@@ -3,7 +3,10 @@
 # Active key and an insertion of a Terminal key, each beside an accepting
 # control, against one generated development node.
 #
-# usage: demo1_cli_controls.sh SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
+# usage: demo1_cli_controls.sh SINGULAR OPEN_DATUM DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
+#
+# #528 slice 4: the ordinary commands run through `open-datum`; `singular`
+# is retained for the registry verbs the story never invokes via the CLI.
 #
 # This script only arranges processes: one node, the wallets the story
 # funds, and one `cli-controls run`, which runs the story, leaves one receipt per
@@ -12,16 +15,17 @@
 # socket) exit 3 and are never a verdict.
 set -euo pipefail
 
-[ "$#" -eq 6 ] || {
-  echo "usage: $0 SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR" >&2
+[ "$#" -eq 7 ] || {
+  echo "usage: $0 SINGULAR OPEN_DATUM DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR" >&2
   exit 2
 }
 singular="$1"
-devnet="$2"
-controls="$3"
-blueprint="$4"
-ledger="$5"
-work="$6"
+open_datum="$2"
+devnet="$3"
+controls="$4"
+blueprint="$5"
+ledger="$6"
+work="$7"
 [ ! -e "$work" ] || {
   echo "controls: $work exists; every run takes a fresh directory" >&2
   exit 2
@@ -131,7 +135,7 @@ say "one private development source at $provider_url"
 status=0
 run_start=$SECONDS
 "$controls" run \
-  --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
+  --singular "$singular" --open-datum "$open_datum" --blueprint "$blueprint" --ledger "$ledger" \
   --koios-url "$provider_url" --network-time "$time_directory" --node-socket "$sock" --network-magic "$network_magic" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" --underfunded-skey "$work/underfunded.skey" \
   --work "$work" >"$work/controls.md" 2> >(tee "$work/controls.err" >&2) || status=$?
 tail -1 "$work/controls.md"

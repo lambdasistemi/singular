@@ -191,6 +191,14 @@ printf '%s\t%s\t%s\n' "open-datum \${1:-} \${2:-}" "\$harness" "\$holds" >>$(pri
 exec $(printf '%q' "$open_datum/bin/open-datum") "\$@"
 WRAPPER
 chmod +x "$work/bin/open-datum"
+# #528 slice 4: the development node reads its genesis from E2E_GENESIS_DIR,
+# falling back to a relative `e2e-test/genesis` that only resolves when the
+# caller happens to run from the registry tree. The archive build leaves the
+# caller in the application's tree before the journey runs, so the
+# genesis-only source (and every later node) would die before printing
+# settings. Point the journey at the genesis the archive carries, so the
+# node starts regardless of the caller's directory.
+export E2E_GENESIS_DIR="$extracted/offchain/e2e-test/genesis"
 status=0
 bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
   || status=$?

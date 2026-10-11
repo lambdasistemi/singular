@@ -125,6 +125,16 @@ the fold deadline — the request's submission time plus the registry's
 processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the
 registry's root, its mirror and its saved state do not move.
 
+Before anything is signed, `insert`, `update` and `terminate` check the
+key's current entry: a booking the entry rules out is refused with the key
+and a named reason. An insert of a key that is already registered, or
+already retired, is refused; an update or a terminate of a key that is
+not registered, or already retired, is refused. The refusal is labelled
+client policy in the receipt, and it runs the same way in planning, in
+preview and live. The fold still validates every booking it folds, so a
+booking made through the permissive builders can still reach the chain's
+own refusal at the fold.
+
 `registry fold` folds that request. It is an ordinary command: it signs and
 funds with the wallet it is given, journals its own transactions, and may be
 run by any wallet, not only the one that booked. An insertion's request carries

@@ -4,6 +4,7 @@ import Naming.CompleteVerifySpec qualified
 import Naming.RecordValueSpec qualified
 import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
+import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
@@ -148,6 +149,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Reclaim" [Cli, Recovery])
         Singular.CLI.ReclaimSpec.spec
+    describe
+        (tagged "Singular.CLI.BookingRefusal" [Cli])
+        Singular.CLI.BookingRefusalSpec.spec
     describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec

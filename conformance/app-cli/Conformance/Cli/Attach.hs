@@ -56,16 +56,24 @@ newtype TakeStopped = TakeStopped Text
 instance Exception TakeStopped
 
 {- | Whether a take goes on after an action that ended this way. Only
-outcomes the story's own requirements can judge: a command's success or its
-partial stop, a transaction the chain accepted or the node refused, a
-readback. Anything else — a client error, an unknown submission, an
+outcomes the story's own requirements can judge: a command's success,
+its partial stop or its client-policy refusal before signing, a
+transaction the chain accepted or the node refused, a readback. A
+client refusal is the command's own judged refusal with its reason, not
+uncertainty. Anything else — a client error, an unknown submission, an
 unconfirmed transaction, a timeout, a lost node, a concurrent writer — is
 uncertainty, and an uncertain take stops.
 -}
 continues :: Text -> Bool
 continues outcome =
     outcome
-        `elem` ["success", "partial", "accepted", "ledger-refused", "observed"]
+        `elem` [ "success"
+               , "partial"
+               , "client-refusal"
+               , "accepted"
+               , "ledger-refused"
+               , "observed"
+               ]
 
 {- | Why a transaction may not be sent. A take must have an explicit
 allowance; a transaction that puts collateral at risk must state a total

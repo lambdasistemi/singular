@@ -71,6 +71,7 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Types
     ( Edge
+    , edgeInsertActive
     )
 
 {- | A wallet holding one ada-only output, and nothing else to say. The
@@ -199,7 +200,7 @@ carriesItsApproval edge key tx = do
     requestHolds tx `shouldReturn` approval
 
 spec :: Spec
-spec =
+spec = do
     describe
         "bookEdge certifies exactly the edges the application approves"
         $ forM_ keys
@@ -214,3 +215,9 @@ spec =
                         it
                             (name <> " on " <> show key <> " is refused before submission")
                             (booked edge key `shouldThrow` anyException)
+    describe "the booking primitive stays permissive (#486)" $ do
+        it "books a taken key twice: it takes no leaf" $ do
+            first <- booked edgeInsertActive "taken"
+            second <- booked edgeInsertActive "taken"
+            carriesItsApproval edgeInsertActive "taken" first
+            carriesItsApproval edgeInsertActive "taken" second

@@ -202,30 +202,68 @@ honestReceipts story = do
                 provoked p r
         RunByToken (Target actor) (Target owner) c k -> do
             before <- readIORef inserted
-            let terminal = (owner <> ":terminate") `elem` before
-            emit
-                ("run " <> T.pack (commandName c) <> " by token")
-                actor
-                k
-                $ \r ->
-                    r
-                        { rcOutcome = "success"
-                        , rcCommand = Just (commandReceipt c k 0 terminal)
-                        }
-        Run c (Target t) k -> do
-            before <- readIORef inserted
-            let again = c == Insert && (t <> "/" <> k) `elem` before
-                updates = length [() | u <- before, u == t <> ":update"]
-                terminal = (t <> ":terminate") `elem` before
-            modifyIORef' inserted (commandMark c t k :)
-            when again $ modifyIORef' inserted ((t <> ":partial") :)
-            emit ("run " <> T.pack (commandName c)) t k $ \r ->
-                if again
-                    then r{rcOutcome = "partial", rcPendingRequest = Just "b0#0"}
-                    else
+            let leaf = entryLeaf before owner k
+                terminal = leaf == EntryTerminal
+                refused = case c of
+                    Insert -> leaf /= EntryUnknown
+                    Update _ -> leaf /= EntryActive
+                    Terminate -> leaf /= EntryActive
+                    _ -> False
+            if refused
+                then emit
+                    ("run " <> T.pack (commandName c) <> " by token")
+                    actor
+                    k
+                    $ \r ->
+                        r
+                            { rcOutcome = "client-refusal"
+                            , rcReason = Just (refusalText c k leaf)
+                            , rcCommand = Just (refusalPrinted c k leaf)
+                            }
+                else emit
+                    ("run " <> T.pack (commandName c) <> " by token")
+                    actor
+                    k
+                    $ \r ->
                         r
                             { rcOutcome = "success"
-                            , rcCommand = Just (commandReceipt c k updates terminal)
+                            , rcCommand = Just (commandReceipt c k 0 terminal)
+                            }
+        Run c (Target t) k -> do
+            before <- readIORef inserted
+            let leaf = entryLeaf before t k
+                updates = length [() | u <- before, u == t <> ":update"]
+                refused = case c of
+                    Insert -> leaf /= EntryUnknown
+                    Update _ -> leaf /= EntryActive
+                    Terminate -> leaf /= EntryActive
+                    _ -> False
+            if refused
+                then emit ("run " <> T.pack (commandName c)) t k $ \r ->
+                    r
+                        { rcOutcome = "client-refusal"
+                        , rcReason = Just (refusalText c k leaf)
+                        , rcCommand = Just (refusalPrinted c k leaf)
+                        }
+                else do
+                    modifyIORef' inserted (commandMark c t k :)
+                    case (c, leaf) of
+                        (Insert, EntryUnknown) ->
+                            modifyIORef' inserted ((t <> "/" <> k <> ":active") :)
+                        (Terminate, EntryActive) ->
+                            modifyIORef' inserted ((t <> "/" <> k <> ":terminal") :)
+                        _ -> pure ()
+                    emit ("run " <> T.pack (commandName c)) t k $ \r ->
+                        r
+                            { rcOutcome = "success"
+                            , rcCommand =
+                                Just
+                                    ( commandReceipt
+                                        c
+                                        k
+                                        updates
+                                        (c == Inspect && leaf == EntryTerminal)
+                                    )
                             }
         Craft cr (Target t) k ->
             emit ("craft " <> T.pack (craftedName cr)) t k $ \r ->
@@ -280,7 +318,7 @@ honestReceipts story = do
                             , rcTxId = Just "f1"
                             , rcEvidence = ["evidence/step-f1.cbor.hex"]
                             }
-                in  if t `notElem` ["duplicate", "resurrection", "permanent"]
+                in  if t `notElem` ["duplicate", "resurrection"]
                         then base{rcOutcome = "accepted"}
                         else
                             (rejected ["PlutusFailure", "CekError"] base)
@@ -292,6 +330,10 @@ honestReceipts story = do
                 reclaims = length [() | m <- before, m == t <> ":reclaim"]
                 pendingNow = t /= "permanent" || partials > reclaims
                 released = if t == "permanent" then 2_800_000 * toInteger reclaims else 0
+                leafNow = case entryLeaf before t k of
+                    EntryActive -> Just "active"
+                    EntryTerminal -> Just "terminal"
+                    EntryUnknown -> Just "unknown"
             emit "observe" t k $ \r ->
                 r
                     { rcOutcome = "observed"
@@ -304,7 +346,7 @@ honestReceipts story = do
                                 ["b0#0" | pendingNow]
                                 (if pendingNow then 3_000_000 else 0)
                                 (100 + released)
-                                (Just "active")
+                                leafNow
                             )
                     }
       where
@@ -318,8 +360,7 @@ honestReceipts story = do
                             }
                 bounded x
                     | t == "permanent"
-                    , name `elem` ["reclaim", "fold-unevaluated"]
-                        || "craft " `T.isPrefixOf` name =
+                    , "craft " `T.isPrefixOf` name =
                         x
                             { rcAllowance = Just 5_000_000
                             , rcAccount =
@@ -485,6 +526,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     , "bookTerminate_inversion"
                     , "fold_settles_additively"
                     , "fold_inversion"
+                    , "update_inversion"
                     ]
             found <-
                 firstExisting
@@ -509,7 +551,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
     it
         "states every clause once and refuses a refusal without an accepting control"
         $ do
-            length (outline controlsStory) `shouldBe` 101
+            length (outline controlsStory) `shouldBe` 120
             validateControls controlsStory `shouldBe` Right ()
             let refusedOnly =
                     theorem duplicateRefused $
@@ -525,9 +567,9 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
         $ do
             rs <- honestReceipts controlsStory
             let results = judge rs controlsStory
-            length results `shouldBe` 101
+            length results `shouldBe` 120
             [crStatus r | r <- results, not (retiredTitle (crTitle r))]
-                `shouldBe` replicate 99 Held
+                `shouldBe` replicate 118 Held
             [crStatus r | r <- results, retiredTitle (crTitle r)]
                 `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` True
@@ -540,7 +582,58 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             clauseStatuses "folds Alice's pending request" results
                 `shouldBe` [Held]
             let report = renderControls results controlsStory
-            report `shouldSatisfy` isInfixOf "singular registry fold"
+            report `shouldSatisfy` isInfixOf "open-datum fold"
+    it
+        "names, per action, the executable that runs it"
+        $ do
+            rs <- honestReceipts controlsStory
+            let report = renderControls (judge rs controlsStory) controlsStory
+            forM_
+                [ "create"
+                , "insert"
+                , "update"
+                , "terminate"
+                , "fold"
+                , "inspect"
+                ]
+                $ \verb -> do
+                    let wanted = "`open-datum " <> verb <> "`"
+                        unwanted = "`singular registry " <> verb <> "`"
+                    report `shouldSatisfy` isInfixOf wanted
+                    report `shouldSatisfy` (not . isInfixOf unwanted)
+            report `shouldSatisfy` isInfixOf "ordinary `open-datum`"
+    it
+        "names in the introduction only executables the story's steps run"
+        $ do
+            rs <- honestReceipts controlsStory
+            let report = renderControls (judge rs controlsStory) controlsStory
+                introLines =
+                    [ l
+                    | l <- lines report
+                    , "Alice's story runs through" `isInfixOf` l
+                    ]
+                stepLines = [l | l <- lines report, "Run `" `isInfixOf` l]
+                introNames exe = any (("`" <> exe <> "`") `isInfixOf`) introLines
+                stepsRun exe = any (("Run `" <> exe) `isInfixOf`) stepLines
+            forM_ ["open-datum", "singular registry"] $ \exe ->
+                when (introNames exe) $
+                    stepsRun exe `shouldBe` True
+    it
+        "names in the introduction every executable the story's steps run"
+        $ do
+            rs <- honestReceipts controlsStory
+            let report = renderControls (judge rs controlsStory) controlsStory
+                introLines =
+                    [ l
+                    | l <- lines report
+                    , "Alice's story runs through" `isInfixOf` l
+                    ]
+                stepLines = [l | l <- lines report, "Run `" `isInfixOf` l]
+                introNames exe = any (("`" <> exe <> "`") `isInfixOf`) introLines
+                stepsRun exe = any (("Run `" <> exe) `isInfixOf`) stepLines
+            forM_ ["open-datum", "singular registry"] $ \exe ->
+                when (stepsRun exe) $
+                    introNames exe `shouldBe` True
     it
         "does not hold a token-only fold of another request, or one its inspect contradicts"
         $ do
@@ -623,11 +716,11 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         )
                         rs
                 results = judge dropped controlsStory
-            length results `shouldBe` 101
-            take 3 (statuses results) `shouldBe` [Held, Held, Held]
-            [crStatus r | r <- drop 3 results, not (retiredTitle (crTitle r))]
+            length results `shouldBe` 120
+            take 4 (statuses results) `shouldBe` [Held, Held, Held, Held]
+            [crStatus r | r <- drop 4 results, not (retiredTitle (crTitle r))]
                 `shouldSatisfy` all isUncovered
-            [crStatus r | r <- drop 3 results, retiredTitle (crTitle r)]
+            [crStatus r | r <- drop 4 results, retiredTitle (crTitle r)]
                 `shouldBe` replicate 2 (Retired selectorRetirement)
             held results `shouldBe` False
     it
@@ -755,8 +848,8 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     (\r -> r{rcTarget = "duplicate-control"})
                     rs
             results = judge aliased controlsStory
-        statuses results !! 3 `shouldSatisfy` isUncovered
-        show (statuses results !! 3)
+        statuses results !! 4 `shouldSatisfy` isUncovered
+        show (statuses results !! 4)
             `shouldSatisfy` isInfixOf "answers fold-unevaluated in duplicate-control"
     it
         "does not hold a refusal the node accepted, or one naming another script"
@@ -780,28 +873,357 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         "duplicate"
                         (\r -> r{rcEvaluation = Nothing})
                         rs
-            statuses (judge accepted controlsStory) !! 3 `shouldSatisfy` isNotHeld
-            statuses (judge otherScript controlsStory) !! 8
+            statuses (judge accepted controlsStory) !! 4 `shouldSatisfy` isNotHeld
+            statuses (judge otherScript controlsStory) !! 12
                 `shouldSatisfy` isNotHeld
-            statuses (judge evaluated controlsStory) !! 3
+            statuses (judge evaluated controlsStory) !! 4
                 `shouldSatisfy` isNotHeld
     it
-        "does not hold an insert reported as anything but partial with its pending request"
+        "does not hold a booking refusal reported as anything but a client refusal naming its policy"
         $ do
             rs <- honestReceipts controlsStory
             let second =
                     [r | r <- rs, rcAction r == "run insert", rcTarget r == "duplicate"]
                         !! 1
-                refusedInstead =
+                succeededInstead =
+                    map
+                        ( \r ->
+                            if r == second then r{rcOutcome = "success"} else r
+                        )
+                        rs
+                unlabelled =
                     map
                         ( \r ->
                             if r == second
-                                then r{rcOutcome = "client-refusal", rcPendingRequest = Nothing}
+                                then r{rcReason = Just "held is already registered"}
                                 else r
                         )
                         rs
-            rcOutcome second `shouldBe` "partial"
-            statuses (judge refusedInstead controlsStory) !! 2
+                pending =
+                    map
+                        ( \r ->
+                            if r == second
+                                then r{rcPendingRequest = Just "b0#0"}
+                                else r
+                        )
+                        rs
+            rcOutcome second `shouldBe` "client-refusal"
+            statuses (judge succeededInstead controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+            statuses (judge unlabelled controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+            statuses (judge pending controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+    it "does not hold a booking refusal whose reason names another key" $
+        do
+            rs <- honestReceipts controlsStory
+            let second =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run insert"
+                    , rcTarget r == "duplicate"
+                    ]
+                        !! 1
+                wrongKey =
+                    map
+                        ( \r ->
+                            if r == second
+                                then
+                                    r
+                                        { rcReason =
+                                            Just
+                                                "other is already registered (client policy)"
+                                        }
+                                else r
+                        )
+                        rs
+            statuses (judge wrongKey controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+    it "does not hold a booking refusal whose printed key is another key" $
+        do
+            rs <- honestReceipts controlsStory
+            let second =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run insert"
+                    , rcTarget r == "duplicate"
+                    ]
+                        !! 1
+                wrongPrinted =
+                    map
+                        ( \r ->
+                            if r == second
+                                then
+                                    r
+                                        { rcCommand =
+                                            fmap
+                                                ( setField
+                                                    "key"
+                                                    (T.pack (hexOf "other"))
+                                                )
+                                                (rcCommand r)
+                                        }
+                                else r
+                        )
+                        rs
+            statuses (judge wrongPrinted controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+    it
+        "does not hold a booking refusal whose reason names a longer key containing the requested spelling"
+        $ do
+            rs <- honestReceipts controlsStory
+            let second =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run insert"
+                    , rcTarget r == "duplicate"
+                    ]
+                        !! 1
+                longerKey =
+                    map
+                        ( \r ->
+                            if r == second
+                                then
+                                    r
+                                        { rcReason =
+                                            Just
+                                                "held-other is already registered (client policy)"
+                                        }
+                                else r
+                        )
+                        rs
+            statuses (judge longerKey controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+    it
+        "does not hold a booking refusal whose hex reason names a longer key containing the requested hex"
+        $ do
+            rs <- honestReceipts controlsStory
+            let second =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run insert"
+                    , rcTarget r == "duplicate"
+                    ]
+                        !! 1
+                longerHex =
+                    map
+                        ( \r ->
+                            if r == second
+                                then
+                                    r
+                                        { rcReason =
+                                            Just
+                                                ( T.pack (hexOf "held-other")
+                                                    <> " is already registered (client policy)"
+                                                )
+                                        }
+                                else r
+                        )
+                        rs
+            statuses (judge longerHex controlsStory) !! 6
+                `shouldSatisfy` isNotHeld
+    it "holds a booking refusal whose reason is the exact hex spelling" $
+        do
+            rs <- honestReceipts controlsStory
+            let second =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run insert"
+                    , rcTarget r == "duplicate"
+                    ]
+                        !! 1
+                exactHex =
+                    map
+                        ( \r ->
+                            if r == second
+                                then
+                                    r
+                                        { rcReason =
+                                            Just
+                                                ( T.pack (hexOf "held")
+                                                    <> " is already registered (client policy)"
+                                                )
+                                        }
+                                else r
+                        )
+                        rs
+            statuses (judge exactHex controlsStory) !! 6
+                `shouldBe` Held
+    it
+        "does not hold the permanent take whose reason names a longer key containing the requested spelling"
+        $ do
+            let story = permanentStory "demo1-take"
+                titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+            rs <- honestReceipts story
+            firstRefused <- case [ r
+                                 | r <- rs
+                                 , rcAction r == "run insert"
+                                 , rcTarget r == "permanent"
+                                 , rcOutcome r == "client-refusal"
+                                 ] of
+                (r : _) -> pure r
+                [] -> fail "no refused insert in permanent take"
+            let longer =
+                    map
+                        ( \r ->
+                            if r == firstRefused
+                                then
+                                    r
+                                        { rcReason =
+                                            Just "demo1-take-other is already registered (client policy)"
+                                        }
+                                else r
+                        )
+                        rs
+            titled "refused before signing" (judge longer story)
+                `shouldSatisfy` any isNotHeld
+    it
+        "does not hold Bob's update refusal of the unknown key whose reason names a longer key"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                targets =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run update by token"
+                    , rcTarget r == "bob"
+                    , rcKey r == "fresh"
+                    , rcOutcome r == "client-refusal"
+                    ]
+            cli <- case targets of
+                (c : _) -> pure c
+                [] -> fail "no honest Bob update refusal for fresh"
+            let longer =
+                    map
+                        ( \r ->
+                            if r == cli
+                                then
+                                    r{rcReason = Just "fresh-other is not registered (client policy)"}
+                                else r
+                        )
+                        rs
+            titled "Bob's update of the unknown key" (judge longer controlsStory)
+                `shouldSatisfy` any isNotHeld
+    it
+        "does not hold Bob's update refusal of the Terminal key whose reason names a longer key"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                targets =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run update by token"
+                    , rcTarget r == "bob"
+                    , rcKey r == "ended"
+                    , rcOutcome r == "client-refusal"
+                    ]
+            cli <- case targets of
+                (c : _) -> pure c
+                [] -> fail "no honest Bob update refusal for ended"
+            let longer =
+                    map
+                        ( \r ->
+                            if r == cli
+                                then
+                                    r{rcReason = Just "ended-other is already retired (client policy)"}
+                                else r
+                        )
+                        rs
+            titled "Bob's update of the Terminal key" (judge longer controlsStory)
+                `shouldSatisfy` any isNotHeld
+    it
+        "does not hold Bob's terminate refusal of the unknown key whose reason names a longer key"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                targets =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run terminate by token"
+                    , rcTarget r == "bob"
+                    , rcKey r == "fresh"
+                    , rcOutcome r == "client-refusal"
+                    ]
+            cli <- case targets of
+                (c : _) -> pure c
+                [] -> fail "no honest Bob terminate refusal for fresh"
+            let longer =
+                    map
+                        ( \r ->
+                            if r == cli
+                                then
+                                    r{rcReason = Just "fresh-other is not registered (client policy)"}
+                                else r
+                        )
+                        rs
+            titled
+                "Bob's terminate of the unknown key"
+                (judge longer controlsStory)
+                `shouldSatisfy` any isNotHeld
+    it
+        "does not hold Bob's terminate refusal of the Terminal key whose reason names a longer key"
+        $ do
+            rs <- honestReceipts controlsStory
+            let titled s results = [crStatus r | r <- results, s `isInfixOf` crTitle r]
+                targets =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run terminate by token"
+                    , rcTarget r == "bob"
+                    , rcKey r == "ended"
+                    , rcOutcome r == "client-refusal"
+                    ]
+            cli <- case targets of
+                (c : _) -> pure c
+                [] -> fail "no honest Bob terminate refusal for ended"
+            let longer =
+                    map
+                        ( \r ->
+                            if r == cli
+                                then
+                                    r{rcReason = Just "ended-other is already retired (client policy)"}
+                                else r
+                        )
+                        rs
+            titled
+                "Bob's terminate of the Terminal key"
+                (judge longer controlsStory)
+                `shouldSatisfy` any isNotHeld
+    it
+        "does not hold a booking refusal whose pre/post state moved but post/post stable"
+        $ do
+            rs <- honestReceipts controlsStory
+            let refused =
+                    [ r
+                    | r <- rs
+                    , rcAction r == "run insert"
+                    , rcTarget r == "duplicate"
+                    , rcOutcome r == "client-refusal"
+                    ]
+                        !! 0
+                posts =
+                    take
+                        2
+                        [ r
+                        | r <- rs
+                        , rcAction r == "observe"
+                        , rcTarget r == "duplicate"
+                        , rcStep r > rcStep refused
+                        ]
+                moved =
+                    map
+                        ( \r ->
+                            if r `elem` posts
+                                then
+                                    r
+                                        { rcObservation =
+                                            fmap (\o -> o{obRoot = "11"}) (rcObservation r)
+                                        }
+                                else r
+                        )
+                        rs
+            length posts `shouldBe` 2
+            statuses (judge moved controlsStory) !! 7
                 `shouldSatisfy` isNotHeld
     it "does not hold a readback that moved, or one with nothing pending" $ do
         rs <- honestReceipts controlsStory
@@ -816,14 +1238,14 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                             else r
                     )
                     rs
-        statuses (judge moved controlsStory) !! 4 `shouldSatisfy` isNotHeld
+        statuses (judge moved controlsStory) !! 7 `shouldSatisfy` isNotHeld
     it "renders uncovered clauses beside held ones, with the count" $ do
         rs <- honestReceipts controlsStory
         let rendered = renderControls (judge (take 3 rs) controlsStory) controlsStory
         rendered `shouldSatisfy` isInfixOf "uncovered: no receipt for step 3"
         rendered
             `shouldSatisfy` isInfixOf
-                "0 of 101 clauses hold; 0 do not; 99 are uncovered; 2 are retired."
+                "0 of 120 clauses hold; 0 do not; 118 are uncovered; 2 are retired."
         rendered
             `shouldSatisfy` isInfixOf
                 "`OpenDatumApplication.Statements.duplicate_refused_by_registry`"
@@ -1129,7 +1551,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             partial =
                 renderControls (judge withoutWithdrawal controlsStory) controlsStory
         full
-            `shouldSatisfy` isInfixOf "30 of 32 approved cases are covered live; 2 are not."
+            `shouldSatisfy` isInfixOf "36 of 38 approved cases are covered live; 2 are not."
         -- a replaced clause stays visible beside the clause replacing it
         full
             `shouldSatisfy` isInfixOf
@@ -1226,7 +1648,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 ]
         take 1 resurrection `shouldSatisfy` all isNotHeld
         drop 1 resurrection
-            `shouldSatisfy` (\ss -> length ss == 4 && all isUncovered ss)
+            `shouldSatisfy` (\ss -> length ss == 7 && all isUncovered ss)
         show (drop 1 resurrection)
             `shouldSatisfy` isInfixOf "its premise does not hold"
         -- each names the cause, not only the premise
@@ -1305,8 +1727,8 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     "duplicate"
                     (\r -> r{rcAdmission = Just ["the retained rejection is missing"]})
                     rs
-        statuses (judge unread controlsStory) !! 3 `shouldSatisfy` isNotHeld
-        show (statuses (judge broken controlsStory) !! 3)
+        statuses (judge unread controlsStory) !! 4 `shouldSatisfy` isNotHeld
+        show (statuses (judge broken controlsStory) !! 4)
             `shouldSatisfy` isInfixOf "the retained rejection is missing"
     it
         "does not count a rejection before any script ran as the validator's refusal, even naming its hash"
@@ -1314,7 +1736,7 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             rs <- honestReceipts controlsStory
             let phaseOne =
                     alter "fold-unevaluated" "duplicate" (\r -> r{rcPhaseWords = []}) rs
-                refusal = statuses (judge phaseOne controlsStory) !! 3
+                refusal = statuses (judge phaseOne controlsStory) !! 4
             refusal `shouldSatisfy` isNotHeld
             show refusal `shouldSatisfy` isInfixOf "before any script ran"
     it
@@ -1329,8 +1751,8 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                         "duplicate"
                         (\r -> r{rcPhaseWords = rcPhaseWords r <> ["OverBudget"]})
                         rs
-                refusal = statuses (judge exhausted controlsStory) !! 3
-            statuses (judge rs controlsStory) !! 3
+                refusal = statuses (judge exhausted controlsStory) !! 4
+            statuses (judge rs controlsStory) !! 4
                 `shouldSatisfy` (not . isNotHeld)
             refusal `shouldSatisfy` isNotHeld
             show refusal `shouldSatisfy` isInfixOf "ran out of the budget"
@@ -1371,6 +1793,119 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                             (pure ())
             validateControls unfounded `shouldSatisfy` isLeft
 
+    describe "booking-time refusal (S6.2)" $ do
+        let titles = map snd (outline controlsStory)
+        it
+            "refuses the ordinary insert of an Active key before signing"
+            $ do
+                titles
+                    `shouldSatisfy` elem
+                        "the ordinary insert of the Active key is refused before signing, naming the key already registered"
+                rs <- honestReceipts controlsStory
+                let second =
+                        [ r
+                        | r <- rs
+                        , rcAction r == "run insert"
+                        , rcTarget r == "duplicate"
+                        ]
+                            !! 1
+                rcOutcome second `shouldBe` "client-refusal"
+        it
+            "refuses Bob's update and terminate of unknown and terminal keys before signing"
+            $ do
+                titles
+                    `shouldSatisfy` elem
+                        "Bob's update of the unknown key is refused before signing, naming the key not registered"
+                titles
+                    `shouldSatisfy` elem
+                        "Bob's update of the Terminal key is refused before signing, naming the key already retired"
+                titles
+                    `shouldSatisfy` elem
+                        "Bob's terminate of the unknown key is refused before signing, naming the key not registered"
+                titles
+                    `shouldSatisfy` elem
+                        "Bob's terminate of the Terminal key is refused before signing, naming the key already retired"
+        it
+            "runs Bob's update and terminate refusals by token as Bob"
+            $ do
+                rs <- honestReceipts controlsStory
+                let refusals =
+                        [ r
+                        | r <- rs
+                        , rcOutcome r == "client-refusal"
+                        , rcKey r `elem` ["fresh", "ended"]
+                        , rcTarget r `elem` ["refusals", "bob"]
+                        , "run update" `T.isPrefixOf` rcAction r
+                            || "run terminate" `T.isPrefixOf` rcAction r
+                        ]
+                length refusals `shouldBe` 4
+                mapM_
+                    (\r -> rcAction r `shouldSatisfy` T.isSuffixOf "by token")
+                    refusals
+                mapM_ (\r -> rcTarget r `shouldBe` "bob") refusals
+        it
+            "states Bob's update refusals as client policy with no Lean theorem"
+            $ do
+                let rows = outline controlsStory
+                [ s
+                  | (s, t) <- rows
+                  , t
+                        == "Bob's update of the unknown key is refused before signing, naming the key not registered"
+                  ]
+                    `shouldBe` ["client-policy-booking-refused"]
+                [ s
+                  | (s, t) <- rows
+                  , t
+                        == "Bob's update of the Terminal key is refused before signing, naming the key already retired"
+                  ]
+                    `shouldBe` ["client-policy-booking-refused"]
+                [ t
+                  | (s, t) <- rows
+                  , s == "OpenDatumApplication.Statements.update_inversion"
+                  , "is refused" `isInfixOf` t
+                  ]
+                    `shouldBe` []
+        it
+            "holds a booking refusal run by token against its registry readback"
+            $ do
+                rs <- honestReceipts controlsStory
+                let clis =
+                        [ r
+                        | r <- rs
+                        , rcAction r == "run update by token"
+                        , rcTarget r == "bob"
+                        , rcKey r == "fresh"
+                        , rcOutcome r == "client-refusal"
+                        ]
+                cli <- case clis of
+                    (c : _) -> pure c
+                    [] -> fail "no honest Bob update refusal for fresh"
+                let seens =
+                        [ r
+                        | r <- rs
+                        , rcAction r == "observe"
+                        , rcTarget r == "refusals"
+                        , rcKey r == "fresh"
+                        , rcStep r > rcStep cli
+                        ]
+                seen <- case seens of
+                    (s : _) -> pure s
+                    [] -> fail "no readback after the update refusal"
+                check BookingRefused [cli, seen] `shouldBe` []
+        it
+            "keeps the chain's own refusal at the fold for a booking through the permissive builders"
+            $ do
+                titles
+                    `shouldSatisfy` elem
+                        "the Active key booked through the permissive builders is accepted"
+        it "names the booking-time refusal in the public description" $ do
+            rs <- honestReceipts controlsStory
+            let report = renderControls (judge rs controlsStory) controlsStory
+            report `shouldSatisfy` isInfixOf "refused before signing"
+        it "takes no fold and no retraction on an existing registry" $ do
+            let story = permanentStory "demo1-take"
+            length (outline story) `shouldBe` 25
+            actionsOf story `shouldSatisfy` all (/= "reclaim")
     describe "one take on a registry that already exists" $ do
         let key = "demo1-take"
             story = permanentStory key
@@ -1379,18 +1914,17 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             "states every clause once, each refusal beside an accepting control"
             $ do
                 validateControls story `shouldBe` Right ()
-                length (outline story) `shouldBe` 29
+                length (outline story) `shouldBe` 25
                 length (nub (map fst (outline story))) `shouldBe` 5
         it "holds every clause on an honest take" $ do
             rs <- honestReceipts story
             let results = judge rs story
-            statuses results `shouldBe` replicate 29 Held
+            statuses results `shouldBe` replicate 25 Held
             held results `shouldBe` True
         it
             "never creates a registry or provokes a command, and the instrument can tell"
             $ do
                 actionsOf story `shouldSatisfy` all (`notElem` forbiddenInPermanent)
-                actionsOf story `shouldSatisfy` elem "reclaim"
                 -- the same quantifier finds them in the story that does both
                 filter (`elem` forbiddenInPermanent) (actionsOf controlsStory)
                     `shouldSatisfy` ( \found -> "run create" `elem` found && any (T.isPrefixOf "provoke ") found
@@ -1399,40 +1933,120 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 length (filter (T.isPrefixOf "provoke ") forbiddenInPermanent)
                     `shouldBe` length [minBound .. maxBound :: Provocation]
         it
-            "does not hold a retraction that left a request behind, took another, or moved the wallet"
+            "does not hold a booking refusal that succeeded, lost its policy, named a request, or moved the wallet"
             $ do
                 rs <- honestReceipts story
-                let reclaimClauses = titled "retraction of that request"
+                let refused =
+                        alter "run insert" "permanent" (\r -> r{rcOutcome = "success"}) rs
+                    unlabelled =
+                        alter
+                            "run insert"
+                            "permanent"
+                            (\r -> r{rcReason = Just "demo1-take is already registered"})
+                            rs
+                    pending =
+                        alter
+                            "run insert"
+                            "permanent"
+                            (\r -> r{rcPendingRequest = Just "b0#0"})
+                            rs
                     after = [r | r <- rs, rcAction r == "observe", rcTarget r == "permanent"]
-                    swapLast f = case reverse after of
-                        (lastObserve : _) -> map (\r -> if r == lastObserve then f r else r) rs
+                    wallet = case reverse after of
+                        (lastObserve : _) ->
+                            map
+                                ( \r ->
+                                    if r == lastObserve
+                                        then
+                                            r
+                                                { rcObservation =
+                                                    fmap
+                                                        (\o -> o{obWalletLovelace = obWalletLovelace o + 1})
+                                                        (rcObservation r)
+                                                }
+                                        else r
+                                )
+                                rs
                         [] -> rs
-                    stillPending =
-                        swapLast
-                            ( \r ->
-                                r
-                                    { rcObservation = fmap (\o -> o{obPending = ["b0#0"]}) (rcObservation r)
-                                    }
-                            )
-                    wallet =
-                        swapLast
-                            ( \r ->
-                                r
-                                    { rcObservation =
-                                        fmap
-                                            (\o -> o{obWalletLovelace = obWalletLovelace o + 1})
-                                            (rcObservation r)
-                                    }
-                            )
-                    refused =
-                        alter "reclaim" "permanent" (\r -> r{rcOutcome = "ledger-refused"}) rs
-                    noFee = alter "reclaim" "permanent" (\r -> r{rcAccount = Nothing}) rs
-                length (filter (/= Held) (reclaimClauses (judge rs story)))
+                length
+                    (filter (/= Held) (titled "refused before signing" (judge rs story)))
                     `shouldBe` 0
                 mapM_
-                    ( \mutated -> reclaimClauses (judge mutated story) `shouldSatisfy` any isNotHeld
+                    ( \mutated ->
+                        titled "refused before signing" (judge mutated story)
+                            `shouldSatisfy` any isNotHeld
                     )
-                    [stillPending, wallet, refused, noFee]
+                    [refused, unlabelled, pending]
+                titled "unchanged by the booking refusal" (judge wallet story)
+                    `shouldSatisfy` any isNotHeld
+        it "does not hold a booking refusal whose reason names another key" $
+            do
+                rs <- honestReceipts story
+                let wrongKey =
+                        alter
+                            "run insert"
+                            "permanent"
+                            ( \r ->
+                                r
+                                    { rcReason =
+                                        Just "other is already registered (client policy)"
+                                    }
+                            )
+                            rs
+                    wrongPrinted =
+                        alter
+                            "run insert"
+                            "permanent"
+                            ( \r ->
+                                r
+                                    { rcCommand =
+                                        fmap
+                                            (setField "key" (T.pack (hexOf "other")))
+                                            (rcCommand r)
+                                    }
+                            )
+                            rs
+                titled "refused before signing" (judge wrongKey story)
+                    `shouldSatisfy` any isNotHeld
+                titled "refused before signing" (judge wrongPrinted story)
+                    `shouldSatisfy` any isNotHeld
+        it
+            "does not hold a booking refusal whose pre/post state moved but post/post stable"
+            $ do
+                rs <- honestReceipts story
+                let refuseds =
+                        [ r
+                        | r <- rs
+                        , rcAction r == "run insert"
+                        , rcTarget r == "permanent"
+                        , rcOutcome r == "client-refusal"
+                        ]
+                    firstRefused = case refuseds of
+                        (r : _) -> r
+                        [] -> error "no refused insert in permanent take"
+                    posts =
+                        take
+                            2
+                            [ r
+                            | r <- rs
+                            , rcAction r == "observe"
+                            , rcTarget r == "permanent"
+                            , rcStep r > rcStep firstRefused
+                            ]
+                    moved =
+                        map
+                            ( \r ->
+                                if r `elem` posts
+                                    then
+                                        r
+                                            { rcObservation =
+                                                fmap (\o -> o{obRoot = "11"}) (rcObservation r)
+                                            }
+                                    else r
+                            )
+                            rs
+                length posts `shouldBe` 2
+                titled "unchanged by the booking refusal" (judge moved story)
+                    `shouldSatisfy` any isNotHeld
         it
             "does not hold a refusal whose collateral is unbounded, unstated or unreturned"
             $ do
@@ -1440,13 +2054,13 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 let account f r = r{rcAccount = fmap f (rcAccount r)}
                     over =
                         alter
-                            "fold-unevaluated"
+                            "craft update-by-stranger"
                             "permanent"
                             (account (\a -> a{acCollateralTotal = Just 9_000_000}))
                             rs
                     none =
                         alter
-                            "fold-unevaluated"
+                            "craft early-withdrawal"
                             "permanent"
                             (account (\a -> a{acCollateralTotal = Nothing}))
                             rs
@@ -1476,24 +2090,17 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                 let unbounded act =
                         alter act "permanent" (\r -> r{rcAllowance = Nothing}) rs
                     exposure = titled "within the operator's explicit allowance"
-                    clauseOf act
-                        | act == "reclaim" = titled "retraction of that request"
-                        | otherwise = exposure
-                length (exposure (judge rs story)) `shouldBe` 4
+                length (exposure (judge rs story)) `shouldBe` 2
                 -- one mutation per node-judged action of the take: each is
                 -- caught by the clause that bounds that refusal, not by luck
                 mapM_
                     ( \act -> do
                         let results = judge (unbounded act) story
-                        clauseOf act results `shouldSatisfy` any isNotHeld
+                        exposure results `shouldSatisfy` any isNotHeld
                         show results
                             `shouldSatisfy` isInfixOf "no collateral allowance was set"
                     )
-                    [ "craft update-by-stranger"
-                    , "craft early-withdrawal"
-                    , "fold-unevaluated"
-                    , "reclaim"
-                    ]
+                    ["craft update-by-stranger", "craft early-withdrawal"]
         it
             "does not hold an indexer's read that is missing, unavailable, stale or in disagreement with the node"
             $ do
@@ -1687,41 +2294,29 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     )
                     mutations
         it
-            "does not hold a retraction of any request but the one the insertion's receipt names"
+            "does not hold a booking refusal naming the wrong ruled-out state for the key"
             $ do
                 rs <- honestReceipts story
-                let reclaimClauses = titled "retraction of that request"
+                let bookingClauses = titled "refused before signing"
                     other =
-                        alter
-                            "reclaim"
-                            "permanent"
-                            (\r -> r{rcPendingRequest = Just "zz#9"})
-                            rs
-                    otherBody =
-                        alter
-                            "reclaim"
-                            "permanent"
-                            ( \r ->
-                                r
-                                    { rcAccount =
-                                        fmap (\a -> a{acSpends = ["w#1"]}) (rcAccount r)
-                                    }
-                            )
-                            rs
-                    unnamed =
                         alter
                             "run insert"
                             "permanent"
-                            ( \r ->
-                                if rcOutcome r == "partial" then r{rcPendingRequest = Nothing} else r
+                            (\r -> r{rcReason = Just "demo1-take cannot be booked (client policy)"})
+                            rs
+                    swapped =
+                        alter
+                            "run insert"
+                            "permanent"
+                            ( \r -> r{rcReason = Just "demo1-take is already retired (client policy)"}
                             )
                             rs
                 mapM_
                     ( \mutated ->
-                        reclaimClauses (judge mutated story) `shouldSatisfy` any isNotHeld
+                        bookingClauses (judge mutated story) `shouldSatisfy` any isNotHeld
                     )
-                    [other, otherBody, unnamed]
-                reclaimClauses (judge rs story) `shouldSatisfy` all (== Held)
+                    [other, swapped]
+                bookingClauses (judge rs story) `shouldSatisfy` all (== Held)
 
 -- | What an indexer's record keeps when it agrees with the inspect it was asked about.
 honestRead :: Indexer -> String -> Receipt -> IndexerRead
@@ -1765,6 +2360,61 @@ honestRead ix k inspected =
 
 appHash :: T.Text
 appHash = "a99"
+
+{- | What the key's current entry says, as the ordinary commands read it:
+a key the story inserted and never retired is live, a retired one is
+terminal, and anything else is unknown to the registry.
+-}
+data EntryLeaf = EntryUnknown | EntryActive | EntryTerminal
+    deriving stock (Eq, Show)
+
+entryLeaf :: [String] -> String -> String -> EntryLeaf
+entryLeaf before t k
+    | (t <> "/" <> k <> ":terminal") `elem` before = EntryTerminal
+    | (t <> "/" <> k <> ":active") `elem` before = EntryActive
+    | otherwise = EntryUnknown
+
+{- | The reason a ruled-out booking is refused with, as the ordinary
+commands print it before signing: what the key is, named with the
+client policy.
+-}
+refusalText :: Command -> String -> EntryLeaf -> T.Text
+refusalText c k leaf = T.pack k <> " " <> phrase <> " (client policy)"
+  where
+    phrase = case (c, leaf) of
+        (Insert, EntryActive) -> "is already registered"
+        (Insert, EntryTerminal) -> "is already retired"
+        (Update _, EntryUnknown) -> "is not registered"
+        (Update _, EntryTerminal) -> "is already retired"
+        (Terminate, EntryUnknown) -> "is not registered"
+        (Terminate, EntryTerminal) -> "is already retired"
+        _ -> "cannot be booked"
+
+{- | The receipt a refused booking prints: the refusal with the key, the
+verb, the edge, the leaves found and required, and the client label.
+-}
+refusalPrinted :: Command -> String -> EntryLeaf -> Value
+refusalPrinted c k leaf =
+    object
+        [ "outcome" .= ("client-refusal" :: String)
+        , "reason" .= refusalText c k leaf
+        , "key" .= hexOf k
+        , "verb" .= commandName c
+        , "edge" .= edgeOf c
+        , "leafFound" .= leafText leaf
+        , "leafRequired" .= leafText (requiredOf c)
+        , "policy" .= ("client" :: String)
+        ]
+  where
+    edgeOf Insert = "insertActive" :: String
+    edgeOf (Update _) = "update"
+    edgeOf Terminate = "updateTerminal"
+    edgeOf _ = "none"
+    requiredOf Insert = EntryUnknown
+    requiredOf _ = EntryActive
+    leafText EntryUnknown = "unknown" :: String
+    leafText EntryActive = "active"
+    leafText EntryTerminal = "terminal"
 
 commandMark :: Command -> String -> String -> String
 commandMark c t k = case c of

@@ -20,7 +20,8 @@ New or changed signatures only: names, explicit arguments, argument and result t
 | `runRegistryCommand` (was `runCommand`) | `application`: application value; `env`; `command` | exit code | dispatches create, fold, reject, reclaim, inspect, help; no insert, update or terminate |
 | `runCreate`, `runFold`, `runInspect` (changed) | `application` first, then today's arguments | as today | `runFold` on a termination with no holding rules refuses before building |
 | `runReject`, `runReclaim` | as today | as today | unchanged: they take no application |
-| `bookRequest` | `env`; `attached`: attached registry; `booking`; `mode`: preview or submit | booked request or booking refusal | reads the key's current leaf from the attached lineage; refuses before any signing key is read |
+| `bookingRefusal` | `attached`: attached registry; `booking` | refusal naming key, edge, leaf found and leaf required, or none | pure decision, exported by the registry packages: the key's current entry rules out this request for its edge; called in planning, preview and live by every ordinary verb; not called by the booking primitive or the application builders |
+| `bookRequest` | `env`; `attached`: attached registry; `booking`; `mode`: preview or submit | booked request or booking refusal | calls `bookingRefusal` with the key's current leaf from the attached lineage; refuses before any signing key is read |
 | `runFoldAfterBooking` | `application`; `env`; `booked` | fold outcome | the `--fold` of an application binary; runs exactly the routine `runFold` runs |
 
 ## open-datum-package

@@ -238,7 +238,16 @@ recovery and the booking call: `Singular.CLI`, `Singular.CLI.Attached`,
 `Singular.CLI.RejectRules`, `Singular.CLI.RequestWindow`,
 `Singular.CLI.Root`, `Singular.CLI.Session`, `Singular.CLI.Trace`,
 `Singular.CLI.TrieHistory` and `Singular.CLI.TrieTrace`; their sources live
-under `offchain/cli/src/Singular/CLI/`. The negative host lives beside the
+under `offchain/cli/src/Singular/CLI/`.
+
+The registry packages export the booking check every ordinary verb runs
+before signing: `bookingRefusal` in `Singular.CLI.Booking` decides, from
+the key's current entry, whether the entry rules out the booking, naming
+the key, the verb, and the leaves found and required. Every ordinary verb
+of an application calls it in planning, in preview and live, so a taken
+key, a terminal key, and an unknown key for update and terminate are
+refused before any signing key is read. A cardano-keri application gets
+the same refusal by calling the exported function in its own planning. The negative host lives beside the
 application in `applications/open-datum/negative/`, with its sources under
 `applications/open-datum/negative/src/Negative/` and its entry point in
 `applications/open-datum/negative/app/`.

@@ -72,6 +72,10 @@ import Singular.Application.OpenDatum.Command
     , neededRoles
     )
 import Singular.Application.OpenDatum.Plan
+import Singular.CLI.Booking
+    ( BookingVerb (..)
+    , refuseBooking
+    )
 import Singular.CLI.Command
     ( EntryArgs (..)
     , Key (..)
@@ -190,17 +194,20 @@ runPreview app env kind a settings addrText = do
                             (failWith ClientRefusal "insert has no envelope")
                             pure
                             insertPayload
+                    refuseBooking context key BookInsert
                     (booked, envelopeJson) <-
                         previewInsert live saved a caller payloadForInsert
                     (<> [("envelope", envelopeJson)])
                         <$> previewBooking a v live addr key booked
                 KTerminate -> do
                     outs <- liveOutputs app v saved
+                    refuseBooking context key BookTerminate
                     (booked, _, _) <- planTerminate live caller key outs
                     previewBooking a v live addr key booked
                 KUpdate -> do
                     payload <- document "update needs --payload" datumFromJson
                     outs <- liveOutputs app v saved
+                    refuseBooking context key BookUpdate
                     (holding, _) <- planUpdate live caller key outs
                     tx <- buildUpdate v live addr (entryFund a) holding payload
                     let outlay = updateOutlay tx

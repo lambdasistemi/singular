@@ -57,7 +57,7 @@
       "pause": 300
     },
     {
-      "text": "booking-refusal. The library's booking call refuses, before signing and in preview alike, a request whose key's current leaf the edge rules out (#486). RED: spec registering an active key on the base returns a booking.",
+      "text": "booking-refusal. The registry packages export the check as a function: does the key's current entry rule out this request for its edge (#486). Every ordinary verb calls it in planning, preview and live, before signing: singular's commands and the open-datum executable's insert, update and terminate, with a control per verb (a taken key, a terminal key, the other cases #486 lists). The booking primitive and the application's envelope, approval and destination builders do not call it and stay permissive: the negative host books taken keys through them to show the chain's own refusal at the fold, and the fold still validates. A cardano-keri application gets the same refusal by calling the exported check in its own planning; the API reference says so. RED: spec registering an active key on the base returns a booking.",
       "pause": 300
     },
     {
@@ -117,6 +117,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c5ebc3e3d657dc66d6fa81990e4c8616a4ff29ea4c7a0976c3092dc37d2a3cba"
+    "sha256": "45b96262bafdd28e76d91a309fdf75f4f181ffe34df77b9802ecd91901810039"
   }
 }

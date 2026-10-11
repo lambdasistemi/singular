@@ -7,7 +7,7 @@ Every action leaves one receipt and never stops the story: a step that
 cannot be taken records why, and the verdicts computed later from the
 receipts say which clauses that leaves uncovered or unmet.
 
-* A command is the @singular@ executable, run as a person runs it; its
+* An ordinary command is the @open-datum@ executable, run as a person runs it; its
   receipt is the command's own printed receipt, kept beside ours.
 * A booking is the library call @insert@ makes, 'bookEdgeWith' with the
   application's insertion approval, and nothing after it.
@@ -317,6 +317,7 @@ import Conformance.Cli.Controls
     , check
     , cliSpecification
     , commandName
+    , commandPrefix
     , controlsStory
     , craftedName
     , emptyReceipt
@@ -349,6 +350,18 @@ import Singular.Registry.TrieState.Lineage (lineageTrieState)
 
 data Options = Options
     { optSingular :: FilePath
+    {- ^ Retained for the registry verbs (reject, reclaim); the ordinary
+    open-datum commands below run through --open-datum since slice 4.
+    -}
+    , optOpenDatum :: FilePath
+    {- ^ The packaged `open-datum` executable for create, insert, update,
+    terminate, fold and inspect (#528 slice 4: `singular` no longer
+    implements them, and its neutral create refuses without a pin).
+    Optional during the slice-4 migration: when absent the ordinary
+    commands fall back to --singular and fail as before, so takes on
+    existing registries (other owners, checkpoint 005b2b) keep their
+    expected-red behaviour until they pass it.
+    -}
     , optBlueprint :: FilePath
     , optLedger :: FilePath
     , optSocket :: FilePath
@@ -399,6 +412,7 @@ parseOptions =
     go
         ( Options
             ""
+            "" -- optOpenDatum (#528 slice 4)
             ""
             ""
             ""
@@ -439,6 +453,7 @@ parseOptions =
         Right o
     go o (flag : v : rest) = case flag of
         "--singular" -> go o{optSingular = v} rest
+        "--open-datum" -> go o{optOpenDatum = v} rest
         "--blueprint" -> go o{optBlueprint = v} rest
         "--ledger" -> go o{optLedger = v} rest
         "--node-socket" -> go o{optSocket = v} rest
@@ -1517,7 +1532,8 @@ commandArgsFor env c actor registry key r = do
             writeFile (backendDir env actor </> "seed") seed
             let common = directory
             pure
-                ( ["registry", "create", "--seed", seed]
+                ( commandPrefix Create
+                    <> ["--seed", seed]
                     <> developmentWindows
                     <> common
                     <> node
@@ -1531,7 +1547,7 @@ commandArgsFor env c actor registry key r = do
                 path = envEvidence env </> printf "step-%03d-payload.json" (rcStep r)
             BL.writeFile path (encodePretty (dataToJson (envPayload e)))
             pure
-                ( ["registry", "insert"]
+                ( commandPrefix Insert
                     <> common
                     <> keyArg
                     <> ["--payload", path]
@@ -1543,7 +1559,7 @@ commandArgsFor env c actor registry key r = do
         Terminate -> do
             common <- named
             pure
-                ( ["registry", "terminate"]
+                ( commandPrefix Terminate
                     <> common
                     <> keyArg
                     <> node
@@ -1560,7 +1576,7 @@ commandArgsFor env c actor registry key r = do
         Fold -> do
             common <- named
             pure
-                ( ["registry", "fold"]
+                ( commandPrefix Fold
                     <> common
                     <> node
                     <> ["--wallet-skey", optStranger o, "--confirm-timeout", "120"]
@@ -1578,7 +1594,7 @@ commandArgsFor env c actor registry key r = do
                     )
                 )
             pure
-                ( ["registry", "update"]
+                ( commandPrefix (Update n)
                     <> common
                     <> keyArg
                     <> ["--payload", path]
@@ -1590,7 +1606,7 @@ commandArgsFor env c actor registry key r = do
             common <- named
             address <- primaryAddress env
             pure
-                ( ["registry", "inspect"]
+                ( commandPrefix Inspect
                     <> common
                     <> keyArg
                     <> node
@@ -1613,18 +1629,18 @@ previewSeed env r label skey dir seed = do
     let o = envOptions env
     (_, preview, _) <-
         singular env r label $
-            [ "registry"
-            , "create"
-            , "--preview"
-            , "--state-dir"
-            , dir
-            , "--blueprint"
-            , optBlueprint o
-            ]
+            ( commandPrefix Create
+                <> [ "--preview"
+                   , "--state-dir"
+                   , dir
+                   , "--blueprint"
+                   , optBlueprint o
+                   ]
                 <> developmentWindows
                 <> providerArgs o
                 <> ["--wallet-skey", skey]
                 <> maybe [] (\s -> ["--seed", s]) seed
+            )
     case printedField "seed" preview of
         Just (String s) -> pure (T.unpack s)
         _ -> fail ("the " <> label <> " named no seed")
@@ -1844,25 +1860,25 @@ provoke env p target key r = do
                     env
                     r
                     "seed-spent-after"
-                    $ [ "registry"
-                      , "create"
-                      , "--preview"
-                      , "--state-dir"
-                      , work </> "probe-after"
-                      , "--blueprint"
-                      , optBlueprint o
-                      , "--koios-url"
-                      , optProviderUrl o
-                      , "--network-time"
-                      , optNetworkTime o
-                      , "--network-magic"
-                      , show (optMagic o)
-                      , "--wallet-skey"
-                      , optWalletKey o
-                      , "--seed"
-                      , first
-                      ]
-                        <> developmentWindows
+                    $ ( commandPrefix Create
+                            <> [ "--preview"
+                               , "--state-dir"
+                               , work </> "probe-after"
+                               , "--blueprint"
+                               , optBlueprint o
+                               , "--koios-url"
+                               , optProviderUrl o
+                               , "--network-time"
+                               , optNetworkTime o
+                               , "--network-magic"
+                               , show (optMagic o)
+                               , "--wallet-skey"
+                               , optWalletKey o
+                               , "--seed"
+                               , first
+                               ]
+                            <> developmentWindows
+                      )
             when
                 ( spentStatus == ExitSuccess
                     && printedField "outcome" spentPrinted == Just (String "success")
@@ -1956,25 +1972,25 @@ provoke env p target key r = do
                     env
                     r
                     "seed-poor-after"
-                    $ [ "registry"
-                      , "create"
-                      , "--preview"
-                      , "--state-dir"
-                      , work </> "probe-poor-after"
-                      , "--blueprint"
-                      , optBlueprint o
-                      , "--koios-url"
-                      , optProviderUrl o
-                      , "--network-time"
-                      , optNetworkTime o
-                      , "--network-magic"
-                      , show (optMagic o)
-                      , "--wallet-skey"
-                      , poor
-                      , "--seed"
-                      , seedPoor
-                      ]
-                        <> developmentWindows
+                    $ ( commandPrefix Create
+                            <> [ "--preview"
+                               , "--state-dir"
+                               , work </> "probe-poor-after"
+                               , "--blueprint"
+                               , optBlueprint o
+                               , "--koios-url"
+                               , optProviderUrl o
+                               , "--network-time"
+                               , optNetworkTime o
+                               , "--network-magic"
+                               , show (optMagic o)
+                               , "--wallet-skey"
+                               , poor
+                               , "--seed"
+                               , seedPoor
+                               ]
+                            <> developmentWindows
+                      )
             unless
                 (printedField "outcome" probePrinted == Just (String "success"))
                 $ fail "the underfunded wallet's seed did not stay unspent"
@@ -2025,25 +2041,24 @@ provoke env p target key r = do
   where
     createArgs registry skey seed =
         let o = envOptions env
-        in  [ "registry"
-            , "create"
-            , "--seed"
-            , seed
-            , "--state-dir"
-            , registry
-            , "--blueprint"
-            , optBlueprint o
-            , "--koios-url"
-            , optProviderUrl o
-            , "--network-time"
-            , optNetworkTime o
-            , "--network-magic"
-            , show (optMagic o)
-            , "--wallet-skey"
-            , skey
-            , "--confirm-timeout"
-            , "120"
-            ]
+        in  commandPrefix Create
+                <> [ "--seed"
+                   , seed
+                   , "--state-dir"
+                   , registry
+                   , "--blueprint"
+                   , optBlueprint o
+                   , "--koios-url"
+                   , optProviderUrl o
+                   , "--network-time"
+                   , optNetworkTime o
+                   , "--network-magic"
+                   , show (optMagic o)
+                   , "--wallet-skey"
+                   , skey
+                   , "--confirm-timeout"
+                   , "120"
+                   ]
                 <> developmentWindows
     snapshot copyDir = do
         createDirectoryIfMissing True copyDir
@@ -2117,9 +2132,12 @@ killedAt env r label hold step args = do
         Aeson.decodeStrict <$> BS.readFile (envEvidence env </> out)
     pure (status, printed, T.pack ("evidence" </> out))
 
-{- | Start one @singular@ process with extra environment, its standard output
+{- | Start one @open-datum@ process with extra environment (#528 slice 4:
+the ordinary commands run through the `open-datum` executable, not
+`singular`), its standard output
 kept as the printed receipt and its standard error beside it; the printed
-file is named relative to the evidence directory.
+file is named relative to the evidence directory. During migration an
+absent --open-datum falls back to --singular and fails as before.
 -}
 spawnSingular
     :: Env
@@ -2136,7 +2154,7 @@ spawnSingular env r label extra args = do
     hErr <- openFile (envEvidence env </> base <> ".err") WriteMode
     (_, _, _, ph) <-
         createProcess
-            (proc (optSingular (envOptions env)) args)
+            (proc (commandBinary (envOptions env)) args)
                 { env =
                     Just (extra <> filter ((`notElem` map fst extra) . fst) inherited)
                 , std_out = UseHandle hOut
@@ -2198,8 +2216,18 @@ awaitOnChain env txid = withSession env $ \caps wallet -> do
                 (threadDelay 200_000 >> go (n - 1))
     go 600
 
-{- | One @singular@ process. Its printed receipt and its standard error are
-kept; the parsed receipt is returned when it is JSON.
+{- | The binary the ordinary commands run through: --open-datum since
+slice 4, falling back to --singular during migration (which fails as
+before for the moved verbs).
+-}
+commandBinary :: Options -> FilePath
+commandBinary o
+    | null (optOpenDatum o) = optSingular o
+    | otherwise = optOpenDatum o
+
+{- | One @open-datum@ process (#528 slice 4). Its printed receipt and its standard error are
+kept; the parsed receipt is returned when it is JSON. During migration an
+absent --open-datum falls back to --singular and fails as before.
 -}
 singular
     :: Env
@@ -2209,7 +2237,7 @@ singular
     -> IO (ExitCode, Maybe Value, Text)
 singular env r label args = do
     (status, out, err) <-
-        readProcessWithExitCode (optSingular (envOptions env)) args ""
+        readProcessWithExitCode (commandBinary (envOptions env)) args ""
     let base = printf "step-%03d-%s" (rcStep r) label
     writeFile (envEvidence env </> base <> ".json") out
     writeFile (envEvidence env </> base <> ".err") err

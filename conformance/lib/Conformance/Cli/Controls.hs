@@ -6,17 +6,21 @@ judged from receipts.
 
 Alice's story runs through the ordinary commands and is checked against
 the receipts they print. Hand-built updates and an early release reach
-the application's own script. And the registry refuses an insertion the
-application books: a second insertion of a key that is Active, and an
-insertion of a key that is already Terminal.
+the application's own script. An ordinary insert, update or terminate the
+key's current entry rules out is refused at booking before signing,
+naming the key and the client policy: a second insertion of a key that
+is Active, an insertion of a key that is already Terminal, and an update
+or a terminate of a key that is unknown or already Terminal.
 
-The application certifies both bookings. Neither can take effect: the
-registry refuses to fold them because the key exists (the model's
-@duplicate_refused_by_registry@ and @resurrection_refused_by_registry@).
-Each refusal is paired with an accepting control that differs only in
-the key: a key the registry has never held, booked and folded the same
-way. Readbacks taken before and after the refused fold show that it
-changed nothing.
+And the registry refuses at its fold a booking the permissive builders
+certify for a key it already holds: a second insertion of a key that is
+Active, and an insertion of a key that is already Terminal. Neither can
+take effect: the registry refuses to fold them because the key exists
+(the model's @duplicate_refused_by_registry@ and
+@resurrection_refused_by_registry@). Each refusal is paired with an
+accepting control that differs only in the key: a key the registry has
+never held, booked and folded the same way. Readbacks taken before and
+after every refusal show that nothing moved.
 
 Every result here is computed from receipts. A story is interpreted
 twice: once against a node, where each action leaves one receipt, and
@@ -26,6 +30,17 @@ misplaced or altered receipt changes the verdict; nothing is typed in.
 module Conformance.Cli.Controls
     ( -- * Actions
       Command (..)
+    , applicationExecutable
+    , registryExecutable
+    , commandExecutable
+    , commandPrefix
+    , commandInvocation
+    , provocationCommand
+    , storyCommands
+    , storyExecutables
+    , introductionExecutablePhrase
+    , registryPrefix
+    , registryInvocation
     , commandName
     , Crafted (..)
     , craftedName
@@ -45,6 +60,12 @@ module Conformance.Cli.Controls
     , ResurrectionRefused
     , duplicateRefused
     , resurrectionRefused
+    , UpdateInversion
+    , updateInversion
+    , ClientPolicy
+    , earlyRefusalPolicy
+    , clientPolicyBindings
+    , terminateBurnsActiveHolding
     , statementBindings
     , resolveStatement
     , obligationBindings
@@ -54,6 +75,7 @@ module Conformance.Cli.Controls
       -- * The stories
     , duplicateStory
     , resurrectionStory
+    , earlyRefusalStory
     , lifecycleStory
     , boundaryStory
     , controlsStory
@@ -135,7 +157,7 @@ import Data.Either (fromRight, lefts, rights)
 import Data.Int (Int64)
 import Data.List (intercalate, isInfixOf, isPrefixOf, nub)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Scientific qualified as Sci
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -172,6 +194,38 @@ commandName c = case c of
     Terminate -> "terminate"
     Inspect -> "inspect"
     Fold -> "fold"
+
+-- | The executable that runs the application's own verbs (#528).
+applicationExecutable :: String
+applicationExecutable = "open-datum"
+
+-- | The executable that keeps the registry's own verbs (#528).
+registryExecutable :: String
+registryExecutable = "singular registry"
+
+{- | The executable that runs one ordinary command: the application's
+verbs all run through `open-datum` (#528).
+-}
+commandExecutable :: Command -> String
+commandExecutable _ = applicationExecutable
+
+{- | The executable and verb one ordinary command runs as, from the one
+source the backend builds its arguments from and the rendering names.
+-}
+commandPrefix :: Command -> [String]
+commandPrefix c = [commandExecutable c, commandName c]
+
+-- | The same invocation as rendered in the description language.
+commandInvocation :: Command -> String
+commandInvocation c = commandExecutable c <> " " <> commandName c
+
+-- | The executable and verb one registry command runs as.
+registryPrefix :: String -> [String]
+registryPrefix verb = ["singular", "registry", verb]
+
+-- | The same registry invocation as rendered.
+registryInvocation :: String -> String
+registryInvocation verb = registryExecutable <> " " <> verb
 
 {- | A transaction built by hand against a key's live holding at the
 application, and submitted without local evaluation so the node judges
@@ -314,28 +368,47 @@ provocationName p = case p of
     UnderfundedCreate -> "create-underfunded"
     NodeLost -> "update-node-lost"
 
--- | A provoked command, in the description language.
+-- | The ordinary command a provocation runs, from the same command its phrase names (#528).
+provocationCommand :: Provocation -> Command
+provocationCommand p = case p of
+    WhileLocked -> Insert
+    WithoutHistory -> Inspect
+    WithoutNode -> Inspect
+    TerminateKilled -> Terminate
+    UpdateAfterKill -> Update 0
+    CreateKilled -> Create
+    CreateAgain -> Create
+    LateCreate -> Create
+    UnderfundedCreate -> Create
+    NodeLost -> Update 0
+
+-- | A provoked command, in the description language, naming the same command it runs.
 provocationPhrase :: Provocation -> String
-provocationPhrase p = case p of
-    WhileLocked ->
-        "Run `singular registry insert` while another process holds the registry's lock"
-    WithoutHistory ->
-        "Run `singular registry inspect` with the public history it needs withheld"
-    WithoutNode ->
-        "Run `singular registry inspect` against a node socket that does not exist"
-    TerminateKilled ->
-        "Run `singular registry terminate` and kill it once the node accepted its fold"
-    UpdateAfterKill ->
-        "Run `singular registry update` of another key once that terminate was killed"
-    CreateKilled ->
-        "Run `singular registry create` on a new registry and kill it once the node accepted its boot"
-    CreateAgain -> "Run `singular registry create` again on that registry"
-    LateCreate ->
-        "Run `singular registry create` twice from the same wallet on the same seed, the second held before the registry's lock while the first create completes, and refused because the registry exists"
-    UnderfundedCreate ->
-        "Run `singular registry create` from a wallet that cannot fund every publication"
-    NodeLost ->
-        "Run `singular registry update`, hold it once the node accepted it, stop the node, then release it"
+provocationPhrase p =
+    let inv = commandInvocation (provocationCommand p)
+    in  case p of
+            WhileLocked ->
+                "Run `" <> inv <> "` while another process holds the registry's lock"
+            WithoutHistory -> "Run `" <> inv <> "` with the public history it needs withheld"
+            WithoutNode -> "Run `" <> inv <> "` against a node socket that does not exist"
+            TerminateKilled -> "Run `" <> inv <> "` and kill it once the node accepted its fold"
+            UpdateAfterKill ->
+                "Run `" <> inv <> "` of another key once that terminate was killed"
+            CreateKilled ->
+                "Run `"
+                    <> inv
+                    <> "` on a new registry and kill it once the node accepted its boot"
+            CreateAgain -> "Run `" <> inv <> "` again on that registry"
+            LateCreate ->
+                "Run `"
+                    <> inv
+                    <> "` twice from the same wallet on the same seed, the second held before the registry's lock while the first create completes, and refused because the registry exists"
+            UnderfundedCreate ->
+                "Run `" <> inv <> "` from a wallet that cannot fund every publication"
+            NodeLost ->
+                "Run `"
+                    <> inv
+                    <> "`, hold it once the node accepted it, stop the node, then release it"
 
 -- | A registry the story works in: its own directory and its own boot.
 newtype Target = Target String
@@ -361,6 +434,13 @@ data Requirement
       pending
       -}
       PartialPending
+    | {- | An ordinary command refused at booking before signing, with a
+      readback of its key: the command's outcome is @client-refusal@,
+      its reason names the key and the client-policy refusal for the
+      leaf the readback authenticates, it names no pending request and
+      submitted nothing, and the registry's journal did not move
+      -}
+      BookingRefused
     | {- | One hand-built transaction submitted without local evaluation,
       which the node refused, naming the applied open-datum script as the
       script that failed
@@ -689,6 +769,37 @@ foldSettlesAdditively =
         "fold_settles_additively"
         "0038394b2e4e770589310e9c7461adb80a5c9a8d90e3a83456e2cfa36ae2ba0d"
 
+-- | Statement markers for the early booking refusals.
+data UpdateInversion
+
+updateInversion :: Theorem UpdateInversion
+updateInversion =
+    bound
+        "update_inversion"
+        "e8702fb6ae5e5dfe4de4ba3f7e5a5f06e63231bd0b6273def555ed79d29adc89"
+
+{- | The client's own booking policy: an update the key's current entry
+rules out is refused before anything is signed, naming the key and the
+client policy. It claims no Lean theorem and no row of the CLI's
+specification (issue #486: kept labelled as client policy unless the
+model is amended); only the accepted payload update below is told under
+`update_inversion`, which states exactly that accepted step.
+-}
+data ClientPolicy
+
+earlyRefusalPolicy :: Theorem ClientPolicy
+earlyRefusalPolicy =
+    bindTheorem
+        ( mkBoundObligation
+            "client-policy-booking-refused"
+            "no-theorem-claimed"
+            "client-policy"
+        )
+
+-- | The client-policy tellings the controls bind, claiming no theorem.
+clientPolicyBindings :: [Binding]
+clientPolicyBindings = [theoremBinding earlyRefusalPolicy]
+
 -- | Every statement the stories bind.
 statementBindings :: [Binding]
 statementBindings =
@@ -706,6 +817,7 @@ statementBindings =
     , theoremBinding bookTerminateInversion
     , theoremBinding foldSettlesAdditively
     , theoremBinding foldInversion
+    , theoremBinding updateInversion
     ]
 
 {- | A client obligation: a row of the CLI's own specification. It is not a
@@ -764,6 +876,15 @@ indexerTitle ix =
     indexerName ix
         <> " finds exactly one output holding exactly one of the key's token, and its output, datum bytes, datum hash and chain position are the node's"
 
+{- | Active becomes Terminal using its actual holding; a terminate the key's
+entry rules out is refused before anything is signed.
+-}
+terminateBurnsActiveHolding :: Theorem ClientObligation
+terminateBurnsActiveHolding =
+    obligationRow
+        "terminate-burns-active-holding"
+        "5ad24c43c629647d99afd7ddfe08f231f094ce0b07efb6ca819df1c131f288e8"
+
 -- | An indexer's read of the Active key counts only when it agrees with the node.
 indexerReads :: Theorem ClientObligation
 indexerReads =
@@ -780,6 +901,7 @@ obligationBindings =
     , theoremBinding identityBinds
     , theoremBinding readOnly
     , theoremBinding indexerReads
+    , theoremBinding terminateBurnsActiveHolding
     ]
 
 {- | Whether the CLI's specification carries the bound row exactly once,
@@ -894,10 +1016,13 @@ reach terminal target = do
 
 {- | The shared shape of both refusals, after their premise. On the control
 registry, an absent key booked through the application and folded without
-local evaluation is accepted. On the target, the ordinary @insert@ of the
-held key is booked, stops partial and names its pending request; that
-request's fold, submitted without local evaluation, is refused by the
-registry's state validator; and nothing changes.
+local evaluation is accepted. On the target, the held key booked through
+the permissive builders is accepted, and that request's fold, submitted
+without local evaluation, is refused by the registry's state validator:
+the chain's own refusal, with nothing changed. The ordinary @insert@ of
+the held key never gets that far: it is refused at booking before
+signing, naming the key and the client policy, and the registry, its
+pending requests and the wallet are unchanged by that early refusal.
 -}
 refusal
     :: Theorem thm
@@ -906,8 +1031,9 @@ refusal
     -> Target
     -> Target
     -> String
+    -> String
     -> TheoremStory thm CliI ()
-refusal thm reachedReq premiseTitle control target keyWhat = do
+refusal thm reachedReq premiseTitle control target keyWhat refusedPhrase = do
     _ <-
         clause
             premiseTitle
@@ -930,33 +1056,55 @@ refusal thm reachedReq premiseTitle control target keyWhat = do
                 fold <- action (FoldUnevaluated control freshKey)
                 pure [fold]
             )
-    (_, before) <-
+    _ <-
         clause
-            ( "the ordinary insert of "
-                <> keyWhat
-                <> " is booked, stops partial and names its pending request"
-            )
-            ( bindCheck
-                thm
-                (\(cli, seen) -> action (Require PartialPending [cli, seen]))
-            )
-            ( do
-                cli <- action (Run Insert target heldKey)
-                seen <- action (Observe target heldKey)
-                pure (cli, seen)
-            )
+            (keyWhat <> " booked through the permissive builders is accepted")
+            (requirement thm Accepted)
+            (pure <$> action (Book target heldKey))
+    chainBefore <-
+        clause
+            "the registry, its pending requests and the wallet are read back"
+            (bindCheck thm (\r -> action (Require Observed [r])))
+            (action (Observe target heldKey))
     _ <-
         clause
             "that request's fold, submitted without local evaluation, is refused by the registry's state validator"
             (requirement thm RefusedByState)
             (pure <$> action (FoldUnevaluated target heldKey))
-    _ <-
+    chainPair <-
         clause
             "the registry's root, the key's holding, the pending request and the wallet are unchanged"
             (requirement thm Unchanged)
             ( do
                 after <- action (Observe target heldKey)
-                pure [before, after]
+                pure [chainBefore, after]
+            )
+    let chainAfter = case chainPair of
+            [_, afterChain] -> afterChain
+            _ -> chainBefore
+    _ <-
+        clause
+            ( "the ordinary insert of "
+                <> keyWhat
+                <> " is refused before signing, naming the key "
+                <> refusedPhrase
+            )
+            ( bindCheck
+                thm
+                (\(cli, observed) -> action (Require BookingRefused [cli, observed]))
+            )
+            ( do
+                cli <- action (Run Insert target heldKey)
+                observed <- action (Observe target heldKey)
+                pure (cli, observed)
+            )
+    _ <-
+        clause
+            "the registry's root, its pending requests and the wallet are unchanged by the booking refusal"
+            (requirement thm RegistryUnchanged)
+            ( do
+                after <- action (Observe target heldKey)
+                pure [chainAfter, after]
             )
     pure ()
 
@@ -971,6 +1119,7 @@ duplicateStory =
             (Target "duplicate-control")
             (Target "duplicate")
             "the Active key"
+            "already registered"
 
 -- | An insertion of a key already Terminal.
 resurrectionStory :: Story ()
@@ -983,6 +1132,7 @@ resurrectionStory =
             (Target "resurrection-control")
             (Target "resurrection")
             "the Terminal key"
+            "already retired"
 
 {- | Alice's story through the ordinary commands, judged against the
 receipts the commands print: create, insert, inspect, two updates with
@@ -1440,10 +1590,153 @@ settlementStory = do
   where
     otherKey = "other"
 
+{- | Bob's update and terminate refused before signing, beside Alice's same
+verbs accepted on a live key. One registry holds a key Active, one key
+Terminal, and one key it never held: Bob, from an empty directory naming the
+registry only by its state token, has an update or a terminate of the unknown
+or the Terminal key refused at booking, naming the key and the client policy,
+before anything is signed; Alice's same verbs on the Active key are accepted,
+the update replacing the payload with the root unmoved and the terminate
+releasing the deposit. The refusals are the client's own policy with no Lean
+theorem claimed; only the accepted payload update is told under
+`update_inversion`, which states exactly that accepted step.
+-}
+earlyRefusalStory :: Story ()
+earlyRefusalStory = do
+    let target = Target "refusals"
+        live = "live"
+        ended = "ended"
+        fresh = "fresh"
+        bob = Target "bob"
+    (accB, accU, accA) <- theorem earlyRefusalPolicy $ do
+        _ <-
+            clause
+                "one key reached Active and another Terminal through the ordinary commands, and inspect reads each"
+                ( bindCheck earlyRefusalPolicy $ \(c, li, en, et, ls, es) -> do
+                    action (Require Established [c])
+                    action (Require ReachedActive [li, ls])
+                    action (Require ReachedTerminal [en, et, es])
+                )
+                ( do
+                    c <- action (Run Create target "")
+                    li <- action (Run Insert target live)
+                    ls <- action (Run Inspect target live)
+                    en <- action (Run Insert target ended)
+                    et <- action (Run Terminate target ended)
+                    es <- action (Run Inspect target ended)
+                    pure (c, li, en, et, ls, es)
+                )
+        before <- readbackOf earlyRefusalPolicy target live
+        _ <-
+            clause
+                "Bob's update of the unknown key is refused before signing, naming the key not registered"
+                ( bindCheck earlyRefusalPolicy $ \(cli, seen) ->
+                    action (Require BookingRefused [cli, seen])
+                )
+                ( do
+                    cli <- action (RunByToken bob target (Update 1) fresh)
+                    seen <- action (Observe target fresh)
+                    pure (cli, seen)
+                )
+        _ <-
+            clause
+                "Bob's update of the Terminal key is refused before signing, naming the key already retired"
+                ( bindCheck earlyRefusalPolicy $ \(cli, seen) ->
+                    action (Require BookingRefused [cli, seen])
+                )
+                ( do
+                    cli <- action (RunByToken bob target (Update 1) ended)
+                    seen <- action (Observe target ended)
+                    pure (cli, seen)
+                )
+        _ <-
+            clause
+                "the registry's root, the key's holding and the wallet are unchanged by the booking refusal"
+                (requirement earlyRefusalPolicy HoldingUnchanged)
+                ( do
+                    after <- action (Observe target live)
+                    pure [before, after]
+                )
+        (b, u, a) <-
+            clause
+                "the controller's update of the Active key, replacing the payload with the root unmoved, is accepted"
+                ( bindCheck earlyRefusalPolicy $ \(b, u, a) -> do
+                    action (Require CommandSucceeded [u])
+                    action (Require PayloadReplaced [b, u, a])
+                )
+                ( do
+                    b <- action (Run Inspect target live)
+                    u <- action (Run (Update 2) target live)
+                    a <- action (Run Inspect target live)
+                    pure (b, u, a)
+                )
+        pure (b, u, a)
+    theorem updateInversion $ do
+        void $
+            clause
+                "the accepted update replaces the payload with the root unmoved (update_inversion)"
+                ( bindCheck updateInversion $ \(b, u, a) -> do
+                    action (Require CommandSucceeded [u])
+                    action (Require PayloadReplaced [b, u, a])
+                )
+                (pure (accB, accU, accA))
+    theorem terminateBurnsActiveHolding $ do
+        _ <-
+            premiseClause
+                terminateBurnsActiveHolding
+                "the live key still reads Active, from a fresh inspect"
+                ReachedActive
+                (pure <$> action (Run Inspect target live))
+        before <- readbackOf terminateBurnsActiveHolding target live
+        _ <-
+            clause
+                "Bob's terminate of the unknown key is refused before signing, naming the key not registered"
+                ( bindCheck terminateBurnsActiveHolding $ \(cli, seen) ->
+                    action (Require BookingRefused [cli, seen])
+                )
+                ( do
+                    cli <- action (RunByToken bob target Terminate fresh)
+                    seen <- action (Observe target fresh)
+                    pure (cli, seen)
+                )
+        _ <-
+            clause
+                "Bob's terminate of the Terminal key is refused before signing, naming the key already retired"
+                ( bindCheck terminateBurnsActiveHolding $ \(cli, seen) ->
+                    action (Require BookingRefused [cli, seen])
+                )
+                ( do
+                    cli <- action (RunByToken bob target Terminate ended)
+                    seen <- action (Observe target ended)
+                    pure (cli, seen)
+                )
+        _ <-
+            clause
+                "the registry's root, the key's holding and the wallet are unchanged by the booking refusal"
+                (requirement terminateBurnsActiveHolding HoldingUnchanged)
+                ( do
+                    after <- action (Observe target live)
+                    pure [before, after]
+                )
+        void $
+            clause
+                "the controller's terminate of the Active key, releasing its deposit, is accepted"
+                ( bindCheck terminateBurnsActiveHolding $ \(b, t, a) -> do
+                    action (Require CommandSucceeded [t])
+                    action (Require Released [b, t, a])
+                )
+                ( do
+                    b <- action (Run Inspect target live)
+                    t <- action (Run Terminate target live)
+                    a <- action (Run Inspect target live)
+                    pure (b, t, a)
+                )
+
 controlsStory :: Story ()
 controlsStory =
     duplicateStory
         >> resurrectionStory
+        >> earlyRefusalStory
         >> lifecycleStory
         >> boundaryStory
         >> bookingStory
@@ -1456,12 +1749,12 @@ control, on one fresh key.
 
 The key is inserted by the ordinary command, which is also the accepting
 control of the two insertion refusals; a second insertion of the Active key is
-booked and its fold refused by the registry, then the request it left pending
-is retracted by its owner; the update another wallet's signature stands for is
-refused, beside the controller's own ordinary update; a release outside any
-fold is refused, beside the ordinary terminate that releases the same holding
-inside one; an insertion of the now Terminal key is booked, refused and its
-request retracted likewise.
+refused before signing, naming the key already registered, with nothing
+submitted and nothing to retract; the update another wallet's signature stands
+for is refused, beside the controller's own ordinary update; a release outside
+any fold is refused, beside the ordinary terminate that releases the same
+holding inside one; an insertion of the now Terminal key is refused before
+signing, naming the key already retired, likewise with nothing to retract.
 
 No registry is created and no node is started, stopped or reset: the story
 contains none of those actions, which 'forbiddenInPermanent' names.
@@ -1470,11 +1763,9 @@ permanentStory :: String -> Story ()
 permanentStory key = do
     let target = Target "permanent"
         again =
-            "the ordinary insert of the Active key is booked, stops partial and names its pending request"
-        folded =
-            "that request's fold, submitted without local evaluation, is refused by the registry's state validator"
+            "the ordinary insert of the Active key is refused before signing, naming the key already registered"
         unchanged =
-            "the registry's root, the key's holding, the pending request and the wallet are unchanged"
+            "the registry's root, its pending requests and the wallet are unchanged by the booking refusal"
         absent = "the ordinary insert of the absent key is accepted"
     inserted <- theorem duplicateRefused $ do
         opened <-
@@ -1494,7 +1785,7 @@ permanentStory key = do
                 absent
                 (requirement duplicateRefused CommandSucceeded)
                 (pure [ins])
-        refusedInsertion duplicateRefused target key again folded unchanged
+        refusedInsertion duplicateRefused target key again unchanged
         pure ins
     finalInspect <- theorem updateRequiresController $ do
         _ <-
@@ -1589,12 +1880,13 @@ permanentStory key = do
             resurrectionRefused
             target
             key
-            "the ordinary insert of the Terminal key is booked, stops partial and names its pending request"
-            folded
+            "the ordinary insert of the Terminal key is refused before signing, naming the key already retired"
             unchanged
 
-{- | A second insertion of a key the registry holds, refused at its fold, and
-the request it left pending retracted by its owner.
+{- | A second insertion of a key the registry holds, refused at booking
+before signing: the ordinary command names the key and the client
+policy, submits nothing, and leaves no pending request behind, so
+there is no fold and nothing to retract.
 -}
 refusedInsertion
     :: Theorem thm
@@ -1602,48 +1894,31 @@ refusedInsertion
     -> String
     -> String
     -> String
-    -> String
     -> TheoremStory thm CliI ()
-refusedInsertion thm target key again folded unchanged = do
-    (cli0, before) <-
+refusedInsertion thm target key again unchanged = do
+    bookingBefore <-
+        clause
+            "the registry, its pending requests and the wallet are read back before the booking refusal"
+            (bindCheck thm (\r -> action (Require Observed [r])))
+            (action (Observe target key))
+    _ <-
         clause
             again
-            ( bindCheck thm $ \(cli, seen) ->
-                action (Require PartialPending [cli, seen])
+            ( bindCheck thm $ \(cli, observed) ->
+                action (Require BookingRefused [cli, observed])
             )
             ( do
                 cli <- action (Run Insert target key)
-                seen <- action (Observe target key)
-                pure (cli, seen)
+                observed <- action (Observe target key)
+                pure (cli, observed)
             )
-    refusedFold <-
-        clause
-            folded
-            (requirement thm RefusedByState)
-            (pure <$> action (FoldUnevaluated target key))
-    exposureBounded thm refusedFold
-    both <-
-        clause
-            unchanged
-            (requirement thm Unchanged)
-            ( do
-                after <- action (Observe target key)
-                pure [before, after]
-            )
-    let pending = case both of
-            [_, after] -> after
-            _ -> error "refusedInsertion: two readbacks"
-        partial = cli0
     void $
         clause
-            "the owner's retraction of that request, inside its retract window, is accepted and returns its bond"
-            ( bindCheck thm $ \(p, b, r, a) ->
-                action (Require Reclaimed [p, b, r, a])
-            )
+            unchanged
+            (requirement thm RegistryUnchanged)
             ( do
-                r <- action (Reclaim target key partial pending)
-                a <- action (Observe target key)
-                pure (partial, pending, r, a)
+                after <- action (Observe target key)
+                pure [bookingBefore, after]
             )
 
 -- | The actions a story runs, by the name their receipts carry, in order.
@@ -2449,6 +2724,70 @@ outcomeIs r expected =
     | rcOutcome r /= expected
     ]
 
+{- | The booking verb a receipt's action names, without its actor suffix:
+`run update by token` and `run update` both name `update`, which is what
+the printed command's `verb` carries. A refusal run by token is still the
+same booking verb, from another actor's directory.
+-}
+bookingVerb :: Text -> Text
+bookingVerb act = case T.stripPrefix "run " act of
+    Just rest -> fromMaybe rest (T.stripSuffix " by token" rest)
+    Nothing -> ""
+
+{- | The client-policy phrase a booking refusal must name, for the verb
+the command ran and the leaf the readback authenticates: what the key
+is, as the ordinary commands print it before signing. Anything else is
+a different refusal, or none the key's entry calls for. The reason must
+be exactly that key's refusal in the product format: the requested key
+in its accepted spelling, one space, the state phrase, one space and
+"(client policy)". A substring occurrence cannot certify the identity
+of a named key, so a longer key containing the requested spelling fails,
+as does a printed command whose key is not that key (checked in 'check').
+-}
+bookingReason :: Text -> Text -> Text -> Observation -> [String]
+bookingReason act requestedKey reason seen = case (verb, obLeaf seen) of
+    ("insert", Just "active") -> want "is already registered"
+    ("insert", Just "terminal") -> want "is already retired"
+    ("update", leaf)
+        | leaf == Just "terminal" -> want "is already retired"
+        | leaf == Just "unknown" || leaf == Just "absent" || isNothing leaf ->
+            want "is not registered"
+        | otherwise -> unexpected
+    ("terminate", leaf)
+        | leaf == Just "terminal" -> want "is already retired"
+        | leaf == Just "unknown" || leaf == Just "absent" || isNothing leaf ->
+            want "is not registered"
+        | otherwise -> unexpected
+    _ -> unexpected
+  where
+    verb = bookingVerb act
+    want phrase =
+        [ "the refusal does not name the key " <> phrase
+        | not (T.pack phrase `T.isInfixOf` reason)
+        ]
+            <> [ "the refusal is not labelled client policy"
+               | not ("(client policy)" `T.isInfixOf` reason)
+               ]
+            <> [ "the refusal does not name the requested key \""
+                    <> T.unpack requestedKey
+                    <> "\""
+               | reason `notElem` [expectedRaw phrase, expectedHex phrase]
+               ]
+      where
+        expectedRaw p = requestedKey <> " " <> T.pack p <> " (client policy)"
+        expectedHex p =
+            hexLabel (T.unpack requestedKey)
+                <> " "
+                <> T.pack p
+                <> " (client policy)"
+    unexpected =
+        [ "the "
+            <> T.unpack verb
+            <> " of the "
+            <> maybe "unproven" T.unpack (obLeaf seen)
+            <> " key is not ruled out by its entry"
+        ]
+
 -- | The outcome class a provoked command's condition calls for.
 expectedOutcome :: Receipt -> Text
 expectedOutcome r = case T.stripPrefix "provoke " (rcAction r) of
@@ -3109,6 +3448,57 @@ check req rs = case (req, rs) of
                ]
             <> attributedTo "registry's state validator" (rcStateValidator r) r
             <> collateralBounded r
+    (BookingRefused, [c, o]) ->
+        [ "the command's outcome is "
+            <> show (rcOutcome c)
+            <> ", not client-refusal"
+        | rcOutcome c /= "client-refusal"
+        ]
+            <> [ "the command names a pending request"
+               | isJust (rcPendingRequest c)
+               ]
+            <> [ "the refused command submitted "
+                    <> show (length (rcSubmissions c))
+                    <> " transactions"
+               | not (null (rcSubmissions c))
+               ]
+            <> case rcJournal c of
+                Nothing -> []
+                Just js ->
+                    [ "the registry's journal moved from "
+                        <> show (jsBefore js)
+                        <> " to "
+                        <> show (jsAfter js)
+                        <> " lines"
+                    | jsAfter js /= jsBefore js
+                    ]
+            <> admitted c
+            <> is
+                "the refusal's policy"
+                (Aeson.String "client")
+                (at [field "policy"] c)
+            <> is
+                "the refusal's verb"
+                (Aeson.String (bookingVerb (rcAction c)))
+                (at [field "verb"] c)
+            <> is
+                "the refused key"
+                (Aeson.String (hexLabel (T.unpack (rcKey c))))
+                (at [field "key"] c)
+            <> case (rcReason c, rcObservation o) of
+                (Nothing, _) -> ["the refusal names no reason"]
+                (_, Nothing) -> ["the readback carries no observation"]
+                (Just reason, Just seen) ->
+                    bookingReason (rcAction c) (rcKey c) reason seen
+                        <> [ "the readback is of another registry or key"
+                           | -- A refusal run by token names the actor as its target
+                           -- while its readback names the registry: same key with
+                           -- a by-token action is that actor's refusal against that
+                           -- registry's readback. The token link itself is the story's
+                           -- wiring, not a receipt field (documented limit).
+                           rcKey c /= rcKey o
+                            || (rcTarget c /= rcTarget o && not ("by token" `T.isSuffixOf` rcAction c))
+                           ]
     (Unchanged, [a, b]) -> case (rcObservation a, rcObservation b) of
         (Just x, Just y) ->
             [ "the registry's root moved"
@@ -3640,8 +4030,13 @@ validateControls story = do
         Left
             "a statement is told more than once; each telling needs its own control"
     forM_ statements $ \s -> do
-        unless (s `elem` map boName (statementBindings <> obligationBindings)) $
-            Left (s <> " is not a statement or obligation this domain binds")
+        unless
+            ( s
+                `elem` map
+                    boName
+                    (statementBindings <> obligationBindings <> clientPolicyBindings)
+            )
+            $ Left (s <> " is not a statement or obligation this domain binds")
         let titles = [t | (s', t) <- rows, s' == s]
         unless (length titles == length (nub titles)) $
             Left (s <> " repeats a clause")
@@ -3668,6 +4063,60 @@ validateControls story = do
 -- Rendering
 -- ---------------------------------------------------------
 
+-- | The ordinary commands a story runs, in order, as the steps name them (#528).
+storyCommands :: Story () -> [Command]
+storyCommands = go
+  where
+    go :: Story a -> [Command]
+    go program = case view program of
+        Return _ -> []
+        Action i :>>= next -> commandOf i <> go (next (blank i))
+        Theorem _ body :>>= next -> inClauses (clauses body) next
+    inClauses
+        :: Program (Clause thm CliI) b -> (b -> Story a) -> [Command]
+    inClauses p k = case view p of
+        Return b -> go (k b)
+        Clause _ leanCheck body :>>= next ->
+            let obs = resultOf body
+            in  go body <> go (checkAction leanCheck obs) <> inClauses (next obs) k
+    commandOf :: CliI a -> [Command]
+    commandOf i = case i of
+        Run c _ _ -> [c]
+        RunByToken _ _ c _ -> [c]
+        Provoke p _ _ -> [provocationCommand p]
+        _ -> []
+    resultOf :: Story a -> a
+    resultOf program = case view program of
+        Return a -> a
+        Action i :>>= next -> resultOf (next (blank i))
+        Theorem _ _ :>>= _ -> error "storyCommands: a statement nested inside a clause"
+    blank :: CliI a -> a
+    blank i = case i of
+        Require _ _ -> ()
+        Retire _ -> ()
+        Run{} -> emptyReceipt 0 "" "" ""
+        RunByToken{} -> emptyReceipt 0 "" "" ""
+        Book{} -> emptyReceipt 0 "" "" ""
+        FoldUnevaluated{} -> emptyReceipt 0 "" "" ""
+        Observe{} -> emptyReceipt 0 "" "" ""
+        Craft{} -> emptyReceipt 0 "" "" ""
+        Provoke{} -> emptyReceipt 0 "" "" ""
+        Reclaim{} -> emptyReceipt 0 "" "" ""
+        ReadIndexer{} -> emptyReceipt 0 "" "" ""
+
+-- | The distinct executables a story's steps run, in first-seen order, from the same source that names each step (#528).
+storyExecutables :: Story () -> [String]
+storyExecutables story = nub (map commandExecutable (storyCommands story))
+
+-- | The introduction's executable phrase, derived from the steps the story actually has (#528).
+introductionExecutablePhrase :: Story () -> String
+introductionExecutablePhrase story = case storyExecutables story of
+    [] -> "the ordinary commands"
+    exes ->
+        "the ordinary "
+            <> intercalate " and " (map (\e -> "`" <> e <> "`") exes)
+            <> " commands"
+
 {- | The section a reader sees: each statement, what was done, the verdict
 of each clause as the receipts give it, and the approved matrix of cases
 with each one's coverage computed from those verdicts. Uncovered clauses
@@ -3678,9 +4127,15 @@ renderControls results story =
     unlines $
         [ "## The ordinary CLI and the application's boundary, judged from receipts"
         , ""
-        , "Alice's story runs through the ordinary `singular registry` commands, and each claim about it is checked against the receipts those commands print: the registry create booted, the holding insert delivered, the payloads the updates wrote with the root unmoved, and the deposit terminate released."
+        , "Alice's story runs through "
+            <> introductionExecutablePhrase story
+            <> ", and each claim about it is checked against the receipts those commands print: the registry create booted, the holding insert delivered, the payloads the updates wrote with the root unmoved, and the deposit terminate released."
         , ""
-        , "The refusals are the node's. Each refused transaction is submitted without evaluating its scripts locally, so the node judges it, and each refusal names the script that failed: the registry's state validator for an insertion of a key the registry already holds, and the applied open-datum script for a tampered update or a release outside any fold. Every refusal sits beside an accepting control built the same way, and readbacks before and after show that nothing moved. The node does not report the model's reason for a refusal, and no reason is claimed as observed."
+        , "The early refusals are the client's: "
+            <> introductionExecutablePhrase story
+            <> " refuse a booking the key's current entry rules out before anything is signed, naming the key and the client policy, with nothing submitted and no request left pending."
+        , ""
+        , "The chain's own refusals are the node's. Each refused transaction is submitted without evaluating its scripts locally, so the node judges it, and each refusal names the script that failed: the registry's state validator for a booking of a key the registry already holds, and the applied open-datum script for a tampered update or a release outside any fold. Every refusal sits beside an accepting control built the same way, and readbacks before and after show that nothing moved. The node does not report the model's reason for a refusal, and no reason is claimed as observed."
         , ""
         , "The last tellings are the client's own obligations, not model statements: rows of the CLI's specification (`"
             <> cliSpecification
@@ -3857,12 +4312,50 @@ approvedCases =
     [
         ( "a second insertion of an Active key"
         , "`duplicate_refused_by_registry`"
-        , ByClause "duplicate_refused_by_registry" registryRefusal
+        , ByClause
+            "duplicate_refused_by_registry"
+            "the ordinary insert of the Active key is refused before signing, naming the key already registered"
         )
     ,
         ( "an insertion of a Terminal key"
         , "`resurrection_refused_by_registry`"
+        , ByClause
+            "resurrection_refused_by_registry"
+            "the ordinary insert of the Terminal key is refused before signing, naming the key already retired"
+        )
+    ,
+        ( "an Active key booked through the permissive builders, folded, is refused"
+        , "`duplicate_refused_by_registry`"
+        , ByClause "duplicate_refused_by_registry" registryRefusal
+        )
+    ,
+        ( "a Terminal key booked through the permissive builders, folded, is refused"
+        , "`resurrection_refused_by_registry`"
         , ByClause "resurrection_refused_by_registry" registryRefusal
+        )
+    ,
+        ( "an update of an unknown key"
+        , "`client-policy-booking-refused`, no model statement and no specification row"
+        , ByObligations
+            [
+                ( "client-policy-booking-refused"
+                ,
+                    [ "Bob's update of the unknown key is refused before signing, naming the key not registered"
+                    ]
+                )
+            ]
+        )
+    ,
+        ( "an update of a Terminal key"
+        , "`client-policy-booking-refused`, no model statement and no specification row"
+        , ByObligations
+            [
+                ( "client-policy-booking-refused"
+                ,
+                    [ "Bob's update of the Terminal key is refused before signing, naming the key already retired"
+                    ]
+                )
+            ]
         )
     ,
         ( "an update not signed by the controller"
@@ -3990,6 +4483,20 @@ approvedCases =
                         , "the same insert, once the lock is released, is accepted"
                         ]
                     )
+                ,
+                    ( "a termination of an unknown key"
+                    , "terminate-burns-active-holding"
+                    ,
+                        [ "Bob's terminate of the unknown key is refused before signing, naming the key not registered"
+                        ]
+                    )
+                ,
+                    ( "a termination of a Terminal key"
+                    , "terminate-burns-active-holding"
+                    ,
+                        [ "Bob's terminate of the Terminal key is refused before signing, naming the key already retired"
+                        ]
+                    )
                 ]
            ]
         <> [
@@ -4067,8 +4574,8 @@ steps story = snd (walk 0 story)
             , Just
                 ( numbered
                     n
-                    ( "Run `singular registry "
-                        <> commandName c
+                    ( "Run `"
+                        <> commandInvocation c
                         <> "` on **"
                         <> t
                         <> "**"
@@ -4083,8 +4590,8 @@ steps story = snd (walk 0 story)
             , Just
                 ( numbered
                     n
-                    ( "Run `singular registry "
-                        <> commandName c
+                    ( "Run `"
+                        <> commandInvocation c
                         <> "` from **"
                         <> actor
                         <> "**, an empty directory, naming **"

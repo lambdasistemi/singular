@@ -33,7 +33,7 @@ For the first form no script bytes exist: no reference output for the applicatio
 | destination | the address and inline datum the fold will deliver to, or none for a termination |
 | deposit | lovelace the request holds |
 
-A **booking refusal** names the key, the edge, the leaf found and the leaf required, and is labelled client policy. It is raised before any key is read for signing and in preview alike. The fold still validates on its own; the early refusal never replaces it.
+A **booking refusal** names the key, the edge, the leaf found and the leaf required, and is labelled client policy. It is raised before any key is read for signing, in planning, in preview and live alike, by every ordinary verb. The booking primitive and the application builders do not raise it. The fold still validates on its own; the early refusal never replaces it.
 
 ## Neutral behaviours (A-001)
 

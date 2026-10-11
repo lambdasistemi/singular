@@ -179,6 +179,7 @@ library registry-cli
   exposed-modules:
     Singular.CLI
     Singular.CLI.Attached
+    Singular.CLI.Booking
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Finish
@@ -943,6 +944,7 @@ test-suite cage-tests
     Naming.RegisterSpec
     Naming.RetireVerifySpec
     Paths_singular_registry
+    Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec

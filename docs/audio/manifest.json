@@ -141061,17 +141061,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "310d090914c6c0f45849852fab213b710f046613b0f63e53e88ba0b68a0b3a55",
-   "characters": 4106,
-   "cost": 0.0040649399999999995,
-   "duration": 304.125,
+   "audio_sha256": "3415c424e996e7cf54010f59451cf7c93f5339df20cc45c4382bf84532daa73b",
+   "characters": 3280,
+   "cost": 0.0032471999999999996,
+   "duration": 247.425,
    "index": 1,
-   "key": "25f7cabc0e506106ec88009dc647585191bf5f0bb6c864f45929d20be9cb56d0",
+   "key": "b83d60152eb558299e73a0feb83055f301c1652730486f611bedc67c5b6094e1",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/. The negative host lives beside the application in applications/open-datum/negative/, with its sources under applications/open-datum/negative/src/Negative/ and its entry point in applications/open-datum/negative/app/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/. The negative host lives beside the application in applications/open-datum/negative/, with its sources under applications/open-datum/negative/src/Negative/ and its entry point in applications/open-datum/negative/app/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
    "words": [
     {
      "end": 0.375,
@@ -143772,665 +143772,1220 @@
      "end": 247.425,
      "start": 241.887,
      "text": "offchain/cli/src/Singular/CLI/."
-    },
+    }
+   ]
+  },
+  "docs-offchain-api-reference/what-the-reference-does-not-claim-02": {
+   "audio_sha256": "5d1c6093a854f702b89369a26888d184a74753f4b398538241160b10f6f958ae",
+   "characters": 1397,
+   "cost": 0.0013830299999999997,
+   "duration": 95.125,
+   "index": 2,
+   "key": "52376be44d43b0c6df88f3ab321fb1752a54a08ef20b00aa86827c8d52ac875b",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "what-the-reference-does-not-claim",
+   "sent_text": "The registry packages export the booking check every ordinary verb runs before signing: bookingRefusal in Singular.CLI.Booking decides, from the key's current entry, whether the entry rules out the booking, naming the key, the verb, and the leaves found and required. Every ordinary verb of an application calls it in planning, in preview and live, so a taken key, a terminal key, and an unknown key for update and terminate are refused before any signing key is read. A cardano-keri application gets the same refusal by calling the exported function in its own planning. The negative host lives beside the application in applications/open-datum/negative/, with its sources under applications/open-datum/negative/src/Negative/ and its entry point in applications/open-datum/negative/app/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "text": "The registry packages export the booking check every ordinary verb runs before signing: bookingRefusal in Singular.CLI.Booking decides, from the key's current entry, whether the entry rules out the booking, naming the key, the verb, and the leaves found and required. Every ordinary verb of an application calls it in planning, in preview and live, so a taken key, a terminal key, and an unknown key for update and terminate are refused before any signing key is read. A cardano-keri application gets the same refusal by calling the exported function in its own planning. The negative host lives beside the application in applications/open-datum/negative/, with its sources under applications/open-datum/negative/src/Negative/ and its entry point in applications/open-datum/negative/app/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+   "words": [
     {
-     "end": 247.7,
-     "start": 247.6,
+     "end": 0.3,
+     "start": 0.2,
      "text": "The"
     },
     {
-     "end": 248.175,
-     "start": 247.7,
-     "text": "negative"
+     "end": 0.8,
+     "start": 0.3,
+     "text": "registry"
     },
     {
-     "end": 248.613,
-     "start": 248.175,
-     "text": "host"
+     "end": 1.388,
+     "start": 0.8,
+     "text": "packages"
     },
     {
-     "end": 248.925,
-     "start": 248.613,
-     "text": "lives"
+     "end": 1.925,
+     "start": 1.388,
+     "text": "export"
     },
     {
-     "end": 249.363,
-     "start": 248.925,
-     "text": "beside"
-    },
-    {
-     "end": 249.475,
-     "start": 249.363,
+     "end": 2.025,
+     "start": 1.925,
      "text": "the"
     },
     {
-     "end": 250.2,
-     "start": 249.475,
-     "text": "application"
+     "end": 2.388,
+     "start": 2.025,
+     "text": "booking"
     },
     {
-     "end": 250.35,
-     "start": 250.2,
-     "text": "in"
-    },
-    {
-     "end": 253.15,
-     "start": 250.35,
-     "text": "applications/open-datum/negative/"
-    },
-    {
-     "end": 253.375,
-     "start": 253.15,
-     "text": ","
-    },
-    {
-     "end": 253.762,
-     "start": 253.625,
-     "text": "with"
-    },
-    {
-     "end": 253.9,
-     "start": 253.762,
-     "text": "its"
-    },
-    {
-     "end": 254.35,
-     "start": 253.9,
-     "text": "sources"
-    },
-    {
-     "end": 254.6,
-     "start": 254.35,
-     "text": "under"
-    },
-    {
-     "end": 260.587,
-     "start": 254.6,
-     "text": "applications/open-datum/negative/src/Negative/"
-    },
-    {
-     "end": 260.712,
-     "start": 260.587,
-     "text": "and"
-    },
-    {
-     "end": 260.85,
-     "start": 260.712,
-     "text": "its"
-    },
-    {
-     "end": 261.188,
-     "start": 260.85,
-     "text": "entry"
-    },
-    {
-     "end": 261.5,
-     "start": 261.188,
-     "text": "point"
-    },
-    {
-     "end": 261.625,
-     "start": 261.5,
-     "text": "in"
-    },
-    {
-     "end": 263.65,
-     "start": 261.625,
-     "text": "applications/open-datum/negative"
-    },
-    {
-     "end": 264.55,
-     "start": 263.65,
-     "text": "app/."
-    },
-    {
-     "end": 264.913,
-     "start": 264.725,
-     "text": "Their"
-    },
-    {
-     "end": 265.475,
-     "start": 264.913,
-     "text": "generated"
-    },
-    {
-     "end": 266.038,
-     "start": 265.475,
-     "text": "pages"
-    },
-    {
-     "end": 266.212,
-     "start": 266.038,
-     "text": "are"
-    },
-    {
-     "end": 266.525,
-     "start": 266.212,
-     "text": "not"
-    },
-    {
-     "end": 266.612,
-     "start": 266.525,
-     "text": "in"
-    },
-    {
-     "end": 266.8,
-     "start": 266.612,
-     "text": "this"
-    },
-    {
-     "end": 267.475,
-     "start": 266.8,
-     "text": "main-library"
-    },
-    {
-     "end": 267.962,
-     "start": 267.475,
-     "text": "reference"
-    },
-    {
-     "end": 268.8,
-     "start": 267.962,
-     "text": "either"
-    },
-    {
-     "end": 269.025,
-     "start": 268.8,
-     "text": ":"
-    },
-    {
-     "end": 269.525,
-     "start": 269.225,
-     "text": "only"
-    },
-    {
-     "end": 269.65,
-     "start": 269.525,
-     "text": "the"
-    },
-    {
-     "end": 269.975,
-     "start": 269.65,
-     "text": "main"
-    },
-    {
-     "end": 270.575,
-     "start": 269.975,
-     "text": "library"
-    },
-    {
-     "end": 270.775,
-     "start": 270.575,
-     "text": "has"
-    },
-    {
-     "end": 270.9,
-     "start": 270.775,
-     "text": "a"
-    },
-    {
-     "end": 271.55,
-     "start": 270.9,
-     "text": "generated"
-    },
-    {
-     "end": 272.175,
-     "start": 271.55,
-     "text": "reference"
-    },
-    {
-     "end": 272.275,
-     "start": 272.175,
-     "text": "."
-    },
-    {
-     "end": 272.513,
-     "start": 272.275,
-     "text": "This"
-    },
-    {
-     "end": 272.925,
-     "start": 272.513,
-     "text": "coverage"
-    },
-    {
-     "end": 273.25,
-     "start": 272.925,
-     "text": "gap"
-    },
-    {
-     "end": 273.625,
-     "start": 273.25,
-     "text": "stays"
-    },
-    {
-     "end": 274.6,
-     "start": 273.625,
-     "text": "visible"
-    },
-    {
-     "end": 274.825,
-     "start": 274.6,
-     "text": ";"
-    },
-    {
-     "end": 275.413,
-     "start": 275.05,
-     "text": "wider"
-    },
-    {
-     "end": 276.038,
-     "start": 275.413,
-     "text": "generated"
-    },
-    {
-     "end": 276.612,
-     "start": 276.038,
-     "text": "coverage"
-    },
-    {
-     "end": 276.775,
-     "start": 276.612,
-     "text": "is"
-    },
-    {
-     "end": 276.9,
-     "start": 276.775,
-     "text": "a"
-    },
-    {
-     "end": 277.325,
-     "start": 276.9,
-     "text": "separate"
-    },
-    {
-     "end": 277.85,
-     "start": 277.325,
-     "text": "decision"
-    },
-    {
-     "end": 277.962,
-     "start": 277.85,
-     "text": "for"
-    },
-    {
-     "end": 278.1,
-     "start": 277.962,
-     "text": "the"
-    },
-    {
-     "end": 278.475,
-     "start": 278.1,
-     "text": "epic's"
-    },
-    {
-     "end": 278.95,
-     "start": 278.475,
-     "text": "owner"
-    },
-    {
-     "end": 279.05,
-     "start": 278.95,
-     "text": ","
-    },
-    {
-     "end": 279.263,
-     "start": 279.05,
-     "text": "not"
-    },
-    {
-     "end": 279.325,
-     "start": 279.263,
-     "text": "a"
-    },
-    {
-     "end": 279.65,
-     "start": 279.325,
-     "text": "claim"
-    },
-    {
-     "end": 279.837,
-     "start": 279.65,
-     "text": "this"
-    },
-    {
-     "end": 280.225,
-     "start": 279.837,
-     "text": "page"
-    },
-    {
-     "end": 281.175,
-     "start": 280.225,
-     "text": "makes"
-    },
-    {
-     "end": 281.375,
-     "start": 281.175,
-     "text": "."
-    },
-    {
-     "end": 281.962,
-     "start": 281.625,
-     "text": "Nothing"
-    },
-    {
-     "end": 282.125,
-     "start": 281.962,
-     "text": "on"
-    },
-    {
-     "end": 282.337,
-     "start": 282.125,
-     "text": "this"
-    },
-    {
-     "end": 282.775,
-     "start": 282.337,
-     "text": "page"
-    },
-    {
-     "end": 282.888,
-     "start": 282.775,
-     "text": "is"
-    },
-    {
-     "end": 282.95,
-     "start": 282.888,
-     "text": "a"
-    },
-    {
-     "end": 283.812,
-     "start": 282.95,
-     "text": "publication"
-    },
-    {
-     "end": 284.0,
-     "start": 283.812,
-     "text": "or"
-    },
-    {
-     "end": 284.4,
-     "start": 284.0,
-     "text": "release"
-    },
-    {
-     "end": 284.987,
-     "start": 284.4,
-     "text": "claim"
-    },
-    {
-     "end": 285.075,
-     "start": 284.987,
-     "text": "—"
-    },
-    {
-     "end": 285.2,
-     "start": 285.075,
-     "text": "the"
-    },
-    {
-     "end": 285.763,
-     "start": 285.2,
-     "text": "reference"
-    },
-    {
-     "end": 286.1,
-     "start": 285.763,
-     "text": "ships"
-    },
-    {
-     "end": 286.237,
-     "start": 286.1,
-     "text": "with"
-    },
-    {
-     "end": 286.325,
-     "start": 286.237,
-     "text": "the"
-    },
-    {
-     "end": 286.862,
-     "start": 286.325,
-     "text": "candidate"
-    },
-    {
-     "end": 287.237,
-     "start": 286.862,
-     "text": "site"
-    },
-    {
-     "end": 287.362,
-     "start": 287.237,
-     "text": "and"
-    },
-    {
-     "end": 287.538,
-     "start": 287.362,
-     "text": "its"
-    },
-    {
-     "end": 287.95,
-     "start": 287.538,
-     "text": "future"
-    },
-    {
-     "end": 289.225,
-     "start": 287.95,
-     "text": "archives"
-    },
-    {
-     "end": 289.45,
-     "start": 289.225,
-     "text": ","
-    },
-    {
-     "end": 289.737,
-     "start": 289.65,
-     "text": "and"
-    },
-    {
-     "end": 289.9,
-     "start": 289.737,
-     "text": "no"
-    },
-    {
-     "end": 290.225,
-     "start": 289.9,
-     "text": "version"
-    },
-    {
-     "end": 290.388,
-     "start": 290.225,
-     "text": "is"
-    },
-    {
-     "end": 290.875,
-     "start": 290.388,
-     "text": "tagged"
-    },
-    {
-     "end": 291.025,
-     "start": 290.875,
-     "text": "or"
-    },
-    {
-     "end": 291.45,
-     "start": 291.025,
-     "text": "published"
-    },
-    {
-     "end": 291.6,
-     "start": 291.45,
-     "text": "by"
-    },
-    {
-     "end": 292.125,
-     "start": 291.6,
-     "text": "existing"
-    },
-    {
-     "end": 292.85,
-     "start": 292.125,
-     "text": "here"
-    },
-    {
-     "end": 293.075,
-     "start": 292.85,
-     "text": "."
-    },
-    {
-     "end": 293.325,
-     "start": 293.25,
-     "text": "The"
-    },
-    {
-     "end": 293.9,
-     "start": 293.325,
-     "text": "behavioral"
-    },
-    {
-     "end": 294.35,
-     "start": 293.9,
-     "text": "evidence"
-    },
-    {
-     "end": 294.462,
-     "start": 294.35,
-     "text": "for"
-    },
-    {
-     "end": 294.55,
-     "start": 294.462,
-     "text": "the"
-    },
-    {
-     "end": 294.825,
-     "start": 294.55,
-     "text": "moved"
-    },
-    {
-     "end": 295.625,
-     "start": 294.825,
-     "text": "builder"
-    },
-    {
-     "end": 295.85,
-     "start": 295.625,
-     "text": ","
-    },
-    {
-     "end": 296.575,
-     "start": 296.05,
-     "text": "blueprint"
-    },
-    {
-     "end": 296.7,
-     "start": 296.575,
-     "text": "and"
-    },
-    {
-     "end": 297.075,
-     "start": 296.7,
-     "text": "wire"
-    },
-    {
-     "end": 297.438,
-     "start": 297.075,
-     "text": "code"
-    },
-    {
-     "end": 297.8,
-     "start": 297.438,
-     "text": "lives"
-    },
-    {
-     "end": 297.913,
-     "start": 297.8,
-     "text": "in"
-    },
-    {
-     "end": 298.038,
-     "start": 297.913,
-     "text": "the"
-    },
-    {
-     "end": 298.438,
-     "start": 298.038,
+     "end": 2.8,
+     "start": 2.388,
      "text": "check"
     },
     {
-     "end": 298.862,
-     "start": 298.438,
-     "text": "commands"
+     "end": 3.188,
+     "start": 2.8,
+     "text": "every"
     },
     {
-     "end": 299.013,
-     "start": 298.862,
-     "text": "the"
+     "end": 3.75,
+     "start": 3.188,
+     "text": "ordinary"
     },
     {
-     "end": 299.575,
-     "start": 299.013,
-     "text": "off-chain"
+     "end": 4.025,
+     "start": 3.75,
+     "text": "verb"
     },
     {
-     "end": 300.125,
-     "start": 299.575,
-     "text": "development"
+     "end": 4.4,
+     "start": 4.025,
+     "text": "runs"
     },
     {
-     "end": 300.425,
-     "start": 300.125,
-     "text": "guide"
+     "end": 4.787,
+     "start": 4.4,
+     "text": "before"
     },
     {
-     "end": 301.5,
-     "start": 300.425,
-     "text": "records"
+     "end": 5.825,
+     "start": 4.787,
+     "text": "signing"
     },
     {
-     "end": 301.7,
-     "start": 301.5,
-     "text": ","
+     "end": 6.025,
+     "start": 5.825,
+     "text": ":"
     },
     {
-     "end": 302.062,
-     "start": 301.9,
-     "text": "not"
+     "end": 7.125,
+     "start": 6.225,
+     "text": "bookingRefusal"
     },
     {
-     "end": 302.138,
-     "start": 302.062,
+     "end": 7.287,
+     "start": 7.125,
      "text": "in"
     },
     {
-     "end": 302.212,
-     "start": 302.138,
+     "end": 7.875,
+     "start": 7.287,
+     "text": "Singular"
+    },
+    {
+     "end": 8.0,
+     "start": 7.875,
+     "text": "."
+    },
+    {
+     "end": 8.775,
+     "start": 8.0,
+     "text": "CLI.Booking"
+    },
+    {
+     "end": 9.35,
+     "start": 8.775,
+     "text": "decides"
+    },
+    {
+     "end": 9.4,
+     "start": 9.35,
+     "text": ","
+    },
+    {
+     "end": 9.538,
+     "start": 9.4,
+     "text": "from"
+    },
+    {
+     "end": 9.625,
+     "start": 9.538,
      "text": "the"
     },
     {
-     "end": 302.712,
-     "start": 302.212,
-     "text": "existence"
+     "end": 9.95,
+     "start": 9.625,
+     "text": "key's"
     },
     {
-     "end": 302.788,
-     "start": 302.712,
+     "end": 10.25,
+     "start": 9.95,
+     "text": "current"
+    },
+    {
+     "end": 11.25,
+     "start": 10.25,
+     "text": "entry"
+    },
+    {
+     "end": 11.5,
+     "start": 11.25,
+     "text": ","
+    },
+    {
+     "end": 11.938,
+     "start": 11.7,
+     "text": "whether"
+    },
+    {
+     "end": 12.075,
+     "start": 11.938,
+     "text": "the"
+    },
+    {
+     "end": 12.4,
+     "start": 12.075,
+     "text": "entry"
+    },
+    {
+     "end": 12.688,
+     "start": 12.4,
+     "text": "rules"
+    },
+    {
+     "end": 12.837,
+     "start": 12.688,
+     "text": "out"
+    },
+    {
+     "end": 12.925,
+     "start": 12.837,
+     "text": "the"
+    },
+    {
+     "end": 13.375,
+     "start": 12.925,
+     "text": "booking"
+    },
+    {
+     "end": 13.45,
+     "start": 13.375,
+     "text": ","
+    },
+    {
+     "end": 13.762,
+     "start": 13.45,
+     "text": "naming"
+    },
+    {
+     "end": 13.887,
+     "start": 13.762,
+     "text": "the"
+    },
+    {
+     "end": 14.15,
+     "start": 13.887,
+     "text": "key"
+    },
+    {
+     "end": 14.188,
+     "start": 14.15,
+     "text": ","
+    },
+    {
+     "end": 14.275,
+     "start": 14.188,
+     "text": "the"
+    },
+    {
+     "end": 15.1,
+     "start": 14.275,
+     "text": "verb"
+    },
+    {
+     "end": 15.375,
+     "start": 15.1,
+     "text": ","
+    },
+    {
+     "end": 15.637,
+     "start": 15.55,
+     "text": "and"
+    },
+    {
+     "end": 15.725,
+     "start": 15.637,
+     "text": "the"
+    },
+    {
+     "end": 16.05,
+     "start": 15.725,
+     "text": "leaves"
+    },
+    {
+     "end": 16.337,
+     "start": 16.05,
+     "text": "found"
+    },
+    {
+     "end": 16.438,
+     "start": 16.337,
+     "text": "and"
+    },
+    {
+     "end": 17.4,
+     "start": 16.438,
+     "text": "required"
+    },
+    {
+     "end": 17.6,
+     "start": 17.4,
+     "text": "."
+    },
+    {
+     "end": 18.138,
+     "start": 17.8,
+     "text": "Every"
+    },
+    {
+     "end": 18.7,
+     "start": 18.138,
+     "text": "ordinary"
+    },
+    {
+     "end": 19.013,
+     "start": 18.7,
+     "text": "verb"
+    },
+    {
+     "end": 19.087,
+     "start": 19.013,
      "text": "of"
     },
     {
-     "end": 303.0,
-     "start": 302.788,
-     "text": "these"
+     "end": 19.175,
+     "start": 19.087,
+     "text": "an"
     },
     {
-     "end": 303.925,
-     "start": 303.0,
+     "end": 19.913,
+     "start": 19.175,
+     "text": "application"
+    },
+    {
+     "end": 20.225,
+     "start": 19.913,
+     "text": "calls"
+    },
+    {
+     "end": 20.35,
+     "start": 20.225,
+     "text": "it"
+    },
+    {
+     "end": 20.513,
+     "start": 20.35,
+     "text": "in"
+    },
+    {
+     "end": 21.125,
+     "start": 20.513,
+     "text": "planning"
+    },
+    {
+     "end": 21.225,
+     "start": 21.125,
+     "text": ","
+    },
+    {
+     "end": 21.375,
+     "start": 21.225,
+     "text": "in"
+    },
+    {
+     "end": 21.8,
+     "start": 21.375,
+     "text": "preview"
+    },
+    {
+     "end": 21.925,
+     "start": 21.8,
+     "text": "and"
+    },
+    {
+     "end": 22.875,
+     "start": 21.925,
+     "text": "live"
+    },
+    {
+     "end": 23.1,
+     "start": 22.875,
+     "text": ","
+    },
+    {
+     "end": 23.362,
+     "start": 23.275,
+     "text": "so"
+    },
+    {
+     "end": 23.425,
+     "start": 23.362,
+     "text": "a"
+    },
+    {
+     "end": 23.775,
+     "start": 23.425,
+     "text": "taken"
+    },
+    {
+     "end": 23.975,
+     "start": 23.775,
+     "text": "key"
+    },
+    {
+     "end": 24.013,
+     "start": 23.975,
+     "text": ","
+    },
+    {
+     "end": 24.1,
+     "start": 24.013,
+     "text": "a"
+    },
+    {
+     "end": 24.525,
+     "start": 24.1,
+     "text": "terminal"
+    },
+    {
+     "end": 25.2,
+     "start": 24.525,
+     "text": "key"
+    },
+    {
+     "end": 25.425,
+     "start": 25.2,
+     "text": ","
+    },
+    {
+     "end": 25.737,
+     "start": 25.65,
+     "text": "and"
+    },
+    {
+     "end": 25.862,
+     "start": 25.737,
+     "text": "an"
+    },
+    {
+     "end": 26.388,
+     "start": 25.862,
+     "text": "unknown"
+    },
+    {
+     "end": 26.65,
+     "start": 26.388,
+     "text": "key"
+    },
+    {
+     "end": 26.8,
+     "start": 26.65,
+     "text": "for"
+    },
+    {
+     "end": 27.25,
+     "start": 26.8,
+     "text": "update"
+    },
+    {
+     "end": 27.375,
+     "start": 27.25,
+     "text": "and"
+    },
+    {
+     "end": 28.013,
+     "start": 27.375,
+     "text": "terminate"
+    },
+    {
+     "end": 28.175,
+     "start": 28.013,
+     "text": "are"
+    },
+    {
+     "end": 28.825,
+     "start": 28.175,
+     "text": "refused"
+    },
+    {
+     "end": 29.2,
+     "start": 28.825,
+     "text": "before"
+    },
+    {
+     "end": 29.462,
+     "start": 29.2,
+     "text": "any"
+    },
+    {
+     "end": 29.85,
+     "start": 29.462,
+     "text": "signing"
+    },
+    {
+     "end": 30.1,
+     "start": 29.85,
+     "text": "key"
+    },
+    {
+     "end": 30.263,
+     "start": 30.1,
+     "text": "is"
+    },
+    {
+     "end": 31.15,
+     "start": 30.263,
+     "text": "read"
+    },
+    {
+     "end": 31.375,
+     "start": 31.15,
+     "text": "."
+    },
+    {
+     "end": 31.65,
+     "start": 31.575,
+     "text": "A"
+    },
+    {
+     "end": 32.5,
+     "start": 31.65,
+     "text": "cardano-keri"
+    },
+    {
+     "end": 33.25,
+     "start": 32.5,
+     "text": "application"
+    },
+    {
+     "end": 33.5,
+     "start": 33.25,
+     "text": "gets"
+    },
+    {
+     "end": 33.638,
+     "start": 33.5,
+     "text": "the"
+    },
+    {
+     "end": 33.975,
+     "start": 33.638,
+     "text": "same"
+    },
+    {
+     "end": 34.737,
+     "start": 33.975,
+     "text": "refusal"
+    },
+    {
+     "end": 34.938,
+     "start": 34.737,
+     "text": "by"
+    },
+    {
+     "end": 35.312,
+     "start": 34.938,
+     "text": "calling"
+    },
+    {
+     "end": 35.438,
+     "start": 35.312,
+     "text": "the"
+    },
+    {
+     "end": 36.088,
+     "start": 35.438,
+     "text": "exported"
+    },
+    {
+     "end": 36.65,
+     "start": 36.088,
+     "text": "function"
+    },
+    {
+     "end": 36.737,
+     "start": 36.65,
+     "text": "in"
+    },
+    {
+     "end": 36.925,
+     "start": 36.737,
+     "text": "its"
+    },
+    {
+     "end": 37.175,
+     "start": 36.925,
+     "text": "own"
+    },
+    {
+     "end": 38.225,
+     "start": 37.175,
+     "text": "planning"
+    },
+    {
+     "end": 38.425,
+     "start": 38.225,
+     "text": "."
+    },
+    {
+     "end": 38.7,
+     "start": 38.6,
+     "text": "The"
+    },
+    {
+     "end": 39.175,
+     "start": 38.7,
+     "text": "negative"
+    },
+    {
+     "end": 39.612,
+     "start": 39.175,
+     "text": "host"
+    },
+    {
+     "end": 39.925,
+     "start": 39.612,
+     "text": "lives"
+    },
+    {
+     "end": 40.362,
+     "start": 39.925,
+     "text": "beside"
+    },
+    {
+     "end": 40.475,
+     "start": 40.362,
+     "text": "the"
+    },
+    {
+     "end": 41.2,
+     "start": 40.475,
+     "text": "application"
+    },
+    {
+     "end": 41.35,
+     "start": 41.2,
+     "text": "in"
+    },
+    {
+     "end": 44.15,
+     "start": 41.35,
+     "text": "applications/open-datum/negative/"
+    },
+    {
+     "end": 44.375,
+     "start": 44.15,
+     "text": ","
+    },
+    {
+     "end": 44.763,
+     "start": 44.625,
+     "text": "with"
+    },
+    {
+     "end": 44.9,
+     "start": 44.763,
+     "text": "its"
+    },
+    {
+     "end": 45.35,
+     "start": 44.9,
+     "text": "sources"
+    },
+    {
+     "end": 45.6,
+     "start": 45.35,
+     "text": "under"
+    },
+    {
+     "end": 51.588,
+     "start": 45.6,
+     "text": "applications/open-datum/negative/src/Negative/"
+    },
+    {
+     "end": 51.713,
+     "start": 51.588,
+     "text": "and"
+    },
+    {
+     "end": 51.85,
+     "start": 51.713,
+     "text": "its"
+    },
+    {
+     "end": 52.188,
+     "start": 51.85,
+     "text": "entry"
+    },
+    {
+     "end": 52.5,
+     "start": 52.188,
+     "text": "point"
+    },
+    {
+     "end": 52.625,
+     "start": 52.5,
+     "text": "in"
+    },
+    {
+     "end": 54.65,
+     "start": 52.625,
+     "text": "applications/open-datum/negative"
+    },
+    {
+     "end": 55.55,
+     "start": 54.65,
+     "text": "app/."
+    },
+    {
+     "end": 55.912,
+     "start": 55.725,
+     "text": "Their"
+    },
+    {
+     "end": 56.475,
+     "start": 55.912,
+     "text": "generated"
+    },
+    {
+     "end": 57.037,
+     "start": 56.475,
      "text": "pages"
     },
     {
-     "end": 304.125,
-     "start": 303.925,
+     "end": 57.213,
+     "start": 57.037,
+     "text": "are"
+    },
+    {
+     "end": 57.525,
+     "start": 57.213,
+     "text": "not"
+    },
+    {
+     "end": 57.612,
+     "start": 57.525,
+     "text": "in"
+    },
+    {
+     "end": 57.8,
+     "start": 57.612,
+     "text": "this"
+    },
+    {
+     "end": 58.475,
+     "start": 57.8,
+     "text": "main-library"
+    },
+    {
+     "end": 58.963,
+     "start": 58.475,
+     "text": "reference"
+    },
+    {
+     "end": 59.8,
+     "start": 58.963,
+     "text": "either"
+    },
+    {
+     "end": 60.025,
+     "start": 59.8,
+     "text": ":"
+    },
+    {
+     "end": 60.525,
+     "start": 60.225,
+     "text": "only"
+    },
+    {
+     "end": 60.65,
+     "start": 60.525,
+     "text": "the"
+    },
+    {
+     "end": 60.975,
+     "start": 60.65,
+     "text": "main"
+    },
+    {
+     "end": 61.575,
+     "start": 60.975,
+     "text": "library"
+    },
+    {
+     "end": 61.775,
+     "start": 61.575,
+     "text": "has"
+    },
+    {
+     "end": 61.9,
+     "start": 61.775,
+     "text": "a"
+    },
+    {
+     "end": 62.55,
+     "start": 61.9,
+     "text": "generated"
+    },
+    {
+     "end": 63.175,
+     "start": 62.55,
+     "text": "reference"
+    },
+    {
+     "end": 63.275,
+     "start": 63.175,
+     "text": "."
+    },
+    {
+     "end": 63.513,
+     "start": 63.275,
+     "text": "This"
+    },
+    {
+     "end": 63.925,
+     "start": 63.513,
+     "text": "coverage"
+    },
+    {
+     "end": 64.25,
+     "start": 63.925,
+     "text": "gap"
+    },
+    {
+     "end": 64.625,
+     "start": 64.25,
+     "text": "stays"
+    },
+    {
+     "end": 65.6,
+     "start": 64.625,
+     "text": "visible"
+    },
+    {
+     "end": 65.825,
+     "start": 65.6,
+     "text": ";"
+    },
+    {
+     "end": 66.412,
+     "start": 66.05,
+     "text": "wider"
+    },
+    {
+     "end": 67.037,
+     "start": 66.412,
+     "text": "generated"
+    },
+    {
+     "end": 67.613,
+     "start": 67.037,
+     "text": "coverage"
+    },
+    {
+     "end": 67.775,
+     "start": 67.613,
+     "text": "is"
+    },
+    {
+     "end": 67.9,
+     "start": 67.775,
+     "text": "a"
+    },
+    {
+     "end": 68.325,
+     "start": 67.9,
+     "text": "separate"
+    },
+    {
+     "end": 68.85,
+     "start": 68.325,
+     "text": "decision"
+    },
+    {
+     "end": 68.963,
+     "start": 68.85,
+     "text": "for"
+    },
+    {
+     "end": 69.1,
+     "start": 68.963,
+     "text": "the"
+    },
+    {
+     "end": 69.475,
+     "start": 69.1,
+     "text": "epic's"
+    },
+    {
+     "end": 69.95,
+     "start": 69.475,
+     "text": "owner"
+    },
+    {
+     "end": 70.05,
+     "start": 69.95,
+     "text": ","
+    },
+    {
+     "end": 70.262,
+     "start": 70.05,
+     "text": "not"
+    },
+    {
+     "end": 70.325,
+     "start": 70.262,
+     "text": "a"
+    },
+    {
+     "end": 70.65,
+     "start": 70.325,
+     "text": "claim"
+    },
+    {
+     "end": 70.838,
+     "start": 70.65,
+     "text": "this"
+    },
+    {
+     "end": 71.225,
+     "start": 70.838,
+     "text": "page"
+    },
+    {
+     "end": 72.175,
+     "start": 71.225,
+     "text": "makes"
+    },
+    {
+     "end": 72.375,
+     "start": 72.175,
+     "text": "."
+    },
+    {
+     "end": 72.963,
+     "start": 72.625,
+     "text": "Nothing"
+    },
+    {
+     "end": 73.125,
+     "start": 72.963,
+     "text": "on"
+    },
+    {
+     "end": 73.338,
+     "start": 73.125,
+     "text": "this"
+    },
+    {
+     "end": 73.775,
+     "start": 73.338,
+     "text": "page"
+    },
+    {
+     "end": 73.887,
+     "start": 73.775,
+     "text": "is"
+    },
+    {
+     "end": 73.95,
+     "start": 73.887,
+     "text": "a"
+    },
+    {
+     "end": 74.812,
+     "start": 73.95,
+     "text": "publication"
+    },
+    {
+     "end": 75.0,
+     "start": 74.812,
+     "text": "or"
+    },
+    {
+     "end": 75.4,
+     "start": 75.0,
+     "text": "release"
+    },
+    {
+     "end": 75.988,
+     "start": 75.4,
+     "text": "claim"
+    },
+    {
+     "end": 76.075,
+     "start": 75.988,
+     "text": "—"
+    },
+    {
+     "end": 76.2,
+     "start": 76.075,
+     "text": "the"
+    },
+    {
+     "end": 76.762,
+     "start": 76.2,
+     "text": "reference"
+    },
+    {
+     "end": 77.1,
+     "start": 76.762,
+     "text": "ships"
+    },
+    {
+     "end": 77.238,
+     "start": 77.1,
+     "text": "with"
+    },
+    {
+     "end": 77.325,
+     "start": 77.238,
+     "text": "the"
+    },
+    {
+     "end": 77.863,
+     "start": 77.325,
+     "text": "candidate"
+    },
+    {
+     "end": 78.238,
+     "start": 77.863,
+     "text": "site"
+    },
+    {
+     "end": 78.363,
+     "start": 78.238,
+     "text": "and"
+    },
+    {
+     "end": 78.537,
+     "start": 78.363,
+     "text": "its"
+    },
+    {
+     "end": 78.95,
+     "start": 78.537,
+     "text": "future"
+    },
+    {
+     "end": 80.225,
+     "start": 78.95,
+     "text": "archives"
+    },
+    {
+     "end": 80.45,
+     "start": 80.225,
+     "text": ","
+    },
+    {
+     "end": 80.738,
+     "start": 80.65,
+     "text": "and"
+    },
+    {
+     "end": 80.9,
+     "start": 80.738,
+     "text": "no"
+    },
+    {
+     "end": 81.225,
+     "start": 80.9,
+     "text": "version"
+    },
+    {
+     "end": 81.387,
+     "start": 81.225,
+     "text": "is"
+    },
+    {
+     "end": 81.875,
+     "start": 81.387,
+     "text": "tagged"
+    },
+    {
+     "end": 82.025,
+     "start": 81.875,
+     "text": "or"
+    },
+    {
+     "end": 82.45,
+     "start": 82.025,
+     "text": "published"
+    },
+    {
+     "end": 82.6,
+     "start": 82.45,
+     "text": "by"
+    },
+    {
+     "end": 83.125,
+     "start": 82.6,
+     "text": "existing"
+    },
+    {
+     "end": 83.85,
+     "start": 83.125,
+     "text": "here"
+    },
+    {
+     "end": 84.075,
+     "start": 83.85,
+     "text": "."
+    },
+    {
+     "end": 84.325,
+     "start": 84.25,
+     "text": "The"
+    },
+    {
+     "end": 84.9,
+     "start": 84.325,
+     "text": "behavioral"
+    },
+    {
+     "end": 85.35,
+     "start": 84.9,
+     "text": "evidence"
+    },
+    {
+     "end": 85.463,
+     "start": 85.35,
+     "text": "for"
+    },
+    {
+     "end": 85.55,
+     "start": 85.463,
+     "text": "the"
+    },
+    {
+     "end": 85.825,
+     "start": 85.55,
+     "text": "moved"
+    },
+    {
+     "end": 86.625,
+     "start": 85.825,
+     "text": "builder"
+    },
+    {
+     "end": 86.85,
+     "start": 86.625,
+     "text": ","
+    },
+    {
+     "end": 87.575,
+     "start": 87.05,
+     "text": "blueprint"
+    },
+    {
+     "end": 87.7,
+     "start": 87.575,
+     "text": "and"
+    },
+    {
+     "end": 88.075,
+     "start": 87.7,
+     "text": "wire"
+    },
+    {
+     "end": 88.438,
+     "start": 88.075,
+     "text": "code"
+    },
+    {
+     "end": 88.8,
+     "start": 88.438,
+     "text": "lives"
+    },
+    {
+     "end": 88.912,
+     "start": 88.8,
+     "text": "in"
+    },
+    {
+     "end": 89.037,
+     "start": 88.912,
+     "text": "the"
+    },
+    {
+     "end": 89.438,
+     "start": 89.037,
+     "text": "check"
+    },
+    {
+     "end": 89.863,
+     "start": 89.438,
+     "text": "commands"
+    },
+    {
+     "end": 90.012,
+     "start": 89.863,
+     "text": "the"
+    },
+    {
+     "end": 90.575,
+     "start": 90.012,
+     "text": "off-chain"
+    },
+    {
+     "end": 91.125,
+     "start": 90.575,
+     "text": "development"
+    },
+    {
+     "end": 91.425,
+     "start": 91.125,
+     "text": "guide"
+    },
+    {
+     "end": 92.5,
+     "start": 91.425,
+     "text": "records"
+    },
+    {
+     "end": 92.7,
+     "start": 92.5,
+     "text": ","
+    },
+    {
+     "end": 93.062,
+     "start": 92.9,
+     "text": "not"
+    },
+    {
+     "end": 93.137,
+     "start": 93.062,
+     "text": "in"
+    },
+    {
+     "end": 93.213,
+     "start": 93.137,
+     "text": "the"
+    },
+    {
+     "end": 93.713,
+     "start": 93.213,
+     "text": "existence"
+    },
+    {
+     "end": 93.787,
+     "start": 93.713,
+     "text": "of"
+    },
+    {
+     "end": 94.0,
+     "start": 93.787,
+     "text": "these"
+    },
+    {
+     "end": 94.925,
+     "start": 94.0,
+     "text": "pages"
+    },
+    {
+     "end": 95.125,
+     "start": 94.925,
      "text": "."
     }
    ]
@@ -257121,11 +257676,631 @@
    ]
   },
   "docs-singular-node/booking-and-folding-02": {
-   "audio_sha256": "98125801ac141fe33fa2d2c6604e40abc9d4cde8bda67130dc4b11ba19f8bedb",
-   "characters": 388,
-   "cost": 0.00024056000000000001,
-   "duration": 25.4,
+   "audio_sha256": "0dbd0ff410b35f04d7b2903464d8f2a2010c1132dd2dc12ca45c7f65fab1f2cb",
+   "characters": 594,
+   "cost": 0.00058806,
+   "duration": 39.225,
    "index": 2,
+   "key": "152268e5b968aa3b7ee4a07f505487c1ab2e461bedc99bc3faf54247cc14f748",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "booking-and-folding",
+   "sent_text": "Before anything is signed, insert, update and terminate check the key's current entry: a booking the entry rules out is refused with the key and a named reason. An insert of a key that is already registered, or already retired, is refused; an update or a terminate of a key that is not registered, or already retired, is refused. The refusal is labelled client policy in the receipt, and it runs the same way in planning, in preview and live. The fold still validates every booking it folds, so a booking made through the permissive builders can still reach the chain's own refusal at the fold.",
+   "text": "Before anything is signed, insert, update and terminate check the key's current entry: a booking the entry rules out is refused with the key and a named reason. An insert of a key that is already registered, or already retired, is refused; an update or a terminate of a key that is not registered, or already retired, is refused. The refusal is labelled client policy in the receipt, and it runs the same way in planning, in preview and live. The fold still validates every booking it folds, so a booking made through the permissive builders can still reach the chain's own refusal at the fold.",
+   "words": [
+    {
+     "end": 0.525,
+     "start": 0.175,
+     "text": "Before"
+    },
+    {
+     "end": 0.925,
+     "start": 0.525,
+     "text": "anything"
+    },
+    {
+     "end": 1.087,
+     "start": 0.925,
+     "text": "is"
+    },
+    {
+     "end": 1.6,
+     "start": 1.087,
+     "text": "signed"
+    },
+    {
+     "end": 1.675,
+     "start": 1.6,
+     "text": ","
+    },
+    {
+     "end": 2.225,
+     "start": 1.675,
+     "text": "insert"
+    },
+    {
+     "end": 2.325,
+     "start": 2.225,
+     "text": ","
+    },
+    {
+     "end": 2.8,
+     "start": 2.325,
+     "text": "update"
+    },
+    {
+     "end": 2.925,
+     "start": 2.8,
+     "text": "and"
+    },
+    {
+     "end": 3.513,
+     "start": 2.925,
+     "text": "terminate"
+    },
+    {
+     "end": 3.775,
+     "start": 3.513,
+     "text": "check"
+    },
+    {
+     "end": 3.9,
+     "start": 3.775,
+     "text": "the"
+    },
+    {
+     "end": 4.2,
+     "start": 3.9,
+     "text": "key's"
+    },
+    {
+     "end": 4.5,
+     "start": 4.2,
+     "text": "current"
+    },
+    {
+     "end": 5.45,
+     "start": 4.5,
+     "text": "entry"
+    },
+    {
+     "end": 5.7,
+     "start": 5.45,
+     "text": ":"
+    },
+    {
+     "end": 5.975,
+     "start": 5.9,
+     "text": "a"
+    },
+    {
+     "end": 6.287,
+     "start": 5.975,
+     "text": "booking"
+    },
+    {
+     "end": 6.425,
+     "start": 6.287,
+     "text": "the"
+    },
+    {
+     "end": 6.775,
+     "start": 6.425,
+     "text": "entry"
+    },
+    {
+     "end": 7.1,
+     "start": 6.775,
+     "text": "rules"
+    },
+    {
+     "end": 7.375,
+     "start": 7.1,
+     "text": "out"
+    },
+    {
+     "end": 7.525,
+     "start": 7.375,
+     "text": "is"
+    },
+    {
+     "end": 8.087,
+     "start": 7.525,
+     "text": "refused"
+    },
+    {
+     "end": 8.212,
+     "start": 8.087,
+     "text": "with"
+    },
+    {
+     "end": 8.337,
+     "start": 8.212,
+     "text": "the"
+    },
+    {
+     "end": 8.925,
+     "start": 8.337,
+     "text": "key"
+    },
+    {
+     "end": 9.062,
+     "start": 8.925,
+     "text": "and"
+    },
+    {
+     "end": 9.125,
+     "start": 9.062,
+     "text": "a"
+    },
+    {
+     "end": 9.475,
+     "start": 9.125,
+     "text": "named"
+    },
+    {
+     "end": 10.425,
+     "start": 9.475,
+     "text": "reason"
+    },
+    {
+     "end": 10.625,
+     "start": 10.425,
+     "text": "."
+    },
+    {
+     "end": 10.95,
+     "start": 10.825,
+     "text": "An"
+    },
+    {
+     "end": 11.288,
+     "start": 10.95,
+     "text": "insert"
+    },
+    {
+     "end": 11.363,
+     "start": 11.288,
+     "text": "of"
+    },
+    {
+     "end": 11.462,
+     "start": 11.363,
+     "text": "a"
+    },
+    {
+     "end": 11.75,
+     "start": 11.462,
+     "text": "key"
+    },
+    {
+     "end": 11.9,
+     "start": 11.75,
+     "text": "that"
+    },
+    {
+     "end": 12.062,
+     "start": 11.9,
+     "text": "is"
+    },
+    {
+     "end": 12.45,
+     "start": 12.062,
+     "text": "already"
+    },
+    {
+     "end": 13.1,
+     "start": 12.45,
+     "text": "registered"
+    },
+    {
+     "end": 13.175,
+     "start": 13.1,
+     "text": ","
+    },
+    {
+     "end": 13.325,
+     "start": 13.175,
+     "text": "or"
+    },
+    {
+     "end": 13.7,
+     "start": 13.325,
+     "text": "already"
+    },
+    {
+     "end": 14.375,
+     "start": 13.7,
+     "text": "retired"
+    },
+    {
+     "end": 14.45,
+     "start": 14.375,
+     "text": ","
+    },
+    {
+     "end": 14.6,
+     "start": 14.45,
+     "text": "is"
+    },
+    {
+     "end": 15.775,
+     "start": 14.6,
+     "text": "refused"
+    },
+    {
+     "end": 15.975,
+     "start": 15.775,
+     "text": ";"
+    },
+    {
+     "end": 16.312,
+     "start": 16.175,
+     "text": "an"
+    },
+    {
+     "end": 16.812,
+     "start": 16.312,
+     "text": "update"
+    },
+    {
+     "end": 16.95,
+     "start": 16.812,
+     "text": "or"
+    },
+    {
+     "end": 17.062,
+     "start": 16.95,
+     "text": "a"
+    },
+    {
+     "end": 17.587,
+     "start": 17.062,
+     "text": "terminate"
+    },
+    {
+     "end": 17.663,
+     "start": 17.587,
+     "text": "of"
+    },
+    {
+     "end": 17.763,
+     "start": 17.663,
+     "text": "a"
+    },
+    {
+     "end": 18.1,
+     "start": 17.763,
+     "text": "key"
+    },
+    {
+     "end": 18.25,
+     "start": 18.1,
+     "text": "that"
+    },
+    {
+     "end": 18.4,
+     "start": 18.25,
+     "text": "is"
+    },
+    {
+     "end": 18.65,
+     "start": 18.4,
+     "text": "not"
+    },
+    {
+     "end": 19.3,
+     "start": 18.65,
+     "text": "registered"
+    },
+    {
+     "end": 19.375,
+     "start": 19.3,
+     "text": ","
+    },
+    {
+     "end": 19.525,
+     "start": 19.375,
+     "text": "or"
+    },
+    {
+     "end": 19.9,
+     "start": 19.525,
+     "text": "already"
+    },
+    {
+     "end": 20.6,
+     "start": 19.9,
+     "text": "retired"
+    },
+    {
+     "end": 20.7,
+     "start": 20.6,
+     "text": ","
+    },
+    {
+     "end": 20.85,
+     "start": 20.7,
+     "text": "is"
+    },
+    {
+     "end": 22.075,
+     "start": 20.85,
+     "text": "refused"
+    },
+    {
+     "end": 22.3,
+     "start": 22.075,
+     "text": "."
+    },
+    {
+     "end": 22.575,
+     "start": 22.5,
+     "text": "The"
+    },
+    {
+     "end": 23.288,
+     "start": 22.575,
+     "text": "refusal"
+    },
+    {
+     "end": 23.462,
+     "start": 23.288,
+     "text": "is"
+    },
+    {
+     "end": 23.938,
+     "start": 23.462,
+     "text": "labelled"
+    },
+    {
+     "end": 24.375,
+     "start": 23.938,
+     "text": "client"
+    },
+    {
+     "end": 24.925,
+     "start": 24.375,
+     "text": "policy"
+    },
+    {
+     "end": 25.013,
+     "start": 24.925,
+     "text": "in"
+    },
+    {
+     "end": 25.1,
+     "start": 25.013,
+     "text": "the"
+    },
+    {
+     "end": 25.675,
+     "start": 25.1,
+     "text": "receipt"
+    },
+    {
+     "end": 25.75,
+     "start": 25.675,
+     "text": ","
+    },
+    {
+     "end": 25.862,
+     "start": 25.75,
+     "text": "and"
+    },
+    {
+     "end": 25.95,
+     "start": 25.862,
+     "text": "it"
+    },
+    {
+     "end": 26.3,
+     "start": 25.95,
+     "text": "runs"
+    },
+    {
+     "end": 26.438,
+     "start": 26.3,
+     "text": "the"
+    },
+    {
+     "end": 26.775,
+     "start": 26.438,
+     "text": "same"
+    },
+    {
+     "end": 26.975,
+     "start": 26.775,
+     "text": "way"
+    },
+    {
+     "end": 27.138,
+     "start": 26.975,
+     "text": "in"
+    },
+    {
+     "end": 27.675,
+     "start": 27.138,
+     "text": "planning"
+    },
+    {
+     "end": 27.75,
+     "start": 27.675,
+     "text": ","
+    },
+    {
+     "end": 27.913,
+     "start": 27.75,
+     "text": "in"
+    },
+    {
+     "end": 28.438,
+     "start": 27.913,
+     "text": "preview"
+    },
+    {
+     "end": 28.6,
+     "start": 28.438,
+     "text": "and"
+    },
+    {
+     "end": 29.575,
+     "start": 28.6,
+     "text": "live"
+    },
+    {
+     "end": 29.8,
+     "start": 29.575,
+     "text": "."
+    },
+    {
+     "end": 30.05,
+     "start": 29.975,
+     "text": "The"
+    },
+    {
+     "end": 30.375,
+     "start": 30.05,
+     "text": "fold"
+    },
+    {
+     "end": 30.625,
+     "start": 30.375,
+     "text": "still"
+    },
+    {
+     "end": 31.212,
+     "start": 30.625,
+     "text": "validates"
+    },
+    {
+     "end": 31.5,
+     "start": 31.212,
+     "text": "every"
+    },
+    {
+     "end": 31.8,
+     "start": 31.5,
+     "text": "booking"
+    },
+    {
+     "end": 31.9,
+     "start": 31.8,
+     "text": "it"
+    },
+    {
+     "end": 32.8,
+     "start": 31.9,
+     "text": "folds"
+    },
+    {
+     "end": 33.0,
+     "start": 32.8,
+     "text": ","
+    },
+    {
+     "end": 33.4,
+     "start": 33.225,
+     "text": "so"
+    },
+    {
+     "end": 33.5,
+     "start": 33.4,
+     "text": "a"
+    },
+    {
+     "end": 33.875,
+     "start": 33.5,
+     "text": "booking"
+    },
+    {
+     "end": 34.188,
+     "start": 33.875,
+     "text": "made"
+    },
+    {
+     "end": 34.4,
+     "start": 34.188,
+     "text": "through"
+    },
+    {
+     "end": 34.5,
+     "start": 34.4,
+     "text": "the"
+    },
+    {
+     "end": 34.95,
+     "start": 34.5,
+     "text": "permissive"
+    },
+    {
+     "end": 35.475,
+     "start": 34.95,
+     "text": "builders"
+    },
+    {
+     "end": 35.688,
+     "start": 35.475,
+     "text": "can"
+    },
+    {
+     "end": 36.025,
+     "start": 35.688,
+     "text": "still"
+    },
+    {
+     "end": 36.275,
+     "start": 36.025,
+     "text": "reach"
+    },
+    {
+     "end": 36.412,
+     "start": 36.275,
+     "text": "the"
+    },
+    {
+     "end": 36.938,
+     "start": 36.412,
+     "text": "chain's"
+    },
+    {
+     "end": 37.175,
+     "start": 36.938,
+     "text": "own"
+    },
+    {
+     "end": 37.775,
+     "start": 37.175,
+     "text": "refusal"
+    },
+    {
+     "end": 37.862,
+     "start": 37.775,
+     "text": "at"
+    },
+    {
+     "end": 37.987,
+     "start": 37.862,
+     "text": "the"
+    },
+    {
+     "end": 39.0,
+     "start": 37.987,
+     "text": "fold"
+    },
+    {
+     "end": 39.225,
+     "start": 39.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/booking-and-folding-03": {
+   "audio_sha256": "3beef99e5598528b43af79d353b88bb7092ecc85c17b7f6d64ad1fca4aec8007",
+   "characters": 388,
+   "cost": 0.00038411999999999995,
+   "duration": 25.4,
+   "index": 3,
    "key": "86bd6519f8aa6c8e0c6b6de5ea9c91a85c5dbdf5be79f34fb1a129830ddf0159",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -257525,12 +258700,12 @@
     }
    ]
   },
-  "docs-singular-node/booking-and-folding-03": {
-   "audio_sha256": "990c1fabf54cd435a30e183c17af9f098e2c1a111f136da472adc01694ab6dfc",
+  "docs-singular-node/booking-and-folding-04": {
+   "audio_sha256": "0796591643e6e3aeb8a34abf40d90afd1c8be51ae57eca80cc825a87080e0f19",
    "characters": 210,
-   "cost": 0.0001302,
+   "cost": 0.00020789999999999998,
    "duration": 13.95,
-   "index": 3,
+   "index": 4,
    "key": "208e8575112095dec0c52e13380cb7b5db19936a8bd5c3e1ce18bbc99cc5c4c4",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -257740,12 +258915,12 @@
     }
    ]
   },
-  "docs-singular-node/booking-and-folding-04": {
-   "audio_sha256": "13a88f64b9d48c437282e12c02d5b7da3d9ab78294f0c00889e7d826feafeb2f",
+  "docs-singular-node/booking-and-folding-05": {
+   "audio_sha256": "265a7831218ca80d14f2fad955154e6c198347bc7d939bd99b6040054a46f2b4",
    "characters": 804,
-   "cost": 0.00049848,
+   "cost": 0.00079596,
    "duration": 52.55,
-   "index": 4,
+   "index": 5,
    "key": "58fa4c1ff204211b402bdca258dcca8f08378ff39800187338e1f38ea8f34764",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -258550,12 +259725,12 @@
     }
    ]
   },
-  "docs-singular-node/booking-and-folding-05": {
-   "audio_sha256": "23db3eff10c8ae434330d17598e6393abd2310878614fdc0186f93f6efe72b4e",
+  "docs-singular-node/booking-and-folding-06": {
+   "audio_sha256": "0981c93d1be2016c50edd7481cdc740802da282ec2d9c86fb4f8a20745a20d91",
    "characters": 497,
-   "cost": 0.00030814,
+   "cost": 0.00049203,
    "duration": 31.125,
-   "index": 5,
+   "index": 6,
    "key": "d92679f7c978e64a008aa151417e3b37967cba3441c5ae3ef98880db359dd7a6",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -259100,12 +260275,12 @@
     }
    ]
   },
-  "docs-singular-node/booking-and-folding-06": {
-   "audio_sha256": "64154887f34fff216449c48aaf4cf2b807e354dc03a477541f1e269763d6e1e4",
+  "docs-singular-node/booking-and-folding-07": {
+   "audio_sha256": "89d608d740269180aeabd494503c1f4321988ad6b7e3f30395978587cd35150a",
    "characters": 152,
-   "cost": 9.424e-05,
+   "cost": 0.00015047999999999998,
    "duration": 9.8,
-   "index": 6,
+   "index": 7,
    "key": "88cc5b9ffd9e4edf2c85740d9dcd5d841ceb380ea250d010fe8405dd39065c70",
    "page": "docs/singular-node.md",
    "pause_ms": 400,

@@ -77,6 +77,11 @@ import Singular.Application.OpenDatum.Plan
 import Singular.Application.OpenDatum.Preview (Kind (..), runPreview)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Attached
+import Singular.CLI.Booking
+    ( BookingVerb (..)
+    , precheckBooking
+    , refuseBooking
+    )
 import Singular.CLI.Command
     ( EntryArgs (..)
     , EntryMode (..)
@@ -161,10 +166,14 @@ book
     :: Attached
     -> EntryArgs
     -> ByteString
+    -> BookingVerb
+    {- ^ The verb booking this key: refused first when the key's current
+    entry rules it out, before anything is placed, built or signed
+    -}
     -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
     -> IO (ConwayTx, r, Deadline)
-book at a key plan = do
+book at a key verb plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
@@ -176,6 +185,7 @@ book at a key plan = do
             (const (Expectation (Just key) "request" Nothing Nothing Nothing))
             ( \building v -> do
                 live <- attachLive v s
+                refuseBooking (atTrie at) key verb
                 (b, decided) <- plan v live
                 let edge = T.pack (edgeName (bookedEdge b))
                 place
@@ -279,6 +289,15 @@ runInsert env a = case entryMode a of
     Submit ws -> do
         let Key key = entryKey a
         payload <- readInsertPayload a
+        precheckBooking
+            openDatumApplication
+            env
+            (writeProvider ws)
+            (entryBlueprint a)
+            (entryAccess a)
+            (neededRoles (OpenInsert a))
+            key
+            BookInsert
         dir <- managedEntryDir a ws
         attached
             openDatumApplication
@@ -295,7 +314,7 @@ runInsert env a = case entryMode a of
                 -- The approval is decided in the booking's own view, from the
                 -- state it holds.
                 (booking, (), deadline) <-
-                    book at a key $ \_ live -> do
+                    book at a key BookInsert $ \_ live -> do
                         b <- planInsert live envelope
                         pure (b, ())
                 if entryFold a
@@ -345,6 +364,15 @@ runUpdate env a = case entryMode a of
                 (entryDocument a)
         payload <-
             readJson path >>= either (failWith ClientRefusal) pure . dataFromJson
+        precheckBooking
+            openDatumApplication
+            env
+            (writeProvider ws)
+            (entryBlueprint a)
+            (entryAccess a)
+            (neededRoles (OpenUpdate a))
+            key
+            BookUpdate
         dir <- managedEntryDir a ws
         attached
             openDatumApplication
@@ -380,6 +408,7 @@ runUpdate env a = case entryMode a of
                         ( \building v -> do
                             live <- attachLive v s
                             outs <- liveOutputs openDatumApplication v s
+                            refuseBooking (atTrie at) key BookUpdate
                             (holding, dh) <- planUpdate live (callerKey at) key outs
                             envelope <-
                                 either
@@ -445,6 +474,15 @@ runTerminate env a = case entryMode a of
     Preview node addr -> runPreview openDatumApplication env KTerminate a node addr
     Submit ws -> do
         let Key key = entryKey a
+        precheckBooking
+            openDatumApplication
+            env
+            (writeProvider ws)
+            (entryBlueprint a)
+            (entryAccess a)
+            (neededRoles (OpenTerminate a))
+            key
+            BookTerminate
         dir <- managedEntryDir a ws
         attached
             openDatumApplication
@@ -460,7 +498,7 @@ runTerminate env a = case entryMode a of
                 -- The live output the booking releases is resolved in the
                 -- booking's own view, with the state the approval binds.
                 (booking, ((liveIn, _), envelope), deadline) <-
-                    book at a key $ \v live -> do
+                    book at a key BookTerminate $ \v live -> do
                         outs <- liveOutputs openDatumApplication v s
                         (b, holding, dh) <- planTerminate live (callerKey at) key outs
                         envelope <-

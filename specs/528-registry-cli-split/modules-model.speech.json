@@ -51,7 +51,7 @@
       "pause": 300
     },
     {
-      "text": "booking-written-once (invariant): the early refusal of a booking the current leaf rules out exists in Singular.CLI.Booking and nowhere else.",
+      "text": "booking-written-once (invariant): the decision that a booking is ruled out by the current leaf is written once, in the registry packages, and every ordinary verb of every executable calls it; the booking primitive and the application builders do not.",
       "pause": 300
     },
     {
@@ -61,6 +61,6 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "810dceb838dadd2b253decd740351d2146b38d6f3ed40b2084521cc6debad3c1"
+    "sha256": "f4ef07628c9bcd84ec18064ba3a9adcbd58b690e87736afe1f2dbaa619972eb7"
   }
 }

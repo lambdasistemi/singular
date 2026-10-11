@@ -30,7 +30,7 @@ module Singular.Application.OpenDatum.CommandRunSpec (spec) where
 import Control.Applicative ((<|>))
 import Control.Exception (bracket, throwIO)
 import Control.Tracer (Tracer (..))
-import Data.Aeson ((.=))
+import Data.Aeson (toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
@@ -114,6 +114,8 @@ import Singular.Application.OpenDatum.Command
 import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
+import Singular.CLI.Proof (Leaf (..), leafName)
 import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Trace
@@ -159,10 +161,19 @@ import Singular.Registry.Types
     , edgeName
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 
 spec :: Spec
-spec = handlerRows >> setupRecut >> readbackRows >> permanentRecognition
+spec =
+    handlerRows
+        >> setupRecut
+        >> readbackRows
+        >> bookingRefusalRows
+        >> permanentRecognition
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"
@@ -600,6 +611,274 @@ readbackRows =
                         [] ->
                             expectationFailure "the create never read its references back"
 
+-- ---------------------------------------------------------
+-- The early booking refusal
+-- ---------------------------------------------------------
+
+{- | S6.1 (#486): every ordinary verb refuses a booking the key's current
+entry rules out, in submit and in preview alike, before anything is
+signed: nothing is submitted, no request is left behind, no booking fee
+is paid, and the reason names the key, labelled client policy. On the
+base these bookings succeed (or stop with the old holding reason); each
+row below fails there on its own and passes once the verbs check. The
+oracles: the Lean table for the decision (found/required leaves), the
+producer's own vocabulary for the structured fields
+(@bookingEdgeName@/@leafName@), the issue story for the reason's words.
+-}
+bookingRefusalRows :: Spec
+bookingRefusalRows = describe "the early booking refusal (#486)" $ do
+    -- One example per verb, per mode, per case: a grouped assertion
+    -- would mask the later refusals behind the first failure.
+    let refused verb found required reasonFragment target = do
+            outcomeOf (runReceipt target) `shouldBe` Just "client-refusal"
+            textAt "reason" (runReceipt target)
+                `shouldSatisfy` maybe False (T.isInfixOf reasonFragment)
+            textAt "reason" (runReceipt target)
+                `shouldSatisfy` maybe False (T.isInfixOf "client policy")
+            valueAt "edge" (runReceipt target)
+                `shouldBe` Just (toJSON (bookingEdgeName verb))
+            valueAt "leafFound" (runReceipt target)
+                `shouldBe` Just (toJSON (leafName found))
+            valueAt "leafRequired" (runReceipt target)
+                `shouldBe` Just (toJSON (leafName required))
+            valueAt "policy" (runReceipt target)
+                `shouldBe` Just (toJSON ("client" :: Text))
+            textAt "request" (runReceipt target) `shouldBe` Nothing
+            submissionsOf (runReceipt target) `shouldBe` []
+        labelled label runs = case [r | r <- runs, runLabel r == label] of
+            [found] -> pure found
+            _ -> fail ("one run labelled " <> label)
+    it "refuses an insert on an active key in submit, with exit 10" $
+        withRig $ \rig -> do
+            runs <- lifecycle rig
+            target <- labelled "insert an active key" runs
+            runExit target `shouldBe` ExitFailure 10
+            refused
+                BookInsert
+                Active
+                Unknown
+                "alice-1 is already registered"
+                target
+    it "refuses an insert on an active key in preview" $
+        withRig $ \rig ->
+            refused
+                BookInsert
+                Active
+                Unknown
+                "alice-1 is already registered"
+                =<< labelled "insert an active key preview"
+                =<< lifecycle rig
+    it "refuses an insert on an active key before any signing key is read" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            insert <-
+                run
+                    rig
+                    "insert alice-1"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt insert) `shouldBe` Just "success"
+            fold1 <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf insert <> tokenArgs t)
+            outcomeOf (runReceipt fold1) `shouldBe` Just "success"
+            -- The signing-key file does not exist: any read of it fails,
+            -- so the named refusal proves the refusal came first.
+            nokey <-
+                runWithKey
+                    (rigDir rig </> "missing.skey")
+                    rig
+                    "insert an active key with no signing key"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            runExit nokey `shouldBe` ExitFailure 10
+            refused
+                BookInsert
+                Active
+                Unknown
+                "alice-1 is already registered"
+                nokey
+    it "refuses an insert on a terminal key in submit" $
+        withRig $ \rig ->
+            refused
+                BookInsert
+                Terminal
+                Unknown
+                "alice-1 is already retired"
+                =<< labelled "insert a terminal key"
+                =<< lifecycle rig
+    it "refuses an insert on a terminal key in preview" $
+        withRig $ \rig ->
+            refused
+                BookInsert
+                Terminal
+                Unknown
+                "alice-1 is already retired"
+                =<< labelled "insert a terminal key preview"
+                =<< lifecycle rig
+    it "refuses a terminate on a terminal key in submit" $
+        withRig $ \rig ->
+            refused
+                BookTerminate
+                Terminal
+                Active
+                "alice-1 is already retired"
+                =<< labelled "terminate a terminal key"
+                =<< lifecycle rig
+    it "refuses a terminate on a terminal key in preview" $
+        withRig $ \rig ->
+            refused
+                BookTerminate
+                Terminal
+                Active
+                "alice-1 is already retired"
+                =<< labelled "terminate a terminal key preview"
+                =<< lifecycle rig
+    it "refuses a terminate on an unknown key in submit" $
+        withRig $ \rig ->
+            refused
+                BookTerminate
+                Unknown
+                Active
+                "nobody is not registered"
+                =<< labelled "terminate an unknown key"
+                =<< lifecycle rig
+    it "refuses a terminate on an unknown key in preview" $
+        withRig $ \rig ->
+            refused
+                BookTerminate
+                Unknown
+                Active
+                "nobody is not registered"
+                =<< labelled "terminate an unknown key preview"
+                =<< lifecycle rig
+    it "refuses an update on an unknown key in submit" $
+        withRig $ \rig ->
+            refused
+                BookUpdate
+                Unknown
+                Active
+                "nobody is not registered"
+                =<< labelled "update an absent key"
+                =<< lifecycle rig
+    it "refuses an update on an unknown key in preview" $
+        withRig $ \rig ->
+            refused
+                BookUpdate
+                Unknown
+                Active
+                "nobody is not registered"
+                =<< labelled "update an unknown key preview"
+                =<< lifecycle rig
+    it "refuses an update on a terminal key in submit" $
+        withRig $ \rig ->
+            refused
+                BookUpdate
+                Terminal
+                Active
+                "alice-1 is already retired"
+                =<< labelled "update a terminal key"
+                =<< lifecycle rig
+    it "refuses an update on a terminal key in preview" $
+        withRig $ \rig ->
+            refused
+                BookUpdate
+                Terminal
+                Active
+                "alice-1 is already retired"
+                =<< labelled "update a terminal key preview"
+                =<< lifecycle rig
+    it "still accepts the bookings the Lean table admits, in submit" $
+        withRig $ \rig -> do
+            runs <- lifecycle rig
+            let succeeds label =
+                    labelled label runs
+                        >>= (`shouldBe` Just "success") . outcomeOf . runReceipt
+            succeeds "insert alice-2"
+            succeeds "update alice-1"
+            succeeds "terminate alice-1"
+    -- Accepted previews pin no over-refusal. They stand outside the
+    -- shared lifecycle: a succeeding preview emits no traced fetch, and
+    -- the timed-read comparison requires one of every succeeding run.
+    it "still accepts the bookings the Lean table admits, in preview" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            let preview args = run rig "preview" (args <> tokenArgs t)
+                walletAddrText = bech32Address (walletAddr (rigWallet rig))
+                succeeds args =
+                    preview args >>= (`shouldBe` Just "success") . outcomeOf . runReceipt
+            insert <-
+                run
+                    rig
+                    "insert alice-1"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt insert) `shouldBe` Just "success"
+            fold1 <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf insert <> tokenArgs t)
+            outcomeOf (runReceipt fold1) `shouldBe` Just "success"
+            succeeds
+                [ "open-datum"
+                , "insert"
+                , "--key"
+                , "unused"
+                , "--payload"
+                , rigDir rig </> "payload.json"
+                , "--preview"
+                , "--wallet-address"
+                , walletAddrText
+                ]
+            succeeds
+                [ "open-datum"
+                , "terminate"
+                , "--key"
+                , "alice-1"
+                , "--preview"
+                , "--wallet-address"
+                , walletAddrText
+                ]
+            succeeds
+                [ "open-datum"
+                , "update"
+                , "--key"
+                , "alice-1"
+                , "--payload"
+                , rigDir rig </> "payload-2.json"
+                , "--preview"
+                , "--wallet-address"
+                , walletAddrText
+                ]
+
 -- | What two packaged writes left: each run, the registry's files and its journal.
 data Written = Written
     { writtenRuns :: [(String, ExitCode, BS.ByteString, BS.ByteString)]
@@ -737,6 +1016,14 @@ data Run = Run
     , runKey :: Maybe Text
     -- ^ The key the command line names, base16
     }
+
+-- | The @--request@ of a run's receipt, for the fold that follows it.
+requestOf :: Run -> [String]
+requestOf r =
+    maybe
+        []
+        (\q -> ["--request", T.unpack q])
+        (textAt "request" (runReceipt r))
 
 magic :: Integer
 magic = 42
@@ -966,6 +1253,31 @@ lifecycle rig = do
             rig
             "fold alice-1"
             (["open-datum", "fold"] <> requestOf insert <> tokenArgs t1)
+    -- S6.1: alice-1 is active now; booking it again is refused (#486).
+    insertActive <-
+        run
+            rig
+            "insert an active key"
+            ( ["open-datum", "insert", "--key", "alice-1", "--payload", payload]
+                <> tokenArgs t1
+            )
+    insertActivePreview <-
+        run
+            rig
+            "insert an active key preview"
+            ( [ "open-datum"
+              , "insert"
+              , "--key"
+              , "alice-1"
+              , "--payload"
+              , payload
+              , "--preview"
+              , "--wallet-address"
+              , previewAddr
+              ]
+                <> tokenArgs t1
+            )
+
     inspect <-
         run
             rig
@@ -988,6 +1300,72 @@ lifecycle rig = do
             rig
             "fold alice-1 terminal"
             (["open-datum", "fold"] <> requestOf terminate <> tokenArgs t1)
+    -- S6.1: alice-1 is terminal now; booking it either way is refused.
+    insertTerminal <-
+        run
+            rig
+            "insert a terminal key"
+            ( ["open-datum", "insert", "--key", "alice-1", "--payload", payload]
+                <> tokenArgs t1
+            )
+    insertTerminalPreview <-
+        run
+            rig
+            "insert a terminal key preview"
+            ( [ "open-datum"
+              , "insert"
+              , "--key"
+              , "alice-1"
+              , "--payload"
+              , payload
+              , "--preview"
+              , "--wallet-address"
+              , previewAddr
+              ]
+                <> tokenArgs t1
+            )
+    terminateTerminal <-
+        run
+            rig
+            "terminate a terminal key"
+            (["open-datum", "terminate", "--key", "alice-1"] <> tokenArgs t1)
+    terminateTerminalPreview <-
+        run
+            rig
+            "terminate a terminal key preview"
+            ( [ "open-datum"
+              , "terminate"
+              , "--key"
+              , "alice-1"
+              , "--preview"
+              , "--wallet-address"
+              , previewAddr
+              ]
+                <> tokenArgs t1
+            )
+    updateTerminal <-
+        run
+            rig
+            "update a terminal key"
+            ( ["open-datum", "update", "--key", "alice-1", "--payload", payload2]
+                <> tokenArgs t1
+            )
+    updateTerminalPreview <-
+        run
+            rig
+            "update a terminal key preview"
+            ( [ "open-datum"
+              , "update"
+              , "--key"
+              , "alice-1"
+              , "--payload"
+              , payload2
+              , "--preview"
+              , "--wallet-address"
+              , previewAddr
+              ]
+                <> tokenArgs t1
+            )
     insert2 <-
         run
             rig
@@ -1056,6 +1434,42 @@ lifecycle rig = do
             ( ["open-datum", "update", "--key", "nobody", "--payload", payload2]
                 <> tokenArgs t1
             )
+    -- S6.1: nobody was never registered; booking it is refused.
+    terminateNobody <-
+        run
+            rig
+            "terminate an unknown key"
+            (["open-datum", "terminate", "--key", "nobody"] <> tokenArgs t1)
+    terminateNobodyPreview <-
+        run
+            rig
+            "terminate an unknown key preview"
+            ( [ "open-datum"
+              , "terminate"
+              , "--key"
+              , "nobody"
+              , "--preview"
+              , "--wallet-address"
+              , previewAddr
+              ]
+                <> tokenArgs t1
+            )
+    updateNobodyPreview <-
+        run
+            rig
+            "update an unknown key preview"
+            ( [ "open-datum"
+              , "update"
+              , "--key"
+              , "nobody"
+              , "--payload"
+              , payload2
+              , "--preview"
+              , "--wallet-address"
+              , previewAddr
+              ]
+                <> tokenArgs t1
+            )
     -- refused before any transaction is built
     existing <-
         run
@@ -1108,10 +1522,18 @@ lifecycle rig = do
         [ create
         , insert
         , fold1
+        , insertActive
+        , insertActivePreview
         , inspect
         , update
         , terminate
         , fold2
+        , insertTerminal
+        , insertTerminalPreview
+        , terminateTerminal
+        , terminateTerminalPreview
+        , updateTerminal
+        , updateTerminalPreview
         , insert2
         , foldInsert2
         , create2
@@ -1120,6 +1542,9 @@ lifecycle rig = do
         , nothingPending
         , overAllowance
         , absent
+        , terminateNobody
+        , terminateNobodyPreview
+        , updateNobodyPreview
         , existing
         , missing
         , emptyDir
@@ -1129,11 +1554,7 @@ lifecycle rig = do
   where
     payload = rigDir rig </> "payload.json"
     payload2 = rigDir rig </> "payload-2.json"
-    requestOf r =
-        maybe
-            []
-            (\q -> ["--request", T.unpack q])
-            (textAt "request" (runReceipt r))
+    previewAddr = bech32Address (walletAddr (rigWallet rig))
 
 -- | A wallet output the create can consume as its seed.
 fundSeed :: Rig -> IO String
@@ -1244,7 +1665,18 @@ commandLine rig registry args =
         <> ["--wallet-skey" | wantsKey]
         <> [rigKey rig | wantsKey]
   where
-    wantsKey = take 2 args /= ["open-datum", "inspect"]
+    -- A preview holds no signing key: it names the caller by address.
+    -- A line that already names one keeps it: the key-ordering control
+    -- supplies an absent key file through the same dispatch.
+    wantsKey =
+        take 2 args /= ["open-datum", "inspect"]
+            && "--preview" `notElem` args
+            && "--wallet-skey" `notElem` args
+
+-- | One command line with this signing-key path instead of the rig's.
+runWithKey :: FilePath -> Rig -> String -> [String] -> IO Run
+runWithKey keyPath rig label args =
+    runAt rig "registry" label (args <> ["--wallet-skey", keyPath])
 
 -- ---------------------------------------------------------
 -- The comparison

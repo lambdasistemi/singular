@@ -31,5 +31,5 @@ Responsibilities, dependency direction and promotion. Names and fields are in `d
 - **hashes-unchanged** (invariant): the hashes of the registry project and the open-datum project together equal the base hashes. Enforced by `script-hash-comparison`.
 - **one-flag-group** (invariant): the flag group lives in registry-cli and is parsed by one function; `singular`, `open-datum` and `keri-stub` call it, none re-spells a flag.
 - **value-is-the-only-door** (invariant): the open-datum knowledge `Fold`, `Live`, `Reconcile`, `Inspect`, `Create`, `Registry`, `Preview` hold today (envelope check, holding lookup, release, decode, pin title, recognised script hash) is reached only through the application value.
-- **booking-written-once** (invariant): the early refusal of a booking the current leaf rules out exists in `Singular.CLI.Booking` and nowhere else.
+- **booking-written-once** (invariant): the decision that a booking is ruled out by the current leaf is written once, in the registry packages, and every ordinary verb of every executable calls it; the booking primitive and the application builders do not.
 - No promotion upstream: `cardano-keri` consumes `registry-cli` and the registry library as published components; nothing in this ticket moves code into that repository.

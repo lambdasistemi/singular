@@ -146,10 +146,25 @@ parseOpenDatumWith
     :: [(String, String)] -> [String] -> Either CLIError OpenDatumCommand
 parseOpenDatumWith environment args = do
     (words', flags) <- tokens args
+    -- #528 slice 4: the packaged `open-datum` binary is invoked as
+    -- `open-datum create|insert|...` (program plus a bare verb, as its
+    -- usage, DEMO1.md and the journey all spell it). Accept that bare
+    -- spelling alongside the namespaced `open-datum create|...` form the
+    -- shared parser also recognises, normalising before every check so
+    -- the create-only windows and the inspect-only `--outputs-at` keep
+    -- their exact scope on both spellings.
+    let words'' = case words' of
+            ["create"] -> ["open-datum", "create"]
+            ["insert"] -> ["open-datum", "insert"]
+            ["update"] -> ["open-datum", "update"]
+            ["terminate"] -> ["open-datum", "terminate"]
+            ["fold"] -> ["open-datum", "fold"]
+            ["inspect"] -> ["open-datum", "inspect"]
+            _ -> words'
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right OpenHelp
         else
-            refuseWindows words' flags >> refuseOutputsAt words' flags >> case words' of
+            refuseWindows words'' flags >> refuseOutputsAt words'' flags >> case words'' of
                 [] -> Right OpenHelp
                 ["open-datum"] -> Right OpenHelp
                 ["open-datum", "create"] ->

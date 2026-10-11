@@ -97,7 +97,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] A booking for a key whose current leaf the edge rules out is refused before signing, in preview and submit alike, with a named reason such as Alice is already registered, and leaves no pending request; the refusal is labelled client policy; the fold keeps validating. This is written once, in the library's request building (#486). Proof: cage-tests [builders] and [application] specs with a failing control on the base; Demo 1 refusals job.",
+      "text": "[ ] A booking for a key whose current leaf the edge rules out is refused before signing, in preview and submit alike, with a named reason such as Alice is already registered, and leaves no pending request; the refusal is labelled client policy; the fold keeps validating. This is written once, as a check the registry packages export and every ordinary verb calls in planning, preview and live (#486); the booking primitive and the application builders stay permissive so that the chain's own refusal at the fold stays observable. Proof: cage-tests [builders] and [application] specs with a failing control on the base; Demo 1 refusals job.",
       "pause": 300
     },
     {
@@ -155,6 +155,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "469611aca37c7068d55afdafe9c747ade66da04289223a04003cec0548d2e845"
+    "sha256": "91b21a890bb64479b989a321caaeea3c6e833adf4460b5916ebed7d4590cbe6a"
   }
 }
