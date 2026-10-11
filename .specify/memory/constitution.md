@@ -531,7 +531,7 @@ Code MUST make what it does and what it holds visible in its types and owners.
    written beside the implementation.
 3. **Inputs are explicit.** Command arguments and an explicitly supplied
    environment value MAY be resolved at the composition boundary, preserving
-   the documented configuration precedence. Hidden environment reads, hidden
+   the documented configuration precedence. Hidden environment reads,
    fault-injection hooks and test-only controls MUST NOT enter ordinary release
    builds. This rule does not authorize removal of documented configuration.
 4. The product is single-threaded unless a written, compelling reason says otherwise. No thread outlives the command that started it. Effectful code a command waits on must be interruptible.
