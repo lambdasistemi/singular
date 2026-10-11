@@ -1263,14 +1263,21 @@ class Journey:
         print("two actors: owned processes: none", flush=True)
 
     def fixture(self):
-        """Start the network and let the creator make the registry alone."""
+        """Start the network and let the creator make the registry alone.
+
+        The registry is created with `open-datum create`: `singular`
+        links the neutral application value, whose pin comes from a state
+        datum that does not exist yet at boot, so `singular registry
+        create` refuses without an out-of-band `--application-policy`
+        hash; the application value on `open-datum` carries the pin (the
+        Demo 1 pattern).
+        """
         self.start_devnet()
         forbidden = (self.homes["alice"], self.homes["bob"])
         preview_status, preview = self.run_party(
             "creator",
             "preview",
             [
-                "registry",
                 "create",
                 "--process-time",
                 str(PROCESS_TIME_MS),
@@ -1294,7 +1301,6 @@ class Journey:
             "creator",
             "create",
             [
-                "registry",
                 "create",
                 "--process-time",
                 str(PROCESS_TIME_MS),
