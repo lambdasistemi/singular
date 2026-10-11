@@ -188,7 +188,7 @@ take() {
   start_indexer "$name" honest
   # shellcheck disable=SC2046
   "$controls" attach \
-    --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
+    --singular "$singular" --open-datum "$open_datum" --blueprint "$blueprint" --ledger "$ledger" \
     "${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
     --state-dir "$registry" --state-token "$state_token" --key "$key" \
     --collateral-allowance 10000000 --max-outlay 40000000 \
@@ -321,7 +321,7 @@ node_args=("${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" 
 attach_with() { # NAME KEY [extra options]
   local name="$1" key="$2"
   shift 2
-  "$controls" attach --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
+  "$controls" attach --singular "$singular" --open-datum "$open_datum" --blueprint "$blueprint" --ledger "$ledger" \
     "${node_args[@]}" --state-dir "$registry" --state-token "$state_token" --key "$key" --work "$work/$name" "$@" \
     >"$work/$name.md" 2>"$work/$name.err"
 }
