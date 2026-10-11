@@ -47,15 +47,41 @@ module Singular.CLI.FoldRules
     , foldKind
     , checkCarriedDatum
 
+      -- * Selection inputs (#518, pure adapters)
+    , requestEdgeKind
+    , requestOwnerText
+    , pendingDeadlineOf
+    , approvalCheckOf
+    , appVerdictOf
+    , neutralAppExecutable
+    , pendingRequestOf
+    , assignKeyInts
+    , assignRefPairing
+    , buildPendingRequests
+    , buildLiveFacts
+
       -- * Which funding
     , fundedView
     ) where
 
+import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
+import Data.ByteString.Short qualified as SBS
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
+import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Api.Tx.Out (TxOut, valueTxOutL)
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
 import Cardano.Ledger.TxIn (TxIn)
 import PlutusCore.Data qualified as PLC
 
@@ -67,16 +93,30 @@ import Singular.Registry.Application
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.FoldSelection
-    ( Exclusion (..)
+    ( AppVerdict (..)
+    , ApprovalCheck (..)
+    , EdgeKind (..)
+    , Exclusion (..)
+    , Leaf (..)
+    , LiveFacts
     , PendingRequest (..)
     , SelectedRequest (..)
     , Selection (..)
     , exclusionName
     , exclusionSource
     )
+import Singular.Registry.Ledger (AssetName (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (selectFunding)
+import Singular.Registry.TxBuilder.Internal.Edges
+    ( approvalDestination
+    , approvalName
+    )
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( extractOwnerBytes
+    , scriptHashBytes
+    )
 import Singular.Registry.Types
     ( Edge
     , OnChainRequest (..)
@@ -625,3 +665,206 @@ renderSpendsRefusal = \case
             <> intercalate ", " (map txt es)
   where
     txt = T.unpack . renderOutRef
+
+-- ---------------------------------------------------------
+-- Selection inputs (#518, pure adapters)
+-- ---------------------------------------------------------
+
+{- | The request's edge as the selection's edge kind: the two admitted
+edges map to themselves, any other edge maps to other carrying the
+model's own edge name.
+-}
+requestEdgeKind :: Edge -> EdgeKind
+requestEdgeKind e
+    | e == edgeInsertActive = EdgeInsertActive
+    | e == edgeUpdateTerminal = EdgeUpdateTerminal
+    | otherwise = EdgeOther (T.pack (edgeName e))
+
+-- | The owner's raw bytes as hex text.
+requestOwnerText :: ByteString -> T.Text
+requestOwnerText bs = T.pack (BC.unpack (B16.encode bs))
+
+{- | A request's processing deadline: its submission time plus the
+registry's processing time (the same addition the booking receipt states).
+-}
+pendingDeadlineOf :: Integer -> Integer -> Integer
+pendingDeadlineOf = requestDeadline
+
+{- | The model's approval check over the output's assets: assets under
+the pinned policy carrying the expected commitment are ok; assets under
+the pinned policy without it are a tuple mismatch; assets only under
+other policies are a policy mismatch; no non-ada asset at all is missing.
+Takes the output's assets as (policy bytes, asset-name bytes), the pinned
+policy, and the expected commitment (the builder's 'approvalName').
+-}
+approvalCheckOf
+    :: [(SBS.ShortByteString, ByteString)]
+    -> SBS.ShortByteString
+    -> ByteString
+    -> ApprovalCheck
+approvalCheckOf assets pinned expected
+    | any (\(p, n) -> p == pinned && n == expected) assets = ApprovalOk
+    | any (\(p, _) -> p == pinned) assets = ApprovalTupleMismatch
+    | not (null assets) = ApprovalPolicyMismatch
+    | otherwise = ApprovalMissing
+
+{- | The application step's verdict, through the application value only:
+an insertion whose carried datum the value cannot read is unreadable; a
+termination under a value with no holding rules is required carrying the
+value's executable (the generic wording when it names none); otherwise
+ready. Reuses 'checkCarriedDatum' for readability and 'appHolding' for
+the holding-rules presence; 'neutralTerminationRefusal' in 'Fold' is
+unreachable here ('Fold' imports this module), so the generic wording is
+duplicated as 'neutralAppExecutable' (see the reliance record).
+-}
+appVerdictOf :: Application -> OnChainRequest -> AppVerdict
+appVerdictOf app req
+    | requestEdge req == edgeInsertActive = case checkCarriedDatum app req of
+        Left _ -> AppDatumUnreadable
+        Right _ -> AppReady
+    | requestEdge req == edgeUpdateTerminal = case appHolding app of
+        Just _ -> AppReady
+        Nothing -> AppRequired (fromMaybe neutralAppExecutable (appExecutable app))
+    | otherwise = AppReady
+
+-- | The generic wording the neutral refusal uses when the value names no executable.
+neutralAppExecutable :: T.Text
+neutralAppExecutable = "the application's own executable"
+
+-- | A pending output's non-ada assets as (policy bytes, asset-name bytes).
+outputAssets :: TxOut ConwayEra -> [(SBS.ShortByteString, ByteString)]
+outputAssets out =
+    [ (SBS.toShort (scriptHashBytes policyHash), SBS.fromShort rawName)
+    | (PolicyID policyHash, names) <- Map.toList assets
+    , (AssetName rawName, _) <- Map.toList names
+    ]
+  where
+    MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
+
+{- | One pending request's selection input: the decode verdict, the edge
+kind, the owner (hex of the output's owner bytes, which match the datum
+for a decodable output), the deadline, the model's approval check
+(expected commitment via the builders' 'approvalName' over the request's
+edge, key, owner and destination), and the given application verdict.
+For an undecodable output the datum-derived fields are placeholders that
+the selection never reaches (it refuses undecodable first).
+-}
+pendingRequestOf
+    :: Int
+    -> Int
+    -> Either String OnChainRequest
+    -> TxOut ConwayEra
+    -> SBS.ShortByteString
+    -> AppVerdict
+    -> Integer
+    -> PendingRequest
+pendingRequestOf ref key decoded out pinned appVerdict process = case decoded of
+    Left _ ->
+        PendingRequest
+            ref
+            key
+            T.empty
+            (EdgeOther (T.pack "undecodable"))
+            0
+            False
+            ApprovalMissing
+            appVerdict
+    Right req ->
+        let ownerBytes = extractOwnerBytes out
+            expected =
+                approvalName
+                    (requestEdge req)
+                    (requestKey req)
+                    ownerBytes
+                    (approvalDestination (requestDestination req))
+            assets = outputAssetsPinned out pinned
+        in  PendingRequest
+                ref
+                key
+                (requestOwnerText ownerBytes)
+                (requestEdgeKind (requestEdge req))
+                (pendingDeadlineOf (requestSubmittedAt req) process)
+                True
+                (approvalCheckOf assets pinned expected)
+                appVerdict
+
+{- | A pending output's assets relevant to approval: all non-ada assets as
+(policy bytes, name bytes). Compared against the pinned policy by
+'approvalCheckOf'.
+-}
+outputAssetsPinned
+    :: TxOut ConwayEra
+    -> SBS.ShortByteString
+    -> [(SBS.ShortByteString, ByteString)]
+outputAssetsPinned out _ = outputAssets out
+
+{- | Integer keys sharing one number among requests on the same key bytes
+and never among distinct keys, in first-appearance order starting at 1.
+-}
+assignKeyInts :: [ByteString] -> [Int]
+assignKeyInts = go Map.empty 1
+  where
+    go _ _ [] = []
+    go seen next (k : ks) = case Map.lookup k seen of
+        Just i -> i : go seen next ks
+        Nothing -> next : go (Map.insert k next seen) (next + 1) ks
+
+-- | Distinct integer references in ledger input order, with the pairing.
+assignRefPairing :: [TxIn] -> [(TxIn, Int)]
+assignRefPairing txs = zip txs [1 ..]
+
+{- | The whole pending list's selection inputs with consistent integers:
+key bytes from decodable datums (empty for undecodable, which the
+selection refuses before the key rule), references distinct in ledger
+order, application verdicts assembled from the given application value
+('AppReady' placeholder for undecodable), and the pairing 'foldRequests'
+takes.
+-}
+buildPendingRequests
+    :: [(TxIn, TxOut ConwayEra, Either String OnChainRequest)]
+    -> SBS.ShortByteString
+    -> Application
+    -> Integer
+    -> ([PendingRequest], [(TxIn, Int)])
+buildPendingRequests inputs pinned app process =
+    let txs = [tx | (tx, _, _) <- inputs]
+        pairing = assignRefPairing txs
+        refOf tx = case lookup tx pairing of
+            Just r -> r
+            Nothing -> error "buildPendingRequests: missing pairing"
+        keyBytes =
+            [either (const mempty) requestKey decoded | (_, _, decoded) <- inputs]
+        keyInts = assignKeyInts keyBytes
+        verdictOf = either (const AppReady) (appVerdictOf app)
+        pendings =
+            [ pendingRequestOf
+                (refOf tx)
+                k
+                decoded
+                out
+                pinned
+                (verdictOf decoded)
+                process
+            | ((tx, out, decoded), k) <- zip inputs keyInts
+            ]
+    in  (pendings, pairing)
+
+{- | The selection's live facts keyed by the shared integers: the leaf
+from the registry state (unknown when the state never mentions the key)
+with whether a live output holds the key's active token.
+-}
+buildLiveFacts
+    :: Map.Map ByteString Leaf
+    -> Map.Map ByteString Bool
+    -> Map.Map ByteString Int
+    -> LiveFacts
+buildLiveFacts leaves present keys =
+    Map.fromList
+        [ ( i
+          ,
+              ( Map.findWithDefault LeafUnknown k leaves
+              , Map.findWithDefault False k present
+              )
+          )
+        | (k, i) <- Map.toList keys
+        ]
