@@ -184,6 +184,7 @@ library registry-cli
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Finish
+    Singular.CLI.FlagGroup
     Singular.CLI.Fold
     Singular.CLI.FoldRules
     Singular.CLI.Inspect
@@ -946,6 +947,7 @@ test-suite cage-tests
     Paths_singular_registry
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
+    Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec

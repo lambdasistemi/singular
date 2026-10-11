@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
+import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
@@ -167,6 +168,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec
+    describe
+        (tagged "Singular.CLI.FlagGroup" [Cli])
+        Singular.CLI.FlagGroupSpec.spec
     describe
         (tagged "Singular.Provider.Koios.Client" [Provider])
         Singular.Provider.Koios.ClientSpec.spec
