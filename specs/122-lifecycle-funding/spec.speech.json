@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Historical deployment journey. This record describes its original deployment-manifest callers and retained evidence. The ordinary CLI under #381 reconstructs its proof trie from public state-token history. It does not copy a deployment mirror, another user's journal or private preimages, and does not persist a saved root. The file-based deployment library below remains available to its historical journey callers.",
+      "pause": 400
+    },
+    {
       "text": "Retroactive record, written 2026-09-15 from PR #122 merged at 6ab1093367e00290a4b74638f03f5ef44b3137e6.",
       "pause": 400
     }
@@ -111,6 +115,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "6d386770f9cd48c10d098518e10b060ab8fe4ff20ef44d83d5450308a9ee86d6"
+    "sha256": "03c67a1f441b7646d0577e39f0aa2cbbfdca0dfe3c9f0f8061384475519adadc"
   }
 }

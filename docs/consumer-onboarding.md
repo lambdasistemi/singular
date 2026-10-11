@@ -180,8 +180,6 @@ naming is runnable. The retained `register-rows`, `recovery-rows` and
 and the [preprod record](preprod.md) preserves its historical executed values.
 This page does not present those naming commands as a current accepted runbook.
 
-A deployment manifest and its mirror travel together. Writing a proof needs
-the trie, not only the root an API reports; a root mismatch must stop rather
-than build against the wrong registry. Historical deployment and naming
+Demo 1 has two users, Alice and Bob, starting with empty homes. Neither creates the registry or receives its creation files. Joining by state token is delivered: each joins with the state token, its own wallet and a Koios URL, with no shared directory — every command carries `--state-token` and no directory option, and neither actor opens the other's files. Not delivered: joining by reading the registry page generated from the chain, which stays pending under issue #503 with its joining receipts attached. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming
 receipts remain evidence of their recorded revision and public chain, not a
 pass for this provider candidate.

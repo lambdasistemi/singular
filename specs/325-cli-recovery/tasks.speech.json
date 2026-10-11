@@ -5,6 +5,20 @@
       "pause": 500
     },
     {
+      "text": "Replay supersedes the former local proof state. This record preserves the",
+      "pause": 400
+    }
+  ],
+  "325-recovery-design-and-its-original-requirement-names-under-381-ordinary": [
+    {
+      "text": "325 recovery design and its original requirement names. Under #381, ordinary.",
+      "pause": 500
+    },
+    {
+      "text": "commands reconstruct proof state from public state-token history. They neither read nor write a proof mirror or state.json, and the journal supplies no replay edge or root. Recovery still appends submission phases and observations; public history selects the trie, including after a rollback. References below to the former local mirror commit are historical and are superseded by this rule.",
+      "pause": 400
+    },
+    {
       "text": "The ticket owner stamps tasks at acceptance.",
       "pause": 400
     },
@@ -43,6 +57,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8cc8a27ab7b8ca7a21511461af1a340ab739b3307a849da575cf775ddc63da43"
+    "sha256": "dadb72c2b93692283117db369c4f9c2c17e2faa1cd3b33b7f436f5eab07f9fd9"
   }
 }

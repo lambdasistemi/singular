@@ -1,5 +1,10 @@
 # #324 plan
 
+> Historical plan: #383 removed the production node read path and this in-memory
+> indexer. Current commands use the ledger-provider interfaces and reconstruct
+> registry proof state from public history under #381. The implementation choices
+> below record the retired adapter, not a current backend option.
+
 **Strategy.** Replace the point-agnostic `indexedReads` in `Singular.Registry.Node.Indexer` with an indexer adapter that yields #323 views at one chain point. Fact at the pin: the chain-sync follower mutates the index only through the caller-owned `IndexerHandle` record that Singular passes to `withChainSyncFollower` (`applyAtSlot`, `rollbackTo`, `pruneRollbacks`). Singular therefore owns the index's write path: while a view is held, the index does not advance, and a view is admitted only when the index's applied point equals the node view's point. The devnet produces ten blocks per second and the pinned node client cannot acquire at a named point, so agreement must be reached deterministically, never by chance. `followedProvider` keeps its signature; its devnet consumers (journeys, e2e) exercise the adapter live in adapter-contract-spec-adapter-its-failure-classes.
 
 **Invariants.**
@@ -11,7 +16,7 @@
 - no-deadlock-confirmation-waits-awaitindexed-submissions-never no deadlock: confirmation waits (`awaitIndexed`) and submissions are never inside a view (#323 indexer-actually-served-devnet-journey-proves-that carried); the held index releases on normal and exceptional view exit.
 - selection-at-startup-singular-cli-reaches-indexer selection at startup only: `singular-cli` reaches the indexer adapter through composition configuration; commands and builders do not name it.
 - model-preserved-conformance-cli-journey-e2e-verdicts model preserved: conformance, CLI, journey and e2e verdicts unchanged.
-- no-upstream-reimplementation-no-index-state-reconstruction no upstream reimplementation: no index state reconstruction, history replay or chain-sync logic copied into Singular.
+- no-upstream-reimplementation-no-index-state-reconstruction No index state reconstruction or chain-sync logic is copied into this indexer adapter. The ordinary CLI separately reconstructs registry proofs from public state-token history under #381; that replay does not reimplement the upstream indexer.
 
 **Live boundaries.** In-process chain-sync follower and in-memory indexer over the DevNet node socket; node LocalStateQuery acquire.
 
@@ -33,4 +38,4 @@
 - ordinary-command-create-insert-update-terminate-inspect every ordinary command (`create`, `insert`, `update`, `terminate`, `inspect`) runs end-to-end on a generated DevNet through the indexer backend, every write's journal carrying its view point (#323 R8).
 - selection-at-startup-singular-cli-reaches-indexer selection at startup only is checked by #323's confinement check; any new allowlist entry carries its one-line reason.
 
-**Constraints.** No `lean/`, validator, blueprint or conformance-row change. `Singular.Registry.Provider` and the #323 adapters are not edited; failure classes live in the indexer adapter's own module. No node-clients pin change. Journal, mirror and recovery flow are #325's.
+**Constraints.** No `lean/`, validator, blueprint or conformance-row change. `Singular.Registry.Provider` and the #323 adapters are not edited; failure classes live in the indexer adapter's own module. No node-clients pin change. The ordinary CLI keeps its submission journal under #325 and derives proof state from public replay under #381, without a persisted mirror or saved root.
