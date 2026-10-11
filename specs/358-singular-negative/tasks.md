@@ -30,8 +30,8 @@ As the person who will run the ticket's commands, I want each piece of work name
 
 ## Third slice, part two: mutants, the page and the aggregate check
 
-- [ ] mutants-first: the way a changed application validator reaches a generated node from the archive's own sources, one mutant, a hosted job per mutant, and one aggregate check name for the pair jobs.
-- [ ] mutants-application-rest: one mutant for each remaining application rule, each failing exactly its pairs and no other pair.
+- [x] mutants-first: the way a changed application validator reaches a generated node from the archive's own sources, one mutant, a hosted job per mutant, and one aggregate check name for the pair jobs.
+- [x] mutants-application-rest: one mutant for each remaining application rule, each failing exactly its pairs and no other pair.
 - [ ] mutant-registry-state: the mutant of the registry state validator failing its four pairs, or the four pairs' mutant check named pending with a ticket.
 - [ ] docs-page: "What `singular-negative` shows" with each command, the refusal expected, the ordinary command it mirrors today and after 528, and the limit.
 - [ ] residuals-closed: every limit, gap and pending row is mapped to a ticket or a named non-goal in the pull request.
