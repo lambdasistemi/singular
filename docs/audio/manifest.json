@@ -276626,17 +276626,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-08": {
-   "audio_sha256": "6ee4191339052af9808311543b44d13f499e564079dde05af6478a025c2d6434",
-   "characters": 576,
-   "cost": 0.00057024,
-   "duration": 37.975,
+   "audio_sha256": "5a1d292e9ef041b127ec18222d0d61a7c5c953e9687132abbc03b720d1aaaefa",
+   "characters": 1116,
+   "cost": 0.00110484,
+   "duration": 70.7,
    "index": 8,
-   "key": "96b86c7ef64b427a2cfd5dced5bdc735f7308954865bfedee210c046b2e347e7",
+   "key": "4a0c1ab5caffba1be13518b4ffa6f58e6ba0133742eeb8ff789ba419617433f0",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "The receipt keeps its earlier fields unchanged for the one settled request and adds two lists and a capacity object beside them: settled names the settled request with its request, key, edge, owner, settlement and deadline; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the shape with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.",
-   "text": "The receipt keeps its earlier fields unchanged for the one settled request and adds two lists and a capacity object beside them: settled names the settled request with its request, key, edge, owner, settlement and deadline; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the shape with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.",
+   "sent_text": "The receipt no longer carries the single-request fields it once printed at the top level: request, key, edge, liveOutput, envelope, released and deposit, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in settled: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. settled names each settled request in ledger order; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.",
+   "text": "The receipt no longer carries the single-request fields it once printed at the top level: request, key, edge, liveOutput, envelope, released and deposit, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in settled: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. settled names each settled request in ledger order; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.",
    "words": [
     {
      "end": 0.275,
@@ -276644,553 +276644,1123 @@
      "text": "The"
     },
     {
-     "end": 0.725,
+     "end": 0.738,
      "start": 0.275,
      "text": "receipt"
     },
     {
-     "end": 0.975,
-     "start": 0.725,
-     "text": "keeps"
+     "end": 0.925,
+     "start": 0.738,
+     "text": "no"
     },
     {
-     "end": 1.175,
-     "start": 0.975,
-     "text": "its"
+     "end": 1.3,
+     "start": 0.925,
+     "text": "longer"
     },
     {
-     "end": 1.638,
-     "start": 1.175,
-     "text": "earlier"
+     "end": 1.7,
+     "start": 1.3,
+     "text": "carries"
     },
     {
-     "end": 2.112,
-     "start": 1.638,
+     "end": 1.837,
+     "start": 1.7,
+     "text": "the"
+    },
+    {
+     "end": 2.65,
+     "start": 1.837,
+     "text": "single-request"
+    },
+    {
+     "end": 3.162,
+     "start": 2.65,
      "text": "fields"
     },
     {
-     "end": 2.95,
-     "start": 2.112,
-     "text": "unchanged"
-    },
-    {
-     "end": 3.075,
-     "start": 2.95,
-     "text": "for"
-    },
-    {
-     "end": 3.213,
-     "start": 3.075,
-     "text": "the"
+     "end": 3.275,
+     "start": 3.162,
+     "text": "it"
     },
     {
      "end": 3.562,
-     "start": 3.213,
-     "text": "one"
+     "start": 3.275,
+     "text": "once"
     },
     {
-     "end": 3.975,
+     "end": 3.95,
      "start": 3.562,
-     "text": "settled"
+     "text": "printed"
     },
     {
-     "end": 4.688,
-     "start": 3.975,
-     "text": "request"
+     "end": 4.037,
+     "start": 3.95,
+     "text": "at"
     },
     {
-     "end": 4.825,
-     "start": 4.688,
-     "text": "and"
-    },
-    {
-     "end": 5.137,
-     "start": 4.825,
-     "text": "adds"
-    },
-    {
-     "end": 5.387,
-     "start": 5.137,
-     "text": "two"
-    },
-    {
-     "end": 5.825,
-     "start": 5.387,
-     "text": "lists"
-    },
-    {
-     "end": 5.938,
-     "start": 5.825,
-     "text": "and"
-    },
-    {
-     "end": 6.0,
-     "start": 5.938,
-     "text": "a"
-    },
-    {
-     "end": 6.675,
-     "start": 6.0,
-     "text": "capacity"
-    },
-    {
-     "end": 7.1,
-     "start": 6.675,
-     "text": "object"
-    },
-    {
-     "end": 7.488,
-     "start": 7.1,
-     "text": "beside"
-    },
-    {
-     "end": 8.4,
-     "start": 7.488,
-     "text": "them"
-    },
-    {
-     "end": 8.6,
-     "start": 8.4,
-     "text": ":"
-    },
-    {
-     "end": 9.15,
-     "start": 8.825,
-     "text": "settled"
-    },
-    {
-     "end": 9.475,
-     "start": 9.15,
-     "text": "names"
-    },
-    {
-     "end": 9.613,
-     "start": 9.475,
+     "end": 4.125,
+     "start": 4.037,
      "text": "the"
     },
     {
-     "end": 10.0,
-     "start": 9.613,
-     "text": "settled"
+     "end": 4.425,
+     "start": 4.125,
+     "text": "top"
     },
     {
-     "end": 10.475,
-     "start": 10.0,
+     "end": 5.325,
+     "start": 4.425,
+     "text": "level"
+    },
+    {
+     "end": 5.525,
+     "start": 5.325,
+     "text": ":"
+    },
+    {
+     "end": 6.1,
+     "start": 5.7,
      "text": "request"
     },
     {
-     "end": 10.613,
-     "start": 10.475,
-     "text": "with"
-    },
-    {
-     "end": 10.775,
-     "start": 10.613,
-     "text": "its"
-    },
-    {
-     "end": 11.4,
-     "start": 10.775,
-     "text": "request"
-    },
-    {
-     "end": 11.488,
-     "start": 11.4,
+     "end": 6.15,
+     "start": 6.1,
      "text": ","
     },
     {
-     "end": 11.875,
-     "start": 11.488,
+     "end": 6.4,
+     "start": 6.15,
      "text": "key"
     },
     {
-     "end": 11.988,
-     "start": 11.875,
+     "end": 6.475,
+     "start": 6.4,
      "text": ","
     },
     {
-     "end": 12.375,
-     "start": 11.988,
+     "end": 6.75,
+     "start": 6.475,
      "text": "edge"
     },
     {
-     "end": 12.45,
-     "start": 12.375,
+     "end": 6.8,
+     "start": 6.75,
      "text": ","
     },
     {
-     "end": 12.825,
-     "start": 12.45,
-     "text": "owner"
+     "end": 7.35,
+     "start": 6.8,
+     "text": "liveOutput"
     },
     {
-     "end": 12.913,
-     "start": 12.825,
+     "end": 7.4,
+     "start": 7.35,
      "text": ","
     },
     {
-     "end": 13.462,
-     "start": 12.913,
-     "text": "settlement"
+     "end": 7.875,
+     "start": 7.4,
+     "text": "envelope"
     },
     {
-     "end": 13.6,
-     "start": 13.462,
+     "end": 7.925,
+     "start": 7.875,
+     "text": ","
+    },
+    {
+     "end": 8.363,
+     "start": 7.925,
+     "text": "released"
+    },
+    {
+     "end": 8.462,
+     "start": 8.363,
      "text": "and"
     },
     {
-     "end": 14.725,
-     "start": 13.6,
-     "text": "deadline"
+     "end": 9.55,
+     "start": 8.462,
+     "text": "deposit"
     },
     {
-     "end": 14.925,
-     "start": 14.725,
-     "text": ";"
+     "end": 9.75,
+     "start": 9.55,
+     "text": ","
     },
     {
-     "end": 15.65,
-     "start": 15.125,
-     "text": "excluded"
+     "end": 10.038,
+     "start": 9.95,
+     "text": "and"
     },
     {
-     "end": 16.038,
-     "start": 15.65,
-     "text": "names"
+     "end": 10.125,
+     "start": 10.038,
+     "text": "the"
     },
     {
-     "end": 16.35,
-     "start": 16.038,
-     "text": "each"
+     "end": 10.5,
+     "start": 10.125,
+     "text": "datum"
     },
     {
-     "end": 16.775,
-     "start": 16.35,
-     "text": "left-out"
+     "end": 10.9,
+     "start": 10.5,
+     "text": "hash"
     },
     {
-     "end": 17.3,
-     "start": 16.775,
+     "end": 11.025,
+     "start": 10.9,
+     "text": "and"
+    },
+    {
+     "end": 11.4,
+     "start": 11.025,
+     "text": "datum"
+    },
+    {
+     "end": 11.712,
+     "start": 11.4,
+     "text": "bytes"
+    },
+    {
+     "end": 11.788,
+     "start": 11.712,
+     "text": "of"
+    },
+    {
+     "end": 11.85,
+     "start": 11.788,
+     "text": "a"
+    },
+    {
+     "end": 12.2,
+     "start": 11.85,
+     "text": "datum"
+    },
+    {
+     "end": 12.7,
+     "start": 12.2,
+     "text": "delivery"
+    },
+    {
+     "end": 12.775,
+     "start": 12.7,
+     "text": ","
+    },
+    {
+     "end": 12.925,
+     "start": 12.775,
+     "text": "are"
+    },
+    {
+     "end": 13.85,
+     "start": 12.925,
+     "text": "gone"
+    },
+    {
+     "end": 14.05,
+     "start": 13.85,
+     "text": "."
+    },
+    {
+     "end": 14.538,
+     "start": 14.25,
+     "text": "Each"
+    },
+    {
+     "end": 14.837,
+     "start": 14.538,
+     "text": "fact"
+    },
+    {
+     "end": 15.062,
+     "start": 14.837,
+     "text": "about"
+    },
+    {
+     "end": 15.163,
+     "start": 15.062,
+     "text": "a"
+    },
+    {
+     "end": 15.55,
+     "start": 15.163,
+     "text": "settled"
+    },
+    {
+     "end": 16.188,
+     "start": 15.55,
      "text": "request"
     },
     {
-     "end": 17.438,
-     "start": 17.3,
-     "text": "with"
+     "end": 16.362,
+     "start": 16.188,
+     "text": "is"
     },
     {
-     "end": 17.625,
-     "start": 17.438,
+     "end": 16.65,
+     "start": 16.362,
+     "text": "read"
+    },
+    {
+     "end": 16.788,
+     "start": 16.65,
+     "text": "from"
+    },
+    {
+     "end": 16.9,
+     "start": 16.788,
      "text": "its"
     },
     {
-     "end": 18.275,
-     "start": 17.625,
+     "end": 17.25,
+     "start": 16.9,
+     "text": "entry"
+    },
+    {
+     "end": 17.413,
+     "start": 17.25,
+     "text": "in"
+    },
+    {
+     "end": 18.35,
+     "start": 17.413,
+     "text": "settled"
+    },
+    {
+     "end": 18.55,
+     "start": 18.35,
+     "text": ":"
+    },
+    {
+     "end": 18.862,
+     "start": 18.75,
+     "text": "its"
+    },
+    {
+     "end": 19.225,
+     "start": 18.862,
      "text": "request"
     },
     {
-     "end": 18.388,
-     "start": 18.275,
+     "end": 19.275,
+     "start": 19.225,
      "text": ","
     },
     {
-     "end": 18.925,
-     "start": 18.388,
-     "text": "reason"
+     "end": 19.5,
+     "start": 19.275,
+     "text": "key"
     },
     {
-     "end": 19.013,
-     "start": 18.925,
+     "end": 19.55,
+     "start": 19.5,
      "text": ","
     },
     {
-     "end": 19.4,
-     "start": 19.013,
-     "text": "source"
+     "end": 19.775,
+     "start": 19.55,
+     "text": "edge"
     },
     {
-     "end": 19.525,
-     "start": 19.4,
-     "text": "and"
+     "end": 19.825,
+     "start": 19.775,
+     "text": ","
     },
     {
      "end": 20.125,
-     "start": 19.525,
-     "text": "detail"
+     "start": 19.825,
+     "text": "owner"
     },
     {
-     "end": 20.225,
+     "end": 20.175,
      "start": 20.125,
      "text": ","
     },
     {
-     "end": 20.375,
-     "start": 20.225,
-     "text": "in"
+     "end": 20.625,
+     "start": 20.175,
+     "text": "settlement"
     },
     {
-     "end": 20.7,
-     "start": 20.375,
-     "text": "ledger"
+     "end": 20.75,
+     "start": 20.625,
+     "text": "and"
     },
     {
-     "end": 21.675,
-     "start": 20.7,
-     "text": "order"
+     "end": 21.75,
+     "start": 20.75,
+     "text": "deadline"
     },
     {
-     "end": 21.9,
-     "start": 21.675,
-     "text": ";"
+     "end": 21.95,
+     "start": 21.75,
+     "text": ","
     },
     {
-     "end": 22.812,
+     "end": 22.237,
      "start": 22.125,
-     "text": "capacity"
+     "text": "where"
     },
     {
-     "end": 23.225,
-     "start": 22.812,
-     "text": "states"
-    },
-    {
-     "end": 23.35,
-     "start": 23.225,
+     "end": 22.337,
+     "start": 22.237,
      "text": "the"
     },
     {
-     "end": 23.8,
-     "start": 23.35,
-     "text": "bound"
+     "end": 22.775,
+     "start": 22.337,
+     "text": "settlement"
     },
     {
-     "end": 23.938,
-     "start": 23.8,
-     "text": "with"
+     "end": 23.175,
+     "start": 22.775,
+     "text": "carries"
     },
     {
-     "end": 24.125,
-     "start": 23.938,
-     "text": "its"
+     "end": 23.275,
+     "start": 23.175,
+     "text": "the"
     },
     {
-     "end": 24.975,
-     "start": 24.125,
-     "text": "provenance"
+     "end": 23.575,
+     "start": 23.275,
+     "text": "live"
     },
     {
-     "end": 25.1,
-     "start": 24.975,
-     "text": "."
+     "end": 24.087,
+     "start": 23.575,
+     "text": "output"
+    },
+    {
+     "end": 24.212,
+     "start": 24.087,
+     "text": "and"
+    },
+    {
+     "end": 24.3,
+     "start": 24.212,
+     "text": "the"
     },
     {
      "end": 25.25,
-     "start": 25.1,
-     "text": "The"
+     "start": 24.3,
+     "text": "envelope"
     },
     {
-     "end": 25.8,
+     "end": 25.475,
      "start": 25.25,
-     "text": "example"
+     "text": ","
     },
     {
-     "end": 26.15,
-     "start": 25.8,
-     "text": "shows"
+     "end": 25.763,
+     "start": 25.675,
+     "text": "or"
     },
     {
-     "end": 26.3,
-     "start": 26.15,
+     "end": 25.85,
+     "start": 25.763,
      "text": "the"
     },
     {
-     "end": 26.625,
-     "start": 26.3,
-     "text": "shape"
+     "end": 26.225,
+     "start": 25.85,
+     "text": "datum"
     },
     {
-     "end": 26.812,
-     "start": 26.625,
-     "text": "with"
+     "end": 26.538,
+     "start": 26.225,
+     "text": "hash"
     },
     {
-     "end": 27.087,
-     "start": 26.812,
-     "text": "two"
+     "end": 26.65,
+     "start": 26.538,
+     "text": "and"
     },
     {
-     "end": 27.5,
-     "start": 27.087,
-     "text": "pending"
+     "end": 27.1,
+     "start": 26.65,
+     "text": "bytes"
     },
     {
-     "end": 28.15,
-     "start": 27.5,
-     "text": "requests"
+     "end": 27.175,
+     "start": 27.1,
+     "text": ","
     },
     {
-     "end": 28.275,
-     "start": 28.15,
+     "end": 27.3,
+     "start": 27.175,
+     "text": "or"
+    },
+    {
+     "end": 27.4,
+     "start": 27.3,
+     "text": "the"
+    },
+    {
+     "end": 27.8,
+     "start": 27.4,
+     "text": "released"
+    },
+    {
+     "end": 28.25,
+     "start": 27.8,
+     "text": "output"
+    },
+    {
+     "end": 28.362,
+     "start": 28.25,
+     "text": "and"
+    },
+    {
+     "end": 28.438,
+     "start": 28.362,
+     "text": "the"
+    },
+    {
+     "end": 29.525,
+     "start": 28.438,
+     "text": "deposit"
+    },
+    {
+     "end": 29.725,
+     "start": 29.525,
+     "text": "."
+    },
+    {
+     "end": 30.05,
+     "start": 29.9,
+     "text": "What"
+    },
+    {
+     "end": 30.388,
+     "start": 30.05,
+     "text": "stays"
+    },
+    {
+     "end": 30.462,
+     "start": 30.388,
+     "text": "at"
+    },
+    {
+     "end": 30.55,
+     "start": 30.462,
+     "text": "the"
+    },
+    {
+     "end": 30.825,
+     "start": 30.55,
+     "text": "top"
+    },
+    {
+     "end": 31.212,
+     "start": 30.825,
+     "text": "level"
+    },
+    {
+     "end": 31.337,
+     "start": 31.212,
+     "text": "are"
+    },
+    {
+     "end": 31.462,
+     "start": 31.337,
+     "text": "the"
+    },
+    {
+     "end": 31.812,
+     "start": 31.462,
+     "text": "facts"
+    },
+    {
+     "end": 31.888,
+     "start": 31.812,
      "text": "of"
     },
     {
-     "end": 28.475,
-     "start": 28.275,
-     "text": "which"
+     "end": 31.975,
+     "start": 31.888,
+     "text": "the"
     },
     {
-     "end": 28.675,
-     "start": 28.475,
-     "text": "one"
+     "end": 33.2,
+     "start": 31.975,
+     "text": "transaction"
     },
     {
-     "end": 28.825,
-     "start": 28.675,
-     "text": "is"
-    },
-    {
-     "end": 29.075,
-     "start": 28.825,
-     "text": "left"
-    },
-    {
-     "end": 29.925,
-     "start": 29.075,
-     "text": "out"
-    },
-    {
-     "end": 30.15,
-     "start": 29.925,
+     "end": 33.4,
+     "start": 33.2,
      "text": ":"
     },
     {
-     "end": 30.425,
-     "start": 30.325,
+     "end": 33.688,
+     "start": 33.575,
      "text": "the"
     },
     {
-     "end": 30.7,
-     "start": 30.425,
-     "text": "first"
+     "end": 34.15,
+     "start": 33.688,
+     "text": "folder"
     },
     {
-     "end": 31.15,
-     "start": 30.7,
-     "text": "settles"
-    },
-    {
-     "end": 31.188,
-     "start": 31.15,
+     "end": 34.2,
+     "start": 34.15,
      "text": ","
     },
     {
-     "end": 31.312,
-     "start": 31.188,
+     "end": 34.338,
+     "start": 34.2,
      "text": "the"
     },
     {
-     "end": 31.675,
-     "start": 31.312,
-     "text": "second"
+     "end": 34.675,
+     "start": 34.338,
+     "text": "fold"
     },
     {
-     "end": 31.825,
-     "start": 31.675,
-     "text": "is"
+     "end": 35.425,
+     "start": 34.675,
+     "text": "transaction"
     },
     {
-     "end": 32.2,
-     "start": 31.825,
-     "text": "named"
-    },
-    {
-     "end": 32.35,
-     "start": 32.2,
-     "text": "with"
-    },
-    {
-     "end": 32.562,
-     "start": 32.35,
-     "text": "its"
-    },
-    {
-     "end": 33.0,
-     "start": 32.562,
-     "text": "reason"
-    },
-    {
-     "end": 33.138,
-     "start": 33.0,
-     "text": "and"
-    },
-    {
-     "end": 34.05,
-     "start": 33.138,
-     "text": "source"
-    },
-    {
-     "end": 34.25,
-     "start": 34.05,
+     "end": 35.475,
+     "start": 35.425,
      "text": ","
     },
     {
-     "end": 34.537,
-     "start": 34.45,
-     "text": "and"
-    },
-    {
-     "end": 34.625,
-     "start": 34.537,
+     "end": 35.612,
+     "start": 35.475,
      "text": "the"
     },
     {
-     "end": 35.3,
-     "start": 34.625,
-     "text": "capacity"
+     "end": 35.95,
+     "start": 35.612,
+     "text": "root"
     },
     {
-     "end": 35.65,
-     "start": 35.3,
-     "text": "states"
+     "end": 36.025,
+     "start": 35.95,
+     "text": ","
     },
     {
-     "end": 35.75,
-     "start": 35.65,
+     "end": 36.162,
+     "start": 36.025,
      "text": "the"
     },
     {
-     "end": 36.037,
-     "start": 35.75,
+     "end": 36.525,
+     "start": 36.162,
+     "text": "fold"
+    },
+    {
+     "end": 37.05,
+     "start": 36.525,
+     "text": "deadline"
+    },
+    {
+     "end": 37.088,
+     "start": 37.05,
+     "text": ","
+    },
+    {
+     "end": 37.175,
+     "start": 37.088,
+     "text": "the"
+    },
+    {
+     "end": 37.6,
+     "start": 37.175,
+     "text": "validity"
+    },
+    {
+     "end": 37.938,
+     "start": 37.6,
      "text": "bound"
     },
     {
-     "end": 36.125,
-     "start": 36.037,
-     "text": "of"
+     "end": 38.875,
+     "start": 37.938,
+     "text": "slot"
     },
     {
-     "end": 36.4,
-     "start": 36.125,
-     "text": "1"
+     "end": 39.1,
+     "start": 38.875,
+     "text": ","
     },
     {
-     "end": 36.537,
-     "start": 36.4,
+     "end": 39.35,
+     "start": 39.275,
+     "text": "the"
+    },
+    {
+     "end": 39.875,
+     "start": 39.35,
+     "text": "post-build"
+    },
+    {
+     "end": 40.325,
+     "start": 39.875,
+     "text": "verdict"
+    },
+    {
+     "end": 40.362,
+     "start": 40.325,
+     "text": ","
+    },
+    {
+     "end": 40.45,
+     "start": 40.362,
+     "text": "the"
+    },
+    {
+     "end": 40.787,
+     "start": 40.45,
+     "text": "host"
+    },
+    {
+     "end": 41.175,
+     "start": 40.787,
+     "text": "clock"
+    },
+    {
+     "end": 41.287,
+     "start": 41.175,
+     "text": "and"
+    },
+    {
+     "end": 41.375,
+     "start": 41.287,
+     "text": "the"
+    },
+    {
+     "end": 41.7,
+     "start": 41.375,
+     "text": "time"
+    },
+    {
+     "end": 42.225,
+     "start": 41.7,
+     "text": "remaining"
+    },
+    {
+     "end": 42.3,
+     "start": 42.225,
+     "text": ","
+    },
+    {
+     "end": 42.463,
+     "start": 42.3,
+     "text": "then"
+    },
+    {
+     "end": 42.588,
+     "start": 42.463,
+     "text": "the"
+    },
+    {
+     "end": 42.85,
+     "start": 42.588,
+     "text": "three"
+    },
+    {
+     "end": 43.8,
+     "start": 42.85,
+     "text": "lists"
+    },
+    {
+     "end": 44.0,
+     "start": 43.8,
+     "text": "."
+    },
+    {
+     "end": 44.525,
+     "start": 44.2,
+     "text": "settled"
+    },
+    {
+     "end": 44.912,
+     "start": 44.525,
+     "text": "names"
+    },
+    {
+     "end": 45.162,
+     "start": 44.912,
+     "text": "each"
+    },
+    {
+     "end": 45.513,
+     "start": 45.162,
+     "text": "settled"
+    },
+    {
+     "end": 46.0,
+     "start": 45.513,
+     "text": "request"
+    },
+    {
+     "end": 46.125,
+     "start": 46.0,
+     "text": "in"
+    },
+    {
+     "end": 46.45,
+     "start": 46.125,
+     "text": "ledger"
+    },
+    {
+     "end": 47.275,
+     "start": 46.45,
+     "text": "order"
+    },
+    {
+     "end": 47.5,
+     "start": 47.275,
+     "text": ";"
+    },
+    {
+     "end": 48.225,
+     "start": 47.7,
+     "text": "excluded"
+    },
+    {
+     "end": 48.612,
+     "start": 48.225,
+     "text": "names"
+    },
+    {
+     "end": 48.925,
+     "start": 48.612,
+     "text": "each"
+    },
+    {
+     "end": 49.35,
+     "start": 48.925,
+     "text": "left-out"
+    },
+    {
+     "end": 49.875,
+     "start": 49.35,
+     "text": "request"
+    },
+    {
+     "end": 50.013,
+     "start": 49.875,
      "text": "with"
     },
     {
-     "end": 36.675,
-     "start": 36.537,
+     "end": 50.2,
+     "start": 50.013,
      "text": "its"
     },
     {
-     "end": 37.775,
-     "start": 36.675,
+     "end": 50.85,
+     "start": 50.2,
+     "text": "request"
+    },
+    {
+     "end": 50.963,
+     "start": 50.85,
+     "text": ","
+    },
+    {
+     "end": 51.5,
+     "start": 50.963,
+     "text": "reason"
+    },
+    {
+     "end": 51.588,
+     "start": 51.5,
+     "text": ","
+    },
+    {
+     "end": 51.975,
+     "start": 51.588,
+     "text": "source"
+    },
+    {
+     "end": 52.1,
+     "start": 51.975,
+     "text": "and"
+    },
+    {
+     "end": 52.7,
+     "start": 52.1,
+     "text": "detail"
+    },
+    {
+     "end": 52.8,
+     "start": 52.7,
+     "text": ","
+    },
+    {
+     "end": 52.95,
+     "start": 52.8,
+     "text": "in"
+    },
+    {
+     "end": 53.275,
+     "start": 52.95,
+     "text": "ledger"
+    },
+    {
+     "end": 54.25,
+     "start": 53.275,
+     "text": "order"
+    },
+    {
+     "end": 54.475,
+     "start": 54.25,
+     "text": ";"
+    },
+    {
+     "end": 55.388,
+     "start": 54.7,
+     "text": "capacity"
+    },
+    {
+     "end": 55.8,
+     "start": 55.388,
+     "text": "states"
+    },
+    {
+     "end": 55.925,
+     "start": 55.8,
+     "text": "the"
+    },
+    {
+     "end": 56.375,
+     "start": 55.925,
+     "text": "bound"
+    },
+    {
+     "end": 56.513,
+     "start": 56.375,
+     "text": "with"
+    },
+    {
+     "end": 56.7,
+     "start": 56.513,
+     "text": "its"
+    },
+    {
+     "end": 57.55,
+     "start": 56.7,
      "text": "provenance"
     },
     {
-     "end": 37.975,
-     "start": 37.775,
+     "end": 57.675,
+     "start": 57.55,
+     "text": "."
+    },
+    {
+     "end": 57.825,
+     "start": 57.675,
+     "text": "The"
+    },
+    {
+     "end": 58.362,
+     "start": 57.825,
+     "text": "example"
+    },
+    {
+     "end": 58.7,
+     "start": 58.362,
+     "text": "shows"
+    },
+    {
+     "end": 58.825,
+     "start": 58.7,
+     "text": "the"
+    },
+    {
+     "end": 59.25,
+     "start": 58.825,
+     "text": "lists"
+    },
+    {
+     "end": 59.438,
+     "start": 59.25,
+     "text": "with"
+    },
+    {
+     "end": 59.713,
+     "start": 59.438,
+     "text": "two"
+    },
+    {
+     "end": 60.125,
+     "start": 59.713,
+     "text": "pending"
+    },
+    {
+     "end": 60.775,
+     "start": 60.125,
+     "text": "requests"
+    },
+    {
+     "end": 60.9,
+     "start": 60.775,
+     "text": "of"
+    },
+    {
+     "end": 61.15,
+     "start": 60.9,
+     "text": "which"
+    },
+    {
+     "end": 61.375,
+     "start": 61.15,
+     "text": "one"
+    },
+    {
+     "end": 61.525,
+     "start": 61.375,
+     "text": "is"
+    },
+    {
+     "end": 61.8,
+     "start": 61.525,
+     "text": "left"
+    },
+    {
+     "end": 62.65,
+     "start": 61.8,
+     "text": "out"
+    },
+    {
+     "end": 62.875,
+     "start": 62.65,
+     "text": ":"
+    },
+    {
+     "end": 63.15,
+     "start": 63.05,
+     "text": "the"
+    },
+    {
+     "end": 63.425,
+     "start": 63.15,
+     "text": "first"
+    },
+    {
+     "end": 63.875,
+     "start": 63.425,
+     "text": "settles"
+    },
+    {
+     "end": 63.912,
+     "start": 63.875,
+     "text": ","
+    },
+    {
+     "end": 64.037,
+     "start": 63.912,
+     "text": "the"
+    },
+    {
+     "end": 64.4,
+     "start": 64.037,
+     "text": "second"
+    },
+    {
+     "end": 64.55,
+     "start": 64.4,
+     "text": "is"
+    },
+    {
+     "end": 64.925,
+     "start": 64.55,
+     "text": "named"
+    },
+    {
+     "end": 65.075,
+     "start": 64.925,
+     "text": "with"
+    },
+    {
+     "end": 65.287,
+     "start": 65.075,
+     "text": "its"
+    },
+    {
+     "end": 65.725,
+     "start": 65.287,
+     "text": "reason"
+    },
+    {
+     "end": 65.863,
+     "start": 65.725,
+     "text": "and"
+    },
+    {
+     "end": 66.775,
+     "start": 65.863,
+     "text": "source"
+    },
+    {
+     "end": 66.975,
+     "start": 66.775,
+     "text": ","
+    },
+    {
+     "end": 67.262,
+     "start": 67.175,
+     "text": "and"
+    },
+    {
+     "end": 67.35,
+     "start": 67.262,
+     "text": "the"
+    },
+    {
+     "end": 68.025,
+     "start": 67.35,
+     "text": "capacity"
+    },
+    {
+     "end": 68.375,
+     "start": 68.025,
+     "text": "states"
+    },
+    {
+     "end": 68.475,
+     "start": 68.375,
+     "text": "the"
+    },
+    {
+     "end": 68.762,
+     "start": 68.475,
+     "text": "bound"
+    },
+    {
+     "end": 68.85,
+     "start": 68.762,
+     "text": "of"
+    },
+    {
+     "end": 69.125,
+     "start": 68.85,
+     "text": "1"
+    },
+    {
+     "end": 69.262,
+     "start": 69.125,
+     "text": "with"
+    },
+    {
+     "end": 69.4,
+     "start": 69.262,
+     "text": "its"
+    },
+    {
+     "end": 70.5,
+     "start": 69.4,
+     "text": "provenance"
+    },
+    {
+     "end": 70.7,
+     "start": 70.5,
      "text": "."
     }
    ]
@@ -278121,17 +278691,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-10": {
-   "audio_sha256": "75ee6f6f7680da5c41129d6d2b8ab44627b7f99bc531d09ab9690724feb8c6a8",
-   "characters": 358,
-   "cost": 0.00035442000000000004,
-   "duration": 22.725,
+   "audio_sha256": "99e37f84c38eb814b95dc42c540060461161c385c1aa0edde42c7c047131369d",
+   "characters": 632,
+   "cost": 0.00062568,
+   "duration": 39.35,
    "index": 10,
-   "key": "b5836d22afac502ca64b7f80e5d68908c5732e73080a3cff6a523ba70c9cf6bc",
+   "key": "4da29668fd1f1ee19ecabcb0e24b7c379b18a2f522f995c563d9d24738679fd7",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same receipt by the same routine registry fold runs. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
-   "text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same receipt by the same routine registry fold runs. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
+   "sent_text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same lists as registry fold. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the first entry of settled. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
+   "text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same lists as registry fold. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the first entry of settled. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
    "words": [
     {
      "end": 0.712,
@@ -278209,253 +278779,518 @@
      "text": "command-line"
     },
     {
-     "end": 6.425,
+     "end": 6.4,
      "start": 5.938,
      "text": "split"
     },
     {
-     "end": 6.525,
-     "start": 6.425,
+     "end": 6.5,
+     "start": 6.4,
      "text": ","
     },
     {
-     "end": 6.775,
-     "start": 6.525,
+     "end": 6.75,
+     "start": 6.5,
      "text": "take"
     },
     {
-     "end": 6.912,
-     "start": 6.775,
+     "end": 6.887,
+     "start": 6.75,
      "text": "the"
     },
     {
-     "end": 7.238,
-     "start": 6.912,
+     "end": 7.213,
+     "start": 6.887,
      "text": "same"
     },
     {
-     "end": 7.85,
-     "start": 7.238,
+     "end": 7.825,
+     "start": 7.213,
      "text": "selection"
     },
     {
-     "end": 7.988,
-     "start": 7.85,
+     "end": 7.95,
+     "start": 7.825,
      "text": "and"
     },
     {
-     "end": 8.325,
-     "start": 7.988,
+     "end": 8.25,
+     "start": 7.95,
      "text": "print"
     },
     {
-     "end": 8.462,
-     "start": 8.325,
+     "end": 8.387,
+     "start": 8.25,
      "text": "the"
     },
     {
-     "end": 8.8,
-     "start": 8.462,
+     "end": 8.725,
+     "start": 8.387,
      "text": "same"
     },
     {
-     "end": 9.275,
-     "start": 8.8,
-     "text": "receipt"
+     "end": 9.188,
+     "start": 8.725,
+     "text": "lists"
     },
     {
-     "end": 9.425,
-     "start": 9.275,
-     "text": "by"
+     "end": 9.387,
+     "start": 9.188,
+     "text": "as"
     },
     {
-     "end": 9.575,
-     "start": 9.425,
-     "text": "the"
-    },
-    {
-     "end": 9.925,
-     "start": 9.575,
-     "text": "same"
-    },
-    {
-     "end": 10.425,
-     "start": 9.925,
-     "text": "routine"
-    },
-    {
-     "end": 11.025,
-     "start": 10.425,
+     "end": 9.938,
+     "start": 9.387,
      "text": "registry"
     },
     {
-     "end": 11.425,
-     "start": 11.025,
+     "end": 11.125,
+     "start": 9.938,
      "text": "fold"
     },
     {
-     "end": 12.625,
-     "start": 11.425,
-     "text": "runs"
-    },
-    {
-     "end": 12.85,
-     "start": 12.625,
+     "end": 11.375,
+     "start": 11.125,
      "text": "."
     },
     {
-     "end": 13.175,
-     "start": 13.025,
-     "text": "If"
+     "end": 11.663,
+     "start": 11.55,
+     "text": "The"
     },
     {
-     "end": 13.275,
-     "start": 13.175,
-     "text": "the"
+     "end": 12.425,
+     "start": 11.663,
+     "text": "fold-derived"
     },
     {
-     "end": 13.712,
-     "start": 13.275,
-     "text": "request"
+     "end": 12.85,
+     "start": 12.425,
+     "text": "facts"
     },
     {
-     "end": 13.8,
-     "start": 13.712,
-     "text": "the"
+     "end": 12.95,
+     "start": 12.85,
+     "text": "are"
     },
     {
-     "end": 14.25,
-     "start": 13.8,
-     "text": "command"
+     "end": 13.125,
+     "start": 12.95,
+     "text": "no"
     },
     {
-     "end": 14.538,
-     "start": 14.25,
-     "text": "just"
+     "end": 13.4,
+     "start": 13.125,
+     "text": "longer"
     },
     {
-     "end": 14.85,
-     "start": 14.538,
-     "text": "booked"
+     "end": 13.75,
+     "start": 13.4,
+     "text": "printed"
     },
     {
-     "end": 15.0,
-     "start": 14.85,
-     "text": "is"
+     "end": 14.163,
+     "start": 13.75,
+     "text": "beside"
     },
     {
-     "end": 15.3,
-     "start": 15.0,
-     "text": "left"
+     "end": 14.875,
+     "start": 14.163,
+     "text": "them"
     },
     {
-     "end": 15.6,
-     "start": 15.3,
-     "text": "out"
-    },
-    {
-     "end": 15.675,
-     "start": 15.6,
-     "text": ","
-    },
-    {
-     "end": 15.775,
-     "start": 15.675,
-     "text": "the"
-    },
-    {
-     "end": 16.175,
-     "start": 15.775,
-     "text": "command"
-    },
-    {
-     "end": 16.55,
-     "start": 16.175,
-     "text": "stops"
-    },
-    {
-     "end": 17.575,
-     "start": 16.55,
-     "text": "partial"
-    },
-    {
-     "end": 17.775,
-     "start": 17.575,
+     "end": 15.05,
+     "start": 14.875,
      "text": ":"
     },
     {
-     "end": 18.025,
-     "start": 17.95,
+     "end": 15.35,
+     "start": 15.25,
      "text": "the"
     },
     {
-     "end": 18.375,
-     "start": 18.025,
-     "text": "booking"
+     "end": 15.675,
+     "start": 15.35,
+     "text": "live"
     },
     {
-     "end": 18.525,
-     "start": 18.375,
-     "text": "is"
+     "end": 16.15,
+     "start": 15.675,
+     "text": "output"
     },
     {
-     "end": 19.225,
-     "start": 18.525,
-     "text": "confirmed"
-    },
-    {
-     "end": 19.337,
-     "start": 19.225,
-     "text": "and"
-    },
-    {
-     "end": 19.475,
-     "start": 19.337,
-     "text": "its"
-    },
-    {
-     "end": 19.975,
-     "start": 19.475,
-     "text": "request"
-    },
-    {
-     "end": 20.362,
-     "start": 19.975,
-     "text": "stays"
-    },
-    {
-     "end": 20.95,
-     "start": 20.362,
-     "text": "pending"
-    },
-    {
-     "end": 21.05,
-     "start": 20.95,
+     "end": 16.188,
+     "start": 16.15,
      "text": ","
     },
     {
-     "end": 21.337,
-     "start": 21.05,
-     "text": "named"
-    },
-    {
-     "end": 21.462,
-     "start": 21.337,
-     "text": "with"
-    },
-    {
-     "end": 21.55,
-     "start": 21.462,
+     "end": 16.337,
+     "start": 16.188,
      "text": "the"
     },
     {
-     "end": 22.525,
-     "start": 21.55,
+     "end": 16.95,
+     "start": 16.337,
+     "text": "envelope"
+    },
+    {
+     "end": 17.0,
+     "start": 16.95,
+     "text": ","
+    },
+    {
+     "end": 17.1,
+     "start": 17.0,
+     "text": "the"
+    },
+    {
+     "end": 17.575,
+     "start": 17.1,
+     "text": "released"
+    },
+    {
+     "end": 18.163,
+     "start": 17.575,
+     "text": "output"
+    },
+    {
+     "end": 18.288,
+     "start": 18.163,
+     "text": "and"
+    },
+    {
+     "end": 18.375,
+     "start": 18.288,
+     "text": "the"
+    },
+    {
+     "end": 19.013,
+     "start": 18.375,
+     "text": "deposit"
+    },
+    {
+     "end": 19.188,
+     "start": 19.013,
+     "text": "are"
+    },
+    {
+     "end": 19.475,
+     "start": 19.188,
+     "text": "read"
+    },
+    {
+     "end": 19.612,
+     "start": 19.475,
+     "text": "from"
+    },
+    {
+     "end": 19.712,
+     "start": 19.612,
+     "text": "the"
+    },
+    {
+     "end": 20.075,
+     "start": 19.712,
+     "text": "first"
+    },
+    {
+     "end": 20.388,
+     "start": 20.075,
+     "text": "entry"
+    },
+    {
+     "end": 20.513,
+     "start": 20.388,
+     "text": "of"
+    },
+    {
+     "end": 21.525,
+     "start": 20.513,
+     "text": "settled"
+    },
+    {
+     "end": 21.75,
+     "start": 21.525,
+     "text": "."
+    },
+    {
+     "end": 22.038,
+     "start": 21.925,
+     "text": "What"
+    },
+    {
+     "end": 22.125,
+     "start": 22.038,
+     "text": "the"
+    },
+    {
+     "end": 22.625,
+     "start": 22.125,
+     "text": "combined"
+    },
+    {
+     "end": 22.975,
+     "start": 22.625,
+     "text": "forms"
+    },
+    {
+     "end": 23.188,
+     "start": 22.975,
+     "text": "keep"
+    },
+    {
+     "end": 23.275,
+     "start": 23.188,
+     "text": "of"
+    },
+    {
+     "end": 23.475,
+     "start": 23.275,
+     "text": "their"
+    },
+    {
+     "end": 23.837,
+     "start": 23.475,
+     "text": "own"
+    },
+    {
+     "end": 23.987,
+     "start": 23.837,
+     "text": "is"
+    },
+    {
+     "end": 24.075,
+     "start": 23.987,
+     "text": "the"
+    },
+    {
+     "end": 24.475,
+     "start": 24.075,
+     "text": "booking's"
+    },
+    {
+     "end": 24.712,
+     "start": 24.475,
+     "text": "key"
+    },
+    {
+     "end": 25.675,
+     "start": 24.712,
+     "text": "fields"
+    },
+    {
+     "end": 25.875,
+     "start": 25.675,
+     "text": ","
+    },
+    {
+     "end": 26.125,
+     "start": 26.05,
+     "text": "the"
+    },
+    {
+     "end": 26.45,
+     "start": 26.125,
+     "text": "booking"
+    },
+    {
+     "end": 27.15,
+     "start": 26.45,
+     "text": "transaction"
+    },
+    {
+     "end": 27.188,
+     "start": 27.15,
+     "text": ","
+    },
+    {
+     "end": 27.312,
+     "start": 27.188,
+     "text": "the"
+    },
+    {
+     "end": 27.625,
+     "start": 27.312,
+     "text": "fold"
+    },
+    {
+     "end": 28.325,
+     "start": 27.625,
+     "text": "transaction"
+    },
+    {
+     "end": 28.438,
+     "start": 28.325,
+     "text": "and"
+    },
+    {
+     "end": 28.525,
+     "start": 28.438,
+     "text": "the"
+    },
+    {
+     "end": 29.275,
+     "start": 28.525,
+     "text": "root"
+    },
+    {
+     "end": 29.475,
+     "start": 29.275,
+     "text": "."
+    },
+    {
+     "end": 29.8,
+     "start": 29.65,
+     "text": "If"
+    },
+    {
+     "end": 29.9,
+     "start": 29.8,
+     "text": "the"
+    },
+    {
+     "end": 30.337,
+     "start": 29.9,
+     "text": "request"
+    },
+    {
+     "end": 30.425,
+     "start": 30.337,
+     "text": "the"
+    },
+    {
+     "end": 30.875,
+     "start": 30.425,
+     "text": "command"
+    },
+    {
+     "end": 31.163,
+     "start": 30.875,
+     "text": "just"
+    },
+    {
+     "end": 31.475,
+     "start": 31.163,
+     "text": "booked"
+    },
+    {
+     "end": 31.625,
+     "start": 31.475,
+     "text": "is"
+    },
+    {
+     "end": 31.925,
+     "start": 31.625,
+     "text": "left"
+    },
+    {
+     "end": 32.225,
+     "start": 31.925,
+     "text": "out"
+    },
+    {
+     "end": 32.3,
+     "start": 32.225,
+     "text": ","
+    },
+    {
+     "end": 32.4,
+     "start": 32.3,
+     "text": "the"
+    },
+    {
+     "end": 32.8,
+     "start": 32.4,
+     "text": "command"
+    },
+    {
+     "end": 33.175,
+     "start": 32.8,
+     "text": "stops"
+    },
+    {
+     "end": 34.2,
+     "start": 33.175,
+     "text": "partial"
+    },
+    {
+     "end": 34.4,
+     "start": 34.2,
+     "text": ":"
+    },
+    {
+     "end": 34.65,
+     "start": 34.575,
+     "text": "the"
+    },
+    {
+     "end": 35.0,
+     "start": 34.65,
+     "text": "booking"
+    },
+    {
+     "end": 35.15,
+     "start": 35.0,
+     "text": "is"
+    },
+    {
+     "end": 35.85,
+     "start": 35.15,
+     "text": "confirmed"
+    },
+    {
+     "end": 35.963,
+     "start": 35.85,
+     "text": "and"
+    },
+    {
+     "end": 36.1,
+     "start": 35.963,
+     "text": "its"
+    },
+    {
+     "end": 36.6,
+     "start": 36.1,
+     "text": "request"
+    },
+    {
+     "end": 36.987,
+     "start": 36.6,
+     "text": "stays"
+    },
+    {
+     "end": 37.575,
+     "start": 36.987,
+     "text": "pending"
+    },
+    {
+     "end": 37.675,
+     "start": 37.575,
+     "text": ","
+    },
+    {
+     "end": 37.963,
+     "start": 37.675,
+     "text": "named"
+    },
+    {
+     "end": 38.088,
+     "start": 37.963,
+     "text": "with"
+    },
+    {
+     "end": 38.175,
+     "start": 38.088,
+     "text": "the"
+    },
+    {
+     "end": 39.15,
+     "start": 38.175,
      "text": "reason"
     },
     {
-     "end": 22.725,
-     "start": 22.525,
+     "end": 39.35,
+     "start": 39.15,
      "text": "."
     }
    ]
