@@ -4,6 +4,7 @@ import Singular.Application.KeriStub.CLISpec qualified
 import Singular.Application.KeriStub.DatumSpec qualified
 import Singular.Application.KeriStub.FlagGroupExtentSpec qualified
 import Singular.Application.KeriStub.RulesSpec qualified
+import Singular.Application.KeriStub.ScriptRecordSpec qualified
 import Singular.Application.KeriStub.ValueSpec qualified
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
@@ -22,6 +23,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.KeriStub.Rules" [Application])
         Singular.Application.KeriStub.RulesSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.ScriptRecord" [Application])
+        Singular.Application.KeriStub.ScriptRecordSpec.spec
     describe
         (tagged "Singular.Application.KeriStub.Value" [Application])
         Singular.Application.KeriStub.ValueSpec.spec

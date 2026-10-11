@@ -66,6 +66,7 @@
           if [ -d ${appSrc}/test-tags ]; then cp -r ${appSrc}/test-tags $out/keri-stub/test-tags; fi
           cp ${appSrc}/keri-stub.cabal $out/keri-stub/keri-stub.cabal
           cp ${appSrc}/LICENSE $out/keri-stub/LICENSE
+          cp ${appSrc}/script-record.json $out/keri-stub/script-record.json
           sed 's|^  \.$|  registry\n  keri-stub|' ${registrySrc}/cabal.project > $out/cabal.project
         '';
 

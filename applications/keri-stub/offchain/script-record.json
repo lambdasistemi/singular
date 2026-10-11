@@ -1,0 +1,9 @@
+{
+  "scriptBytesHex": "46010100224981",
+  "scriptHashHex": "416b16010dea53c87349206f6cfe7b5ced92a71688b564ea289b5a7b",
+  "scriptConstantNames": [
+    "keriStubScriptBytes",
+    "keriStubScript",
+    "keriStubPolicy"
+  ]
+}

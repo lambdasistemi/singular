@@ -14,6 +14,9 @@ author:        Paolo Veronelli
 maintainer:    paolo.veronelli@gmail.com
 category:      Cardano
 build-type:    Simple
+data-files:
+  script-record.json
+  src/Singular/Application/KeriStub/Script.hs
 
 common warnings
   ghc-options:
@@ -74,15 +77,19 @@ test-suite keri-stub-tests
   default-language: GHC2021
   hs-source-dirs:   test test-tags
   main-is:          Main.hs
+  autogen-modules:  Paths_keri_stub
   other-modules:
+    Paths_keri_stub
     Singular.Application.KeriStub.CLISpec
     Singular.Application.KeriStub.DatumSpec
     Singular.Application.KeriStub.FlagGroupExtentSpec
     Singular.Application.KeriStub.RulesSpec
+    Singular.Application.KeriStub.ScriptRecordSpec
     Singular.Application.KeriStub.ValueSpec
     Test.Tags
 
   build-depends:
+    , aeson
     , base
     , base16-bytestring
     , bytestring
