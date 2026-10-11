@@ -80,9 +80,12 @@ jobs:
       # its lock resolves, and checks the FLAKE SOURCE (a store copy), so
       # the bytes it checks are candidate-bound — the same shape as the
       # off-chain lint app. The whole-tree checkout-context carrier (both
-      # Haskell trees, same configuration, same extent) is `just
-      # format-check` inside the dev-shell job's `just ci`; the negative
-      # and positive controls run there too via `just format-controls`.
+      # Haskell trees, same configuration, same extent) runs hosted as the
+      # baseline of this job's format-controls step below (the controls
+      # script first checks the real root, as `just format-check` does) and
+      # locally via `just format-check` inside local `just ci`; the negative
+      # and positive controls run hosted in that format-controls step
+      # (`nix run .#format-controls`).
       - run: nix run --quiet .#format-check
         working-directory: conformance
       # #278 supply-matches-leaf-state: HLint over the same discovered extent, with the pinned

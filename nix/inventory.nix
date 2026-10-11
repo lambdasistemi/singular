@@ -3,8 +3,9 @@ let
   # #278 slice 1: the repository code inventory. The checker runs the tool
   # over the FLAKE SOURCE — a store copy with no .git directory — which is
   # one of the two contexts the inventory must reproduce (the other is the
-  # tracked checkout, carried by `just inventory` inside `just ci`). The
-  # tool reads only Python's standard library and the source tree.
+  # tracked checkout, run hosted as the orphan-controls baseline and locally
+  # via `just inventory` inside local `just ci`). The tool reads only Python's standard
+  # library and the source tree.
   checker = pkgs.writeShellApplication {
     name = "inventory-check";
     runtimeInputs = [ pkgs.python3 ];

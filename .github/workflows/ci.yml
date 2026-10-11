@@ -231,13 +231,16 @@ jobs:
       # #278 slice 1: the machine-checked code inventory. This job runs the
       # inventory over the NIX FLAKE SOURCE — a store copy with no .git
       # directory — which is one of the two contexts the inventory must
-      # reproduce; the tracked-checkout context is carried by `just
-      # inventory` inside the dev-shell job's `just ci`. The inventory maps
-      # every discovered file to a lint and a format policy (or a named
-      # non-code class), fails closed on anything unmapped, and reports
-      # enforced versus pending extents honestly — the negative and positive
-      # controls proving each discovery signal runs in the dev-shell job via
-      # `just inventory-controls`.
+      # reproduce; the tracked-checkout context runs hosted as the baseline
+      # of the Refuse unclassified sources step below (the controls script
+      # first inventories the real checkout, as `just inventory` does) and
+      # locally via `just inventory` inside local `just ci`.
+      # The inventory maps every discovered file to a lint and a format
+      # policy (or a named non-code class), fails closed on anything unmapped,
+      # and reports enforced versus pending extents honestly — the test-tag
+      # controls run in the inventory-check step above, and the orphan
+      # controls proving each discovery signal run in the Refuse
+      # unclassified sources step below (`nix run .#inventory-controls`).
       - run: nix run --quiet .#inventory-check
       # #562 item 5a: the inventory orphan controls only (the test-tag
       # controls already run inside inventory-check above). The step refuses
@@ -387,9 +390,14 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #467: the dev-shell checks no other hosted job runs, each inside the
-      # development shell that pins its tools. Parallel to the Development
-      # shell build job; inventory and format keep their existing carriers.
+      # #467: the dev-shell checks, each inside the development shell that
+      # pins its tools. Parallel to the Development shell build job.
+      # check-presentation additionally runs inside the Rendered documentation
+      # job's docs-check (both run `tools/check_presentation_repo.py`) — a
+      # pre-existing overlap, both kept. Inventory orphan controls run in the
+      # Code inventory job's Refuse unclassified sources step, test-tag
+      # controls inside its inventory-check step; format controls run in the
+      # Conformance format-check job's format-controls step — none of them here.
       - run: nix develop --quiet -c just application-model
       - run: nix develop --quiet -c just check-presentation
       - run: nix develop --quiet -c just rename-registry-test
