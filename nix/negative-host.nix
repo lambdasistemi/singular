@@ -66,9 +66,31 @@ let
       findutils
       gnugrep
       nix
+      yq-go
     ];
     text = ''
       bash ${./../tools/negative_host_lint.sh} "$PWD"
+    '';
+  };
+  mutants = pkgs.writeShellApplication {
+    name = "negative-host-mutants";
+    runtimeInputs = with pkgs; [
+      bash
+      coreutils
+      diffutils
+      findutils
+      gawk
+      git
+      gnugrep
+      gnutar
+      gzip
+      jq
+      just
+      nix
+      procps
+    ];
+    text = ''
+      bash ${./../tools/negative_host_mutants.sh} "$PWD" "$@"
     '';
   };
 in
@@ -88,5 +110,9 @@ in
   negative-host-lint = {
     type = "app";
     program = pkgs.lib.getExe lint;
+  };
+  negative-host-mutants = {
+    type = "app";
+    program = pkgs.lib.getExe mutants;
   };
 }

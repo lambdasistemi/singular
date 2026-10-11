@@ -1,0 +1,15 @@
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
+@@ -378,9 +378,9 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
+     is {
+       [next] ->
+         if next.address != self.address {
+-          traceFalse(@"update-escape")
++          True
+         } else if liveControl(next.datum) != Some(control) {
+-          traceFalse(@"update-control")
++          True
+         } else if without_lovelace(next.value) != without_lovelace(self.value) {
+           traceFalse(@"update-assets")
+         } else if lovelace_of(next.value) < control.deposit {
