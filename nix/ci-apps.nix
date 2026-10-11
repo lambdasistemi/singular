@@ -86,4 +86,27 @@ in
       text = ''bash offchain/naming/run-drift-check.sh "$@"'';
     }
   );
+
+  # #562 item 1: the workflow command resolver and its controls. The controls
+  # script first resolves the clean tree (every nix run, build and develop
+  # reference in the workflows exists), then plants a missing app and a
+  # missing package and requires both refused. One hosted job covers the
+  # check and its controls. The single clean run's summary reaches the log.
+  # Scratch owned: the controls script owns its plant directory under mktemp
+  # with bounded lifetime and trap cleanup; no process is stopped.
+  workflow-commands-resolve-controls = app (
+    pkgs.writeShellApplication {
+      name = "workflow-commands-resolve-controls";
+      runtimeInputs = with pkgs; [
+        bash
+        coreutils
+        gawk
+        git
+        gnugrep
+        gnused
+        nix
+      ];
+      text = ''bash tools/workflow_commands_resolve_controls.sh "$PWD"'';
+    }
+  );
 }

@@ -21,10 +21,13 @@ check="$(cd "$(dirname "$0")" && pwd)/workflow_commands_resolve.sh"
   exit 2
 }
 
-if ! "$check" "$root" >/dev/null 2>&1; then
+if ! clean_out=$("$check" "$root" 2>&1); then
   echo "workflow-commands-resolve-controls: resolver refused the clean tree" >&2
+  printf '%s\n' "$clean_out" >&2
   exit 1
 fi
+# The single clean run's summary reaches the log; the tree is not resolved twice.
+printf '%s\n' "$clean_out"
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
