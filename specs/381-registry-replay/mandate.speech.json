@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "The branch was stacked on PR 525, the managed-state ticket #485. It is now rebased on main c67489502d3cdd8b5230d5fc8aaecbc954198bdc under the desk's merge slot; the desk owns that slot and this ticket never edits other lanes.",
+      "text": "The branch was stacked on PR 525, the managed-state ticket #485. It is now rebased on main b55053a2aec490186e552cf6f5c339e2b503189d under the desk's merge slot; the desk owns that slot and this ticket never edits other lanes.",
       "pause": 400
     },
     {
@@ -289,6 +289,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "591180c85075aac16060f2750eb0b32f8f88ec8a60e8c683e9c6afb61906b4bf"
+    "sha256": "258e44ef869de36b4adce0fd27cc45f544ccf864f089552aed5385d120f12cb5"
   }
 }

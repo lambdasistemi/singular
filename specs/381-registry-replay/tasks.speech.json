@@ -137,7 +137,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] T014 Update PR 433 from .github/pull_request_template.md, declaring the rebased base (main c6748950 under the merge slot; history: \"stacked on PR 525\"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.",
+      "text": "[ ] T014 Update PR 433 from .github/pull_request_template.md, declaring the rebased base (main b55053a2 under the merge slot; history: \"stacked on PR 525\"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.",
       "pause": 300
     }
   ],
@@ -153,6 +153,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "01e9d3c47bcc326677ecac3a7f191aa79b4fe1d8e35c8b1854e62bbeab5ffe9f"
+    "sha256": "97865e7dc2a8ffe9d76fc0962f10698f2290cd2f06bc7a4cb8457c2d8eb10956"
   }
 }

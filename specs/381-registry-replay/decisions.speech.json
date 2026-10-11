@@ -133,12 +133,12 @@
       "pause": 500
     },
     {
-      "text": "As this ticket's owner, I implement only against published code, and the base is main c67489502d3cdd8b5230d5fc8aaecbc954198bdc (history: PR 525). The October 9 staffing ruling supersedes the October 7 roster: a Sonnet ticket owner, a Muse source writer and a GLM auditor, no other seat, one writer at a time. The mandate quotes the ruling. This ticket merges in the slot the desk grants, rebased onto main (history: it was to merge immediately after issue #485, not rebased onto main before the slot). If the published contract does not fit lineage reconstruction, that is a question, not a change to the provider ticket.",
+      "text": "As this ticket's owner, I implement only against published code, and the base is main b55053a2aec490186e552cf6f5c339e2b503189d (history: PR 525). The October 9 staffing ruling supersedes the October 7 roster: a Sonnet ticket owner, a Muse source writer and a GLM auditor, no other seat, one writer at a time. The mandate quotes the ruling. This ticket merges in the slot the desk grants, rebased onto main (history: it was to merge immediately after issue #485, not rebased onto main before the slot). If the published contract does not fit lineage reconstruction, that is a question, not a change to the provider ticket.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "6374fe977f42c8da8678517b9a1d8bde6f9a35a8e3f6cd227d89081ded094af0"
+    "sha256": "1efdd8d11e88de114b6c4bb32920d0c2d68c116600600f617df5594327f446f5"
   }
 }

@@ -48,7 +48,7 @@ only with the state token, a wallet and the provider address.
 - [x] T011 Compute all fourteen row states from the executed receipts in `tools/registry_two_actors.py`; the two rows that read the registry page stay pending on issue 503; keep harness evidence in a marked appendix. (run-six receipt `evidence/run6-journey.log` with `run6-journey.json`: twelve passed, two page-pending, appendix present.)
 - [x] reconcile-onboarding-join-statement Correct the statement in `docs/consumer-onboarding.md` that joining by state token is pending under issue 437, regenerating its speech companion and narration. (this commit: rewritten paragraph, speech companion, regenerated clips, `docs-check`.)
 - [ ] T013 Run the packaged journey and `nix develop --quiet -c just ci` on the final candidate; record candidate, Lean tree, commands, receipts and limits in `specs/381-registry-replay/verification.md`.
-- [ ] T014 Update PR 433 from `.github/pull_request_template.md`, declaring the rebased base (main `c6748950` under the merge slot; history: "stacked on PR 525"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.
+- [ ] T014 Update PR 433 from `.github/pull_request_template.md`, declaring the rebased base (main `b55053a2` under the merge slot; history: "stacked on PR 525"), verify the hosted required checks on the exact head, and hand the head to the desk for the merge slot. Close issue 381 only when every required journey row has executed.
 
 ## Order and model binding
 
