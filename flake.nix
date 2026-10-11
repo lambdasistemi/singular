@@ -172,8 +172,8 @@
               jq
             ];
             text = ''
-              holds=$(grep -hoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
-                ${./offchain/cli/src/Singular/CLI/Session.hs} ${./offchain/cli/src/Singular/CLI/Fold.hs} \
+              holds=$(grep -rhoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
+                ${./offchain/cli} \
                 | sed -E 's/.*"(SINGULAR_HARNESS_HOLD_[A-Z_]+)".*/\1/' | sort -u)
               [ -n "$holds" ] || { echo "the fold path declares no hold points" >&2; exit 3; }
               printf '%s\n' "$holds" | jq -Rsc --arg lost "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer" \
@@ -233,7 +233,16 @@
               # application's own tree, and the fault build needs only
               # the registry executable (main's offchain project lists
               # no cabalProjectLocal either).
-              modules = [ fix-libs ];
+              # The replay alteration is its own package build, with no
+              # hold/drop/trace harness code linked into this variant.
+              cabalProjectLocal = ''
+                package singular-registry
+                  flags: -test-harness
+              '';
+              modules = [
+                fix-libs
+                { packages.singular-registry.flags.test-harness = false; }
+              ];
               inputMap = {
                 "https://chap.intersectmbo.org/" = offchain.inputs.CHaP;
               };
@@ -267,6 +276,9 @@
           managedScripts = pkgs.runCommand "managed-scripts" { } ''
             mkdir -p $out
             cp ${./tools/cli_recovery_controls.sh} $out/cli_recovery_controls.sh
+            cp ${./tools/check_recovery_trie.py} $out/check_recovery_trie.py
+            cp ${./tools/fixture_process.py} $out/fixture_process.py
+            cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
             cp ${./tools/managed_state.sh} $out/managed_state.sh
             cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
             cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
@@ -305,24 +317,28 @@
               }
             );
           };
+          # Every direct/wrapped recovery controller carries the same tools.
+          # The lifecycle composition must not inherit them from an ambient
+          # developer PATH after eliminating the old launcher wrapper chain.
+          recoveryRuntimeInputs = with pkgs; [
+            bash
+            coreutils
+            diffutils
+            findutils
+            gawk
+            gnugrep
+            gnused
+            jq
+            nix
+            procps
+            python3
+          ];
           recoveryApp = name: parts: {
             type = "app";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 inherit name;
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  jq
-                  nix
-                  # the controls find and stop their own development node
-                  procps
-                  # read-root.py and the CBOR reader; without it the check
-                  # script falls back to nix develop
-                  python3
-                ];
+                runtimeInputs = recoveryRuntimeInputs;
                 text = ''
                   bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
                   CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
@@ -342,16 +358,7 @@
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "cli-recovery-cross-wallet-part";
-                runtimeInputs = with pkgs; [
-                  bash
-                  coreutils
-                  diffutils
-                  findutils
-                  jq
-                  nix
-                  procps
-                  python3
-                ];
+                runtimeInputs = recoveryRuntimeInputs;
                 text = ''
                   [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-cross-wallet-part PART" >&2; exit 2; }
                   bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
@@ -379,6 +386,8 @@
             name = "verify-release";
             runtimeInputs = with pkgs; [
               bash
+              python3
+              binutils
               coreutils
               curl
               diffutils
@@ -402,6 +411,7 @@
             ];
             text = ''
               export VERIFY_RELEASE_JOURNEY=${managedScripts}/demo1_cli_journey.sh
+              export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
               export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
               export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
               bash ${./tools/verify_release.sh} "$@"
@@ -430,6 +440,57 @@
                   gzip
                 ];
                 text = ''VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/verify_release_controls.sh} "$@"'';
+              }
+            );
+          };
+          # The control needs the Nix daemon and real output derivations.
+          release-build-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "release-build-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  binutils
+                  coreutils
+                  gnugrep
+                  nix
+                  python3
+                ];
+                text = ''
+                  export RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
+                  bash ${./tools/release_build_control.sh} "$PWD"
+                '';
+              }
+            );
+          };
+          # This mandatory carrier retains every original injected journey
+          # assertion and independent trie observation on explicit test builds.
+          demo1-cli-test-harness = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-test-harness";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  gawk
+                  git
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                  procps
+                  strace
+                  util-linux
+                ];
+                text = ''
+                  export DEMO1_TEST_JOURNEY=${managedScripts}/demo1_cli_journey.sh
+                  export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
+                  bash ${./tools/demo1_cli_test_harness_check.sh} "$PWD"
+                '';
               }
             );
           };
@@ -705,6 +766,25 @@
           # mirror is saved, a transaction never sent, and an accepting
           # control — judged from receipts and journals:
           # `nix run --quiet .#cli-recovery-controls`.
+          facade-lifecycle-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "facade-lifecycle-controls";
+                runtimeInputs = recoveryRuntimeInputs;
+                text = ''
+                  work="$(mktemp -d)/controls"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  exec python3 ${managedScripts}/facade_lifecycle_controls.py \
+                    ${pkgs.lib.getExe offchain.packages.${system}.devnet} "$work" \
+                  --startup-controller ${managedScripts}/cli_recovery_controls.sh \
+                  --singular ${pkgs.lib.getExe offchain.packages.${system}.singular-test-harness} --root "$PWD"
+                '';
+              }
+            );
+          };
+          cli-recovery-history = recoveryApp "cli-recovery-history" "accepting lost-answer killed never-sent whole-journal trie-capability";
+          cli-recovery-rollback = recoveryApp "cli-recovery-rollback" "rollback trie-capability";
           cli-recovery-controls = recoveryApp "cli-recovery-controls" "";
           # #449: the parts seen passing on main since #411, one CI job each.
           cli-recovery-accepting = recoveryApp "cli-recovery-accepting" "accepting";

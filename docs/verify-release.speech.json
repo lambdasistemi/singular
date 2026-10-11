@@ -41,7 +41,11 @@
       "pause": 400
     },
     {
-      "text": "The last check is computed from that same run. The released singular has test-harness hooks, environment variables that stop a command at an exact point for the project's own tests (see Connecting singular to a node). The verifier records which variables every process was started with, and checks that each of the five commands ran with none set and that the hold points that fired are exactly the ones a process asked for.",
+      "text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: all five commands must run without hidden harness inputs, and no hold marker may appear.",
+      "pause": 400
+    },
+    {
+      "text": "Fault injection, crash recovery, race controls and independent trie-capability observations run in the explicit test build. Their unchanged assertions are separate required CI evidence. They do not claim to have run inside these extracted release binaries.",
       "pause": 400
     }
   ],
@@ -75,6 +79,6 @@
   ],
   "_source": {
     "file": "verify-release.md",
-    "sha256": "a639710c1b32bbcdd93a330d114a0fe07641f0fd3892f977a89a34dc87f1e60c"
+    "sha256": "fcfcd7894be2ecbc0fc8fb714a2c22e02dd2700d1e220f6651c394ea92558b7a"
   }
 }

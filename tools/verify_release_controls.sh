@@ -9,6 +9,7 @@
 # .#release-artifacts -- RELEASE-DIR`): the documentation archive, the
 # on-chain archive and SHA256SUMS. It is never modified.
 #
+#   enabled test build      compiled hooks refused as harness-code-present
 #   published v0.7.0         the real release, downloaded unauthenticated
 #                            from GitHub; it predates the stated model
 #                            revision and must be refused as
@@ -130,6 +131,11 @@ no_singular() { rm "$1/offchain/cli/Main.hs"; }
 changed_run_page() { printf '\n' >>"$1/DEMO1.md"; }
 broken_flake() { printf '\n}\n' >>"$1/offchain/flake.nix"; }
 empty_blueprint() { printf '{}\n' >"$1/onchain/plutus.json"; }
+# This deliberately builds ordinary-named outputs with the real test flag
+# enabled. The same compiled checker must reject that hook-bearing artifact.
+test_build_enabled() {
+  sed -i 's/testHarness ? false/testHarness ? true/' "$1/offchain/nix/project.nix"
+}
 
 check published model-revision-missing "states no MODEL-REVISION" "sums" "model_revision"
 
@@ -165,5 +171,8 @@ check broken-flake command-failed "nix build .#singular" "sums model_revision me
 variant empty-blueprint empty_blueprint
 check empty-blueprint command-failed "the journey exited" "sums model_revision members build" "journey"
 
+variant test-build-enabled test_build_enabled
+check test-build-enabled harness-code-present "release-binary: REFUSED" "sums model_revision members build" "release_build journey"
+
 [ "$(sha256sum "$release"/* | sha256sum)" = "$before" ] || fail "the assembled release was modified"
-echo "verify-release-controls: PASS — the published v0.7.0 and ten mutated copies of the v$version assets each refused by name, after every check before its own passed; the assembled release unmodified"
+echo "verify-release-controls: PASS — the published v0.7.0 and eleven mutated copies of the v$version assets each refused by name, after every check before its own passed; the assembled release unmodified"

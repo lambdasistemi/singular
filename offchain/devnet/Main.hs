@@ -43,9 +43,10 @@ it, never the answer of the command under test.
 -}
 module Main (main) where
 
-import Control.Concurrent (threadDelay)
+import Control.Concurrent (myThreadId, threadDelay, throwTo)
 import Control.Concurrent.MVar (newMVar, withMVar)
-import Control.Monad (forever, unless)
+import Control.Exception (AsyncException (UserInterrupt), bracket)
+import Control.Monad (forever, unless, void, when)
 import Data.List (isPrefixOf, sortOn)
 import Data.Maybe (fromMaybe)
 import Data.Maybe qualified
@@ -70,6 +71,11 @@ import System.IO
     )
 import System.IO.Temp (createTempDirectory, withSystemTempDirectory)
 import System.Posix.Files (setFileMode)
+import System.Posix.Signals
+    ( Handler (CatchOnce)
+    , installHandler
+    , sigTERM
+    )
 import System.Process
     ( CreateProcess (..)
     , proc
@@ -103,7 +109,7 @@ import Singular.Registry.Runner (runnerSettings)
 import Singular.Registry.SessionIO qualified as Session
 import Singular.Registry.Terminal (withReads)
 
-import Data.Aeson (encode, object, (.=))
+import Data.Aeson (Value, encode, object, (.=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy.Char8 qualified as LBS
@@ -130,6 +136,21 @@ data Funding = Funding
 
 main :: IO ()
 main = do
+    owner <- myThreadId
+    -- The private fixture's shell owner cancels with TERM. Turn that signal
+    -- into an interrupt of this owning thread so its node/session brackets
+    -- close and join before the generated directory can be removed.
+    bracket
+        ( installHandler
+            sigTERM
+            (CatchOnce (throwTo owner UserInterrupt))
+            Nothing
+        )
+        (\previous -> void (installHandler sigTERM previous Nothing))
+        (const dispatch)
+
+dispatch :: IO ()
+dispatch = do
     hSetBuffering stdout LineBuffering
     args <- getArgs
     case args of
@@ -148,22 +169,39 @@ main = do
 
 -- | Spawn the private facade, fund through shared HTTP, print settings, wait.
 spawn :: [String] -> IO ()
-spawn args = do
-    withFixture args $ \evidence facade -> withReads nullTracer nullTracer (facadeSettings facade) $ \caps -> do
-        mapM_ (fund caps) =<< either die pure (fundingFrom args)
-        let settings = facadeSettings facade
-        LBS.putStrLn
-            ( encode
-                ( object
-                    [ "providerUrl" .= providerUrl settings
-                    , "networkMagic" .= providerMagic settings
-                    , "networkTimeDirectory" .= providerTimeDirectory settings
-                    , "privateProbeSocket" .= facadeSocket facade
-                    , "independentSourceDirectory" .= evidence
-                    ]
-                )
-            )
+spawn args = case flag "--restart-control-dir" args of
+    Nothing -> withFixture args $ \evidence facade -> do
+        fundAndPublish evidence True facade
         forever (threadDelay 3_600_000_000)
+    Just control -> do
+        deadline <- case flag "--restart-resume-timeout-ms" args of
+            Nothing -> pure 120_000_000
+            Just spelling -> case readMaybe spelling of
+                Just milliseconds
+                    | milliseconds > (0 :: Int)
+                    , milliseconds <= 120_000 ->
+                        pure (milliseconds * 1000)
+                _ ->
+                    die "devnet: restart resume timeout must be 1..120000 milliseconds"
+        (gDir, evidence, funding, observe) <- fixtureInputs args
+        withRestartableGeneratedFacade funding gDir control deadline observe $ \_ first facade ->
+            fundAndPublish evidence first facade
+  where
+    fundAndPublish evidence first facade =
+        withReads nullTracer nullTracer (facadeSettings facade) $ \caps -> do
+            when first (mapM_ (fund caps) =<< either die pure (fundingFrom args))
+            let settings = facadeSettings facade
+            LBS.putStrLn
+                ( encode
+                    ( object
+                        [ "providerUrl" .= providerUrl settings
+                        , "networkMagic" .= providerMagic settings
+                        , "networkTimeDirectory" .= providerTimeDirectory settings
+                        , "privateProbeSocket" .= facadeSocket facade
+                        , "independentSourceDirectory" .= evidence
+                        ]
+                    )
+                )
 
 {- | The CI launcher owns the generated node. Its child receives only public
 provider/time settings and one ephemeral private fixture wallet file.
@@ -234,6 +272,14 @@ run command arguments = do
 
 withFixture :: [String] -> (FilePath -> Facade -> IO a) -> IO a
 withFixture args action = do
+    (gDir, evidence, funding, observe) <- fixtureInputs args
+    withGeneratedFacade funding gDir observe $ \_ facade -> action evidence facade
+
+-- Ordinary and restart experiments share real source observation and funding.
+-- Only the explicit private experiment changes the facade session lifetime.
+fixtureInputs
+    :: [String] -> IO (FilePath, FilePath, GenesisFunding, Value -> IO ())
+fixtureInputs args = do
     gDir <- genesisDir
     tmp <- getTemporaryDirectory
     evidence <-
@@ -255,7 +301,7 @@ withFixture args action = do
     requested <- either die pure (fundingFrom args)
     unless (funding /= LeaveGenesis || null requested) $
         die "devnet: --genesis-only cannot also fund caller wallets"
-    withGeneratedFacade funding gDir observe $ \_ facade -> action evidence facade
+    pure (gDir, evidence, funding, observe)
 
 {- | Read the funding flags: every @--fund-skey@ given (it may repeat, one
 wallet each), all paid the same @--fund-outputs@ of @--fund-lovelace@, plus

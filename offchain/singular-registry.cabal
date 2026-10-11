@@ -23,6 +23,12 @@ data-files:
   data/network/preprod/evaluation/*.cbor
   data/network/preprod/evaluation/*.json
 
+-- Explicit test composition only; automatic solver selection is forbidden.
+flag test-harness
+  description: Compile recovery fault injection and independent trie diagnostics
+  default:     False
+  manual:      True
+
 common warnings
   ghc-options:
     -Wall -Werror -Wunused-imports -Wunused-packages
@@ -177,6 +183,11 @@ library registry-cli
   visibility:       public
   default-language: GHC2021
   hs-source-dirs:   cli/src
+  if flag(test-harness)
+    hs-source-dirs: cli/test-harness
+  else
+    hs-source-dirs: cli/ordinary
+
   exposed-modules:
     Singular.CLI
     Singular.CLI.Attached
@@ -210,6 +221,8 @@ library registry-cli
     Singular.CLI.Trace
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
+
+  other-modules: Singular.CLI.Harness
 
   build-depends:
     , aeson

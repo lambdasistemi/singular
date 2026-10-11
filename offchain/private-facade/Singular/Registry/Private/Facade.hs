@@ -9,6 +9,7 @@ module Singular.Registry.Private.Facade
     ( Facade (..)
     , GenesisFunding (..)
     , withGeneratedFacade
+    , withRestartableGeneratedFacade
     ) where
 
 import Cardano.Chain.Common (decodeAddressBase58)
@@ -124,7 +125,7 @@ import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.CaseInsensitive qualified as CI
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
-import Data.List (sortOn)
+import Data.List (isPrefixOf, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (mapMaybe)
 import Data.Maybe.Strict (StrictMaybe (..))
@@ -176,7 +177,12 @@ import Singular.Registry.Private.TimePublication (publishTime)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Wait (tryOutcome)
-import System.Directory (createDirectoryIfMissing)
+import System.Directory
+    ( createDirectoryIfMissing
+    , listDirectory
+    , removeFile
+    , renameFile
+    )
 import System.FilePath (takeDirectory, (</>))
 import System.Timeout (timeout)
 import Text.Read (readMaybe)
@@ -206,6 +212,15 @@ data Server = Server
     , serverObserver :: Value -> IO ()
     }
 
+-- This immutable seed is acquired and checked before any funding. Resumed
+-- archives never pretend that a later current UTxO is the genesis allocation.
+data FacadeSeed = FacadeSeed
+    { seedGenesis :: ByteString
+    , seedEpochSlots :: EpochSlots
+    , seedOutputs :: Map.Map TxIn (TxOut ConwayEra)
+    , seedEvent :: Value
+    }
+
 withGeneratedFacade
     :: GenesisFunding
     -> FilePath
@@ -213,89 +228,175 @@ withGeneratedFacade
     -> (Integer -> Facade -> IO a)
     -> IO a
 withGeneratedFacade funding genesisDirectory observer action =
+    withCardanoNode genesisDirectory $ \socket startMs ->
+        snd
+            <$> withFacadeSession funding socket observer Nothing (action startMs)
+
+{- | Explicit test-only restart experiment. The outer node/genesis owner spans
+sequential facade sessions. A numbered pause closes and joins HTTP, LSQ and
+chain-sync before acknowledgement; resume replays the restarted node from
+origin with the original checked genesis seed. Unexpected transport failures
+still propagate through links. No detached watcher or exception retry exists.
+The shell controller must join its replacement node before ending this owner.
+-}
+withRestartableGeneratedFacade
+    :: GenesisFunding
+    -> FilePath
+    -> FilePath
+    -> Int
+    -> (Value -> IO ())
+    -> (Integer -> Bool -> Facade -> IO ())
+    -> IO ()
+withRestartableGeneratedFacade funding genesisDirectory control resumeMicros observer action = do
+    createDirectoryIfMissing True control
+    existing <- listDirectory control
+    unless (null existing) (fail "restart control directory is not fresh")
+    unless
+        (resumeMicros > 0)
+        (fail "restart resume deadline must be positive")
     withCardanoNode genesisDirectory $ \socket startMs -> do
-        lsq <- newLSQChannel 16
-        submit <- newLTxSChannel 16
-        withAsync
-            (closedConnection =<< runNodeClient (NetworkMagic 42) socket lsq submit)
-            $ \connection -> do
-                link connection
-                initial <- withinStartup (readLedgerSource lsq)
-                genesis <-
-                    BS.readFile (takeDirectory socket </> "shelley-genesis.json")
-                byron <- BS.readFile (takeDirectory socket </> "byron-genesis.json")
-                byronValue <- either fail pure (eitherDecodeStrict' byron)
-                security <-
-                    parsed
-                        ( withObject
-                            "Byron genesis"
-                            ( \value ->
-                                value .: "protocolConsts"
-                                    >>= withObject "Byron protocol constants" (.: "k")
+        let session number previous = do
+                let first = number == (0 :: Int)
+                (seed, ()) <-
+                    withFacadeSession
+                        (if first then funding else LeaveGenesis)
+                        socket
+                        observer
+                        previous
+                        $ \facade -> do
+                            action startMs first facade
+                            marker ("ready." <> show number)
+                            request 900_000_000 ("pause." <> show (number + 1))
+                -- withFacadeSession has returned: all its brackets are joined.
+                marker ("paused." <> show (number + 1))
+                request resumeMicros ("resume." <> show (number + 1))
+                session (number + 1) (Just seed)
+        session 0 Nothing
+  where
+    marker name = do
+        let path = control </> name
+        BS.writeFile (path <> ".tmp") (BC.pack (name <> "\n"))
+        renameFile (path <> ".tmp") path
+        observer
+            (object ["kind" .= ("facade-control" :: Text), "transition" .= name])
+    request deadline expected = do
+        let await = do
+                names <- listDirectory control
+                let requests =
+                        filter
+                            (\name -> "pause." `isPrefixOf` name || "resume." `isPrefixOf` name)
+                            names
+                unless (all (== expected) requests) $
+                    fail
+                        ("stale, duplicate or out-of-order facade request: " <> show requests)
+                if expected `elem` requests
+                    then removeFile (control </> expected)
+                    else threadDelay 20_000 >> await
+        timeout deadline await
+            >>= maybe (fail ("missing facade request: " <> expected)) pure
+
+withFacadeSession
+    :: GenesisFunding
+    -> FilePath
+    -> (Value -> IO ())
+    -> Maybe FacadeSeed
+    -> (Facade -> IO a)
+    -> IO (FacadeSeed, a)
+withFacadeSession funding socket observer previous action = do
+    lsq <- newLSQChannel 16
+    submit <- newLTxSChannel 16
+    -- Real LSQ and full-block following must coexist with the HTTP server.
+    -- This session owns both children; linked failure is fatal and each
+    -- withAsync cancels and joins its child before the next session starts.
+    withAsync
+        (closedConnection =<< runNodeClient (NetworkMagic 42) socket lsq submit)
+        $ \connection -> do
+            link connection
+            initial <- withinStartup (readLedgerSource lsq)
+            seed <- case previous of
+                Just checked -> pure checked
+                Nothing -> do
+                    genesis <-
+                        BS.readFile (takeDirectory socket </> "shelley-genesis.json")
+                    byron <- BS.readFile (takeDirectory socket </> "byron-genesis.json")
+                    byronValue <- either fail pure (eitherDecodeStrict' byron)
+                    security <-
+                        parsed
+                            ( withObject
+                                "Byron genesis"
+                                ( \value ->
+                                    value .: "protocolConsts"
+                                        >>= withObject "Byron protocol constants" (.: "k")
+                                )
                             )
+                            byronValue
+                    unless
+                        ( (security :: Integer) > 0
+                            && security <= toInteger (maxBound :: Word64) `div` 10
                         )
-                        byronValue
-                unless
-                    ( (security :: Integer) > 0
-                        && security <= toInteger (maxBound :: Word64) `div` 10
-                    )
-                    (fail "private facade unsupported Byron security parameter")
-                let epochSlots = EpochSlots (fromInteger (security * 10))
-                let initialEvent =
-                        object
-                            [ "kind" .= ("initial-genesis-ledger" :: Text)
-                            , "genesisBytes" .= hex genesis
-                            , "byronGenesisBytes" .= hex byron
-                            , "source" .= sourceValue initial
-                            ]
-                observer initialEvent
-                validateGenesisUTxO genesis byron initial
-                archive <- newIORef (emptyArchive (sourceOutputs initial))
-                events <- newIORef [initialEvent]
-                let timeRoot = takeDirectory socket </> "facade-time"
-                    server =
-                        Server
-                            lsq
-                            submit
-                            archive
-                            events
+                        (fail "private facade unsupported Byron security parameter")
+                    let event =
+                            object
+                                [ "kind" .= ("initial-genesis-ledger" :: Text)
+                                , "genesisBytes" .= hex genesis
+                                , "byronGenesisBytes" .= hex byron
+                                , "source" .= sourceValue initial
+                                ]
+                    observer event
+                    validateGenesisUTxO genesis byron initial
+                    pure
+                        ( FacadeSeed
                             genesis
+                            (EpochSlots (fromInteger (security * 10)))
                             (sourceOutputs initial)
-                            timeRoot
-                            observer
-                createDirectoryIfMissing True timeRoot
-                void (publishTime timeRoot genesis (timeFactsOf initial))
-                withAsync
-                    ( closedConnection
-                        =<< runChainSyncN2C
-                            epochSlots
-                            (NetworkMagic 42)
-                            socket
-                            ( mkChainSyncN2C
-                                nullTracer
-                                nullTracer
-                                (intersector server)
-                                [Chain.GenesisPoint]
-                            )
-                    )
-                    $ \follower -> do
-                        link follower
-                        withinStartup (awaitArchive server initial)
-                        when (funding == FundGenesis) (bootstrapGenesis server)
-                        testWithApplication (pure (application server)) $ \port ->
-                            action
-                                startMs
-                                Facade
-                                    { facadeSettings =
-                                        ProviderSettings
-                                            ("http://127.0.0.1:" <> show port <> "/api/v1")
-                                            42
-                                            Nothing
-                                            (Just (timeRoot </> "current"))
-                                    , facadeSources = reverse <$> readIORef events
-                                    , facadeArchive = readIORef archive
-                                    , facadeSocket = socket
-                                    }
+                            event
+                        )
+            archive <- newIORef (emptyArchive (seedOutputs seed))
+            events <- newIORef [seedEvent seed]
+            let timeRoot = takeDirectory socket </> "facade-time"
+                server =
+                    Server
+                        lsq
+                        submit
+                        archive
+                        events
+                        (seedGenesis seed)
+                        (seedOutputs seed)
+                        timeRoot
+                        observer
+            createDirectoryIfMissing True timeRoot
+            void (publishTime timeRoot (seedGenesis seed) (timeFactsOf initial))
+            withAsync
+                ( closedConnection
+                    =<< runChainSyncN2C
+                        (seedEpochSlots seed)
+                        (NetworkMagic 42)
+                        socket
+                        ( mkChainSyncN2C
+                            nullTracer
+                            nullTracer
+                            (intersector server)
+                            [Chain.GenesisPoint]
+                        )
+                )
+                $ \follower -> do
+                    link follower
+                    withinStartup (awaitArchive server initial)
+                    when (funding == FundGenesis) (bootstrapGenesis server)
+                    result <- testWithApplication (pure (application server)) $ \port ->
+                        action
+                            Facade
+                                { facadeSettings =
+                                    ProviderSettings
+                                        ("http://127.0.0.1:" <> show port <> "/api/v1")
+                                        42
+                                        Nothing
+                                        (Just (timeRoot </> "current"))
+                                , facadeSources = reverse <$> readIORef events
+                                , facadeArchive = readIORef archive
+                                , facadeSocket = socket
+                                }
+                    pure (seed, result)
   where
     closedConnection =
         either

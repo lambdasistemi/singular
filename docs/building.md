@@ -17,6 +17,53 @@ The documentation package and checks use the locked shared MkDocs toolchain. The
 
 The browser check launches the pinned Chromium build, serves the standalone simulator on a temporary loopback port, and executes its manual-control and story assertions. The canonical runner is `tools/browser-check.mjs`; the earlier callback under `simulator/` is retained as historical browser evidence. Screenshots use a temporary writable directory; no browser download or external service is required during execution. Set `KEEP_BROWSER_EVIDENCE=1` to retain successful browser evidence. CI's build gate realizes the packages, executing checks, and development-shell inputs before the downstream verification jobs.
 
+## Ordinary binaries and explicit test builds
+
+As a release operator, I build ordinary `singular` and `open-datum` with
+the manual Cabal `test-harness` flag disabled. Both executable closures use
+the ordinary registry CLI modules. The release archive and publication
+commands select these ordinary outputs.
+
+As a contributor, I exercise crash windows and provider-answer loss with
+the separately named test outputs. Their registry CLI modules retain the
+original hold/drop controls and `SINGULAR_HARNESS_TRIE_TRACE`, an independent
+observation of the trie capability's actual operations. That diagnostic is
+a hidden test input and its evidence belongs to the test build.
+
+```sh
+nix build ./offchain#singular
+nix build ./applications/open-datum/offchain#open-datum
+nix build ./offchain#singular-test-harness
+nix build ./applications/open-datum/offchain#open-datum-test-harness
+nix run .#release-build-control
+nix run .#demo1-cli-test-harness
+```
+
+The build control strips and inspects both ordinary compiled executables,
+reads the actual resolved registry CLI flag, and deliberately rejects the
+hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary
+extracted-release journey separately from the test journey's unchanged
+recovery, race, node-loss and trie-observation assertions. CLI recovery and
+conformance backend controls select the explicit test composition. The
+separate replay-fault project remains a deliberately altered test build;
+its named refusal proof retains its published pending cases. Test outputs
+are never substituted into the ordinary release verifier or published as
+ordinary release artifacts.
+
+```mermaid
+flowchart TB
+    Source[Registry CLI source] -->|flag disabled| Ordinary[Ordinary binaries]
+    Ordinary -->|inspect bytes and flags| Exclusion[Release build control]
+    Exclusion -->|checks pass| Journey[Ordinary archive journey]
+```
+
+```mermaid
+flowchart TB
+    Source[Registry CLI source] -->|flag enabled explicitly| Tests[Test binaries]
+    Tests -->|faults and diagnostics| Recovery[Recovery controls]
+    Recovery -->|assertions pass| Evidence[Test receipts]
+```
+
 ## Generated API references
 
 The site ships a generated reference for each library a contributor calls

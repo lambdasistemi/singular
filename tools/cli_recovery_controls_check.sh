@@ -27,17 +27,18 @@ scratch="$(mktemp -d "${RUNNER_TEMP:-/tmp}/cli-recovery.XXXXXX")"
 # shellcheck disable=SC2329 # the EXIT trap below invokes this
 release_scratch() {
   local code=$?
-  local _wait
+  local record
   trap - EXIT
   if [ -n "${scratch:-}" ] && [ -e "$scratch" ]; then
-    if command -v pkill >/dev/null 2>&1; then
-      pkill -f "cardano-node run --config ${scratch}/" >/dev/null 2>&1 || true
-    fi
-    for _wait in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
-      if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -f "cardano-node run --config ${scratch}/" >/dev/null 2>&1; then
-        break
+    # The controller joins its children; this wrapper checks exact retained
+    # identities before removing evidence. A broad pkill cannot prove cleanup.
+    for record in "$scratch"/run/original-node.json "$scratch"/run/replacement-node-*.json "$scratch"/run/devnet-process.json; do
+      [ -f "$record" ] || continue
+      if ! python3 "$(dirname "$controls_sh")/fixture_process.py" assert-gone "$record"; then
+        echo "cleanup incomplete; retained $scratch" >&2
+        [ "$code" -ne 0 ] || code=1
+        exit "$code"
       fi
-      sleep 0.1
     done
     if [ "${DEMO1_KEEP_SCRATCH:-}" = 1 ]; then
       echo "kept scratch: $scratch" >&2
@@ -56,7 +57,7 @@ trap release_scratch EXIT
 build() { nix build --quiet --no-link --print-out-paths "$@"; }
 
 cd "$root/offchain"
-singular="$(build .#singular)/bin/singular"
+singular="$(build .#singular-test-harness)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 # The raw devnet reads its genesis from E2E_GENESIS_DIR, falling back to a
 # relative `e2e-test/genesis` that only resolves from the registry tree.
@@ -67,8 +68,10 @@ export E2E_GENESIS_DIR="$root/offchain/e2e-test/genesis"
 # the merged deployment document (application + witnesses, one build).
 blueprint="$(build ../applications/open-datum/onchain#open-datum-blueprint)"
 cd "$root/applications/open-datum/offchain"
-open_datum="$(build .#open-datum)/bin/open-datum"
+open_datum="$(build .#open-datum-test-harness)/bin/open-datum"
 
+echo "explicit test-build executables: singular=$singular open-datum=$open_datum"
+sha256sum "$singular" "$open_datum"
 status=0
 bash "$controls_sh" "$singular" "$open_datum" "$devnet" "$blueprint" "$scratch/run" "$root" || status=$?
 echo "cli-recovery-controls: receipts and registry in $scratch/run (exit $status)"

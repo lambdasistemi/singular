@@ -22130,6 +22130,1091 @@
     }
    ]
   },
+  "docs-building/ordinary-binaries-and-explicit-test-builds-00": {
+   "audio_sha256": "ca48e00932beb8a9ef7374f6d282a519440424fc23aff56d79dc211b8e7f7680",
+   "characters": 43,
+   "cost": 4.2569999999999994e-05,
+   "duration": 3.1,
+   "index": 0,
+   "key": "8f7b7af91dca541f45f7a6240fefb5d419e1a6815274da00f1b150db82c591b1",
+   "page": "docs/building.md",
+   "pause_ms": 500,
+   "section": "ordinary-binaries-and-explicit-test-builds",
+   "sent_text": "Ordinary binaries and explicit test builds.",
+   "text": "Ordinary binaries and explicit test builds.",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.175,
+     "text": "Ordinary"
+    },
+    {
+     "end": 1.15,
+     "start": 0.575,
+     "text": "binaries"
+    },
+    {
+     "end": 1.263,
+     "start": 1.15,
+     "text": "and"
+    },
+    {
+     "end": 1.775,
+     "start": 1.263,
+     "text": "explicit"
+    },
+    {
+     "end": 2.05,
+     "start": 1.775,
+     "text": "test"
+    },
+    {
+     "end": 2.9,
+     "start": 2.05,
+     "text": "builds"
+    },
+    {
+     "end": 3.1,
+     "start": 2.9,
+     "text": "."
+    }
+   ]
+  },
+  "docs-building/ordinary-binaries-and-explicit-test-builds-01": {
+   "audio_sha256": "415ec71250fc46e09008baa90abcd8e1619c3669c372427e78a75399cf9a13e2",
+   "characters": 253,
+   "cost": 0.00025047,
+   "duration": 18.225,
+   "index": 1,
+   "key": "492a161c76d6d36de878dd506d59ff7cfd2bcf4903390de773d32efc8ccebb9e",
+   "page": "docs/building.md",
+   "pause_ms": 400,
+   "section": "ordinary-binaries-and-explicit-test-builds",
+   "sent_text": "As a release operator, I build ordinary singular and open-datum with the manual Cabal test-harness flag disabled. Both executable closures use the ordinary registry CLI modules. The release archive and publication commands select these ordinary outputs.",
+   "text": "As a release operator, I build ordinary singular and open-datum with the manual Cabal test-harness flag disabled. Both executable closures use the ordinary registry CLI modules. The release archive and publication commands select these ordinary outputs.",
+   "words": [
+    {
+     "end": 0.387,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.45,
+     "start": 0.387,
+     "text": "a"
+    },
+    {
+     "end": 0.85,
+     "start": 0.45,
+     "text": "release"
+    },
+    {
+     "end": 1.45,
+     "start": 0.85,
+     "text": "operator"
+    },
+    {
+     "end": 1.525,
+     "start": 1.45,
+     "text": ","
+    },
+    {
+     "end": 1.688,
+     "start": 1.525,
+     "text": "I"
+    },
+    {
+     "end": 1.987,
+     "start": 1.688,
+     "text": "build"
+    },
+    {
+     "end": 2.6,
+     "start": 1.987,
+     "text": "ordinary"
+    },
+    {
+     "end": 3.213,
+     "start": 2.6,
+     "text": "singular"
+    },
+    {
+     "end": 3.362,
+     "start": 3.213,
+     "text": "and"
+    },
+    {
+     "end": 4.175,
+     "start": 3.362,
+     "text": "open-datum"
+    },
+    {
+     "end": 4.312,
+     "start": 4.175,
+     "text": "with"
+    },
+    {
+     "end": 4.438,
+     "start": 4.312,
+     "text": "the"
+    },
+    {
+     "end": 4.9,
+     "start": 4.438,
+     "text": "manual"
+    },
+    {
+     "end": 5.412,
+     "start": 4.9,
+     "text": "Cabal"
+    },
+    {
+     "end": 6.088,
+     "start": 5.412,
+     "text": "test-harness"
+    },
+    {
+     "end": 6.525,
+     "start": 6.088,
+     "text": "flag"
+    },
+    {
+     "end": 7.75,
+     "start": 6.525,
+     "text": "disabled"
+    },
+    {
+     "end": 7.975,
+     "start": 7.75,
+     "text": "."
+    },
+    {
+     "end": 8.425,
+     "start": 8.15,
+     "text": "Both"
+    },
+    {
+     "end": 9.1,
+     "start": 8.425,
+     "text": "executable"
+    },
+    {
+     "end": 9.688,
+     "start": 9.1,
+     "text": "closures"
+    },
+    {
+     "end": 9.962,
+     "start": 9.688,
+     "text": "use"
+    },
+    {
+     "end": 10.113,
+     "start": 9.962,
+     "text": "the"
+    },
+    {
+     "end": 10.625,
+     "start": 10.113,
+     "text": "ordinary"
+    },
+    {
+     "end": 11.262,
+     "start": 10.625,
+     "text": "registry"
+    },
+    {
+     "end": 11.8,
+     "start": 11.262,
+     "text": "CLI"
+    },
+    {
+     "end": 12.9,
+     "start": 11.8,
+     "text": "modules"
+    },
+    {
+     "end": 13.1,
+     "start": 12.9,
+     "text": "."
+    },
+    {
+     "end": 13.35,
+     "start": 13.275,
+     "text": "The"
+    },
+    {
+     "end": 13.712,
+     "start": 13.35,
+     "text": "release"
+    },
+    {
+     "end": 14.25,
+     "start": 13.712,
+     "text": "archive"
+    },
+    {
+     "end": 14.375,
+     "start": 14.25,
+     "text": "and"
+    },
+    {
+     "end": 15.1,
+     "start": 14.375,
+     "text": "publication"
+    },
+    {
+     "end": 15.7,
+     "start": 15.1,
+     "text": "commands"
+    },
+    {
+     "end": 16.125,
+     "start": 15.7,
+     "text": "select"
+    },
+    {
+     "end": 16.362,
+     "start": 16.125,
+     "text": "these"
+    },
+    {
+     "end": 16.925,
+     "start": 16.362,
+     "text": "ordinary"
+    },
+    {
+     "end": 18.025,
+     "start": 16.925,
+     "text": "outputs"
+    },
+    {
+     "end": 18.225,
+     "start": 18.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-building/ordinary-binaries-and-explicit-test-builds-02": {
+   "audio_sha256": "fcccea2d0cb38af45f7ccab5ede0681d702fe13f9443d4410b3f63f1a8b73017",
+   "characters": 360,
+   "cost": 0.0003564,
+   "duration": 25.475,
+   "index": 2,
+   "key": "f2be6cfd0c8a7093424bf9fee2bbaa850b53d820c63bea7d0a152bade29ce0ba",
+   "page": "docs/building.md",
+   "pause_ms": 400,
+   "section": "ordinary-binaries-and-explicit-test-builds",
+   "sent_text": "As a contributor, I exercise crash windows and provider-answer loss with the separately named test outputs. Their registry CLI modules retain the original hold/drop controls and SINGULAR_HARNESS_TRIE_TRACE, an independent observation of the trie capability's actual operations. That diagnostic is a hidden test input and its evidence belongs to the test build.",
+   "text": "As a contributor, I exercise crash windows and provider-answer loss with the separately named test outputs. Their registry CLI modules retain the original hold/drop controls and SINGULAR_HARNESS_TRIE_TRACE, an independent observation of the trie capability's actual operations. That diagnostic is a hidden test input and its evidence belongs to the test build.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.425,
+     "start": 0.363,
+     "text": "a"
+    },
+    {
+     "end": 1.1,
+     "start": 0.425,
+     "text": "contributor"
+    },
+    {
+     "end": 1.175,
+     "start": 1.1,
+     "text": ","
+    },
+    {
+     "end": 1.325,
+     "start": 1.175,
+     "text": "I"
+    },
+    {
+     "end": 2.037,
+     "start": 1.325,
+     "text": "exercise"
+    },
+    {
+     "end": 2.487,
+     "start": 2.037,
+     "text": "crash"
+    },
+    {
+     "end": 3.125,
+     "start": 2.487,
+     "text": "windows"
+    },
+    {
+     "end": 3.25,
+     "start": 3.125,
+     "text": "and"
+    },
+    {
+     "end": 4.05,
+     "start": 3.25,
+     "text": "provider-answer"
+    },
+    {
+     "end": 4.45,
+     "start": 4.05,
+     "text": "loss"
+    },
+    {
+     "end": 4.588,
+     "start": 4.45,
+     "text": "with"
+    },
+    {
+     "end": 4.713,
+     "start": 4.588,
+     "text": "the"
+    },
+    {
+     "end": 5.225,
+     "start": 4.713,
+     "text": "separately"
+    },
+    {
+     "end": 5.588,
+     "start": 5.225,
+     "text": "named"
+    },
+    {
+     "end": 5.9,
+     "start": 5.588,
+     "text": "test"
+    },
+    {
+     "end": 7.1,
+     "start": 5.9,
+     "text": "outputs"
+    },
+    {
+     "end": 7.325,
+     "start": 7.1,
+     "text": "."
+    },
+    {
+     "end": 7.725,
+     "start": 7.525,
+     "text": "Their"
+    },
+    {
+     "end": 8.3,
+     "start": 7.725,
+     "text": "registry"
+    },
+    {
+     "end": 8.913,
+     "start": 8.3,
+     "text": "CLI"
+    },
+    {
+     "end": 9.525,
+     "start": 8.913,
+     "text": "modules"
+    },
+    {
+     "end": 9.962,
+     "start": 9.525,
+     "text": "retain"
+    },
+    {
+     "end": 10.075,
+     "start": 9.962,
+     "text": "the"
+    },
+    {
+     "end": 10.587,
+     "start": 10.075,
+     "text": "original"
+    },
+    {
+     "end": 11.225,
+     "start": 10.587,
+     "text": "hold/drop"
+    },
+    {
+     "end": 11.962,
+     "start": 11.225,
+     "text": "controls"
+    },
+    {
+     "end": 12.137,
+     "start": 11.962,
+     "text": "and"
+    },
+    {
+     "end": 14.475,
+     "start": 12.137,
+     "text": "SINGULAR_HARNESS_TRIE_TRACE"
+    },
+    {
+     "end": 14.7,
+     "start": 14.475,
+     "text": ","
+    },
+    {
+     "end": 15.038,
+     "start": 14.9,
+     "text": "an"
+    },
+    {
+     "end": 15.675,
+     "start": 15.038,
+     "text": "independent"
+    },
+    {
+     "end": 16.413,
+     "start": 15.675,
+     "text": "observation"
+    },
+    {
+     "end": 16.487,
+     "start": 16.413,
+     "text": "of"
+    },
+    {
+     "end": 16.587,
+     "start": 16.487,
+     "text": "the"
+    },
+    {
+     "end": 17.062,
+     "start": 16.587,
+     "text": "trie"
+    },
+    {
+     "end": 17.85,
+     "start": 17.062,
+     "text": "capability's"
+    },
+    {
+     "end": 18.3,
+     "start": 17.85,
+     "text": "actual"
+    },
+    {
+     "end": 19.6,
+     "start": 18.3,
+     "text": "operations"
+    },
+    {
+     "end": 19.8,
+     "start": 19.6,
+     "text": "."
+    },
+    {
+     "end": 20.25,
+     "start": 20.0,
+     "text": "That"
+    },
+    {
+     "end": 21.15,
+     "start": 20.25,
+     "text": "diagnostic"
+    },
+    {
+     "end": 21.3,
+     "start": 21.15,
+     "text": "is"
+    },
+    {
+     "end": 21.4,
+     "start": 21.3,
+     "text": "a"
+    },
+    {
+     "end": 21.725,
+     "start": 21.4,
+     "text": "hidden"
+    },
+    {
+     "end": 21.987,
+     "start": 21.725,
+     "text": "test"
+    },
+    {
+     "end": 22.6,
+     "start": 21.987,
+     "text": "input"
+    },
+    {
+     "end": 22.737,
+     "start": 22.6,
+     "text": "and"
+    },
+    {
+     "end": 22.9,
+     "start": 22.737,
+     "text": "its"
+    },
+    {
+     "end": 23.35,
+     "start": 22.9,
+     "text": "evidence"
+    },
+    {
+     "end": 23.875,
+     "start": 23.35,
+     "text": "belongs"
+    },
+    {
+     "end": 23.962,
+     "start": 23.875,
+     "text": "to"
+    },
+    {
+     "end": 24.05,
+     "start": 23.962,
+     "text": "the"
+    },
+    {
+     "end": 24.375,
+     "start": 24.05,
+     "text": "test"
+    },
+    {
+     "end": 25.25,
+     "start": 24.375,
+     "text": "build"
+    },
+    {
+     "end": 25.475,
+     "start": 25.25,
+     "text": "."
+    }
+   ]
+  },
+  "docs-building/ordinary-binaries-and-explicit-test-builds-03": {
+   "audio_sha256": "7145f0b356bd775cde59d83e6a9bdd727e1a9b18c91ee65d6d6bdebbf1146632",
+   "characters": 690,
+   "cost": 0.0006831,
+   "duration": 47.725,
+   "index": 3,
+   "key": "05504b19ac2e7b78de4756494df445a5b16f2331dca74d405025299892787cc3",
+   "page": "docs/building.md",
+   "pause_ms": 400,
+   "section": "ordinary-binaries-and-explicit-test-builds",
+   "sent_text": "The build control strips and inspects both ordinary compiled executables, reads the actual resolved registry CLI flag, and deliberately rejects the hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary extracted-release journey separately from the test journey's unchanged recovery, race, node-loss and trie-observation assertions. CLI recovery and conformance backend controls select the explicit test composition. The separate replay-fault project remains a deliberately altered test build; its named refusal proof retains its published pending cases. Test outputs are never substituted into the ordinary release verifier or published as ordinary release artifacts.",
+   "text": "The build control strips and inspects both ordinary compiled executables, reads the actual resolved registry CLI flag, and deliberately rejects the hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary extracted-release journey separately from the test journey's unchanged recovery, race, node-loss and trie-observation assertions. CLI recovery and conformance backend controls select the explicit test composition. The separate replay-fault project remains a deliberately altered test build; its named refusal proof retains its published pending cases. Test outputs are never substituted into the ordinary release verifier or published as ordinary release artifacts.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.25,
+     "text": "The"
+    },
+    {
+     "end": 0.625,
+     "start": 0.325,
+     "text": "build"
+    },
+    {
+     "end": 1.125,
+     "start": 0.625,
+     "text": "control"
+    },
+    {
+     "end": 1.65,
+     "start": 1.125,
+     "text": "strips"
+    },
+    {
+     "end": 1.763,
+     "start": 1.65,
+     "text": "and"
+    },
+    {
+     "end": 2.338,
+     "start": 1.763,
+     "text": "inspects"
+    },
+    {
+     "end": 2.713,
+     "start": 2.338,
+     "text": "both"
+    },
+    {
+     "end": 3.3,
+     "start": 2.713,
+     "text": "ordinary"
+    },
+    {
+     "end": 3.825,
+     "start": 3.3,
+     "text": "compiled"
+    },
+    {
+     "end": 4.725,
+     "start": 3.825,
+     "text": "executables"
+    },
+    {
+     "end": 4.838,
+     "start": 4.725,
+     "text": ","
+    },
+    {
+     "end": 5.275,
+     "start": 4.838,
+     "text": "reads"
+    },
+    {
+     "end": 5.438,
+     "start": 5.275,
+     "text": "the"
+    },
+    {
+     "end": 5.925,
+     "start": 5.438,
+     "text": "actual"
+    },
+    {
+     "end": 6.525,
+     "start": 5.925,
+     "text": "resolved"
+    },
+    {
+     "end": 7.188,
+     "start": 6.525,
+     "text": "registry"
+    },
+    {
+     "end": 7.838,
+     "start": 7.188,
+     "text": "CLI"
+    },
+    {
+     "end": 8.425,
+     "start": 7.838,
+     "text": "flag"
+    },
+    {
+     "end": 8.525,
+     "start": 8.425,
+     "text": ","
+    },
+    {
+     "end": 8.65,
+     "start": 8.525,
+     "text": "and"
+    },
+    {
+     "end": 9.25,
+     "start": 8.65,
+     "text": "deliberately"
+    },
+    {
+     "end": 9.775,
+     "start": 9.25,
+     "text": "rejects"
+    },
+    {
+     "end": 9.875,
+     "start": 9.775,
+     "text": "the"
+    },
+    {
+     "end": 10.45,
+     "start": 9.875,
+     "text": "hook-bearing"
+    },
+    {
+     "end": 10.712,
+     "start": 10.45,
+     "text": "test"
+    },
+    {
+     "end": 11.4,
+     "start": 10.712,
+     "text": "artifacts"
+    },
+    {
+     "end": 11.538,
+     "start": 11.4,
+     "text": "and"
+    },
+    {
+     "end": 12.012,
+     "start": 11.538,
+     "text": "opposite"
+    },
+    {
+     "end": 12.375,
+     "start": 12.012,
+     "text": "flag"
+    },
+    {
+     "end": 13.65,
+     "start": 12.375,
+     "text": "polarity"
+    },
+    {
+     "end": 13.9,
+     "start": 13.65,
+     "text": "."
+    },
+    {
+     "end": 14.637,
+     "start": 14.15,
+     "text": "CI"
+    },
+    {
+     "end": 15.025,
+     "start": 14.637,
+     "text": "runs"
+    },
+    {
+     "end": 15.188,
+     "start": 15.025,
+     "text": "the"
+    },
+    {
+     "end": 15.775,
+     "start": 15.188,
+     "text": "ordinary"
+    },
+    {
+     "end": 16.8,
+     "start": 15.775,
+     "text": "extracted-release"
+    },
+    {
+     "end": 17.225,
+     "start": 16.8,
+     "text": "journey"
+    },
+    {
+     "end": 17.75,
+     "start": 17.225,
+     "text": "separately"
+    },
+    {
+     "end": 17.913,
+     "start": 17.75,
+     "text": "from"
+    },
+    {
+     "end": 18.013,
+     "start": 17.913,
+     "text": "the"
+    },
+    {
+     "end": 18.413,
+     "start": 18.013,
+     "text": "test"
+    },
+    {
+     "end": 18.862,
+     "start": 18.413,
+     "text": "journey's"
+    },
+    {
+     "end": 19.575,
+     "start": 18.862,
+     "text": "unchanged"
+    },
+    {
+     "end": 20.75,
+     "start": 19.575,
+     "text": "recovery"
+    },
+    {
+     "end": 20.975,
+     "start": 20.75,
+     "text": ","
+    },
+    {
+     "end": 21.425,
+     "start": 21.175,
+     "text": "race"
+    },
+    {
+     "end": 21.475,
+     "start": 21.425,
+     "text": ","
+    },
+    {
+     "end": 21.962,
+     "start": 21.475,
+     "text": "node-loss"
+    },
+    {
+     "end": 22.075,
+     "start": 21.962,
+     "text": "and"
+    },
+    {
+     "end": 22.862,
+     "start": 22.075,
+     "text": "trie-observation"
+    },
+    {
+     "end": 23.95,
+     "start": 22.862,
+     "text": "assertions"
+    },
+    {
+     "end": 24.15,
+     "start": 23.95,
+     "text": "."
+    },
+    {
+     "end": 25.0,
+     "start": 24.4,
+     "text": "CLI"
+    },
+    {
+     "end": 25.6,
+     "start": 25.0,
+     "text": "recovery"
+    },
+    {
+     "end": 25.725,
+     "start": 25.6,
+     "text": "and"
+    },
+    {
+     "end": 26.388,
+     "start": 25.725,
+     "text": "conformance"
+    },
+    {
+     "end": 26.8,
+     "start": 26.388,
+     "text": "backend"
+    },
+    {
+     "end": 27.475,
+     "start": 26.8,
+     "text": "controls"
+    },
+    {
+     "end": 27.9,
+     "start": 27.475,
+     "text": "select"
+    },
+    {
+     "end": 28.05,
+     "start": 27.9,
+     "text": "the"
+    },
+    {
+     "end": 28.6,
+     "start": 28.05,
+     "text": "explicit"
+    },
+    {
+     "end": 28.875,
+     "start": 28.6,
+     "text": "test"
+    },
+    {
+     "end": 30.15,
+     "start": 28.875,
+     "text": "composition"
+    },
+    {
+     "end": 30.35,
+     "start": 30.15,
+     "text": "."
+    },
+    {
+     "end": 30.638,
+     "start": 30.525,
+     "text": "The"
+    },
+    {
+     "end": 31.075,
+     "start": 30.638,
+     "text": "separate"
+    },
+    {
+     "end": 31.7,
+     "start": 31.075,
+     "text": "replay-fault"
+    },
+    {
+     "end": 32.3,
+     "start": 31.7,
+     "text": "project"
+    },
+    {
+     "end": 32.8,
+     "start": 32.3,
+     "text": "remains"
+    },
+    {
+     "end": 32.9,
+     "start": 32.8,
+     "text": "a"
+    },
+    {
+     "end": 33.638,
+     "start": 32.9,
+     "text": "deliberately"
+    },
+    {
+     "end": 34.075,
+     "start": 33.638,
+     "text": "altered"
+    },
+    {
+     "end": 34.4,
+     "start": 34.075,
+     "text": "test"
+    },
+    {
+     "end": 35.25,
+     "start": 34.4,
+     "text": "build"
+    },
+    {
+     "end": 35.45,
+     "start": 35.25,
+     "text": ";"
+    },
+    {
+     "end": 35.825,
+     "start": 35.65,
+     "text": "its"
+    },
+    {
+     "end": 36.125,
+     "start": 35.825,
+     "text": "named"
+    },
+    {
+     "end": 36.625,
+     "start": 36.125,
+     "text": "refusal"
+    },
+    {
+     "end": 37.025,
+     "start": 36.625,
+     "text": "proof"
+    },
+    {
+     "end": 37.463,
+     "start": 37.025,
+     "text": "retains"
+    },
+    {
+     "end": 37.6,
+     "start": 37.463,
+     "text": "its"
+    },
+    {
+     "end": 38.025,
+     "start": 37.6,
+     "text": "published"
+    },
+    {
+     "end": 38.425,
+     "start": 38.025,
+     "text": "pending"
+    },
+    {
+     "end": 39.45,
+     "start": 38.425,
+     "text": "cases"
+    },
+    {
+     "end": 39.65,
+     "start": 39.45,
+     "text": "."
+    },
+    {
+     "end": 40.15,
+     "start": 39.875,
+     "text": "Test"
+    },
+    {
+     "end": 40.675,
+     "start": 40.15,
+     "text": "outputs"
+    },
+    {
+     "end": 40.838,
+     "start": 40.675,
+     "text": "are"
+    },
+    {
+     "end": 41.188,
+     "start": 40.838,
+     "text": "never"
+    },
+    {
+     "end": 41.95,
+     "start": 41.188,
+     "text": "substituted"
+    },
+    {
+     "end": 42.175,
+     "start": 41.95,
+     "text": "into"
+    },
+    {
+     "end": 42.338,
+     "start": 42.175,
+     "text": "the"
+    },
+    {
+     "end": 42.875,
+     "start": 42.338,
+     "text": "ordinary"
+    },
+    {
+     "end": 43.3,
+     "start": 42.875,
+     "text": "release"
+    },
+    {
+     "end": 44.125,
+     "start": 43.3,
+     "text": "verifier"
+    },
+    {
+     "end": 44.338,
+     "start": 44.125,
+     "text": "or"
+    },
+    {
+     "end": 44.925,
+     "start": 44.338,
+     "text": "published"
+    },
+    {
+     "end": 45.162,
+     "start": 44.925,
+     "text": "as"
+    },
+    {
+     "end": 45.725,
+     "start": 45.162,
+     "text": "ordinary"
+    },
+    {
+     "end": 46.15,
+     "start": 45.725,
+     "text": "release"
+    },
+    {
+     "end": 47.525,
+     "start": 46.15,
+     "text": "artifacts"
+    },
+    {
+     "end": 47.725,
+     "start": 47.525,
+     "text": "."
+    }
+   ]
+  },
   "docs-building/other-languages-00": {
    "audio_sha256": "b5764c082c6ebea7d59e1bf5c1a4b77f6459fbecc75b31e2e89e5df09d162fd6",
    "characters": 16,
@@ -271751,881 +272836,81 @@
    ]
   },
   "docs-singular-node/harness-appendix-test-hooks-01": {
-   "audio_sha256": "b1ba9f578639e202a1203f694d71f2d0cb9d653920f66e91b5d8e685ac0d3e5c",
-   "characters": 598,
-   "cost": 0.00059202,
-   "duration": 39.725,
+   "audio_sha256": "14a04afcf19daa8f6fdfeed6d8d5ac6a80e2db66c8246392209133437d309d42",
+   "characters": 99,
+   "cost": 9.800999999999999e-05,
+   "duration": 6.975,
    "index": 1,
-   "key": "fd091351f25fbb334e7bd7a0662e118caff4aebf1aa5a12f4d901fb7d6e83c85",
+   "key": "c22b1c3749a5c2876c5f0c25904c30bafe9fdd3406137efc4978c4b98930ee54",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "harness-appendix-test-hooks",
-   "sent_text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
-   "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
+   "sent_text": "Released singular and open-datum binaries carry no fault-injection or hidden trie-diagnostic hooks.",
+   "text": "Released singular and open-datum binaries carry no fault-injection or hidden trie-diagnostic hooks.",
    "words": [
     {
-     "end": 0.275,
-     "start": 0.175,
-     "text": "You"
+     "end": 0.675,
+     "start": 0.2,
+     "text": "Released"
     },
     {
-     "end": 0.575,
-     "start": 0.275,
-     "text": "never"
-    },
-    {
-     "end": 0.8,
-     "start": 0.575,
-     "text": "set"
-    },
-    {
-     "end": 1.55,
-     "start": 0.8,
-     "text": "these"
-    },
-    {
-     "end": 1.75,
-     "start": 1.55,
-     "text": "."
-    },
-    {
-     "end": 2.075,
-     "start": 1.975,
-     "text": "The"
-    },
-    {
-     "end": 2.588,
-     "start": 2.075,
-     "text": "released"
-    },
-    {
-     "end": 3.138,
-     "start": 2.588,
+     "end": 1.3,
+     "start": 0.675,
      "text": "singular"
     },
     {
-     "end": 3.537,
-     "start": 3.138,
-     "text": "reads"
+     "end": 1.425,
+     "start": 1.3,
+     "text": "and"
     },
     {
-     "end": 4.0,
-     "start": 3.537,
-     "text": "eleven"
+     "end": 2.125,
+     "start": 1.425,
+     "text": "open-datum"
     },
     {
-     "end": 4.6,
-     "start": 4.0,
-     "text": "environment"
+     "end": 2.737,
+     "start": 2.125,
+     "text": "binaries"
     },
     {
-     "end": 5.225,
-     "start": 4.6,
-     "text": "variables"
+     "end": 3.088,
+     "start": 2.737,
+     "text": "carry"
     },
     {
-     "end": 5.45,
-     "start": 5.225,
-     "text": "whose"
+     "end": 3.388,
+     "start": 3.088,
+     "text": "no"
     },
     {
-     "end": 5.762,
-     "start": 5.45,
-     "text": "only"
+     "end": 4.325,
+     "start": 3.388,
+     "text": "fault-injection"
     },
     {
-     "end": 6.312,
-     "start": 5.762,
-     "text": "purpose"
-    },
-    {
-     "end": 6.475,
-     "start": 6.312,
-     "text": "is"
-    },
-    {
-     "end": 6.6,
-     "start": 6.475,
-     "text": "to"
-    },
-    {
-     "end": 6.787,
-     "start": 6.6,
-     "text": "let"
-    },
-    {
-     "end": 6.887,
-     "start": 6.787,
-     "text": "the"
-    },
-    {
-     "end": 7.425,
-     "start": 6.887,
-     "text": "project's"
-    },
-    {
-     "end": 7.713,
-     "start": 7.425,
-     "text": "own"
-    },
-    {
-     "end": 8.212,
-     "start": 7.713,
-     "text": "tests"
-    },
-    {
-     "end": 8.512,
-     "start": 8.212,
-     "text": "stop"
-    },
-    {
-     "end": 8.575,
-     "start": 8.512,
-     "text": "a"
-    },
-    {
-     "end": 9.15,
-     "start": 8.575,
-     "text": "command"
-    },
-    {
-     "end": 9.238,
-     "start": 9.15,
-     "text": "at"
-    },
-    {
-     "end": 9.325,
-     "start": 9.238,
-     "text": "an"
-    },
-    {
-     "end": 9.837,
-     "start": 9.325,
-     "text": "exact"
-    },
-    {
-     "end": 10.4,
-     "start": 9.837,
-     "text": "point"
-    },
-    {
-     "end": 10.475,
-     "start": 10.4,
-     "text": "—"
-    },
-    {
-     "end": 10.625,
-     "start": 10.475,
-     "text": "to"
-    },
-    {
-     "end": 11.125,
-     "start": 10.625,
-     "text": "inspect"
-    },
-    {
-     "end": 11.275,
-     "start": 11.125,
-     "text": "it"
-    },
-    {
-     "end": 12.325,
-     "start": 11.275,
-     "text": "there"
-    },
-    {
-     "end": 12.55,
-     "start": 12.325,
-     "text": ","
-    },
-    {
-     "end": 12.913,
-     "start": 12.725,
-     "text": "kill"
-    },
-    {
-     "end": 13.0,
-     "start": 12.913,
-     "text": "it"
-    },
-    {
-     "end": 13.6,
-     "start": 13.0,
-     "text": "there"
-    },
-    {
-     "end": 13.85,
-     "start": 13.6,
-     "text": ","
-    },
-    {
-     "end": 14.2,
-     "start": 14.05,
+     "end": 4.5,
+     "start": 4.325,
      "text": "or"
     },
     {
-     "end": 14.387,
-     "start": 14.2,
-     "text": "make"
+     "end": 4.838,
+     "start": 4.5,
+     "text": "hidden"
     },
     {
-     "end": 14.5,
-     "start": 14.387,
-     "text": "it"
+     "end": 5.775,
+     "start": 4.838,
+     "text": "trie-diagnostic"
     },
     {
-     "end": 14.725,
-     "start": 14.5,
-     "text": "meet"
+     "end": 6.775,
+     "start": 5.775,
+     "text": "hooks"
     },
     {
-     "end": 14.988,
-     "start": 14.725,
-     "text": "no"
-    },
-    {
-     "end": 15.4,
-     "start": 14.988,
-     "text": "answer"
-    },
-    {
-     "end": 15.538,
-     "start": 15.4,
-     "text": "from"
-    },
-    {
-     "end": 15.625,
-     "start": 15.538,
-     "text": "the"
-    },
-    {
-     "end": 16.25,
-     "start": 15.625,
-     "text": "provider"
-    },
-    {
-     "end": 16.325,
-     "start": 16.25,
-     "text": "—"
-    },
-    {
-     "end": 16.462,
-     "start": 16.325,
-     "text": "and"
-    },
-    {
-     "end": 16.725,
-     "start": 16.462,
-     "text": "check"
-    },
-    {
-     "end": 16.862,
-     "start": 16.725,
-     "text": "what"
-    },
-    {
-     "end": 16.95,
-     "start": 16.862,
-     "text": "it"
-    },
-    {
-     "end": 17.25,
-     "start": 16.95,
-     "text": "leaves"
-    },
-    {
-     "end": 18.3,
-     "start": 17.25,
-     "text": "behind"
-    },
-    {
-     "end": 18.525,
-     "start": 18.3,
-     "text": "."
-    },
-    {
-     "end": 18.825,
-     "start": 18.7,
-     "text": "When"
-    },
-    {
-     "end": 19.05,
-     "start": 18.825,
-     "text": "none"
-    },
-    {
-     "end": 19.212,
-     "start": 19.05,
-     "text": "is"
-    },
-    {
-     "end": 19.5,
-     "start": 19.212,
-     "text": "set"
-    },
-    {
-     "end": 19.55,
-     "start": 19.5,
-     "text": ","
-    },
-    {
-     "end": 19.75,
-     "start": 19.55,
-     "text": "which"
-    },
-    {
-     "end": 19.875,
-     "start": 19.75,
-     "text": "is"
-    },
-    {
-     "end": 20.138,
-     "start": 19.875,
-     "text": "how"
-    },
-    {
-     "end": 20.475,
-     "start": 20.138,
-     "text": "every"
-    },
-    {
-     "end": 21.05,
-     "start": 20.475,
-     "text": "operator"
-    },
-    {
-     "end": 21.388,
-     "start": 21.05,
-     "text": "runs"
-    },
-    {
-     "end": 21.55,
-     "start": 21.388,
-     "text": "it"
-    },
-    {
-     "end": 21.625,
-     "start": 21.55,
-     "text": ","
-    },
-    {
-     "end": 21.775,
-     "start": 21.625,
-     "text": "they"
-    },
-    {
-     "end": 21.9,
-     "start": 21.775,
-     "text": "do"
-    },
-    {
-     "end": 22.85,
-     "start": 21.9,
-     "text": "nothing"
-    },
-    {
-     "end": 23.05,
-     "start": 22.85,
-     "text": ":"
-    },
-    {
-     "end": 23.425,
-     "start": 23.25,
-     "text": "no"
-    },
-    {
-     "end": 23.65,
-     "start": 23.425,
-     "text": "hold"
-    },
-    {
-     "end": 23.688,
-     "start": 23.65,
-     "text": ","
-    },
-    {
-     "end": 23.825,
-     "start": 23.688,
-     "text": "no"
-    },
-    {
-     "end": 24.125,
-     "start": 23.825,
-     "text": "dropped"
-    },
-    {
-     "end": 24.875,
-     "start": 24.125,
-     "text": "send"
-    },
-    {
-     "end": 25.075,
-     "start": 24.875,
-     "text": "."
-    },
-    {
-     "end": 25.35,
-     "start": 25.275,
-     "text": "The"
-    },
-    {
-     "end": 25.85,
-     "start": 25.35,
-     "text": "retained"
-    },
-    {
-     "end": 26.225,
-     "start": 25.85,
-     "text": "harness"
-    },
-    {
-     "end": 26.862,
-     "start": 26.225,
-     "text": "controls"
-    },
-    {
-     "end": 27.125,
-     "start": 26.862,
-     "text": "check"
-    },
-    {
-     "end": 27.25,
-     "start": 27.125,
-     "text": "the"
-    },
-    {
-     "end": 27.812,
-     "start": 27.25,
-     "text": "ordinary"
-    },
-    {
-     "end": 28.25,
-     "start": 27.812,
-     "text": "path"
-    },
-    {
-     "end": 28.438,
-     "start": 28.25,
-     "text": "with"
-    },
-    {
-     "end": 28.712,
-     "start": 28.438,
-     "text": "no"
-    },
-    {
-     "end": 29.275,
-     "start": 28.712,
-     "text": "variable"
-    },
-    {
-     "end": 29.688,
-     "start": 29.275,
-     "text": "set"
-    },
-    {
-     "end": 29.812,
-     "start": 29.688,
-     "text": "and"
-    },
-    {
-     "end": 29.913,
-     "start": 29.812,
-     "text": "the"
-    },
-    {
-     "end": 30.325,
-     "start": 29.913,
-     "text": "holds"
-    },
-    {
-     "end": 30.45,
-     "start": 30.325,
-     "text": "at"
-    },
-    {
-     "end": 30.55,
-     "start": 30.45,
-     "text": "the"
-    },
-    {
-     "end": 31.1,
-     "start": 30.55,
-     "text": "requested"
-    },
-    {
-     "end": 32.2,
-     "start": 31.1,
-     "text": "points"
-    },
-    {
-     "end": 32.425,
-     "start": 32.2,
-     "text": "."
-    },
-    {
-     "end": 32.8,
-     "start": 32.6,
-     "text": "Their"
-    },
-    {
-     "end": 33.225,
-     "start": 32.8,
-     "text": "local"
-    },
-    {
-     "end": 33.275,
-     "start": 33.225,
-     "text": ","
-    },
-    {
-     "end": 33.775,
-     "start": 33.275,
-     "text": "hosted"
-    },
-    {
-     "end": 33.888,
-     "start": 33.775,
-     "text": "and"
-    },
-    {
-     "end": 34.225,
-     "start": 33.888,
-     "text": "release"
-    },
-    {
-     "end": 34.713,
-     "start": 34.225,
-     "text": "results"
-    },
-    {
-     "end": 34.9,
-     "start": 34.713,
-     "text": "are"
-    },
-    {
-     "end": 35.3,
-     "start": 34.9,
-     "text": "separate"
-    },
-    {
-     "end": 36.325,
-     "start": 35.3,
-     "text": "evidence"
-    },
-    {
-     "end": 36.525,
-     "start": 36.325,
-     "text": ";"
-    },
-    {
-     "end": 36.775,
-     "start": 36.7,
-     "text": "an"
-    },
-    {
-     "end": 37.475,
-     "start": 36.775,
-     "text": "unexecuted"
-    },
-    {
-     "end": 37.975,
-     "start": 37.475,
-     "text": "control"
-    },
-    {
-     "end": 38.625,
-     "start": 37.975,
-     "text": "establishes"
-    },
-    {
-     "end": 39.525,
-     "start": 38.625,
-     "text": "nothing"
-    },
-    {
-     "end": 39.725,
-     "start": 39.525,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/harness-appendix-test-hooks-02": {
-   "audio_sha256": "30b9e44fc52d8f67b53e0b46e4acce08d60eef33c42540be53f219a23523779f",
-   "characters": 116,
-   "cost": 7.192e-05,
-   "duration": 7.575,
-   "index": 2,
-   "key": "5655ec4a87e91266abf9800deaa78d4ee0171e7dc2c63afffe01a516f45214e7",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "harness-appendix-test-hooks",
-   "sent_text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
-   "text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
-   "words": [
-    {
-     "end": 0.25,
-     "start": 0.175,
-     "text": "A"
-    },
-    {
-     "end": 0.5,
-     "start": 0.25,
-     "text": "hold"
-    },
-    {
-     "end": 0.962,
-     "start": 0.5,
-     "text": "variable"
-    },
-    {
-     "end": 1.188,
-     "start": 0.962,
-     "text": "names"
-    },
-    {
-     "end": 1.25,
-     "start": 1.188,
-     "text": "a"
-    },
-    {
-     "end": 2.025,
-     "start": 1.25,
-     "text": "path"
-    },
-    {
-     "end": 2.225,
-     "start": 2.025,
-     "text": "."
-    },
-    {
-     "end": 2.513,
-     "start": 2.4,
-     "text": "When"
-    },
-    {
-     "end": 2.6,
-     "start": 2.513,
-     "text": "the"
-    },
-    {
-     "end": 3.05,
-     "start": 2.6,
-     "text": "command"
-    },
-    {
-     "end": 3.4,
-     "start": 3.05,
-     "text": "reaches"
-    },
-    {
-     "end": 3.612,
-     "start": 3.4,
-     "text": "its"
-    },
-    {
-     "end": 4.012,
-     "start": 3.612,
-     "text": "point"
-    },
-    {
-     "end": 4.15,
-     "start": 4.012,
-     "text": "it"
-    },
-    {
-     "end": 4.463,
-     "start": 4.15,
-     "text": "writes"
-    },
-    {
-     "end": 5.15,
-     "start": 4.463,
-     "text": "PATH.waiting"
-    },
-    {
-     "end": 5.287,
-     "start": 5.15,
-     "text": "and"
-    },
-    {
-     "end": 5.675,
-     "start": 5.287,
-     "text": "waits"
-    },
-    {
-     "end": 5.975,
-     "start": 5.675,
-     "text": "until"
-    },
-    {
-     "end": 6.275,
-     "start": 5.975,
-     "text": "PATH"
-    },
-    {
-     "end": 7.375,
-     "start": 6.275,
-     "text": "exists"
-    },
-    {
-     "end": 7.575,
-     "start": 7.375,
-     "text": "."
-    }
-   ]
-  },
-  "docs-singular-node/harness-appendix-test-hooks-03": {
-   "audio_sha256": "a274ed318615451ac0d0ca1dcba0ffd47399eb678c706119ea1db49aec22fc69",
-   "characters": 154,
-   "cost": 9.548000000000001e-05,
-   "duration": 10.75,
-   "index": 3,
-   "key": "dfecfbde49eecc33596b4331420b0f189249d799338a3a5033183c9768a6c73e",
-   "page": "docs/singular-node.md",
-   "pause_ms": 400,
-   "section": "harness-appendix-test-hooks",
-   "sent_text": "A requested hold writes its waiting file and continues only after the release file exists. A requested drop models a missing provider answer at that step.",
-   "text": "A requested hold writes its waiting file and continues only after the release file exists. A requested drop models a missing provider answer at that step.",
-   "words": [
-    {
-     "end": 0.275,
-     "start": 0.2,
-     "text": "A"
-    },
-    {
-     "end": 0.85,
-     "start": 0.275,
-     "text": "requested"
-    },
-    {
-     "end": 1.312,
-     "start": 0.85,
-     "text": "hold"
-    },
-    {
-     "end": 1.6,
-     "start": 1.312,
-     "text": "writes"
-    },
-    {
-     "end": 1.8,
-     "start": 1.6,
-     "text": "its"
-    },
-    {
-     "end": 2.162,
-     "start": 1.8,
-     "text": "waiting"
-    },
-    {
-     "end": 2.688,
-     "start": 2.162,
-     "text": "file"
-    },
-    {
-     "end": 2.825,
-     "start": 2.688,
-     "text": "and"
-    },
-    {
-     "end": 3.487,
-     "start": 2.825,
-     "text": "continues"
-    },
-    {
-     "end": 3.85,
-     "start": 3.487,
-     "text": "only"
-    },
-    {
-     "end": 4.137,
-     "start": 3.85,
-     "text": "after"
-    },
-    {
-     "end": 4.225,
-     "start": 4.137,
-     "text": "the"
-    },
-    {
-     "end": 4.65,
-     "start": 4.225,
-     "text": "release"
-    },
-    {
-     "end": 4.975,
-     "start": 4.65,
-     "text": "file"
-    },
-    {
-     "end": 6.1,
-     "start": 4.975,
-     "text": "exists"
-    },
-    {
-     "end": 6.3,
-     "start": 6.1,
-     "text": "."
-    },
-    {
-     "end": 6.575,
-     "start": 6.5,
-     "text": "A"
-    },
-    {
-     "end": 7.125,
-     "start": 6.575,
-     "text": "requested"
-    },
-    {
-     "end": 7.537,
-     "start": 7.125,
-     "text": "drop"
-    },
-    {
-     "end": 7.95,
-     "start": 7.537,
-     "text": "models"
-    },
-    {
-     "end": 8.062,
-     "start": 7.95,
-     "text": "a"
-    },
-    {
-     "end": 8.4,
-     "start": 8.062,
-     "text": "missing"
-    },
-    {
-     "end": 8.9,
-     "start": 8.4,
-     "text": "provider"
-    },
-    {
-     "end": 9.325,
-     "start": 8.9,
-     "text": "answer"
-    },
-    {
-     "end": 9.425,
-     "start": 9.325,
-     "text": "at"
-    },
-    {
-     "end": 9.7,
-     "start": 9.425,
-     "text": "that"
-    },
-    {
-     "end": 10.55,
-     "start": 9.7,
-     "text": "step"
-    },
-    {
-     "end": 10.75,
-     "start": 10.55,
+     "end": 6.975,
+     "start": 6.775,
      "text": "."
     }
    ]
@@ -274366,6 +274651,411 @@
     {
      "end": 27.325,
      "start": 27.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/public-environment-configuration-00": {
+   "audio_sha256": "98884428d0b014e50ad5497c6548e9b50009f66518a30cedc8050411c234cd84",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.525,
+   "index": 0,
+   "key": "d5946df19bd495fe5ec646edeef1e7c27502a74c561254975087780567e4b553",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "public-environment-configuration",
+   "sent_text": "Public environment configuration.",
+   "text": "Public environment configuration.",
+   "words": [
+    {
+     "end": 0.512,
+     "start": 0.175,
+     "text": "Public"
+    },
+    {
+     "end": 0.975,
+     "start": 0.512,
+     "text": "environment"
+    },
+    {
+     "end": 2.325,
+     "start": 0.975,
+     "text": "configuration"
+    },
+    {
+     "end": 2.525,
+     "start": 2.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/public-environment-configuration-01": {
+   "audio_sha256": "45ca10cfe8ab7b77f7e09968c80fd473c9a7ee2650a5c12b0d28a5f6e9721df8",
+   "characters": 433,
+   "cost": 0.00042867,
+   "duration": 29.35,
+   "index": 1,
+   "key": "5881251137c55021412e4d16afd9ddcb85e7727d4b0d5b0a520e9ad75db5c91e",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "public-environment-configuration",
+   "sent_text": "As an operator, I can supply SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line token takes precedence. The token names the registry, and never selects a provider. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
+   "text": "As an operator, I can supply SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line token takes precedence. The token names the registry, and never selects a provider. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.425,
+     "start": 0.338,
+     "text": "an"
+    },
+    {
+     "end": 1.05,
+     "start": 0.425,
+     "text": "operator"
+    },
+    {
+     "end": 1.125,
+     "start": 1.05,
+     "text": ","
+    },
+    {
+     "end": 1.275,
+     "start": 1.125,
+     "text": "I"
+    },
+    {
+     "end": 1.475,
+     "start": 1.275,
+     "text": "can"
+    },
+    {
+     "end": 1.925,
+     "start": 1.475,
+     "text": "supply"
+    },
+    {
+     "end": 3.1,
+     "start": 1.925,
+     "text": "SINGULAR_STATE_TOKEN"
+    },
+    {
+     "end": 3.237,
+     "start": 3.1,
+     "text": "when"
+    },
+    {
+     "end": 3.388,
+     "start": 3.237,
+     "text": "I"
+    },
+    {
+     "end": 3.725,
+     "start": 3.388,
+     "text": "omit"
+    },
+    {
+     "end": 5.0,
+     "start": 3.725,
+     "text": "--state-token"
+    },
+    {
+     "end": 5.2,
+     "start": 5.0,
+     "text": ";"
+    },
+    {
+     "end": 5.5,
+     "start": 5.4,
+     "text": "an"
+    },
+    {
+     "end": 6.075,
+     "start": 5.5,
+     "text": "explicit"
+    },
+    {
+     "end": 6.838,
+     "start": 6.075,
+     "text": "command-line"
+    },
+    {
+     "end": 7.275,
+     "start": 6.838,
+     "text": "token"
+    },
+    {
+     "end": 7.575,
+     "start": 7.275,
+     "text": "takes"
+    },
+    {
+     "end": 8.425,
+     "start": 7.575,
+     "text": "precedence"
+    },
+    {
+     "end": 8.55,
+     "start": 8.425,
+     "text": "."
+    },
+    {
+     "end": 8.65,
+     "start": 8.55,
+     "text": "The"
+    },
+    {
+     "end": 9.075,
+     "start": 8.65,
+     "text": "token"
+    },
+    {
+     "end": 9.4,
+     "start": 9.075,
+     "text": "names"
+    },
+    {
+     "end": 9.525,
+     "start": 9.4,
+     "text": "the"
+    },
+    {
+     "end": 10.175,
+     "start": 9.525,
+     "text": "registry"
+    },
+    {
+     "end": 10.25,
+     "start": 10.175,
+     "text": ","
+    },
+    {
+     "end": 10.387,
+     "start": 10.25,
+     "text": "and"
+    },
+    {
+     "end": 10.725,
+     "start": 10.387,
+     "text": "never"
+    },
+    {
+     "end": 11.137,
+     "start": 10.725,
+     "text": "selects"
+    },
+    {
+     "end": 11.2,
+     "start": 11.137,
+     "text": "a"
+    },
+    {
+     "end": 12.325,
+     "start": 11.2,
+     "text": "provider"
+    },
+    {
+     "end": 12.575,
+     "start": 12.325,
+     "text": "."
+    },
+    {
+     "end": 14.55,
+     "start": 12.825,
+     "text": "SINGULAR_LOG=PATH"
+    },
+    {
+     "end": 14.988,
+     "start": 14.55,
+     "text": "appends"
+    },
+    {
+     "end": 15.35,
+     "start": 14.988,
+     "text": "phase"
+    },
+    {
+     "end": 15.75,
+     "start": 15.35,
+     "text": "events"
+    },
+    {
+     "end": 15.875,
+     "start": 15.75,
+     "text": "to"
+    },
+    {
+     "end": 15.988,
+     "start": 15.875,
+     "text": "a"
+    },
+    {
+     "end": 16.513,
+     "start": 15.988,
+     "text": "file"
+    },
+    {
+     "end": 17.087,
+     "start": 16.513,
+     "text": "alongside"
+    },
+    {
+     "end": 17.175,
+     "start": 17.087,
+     "text": "the"
+    },
+    {
+     "end": 17.737,
+     "start": 17.175,
+     "text": "narration"
+    },
+    {
+     "end": 18.075,
+     "start": 17.737,
+     "text": "sinks"
+    },
+    {
+     "end": 18.575,
+     "start": 18.075,
+     "text": "selected"
+    },
+    {
+     "end": 18.788,
+     "start": 18.575,
+     "text": "by"
+    },
+    {
+     "end": 19.875,
+     "start": 18.788,
+     "text": "trace"
+    },
+    {
+     "end": 20.1,
+     "start": 19.875,
+     "text": ","
+    },
+    {
+     "end": 20.612,
+     "start": 20.275,
+     "text": "trace-to"
+    },
+    {
+     "end": 20.712,
+     "start": 20.612,
+     "text": "and"
+    },
+    {
+     "end": 21.8,
+     "start": 20.712,
+     "text": "trace-format"
+    },
+    {
+     "end": 22.0,
+     "start": 21.8,
+     "text": "."
+    },
+    {
+     "end": 22.263,
+     "start": 22.175,
+     "text": "It"
+    },
+    {
+     "end": 22.4,
+     "start": 22.263,
+     "text": "does"
+    },
+    {
+     "end": 22.625,
+     "start": 22.4,
+     "text": "not"
+    },
+    {
+     "end": 23.025,
+     "start": 22.625,
+     "text": "replace"
+    },
+    {
+     "end": 23.288,
+     "start": 23.025,
+     "text": "those"
+    },
+    {
+     "end": 23.737,
+     "start": 23.288,
+     "text": "sinks"
+    },
+    {
+     "end": 23.913,
+     "start": 23.737,
+     "text": "or"
+    },
+    {
+     "end": 24.237,
+     "start": 23.913,
+     "text": "change"
+    },
+    {
+     "end": 24.4,
+     "start": 24.237,
+     "text": "their"
+    },
+    {
+     "end": 24.95,
+     "start": 24.4,
+     "text": "command-line"
+    },
+    {
+     "end": 26.075,
+     "start": 24.95,
+     "text": "precedence"
+    },
+    {
+     "end": 26.275,
+     "start": 26.075,
+     "text": "."
+    },
+    {
+     "end": 26.525,
+     "start": 26.45,
+     "text": "An"
+    },
+    {
+     "end": 26.825,
+     "start": 26.525,
+     "text": "empty"
+    },
+    {
+     "end": 27.3,
+     "start": 26.825,
+     "text": "phase-log"
+    },
+    {
+     "end": 27.6,
+     "start": 27.3,
+     "text": "path"
+    },
+    {
+     "end": 28.125,
+     "start": 27.6,
+     "text": "disables"
+    },
+    {
+     "end": 28.388,
+     "start": 28.125,
+     "text": "that"
+    },
+    {
+     "end": 29.15,
+     "start": 28.388,
+     "text": "sink"
+    },
+    {
+     "end": 29.35,
+     "start": 29.15,
      "text": "."
     }
    ]
@@ -279821,17 +280511,17 @@
    ]
   },
   "docs-singular-node/the-settings-you-give-01": {
-   "audio_sha256": "a6113557517a33eac8569b81f4c16c2d8a3691d256b8466b73b50cedbeecee46",
-   "characters": 422,
-   "cost": 0.00026164,
-   "duration": 27.325,
+   "audio_sha256": "a5bc088a300960bb4192fc08046f9bdfcd8118ff2f380461511a1fbb76ddfa26",
+   "characters": 460,
+   "cost": 0.00045539999999999996,
+   "duration": 30.075,
    "index": 1,
-   "key": "dcba3cc8a6cd056d1c832043864d1b68a08d863af5c0003876a748120b6a3899",
+   "key": "abddad85bb7ced601c8e226659c5fffbb0616384368adb7179e066f493550e92",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "the-settings-you-give",
-   "sent_text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
-   "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
+   "sent_text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+   "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
    "words": [
     {
      "end": 0.287,
@@ -280144,118 +280834,118 @@
      "text": "."
     },
     {
-     "end": 20.013,
-     "start": 19.9,
+     "end": 19.95,
+     "start": 19.875,
      "text": "The"
     },
     {
-     "end": 20.5,
-     "start": 20.013,
+     "end": 20.45,
+     "start": 19.95,
+     "text": "connection"
+    },
+    {
+     "end": 20.962,
+     "start": 20.45,
      "text": "settings"
     },
     {
-     "end": 20.663,
-     "start": 20.5,
+     "end": 21.125,
+     "start": 20.962,
      "text": "are"
     },
     {
-     "end": 20.95,
-     "start": 20.663,
+     "end": 21.4,
+     "start": 21.125,
      "text": "read"
     },
     {
-     "end": 21.112,
-     "start": 20.95,
+     "end": 21.538,
+     "start": 21.4,
      "text": "from"
     },
     {
-     "end": 21.2,
-     "start": 21.112,
+     "end": 21.625,
+     "start": 21.538,
      "text": "the"
     },
     {
-     "end": 21.65,
-     "start": 21.2,
+     "end": 22.025,
+     "start": 21.625,
      "text": "command"
     },
     {
-     "end": 22.013,
-     "start": 21.65,
+     "end": 22.3,
+     "start": 22.025,
      "text": "line"
     },
     {
-     "end": 22.575,
-     "start": 22.013,
+     "end": 23.15,
+     "start": 22.3,
      "text": "only"
     },
     {
-     "end": 22.675,
-     "start": 22.575,
-     "text": ";"
+     "end": 23.35,
+     "start": 23.15,
+     "text": "."
     },
     {
-     "end": 22.8,
-     "start": 22.675,
+     "end": 23.9,
+     "start": 23.55,
+     "text": "Public"
+    },
+    {
+     "end": 24.475,
+     "start": 23.9,
+     "text": "environment"
+    },
+    {
+     "end": 25.413,
+     "start": 24.475,
+     "text": "configuration"
+    },
+    {
+     "end": 25.938,
+     "start": 25.413,
+     "text": "supplies"
+    },
+    {
+     "end": 26.087,
+     "start": 25.938,
      "text": "the"
     },
     {
-     "end": 23.0,
-     "start": 22.8,
-     "text": "one"
+     "end": 26.6,
+     "start": 26.087,
+     "text": "optional"
     },
     {
-     "end": 23.6,
-     "start": 23.0,
-     "text": "exception"
+     "end": 27.413,
+     "start": 26.6,
+     "text": "registry-token"
     },
     {
-     "end": 23.75,
-     "start": 23.6,
-     "text": "is"
+     "end": 28.087,
+     "start": 27.413,
+     "text": "fallback"
     },
     {
-     "end": 23.888,
-     "start": 23.75,
-     "text": "the"
+     "end": 28.263,
+     "start": 28.087,
+     "text": "and"
     },
     {
-     "end": 24.575,
-     "start": 23.888,
-     "text": "test-harness"
+     "end": 28.862,
+     "start": 28.263,
+     "text": "phase-log"
     },
     {
-     "end": 24.9,
-     "start": 24.575,
-     "text": "hooks"
+     "end": 29.825,
+     "start": 28.862,
+     "text": "path"
     },
     {
-     "end": 24.938,
-     "start": 24.9,
-     "text": ","
-    },
-    {
-     "end": 25.138,
-     "start": 24.938,
-     "text": "which"
-    },
-    {
-     "end": 25.812,
-     "start": 25.138,
-     "text": "operators"
-    },
-    {
-     "end": 26.138,
-     "start": 25.812,
-     "text": "never"
-    },
-    {
-     "end": 27.075,
-     "start": 26.138,
-     "text": "set"
-    },
-    {
-     "end": 27.325,
-     "start": 27.075,
+     "end": 30.075,
+     "start": 29.825,
      "text": "."
     }
    ]
@@ -291466,416 +292156,551 @@
    ]
   },
   "docs-verify-release/what-it-checks-in-order-03": {
-   "audio_sha256": "47ff1c505e75b3fe8034b743b14af0977012650126c70a09107774ee701884ac",
-   "characters": 424,
-   "cost": 0.00026288,
-   "duration": 27.3,
+   "audio_sha256": "269ad9212491031138811e7f0bce1275a18b05758d38bddcd14a4827e2ee05a1",
+   "characters": 372,
+   "cost": 0.00036828,
+   "duration": 25.875,
    "index": 3,
-   "key": "7c2bd1309442a3dfd1664640df430afe61a24ac878be71bac5aa8607d6d6fe44",
+   "key": "c8acdd60d6ec432b4ce2a346ddb19b44a39ae8d520658ab04e2301b04ca4e469",
    "page": "docs/verify-release.md",
    "pause_ms": 400,
    "section": "what-it-checks-in-order",
-   "sent_text": "The last check is computed from that same run. The released singular has test-harness hooks, environment variables that stop a command at an exact point for the project's own tests (see Connecting singular to a node). The verifier records which variables every process was started with, and checks that each of the five commands ran with none set and that the hold points that fired are exactly the ones a process asked for.",
-   "text": "The last check is computed from that same run. The released singular has test-harness hooks, environment variables that stop a command at an exact point for the project's own tests (see Connecting singular to a node). The verifier records which variables every process was started with, and checks that each of the five commands ran with none set and that the hold points that fired are exactly the ones a process asked for.",
+   "sent_text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: all five commands must run without hidden harness inputs, and no hold marker may appear.",
+   "text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: all five commands must run without hidden harness inputs, and no hold marker may appear.",
    "words": [
     {
-     "end": 0.25,
-     "start": 0.175,
-     "text": "The"
+     "end": 0.55,
+     "start": 0.225,
+     "text": "Before"
     },
     {
-     "end": 0.525,
-     "start": 0.25,
-     "text": "last"
+     "end": 0.938,
+     "start": 0.55,
+     "text": "starting"
     },
     {
-     "end": 0.738,
-     "start": 0.525,
-     "text": "check"
-    },
-    {
-     "end": 0.875,
-     "start": 0.738,
-     "text": "is"
-    },
-    {
-     "end": 1.35,
-     "start": 0.875,
-     "text": "computed"
-    },
-    {
-     "end": 1.487,
-     "start": 1.35,
-     "text": "from"
-    },
-    {
-     "end": 1.75,
-     "start": 1.487,
-     "text": "that"
-    },
-    {
-     "end": 2.025,
-     "start": 1.75,
-     "text": "same"
-    },
-    {
-     "end": 2.775,
-     "start": 2.025,
-     "text": "run"
-    },
-    {
-     "end": 2.975,
-     "start": 2.775,
-     "text": "."
-    },
-    {
-     "end": 3.225,
-     "start": 3.15,
-     "text": "The"
-    },
-    {
-     "end": 3.575,
-     "start": 3.225,
-     "text": "released"
-    },
-    {
-     "end": 3.95,
-     "start": 3.575,
-     "text": "singular"
-    },
-    {
-     "end": 4.15,
-     "start": 3.95,
-     "text": "has"
-    },
-    {
-     "end": 4.775,
-     "start": 4.15,
-     "text": "test-harness"
-    },
-    {
-     "end": 5.55,
-     "start": 4.775,
-     "text": "hooks"
-    },
-    {
-     "end": 5.75,
-     "start": 5.55,
-     "text": ","
-    },
-    {
-     "end": 6.525,
-     "start": 5.975,
-     "text": "environment"
-    },
-    {
-     "end": 7.15,
-     "start": 6.525,
-     "text": "variables"
-    },
-    {
-     "end": 7.35,
-     "start": 7.15,
-     "text": "that"
-    },
-    {
-     "end": 7.637,
-     "start": 7.35,
-     "text": "stop"
-    },
-    {
-     "end": 7.7,
-     "start": 7.637,
-     "text": "a"
-    },
-    {
-     "end": 8.312,
-     "start": 7.7,
-     "text": "command"
-    },
-    {
-     "end": 8.413,
-     "start": 8.312,
-     "text": "at"
-    },
-    {
-     "end": 8.5,
-     "start": 8.413,
-     "text": "an"
-    },
-    {
-     "end": 9.012,
-     "start": 8.5,
-     "text": "exact"
-    },
-    {
-     "end": 9.375,
-     "start": 9.012,
-     "text": "point"
-    },
-    {
-     "end": 9.488,
-     "start": 9.375,
-     "text": "for"
-    },
-    {
-     "end": 9.575,
-     "start": 9.488,
+     "end": 1.038,
+     "start": 0.938,
      "text": "the"
     },
     {
-     "end": 10.1,
-     "start": 9.575,
-     "text": "project's"
+     "end": 1.45,
+     "start": 1.038,
+     "text": "journey"
     },
     {
-     "end": 10.312,
-     "start": 10.1,
-     "text": "own"
+     "end": 1.525,
+     "start": 1.45,
+     "text": ","
     },
     {
-     "end": 11.012,
-     "start": 10.312,
-     "text": "tests"
+     "end": 1.625,
+     "start": 1.525,
+     "text": "the"
     },
     {
-     "end": 11.125,
-     "start": 11.012,
-     "text": "("
-    },
-    {
-     "end": 11.413,
-     "start": 11.125,
-     "text": "see"
-    },
-    {
-     "end": 11.938,
-     "start": 11.413,
-     "text": "Connecting"
-    },
-    {
-     "end": 12.45,
-     "start": 11.938,
-     "text": "singular"
-    },
-    {
-     "end": 12.6,
-     "start": 12.45,
-     "text": "to"
-    },
-    {
-     "end": 12.7,
-     "start": 12.6,
-     "text": "a"
-    },
-    {
-     "end": 13.725,
-     "start": 12.7,
-     "text": "node"
-    },
-    {
-     "end": 14.0,
-     "start": 13.725,
-     "text": ")"
-    },
-    {
-     "end": 14.05,
-     "start": 14.0,
-     "text": "."
-    },
-    {
-     "end": 14.3,
-     "start": 14.225,
-     "text": "The"
-    },
-    {
-     "end": 14.9,
-     "start": 14.3,
+     "end": 2.213,
+     "start": 1.625,
      "text": "verifier"
     },
     {
-     "end": 15.375,
-     "start": 14.9,
+     "end": 2.7,
+     "start": 2.213,
+     "text": "strips"
+    },
+    {
+     "end": 2.812,
+     "start": 2.7,
+     "text": "and"
+    },
+    {
+     "end": 3.4,
+     "start": 2.812,
+     "text": "inspects"
+    },
+    {
+     "end": 3.537,
+     "start": 3.4,
+     "text": "the"
+    },
+    {
+     "end": 4.05,
+     "start": 3.537,
+     "text": "actual"
+    },
+    {
+     "end": 4.65,
+     "start": 4.05,
+     "text": "compiled"
+    },
+    {
+     "end": 5.262,
+     "start": 4.65,
+     "text": "singular"
+    },
+    {
+     "end": 5.412,
+     "start": 5.262,
+     "text": "and"
+    },
+    {
+     "end": 6.15,
+     "start": 5.412,
+     "text": "open-datum"
+    },
+    {
+     "end": 7.037,
+     "start": 6.15,
+     "text": "executables"
+    },
+    {
+     "end": 7.213,
+     "start": 7.037,
+     "text": "and"
+    },
+    {
+     "end": 7.625,
+     "start": 7.213,
+     "text": "reads"
+    },
+    {
+     "end": 7.825,
+     "start": 7.625,
+     "text": "their"
+    },
+    {
+     "end": 8.438,
+     "start": 7.825,
+     "text": "resolved"
+    },
+    {
+     "end": 9.087,
+     "start": 8.438,
+     "text": "registry"
+    },
+    {
+     "end": 9.812,
+     "start": 9.087,
+     "text": "CLI"
+    },
+    {
+     "end": 10.163,
+     "start": 9.812,
+     "text": "build"
+    },
+    {
+     "end": 11.45,
+     "start": 10.163,
+     "text": "flags"
+    },
+    {
+     "end": 11.7,
+     "start": 11.45,
+     "text": "."
+    },
+    {
+     "end": 12.2,
+     "start": 11.9,
+     "text": "Both"
+    },
+    {
+     "end": 12.438,
+     "start": 12.2,
+     "text": "must"
+    },
+    {
+     "end": 12.9,
+     "start": 12.438,
+     "text": "exclude"
+    },
+    {
+     "end": 13.2,
+     "start": 12.9,
+     "text": "hidden"
+    },
+    {
+     "end": 13.462,
+     "start": 13.2,
+     "text": "test"
+    },
+    {
+     "end": 14.012,
+     "start": 13.462,
+     "text": "inputs"
+    },
+    {
+     "end": 14.137,
+     "start": 14.012,
+     "text": "and"
+    },
+    {
+     "end": 14.587,
+     "start": 14.137,
+     "text": "disable"
+    },
+    {
+     "end": 14.675,
+     "start": 14.587,
+     "text": "the"
+    },
+    {
+     "end": 14.975,
+     "start": 14.675,
+     "text": "test"
+    },
+    {
+     "end": 15.9,
+     "start": 14.975,
+     "text": "flag"
+    },
+    {
+     "end": 16.125,
+     "start": 15.9,
+     "text": "."
+    },
+    {
+     "end": 16.425,
+     "start": 16.3,
+     "text": "It"
+    },
+    {
+     "end": 16.625,
+     "start": 16.425,
+     "text": "then"
+    },
+    {
+     "end": 17.175,
+     "start": 16.625,
      "text": "records"
     },
     {
-     "end": 15.613,
-     "start": 15.375,
-     "text": "which"
-    },
-    {
-     "end": 16.237,
-     "start": 15.613,
-     "text": "variables"
-    },
-    {
-     "end": 16.55,
-     "start": 16.237,
+     "end": 17.562,
+     "start": 17.175,
      "text": "every"
     },
     {
-     "end": 17.1,
-     "start": 16.55,
-     "text": "process"
+     "end": 18.112,
+     "start": 17.562,
+     "text": "ordinary"
     },
     {
-     "end": 17.225,
-     "start": 17.1,
-     "text": "was"
+     "end": 18.462,
+     "start": 18.112,
+     "text": "journey"
     },
     {
-     "end": 17.675,
-     "start": 17.225,
-     "text": "started"
+     "end": 19.65,
+     "start": 18.462,
+     "text": "invocation"
     },
     {
-     "end": 18.45,
-     "start": 17.675,
-     "text": "with"
+     "end": 19.825,
+     "start": 19.65,
+     "text": ":"
     },
     {
-     "end": 18.675,
-     "start": 18.45,
-     "text": ","
+     "end": 20.263,
+     "start": 20.025,
+     "text": "all"
     },
     {
-     "end": 19.038,
-     "start": 18.9,
-     "text": "and"
-    },
-    {
-     "end": 19.375,
-     "start": 19.038,
-     "text": "checks"
-    },
-    {
-     "end": 19.575,
-     "start": 19.375,
-     "text": "that"
-    },
-    {
-     "end": 19.812,
-     "start": 19.575,
-     "text": "each"
-    },
-    {
-     "end": 19.888,
-     "start": 19.812,
-     "text": "of"
-    },
-    {
-     "end": 19.987,
-     "start": 19.888,
-     "text": "the"
-    },
-    {
-     "end": 20.35,
-     "start": 19.987,
+     "end": 20.6,
+     "start": 20.263,
      "text": "five"
     },
     {
-     "end": 20.938,
-     "start": 20.35,
+     "end": 21.15,
+     "start": 20.6,
      "text": "commands"
     },
     {
-     "end": 21.3,
-     "start": 20.938,
-     "text": "ran"
+     "end": 21.438,
+     "start": 21.15,
+     "text": "must"
     },
     {
-     "end": 21.487,
-     "start": 21.3,
-     "text": "with"
+     "end": 21.75,
+     "start": 21.438,
+     "text": "run"
     },
     {
-     "end": 21.825,
-     "start": 21.487,
-     "text": "none"
+     "end": 22.1,
+     "start": 21.75,
+     "text": "without"
     },
     {
-     "end": 22.237,
-     "start": 21.825,
-     "text": "set"
+     "end": 22.4,
+     "start": 22.1,
+     "text": "hidden"
     },
     {
-     "end": 22.362,
-     "start": 22.237,
+     "end": 22.775,
+     "start": 22.4,
+     "text": "harness"
+    },
+    {
+     "end": 23.4,
+     "start": 22.775,
+     "text": "inputs"
+    },
+    {
+     "end": 23.475,
+     "start": 23.4,
+     "text": ","
+    },
+    {
+     "end": 23.6,
+     "start": 23.475,
      "text": "and"
     },
     {
-     "end": 22.475,
-     "start": 22.362,
-     "text": "that"
+     "end": 23.825,
+     "start": 23.6,
+     "text": "no"
     },
     {
-     "end": 22.612,
-     "start": 22.475,
-     "text": "the"
-    },
-    {
-     "end": 22.962,
-     "start": 22.612,
+     "end": 24.1,
+     "start": 23.825,
      "text": "hold"
     },
     {
-     "end": 23.375,
-     "start": 22.962,
-     "text": "points"
+     "end": 24.475,
+     "start": 24.1,
+     "text": "marker"
     },
     {
-     "end": 23.587,
-     "start": 23.375,
-     "text": "that"
+     "end": 24.65,
+     "start": 24.475,
+     "text": "may"
     },
     {
-     "end": 24.087,
-     "start": 23.587,
-     "text": "fired"
+     "end": 25.65,
+     "start": 24.65,
+     "text": "appear"
     },
     {
-     "end": 24.25,
-     "start": 24.087,
-     "text": "are"
+     "end": 25.875,
+     "start": 25.65,
+     "text": "."
+    }
+   ]
+  },
+  "docs-verify-release/what-it-checks-in-order-04": {
+   "audio_sha256": "5577924447accf640b03037658c2add3cbb4d6721c325dd5984ee3d1f7c0bedf",
+   "characters": 256,
+   "cost": 0.00025343999999999996,
+   "duration": 17.275,
+   "index": 4,
+   "key": "2842f80f4571b47ce172eefe766590d499a1faefa103f2a1f4350425015d1326",
+   "page": "docs/verify-release.md",
+   "pause_ms": 400,
+   "section": "what-it-checks-in-order",
+   "sent_text": "Fault injection, crash recovery, race controls and independent trie-capability observations run in the explicit test build. Their unchanged assertions are separate required CI evidence. They do not claim to have run inside these extracted release binaries.",
+   "text": "Fault injection, crash recovery, race controls and independent trie-capability observations run in the explicit test build. Their unchanged assertions are separate required CI evidence. They do not claim to have run inside these extracted release binaries.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.225,
+     "text": "Fault"
     },
     {
-     "end": 24.85,
-     "start": 24.25,
-     "text": "exactly"
+     "end": 1.175,
+     "start": 0.5,
+     "text": "injection"
     },
     {
-     "end": 24.95,
-     "start": 24.85,
+     "end": 1.263,
+     "start": 1.175,
+     "text": ","
+    },
+    {
+     "end": 1.65,
+     "start": 1.263,
+     "text": "crash"
+    },
+    {
+     "end": 2.275,
+     "start": 1.65,
+     "text": "recovery"
+    },
+    {
+     "end": 2.388,
+     "start": 2.275,
+     "text": ","
+    },
+    {
+     "end": 2.7,
+     "start": 2.388,
+     "text": "race"
+    },
+    {
+     "end": 3.438,
+     "start": 2.7,
+     "text": "controls"
+    },
+    {
+     "end": 3.612,
+     "start": 3.438,
+     "text": "and"
+    },
+    {
+     "end": 4.25,
+     "start": 3.612,
+     "text": "independent"
+    },
+    {
+     "end": 5.1,
+     "start": 4.25,
+     "text": "trie-capability"
+    },
+    {
+     "end": 5.95,
+     "start": 5.1,
+     "text": "observations"
+    },
+    {
+     "end": 6.325,
+     "start": 5.95,
+     "text": "run"
+    },
+    {
+     "end": 6.438,
+     "start": 6.325,
+     "text": "in"
+    },
+    {
+     "end": 6.575,
+     "start": 6.438,
      "text": "the"
     },
     {
-     "end": 25.212,
-     "start": 24.95,
-     "text": "ones"
+     "end": 7.125,
+     "start": 6.575,
+     "text": "explicit"
     },
     {
-     "end": 25.275,
-     "start": 25.212,
-     "text": "a"
+     "end": 7.45,
+     "start": 7.125,
+     "text": "test"
     },
     {
-     "end": 25.763,
-     "start": 25.275,
-     "text": "process"
+     "end": 8.45,
+     "start": 7.45,
+     "text": "build"
     },
     {
-     "end": 26.125,
-     "start": 25.763,
-     "text": "asked"
+     "end": 8.675,
+     "start": 8.45,
+     "text": "."
     },
     {
-     "end": 27.05,
-     "start": 26.125,
-     "text": "for"
+     "end": 9.0,
+     "start": 8.85,
+     "text": "Their"
     },
     {
-     "end": 27.3,
-     "start": 27.05,
+     "end": 9.587,
+     "start": 9.0,
+     "text": "unchanged"
+    },
+    {
+     "end": 10.238,
+     "start": 9.587,
+     "text": "assertions"
+    },
+    {
+     "end": 10.425,
+     "start": 10.238,
+     "text": "are"
+    },
+    {
+     "end": 10.812,
+     "start": 10.425,
+     "text": "separate"
+    },
+    {
+     "end": 11.363,
+     "start": 10.812,
+     "text": "required"
+    },
+    {
+     "end": 11.7,
+     "start": 11.363,
+     "text": "CI"
+    },
+    {
+     "end": 12.725,
+     "start": 11.7,
+     "text": "evidence"
+    },
+    {
+     "end": 12.925,
+     "start": 12.725,
+     "text": "."
+    },
+    {
+     "end": 13.188,
+     "start": 13.1,
+     "text": "They"
+    },
+    {
+     "end": 13.288,
+     "start": 13.188,
+     "text": "do"
+    },
+    {
+     "end": 13.5,
+     "start": 13.288,
+     "text": "not"
+    },
+    {
+     "end": 13.738,
+     "start": 13.5,
+     "text": "claim"
+    },
+    {
+     "end": 13.812,
+     "start": 13.738,
+     "text": "to"
+    },
+    {
+     "end": 13.988,
+     "start": 13.812,
+     "text": "have"
+    },
+    {
+     "end": 14.275,
+     "start": 13.988,
+     "text": "run"
+    },
+    {
+     "end": 14.8,
+     "start": 14.275,
+     "text": "inside"
+    },
+    {
+     "end": 15.025,
+     "start": 14.8,
+     "text": "these"
+    },
+    {
+     "end": 15.625,
+     "start": 15.025,
+     "text": "extracted"
+    },
+    {
+     "end": 15.975,
+     "start": 15.625,
+     "text": "release"
+    },
+    {
+     "end": 17.075,
+     "start": 15.975,
+     "text": "binaries"
+    },
+    {
+     "end": 17.275,
+     "start": 17.075,
      "text": "."
     }
    ]

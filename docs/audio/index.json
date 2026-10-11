@@ -670,6 +670,36 @@
     "v": "03a03f68a1ed"
    }
   ],
+  "ordinary-binaries-and-explicit-test-builds": [
+   {
+    "index": 0,
+    "name": "docs-building/ordinary-binaries-and-explicit-test-builds-00",
+    "pause_ms": 500,
+    "text": "Ordinary binaries and explicit test builds.",
+    "v": "ca48e00932be"
+   },
+   {
+    "index": 1,
+    "name": "docs-building/ordinary-binaries-and-explicit-test-builds-01",
+    "pause_ms": 400,
+    "text": "As a release operator, I build ordinary singular and open-datum with the manual Cabal test-harness flag disabled. Both executable closures use the ordinary registry CLI modules. The release archive and publication commands select these ordinary outputs.",
+    "v": "415ec71250fc"
+   },
+   {
+    "index": 2,
+    "name": "docs-building/ordinary-binaries-and-explicit-test-builds-02",
+    "pause_ms": 400,
+    "text": "As a contributor, I exercise crash windows and provider-answer loss with the separately named test outputs. Their registry CLI modules retain the original hold/drop controls and SINGULAR_HARNESS_TRIE_TRACE, an independent observation of the trie capability's actual operations. That diagnostic is a hidden test input and its evidence belongs to the test build.",
+    "v": "fcccea2d0cb3"
+   },
+   {
+    "index": 3,
+    "name": "docs-building/ordinary-binaries-and-explicit-test-builds-03",
+    "pause_ms": 400,
+    "text": "The build control strips and inspects both ordinary compiled executables, reads the actual resolved registry CLI flag, and deliberately rejects the hook-bearing test artifacts and opposite flag polarity. CI runs the ordinary extracted-release journey separately from the test journey's unchanged recovery, race, node-loss and trie-observation assertions. CLI recovery and conformance backend controls select the explicit test composition. The separate replay-fault project remains a deliberately altered test build; its named refusal proof retains its published pending cases. Test outputs are never substituted into the ordinary release verifier or published as ordinary release artifacts.",
+    "v": "7145f0b356bd"
+   }
+  ],
   "other-languages": [
    {
     "index": 0,
@@ -7792,22 +7822,8 @@
     "index": 1,
     "name": "docs-singular-node/harness-appendix-test-hooks-01",
     "pause_ms": 400,
-    "text": "You never set these. The released singular reads eleven environment variables whose only purpose is to let the project's own tests stop a command at an exact point — to inspect it there, kill it there, or make it meet no answer from the provider — and check what it leaves behind. When none is set, which is how every operator runs it, they do nothing: no hold, no dropped send. The retained harness controls check the ordinary path with no variable set and the holds at the requested points. Their local, hosted and release results are separate evidence; an unexecuted control establishes nothing.",
-    "v": "b1ba9f578639"
-   },
-   {
-    "index": 2,
-    "name": "docs-singular-node/harness-appendix-test-hooks-02",
-    "pause_ms": 400,
-    "text": "A hold variable names a path. When the command reaches its point it writes PATH.waiting and waits until PATH exists.",
-    "v": "30b9e44fc52d"
-   },
-   {
-    "index": 3,
-    "name": "docs-singular-node/harness-appendix-test-hooks-03",
-    "pause_ms": 400,
-    "text": "A requested hold writes its waiting file and continues only after the release file exists. A requested drop models a missing provider answer at that step.",
-    "v": "a274ed318615"
+    "text": "Released singular and open-datum binaries carry no fault-injection or hidden trie-diagnostic hooks.",
+    "v": "14a04afcf19d"
    }
   ],
   "naming-the-registry-by-its-state-token": [
@@ -7845,6 +7861,22 @@
     "pause_ms": 400,
     "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here and stays operable with the release that made it.",
     "v": "ef78b1093c7b"
+   }
+  ],
+  "public-environment-configuration": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/public-environment-configuration-00",
+    "pause_ms": 500,
+    "text": "Public environment configuration.",
+    "v": "98884428d0b0"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/public-environment-configuration-01",
+    "pause_ms": 400,
+    "text": "As an operator, I can supply SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line token takes precedence. The token names the registry, and never selects a provider. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
+    "v": "45ca10cfe8ab"
    }
   ],
   "reading-through-an-index": [
@@ -7949,8 +7981,8 @@
     "index": 1,
     "name": "docs-singular-node/the-settings-you-give-01",
     "pause_ms": 400,
-    "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The settings are read from the command line only; the one exception is the test-harness hooks, which operators never set.",
-    "v": "a6113557517a"
+    "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+    "v": "a5bc088a3009"
    }
   ],
   "what-a-write-records": [
@@ -8353,8 +8385,15 @@
     "index": 3,
     "name": "docs-verify-release/what-it-checks-in-order-03",
     "pause_ms": 400,
-    "text": "The last check is computed from that same run. The released singular has test-harness hooks, environment variables that stop a command at an exact point for the project's own tests (see Connecting singular to a node). The verifier records which variables every process was started with, and checks that each of the five commands ran with none set and that the hold points that fired are exactly the ones a process asked for.",
-    "v": "47ff1c505e75"
+    "text": "Before starting the journey, the verifier strips and inspects the actual compiled singular and open-datum executables and reads their resolved registry CLI build flags. Both must exclude hidden test inputs and disable the test flag. It then records every ordinary journey invocation: all five commands must run without hidden harness inputs, and no hold marker may appear.",
+    "v": "269ad9212491"
+   },
+   {
+    "index": 4,
+    "name": "docs-verify-release/what-it-checks-in-order-04",
+    "pause_ms": 400,
+    "text": "Fault injection, crash recovery, race controls and independent trie-capability observations run in the explicit test build. Their unchanged assertions are separate required CI evidence. They do not claim to have run inside these extracted release binaries.",
+    "v": "5577924447ac"
    }
   ],
   "what-you-run": [

@@ -393,6 +393,8 @@ jobs:
       # fail specifically at this boundary. The same assembler — control
       # included — runs inside the publish job before anything is
       # uploaded; the docs-only release-check job does not carry it.
+      - name: Exclude compiled test controls from both ordinary release closures
+        run: nix run --quiet .#release-build-control
       - run: nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"
       # #326: every refusal of the release verifier, by name, from the
       # verifier itself: the real published v0.7.0, downloaded without
