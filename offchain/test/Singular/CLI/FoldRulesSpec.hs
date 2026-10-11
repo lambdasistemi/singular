@@ -37,13 +37,16 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
+import Data.Aeson (Value, object, toJSON, (.=))
 import Lens.Micro ((&), (.~))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
 import Singular.CLI.FoldRules
-    ( FoldRequestsRefusal (..)
-    , FoldTargetRefusal (..)
+    ( EarlierDelivery (..)
+    , EarlierReceipt (..)
+    , FoldRequestsRefusal (..)
+    , SettledForReceipt (..)
     , SpendsRefusal (..)
     , appVerdictOf
     , approvalCheckOf
@@ -51,14 +54,17 @@ import Singular.CLI.FoldRules
     , assignRefPairing
     , buildLiveFacts
     , buildPendingRequests
+    , combineReceiptFields
+    , combineWindowClosedMessage
+    , earlierReceiptFields
+    , foldReceiptLists
     , foldRequests
-    , foldTarget
     , neutralAppExecutable
     , pendingDeadlineOf
     , pendingRequestOf
+    , refuseNamedEdgeEarly
     , renderFoldRequestsRefusal
     , renderSpendsRefusal
-    , renderTargetRefusal
     , requestEdgeKind
     , requestOwnerText
     , spendsSelection
@@ -77,6 +83,7 @@ import Singular.Registry.FoldSelection
     , Exclusion (..)
     , Leaf (..)
     , PendingRequest (..)
+    , Reason (..)
     , SelectedRequest (..)
     , Selection (..)
     , exclusionName
@@ -319,6 +326,8 @@ spec = describe "registry fold takes the selection" $ do
     builtFoldSpendsExactlyTheSelection
     mismatchedInputsRefuseAsInconsistent
     namedWithNothingSettledStatesCause
+    earlyNamedEdgeRefusal
+    earlierFieldsProjectionPerDelivery
     requestFieldsAreReadFromTheOutput
     sameKeySameInteger
     approvalCheckFollowsTheModel
@@ -327,6 +336,10 @@ spec = describe "registry fold takes the selection" $ do
     assembledApplicationVerdictReachesTheSelection
     assembledApprovalCheckReachesTheSelection
     oldRuleUntouched
+    receiptListsSettledAndExcluded
+    receiptCombinesEarlierAndAdditions
+    windowClosedKeepsOthers
+    oldRuleContrastReference
 
 -- ---------------------------------------------------------
 -- A named request must be among the settled
@@ -368,10 +381,11 @@ namedRequestMustBeSettled = describe "a named request is among the settled" $ do
         "refuses a named request that was never pending with the not-pending wording"
         $ do
             let fresh = txRef 9
+                said = renderFoldRequestsRefusal (FoldNamedNotPending fresh)
             foldRequests (Just fresh) threePairing threeSelection
                 `shouldBe` Left (FoldNamedNotPending fresh)
-            renderFoldRequestsRefusal (FoldNamedNotPending fresh)
-                `shouldBe` renderTargetRefusal (NotPending fresh)
+            T.unpack (renderOutRef fresh) `isInfixOf` said `shouldBe` True
+            "is not pending" `isInfixOf` said `shouldBe` True
 
 -- ---------------------------------------------------------
 -- Nothing settleable names every exclusion
@@ -406,9 +420,9 @@ nothingToFoldNamesEveryExclusion = describe "nothing settleable names every excl
             `shouldNotBe` renderFoldRequestsRefusal (FoldNothingToFold firstOnly)
     it "says nothing is pending when nothing is pending" $ do
         let emptySel = selectFold 1 nowMs marginMs Map.empty []
+            said = renderFoldRequestsRefusal FoldNothingPending
         foldRequests Nothing [] emptySel `shouldBe` Left FoldNothingPending
-        renderFoldRequestsRefusal FoldNothingPending
-            `shouldBe` renderTargetRefusal NothingPending
+        "nothing is pending" `isInfixOf` said `shouldBe` True
 
 -- ---------------------------------------------------------
 -- Several pending never refuses on count
@@ -422,13 +436,13 @@ severalPendingNeverRefusesOnCount = describe "several pending never refuses on c
             facts2 = Map.delete 52 threeFacts
             sel2 = selectFold 1 nowMs marginMs facts2 pending2
         foldRequests Nothing pairing2 sel2 `shouldBe` Right (t1 :| [])
-        foldTarget Nothing [t1, t2]
-            `shouldBe` Left (SeveralPending [t1, t2])
+        refuseWhenSeveralArePending Nothing [t1, t2]
+            `shouldBe` Left "several pending"
     it "takes the one settled request when three are pending" $ do
         foldRequests Nothing threePairing threeSelection
             `shouldBe` Right (t1 :| [])
-        foldTarget Nothing [t1, t2, t3]
-            `shouldBe` Left (SeveralPending [t1, t2, t3])
+        refuseWhenSeveralArePending Nothing [t1, t2, t3]
+            `shouldBe` Left "several pending"
     it "returns every settled request under a wide bound" $ do
         let expected = settledTxIns widePairing wideSelection
         expected `shouldBe` [v1, v2]
@@ -775,16 +789,508 @@ namedWithNothingSettledStatesCause =
 -- ---------------------------------------------------------
 
 oldRuleUntouched :: Spec
-oldRuleUntouched = describe "the old one-pending rule stays in place" $ do
+oldRuleUntouched = describe "the old one-pending rule is deleted" $ do
+    it "refuses several pending by the private reference" $
+        refuseWhenSeveralArePending Nothing [t1, t2]
+            `shouldBe` Left "several pending"
+    it "keeps the not-pending wording for the new refusals" $ do
+        let saidNothing = renderFoldRequestsRefusal FoldNothingPending
+            saidNotPending = renderFoldRequestsRefusal (FoldNamedNotPending t1)
+        "nothing is pending" `isInfixOf` saidNothing `shouldBe` True
+        T.unpack (renderOutRef t1) `isInfixOf` saidNotPending `shouldBe` True
+        "is not pending" `isInfixOf` saidNotPending `shouldBe` True
+
+-- ---------------------------------------------------------
+-- The additive receipt lists beside the earlier fields (invariant 7)
+-- ---------------------------------------------------------
+
+receiptListsSettledAndExcluded :: Spec
+receiptListsSettledAndExcluded = describe
+    "receipt lists settled and excluded beside the earlier fields"
+    $ do
+        it "lists two settled requests with distinct payloads in ledger order" $ do
+            let provenance =
+                    "the journal binds one transition until the multi-request journal ships"
+                        :: T.Text
+                settlement1 = object ["liveOutput" .= renderOutRef v1]
+                deadline1 = object ["posixMs" .= (farDeadline :: Integer)]
+                settlement2 =
+                    object
+                        ["released" .= renderOutRef v2, "deposit" .= (2000000 :: Integer)]
+                deadline2 = object ["posixMs" .= (nearDeadline :: Integer)]
+                settled =
+                    [ SettledForReceipt
+                        v1
+                        "6b31"
+                        "insertActive"
+                        "6f776e657231"
+                        settlement1
+                        deadline1
+                    , SettledForReceipt
+                        v2
+                        "6b32"
+                        "updateTerminal"
+                        "6f776e657232"
+                        settlement2
+                        deadline2
+                    ]
+                got = foldReceiptLists settled [] 1 provenance
+            map fst got `shouldBe` ["settled", "excluded", "capacity"]
+            lookup "settled" got
+                `shouldBe` Just
+                    ( toJSON
+                        [ object
+                            [ "request" .= renderOutRef v1
+                            , "key" .= ("6b31" :: T.Text)
+                            , "edge" .= ("insertActive" :: T.Text)
+                            , "owner" .= ("6f776e657231" :: T.Text)
+                            , "settlement" .= settlement1
+                            , "deadline" .= deadline1
+                            ]
+                        , object
+                            [ "request" .= renderOutRef v2
+                            , "key" .= ("6b32" :: T.Text)
+                            , "edge" .= ("updateTerminal" :: T.Text)
+                            , "owner" .= ("6f776e657232" :: T.Text)
+                            , "settlement" .= settlement2
+                            , "deadline" .= deadline2
+                            ]
+                        ]
+                    )
+            lookup "settled" got
+                `shouldNotBe` Just
+                    ( toJSON
+                        [ object
+                            [ "request" .= renderOutRef v2
+                            , "key" .= ("6b32" :: T.Text)
+                            , "edge" .= ("updateTerminal" :: T.Text)
+                            , "owner" .= ("6f776e657232" :: T.Text)
+                            , "settlement" .= settlement2
+                            , "deadline" .= deadline2
+                            ]
+                        , object
+                            [ "request" .= renderOutRef v1
+                            , "key" .= ("6b31" :: T.Text)
+                            , "edge" .= ("insertActive" :: T.Text)
+                            , "owner" .= ("6f776e657231" :: T.Text)
+                            , "settlement" .= settlement1
+                            , "deadline" .= deadline1
+                            ]
+                        ]
+                    )
+            lookup "excluded" got `shouldBe` Just (toJSON ([] :: [Value]))
+        it
+            "lists every exclusion with reason, source and detail in ledger order, both vocabularies"
+            $ do
+                let provenance =
+                        "the journal binds one transition until the multi-request journal ships"
+                            :: T.Text
+                    expected = excludedTxIns nonePairing noneSelection
+                    got = foldReceiptLists [] expected 1 provenance
+                map fst got `shouldBe` ["settled", "excluded", "capacity"]
+                length expected `shouldBe` 3
+                let sources = map (exclusionSource . snd) expected
+                sources `shouldSatisfy` elem "model-refusal"
+                sources `shouldSatisfy` elem "selection-policy"
+                lookup "settled" got `shouldBe` Just (toJSON ([] :: [Value]))
+                lookup "excluded" got
+                    `shouldBe` Just
+                        ( toJSON
+                            [ object
+                                [ "request" .= renderOutRef tx
+                                , "reason" .= exclusionName exc
+                                , "source" .= exclusionSource exc
+                                , "detail" .= excDetail exc
+                                ]
+                            | (tx, exc) <- expected
+                            ]
+                        )
+                lookup "excluded" got
+                    `shouldNotBe` Just
+                        ( toJSON
+                            [ object
+                                [ "request" .= renderOutRef tx
+                                , "reason" .= exclusionName exc
+                                , "source" .= exclusionSource exc
+                                , "detail" .= excDetail exc
+                                ]
+                            | (tx, exc) <- reverse expected
+                            ]
+                        )
+                map fst expected `shouldBe` [u1, u2, u3]
+        it
+            "carries the bound with its provenance text, and a second bound differs"
+            $ do
+                let provenance1 =
+                        "the journal binds one transition until the multi-request journal ships"
+                            :: T.Text
+                    provenance9 =
+                        "preprod execution budget of 14 million memory units, bound by trie-proof verification, unmeasured"
+                            :: T.Text
+                    got1 = foldReceiptLists [] [] 1 provenance1
+                    got9 = foldReceiptLists [] [] 9 provenance9
+                map fst got1 `shouldBe` ["settled", "excluded", "capacity"]
+                lookup "capacity" got1
+                    `shouldBe` Just (object ["bound" .= (1 :: Int), "provenance" .= provenance1])
+                lookup "capacity" got9
+                    `shouldBe` Just (object ["bound" .= (9 :: Int), "provenance" .= provenance9])
+                lookup "capacity" got1 `shouldNotBe` lookup "capacity" got9
+
+-- ---------------------------------------------------------
+-- The additive combine beside the earlier fields (invariant 7, finding 2)
+-- ---------------------------------------------------------
+
+receiptCombinesEarlierAndAdditions :: Spec
+receiptCombinesEarlierAndAdditions = describe
+    "receipt combines earlier fields with the additions"
+    $ do
+        it
+            "keeps a delivered-envelope earlier projection unchanged with the additions after it"
+            $ do
+                let earlier =
+                        [ ("request", toJSON (renderOutRef t1))
+                        , ("key", toJSON ("6b31" :: T.Text))
+                        , ("edge", toJSON ("insertActive" :: T.Text))
+                        , ("folder", toJSON ("666f6c646572" :: T.Text))
+                        , ("fold", toJSON ("aa" :: T.Text))
+                        , ("liveOutput", toJSON (renderOutRef t1))
+                        , ("envelope", toJSON ("656e76656c6f7065" :: T.Text))
+                        , ("root", toJSON ("726f6f74" :: T.Text))
+                        , ("foldDeadline", toJSON ("deadline" :: T.Text))
+                        , ("validUntilSlot", toJSON (42 :: Int))
+                        , ("postBuild", toJSON ("admitted" :: T.Text))
+                        , ("hostClockMs", toJSON (1000000 :: Integer))
+                        , ("remainingMs", toJSON (900000 :: Integer))
+                        ]
+                    additions = foldReceiptLists [] [] 1 "prov-1"
+                    got = combineReceiptFields earlier additions
+                take (length earlier) got `shouldBe` earlier
+                drop (length earlier) got `shouldBe` additions
+                map fst got `shouldBe` (map fst earlier ++ map fst additions)
+        it
+            "keeps a delivered-datum earlier projection unchanged with the additions after it"
+            $ do
+                let earlier =
+                        [ ("request", toJSON (renderOutRef t1))
+                        , ("key", toJSON ("6b31" :: T.Text))
+                        , ("edge", toJSON ("insertActive" :: T.Text))
+                        , ("folder", toJSON ("666f6c646572" :: T.Text))
+                        , ("fold", toJSON ("aa" :: T.Text))
+                        , ("liveOutput", toJSON (renderOutRef t1))
+                        , ("datumHash", toJSON ("68617368" :: T.Text))
+                        , ("datumCbor", toJSON ("63626f72" :: T.Text))
+                        , ("root", toJSON ("726f6f74" :: T.Text))
+                        , ("foldDeadline", toJSON ("deadline" :: T.Text))
+                        , ("validUntilSlot", toJSON (42 :: Int))
+                        , ("postBuild", toJSON ("admitted" :: T.Text))
+                        , ("hostClockMs", toJSON (1000000 :: Integer))
+                        , ("remainingMs", toJSON (900000 :: Integer))
+                        ]
+                    additions = foldReceiptLists [] [] 1 "prov-1"
+                    got = combineReceiptFields earlier additions
+                take (length earlier) got `shouldBe` earlier
+                drop (length earlier) got `shouldBe` additions
+        it
+            "keeps a released earlier projection unchanged with the additions after it"
+            $ do
+                let earlier =
+                        [ ("request", toJSON (renderOutRef t1))
+                        , ("key", toJSON ("6b32" :: T.Text))
+                        , ("edge", toJSON ("updateTerminal" :: T.Text))
+                        , ("folder", toJSON ("666f6c646572" :: T.Text))
+                        , ("fold", toJSON ("aa" :: T.Text))
+                        , ("released", toJSON (renderOutRef t1))
+                        , ("deposit", toJSON (2000000 :: Integer))
+                        , ("root", toJSON ("726f6f74" :: T.Text))
+                        , ("foldDeadline", toJSON ("deadline" :: T.Text))
+                        , ("validUntilSlot", toJSON (42 :: Int))
+                        , ("postBuild", toJSON ("admitted" :: T.Text))
+                        , ("hostClockMs", toJSON (1000000 :: Integer))
+                        , ("remainingMs", toJSON (900000 :: Integer))
+                        ]
+                    additions = foldReceiptLists [] [] 1 "prov-1"
+                    got = combineReceiptFields earlier additions
+                take (length earlier) got `shouldBe` earlier
+                drop (length earlier) got `shouldBe` additions
+                length got `shouldBe` (length earlier + 3)
+        it
+            "lists every exclusion with reason, source and detail in ledger order"
+            $ do
+                let provenance =
+                        "the journal binds one transition until the multi-request journal ships"
+                            :: T.Text
+                    expected = excludedTxIns nonePairing noneSelection
+                    got = foldReceiptLists [] expected 1 provenance
+                    names = map fst got
+                names `shouldBe` ["settled", "excluded", "capacity"]
+                length expected `shouldBe` 3
+                lookup "settled" got `shouldBe` Just (toJSON ([] :: [Value]))
+                lookup "excluded" got
+                    `shouldBe` Just
+                        ( toJSON
+                            [ object
+                                [ "request" .= renderOutRef tx
+                                , "reason" .= exclusionName exc
+                                , "source" .= exclusionSource exc
+                                , "detail" .= excDetail exc
+                                ]
+                            | (tx, exc) <- expected
+                            ]
+                        )
+                lookup "capacity" got
+                    `shouldBe` Just (object ["bound" .= (1 :: Int), "provenance" .= provenance])
+                map fst expected `shouldBe` [u1, u2, u3]
+        it "carries the bound with its provenance text" $ do
+            let provenance =
+                    "the journal binds one transition until the multi-request journal ships"
+                        :: T.Text
+                got = foldReceiptLists [] [] 1 provenance
+                names = map fst got
+            names `shouldBe` ["settled", "excluded", "capacity"]
+            lookup "capacity" got
+                `shouldBe` Just (object ["bound" .= (1 :: Int), "provenance" .= provenance])
+
+-- ---------------------------------------------------------
+-- The old-rule contrast as a private reference (invariant 9)
+-- ---------------------------------------------------------
+
+{- | A private reference implementation of "refuse when several are pending":
+the contrast the deletion keeps, failing the same inputs the old rule failed.
+-}
+refuseWhenSeveralArePending
+    :: Maybe TxIn -> [TxIn] -> Either String TxIn
+refuseWhenSeveralArePending _ [] = Left "nothing is pending"
+refuseWhenSeveralArePending (Just r) pend
+    | r `notElem` pend = Left "not pending"
+refuseWhenSeveralArePending _ [one] = Right one
+refuseWhenSeveralArePending _ _ = Left "several pending"
+
+-- ---------------------------------------------------------
+-- A window-closed named cause keeps every other exclusion
+-- ---------------------------------------------------------
+
+windowClosedKeepsOthers :: Spec
+windowClosedKeepsOthers = describe "a window-closed named cause keeps every other exclusion" $ do
+    it "leaves a sole window-closed message unchanged" $ do
+        let legacy = "the request's processing deadline, 123 ms: no fold is built"
+        combineWindowClosedMessage legacy [] `shouldBe` legacy
+    it "lists an undecodable other exclusion after the legacy wording" $ do
+        let legacy = "the request's processing deadline, 123 ms: no fold is built"
+            undecodableExc =
+                Exclusion ReasonUndecodable "the output does not decode as a request"
+            others = [(u1, undecodableExc)]
+            got = combineWindowClosedMessage legacy others
+        legacy `isInfixOf` got `shouldBe` True
+        T.unpack (renderOutRef u1) `isInfixOf` got `shouldBe` True
+        "undecodable" `isInfixOf` got `shouldBe` True
+        "selection-policy" `isInfixOf` got `shouldBe` True
+        got `shouldNotBe` legacy
+
+oldRuleContrastReference :: Spec
+oldRuleContrastReference = describe "the old-rule contrast refuses the same inputs" $ do
     it "takes the one pending request" $
-        foldTarget Nothing [t1] `shouldBe` Right t1
-    it "refuses several pending" $
-        foldTarget Nothing [t1, t2] `shouldBe` Left (SeveralPending [t1, t2])
-    it "keeps its wording for the new refusals to reuse" $ do
-        renderFoldRequestsRefusal FoldNothingPending
-            `shouldBe` renderTargetRefusal NothingPending
-        renderFoldRequestsRefusal (FoldNamedNotPending t1)
-            `shouldBe` renderTargetRefusal (NotPending t1)
+        refuseWhenSeveralArePending Nothing [t1] `shouldBe` Right t1
+    it "refuses several pending" $ do
+        refuseWhenSeveralArePending Nothing [t1, t2]
+            `shouldBe` Left "several pending"
+        refuseWhenSeveralArePending (Just t1) [t1, t2]
+            `shouldBe` Left "several pending"
+    it "refuses nothing pending" $ do
+        refuseWhenSeveralArePending Nothing []
+            `shouldBe` Left "nothing is pending"
+        refuseWhenSeveralArePending (Just t1) []
+            `shouldBe` Left "nothing is pending"
+
+-- ---------------------------------------------------------
+-- An early refusal for a named request keeps every other exclusion
+-- ---------------------------------------------------------
+
+{- | The fixtures of the early-refusal row: one pending request whose edge the
+fold does not take (named) and one pending output that does not decode, both
+read from real request datums through the production adapters.
+-}
+earlyRefusalFixtures
+    :: ( [(TxIn, Either String OnChainRequest)]
+       , [(TxIn, Int)]
+       , [PendingRequest]
+       , Selection
+       )
+earlyRefusalFixtures =
+    let addrR = addrFromKeyHashBytes Testnet (BC.pack (replicate 28 'R'))
+        keyR = BC.pack "early-refusal-inadmissible"
+        destR = (serialiseAddr addrR, Just (PLC.I 1))
+        datumR =
+            mkRequestDatumWith
+                Fixture.tokenId
+                addrR
+                keyR
+                2
+                2000000
+                1000
+                destR
+        reqAddr = requestAddrFromCfg Fixture.cfg Fixture.tokenId Testnet
+        outR =
+            mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
+                & datumTxOutL .~ mkInlineDatum datumR
+        outU = mkBasicTxOut reqAddr (MaryValue (Coin 10000000) mempty)
+        decR = case extractCageDatum outR of
+            Just (RequestDatum r) -> Right r
+            _ -> Left "no request datum"
+        decU = Left "no datum" :: Either String OnChainRequest
+        rTx = txRef 101
+        uTx = txRef 102
+        (pendings, pairing) =
+            buildPendingRequests
+                [(rTx, outR, decR), (uTx, outU, decU)]
+                gPinned
+                neutralApplication
+                gProcess
+        facts = Map.fromList [(prKey p, (LeafUnknown, False)) | p <- pendings]
+        sel = selectFold 1 nowMs marginMs facts pendings
+    in  ([(rTx, decR), (uTx, decU)], pairing, pendings, sel)
+
+earlyNamedEdgeRefusal :: Spec
+earlyNamedEdgeRefusal = describe "an early refusal for a named untakeable edge" $ do
+    it "refuses at once when the named request is the only one pending" $
+        refuseNamedEdgeEarly (Just t1) [t1] `shouldBe` True
+    it "does not refuse at once when another request is also pending" $
+        refuseNamedEdgeEarly (Just t1) [t1, t2] `shouldBe` False
+    it
+        "does not refuse at once a named request that is not the sole pending one"
+        $ refuseNamedEdgeEarly (Just t1) [t2, t3] `shouldBe` False
+    it "decides nothing without a named request" $
+        refuseNamedEdgeEarly Nothing [t1] `shouldBe` False
+    it
+        "a named inadmissible edge beside an undecodable request is refused by the selection, naming both"
+        $ do
+            let (_, pairing, pendings, sel) = earlyRefusalFixtures
+                (rTx, uTx) = (txRef 101, txRef 102)
+                excluded = excludedTxIns pairing sel
+                excOf tx = case [exc | (t, exc) <- excluded, t == tx] of
+                    (e : _) -> e
+                    [] -> error ("early-refusal row: no exclusion for " <> show tx)
+                excR = excOf rTx
+                excU = excOf uTx
+            map fst pairing `shouldBe` [rTx, uTx]
+            selectionSettled sel `shouldBe` []
+            map fst excluded `shouldBe` [rTx, uTx]
+            exclusionName excR `shouldBe` "edge-inadmissible"
+            exclusionSource excR `shouldBe` "model-refusal"
+            exclusionName excU `shouldBe` "undecodable"
+            exclusionSource excU `shouldBe` "selection-policy"
+            length pendings `shouldBe` 2
+            -- the decision: with another request pending, no early refusal
+            refuseNamedEdgeEarly (Just rTx) (map fst pairing) `shouldBe` False
+            -- so the selection's refusal names the named cause and every other exclusion
+            foldRequests (Just rTx) pairing sel
+                `shouldBe` Left (FoldNamedNothingSettled rTx (Just excR) [(uTx, excU)])
+            let said =
+                    renderFoldRequestsRefusal
+                        (FoldNamedNothingSettled rTx (Just excR) [(uTx, excU)])
+            T.unpack (renderOutRef rTx) `isInfixOf` said `shouldBe` True
+            T.unpack (renderOutRef uTx) `isInfixOf` said `shouldBe` True
+            T.unpack (exclusionName excR) `isInfixOf` said `shouldBe` True
+            T.unpack (exclusionName excU) `isInfixOf` said `shouldBe` True
+            T.unpack (exclusionSource excR) `isInfixOf` said `shouldBe` True
+            T.unpack (exclusionSource excU) `isInfixOf` said `shouldBe` True
+            T.unpack (excDetail excR) `isInfixOf` said `shouldBe` True
+            T.unpack (excDetail excU) `isInfixOf` said `shouldBe` True
+
+-- ---------------------------------------------------------
+-- The earlier fields' production projection, per delivery branch
+-- ---------------------------------------------------------
+
+{- | The earlier fields' fixture components, shared by every delivery branch:
+each value is spelled once and both the projection and its expected pairs
+read the same fields.
+-}
+baseEarlierComps :: EarlierReceipt
+baseEarlierComps =
+    EarlierReceipt
+        { earRequest = renderOutRef t1
+        , earKey = "6b31"
+        , earEdge = "insertActive"
+        , earFolder = "666f6c646572"
+        , earFold = "aa11"
+        , earDelivery =
+            EarlierDelivered (renderOutRef t1) (toJSON ("unused" :: T.Text))
+        , earRoot = "726f6f74"
+        , earDeadline = object ["posixMs" .= farDeadline]
+        , earUpperSlot = Just 42
+        , earPostBuild = object ["check" .= ("admitted" :: T.Text)]
+        , earHostClockMs = nowMs
+        , earRemainingMs = 900000
+        }
+
+earlierFieldsProjectionPerDelivery :: Spec
+earlierFieldsProjectionPerDelivery =
+    describe
+        "the earlier receipt fields' production projection, per delivery branch"
+        $ do
+            let headPairs c =
+                    [ ("request", toJSON (earRequest c))
+                    , ("key", toJSON (earKey c))
+                    , ("edge", toJSON (earEdge c))
+                    , ("folder", toJSON (earFolder c))
+                    , ("fold", toJSON (earFold c))
+                    ]
+                tailPairs c =
+                    [ ("root", toJSON (earRoot c))
+                    , ("foldDeadline", earDeadline c)
+                    , ("validUntilSlot", toJSON (earUpperSlot c))
+                    , ("postBuild", earPostBuild c)
+                    , ("hostClockMs", toJSON (earHostClockMs c))
+                    , ("remainingMs", toJSON (earRemainingMs c))
+                    ]
+            it
+                "projects a delivered envelope from its components, unchanged and in order"
+                $ do
+                    let liveOut = renderOutRef (txRef 111)
+                        envelope = toJSON ("656e76656c6f7065" :: T.Text)
+                        got =
+                            earlierReceiptFields
+                                baseEarlierComps{earDelivery = EarlierDelivered liveOut envelope}
+                        expected =
+                            headPairs baseEarlierComps
+                                <> [ ("liveOutput", toJSON liveOut)
+                                   , ("envelope", envelope)
+                                   ]
+                                <> tailPairs baseEarlierComps
+                    got `shouldBe` expected
+            it
+                "projects a delivered datum with its hash and cbor from its components, unchanged and in order"
+                $ do
+                    let liveOut = renderOutRef t2
+                        dHash = "6861736832" :: T.Text
+                        dCbor = "63626f7232" :: T.Text
+                        got =
+                            earlierReceiptFields
+                                baseEarlierComps
+                                    { earDelivery = EarlierDeliveredDatum liveOut dHash dCbor
+                                    }
+                        expected =
+                            headPairs baseEarlierComps
+                                <> [ ("liveOutput", toJSON liveOut)
+                                   , ("datumHash", toJSON dHash)
+                                   , ("datumCbor", toJSON dCbor)
+                                   ]
+                                <> tailPairs baseEarlierComps
+                    got `shouldBe` expected
+            it
+                "projects a released output with its deposit from its components, unchanged and in order"
+                $ do
+                    let releasedOut = renderOutRef t3
+                        deposit = 2000000 :: Integer
+                        got =
+                            earlierReceiptFields
+                                baseEarlierComps{earDelivery = EarlierReleased releasedOut deposit}
+                        expected =
+                            headPairs baseEarlierComps
+                                <> [ ("released", toJSON releasedOut)
+                                   , ("deposit", toJSON deposit)
+                                   ]
+                                <> tailPairs baseEarlierComps
+                    got `shouldBe` expected
 
 -- ---------------------------------------------------------
 -- Selection inputs: output-derived fixtures (invariants 1-5)

@@ -29,15 +29,11 @@ module Singular.CLI.FoldRules
     , postBuildDecision
     , placedEdge
 
-      -- * Which request
-    , FoldTargetRefusal (..)
-    , foldTarget
-    , renderTargetRefusal
-
       -- * Which requests take the selection (#518)
     , FoldRequestsRefusal (..)
     , foldRequests
     , renderFoldRequestsRefusal
+    , refuseNamedEdgeEarly
     , SpendsRefusal (..)
     , spendsSelection
     , renderSpendsRefusal
@@ -60,10 +56,21 @@ module Singular.CLI.FoldRules
     , buildPendingRequests
     , buildLiveFacts
 
+      -- * Additive receipt lists (#518, pull request 1)
+    , SettledForReceipt (..)
+    , foldReceiptLists
+    , EarlierDelivery (..)
+    , EarlierReceipt (..)
+    , earlierReceiptFields
+    , combineReceiptFields
+    , combineWindowClosedMessage
+    , holdsActiveToken
+
       -- * Which funding
     , fundedView
     ) where
 
+import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -287,42 +294,6 @@ boundStartMs slotOf lo0 hi0 slot = do
                 Just m | m >= slot -> go lo mid
                 Just _ -> go mid hi
                 Nothing -> pure Nothing
-
--- | Why a fold has no request to take.
-data FoldTargetRefusal
-    = NothingPending
-    | -- | The request the caller named is not pending
-      NotPending TxIn
-    | -- | Every pending request: a fold takes them all, and takes one
-      SeveralPending [TxIn]
-    deriving stock (Eq, Show)
-
-{- | The one pending request a fold takes, or why there is none. The
-production fold takes every request pending for the registry, so a fold
-is built only while exactly one is pending, and a request the caller
-named must be that one.
--}
-foldTarget :: Maybe TxIn -> [TxIn] -> Either FoldTargetRefusal TxIn
-foldTarget named pending = case (pending, named) of
-    ([], _) -> Left NothingPending
-    (_, Just r) | r `notElem` pending -> Left (NotPending r)
-    ([one], _) -> Right one
-    _ -> Left (SeveralPending pending)
-
--- | One line naming the refusal.
-renderTargetRefusal :: FoldTargetRefusal -> String
-renderTargetRefusal = \case
-    NothingPending -> "nothing is pending: there is no request to fold"
-    NotPending r ->
-        "the request "
-            <> txt r
-            <> " is not pending: it was folded, retracted or never booked"
-    SeveralPending rs ->
-        "more than one request is pending ("
-            <> intercalate ", " (map txt rs)
-            <> "); the registry's fold takes every pending request, so it is built only while exactly one is pending"
-  where
-    txt = T.unpack . renderOutRef
 
 -- | The edges @registry fold@ folds.
 data FoldKind = FoldInsertion | FoldTermination
@@ -624,6 +595,18 @@ renderFoldRequestsRefusal = \case
   where
     txt = T.unpack . renderOutRef
 
+{- | Whether the fold refuses a named request's untakeable edge at once,
+before the selection runs and before any other pending request is read:
+only when that request is the only one pending, so the early refusal has no
+other exclusion to name. Consulted only after the named request was found
+pending and its edge was refused by 'foldKind'; every other case goes
+through the selection and 'foldRequests', whose refusal names the named
+request's cause and every other exclusion.
+-}
+refuseNamedEdgeEarly :: Maybe TxIn -> [TxIn] -> Bool
+refuseNamedEdgeEarly (Just r) pendings = pendings == [r]
+refuseNamedEdgeEarly Nothing _ = False
+
 -- | Why a built fold does not spend exactly the selection.
 data SpendsRefusal
     = SpendsMissingState TxIn
@@ -868,3 +851,172 @@ buildLiveFacts leaves present keys =
           )
         | (k, i) <- Map.toList keys
         ]
+
+{- | Whether any live output at the application address holds the key's one
+active token: an asset under the active-token policy named by the key bytes.
+Pure over the outputs the routine already reads, so the selection's leaf
+check sees the same holdings the fold would spend, for either application
+value (the neutral value carries no holding rules, but its keys still hold
+tokens at the application address).
+-}
+holdsActiveToken
+    :: SBS.ShortByteString
+    -- ^ The active-token policy bytes
+    -> ByteString
+    -- ^ The key bytes
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Bool
+holdsActiveToken _ key _ | key == mempty = False
+holdsActiveToken active key outs =
+    any (holds . snd) outs
+  where
+    holds out = any (\(p, n) -> p == active && n == key) (outputAssets out)
+
+-- ---------------------------------------------------------
+-- Additive receipt lists (#518, pull request 1)
+-- ---------------------------------------------------------
+
+{- | One settled request as the additive receipt lists it: the output
+reference, the key and edge as the receipt names them, the owner hex,
+the settlement object (the delivered output with its datum, or the
+released holding with the deposit paid back) and the deadline object.
+-}
+data SettledForReceipt = SettledForReceipt
+    { sfrRequest :: TxIn
+    , sfrKeyHex :: T.Text
+    , sfrEdge :: T.Text
+    , sfrOwnerHex :: T.Text
+    , sfrSettlement :: Value
+    , sfrDeadline :: Value
+    }
+    deriving stock (Eq, Show)
+
+{- | The three additive receipt fields beside the earlier top-level ones:
+@settled@ (each settled request in ledger order), @excluded@ (each
+excluded request with reason, source and detail, in ledger order) and
+@capacity@ (the bound with its provenance text). Pure over simple data
+so the receipt shape is tested without a ledger.
+-}
+foldReceiptLists
+    :: [SettledForReceipt]
+    -> [(TxIn, Exclusion)]
+    -> Int
+    -> T.Text
+    -> [(T.Text, Value)]
+foldReceiptLists settled excluded bound provenance =
+    [ ("settled", toJSON (map settledJson settled))
+    , ("excluded", toJSON (map excludedJson excluded))
+    , ("capacity", object ["bound" .= bound, "provenance" .= provenance])
+    ]
+  where
+    settledJson s =
+        object
+            [ "request" .= renderOutRef (sfrRequest s)
+            , "key" .= sfrKeyHex s
+            , "edge" .= sfrEdge s
+            , "owner" .= sfrOwnerHex s
+            , "settlement" .= sfrSettlement s
+            , "deadline" .= sfrDeadline s
+            ]
+    excludedJson (tx, exc) =
+        object
+            [ "request" .= renderOutRef tx
+            , "reason" .= exclusionName exc
+            , "source" .= exclusionSource exc
+            , "detail" .= excDetail exc
+            ]
+
+{- | The delivery of the earlier top-level receipt fields as simple
+components: the delivered output with its envelope, the delivered datum
+with its hash and cbor, or the released output with the deposit paid back.
+-}
+data EarlierDelivery
+    = -- | The output now holding the key, with its envelope as the receipt states it
+      EarlierDelivered T.Text Value
+    | -- | The output now holding the key's datum, with the datum's hash and cbor
+      EarlierDeliveredDatum T.Text T.Text T.Text
+    | -- | The live output the fold released, and the deposit it paid back
+      EarlierReleased T.Text Integer
+    deriving stock (Eq, Show)
+
+{- | The earlier top-level receipt fields as one record of simple
+components, each already spelled as the receipt states it: the settled
+request, key, edge, folder and fold transaction as text, the delivery, the
+root after, the deadline object, the validity upper bound slot, the
+post-build verdict, the host clock and the milliseconds remaining.
+-}
+data EarlierReceipt = EarlierReceipt
+    { earRequest :: T.Text
+    , earKey :: T.Text
+    , earEdge :: T.Text
+    , earFolder :: T.Text
+    , earFold :: T.Text
+    , earDelivery :: EarlierDelivery
+    , earRoot :: T.Text
+    , earDeadline :: Value
+    , earUpperSlot :: Maybe Integer
+    , earPostBuild :: Value
+    , earHostClockMs :: Integer
+    , earRemainingMs :: Integer
+    }
+    deriving stock (Eq, Show)
+
+{- | The earlier top-level receipt fields in the order a reader meets them,
+projected from simple components. The production 'foldedFields' in
+"Singular.CLI.Fold" builds the record and calls this function, so rows over
+it pin the production projection: every earlier pair unchanged and in
+order, nothing added or removed, per delivery branch.
+-}
+earlierReceiptFields :: EarlierReceipt -> [(T.Text, Value)]
+earlierReceiptFields r =
+    [ ("request", toJSON (earRequest r))
+    , ("key", toJSON (earKey r))
+    , ("edge", toJSON (earEdge r))
+    , ("folder", toJSON (earFolder r))
+    , ("fold", toJSON (earFold r))
+    ]
+        <> deliveryFields (earDelivery r)
+        <> [ ("root", toJSON (earRoot r))
+           , ("foldDeadline", earDeadline r)
+           , ("validUntilSlot", toJSON (earUpperSlot r))
+           , ("postBuild", earPostBuild r)
+           , ("hostClockMs", toJSON (earHostClockMs r))
+           , ("remainingMs", toJSON (earRemainingMs r))
+           ]
+  where
+    deliveryFields = \case
+        EarlierDelivered live envelope ->
+            [ ("liveOutput", toJSON live)
+            , ("envelope", envelope)
+            ]
+        EarlierDeliveredDatum live dHash dCbor ->
+            [ ("liveOutput", toJSON live)
+            , ("datumHash", toJSON dHash)
+            , ("datumCbor", toJSON dCbor)
+            ]
+        EarlierReleased out deposit ->
+            [ ("released", toJSON out)
+            , ("deposit", toJSON deposit)
+            ]
+
+{- | Combine the earlier top-level receipt fields with the three additions:
+the earlier pairs survive unchanged and in order, the additions follow them,
+nothing else added or removed. The production @foldedFields@ calls this, so
+rows over realistic earlier projections pin the production path.
+-}
+combineReceiptFields
+    :: [(T.Text, Value)]
+    -> [(T.Text, Value)]
+    -> [(T.Text, Value)]
+combineReceiptFields earlier additions = earlier ++ additions
+
+{- | Combine a legacy window-closed message with every other exclusion.
+Sole cause returns the legacy message unchanged, so the Demo 1 readers of
+the closed-window wording and timing fields stay untouched; with others,
+the legacy wording stays first and every other exclusion is listed after
+it in the same refusal, so no exclusion is lost.
+-}
+combineWindowClosedMessage :: String -> [(TxIn, Exclusion)] -> String
+combineWindowClosedMessage legacy [] = legacy
+combineWindowClosedMessage legacy others =
+    legacy ++ "\n" ++ renderFoldRequestsRefusal (FoldNothingToFold others)
