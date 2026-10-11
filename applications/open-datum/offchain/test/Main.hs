@@ -64,7 +64,10 @@ main = hspec $ do
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec
     describe
-        (tagged "Singular.Application.OpenDatum.IndependentActors" [Cli, Provider, History, Trie])
+        ( tagged
+            "Singular.Application.OpenDatum.IndependentActors"
+            [Cli, Provider, History, Trie]
+        )
         Singular.Application.OpenDatum.IndependentActorsSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.ManagedState" [Cli])

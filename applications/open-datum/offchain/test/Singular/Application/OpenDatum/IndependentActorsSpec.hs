@@ -53,10 +53,10 @@ import Lens.Micro ((&), (.~), (^.))
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 import PlutusCore.Data qualified as PLC
 import Singular.Application.OpenDatum.Envelope (Envelope (..))
-import Singular.CLI.FoldRules (FoldKind (FoldTermination), foldKind)
 import Singular.Application.OpenDatum.InsertEnvelope (insertEnvelope)
-import Singular.CLI.Live (failTrie)
 import Singular.Application.OpenDatum.Plan (controllerCheck)
+import Singular.CLI.FoldRules (FoldKind (FoldTermination), foldKind)
+import Singular.CLI.Live (failTrie)
 import Singular.CLI.Receipt (OutcomeClass (..), exitCodeOf)
 import Singular.CLI.ReclaimRules qualified as Reclaim
 import Singular.CLI.RejectRules qualified as Reject
