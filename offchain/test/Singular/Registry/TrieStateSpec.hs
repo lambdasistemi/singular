@@ -103,28 +103,29 @@ leafBytes Unknown = ""
 spec :: Spec
 spec = describe "TrieState preservation oracle (existing IO producer)" $ do
     it
-        "preserves rootOfDb snapshot failures inside IO and leaves malformed roots lazy" $ do
-        let token = TokenId (AssetName "root-boundary")
-        (db, Root root, _) <- produced token [("key", 1), ("other", 1)]
-        let damaged = db{mpfInMemoryMPF = Map.map (const BS.empty) (mpfInMemoryMPF db)}
-            unavailable = error "root snapshot unavailable" :: MPFInMemoryDB
-        forM_ [db, damaged, unavailable] $ \snapshot -> do
-            oldDiscarded <- outcome (void (frozenRootOfDb snapshot))
-            newDiscarded <- outcome (void (rootOfDb snapshot))
-            newDiscarded `shouldBe` oldDiscarded
-            oldForced <- outcome (frozenRootOfDb snapshot >>= evaluate)
-            newForced <- outcome (rootOfDb snapshot >>= evaluate)
-            newForced `shouldBe` oldForced
-        outcome (void (rootOfDb unavailable))
-            `shouldReturn` Left "root snapshot unavailable"
-        outcome (void (rootOfDb damaged)) `shouldReturn` Right ()
-        -- Forcing the returned root, rather than merely running IO, must
-        -- still expose malformed nodes. This rejects an over-strict repair.
-        malformed <- outcome (rootOfDb damaged >>= evaluate)
-        case malformed of
-            Left _ -> pure ()
-            Right _ -> fail "the damaged authenticated nodes unexpectedly decoded"
-        rootOfDb db `shouldReturn` root
+        "preserves rootOfDb snapshot failures inside IO and leaves malformed roots lazy"
+        $ do
+            let token = TokenId (AssetName "root-boundary")
+            (db, Root root, _) <- produced token [("key", 1), ("other", 1)]
+            let damaged = db{mpfInMemoryMPF = Map.map (const BS.empty) (mpfInMemoryMPF db)}
+                unavailable = error "root snapshot unavailable" :: MPFInMemoryDB
+            forM_ [db, damaged, unavailable] $ \snapshot -> do
+                oldDiscarded <- outcome (void (frozenRootOfDb snapshot))
+                newDiscarded <- outcome (void (rootOfDb snapshot))
+                newDiscarded `shouldBe` oldDiscarded
+                oldForced <- outcome (frozenRootOfDb snapshot >>= evaluate)
+                newForced <- outcome (rootOfDb snapshot >>= evaluate)
+                newForced `shouldBe` oldForced
+            outcome (void (rootOfDb unavailable))
+                `shouldReturn` Left "root snapshot unavailable"
+            outcome (void (rootOfDb damaged)) `shouldReturn` Right ()
+            -- Forcing the returned root, rather than merely running IO, must
+            -- still expose malformed nodes. This rejects an over-strict repair.
+            malformed <- outcome (rootOfDb damaged >>= evaluate)
+            case malformed of
+                Left _ -> pure ()
+                Right _ -> fail "the damaged authenticated nodes unexpectedly decoded"
+            rootOfDb db `shouldReturn` root
     forM_
         [TokenId (AssetName "registry-a"), TokenId (AssetName "registry-b")]
         $ \token ->
