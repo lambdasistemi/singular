@@ -118,7 +118,7 @@ as a cache in this ticket. A later cache is a further trie-state backend and
 never overrides a replay.
 
 A request now carries the datum it delivers under merged #419 and constitution
-1.13.0. Another actor can obtain that input publicly; the integrated journey
+1.14.0. Another actor can obtain that input publicly; the integrated journey
 must exercise cross-actor insertion folding without the booker's preimage file.
 
 ## Acceptance

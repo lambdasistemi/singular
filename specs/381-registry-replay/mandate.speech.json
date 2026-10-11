@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "The branch is stacked on PR 525, the managed-state ticket #485. The desk owns that branch and this ticket never edits it.",
+      "text": "The branch was stacked on PR 525, the managed-state ticket #485. It is now rebased on main c67489502d3cdd8b5230d5fc8aaecbc954198bdc under the desk's merge slot; the desk owns that slot and this ticket never edits other lanes.",
       "pause": 400
     },
     {
@@ -37,7 +37,7 @@
       "pause": 300
     },
     {
-      "text": "The inline request datum, with no size cap. \"A request carries the datum value it names for its delivered output\" (constitution 1.13.0, the tx and settle rows). A folder reads that datum from the pending request on the chain. No file the booker wrote is an input, and the harness never assumes or truncates a datum size.",
+      "text": "The inline request datum, with no size cap. \"A request carries the datum value it names for its delivered output\" (constitution 1.14.0, the tx and settle rows). A folder reads that datum from the pending request on the chain. No file the booker wrote is an input, and the harness never assumes or truncates a datum size.",
       "pause": 300
     },
     {
@@ -53,7 +53,7 @@
       "pause": 300
     },
     {
-      "text": "Stacking and the merge slot. The stack is declared in the pull request body with the words \"stacked on PR 525\". This ticket merges immediately after #485, in the slot the desk grants. It does not rebase onto main before that slot.",
+      "text": "Stacking and the merge slot. The rebased base is declared in the pull request body. This ticket merges in the slot the desk grants, rebased on main.",
       "pause": 300
     }
   ],
@@ -269,7 +269,7 @@
       "pause": 500
     },
     {
-      "text": "One team for this epic. One producer at a time, for ticket work. Journey runs go on a fresh development network each, with receipts under the 50 MiB cap and scratch under /srv/lanes/singular-e371/381-live. No public-network write and no private key. The aggregate just ci runs once, on the final candidate. A local rerun of a hosted job list is not a gate: a hosted failure is one repair commit.",
+      "text": "One team for this epic. One producer at a time, for ticket work. Journey runs go on a fresh development network each, with receipts under the 50 MiB cap and scratch under /code/singular-e371-381-live. No public-network write and no private key. The aggregate just ci runs once, on the final candidate. A local rerun of a hosted job list is not a gate: a hosted failure is one repair commit.",
       "pause": 400
     }
   ],
@@ -289,6 +289,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "718659af23c4cbeb76640679aed13767c5660efb390f4ddb2dbe3dc5972e952d"
+    "sha256": "591180c85075aac16060f2750eb0b32f8f88ec8a60e8c683e9c6afb61906b4bf"
   }
 }

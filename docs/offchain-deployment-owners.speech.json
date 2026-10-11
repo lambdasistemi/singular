@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
+      "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is delivered, with no shared directory. Importing a creator identity file is superseded.",
       "pause": 400
     },
     {
@@ -73,6 +73,6 @@
   ],
   "_source": {
     "file": "offchain-deployment-owners.md",
-    "sha256": "7add7abac888f271e85f9305a556d57c8eae66791c383ffaaeff416132573d6b"
+    "sha256": "717dbe0665fbc6e1f9b77fa60554ea6039873bb3066a9dd3709d07f7dee63aa6"
   }
 }

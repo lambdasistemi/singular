@@ -4,9 +4,10 @@ As a maintainer, I want one trie-state backend that rebuilds a registry's trie
 from its full public history at every selection, so that commands get the
 chain's trie without any actor's local copy. Read the [stories](spec.md) first,
 then the [decisions](decisions.md). The pure replay and command migration are merged in PRs 391 and 411.
-The remaining branch is stacked on PR 525, the managed-state ticket
+The remaining branch was stacked on PR 525, the managed-state ticket
 ([issue #485](https://github.com/lambdasistemi/singular/issues/485)), at
-`026576268e916c964426d4a4be304d35544d9816`. The remaining deliverable is the actual
+`026576268e916c964426d4a4be304d35544d9816`; it is now rebased on main
+`c67489502d3cdd8b5230d5fc8aaecbc954198bdc` under the merge slot. The remaining deliverable is the actual
 independent-user journey. The [mandate](mandate.md) fixes its content, runs and
 gate, and the ordered [task list](tasks.md) tracks it; an empty-user harness alone
 does not complete it.
@@ -162,7 +163,7 @@ and stacks on the provider ticket's published slices.
 | Pure replay and chain oracles | The replay over the ledger's own transactions, rebuilding into the trie interface `walkEdge` takes, with every named refusal. Development-network checks: root at every fold, mixed fold, input-order pairing, dropped and forked history, and proofs at every fold. | Intake acceptance; nothing unpublished is consumed |
 | Commands run on the replay | The lineage backend replaces the mirror instance in the terminal. Mirror and saved-root files are no longer written or read. The journey's single shared directory passes on it. | The provider ticket's provider switch slice is published, with `Session.history` |
 | Separate actors before token joining | Creator-only fixture; two empty independent users; public replay, controller and request-window unit controls; superseded statements corrected. Merged before this stack. | Commands run on the replay (merged in [PR 411](https://github.com/lambdasistemi/singular/pull/411)) |
-| Separate actors integrated | Actual token-driven joining and the full two-user CLI journey, in four runs under the [mandate](mandate.md). No creator identity file is shared. | Joining by token merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)) and the managed state directory stacked ([PR 525](https://github.com/lambdasistemi/singular/pull/525)) |
+| Separate actors integrated | Actual token-driven joining and the full two-user CLI journey, in four runs under the [mandate](mandate.md). No creator identity file is shared. | Joining by token merged ([issue #501](https://github.com/lambdasistemi/singular/issues/501)) and the managed state directory merged ([issue #485](https://github.com/lambdasistemi/singular/issues/485), formerly PR 525; the branch is rebased on main) |
 | Published evidence | Folded into the separate-actors pull request: its description and this directory. | Separate actors |
 
 Each slice deletes what it makes obsolete in the same diff: the mirror adapter
@@ -222,8 +223,8 @@ state directory is stacked beneath this branch. The two rows that read the regis
 stay pending on [issue #503](https://github.com/lambdasistemi/singular/issues/503). No
 identity-file copy or handwritten registry configuration substitutes for the joining.
 
-Lean behavior is bound to tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, the same on
-main, on PR 525 and here, with `Singular.step`, `exitStep`, `foldActions`, `buildFold`
+Lean behavior is bound to tree `d9161edd0274b67151f331949521f34bbf18612f`, the same on
+main and here (history: `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`), with `Singular.step`, `exitStep`, `foldActions`, `buildFold`
 and the public-fold-input statements. No model change is planned. Mixed transactions
 retain the separately stated validator oracle. Final acceptance requires exact-head CI
 and executed journey receipts, including the negative controls, with all missing rows

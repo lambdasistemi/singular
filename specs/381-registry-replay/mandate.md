@@ -11,25 +11,26 @@ and reads with the [spec](spec.md), the [plan](plan.md) and the [task list](task
 
 ## What is being built on
 
-The branch is stacked on PR 525, the managed-state ticket
-[#485](https://github.com/lambdasistemi/singular/issues/485). The desk owns that
-branch and this ticket never edits it.
+The branch was stacked on PR 525, the managed-state ticket
+[#485](https://github.com/lambdasistemi/singular/issues/485). It is now rebased
+on main `c67489502d3cdd8b5230d5fc8aaecbc954198bdc` under the desk's merge
+slot; the desk owns that slot and this ticket never edits other lanes.
 
 | Fact | Value |
 | --- | --- |
 | Repository, issue, pull request | lambdasistemi/singular, issue 381, draft PR 433 |
 | Worktree and branch | `/code/singular-381-registry-replay`, `feat/381-two-terminals` |
-| Stacked on PR 525 | `feat/485-managed-state` at `026576268e916c964426d4a4be304d35544d9816`, itself on main `e48e3098` |
-| Nine commits of this ticket on top | from `9d690989` (reconstruction plan) to the narration refresh `2d995b8e`; their messages were completed and their trees are unchanged |
-| Previous tips, kept | `archive/e371-381-before-485-stack-20261009` at `046706c4` (before the stack); `archive/e371-381-before-message-rewrite-20261009` at `53a6600075f8d42d85ac360b313819555fcde6f9` (before the nine messages were completed); the remote head `2adc3101` as `archive/e371-381-before-refresh-20261008` |
-| Main when this was written | `76bb09936f79a97adb2d359a0c5eb8806d2af5aa`; this branch is not rebased onto it before the desk grants the merge slot |
-| Lean | tree `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`, the same tree on main, on PR 525 and here |
-| Constitution | version 1.13.0, sha256 `4e99d8486db1b88c414ad6e57c4ca1472f9afd8915e2a0b63539bd99fbf72131` |
-| Scratch and temporary files | `/srv/lanes/singular-e371/381-live` (`TMPDIR` and `RUNNER_TEMP`) |
+| Stacked on PR 525, now rebased | `feat/485-managed-state` was at `026576268e916c964426d4a4be304d35544d9816`, itself on main `e48e3098`; the branch is now rebased on main `c67489502d3cdd8b5230d5fc8aaecbc954198bdc` under the merge slot (history: the stack above) |
+| Commits of this ticket on top | from the reconstruction plan through run six (rebase, open-datum move, booking refusal, proof, docs close); history below names the earlier states |
+| Previous tips, kept | `archive/e371-381-before-485-stack-20261009` at `046706c4` (before the stack); `archive/e371-381-before-message-rewrite-20261009` at `53a6600075f8d42d85ac360b313819555fcde6f9` (before the nine messages were completed); the remote head `2adc3101` as `archive/e371-381-before-refresh-20261008`; `archive/e371-381-before-rebase-c6748950-20261011` at `296e1715` (before the rebase onto main) |
+| Main (rebased base under the slot) | `c67489502d3cdd8b5230d5fc8aaecbc954198bdc`; this branch is rebased onto it (history: `76bb09936f79a97adb2d359a0c5eb8806d2af5aa`, onto which it was not rebased before the slot) |
+| Lean | tree `d9161edd0274b67151f331949521f34bbf18612f`, the same tree on main and here (history: `16ee2d4a4233130460b7e36daffbe6f2b8b9a8ef`) |
+| Constitution | version 1.14.0, sha256 `688f4c39493b7dc0b63418f817927d10476f566fec43c8bf1cd8f629c37c69b6` |
+| Scratch and temporary files | `/code/singular-e371-381-live` (`TMPDIR`, `RUNNER_TEMP` and `REGISTRY_JOURNEY_ROOT`) |
 
-Until PR 525 is pushed, nothing of this branch is pushed: a push now would publish
-commits of the desk's branch that are not on its remote. If the tip of PR 525 is
-rewritten under this stack, work stops and the ticket owner re-bases first.
+The base is main, so one push publishes only this ticket's commits: the
+ticket owner pushes once, after approval, into the merge slot. If `origin/main`
+moves under this stack, work stops and the ticket owner re-bases first.
 
 ## Rulings in force
 
@@ -44,7 +45,7 @@ These are quoted, not referenced.
   book a request are assembled in one place in the harness, so the split moves them
   without rewriting the journey.
 - **The inline request datum, with no size cap.** "A request carries the datum value it
-  names for its delivered output" (constitution 1.13.0, the `tx` and `settle` rows). A
+  names for its delivered output" (constitution 1.14.0, the `tx` and `settle` rows). A
   folder reads that datum from the pending request on the chain. No file the booker
   wrote is an input, and the harness never assumes or truncates a datum size.
 - **The request tag ([#529](https://github.com/lambdasistemi/singular/issues/529)), where
@@ -62,9 +63,7 @@ These are quoted, not referenced.
   the state token, his wallet and a Koios URL. An assertion that reads a registry or
   state directory is rewritten, not kept. That covers a foreign actor's directory, the
   creator's directory and any `--state-dir`.
-- **Stacking and the merge slot.** The stack is declared in the pull request body with
-  the words "stacked on PR 525". This ticket merges immediately after #485, in the slot
-  the desk grants. It does not rebase onto main before that slot.
+- **Stacking and the merge slot.** The rebased base is declared in the pull request body. This ticket merges in the slot the desk grants, rebased on main.
 
 ## What must hold
 
@@ -235,7 +234,7 @@ outside the demonstration by the operator's ruling in the [decisions](decisions.
 
 One team for this epic. One producer at a time, for ticket work. Journey runs go on a
 fresh development network each, with receipts under the 50 MiB cap and scratch under
-`/srv/lanes/singular-e371/381-live`. No public-network write and no private key. The
+`/code/singular-e371-381-live`. No public-network write and no private key. The
 aggregate `just ci` runs once, on the final candidate. A local rerun of a hosted job
 list is not a gate: a hosted failure is one repair commit.
 

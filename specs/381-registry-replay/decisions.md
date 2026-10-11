@@ -71,7 +71,7 @@ directory or any state directory. The journey's assertions read command receipts
 The registry page, generated from the chain, belongs to
 [issue #503](https://github.com/lambdasistemi/singular/issues/503). The two journey rows
 that read it stay pending on it, with their joining receipts attached. The complete
-integrated journey ships in this pull request, stacked on PR 525.
+integrated journey ships in this pull request, rebased on main under the merge slot (history: stacked on PR 525).
 
 ## The directory keeps nothing the replay replaces
 
@@ -139,10 +139,8 @@ ticket builds on the payload-carrying type rather than rebasing across it.
 
 ## Sequencing and staffing
 
-As this ticket's owner, I implement only against published code, and the base is PR 525.
+As this ticket's owner, I implement only against published code, and the base is main `c67489502d3cdd8b5230d5fc8aaecbc954198bdc` (history: PR 525).
 The October 9 staffing ruling supersedes the October 7 roster: a Sonnet ticket owner, a
 Muse source writer and a GLM auditor, no other seat, one writer at a time. The
-[mandate](mandate.md) quotes the ruling. This ticket merges immediately after
-[issue #485](https://github.com/lambdasistemi/singular/issues/485), in the slot the desk
-grants, and is not rebased onto main before it. If the published contract does not fit
+[mandate](mandate.md) quotes the ruling. This ticket merges in the slot the desk grants, rebased onto main (history: it was to merge immediately after [issue #485](https://github.com/lambdasistemi/singular/issues/485), not rebased onto main before the slot). If the published contract does not fit
 lineage reconstruction, that is a question, not a change to the provider ticket.

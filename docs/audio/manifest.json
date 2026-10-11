@@ -85276,297 +85276,327 @@
    ]
   },
   "docs-consumer-onboarding/deployment-and-naming-availability-03": {
-   "audio_sha256": "158adbec93ba9f76b2ee12c35daa971e193462e8df0fa781bee5821e0f34daca",
-   "characters": 690,
-   "cost": 0.0004278,
-   "duration": 48.675,
+   "audio_sha256": "68cec928ffdacd66610ed2356bb32a1eea5f6d02870e7b9d33c67854b65ebae0",
+   "characters": 815,
+   "cost": 0.0008068499999999999,
+   "duration": 56.275,
    "index": 3,
-   "key": "9450415634632b1ebe5be0f3774bf6f6a7e0c8b9e0e9c1608ee7ea7818dbc952",
+   "key": "09acf39d7467e07a124fb2db2e5716685aa66a4456959574f71b6162daf002e8",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "deployment-and-naming-availability",
-   "sent_text": "Demo 1 has two users, Alice and Bob, starting with empty homes and registry directories. Neither creates the registry or receives its creation files; each reads the registry's web page generated from the chain and Koios. Joining by state token is pending under issue #437, which owns deriving the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
-   "text": "Demo 1 has two users, Alice and Bob, starting with empty homes and registry directories. Neither creates the registry or receives its creation files; each reads the registry's web page generated from the chain and Koios. Joining by state token is pending under issue #437, which owns deriving the seed, pins, windows, tip and reference outputs from the state token, state datum and release. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+   "sent_text": "Demo 1 has two users, Alice and Bob, starting with empty homes. Neither creates the registry or receives its creation files. Joining by state token is delivered: each joins with the state token, its own wallet and a Koios URL, with no shared directory — every command carries the state-token flag and no directory option, and neither actor opens the other's files. Not delivered: joining by reading the registry page generated from the chain, which stays pending under issue #503 with its joining receipts attached. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+   "text": "Demo 1 has two users, Alice and Bob, starting with empty homes. Neither creates the registry or receives its creation files. Joining by state token is delivered: each joins with the state token, its own wallet and a Koios URL, with no shared directory — every command carries the state-token flag and no directory option, and neither actor opens the other's files. Not delivered: joining by reading the registry page generated from the chain, which stays pending under issue #503 with its joining receipts attached. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
    "words": [
     {
-     "end": 0.55,
+     "end": 0.5,
      "start": 0.2,
      "text": "Demo"
     },
     {
-     "end": 0.775,
-     "start": 0.55,
+     "end": 0.65,
+     "start": 0.5,
      "text": "1"
     },
     {
-     "end": 1.013,
-     "start": 0.775,
+     "end": 0.863,
+     "start": 0.65,
      "text": "has"
     },
     {
-     "end": 1.237,
-     "start": 1.013,
+     "end": 1.075,
+     "start": 0.863,
      "text": "two"
     },
     {
-     "end": 1.775,
-     "start": 1.237,
+     "end": 1.575,
+     "start": 1.075,
      "text": "users"
     },
     {
-     "end": 1.862,
-     "start": 1.775,
+     "end": 1.65,
+     "start": 1.575,
      "text": ","
     },
     {
-     "end": 2.25,
-     "start": 1.862,
+     "end": 1.962,
+     "start": 1.65,
      "text": "Alice"
     },
     {
-     "end": 2.375,
-     "start": 2.25,
+     "end": 2.075,
+     "start": 1.962,
      "text": "and"
     },
     {
-     "end": 2.85,
-     "start": 2.375,
+     "end": 2.45,
+     "start": 2.075,
      "text": "Bob"
     },
     {
-     "end": 2.95,
-     "start": 2.85,
+     "end": 2.55,
+     "start": 2.45,
      "text": ","
     },
     {
-     "end": 3.362,
-     "start": 2.95,
+     "end": 2.963,
+     "start": 2.55,
      "text": "starting"
     },
     {
-     "end": 3.537,
-     "start": 3.362,
+     "end": 3.125,
+     "start": 2.963,
      "text": "with"
     },
     {
-     "end": 3.875,
-     "start": 3.537,
+     "end": 3.425,
+     "start": 3.125,
      "text": "empty"
     },
     {
-     "end": 4.3,
-     "start": 3.875,
+     "end": 4.375,
+     "start": 3.425,
      "text": "homes"
     },
     {
-     "end": 4.425,
-     "start": 4.3,
-     "text": "and"
-    },
-    {
-     "end": 4.925,
-     "start": 4.425,
-     "text": "registry"
-    },
-    {
-     "end": 6.2,
-     "start": 4.925,
-     "text": "directories"
-    },
-    {
-     "end": 6.4,
-     "start": 6.2,
+     "end": 4.575,
+     "start": 4.375,
      "text": "."
     },
     {
-     "end": 6.925,
-     "start": 6.6,
+     "end": 5.1,
+     "start": 4.775,
      "text": "Neither"
     },
     {
-     "end": 7.312,
-     "start": 6.925,
+     "end": 5.488,
+     "start": 5.1,
      "text": "creates"
     },
     {
-     "end": 7.4,
-     "start": 7.312,
+     "end": 5.575,
+     "start": 5.488,
      "text": "the"
     },
     {
-     "end": 8.075,
-     "start": 7.4,
+     "end": 6.25,
+     "start": 5.575,
      "text": "registry"
     },
     {
-     "end": 8.225,
-     "start": 8.075,
+     "end": 6.4,
+     "start": 6.25,
      "text": "or"
     },
     {
-     "end": 8.637,
-     "start": 8.225,
+     "end": 6.812,
+     "start": 6.4,
      "text": "receives"
     },
     {
-     "end": 8.75,
-     "start": 8.637,
+     "end": 6.925,
+     "start": 6.812,
      "text": "its"
     },
     {
-     "end": 9.225,
-     "start": 8.75,
+     "end": 7.425,
+     "start": 6.925,
      "text": "creation"
     },
     {
-     "end": 10.125,
-     "start": 9.225,
+     "end": 8.35,
+     "start": 7.425,
      "text": "files"
     },
     {
-     "end": 10.325,
-     "start": 10.125,
-     "text": ";"
-    },
-    {
-     "end": 10.812,
-     "start": 10.525,
-     "text": "each"
-    },
-    {
-     "end": 11.175,
-     "start": 10.812,
-     "text": "reads"
-    },
-    {
-     "end": 11.275,
-     "start": 11.175,
-     "text": "the"
-    },
-    {
-     "end": 11.863,
-     "start": 11.275,
-     "text": "registry's"
-    },
-    {
-     "end": 12.125,
-     "start": 11.863,
-     "text": "web"
-    },
-    {
-     "end": 12.5,
-     "start": 12.125,
-     "text": "page"
-    },
-    {
-     "end": 13.075,
-     "start": 12.5,
-     "text": "generated"
-    },
-    {
-     "end": 13.212,
-     "start": 13.075,
-     "text": "from"
-    },
-    {
-     "end": 13.312,
-     "start": 13.212,
-     "text": "the"
-    },
-    {
-     "end": 13.7,
-     "start": 13.312,
-     "text": "chain"
-    },
-    {
-     "end": 13.825,
-     "start": 13.7,
-     "text": "and"
-    },
-    {
-     "end": 14.85,
-     "start": 13.825,
-     "text": "Koios"
-    },
-    {
-     "end": 15.05,
-     "start": 14.85,
+     "end": 8.55,
+     "start": 8.35,
      "text": "."
     },
     {
-     "end": 15.65,
-     "start": 15.275,
+     "end": 9.062,
+     "start": 8.75,
      "text": "Joining"
     },
     {
-     "end": 15.85,
-     "start": 15.65,
+     "end": 9.2,
+     "start": 9.062,
      "text": "by"
     },
     {
-     "end": 16.175,
-     "start": 15.85,
+     "end": 9.475,
+     "start": 9.2,
      "text": "state"
     },
     {
-     "end": 16.6,
-     "start": 16.175,
+     "end": 9.825,
+     "start": 9.475,
      "text": "token"
     },
     {
-     "end": 16.763,
-     "start": 16.6,
+     "end": 9.975,
+     "start": 9.825,
      "text": "is"
     },
     {
-     "end": 17.25,
-     "start": 16.763,
-     "text": "pending"
+     "end": 10.925,
+     "start": 9.975,
+     "text": "delivered"
     },
     {
-     "end": 17.525,
-     "start": 17.25,
-     "text": "under"
+     "end": 11.125,
+     "start": 10.925,
+     "text": ":"
     },
     {
-     "end": 17.9,
-     "start": 17.525,
-     "text": "issue"
+     "end": 11.538,
+     "start": 11.325,
+     "text": "each"
     },
     {
-     "end": 19.35,
-     "start": 17.9,
-     "text": "437"
+     "end": 11.887,
+     "start": 11.538,
+     "text": "joins"
     },
     {
-     "end": 19.45,
-     "start": 19.35,
-     "text": ","
+     "end": 12.012,
+     "start": 11.887,
+     "text": "with"
     },
     {
-     "end": 19.688,
-     "start": 19.45,
-     "text": "which"
-    },
-    {
-     "end": 20.075,
-     "start": 19.688,
-     "text": "owns"
-    },
-    {
-     "end": 20.587,
-     "start": 20.075,
-     "text": "deriving"
-    },
-    {
-     "end": 20.712,
-     "start": 20.587,
+     "end": 12.1,
+     "start": 12.012,
      "text": "the"
     },
     {
+     "end": 12.375,
+     "start": 12.1,
+     "text": "state"
+    },
+    {
+     "end": 12.875,
+     "start": 12.375,
+     "text": "token"
+    },
+    {
+     "end": 12.975,
+     "start": 12.875,
+     "text": ","
+    },
+    {
+     "end": 13.15,
+     "start": 12.975,
+     "text": "its"
+    },
+    {
+     "end": 13.4,
+     "start": 13.15,
+     "text": "own"
+    },
+    {
+     "end": 13.8,
+     "start": 13.4,
+     "text": "wallet"
+    },
+    {
+     "end": 13.913,
+     "start": 13.8,
+     "text": "and"
+    },
+    {
+     "end": 13.975,
+     "start": 13.913,
+     "text": "a"
+    },
+    {
+     "end": 14.375,
+     "start": 13.975,
+     "text": "Koios"
+    },
+    {
+     "end": 15.4,
+     "start": 14.375,
+     "text": "URL"
+    },
+    {
+     "end": 15.6,
+     "start": 15.4,
+     "text": ","
+    },
+    {
+     "end": 15.988,
+     "start": 15.8,
+     "text": "with"
+    },
+    {
+     "end": 16.275,
+     "start": 15.988,
+     "text": "no"
+    },
+    {
+     "end": 16.575,
+     "start": 16.275,
+     "text": "shared"
+    },
+    {
+     "end": 17.288,
+     "start": 16.575,
+     "text": "directory"
+    },
+    {
+     "end": 17.375,
+     "start": 17.288,
+     "text": "—"
+    },
+    {
+     "end": 17.7,
+     "start": 17.375,
+     "text": "every"
+    },
+    {
+     "end": 18.175,
+     "start": 17.7,
+     "text": "command"
+    },
+    {
+     "end": 18.575,
+     "start": 18.175,
+     "text": "carries"
+    },
+    {
+     "end": 18.675,
+     "start": 18.575,
+     "text": "the"
+    },
+    {
+     "end": 19.312,
+     "start": 18.675,
+     "text": "state-token"
+    },
+    {
+     "end": 19.837,
+     "start": 19.312,
+     "text": "flag"
+    },
+    {
+     "end": 19.975,
+     "start": 19.837,
+     "text": "and"
+    },
+    {
+     "end": 20.175,
+     "start": 19.975,
+     "text": "no"
+    },
+    {
+     "end": 20.7,
+     "start": 20.175,
+     "text": "directory"
+    },
+    {
      "end": 21.7,
-     "start": 20.712,
-     "text": "seed"
+     "start": 20.7,
+     "text": "option"
     },
     {
      "end": 21.925,
@@ -85574,353 +85604,433 @@
      "text": ","
     },
     {
-     "end": 22.5,
+     "end": 22.225,
      "start": 22.125,
-     "text": "pins"
-    },
-    {
-     "end": 22.55,
-     "start": 22.5,
-     "text": ","
-    },
-    {
-     "end": 23.05,
-     "start": 22.55,
-     "text": "windows"
-    },
-    {
-     "end": 23.112,
-     "start": 23.05,
-     "text": ","
-    },
-    {
-     "end": 23.4,
-     "start": 23.112,
-     "text": "tip"
-    },
-    {
-     "end": 23.525,
-     "start": 23.4,
      "text": "and"
     },
     {
-     "end": 24.0,
-     "start": 23.525,
-     "text": "reference"
+     "end": 22.5,
+     "start": 22.225,
+     "text": "neither"
     },
     {
-     "end": 24.475,
-     "start": 24.0,
-     "text": "outputs"
+     "end": 22.875,
+     "start": 22.5,
+     "text": "actor"
     },
     {
-     "end": 24.612,
-     "start": 24.475,
-     "text": "from"
+     "end": 23.188,
+     "start": 22.875,
+     "text": "opens"
     },
     {
-     "end": 24.7,
-     "start": 24.612,
+     "end": 23.275,
+     "start": 23.188,
      "text": "the"
     },
     {
-     "end": 25.0,
-     "start": 24.7,
-     "text": "state"
+     "end": 23.625,
+     "start": 23.275,
+     "text": "other's"
     },
     {
-     "end": 25.55,
-     "start": 25.0,
-     "text": "token"
+     "end": 24.45,
+     "start": 23.625,
+     "text": "files"
     },
     {
-     "end": 25.663,
-     "start": 25.55,
-     "text": ","
-    },
-    {
-     "end": 26.0,
-     "start": 25.663,
-     "text": "state"
-    },
-    {
-     "end": 26.425,
-     "start": 26.0,
-     "text": "datum"
-    },
-    {
-     "end": 26.55,
-     "start": 26.425,
-     "text": "and"
-    },
-    {
-     "end": 27.65,
-     "start": 26.55,
-     "text": "release"
-    },
-    {
-     "end": 27.85,
-     "start": 27.65,
+     "end": 24.65,
+     "start": 24.45,
      "text": "."
     },
     {
-     "end": 28.475,
-     "start": 28.075,
-     "text": "Joining"
+     "end": 25.038,
+     "start": 24.85,
+     "text": "Not"
     },
     {
-     "end": 28.65,
-     "start": 28.475,
+     "end": 25.875,
+     "start": 25.038,
+     "text": "delivered"
+    },
+    {
+     "end": 26.1,
+     "start": 25.875,
+     "text": ":"
+    },
+    {
+     "end": 26.675,
+     "start": 26.3,
+     "text": "joining"
+    },
+    {
+     "end": 26.85,
+     "start": 26.675,
      "text": "by"
     },
     {
-     "end": 28.763,
-     "start": 28.65,
-     "text": "a"
+     "end": 27.163,
+     "start": 26.85,
+     "text": "reading"
     },
     {
-     "end": 29.237,
-     "start": 28.763,
-     "text": "copied"
-    },
-    {
-     "end": 29.812,
-     "start": 29.237,
-     "text": "identity"
-    },
-    {
-     "end": 30.237,
-     "start": 29.812,
-     "text": "file"
-    },
-    {
-     "end": 30.388,
-     "start": 30.237,
-     "text": "is"
-    },
-    {
-     "end": 31.325,
-     "start": 30.388,
-     "text": "superseded"
-    },
-    {
-     "end": 31.462,
-     "start": 31.325,
-     "text": "."
-    },
-    {
-     "end": 31.875,
-     "start": 31.462,
-     "text": "Public"
-    },
-    {
-     "end": 32.325,
-     "start": 31.875,
-     "text": "replay"
-    },
-    {
-     "end": 33.025,
-     "start": 32.325,
-     "text": "reconstructs"
-    },
-    {
-     "end": 33.125,
-     "start": 33.025,
+     "end": 27.25,
+     "start": 27.163,
      "text": "the"
     },
     {
-     "end": 34.075,
-     "start": 33.125,
-     "text": "trie"
+     "end": 27.75,
+     "start": 27.25,
+     "text": "registry"
     },
     {
-     "end": 34.3,
-     "start": 34.075,
-     "text": ";"
+     "end": 28.15,
+     "start": 27.75,
+     "text": "page"
     },
     {
-     "end": 34.8,
-     "start": 34.5,
-     "text": "missing"
+     "end": 28.725,
+     "start": 28.15,
+     "text": "generated"
     },
     {
-     "end": 35.338,
-     "start": 34.8,
-     "text": "history"
+     "end": 28.862,
+     "start": 28.725,
+     "text": "from"
     },
     {
-     "end": 35.475,
-     "start": 35.338,
-     "text": "or"
+     "end": 28.962,
+     "start": 28.862,
+     "text": "the"
     },
     {
-     "end": 35.588,
-     "start": 35.475,
-     "text": "a"
-    },
-    {
-     "end": 35.95,
-     "start": 35.588,
-     "text": "root"
-    },
-    {
-     "end": 36.088,
-     "start": 35.95,
-     "text": "that"
-    },
-    {
-     "end": 36.275,
-     "start": 36.088,
-     "text": "does"
-    },
-    {
-     "end": 36.537,
-     "start": 36.275,
-     "text": "not"
-    },
-    {
-     "end": 36.875,
-     "start": 36.537,
+     "end": 29.9,
+     "start": 28.962,
      "text": "chain"
     },
     {
-     "end": 37.375,
-     "start": 36.875,
-     "text": "remains"
-    },
-    {
-     "end": 37.487,
-     "start": 37.375,
-     "text": "a"
-    },
-    {
-     "end": 37.875,
-     "start": 37.487,
-     "text": "named"
-    },
-    {
-     "end": 39.0,
-     "start": 37.875,
-     "text": "refusal"
-    },
-    {
-     "end": 39.2,
-     "start": 39.0,
-     "text": "."
-    },
-    {
-     "end": 40.025,
-     "start": 39.4,
-     "text": "Historical"
-    },
-    {
-     "end": 40.662,
-     "start": 40.025,
-     "text": "deployment"
-    },
-    {
-     "end": 40.8,
-     "start": 40.662,
-     "text": "and"
-    },
-    {
-     "end": 41.225,
-     "start": 40.8,
-     "text": "naming"
-    },
-    {
-     "end": 41.838,
-     "start": 41.225,
-     "text": "receipts"
-    },
-    {
-     "end": 42.338,
-     "start": 41.838,
-     "text": "remain"
-    },
-    {
-     "end": 42.85,
-     "start": 42.338,
-     "text": "evidence"
-    },
-    {
-     "end": 42.95,
-     "start": 42.85,
-     "text": "of"
-    },
-    {
-     "end": 43.15,
-     "start": 42.95,
-     "text": "their"
-    },
-    {
-     "end": 43.675,
-     "start": 43.15,
-     "text": "recorded"
-    },
-    {
-     "end": 44.325,
-     "start": 43.675,
-     "text": "revision"
-    },
-    {
-     "end": 44.475,
-     "start": 44.325,
-     "text": "and"
-    },
-    {
-     "end": 44.888,
-     "start": 44.475,
-     "text": "public"
-    },
-    {
-     "end": 45.875,
-     "start": 44.888,
-     "text": "chain"
-    },
-    {
-     "end": 46.075,
-     "start": 45.875,
+     "end": 30.1,
+     "start": 29.9,
      "text": ","
     },
     {
-     "end": 46.388,
-     "start": 46.25,
-     "text": "not"
+     "end": 30.45,
+     "start": 30.275,
+     "text": "which"
     },
     {
-     "end": 46.45,
-     "start": 46.388,
+     "end": 30.837,
+     "start": 30.45,
+     "text": "stays"
+    },
+    {
+     "end": 31.275,
+     "start": 30.837,
+     "text": "pending"
+    },
+    {
+     "end": 31.5,
+     "start": 31.275,
+     "text": "under"
+    },
+    {
+     "end": 31.862,
+     "start": 31.5,
+     "text": "issue"
+    },
+    {
+     "end": 32.963,
+     "start": 31.862,
+     "text": "503"
+    },
+    {
+     "end": 33.15,
+     "start": 32.963,
+     "text": "with"
+    },
+    {
+     "end": 33.362,
+     "start": 33.15,
+     "text": "its"
+    },
+    {
+     "end": 33.75,
+     "start": 33.362,
+     "text": "joining"
+    },
+    {
+     "end": 34.2,
+     "start": 33.75,
+     "text": "receipts"
+    },
+    {
+     "end": 35.25,
+     "start": 34.2,
+     "text": "attached"
+    },
+    {
+     "end": 35.45,
+     "start": 35.25,
+     "text": "."
+    },
+    {
+     "end": 36.075,
+     "start": 35.675,
+     "text": "Joining"
+    },
+    {
+     "end": 36.25,
+     "start": 36.075,
+     "text": "by"
+    },
+    {
+     "end": 36.362,
+     "start": 36.25,
      "text": "a"
     },
     {
-     "end": 46.737,
-     "start": 46.45,
+     "end": 36.838,
+     "start": 36.362,
+     "text": "copied"
+    },
+    {
+     "end": 37.412,
+     "start": 36.838,
+     "text": "identity"
+    },
+    {
+     "end": 37.838,
+     "start": 37.412,
+     "text": "file"
+    },
+    {
+     "end": 37.987,
+     "start": 37.838,
+     "text": "is"
+    },
+    {
+     "end": 38.925,
+     "start": 37.987,
+     "text": "superseded"
+    },
+    {
+     "end": 39.062,
+     "start": 38.925,
+     "text": "."
+    },
+    {
+     "end": 39.475,
+     "start": 39.062,
+     "text": "Public"
+    },
+    {
+     "end": 39.925,
+     "start": 39.475,
+     "text": "replay"
+    },
+    {
+     "end": 40.625,
+     "start": 39.925,
+     "text": "reconstructs"
+    },
+    {
+     "end": 40.725,
+     "start": 40.625,
+     "text": "the"
+    },
+    {
+     "end": 41.675,
+     "start": 40.725,
+     "text": "trie"
+    },
+    {
+     "end": 41.9,
+     "start": 41.675,
+     "text": ";"
+    },
+    {
+     "end": 42.4,
+     "start": 42.1,
+     "text": "missing"
+    },
+    {
+     "end": 42.938,
+     "start": 42.4,
+     "text": "history"
+    },
+    {
+     "end": 43.075,
+     "start": 42.938,
+     "text": "or"
+    },
+    {
+     "end": 43.188,
+     "start": 43.075,
+     "text": "a"
+    },
+    {
+     "end": 43.55,
+     "start": 43.188,
+     "text": "root"
+    },
+    {
+     "end": 43.688,
+     "start": 43.55,
+     "text": "that"
+    },
+    {
+     "end": 43.875,
+     "start": 43.688,
+     "text": "does"
+    },
+    {
+     "end": 44.138,
+     "start": 43.875,
+     "text": "not"
+    },
+    {
+     "end": 44.475,
+     "start": 44.138,
+     "text": "chain"
+    },
+    {
+     "end": 44.975,
+     "start": 44.475,
+     "text": "remains"
+    },
+    {
+     "end": 45.088,
+     "start": 44.975,
+     "text": "a"
+    },
+    {
+     "end": 45.475,
+     "start": 45.088,
+     "text": "named"
+    },
+    {
+     "end": 46.6,
+     "start": 45.475,
+     "text": "refusal"
+    },
+    {
+     "end": 46.8,
+     "start": 46.6,
+     "text": "."
+    },
+    {
+     "end": 47.625,
+     "start": 47.0,
+     "text": "Historical"
+    },
+    {
+     "end": 48.263,
+     "start": 47.625,
+     "text": "deployment"
+    },
+    {
+     "end": 48.4,
+     "start": 48.263,
+     "text": "and"
+    },
+    {
+     "end": 48.825,
+     "start": 48.4,
+     "text": "naming"
+    },
+    {
+     "end": 49.438,
+     "start": 48.825,
+     "text": "receipts"
+    },
+    {
+     "end": 49.938,
+     "start": 49.438,
+     "text": "remain"
+    },
+    {
+     "end": 50.45,
+     "start": 49.938,
+     "text": "evidence"
+    },
+    {
+     "end": 50.55,
+     "start": 50.45,
+     "text": "of"
+    },
+    {
+     "end": 50.75,
+     "start": 50.55,
+     "text": "their"
+    },
+    {
+     "end": 51.275,
+     "start": 50.75,
+     "text": "recorded"
+    },
+    {
+     "end": 51.925,
+     "start": 51.275,
+     "text": "revision"
+    },
+    {
+     "end": 52.075,
+     "start": 51.925,
+     "text": "and"
+    },
+    {
+     "end": 52.487,
+     "start": 52.075,
+     "text": "public"
+    },
+    {
+     "end": 53.475,
+     "start": 52.487,
+     "text": "chain"
+    },
+    {
+     "end": 53.675,
+     "start": 53.475,
+     "text": ","
+    },
+    {
+     "end": 53.987,
+     "start": 53.85,
+     "text": "not"
+    },
+    {
+     "end": 54.05,
+     "start": 53.987,
+     "text": "a"
+    },
+    {
+     "end": 54.338,
+     "start": 54.05,
      "text": "pass"
     },
     {
-     "end": 46.838,
-     "start": 46.737,
+     "end": 54.438,
+     "start": 54.338,
      "text": "for"
     },
     {
-     "end": 47.025,
-     "start": 46.838,
+     "end": 54.625,
+     "start": 54.438,
      "text": "this"
     },
     {
-     "end": 47.5,
-     "start": 47.025,
+     "end": 55.1,
+     "start": 54.625,
      "text": "provider"
     },
     {
-     "end": 48.475,
-     "start": 47.5,
+     "end": 56.075,
+     "start": 55.1,
      "text": "candidate"
     },
     {
-     "end": 48.675,
-     "start": 48.475,
+     "end": 56.275,
+     "start": 56.075,
      "text": "."
     }
    ]
@@ -167446,17 +167556,17 @@
    ]
   },
   "docs-offchain-deployment-owners/who-owns-a-deployment-record-01": {
-   "audio_sha256": "d343351594098ce6c9dae87ead62860766ba029d7d7287321904e7c763ee136f",
-   "characters": 367,
-   "cost": 0.00022754,
-   "duration": 28.025,
+   "audio_sha256": "aee59e0e865fd8e427a63eb2b555fad5f4b56eb792ac3e29bcaaa2d7353be8e8",
+   "characters": 384,
+   "cost": 0.00038015999999999994,
+   "duration": 27.85,
    "index": 1,
-   "key": "f1f6571aad0dff68f31f7784c3376563abf06c5aa4baa8e6850f155c3c2f053b",
+   "key": "26ab402bd248fc4e31256b53cdaf11597373bd763d8b2e9ed443b71a69c1cef7",
    "page": "docs/offchain-deployment-owners.md",
    "pause_ms": 400,
    "section": "who-owns-a-deployment-record",
-   "sent_text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
-   "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.",
+   "sent_text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is delivered, with no shared directory. Importing a creator identity file is superseded.",
+   "text": "The deployment mirror API remains for retained deployment journeys. Ordinary singular registry commands under #381 reconstruct proof state from public state-token history and do not read or write that mirror or a saved-root file. Demo 1 starts two independent users empty; joining by state token is delivered, with no shared directory. Importing a creator identity file is superseded.",
    "words": [
     {
      "end": 0.25,
@@ -167659,108 +167769,123 @@
      "text": "two"
     },
     {
-     "end": 18.8,
+     "end": 18.775,
      "start": 18.15,
      "text": "independent"
     },
     {
-     "end": 19.237,
-     "start": 18.8,
+     "end": 19.212,
+     "start": 18.775,
      "text": "users"
     },
     {
-     "end": 19.825,
-     "start": 19.237,
+     "end": 19.8,
+     "start": 19.212,
      "text": "empty"
     },
     {
-     "end": 19.962,
-     "start": 19.825,
+     "end": 19.938,
+     "start": 19.8,
      "text": ";"
     },
     {
-     "end": 20.425,
-     "start": 19.962,
+     "end": 20.375,
+     "start": 19.938,
      "text": "joining"
     },
     {
-     "end": 20.625,
-     "start": 20.425,
+     "end": 20.587,
+     "start": 20.375,
      "text": "by"
     },
     {
-     "end": 20.962,
-     "start": 20.625,
+     "end": 20.938,
+     "start": 20.587,
      "text": "state"
     },
     {
-     "end": 21.4,
-     "start": 20.962,
+     "end": 21.375,
+     "start": 20.938,
      "text": "token"
     },
     {
-     "end": 21.562,
-     "start": 21.4,
+     "end": 21.525,
+     "start": 21.375,
      "text": "is"
     },
     {
-     "end": 22.025,
-     "start": 21.562,
-     "text": "pending"
+     "end": 22.1,
+     "start": 21.525,
+     "text": "delivered"
     },
     {
-     "end": 22.263,
-     "start": 22.025,
-     "text": "under"
+     "end": 22.15,
+     "start": 22.1,
+     "text": ","
     },
     {
-     "end": 24.275,
-     "start": 22.263,
-     "text": "437"
+     "end": 22.337,
+     "start": 22.15,
+     "text": "with"
     },
     {
-     "end": 24.55,
-     "start": 24.275,
+     "end": 22.65,
+     "start": 22.337,
+     "text": "no"
+    },
+    {
+     "end": 22.95,
+     "start": 22.65,
+     "text": "shared"
+    },
+    {
+     "end": 24.15,
+     "start": 22.95,
+     "text": "directory"
+    },
+    {
+     "end": 24.375,
+     "start": 24.15,
      "text": "."
     },
     {
-     "end": 25.188,
-     "start": 24.75,
+     "end": 25.013,
+     "start": 24.575,
      "text": "Importing"
     },
     {
-     "end": 25.25,
-     "start": 25.188,
+     "end": 25.075,
+     "start": 25.013,
      "text": "a"
     },
     {
-     "end": 25.65,
-     "start": 25.25,
+     "end": 25.475,
+     "start": 25.075,
      "text": "creator"
     },
     {
-     "end": 26.138,
-     "start": 25.65,
+     "end": 25.962,
+     "start": 25.475,
      "text": "identity"
     },
     {
-     "end": 26.5,
-     "start": 26.138,
+     "end": 26.325,
+     "start": 25.962,
      "text": "file"
     },
     {
-     "end": 26.625,
-     "start": 26.5,
+     "end": 26.45,
+     "start": 26.325,
      "text": "is"
     },
     {
-     "end": 27.825,
-     "start": 26.625,
+     "end": 27.65,
+     "start": 26.45,
      "text": "superseded"
     },
     {
-     "end": 28.025,
-     "start": 27.825,
+     "end": 27.85,
+     "start": 27.65,
      "text": "."
     }
    ]

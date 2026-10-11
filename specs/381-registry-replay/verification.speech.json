@@ -19,7 +19,7 @@
       "pause": 400
     },
     {
-      "text": "Lean revision is bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713, binding Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. Replay calls walkEdge; rejected actions leave the trie unchanged. A mixed fold's oracle is the compiled state validator accepting its submitted transaction on the devnet. No whole-transaction Lean correspondence is claimed for a mixture of applied and rejected requests.",
+      "text": "Lean revision is d9161edd0274b67151f331949521f34bbf18612f (history: bb9c21fa9f09eafb0cf8b69ee2ab3cd010762713), binding Singular.step, exitStep, foldActions, buildFold and the public-fold-input statements. Replay calls walkEdge; rejected actions leave the trie unchanged. A mixed fold's oracle is the compiled state validator accepting its submitted transaction on the devnet. No whole-transaction Lean correspondence is claimed for a mixture of applied and rejected requests.",
       "pause": 400
     }
   ],
@@ -101,6 +101,6 @@
   ],
   "_source": {
     "file": "verification.md",
-    "sha256": "1c0a99f237d3fffc5fd3ef78985f862c1931fc33499a5712419f7b88198c9d61"
+    "sha256": "e4e70eed2637914c0289aa0c67410d84f255fa1701ab7f9ffbde0a1c4bd8a6ca"
   }
 }

@@ -3,7 +3,7 @@
 The deployment mirror API remains for retained deployment journeys. Ordinary
 `singular registry` commands under #381 reconstruct proof state from public
 state-token history and do not read or write that mirror or a saved-root file.
-Demo 1 starts two independent users empty; joining by state token is pending under #437. Importing a creator identity file is superseded.
+Demo 1 starts two independent users empty; joining by state token is delivered, with no shared directory. Importing a creator identity file is superseded.
 
 A contributor changing what a deployment carries — a manifest field, a
 mirror entry, the checks a run makes before it attaches to a recorded

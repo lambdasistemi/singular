@@ -1,6 +1,6 @@
 # Touch list: every file the independent-user journey edits, creates or deletes
 
-As the desk ordering merges, I read here every file this ticket edits, creates or deletes, and the shared surfaces it crosses, so that I can order the merge without opening the diff. The ticket is [issue 381](https://github.com/lambdasistemi/singular/issues/381), pull request 433, stacked on PR 525. It covers the four runs of the [mandate](mandate.md). A slice that needs a file not on this list asks before editing it.
+As the desk ordering merges, I read here every file this ticket edits, creates or deletes, and the shared surfaces it crosses, so that I can order the merge without opening the diff. The ticket is [issue 381](https://github.com/lambdasistemi/singular/issues/381), pull request 433, rebased on main `c6748950` under the merge slot (history: stacked on PR 525). It covers the four runs of the [mandate](mandate.md). A slice that needs a file not on this list asks before editing it.
 
 ## Created
 

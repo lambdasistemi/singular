@@ -81,7 +81,7 @@
       "pause": 400
     },
     {
-      "text": "A request now carries the datum it delivers under merged #419 and constitution 1.13.0. Another actor can obtain that input publicly; the integrated journey must exercise cross-actor insertion folding without the booker's preimage file.",
+      "text": "A request now carries the datum it delivers under merged #419 and constitution 1.14.0. Another actor can obtain that input publicly; the integrated journey must exercise cross-actor insertion folding without the booker's preimage file.",
       "pause": 400
     }
   ],
@@ -139,6 +139,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "8ca6651ca1cb39b639d22315fd4f7e9754bc02becb76f6a1dc718808ce8db529"
+    "sha256": "23f8dc1741cfe64c4466a5a87f059100d51944d60d53d63fb87212b08fbb3caf"
   }
 }
