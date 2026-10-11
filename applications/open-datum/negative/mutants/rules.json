@@ -7,6 +7,22 @@
       "file": "onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-withdraws-outside-a-fold", "command": "withdraw"}],
       "control": "stranger-updates-the-key"
+    },
+    {
+      "name": "update-controller-signature",
+      "patch": "update-controller-signature.patch",
+      "rule": "update-controller-signature",
+      "file": "onchain/validators/open_datum.ak",
+      "flip": [{"pair": "stranger-updates-the-key", "command": "update"}],
+      "control": "controller-withdraws-outside-a-fold"
+    },
+    {
+      "name": "update-escape",
+      "patch": "update-escape.patch",
+      "rule": "update-escape",
+      "file": "onchain/validators/open_datum.ak",
+      "flip": [{"pair": "controller-tamper-address", "command": "update"}],
+      "control": "controller-withdraws-outside-a-fold"
     }
   ]
 }

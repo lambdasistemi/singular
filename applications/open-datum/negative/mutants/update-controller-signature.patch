@@ -1,0 +1,12 @@
+diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
+--- a/onchain/validators/open_datum.ak
++++ b/onchain/validators/open_datum.ak
+@@ -366,7 +366,7 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
+   if !holdsItsToken(control, self) {
+     traceFalse(@"update-holding-token")
+   } else if !list.has(tx.extra_signatories, control.controller) {
+-    traceFalse(@"update-controller-signature")
++    True
+   } else {
+     when
+       list.filter(

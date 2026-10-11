@@ -175,7 +175,40 @@ regen_manifest_ok() {
   ' >/dev/null || return 1
 }
 
-# Build a scratch git copy of the checkout at its HEAD (tracked source only;
+# The patch-hygiene step (derivation: every mutant changes only its named
+# rule): before a mutant runs, its patch must touch exactly the one file
+# named in rules.json, name its rule's trace label among the removed lines,
+# and remove nothing outside that rule's branch (the label line and the
+# condition line above it). Anything else is a setup failure, never a flip.
+# The live run calls it before any scratch copy; the self-check drives it
+# on good and fabricated patches. Each fabricated patch fails exactly one
+# guard, so deleting that guard's check makes it pass. (The labels
+# app-owner and app-controller-signature occur twice in the file; this
+# function fails closed unless the label occurs exactly once, which holds
+# for the four mutants in rules.json today.)
+patch_hygiene_ok() {
+  local patch="$1" rule="$2" expected="$3" source="$4"
+  local touched="" count="" at="" line="" stripped="" b1="" b2="" s1="" s2=""
+  [ -f "$patch" ] || return 1
+  [ -f "$source" ] || return 1
+  count="$(grep -c '^diff --git ' "$patch" || true)" # GUARD-hfiles
+  [ "$count" = 1 ] || return 1
+  touched="$(grep '^diff --git ' "$patch" | awk '{print $4}' | sed 's|^b/||')" || return 1
+  [ "$touched" = "$expected" ] || return 1
+  count="$(grep -c -F "@\"$rule\"" "$source" || true)"
+  [ "$count" = 1 ] || return 1
+  at="$(grep -n -F "@\"$rule\"" "$source" | cut -d: -f1)" || return 1
+  [ "$at" -ge 2 ] || return 1
+  grep '^-[^-]' "$patch" | grep -q -F "$rule" || return 1 # GUARD-hlabel
+  b1="$(sed -n "$((at - 1))p" "$source")" || return 1
+  b2="$(sed -n "${at}p" "$source")" || return 1
+  s1="$(printf '%s' "$b1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+  s2="$(printf '%s' "$b2" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+  while IFS= read -r line; do # GUARD-hlines
+    stripped="$(printf '%s' "${line#-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')" || return 1
+    [ "$stripped" = "$s1" ] || [ "$stripped" = "$s2" ] || return 1
+  done < <(grep '^-[^-]' "$patch" || true)
+}
 # the patch and the rules are read from the checkout itself) and commit it,
 # so the flakes and the release assembler see tracked files.
 make_scratch_copy() {
@@ -346,6 +379,86 @@ regen_step_controls() {
   echo "negative-host-mutants: regen control wide-scope: rejected (as expected)"
 }
 
+# Every fabricated-patch control for patch_hygiene_ok: each real patch
+# passes; a copy of a real patch with one extra hunk on another rule's
+# line is rejected (hlines) while it still applies and still names one
+# file and its rule's label (every other guard passes it); a patch
+# retargeted to another file is rejected (hfiles); a patch touching only
+# the condition line is rejected (hlabel) while hfiles and hlines still
+# pass it. Prints one line per control; returns nonzero on the first
+# mismatch.
+patch_hygiene_controls() {
+  local source="$1" work="$2"
+  local name="" patch="" rule="" file="" st=""
+  local base="" donor=""
+  rm -rf "$work" || return 1
+  mkdir -p "$work/check/onchain/validators" || return 1
+  cp "$source" "$work/check/onchain/validators/open_datum.ak" || return 1
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
+    rule="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .rule' "$rules")" || return 1
+    file="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .file' "$rules")" || return 1
+    patch_hygiene_ok "$patch" "$rule" "$file" "$source" && st=0 || st=$?
+    [ "$st" -eq 0 ] || {
+      echo "negative-host-mutants: hygiene control good-$name rejected" >&2
+      return 1
+    }
+    echo "negative-host-mutants: hygiene control good-$name: passes (as expected)"
+  done <<<"$names"
+  base="$mutants_dir/update-controller-signature.patch"
+  donor="$mutants_dir/update-escape.patch"
+  [ -f "$base" ] || return 1
+  [ -f "$donor" ] || return 1
+  cp "$base" "$work/extra-hunk.patch" || return 1
+  awk '/^@@/{p = 1} p' "$donor" >>"$work/extra-hunk.patch" || return 1
+  (cd "$work/check" && git apply --check "$work/extra-hunk.patch") || {
+    echo "negative-host-mutants: hygiene control extra-hunk does not apply" >&2
+    return 1
+  }
+  grep -q -F "update-controller-signature" "$work/extra-hunk.patch" || {
+    echo "negative-host-mutants: hygiene control extra-hunk lost its label" >&2
+    return 1
+  }
+  patch_hygiene_ok "$work/extra-hunk.patch" "update-controller-signature" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control extra-hunk passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control extra-hunk: rejected (as expected)"
+  sed 's|onchain/validators/open_datum.ak|onchain/validators/other.ak|g' "$base" >"$work/wrong-file.patch" || return 1
+  patch_hygiene_ok "$work/wrong-file.patch" "update-controller-signature" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control wrong-file passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control wrong-file: rejected (as expected)"
+  cat >"$work/condition-only.patch" <<'EOF'
+diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
+--- a/onchain/validators/open_datum.ak
++++ b/onchain/validators/open_datum.ak
+@@ -366,7 +366,7 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
+   if !holdsItsToken(control, self) {
+     traceFalse(@"update-holding-token")
+-  } else if !list.has(tx.extra_signatories, control.controller) {
++  } else if False {
+     traceFalse(@"update-controller-signature")
+   } else {
+     when
+       list.filter(
+EOF
+  (cd "$work/check" && git apply --check "$work/condition-only.patch") || {
+    echo "negative-host-mutants: hygiene control condition-only does not apply" >&2
+    return 1
+  }
+  patch_hygiene_ok "$work/condition-only.patch" "update-controller-signature" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  [ "$st" -ne 0 ] || {
+    echo "negative-host-mutants: hygiene control condition-only passed" >&2
+    return 1
+  }
+  echo "negative-host-mutants: hygiene control condition-only: rejected (as expected)"
+}
+
 mutant_field() {
   local name="$1" field="$2"
   jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .[$f] // empty' --arg f "$field" "$rules" || return 1
@@ -407,10 +520,16 @@ release_kept() {
 # declared control pair must pass there. Prints one verdict line per pair.
 run_one_mutant() {
   local name="$1"
-  local patch flips control copy
+  local patch flips control rule file copy
   patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
   flips="$(jq -c --arg n "$name" '.mutants[] | select(.name == $n) | .flip[]' "$rules")" || return 1
   control="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .control' "$rules")" || return 1
+  rule="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .rule' "$rules")" || return 1
+  file="$(jq -er --arg n "$name" '.mutants[] | select(.name == $n) | .file' "$rules")" || return 1
+  patch_hygiene_ok "$patch" "$rule" "$file" "$root/$file" || {
+    echo "negative-host-mutants [$name]: classified SETUP (patch hygiene)" >&2
+    return 1
+  }
   [ -n "$flips" ] || {
     echo "negative-host-mutants [$name]: FAIL: no flip pairs" >&2
     return 1
@@ -526,6 +645,7 @@ if [ "$mode" = noop ]; then
   git -C "$first_copy" show HEAD:onchain/script-identity.json >"$scratch_parent/noop-base-manifest.json" || fail "self-check cannot read the scratch manifest"
   classification_controls "$first_base" "$scratch_parent/controls" || fail "self-check classification controls failed"
   regen_step_controls "$scratch_parent/noop-base-manifest.json" "$scratch_parent/regen-controls" || fail "self-check regeneration-step controls failed"
+  patch_hygiene_controls "$root/onchain/validators/open_datum.ak" "$scratch_parent/hygiene-controls" || fail "self-check patch-hygiene controls failed"
   echo "negative-host-mutants: SELF-CHECK PASS"
   exit 0
 fi
