@@ -23,6 +23,10 @@
       "pause": 400
     },
     {
+      "text": "A control runs from the same state as its forbidden command, with the same signer and the same booking and fold path. For the two taken-key pairs that state is the registry after alice-1 became active. For the two revival pairs it is the registry after alice-1 was inserted, folded, terminated and folded. A control that skipped that setup would differ in two things. The control's key is fresh: never used earlier in the run, and the part asserts that it is not, so freshness is checked and not assumed.",
+      "pause": 400
+    },
+    {
       "text": "The last pair is one connected sequence over one request: the termination is booked and left unfolded (registry terminate without --fold, which stops at the pending request), the short fold is refused with the request still pending and the deposit held, and the honest fold of that same request then burns the token, leaves the key terminal and pays the controller in full. It stands for rows 11, 12 and 12b of the preprod demonstration.",
       "pause": 400
     },
@@ -75,12 +79,36 @@
       "pause": 500
     },
     {
-      "text": "For each pair one mutant validator removes exactly the rule that refuses it. Running the pair against the mutant must make the forbidden check report failure because the node accepted what the rule refuses, while every other pair on the same mutant is unchanged. A mutant that changes nothing must leave the row green, which the check treats as its own failure.",
+      "text": "For each refusing rule one mutant validator removes exactly that rule. The mutation is a source patch that changes only that rule, applied in a scratch copy of the checkout; the identity manifest that the release check compares against is then regenerated in that copy by the repository's own recipe from the mutant's own build, so the release identity check still runs and passes on the mutant archive.",
+      "pause": 400
+    },
+    {
+      "text": "Running a pair that the rule refuses against its mutant must make the forbidden check report failure, because the node accepted what the rule refuses. That is read from the host's receipt of the forbidden command (outcome success), not from the part's exit status: a move that consumes state leaves the part's own control stage nothing to run on, so the part may fail afterwards, and that later failure is evidence of the acceptance. Beside the pairs the rule refuses, a mutant runs one declared control pair that a different rule refuses, which must stay green on the mutant. A mutant that changes nothing must leave the forbidden check passing, which the command treats as its own failure.",
+      "pause": 400
+    },
+    {
+      "text": "Several pairs can be refused by the same rule, and one pair by two rules, so mutants are counted by the set of rules they remove: eight mutants cover thirteen pairs.",
+      "pause": 400
+    },
+    {
+      "text": "The rule that the continuation keeps at least the protected deposit in its value (update-deposit) is not in the table, because no pair is refused by it. The pair controller-tamper-deposit rewrites the deposit recorded in the continuation's datum and leaves the value untouched; the recorded control is compared before the lovelace bound, so update-control refuses it, and update-deposit would not fire on it even if it were reached. The pair that would exercise update-deposit (a continuation that keeps its datum but pays less lovelace than the deposit) is not built here; the rule is listed as uncovered, not counted as covered.",
+      "pause": 400
+    },
+    {
+      "text": "The rule that exactly one output carries the key's token (update-token) is not in the table either. The pair controller-tamper-token moves the token into one plain output at the controller's wallet address, so exactly one output carries it and the move is refused earlier: by update-escape (that output is not at the holding's address) and, with that rule removed, by update-control (a plain output records no control). Removing update-token alone, or update-control alone, leaves the pair refused; removing update-escape and update-control together flips it, which is why the table has the joint mutant. As far as the validator reads (a reading of the validator, not a node result), no transaction the node would otherwise accept isolates update-token: the token is a single unit, so more than one output cannot carry it, and none can carry it only if it is burned, which the minting policy does not allow in an update. The rule is listed as not reachable by any pair, not counted as covered.",
+      "pause": 400
+    },
+    {
+      "text": "The stranger who books a termination fails the owner check and the controller-signature check alike, so removing one of them alone changes nothing the node sees; the two are one mutant because they are one rule, not two differences. The first mutant brief pins the table from the failing rule names in the node's own trace and corrects any row in the same commit.",
+      "pause": 400
+    },
+    {
+      "text": "Every other pair staying green under a mutant is derived, not re-run. When the mutant of rule B flips pair P, that shows only rule B refuses P; with any other rule A removed and B intact, P is still refused. Across the whole mutant set, every pair's stay-green under every other mutant follows from its own mutant's flip. This needs every pair to have a mutant that flips it and each mutant to change only its named rule: the patch is the evidence, and the declared control pair catches a patch that disables more. For a mutant that removes several rules, the same reading holds with a set: a pair stays refused under another mutant when at least one rule that alone refuses it is still in place. For the token pair, the mutant that removes only update-escape leaves update-control in place, and the mutant that removes only update-control leaves update-escape in place, and each of those rules refuses the pair alone. It does not yet hold for the four registry pairs: until the registry state validator's mutant exists, their stay-green under the application mutants rests on the declared control pair alone. The mutant of the registry state validator needs a blueprint that the shared loader accepts; if no route exists inside the host's own files, the mutant check of the four registry pairs is named pending with a ticket, and no pair is credited for it.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "85bc13e3cb0d5b39513604b4bcec30ed3782ee0b630f70d50c21360f1106e906"
+    "sha256": "1ed1fed1da7a9dc3040f7eac5676d19504dad41e2f797567b6f47ead6f4ba9a4"
   }
 }
