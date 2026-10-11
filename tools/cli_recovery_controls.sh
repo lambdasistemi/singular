@@ -234,12 +234,16 @@ finish() {
 
   fi
   if [ -n "${devnet_pid:-}" ]; then
-    if [ ! -f "$work/devnet-process.json" ]; then
-      python3 "$process_control" bind "$work/devnet-process.json" --pid "$devnet_pid" >/dev/null || true
-    fi
     if [ -f "$work/devnet-process.json" ]; then
       if ! python3 "$process_control" stop "$work/devnet-process.json" --signal TERM --seconds 30; then
         python3 "$process_control" stop "$work/devnet-process.json" --signal KILL --seconds 5 || { [ "$code" -ne 0 ] || code=1; }
+      fi
+    elif [ -n "${devnet_start:-}" ]; then
+      # The acquiring fixture child may not yet have a complete executable
+      # identity; stop it by the start ticks captured at the fork, exactly
+      # as cleanup does for a replacement node acquiring above.
+      if ! python3 "$process_control" stop-child "$work/devnet-process.json" --pid "$devnet_pid" --start-ticks "$devnet_start" --owner "$$" --signal TERM --seconds 30; then
+        python3 "$process_control" stop-child "$work/devnet-process.json" --pid "$devnet_pid" --start-ticks "$devnet_start" --owner "$$" --signal KILL --seconds 5 || { [ "$code" -ne 0 ] || code=1; }
       fi
     fi
     if [ -f "$work/devnet-process.json" ] && ! python3 "$process_control" assert-gone "$work/devnet-process.json"; then
@@ -278,9 +282,25 @@ restart_args=()
 if [ -z "${CLI_RECOVERY_PARTS:-}" ] || [[ " ${CLI_RECOVERY_PARTS:-} " == *" rollback "* ]]; then
   restart_args=(--restart-control-dir "$work/facade-control")
 fi
+# Defer cancellation only across the initial fixture fork/start-tick
+# acquisition, using shell builtins — the same contract as start_node
+# below. Cleanup then owns this exact direct child even before the private
+# devnet prints usable settings or a complete executable identity exists.
+pending_cancel=0
+trap 'pending_cancel=143' TERM
+trap 'pending_cancel=130' INT
 "$devnet" "${restart_args[@]}" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" --fund-outputs 10 --fund-lovelace 2000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
+devnet_start=""
+if IFS= read -r devnet_stat <"/proc/$devnet_pid/stat"; then
+  devnet_stat="${devnet_stat##*) }"
+  read -r -a devnet_fields <<<"$devnet_stat"
+  devnet_start="${devnet_fields[19]}"
+fi
+trap 'exit 143' TERM
+trap 'exit 130' INT
+[ "$pending_cancel" -eq 0 ] || exit "$pending_cancel"
 sock=""
 provider_url=""
 time_directory=""
