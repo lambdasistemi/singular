@@ -21,6 +21,8 @@ module Singular.CLI.Proof
     , AuthError (..)
     , renderAuthError
     , authErrorFields
+    , authenticatedLeafPure
+    , rootOfDbPure
     , authenticatedLeaf
     , rootOfDb
     ) where
@@ -29,20 +31,19 @@ import Data.Aeson (Value)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 
 import MPF.Backend.Pure (MPFInMemoryDB)
 
 import Singular.Registry.Ledger
-    ( AssetName (..)
-    , Root (..)
-    , TokenId (..)
+    ( Root (..)
     )
-import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
-import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
+import Singular.Registry.Trie.Pure
+    ( provesAbsent
+    , provesMember
+    , rootFromDb
+    )
 import Singular.Registry.TrieState (Leaf (..), leafName)
 import Singular.Registry.TrieState qualified as TrieState
 import Singular.Registry.TxBuilder.Internal
@@ -84,12 +85,13 @@ authErrorFields = \case
     TrieRefusal why -> TrieState.trieFailureFields why
     _ -> []
 
--- | The root the saved trie commits to.
+-- | The root the saved trie commits to, without allocating mutable state.
+rootOfDbPure :: MPFInMemoryDB -> ByteString
+rootOfDbPure = unRoot . rootFromDb
+
+-- | Compatibility IO wrapper for 'rootOfDbPure'; allocates no manager.
 rootOfDb :: MPFInMemoryDB -> IO ByteString
-rootOfDb db = do
-    (tm, _) <- mkPureTrieManagerFrom (Map.singleton registry db)
-    Root r <- withTrie tm registry getRoot
-    pure r
+rootOfDb = pure . rootOfDbPure
 
 {- | The leaf at a key, proven against the observed root. The saved
 trie's root must equal it; then a leaf is reported only when the saved
@@ -98,30 +100,43 @@ observed root, and Unknown only when they prove the key bound to
 nothing. The key index kept beside the nodes, which the root does not
 commit to, is never read.
 -}
+authenticatedLeafPure
+    :: MPFInMemoryDB
+    -> ByteString
+    -> ByteString
+    -> Either AuthError Leaf
+authenticatedLeafPure db key observed =
+    if local /= observed
+        then Left (RootMismatch local observed)
+        else case [ leaf
+                  | (leaf, bytes) <-
+                        [ (Absent, leafAbsent)
+                        , (Active, leafActive)
+                        , (Terminal, leafTerminal)
+                        ]
+                  , provesMember db observed key bytes
+                  ] of
+            [leaf] -> Right leaf
+            []
+                | provesAbsent db observed key -> Right Unknown
+            _ -> Left (ProofInconsistent key)
+  where
+    local = rootOfDbPure db
+
+{- | Compatibility IO wrapper for 'authenticatedLeafPure'. As before, it
+does not catch malformed-node exceptions. Callers that need decode refusal
+must own their exception boundary, as the conformance observer does.
+-}
 authenticatedLeaf
     :: MPFInMemoryDB
     -> ByteString
     -> ByteString
     -> IO (Either AuthError Leaf)
-authenticatedLeaf db key observed = do
-    (tm, _) <- mkPureTrieManagerFrom (Map.singleton registry db)
-    Root local <- withTrie tm registry getRoot
+authenticatedLeaf db key observed =
+    -- Preserve the old IO action's root comparison: a root decode failure
+    -- must still occur inside the caller's handler, before returning Either.
     if local /= observed
         then pure (Left (RootMismatch local observed))
-        else pure $
-            case [ leaf
-                 | (leaf, bytes) <-
-                    [ (Absent, leafAbsent)
-                    , (Active, leafActive)
-                    , (Terminal, leafTerminal)
-                    ]
-                 , provesMember db observed key bytes
-                 ] of
-                [leaf] -> Right leaf
-                []
-                    | provesAbsent db observed key -> Right Unknown
-                _ -> Left (ProofInconsistent key)
-
--- | The one trie a proof session holds; its name is never observed.
-registry :: TokenId
-registry = TokenId (AssetName "")
+        else pure (authenticatedLeafPure db key observed)
+  where
+    local = rootOfDbPure db

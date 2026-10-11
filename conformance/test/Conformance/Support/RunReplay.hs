@@ -7,6 +7,8 @@ hashing to the failing hash.
 -}
 module Conformance.Support.RunReplay (spec) where
 
+import Control.Exception (ErrorCall (..))
+import Control.Monad (forM_, replicateM)
 import Data.Aeson
     ( Value (..)
     , eitherDecodeFileStrict
@@ -41,6 +43,7 @@ import Test.Hspec
     , shouldNotBe
     , shouldReturn
     , shouldSatisfy
+    , shouldThrow
     )
 
 import Cardano.Ledger.Api.Tx (mkBasicTx, txIdTx)
@@ -75,13 +78,19 @@ import UntypedPlutusCore qualified as UPLC
 import UntypedPlutusCore.Evaluation.Machine.Cek (CekUserError (..))
 
 import Singular.Registry.Blueprint (applyBytesParam, applyDataParam)
-import Singular.Registry.Ledger (AssetName (..), TokenId (..))
+import Singular.Registry.Ledger
+    ( AssetName (..)
+    , Root (..)
+    , TokenId (..)
+    )
 import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.Trie qualified as CageTrie
 import Singular.Registry.Trie.PureManager (mkPureTrieManager)
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
+    , leafAbsent
+    , leafActive
     , leafTerminal
     )
 
@@ -104,6 +113,7 @@ import Conformance.Run.Control
     , controlledReason
     , parseReasonControl
     )
+import Conformance.Run.Live (classifyLeaves)
 import Conformance.Run.Replay
 import Paths_conformance (getDataFileName)
 import Singular.Registry.Types (edgeUpdateTerminal)
@@ -273,6 +283,43 @@ spec = describe "before a replay evaluates" $ do
                     )
                 )
                 `shouldBe` Left ParametersMismatch
+    describe
+        "leaf assignments authenticated against an independently produced root"
+        $ do
+            let produceRoot entries = do
+                    manager <- mkPureTrieManager
+                    let token = TokenId (AssetName "classification")
+                    createTrie manager token
+                    withTrie manager token $ \trie -> do
+                        mapM_ (uncurry (CageTrie.insert trie)) entries
+                        unRoot <$> CageTrie.getRoot trie
+            it "classifies empty membership against the empty producer root" $ do
+                root <- produceRoot []
+                classifyLeaves [] root `shouldReturn` []
+                classifyLeaves [("unbound", False)] root `shouldReturn` []
+            it "preserves all three-key leaf assignments and ignores nonmembers" $ do
+                let keys = ["first", "second", "third"]
+                forM_ (replicateM 3 [leafAbsent, leafActive, leafTerminal]) $ \values -> do
+                    let leaves = zip keys values
+                    root <- produceRoot leaves
+                    classifyLeaves (map (,True) keys <> [("unbound", False)]) root
+                        `shouldReturn` leaves
+            it "refuses a foreign root without manufacturing a leaf assignment" $ do
+                root <- produceRoot [("first", leafActive)]
+                classifyLeaves [("other", True)] root
+                    `shouldThrow` ( ==
+                                        ErrorCall
+                                            "conformance: concrete root identifies 0 leaf assignments over this registry's allocated keys"
+                                  )
+            it
+                "refuses duplicate-key membership whose root binds multiple assignments"
+                $ do
+                    root <- produceRoot [("first", leafActive)]
+                    classifyLeaves [("first", True), ("first", True)] root
+                        `shouldThrow` ( ==
+                                            ErrorCall
+                                                "conformance: concrete root identifies 3 leaf assignments over this registry's allocated keys"
+                                      )
     describe "the proof a fold carries for a key" $ do
         let tid = TokenId (AssetName (SBS.toShort "registry"))
             withControl action = do

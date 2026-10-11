@@ -137700,6 +137700,276 @@
     }
    ]
   },
+  "docs-offchain-api-reference/appendix-discovered-adapter-consumers-00": {
+   "audio_sha256": "d17d54ff223be7a830d4afbce6a825f9636ee0e1e94d9e1ac0ac3dfae475d386",
+   "characters": 39,
+   "cost": 3.861e-05,
+   "duration": 3.6,
+   "index": 0,
+   "key": "1c242f8c83fddb024044fd14276c860479a77acca290aae4e2fe4c276a572223",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 500,
+   "section": "appendix-discovered-adapter-consumers",
+   "sent_text": "Appendix: discovered adapter consumers.",
+   "text": "Appendix: discovered adapter consumers.",
+   "words": [
+    {
+     "end": 1.125,
+     "start": 0.2,
+     "text": "Appendix"
+    },
+    {
+     "end": 1.35,
+     "start": 1.125,
+     "text": ":"
+    },
+    {
+     "end": 1.938,
+     "start": 1.525,
+     "text": "discovered"
+    },
+    {
+     "end": 2.35,
+     "start": 1.938,
+     "text": "adapter"
+    },
+    {
+     "end": 3.4,
+     "start": 2.35,
+     "text": "consumers"
+    },
+    {
+     "end": 3.6,
+     "start": 3.4,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-api-reference/appendix-discovered-adapter-consumers-01": {
+   "audio_sha256": "df70b8a0d4de86d9d24dfde603efb356bcaa762f14c009531ab367690bab4c35",
+   "characters": 256,
+   "cost": 0.00025343999999999996,
+   "duration": 17.75,
+   "index": 1,
+   "key": "141b047442ac03a364938ce1c18b372fa0b10418508a754a5151f93e8fa2e3d1",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "appendix-discovered-adapter-consumers",
+   "sent_text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
+   "text": "This source inventory explains ownership, not ledger coverage. Each retained owner below uses serial access for the stated lifetime. Test producers stay independent of the pure computation being compared. No public interface or retained journey is removed.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.2,
+     "text": "This"
+    },
+    {
+     "end": 0.725,
+     "start": 0.412,
+     "text": "source"
+    },
+    {
+     "end": 1.3,
+     "start": 0.725,
+     "text": "inventory"
+    },
+    {
+     "end": 1.862,
+     "start": 1.3,
+     "text": "explains"
+    },
+    {
+     "end": 2.5,
+     "start": 1.862,
+     "text": "ownership"
+    },
+    {
+     "end": 2.575,
+     "start": 2.5,
+     "text": ","
+    },
+    {
+     "end": 2.8,
+     "start": 2.575,
+     "text": "not"
+    },
+    {
+     "end": 3.075,
+     "start": 2.8,
+     "text": "ledger"
+    },
+    {
+     "end": 4.1,
+     "start": 3.075,
+     "text": "coverage"
+    },
+    {
+     "end": 4.325,
+     "start": 4.1,
+     "text": "."
+    },
+    {
+     "end": 4.75,
+     "start": 4.525,
+     "text": "Each"
+    },
+    {
+     "end": 5.2,
+     "start": 4.75,
+     "text": "retained"
+    },
+    {
+     "end": 5.475,
+     "start": 5.2,
+     "text": "owner"
+    },
+    {
+     "end": 5.988,
+     "start": 5.475,
+     "text": "below"
+    },
+    {
+     "end": 6.363,
+     "start": 5.988,
+     "text": "uses"
+    },
+    {
+     "end": 6.8,
+     "start": 6.363,
+     "text": "serial"
+    },
+    {
+     "end": 7.275,
+     "start": 6.8,
+     "text": "access"
+    },
+    {
+     "end": 7.387,
+     "start": 7.275,
+     "text": "for"
+    },
+    {
+     "end": 7.475,
+     "start": 7.387,
+     "text": "the"
+    },
+    {
+     "end": 7.85,
+     "start": 7.475,
+     "text": "stated"
+    },
+    {
+     "end": 8.975,
+     "start": 7.85,
+     "text": "lifetime"
+    },
+    {
+     "end": 9.175,
+     "start": 8.975,
+     "text": "."
+    },
+    {
+     "end": 9.625,
+     "start": 9.375,
+     "text": "Test"
+    },
+    {
+     "end": 10.25,
+     "start": 9.625,
+     "text": "producers"
+    },
+    {
+     "end": 10.575,
+     "start": 10.25,
+     "text": "stay"
+    },
+    {
+     "end": 11.3,
+     "start": 10.575,
+     "text": "independent"
+    },
+    {
+     "end": 11.387,
+     "start": 11.3,
+     "text": "of"
+    },
+    {
+     "end": 11.488,
+     "start": 11.387,
+     "text": "the"
+    },
+    {
+     "end": 11.8,
+     "start": 11.488,
+     "text": "pure"
+    },
+    {
+     "end": 12.575,
+     "start": 11.8,
+     "text": "computation"
+    },
+    {
+     "end": 12.875,
+     "start": 12.575,
+     "text": "being"
+    },
+    {
+     "end": 13.975,
+     "start": 12.875,
+     "text": "compared"
+    },
+    {
+     "end": 14.2,
+     "start": 13.975,
+     "text": "."
+    },
+    {
+     "end": 14.6,
+     "start": 14.4,
+     "text": "No"
+    },
+    {
+     "end": 14.962,
+     "start": 14.6,
+     "text": "public"
+    },
+    {
+     "end": 15.45,
+     "start": 14.962,
+     "text": "interface"
+    },
+    {
+     "end": 15.575,
+     "start": 15.45,
+     "text": "or"
+    },
+    {
+     "end": 16.0,
+     "start": 15.575,
+     "text": "retained"
+    },
+    {
+     "end": 16.438,
+     "start": 16.0,
+     "text": "journey"
+    },
+    {
+     "end": 16.6,
+     "start": 16.438,
+     "text": "is"
+    },
+    {
+     "end": 17.55,
+     "start": 16.6,
+     "text": "removed"
+    },
+    {
+     "end": 17.75,
+     "start": 17.55,
+     "text": "."
+    }
+   ]
+  },
   "docs-offchain-api-reference/how-the-reference-stays-honest-00": {
    "audio_sha256": "1caf9d819301cb4e4ab8862502efbf05fcf6faa5f6ef918c90d52f68bd3ddbe5",
    "characters": 31,
@@ -141006,6 +141276,1511 @@
     {
      "end": 53.825,
      "start": 53.625,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-00": {
+   "audio_sha256": "c4908e0924ce648fff54a14cd9857e2fdf16a0ab28dc1bd72d8185aa42ed1dcf",
+   "characters": 48,
+   "cost": 4.751999999999999e-05,
+   "duration": 3.775,
+   "index": 0,
+   "key": "391e727204377d0c8a4d3d216c7f53bc209585a4cbe07d52e4c5fdd443f395e1",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 500,
+   "section": "snapshot-computations-and-mutable-compatibility",
+   "sent_text": "Snapshot computations and mutable compatibility.",
+   "text": "Snapshot computations and mutable compatibility.",
+   "words": [
+    {
+     "end": 0.675,
+     "start": 0.2,
+     "text": "Snapshot"
+    },
+    {
+     "end": 1.7,
+     "start": 0.675,
+     "text": "computations"
+    },
+    {
+     "end": 1.85,
+     "start": 1.7,
+     "text": "and"
+    },
+    {
+     "end": 2.25,
+     "start": 1.85,
+     "text": "mutable"
+    },
+    {
+     "end": 3.575,
+     "start": 2.25,
+     "text": "compatibility"
+    },
+    {
+     "end": 3.775,
+     "start": 3.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-01": {
+   "audio_sha256": "f41431ddbd047b74af59d7acedd3d37a7f50435706c4bfa48fe4126716e98cf5",
+   "characters": 471,
+   "cost": 0.00046628999999999996,
+   "duration": 33.25,
+   "index": 1,
+   "key": "03722d6366736c8e3f3c62b53e96af8dfbe08143ac5ea3e2773ab86a0bb54cde",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "snapshot-computations-and-mutable-compatibility",
+   "sent_text": "As a library consumer, you can compute a root, membership or exclusion proof, or an authenticated leaf from an MPF database value without allocating a mutable manager. The computation uses the existing MPF core and never treats the uncommitted key index as evidence for a leaf. A foreign observed root refuses authentication; inconsistent nodes prove no leaf. Malformed node decoding can still raise an exception, so the caller owns its evaluation and exception boundary.",
+   "text": "As a library consumer, you can compute a root, membership or exclusion proof, or an authenticated leaf from an MPF database value without allocating a mutable manager. The computation uses the existing MPF core and never treats the uncommitted key index as evidence for a leaf. A foreign observed root refuses authentication; inconsistent nodes prove no leaf. Malformed node decoding can still raise an exception, so the caller owns its evaluation and exception boundary.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.5,
+     "start": 0.4,
+     "text": "a"
+    },
+    {
+     "end": 1.025,
+     "start": 0.5,
+     "text": "library"
+    },
+    {
+     "end": 1.6,
+     "start": 1.025,
+     "text": "consumer"
+    },
+    {
+     "end": 1.65,
+     "start": 1.6,
+     "text": ","
+    },
+    {
+     "end": 1.8,
+     "start": 1.65,
+     "text": "you"
+    },
+    {
+     "end": 2.0,
+     "start": 1.8,
+     "text": "can"
+    },
+    {
+     "end": 2.45,
+     "start": 2.0,
+     "text": "compute"
+    },
+    {
+     "end": 2.575,
+     "start": 2.45,
+     "text": "a"
+    },
+    {
+     "end": 2.975,
+     "start": 2.575,
+     "text": "root"
+    },
+    {
+     "end": 3.088,
+     "start": 2.975,
+     "text": ","
+    },
+    {
+     "end": 3.787,
+     "start": 3.088,
+     "text": "membership"
+    },
+    {
+     "end": 3.95,
+     "start": 3.787,
+     "text": "or"
+    },
+    {
+     "end": 4.55,
+     "start": 3.95,
+     "text": "exclusion"
+    },
+    {
+     "end": 4.95,
+     "start": 4.55,
+     "text": "proof"
+    },
+    {
+     "end": 5.037,
+     "start": 4.95,
+     "text": ","
+    },
+    {
+     "end": 5.2,
+     "start": 5.037,
+     "text": "or"
+    },
+    {
+     "end": 5.312,
+     "start": 5.2,
+     "text": "an"
+    },
+    {
+     "end": 6.075,
+     "start": 5.312,
+     "text": "authenticated"
+    },
+    {
+     "end": 6.375,
+     "start": 6.075,
+     "text": "leaf"
+    },
+    {
+     "end": 6.537,
+     "start": 6.375,
+     "text": "from"
+    },
+    {
+     "end": 6.662,
+     "start": 6.537,
+     "text": "an"
+    },
+    {
+     "end": 7.312,
+     "start": 6.662,
+     "text": "MPF"
+    },
+    {
+     "end": 7.9,
+     "start": 7.312,
+     "text": "database"
+    },
+    {
+     "end": 8.387,
+     "start": 7.9,
+     "text": "value"
+    },
+    {
+     "end": 8.788,
+     "start": 8.387,
+     "text": "without"
+    },
+    {
+     "end": 9.4,
+     "start": 8.788,
+     "text": "allocating"
+    },
+    {
+     "end": 9.5,
+     "start": 9.4,
+     "text": "a"
+    },
+    {
+     "end": 9.975,
+     "start": 9.5,
+     "text": "mutable"
+    },
+    {
+     "end": 11.2,
+     "start": 9.975,
+     "text": "manager"
+    },
+    {
+     "end": 11.475,
+     "start": 11.2,
+     "text": "."
+    },
+    {
+     "end": 11.75,
+     "start": 11.675,
+     "text": "The"
+    },
+    {
+     "end": 12.562,
+     "start": 11.75,
+     "text": "computation"
+    },
+    {
+     "end": 13.0,
+     "start": 12.562,
+     "text": "uses"
+    },
+    {
+     "end": 13.15,
+     "start": 13.0,
+     "text": "the"
+    },
+    {
+     "end": 13.762,
+     "start": 13.15,
+     "text": "existing"
+    },
+    {
+     "end": 14.387,
+     "start": 13.762,
+     "text": "MPF"
+    },
+    {
+     "end": 14.925,
+     "start": 14.387,
+     "text": "core"
+    },
+    {
+     "end": 15.113,
+     "start": 14.925,
+     "text": "and"
+    },
+    {
+     "end": 15.462,
+     "start": 15.113,
+     "text": "never"
+    },
+    {
+     "end": 15.875,
+     "start": 15.462,
+     "text": "treats"
+    },
+    {
+     "end": 16.025,
+     "start": 15.875,
+     "text": "the"
+    },
+    {
+     "end": 16.663,
+     "start": 16.025,
+     "text": "uncommitted"
+    },
+    {
+     "end": 16.9,
+     "start": 16.663,
+     "text": "key"
+    },
+    {
+     "end": 17.413,
+     "start": 16.9,
+     "text": "index"
+    },
+    {
+     "end": 17.587,
+     "start": 17.413,
+     "text": "as"
+    },
+    {
+     "end": 18.05,
+     "start": 17.587,
+     "text": "evidence"
+    },
+    {
+     "end": 18.2,
+     "start": 18.05,
+     "text": "for"
+    },
+    {
+     "end": 18.3,
+     "start": 18.2,
+     "text": "a"
+    },
+    {
+     "end": 19.325,
+     "start": 18.3,
+     "text": "leaf"
+    },
+    {
+     "end": 19.525,
+     "start": 19.325,
+     "text": "."
+    },
+    {
+     "end": 19.825,
+     "start": 19.725,
+     "text": "A"
+    },
+    {
+     "end": 20.225,
+     "start": 19.825,
+     "text": "foreign"
+    },
+    {
+     "end": 20.737,
+     "start": 20.225,
+     "text": "observed"
+    },
+    {
+     "end": 21.05,
+     "start": 20.737,
+     "text": "root"
+    },
+    {
+     "end": 21.65,
+     "start": 21.05,
+     "text": "refuses"
+    },
+    {
+     "end": 22.675,
+     "start": 21.65,
+     "text": "authentication"
+    },
+    {
+     "end": 22.775,
+     "start": 22.675,
+     "text": ";"
+    },
+    {
+     "end": 23.55,
+     "start": 22.775,
+     "text": "inconsistent"
+    },
+    {
+     "end": 23.987,
+     "start": 23.55,
+     "text": "nodes"
+    },
+    {
+     "end": 24.3,
+     "start": 23.987,
+     "text": "prove"
+    },
+    {
+     "end": 24.475,
+     "start": 24.3,
+     "text": "no"
+    },
+    {
+     "end": 25.4,
+     "start": 24.475,
+     "text": "leaf"
+    },
+    {
+     "end": 25.6,
+     "start": 25.4,
+     "text": "."
+    },
+    {
+     "end": 26.45,
+     "start": 25.825,
+     "text": "Malformed"
+    },
+    {
+     "end": 26.775,
+     "start": 26.45,
+     "text": "node"
+    },
+    {
+     "end": 27.425,
+     "start": 26.775,
+     "text": "decoding"
+    },
+    {
+     "end": 27.625,
+     "start": 27.425,
+     "text": "can"
+    },
+    {
+     "end": 27.913,
+     "start": 27.625,
+     "text": "still"
+    },
+    {
+     "end": 28.3,
+     "start": 27.913,
+     "text": "raise"
+    },
+    {
+     "end": 28.4,
+     "start": 28.3,
+     "text": "an"
+    },
+    {
+     "end": 29.075,
+     "start": 28.4,
+     "text": "exception"
+    },
+    {
+     "end": 29.175,
+     "start": 29.075,
+     "text": ","
+    },
+    {
+     "end": 29.35,
+     "start": 29.175,
+     "text": "so"
+    },
+    {
+     "end": 29.462,
+     "start": 29.35,
+     "text": "the"
+    },
+    {
+     "end": 29.862,
+     "start": 29.462,
+     "text": "caller"
+    },
+    {
+     "end": 30.225,
+     "start": 29.862,
+     "text": "owns"
+    },
+    {
+     "end": 30.4,
+     "start": 30.225,
+     "text": "its"
+    },
+    {
+     "end": 31.25,
+     "start": 30.4,
+     "text": "evaluation"
+    },
+    {
+     "end": 31.362,
+     "start": 31.25,
+     "text": "and"
+    },
+    {
+     "end": 31.9,
+     "start": 31.362,
+     "text": "exception"
+    },
+    {
+     "end": 33.025,
+     "start": 31.9,
+     "text": "boundary"
+    },
+    {
+     "end": 33.25,
+     "start": 33.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-02": {
+   "audio_sha256": "20b6f2f6cd3cd2bad69d3444267ad06fb26ac6ced85e3d4878406b1027df66b2",
+   "characters": 931,
+   "cost": 0.00092169,
+   "duration": 66.75,
+   "index": 2,
+   "key": "b350fd2cbb04e087488dab2fb018d169eda3a1738fccf647cc0daf2854069a8e",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "snapshot-computations-and-mutable-compatibility",
+   "sent_text": "The legacy names mkPureTrie, mkPureTrieFromRef, mkPureTrieManager and mkPureTrieManagerFrom identify the in-memory backend. Their IO adapters remain mutable. A caller owns the adapter and any dump action for the entire serial builder, replay or mirror lifetime. There is no locking or thread-safety guarantee. Sharing requires external serialization of complete sessions, including reads, writes, speculative snapshots, visibility changes and dumps. A dump includes hidden tries and is not an atomic concurrent snapshot. Missing and hidden manager lookups retain their existing exceptions, Trie not found: and Trie is hidden: followed by the shown token. Speculative sessions execute the existing pure stateTrie over a snapshot and discard the resulting database, without allocating a mutable copy. Action and mutation failures still occur during the IO callback; the returned value stays lazy, as it did with the mutable callback.",
+   "text": "The legacy names mkPureTrie, mkPureTrieFromRef, mkPureTrieManager and mkPureTrieManagerFrom identify the in-memory backend. Their IO adapters remain mutable. A caller owns the adapter and any dump action for the entire serial builder, replay or mirror lifetime. There is no locking or thread-safety guarantee. Sharing requires external serialization of complete sessions, including reads, writes, speculative snapshots, visibility changes and dumps. A dump includes hidden tries and is not an atomic concurrent snapshot. Missing and hidden manager lookups retain their existing exceptions, Trie not found: and Trie is hidden: followed by the shown token. Speculative sessions execute the existing pure stateTrie over a snapshot and discard the resulting database, without allocating a mutable copy. Action and mutation failures still occur during the IO callback; the returned value stays lazy, as it did with the mutable callback.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.325,
+     "text": "legacy"
+    },
+    {
+     "end": 1.138,
+     "start": 0.8,
+     "text": "names"
+    },
+    {
+     "end": 2.475,
+     "start": 1.138,
+     "text": "mkPureTrie"
+    },
+    {
+     "end": 2.575,
+     "start": 2.475,
+     "text": ","
+    },
+    {
+     "end": 4.375,
+     "start": 2.575,
+     "text": "mkPureTrieFromRef"
+    },
+    {
+     "end": 4.475,
+     "start": 4.375,
+     "text": ","
+    },
+    {
+     "end": 6.088,
+     "start": 4.475,
+     "text": "mkPureTrieManager"
+    },
+    {
+     "end": 6.238,
+     "start": 6.088,
+     "text": "and"
+    },
+    {
+     "end": 8.038,
+     "start": 6.238,
+     "text": "mkPureTrieManagerFrom"
+    },
+    {
+     "end": 8.725,
+     "start": 8.038,
+     "text": "identify"
+    },
+    {
+     "end": 8.875,
+     "start": 8.725,
+     "text": "the"
+    },
+    {
+     "end": 9.375,
+     "start": 8.875,
+     "text": "in-memory"
+    },
+    {
+     "end": 10.575,
+     "start": 9.375,
+     "text": "backend"
+    },
+    {
+     "end": 10.8,
+     "start": 10.575,
+     "text": "."
+    },
+    {
+     "end": 11.125,
+     "start": 10.975,
+     "text": "Their"
+    },
+    {
+     "end": 11.413,
+     "start": 11.125,
+     "text": "IO"
+    },
+    {
+     "end": 11.925,
+     "start": 11.413,
+     "text": "adapters"
+    },
+    {
+     "end": 12.25,
+     "start": 11.925,
+     "text": "remain"
+    },
+    {
+     "end": 13.15,
+     "start": 12.25,
+     "text": "mutable"
+    },
+    {
+     "end": 13.35,
+     "start": 13.15,
+     "text": "."
+    },
+    {
+     "end": 13.637,
+     "start": 13.55,
+     "text": "A"
+    },
+    {
+     "end": 14.025,
+     "start": 13.637,
+     "text": "caller"
+    },
+    {
+     "end": 14.312,
+     "start": 14.025,
+     "text": "owns"
+    },
+    {
+     "end": 14.45,
+     "start": 14.312,
+     "text": "the"
+    },
+    {
+     "end": 15.062,
+     "start": 14.45,
+     "text": "adapter"
+    },
+    {
+     "end": 15.212,
+     "start": 15.062,
+     "text": "and"
+    },
+    {
+     "end": 15.512,
+     "start": 15.212,
+     "text": "any"
+    },
+    {
+     "end": 15.8,
+     "start": 15.512,
+     "text": "dump"
+    },
+    {
+     "end": 16.225,
+     "start": 15.8,
+     "text": "action"
+    },
+    {
+     "end": 16.337,
+     "start": 16.225,
+     "text": "for"
+    },
+    {
+     "end": 16.475,
+     "start": 16.337,
+     "text": "the"
+    },
+    {
+     "end": 17.013,
+     "start": 16.475,
+     "text": "entire"
+    },
+    {
+     "end": 17.45,
+     "start": 17.013,
+     "text": "serial"
+    },
+    {
+     "end": 18.0,
+     "start": 17.45,
+     "text": "builder"
+    },
+    {
+     "end": 18.138,
+     "start": 18.0,
+     "text": ","
+    },
+    {
+     "end": 18.85,
+     "start": 18.138,
+     "text": "replay"
+    },
+    {
+     "end": 19.038,
+     "start": 18.85,
+     "text": "or"
+    },
+    {
+     "end": 19.375,
+     "start": 19.038,
+     "text": "mirror"
+    },
+    {
+     "end": 20.6,
+     "start": 19.375,
+     "text": "lifetime"
+    },
+    {
+     "end": 20.8,
+     "start": 20.6,
+     "text": "."
+    },
+    {
+     "end": 21.087,
+     "start": 20.975,
+     "text": "There"
+    },
+    {
+     "end": 21.175,
+     "start": 21.087,
+     "text": "is"
+    },
+    {
+     "end": 21.375,
+     "start": 21.175,
+     "text": "no"
+    },
+    {
+     "end": 21.825,
+     "start": 21.375,
+     "text": "locking"
+    },
+    {
+     "end": 21.975,
+     "start": 21.825,
+     "text": "or"
+    },
+    {
+     "end": 22.575,
+     "start": 21.975,
+     "text": "thread-safety"
+    },
+    {
+     "end": 23.625,
+     "start": 22.575,
+     "text": "guarantee"
+    },
+    {
+     "end": 23.85,
+     "start": 23.625,
+     "text": "."
+    },
+    {
+     "end": 24.45,
+     "start": 24.1,
+     "text": "Sharing"
+    },
+    {
+     "end": 25.0,
+     "start": 24.45,
+     "text": "requires"
+    },
+    {
+     "end": 25.538,
+     "start": 25.0,
+     "text": "external"
+    },
+    {
+     "end": 26.4,
+     "start": 25.538,
+     "text": "serialization"
+    },
+    {
+     "end": 26.525,
+     "start": 26.4,
+     "text": "of"
+    },
+    {
+     "end": 26.975,
+     "start": 26.525,
+     "text": "complete"
+    },
+    {
+     "end": 27.65,
+     "start": 26.975,
+     "text": "sessions"
+    },
+    {
+     "end": 27.75,
+     "start": 27.65,
+     "text": ","
+    },
+    {
+     "end": 28.237,
+     "start": 27.75,
+     "text": "including"
+    },
+    {
+     "end": 28.7,
+     "start": 28.237,
+     "text": "reads"
+    },
+    {
+     "end": 28.763,
+     "start": 28.7,
+     "text": ","
+    },
+    {
+     "end": 29.75,
+     "start": 28.763,
+     "text": "writes"
+    },
+    {
+     "end": 29.975,
+     "start": 29.75,
+     "text": ","
+    },
+    {
+     "end": 30.775,
+     "start": 30.175,
+     "text": "speculative"
+    },
+    {
+     "end": 31.425,
+     "start": 30.775,
+     "text": "snapshots"
+    },
+    {
+     "end": 31.475,
+     "start": 31.425,
+     "text": ","
+    },
+    {
+     "end": 32.025,
+     "start": 31.475,
+     "text": "visibility"
+    },
+    {
+     "end": 32.525,
+     "start": 32.025,
+     "text": "changes"
+    },
+    {
+     "end": 32.65,
+     "start": 32.525,
+     "text": "and"
+    },
+    {
+     "end": 33.525,
+     "start": 32.65,
+     "text": "dumps"
+    },
+    {
+     "end": 33.725,
+     "start": 33.525,
+     "text": "."
+    },
+    {
+     "end": 34.013,
+     "start": 33.925,
+     "text": "A"
+    },
+    {
+     "end": 34.325,
+     "start": 34.013,
+     "text": "dump"
+    },
+    {
+     "end": 34.775,
+     "start": 34.325,
+     "text": "includes"
+    },
+    {
+     "end": 35.075,
+     "start": 34.775,
+     "text": "hidden"
+    },
+    {
+     "end": 35.662,
+     "start": 35.075,
+     "text": "tries"
+    },
+    {
+     "end": 35.787,
+     "start": 35.662,
+     "text": "and"
+    },
+    {
+     "end": 35.925,
+     "start": 35.787,
+     "text": "is"
+    },
+    {
+     "end": 36.162,
+     "start": 35.925,
+     "text": "not"
+    },
+    {
+     "end": 36.25,
+     "start": 36.162,
+     "text": "an"
+    },
+    {
+     "end": 36.725,
+     "start": 36.25,
+     "text": "atomic"
+    },
+    {
+     "end": 37.2,
+     "start": 36.725,
+     "text": "concurrent"
+    },
+    {
+     "end": 38.35,
+     "start": 37.2,
+     "text": "snapshot"
+    },
+    {
+     "end": 38.55,
+     "start": 38.35,
+     "text": "."
+    },
+    {
+     "end": 39.287,
+     "start": 38.775,
+     "text": "Missing"
+    },
+    {
+     "end": 39.425,
+     "start": 39.287,
+     "text": "and"
+    },
+    {
+     "end": 39.75,
+     "start": 39.425,
+     "text": "hidden"
+    },
+    {
+     "end": 40.225,
+     "start": 39.75,
+     "text": "manager"
+    },
+    {
+     "end": 40.725,
+     "start": 40.225,
+     "text": "lookups"
+    },
+    {
+     "end": 41.175,
+     "start": 40.725,
+     "text": "retain"
+    },
+    {
+     "end": 41.375,
+     "start": 41.175,
+     "text": "their"
+    },
+    {
+     "end": 41.875,
+     "start": 41.375,
+     "text": "existing"
+    },
+    {
+     "end": 42.575,
+     "start": 41.875,
+     "text": "exceptions"
+    },
+    {
+     "end": 42.688,
+     "start": 42.575,
+     "text": ","
+    },
+    {
+     "end": 42.975,
+     "start": 42.688,
+     "text": "Trie"
+    },
+    {
+     "end": 43.237,
+     "start": 42.975,
+     "text": "not"
+    },
+    {
+     "end": 44.225,
+     "start": 43.237,
+     "text": "found"
+    },
+    {
+     "end": 44.45,
+     "start": 44.225,
+     "text": ":"
+    },
+    {
+     "end": 44.725,
+     "start": 44.625,
+     "text": "and"
+    },
+    {
+     "end": 45.0,
+     "start": 44.725,
+     "text": "Trie"
+    },
+    {
+     "end": 45.15,
+     "start": 45.0,
+     "text": "is"
+    },
+    {
+     "end": 45.475,
+     "start": 45.15,
+     "text": "hidden"
+    },
+    {
+     "end": 45.55,
+     "start": 45.475,
+     "text": ":"
+    },
+    {
+     "end": 45.862,
+     "start": 45.55,
+     "text": "followed"
+    },
+    {
+     "end": 45.987,
+     "start": 45.862,
+     "text": "by"
+    },
+    {
+     "end": 46.088,
+     "start": 45.987,
+     "text": "the"
+    },
+    {
+     "end": 46.375,
+     "start": 46.088,
+     "text": "shown"
+    },
+    {
+     "end": 47.275,
+     "start": 46.375,
+     "text": "token"
+    },
+    {
+     "end": 47.475,
+     "start": 47.275,
+     "text": "."
+    },
+    {
+     "end": 48.338,
+     "start": 47.7,
+     "text": "Speculative"
+    },
+    {
+     "end": 48.912,
+     "start": 48.338,
+     "text": "sessions"
+    },
+    {
+     "end": 49.45,
+     "start": 48.912,
+     "text": "execute"
+    },
+    {
+     "end": 49.6,
+     "start": 49.45,
+     "text": "the"
+    },
+    {
+     "end": 50.188,
+     "start": 49.6,
+     "text": "existing"
+    },
+    {
+     "end": 50.5,
+     "start": 50.188,
+     "text": "pure"
+    },
+    {
+     "end": 51.275,
+     "start": 50.5,
+     "text": "stateTrie"
+    },
+    {
+     "end": 51.5,
+     "start": 51.275,
+     "text": "over"
+    },
+    {
+     "end": 51.612,
+     "start": 51.5,
+     "text": "a"
+    },
+    {
+     "end": 52.362,
+     "start": 51.612,
+     "text": "snapshot"
+    },
+    {
+     "end": 52.487,
+     "start": 52.362,
+     "text": "and"
+    },
+    {
+     "end": 53.0,
+     "start": 52.487,
+     "text": "discard"
+    },
+    {
+     "end": 53.1,
+     "start": 53.0,
+     "text": "the"
+    },
+    {
+     "end": 53.675,
+     "start": 53.1,
+     "text": "resulting"
+    },
+    {
+     "end": 54.925,
+     "start": 53.675,
+     "text": "database"
+    },
+    {
+     "end": 55.15,
+     "start": 54.925,
+     "text": ","
+    },
+    {
+     "end": 55.625,
+     "start": 55.325,
+     "text": "without"
+    },
+    {
+     "end": 56.138,
+     "start": 55.625,
+     "text": "allocating"
+    },
+    {
+     "end": 56.2,
+     "start": 56.138,
+     "text": "a"
+    },
+    {
+     "end": 56.6,
+     "start": 56.2,
+     "text": "mutable"
+    },
+    {
+     "end": 57.45,
+     "start": 56.6,
+     "text": "copy"
+    },
+    {
+     "end": 57.675,
+     "start": 57.45,
+     "text": "."
+    },
+    {
+     "end": 58.275,
+     "start": 57.875,
+     "text": "Action"
+    },
+    {
+     "end": 58.388,
+     "start": 58.275,
+     "text": "and"
+    },
+    {
+     "end": 58.987,
+     "start": 58.388,
+     "text": "mutation"
+    },
+    {
+     "end": 59.513,
+     "start": 58.987,
+     "text": "failures"
+    },
+    {
+     "end": 59.775,
+     "start": 59.513,
+     "text": "still"
+    },
+    {
+     "end": 60.1,
+     "start": 59.775,
+     "text": "occur"
+    },
+    {
+     "end": 60.312,
+     "start": 60.1,
+     "text": "during"
+    },
+    {
+     "end": 60.463,
+     "start": 60.312,
+     "text": "the"
+    },
+    {
+     "end": 60.825,
+     "start": 60.463,
+     "text": "IO"
+    },
+    {
+     "end": 61.825,
+     "start": 60.825,
+     "text": "callback"
+    },
+    {
+     "end": 62.025,
+     "start": 61.825,
+     "text": ";"
+    },
+    {
+     "end": 62.275,
+     "start": 62.2,
+     "text": "the"
+    },
+    {
+     "end": 62.7,
+     "start": 62.275,
+     "text": "returned"
+    },
+    {
+     "end": 63.1,
+     "start": 62.7,
+     "text": "value"
+    },
+    {
+     "end": 63.487,
+     "start": 63.1,
+     "text": "stays"
+    },
+    {
+     "end": 64.125,
+     "start": 63.487,
+     "text": "lazy"
+    },
+    {
+     "end": 64.238,
+     "start": 64.125,
+     "text": ","
+    },
+    {
+     "end": 64.4,
+     "start": 64.238,
+     "text": "as"
+    },
+    {
+     "end": 64.562,
+     "start": 64.4,
+     "text": "it"
+    },
+    {
+     "end": 64.825,
+     "start": 64.562,
+     "text": "did"
+    },
+    {
+     "end": 64.963,
+     "start": 64.825,
+     "text": "with"
+    },
+    {
+     "end": 65.05,
+     "start": 64.963,
+     "text": "the"
+    },
+    {
+     "end": 65.45,
+     "start": 65.05,
+     "text": "mutable"
+    },
+    {
+     "end": 66.525,
+     "start": 65.45,
+     "text": "callback"
+    },
+    {
+     "end": 66.75,
+     "start": 66.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-api-reference/snapshot-computations-and-mutable-compatibility-03": {
+   "audio_sha256": "d98ab6829054e000e381746f1d22da649bf56cca5489c82b6d165fd734198042",
+   "characters": 313,
+   "cost": 0.00030986999999999996,
+   "duration": 20.925,
+   "index": 3,
+   "key": "f844aed5f3dc378749cc4f2e2870b5adf409cbf7906531d53ceb7ce177c702dd",
+   "page": "docs/offchain-api-reference.md",
+   "pause_ms": 400,
+   "section": "snapshot-computations-and-mutable-compatibility",
+   "sent_text": "Ordinary registry and open-datum commands already authenticate through TrieState; the direct executable callers of the older CLI.Proof snapshot functions are the preservation tests. Removing their allocation alone is therefore a library computation improvement, not a claim that command session ownership changed.",
+   "text": "Ordinary registry and open-datum commands already authenticate through TrieState; the direct executable callers of the older CLI.Proof snapshot functions are the preservation tests. Removing their allocation alone is therefore a library computation improvement, not a claim that command session ownership changed.",
+   "words": [
+    {
+     "end": 0.7,
+     "start": 0.2,
+     "text": "Ordinary"
+    },
+    {
+     "end": 1.325,
+     "start": 0.7,
+     "text": "registry"
+    },
+    {
+     "end": 1.45,
+     "start": 1.325,
+     "text": "and"
+    },
+    {
+     "end": 2.237,
+     "start": 1.45,
+     "text": "open-datum"
+    },
+    {
+     "end": 2.713,
+     "start": 2.237,
+     "text": "commands"
+    },
+    {
+     "end": 3.138,
+     "start": 2.713,
+     "text": "already"
+    },
+    {
+     "end": 3.825,
+     "start": 3.138,
+     "text": "authenticate"
+    },
+    {
+     "end": 4.025,
+     "start": 3.825,
+     "text": "through"
+    },
+    {
+     "end": 5.225,
+     "start": 4.025,
+     "text": "TrieState"
+    },
+    {
+     "end": 5.425,
+     "start": 5.225,
+     "text": ";"
+    },
+    {
+     "end": 5.725,
+     "start": 5.625,
+     "text": "the"
+    },
+    {
+     "end": 6.188,
+     "start": 5.725,
+     "text": "direct"
+    },
+    {
+     "end": 6.912,
+     "start": 6.188,
+     "text": "executable"
+    },
+    {
+     "end": 7.425,
+     "start": 6.912,
+     "text": "callers"
+    },
+    {
+     "end": 7.512,
+     "start": 7.425,
+     "text": "of"
+    },
+    {
+     "end": 7.662,
+     "start": 7.512,
+     "text": "the"
+    },
+    {
+     "end": 8.038,
+     "start": 7.662,
+     "text": "older"
+    },
+    {
+     "end": 8.788,
+     "start": 8.038,
+     "text": "CLI.Proof"
+    },
+    {
+     "end": 9.4,
+     "start": 8.788,
+     "text": "snapshot"
+    },
+    {
+     "end": 10.075,
+     "start": 9.4,
+     "text": "functions"
+    },
+    {
+     "end": 10.238,
+     "start": 10.075,
+     "text": "are"
+    },
+    {
+     "end": 10.325,
+     "start": 10.238,
+     "text": "the"
+    },
+    {
+     "end": 11.075,
+     "start": 10.325,
+     "text": "preservation"
+    },
+    {
+     "end": 12.15,
+     "start": 11.075,
+     "text": "tests"
+    },
+    {
+     "end": 12.35,
+     "start": 12.15,
+     "text": "."
+    },
+    {
+     "end": 13.075,
+     "start": 12.55,
+     "text": "Removing"
+    },
+    {
+     "end": 13.275,
+     "start": 13.075,
+     "text": "their"
+    },
+    {
+     "end": 13.9,
+     "start": 13.275,
+     "text": "allocation"
+    },
+    {
+     "end": 14.525,
+     "start": 13.9,
+     "text": "alone"
+    },
+    {
+     "end": 14.7,
+     "start": 14.525,
+     "text": "is"
+    },
+    {
+     "end": 15.175,
+     "start": 14.7,
+     "text": "therefore"
+    },
+    {
+     "end": 15.288,
+     "start": 15.175,
+     "text": "a"
+    },
+    {
+     "end": 15.825,
+     "start": 15.288,
+     "text": "library"
+    },
+    {
+     "end": 16.525,
+     "start": 15.825,
+     "text": "computation"
+    },
+    {
+     "end": 17.6,
+     "start": 16.525,
+     "text": "improvement"
+    },
+    {
+     "end": 17.8,
+     "start": 17.6,
+     "text": ","
+    },
+    {
+     "end": 18.112,
+     "start": 17.975,
+     "text": "not"
+    },
+    {
+     "end": 18.175,
+     "start": 18.112,
+     "text": "a"
+    },
+    {
+     "end": 18.438,
+     "start": 18.175,
+     "text": "claim"
+    },
+    {
+     "end": 18.575,
+     "start": 18.438,
+     "text": "that"
+    },
+    {
+     "end": 18.95,
+     "start": 18.575,
+     "text": "command"
+    },
+    {
+     "end": 19.275,
+     "start": 18.95,
+     "text": "session"
+    },
+    {
+     "end": 19.788,
+     "start": 19.275,
+     "text": "ownership"
+    },
+    {
+     "end": 20.725,
+     "start": 19.788,
+     "text": "changed"
+    },
+    {
+     "end": 20.925,
+     "start": 20.725,
      "text": "."
     }
    ]

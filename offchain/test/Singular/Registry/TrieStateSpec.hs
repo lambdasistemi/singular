@@ -1,17 +1,33 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-{- | Preservation witnesses from the current MPF producer, before the
-capability exists. These are not evidence of the new interface or coverage.
+{- | Snapshot preservation against the unchanged mutable MPF producer.
+These component witnesses establish roots, proofs, leaves and compatibility
+boundaries; ledger coverage comes from the packaged connected journeys.
 -}
 module Singular.Registry.TrieStateSpec (spec, produced, edgeCases) where
 
-import Control.Monad (forM_)
+import Control.Exception
+    ( SomeException
+    , displayException
+    , evaluate
+    , try
+    )
+import Control.Monad (forM_, void)
+import Control.Monad.State.Strict (runState)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.IORef (newIORef)
 import Data.Map.Strict qualified as Map
-import MPF.Backend.Pure (MPFInMemoryDB (..))
-import Singular.CLI.Proof (Leaf (..), authenticatedLeaf, rootOfDb)
+import MPF.Backend.Pure (MPFInMemoryDB (..), emptyMPFInMemoryDB)
+import Singular.CLI.Proof
+    ( AuthError (..)
+    , Leaf (..)
+    , authenticatedLeaf
+    , authenticatedLeafPure
+    , rootOfDb
+    , rootOfDbPure
+    )
 import Singular.Registry.Deployment (loadMirror, saveMirror)
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -19,7 +35,13 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
-import Singular.Registry.Trie.Pure (provesAbsent, provesMember)
+import Singular.Registry.Trie.Pure
+    ( membershipFromDb
+    , mkPureTrieFromRef
+    , provesAbsent
+    , provesMember
+    , stateTrie
+    )
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.Internal (walkEdge)
 import Singular.Registry.Types (ProofStep)
@@ -27,6 +49,14 @@ import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
+import Test.QuickCheck
+    ( Gen
+    , chooseInt
+    , elements
+    , forAll
+    , ioProperty
+    , vectorOf
+    )
 
 -- The two admitted moves and five raw refused encodings, in the frozen model's leaf vocabulary.
 edgeCases :: [(String, Integer, [Integer], Leaf)]
@@ -96,6 +126,7 @@ spec = describe "TrieState preservation oracle (existing IO producer)" $ do
                                     (_, Root other, _) <- produced token [("other-root", 1)]
                                     pure other
                                 _ -> pure root
+                            authenticatedLeafPure db queried selected `shouldBe` Right want
                             authenticatedLeaf db queried selected `shouldReturn` Right want
                             if want == Unknown
                                 then provesAbsent db root key `shouldBe` True
@@ -103,9 +134,10 @@ spec = describe "TrieState preservation oracle (existing IO producer)" $ do
                             provesAbsent db root "never-bound" `shouldBe` True
                             provesMember db root key "wrong-leaf" `shouldBe` False
                             provesMember db root "never-bound" (leafBytes want) `shouldBe` False
+                            rootOfDbPure db{mpfInMemoryKV = Map.empty} `shouldBe` root
                             rootOfDb db{mpfInMemoryKV = Map.empty} `shouldReturn` root
-                            authenticatedLeaf db{mpfInMemoryKV = Map.empty} key root
-                                `shouldReturn` Right want
+                            authenticatedLeafPure db{mpfInMemoryKV = Map.empty} key root
+                                `shouldBe` Right want
                     it
                         ( label
                             <> ": returns ordered production proofs and discards speculation"
@@ -143,3 +175,193 @@ spec = describe "TrieState preservation oracle (existing IO producer)" $ do
             back `shouldBe` nodes
             saveMirror path back
             BS.readFile (dir </> "deployment.mirror.json") `shouldReturn` bytes
+
+    it
+        "preserves generated lifecycle roots, ordered proofs and snapshot leaves against the unchanged IO producer"
+        $ forAll genLifecycle
+        $ \moves -> ioProperty $ do
+            let token = TokenId (AssetName "generated-registry")
+                ((pureRoot, pureProofs), pureDb) =
+                    runState (walkReport stateTrie moves) emptyMPFInMemoryDB
+                keys = Map.keys (Map.fromList moves)
+                leaves = foldl applyLeaf Map.empty moves
+                applyLeaf current (key, edge)
+                    | edge == 1 = Map.insert key Active current
+                    | edge == 3 = Map.insert key Terminal current
+                    | otherwise = current
+            (db, root, proofs) <- produced token moves
+            pureRoot `shouldBe` root
+            pureProofs `shouldBe` proofs
+            pureDb `shouldBe` db
+            forM_ ("never-bound" : keys) $ \key -> do
+                let wanted = Right (Map.findWithDefault Unknown key leaves)
+                    observed = unRoot root
+                    withoutIndex = db{mpfInMemoryKV = Map.empty}
+                    alteredIndex = db{mpfInMemoryKV = Map.map (const "foreign") (mpfInMemoryKV db)}
+                authenticatedLeafPure db key observed `shouldBe` wanted
+                frozenAuthenticatedLeaf db key observed `shouldReturn` wanted
+                authenticatedLeaf db key observed `shouldReturn` wanted
+                authenticatedLeafPure withoutIndex key observed `shouldBe` wanted
+                authenticatedLeafPure alteredIndex key observed `shouldBe` wanted
+                membershipFromDb pureDb key `shouldBe` membershipFromDb db key
+                -- A foreign observed root must refuse even a proven leaf.
+                authenticatedLeafPure db key (BS.replicate 32 255)
+                    `shouldBe` Left (RootMismatch observed (BS.replicate 32 255))
+            pure True
+    it
+        "preserves legacy snapshot leaf bytes and inconsistent-leaf refusal"
+        $ do
+            let token = TokenId (AssetName "legacy-snapshot")
+            forM_ [Absent, Active, Terminal, Unknown] $ \leaf -> do
+                (manager, dump) <- mkPureTrieManagerFrom Map.empty
+                createTrie manager token
+                Root root <- withTrie manager token $ \trie -> do
+                    _ <-
+                        insert
+                            trie
+                            "key"
+                            (if leaf == Unknown then "foreign-leaf" else leafBytes leaf)
+                    getRoot trie
+                nodes <- dump
+                let db = nodes Map.! token
+                    wanted =
+                        if leaf == Unknown then Left (ProofInconsistent "key") else Right leaf
+                authenticatedLeafPure db "key" root `shouldBe` wanted
+                frozenAuthenticatedLeaf db "key" root `shouldReturn` wanted
+                authenticatedLeaf db "key" root `shouldReturn` wanted
+    it
+        "preserves the old IO root-failure boundary, including malformed snapshots"
+        $ do
+            let token = TokenId (AssetName "failure-registry")
+            (db, Root root, _) <- produced token [("key", 1), ("other", 1)]
+            let damaged = db{mpfInMemoryMPF = Map.map (const BS.empty) (mpfInMemoryMPF db)}
+                refusedDb = error "snapshot read failed" :: MPFInMemoryDB
+            forM_ [db, damaged, refusedDb] $ \snapshot -> do
+                before <-
+                    outcome (void (frozenAuthenticatedLeaf snapshot "key" root))
+                after <- outcome (void (authenticatedLeaf snapshot "key" root))
+                after `shouldBe` before
+                forcedBefore <-
+                    outcome (frozenAuthenticatedLeaf snapshot "key" root >>= evaluate)
+                forcedAfter <-
+                    outcome (authenticatedLeaf snapshot "key" root >>= evaluate)
+                forcedAfter `shouldBe` forcedBefore
+            outcome (authenticatedLeaf refusedDb "key" root)
+                `shouldReturn` Left "snapshot read failed"
+    it
+        "retains missing and hidden manager exceptions and restores visibility without changing nodes"
+        $ do
+            let token = TokenId (AssetName "visibility-registry")
+            (manager, dump) <- mkPureTrieManagerFrom Map.empty
+            outcome (withTrie manager token getRoot)
+                `shouldReturn` Left ("Trie not found: " <> show token)
+            outcome (withSpeculativeTrie manager token getRoot)
+                `shouldReturn` Left ("Trie not found: " <> show token)
+            createTrie manager token
+            _ <-
+                withTrie manager token (\trie -> insert trie "key" (leafBytes Active))
+            nodes <- dump
+            hideTrie manager token
+            outcome (withTrie manager token getRoot)
+                `shouldReturn` Left ("Trie is hidden: " <> show token)
+            outcome (withSpeculativeTrie manager token getRoot)
+                `shouldReturn` Left ("Trie is hidden: " <> show token)
+            dump `shouldReturn` nodes
+            unhideTrie manager token
+            withTrie manager token getRoot
+                `shouldReturn` Root (rootOfDbPure (nodes Map.! token))
+    it
+        "preserves speculative action failure timing, lazy answers and state discard against the frozen IO callback"
+        $ do
+            let token = TokenId (AssetName "speculation-boundary")
+            (before, _, _) <- produced token [("held", 1)]
+            let check :: (forall m. (Monad m) => Trie m -> m ()) -> IO ()
+                check action = do
+                    (manager, dump) <- mkPureTrieManagerFrom (Map.singleton token before)
+                    oldStage <- outcome (void (frozenSpeculation before action))
+                    newStage <- outcome (void (withSpeculativeTrie manager token action))
+                    newStage `shouldBe` oldStage
+                    oldForced <- outcome (frozenSpeculation before action >>= evaluate)
+                    newForced <-
+                        outcome (withSpeculativeTrie manager token action >>= evaluate)
+                    newForced `shouldBe` oldForced
+                    dump `shouldReturn` Map.singleton token before
+            check (\trie -> void (insert trie "new" (leafBytes Active)))
+            check (\_ -> error "speculative action failed")
+            check (\_ -> pure (error "lazy speculative answer"))
+            check
+                ( \trie ->
+                    void (insert trie (error "speculative key failed") (leafBytes Active))
+                )
+            check
+                (\trie -> void (insert trie "new" (error "speculative value failed")))
+            check
+                (\trie -> void (delete trie (error "speculative deletion failed")))
+            check $ \trie -> do
+                _ <- insert trie (error "first mutation failed") (leafBytes Active)
+                error "later action failed"
+            check $ \trie -> do
+                _ <- insert trie "new" (leafBytes Active)
+                error "action failed after mutation"
+
+-- Distinct byte keys and generated multi-key registration/retirement
+-- lifecycles, with refused raw encodings inserted between admitted moves.
+genLifecycle :: Gen [(ByteString, Integer)]
+genLifecycle = do
+    count <- chooseInt (1, 12)
+    bytes <-
+        vectorOf
+            count
+            (BS.pack <$> vectorOf 16 (fromIntegral <$> chooseInt (0, 255)))
+    retirements <- vectorOf count (elements [False, True])
+    excluded <- vectorOf count (elements [0, 2, 4, 5, 6])
+    let keys =
+            zipWith
+                (BS.cons . fromIntegral)
+                [0 :: Int ..]
+                bytes
+    pure $
+        map (,1) keys
+            <> zip keys excluded
+            <> [(key, 3) | (key, True) <- zip keys retirements]
+
+-- The exact b55053a2 CLI.Proof root/leaf computation, kept test-only as an
+-- independent frozen-base IO boundary. It must not call the new pure API.
+frozenAuthenticatedLeaf
+    :: MPFInMemoryDB
+    -> ByteString
+    -> ByteString
+    -> IO (Either AuthError Leaf)
+frozenAuthenticatedLeaf db key observed = do
+    let token = TokenId (AssetName "")
+    (manager, _) <- mkPureTrieManagerFrom (Map.singleton token db)
+    Root local <- withTrie manager token getRoot
+    if local /= observed
+        then pure (Left (RootMismatch local observed))
+        else pure $
+            case [ leaf
+                 | leaf <- [Absent, Active, Terminal]
+                 , provesMember db observed key (leafBytes leaf)
+                 ] of
+                [leaf] -> Right leaf
+                [] | provesAbsent db observed key -> Right Unknown
+                _ -> Left (ProofInconsistent key)
+
+-- Compare the stage at which an exception occurs as well as successful values.
+-- Discard call-stack locations, which differ between base and candidate sites.
+outcome :: IO a -> IO (Either String a)
+outcome action = do
+    result <- try action
+    pure $ case result of
+        Left (exception :: SomeException) -> Left (takeWhile (/= '\n') (displayException exception))
+        Right value -> Right value
+
+-- The b55053a2 successful-lookup speculation implementation. The original
+-- mutable adapter and its strict insertion/deletion remain unchanged.
+frozenSpeculation
+    :: MPFInMemoryDB
+    -> (forall m. (Monad m) => Trie m -> m a)
+    -> IO a
+frozenSpeculation db action = do
+    copyRef <- newIORef db
+    action (mkPureTrieFromRef copyRef)
