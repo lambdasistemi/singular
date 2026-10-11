@@ -1,6 +1,6 @@
 { pkgs }:
 let
-  pairsJson = ./../offchain/negative/pairs.json;
+  pairsJson = ./../applications/open-datum/negative/pairs.json;
   parts = pkgs.writeShellApplication {
     name = "negative-host-parts";
     runtimeInputs = with pkgs; [

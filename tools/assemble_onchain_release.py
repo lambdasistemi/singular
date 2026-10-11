@@ -94,6 +94,13 @@ def assemble(
             "flake.lock",
             "fourmolu.yaml",
             "applications/open-datum/ledgers.json",
+            # #528 slice 4: the release ships both executables. The
+            # application's flake and the negative-host pair's host sources
+            # ride as their own tracked partitions, so the extracted archive
+            # builds `open-datum` and `singular-negative` from the
+            # application's tree now, beside `singular` from the registry.
+            "applications/open-datum/offchain",
+            "applications/open-datum/negative",
             "specs/299-singular-cli/spec.md",
         ),
     )
@@ -123,6 +130,48 @@ def assemble(
     )
     shutil.copyfile(onchain_bp, farm / "onchain" / "plutus.json")
     shutil.copyfile(naming_bp, farm / "naming-onchain" / "plutus.json")
+    # S5.2: the archive's onchain/plutus.json is the merged deployment
+    # document (14 validators), so its script-identity.json is the merged
+    # manifest (union of the two committed manifests, same schema/compiler).
+    # The farm already carries the registry manifest via tracked partitions;
+    # overwrite it with the union so verify-identities.sh passes from the
+    # artifact alone. No second copy of any registry module is introduced.
+    import json as _json
+
+    _reg_man = _json.loads((root / "onchain" / "script-identity.json").read_text())
+    _app_man = _json.loads(
+        (
+            root / "applications" / "open-datum" / "onchain" / "script-identity.json"
+        ).read_text()
+    )
+    assert _reg_man["schema"] == _app_man["schema"] == 1, "manifest schema moved"
+    assert _reg_man["compiler"] == _app_man["compiler"], "manifest compiler moved"
+    assert _reg_man["upstream"] == _app_man["upstream"], "manifest upstream moved"
+    _titles = [v["title"] for v in _reg_man["validators"]] + [
+        v["title"] for v in _app_man["validators"]
+    ]
+    assert len(_titles) == len(set(_titles)), "duplicate validator titles in manifests"
+    _merged_validators = sorted(
+        _reg_man["validators"] + _app_man["validators"],
+        key=lambda v: v["title"],
+    )
+    assert len(_merged_validators) == 14, (
+        f"merged manifest has {len(_merged_validators)} validators, not 14"
+    )
+    (farm / "onchain" / "script-identity.json").write_text(
+        _json.dumps(
+            {
+                "schema": 1,
+                "upstream": _reg_man["upstream"],
+                "compiler": _reg_man["compiler"],
+                "validators": _merged_validators,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     # Issue #91: the archive is not a git checkout, so the commit it
     # publishes rides at its root as RELEASE-COMMIT — the row runners
     # resolve their candidate by walking up from their working

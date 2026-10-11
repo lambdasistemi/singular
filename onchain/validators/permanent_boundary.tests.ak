@@ -11,6 +11,7 @@ use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, Spend, Transaction,
 }
 use registry_fixtures as fx
+use registry_pin.{registryStateHash}
 use request
 use state as m1
 use types.{Contribute, End, Modify, Rejected, StateDatum, UpdateAction}
@@ -339,7 +340,7 @@ test export_request_and_mint_routes() {
     list.range(0, 6),
     fn(edge) {
       let (root, original) = edgeTransaction(edge)
-      let pin = witness.registryStateHash
+      let pin = registryStateHash
       let state = fx.stateInput(root)
       let value =
         merge(

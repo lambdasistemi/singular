@@ -20,7 +20,9 @@
 #                            as it was (the release's sums recomputed)
 #   model-revision-missing   the on-chain archive without MODEL-REVISION
 #   model-revision-mismatch  MODEL-REVISION naming another commit
-#   member-missing           the on-chain archive without its DEMO1.md
+#   member-missing, three ways the on-chain archive without its DEMO1.md;
+#                            without its open-datum entry point;
+#                            without its singular entry point
 #   command-failed, two ways the archive's offchain flake made unevaluable
 #                            (the build fails, nothing runs); and the
 #                            archive's compiled blueprint replaced by an
@@ -121,6 +123,10 @@ variant() {
 no_model_revision() { rm "$1/MODEL-REVISION"; }
 other_model_revision() { printf '%040d\n' 0 >"$1/MODEL-REVISION"; }
 no_run_page() { rm "$1/DEMO1.md"; }
+# #528 slice 4: the release ships both executables. Removing either entry
+# point must refuse as member-missing naming that member.
+no_open_datum() { rm "$1/applications/open-datum/offchain/app/Main.hs"; }
+no_singular() { rm "$1/offchain/cli/Main.hs"; }
 changed_run_page() { printf '\n' >>"$1/DEMO1.md"; }
 broken_flake() { printf '\n}\n' >>"$1/offchain/flake.nix"; }
 empty_blueprint() { printf '{}\n' >"$1/onchain/plutus.json"; }
@@ -147,6 +153,12 @@ check other-revision model-revision-mismatch "states 000000000000000000000000000
 variant no-page no_run_page
 check no-page member-missing "DEMO1.md" "sums model_revision" "members"
 
+variant no-open-datum no_open_datum
+check no-open-datum member-missing "applications/open-datum/offchain/app/Main.hs" "sums model_revision" "members"
+
+variant no-singular no_singular
+check no-singular member-missing "offchain/cli/Main.hs" "sums model_revision" "members"
+
 variant broken-flake broken_flake
 check broken-flake command-failed "nix build .#singular" "sums model_revision members" "build"
 
@@ -154,4 +166,4 @@ variant empty-blueprint empty_blueprint
 check empty-blueprint command-failed "the journey exited" "sums model_revision members build" "journey"
 
 [ "$(sha256sum "$release"/* | sha256sum)" = "$before" ] || fail "the assembled release was modified"
-echo "verify-release-controls: PASS — the published v0.7.0 and eight mutated copies of the v$version assets each refused by name, after every check before its own passed; the assembled release unmodified"
+echo "verify-release-controls: PASS — the published v0.7.0 and ten mutated copies of the v$version assets each refused by name, after every check before its own passed; the assembled release unmodified"

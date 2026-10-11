@@ -33,6 +33,7 @@ on:
       - 'onchain/**'
       - 'naming-onchain/**'
       - 'offchain/**'
+      - 'applications/**'
       # The drift check also watches epic 15's live corpus.
       - 'lean/**'
       - '.github/workflows/registry.yml'
@@ -132,6 +133,15 @@ jobs:
       - name: Compare the committed manifest with a fresh blueprint build
         working-directory: onchain
         run: nix build --quiet --no-link --print-out-paths .#script-identity
+      # #528 S5.1: the split-blueprint hash comparison. The open-datum
+      # validators build in their own Aiken project now, so no single
+      # blueprint holds the whole contract: this step rebuilds the registry
+      # blueprint and the application blueprint and requires their union to
+      # equal the base set byte-identically, with its changed-hash and
+      # missing-validator plants refused on every run. Same app as
+      # `nix run .#script-hash-comparison` at the repository root.
+      - name: Compare the split blueprints against the base hash set
+        run: nix run --quiet .#script-hash-comparison
   aiken-suite:
     name: Onchain Aiken unit and property suite passes
     runs-on: nixos
@@ -167,6 +177,87 @@ jobs:
       # with the devnet row runners.
       - name: Run the onchain Aiken suite as a flake check
         working-directory: onchain
+        run: nix flake check
+  application-blueprint:
+    name: Application blueprint builds first
+    runs-on: nixos
+    timeout-minutes: 15
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #528 S5.3: the application's own blueprint obligations, from its
+      # own flake with its own lock (same toolchain as the registry's).
+      # Builds the application validators' blueprint and the merged
+      # deployment document; same derivations a local
+      # `nix build .#plutus-blueprint` / `.#open-datum-blueprint` in
+      # applications/open-datum/onchain/ verify.
+      - name: Build the application blueprint
+        working-directory: applications/open-datum/onchain
+        run: nix build --quiet --no-link --print-out-paths .#plutus-blueprint
+      - name: Build the merged deployment blueprint
+        working-directory: applications/open-datum/onchain
+        run: nix build --quiet --no-link --print-out-paths .#open-datum-blueprint
+  application-script-identity:
+    name: Application script identity matches the manifest
+    needs: application-blueprint
+    runs-on: nixos
+    timeout-minutes: 15
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #528 S5.3: the application's compiled script hash IS its
+      # contract's identity, as the registry's is. Rebuilds the
+      # application blueprint and compares every validator against the
+      # committed applications/open-datum/onchain/script-identity.json,
+      # then regenerates the application permanent record and module from
+      # the same blueprint alone. Same derivation as
+      # checks.script-identity in the application's flake.
+      - name: Compare the committed application manifest with a fresh build
+        working-directory: applications/open-datum/onchain
+        run: nix build --quiet --no-link --print-out-paths .#script-identity
+  application-aiken-suite:
+    name: Application Aiken unit and property suite passes
+    runs-on: nixos
+    timeout-minutes: 45
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #528 S5.3: the application's Aiken suite as its own hosted job
+      # (counterpart of the registry aiken-suite): formatter, identity,
+      # composed assembly and full boundary over the merged blueprint,
+      # with the pinned toolchain from the application's own lock.
+      - name: Run the application Aiken suite as a flake check
+        working-directory: applications/open-datum/onchain
         run: nix flake check
   vectors-fresh:
     name: Cage vectors match the generator

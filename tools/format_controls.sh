@@ -24,8 +24,8 @@
 #       force-added offchain/dist-newstyle/Kept.hs tracked, the check
 #       must pass over exactly baseline + 1 sources — never baseline + 2.
 #
-# Every control runs over a scratch copy of the Haskell trees; the
-# working tree is never touched and no deliberate defect is ever
+# Every control runs over a scratch copy of the tracked Haskell extent;
+# the working tree is never touched and no deliberate defect is ever
 # committed. The controls are permanent harness inputs, run by
 # `just format-controls` inside `just ci` and PR CI.
 set -euo pipefail
@@ -38,11 +38,19 @@ trap 'rm -rf "$work"' EXIT
 
 failures=0
 
-scratch() { # scratch <name> — fresh copy of the two Haskell trees and
-  # the one configuration; everything the checker discovers and reads.
+scratch() { # scratch <name> — fresh copy of the tracked Haskell extent
+  # and the one configuration, read from the Git index itself: the same
+  # discovery the checker runs (git ls-files --cached -- '*.hs'), so a
+  # new component tree joins with nothing to edit here. fourmolu.yaml,
+  # the tracked ignore rules and the cabal manifests fourmolu reads for
+  # parse context travel along; untracked and ignored build output
+  # (.lake, dist-newstyle) is never copied.
   local dest="$work/$1"
   mkdir -p "$dest"
-  cp -r "$root/offchain" "$root/conformance" "$root/fourmolu.yaml" "$dest/"
+  while IFS= read -r -d '' f; do
+    mkdir -p "$dest/$(dirname -- "$f")"
+    cp -- "$root/$f" "$dest/$f"
+  done < <(git -C "$root" ls-files -z --cached -- '*.hs' '*.cabal' 'fourmolu.yaml' '.gitignore' '**/.gitignore')
 }
 
 # Baseline: the real tree must pass before any control can mean anything.
@@ -142,7 +150,7 @@ else
 fi
 
 # f3 positive correction: formatting the scratch brings the new tree to
-# the house configuration and the SAME check passes over 203 sources.
+# the house configuration and the SAME check passes over baseline + 1.
 if bash "$check" inplace "$work/f3-new-tracked-tree" >>"$log" 2>&1; then
   if bash "$check" check "$work/f3-new-tracked-tree" >"$work/f3-positive.log" 2>&1 \
     && grep -qF "$expected discovered Haskell sources" "$work/f3-positive.log"; then

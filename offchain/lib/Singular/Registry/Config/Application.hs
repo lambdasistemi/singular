@@ -1,14 +1,14 @@
 {- |
 Module      : Singular.Registry.Config.Application
-Description : The application a registry pins, derived from its seed
+Description : The application pin a registry derives from its seed
 License     : Apache-2.0
 
 A registry's four pins (#157 genesis-policy-pins) are derived, never written down:
 the application policy and @witness(kind, registry)@ at kinds 0, 1 and 2,
 all for the registry identity the boot seed determines (state policy ‖
 the token name the seed derives). Which application the first pin comes
-from is the caller's 'Application' choice: @open.open@ as compiled, or
-@open_datum.open_datum@ applied to that identity.
+from is the caller's pin ('Singular.Registry.Application'): a hash given
+as input, or a blueprint validator title applied to that identity.
 
 'configForApplication' is the derivation: from a seed, the configuration
 the boot pins and the codes the bookings and folds run. A command that
@@ -27,10 +27,7 @@ import Data.ByteString.Short qualified as SBS
 
 import Cardano.Ledger.BaseTypes (Network (..))
 
-import Singular.Application.OpenDatum.Script
-    ( Application
-    , applicationCodes
-    )
+import Singular.Registry.Application (ApplicationPin, applyPin)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
@@ -60,7 +57,7 @@ registryIdentity stateBytes seed =
 registry runs them (the application applied when it takes the identity).
 -}
 configForApplication
-    :: Application
+    :: ApplicationPin
     -> NamingCodes
     -- ^ The application and witness codes as the blueprint carries them
     -> SBS.ShortByteString
@@ -72,10 +69,10 @@ configForApplication
     -> OnChainTxOutRef
     -- ^ The seed the boot consumes
     -> (CageConfig, NamingCodes)
-configForApplication app codes stateBytes requestBytes econ net seed =
+configForApplication pin codes stateBytes requestBytes econ net seed =
     let registryId = registryIdentity stateBytes seed
-        pinned = applicationCodes app registryId codes
-        (appPin, absentPin, activePin, terminalPin) = namingPins pinned registryId
+        (appPin, pinned) = applyPin pin registryId codes
+        (_, absentPin, activePin, terminalPin) = namingPins pinned registryId
     in  ( CageConfig
             { cageScriptBytes = stateBytes
             , requestScriptBytes = requestBytes

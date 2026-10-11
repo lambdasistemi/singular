@@ -9,8 +9,9 @@
 # 2. Those assets are verified by `verify-release` (#326) exactly as a
 #    published release is, presented as its download input: the sums, the
 #    stated model revision, the archive members, and the journey
-#    (demo1_cli_journey.sh) — `singular` and the development node built
-#    from the archive's own offchain flake, extracted OUTSIDE the checkout,
+#    (demo1_cli_journey.sh) — `singular`, `open-datum` and the development
+#    node built from the archive's own offchain flake and the application's
+#    offchain flake, extracted OUTSIDE the checkout,
 #    and the commands run as separate processes against ONE node, a booking
 #    and its fold by another wallet among them, with the archive's own
 #    blueprint, beside its process controls.
@@ -77,22 +78,38 @@ mkdir -p "$release_dir"
 version="$(cat "$root/version.txt")"
 "$verify" --assets "$release_dir" --work "$scratch/verify" "v$version"
 extracted="$scratch/verify/extracted"
-test ! -e "$extracted/.git" || fail "the archive carries a git checkout"
+# The archive itself carries no git checkout: assert on the tarball's member
+# list, not on the extraction directory. verify-release deliberately turns the
+# extraction into a temporary git worktree (git init/add/commit) so the
+# application's relative registry source path can evaluate, and with an
+# explicit --work it retains that directory; a `.git` there is verifier-created
+# working state, not archive contents. The listing goes to a file first so a
+# failed `tar` fails the check with its own message instead of reading as
+# absent, and `grep` never closes the producer early (pipefail/SIGPIPE).
+members="$scratch/tar-members.txt"
+tar -tzf "$release_dir/singular-onchain-$version.tar.gz" >"$members" 2>"$scratch/tar-members.err" \
+  || fail "the archive does not list its members: $(tail -n 3 "$scratch/tar-members.err" | tr '\n' ' ')"
+if grep -qE '(^|/)\.git($|/)' "$members"; then
+  fail "the archive carries a git checkout"
+fi
 
-# The page's numbered steps, each "N. **`singular registry CMD`**", read as
-# "N:CMD" in page order. Only those steps count: a command named in prose,
-# in a code block or at another position covers no step.
+# The page's numbered steps, each "N. **`singular registry CMD`**" or
+# "N. **`open-datum CMD`**", read as "N:BINARY:CMD" in page order, where
+# BINARY is `singular` or `open-datum`. Only those steps count: a command
+# named in prose, in a code block or at another position covers no step.
 page_steps() {
   # shellcheck disable=SC2016 # the backticks are the page's own Markdown
-  sed -n 's/^\([0-9][0-9]*\)\. \*\*`singular registry \([a-z][a-z]*\)`\*\*.*/\1:\2/p' "$1" | tr '\n' ' '
+  sed -n -e 's/^\([0-9][0-9]*\)\. \*\*`singular registry \([a-z][a-z]*\)`\*\*.*/\1:singular:\2/p' -e 's/^\([0-9][0-9]*\)\. \*\*`open-datum \([a-z][a-z]*\)`\*\*.*/\1:open-datum:\2/p' "$1" | tr '\n' ' '
 }
-# The page documents exactly the fifteen commands of the journey, in position.
+# The page documents exactly the fifteen commands of the journey, in position,
+# per binary: every open-datum verb through `open-datum`, reject and reclaim
+# through `singular registry`.
 page_ok() {
-  [ "$(page_steps "$1")" = "1:create 2:insert 3:fold 4:inspect 5:update 6:inspect 7:terminate 8:fold 9:inspect 10:reject 11:insert 12:fold 13:reclaim 14:insert 15:fold " ]
+  [ "$(page_steps "$1")" = "1:open-datum:create 2:open-datum:insert 3:open-datum:fold 4:open-datum:inspect 5:open-datum:update 6:open-datum:inspect 7:open-datum:terminate 8:open-datum:fold 9:open-datum:inspect 10:singular:reject 11:open-datum:insert 12:open-datum:fold 13:singular:reclaim 14:open-datum:insert 15:open-datum:fold " ]
 }
-# without STEP: the page with its numbered step STEP removed.
+# without STEP: the page with its numbered step STEP removed, either binary.
 # shellcheck disable=SC2016 # the backticks are the page's own Markdown
-without() { grep -v "^$2"'\. \*\*`singular registry ' "$1"; }
+without() { grep -v "^$2"'\. \*\*`\(singular registry \|open-datum \)' "$1"; }
 test -f "$extracted/DEMO1.md" || fail "the archive carries no DEMO1.md run page"
 page_ok "$extracted/DEMO1.md" \
   || fail "DEMO1.md's numbered steps are not the fifteen commands in position: $(page_steps "$extracted/DEMO1.md")"

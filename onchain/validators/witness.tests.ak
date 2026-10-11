@@ -6,8 +6,9 @@ use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction,
 }
 use cardano/transaction as tx_mod
+use registry_pin.{registryStateHash}
 use types.{Contribute, End, Modify, Rejected, State, StateDatum, UpdateRedeemer}
-use witness.{registryStateHash}
+use witness as witness
 
 // ============================================================================
 // #173 A173-BOOT — the three witness policies at their new home

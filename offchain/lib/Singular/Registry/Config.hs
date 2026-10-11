@@ -64,7 +64,7 @@ data CageConfig = CageConfig
     {- ^ The application policy the registry pins (28 raw bytes, #157 tree-edge-admission-by-approval,
     genesis-policy-pins): the hash of the application script the registry was booted
     with, for the registry identity this boot creates — `open.open` as
-    compiled, or `open_datum.open_datum` applied to that identity
+    compiled, or the application's validator applied to that identity
     ("Singular.Registry.Config.Application" derives and re-derives it).
     It certifies every request that changes the trie. Never a literal.
     -}

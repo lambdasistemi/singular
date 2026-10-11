@@ -37,7 +37,7 @@ module Singular.CLI.FoldRules
       -- * Which edge
     , FoldKind (..)
     , foldKind
-    , carriedEnvelope
+    , checkCarriedDatum
 
       -- * Which funding
     , fundedView
@@ -48,11 +48,13 @@ import Data.Text qualified as T
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.TxIn (TxIn)
+import PlutusCore.Data qualified as PLC
 
-import Singular.Application.OpenDatum.Envelope
-    ( Envelope
-    , envelopeFromData
+import Singular.Registry.Application
+    ( Application (..)
+    , HoldingRules (..)
     )
+
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
@@ -401,20 +403,20 @@ postBuildDecision slotOf now deadline deadlineSlot upper = do
     pure
         (postBuildCheck now deadline deadlineSlot upper boundTime, boundTime)
 
-{- | The envelope an insertion's request carries for its delivered output
+{- | The datum an insertion's request carries for its delivered output
 (#419), read off the request on the chain and never off a file, so any
-wallet can fold the insertion.
+wallet can fold the insertion. Through the value: the open datum checks
+it is an envelope; the neutral value takes the request's own datum
+unchanged (decoding nothing).
 -}
-carriedEnvelope :: OnChainRequest -> Either String Envelope
-carriedEnvelope req = case snd (requestDestination req) of
-    Nothing ->
-        Left
-            "the insertion's request carries no envelope: its delivered output would hold none"
-    Just datum ->
-        either
-            ( \why ->
-                Left
-                    ("the envelope the insertion's request carries cannot be read: " <> why)
-            )
-            Right
-            (envelopeFromData datum)
+checkCarriedDatum
+    :: Application -> OnChainRequest -> Either String PLC.Data
+checkCarriedDatum app req = case appHolding app of
+    Just rules -> case hrCheckCarried rules req of
+        Left why -> Left (T.unpack why)
+        Right datum -> Right datum
+    Nothing -> case snd (requestDestination req) of
+        Nothing ->
+            Left
+                "the insertion's request carries no datum: its delivered output would hold none"
+        Just datum -> Right datum

@@ -95,6 +95,60 @@ jobs:
       # whole package — build only, nothing executes.
       - run: nix build --quiet .#component-build
         working-directory: offchain
+      # #528 slice 4: the registry/application separation pair replaces the
+      # retired application-boundary pair. These steps run at the repository
+      # root: the check scans the registry trees named in its own data list
+      # and the application trees' reach, and the controls plant a naming,
+      # a reach, a dependency and the script hash in scratch copies. The
+      # S1b form reruns both under nix-and-git-only PATH, proving the
+      # wrappers carry every tool they call.
+      - run: nix run --quiet .#application-separation-check
+      - run: nix run --quiet .#application-separation-controls
+      - run: >-
+          env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#application-separation-check && env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#application-separation-controls
+  open-datum-component-build:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Open-datum component build
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #528 slice 4: the application's own component build and lint,
+      # from the application's tree, mirroring offchain-component-build.
+      - run: cd applications/open-datum/offchain && nix build --quiet .#component-build
+      - run: cd applications/open-datum/offchain && nix run --quiet .#lint
+  open-datum-tests:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Open-datum tests
+    runs-on: nixos
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #528 slice 4: the application's whole suite, as the journey job
+      # runs cage-tests whole.
+      - run: cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests
   model:
     if: github.event.action != 'closed'
     needs: build-gate

@@ -1,0 +1,123 @@
+{-# LANGUAGE LambdaCase #-}
+
+{- |
+Module      : Singular.Application.OpenDatum.Build
+Description : The open-datum envelope, built from the sources a caller names
+License     : Apache-2.0
+
+A caller of the open-datum application names six things: the registry's
+state asset, the active policy, a key, a controller, a deposit and a
+payload. This module reads the three that arrive as text or JSON — key,
+deposit and payload — each refusing its bad input under a name of its own,
+and builds the 'Envelope' from all six. The version is the only field it
+chooses.
+-}
+module Singular.Application.OpenDatum.Build
+    ( -- * The deposit minimum
+      minimumDeposit
+
+      -- * Readers
+    , KeyEncoding (..)
+    , KeyRefusal (..)
+    , maxKeyBytes
+    , readKey
+    , DepositRefusal (..)
+    , readDeposit
+    , PayloadRefusal (..)
+    , readPayload
+
+      -- * The builder
+    , buildEnvelope
+    ) where
+
+import Control.Monad (when)
+import Data.Aeson (Value)
+import Data.Bifunctor (first)
+import Data.ByteString (ByteString)
+import Data.Char (digitToInt, isDigit)
+import Data.Text (Text)
+import Data.Text qualified as T
+
+import PlutusCore.Data qualified as PLC
+
+import Singular.Application.OpenDatum.Envelope
+    ( Control (..)
+    , Envelope (..)
+    , StateAsset
+    , dataFromJson
+    , envelopeVersion
+    )
+import Singular.CLI.Key
+    ( KeyEncoding (..)
+    , KeyRefusal (..)
+    , maxKeyBytes
+    , readKey
+    )
+
+-- | The least deposit the client builds an envelope with, in lovelace.
+minimumDeposit :: Integer
+minimumDeposit = 2_000_000
+
+-- Key readers (KeyEncoding, KeyRefusal, maxKeyBytes, readKey) come from
+-- Singular.CLI.Key, the one module both binaries read keys through, and
+-- are re-exported here so existing callers keep importing this module.
+
+-- | Why a deposit argument is refused.
+data DepositRefusal
+    = DepositNotInteger
+    | -- | the deposit it came to
+      DepositBelowMinimum Integer
+    deriving stock (Eq, Show)
+
+-- | The deposit an optional argument names; absent is 'minimumDeposit'.
+readDeposit :: Maybe Text -> Either DepositRefusal Integer
+readDeposit = \case
+    Nothing -> Right minimumDeposit
+    Just argument -> do
+        deposit <- maybe (Left DepositNotInteger) Right (integer argument)
+        when (deposit < minimumDeposit) $
+            Left (DepositBelowMinimum deposit)
+        pure deposit
+  where
+    integer argument = case T.uncons argument of
+        Just ('-', digits) -> negate <$> natural digits
+        _ -> natural argument
+    natural digits
+        | not (T.null digits) && T.all isDigit digits =
+            Just (T.foldl' (\n c -> n * 10 + toInteger (digitToInt c)) 0 digits)
+        | otherwise = Nothing
+
+-- | Why a payload is refused: the reason the datum reader gives.
+newtype PayloadRefusal = PayloadNotPlutusData String
+    deriving stock (Eq, Show)
+
+-- | The datum a detailed-schema JSON value is.
+readPayload :: Value -> Either PayloadRefusal PLC.Data
+readPayload = first PayloadNotPlutusData . dataFromJson
+
+{- | The envelope its six sources make, under 'envelopeVersion'.
+
+Arguments, in order: the registry's state asset, the active policy, the
+key, the controller's payment key hash, the deposit, the payload.
+-}
+buildEnvelope
+    :: StateAsset
+    -> ByteString
+    -> ByteString
+    -> ByteString
+    -> Integer
+    -> PLC.Data
+    -> Envelope
+buildEnvelope registry active key controller deposit payload =
+    Envelope
+        { envControl =
+            Control
+                { ctlVersion = envelopeVersion
+                , ctlRegistry = registry
+                , ctlActivePolicy = active
+                , ctlKey = key
+                , ctlController = controller
+                , ctlDeposit = deposit
+                }
+        , envPayload = payload
+        }

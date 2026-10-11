@@ -34,6 +34,8 @@ module Singular.Registry.TxBuilder.Update
     , RegistryContext (..)
     , HolderRelease (..)
     , registryDuties
+    , NoCtx
+    , mkEvalTx
     ) where
 
 import Cardano.Ledger.Api.Tx.Out (TxOut)

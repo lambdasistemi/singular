@@ -3,12 +3,12 @@
 
 {- |
 Module      : Singular.CLI.Create
-Description : @singular registry create@: boot an open-datum registry from the caller's seed
+Description : @singular registry create@: boot a registry from the caller's seed
 License     : Apache-2.0
 
 The caller names a seed: an unspent, ada-only output of their own wallet.
 The seed decides the registry's identity — its state token name, and so
-the open-datum application applied to that identity and the three witness
+the application applied to that identity and the three witness
 policies — so every pin is derived before anything is submitted, and
 @--preview@ stops there, submitting nothing and writing nothing.
 
@@ -33,7 +33,7 @@ refusal happens under the target's lock, after selection and before any
 submission. A preview never refuses for existing state: it only reads,
 submitting nothing and writing nothing.
 -}
-module Singular.CLI.Create (runCreate, stateTokenOf) where
+module Singular.CLI.Create (createApplication, runCreate, stateTokenOf) where
 
 import Control.Exception
     ( SomeAsyncException
@@ -79,12 +79,9 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Application.OpenDatum.Script
-    ( Application (..)
-    , applicationTitle
-    )
 import Singular.CLI.Command
-    ( CreateArgs (..)
+    ( ApplicationPolicy (..)
+    , CreateArgs (..)
     , EntryMode (..)
     , ProviderSettings (..)
     , WriteSettings (..)
@@ -131,6 +128,12 @@ import Singular.CLI.Trace
     , Scope (..)
     , What (Created, EdgeStarted, RegistrySeen)
     , report
+    )
+import Singular.Registry.Application
+    ( Application (..)
+    , ApplicationPin (..)
+    , appPin
+    , hashPinnedApplication
     )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
@@ -190,10 +193,39 @@ import Singular.Registry.Wallet
     , loadWallet
     )
 
-runCreate :: Env -> CreateArgs -> IO Value
-runCreate env a = do
+{- | The application a @registry create@ runs with: the hash the flag pins
+through 'hashPinnedApplication', or the composed value. A neutral value
+without the flag, and a flag on a value that already fixes its pin, are
+refused by name before anything is built or signed.
+-}
+createApplication
+    :: Application -> Maybe ApplicationPolicy -> IO Application
+createApplication app policy = case (appPin app, policy) of
+    (PinFromState, Just (ApplicationPolicy hashed)) ->
+        pure (hashPinnedApplication hashed)
+    (PinFromState, Nothing) -> failWith ClientRefusal needsApplicationPolicy
+    (_, Just _) -> failWith ClientRefusal applicationPolicyNotAccepted
+    (_, Nothing) -> pure app
+
+-- | Why a create without the flag is refused on a neutral value.
+needsApplicationPolicy :: String
+needsApplicationPolicy =
+    "registry create needs --application-policy HEX: this application reads its pin from the state datum of a registry that does not exist yet, so give the 28-byte policy hash in hex (56 characters) to pin"
+
+-- | Why the flag is refused on a value that already fixes its pin.
+applicationPolicyNotAccepted :: String
+applicationPolicyNotAccepted =
+    "--application-policy is not accepted here: the application value already fixes its pin, so the pin comes from the application value"
+
+runCreate :: Application -> Env -> CreateArgs -> IO Value
+runCreate app env a = do
+    -- A direct caller composing the neutral value meets the same refusal
+    -- as the dispatch: at boot no state datum exists to read a pin from.
+    case appPin app of
+        PinFromState -> failWith ClientRefusal needsApplicationPolicy
+        _ -> pure ()
     rel <-
-        envLoadRelease env (createBlueprint a)
+        envLoadRelease env app (createBlueprint a)
             >>= either (failWith ClientRefusal) pure
     case createMode a of
         Preview settings addrText -> do
@@ -206,7 +238,7 @@ runCreate env a = do
                     (parseEnterpriseAddress magic addrText)
             readOnce env settings ["wallet outputs"] $ \caps v -> do
                 utxos <- Cage.outputsAt v addr
-                (_, identity) <- previewIdentity False a rel addr utxos
+                (_, identity) <- previewIdentity app False a rel addr utxos
                 scope <- sessionReceipt caps v
                 pure $
                     receipt
@@ -215,7 +247,7 @@ runCreate env a = do
                         ( [("preview", toJSON True), ("sessionEvidence", scope)]
                             <> identity
                         )
-        Submit ws -> createWith env a rel ws
+        Submit ws -> createWith app env a rel ws
 
 {- | Run the pre-lock selection read, reporting a provider it cannot use as
 node-unavailable with the session's own wording. A failure the command
@@ -240,8 +272,13 @@ catchSelection act settings = do
                         )
 
 createWith
-    :: Env -> CreateArgs -> Release -> WriteSettings -> IO Value
-createWith env a rel ws = do
+    :: Application
+    -> Env
+    -> CreateArgs
+    -> Release
+    -> WriteSettings
+    -> IO Value
+createWith app env a rel ws = do
     let magic = providerMagic (writeProvider ws)
     caller <- loadWallet magic (writeWalletKey ws)
     root <- resolveStateRoot (createStateDir a)
@@ -285,7 +322,7 @@ createWith env a rel ws = do
             )
             `catchSelection` settings
     ((seedIn, cfg, pinned), identity) <-
-        previewIdentity (not (createPreview a)) a rel addr utxos
+        previewIdentity app (not (createPreview a)) a rel addr utxos
     let token = stateTokenOf rel seedIn
         dir = managedDir root magic token (walletPartition caller)
     -- A preview writes nothing: no lock, no directory, no journal.
@@ -337,7 +374,7 @@ createWith env a rel ws = do
                         ["reference scripts"]
                         (wcCapabilities wc)
                         $ \v -> do
-                            found <- stateReference v addrUnder rel seedIn
+                            found <- stateReference app v addrUnder rel seedIn
                             (found,) <$> Cage.parameters v
                 let stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
                     beforeBoot = case foundState of
@@ -418,18 +455,23 @@ stateTokenOf rel seedIn =
 provider, then the wallet; none when neither has one.
 -}
 stateReference
-    :: LP.Session NoWitness IO
+    :: Application
+    -> LP.Session NoWitness IO
     -> Addr
     -- ^ The creator's wallet
     -> Release
     -> TxIn
     -> IO (Maybe (TxIn, TxOut ConwayEra))
-stateReference v wallet rel seedIn = do
+stateReference app v wallet rel seedIn = do
     found <-
         findReferences
             v
             (Just wallet)
-            (expectedReferences rel (stateTokenOf rel seedIn))
+            ( expectedReferences
+                (appPin app)
+                rel
+                (stateTokenOf rel seedIn)
+            )
             (Set.singleton RoleState)
     case found of
         Right chosen -> pure (Map.lookup RoleState chosen)
@@ -437,7 +479,10 @@ stateReference v wallet rel seedIn = do
         Left refusal ->
             failWith NodeUnavailable (T.unpack (renderReferenceRefusal refusal))
 
--- | The scripts published after the boot, by role, as the registry runs them.
+{- | The scripts published after the boot, by role, as the registry runs them.
+A hash pin publishes none for the application (slice 2: its script bytes
+do not exist); a script pin publishes it as today.
+-}
 laterScripts
     :: CageConfig -> NamingCodes -> TokenId -> [(Text, Script ConwayEra)]
 laterScripts cfg pinned tid =
@@ -445,8 +490,10 @@ laterScripts cfg pinned tid =
     , ("witness-absent", witnessScriptOf cfg pinned 0)
     , ("witness-active", witnessScriptOf cfg pinned 1)
     , ("witness-terminal", witnessScriptOf cfg pinned 2)
-    , ("application", scriptFromBytes "open-datum" (ncApplication pinned))
     ]
+        <> [ ("application", scriptFromBytes "application" (ncApplication pinned))
+           | not (SBS.null (ncApplication pinned))
+           ]
 
 -- | What a boot made.
 data Booted = Booted
@@ -644,6 +691,17 @@ reference role script (i, o) =
         , refAddressBytes = renderAddrBytes (o ^. addrTxOutL)
         }
 
+{- | The application a receipt names, from the pin: the blueprint validator
+title for a script or compiled pin, the policy hex for a hash pin (slice 2:
+its script bytes do not exist, so no title exists to name).
+-}
+pinApplicationName :: ApplicationPin -> Text
+pinApplicationName pin = case pin of
+    PinByScript title -> title
+    PinAsCompiled title -> title
+    PinByHash policy -> hexT (SBS.fromShort policy)
+    PinFromState -> "from-state"
+
 {- | The registry identity a seed would give: the chosen or the largest
 ada-only output of the caller, checked to be held and ada only, the
 configuration and pins every later command derives again, and the receipt
@@ -655,14 +713,15 @@ regardless and reports, as @createRefusal@, the refusal a create from this
 wallet would meet now, or null.
 -}
 previewIdentity
-    :: Bool
+    :: Application
+    -> Bool
     -- ^ whether the identity is for a create about to submit
     -> CreateArgs
     -> Release
     -> Addr
     -> [(TxIn, TxOut ConwayEra)]
     -> IO ((TxIn, CageConfig, NamingCodes), [(Text, Value)])
-previewIdentity submitting a rel addr utxos = do
+previewIdentity app submitting a rel addr utxos = do
     seedIn <- case createSeed a of
         Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
         Nothing -> case sortOn
@@ -683,9 +742,10 @@ previewIdentity submitting a rel addr utxos = do
                 { reProcessTime = createProcessTime a
                 , reRetractTime = createRetractTime a
                 }
-        (cfg, pinned) = registryConfigFor rel chosen (txInToRef seedIn)
+        (cfg, pinned) =
+            registryConfigFor app rel chosen (txInToRef seedIn)
         identity =
-            [ ("application", toJSON (applicationTitle OpenDatumApplication))
+            [ ("application", toJSON (pinApplicationName (appPin app)))
             , ("stateToken", toJSON (renderStateToken (stateTokenOf rel seedIn)))
             , ("seed", toJSON (txInText seedIn))
             , ("wallet", toJSON (T.pack (bech32Address addr)))

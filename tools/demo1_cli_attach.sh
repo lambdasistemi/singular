@@ -5,9 +5,12 @@
 # and an insertion of a Terminal key, each beside its accepting control, through
 # a node the script starts and then only reads from and submits to.
 #
-# usage: demo1_cli_attach.sh SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
+# usage: demo1_cli_attach.sh SINGULAR OPEN_DATUM DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR
 #
-# The registry is created once by the ordinary `singular registry create`,
+# SINGULAR runs `registry reject` and `registry reclaim`; OPEN_DATUM runs
+# `create`, `insert`, `update`, `terminate`, `fold` and `inspect` of an
+# open-datum registry, as the Demo 1 journey dispatches them. The registry
+# is created once by the ordinary `open-datum create`,
 # as a person runs it, from a wallet holding two large ada-only outputs: the
 # seed, which stays unspent until the boot, and the output that pays the
 # first publication meanwhile (a wallet holding one output is refused before
@@ -15,24 +18,26 @@
 # registry with two fresh keys: `cli-controls attach` creates no registry and
 # never stops or resets the node, runs the ordinary commands itself, and
 # judges every clause from the receipts it leaves. The second take can only
-# succeed if the first left its registry usable: the first take's refused
-# insertions leave pending requests that it must retract, or the second take's
-# fold would take them with it. Two continuation controls follow: a take with no
+# succeed if the first left its registry usable. The second insertion of an
+# Active key is refused by the client before signing and leaves no pending
+# request; the chain's own refusal of such a booking is exercised by the Demo 1
+# refusal controls and the negative host. Two continuation controls follow: a take with no
 # collateral allowance is refused before it writes, and a take over its allowance
 # stops at that refusal with nothing after it run. Setup failures exit 3 and are
 # never a verdict.
 set -euo pipefail
 
-[ "$#" -eq 6 ] || {
-  echo "usage: $0 SINGULAR DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR" >&2
+[ "$#" -eq 7 ] || {
+  echo "usage: $0 SINGULAR OPEN_DATUM DEVNET CLI_CONTROLS BLUEPRINT LEDGER WORKDIR" >&2
   exit 2
 }
 singular="$1"
-devnet="$2"
-controls="$3"
-blueprint="$4"
-ledger="$5"
-work="$6"
+open_datum="$2"
+devnet="$3"
+controls="$4"
+blueprint="$5"
+ledger="$6"
+work="$7"
 [ ! -e "$work" ] || {
   echo "attach: $work exists; every run takes a fresh directory" >&2
   exit 2
@@ -107,6 +112,7 @@ release_work() {
 }
 
 export TMPDIR="$work"
+devnet_started="$SECONDS"
 "$devnet" --fund-skey "$work/wallet.skey" --fund-skey "$work/stranger.skey" \
   --fund-outputs 80 --fund-lovelace 5000000000 \
   >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -132,6 +138,24 @@ if [ -z "$provider_url" ] || [ "$network_magic" != 42 ] || [ ! -S "$sock" ] || [
 fi
 say "one private development source at $provider_url"
 
+# The lag tamper needs a recorded tip beyond the 600-slot lag bound, and the
+# faster story reads its first take young: age the chain before the first take
+# of any part that runs one, so the recorded tip clears the bound whatever the
+# story's speed. Over-allowance stops before any read and tampers nothing, so
+# it skips the wait.
+needs_aged_chain=0
+if [ -z "${CLI_ATTACH_PARTS:-}" ]; then
+  needs_aged_chain=1
+else
+  for aged_part in takes indexer-reads tampered-a tampered-b; do
+    if [[ " $CLI_ATTACH_PARTS " == *" $aged_part "* ]]; then needs_aged_chain=1; fi
+  done
+fi
+if [ "$needs_aged_chain" -eq 1 ]; then
+  while [ "$((SECONDS - devnet_started))" -lt 90 ]; do sleep 1; done
+  say "the chain is aged so a take's recorded tip is beyond the 600-slot lag bound"
+fi
+
 node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 registry="$work/registry"
 common=(--state-dir "$registry" --blueprint "$blueprint")
@@ -139,14 +163,14 @@ receipts="$work/receipts"
 mkdir -p "$receipts"
 
 # The registry, created once by the ordinary commands.
-"$singular" registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
+"$open_datum" create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
   >"$receipts/preview.json"
 address="$(jq -r .wallet "$receipts/preview.json")"
-"$singular" registry create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
+"$open_datum" create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
   >"$receipts/preview-public.json"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins' \
   "$receipts/preview-public.json" >/dev/null || setup_fail "the public preview names another registry"
-"$singular" registry create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
+"$open_datum" create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" >"$receipts/create.json"
 jq -e '.outcome == "success"' "$receipts/create.json" >/dev/null || setup_fail "the registry was not created"
 # Every later command names the registry by the state token create printed;
@@ -157,7 +181,7 @@ state_token="$(jq -r .stateToken "$receipts/create.json")"
 common+=(--state-token "$state_token")
 jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/create.json" >/dev/null \
   || setup_fail "the attach registry did not read back the short CI windows"
-"$singular" registry inspect --key window-control "${common[@]}" "${node[@]}" >"$receipts/windows.json"
+"$open_datum" inspect --key window-control "${common[@]}" "${node[@]}" >"$receipts/windows.json"
 jq -e '.processTime == 90000 and .retractTime == 30000' "$receipts/windows.json" >/dev/null \
   || setup_fail "inspect did not read the attach registry's short windows"
 say "registry $(jq -r .token "$receipts/create.json") created once, from its seed beside one funding output"
@@ -184,7 +208,7 @@ take() {
   start_indexer "$name" honest
   # shellcheck disable=SC2046
   "$controls" attach \
-    --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
+    --singular "$singular" --open-datum "$open_datum" --blueprint "$blueprint" --ledger "$ledger" \
     "${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey" \
     --state-dir "$registry" --state-token "$state_token" --key "$key" \
     --collateral-allowance 10000000 --max-outlay 40000000 \
@@ -193,19 +217,19 @@ take() {
   stop_indexer
   tail -1 "$work/$name.md"
   if [ "$name" = one ]; then
-    jq -se '
-      [.[] | select(.step == 4 and .action == "fold-unevaluated")]
-      | length == 1 and .[0].outcome == "ledger-refused"
+    jq -se --arg key "$key" '
+      [.[] | select(.step == 3 and .action == "run insert")]
+      | length == 1 and (.[0].outcome + "/" + .[0].reason) == ("client-refusal/" + $key + " is already registered (client policy)")
     ' "$work/$name/receipts"/*.json >/dev/null || {
-      jq -s '[.[] | select(.step == 4 and .action == "fold-unevaluated") | {step, action, outcome, reason}]' \
+      jq -s '[.[] | select(.step == 3 and .action == "run insert") | {step, action, outcome, reason}]' \
         "$work/$name/receipts"/*.json >&2
-      fail_control "take one step 4 must reach the ledger's refusal after command-produced state"
+      fail_control "take one step 3 must refuse the second insertion at booking after command-produced state"
     }
   fi
   [ "$status" -eq 0 ] || fail_control "take $name did not hold (exit $status)"
   grep -m3 "uncovered" "$work/$name.md" >&2 || true
-  # The key ends Terminal by the ordinary inspect, and no request is left pending.
-  "$singular" registry inspect --key "$key" \
+  # The key ends Terminal by the ordinary `open-datum inspect`, and no request is left pending.
+  "$open_datum" inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = terminal ] \
     || fail_control "take $name: the key is not Terminal afterwards"
@@ -267,18 +291,19 @@ if part takes; then
   }
   copy honest
   expect honest ""
-  reclaim="$(grep -l '"action": "reclaim"' "$work"/one/receipts/*.json || true)"
-  reclaim="${reclaim%%$'\n'*}"
-  [ -n "$reclaim" ] || fail_control "the first take left no retraction receipt"
-  body="$(jq -r .bodyFile "$reclaim")"
-  copy retraction-body-missing
-  rm "$copies/retraction-body-missing/$body"
-  expect retraction-body-missing "the retained body $body is missing"
-  refusal="$(grep -l '"action": "fold-unevaluated"' "$work"/one/receipts/*.json || true)"
-  refusal="${refusal%%$'\n'*}"
-  copy bound-lowered
-  jq '.allowance = 1' "$refusal" >"$copies/bound-lowered/receipts/$(basename "$refusal")"
-  expect bound-lowered "over the bound of 1"
+  # Take one books nothing pending after the early booking refusal, so it
+  # leaves no retraction: the tamper controls below run on its first
+  # node-judged craft instead.
+  craft="$(grep -l '"action": "craft ' "$work"/one/receipts/*.json || true)"
+  craft="${craft%%$'\n'*}"
+  [ -n "$craft" ] || fail_control "the first take left no crafted refusal"
+  body="$(jq -r .bodyFile "$craft")"
+  copy craft-body-missing
+  rm "$copies/craft-body-missing/$body"
+  expect craft-body-missing "the retained body $body is missing"
+  copy craft-bound-lowered
+  jq '.allowance = 1' "$craft" >"$copies/craft-bound-lowered/receipts/$(basename "$craft")"
+  expect craft-bound-lowered "over the bound of 1"
   say "artifact controls: the honest copy holds; each changed copy fails for its reason"
   # The indexer verdict rests on the record's facts, not on what it says of them:
   # on copies of the first take's receipts, the Koios record changed in one raw
@@ -312,12 +337,12 @@ fi
 # cannot be reached, stop at that read, before the termination: the key is still
 # Active afterwards and no later action ran.
 # (4) A take whose refusal states more collateral than its allowance stops at
-# that refusal: nothing is signed for it, and no later action runs.
+# that refusal: nothing is submitted for it, and no later action runs.
 node_args=("${node[@]}" --node-socket "$sock" --wallet-skey "$work/wallet.skey" --stranger-skey "$work/stranger.skey")
 attach_with() { # NAME KEY [extra options]
   local name="$1" key="$2"
   shift 2
-  "$controls" attach --singular "$singular" --blueprint "$blueprint" --ledger "$ledger" \
+  "$controls" attach --singular "$singular" --open-datum "$open_datum" --blueprint "$blueprint" --ledger "$ledger" \
     "${node_args[@]}" --state-dir "$registry" --state-token "$state_token" --key "$key" --work "$work/$name" "$@" \
     >"$work/$name.md" 2>"$work/$name.err"
 }
@@ -364,7 +389,7 @@ indexer_stop() { # NAME KEY OUTCOME MODE KOIOS_URL_OR_EMPTY
   [ "$(jq -r .outcome "$last")" = "$outcome" ] || fail_control "$name: the read ended $(jq -r .outcome "$last"), not $outcome"
   [ "$(actions_of "$name" | grep -cE '^(read-indexer blockfrost|craft early-withdrawal|run terminate)' || true)" -eq 0 ] \
     || fail_control "$name: an action ran after the take had to stop"
-  "$singular" registry inspect --key "$key" \
+  "$open_datum" inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = active ] \
     || fail_control "$name: the key is not still Active, so something was written after the stop"
@@ -397,7 +422,7 @@ tampered_stop() { # NAME KEY FACT NEEDLE
   [ "$(jq -r .outcome "$last")" = success ] || fail_control "$name: the tampered read did not end success, so it tests nothing"
   [ "$(actions_of "$name" | grep -cE '^(read-indexer blockfrost|craft early-withdrawal|run terminate)' || true)" -eq 0 ] \
     || fail_control "$name: an action ran after the take had to stop"
-  "$singular" registry inspect --key "$key" \
+  "$open_datum" inspect --key "$key" \
     "${common[@]}" "${node[@]}" >"$receipts/inspect-$name.json"
   [ "$(jq -r .leaf "$receipts/inspect-$name.json")" = active ] \
     || fail_control "$name: the key is not still Active, so something was written after the stop"
@@ -425,17 +450,26 @@ if part over-allowance; then
   stop_indexer
   [ "$status" -ne 0 ] || fail_control "a take over its collateral allowance did not stop"
   [ -s "$work/stopped/stopped.txt" ] || fail_control "the stopped take recorded no reason"
-  grep -qF "fold-unevaluated ended client-error" "$work/stopped/stopped.txt" \
-    || fail_control "the take stopped, but not at the refusal over its allowance: $(cat "$work/stopped/stopped.txt")"
+  grep -qF "craft update-by-stranger ended client-error" "$work/stopped/stopped.txt" \
+    || fail_control "the take stopped, but not at the crafted refusal: $(cat "$work/stopped/stopped.txt")"
+  grep -qF "the transaction states a total collateral of" "$work/stopped/stopped.txt" \
+    || fail_control "the stop does not state the collateral: $(cat "$work/stopped/stopped.txt")"
   grep -qF "over the bound of 1" "$work/stopped/stopped.txt" \
     || fail_control "the stop does not say the collateral was over the bound"
   last="$(last_receipt stopped)"
-  [ "$(jq -r .action "$last")" = fold-unevaluated ] \
+  [ "$(jq -r .action "$last")" = "craft update-by-stranger" ] \
     || fail_control "the take went on past its stop: its last receipt is $(jq -r .action "$last")"
-  [ "$(jq -r .txId "$last")" = null ] || fail_control "something was signed for the refusal over the allowance"
-  [ "$(actions_of stopped | grep -cE '^(reclaim|craft |run terminate|read-indexer)' || true)" -eq 0 ] \
+  [ "$(jq -r .outcome "$last")" = client-error ] \
+    || fail_control "the stopping craft was judged, not refused by the client: $(jq -r .outcome "$last")"
+  [ "$(jq -c .submissions "$last")" = "[]" ] \
+    || fail_control "the stopping craft submitted something: $(jq -c .submissions "$last")"
+  [ "$(jq -r .bodyFile "$last")" = null ] \
+    || fail_control "the stopping craft kept a signed body: $(jq -r .bodyFile "$last")"
+  [ "$(actions_of stopped | grep -c '^craft ' || true)" -eq 1 ] \
+    || fail_control "the stopped take ran no crafted refusal or more than one"
+  [ "$(actions_of stopped | grep -cE '^(reclaim|run terminate|read-indexer)' || true)" -eq 0 ] \
     || fail_control "an action ran after the take had to stop"
-  say "continuation control over-allowance: stopped at the refusal, nothing signed, nothing after it ran"
+  say "continuation control over-allowance: stopped at the crafted refusal over the allowance, nothing submitted, nothing after it ran"
 
 fi
 for requested in ${CLI_ATTACH_PARTS:-$known_parts}; do

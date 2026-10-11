@@ -29,14 +29,14 @@ end_leg() {
 
 say() { printf 'PROOF: %s\n' "$*"; }
 
-# 1. The host builds from the offchain flake (executes the build subject).
+# 1. The host builds from the application flake (executes the build subject).
 begin_leg
-if (cd "$root/offchain" && nix build --quiet --no-link --print-out-paths .#singular-negative) >"$receipts/host-build.out" 2>"$receipts/host-build.err"; then
-  say "host builds from the offchain flake"
+if (cd "$root/applications/open-datum/offchain" && nix build --quiet --no-link --print-out-paths .#singular-negative) >"$receipts/host-build.out" 2>"$receipts/host-build.err"; then
+  say "host builds from the application flake"
   end_leg host-build
 else
   end_leg host-build
-  say "FAIL: nix build offchain#singular-negative failed (see host-build.err)"
+  say "FAIL: nix build application#singular-negative failed (see host-build.err)"
   failures=$((failures + 1))
 fi
 

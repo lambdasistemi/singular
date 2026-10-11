@@ -43,6 +43,7 @@ import Control.Exception
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Bifunctor (bimap)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
@@ -67,12 +68,6 @@ import Cardano.Ledger.Hashes (extractHash)
 import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
 import Cardano.Ledger.TxIn (TxIn)
 
-import Singular.Application.OpenDatum.Envelope
-    ( Control (..)
-    , Envelope (..)
-    , dataToJson
-    , envelopeToJson
-    )
 import Singular.CLI.Command
     ( InspectArgs (..)
     , Key (..)
@@ -129,6 +124,11 @@ import Singular.CLI.Trace
     , report
     , within
     )
+import Singular.Registry.Application
+    ( Application (..)
+    , DecodedHolding (..)
+    , txOutDatum
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (parseOutRef)
@@ -151,14 +151,14 @@ import Singular.Registry.Types
     , edgeName
     )
 
-runInspect :: Env -> InspectArgs -> IO Value
-runInspect env a = do
+runInspect :: Application -> Env -> InspectArgs -> IO Value
+runInspect app env a = do
     let Key key = inspectKey a
         settings = inspectProvider a
         requested = accessToken (inspectAccess a)
         magic = providerMagic settings
     release <-
-        envLoadRelease env (inspectBlueprint a)
+        envLoadRelease env app (inspectBlueprint a)
             >>= either (failWith ClientRefusal) pure
     root <- resolveStateRoot (inspectStateDir a)
     case inspectWalletAddress a of
@@ -180,12 +180,13 @@ runInspect env a = do
                         pure
                         (pendingToken release identity >>= (`checkPendingToken` requested))
                     inspectIncompleteCreate env dir settings identity
-                else inspectSaved env dir (Just dir) key settings release a
+                else inspectSaved app env dir (Just dir) key settings release a
         -- A stateless public read: no wallet journal is reconciled, no
         -- wallet partition is scanned, no pending identity is looked up and
         -- no directory or lock is created.
         Nothing ->
             inspectSaved
+                app
                 env
                 (statelessDir root magic requested)
                 Nothing
@@ -310,7 +311,8 @@ inlineDatum o = case o ^. datumTxOutL of
     _ -> Nothing
 
 inspectSaved
-    :: Env
+    :: Application
+    -> Env
     -> FilePath
     -- ^ The path 'Saved' carries; a stateless sentinel is never touched on disk
     -> Maybe FilePath
@@ -320,7 +322,7 @@ inspectSaved
     -> Release
     -> InspectArgs
     -> IO Value
-inspectSaved env savedPath mJournal key settings release a = do
+inspectSaved app env savedPath mJournal key settings release a = do
     let magic = providerMagic settings
         -- The token the command named is the registry these reports sit in.
         -- Resolution still happens in the one view below.
@@ -336,10 +338,17 @@ inspectSaved env savedPath mJournal key settings release a = do
         try $ readOnce registryEnv settings ["state", "key outputs", "requests"] $ \caps v -> do
             -- An inspect runs no transaction: it looks up no reference.
             saved <-
-                resolveSaved savedPath release (inspectAccess a) Set.empty Nothing v
+                resolveSaved
+                    app
+                    savedPath
+                    release
+                    (inspectAccess a)
+                    Set.empty
+                    Nothing
+                    v
             point <- Cage.tip v
             reconciled <- case mJournal of
-                Just dir -> reconcileLocked dir (reconcile "inspect" dir saved v)
+                Just dir -> reconcileLocked dir (reconcile app "inspect" dir saved v)
                 Nothing -> pure Nothing
             live <- attachLive v saved
             state <- case extractCageDatum (snd (liveState live)) of
@@ -350,7 +359,7 @@ inspectSaved env savedPath mJournal key settings release a = do
             context <- openTrie saved
             requireTrieSelection saved live context
             leaf <- trieLeaf context key root
-            outs <- liveOutputs v saved
+            outs <- liveOutputs app v saved
             requests <-
                 Cage.outputsAt
                     v
@@ -374,8 +383,8 @@ inspectSaved env savedPath mJournal key settings release a = do
                             )
                         ]
             scope <- sessionReceipt caps v
-            let holdings = holdingsFor saved key outs
-                keyOutput = liveOutputFor saved key outs
+            let holdings = holdingsFor app saved key outs
+                keyOutput = liveOutputFor app saved key outs
             entries <- case mJournal of
                 Just dir -> readJournal dir
                 Nothing -> pure []
@@ -409,21 +418,41 @@ inspectSaved env savedPath mJournal key settings release a = do
                                , Just (RequestDatum r) <- [extractCageDatum o]
                                ]
             let chainPoint = renderPoint point
-                application = case keyOutput of
-                    Right ((i, o), e) ->
+                rawDatums =
+                    [ object
+                        [ "output" .= txInText i
+                        , "lovelace" .= let Coin c = o ^. coinTxOutL in c
+                        , "datumCbor" .= fmap fst (inlineDatum o)
+                        , "datumHash" .= fmap snd (inlineDatum o)
+                        , "datum"
+                            .= maybe
+                                (toJSON ([] :: [Value]))
+                                ((\(cbor, h) -> toJSON [cbor, h]) . bimap hexT hexT)
+                                (txOutDatum o)
+                        ]
+                    | (i, o) <- outs
+                    ]
+                application = case appDecoder app of
+                    Just _ -> case keyOutput of
+                        Right ((i, o), dh) ->
+                            object
+                                [ "output" .= txInText i
+                                , "envelope" .= dhDatumJson dh
+                                , "payload" .= dhPayloadJson dh
+                                , "deposit" .= dhDeposit dh
+                                , "controller" .= hexT (dhController dh)
+                                , "lovelace" .= let Coin c = o ^. coinTxOutL in c
+                                , "datumCbor" .= fmap fst (inlineDatum o)
+                                , "datumHash" .= fmap snd (inlineDatum o)
+                                ]
+                        Left why ->
+                            object
+                                [ "absent" .= T.pack why
+                                , "holdings" .= map (txInText . fst . fst) holdings
+                                ]
+                    Nothing ->
                         object
-                            [ "output" .= txInText i
-                            , "envelope" .= envelopeToJson e
-                            , "payload" .= dataToJson (envPayload e)
-                            , "deposit" .= ctlDeposit (envControl e)
-                            , "controller" .= hexT (ctlController (envControl e))
-                            , "lovelace" .= let Coin c = o ^. coinTxOutL in c
-                            , "datumCbor" .= fmap fst (inlineDatum o)
-                            , "datumHash" .= fmap snd (inlineDatum o)
-                            ]
-                    Left why ->
-                        object
-                            [ "absent" .= T.pack why
+                            [ "rawDatums" .= rawDatums
                             , "holdings" .= map (txInText . fst . fst) holdings
                             ]
                 labels =
@@ -461,9 +490,11 @@ inspectSaved env savedPath mJournal key settings release a = do
                                     , toJSON ("stateless public read: no wallet journal checked" :: Text)
                                     )
                                 ]
-                agrees = \case
-                    Active -> length holdings == 1
-                    _ -> null holdings
+                agrees = case appHolding app of
+                    Nothing -> const True
+                    Just _ -> \case
+                        Active -> length holdings == 1
+                        _ -> null holdings
             pure . (,) findings $ case (pending, leaf) of
                 (Just e, _) ->
                     receipt

@@ -155,8 +155,8 @@ def restage_onchain_hrefs(stage: Path) -> int:
     The same convention as the Haskell libraries: an authored anchor links
     the repository's own source for GitHub rendering, and ``data-api``
     names the generated page the site serves instead — ``module`` for the
-    page of one validators/ module (which must be a module the reference
-    documents, one with a public declaration) and ``index`` for the
+    page of one validators/ or lib/ module (which must be a module the
+    reference documents, one with a public declaration) and ``index`` for the
     reference's index, whose anchor names the onchain/ root.
     """
     documented = aiken_reference.documented_modules(root / "onchain")
@@ -171,11 +171,12 @@ def restage_onchain_hrefs(stage: Path) -> int:
                     f"aiken reference index anchor must name the onchain/ root, not {rel}"
                 )
             return f'<a href="../../{prefix}/index.html">'
-        module = (
-            rel[len("validators/") : -len(".ak")]
-            if rel.startswith("validators/") and rel.endswith(".ak")
-            else None
-        )
+        if rel.startswith("validators/") and rel.endswith(".ak"):
+            module = rel[len("validators/") : -len(".ak")]
+        elif rel.startswith("lib/") and rel.endswith(".ak"):
+            module = rel[len("lib/") : -len(".ak")]
+        else:
+            module = None
         if module not in documented:
             raise RuntimeError(
                 f"aiken reference anchor targets a module with no generated page: {rel}"

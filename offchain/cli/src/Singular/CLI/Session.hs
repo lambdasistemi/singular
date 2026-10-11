@@ -177,6 +177,7 @@ import Singular.CLI.Trace
     , within
     )
 import Singular.Provider.Koios.Runtime (koiosSource)
+import Singular.Registry.Application (Application)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
@@ -253,7 +254,8 @@ data Env = Env
     { envTracer :: Tracer IO Trace
     , envSource :: Text
     -- ^ The name the provider's reads report as
-    , envLoadRelease :: FilePath -> IO (Either String Release)
+    , envLoadRelease
+        :: Application -> FilePath -> IO (Either String Release)
     -- ^ Recognition is fixed by the shipping composition; tests supply code fixtures.
     , envReads
         :: forall a

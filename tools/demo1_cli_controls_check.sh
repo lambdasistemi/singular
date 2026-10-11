@@ -6,7 +6,9 @@
 #
 # usage: demo1_cli_controls_check.sh REPO-ROOT
 #
-# `singular` and the development node come from the offchain flake, the
+# `singular` and the development node come from the offchain flake, `open-datum`
+# from the application's flake (#528 slice 4: the ordinary commands run
+# through it), the
 # controls runner from the conformance flake, the blueprint from the
 # onchain flake, and the bound statements from the application's own
 # statement ledger. The verdict section is printed. The scratch is removed
@@ -64,10 +66,14 @@ cd "$root/offchain"
 singular="$(build .#singular)/bin/singular"
 devnet="$(build .#devnet)/bin/devnet"
 controls="$(build ../conformance#cli-controls)/bin/cli-controls"
-blueprint="$(build ../onchain#plutus-blueprint)"
+# S5.2: the refusal controls run against the merged deployment blueprint
+# (the application and the witnesses from one build); registry-only rows
+# still pass against the superset.
+blueprint="$(build ../applications/open-datum/onchain#open-datum-blueprint)"
+open_datum="$(build ../applications/open-datum/offchain#open-datum)/bin/open-datum"
 
 status=0
-bash "$controls_sh" "$singular" "$devnet" "$controls" "$blueprint" \
+bash "$controls_sh" "$singular" "$open_datum" "$devnet" "$controls" "$blueprint" \
   "$root/applications/open-datum/ledgers.json" "$scratch/run" || status=$?
 cat "$scratch/run/controls.md" 2>/dev/null || true
 bash "$ran_sh" "$scratch/run" "$status" || status=$?

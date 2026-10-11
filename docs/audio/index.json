@@ -942,8 +942,8 @@
     "index": 1,
     "name": "docs-cli-recovery/recovering-a-registry-command-01",
     "pause_ms": 400,
-    "text": "You run singular registry create, insert, update, terminate or inspect, and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
-    "v": "461c4c07324c"
+    "text": "You run singular registry create, open-datum insert, open-datum update, open-datum terminate or inspect (singular registry inspect or open-datum inspect), and something goes wrong between your machine and the chain: the node's answer to a submission never arrives, the process is killed, the machine stops halfway through saving its files, or a transaction the chain had included is rolled back. You want to know which of those happened, you want the next command to pick up from where the last one stopped without sending anything twice, and you want to be told plainly when it cannot.",
+    "v": "96ab1e746499"
    },
    {
     "index": 2,
@@ -2795,8 +2795,8 @@
     "index": 1,
     "name": "docs-demo1-preprod/what-you-run-01",
     "pause_ms": 400,
-    "text": "The ordinary singular registry commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.",
-    "v": "12c76271d2f2"
+    "text": "The ordinary singular registry and open-datum commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.",
+    "v": "3683dc5efab3"
    },
    {
     "index": 2,
@@ -4439,8 +4439,15 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
-    "v": "d8c7125c30ae"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "3415c424e996"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-02",
+    "pause_ms": 400,
+    "text": "The registry packages export the booking check every ordinary verb runs before signing: bookingRefusal in Singular.CLI.Booking decides, from the key's current entry, whether the entry rules out the booking, naming the key, the verb, and the leaves found and required. Every ordinary verb of an application calls it in planning, in preview and live, so a taken key, a terminal key, and an unknown key for update and terminate are refused before any signing key is read. A cardano-keri application gets the same refusal by calling the exported function in its own planning. The negative host lives beside the application in applications/open-datum/negative/, with its sources under applications/open-datum/negative/src/Negative/ and its entry point in applications/open-datum/negative/app/. Their generated pages are not in this main-library reference either: only the main library has a generated reference. This coverage gap stays visible; wider generated coverage is a separate decision for the epic's owner, not a claim this page makes. Nothing on this page is a publication or release claim — the reference ships with the candidate site and its future archives, and no version is tagged or published by existing here. The behavioral evidence for the moved builder, blueprint and wire code lives in the check commands the off-chain development guide records, not in the existence of these pages.",
+    "v": "5d1c6093a854"
    }
   ],
   "what-this-reference-contains": [
@@ -4462,15 +4469,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 74 modules in three kinds: 57 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "35e14997f804"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 69 modules in three kinds: 52 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "08ff2061d5d2"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Application.OpenDatum.Book — source - Singular.Application.OpenDatum.Build — source - Singular.Application.OpenDatum.Envelope — source - Singular.Application.OpenDatum.Release — source - Singular.Application.OpenDatum.Script — source - Singular.Application.OpenDatum.Update — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-    "v": "05006377c533"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+    "v": "88f75e5b991c"
    },
    {
     "index": 4,
@@ -5929,8 +5936,8 @@
     "index": 1,
     "name": "docs-onchain-api-reference/what-it-leaves-out-01",
     "pause_ms": 400,
-    "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, open_datum validator, staking validator and cage_vectors table — so their sources are their reference. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
-    "v": "824dcb3f098f"
+    "text": "A module gets a page when it declares a public definition. Test and property modules are not documented, and four modules declare nothing public — the open approval policy, the witness and staking validators and the cage_vectors table — so their sources are their reference. The open-datum application's validators under applications/open-datum/onchain/ are a separate Aiken project and have no generated reference on this site. The naming application's validators under naming-onchain/ are a separate Aiken project and have no generated reference on this site. Members that belong to Aiken's standard library link to its own published documentation.",
+    "v": "e7e6720abe41"
    },
    {
     "index": 2,
@@ -6043,85 +6050,71 @@
     "index": 14,
     "name": "docs-onchain-api-reference/what-this-reference-contains-14",
     "pause_ms": 400,
-    "text": "The open-datum application's protected envelope:",
-    "v": "62f0a068d7b4"
+    "text": "The shared vocabulary and the other validators:",
+    "v": "916d06f6fce1"
    },
    {
     "index": 15,
     "name": "docs-onchain-api-reference/what-this-reference-contains-15",
     "pause_ms": 300,
-    "text": "application/envelope — the controller, registry binding, deposit and arbitrary payload representation",
-    "v": "54ccdfcaa707"
+    "text": "lib — the edge table, the approval name and the named refusal reasons",
+    "v": "65959215bedb"
    },
    {
     "index": 16,
     "name": "docs-onchain-api-reference/what-this-reference-contains-16",
-    "pause_ms": 400,
-    "text": "The shared vocabulary and the other validators:",
-    "v": "5a76e451a268"
+    "pause_ms": 300,
+    "text": "types — the datum, redeemer and request types",
+    "v": "6722e627a9c4"
    },
    {
     "index": 17,
     "name": "docs-onchain-api-reference/what-this-reference-contains-17",
     "pause_ms": 300,
-    "text": "lib — the edge table, the approval name and the named refusal reasons",
-    "v": "d0f264a085d8"
+    "text": "shared — reading state from inputs and the phase windows",
+    "v": "389f70fed208"
    },
    {
     "index": 18,
     "name": "docs-onchain-api-reference/what-this-reference-contains-18",
     "pause_ms": 300,
-    "text": "types — the datum, redeemer and request types",
-    "v": "fd4719d31b09"
+    "text": "request — the request validator and its retraction refusal",
+    "v": "1a73cad088d1"
    },
    {
     "index": 19,
     "name": "docs-onchain-api-reference/what-this-reference-contains-19",
     "pause_ms": 300,
-    "text": "shared — reading state from inputs and the phase windows",
-    "v": "095df2513a56"
+    "text": "registry_pin — the pinned state hash shared by the witness and the open-datum application",
+    "v": "31959208bfe8"
    },
    {
     "index": 20,
     "name": "docs-onchain-api-reference/what-this-reference-contains-20",
     "pause_ms": 300,
-    "text": "request — the request validator and its retraction refusal",
-    "v": "8148ddff0ab0"
+    "text": "cage — the phase predicates the property tests use",
+    "v": "0f9fde43d2a6"
    },
    {
     "index": 21,
     "name": "docs-onchain-api-reference/what-this-reference-contains-21",
-    "pause_ms": 300,
-    "text": "witness — the witness validator and its pinned state hash",
-    "v": "7325861c6088"
+    "pause_ms": 400,
+    "text": "Test support, documented because it is public to the test modules:",
+    "v": "b81c56d064d9"
    },
    {
     "index": 22,
     "name": "docs-onchain-api-reference/what-this-reference-contains-22",
     "pause_ms": 300,
-    "text": "cage — the phase predicates the property tests use",
-    "v": "115172e9ce47"
+    "text": "cage_fixtures",
+    "v": "8ef0608a062a"
    },
    {
     "index": 23,
     "name": "docs-onchain-api-reference/what-this-reference-contains-23",
-    "pause_ms": 400,
-    "text": "Test support, documented because it is public to the test modules:",
-    "v": "e977025318d8"
-   },
-   {
-    "index": 24,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-24",
-    "pause_ms": 300,
-    "text": "cage_fixtures",
-    "v": "24c949bbb935"
-   },
-   {
-    "index": 25,
-    "name": "docs-onchain-api-reference/what-this-reference-contains-25",
     "pause_ms": 300,
     "text": "registry_fixtures",
-    "v": "7d4af3fce9e4"
+    "v": "2325b4bae6de"
    }
   ]
  },
@@ -7496,36 +7489,43 @@
     "index": 2,
     "name": "docs-singular-node/booking-and-folding-02",
     "pause_ms": 400,
-    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
-    "v": "98125801ac14"
+    "text": "Before anything is signed, insert, update and terminate check the key's current entry: a booking the entry rules out is refused with the key and a named reason. An insert of a key that is already registered, or already retired, is refused; an update or a terminate of a key that is not registered, or already retired, is refused. The refusal is labelled client policy in the receipt, and it runs the same way in planning, in preview and live. The fold still validates every booking it folds, so a booking made through the permissive builders can still reach the chain's own refusal at the fold.",
+    "v": "0dbd0ff410b3"
    },
    {
     "index": 3,
     "name": "docs-singular-node/booking-and-folding-03",
     "pause_ms": 400,
-    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
-    "v": "990c1fabf54c"
+    "text": "registry fold folds that request. It is an ordinary command: it signs and funds with the wallet it is given, journals its own transactions, and may be run by any wallet, not only the one that booked. An insertion's request carries the envelope its fold delivers, so the folder reads it from the pending request on the chain; nothing the booking wrote to its own state directory is needed.",
+    "v": "3beef99e5598"
    },
    {
     "index": 4,
     "name": "docs-singular-node/booking-and-folding-04",
     "pause_ms": 400,
-    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
-    "v": "13a88f64b9d4"
+    "text": "The requester books with its wallet. The folder reads that pending request, then builds, signs and funds the fold with the folder's wallet; the saved registry journal, mirror and state follow the observed fold:",
+    "v": "0796591643e6"
    },
    {
     "index": 5,
     "name": "docs-singular-node/booking-and-folding-05",
     "pause_ms": 400,
-    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-    "v": "23db3eff10c8"
+    "text": "The registry's fold takes every pending request, so a fold is built only while exactly one is pending. Before anything is signed the command refuses, naming the reason: nothing pending; the request named by --request is not the one pending; more than one pending, each named; an insertion whose request carries no envelope, or something that is not one; an edge other than an insertion or a termination; the outlay past --max-outlay; a funding output that is not the wallet's; and a request whose processing deadline has passed or is within thirty seconds of passing, judged on the host's clock and named by its time, and by its slot when pinned time converts it. Run after its own booking by --fold, a fold that cannot be built or signed stops the command partial, naming the request that stays pending.",
+    "v": "265a7831218c"
    },
    {
     "index": 6,
     "name": "docs-singular-node/booking-and-folding-06",
     "pause_ms": 400,
+    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+    "v": "0981c93d1be2"
+   },
+   {
+    "index": 7,
+    "name": "docs-singular-node/booking-and-folding-07",
+    "pause_ms": 400,
     "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
-    "v": "64154887f34f"
+    "v": "89d608d74026"
    }
   ],
   "choosing-a-registrys-windows": [
@@ -7593,8 +7593,8 @@
     "index": 1,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-01",
     "pause_ms": 400,
-    "text": "As a registry operator, you want to use create, insert, update, terminate, fold, reclaim, reject and inspect with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
-    "v": "368faa75a203"
+    "text": "As a registry operator, you want to use create, fold, reclaim, reject and inspect through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "1d1fc1f8171e"
    },
    {
     "index": 2,
@@ -8168,8 +8168,8 @@
     "index": 1,
     "name": "docs-verify-release/download-and-verify-a-release-01",
     "pause_ms": 400,
-    "text": "You have cloned nothing. You want to know that a Singular release is what it says it is before you run it: that the files you downloaded are the files that were published, that the release names the formal model its evidence was checked against, and that the singular command built from it actually runs a registry from creation to termination. One command answers all three, from the downloaded bytes alone, and either passes or refuses by name.",
-    "v": "1d2554c14244"
+    "text": "You have cloned nothing. You want to know that a Singular release is what it says it is before you run it: that the files you downloaded are the files that were published, that the release names the formal model its evidence was checked against, and that the singular and open-datum commands built from it actually run a registry from creation to termination. One command answers all three, from the downloaded bytes alone, and either passes or refuses by name.",
+    "v": "157591503c9f"
    }
   ],
   "what-a-refusal-means": [
@@ -8214,8 +8214,8 @@
     "index": 2,
     "name": "docs-verify-release/what-it-checks-in-order-02",
     "pause_ms": 400,
-    "text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The release states it in the archive as MODEL-REVISION; the verifier compares it with the revision the conformance evidence of the same release is compiled against. The journey is the one on the archive's run page: a registry is created, a key inserted, its payload updated and the key terminated, each a separate singular process on one development network the verifier starts and stops itself, with an inspect after every write.",
-    "v": "2ea8bcb63ce2"
+    "text": "The model revision is the commit of the application model, the formal specification the conformance evidence reads its statements at. The release states it in the archive as MODEL-REVISION; the verifier compares it with the revision the conformance evidence of the same release is compiled against. The journey is the one on the archive's run page: a registry is created, a key inserted, its payload updated and the key terminated, each a separate singular or open-datum process on one development network the verifier starts and stops itself, with an inspect after every write.",
+    "v": "cb9bc6c181f4"
    },
    {
     "index": 3,

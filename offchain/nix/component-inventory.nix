@@ -78,6 +78,9 @@ let
     sublibs = [
       "local-services"
       "koios-http"
+      # #528 slice 4: the application lives in its own tree; the entry
+      # commands moved there and this library names no application.
+      "registry-cli"
     ];
   };
 

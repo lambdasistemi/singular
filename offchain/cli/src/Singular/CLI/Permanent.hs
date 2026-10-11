@@ -27,8 +27,4 @@ knownScripts =
         ( "witness.witness"
         , "fde1eb8c2a91a1c2f571f4c2f7b3a2b6ef68339c39bbce5ce2037575"
         )
-    ,
-        ( "open_datum.open_datum"
-        , "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33"
-        )
     ]

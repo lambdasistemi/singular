@@ -131,7 +131,13 @@ spec = do
         it "goes on from the outcomes a requirement judges" $
             mapM_
                 (\o -> (o, continues o) `shouldBe` (o, True))
-                ["success", "partial", "accepted", "ledger-refused", "observed"]
+                [ "success"
+                , "partial"
+                , "client-refusal"
+                , "accepted"
+                , "ledger-refused"
+                , "observed"
+                ]
         it
             "stops at uncertainty and at setup, client, budget and stale outcomes"
             $ mapM_
@@ -143,7 +149,6 @@ spec = do
                 , "node-unavailable"
                 , "concurrent-writer"
                 , "stale-state"
-                , "client-refusal"
                 , "ledger-refusal"
                 , "provider-mismatch"
                 , "provider-unavailable"

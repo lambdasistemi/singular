@@ -11,10 +11,6 @@ below happens before anything is read or submitted.
 
 * @registry create@ boots one registry from a seed the caller chose in
   their own wallet, or previews its identity with @--preview@;
-* @registry insert@ books one @insertActive@ at a key and
-* @registry terminate@ books one @updateTerminal@ at a key, each leaving
-  its request pending for the registry's fold; with @--fold@ either
-  also folds it in the same command;
 * @registry fold@ folds the one pending request, signed and funded by
   the wallet that runs it;
 * @registry reclaim@ takes back the wallet's named pending insertion or
@@ -43,6 +39,7 @@ module Singular.CLI.Command
     , WriteSettings (..)
     , RegistryAccess (..)
     , Key (..)
+    , ApplicationPolicy (..)
     , neededRoles
 
       -- * Parsing
@@ -60,6 +57,9 @@ import Control.Applicative ((<|>))
 import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Short qualified as SBS
 import Data.Char
     ( GeneralCategory (Surrogate)
     , generalCategory
@@ -71,17 +71,16 @@ import Data.Maybe qualified
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
 import Cardano.Ledger.TxIn (TxIn)
-import Singular.Application.OpenDatum.Build
-    ( DepositRefusal (..)
-    , KeyEncoding (..)
+import Singular.CLI.Key
+    ( KeyEncoding (..)
     , KeyRefusal (..)
+    , keyFlags
     , maxKeyBytes
-    , minimumDeposit
-    , readDeposit
     , readKey
     )
 import Singular.CLI.Registry (economics)
@@ -103,6 +102,15 @@ import Singular.Registry.StateToken
 
 -- | A registry key: the bytes the leaf and the active token are named by.
 newtype Key = Key {unKey :: ByteString}
+    deriving stock (Eq, Show)
+
+{- | @--application-policy HEX@: the 28-byte policy hash a @registry create@
+pins, as parsed bytes. Nothing else carries it: any other command refuses
+the flag by name.
+-}
+newtype ApplicationPolicy = ApplicationPolicy
+    { unApplicationPolicy :: SBS.ShortByteString
+    }
     deriving stock (Eq, Show)
 
 -- | The node and the wallet a write command funds and signs from.
@@ -267,10 +275,7 @@ data InspectArgs = InspectArgs
 -- | One parsed command line.
 data Command
     = Help
-    | Create CreateArgs
-    | Insert EntryArgs
-    | Update EntryArgs
-    | Terminate EntryArgs
+    | Create CreateArgs (Maybe ApplicationPolicy)
     | Fold FoldArgs
     | Reject RejectArgs
     | Reclaim ReclaimArgs
@@ -285,8 +290,6 @@ data CLIError
     | BadValue String String
     | -- | the key reader's named reason
       KeyRefused KeyRefusal
-    | -- | the deposit reader's named reason
-      DepositRefused DepositRefusal
     | UnsafeSettings String
     | SigningKeyNotAccepted
     | PreviewTakesNoKey
@@ -295,12 +298,6 @@ data CLIError
       -}
       UnsupportedFlag String String
     deriving stock (Eq, Show)
-
-{- | The flags that spell a registry key, each with how it spells it: the one set
-the key reader and every command that refuses a key are derived from.
--}
-keyFlags :: [(String, KeyEncoding)]
-keyFlags = [("--key", KeyText), ("--key-hex", KeyHex)]
 
 -- | Parse a command line.
 parseCommand :: [String] -> Either CLIError Command
@@ -320,22 +317,19 @@ parseWith environment args = do
                     refuseSpendingFlags "create" flags
                         >> refuseRequest flags
                         >> refuseFold flags
-                        >> (Create <$> createArgs flags)
-                ["registry", "insert"] ->
-                    refuseRequest flags >> (Insert <$> insertArgs environment flags)
-                ["registry", "update"] ->
-                    refuseRequest flags
-                        >> refuseDeposit flags
-                        >> (Update <$> entryArgs False (Just "--payload") environment flags)
-                ["registry", "terminate"] ->
-                    refuseRequest flags
-                        >> refuseDeposit flags
-                        >> (Terminate <$> entryArgs True Nothing environment flags)
-                ["registry", "fold"] -> Fold <$> foldArgs environment flags
-                ["registry", "reject"] -> Reject <$> rejectArgs environment flags
-                ["registry", "reclaim"] -> Reclaim <$> reclaimArgs environment flags
+                        >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
+                ["registry", "fold"] ->
+                    refuseApplicationPolicy flags
+                        >> (Fold <$> foldArgs environment flags)
+                ["registry", "reject"] ->
+                    refuseApplicationPolicy flags
+                        >> (Reject <$> rejectArgs environment flags)
+                ["registry", "reclaim"] ->
+                    refuseApplicationPolicy flags
+                        >> (Reclaim <$> reclaimArgs environment flags)
                 ["registry", "inspect"] ->
-                    refuseSpendingFlags "inspect" flags
+                    refuseApplicationPolicy flags
+                        >> refuseSpendingFlags "inspect" flags
                         >> refuseRequest flags
                         >> refuseFold flags
                         >> (Inspect <$> inspectArgs environment flags)
@@ -385,6 +379,15 @@ parseWith environment args = do
                     "--fold"
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
+    -- @--application-policy@ pins what @registry create@ boots; any other
+    -- command refuses it by name rather than ignore it.
+    refuseApplicationPolicy flags =
+        when (isJust (lookup "--application-policy" flags)) $
+            Left
+                ( BadValue
+                    "--application-policy"
+                    "is a registry create flag: only create pins an application policy"
+                )
     createArgs flags = do
         when (isJust (lookup "--state-token" flags)) $
             Left
@@ -424,67 +427,29 @@ parseWith environment args = do
                 , createProcessTime = processing
                 , createRetractTime = retracting
                 }
+    applicationPolicyFrom flags = case optional "--application-policy" flags of
+        Nothing -> Right Nothing
+        Just spelling -> case parseApplicationPolicy (T.pack spelling) of
+            Right pinned -> Right (Just pinned)
+            Left why -> Left (BadValue "--application-policy" why)
+    parseApplicationPolicy spelling = case B16.decode (TE.encodeUtf8 spelling) of
+        Left _ ->
+            Left "is not hex: give 56 hex characters (a 28-byte policy hash)"
+        Right bytes
+            | BS.length bytes == 28 ->
+                Right (ApplicationPolicy (SBS.toShort bytes))
+            | otherwise ->
+                Left
+                    ( "is "
+                        <> show (BS.length bytes)
+                        <> " bytes, not 28: give 56 hex characters (a 28-byte policy hash)"
+                    )
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
         Just value -> case readMaybe value of
             Just n | n > 0 && all isDigit value -> Right n
             _ ->
                 Left (BadValue name "needs a positive integer number of milliseconds")
-    -- An insert is an entry command that also names the deposit its envelope
-    -- protects: --deposit LOVELACE, else the minimum, read by the library.
-    insertArgs env flags = do
-        parsed <- entryArgs True (Just "--payload") env flags
-        deposit <-
-            first
-                DepositRefused
-                (readDeposit (T.pack <$> optional "--deposit" flags))
-        pure parsed{entryDeposit = Just deposit}
-    refuseDeposit flags =
-        when (isJust (lookup "--deposit" flags)) $
-            Left
-                ( BadValue
-                    "--deposit"
-                    "is a registry insert flag: only insert sets a deposit"
-                )
-    entryArgs books document env flags = do
-        let dir = optional "--state-dir" flags
-        bp <- required "--blueprint" flags
-        key <- keyFrom flags
-        unless books (refuseFold flags)
-        when
-            (isJust (lookup "--fold" flags) && isJust (lookup "--preview" flags))
-            $ Left
-                ( BadValue
-                    "--fold"
-                    "is not accepted with --preview: a preview measures the booking and never folds"
-                )
-        when
-            ( isNothing (lookup "--preview" flags)
-                && isJust (lookup "--wallet-address" flags)
-            )
-            $ Left addressNeedsPreview
-        mode <-
-            if isJust (lookup "--preview" flags)
-                then previewMode flags
-                else Submit <$> writeSettings flags
-        doc <- traverse (`required` flags) document
-        fund <- fundFrom flags
-        outlay <- outlayFrom flags
-        access <- registryAccess env flags
-        pure
-            EntryArgs
-                { entryStateDir = dir
-                , entryAccess = access
-                , entryBlueprint = bp
-                , entryMode = mode
-                , entryKey = key
-                , entryDocument = doc
-                , entryDeposit = Nothing
-                , entryFund = fund
-                , entryMaxOutlay = outlay
-                , entryReceipt = optional "--receipt" flags
-                , entryFold = isJust (lookup "--fold" flags)
-                }
     foldArgs env flags = do
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
@@ -824,6 +789,7 @@ valuedFlags =
     , "--network-magic"
     , "--wallet-skey"
     , "--seed"
+    , "--application-policy"
     , "--process-time"
     , "--retract-time"
     , "--key"
@@ -861,14 +827,6 @@ renderCLIError = \case
             <> " bytes; a registry key is at most "
             <> show maxKeyBytes
             <> " bytes"
-    DepositRefused DepositNotInteger ->
-        "--deposit is not a whole number of lovelace"
-    DepositRefused (DepositBelowMinimum n) ->
-        "--deposit "
-            <> show n
-            <> " is below the minimum of "
-            <> show minimumDeposit
-            <> " lovelace"
     UnsafeSettings why -> why
     SigningKeyNotAccepted ->
         "inspect takes no signing key: it reads, and never funds or submits"
@@ -878,7 +836,7 @@ renderCLIError = \case
         flag
             <> " is not accepted by `registry "
             <> command
-            <> "`: only insert, update, terminate, fold, reclaim and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
+            <> "`: only fold, reclaim and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
 
 -- | The supported commands.
 usage :: String
@@ -886,40 +844,11 @@ usage =
     unlines
         [ "usage:"
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      (--seed TXID#IX | --preview) [--process-time MS] [--retract-time MS]"
+        , "      (--seed TXID#IX | --preview) [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "  singular registry insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  singular registry insert --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry update --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  singular registry terminate --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      (--key KEY | --key-hex HEX)"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
@@ -966,10 +895,6 @@ usage =
         , "option repeated per sink, or to standard error. With no level named it narrates what"
         , "on a terminal and nothing otherwise; text goes to standard error and JSON lines to a"
         , "file unless a format is named. Standard output carries the receipt alone."
-        , "insert and terminate book the request and leave it pending: the registry's"
-        , "fold is its own command, registry fold, run by whichever wallet folds, before"
-        , "the processing deadline the booking's receipt names. Given the fold switch,"
-        , "either also folds, in the same command, once its booking confirms."
         , "reclaim takes back the owner's pending insertion or terminal-witness request,"
         , "inside its retract window: the view's tip must reach the converted processing"
         , "deadline; a converted retract deadline must still be ahead of the tip. An"
@@ -983,11 +908,9 @@ usage =
         , "and when its retract window closes. Each owner is refunded the request's value"
         , "less the tip in the one output designated for it; the wallet that runs it keeps"
         , "the tip, and the registry's root does not move."
-        , "insert, update, terminate, fold, reclaim and reject fund and collateralise from the funding"
-        , "input named, and hold to the maximum outlay stated: a booking, update, reclaim, reject or"
-        , "fold past it is not signed, and a combined insert or terminate whose fold,"
-        , "built after its booking confirms, costs more than the booking left of it stops"
-        , "partial, its request pending, with the fold unsigned. create and inspect"
+        , "fold, reclaim and reject fund and collateralise from the funding"
+        , "input named, and hold to the maximum outlay stated: a reclaim, reject or"
+        , "fold past it is not signed. create and inspect"
         , "refuse both settings: they enforce neither."
         , "The preview forms name the caller by a public wallet address instead of a"
         , "signing key: they build and measure what they would submit, print it, and"
@@ -1008,14 +931,7 @@ references it looks up.
 -}
 neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
-    Create _ -> Set.singleton RoleState
-    Insert a
-        | entryFold a -> everything
-        | otherwise -> Set.singleton RoleApplication
-    Update _ -> Set.singleton RoleApplication
-    Terminate a
-        | entryFold a -> everything
-        | otherwise -> Set.singleton RoleApplication
+    Create _ _ -> Set.singleton RoleState
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty

@@ -7,24 +7,32 @@
 # registries in different managed partitions, so cross-seed concurrency is
 # two registries, not a race.
 #
-# usage: demo1_cli_create_race.sh SINGULAR BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR
+# usage: demo1_cli_create_race.sh SINGULAR OPEN_DATUM BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR
+#
+# SINGULAR and OPEN_DATUM are executables; the race boots open-datum
+# registries, so every create runs through OPEN_DATUM. SINGULAR travels
+# for uniform wiring with the journey and is otherwise unused here.
 #
 # Exit 0: the control holds. Exit 1: it does not, with the reason. Exit 3:
 # setup failed before the race was reached; that is never a verdict.
 set -euo pipefail
 
-[ "$#" -eq 8 ] || {
-  echo "usage: $0 SINGULAR BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR" >&2
+[ "$#" -eq 9 ] || {
+  echo "usage: $0 SINGULAR OPEN_DATUM BLUEPRINT KOIOS_URL NETWORK_TIME MAGIC FIRST_SKEY LATE_SKEY WORKDIR" >&2
   exit 2
 }
 singular="$1"
-blueprint="$2"
-provider_url="$3"
-time_directory="$4"
-network_magic="$5"
-first_key="$6"
-late_key="$7"
-work="$8"
+open_datum="$2"
+# SINGULAR travels for uniform wiring with the journey; every create here
+# runs through OPEN_DATUM. Reference it so the uniform arity is enforced.
+: "$singular"
+blueprint="$3"
+provider_url="$4"
+time_directory="$5"
+network_magic="$6"
+first_key="$7"
+late_key="$8"
+work="$9"
 mkdir -p "$work/receipts"
 receipts="$work/receipts"
 target="$work/raced"
@@ -44,11 +52,11 @@ node=(--koios-url "$provider_url" --network-time "$time_directory" --network-mag
 # seed it succeeds only while that seed is an unspent output of the wallet.
 preview() {
   local name="$1" skey="$2" seed="${3:-}"
-  local args=(registry create --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
+  local args=(create --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
     "${node[@]}" --wallet-skey "$skey")
   [ -z "$seed" ] || args+=(--seed "$seed")
   local status=0
-  "$singular" "${args[@]}" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+  "$open_datum" "${args[@]}" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   [ ! -e "$work/probe-$name" ] || fail "$name: a preview created its target"
   return "$status"
 }
@@ -73,7 +81,7 @@ seed_first="$(jq -r .seed "$receipts/preview-first.json")"
 # (asserted below) after validating the seed and before the first create
 # consumed it, so the race is real.
 
-SINGULAR_HARNESS_HOLD_BEFORE_LOCK="$work/go" "$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_first" \
+SINGULAR_HARNESS_HOLD_BEFORE_LOCK="$work/go" "$open_datum" create --process-time 45000 --retract-time 15000 --seed "$seed_first" \
   --state-dir "$target" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$first_key" \
   >"$receipts/create-late.json" 2>"$receipts/create-late.err" &
 late=$!
@@ -84,7 +92,7 @@ done
 [ -e "$work/go.waiting" ] || setup_fail "the late create never reached its hold point"
 
 status=0
-"$singular" registry create --process-time 45000 --retract-time 15000 --seed "$seed_first" --state-dir "$target" --blueprint "$blueprint" \
+"$open_datum" create --process-time 45000 --retract-time 15000 --seed "$seed_first" --state-dir "$target" --blueprint "$blueprint" \
   "${node[@]}" --wallet-skey "$first_key" >"$receipts/create-first.json" 2>"$receipts/create-first.err" \
   || status=$?
 [ "$status" -eq 0 ] && [ "$(jq -r .outcome "$receipts/create-first.json")" = success ] \

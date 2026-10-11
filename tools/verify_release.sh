@@ -15,10 +15,10 @@
 #                   it carries and every file matches
 #   model revision  the archive's MODEL-REVISION names the application model
 #                   commit the conformance evidence is compiled against
-#   members         the run page, the offchain flake, the command's source
+#   members         the run page, both flakes, both commands' sources
 #                   and the compiled registry blueprint are present
-#   build           `singular` and the development node are built from the
-#                   archive's own offchain flake
+#   build           `singular`, `open-datum` and the development node are built
+#                   from the archive's own flakes
 #   journey         create, insert, update, terminate and inspect run as
 #                   separate processes on one generated development network
 #                   (demo1_cli_journey.sh)
@@ -136,10 +136,21 @@ stated="$(cat "$extracted/MODEL-REVISION")"
 pass "model revision" "$stated"
 
 # members
-for member in DEMO1.md offchain/flake.nix offchain/flake.lock offchain/cli/Main.hs onchain/plutus.json; do
+for member in DEMO1.md offchain/flake.nix offchain/flake.lock offchain/cli/Main.hs applications/open-datum/offchain/flake.nix applications/open-datum/offchain/flake.lock applications/open-datum/offchain/app/Main.hs onchain/plutus.json; do
   [ -f "$extracted/$member" ] || refuse member-missing "$onchain carries no $member"
 done
 pass members
+
+# #528 slice 4: the application's flake reaches the registry via
+# ../../../offchain, which pure evaluation allows only inside a git worktree.
+# The archive carries no .git, so the extracted copy is made a temporary git
+# worktree for the builds below; the archive itself is untouched.
+git -C "$extracted" init -q 2>"$work/git-init.log" \
+  || refuse command-failed "git init in the extracted archive: $(tail -n 3 "$work/git-init.log" | tr '\n' ' ')"
+git -C "$extracted" add -A 2>"$work/git-add.log" \
+  || refuse command-failed "git add in the extracted archive: $(tail -n 3 "$work/git-add.log" | tr '\n' ' ')"
+git -C "$extracted" -c user.email=verify@local -c user.name=verify commit -qm extracted 2>"$work/git-commit.log" \
+  || refuse command-failed "git commit in the extracted archive: $(tail -n 3 "$work/git-commit.log" | tr '\n' ' ')"
 
 # build
 cd "$extracted/offchain"
@@ -147,13 +158,20 @@ singular="$(nix build --quiet --no-link --print-out-paths .#singular 2>"$work/bu
   || refuse command-failed "nix build .#singular from the archive: $(tail -n 3 "$work/build-singular.log" | tr '\n' ' ')"
 devnet="$(nix build --quiet --no-link --print-out-paths .#devnet 2>"$work/build-devnet.log")" \
   || refuse command-failed "nix build .#devnet from the archive: $(tail -n 3 "$work/build-devnet.log" | tr '\n' ' ')"
-pass build "singular and the development node from the archive's own flake"
+# #528 slice 4: `open-datum` is its own executable, built from the
+# application's flake the archive carries beside the registry.
+cd "$extracted/applications/open-datum/offchain"
+open_datum="$(nix build --quiet --no-link --print-out-paths .#open-datum 2>"$work/build-open-datum.log")" \
+  || refuse command-failed "nix build .#open-datum from the archive: $(tail -n 3 "$work/build-open-datum.log" | tr '\n' ' ')"
+[ -x "$open_datum/bin/open-datum" ] \
+  || refuse command-failed "open-datum binary missing from the archive build"
+pass build "singular and open-datum and the development node from the archive's own flakes"
 
 # journey
-# Every `singular` process the journey starts goes through a wrapper that
-# records which SINGULAR_HARNESS_* variables it was started with, and the
-# path each hold variable names, before it replaces itself with the
-# released executable (so a process the journey kills is that executable).
+# Every `singular` and `open-datum` process the journey starts goes through
+# a wrapper that records which SINGULAR_HARNESS_* variables it was started
+# with, and the path each hold variable names, before it replaces itself with
+# the released executable (so a process the journey kills is that executable).
 invocations="$work/invocations.tsv"
 : >"$invocations"
 mkdir -p "$work/bin"
@@ -161,22 +179,38 @@ cat >"$work/bin/singular" <<WRAPPER
 #!/usr/bin/env bash
 harness="\$(env | grep -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C sort | paste -sd, - || true)"
 holds="\$(env | grep '^SINGULAR_HARNESS_HOLD_' | grep -v '^SINGULAR_HARNESS_HOLD_STEP=' | cut -d= -f2- | paste -sd'|' - || true)"
-printf '%s\t%s\t%s\n' "\${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
+printf '%s\t%s\t%s\n' "singular \${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
 exec $(printf '%q' "$singular/bin/singular") "\$@"
 WRAPPER
 chmod +x "$work/bin/singular"
+cat >"$work/bin/open-datum" <<WRAPPER
+#!/usr/bin/env bash
+harness="\$(env | grep -o '^SINGULAR_HARNESS_[A-Z_]*' | LC_ALL=C sort | paste -sd, - || true)"
+holds="\$(env | grep '^SINGULAR_HARNESS_HOLD_' | grep -v '^SINGULAR_HARNESS_HOLD_STEP=' | cut -d= -f2- | paste -sd'|' - || true)"
+printf '%s\t%s\t%s\n' "open-datum \${1:-} \${2:-}" "\$harness" "\$holds" >>$(printf '%q' "$invocations")
+exec $(printf '%q' "$open_datum/bin/open-datum") "\$@"
+WRAPPER
+chmod +x "$work/bin/open-datum"
+# #528 slice 4: the development node reads its genesis from E2E_GENESIS_DIR,
+# falling back to a relative `e2e-test/genesis` that only resolves when the
+# caller happens to run from the registry tree. The archive build leaves the
+# caller in the application's tree before the journey runs, so the
+# genesis-only source (and every later node) would die before printing
+# settings. Point the journey at the genesis the archive carries, so the
+# node starts regardless of the caller's directory.
+export E2E_GENESIS_DIR="$extracted/offchain/e2e-test/genesis"
 status=0
-bash "$journey" "$work/bin/singular" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
+bash "$journey" "$work/bin/singular" "$work/bin/open-datum" "$devnet/bin/devnet" "$extracted/onchain/plutus.json" "$work/journey" \
   || status=$?
 [ "$status" -eq 0 ] || refuse command-failed "the journey exited $status$kept"
 pass journey "create, insert, update, terminate and inspect as separate processes"
 
 # harness hooks: computed from the run. A hold point that fires writes
 # PATH.waiting; the holds that fired must be exactly the ones a process was
-# started with a variable for, and every process of the five commands
-# started with no harness variable at all must exist.
+# started with a variable for, and every process of the five open-datum
+# commands started with no harness variable at all must exist.
 for command in create insert update terminate inspect; do
-  awk -F'\t' -v c="registry $command" '$1 == c && $2 == ""' "$invocations" | grep -q . \
+  awk -F'\t' -v c="open-datum $command" 'index($1, c) == 1 && $2 == ""' "$invocations" | grep -q . \
     || refuse harness-hook-fired "no $command process ran without a harness variable"
 done
 plain="$(awk -F'\t' '$2 == ""' "$invocations" | wc -l)"

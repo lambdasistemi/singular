@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you want to use create, insert, update, terminate, fold, reclaim, reject and inspect with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "text": "As a registry operator, you want to use create, fold, reclaim, reject and inspect through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
     {
@@ -66,6 +66,10 @@
     },
     {
       "text": "An insert or a terminate books a request and stops. The request waits at the registry; the command's receipt names it, the booking's transaction, and the fold deadline — the request's submission time plus the registry's processing time — as a POSIX time, and as a slot when pinned time converts it. Nothing is folded, and the registry's root, its mirror and its saved state do not move.",
+      "pause": 400
+    },
+    {
+      "text": "Before anything is signed, insert, update and terminate check the key's current entry: a booking the entry rules out is refused with the key and a named reason. An insert of a key that is already registered, or already retired, is refused; an update or a terminate of a key that is not registered, or already retired, is refused. The refusal is labelled client policy in the receipt, and it runs the same way in planning, in preview and live. The fold still validates every booking it folds, so a booking made through the permissive builders can still reach the chain's own refusal at the fold.",
       "pause": 400
     },
     {
@@ -231,6 +235,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "4cae10e15524f1c4654393de709dccc0fe27ce59d09cbaa6a36ce1707f43a018"
+    "sha256": "9e976251578b1f3f479e0159950c5d39f0cb853a186ee114be0cb816a82c8509"
   }
 }

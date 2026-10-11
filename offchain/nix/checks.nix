@@ -98,6 +98,9 @@ let
         done
         bash $src/tools/signed_tx_control.sh "$src" -- -hide-all-packages "''${dbs[@]}" | tee $out
       '';
+  # #528 slice 4 retired the application-boundary pair (the temporary
+  # application sublibrary no longer exists); the root
+  # application-separation pair replaces it.
 in
 {
   inherit (components) library;

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# The ordinary CLI's recovery controls (#325): what `singular registry`
-# does after a lost acknowledgement or an interrupted local commit, on one
-# generated development node, every command a separate process.
+# The ordinary CLI's recovery controls (#325): what `open-datum` and
+# `singular registry` do after a lost acknowledgement or an interrupted local
+# commit, on one generated development node, every command a separate process.
+# `create`, `insert`, `update`, `terminate`, `fold` and `inspect` of an
+# open-datum registry run through `open-datum`; `reject` and `reclaim` run
+# through `singular registry`, as the Demo 1 journey dispatches them.
 #
-# usage: cli_recovery_controls.sh SINGULAR DEVNET BLUEPRINT WORKDIR REPO-ROOT
+# usage: cli_recovery_controls.sh SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR REPO-ROOT
 #
 #   accepting: public replay proves an included fold at the ledger root.
 #   lost answer: the next command observes the included fold once, never sends
@@ -102,15 +105,16 @@ if [ "${1:-}" = "--receipt-cap" ]; then
   exit
 fi
 
-[ "$#" -eq 5 ] || {
-  echo "usage: $0 SINGULAR DEVNET BLUEPRINT WORKDIR REPO-ROOT" >&2
+[ "$#" -eq 6 ] || {
+  echo "usage: $0 SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR REPO-ROOT" >&2
   exit 2
 }
 singular="$1"
-devnet="$2"
-blueprint="$3"
-work="$4"
-root="$5"
+open_datum="$2"
+devnet="$3"
+blueprint="$4"
+work="$5"
+root="$6"
 [ ! -e "$work" ] || {
   echo "recovery: $work exists; every run takes a fresh directory" >&2
   exit 2
@@ -285,30 +289,37 @@ say_run() {
     say "$name: no parsable receipt (exit $status); stderr: $(head -n 1 "$receipts/$name.err" 2>/dev/null || echo none)"
   fi
 }
-# run NAME ARGS...: one singular process; its receipt and exit status kept.
+# run NAME ARGS...: one ordinary process; its receipt and exit status kept.
+# A `registry` first word runs through `singular`; a bare verb
+# (`create`, `insert`, `update`, `terminate`, `fold`, `inspect`) runs through
+# `open-datum`, as the journey dispatches them.
 run() {
   local name="$1"
   shift
   local status=0
+  local bin="$open_datum"
+  [ "${1:-}" = registry ] && bin="$singular"
   : >"$receipts/$name.trie.jsonl"
   SINGULAR_HARNESS_TRIE_TRACE="$receipts/$name.trie.jsonl" \
-    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
+    "$bin" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" || status=$?
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   echo "$status" >"$receipts/$name.exit"
   say_run "$name" "$status"
 }
-# held NAME VAR ARGS...: one singular process with the harness hold VAR set
+# held NAME VAR ARGS...: one ordinary process with the harness hold VAR set
 # to a path, killed once it waits there. Returns 0 only when it was killed
-# at the hold.
+# at the hold. Dispatch as run() does.
 held() {
   local name="$1" var="$2"
   shift 2
+  local bin="$open_datum"
+  [ "${1:-}" = registry ] && bin="$singular"
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
   : >"$receipts/$name.trie.jsonl"
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
-    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+    "$bin" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -329,18 +340,21 @@ held() {
   say_run "$name" "$status"
   return 1
 }
-# paused NAME VAR CHECK ARGS...: one singular process with the harness hold
+# paused NAME VAR CHECK ARGS...: one ordinary process with the harness hold
 # VAR set to a path; while it waits there CHECK runs, then it is released
 # and runs to its end. Returns 0 only when it reached the hold.
+# Dispatch as run() does.
 paused() {
   local name="$1" var="$2" check="$3"
   shift 3
+  local bin="$open_datum"
+  [ "${1:-}" = registry ] && bin="$singular"
   local go="$work/$name.go"
   rm -f "$go" "$go.waiting"
   : >"$receipts/$name.trie.jsonl"
   printf '%s\n' "$name" >>"$work/trie-command-invocations"
   env "SINGULAR_HARNESS_TRIE_TRACE=$receipts/$name.trie.jsonl" "$var=$go" \
-    "$singular" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
+    "$bin" "$@" >"$receipts/$name.json" 2>"$receipts/$name.err" &
   local victim=$!
   for _ in $(seq 1 1800); do
     [ -e "$go.waiting" ] && break
@@ -412,7 +426,7 @@ with open(os.path.join(registry, ".lock"), "a") as lock:
         fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         pass  # a deliberately held command already prevents reconciliation
-    result = subprocess.run([binary, "registry", "inspect", "--key-hex", "00",
+    result = subprocess.run([binary, "inspect", "--key-hex", "00",
         "--state-dir", registry, "--blueprint", blueprint, *settings], capture_output=True, text=True,
         env={k: v for k, v in os.environ.items() if k != "SINGULAR_HARNESS_TRIE_TRACE"})
     receipt = json.loads(result.stdout)
@@ -421,7 +435,7 @@ with open(os.path.join(registry, ".lock"), "a") as lock:
         raise RuntimeError(f"public root unavailable: exit={result.returncode} receipt={receipt}")
     print(root)
 PY
-root_now() { python3 "$work/read-root.py" "$singular" "$reg" "$blueprint" --state-token "$state_token" "${node[@]}"; }
+root_now() { python3 "$work/read-root.py" "$open_datum" "$reg" "$blueprint" --state-token "$state_token" "${node[@]}"; }
 trie_files_absent() { [ -z "$(managed_find "$reg" state.json)" ] && [ -z "$(managed_find "$reg" registry.mirror.json)" ]; }
 snap() {
   if [ -f "$journal" ]; then cp "$journal" "$snaps/$1.jsonl"; else : >"$snaps/$1.jsonl"; fi
@@ -469,7 +483,7 @@ is_txid() { [[ "$1" =~ ^[0-9a-f]{64}$ ]]; }
 
 # The payload every insert here carries; the command builds the rest of the
 # envelope from the registry, the key and the signing wallet.
-insert_of() { args=(registry insert --fold --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
+insert_of() { args=(insert --fold --key-hex "$1" --payload "$work/insert-payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"); }
 
 # ------------------------------------------------------------------
 # The registry
@@ -477,9 +491,9 @@ insert_of() { args=(registry insert --fold --key-hex "$1" --payload "$work/inser
 # and building on shared runners plus the CLI's unchanged 30-second signing
 # margin; the former 45-second window left only 15 seconds for that work.
 # ------------------------------------------------------------------
-run preview registry create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
-run create registry create --process-time 120000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+run create create --process-time 120000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
   || setup_fail "the recovery registry did not read back the CI recovery windows"
 outcome_is create success || setup_fail "create did not succeed"
@@ -502,17 +516,17 @@ absent_before="$(find "$reg" -type f -print0 | sort -z | xargs -0 sha256sum | sh
 for command in update terminate; do
   extra=()
   [ "$command" != update ] || extra=(--payload "$work/payload.json")
-  run "$command-absent" registry "$command" --key-hex 6d697373696e672d6b6579 \
+  run "$command-absent" "$command" --key-hex 6d697373696e672d6b6579 \
     "${extra[@]}" "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "$command of an absent key is refused before signing" exit_is "$command-absent" 10
-  clause "$command names the absent source holding" is_equal \
+  clause "$command names the key as not registered, labelled client policy" is_equal \
     "$(field "$command-absent" '.outcome + "/" + .reason')" \
-    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
-  run "$command-absent-preview" registry "$command" --preview --key-hex 6d697373696e672d6b6579 \
+    'client-refusal/missing-key is not registered (client policy)'
+  run "$command-absent-preview" "$command" --preview --key-hex 6d697373696e672d6b6579 \
     "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
-  clause "$command preview names the same absent source holding" is_equal \
+  clause "$command preview names the same key as not registered, labelled client policy" is_equal \
     "$(field "$command-absent-preview" '.outcome + "/" + .reason')" \
-    'client-refusal/no live output holds key 0x6d697373696e672d6b6579'
+    'client-refusal/missing-key is not registered (client policy)'
   clause "$command preview is refused" exit_is "$command-absent-preview" 10
 done
 clause "absent-source write and preview refusals leave every registry file unchanged" is_equal \
@@ -541,7 +555,7 @@ signers_of() {
     decode | .[1] | mapget(0) | (if type == \"object\" then .value else . end) | .[][0]" \
     "$(prepared_of "$1" | jq -r .journalBody)")
 }
-run bob-preview registry create --process-time 120000 --retract-time 15000 --preview --state-dir "$work/bob-preview" --blueprint "$blueprint" \
+run bob-preview create --process-time 120000 --retract-time 15000 --preview --state-dir "$work/bob-preview" --blueprint "$blueprint" \
   "${node[@]}" "${bob[@]}"
 outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -580,7 +594,7 @@ if part accepting; then
   clause "the fold was prepared, acknowledged, included and observed, once each" \
     is_equal "$(events_of "$fold")" '["prepared","submitted","confirmed","observed"]'
   clause "the receipt's root is that root" is_equal "$(field insert-a .root)" "$(root_after_of "$fold")"
-  run inspect-a registry inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
+  run inspect-a inspect --key-hex 6b0a "${common[@]}" "${node[@]}"
   clause "inspect reads the key active at that root" \
     is_equal "$(field inspect-a '.outcome + "/" + .leaf + "/" + .root')" "success/active/$(root_after_of "$fold")"
   clause "the journal was only appended to and no body changed" appended_only s0
@@ -599,7 +613,7 @@ if part accepting; then
   for source in clean corrupt; do
     source_dir="$clean_source"
     [ "$source" != corrupt ] || source_dir="$corrupt_source"
-    run "inspect-$source-source" registry inspect --key-hex 6b0a \
+    run "inspect-$source-source" inspect --key-hex 6b0a \
       --state-dir "$source_dir" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
     clause "$source directory reads the active key from public history" \
       is_equal "$(field "inspect-$source-source" '.outcome + "/" + .leaf')" success/active
@@ -623,7 +637,7 @@ if part accepting; then
     extra=()
     [ "$command" != update ] || extra=(--payload "$work/payload.json")
     name="$command-active-preview"
-    run "$name" registry "$command" --preview --key-hex 6b0a \
+    run "$name" "$command" --preview --key-hex 6b0a \
       "${extra[@]}" "${common[@]}" "${node[@]}" --wallet-address "$(field preview .wallet)"
     clause "$command preview succeeds on the active source" outcome_is "$name" success
     clause "$command preview consumes the capability selection at its reported root" \
@@ -643,7 +657,7 @@ if part accepting; then
     "$preview_copy/$preview_rel" >"$work/preview-incomplete-journal"
   mv "$work/preview-incomplete-journal" "$preview_copy/$preview_rel"
   preview_copy_before="$(find "$preview_copy" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
-  run preview-incomplete registry update --preview --key-hex 6b0a --payload "$work/payload.json" \
+  run preview-incomplete update --preview --key-hex 6b0a --payload "$work/payload.json" \
     --state-dir "$preview_copy" --blueprint "$blueprint" --state-token "$state_token" "${node[@]}" --wallet-address "$(field preview .wallet)"
   clause "preview succeeds without the local boot journal" exit_is preview-incomplete 0
   clause "preview without local boot records reads the same public root" is_equal \
@@ -710,7 +724,7 @@ if part lost-answer; then
   clause "the fold started from the root before the lost answer" is_equal "$(root_before_of "$lost")" "$(cat "$snaps/s1.root")"
   clause "the next fold started from the lost fold's root after: one edge between" \
     is_equal "$(root_before_of "$(submission_tx insert-c fold)")" "$(root_after_of "$lost")"
-  run inspect-b registry inspect --key-hex 6b0b "${common[@]}" "${node[@]}"
+  run inspect-b inspect --key-hex 6b0b "${common[@]}" "${node[@]}"
   clause "inspect reads the lost answer's key active" is_equal "$(field inspect-b '.outcome + "/" + .leaf')" success/active
   clause "the journal was only appended to and no body changed" appended_only s1
 
@@ -728,14 +742,14 @@ if part killed; then
   killed_fold="$(fold_since s2)"
   clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$killed_fold")" confirmed
   snap s2-killed
-  run update-a registry update --key-hex 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run update-a update --key-hex 6b0a --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "the next write, an update of another key, reconciles and succeeds" outcome_is update-a success
   clause "the killed fold is observed exactly once, by the update" \
     is_equal "$(since s2-killed | jq -r --arg t "$killed_fold" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" update
   clause "the killed fold was prepared once, never sent again" prepared_once "$killed_fold"
   clause "the fold started from the root before the kill" is_equal "$(root_before_of "$killed_fold")" "$(cat "$snaps/s2.root")"
   clause "the confirmed killed fold left no retired trie files" trie_files_absent
-  run inspect-d registry inspect --key-hex 6b0d "${common[@]}" "${node[@]}"
+  run inspect-d inspect --key-hex 6b0d "${common[@]}" "${node[@]}"
   clause "inspect reads the killed insert's key active" is_equal "$(field inspect-d '.outcome + "/" + .leaf')" success/active
   clause "the journal was only appended to and no body changed" appended_only s2
 
@@ -759,7 +773,7 @@ if part killed; then
   clause "the killed fold was prepared once, never sent again" prepared_once "$written_fold"
   clause "the next fold started from the killed fold's root after: one edge between" \
     is_equal "$(root_before_of "$(submission_tx insert-h fold)")" "$(root_after_of "$written_fold")"
-  run inspect-g registry inspect --key-hex 6b10 "${common[@]}" "${node[@]}"
+  run inspect-g inspect --key-hex 6b10 "${common[@]}" "${node[@]}"
   clause "inspect reads the killed insert's key active" is_equal "$(field inspect-g '.outcome + "/" + .leaf')" success/active
   clause "the journal was only appended to and no body changed" appended_only s5
 
@@ -860,7 +874,7 @@ if [ "$cross_any" -eq 1 ]; then
     control="another wallet's fold at ${cross_case#cross-wallet:}"
     journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
     snap "$cross-before"
-    run "$cross-book" registry insert --key-hex "$key" --payload "$work/insert-payload.json" \
+    run "$cross-book" insert --key-hex "$key" --payload "$work/insert-payload.json" \
       "${common[@]}" "${node[@]}" "${alice[@]}"
     snap "$cross-booked"
     # Bob's folds journal to his own partition under the same root and token.
@@ -873,11 +887,11 @@ if [ "$cross_any" -eq 1 ]; then
       # with its answer dropped, then let the next ordinary command reconcile.
       export SINGULAR_HARNESS_DROP_ANSWER=fold
       at_cross_send() { snap "$cross-sent"; }
-      paused "$cross-fold" "$point" at_cross_send registry fold \
+      paused "$cross-fold" "$point" at_cross_send fold \
         --request "$(field "$cross-book" .request)" "${common[@]}" "${node[@]}" "${bob[@]}" || reached=1
       unset SINGULAR_HARNESS_DROP_ANSWER
     else
-      held "$cross-fold" "$point" registry fold --request "$(field "$cross-book" .request)" \
+      held "$cross-fold" "$point" fold --request "$(field "$cross-book" .request)" \
         "${common[@]}" "${node[@]}" "${bob[@]}" || reached=1
     fi
     unset SINGULAR_HARNESS_HOLD_STEP
@@ -890,7 +904,7 @@ if [ "$cross_any" -eq 1 ]; then
     # Her ordinary write proceeds independently while another wallet's fold
     # is unresolved: her journal is clean, so nothing names that fold and
     # only her own four phases move her journal.
-    run "$cross-next" registry update --key-hex "$next_key" --payload "$work/payload.json" \
+    run "$cross-next" update --key-hex "$next_key" --payload "$work/payload.json" \
       "${common[@]}" "${node[@]}" "${alice[@]}"
     outcome_is "$cross-next" success || refusals_clean=1
     cross_update="$(submission_tx "$cross-next" update)"
@@ -915,7 +929,7 @@ if [ "$cross_any" -eq 1 ]; then
     journal="$bob_journal"
     event_count_bob() { event_count "$1" "$2"; }
     for i in $(seq 1 40); do
-      run "$cross-inspect" registry inspect --key-hex "$key" \
+      run "$cross-inspect" inspect --key-hex "$key" \
         "${common[@]}" "${node[@]}" --wallet-address "$bob_addr"
       outcome_is "$cross-inspect" success || break
       [ "$(event_count_bob "$cross_fold" observed)" = 1 ] && break
@@ -1071,7 +1085,7 @@ if part never-sent; then
   clause "the node reports the unsent fold's inputs unspent" \
     jq -n -e --argjson p "$unsent_live" '($p.live | length) > 0 and ($p.spent == [])'
   snap s4-excluded
-  run update-d registry update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run update-d update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
   excluded_line="$(jq -c --arg t "$unsent" 'select(.journalTxId == $t and .journalEvent == "excluded")' "$journal")"
   clause "the next write journals the unsent fold excluded" \
     is_equal "$(events_of "$unsent")" '["prepared","submit-unknown","excluded"]'
@@ -1097,7 +1111,7 @@ if part never-sent; then
   processing_ms="$(field create .processTime)"
   sleep $((processing_ms / 1000 + 1))
   snap s6-refused
-  run update-e registry update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run update-e update --key-hex 6b0d --payload "$work/payload.json" "${common[@]}" "${node[@]}" "${alice[@]}"
   clause "the next write stops partial (exit 15)" exit_is update-e 15
   clause "it names the unsent booking" is_equal "$(field update-e .unresolved.tx)" "$unbooked"
   clause "it names the case unknown" is_equal "$(field update-e .unresolved.case)" unknown
@@ -1240,9 +1254,9 @@ if part rollback; then
 
   reg="$work/registry-rolled-back"
   common=(--state-dir "$reg" --blueprint "$blueprint")
-  run preview-rb registry create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+  run preview-rb create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
   outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
-  run create-rb registry create --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run create-rb create --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
   jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
     || setup_fail "the rollback registry did not read back the CI recovery windows"
   outcome_is create-rb success || setup_fail "the second create did not succeed"
@@ -1329,10 +1343,10 @@ if part rollback; then
   clause "neither the booking's nor the fold's first output exists" \
     jq -n -e --argjson p "$post" --arg b "$rb_book#0" --arg f "$rb_fold#0" '($p.spent | index($b)) != null and ($p.spent | index($f)) != null'
 
-  run inspect-rb registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
+  run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
   clause "the first inspect journals both rollbacks" \
     is_equal "$(event_count "$rb_book" rolled-back)/$(event_count "$rb_fold" rolled-back)" 1/1
-  run inspect-rb registry inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
+  run inspect-rb inspect --key-hex 6c01 "${common[@]}" "${node[@]}"
   clause "a second inspect journals no second rollback" \
     jq -e '.rolledBack == []' "$receipts/inspect-rb.json"
   clause "the booking's rollback is journalled once, after its observation" \

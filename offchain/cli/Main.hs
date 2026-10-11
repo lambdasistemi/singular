@@ -3,7 +3,7 @@ Module      : Main
 Description : The packaged @singular@ command
 License     : Apache-2.0
 
-@singular registry create|insert|update|terminate|fold|reject|reclaim|inspect@:
+@singular registry create|fold|reject|reclaim|inspect@:
 one ordinary process per command over your state directory. See
 "Singular.CLI.Command" for the command line, "Singular.CLI" for what each
 command does and "Singular.CLI.Root" for the composition this runs.
@@ -14,9 +14,10 @@ import System.Environment (getArgs, getEnvironment)
 import System.Exit (exitWith)
 
 import Singular.CLI.Root (runPackaged)
+import Singular.Registry.Application (neutralApplication)
 
 main :: IO ()
 main = do
     args <- getArgs
     environment <- getEnvironment
-    runPackaged args environment >>= exitWith
+    runPackaged neutralApplication args environment >>= exitWith

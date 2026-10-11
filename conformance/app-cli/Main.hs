@@ -2,7 +2,9 @@
 their receipts.
 
 @cli-controls run@ executes "Conformance.Cli.Controls"'s stories: the
-ordinary commands through the @singular@ executable, and the two steps no
+ordinary commands through the @open-datum@ executable (#528 slice 4:
+`singular` no longer implements create/insert/update/terminate/fold/inspect),
+and the two steps no
 command takes — an insertion booked but not folded, and a fold submitted
 without local evaluation — through the same library builders the commands
 use. Every action leaves one receipt under @WORK/receipts@.
@@ -66,9 +68,10 @@ usage :: String
 usage =
     unlines
         [ "usage:"
-        , "  cli-controls run --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
+        , "  cli-controls run --singular EXE --open-datum EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
         , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --underfunded-skey FILE --work DIR"
-        , "  cli-controls attach --singular EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
+        , "      (--singular is retained for the registry verbs; the ordinary commands run through --open-datum)"
+        , "  cli-controls attach --singular EXE --open-datum EXE --blueprint PLUTUS_JSON --ledger LEDGERS_JSON"
         , "      --koios-url URL --network-time DIR --node-socket PROBE --network-magic N --wallet-skey FILE --stranger-skey FILE"
         , "      --state-dir ROOT --key LABEL --work DIR"
         , "      (the state root; journals live in managed per-actor partitions below it)"

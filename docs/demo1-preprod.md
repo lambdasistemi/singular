@@ -8,18 +8,18 @@ This page is the reviewer's map. It says what the archive lets you replay, what 
 
 ## What you run
 
-The ordinary `singular registry` commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.
+The ordinary `singular registry` and `open-datum` commands are the product path. Two more tools ship in the same archive: a controls runner that attaches to a registry that already exists, and a readback that asks a public indexer.
 
 ```mermaid
 sequenceDiagram
     participant R as Reviewer
-    participant S as singular commands
+    participant S as singular and open-datum commands
     participant C as controls runner
     participant N as Preprod node
     participant I as Koios and Blockfrost
     R->>S: create --preview with a public address
     S->>N: read only
-    R->>S: insert, update, terminate with --preview
+    R->>S: open-datum insert, update, terminate with --preview
     S-->>R: measured fee, units, collateral, outlay
     R->>C: attach to the registry with a fresh key
     C->>N: ordinary commands, four refusals, retractions

@@ -41,6 +41,7 @@ module Singular.CLI.Fold
     , Delivery (..)
     , foldPending
     , foldedFields
+    , neutralTerminationRefusal
     , slotAt
 
       -- * The processing deadline
@@ -82,13 +83,9 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
-import Singular.Application.OpenDatum.Envelope
-    ( Control (..)
-    , Envelope (..)
-    , envelopeHash
-    , envelopeToJson
-    )
-import Singular.Application.OpenDatum.Release (withApplication)
+import Data.ByteString.Short qualified as SBS
+import PlutusCore.Data qualified as PLC
+
 import Singular.CLI.Attached
 import Singular.CLI.Command
     ( Command (..)
@@ -117,6 +114,15 @@ import Singular.CLI.Trace
     , report
     )
 import Singular.CLI.Trace qualified as Trace
+import Singular.Registry.Application
+    ( Application (..)
+    , DecodedHolding (..)
+    , HoldingRules (..)
+    , datumCbor
+    , datumHash
+    , txOutDatum
+    )
+import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger
     ( ConwayEra
@@ -128,7 +134,8 @@ import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.Edges (registryContextFor)
 import Singular.Registry.TxBuilder.Internal
-    ( currentPosixMs
+    ( addrFromBytes
+    , currentPosixMs
     , extractCageDatum
     , requestAddrFromCfg
     )
@@ -219,8 +226,12 @@ data FoldSpec = FoldSpec
 
 -- | What the fold left at the application.
 data Delivery
-    = -- | The output now holding the key's active token, under its envelope
-      Delivered TxIn Envelope
+    = -- | The output now holding the key, as the value decodes it (open datum)
+      Delivered TxIn DecodedHolding
+    | {- | The output now holding the key's datum, at the request's own
+      destination (neutral: decodes nothing)
+      -}
+      DeliveredDatum TxIn PLC.Data
     | -- | The live output the fold released, and the deposit it paid back
       Released TxIn Integer
 
@@ -251,8 +262,12 @@ data Plan = Plan
     , plKey :: ByteString
     , plEdge :: Edge
     , plKind :: FoldKind
-    , plEnvelope :: Maybe Envelope
-    , plHolding :: Maybe ((TxIn, TxOut ConwayEra), Envelope)
+    , plDatum :: Maybe PLC.Data
+    -- ^ The datum an insertion delivers (the request's own, through the value)
+    , plDestination :: Maybe (ByteString, Maybe PLC.Data)
+    -- ^ Where the insertion delivers (the request's own destination)
+    , plHolding :: Maybe ((TxIn, TxOut ConwayEra), DecodedHolding)
+    -- ^ The holding a termination releases (through the value; absent on neutral)
     , plRootAfter :: ByteString
     , plDeadline :: Deadline
     , plUpper :: Maybe SlotNo
@@ -261,12 +276,31 @@ data Plan = Plan
     , plRemaining :: Integer
     }
 
+{- | Why a termination with no holding rules is refused, before anything is
+built or signed: the registry's pinned application policy (hex), and the
+value's executable when present, so the application's own executable folds it.
+-}
+neutralTerminationRefusal :: Application -> CageConfig -> String
+neutralTerminationRefusal app cfg =
+    let policyHex = hexT (SBS.fromShort (cfgApplicationPolicy cfg))
+    in  case appExecutable app of
+            Just exe ->
+                "a termination must be folded by "
+                    <> T.unpack exe
+                    <> " (this registry pins application policy "
+                    <> T.unpack policyHex
+                    <> ")"
+            Nothing ->
+                "this registry pins application policy "
+                    <> T.unpack policyHex
+                    <> ": its termination must be folded by the application's own executable"
+
 {- | @singular registry fold@: fold the one pending request, signed and funded
 by this wallet, and journal it. Whoever booked the request, the fold journals
 in this wallet's own managed partition.
 -}
-runFold :: Env -> FoldArgs -> IO Value
-runFold env a = do
+runFold :: Application -> Env -> FoldArgs -> IO Value
+runFold app env a = do
     let ws = foldWrite a
     dir <-
         resolveWalletDir
@@ -275,6 +309,7 @@ runFold env a = do
             (accessToken (foldAccess a))
             (writeWalletKey ws)
     attached
+        app
         env
         dir
         (foldBlueprint a)
@@ -285,6 +320,7 @@ runFold env a = do
         $ \at -> do
             folded <-
                 foldPending
+                    app
                     at
                     FoldSpec
                         { fsOrigin = Standalone
@@ -304,9 +340,14 @@ foldedFields f =
     , ("fold", toJSON (txIdHex (fdTx f)))
     ]
         <> case fdDelivery f of
-            Delivered out envelope ->
+            Delivered out holding ->
                 [ ("liveOutput", toJSON (txInText out))
-                , ("envelope", envelopeToJson envelope)
+                , ("envelope", dhDatumJson holding)
+                ]
+            DeliveredDatum out datum ->
+                [ ("liveOutput", toJSON (txInText out))
+                , ("datumHash", toJSON (hexT (datumHash datum)))
+                , ("datumCbor", toJSON (hexT (datumCbor datum)))
                 ]
             Released out deposit ->
                 [ ("released", toJSON (txInText out))
@@ -328,8 +369,8 @@ after and the built fold all come from the fold's own view; any refusal
 there happens before anything is signed. The speculative walk and the
 journalled after-root are that one edge.
 -}
-foldPending :: Attached -> FoldSpec -> IO Folded
-foldPending at FoldSpec{..} = do
+foldPending :: Application -> Attached -> FoldSpec -> IO Folded
+foldPending app at FoldSpec{..} = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
@@ -348,7 +389,7 @@ foldPending at FoldSpec{..} = do
                     (Just (plKey p))
                     ( case plKind p of
                         FoldInsertion ->
-                            "active:" <> maybe "" (hexT . envelopeHash) (plEnvelope p)
+                            "active:" <> maybe "" (hexT . datumHash) (plDatum p)
                         FoldTermination -> "terminal"
                     )
                     (Just (plEdge p))
@@ -439,21 +480,27 @@ foldPending at FoldSpec{..} = do
                             , ("remainingMs", toJSON left)
                             ]
                 let key = requestKey req
-                (envelope, holding) <- case kind of
+                    dest = requestDestination req
+                case (kind, appHolding app) of
+                    (FoldTermination, Nothing) -> do
+                        seen Nothing
+                        stop' ClientRefusal (neutralTerminationRefusal app cfg) []
+                    _ -> pure ()
+                (datum, holding) <- case kind of
                     FoldInsertion -> do
-                        e <-
+                        d <-
                             either
-                                (\why -> stop' ClientRefusal why [])
+                                (\why -> seen Nothing >> stop' ClientRefusal why [])
                                 pure
-                                (carriedEnvelope req)
-                        pure (Just e, Nothing)
+                                (checkCarriedDatum app req)
+                        pure (Just d, Nothing)
                     FoldTermination -> do
-                        outs <- liveOutputs v s
+                        outs <- liveOutputs app v s
                         h <-
                             either
                                 (\why -> stop' ClientRefusal why [])
                                 pure
-                                (liveOutputFor s key outs)
+                                (liveOutputFor app s key outs)
                         pure (Nothing, Just h)
                 freshRoot <- either (failWith ClientRefusal) pure (observedRoot live)
                 unless (freshRoot == rootBefore) $
@@ -478,16 +525,19 @@ foldPending at FoldSpec{..} = do
                     pure (TS.walkRoot walked)
                 ctx0 <-
                     registryContextFor cfg (savedCodes s) v (liveRefs (atLive at))
-                ctx <-
-                    either
-                        (\why -> stop' ClientRefusal why [])
-                        pure
-                        ( withApplication
-                            (applied s)
-                            Nothing
-                            (maybe [] (pure . fst) holding)
-                            ctx0
-                        )
+                ctx <- case appHolding app of
+                    Just rules ->
+                        either
+                            (\why -> stop' ClientRefusal (T.unpack why) [])
+                            pure
+                            ( hrWithApplication
+                                rules
+                                (applied s)
+                                Nothing
+                                (maybe [] (pure . fst) holding)
+                                ctx0
+                            )
+                    Nothing -> pure ctx0
                 funded <-
                     fundedView fsFund addr v
                         >>= either
@@ -574,7 +624,8 @@ foldPending at FoldSpec{..} = do
                         , plKey = key
                         , plEdge = requestEdge req
                         , plKind = kind
-                        , plEnvelope = envelope
+                        , plDatum = datum
+                        , plDestination = Just dest
                         , plHolding = holding
                         , plRootAfter = rootAfter
                         , plDeadline = deadline
@@ -604,28 +655,62 @@ foldPending at FoldSpec{..} = do
                 StaleState
                 "after the fold the public lineage reaches another root"
         pure root
-    (delivery, detail) <- case (plKind plan, plEnvelope plan, plHolding plan) of
-        (FoldInsertion, Just envelope, _) -> do
-            outs <- readingBack at "fold" fold ["key outputs"] (`liveOutputs` s)
-            ((liveIn, _), seen) <-
-                either (failWith Partial) pure (liveOutputFor s key outs)
-            unless (seen == envelope) $
-                failWith Partial "the delivered output carries another envelope"
-            pure
-                ( Delivered liveIn seen
-                , "key live at "
-                    <> txInText liveIn
-                    <> " under its envelope; root 0x"
-                    <> hexT local
-                )
-        (FoldTermination, _, Just ((liveIn, _), envelope)) -> do
-            after <- readingBack at "fold" fold ["key outputs"] (`liveOutputs` s)
+    (delivery, detail) <- case (plKind plan, plDatum plan, plHolding plan) of
+        (FoldInsertion, Just datum, _) -> case appHolding app of
+            Just _ -> do
+                outs <-
+                    readingBack at "fold" fold ["key outputs"] (\v -> liveOutputs app v s)
+                ((liveIn, _), seen) <-
+                    either (failWith Partial) pure (liveOutputFor app s key outs)
+                unless (dhDatumData seen == datum) $
+                    failWith Partial "the delivered output carries another envelope"
+                pure
+                    ( Delivered liveIn seen
+                    , "key live at "
+                        <> txInText liveIn
+                        <> " under its envelope; root 0x"
+                        <> hexT local
+                    )
+            Nothing -> do
+                let destAddr = maybe "" fst (plDestination plan)
+                outs <- readingBack at "fold" fold ["key outputs"] $ \view ->
+                    case addrFromBytes destAddr of
+                        Nothing ->
+                            failWith
+                                Partial
+                                "the insertion's request names an address this fold cannot decode"
+                        Just destAt -> Cage.outputsAt view destAt
+                let wanted = datumHash datum
+                    matching =
+                        [ u
+                        | u@(_, o) <- outs
+                        , Just (_, h) <- [txOutDatum o]
+                        , h == wanted
+                        ]
+                liveIn <- case matching of
+                    [(i, _)] -> pure i
+                    [] ->
+                        failWith Partial "the delivered output carries another datum"
+                    _ ->
+                        failWith
+                            Partial
+                            "more than one live output carries the delivered datum"
+                pure
+                    ( DeliveredDatum liveIn datum
+                    , "key live at "
+                        <> txInText liveIn
+                        <> " under its datum; root 0x"
+                        <> hexT local
+                    )
+        (FoldTermination, _, Just ((liveIn, _), holding)) -> do
+            after <-
+                readingBack at "fold" fold ["key outputs"] (\v -> liveOutputs app v s)
             when (any ((== liveIn) . fst) after) $
                 failWith
                     Partial
                     "the fold confirmed but the live output is still unspent"
             pure
-                ( Released liveIn (ctlDeposit (envControl envelope))
+                ( Released liveIn (dhDeposit holding)
                 , "live output "
                     <> txInText liveIn
                     <> " released; root 0x"
@@ -634,7 +719,7 @@ foldPending at FoldSpec{..} = do
         _ ->
             failWith
                 Partial
-                "the fold's plan carries neither an envelope nor a holding"
+                "the fold's plan carries neither a datum nor a holding"
     harnessHoldAt "SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED" Nothing
     journalObserved wc "fold" fold detail
     report
@@ -644,6 +729,7 @@ foldPending at FoldSpec{..} = do
         ]
         ( Trace.Folded (edgeText edge) key $ case delivery of
             Delivered out _ -> txInText out
+            DeliveredDatum out _ -> txInText out
             Released out _ -> txInText out
         )
     report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT local))

@@ -1,7 +1,7 @@
 # Recovering a registry command
 
-You run `singular registry create`, `insert`, `update`, `terminate` or
-`inspect`, and something goes wrong between your machine and the chain:
+You run `singular registry create`, `open-datum insert`, `open-datum update`, `open-datum terminate` or
+`inspect` (`singular registry inspect` or `open-datum inspect`), and something goes wrong between your machine and the chain:
 the node's answer to a submission never arrives, the process is killed,
 the machine stops halfway through saving its files, or a transaction the
 chain had included is rolled back. You want to know which of those

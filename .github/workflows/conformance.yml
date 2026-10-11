@@ -6,6 +6,7 @@ on:
     paths:
       - 'conformance/**'
       - 'onchain/**'
+      - 'applications/**'
       - 'lean/**'
       - 'tools/**'
       - '.github/workflows/conformance.yml'
