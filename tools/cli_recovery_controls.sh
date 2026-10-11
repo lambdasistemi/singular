@@ -1221,7 +1221,9 @@ if part rollback; then
   # The hash and slot of the tip a node opened its database at, from the
   # OpenedDB line numbered after LINE in its log.
   opened_tip_after() {
-    tail -n +"$(($1 + 1))" "$nlog" | grep -m1 'ChainDB.OpenEvent.OpenedDB' \
+    local window
+    window="$(tail -n +"$(($1 + 1))" "$nlog")"
+    grep -m1 'ChainDB.OpenEvent.OpenedDB' <<<"$window" \
       | sed -nE 's/.* and tip ([0-9a-f]{64}) at slot ([0-9]+)$/{"hash":"\1","slot":\2}/p'
   }
   # Every block the node put on its chain after line LINE of its log. The
