@@ -212,8 +212,9 @@ cleanupFailureCase actionFails =
         ( if actionFails
             then "retains the action and cleanup failures together"
             else "refuses success when its root could not be removed"
-        ) $
-        withEnvironment True $ \owner original other -> do
+        )
+        $ withEnvironment True
+        $ \owner original other -> do
             let parent = takeDirectory other
             seen <- newIORef Nothing
             result <-
