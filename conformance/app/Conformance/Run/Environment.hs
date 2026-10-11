@@ -24,6 +24,8 @@ module Conformance.Run.Environment
     , requireBase
     , requireTreeClean
     , bracketTmpDir
+    , TmpDirOwner
+    , newTmpDirOwner
     , blueprintId
     , cageCfg
     , cageCfgWith
@@ -35,31 +37,22 @@ module Conformance.Run.Environment
 import Conformance.FoldFixture qualified as FoldFixture
 import Conformance.Run.Control
 import Conformance.Run.Replay (ReplayIndex)
+import Conformance.Run.Temporary
+    ( TmpDirOwner
+    , newTmpDirOwner
+    , withTmpDir
+    )
 import Singular.Registry.Evidence qualified as Cage
 
-import Control.Exception
-    ( SomeException
-    , throwIO
-    , try
-    )
 import Data.Aeson (Value (..))
 import Data.ByteString.Short qualified as SBS
 import Data.IORef (IORef)
 import Data.Map.Strict qualified as Map
-import Data.Time (getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Lens.Micro ((^.))
-import System.Directory
-    ( createDirectoryIfMissing
-    , doesFileExist
-    , getTemporaryDirectory
-    , removePathForcibly
-    )
+import System.Directory (doesFileExist)
 import System.Environment (lookupEnv)
 import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
-import System.Posix.Env (setEnv)
-import System.Posix.Process (getProcessID)
 import System.Process (readProcess, readProcessWithExitCode)
 
 import Cardano.Crypto.Hash.Class (hashToBytes)
@@ -358,43 +351,17 @@ requireTreeClean = do
 -- Devnet isolation (not optional)
 -- ---------------------------------------------------------
 
-{- | Isolate this run's node: a unique TMPDIR owned by this process,
-created before the node starts. @prepareTmpDir@ removes
-@$TMPDIR\/cardano-e2e@, so inheriting the default would delete
-another lane's database. Verified below, not merely set.
+{- | Isolate this run's node under the executable's explicit environment
+owner. The pinned node helper deletes @$TMPDIR\/cardano-e2e@, so the
+root must be exclusively created before it starts. 'withTmpDir' restores
+the environment and attempts cleanup even if logging or the action throws;
+failed removal retains both errors and the root path.
 -}
-bracketTmpDir :: IO a -> IO a
-bracketTmpDir action = do
-    sysTmp <- getTemporaryDirectory
-    pid <- getProcessID
-    now <- getCurrentTime
-    let stamp =
-            show
-                ( floor (utcTimeToPOSIXSeconds now * 1000)
-                    :: Integer
-                )
-        dir =
-            sysTmp </> ("conformance-" <> show pid <> "-" <> stamp)
-    createDirectoryIfMissing True dir
-    setEnv "TMPDIR" dir True
-    check <- getTemporaryDirectory
-    require
-        ( "TMPDIR isolation failed: still "
-            <> check
-            <> " (wanted "
-            <> dir
-            <> ")"
-        )
-        (check == dir)
-    require
-        ("TMPDIR isolation failed: using the default " <> sysTmp)
-        (dir /= sysTmp)
-    emit "tmpdir" dir
-    result <- try @SomeException action
-    removePathForcibly dir
-    case result of
-        Right a -> pure a
-        Left (e :: SomeException) -> throwIO e
+bracketTmpDir :: TmpDirOwner -> IO a -> IO a
+bracketTmpDir owner action =
+    withTmpDir owner $ \dir -> do
+        emit "tmpdir" dir
+        action
 
 blueprintId :: CageConfig -> SBS.ShortByteString -> String
 blueprintId cfg requestBytes =

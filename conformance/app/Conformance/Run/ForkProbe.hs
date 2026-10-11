@@ -58,8 +58,8 @@ fold falsifies that and opens a green path for the row (re-marking
 stays an owner ruling). No receipts: this is an investigation probe,
 not a row; shapes and verdicts are the evidence.
 -}
-runForkProbe :: IO ()
-runForkProbe = do
+runForkProbe :: TmpDirOwner -> IO ()
+runForkProbe owner = do
     blueprintPath <- requireEnv "REGISTRY_BLUEPRINT"
     (stateBytes, requestBytes, namingCodes) <- loadCodes blueprintPath
     checkHarnessGenesis
@@ -67,7 +67,7 @@ runForkProbe = do
     emit "node" nodeVer
     base <- requireBase
     emit "base" base
-    bracketTmpDir $ do
+    bracketTmpDir owner $ do
         withHarnessNode $
             runForkProbeSession stateBytes requestBytes namingCodes
 

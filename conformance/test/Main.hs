@@ -34,6 +34,7 @@ import Conformance.Support.Rows qualified as Rows
 import Conformance.Support.RunReplay qualified as RunReplay
 import Conformance.Support.Specification qualified as Specification
 import Conformance.Support.Step qualified as Step
+import Conformance.Support.Temporary qualified as Temporary
 import Conformance.Support.Withhold qualified as Withhold
 import System.Environment (lookupEnv)
 import Test.Hspec (Spec, describe, hspec)
@@ -52,6 +53,8 @@ main = do
 
 suite :: Spec
 suite = do
+    describe (tagged "Conformance.Support.Temporary" [Conformance]) $
+        describe "Appendix — how we check the evidence" Temporary.spec
     describe (tagged "Conformance.Cli.ManagedState" [Conformance]) $
         describe "Appendix — how we check the evidence" ManagedStateSpec.spec
     describe (tagged "Conformance.Support.Receipt" [Conformance]) $
