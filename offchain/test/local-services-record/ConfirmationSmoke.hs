@@ -32,16 +32,21 @@ import Cardano.Node.Client.Provider qualified as Node
 import Cardano.Slotting.Time (SystemStart (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Serialise (deserialiseOrFail)
-import Control.Concurrent.Async (concurrently, link, withAsync)
+import Control.Concurrent.Async (link, withAsync)
 import Control.Exception (try)
-import Control.Monad (forM, unless)
-import Data.Aeson (encode, object, (.=))
+import Control.Monad (forM, unless, when)
+import Control.Tracer (Tracer (..))
+import Data.Aeson (Value (..), encode, object, (.=))
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as LBS
-import Data.Maybe (fromMaybe)
+import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.List (sort)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
 import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
+import GHC.Clock (getMonotonicTime)
 import Lens.Micro ((&), (.~), (^.))
 import Ouroboros.Consensus.HardFork.History.Summary
     ( Bound (..)
@@ -69,10 +74,16 @@ import Singular.Registry.Private.RawFacts
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Terminal (withWrites)
+import Singular.Registry.Trace
+    ( BackendEvent (..)
+    , Query (..)
+    , QueryEnd (..)
+    )
 import Singular.Registry.Wait (WaitFailure (..), WaitStage (..))
 import Singular.Registry.Wallet (Wallet (..))
 import System.Directory (copyFile)
 import System.FilePath (takeDirectory, (</>))
+import System.Timeout (timeout)
 
 confirmationSmoke :: FilePath -> FilePath -> IO ()
 confirmationSmoke output genesisDirectory =
@@ -90,6 +101,9 @@ confirmationSmoke output genesisDirectory =
             ]
         lsq <- newLSQChannel 16
         unusedSubmission <- newLTxSChannel 16
+        -- Raw node queries need the node-client loop to serve them while
+        -- this harness drives HTTP confirmation. withAsync owns and joins
+        -- that loop before the facade/node lifetime ends.
         withAsync
             (runNodeClient (NetworkMagic 42) socket lsq unusedSubmission)
             $ \client -> do
@@ -112,7 +126,14 @@ confirmationSmoke output genesisDirectory =
                         EraSummary{eraEnd = EraEnd bound} : _ -> pure (boundSlot bound)
                         _ -> fail "ConfirmationSmokeMissingFiniteHorizon"
                     pure (floor (utcTimeToPOSIXSeconds start * 1000), end, snapshot)
-                withWrites mempty mempty (facadeSettings facade) wallet $ \caps -> do
+                watchingDeadline <- newIORef False
+                enteredDeadline <- newIORef Nothing
+                let observe = Tracer $ \case
+                        Exchanged Query{queryName = "tx_info", queryEnd = Answered _} -> do
+                            watching <- readIORef watchingDeadline
+                            when watching (getMonotonicTime >>= writeIORef enteredDeadline . Just)
+                        _ -> pure ()
+                withWrites observe mempty (facadeSettings facade) wallet $ \caps -> do
                     let SlotNo tip = Node.ledgerTipSlot point
                         upper = SlotNo (tip + 50)
                         SlotNo horizonSlot = horizon
@@ -176,12 +197,62 @@ confirmationSmoke output genesisDirectory =
                         (encode samples)
                     capTrace caps
                         >>= LBS.writeFile (output </> "provider-trace.json") . encode
+                    -- A valid signed key payment on the working private
+                    -- node is deliberately not submitted. Confirmation must
+                    -- enter real HTTP reads/polling before its positive outer
+                    -- deadline, then unwind every acquired provider session.
+                    deadlinePayment <- payment caps wallet SNothing
+                    let deadlineSigned = signedTx (signTx (walletSignKey wallet) deadlinePayment)
+                    priorTrace <- length <$> capTrace caps
+                    writeIORef watchingDeadline True
+                    deadlineStarted <- getMonotonicTime
+                    deadlineResult <- timeout 2_500_000 (capConfirm caps deadlineSigned)
+                    deadlineFinished <- getMonotonicTime
+                    writeIORef watchingDeadline False
+                    deadlineEntry <- readIORef enteredDeadline
+                    deadlineTrace <- drop priorTrace <$> capTrace caps
+                    let sessions kind =
+                            sort
+                                [ identity
+                                | Object fields <- deadlineTrace
+                                , KeyMap.lookup "kind" fields == Just (String kind)
+                                , Just (String identity) <- [KeyMap.lookup "session" fields]
+                                ]
+                        elapsed = deadlineFinished - deadlineStarted
+                    LBS.writeFile (output </> "forced-confirmation-deadline.json") $
+                        encode $
+                            object
+                                [ "transaction" .= show (txIdTx deadlineSigned)
+                                , "outerDeadlineUs" .= (2_500_000 :: Int)
+                                , "result" .= deadlineResult
+                                , "entrySeconds" .= fmap (subtract deadlineStarted) deadlineEntry
+                                , "elapsedSeconds" .= elapsed
+                                , "trace" .= deadlineTrace
+                                , "limit"
+                                    .= ( "Real private-node-backed HTTP confirmation; no public-network claim"
+                                            :: String
+                                       )
+                                ]
+                    unless
+                        ( isNothing deadlineResult
+                            && elapsed >= 2.4
+                            -- One second of scheduler tolerance beyond the
+                            -- 2.5s deadline rejects eventual delayed cleanup.
+                            && elapsed < 3.5
+                            && maybe
+                                False
+                                (\at -> at >= deadlineStarted && at < deadlineStarted + 2.5)
+                                deadlineEntry
+                            && not (null (sessions "acquire"))
+                            && sessions "acquire" == sessions "release"
+                        )
+                        $ fail "ConfirmationSmokeForcedDeadlineMismatch"
                     let missingFinite = finite & bodyTxL . feeTxBodyL .~ Coin 1_000_001
                         missingUnbounded = unbounded & bodyTxL . feeTxBodyL .~ Coin 1_000_002
-                    (finiteFailure, unboundedFailure) <-
-                        concurrently
-                            (expectTimeout caps missingFinite (Just finiteDeadline) initialEnd)
-                            (expectTimeout caps missingUnbounded Nothing initialEnd)
+                    finiteFailure <-
+                        expectTimeout caps missingFinite (Just finiteDeadline) initialEnd
+                    unboundedFailure <-
+                        expectTimeout caps missingUnbounded Nothing initialEnd
                     trace <- capTrace caps
                     LBS.writeFile (output </> "provider-trace.json") (encode trace)
                     LBS.writeFile (output </> "confirmation-smoke.json") $

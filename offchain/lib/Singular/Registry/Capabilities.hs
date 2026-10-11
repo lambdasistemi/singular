@@ -1,6 +1,13 @@
 {- | Capabilities retained by a command or runner. Reads use the explicit
 network and generic provider; submission accepts only signed bytes; clocks
 and bounded confirmation belong to the caller's effect composition.
+
+IO confirmation runs on the command's calling thread. Its implementation
+must be interruptible, including transport waits and resource cleanup, and
+must propagate asynchronous exceptions rather than convert them into a
+provider verdict. Blocking uninterruptibly delays both deadlines and caller
+cancellation until that block is released; there is no detached worker to
+continue confirmation after the command.
 -}
 module Singular.Registry.Capabilities (Capabilities (..), sessionReceipt) where
 
@@ -30,6 +37,13 @@ data Capabilities w m = Capabilities
     -}
     , capSubmit :: SignedTx -> m SubmitResult
     , capConfirm :: ConwayTx -> m ()
+    {- ^ Confirm exactly this signed transaction without resubmitting it.
+    For IO callers this action and its cleanup must be interruptible: a
+    command runs it on its calling thread under its confirmation deadline.
+    Provider failures, wait failures and caller cancellation retain their
+    distinct identities. An uninterruptible replacement delays command
+    return until it releases; it does not gain a background worker.
+    -}
     , capFacts :: m [FactRecord]
     , capTrace :: m [Value]
     }

@@ -34,7 +34,13 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Concurrent (threadDelay)
+import Control.Concurrent
+    ( newEmptyMVar
+    , putMVar
+    , readMVar
+    , threadDelay
+    , tryPutMVar
+    )
 import Control.Exception (finally, try)
 import Control.Monad (forM_, void)
 import Control.Monad.State.Strict (State, gets, modify', runState)
@@ -67,10 +73,12 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TE
 import Data.Time (UTCTime (..), fromGregorian)
 import Data.Word (Word64)
+import GHC.Clock (getMonotonicTime)
 import Lens.Micro ((&), (.~), (^.))
 import Singular.Provider.Koios.Client qualified as Client
 import Singular.Provider.Koios.FakeServer
     ( Seen (..)
+    , countAt
     , replayFixtures
     , withFakeKoios
     )
@@ -99,6 +107,7 @@ import Singular.Provider.Koios.Scripted
     )
 import Singular.Provider.Koios.State
 import Singular.Provider.Koios.Wire qualified as Wire
+import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Confirmation qualified as Confirmation
 import Singular.Registry.Evidence
     ( Evidenced (..)
@@ -113,11 +122,13 @@ import Singular.Registry.NetworkTime
     , networkMagic
     )
 import Singular.Registry.NetworkTimeSpec (loadNetworkFixture)
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionEvidence
     ( FactRecord (..)
     , observeProvider
     )
 import Singular.Registry.Signing (signedTx)
+import Singular.Registry.Terminal (newCapabilities)
 import Singular.Registry.TimeSource (loadPinnedSource)
 import Singular.Registry.TraceRender (backendPhaseLog)
 import Singular.Registry.TxBuilder.BookingFixture (payer)
@@ -1255,6 +1266,85 @@ spec = describe "Koios ledger provider constructor" $ do
             map Client.rawCall seen `shouldBe` [Wire.CallTip]
             length [() | SessionOpened _ _ <- observations] `shouldBe` 1
             length [() | SessionClosed _ <- observations] `shouldBe` 1
+
+    it
+        "interrupts the shipping Koios confirmation after real HTTP entry at a positive deadline"
+        $ do
+            set <- recordedSet
+            armed <- newIORef False
+            entered <- newEmptyMVar
+            released <- newEmptyMVar
+            hold <- newEmptyMVar
+            -- The loopback server must run concurrently with its real HTTP
+            -- client to hold a read after successful setup. Warp owns its server
+            -- lifetime; this finally releases and joins the held handler too.
+            let scene seen number = do
+                    blocking <- readIORef armed
+                    if blocking && seenPath seen == "/tip"
+                        then
+                            ( getMonotonicTime
+                                >>= putMVar entered
+                                >> readMVar hold
+                                >> replayFixtures set seen number
+                            )
+                                `finally` putMVar released ()
+                        else replayFixtures set seen number
+            withFakeKoios scene $ \url serverSeen -> do
+                caps <-
+                    newCapabilities
+                        nullTracer
+                        (ProviderSettings (Text.unpack url) 1 Nothing Nothing)
+                let (network, provider) = capReads caps
+                    (target, _, _) = dependentPair True
+                    sessions kind trace =
+                        sort
+                            [ identity
+                            | Object fields <- trace
+                            , KM.lookup "kind" fields == Just (String kind)
+                            , Just (String identity) <- [KM.lookup "session" fields]
+                            ]
+                toList (target ^. bodyTxL . outputsTxBodyL)
+                    `shouldSatisfy` (not . null)
+                runtime <- Confirmation.newIOConfirmationRuntime
+                void $
+                    Confirmation.confirmationWindow runtime provider network target
+                        >>= requireRight
+                setupTipCount <- countAt "/tip" <$> serverSeen
+                setupTipCount `shouldBe` 1
+                writeIORef armed True
+                ( do
+                        started <- getMonotonicTime
+                        result <- timeout 300000 (capConfirm caps target)
+                        finished <- getMonotonicTime
+                        entry <- timeout 1000000 (readMVar entered)
+                        trace <- capTrace caps
+                        persist "shipping-http-forced-deadline" $
+                            object
+                                [ "outerDeadlineUs" .= (300000 :: Int)
+                                , "result" .= result
+                                , "enteredHttp" .= Data.Maybe.isJust entry
+                                , "entrySeconds" .= fmap (subtract started) entry
+                                , "elapsedSeconds" .= (finished - started)
+                                , "transaction" .= show (keyOf target)
+                                , "trace" .= trace
+                                ]
+                        result `shouldBe` Nothing
+                        case entry of
+                            Just at ->
+                                (at - started)
+                                    `shouldSatisfy` (\seconds -> seconds >= 0 && seconds < 0.3)
+                            Nothing -> expectationFailure "shipping confirmation never entered HTTP"
+                        (finished - started)
+                            -- Allow one second of scheduler tolerance beyond
+                            -- the 300ms deadline; eventual delayed cleanup fails.
+                            `shouldSatisfy` (\seconds -> seconds >= 0.25 && seconds < 1.3)
+                        countAt "/tip" <$> serverSeen `shouldReturn` setupTipCount + 1
+                        sessions "acquire" trace `shouldBe` sessions "release" trace
+                        length (sessions "acquire" trace) `shouldBe` 2
+                    )
+                    `finally` do
+                        void (tryPutMVar hold ())
+                        timeout 1000000 (readMVar released) `shouldReturn` Just ()
 
     it
         "reconciles every real constructor HTTP read, time and parameters with phase logging"

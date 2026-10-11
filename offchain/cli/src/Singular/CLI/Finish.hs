@@ -11,12 +11,21 @@ Every command ends here: its receipt is printed as JSON on standard output
 (and to @--receipt FILE@ when given), and the exit status is that of its
 outcome class ("Singular.CLI.Receipt"). A command that stops early is its
 own receipt, naming its outcome class and why.
+
+Asynchronous cancellation and infrastructure wait failures propagate unchanged
+after the action's cleanup and journal preservation. They supply no command
+verdict and must not become client or ledger refusals here.
 -}
 module Singular.CLI.Finish
     ( finish
     ) where
 
-import Control.Exception (SomeException, fromException, try)
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , tryJust
+    )
 import Control.Monad (forM_, unless)
 import Control.Tracer (Tracer, traceWith)
 import Data.Aeson (Value (..), toJSON)
@@ -40,6 +49,7 @@ import Singular.CLI.Trace
     , What (..)
     )
 import Singular.Registry.Trace (startTimer)
+import Singular.Registry.WaitTypes (WaitFailure)
 
 {- | Print the receipt, write it where asked, and exit with the class of
 its outcome. A failure is its own receipt. The command's stream opens with
@@ -53,7 +63,7 @@ finish
 finish tracer command target action = do
     traceWith tracer (Trace [] (What (CommandStarted command)))
     elapsed <- startTimer
-    result <- try action
+    result <- tryJust receiptFailure action
     let (value, outcome, reported) = case result of
             Right v -> (v, outcomeOf v, False)
             Left (e :: SomeException) -> case reportedOf e of
@@ -83,6 +93,11 @@ finish tracer command target action = do
     BLC.putStrLn rendered
     maybe (pure ()) (\p -> BLC.writeFile p (rendered <> "\n")) target
     pure (exitCodeOf outcome)
+  where
+    receiptFailure failure
+        | Just (_ :: SomeAsyncException) <- fromException failure = Nothing
+        | Just (_ :: WaitFailure) <- fromException failure = Nothing
+        | otherwise = Just failure
 
 -- | The outcome class a receipt names.
 outcomeOf :: Value -> OutcomeClass
