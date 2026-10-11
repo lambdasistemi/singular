@@ -5,9 +5,11 @@
 # A mutant is a source-only patch in the host's own tree that removes exactly
 # one refusing rule, or one named set of rules, from the Aiken source. For one mutant the command builds
 # a scratch git copy of the checkout, applies the patch there, regenerates
-# the identity manifest with the repo's own recipe (A-001: `just
-# script-identity-regen` in onchain, scratch copy only, never typed, never
-# edited by hand; the checkout is never touched), commits the scratch copy
+# the application's identity manifest with the repo's own recipe (A-001:
+# the `script-identity-regen` jq shape from onchain/justfile over the
+# application's own `.#plutus-blueprint` — the application project carries
+# no `just` alias — scratch copy only, never typed, never edited by hand;
+# the checkout is never touched), commits the scratch copy
 # (a flake and the release assembler need tracked files), and runs the
 # UNMODIFIED part command (`nix run .#negative-host-part -- PART`) from that
 # copy for each pair the rule refuses plus the mutant's declared control
@@ -151,8 +153,11 @@ classify_mutant_run() {
 }
 
 # The regeneration step may change only the identity manifest (F314-1):
-# after the source patch is committed, exactly onchain/script-identity.json
-# is modified, it did change, and the move stays within the open_datum pins
+# after the source patch is committed, exactly the application's own
+# applications/open-datum/onchain/script-identity.json is modified (the
+# registry's onchain/script-identity.json no longer carries the application
+# validator since #528), it did change, and the move stays within the
+# open_datum pins
 # (same schema, compiler and upstream, same validator count and titles,
 # every changed validator an open_datum one). Anything else is a setup
 # failure, never a flip. The live run calls it on the real scratch state;
@@ -160,12 +165,12 @@ classify_mutant_run() {
 # exactly one guard, so deleting that guard's check makes it pass.
 regen_manifest_ok() {
   local copy="$1" base="$2"
-  local manifest="$copy/onchain/script-identity.json"
+  local manifest="$copy/applications/open-datum/onchain/script-identity.json"
   local modified=""
-  git -C "$copy" show HEAD:onchain/script-identity.json >"$base" || return 1 # GUARD-rbase
-  git -C "$copy" diff --quiet -- onchain/script-identity.json && return 1    # GUARD-rchanged
+  git -C "$copy" show HEAD:applications/open-datum/onchain/script-identity.json >"$base" || return 1 # GUARD-rbase
+  git -C "$copy" diff --quiet -- applications/open-datum/onchain/script-identity.json && return 1    # GUARD-rchanged
   modified="$(git -C "$copy" status --porcelain | awk '{print $2}')" || return 1
-  [ -z "$modified" ] || [ "$modified" = "onchain/script-identity.json" ] || return 1 # GUARD-rfiles
+  [ -z "$modified" ] || [ "$modified" = "applications/open-datum/onchain/script-identity.json" ] || return 1 # GUARD-rfiles
   jq --slurpfile b "$base" --slurpfile n "$manifest" -n -e ' # GUARD-rscope
     ($b[0]) as $bb | ($n[0]) as $nn
     | ($bb.schema == $nn.schema and $bb.compiler == $nn.compiler and $bb.upstream == $nn.upstream)
@@ -266,8 +271,8 @@ patch_hygiene_ok() {
     hverdict=0
     htmp="$(mktemp -d)" || hverdict=1
     if [ "$hverdict" = 0 ]; then
-      mkdir -p "$htmp/apply/onchain/validators" || hverdict=1
-      cp "$source" "$htmp/apply/onchain/validators/open_datum.ak" || hverdict=1
+      mkdir -p "$htmp/apply/applications/open-datum/onchain/validators" || hverdict=1
+      cp "$source" "$htmp/apply/applications/open-datum/onchain/validators/open_datum.ak" || hverdict=1
     fi
     hheaders="$(grep -n '^@@ ' "$patch" | cut -d: -f1 || true)"
     [ -n "$hheaders" ] || hverdict=1
@@ -305,7 +310,7 @@ patch_hygiene_ok() {
       (cd "$htmp/apply" && git apply "$patch" >/dev/null 2>&1) || hverdict=1
     fi
     if [ "$hverdict" = 0 ]; then
-      actual="$(git diff --no-index -U0 "$source" "$htmp/apply/onchain/validators/open_datum.ak" 2>/dev/null | grep '^@@ ' || true)"
+      actual="$(git diff --no-index -U0 "$source" "$htmp/apply/applications/open-datum/onchain/validators/open_datum.ak" 2>/dev/null | grep '^@@ ' || true)"
       [ -n "$actual" ] || hverdict=1
       while IFS= read -r ahunk; do
         [ -n "$ahunk" ] || continue
@@ -361,8 +366,29 @@ apply_patch_and_regen() {
     REGEN_STATUS=failed
     return 1
   }
-  (cd "$copy/onchain" && just script-identity-regen >"$parent/regen.log" 2>&1) || {
-    echo "negative-host-mutants: FAIL: script-identity-regen failed (see regen.log)" >&2
+  # The application's manifest recipe: the registry `script-identity-regen`
+  # jq shape (onchain/justfile) over the application's own blueprint — the
+  # application project has no `just` alias. Scratch copy only; the byte
+  # shape reproduces the committed manifest exactly on an unmutated build.
+  (
+    cd "$copy"
+    blueprint="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/onchain#plutus-blueprint)"
+    rev="$(awk -F'|' '/frozen revision/ {gsub(/[ `]/, "", $3); print $3; exit}' PROVENANCE.md)"
+    if [[ ! "$rev" =~ ^[0-9a-f]{40}$ ]]; then
+      echo "error: could not read the upstream frozen revision from PROVENANCE.md" >&2
+      exit 1
+    fi
+    jq -n \
+      --slurpfile bp "$blueprint" \
+      --arg rev "$rev" \
+      '{
+         schema: 1,
+         upstream: {source_revision: $rev},
+         compiler: $bp[0].preamble.compiler.version,
+         validators: [$bp[0].validators[] | {title: .title, hash: .hash, parameters: ((.parameters // []) | length)}]
+       }' >applications/open-datum/onchain/script-identity.json
+  ) >"$parent/regen.log" 2>&1 || {
+    echo "negative-host-mutants: FAIL: application manifest regeneration failed (see regen.log)" >&2
     REGEN_STATUS=failed
     return 1
   }
@@ -443,14 +469,15 @@ check_control() {
 # move beyond the open_datum pins is rejected. Each state fails exactly one
 # guard of the same function the live run calls. Prints one line per state;
 # returns nonzero on the first mismatch. The mini-repo mirrors the scratch
-# layout (onchain/script-identity.json) with fixture content.
+# layout (the application manifest,
+# applications/open-datum/onchain/script-identity.json) with fixture content.
 regen_step_controls() {
   local base_manifest="$1" work="$2"
   local rdir="$work/regen"
-  local man="$rdir/onchain/script-identity.json"
-  local other="$rdir/onchain/validators/open_datum.ak"
+  local man="$rdir/applications/open-datum/onchain/script-identity.json"
+  local other="$rdir/applications/open-datum/onchain/validators/open_datum.ak"
   rm -rf "$rdir" || return 1
-  mkdir -p "$rdir/onchain/validators" || return 1
+  mkdir -p "$rdir/applications/open-datum/onchain/validators" || return 1
   cp "$base_manifest" "$man" || return 1
   printf '%s\n' "-- placeholder validator (content irrelevant to the guard)" >"$other" || return 1
   git -C "$rdir" init -q || return 1
@@ -479,8 +506,13 @@ regen_step_controls() {
     return 1
   }
   echo "negative-host-mutants: regen control extra-file: rejected (as expected)"
-  git -C "$rdir" checkout -- onchain/validators/open_datum.ak || return 1
-  jq '.validators |= map(if (.title | startswith("open_datum.") | not) then .hash = "11111111111111111111111111111111111111111111111111111111" else . end)' "$man" >"$work/wide-manifest.json" || return 1
+  git -C "$rdir" checkout -- applications/open-datum/onchain/validators/open_datum.ak || return 1
+  # A move beyond the application's pins: every validator of the application
+  # manifest is an open_datum one, so a hash move is always in scope — the
+  # out-of-scope control rewrites the compiler string, which no build of this
+  # source reports and the scope guard rejects (the registry manifest's old
+  # fixture rewrote non-open_datum hashes, vacuous against this manifest).
+  jq '.compiler = "v0.0.0-wide-scope-control"' "$man" >"$work/wide-manifest.json" || return 1
   cp "$work/wide-manifest.json" "$man" || return 1
   regen_manifest_ok "$rdir" "$work/wide-base.json" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
@@ -503,8 +535,8 @@ patch_hygiene_controls() {
   local name="" patch="" rules_csv="" file="" st=""
   local base="" donor=""
   rm -rf "$work" || return 1
-  mkdir -p "$work/check/onchain/validators" || return 1
-  cp "$source" "$work/check/onchain/validators/open_datum.ak" || return 1
+  mkdir -p "$work/check/applications/open-datum/onchain/validators" || return 1
+  cp "$source" "$work/check/applications/open-datum/onchain/validators/open_datum.ak" || return 1
   while IFS= read -r name; do
     [ -n "$name" ] || continue
     patch="$mutants_dir/$(mutant_field "$name" patch)" || return 1
@@ -532,23 +564,23 @@ patch_hygiene_controls() {
     echo "negative-host-mutants: hygiene control extra-hunk lost its label" >&2
     return 1
   }
-  patch_hygiene_ok "$work/extra-hunk.patch" "update-controller-signature" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  patch_hygiene_ok "$work/extra-hunk.patch" "update-controller-signature" "applications/open-datum/onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control extra-hunk passed" >&2
     return 1
   }
   echo "negative-host-mutants: hygiene control extra-hunk: rejected (as expected)"
-  sed 's|onchain/validators/open_datum.ak|onchain/validators/other.ak|g' "$base" >"$work/wrong-file.patch" || return 1
-  patch_hygiene_ok "$work/wrong-file.patch" "update-controller-signature" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  sed 's|applications/open-datum/onchain/validators/open_datum.ak|applications/open-datum/onchain/validators/other.ak|g' "$base" >"$work/wrong-file.patch" || return 1
+  patch_hygiene_ok "$work/wrong-file.patch" "update-controller-signature" "applications/open-datum/onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control wrong-file passed" >&2
     return 1
   }
   echo "negative-host-mutants: hygiene control wrong-file: rejected (as expected)"
   cat >"$work/condition-only.patch" <<'EOF'
-diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
---- a/onchain/validators/open_datum.ak
-+++ b/onchain/validators/open_datum.ak
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
 @@ -366,7 +366,7 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
    if !holdsItsToken(control, self) {
      traceFalse(@"update-holding-token")
@@ -563,7 +595,7 @@ EOF
     echo "negative-host-mutants: hygiene control condition-only does not apply" >&2
     return 1
   }
-  patch_hygiene_ok "$work/condition-only.patch" "update-controller-signature" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  patch_hygiene_ok "$work/condition-only.patch" "update-controller-signature" "applications/open-datum/onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control condition-only passed" >&2
     return 1
@@ -573,8 +605,7 @@ EOF
   [ -f "$joint" ] || return 1
   cp "$joint" "$work/joint-extra-hunk.patch" || return 1
   cat >>"$work/joint-extra-hunk.patch" <<'EOF'
-@@ -386,5 +386,5 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
-         } else if lovelace_of(next.value) < control.deposit {
+@@ -387,4 +387,4 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
 -          traceFalse(@"update-deposit")
 +          True
          } else {
@@ -585,16 +616,16 @@ EOF
     echo "negative-host-mutants: hygiene control joint-extra-hunk does not apply" >&2
     return 1
   }
-  patch_hygiene_ok "$work/joint-extra-hunk.patch" "update-escape,update-control" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  patch_hygiene_ok "$work/joint-extra-hunk.patch" "update-escape,update-control" "applications/open-datum/onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control joint-extra-hunk passed" >&2
     return 1
   }
   echo "negative-host-mutants: hygiene control joint-extra-hunk: rejected (as expected)"
   cat >"$work/joint-only-one.patch" <<'EOF'
-diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
---- a/onchain/validators/open_datum.ak
-+++ b/onchain/validators/open_datum.ak
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
 @@ -379,7 +379,7 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
        [next] ->
          if next.address != self.address {
@@ -609,16 +640,16 @@ EOF
     echo "negative-host-mutants: hygiene control joint-only-one does not apply" >&2
     return 1
   }
-  patch_hygiene_ok "$work/joint-only-one.patch" "update-escape,update-control" "onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
+  patch_hygiene_ok "$work/joint-only-one.patch" "update-escape,update-control" "applications/open-datum/onchain/validators/open_datum.ak" "$source" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control joint-only-one passed" >&2
     return 1
   }
   echo "negative-host-mutants: hygiene control joint-only-one: rejected (as expected)"
   cat >"$work/insert-booking.patch" <<'EOF'
-diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
---- a/onchain/validators/open_datum.ak
-+++ b/onchain/validators/open_datum.ak
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
 @@ -214,9 +214,9 @@ fn bookInsert(
    } else if control.key != key {
      traceFalse(@"app-key")
@@ -636,7 +667,7 @@ EOF
     echo "negative-host-mutants: hygiene control insert-booking does not apply" >&2
     return 1
   }
-  patch_hygiene_ok "$work/insert-booking.patch" "app-owner,app-controller-signature" "onchain/validators/open_datum.ak" "$source" "fn bookTerminate(" && st=0 || st=$?
+  patch_hygiene_ok "$work/insert-booking.patch" "app-owner,app-controller-signature" "applications/open-datum/onchain/validators/open_datum.ak" "$source" "fn bookTerminate(" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control insert-booking passed" >&2
     return 1
@@ -644,7 +675,7 @@ EOF
   echo "negative-host-mutants: hygiene control insert-booking: rejected (as expected)"
   sed 's/^@@ -214,9 +214,9 @@ fn bookInsert(/@@ -284,9 +284,9 @@ fn bookTerminate(/' "$work/insert-booking.patch" >"$work/misleading-header.patch" || return 1
   grep -q '^@@ -284,9 +284,9 @@ fn bookTerminate(' "$work/misleading-header.patch" || return 1
-  patch_hygiene_ok "$work/misleading-header.patch" "app-owner,app-controller-signature" "onchain/validators/open_datum.ak" "$source" "fn bookTerminate(" && st=0 || st=$?
+  patch_hygiene_ok "$work/misleading-header.patch" "app-owner,app-controller-signature" "applications/open-datum/onchain/validators/open_datum.ak" "$source" "fn bookTerminate(" && st=0 || st=$?
   [ "$st" -ne 0 ] || {
     echo "negative-host-mutants: hygiene control misleading-header passed" >&2
     return 1
@@ -1002,10 +1033,10 @@ if [ "$mode" = noop ]; then
   [ "$noop_ok" -eq 1 ] || fail "self-check live empty run failed"
   [ -n "$first_base" ] || fail "self-check produced no receipt base"
   [ -n "$first_copy" ] || fail "self-check produced no scratch copy"
-  git -C "$first_copy" show HEAD:onchain/script-identity.json >"$scratch_parent/noop-base-manifest.json" || fail "self-check cannot read the scratch manifest"
+  git -C "$first_copy" show HEAD:applications/open-datum/onchain/script-identity.json >"$scratch_parent/noop-base-manifest.json" || fail "self-check cannot read the scratch manifest"
   classification_controls "$first_base" "$scratch_parent/controls" || fail "self-check classification controls failed"
   regen_step_controls "$scratch_parent/noop-base-manifest.json" "$scratch_parent/regen-controls" || fail "self-check regeneration-step controls failed"
-  patch_hygiene_controls "$root/onchain/validators/open_datum.ak" "$scratch_parent/hygiene-controls" || fail "self-check patch-hygiene controls failed"
+  patch_hygiene_controls "$root/applications/open-datum/onchain/validators/open_datum.ak" "$scratch_parent/hygiene-controls" || fail "self-check patch-hygiene controls failed"
   side_flip_controls "$scratch_parent/side-controls" || fail "self-check side-flip controls failed"
   echo "negative-host-mutants: SELF-CHECK PASS"
   exit 0

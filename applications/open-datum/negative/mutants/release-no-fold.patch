@@ -1,7 +1,7 @@
-diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
---- a/onchain/validators/open_datum.ak
-+++ b/onchain/validators/open_datum.ak
-@@ -630,7 +630,7 @@
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
+@@ -630,7 +630,7 @@ fn validRelease(
      traceFalse(@"release-registry")
    } else {
      when ownFold(registry, foldsIn(tx)) is {

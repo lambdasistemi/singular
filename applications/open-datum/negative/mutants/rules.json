@@ -4,7 +4,7 @@
       "name": "release-no-fold",
       "patch": "release-no-fold.patch",
       "rule": "release-no-fold",
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-withdraws-outside-a-fold", "command": "withdraw"}],
       "control": "stranger-updates-the-key"
     },
@@ -12,7 +12,7 @@
       "name": "update-controller-signature",
       "patch": "update-controller-signature.patch",
       "rule": "update-controller-signature",
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "stranger-updates-the-key", "command": "update"}],
       "control": "controller-withdraws-outside-a-fold"
     },
@@ -20,7 +20,7 @@
       "name": "update-escape",
       "patch": "update-escape.patch",
       "rule": "update-escape",
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-tamper-address", "command": "update"}],
       "control": "controller-withdraws-outside-a-fold"
     },
@@ -28,7 +28,7 @@
       "name": "update-control",
       "patch": "update-control.patch",
       "rule": "update-control",
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-tamper-controller", "command": "update"}, {"pair": "controller-tamper-datum", "command": "update"}, {"pair": "controller-tamper-deposit", "command": "update"}],
       "control": "controller-withdraws-outside-a-fold"
     },
@@ -36,7 +36,7 @@
       "name": "token-continuation-leaves-the-holding",
       "patch": "token-continuation-leaves-the-holding.patch",
       "rules": ["update-escape", "update-control"],
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "controller-tamper-token", "command": "update"}],
       "side_flips": [{"pair": "controller-tamper-address", "command": "update"}, {"pair": "controller-tamper-controller", "command": "update"}, {"pair": "controller-tamper-datum", "command": "update"}, {"pair": "controller-tamper-deposit", "command": "update"}],
       "control": "controller-withdraws-outside-a-fold"
@@ -46,7 +46,7 @@
       "patch": "termination-booking-controller-checks.patch",
       "rules": ["app-owner", "app-controller-signature"],
       "anchor": "fn bookTerminate(",
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "stranger-terminates-the-key", "command": "terminate"}],
       "control": "stranger-updates-the-key"
     },
@@ -54,7 +54,7 @@
       "name": "release-additive",
       "patch": "release-additive.patch",
       "rule": "release-additive",
-      "file": "onchain/validators/open_datum.ak",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "short-fold-of-a-booked-termination", "command": "fold"}],
       "control": "stranger-updates-the-key"
     }

@@ -1,6 +1,6 @@
-diff --git a/onchain/validators/open_datum.ak b/onchain/validators/open_datum.ak
---- a/onchain/validators/open_datum.ak
-+++ b/onchain/validators/open_datum.ak
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
 @@ -378,7 +378,7 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
      is {
        [next] ->
