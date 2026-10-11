@@ -264,6 +264,32 @@ jobs:
       # app and a missing package and requires both refused. One job covers
       # the check and its controls; the clean run's summary reaches the log.
       - run: nix run --quiet .#workflow-commands-resolve-controls
+  registry-cli-build-graph:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Registry CLI build graph
+    runs-on: nixos
+    timeout-minutes: 5
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562 item 2: the registry CLI build-graph check and its controls.
+      # Each app first fetches the pinned git sources as setup (exit 2 on
+      # failure, never a verdict), then runs its script; the controls refuse
+      # both plants with exit 1 naming the offender.
+      - run: nix run --quiet ./offchain#registry-cli-build-graph-check
+      - run: nix run --quiet ./offchain#registry-cli-build-graph-controls
   coverage:
     if: github.event.action != 'closed'
     needs: build-gate

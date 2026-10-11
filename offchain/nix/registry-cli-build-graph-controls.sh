@@ -35,6 +35,14 @@ check="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/registry-cli-build-graph-ch
   echo "registry-cli-build-graph-controls: no cli/src under $root" >&2
   exit 2
 }
+[ -d "$root/cli/ordinary" ] || {
+  echo "registry-cli-build-graph-controls: no cli/ordinary under $root" >&2
+  exit 2
+}
+[ -d "$root/cli/test-harness" ] || {
+  echo "registry-cli-build-graph-controls: no cli/test-harness under $root" >&2
+  exit 2
+}
 [ -d "$root/dist-newstyle/src" ] || {
   echo "registry-cli-build-graph-controls: no dist-newstyle/src under $root (the pinned git sources the offline solver reads)" >&2
   exit 2
@@ -47,7 +55,7 @@ copy_tree() {
   mkdir -p "$work/$1"
   cp "$root/singular-registry.cabal" "$root/cabal.project" "$work/$1/"
   mkdir -p "$work/$1/cli"
-  cp -r "$root/cli/src" "$work/$1/cli/src"
+  cp -r "$root/cli/src" "$root/cli/ordinary" "$root/cli/test-harness" "$work/$1/cli/"
   mkdir -p "$work/$1/dist-newstyle"
   cp -r "$root/dist-newstyle/src" "$work/$1/dist-newstyle/src"
 }
@@ -118,4 +126,53 @@ printf '%s\n' "$out" | grep -q 'Singular.CLI.PlantProbe' \
   }
 echo "registry-cli-build-graph-controls: planted suite module caught" >&2
 
-echo "registry-cli-build-graph-controls: planted suite source directory and suite module both caught"
+# Plant 3: a cli/src module demoted from exposed to private. Singular.CLI.Root
+# lives in cli/src, so the original protected obligation (every cli/src module
+# exposed) must fail naming it. A check that subtracts other-modules from the
+# whole extent would hide this demotion and miss the plant.
+copy_tree plant-src-demotion
+sed -i '/^    Singular.CLI.Root$/d' "$work/plant-src-demotion/singular-registry.cabal"
+sed -i 's|^  other-modules: Singular.CLI.Harness$|  other-modules: Singular.CLI.Harness\n    Singular.CLI.Root|' "$work/plant-src-demotion/singular-registry.cabal"
+# Verify the move: Root present in other-modules, absent from exposed-modules.
+exposed_has=$(awk '
+    /^library[ \t]+registry-cli([ \t]|$)/ { inlib = 1; next }
+    /^[^ \t]/ { if (inlib) exit; next }
+    inlib && /^[ \t]*exposed-modules:/ { inmods = 1; next }
+    inlib && inmods && /^[ \t]*[a-zA-Z0-9-]+:/ { inmods = 0; next }
+    inlib && inmods && /^    Singular\.CLI\.Root$/ { print "yes"; exit }
+' "$work/plant-src-demotion/singular-registry.cabal")
+other_has=$(awk '
+    /^library[ \t]+registry-cli([ \t]|$)/ { inlib = 1; next }
+    /^[^ \t]/ { if (inlib) exit; next }
+    inlib && /^[ \t]*other-modules:/ { inmods = 1; next }
+    inlib && inmods && /^[ \t]*[a-zA-Z0-9-]+:/ { inmods = 0; next }
+    inlib && inmods && /^    Singular\.CLI\.Root$/ { print "yes"; exit }
+' "$work/plant-src-demotion/singular-registry.cabal")
+[ "$exposed_has" != "yes" ] || {
+  echo "registry-cli-build-graph-controls: src-demotion plant did not apply (Root still exposed)" >&2
+  exit 2
+}
+[ "$other_has" = "yes" ] || {
+  echo "registry-cli-build-graph-controls: src-demotion plant did not apply (Root not private)" >&2
+  exit 2
+}
+code=0
+out=$(bash "$check" "$work/plant-src-demotion" 2>&1) || code=$?
+if [ "$code" -eq 0 ]; then
+  echo "registry-cli-build-graph-controls: check MISSED the demoted src module" >&2
+  exit 1
+fi
+if [ "$code" -ne 1 ]; then
+  echo "registry-cli-build-graph-controls: check errored instead of naming the plant (exit $code):" >&2
+  printf '%s\n' "$out" >&2
+  exit 2
+fi
+printf '%s\n' "$out" | grep -q 'Singular.CLI.Root' \
+  || {
+    echo "registry-cli-build-graph-controls: check failed but did not name the demoted module:" >&2
+    printf '%s\n' "$out" >&2
+    exit 1
+  }
+echo "registry-cli-build-graph-controls: demoted src module caught" >&2
+
+echo "registry-cli-build-graph-controls: planted suite source directory, suite module and demoted src module all caught"
