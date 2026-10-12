@@ -3,6 +3,8 @@ module Main (main) where
 import Singular.Application.KeriStub.CLISpec qualified
 import Singular.Application.KeriStub.DatumSpec qualified
 import Singular.Application.KeriStub.FlagGroupExtentSpec qualified
+import Singular.Application.KeriStub.PurposesSpec qualified
+import Singular.Application.KeriStub.RegisterSpec qualified
 import Singular.Application.KeriStub.RulesSpec qualified
 import Singular.Application.KeriStub.ScriptRecordSpec qualified
 import Singular.Application.KeriStub.ValueSpec qualified
@@ -20,6 +22,12 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.KeriStub.FlagGroupExtent" [Cli])
         Singular.Application.KeriStub.FlagGroupExtentSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Register" [Application])
+        Singular.Application.KeriStub.RegisterSpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Purposes" [Application])
+        Singular.Application.KeriStub.PurposesSpec.spec
     describe
         (tagged "Singular.Application.KeriStub.Rules" [Application])
         Singular.Application.KeriStub.RulesSpec.spec

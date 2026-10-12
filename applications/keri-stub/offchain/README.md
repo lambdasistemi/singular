@@ -17,10 +17,12 @@ copies it.
 - One application value (`Singular.Application.KeriStub.Value`):
   name `keri-stub`, executable `keri-stub`, pin by hash of the
   script, decoder and holding rules over the holding datum.
-- One command line (`keri-stub create|fold|status`): thin calls to
-  `runCreate`, `runFold` and `runInspect` of `registry-cli` with the
-  stub's value. `register` and `convict` arrive in later briefs and
-  are unknown commands for now.
+- One command line (`keri-stub create|register|fold|status`): create,
+  fold and status are thin calls to `runCreate`, `runFold` and
+  `runInspect` of `registry-cli` with the stub's value; `register` is
+  the entry command this package owns — it books one `insertActive`
+  under the stub's policy, with `--fold` folding it in the same command.
+  `convict` arrives in a later brief and is an unknown command for now.
 
 ## How to start an application from it
 

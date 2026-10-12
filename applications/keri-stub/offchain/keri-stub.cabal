@@ -40,22 +40,25 @@ library
   exposed-modules:
     Singular.Application.KeriStub.Command
     Singular.Application.KeriStub.Datum
+    Singular.Application.KeriStub.Register
     Singular.Application.KeriStub.Root
     Singular.Application.KeriStub.Run
     Singular.Application.KeriStub.Script
     Singular.Application.KeriStub.Value
 
   build-depends:
+    , aeson                              >=2.1  && <2.3
     , base                               >=4.14 && <5
     , base16-bytestring
     , bytestring                         >=0.11 && <0.13
     , cardano-ledger-api
     , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-tx-tools:tx-build
     , containers                         >=0.6  && <0.8
     , contra-tracer
     , microlens
     , plutus-core
-    , plutus-ledger-api
     , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-cli
@@ -83,6 +86,8 @@ test-suite keri-stub-tests
     Singular.Application.KeriStub.CLISpec
     Singular.Application.KeriStub.DatumSpec
     Singular.Application.KeriStub.FlagGroupExtentSpec
+    Singular.Application.KeriStub.RegisterSpec
+    Singular.Application.KeriStub.PurposesSpec
     Singular.Application.KeriStub.RulesSpec
     Singular.Application.KeriStub.ScriptRecordSpec
     Singular.Application.KeriStub.ValueSpec
@@ -101,6 +106,8 @@ test-suite keri-stub-tests
     , keri-stub
     , microlens
     , plutus-core
+    , mtl
+    , plutus-ledger-api
     , plutus-tx
     , QuickCheck
     , singular-registry

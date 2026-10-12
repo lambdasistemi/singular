@@ -11,6 +11,9 @@ below happens before anything is read or submitted.
 
 * @keri-stub create@ boots one registry from a seed the caller chose in
   their own wallet, or previews its identity with @--preview@;
+* @keri-stub register@ books one @insertActive@ at a key under the stub's
+  own always-succeeding policy, leaving its request pending for the
+  registry's fold; with @--fold@ it also folds it in the same command;
 * @keri-stub fold@ folds the one pending request, signed and funded by
   the wallet that runs it;
 * @keri-stub status@ reads the registry and one key back, and accepts
@@ -19,8 +22,8 @@ below happens before anything is read or submitted.
 Write commands name the Koios URL, network and wallet key. Partial
 settings and mainnet are refused before file reads or provider
 effects. Read commands carry a public wallet address instead of a
-signing key. @register@ and @convict@ arrive in later briefs and are
-unknown commands for now.
+signing key. Register takes no preview — it books and submits — and
+@convict@ arrives in a later brief and is an unknown command for now.
 
 The tokenizing, tracing and settings readers live in the shared flag
 group ("Singular.CLI.FlagGroup"), called with the extras this binary
@@ -57,6 +60,7 @@ import Text.Read (readMaybe)
 
 import Singular.CLI.Command
     ( CreateArgs (..)
+    , EntryArgs (..)
     , EntryMode (..)
     , FoldArgs (..)
     , InspectArgs (..)
@@ -86,11 +90,13 @@ import Singular.Registry.StateToken
     ( ReferenceRole (..)
     , parseStateToken
     )
+import Singular.Registry.TxBuilder.Edges (edgeDeposit)
 
 -- | One parsed keri-stub command line.
 data KeriStubCommand
     = KeriHelp
     | KeriCreate CreateArgs
+    | KeriRegister EntryArgs
     | KeriFold FoldArgs
     | KeriStatus InspectArgs
     deriving stock (Eq, Show, Generic)
@@ -135,6 +141,7 @@ parseKeriStubWithGroup group environment args = do
     (words', flags) <- tokenizeWith RemovedSetting BadValue group args
     let words'' = case words' of
             ["create"] -> ["keri-stub", "create"]
+            ["register"] -> ["keri-stub", "register"]
             ["fold"] -> ["keri-stub", "fold"]
             ["status"] -> ["keri-stub", "status"]
             _ -> words'
@@ -150,6 +157,9 @@ parseKeriStubWithGroup group environment args = do
                         >> refuseFold flags
                         >> refuseEntry flags
                         >> (KeriCreate <$> createArgs flags)
+                ["keri-stub", "register"] ->
+                    refuseRequest flags
+                        >> (KeriRegister <$> registerArgs environment flags)
                 ["keri-stub", "fold"] ->
                     refuseEntry flags >> (KeriFold <$> foldArgs environment flags)
                 ["keri-stub", "status"] ->
@@ -195,7 +205,7 @@ parseKeriStubWithGroup group environment args = do
             Left
                 ( BadValue
                     "--fold"
-                    "is taken by register and convict only, which arrive in a later brief"
+                    "is taken by register only, which books: this command books nothing, so there is nothing to fold in the same command"
                 )
     refuseEntry flags =
         forM_ ["--deposit", "--payload"] $ \flag ->
@@ -203,8 +213,62 @@ parseKeriStubWithGroup group environment args = do
                 Left
                     ( BadValue
                         flag
-                        "belongs to register and convict, which arrive in a later brief"
+                        "is taken by register only, which books an insertion carrying a holding"
                     )
+    registerArgs env flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        key <- keyFrom flags
+        when (isJust (lookup "--preview" flags)) $
+            Left
+                ( BadValue
+                    "--preview"
+                    "is not accepted by register: it books and submits, and the stub offers no booking preview"
+                )
+        when (isJust (lookup "--wallet-address" flags)) $
+            Left addressNeedsPreview
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        deposit <- depositFrom flags
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
+        access <- registryAccess env flags
+        pure
+            EntryArgs
+                { entryStateDir = dir
+                , entryAccess = access
+                , entryBlueprint = bp
+                , entryMode = Submit settings
+                , entryKey = key
+                , entryDocument = optional "--payload" flags
+                , entryDeposit = deposit
+                , entryFund = fund
+                , entryMaxOutlay = outlay
+                , entryReceipt = optional "--receipt" flags
+                , entryFold = isJust (lookup "--fold" flags)
+                }
+    depositFrom flags = case optional "--deposit" flags of
+        Nothing -> Right Nothing
+        Just value -> case readMaybe value of
+            Just n
+                | n < leastDeposit ->
+                    Left
+                        ( BadValue
+                            "--deposit"
+                            ( "is below the least deposit an insertion rides with: "
+                                <> show leastDeposit
+                                <> " lovelace"
+                            )
+                        )
+                | otherwise -> Right (Just n)
+            Nothing ->
+                Left (BadValue "--deposit" "is not a number of lovelace")
+    leastDeposit = edgeDeposit
     createArgs flags = do
         when (isJust (lookup "--state-token" flags)) $
             Left
@@ -447,6 +511,11 @@ keriStubUsage =
         , "  keri-stub create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
+        , "  keri-stub register [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--deposit LOVELACE] [--payload PLUTUS_JSON] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fold]"
         , "  keri-stub fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
@@ -459,7 +528,9 @@ keriStubUsage =
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
         , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry."
-        , "register and convict arrive in a later brief and are unknown commands for now."
+        , "register books an insertion whose request the fold settles; --fold on"
+        , "register runs that fold in the same command. convict arrives in a later"
+        , "brief and is an unknown command for now."
         ]
 
 {- | The reference roles a command's transactions run, and so the only
@@ -468,6 +539,11 @@ references it looks up.
 neededRoles :: KeriStubCommand -> Set ReferenceRole
 neededRoles = \case
     KeriCreate _ -> Set.singleton RoleState
+    KeriRegister a
+        | entryFold a -> Set.fromList [minBound .. maxBound]
+        -- The stub's pin is a hash: no application reference exists to
+        -- find, and the booking reads the registry state alone.
+        | otherwise -> Set.singleton RoleState
     KeriFold _ -> Set.fromList [minBound .. maxBound]
     KeriStatus _ -> Set.empty
     KeriHelp -> Set.empty
