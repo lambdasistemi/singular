@@ -19,3 +19,12 @@ harness evidence kept to a marked appendix.
 Use [.github/pull_request_template.md](.github/pull_request_template.md) to record
 the story, exact model revision, implementation mapping and verification limits.
 The constitution defines the full rules and amendment process.
+
+## Lean compiler
+
+The supported compiler is the one `lean-toolchain` names (Lean 4.27.0). The
+flake pins the same version as `nixpkgs-lean`; moving the compiler moves both
+together, then the hash-bound corpora and the simulator mirror are rebuilt. A
+project that depends on this library through Lake builds it with its own
+compiler. Compiling together is not a behavioral migration or an integration
+acceptance of that project.

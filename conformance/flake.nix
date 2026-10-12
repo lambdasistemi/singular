@@ -553,8 +553,10 @@
 
         # Compile the observation and its proof against this checkout's model.
         # The executable transports abstract IDs; Cardano bytes stay in Haskell.
+        # The compiler is the root flake's `nixpkgs-lean` node: the pin that owns
+        # root `lean-toolchain`, not the documentation tooling's nixpkgs.
         modelLock = builtins.fromJSON (builtins.readFile ../flake.lock);
-        modelPkgs = import (builtins.fetchTree modelLock.nodes.nixpkgs.locked) {
+        modelPkgs = import (builtins.fetchTree modelLock.nodes.nixpkgs-lean.locked) {
           inherit system;
         };
         # The generic evaluator: the story language's abstract scenario and the context

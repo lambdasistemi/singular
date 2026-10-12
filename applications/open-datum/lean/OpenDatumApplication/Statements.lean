@@ -49,7 +49,7 @@ theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -63,7 +63,7 @@ theorem bookInsert_inversion (w w' : World) (r : Request) (e : Envelope)
     cases c with
     | false =>
       first
-        | exact Except.noConfusion hc
+        | exact Except.noConfusion rfl rfl (heq_of_eq hc)
         | (simp [ensure] at hc)
     | true => rfl
   have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
@@ -200,7 +200,7 @@ theorem bookTerminate_inversion (w w' : World) (r : Request) (ref : Nat)
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -214,7 +214,7 @@ theorem bookTerminate_inversion (w w' : World) (r : Request) (ref : Nat)
     cases c with
     | false =>
       first
-        | exact Except.noConfusion hc
+        | exact Except.noConfusion rfl rfl (heq_of_eq hc)
         | (simp [ensure] at hc)
     | true => rfl
   have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
@@ -264,7 +264,7 @@ theorem bookTerminate_inversion (w w' : World) (r : Request) (ref : Nat)
     cases ho : outputAt w ref with
     | none =>
       first
-        | (simp only [ho] at h; exact Except.noConfusion h)
+        | (simp only [ho] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
         | (simp only [ho] at h)
         | (simp [ho] at h)
     | some o =>
@@ -315,7 +315,7 @@ theorem bookOther_refused (w w' : World) (r : Request) (sigs : List Nat) :
     appStep w (.bookOther r sigs) ≠ .ok w' := by
   intro h
   first
-    | exact Except.noConfusion h
+    | exact Except.noConfusion rfl rfl (heq_of_eq h)
     | (simp [appStep, appStepWith, bookOtherStep] at h)
     | cases h
 
@@ -351,7 +351,7 @@ theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -365,7 +365,7 @@ theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
     cases c with
     | false =>
       first
-        | exact Except.noConfusion hc
+        | exact Except.noConfusion rfl rfl (heq_of_eq hc)
         | (simp [ensure] at hc)
     | true => rfl
   have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
@@ -400,7 +400,7 @@ theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
     cases ho : outputAt w ref with
     | none =>
       first
-        | (simp only [ho] at h; exact Except.noConfusion h)
+        | (simp only [ho] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
         | (simp only [ho] at h)
         | (simp [ho] at h)
     | some o =>
@@ -409,14 +409,14 @@ theorem update_inversion (w w' : World) (ref : Nat) (succs : List Successor)
       cases hcar : List.filter (fun x => carriesKey x.assets o.envelope.control.key) succs with
       | nil =>
         first
-          | (simp only [hcar] at h; exact Except.noConfusion h)
+          | (simp only [hcar] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
           | (simp only [hcar] at h)
           | (simp [hcar] at h)
       | cons s rest =>
         cases rest with
         | cons s2 rest2 =>
           first
-            | (simp only [hcar] at h; exact Except.noConfusion h)
+            | (simp only [hcar] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
             | (simp only [hcar] at h)
             | (simp [hcar] at h)
         | nil =>
@@ -486,7 +486,7 @@ theorem fold_inversion (w w' : World) (sel : List (Edge × Key)) (outs : List Tx
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -515,9 +515,9 @@ theorem fold_inversion (w w' : World) (sel : List (Edge × Key)) (outs : List Tx
         (outs ++ (createdOutputs w.app w.nextRef rows).map (deliveryOf w.app)) with
     | some why =>
       first
-        | (simp only [hs] at h; exact Except.noConfusion h)
+        | (simp only [hs] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
         | (simp only [hs] at h)
-        | (rw [hs] at h; exact Except.noConfusion h)
+        | (rw [hs] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
     | none =>
       first
         | simp only [hs] at h
@@ -566,7 +566,7 @@ theorem reject_inversion (w w' : World) (edge : Edge) (key : Key) (outs : List T
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -589,7 +589,7 @@ theorem reject_inversion (w w' : World) (edge : Edge) (key : Key) (outs : List T
     cases hp : pendingOf w edge key with
     | none =>
       first
-        | (simp only [hp] at h; exact Except.noConfusion h)
+        | (simp only [hp] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
         | (simp only [hp] at h)
         | (simp [hp] at h)
     | some p =>
@@ -598,7 +598,7 @@ theorem reject_inversion (w w' : World) (edge : Edge) (key : Key) (outs : List T
       cases hs : settle (obligations .reject p.request) outs with
       | some why =>
         first
-          | (simp only [hs] at h; exact Except.noConfusion h)
+          | (simp only [hs] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
           | (simp only [hs] at h)
           | (simp [hs] at h)
       | none =>
@@ -622,10 +622,10 @@ theorem withdraw_inversion (w w' : World) (ref : Nat) (outs : List TxOutput) :
     withdrawStep w ref outs ≠ .ok w' := by
   intro h
   first
-    | (unfold withdrawStep at h; split at h <;> exact Except.noConfusion h)
-    | (simp only [withdrawStep] at h; split at h <;> exact Except.noConfusion h)
+    | (unfold withdrawStep at h; split at h <;> exact Except.noConfusion rfl rfl (heq_of_eq h))
+    | (simp only [withdrawStep] at h; split at h <;> exact Except.noConfusion rfl rfl (heq_of_eq h))
     | (unfold withdrawStep at h
-       cases ho : outputAt w ref <;> rw [ho] at h <;> exact Except.noConfusion h)
+       cases ho : outputAt w ref <;> rw [ho] at h <;> exact Except.noConfusion rfl rfl (heq_of_eq h))
     | (cases ho : outputAt w ref <;> simp [withdrawStep, ho] at h)
 
 /-! ## The consistency of reached worlds -/
@@ -702,7 +702,7 @@ theorem appStep_preserves_consistent (w w' : World) (a : AppAction) :
     cases hf : foldEffect Law.standard w sel outs with
     | error e =>
       rw [hf] at h
-      exact Except.noConfusion h
+      exact Except.noConfusion rfl rfl (heq_of_eq h)
     | ok res =>
       rw [hf] at h
       have hres : res.1 = w' := ProofSupport.ok_inj h
@@ -968,7 +968,7 @@ theorem fold_preserves_consistent (w w' : World) (sel : List (Edge × Key))
   cases hf : foldEffect Law.standard w sel outs with
   | error e =>
     rw [hf] at h
-    exact Except.noConfusion h
+    exact Except.noConfusion rfl rfl (heq_of_eq h)
   | ok res =>
     rw [hf] at h
     have hres : res.1 = w' := ProofSupport.ok_inj h
@@ -1027,7 +1027,7 @@ theorem update_requires_controller (w w' : World) (ref : Nat) (succs : List Succ
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -1036,7 +1036,7 @@ theorem update_requires_controller (w w' : World) (ref : Nat) (succs : List Succ
     cases c with
     | false =>
       first
-        | exact Except.noConfusion hc
+        | exact Except.noConfusion rfl rfl (heq_of_eq hc)
         | (simp [ensure] at hc)
     | true => rfl
   have hupd : ∀ b : Bool, (!Law.standard.checkUpdateSigner || b) = true → b = true := by
@@ -1118,7 +1118,7 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -1132,7 +1132,7 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
     cases c with
     | false =>
       first
-        | exact Except.noConfusion hc
+        | exact Except.noConfusion rfl rfl (heq_of_eq hc)
         | (simp [ensure] at hc)
     | true => rfl
   have ens_ok : ∀ (c : Bool) (why : String), c = true → ensure c why = Except.ok () := by
@@ -1150,7 +1150,7 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
           | cases hx
           | (simp [Except.isOk, Except.toBool] at hx)
       · intro ⟨_, hx⟩
-        exact Except.noConfusion hx
+        exact Except.noConfusion rfl rfl (heq_of_eq hx)
     | ok a => exact ⟨fun _ => ⟨a, rfl⟩, fun _ => rfl⟩
   have fwd : ∀ (succ : Successor) (w1 : World),
       updateStep Law.standard w ref [succ] sigs = Except.ok w1 →
@@ -1169,7 +1169,7 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
     cases ho : outputAt w ref with
     | none =>
       first
-        | (simp only [ho] at h; exact Except.noConfusion h)
+        | (simp only [ho] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
         | (simp only [ho] at h)
         | (simp [ho] at h)
     | some o =>
@@ -1178,7 +1178,7 @@ theorem update_payload_free (w : World) (ref : Nat) (s : Successor) (sigs : List
       cases hc : carriesKey succ.assets o.envelope.control.key with
       | false =>
         first
-          | (simp only [List.filter, hc] at h; exact Except.noConfusion h)
+          | (simp only [List.filter, hc] at h; exact Except.noConfusion rfl rfl (heq_of_eq h))
           | (simp only [List.filter, hc] at h)
           | (simp [List.filter, hc] at h)
       | true =>
@@ -1246,7 +1246,7 @@ theorem update_keeps_registry (w w' : World) (ref : Nat) (succs : List Successor
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -1256,7 +1256,7 @@ theorem update_keeps_registry (w w' : World) (ref : Nat) (succs : List Successor
     | simp only [updateStep] at h
     | skip
   repeat' (first
-    | exact Except.noConfusion h
+    | exact Except.noConfusion rfl rfl (heq_of_eq h)
     | (obtain ⟨_, _, h⟩ := bind_ok _ _ _ h)
     | (split at h)
     | (simp only at h))
@@ -1279,7 +1279,7 @@ theorem insertion_requires_registry_identity (w w' : World) (r : Request) (e : E
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -1288,7 +1288,7 @@ theorem insertion_requires_registry_identity (w w' : World) (r : Request) (e : E
     cases c with
     | false =>
       first
-        | exact Except.noConfusion hc
+        | exact Except.noConfusion rfl rfl (heq_of_eq hc)
         | (simp [ensure] at hc)
     | true => rfl
   have hreg : ∀ b : Bool, (!Law.standard.checkRegistryAsset || b) = true → b = true := by
@@ -1318,7 +1318,7 @@ theorem insertion_requires_registry_identity (w w' : World) (r : Request) (e : E
     | simp only [bookInsertStep] at h
     | skip
   repeat' (first
-    | exact Except.noConfusion h
+    | exact Except.noConfusion rfl rfl (heq_of_eq h)
     | (obtain ⟨_, hx, h⟩ := bind_ok _ _ _ h
        have := ens _ _ _ hx
        clear hx)
@@ -1467,7 +1467,7 @@ theorem bookTerminate_keeps_locked (w w' : World) (r : Request) (ref : Nat) (sig
     cases x with
     | error e =>
       first
-        | exact Except.noConfusion hx
+        | exact Except.noConfusion rfl rfl (heq_of_eq hx)
         | cases hx
         | (simp [bind, Except.bind] at hx)
     | ok a => exact ⟨a, rfl, hx⟩
@@ -1477,7 +1477,7 @@ theorem bookTerminate_keeps_locked (w w' : World) (r : Request) (ref : Nat) (sig
     | simp only [bookTerminateStep] at h
     | skip
   repeat' (first
-    | exact Except.noConfusion h
+    | exact Except.noConfusion rfl rfl (heq_of_eq h)
     | (obtain ⟨_, _, h⟩ := bind_ok _ _ _ h)
     | (split at h)
     | (simp only at h))
@@ -1619,7 +1619,7 @@ theorem fold_settles_additively (w w' : World) (sel : List (Edge × Key))
   obtain ⟨_, _, _, _, hcase⟩ := ProofSupport.selectRow_spec w x row hx
   rcases hcase with ⟨_, hnone, _⟩ | ⟨_, o', ho', hsp'⟩
   · rw [hnone] at hsp
-    exact Option.noConfusion hsp
+    exact Option.noConfusion rfl (heq_of_eq hsp)
   · rw [hsp] at hsp'
     have hoo : o = o' := Option.some.inj hsp'
     subst hoo
@@ -1685,7 +1685,7 @@ private theorem reachable_pending_booked (w : World) (hr : Reachable w) :
       cases hf : foldEffect Law.standard v sel outs with
       | error e =>
         rw [hf] at hstep
-        exact Except.noConfusion hstep
+        exact Except.noConfusion rfl rfl (heq_of_eq hstep)
       | ok res =>
         rw [hf] at hstep
         have hres : res.1 = v' := ProofSupport.ok_inj hstep
@@ -1741,7 +1741,7 @@ private theorem reachable_pending_carries_envelope (w : World) (hr : Reachable w
       cases hf : foldEffect Law.standard v sel outs with
       | error e =>
         rw [hf] at hstep
-        exact Except.noConfusion hstep
+        exact Except.noConfusion rfl rfl (heq_of_eq hstep)
       | ok res =>
         rw [hf] at hstep
         have hres : res.1 = v' := ProofSupport.ok_inj hstep

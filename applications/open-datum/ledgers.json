@@ -73,7 +73,7 @@
    "scenarios": ["early-withdrawal", "reject-keeps-locked"],
    "class": "inversion",
    "boundary": [],
-   "axioms": []},
+   "axioms": ["propext"]},
   {"status": "PROVED",
    "statementSha256":
    "cf8eba0143530a725b6fa4dd399be7e52ac83366db374a692c6aea18cb3ab832",
