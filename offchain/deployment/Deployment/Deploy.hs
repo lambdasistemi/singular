@@ -11,6 +11,10 @@ reference); boot from the wallet's largest output that is not that
 publication; register the stake credentials; publish the other four
 reference scripts; write the manifest; verify it.
 
+A stop before the manifest writes nothing to the manifest path: the
+bootstrap transactions submitted so far are narrated as one @partial@
+line, oldest first, and the stop is rethrown unchanged.
+
 It refuses to run twice: given a manifest a node still agrees with, it
 reports the deployment that already exists rather than making a second
 one nobody asked for; given one the node does not agree with, it refuses
@@ -21,10 +25,10 @@ module Deployment.Deploy
     ( deploy
     ) where
 
-import Control.Exception (SomeException, catch)
-import Control.Monad (when)
+import Control.Exception (SomeException, catch, onException)
+import Control.Monad (unless, when)
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (newIORef, readIORef)
+import Data.IORef (IORef, newIORef, readIORef)
 import Data.Text qualified as T
 import System.Directory (doesFileExist)
 
@@ -79,10 +83,21 @@ deploy args = do
         } <-
         deployOptions args
     unbound <- loadCompiled
-    withRunner $ \wallet caps -> do
+    {- | Owner, lifetime and concurrency contract for the deployment tx
+    accumulator. It belongs to this single 'deploy' invocation:
+    created once, threaded explicitly through publication, boot and
+    registration, read once for the manifest. 'submitted' conses each
+    accepted transaction newest-first and 'deploy' reverses for the
+    manifest, so repeated recording is O(1) while the manifest keeps
+    receipt order. The product is single-threaded: one command submits
+    in order on the calling thread, so plain 'readIORef'/'writeIORef'
+    suffice and no thread outlives the command. A stop before the
+    manifest reports the accumulator through 'reportPartial' below.
+    -}
+    txs <- newIORef []
+    (withRunner $ \wallet caps -> do
         let prov = capReads caps
         refuseIfAlreadyDeployed prov out unbound
-        txs <- newIORef []
         -- A registry boots only by reference: the state validator is
         -- published before the boot, which resolves it from there.
         (stateIn, _) <-
@@ -133,6 +148,23 @@ deploy args = do
                 <> show (length refs)
                 <> " reference scripts published; funded by "
                 <> bech32Address (walletAddr wallet)
+            )
+        ) `onException` reportPartial txs
+
+{- | Narrate a deployment that stopped before writing its manifest: the
+bootstrap transactions submitted so far, oldest first. Runs on any
+throw, including cancellation; the original stop is rethrown unchanged
+by 'onException', and nothing is written to the manifest path, so the
+no-overwrite rule for an existing manifest is untouched.
+-}
+reportPartial :: IORef [Text] -> IO ()
+reportPartial txs = do
+    partial <- reverse <$> readIORef txs
+    unless (null partial) $
+        emit
+            "partial"
+            ( "no manifest written; bootstrap transactions so far: "
+                <> T.unpack (T.intercalate " " partial)
             )
 
 {- | A deployment is made once. Given a manifest a node still agrees
