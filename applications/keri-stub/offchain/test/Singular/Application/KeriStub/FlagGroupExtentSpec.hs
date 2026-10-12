@@ -39,11 +39,11 @@ spec = describe "flag group extent" $ do
     productionVariants
 
 {- | The full valued group the stub's parser reads: the shared group plus
-the stub's own valued flags. The stub owns none beyond the group;
-@register@ and @convict@ arrive in later briefs and will add their own.
+the stub's own valued flags. The stub owns @--evidence@, the hash a
+convict carries; @register@ takes no valued flag beyond the group.
 -}
 stubFull :: [String]
-stubFull = commonFlagGroup
+stubFull = commonFlagGroup <> ["--evidence"]
 
 -- | The refusal for a flag no parser reads.
 stubUnknown :: String -> CLIError
@@ -112,6 +112,26 @@ ownsTheGroup = describe "the stub's parser owns the shared group" $ do
                 stubFull
                 ["cmd", flag, "value"]
                 `shouldSatisfy` isRight
+    it "the stub's parser owns --evidence on convict" $
+        parseKeriStubCommand
+            [ "keri-stub"
+            , "convict"
+            , "--key"
+            , "hello"
+            , "--evidence"
+            , "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            , "--blueprint"
+            , "blueprint.json"
+            , "--state-token"
+            , extentToken
+            , "--koios-url"
+            , "u"
+            , "--network-magic"
+            , "1"
+            , "--wallet-skey"
+            , "k"
+            ]
+            `shouldSatisfy` isRight
     forM_ commonSwitches $ \flag ->
         it ("the stub's parser owns " <> flag) $
             parseKeriStubCommand (stubFold <> [flag])

@@ -2,16 +2,18 @@
 
 {- |
 Module      : Singular.Application.KeriStub.CLISpec
-Description : The keri-stub command line parses its four verbs
+Description : The keri-stub command line parses its five verbs
 License     : Apache-2.0
 
-Effect-free rows over the real parser: help, the four verbs, the
+Effect-free rows over the real parser: help, the five verbs, the
 common flags, and the refusals that must happen before any file, node
-or key is read. @convict@ arrives in a later brief and is an unknown
-command for now.
+or key is read.
 -}
 module Singular.Application.KeriStub.CLISpec (spec) where
 
+import Data.ByteString (ByteString)
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
 import Data.Maybe (isJust)
@@ -55,6 +57,32 @@ seedText :: String
 seedText =
     replicate 64 'a' <> "#0"
 
+-- | One evidence hash as the command line spells it.
+evidenceHex :: String
+evidenceHex =
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+-- | One convict with its key and evidence.
+convict :: [String]
+convict =
+    ["keri-stub", "convict", "--key", "hello", "--evidence", evidenceHex]
+
+-- | One convict whose evidence is not base16 bytes.
+convictBadEvidence :: [String]
+convictBadEvidence =
+    ["keri-stub", "convict", "--key", "hello", "--evidence", "not-hex!!"]
+
+-- | One convict with evidence but no key.
+convictNoKey :: [String]
+convictNoKey =
+    ["keri-stub", "convict", "--evidence", evidenceHex]
+
+-- | The evidence hash as bytes.
+evidenceBytes :: ByteString
+evidenceBytes = case B16.decode (BC.pack evidenceHex) of
+    Right bytes -> bytes
+    Left why -> error ("CLISpec: bad evidence hex: " <> why)
+
 commandLine :: Spec
 commandLine = describe "the command line" $ do
     it "answers help at the top and under keri-stub" $ do
@@ -62,17 +90,14 @@ commandLine = describe "the command line" $ do
         parseKeriStubCommand ["keri-stub", "--help"]
             `shouldBe` Right KeriHelp
         parseKeriStubCommand [] `shouldBe` Right KeriHelp
-    it "names the four commands and only them in its keriStubUsage" $ do
+    it "names the five commands and only them in its keriStubUsage" $ do
         keriStubUsage `shouldSatisfy` isInfixOf "keri-stub create"
         keriStubUsage `shouldSatisfy` isInfixOf "keri-stub register"
+        keriStubUsage `shouldSatisfy` isInfixOf "keri-stub convict"
         keriStubUsage `shouldSatisfy` isInfixOf "keri-stub fold"
         keriStubUsage `shouldSatisfy` isInfixOf "keri-stub status"
-        keriStubUsage `shouldNotSatisfy` isInfixOf "keri-stub convict"
     it "refuses a command it does not support" $
         parseKeriStubCommand ["keri-stub", "delete"]
-            `shouldSatisfy` isLeft
-    it "leaves convict for a later brief: unknown for now" $
-        parseKeriStubCommand ["keri-stub", "convict"]
             `shouldSatisfy` isLeft
     it "reads a create with its seed, wallet and provider" $
         case parseKeriStubCommand
@@ -207,6 +232,57 @@ commandLine = describe "the command line" $ do
                 <> provider
                 <> wallet
             )
+            `shouldSatisfy` isLeft
+    it "reads a convict with its key, evidence and fold" $
+        case parseKeriStubCommand
+            (convict <> ["--fold"] <> reg <> provider <> wallet) of
+            Right (KeriConvict c) -> do
+                show (entryKey (convictEntry c)) `shouldBe` show (Key "hello")
+                convictEvidence c `shouldBe` evidenceBytes
+                entryFold (convictEntry c) `shouldBe` True
+            other ->
+                expectationFailure ("convict did not parse: " <> show other)
+    it "reads a convict without its fold" $
+        case parseKeriStubCommand (convict <> reg <> provider <> wallet) of
+            Right (KeriConvict c) -> do
+                convictEvidence c `shouldBe` evidenceBytes
+                entryFold (convictEntry c) `shouldBe` False
+            other ->
+                expectationFailure ("convict did not parse: " <> show other)
+    it "refuses a convict with no evidence" $
+        parseKeriStubCommand
+            ( ["keri-stub", "convict", "--key", "hello"]
+                <> reg
+                <> provider
+                <> wallet
+            )
+            `shouldSatisfy` isLeft
+    it "refuses a convict whose evidence is not base16 bytes" $
+        parseKeriStubCommand
+            (convictBadEvidence <> reg <> provider <> wallet)
+            `shouldSatisfy` isLeft
+    it "refuses a convict that names a deposit or a payload" $ do
+        parseKeriStubCommand
+            (convict <> ["--deposit", "4000000"] <> reg <> provider <> wallet)
+            `shouldSatisfy` isLeft
+        parseKeriStubCommand
+            ( convict
+                <> ["--payload", "/srv/prefix.json"]
+                <> reg
+                <> provider
+                <> wallet
+            )
+            `shouldSatisfy` isLeft
+    it "refuses a convict that previews: it books and submits" $
+        parseKeriStubCommand
+            (convict <> ["--preview"] <> reg <> provider <> wallet)
+            `shouldSatisfy` isLeft
+    it "refuses a convict with no key" $
+        parseKeriStubCommand (convictNoKey <> reg <> provider <> wallet)
+            `shouldSatisfy` isLeft
+    it "refuses a convict that names a request to fold" $
+        parseKeriStubCommand
+            (convict <> ["--request", seedText] <> reg <> provider <> wallet)
             `shouldSatisfy` isLeft
 
 flags :: Spec

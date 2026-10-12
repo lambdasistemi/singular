@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Singular.Application.KeriStub.CLISpec qualified
+import Singular.Application.KeriStub.ConvictSpec qualified
 import Singular.Application.KeriStub.DatumSpec qualified
 import Singular.Application.KeriStub.FlagGroupExtentSpec qualified
 import Singular.Application.KeriStub.PurposesSpec qualified
@@ -16,6 +17,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.KeriStub.CLI" [Cli])
         Singular.Application.KeriStub.CLISpec.spec
+    describe
+        (tagged "Singular.Application.KeriStub.Convict" [Application])
+        Singular.Application.KeriStub.ConvictSpec.spec
     describe
         (tagged "Singular.Application.KeriStub.Datum" [Application])
         Singular.Application.KeriStub.DatumSpec.spec

@@ -39,6 +39,7 @@ library
   hs-source-dirs:   src
   exposed-modules:
     Singular.Application.KeriStub.Command
+    Singular.Application.KeriStub.Convict
     Singular.Application.KeriStub.Datum
     Singular.Application.KeriStub.Register
     Singular.Application.KeriStub.Root
@@ -84,6 +85,7 @@ test-suite keri-stub-tests
   other-modules:
     Paths_keri_stub
     Singular.Application.KeriStub.CLISpec
+    Singular.Application.KeriStub.ConvictSpec
     Singular.Application.KeriStub.DatumSpec
     Singular.Application.KeriStub.FlagGroupExtentSpec
     Singular.Application.KeriStub.RegisterSpec

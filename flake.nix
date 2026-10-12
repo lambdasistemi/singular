@@ -966,6 +966,10 @@
                   # the journey checks the live process record for an
                   # open-datum executable and stops its own node
                   pkgs.procps
+                  # the journey derives testnet enterprise addresses for
+                  # the repayment observation through the embedded bech32
+                  # encoder (the controller's address, plus a decoy)
+                  pkgs.python3Minimal
                 ];
                 text = ''
                   set -euo pipefail

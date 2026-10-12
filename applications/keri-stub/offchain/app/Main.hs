@@ -3,7 +3,7 @@ Module      : Main
 Description : The packaged @keri-stub@ command
 License     : Apache-2.0
 
-@keri-stub create|fold|status@:
+@keri-stub create|register|convict|fold|status@:
 one ordinary process per command over your state directory. See
 "Singular.Application.KeriStub.Command" for the command line and
 "Singular.Application.KeriStub.Run" for what each command does.

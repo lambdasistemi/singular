@@ -10,8 +10,8 @@ The composition root of the command: the command line parsed, the tracing
 controls resolved against the process's standard error, @SINGULAR_LOG@ read,
 the tracer built and the command run.
 
-Mirrors 'Singular.CLI.Root' for the application's three verbs
-(create, fold, status). Nothing tracing does
+Mirrors 'Singular.CLI.Root' for the application's five verbs
+(create, register, convict, fold, status). Nothing tracing does
 here can change the command's receipt, journal, outcome class or exit
 status: every setup step runs inside the same containment as emission.
 -}

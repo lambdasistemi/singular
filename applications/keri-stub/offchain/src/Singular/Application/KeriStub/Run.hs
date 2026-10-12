@@ -10,8 +10,8 @@ License     : Apache-2.0
 command prints one receipt as JSON on standard output (and to
 @--receipt FILE@ when given) and ends with the exit status of its
 outcome class ("Singular.CLI.Finish"). Create, fold and status are thin
-calls to the library with the keri-stub value; register is the entry
-command this package owns.
+calls to the library with the keri-stub value; register and convict are
+the entry commands this package owns.
 -}
 module Singular.Application.KeriStub.Run
     ( runKeriStub
@@ -20,9 +20,11 @@ module Singular.Application.KeriStub.Run
 import System.Exit (ExitCode (..))
 
 import Singular.Application.KeriStub.Command
-    ( KeriStubCommand (..)
+    ( ConvictArgs (..)
+    , KeriStubCommand (..)
     , keriStubUsage
     )
+import Singular.Application.KeriStub.Convict (runConvict)
 import Singular.Application.KeriStub.Register (runRegister)
 import Singular.Application.KeriStub.Value (keriStubApplication)
 import Singular.CLI.Command
@@ -53,6 +55,12 @@ runKeriStub env = \case
             "register"
             (entryReceipt a)
             (runRegister env a)
+    KeriConvict c ->
+        finish
+            (envTracer env)
+            "convict"
+            (entryReceipt (convictEntry c))
+            (runConvict env c)
     KeriFold a ->
         finish
             (envTracer env)

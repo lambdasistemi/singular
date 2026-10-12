@@ -14,6 +14,10 @@ below happens before anything is read or submitted.
 * @keri-stub register@ books one @insertActive@ at a key under the stub's
   own always-succeeding policy, leaving its request pending for the
   registry's fold; with @--fold@ it also folds it in the same command;
+* @keri-stub convict@ books one @updateTerminal@ at a key, carrying the
+  evidence hash its @--evidence@ names, leaving its request pending for
+  the registry's fold; with @--fold@ it also folds it in the same
+  command, releasing the holding to its controller;
 * @keri-stub fold@ folds the one pending request, signed and funded by
   the wallet that runs it;
 * @keri-stub status@ reads the registry and one key back, and accepts
@@ -22,8 +26,8 @@ below happens before anything is read or submitted.
 Write commands name the Koios URL, network and wallet key. Partial
 settings and mainnet are refused before file reads or provider
 effects. Read commands carry a public wallet address instead of a
-signing key. Register takes no preview — it books and submits — and
-@convict@ arrives in a later brief and is an unknown command for now.
+signing key. Register and convict take no preview — they book and
+submit.
 
 The tokenizing, tracing and settings readers live in the shared flag
 group ("Singular.CLI.FlagGroup"), called with the extras this binary
@@ -32,6 +36,7 @@ owns; this parser keeps none of its own.
 module Singular.Application.KeriStub.Command
     ( -- * Commands
       KeriStubCommand (..)
+    , ConvictArgs (..)
     , neededRoles
 
       -- * Parsing
@@ -46,6 +51,10 @@ module Singular.Application.KeriStub.Command
 
 import Control.Monad (forM_, unless, when)
 import Data.Bifunctor (first)
+import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
 import Data.Char
     ( GeneralCategory (Surrogate)
     , generalCategory
@@ -97,8 +106,20 @@ data KeriStubCommand
     = KeriHelp
     | KeriCreate CreateArgs
     | KeriRegister EntryArgs
+    | KeriConvict ConvictArgs
     | KeriFold FoldArgs
     | KeriStatus InspectArgs
+    deriving stock (Eq, Show, Generic)
+
+{- | One parsed @keri-stub convict@: the termination it books and the
+evidence hash the booking carries. The entry part is the shared
+entry command; the evidence flag belongs to convict alone and stays
+in the stub.
+-}
+data ConvictArgs = ConvictArgs
+    { convictEntry :: EntryArgs
+    , convictEvidence :: ByteString
+    }
     deriving stock (Eq, Show, Generic)
 
 -- | Why a keri-stub command line was refused before anything ran.
@@ -142,6 +163,7 @@ parseKeriStubWithGroup group environment args = do
     let words'' = case words' of
             ["create"] -> ["keri-stub", "create"]
             ["register"] -> ["keri-stub", "register"]
+            ["convict"] -> ["keri-stub", "convict"]
             ["fold"] -> ["keri-stub", "fold"]
             ["status"] -> ["keri-stub", "status"]
             _ -> words'
@@ -160,6 +182,10 @@ parseKeriStubWithGroup group environment args = do
                 ["keri-stub", "register"] ->
                     refuseRequest flags
                         >> (KeriRegister <$> registerArgs environment flags)
+                ["keri-stub", "convict"] ->
+                    refuseRequest flags
+                        >> refuseEntry flags
+                        >> (KeriConvict <$> convictArgs environment flags)
                 ["keri-stub", "fold"] ->
                     refuseEntry flags >> (KeriFold <$> foldArgs environment flags)
                 ["keri-stub", "status"] ->
@@ -269,6 +295,65 @@ parseKeriStubWithGroup group environment args = do
             Nothing ->
                 Left (BadValue "--deposit" "is not a number of lovelace")
     leastDeposit = edgeDeposit
+    convictArgs env flags = do
+        let dir = optional "--state-dir" flags
+        bp <- required "--blueprint" flags
+        key <- keyFrom flags
+        when (isJust (lookup "--preview" flags)) $
+            Left
+                ( BadValue
+                    "--preview"
+                    "is not accepted by convict: it books and submits, and the stub offers no booking preview"
+                )
+        when (isJust (lookup "--wallet-address" flags)) $
+            Left addressNeedsPreview
+        settings <-
+            parseFlagGroup
+                MissingFlag
+                BadValue
+                UnsafeSettings
+                WriteSettings
+                flags
+        evidence <- evidenceFrom flags
+        fund <- fundFrom flags
+        outlay <- outlayFrom flags
+        access <- registryAccess env flags
+        pure
+            ConvictArgs
+                { convictEntry =
+                    EntryArgs
+                        { entryStateDir = dir
+                        , entryAccess = access
+                        , entryBlueprint = bp
+                        , entryMode = Submit settings
+                        , entryKey = key
+                        , entryDocument = Nothing
+                        , entryDeposit = Nothing
+                        , entryFund = fund
+                        , entryMaxOutlay = outlay
+                        , entryReceipt = optional "--receipt" flags
+                        , entryFold = isJust (lookup "--fold" flags)
+                        }
+                , convictEvidence = evidence
+                }
+    evidenceFrom flags = case optional "--evidence" flags of
+        Nothing -> Left (MissingFlag "--evidence")
+        Just value
+            | null value ->
+                Left
+                    ( BadValue
+                        "--evidence"
+                        "is empty: name the evidence hash in hex"
+                    )
+            | otherwise -> case B16.decode (BC.pack value) of
+                Right bytes
+                    | not (BS.null bytes) -> Right bytes
+                _ ->
+                    Left
+                        ( BadValue
+                            "--evidence"
+                            "is not base16 bytes: name the evidence hash in hex"
+                        )
     createArgs flags = do
         when (isJust (lookup "--state-token" flags)) $
             Left
@@ -461,12 +546,12 @@ parseKeriStubInvocation environment args = do
     pure (command, request)
 
 {- | The extra valued flags this binary owns beyond the common group:
-its command-specific flags stay with its commands, and it owns no
-valued flag beyond the group; @register@ and @convict@, when they
-arrive, add their own here.
+@--evidence@, the hash a convict carries, belongs to convict alone and
+stays in the stub; every other command-specific spelling is refused by
+name above.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = []
+extraValuedFlags = ["--evidence"]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
@@ -516,6 +601,11 @@ keriStubUsage =
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--deposit LOVELACE] [--payload PLUTUS_JSON] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "      [--fold]"
+        , "  keri-stub convict [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --evidence HEX --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fold]"
         , "  keri-stub fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
@@ -529,8 +619,10 @@ keriStubUsage =
         , "the policy and the name in hex, which create prints; when the flag is absent"
         , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry."
         , "register books an insertion whose request the fold settles; --fold on"
-        , "register runs that fold in the same command. convict arrives in a later"
-        , "brief and is an unknown command for now."
+        , "register runs that fold in the same command. convict books a termination"
+        , "carrying the evidence hash, whose request the fold settles by releasing"
+        , "the holding to its controller; --fold on convict runs that fold in the"
+        , "same command."
         ]
 
 {- | The reference roles a command's transactions run, and so the only
@@ -543,6 +635,11 @@ neededRoles = \case
         | entryFold a -> Set.fromList [minBound .. maxBound]
         -- The stub's pin is a hash: no application reference exists to
         -- find, and the booking reads the registry state alone.
+        | otherwise -> Set.singleton RoleState
+    KeriConvict c
+        | entryFold (convictEntry c) -> Set.fromList [minBound .. maxBound]
+        -- As register: the pin is a hash, so the booking reads the
+        -- registry state and the key's live holding alone.
         | otherwise -> Set.singleton RoleState
     KeriFold _ -> Set.fromList [minBound .. maxBound]
     KeriStatus _ -> Set.empty

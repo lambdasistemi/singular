@@ -17,12 +17,26 @@ copies it.
 - One application value (`Singular.Application.KeriStub.Value`):
   name `keri-stub`, executable `keri-stub`, pin by hash of the
   script, decoder and holding rules over the holding datum.
-- One command line (`keri-stub create|register|fold|status`): create,
+- One command line (`keri-stub create|register|convict|fold|status`): create,
   fold and status are thin calls to `runCreate`, `runFold` and
   `runInspect` of `registry-cli` with the stub's value; `register` is
   the entry command this package owns — it books one `insertActive`
-  under the stub's policy, with `--fold` folding it in the same command.
-  `convict` arrives in a later brief and is an unknown command for now.
+  under the stub's policy, with `--fold` folding it in the same command;
+  `convict` is the entry command this package owns — it books one
+  `updateTerminal` carrying the evidence hash its `--evidence` names,
+  with `--fold` folding it in the same command, releasing the holding
+  to its controller.
+
+## Devnet journey
+
+`nix run --quiet .#keri-stub-check` from the repository root runs
+`tools/keri_stub_journey.sh`: one registry booted for the stub's own
+policy, one key registered and folded to Active, a second register of
+the same key refused at booking, then the key convicted with its
+evidence and folded to Terminal with its holding released to its
+controller and the deposit back. The run uses the stub executable alone:
+no other application's executable is on its PATH, in its process record,
+or in what it writes.
 
 ## How to start an application from it
 
