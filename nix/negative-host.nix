@@ -93,6 +93,30 @@ let
       bash ${./../tools/negative_host_mutants.sh} "$PWD" "$@"
     '';
   };
+  # #562: the node-free legs of the retired negative host proof script:
+  # the 13-name membership of the discovered parts, the empty-list
+  # refusal control on the discovery assertion, the four exit-2 parser
+  # refusals, the unknown-part refusal of the part dispatcher, and the
+  # terminate and insert handler receipts with exit 10 against an
+  # unreachable provider. The host build, plain discovery, the ordinary
+  # check and the lint check keep their existing sole hosted carriers;
+  # this app does not re-run them as verdicts. Its setup (building the
+  # host binary from the application flake) is exit 2 on failure, never
+  # a verdict; the script owns its receipts directory under mktemp with
+  # trap cleanup and stops no process.
+  nodeFreeControls = pkgs.writeShellApplication {
+    name = "negative-host-node-free-controls";
+    runtimeInputs = with pkgs; [
+      bash
+      coreutils
+      gnugrep
+      jq
+      nix
+    ];
+    text = ''
+      bash ${./../tools/negative_host_node_free_controls.sh} "$PWD"
+    '';
+  };
 in
 {
   negative-host-parts = {
@@ -114,5 +138,9 @@ in
   negative-host-mutants = {
     type = "app";
     program = pkgs.lib.getExe mutants;
+  };
+  negative-host-node-free-controls = {
+    type = "app";
+    program = pkgs.lib.getExe nodeFreeControls;
   };
 }
