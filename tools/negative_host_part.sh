@@ -190,11 +190,23 @@ run_ok() {
 }
 
 # 5. Create, insert alice-1 as alice, fold to active.
-run_ok preview "$open_datum" open-datum create --process-time 120000 --retract-time 30000 --preview \
+# The reclaim part configures a longer retract window (120s process unchanged,
+# 30s -> 600s retract): the part waits for the processing deadline (plus a
+# small margin), checks the window around the wait, and runs the single reclaim
+# immediately; the reclaim itself is still governed by the chain and the view's
+# admission (tip inside the converted window), so a longer window only makes
+# expiry unlikely, never impossible — expiry is a named setup failure, never a
+# pass. All other parts keep 120000/30000.
+process_time=120000
+retract_time=30000
+if [ "$part" = stranger-registers-a-taken-key ]; then
+  retract_time=600000
+fi
+run_ok preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview \
   --state-dir "$work/preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create preview failed"
 seed="$(jq -er .seed "$receipts/preview.json")" || setup_fail "preview names no seed"
-run_ok create "$open_datum" open-datum create --process-time 120000 --retract-time 30000 --seed "$seed" \
+run_ok create "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create failed"
 state_token="$(jq -er .stateToken "$receipts/create.json")" || setup_fail "create names no state token"
@@ -610,6 +622,166 @@ if [ "$part" = short-fold-of-a-booked-termination ]; then
 fi
 say "judged: forbidden refused by the registry pin $expect_pin role $expect_role with reads equal; control accepted"
 
+# 7b. Reclaim clauses (stranger-registers-a-taken-key only): Bob reclaims the
+# stranded booking with the ordinary command inside the retract window. Judged
+# from the ordinary receipts and fresh ordinary reads, never from exit status
+# alone. Each clause is one function; the live stage and every altered control
+# call the same code (never recomputed inside a control).
+# Classify an ordinary reclaim refusal by its exact reason code (never by a
+# bare substring like "retract" or "window"): prints one word for the caller
+# to map. $1 reason text, $2 now_ms, $3 retract_ends_ms. Dynamic numbers live
+# inside the reasons, so each branch keys on the code's fixed wording. Every
+# output branch is exactly one line (a case arm, or one of the two clock
+# lines), so the deletion matrix can remove any branch alone and still have
+# valid shell: a deleted fixed arm falls through to the clock lines, a
+# deleted clock line falls to the line below it. The clock lines only apply
+# when no fixed reason matched, so a matched reason is never overridden.
+classify_reclaim_refusal() {
+  local reason="$1" now_ms="$2" retract_ends="$3" word=""
+  case "$reason" in
+    *"is not pending in this registry"*) word=SETUP-NOT-PENDING ;;
+    *"no nonempty validity interval inside the retract window"*) word=SETUP-NOT-PHASE2 ;;
+    *"cannot convert"*) word=SETUP-UNCONVERTED ;;
+    *"registry reject clears"*) word=SETUP-CLOSED ;;
+    *"before the window"*) word=SETUP-BEFORE ;;
+    *"is not the request's owner"* | *"does not require the owner's signature"*) word=FAIL-OWNER ;;
+  esac
+  # Past the deadline by the post-command host clock, and no fixed reason
+  # matched, the window may have expired during submission itself: setup.
+  [ -z "$word" ] && [ "$now_ms" -ge "$retract_ends" ] && word=SETUP-EXPIRED
+  # Still nothing: an unmatched reason inside the window is simply
+  # unclassified, a credited refusal that needs an owner decision.
+  [ -z "$word" ] && word=FAIL-GENERIC
+  printf '%s' "$word"
+}
+# Map a classifier word to its own named outcome: every setup word is the
+# part's own window or booking setup and exits 3 through setup_fail (never a
+# credited pass), owner and generic are credited refusals that need an owner
+# decision, and no word at all is the classifier's silence, named as such so
+# a deleted branch stays observable in the caller's message. $1 class, $2 the
+# reclaim exit status, $3 reason, $4 now_ms, $5 retract_ends_ms.
+reclaim_refusal_outcome() {
+  local class="$1" status="$2" reason="$3" now_ms="$4" retract_ends="$5"
+  case "$class" in
+    SETUP-NOT-PENDING) setup_fail "ordinary reclaim says not pending ($reason): missing-request, never credited" ;;
+    SETUP-NOT-PHASE2) setup_fail "ordinary reclaim outside phase two (not-phase2, exit $status, reason $reason): the built reclaim had no nonempty validity interval inside the retract window; setup failure, never credited" ;;
+    SETUP-BEFORE) setup_fail "ordinary reclaim before its window ($reason): setup failure, never credited" ;;
+    SETUP-CLOSED) setup_fail "ordinary reclaim window closed ($reason): setup failure, never credited" ;;
+    SETUP-UNCONVERTED) setup_fail "ordinary reclaim window unconverted ($reason): setup failure, never credited" ;;
+    SETUP-EXPIRED) setup_fail "ordinary reclaim window expired during submission ($reason; now $now_ms >= retractEnds $retract_ends): setup failure, never credited" ;;
+    FAIL-OWNER) fail "ordinary reclaim refused (retract-owner, exit $status, reason $reason): A-014 requires an owner decision, never a host reclaim" ;;
+    FAIL-GENERIC) fail "ordinary reclaim refused (exit $status, reason $reason): A-014 requires an owner decision, never a host reclaim" ;;
+    *) fail "ordinary reclaim refusal unclassified (class '$class', exit $status, reason $reason): the classifier printed no known word; A-014 requires an owner decision, never a host reclaim" ;;
+  esac
+}
+reclaim_names_command() {
+  local reclaim_json="$1" expected_request="$2"
+  [ "$(jq -er .outcome "$reclaim_json")" = success ] || return 1
+  [ "$(jq -er .command "$reclaim_json")" = reclaim ] || return 1
+  [ "$(jq -er .request "$reclaim_json")" = "$expected_request" ] || return 1
+  [ "$(jq -er .edge "$reclaim_json")" = insertActive ] || return 1
+}
+booking_collected() {
+  local reclaim_json="$1" before_json="$2" after_json="$3" expected_request="$4"
+  local reclaim_owner before_owner
+  reclaim_owner="$(jq -er .owner "$reclaim_json")" || return 1
+  before_owner="$(jq -er --arg r "$expected_request" '.pendingRequests[] | select(.request == $r) | .owner' "$before_json")" || return 1
+  [ "$reclaim_owner" = "$before_owner" ] || return 1
+  jq -e --arg r "$expected_request" '.pendingRequests | map(.request) | index($r) != null' "$before_json" >/dev/null || return 1
+  jq -e --arg r "$expected_request" '.pendingRequests | map(.request) | index($r) == null' "$after_json" >/dev/null || return 1
+  [ "$(jq -er .root "$before_json")" = "$(jq -er .root "$after_json")" ] || return 1
+  [ "$(jq -er .root "$reclaim_json")" = "$(jq -er .root "$after_json")" ] || return 1
+  [ "$(jq -er .leaf "$before_json")" = active ] || return 1
+  [ "$(jq -er .leaf "$after_json")" = active ] || return 1
+}
+deposit_returned() {
+  local reclaim_json="$1" before_json="$2" after_json="$3" expected_addr="$4" expected_request="$5"
+  local locked_lov returned_lov topup
+  [ "$(jq -er .request "$reclaim_json")" = "$expected_request" ] || return 1
+  [ "$(jq -er '.returned.request' "$reclaim_json")" = "$expected_request" ] || return 1
+  [ "$(jq -er '.returned.index' "$reclaim_json")" = 0 ] || return 1
+  [ "$(jq -er '.returned.output' "$reclaim_json")" = "$(jq -er .retract "$reclaim_json")#0" ] || return 1
+  [ "$(jq -er '.returned.recipient' "$reclaim_json")" = "$expected_addr" ] || return 1
+  [ "$(jq -c -S .locked "$reclaim_json")" = "$(jq -c -S --arg r "$expected_request" '.pendingRequests[] | select(.request == $r) | .locked' "$before_json")" ] || return 1
+  locked_lov="$(jq -er .locked.lovelace "$reclaim_json")" || return 1
+  returned_lov="$(jq -er .returned.lovelace "$reclaim_json")" || return 1
+  topup="$(jq -er .topUp "$reclaim_json")" || return 1
+  [ "$returned_lov" -ge "$locked_lov" ] || return 1
+  [ "$topup" -eq "$((returned_lov - locked_lov))" ] || return 1
+  [ "$locked_lov" -gt 0 ] || return 1
+  # BEGIN-R3-amount-bind (F334-1): the summary number, the value object and
+  # the fresh output's own lovelace are one amount, at least the booking.
+  # Without this a full summary beside a matching short output passes.
+  jq -e --arg o "$(jq -er '.returned.output' "$reclaim_json")" --argjson rlove "$returned_lov" --argjson llove "$locked_lov" --argjson want "$(jq -c '.returned.value' "$reclaim_json")" '
+    ($want.lovelace == $rlove)
+    and ([.outputsAt.outputs[] | select(.output == $o)] | length == 1)
+    and ([.outputsAt.outputs[] | select(.output == $o)][0].locked == $want)
+    and ([.outputsAt.outputs[] | select(.output == $o)][0].locked.lovelace == $rlove)
+    and ($rlove >= $llove)
+  ' "$after_json" >/dev/null || return 1
+  # END-R3-amount-bind
+  jq -e --arg o "$(jq -er '.returned.output' "$reclaim_json")" --argjson want "$(jq -c '.returned.value' "$reclaim_json")" '
+    [.outputsAt.outputs[] | select(.output == $o)] | length == 1 and .[0].locked == $want
+  ' "$after_json" >/dev/null || return 1
+}
+if [ "$part" = stranger-registers-a-taken-key ]; then
+  reclaim_request="$(jq -er '.requests[0]' "$receipts/forbidden.json")" || setup_fail "stranded request missing in forbidden receipt"
+  printf '%s' "$reclaim_request" | grep -Eq '^[0-9a-fA-F]{64}#[0-9]+$' || setup_fail "stranded request malformed: $reclaim_request"
+  "$singular" --help >"$receipts/singular-help.out" 2>"$receipts/singular-help.err" || setup_fail "singular --help failed"
+  grep -q "singular registry reclaim" "$receipts/singular-help.out" || setup_fail "singular --help does not name registry reclaim"
+  "$singular" registry reclaim --help >"$receipts/singular-reclaim-help.out" 2>"$receipts/singular-reclaim-help.err" || setup_fail "singular registry reclaim --help failed"
+  grep -q -- "--request" "$receipts/singular-reclaim-help.out" || setup_fail "reclaim --help names no --request"
+  "$open_datum" --help >"$receipts/opendatum-help.out" 2>"$receipts/opendatum-help.err" || setup_fail "open-datum --help failed"
+  if grep -q "reclaim" "$receipts/opendatum-help.out"; then
+    setup_fail "open-datum --help names reclaim (ordinary reclaim lives in singular only)"
+  fi
+  say "ordinary command: singular registry reclaim --request $reclaim_request (help agrees; open-datum has none)"
+  run_ok bob-preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview \
+    --state-dir "$work/bob-preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/bob.skey" \
+    || setup_fail "bob preview failed"
+  bob_addr="$(jq -er .wallet "$receipts/bob-preview.json")" || setup_fail "bob preview names no wallet"
+  [ -n "$bob_addr" ] || setup_fail "bob address empty"
+  run_ok inspect-before-reclaim "$open_datum" open-datum inspect --key alice-1 "${common[@]}" "${node[@]}" \
+    || setup_fail "before-reclaim inspect failed"
+  [ "$(jq -er .leaf "$receipts/inspect-before-reclaim.json")" = active ] || setup_fail "key not active before reclaim"
+  submitted="$(jq -er --arg r "$reclaim_request" '.pendingRequests[] | select(.request == $r) | .submittedAt' "$receipts/inspect-before-reclaim.json")" || setup_fail "stranded request not pending before reclaim (missing-request, never credited)"
+  proc_time="$(jq -er .processTime "$receipts/inspect-before-reclaim.json")" || setup_fail "before inspect names no processTime"
+  retr_time="$(jq -er .retractTime "$receipts/inspect-before-reclaim.json")" || setup_fail "before inspect names no retractTime"
+  processing_ends=$((submitted + proc_time))
+  retract_ends=$((submitted + proc_time + retr_time))
+  now_ms=$(date +%s%3N)
+  [ "$now_ms" -lt "$retract_ends" ] || setup_fail "reclaim window expired before the wait (now $now_ms >= retractEnds $retract_ends)"
+  wait_ms=$((processing_ends + 5000 - now_ms))
+  if [ "$wait_ms" -gt 0 ]; then
+    say "waiting $wait_ms ms for the retract window to open (processingEnds $processing_ends)"
+    sleep "$((wait_ms / 1000)).$(printf '%03d' "$((wait_ms % 1000))")"
+  fi
+  now_ms=$(date +%s%3N)
+  [ "$now_ms" -lt "$retract_ends" ] || setup_fail "reclaim window expired after the wait (now $now_ms >= retractEnds $retract_ends)"
+  mkdir -p "$work/reclaim-bob"
+  reclaim_status=0
+  "$singular" registry reclaim --request "$reclaim_request" \
+    --state-dir "$work/reclaim-bob" --blueprint "$blueprint" --state-token "$state_token" \
+    "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/reclaim.json" \
+    >"$receipts/reclaim.out" 2>"$receipts/reclaim.stderr" || reclaim_status=$?
+  [ -f "$receipts/reclaim.json" ] || setup_fail "ordinary reclaim produced no receipt (missing-request, never credited)"
+  if [ "$reclaim_status" -ne 0 ]; then
+    reason="$(jq -r .reason "$receipts/reclaim.json" 2>/dev/null || echo "no reason")"
+    now_ms=$(date +%s%3N)
+    class="$(classify_reclaim_refusal "$reason" "$now_ms" "$retract_ends")"
+    reclaim_refusal_outcome "$class" "$reclaim_status" "$reason" "$now_ms" "$retract_ends"
+  fi
+  reclaim_names_command "$receipts/reclaim.json" "$reclaim_request" \
+    || fail "reclaim not credited: command/request/edge mismatch (outcome=$(jq -r .outcome "$receipts/reclaim.json"))"
+  run_ok inspect-after-reclaim "$open_datum" open-datum inspect --key alice-1 --outputs-at "$bob_addr" "${common[@]}" "${node[@]}" \
+    || setup_fail "after-reclaim inspect failed"
+  booking_collected "$receipts/reclaim.json" "$receipts/inspect-before-reclaim.json" "$receipts/inspect-after-reclaim.json" "$reclaim_request" \
+    || fail "reclaim did not collect the booking (pending still live or root moved)"
+  deposit_returned "$receipts/reclaim.json" "$receipts/inspect-before-reclaim.json" "$receipts/inspect-after-reclaim.json" "$bob_addr" "$reclaim_request" \
+    || fail "reclaim did not return Bob's deposit (returned mismatch)"
+  say "reclaimed: $reclaim_request collected, deposit returned to $bob_addr by singular registry reclaim"
+fi
+
 # 8. Altered-receipt controls: each clause changes its verdict.
 altered="$work/altered"
 mkdir -p "$altered"
@@ -726,6 +898,52 @@ if judge "$receipts/forbidden.json" accepted; then
   fail "control: forbidden receipt passed the accepted clause"
 fi
 say "altered-receipt controls: each clause changes its verdict"
+# (x-xii) reclaim controls, each the only reason to be rejected, each calling
+# the live functions themselves (never recomputed). Only for
+# stranger-registers-a-taken-key; every other part and its controls are untouched.
+if [ "$part" = stranger-registers-a-taken-key ]; then
+  jq '.command = "fold"' "$receipts/reclaim.json" >"$altered/reclaim-command-fold.json"
+  if reclaim_names_command "$altered/reclaim-command-fold.json" "$reclaim_request"; then
+    fail "control: folded command passed the reclaim-command clause"
+  fi
+  booking_collected "$altered/reclaim-command-fold.json" "$receipts/inspect-before-reclaim.json" "$receipts/inspect-after-reclaim.json" "$reclaim_request" \
+    || fail "control: folded command failed the collected clause (isolation)"
+  deposit_returned "$altered/reclaim-command-fold.json" "$receipts/inspect-before-reclaim.json" "$receipts/inspect-after-reclaim.json" "$bob_addr" "$reclaim_request" \
+    || fail "control: folded command failed the returned clause (isolation)"
+  jq --slurpfile b "$receipts/inspect-before-reclaim.json" '.pendingRequests = $b[0].pendingRequests' \
+    "$receipts/inspect-after-reclaim.json" >"$altered/inspect-after-pending.json"
+  if booking_collected "$receipts/reclaim.json" "$receipts/inspect-before-reclaim.json" "$altered/inspect-after-pending.json" "$reclaim_request"; then
+    fail "control: re-added pending passed the collected clause"
+  fi
+  reclaim_names_command "$receipts/reclaim.json" "$reclaim_request" \
+    || fail "control: re-added pending failed the command clause (isolation)"
+  deposit_returned "$receipts/reclaim.json" "$receipts/inspect-before-reclaim.json" "$altered/inspect-after-pending.json" "$bob_addr" "$reclaim_request" \
+    || fail "control: re-added pending failed the returned clause (isolation)"
+  jq '.returned.lovelace += 1' "$receipts/reclaim.json" >"$altered/reclaim-returned-plus-one.json"
+  if deposit_returned "$altered/reclaim-returned-plus-one.json" "$receipts/inspect-before-reclaim.json" "$receipts/inspect-after-reclaim.json" "$bob_addr" "$reclaim_request"; then
+    fail "control: plus-one return passed the returned clause"
+  fi
+  reclaim_names_command "$altered/reclaim-returned-plus-one.json" "$reclaim_request" \
+    || fail "control: plus-one return failed the command clause (isolation)"
+  booking_collected "$altered/reclaim-returned-plus-one.json" "$receipts/inspect-before-reclaim.json" "$receipts/inspect-after-reclaim.json" "$reclaim_request" \
+    || fail "control: plus-one return failed the collected clause (isolation)"
+  # C-R4 short output with a full summary (F334-1): the value object and the
+  # fresh output both say 1 while the summary still says the full booking.
+  # Old R3 checks pass (summary>=locked, topUp, outputsAt==value at 1); only
+  # the new amount-bind comparison rejects it.
+  jq '.returned.value.lovelace = 1' "$receipts/reclaim.json" >"$altered/reclaim-value-short.json"
+  jq --arg o "$(jq -er '.returned.output' "$receipts/reclaim.json")" '
+    .outputsAt.outputs |= map(if .output == $o then .locked.lovelace = 1 else . end)
+  ' "$receipts/inspect-after-reclaim.json" >"$altered/inspect-after-short.json"
+  if deposit_returned "$altered/reclaim-value-short.json" "$receipts/inspect-before-reclaim.json" "$altered/inspect-after-short.json" "$bob_addr" "$reclaim_request"; then
+    fail "control: short output with full summary passed the returned clause"
+  fi
+  reclaim_names_command "$altered/reclaim-value-short.json" "$reclaim_request" \
+    || fail "control: short output failed the command clause (isolation)"
+  booking_collected "$altered/reclaim-value-short.json" "$receipts/inspect-before-reclaim.json" "$altered/inspect-after-short.json" "$reclaim_request" \
+    || fail "control: short output failed the collected clause (isolation)"
+  say "reclaim controls: command, collected and returned each change their verdict alone"
+fi
 
 # 9. Scan the run directory for the signing-key bytes: receipts, stdio,
 # host state directories with their journals, devnet logs. The key files

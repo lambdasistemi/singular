@@ -27,6 +27,7 @@ nav:
   - Download and verify a release: docs/verify-release.md
   - Conformance evidence: docs/conformance-evidence.md
   - Consumer conformance record: docs/consumer-conformance.md
+  - What singular-negative shows: docs/negative-host.md
   - The preprod record: docs/preprod.md
   - Demo 1 on preprod, what a reviewer checks: docs/demo1-preprod.md
   - Executable candidate:
