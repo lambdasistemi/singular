@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
+      "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and Singular.Registry.FoldSelection owns which pending requests a fold takes, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
       "pause": 400
     }
   ],
@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "The facade holds no algorithm. It runs the fold's sequence — query, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+      "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
       "pause": 400
     }
   ],
@@ -66,6 +66,10 @@
     },
     {
       "text": "A request gains or changes what it carries: Update.Context finds and decodes it (the datum shape itself lives in Singular.Registry.Types).",
+      "pause": 300
+    },
+    {
+      "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound: Singular.Registry.FoldSelection, and only there.",
       "pause": 300
     },
     {
@@ -109,12 +113,16 @@
       "pause": 300
     },
     {
+      "text": "Selection: Singular.Registry.FoldSelection",
+      "pause": 300
+    },
+    {
       "text": "The wider builder map these owners sit in is Builder and blueprint modules; the check commands and their extents are in Checking off-chain code.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "offchain-fold-responsibilities.md",
-    "sha256": "0d208e3bb6b054b984d6a894d48913d6b09a5c0f3ab1a5e7880f51bc2977ee81"
+    "sha256": "68c1a5da94e7ea6d768371e7dc0c6ab16e8d673f3d21533bd1b0f78fef12f444"
   }
 }

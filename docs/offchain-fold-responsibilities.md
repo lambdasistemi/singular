@@ -6,7 +6,8 @@ wants to change one module and have the review ask one question. Before
 the extraction, all of that lived in one 890-line module; a change to a
 custody refund and a change to a slot computation were reviewed in the
 same file with no boundary between them. Now the fold path is three
-focused owners behind the same public facade, and this page tells a
+focused owners behind the same public facade, and `Singular.Registry.FoldSelection`
+owns which pending requests a fold takes, and this page tells a
 contributor which owner their change belongs to, what the flow through
 them is, and what must never change while it moves.
 
@@ -58,6 +59,7 @@ minimum, or proof correctness beyond live cage acceptance.
 ```mermaid
 flowchart TD
     Callers[Callers — tests, commands, journeys, conformance] -->|import the six public names| U[Singular.Registry.TxBuilder.Update — facade and orchestration]
+    Callers -->|which pending requests a fold takes| S[Singular.Registry.FoldSelection — selection]
     U -->|queries, proofs, state, slot, context completion| C[Update.Context]
     U -->|what the requests owe| D[Update.Duties]
     U -->|evaluation adapter and the one story language program| B[Update.Build]
@@ -75,10 +77,14 @@ flowchart TD
     U -->|reads the custody-spend accessor| CF
 ```
 
-The facade holds no algorithm. It runs the fold's sequence — query,
-proofs, state preparation, context completion, duties, upper slot,
-program, build — and every decision in that sequence belongs to exactly
-one of the three owners below it. The graph is acyclic and one-way
+The facade holds no algorithm. It runs the fold's sequence — query
+of the chosen requests, proofs, state preparation, context completion,
+duties, upper slot, program, build — and every decision in that sequence
+belongs to exactly one of the three owners below it. Which pending
+requests reach that sequence belongs to `Singular.Registry.FoldSelection`
+alone: it judges every pending request on its own, by seven checks in
+order, and returns each as settled or excluded with a reason, up to a
+capacity bound. The graph is acyclic and one-way
 between the fold owners: Context knows nothing of duties or assembly,
 Duties reads Context but no assembly, Build reads Duties but no
 facade. Below the fold owners, both Duties and Build also read the
@@ -89,6 +95,7 @@ action types.
 
 | Module | Responsible for |
 | --- | --- |
+| `Singular.Registry.FoldSelection` | Which pending requests a fold takes: judging every pending request alone, by seven checks in order, returning each as settled or excluded with a reason, up to a capacity bound. |
 | `Singular.Registry.TxBuilder.Update` | The six public exports and the two fold entry points; the sequence of preparation, decision and assembly. Nothing else. |
 | `Singular.Registry.TxBuilder.Update.Context` | The `RegistryContext` a caller hands in and its empty value; finding the state, request and fee UTxOs; the ordered speculative proofs through the trie; the new state output and the cage script; the validity upper slot; completing a partly empty context from the provider. |
 | `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the three token policies, destinations, custody spends, burn sources, deposit and approval returns, and the (empty) signer set. |
@@ -99,16 +106,19 @@ action types.
 ```mermaid
 sequenceDiagram
     participant Caller
+    participant Sel as FoldSelection
     participant Facade as Update facade
     participant Ctx as Update.Context
     participant Dut as Update.Duties
     participant Bld as Update.Build
-    Caller->>Facade: updateTokenWithDuties cfg prov tm tid addr ctx
-    Facade->>Ctx: queryContext — state, requests (sorted by input), fee, params
+    Caller->>Sel: selectFold — judges each pending request alone, seven checks, settled or excluded with reason, up to capacity
+    Sel-->>Caller: chosen requests
+    Caller->>Facade: updateTokenSelected cfg prov tm tid addr ctx chosen
+    Facade->>Ctx: queryContext — state, chosen requests (sorted by input), fee, params
     Facade->>Ctx: computeProofs — speculative trie walk in request order
     Facade->>Ctx: prepareState — new state output, cage script
     Facade->>Ctx: completeContext — cage/holder inventories, cage script default
-    Facade->>Dut: registryDuties — what these requests owe
+    Facade->>Dut: registryDuties — what the chosen requests owe
     Facade->>Ctx: computeUpperSlot — earliest request deadline
     Facade->>Bld: mkEvalTx + buildProgram — the one story language program
     Bld-->>Facade: assembled transaction
@@ -154,6 +164,8 @@ extraction touches none of it.
 - A request gains or changes what it carries: `Update.Context` finds
   and decodes it (the datum shape itself lives in
   `Singular.Registry.Types`).
+- Which pending requests a fold takes — the seven checks, the reasons,
+  the capacity bound: `Singular.Registry.FoldSelection`, and only there.
 - An edge's obligations change — what it mints, where it delivers, what
   custody it spends or returns: `Update.Duties`, and only there.
 - The transaction's shape changes — a new input kind, reference
@@ -180,6 +192,7 @@ viewing:
 
 - Facade: <a href="../offchain/lib/Singular/Registry/TxBuilder/Update.hs" data-api="module">Singular.Registry.TxBuilder.Update</a>
 - Owners: <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Context.hs" data-api="module">Singular.Registry.TxBuilder.Update.Context</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="module">Singular.Registry.TxBuilder.Update.Duties</a>, <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Build.hs" data-api="module">Singular.Registry.TxBuilder.Update.Build</a>
+- Selection: <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="module">Singular.Registry.FoldSelection</a>
 
 The wider builder map these owners sit in is
 [Builder and blueprint modules](offchain-builder-blueprint.md); the

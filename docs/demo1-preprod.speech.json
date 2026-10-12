@@ -35,7 +35,7 @@
       "pause": 300
     },
     {
-      "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold takes every pending request. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
+      "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles the first that passes, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
       "pause": 300
     },
     {
@@ -87,6 +87,6 @@
   ],
   "_source": {
     "file": "demo1-preprod.md",
-    "sha256": "52f7a0599c017b7515cdce8451de61e550d8b566c7233dcf61c0ede493da9d82"
+    "sha256": "8f778b73d4adb87e09e4b1c97de377b7113d60361022253297fb03d99dba2fff"
   }
 }
