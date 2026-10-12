@@ -285,10 +285,11 @@ koiosEnv tracer =
         , envWrites = withWrites (backendUnder tracer) (readsUnder tracer)
         }
 
--- | Everything a write's submissions need: immutable explicit inputs.
--- Successful per-submission metadata (placement scopes, confirmation age)
--- travels in the returned 'ConfirmedSubmission' value, never in a
--- command-wide mutable index.
+{- | Everything a write's submissions need: immutable explicit inputs.
+Successful per-submission metadata (placement scopes, confirmation age)
+travels in the returned 'ConfirmedSubmission' value, never in a
+command-wide mutable index.
+-}
 data WriteContext = WriteContext
     { wcDir :: FilePath
     , wcCommand :: Text
@@ -328,8 +329,9 @@ confirmedTxId = csTxId
 confirmedScopes :: ConfirmedSubmission -> [Scope]
 confirmedScopes = csScopes
 
--- | How long the confirmed submission's readback took when journalled
--- observed: the milliseconds since its confirmation.
+{- | How long the confirmed submission's readback took when journalled
+observed: the milliseconds since its confirmation.
+-}
 confirmedElapsed :: ConfirmedSubmission -> IO Double
 confirmedElapsed = csElapsed
 
@@ -604,7 +606,10 @@ submitBuiltIn
     -> IO (ConfirmedSubmission, r)
 submitBuiltIn wc step items expect build = do
     progress <-
-        BuildProgress <$> newIORef [] <*> newIORef (null items) <*> newIORef False
+        BuildProgress
+            <$> newIORef []
+            <*> newIORef (null items)
+            <*> newIORef False
     since <- startTimer
     let building = Tracer $ \(Trace path event) -> do
             placed <- readIORef (bpScopes progress)
@@ -665,7 +670,8 @@ submitBuiltIn wc step items expect build = do
     let tracer = within (InTransaction step) (inScopes placed (wcTracer wc))
     (signed, elapsed) <-
         journalledSubmit tracer wc step (expect extra) scope unsigned
-    pure (ConfirmedSubmission signed (txIdHex signed) placed elapsed, extra)
+    pure
+        (ConfirmedSubmission signed (txIdHex signed) placed elapsed, extra)
 
 {- | The necessary synchronous exceptional state of one 'submitBuiltIn'
 invocation, private to this module. 'bpScopes' collects the placement the
@@ -936,7 +942,8 @@ transaction made, and says what it read. Takes the confirmed submission
 itself — its scopes and its confirmation-age action — never a
 transaction-id lookup.
 -}
-journalObserved :: WriteContext -> Text -> ConfirmedSubmission -> Text -> IO ()
+journalObserved
+    :: WriteContext -> Text -> ConfirmedSubmission -> Text -> IO ()
 journalObserved wc step confirmed detail = do
     let txid = confirmedTxId confirmed
     appendJournal
@@ -948,9 +955,10 @@ journalObserved wc step confirmed detail = do
         (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))
         (TxObserved step txid readback)
 
--- | The same, for an already-live reference found before this command:
--- known by its original id, with no current-command confirmation, so zero
--- elapsed and empty scopes by construction (there is no map to consult).
+{- | The same, for an already-live reference found before this command:
+known by its original id, with no current-command confirmation, so zero
+elapsed and empty scopes by construction (there is no map to consult).
+-}
 journalObservedId :: WriteContext -> Text -> Text -> Text -> IO ()
 journalObservedId wc step txid detail = do
     appendJournal

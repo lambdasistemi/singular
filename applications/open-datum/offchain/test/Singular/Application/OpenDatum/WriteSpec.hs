@@ -622,7 +622,8 @@ withReplayViews use = withFixture $ \fx -> do
                     , Cage.historicalTx = confirmedTx boot
                     , Cage.spentOutputs = [(seed, seedOut)]
                     , Cage.referenceOutputs = []
-                    , Cage.createdOutputs = [(TxIn (txIdTx (confirmedTx boot)) (TxIx 0), stateOut)]
+                    , Cage.createdOutputs =
+                        [(TxIn (txIdTx (confirmedTx boot)) (TxIx 0), stateOut)]
                     , Cage.scriptValid = True
                     }
             viewOver output = do
@@ -634,7 +635,11 @@ withReplayViews use = withFixture $ \fx -> do
                     restore = writeIORef cell (Right (healthyStream record))
                 pure
                     ( ReplaySource cell restore
-                    , Live session saved [] (TxIn (txIdTx (confirmedTx boot)) (TxIx 0), output)
+                    , Live
+                        session
+                        saved
+                        []
+                        (TxIn (txIdTx (confirmedTx boot)) (TxIx 0), output)
                     )
             view = viewOver stateOut
             tamperedView wanted = do
@@ -646,7 +651,13 @@ withReplayViews use = withFixture $ \fx -> do
                 snd <$> viewOver other
         (sourceA, liveA) <- view
         (sourceB, liveB) <- view
-        use (sourceA, liveA) (sourceB, liveB) tamperedView fx saved (confirmedTx boot)
+        use
+            (sourceA, liveA)
+            (sourceB, liveB)
+            tamperedView
+            fx
+            saved
+            (confirmedTx boot)
 
 data Fixture = Fixture
     { fxDir :: FilePath
@@ -738,7 +749,10 @@ write fx = writeVia (writeContext fx) id fx
 builds with a function.
 -}
 writeVia
-    :: WriteContext -> (ConwayTx -> ConwayTx) -> Fixture -> IO (ConfirmedSubmission, ())
+    :: WriteContext
+    -> (ConwayTx -> ConwayTx)
+    -> Fixture
+    -> IO (ConfirmedSubmission, ())
 writeVia ctx shape fx =
     submitBuilt ctx "fold" (const (expecting "state")) $ \v -> do
         utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
@@ -1188,16 +1202,21 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     TxObserved s _ _ -> s
                 txEvents = [(scope, e) | Trace scope (How (Tx e)) <- events]
             journalled
-                `shouldBe` [("fold", txIdHex (confirmedTx folded)), ("book", txIdHex (confirmedTx booked))]
-            txIdHex (confirmedTx folded) `shouldNotBe` txIdHex (confirmedTx booked)
+                `shouldBe` [ ("fold", txIdHex (confirmedTx folded))
+                           , ("book", txIdHex (confirmedTx booked))
+                           ]
+            txIdHex (confirmedTx folded)
+                `shouldNotBe` txIdHex (confirmedTx booked)
             forM_ [("fold", folded), ("book", booked)] $ \(step, signed) -> do
                 let mine = [e | (scope, e) <- txEvents, scope == [InTransaction step]]
                 map stepOf mine `shouldSatisfy` all (== step)
                 [() | TxBuilt{} <- mine] `shouldBe` [()]
-                mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex (confirmedTx signed))
+                mapMaybe txOf mine
+                    `shouldBe` replicate 4 (txIdHex (confirmedTx signed))
                 [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
                 [v | TxConfirmed _ _ _ v <- mine] `shouldBe` [Confirmed]
-                [t | TxObserved _ t _ <- mine] `shouldBe` [txIdHex (confirmedTx signed)]
+                [t | TxObserved _ t _ <- mine]
+                    `shouldBe` [txIdHex (confirmedTx signed)]
             length txEvents `shouldBe` 10
     it
         "names the four places a failure happens as four distinct events, \
@@ -1335,7 +1354,8 @@ narrationRows = describe "the narration of a write (#416)" $ do
         "keeps tracing total: a sink that throws and one on a closed handle change \
         \no outcome, journal or exception, and the other sinks still see every event"
         $ do
-            let scenarios :: [(String, WriteContext -> Fixture -> IO (ConfirmedSubmission, ()))]
+            let scenarios
+                    :: [(String, WriteContext -> Fixture -> IO (ConfirmedSubmission, ()))]
                 scenarios =
                     [ ("submitted, confirmed", (`writeVia` id))
                     ,

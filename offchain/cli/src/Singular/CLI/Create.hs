@@ -534,7 +534,8 @@ boot wc cfg pinned seedIn foundState = do
                         (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
                     )
                     (\v -> publishRefScriptTx reserved v addr script)
-            pure (confirmed, TxIn (txIdTx (confirmedTx confirmed)) (TxIx 0), refOut)
+            pure
+                (confirmed, TxIn (txIdTx (confirmedTx confirmed)) (TxIx 0), refOut)
         stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
     -- The state validator, published from outside the seed, unless a live
     -- carrier of it was found. A found carrier has no current-command
@@ -548,7 +549,12 @@ boot wc cfg pinned seedIn foundState = do
             Just found -> pure (Nothing, found)
     -- A carrier found elsewhere was not submitted by this create.
     let stateTxs = [txInTxId stateIn | null foundState]
-    observeReference wc "publish-state" stateScript stateConfirmed stateRef
+    observeReference
+        wc
+        "publish-state"
+        stateScript
+        stateConfirmed
+        stateRef
     -- The boot, consuming the seed and running the state script from the
     -- reference, wherever it sits.
     (confirmedBoot, ()) <-
@@ -603,7 +609,12 @@ boot wc cfg pinned seedIn foundState = do
         mapM
             ( \(role, script) -> do
                 (confirmed, i, o) <- publish ("publish-" <> role) Set.empty script
-                observeReference wc ("publish-" <> role) script (Just confirmed) (i, o)
+                observeReference
+                    wc
+                    ("publish-" <> role)
+                    script
+                    (Just confirmed)
+                    (i, o)
                 pure (reference role script (i, o))
             )
             (laterScripts cfg pinned tid)
@@ -661,11 +672,10 @@ observeReference wc step script published (i, _) = do
             )
     let wanted = hashScript script
         detail =
-            ( "reference output "
+            "reference output "
                 <> txInText i
                 <> " is live carrying script "
                 <> hexT (scriptHashBytes wanted)
-            )
         original = T.takeWhile (/= '#') (txInText i)
     case found of
         [o]

@@ -242,11 +242,15 @@ book at a key verb plan = do
     pure (booking, decided, deadline)
 
 -- | What a booking-only command's receipt names of its pending request.
-pendingFields :: ByteString -> ConfirmedSubmission -> Deadline -> [(Text, Value)]
+pendingFields
+    :: ByteString -> ConfirmedSubmission -> Deadline -> [(Text, Value)]
 pendingFields requester booking deadline =
     [ ("booking", toJSON (txIdHex (confirmedTx booking)))
     , ("requester", toJSON (hexT requester))
-    , ("request", toJSON (txInText (TxIn (txIdTx (confirmedTx booking)) (TxIx 0))))
+    ,
+        ( "request"
+        , toJSON (txInText (TxIn (txIdTx (confirmedTx booking)) (TxIx 0)))
+        )
     , ("foldDeadline", deadlineJson deadline)
     ]
 
