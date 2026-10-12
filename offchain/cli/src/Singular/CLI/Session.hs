@@ -43,6 +43,11 @@ module Singular.CLI.Session
 
       -- * Writes
     , WriteContext (..)
+    , ConfirmedSubmission
+    , confirmedTx
+    , confirmedTxId
+    , confirmedScopes
+    , confirmedElapsed
     , withWrite
     , withSession
     , readsIn
@@ -90,14 +95,11 @@ import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
 import Data.IORef
     ( IORef
-    , modifyIORef'
     , newIORef
     , readIORef
     , writeIORef
     )
 import Data.List (nub)
-import Data.Map.Strict (Map)
-import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -283,7 +285,11 @@ koiosEnv tracer =
         , envWrites = withWrites (backendUnder tracer) (readsUnder tracer)
         }
 
--- | Everything a write's submissions need.
+{- | Everything a write's submissions need: immutable explicit inputs.
+Successful per-submission metadata (placement scopes, confirmation age)
+travels in the returned 'ConfirmedSubmission' value, never in a
+command-wide mutable index.
+-}
 data WriteContext = WriteContext
     { wcDir :: FilePath
     , wcCommand :: Text
@@ -294,13 +300,40 @@ data WriteContext = WriteContext
     -- ^ Where the write reports its transactions, in the scope that runs it
     , wcSource :: Text
     -- ^ The name the provider's reads report as
-    , wcConfirmed :: IORef (Map Text (IO Double))
-    {- ^ For each transaction confirmed so far, the milliseconds since its
-    confirmation: how long its readback took when it is journalled observed
-    -}
-    , wcPlaced :: IORef (Map Text [Scope])
-    -- ^ For each transaction built so far, the scopes its build placed it in
     }
+
+{- | A CONFIRMED successful submission: the signed transaction, the scopes
+its build placed it in, and how long its readback took to report once
+journalled observed. The constructors are private to this module, so only
+a submission this command confirmed can produce one; an already-live
+reference found before this command carries no such value (see
+'journalObservedId'). Every later step — readback, observation, receipt
+fields — takes this value, never a command-wide transaction-id lookup.
+-}
+data ConfirmedSubmission = ConfirmedSubmission
+    { csSigned :: ConwayTx
+    , csTxId :: Text
+    , csScopes :: [Scope]
+    , csElapsed :: IO Double
+    }
+
+-- | The signed transaction a confirmed submission carries.
+confirmedTx :: ConfirmedSubmission -> ConwayTx
+confirmedTx = csSigned
+
+-- | The confirmed submission's transaction id, as hex.
+confirmedTxId :: ConfirmedSubmission -> Text
+confirmedTxId = csTxId
+
+-- | The scopes the confirmed submission's build placed it in.
+confirmedScopes :: ConfirmedSubmission -> [Scope]
+confirmedScopes = csScopes
+
+{- | How long the confirmed submission's readback took when journalled
+observed: the milliseconds since its confirmation.
+-}
+confirmedElapsed :: ConfirmedSubmission -> IO Double
+confirmedElapsed = csElapsed
 
 {- | Take the target directory's write lock, connect to the named node with
 the caller's wallet, and run the body holding the lock throughout. A
@@ -343,8 +376,6 @@ withSession env dir command ws body = do
         url = providerUrl settings
     wallet <- loadWallet magic (writeWalletKey ws)
     connected <- newIORef False
-    confirmed <- newIORef Map.empty
-    placements <- newIORef Map.empty
     before <- length <$> readJournal dir
     result <-
         try $
@@ -361,8 +392,6 @@ withSession env dir command ws body = do
                                 , wcTimeout = writeConfirmTimeout ws
                                 , wcTracer = envTracer env
                                 , wcSource = envSource env
-                                , wcConfirmed = confirmed
-                                , wcPlaced = placements
                                 }
                 named <- submissionsOf dir before
                 case ran of
@@ -542,7 +571,7 @@ expecting after = Expectation Nothing after Nothing Nothing Nothing
 submit it journalled under that view's chain point and the expectation
 the build decided. The view is released before the transaction is signed
 and sent. The only way a command writes: the journalled point is the
-building view's by construction. Returns the signed transaction and
+building view's by construction. Returns the confirmed submission and
 whatever else the build produced.
 -}
 submitBuilt
@@ -550,7 +579,7 @@ submitBuilt
     -> Text
     -> (r -> Expectation)
     -> (Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
-    -> IO (ConwayTx, r)
+    -> IO (ConfirmedSubmission, r)
 submitBuilt wc step expect build = submitBuiltIn wc step [] expect (const build)
 
 {- | 'submitBuilt', with the build reading what it names and placing its
@@ -574,20 +603,23 @@ submitBuiltIn
     -> [Text]
     -> (r -> Expectation)
     -> (Building -> Cage.Session Cage.NoWitness IO -> IO (ConwayTx, r))
-    -> IO (ConwayTx, r)
+    -> IO (ConfirmedSubmission, r)
 submitBuiltIn wc step items expect build = do
-    placement <- newIORef []
-    readOpen <- newIORef (null items)
+    progress <-
+        BuildProgress
+            <$> newIORef []
+            <*> newIORef (null items)
+            <*> newIORef False
     since <- startTimer
     let building = Tracer $ \(Trace path event) -> do
-            placed <- readIORef placement
+            placed <- readIORef (bpScopes progress)
             traceWith
                 (wcTracer wc)
                 (Trace (placed <> (InTransaction step : path)) event)
         closeReadWith end = do
-            open <- not <$> readIORef readOpen
+            open <- not <$> readIORef (bpReadClosed progress)
             when open $ do
-                writeIORef readOpen True
+                writeIORef (bpReadClosed progress) True
                 ms <- since
                 traceWith (how building) (Fetched (Fetch items (wcSource wc) ms end))
         closeRead = closeReadWith Done
@@ -598,16 +630,15 @@ submitBuiltIn wc step items expect build = do
                     report (wcTracer wc) scopes event
                 , place = \scopes event -> do
                     closeRead
-                    writeIORef placement scopes
+                    writeIORef (bpScopes progress) scopes
                     report (wcTracer wc) scopes event
                 }
-    evaluationFailed <- newIORef False
     let provider = tracedReads (wcSource wc) (readsUnder building) (wcCapabilities wc)
         -- the build's own session records whether a script failed its local evaluation
         recording v =
             v
                 { Cage.sessionEvaluated = \e -> do
-                    when (evalFailed e > 0) (writeIORef evaluationFailed True)
+                    when (evalFailed e > 0) (writeIORef (bpEvalFailed progress) True)
                     Cage.sessionEvaluated v e
                 }
     built <-
@@ -624,7 +655,7 @@ submitBuiltIn wc step items expect build = do
         Left (e :: SomeException)
             | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
             | otherwise -> do
-                failed <- readIORef evaluationFailed
+                failed <- readIORef (bpEvalFailed progress)
                 let cls = errorClassOf e
                 closeReadWith (FailedWith cls)
                 refused building $
@@ -635,12 +666,29 @@ submitBuiltIn wc step items expect build = do
                 case fromException e of
                     Just (_ :: WaitFailure) -> throwIO e
                     Nothing -> throwIO (Reported e)
-    placed <- readIORef placement
-    modifyIORef' (wcPlaced wc) (Map.insert (txIdHex unsigned) placed)
+    placed <- readIORef (bpScopes progress)
     let tracer = within (InTransaction step) (inScopes placed (wcTracer wc))
-    signed <-
+    (signed, elapsed) <-
         journalledSubmit tracer wc step (expect extra) scope unsigned
-    pure (signed, extra)
+    pure
+        (ConfirmedSubmission signed (txIdHex signed) placed elapsed, extra)
+
+{- | The necessary synchronous exceptional state of one 'submitBuiltIn'
+invocation, private to this module. 'bpScopes' collects the placement the
+build's 'place' callback reports; 'bpReadClosed' marks the read step
+closed before a sink may throw; 'bpEvalFailed' is monotonic: once a script
+fails local evaluation it stays failed, marked before any delegated
+callback can throw. A value alone cannot report a throw: when the build or
+a callback throws, the return path carrying a value never runs, yet these
+marks must already be recorded for the exception path to classify and
+report them. Owned by the one invocation; never shared between
+transactions, threads, or commands.
+-}
+data BuildProgress = BuildProgress
+    { bpScopes :: IORef [Scope]
+    , bpReadClosed :: IORef Bool
+    , bpEvalFailed :: IORef Bool
+    }
 
 -- | What a build reports while it decides, from its own view.
 data Building = Building
@@ -701,8 +749,9 @@ readsIn source tracer = tracedReads source (readsUnder tracer)
 {- | Sign; save the signed transaction and journal @prepared@ with its
 inputs, body hash and the chain point of the view its body was built
 from; send; journal the answer;
-await the confirmation; journal it. Returns the signed transaction once
-confirmed. The command journals @observed@ after its own readback.
+await the confirmation; journal it. Returns the signed transaction and the
+milliseconds-since-confirmation action once confirmed. The command journals
+@observed@ after its own readback.
 -}
 journalledSubmit
     :: Tracer IO Trace
@@ -711,7 +760,7 @@ journalledSubmit
     -> Expectation
     -> Value
     -> ConwayTx
-    -> IO ConwayTx
+    -> IO (ConwayTx, IO Double)
 journalledSubmit tracer wc step ex scope unsigned = do
     let txid = txIdHex unsigned
         txs = txUnder tracer
@@ -859,8 +908,7 @@ journalledSubmit tracer wc step ex scope unsigned = do
         Right (Just ()) -> do
             journal "confirmed" Nothing
             since <- startTimer
-            modifyIORef' (wcConfirmed wc) (Map.insert txid since)
-            pure signed
+            pure (signed, since)
 
 {- | The node's tip slot at the moment of submission, for the submission's
 event: one more acquisition, its reads traced like every other. A tip that
@@ -890,23 +938,35 @@ validityOf tx =
     in  (slot lower, slot upper)
 
 {- | Journal the fourth phase: the command read back what a confirmed
-transaction made, and says what it read.
+transaction made, and says what it read. Takes the confirmed submission
+itself — its scopes and its confirmation-age action — never a
+transaction-id lookup.
 -}
-journalObserved :: WriteContext -> Text -> ConwayTx -> Text -> IO ()
-journalObserved wc step tx = journalObservedId wc step (txIdHex tx)
+journalObserved
+    :: WriteContext -> Text -> ConfirmedSubmission -> Text -> IO ()
+journalObserved wc step confirmed detail = do
+    let txid = confirmedTxId confirmed
+    appendJournal
+        (wcDir wc)
+        (blankEntry wc step txid "observed"){journalDetail = Just detail}
+    readback <- confirmedElapsed confirmed
+    let placed = confirmedScopes confirmed
+    traceWith
+        (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))
+        (TxObserved step txid readback)
 
--- | The same, for a transaction known by its id.
+{- | The same, for an already-live reference found before this command:
+known by its original id, with no current-command confirmation, so zero
+elapsed and empty scopes by construction (there is no map to consult).
+-}
 journalObservedId :: WriteContext -> Text -> Text -> Text -> IO ()
 journalObservedId wc step txid detail = do
     appendJournal
         (wcDir wc)
         (blankEntry wc step txid "observed"){journalDetail = Just detail}
-    readback <-
-        readIORef (wcConfirmed wc) >>= fromMaybe (pure 0) . Map.lookup txid
-    placed <- Map.findWithDefault [] txid <$> readIORef (wcPlaced wc)
     traceWith
-        (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))
-        (TxObserved step txid readback)
+        (txUnder (within (InTransaction step) (inScopes [] (wcTracer wc))))
+        (TxObserved step txid 0)
 
 hexT :: ByteString -> Text
 hexT = T.pack . BC.unpack . B16.encode

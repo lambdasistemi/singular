@@ -356,8 +356,7 @@ inspectSaved app env savedPath mJournal key settings release a = do
                 _ ->
                     failWith Partial "the registry's state output carries no state datum"
             let root = unOnChainRoot (stateRoot state)
-            context <- openTrie saved
-            requireTrieSelection saved live context
+            context <- requireTrieSelection saved live
             leaf <- trieLeaf context key root
             outs <- liveOutputs app v saved
             requests <-

@@ -69,6 +69,7 @@ import Singular.CLI.Session
     , Env
     , Expectation (..)
     , WriteContext (..)
+    , confirmedTx
     , failWith
     , submitBuiltIn
     , txIdHex
@@ -258,8 +259,8 @@ runNegativeInsert env args = case entryMode args of
                                         "insert"
                                         Success
                                         [ ("key", toJSON (hexT key))
-                                        , ("booking", toJSON (txIdHex signedBooking))
-                                        , ("fold", toJSON (txIdHex signedFold))
+                                        , ("booking", toJSON (txIdHex (confirmedTx signedBooking)))
+                                        , ("fold", toJSON (txIdHex (confirmedTx signedFold)))
                                         , ("requests", toJSON [txInText tin | (tin, _) <- chosen])
                                         , ("keys", toJSON [hexT k | (_, k) <- chosen])
                                         , ("before", aroundJson mid)
@@ -283,7 +284,7 @@ runNegativeInsert env args = case entryMode args of
                                                 "insert"
                                                 LedgerRefusal
                                                 [ ("key", toJSON (hexT key))
-                                                , ("booking", toJSON (txIdHex signedBooking))
+                                                , ("booking", toJSON (txIdHex (confirmedTx signedBooking)))
                                                 , ("fold", toJSON ("none" :: Text))
                                                 , ("requests", toJSON [txInText tin | ((tin, _), _) <- foldPairs])
                                                 , ("keys", toJSON [hexT (requestKey q) | (_, q) <- foldPairs])
@@ -394,7 +395,7 @@ runNegativeUpdate env args tamper = case entryMode args of
                                 "update"
                                 Success
                                 [ ("key", toJSON (hexT key))
-                                , ("update", toJSON (txIdHex signed))
+                                , ("update", toJSON (txIdHex (confirmedTx signed)))
                                 , ("before", aroundJson before)
                                 , ("after", aroundJson after)
                                 , ("tamper", toJSON (tamperName tamper))
@@ -507,7 +508,7 @@ runNegativeTerminate env args = case entryMode args of
                                 "terminate"
                                 Success
                                 [ ("key", toJSON (hexT key))
-                                , ("booking", toJSON (txIdHex signed))
+                                , ("booking", toJSON (txIdHex (confirmedTx signed)))
                                 , ("before", aroundJson before)
                                 , ("after", aroundJson after)
                                 , ("applicationHash", toJSON (applicationHashOf registry))
@@ -622,7 +623,7 @@ runNegativeWithdraw env args = case entryMode args of
                                 "withdraw"
                                 Success
                                 [ ("key", toJSON (hexT key))
-                                , ("withdraw", toJSON (txIdHex signed))
+                                , ("withdraw", toJSON (txIdHex (confirmedTx signed)))
                                 , ("before", aroundJson before)
                                 , ("after", aroundJson after)
                                 , ("applicationHash", toJSON (applicationHashOf registry))
@@ -729,7 +730,7 @@ runNegativeFold env args short = do
                         ( receipt
                             "fold"
                             Success
-                            [ ("fold", toJSON (txIdHex signed))
+                            [ ("fold", toJSON (txIdHex (confirmedTx signed)))
                             , ("requests", toJSON [txInText tin | (tin, _) <- chosen])
                             , ("keys", toJSON [hexT k | (_, k) <- chosen])
                             , ("before", aroundJson before)

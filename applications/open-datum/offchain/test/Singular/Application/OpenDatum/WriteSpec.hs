@@ -137,9 +137,9 @@ import Singular.CLI.Fold (FoldOrigin (..), FoldSpec (..), foldPending)
 import Singular.CLI.Live
     ( Live (..)
     , Saved (..)
-    , TrieContext
-    , openTrie
+    , SelectedTrie
     , requireTrieSelection
+    , selectTrie
     , selectedTrieRoot
     , txInText
     )
@@ -155,7 +155,9 @@ import Singular.CLI.RejectRules (rejectGate, renderRejectRefusal)
 import Singular.CLI.RequestWindow (retractEnds, windowOf)
 import Singular.CLI.Session
     ( CommandFailure (..)
+    , ConfirmedSubmission
     , WriteContext (..)
+    , confirmedTx
     , expecting
     , failWith
     , journalObserved
@@ -221,6 +223,10 @@ import Singular.Registry.Trace
     ( ErrorClass (..)
     , Evaluation (..)
     )
+import Singular.Registry.TrieState qualified as TS
+    ( Staleness (..)
+    , TrieFailure (..)
+    )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
@@ -240,7 +246,12 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 spec :: Spec
-spec = writeRows >> phaseLogRows >> inputRows >> narrationRows
+spec =
+    writeRows
+        >> phaseLogRows
+        >> inputRows
+        >> explicitSelection
+        >> narrationRows
 
 writeRows :: Spec
 writeRows = describe "a singular write on injected capabilities (#323)" $ do
@@ -275,7 +286,7 @@ writeRows = describe "a singular write on injected capabilities (#323)" $ do
         $ \fx -> do
             (signed, ()) <- write fx
             confirmed <- readIORef (fxConfirmed fx)
-            confirmed `shouldBe` [T.unpack (txIdHex signed)]
+            confirmed `shouldBe` [T.unpack (txIdHex (confirmedTx signed))]
             events <- map journalEvent <$> readJournal (fxDir fx)
             events `shouldBe` ["prepared", "submitted", "confirmed"]
     it "hands the node only the body the caller's key signed" $
@@ -304,19 +315,85 @@ writeRows = describe "a singular write on injected capabilities (#323)" $ do
 -- The boot is signed and recorded through submitBuilt, so selection checks the
 -- real saved body and empty MPF nodes. Confirmation here is a recording test
 -- capability: these cases establish command behavior, never ledger admission.
+-- ---------------------------------------------------------
+-- The explicit selected trie value (#541)
+-- ---------------------------------------------------------
+
+{- | A selection is a value that captures its view's own history source.
+Every control works through the source the wrapper really reads: a source
+that refuses makes uses refuse with the provider-history failure, and a
+restored source serves uses again, so no use is served from a cached
+snapshot or a cached failure. Values from two views are independent through
+the source each captured, and a selection whose validation fails returns
+the refusal instead of any value. The fixture's history never advances:
+run-ahead along one chain stays Replay's own control, and no latest or
+atomic guarantee is claimed here.
+-}
+explicitSelection :: Spec
+explicitSelection = describe "the explicit selected trie value (#541)" $ do
+    it "revalidates through its history source on every use" $
+        withReplayViews $ \(sourceA, liveA) _second _tamper _fx saved _boot -> do
+            selected <- requireTrieSelection saved liveA
+            selectedTrieRoot selected `shouldReturn` BS.replicate 32 0
+            refuseReplay sourceA
+            selectedTrieRoot selected
+                `shouldThrow` \case
+                    CommandFailure ClientRefusal "TrieState HistoryIncomplete" _ -> True
+                    _ -> False
+            restoreReplay sourceA
+            selectedTrieRoot selected `shouldReturn` BS.replicate 32 0
+
+    it "keeps each selection to the source its own view captured" $
+        withReplayViews $ \(sourceA, liveA) (_sourceB, liveB) _tamper _fx saved _boot -> do
+            held <- requireTrieSelection saved liveA
+            fresh <- requireTrieSelection saved liveB
+            selectedTrieRoot held `shouldReturn` BS.replicate 32 0
+            selectedTrieRoot fresh `shouldReturn` BS.replicate 32 0
+            refuseReplay sourceA
+            -- the held value consults the source it captured ...
+            selectedTrieRoot held
+                `shouldThrow` \case
+                    CommandFailure ClientRefusal "TrieState HistoryIncomplete" _ -> True
+                    _ -> False
+            -- ... while the fresh value's own source still answers
+            selectedTrieRoot fresh `shouldReturn` BS.replicate 32 0
+            restoreReplay sourceA
+            selectedTrieRoot held `shouldReturn` BS.replicate 32 0
+
+    it "returns the refusal and no selection when validation fails" $
+        withReplayViews $ \_first _second tamper _fx saved _boot -> do
+            tampered <- tamper (BS.replicate 32 7)
+            answer <- selectTrie saved tampered
+            case answer of
+                Right _ -> expectationFailure "a tampered root produced a selection"
+                Left refusal -> do
+                    -- the selection root does not chain to the recorded one
+                    -- (Replay: recorded /= selection → StaleState StaleRoot)
+                    refusal `shouldSatisfy` \case
+                        TS.StaleState _ _ (TS.StaleRoot _ _) -> True
+                        _ -> False
+                    requireTrieSelection saved tampered
+                        `shouldThrow` \case
+                            CommandFailure _ "TrieState StaleState" _ -> True
+                            _ -> False
+
+-- ---------------------------------------------------------
+-- Fixture
+-- ---------------------------------------------------------
+
 inputRows :: Spec
 inputRows = describe "TrieState command input refusals on injected capabilities" $ do
     it
         "removing or corrupting journal trie records does not change the public trie"
         $ withInputFixture
-        $ \fx saved live context _ -> do
+        $ \fx saved live _context _ -> do
             entries <- readJournal (fxDir fx)
             BS.writeFile (fxDir fx </> "journal.jsonl") ""
-            requireTrieSelection saved live context
-            selectedTrieRoot context `shouldReturn` BS.replicate 32 0
+            selected <- requireTrieSelection saved live
+            selectedTrieRoot selected `shouldReturn` BS.replicate 32 0
             BS.writeFile (fxDir fx </> "journal.jsonl") "corrupt local history"
-            requireTrieSelection saved live context
-            selectedTrieRoot context `shouldReturn` BS.replicate 32 0
+            reselected <- requireTrieSelection saved live
+            selectedTrieRoot reselected `shouldReturn` BS.replicate 32 0
             BS.writeFile
                 (fxDir fx </> "journal.jsonl")
                 (BL.toStrict (foldMap (\e -> Aeson.encode e <> "\n") entries))
@@ -421,8 +498,69 @@ inputRows = describe "TrieState command input refusals on injected capabilities"
             readJournal (fxDir fx) `shouldReturn` entries
 
 withInputFixture
-    :: (Fixture -> Saved -> Live -> TrieContext -> ConwayTx -> IO a) -> IO a
-withInputFixture use = withFixture $ \fx -> do
+    :: (Fixture -> Saved -> Live -> SelectedTrie -> ConwayTx -> IO a) -> IO a
+withInputFixture use =
+    withReplayViews $ \(_sourceA, liveA) _second _tamper fx saved boot -> do
+        selected <- requireTrieSelection saved liveA
+        use fx saved liveA selected boot
+
+{- | The fixture's history behind a source each view owns (#541): flipping a
+source to a provider read refusal and back is the input a selected trie's
+uses actually read. Every view reads its own source over the same boot
+record, so selections from different views are distinguishable through the
+capability each captured. The history never advances here: run-ahead along
+one chain stays Replay's own control, and no latest or atomic guarantee is
+claimed or added by the wrapper.
+-}
+data ReplaySource = ReplaySource
+    { replayCell
+        :: IORef (Either Cage.HistoryFailure (Cage.HistoryStream IO))
+    , replayRestore :: IO ()
+    }
+
+-- | Refuse a view's history reads, as a failing provider does.
+refuseReplay :: ReplaySource -> IO ()
+refuseReplay source =
+    writeIORef
+        (replayCell source)
+        ( Left
+            ( Cage.HistoryReadFailure
+                (Cage.BackendReadFailure "the history source refused")
+            )
+        )
+
+-- | Restore the working boot history the source was built with.
+restoreReplay :: ReplaySource -> IO ()
+restoreReplay = replayRestore
+
+healthyStream :: Cage.HistoricalTransaction -> Cage.HistoryStream IO
+healthyStream record =
+    Cage.HistoryStream
+        ( pure
+            ( Right
+                ( Just
+                    ( Cage.HistoryBlock 1 (record :| [])
+                    , Cage.HistoryStream (pure (Right Nothing))
+                    )
+                )
+            )
+        )
+
+{- | Two independent views of the same saved registry plus a way to build a
+view whose state datum names another root: each view's session reads its
+own mutable history source over the one boot record.
+-}
+withReplayViews
+    :: ( (ReplaySource, Live)
+         -> (ReplaySource, Live)
+         -> (BS.ByteString -> IO Live)
+         -> Fixture
+         -> Saved
+         -> ConwayTx
+         -> IO a
+       )
+    -> IO a
+withReplayViews use = withFixture $ \fx -> do
     let cfg = Booking.cfg
         seed = either error id (parseOutRef (T.pack (replicate 64 '1' <> "#0")))
         seedOut =
@@ -478,37 +616,48 @@ withInputFixture use = withFixture $ \fx -> do
     SessionIO.withLatest (capReads (wcCapabilities (writeContext fx))) $ \actualSession -> do
         let record =
                 Cage.HistoricalTransaction
-                    { Cage.historicalId = txIdTx boot
+                    { Cage.historicalId = txIdTx (confirmedTx boot)
                     , Cage.historicalCbor =
-                        BL.toStrict (serialize (eraProtVerHigh @ConwayEra) boot)
-                    , Cage.historicalTx = boot
+                        BL.toStrict (serialize (eraProtVerHigh @ConwayEra) (confirmedTx boot))
+                    , Cage.historicalTx = confirmedTx boot
                     , Cage.spentOutputs = [(seed, seedOut)]
                     , Cage.referenceOutputs = []
-                    , Cage.createdOutputs = [(TxIn (txIdTx boot) (TxIx 0), stateOut)]
+                    , Cage.createdOutputs =
+                        [(TxIn (txIdTx (confirmedTx boot)) (TxIx 0), stateOut)]
                     , Cage.scriptValid = True
                     }
-            session =
-                actualSession
-                    { Cage.history = \_ _ ->
-                        pure
-                            ( Right
-                                ( Cage.HistoryStream
-                                    ( pure
-                                        ( Right
-                                            ( Just
-                                                ( Cage.HistoryBlock 1 (record :| [])
-                                                , Cage.HistoryStream (pure (Right Nothing))
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                    }
-            live = Live session saved [] (TxIn (txIdTx boot) (TxIx 0), stateOut)
-        mirror <- openTrie saved
-        requireTrieSelection saved live mirror
-        use fx saved live mirror boot
+            viewOver output = do
+                cell <- newIORef (Right (healthyStream record))
+                let session =
+                        actualSession
+                            { Cage.history = \_ _ -> readIORef cell
+                            }
+                    restore = writeIORef cell (Right (healthyStream record))
+                pure
+                    ( ReplaySource cell restore
+                    , Live
+                        session
+                        saved
+                        []
+                        (TxIn (txIdTx (confirmedTx boot)) (TxIx 0), output)
+                    )
+            view = viewOver stateOut
+            tamperedView wanted = do
+                let other =
+                        stateOut
+                            & datumTxOutL
+                                .~ mkInlineDatum
+                                    (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot wanted))))
+                snd <$> viewOver other
+        (sourceA, liveA) <- view
+        (sourceB, liveB) <- view
+        use
+            (sourceA, liveA)
+            (sourceB, liveB)
+            tamperedView
+            fx
+            saved
+            (confirmedTx boot)
 
 data Fixture = Fixture
     { fxDir :: FilePath
@@ -519,8 +668,6 @@ data Fixture = Fixture
     , fxBuiltAt :: IORef (Maybe (Aeson.Value, Cage.TipObservation))
     , fxUnsigned :: IORef (Maybe ConwayTx)
     , fxFacts :: IORef [FactRecord]
-    , fxConfirmations :: IORef (Map.Map Text (IO Double))
-    , fxPlacements :: IORef (Map.Map Text [Scope])
     }
 
 magic :: Word32
@@ -558,8 +705,6 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
         <*> newIORef Nothing
         <*> newIORef Nothing
         <*> newIORef []
-        <*> newIORef Map.empty
-        <*> newIORef Map.empty
         >>= k
 
 {- | The write context a command would get from composition, over the
@@ -592,21 +737,22 @@ writeContext fx =
         , wcTimeout = Just 5
         , wcTracer = nullTracer
         , wcSource = "fixture"
-        , wcConfirmed = fxConfirmations fx
-        , wcPlaced = fxPlacements fx
         }
 
 {- | One write: spend the wallet's output as the view shows it, moving the
 chain after the view is acquired.
 -}
-write :: Fixture -> IO (ConwayTx, ())
+write :: Fixture -> IO (ConfirmedSubmission, ())
 write fx = writeVia (writeContext fx) id fx
 
 {- | The same write through a given context, shaping the transaction it
 builds with a function.
 -}
 writeVia
-    :: WriteContext -> (ConwayTx -> ConwayTx) -> Fixture -> IO (ConwayTx, ())
+    :: WriteContext
+    -> (ConwayTx -> ConwayTx)
+    -> Fixture
+    -> IO (ConfirmedSubmission, ())
 writeVia ctx shape fx =
     submitBuilt ctx "fold" (const (expecting "state")) $ \v -> do
         utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
@@ -718,8 +864,8 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
             Cage.observedSlot (snd builtPoint) `shouldNotBe` tip
             objects <- logObjects path
             let phased p = [o | o <- objects, field "phase" o == Just (p :: Text)]
-                txid = txIdHex signed
-                vldt = signed ^. bodyTxL . vldtTxBodyL
+                txid = txIdHex (confirmedTx signed)
+                vldt = confirmedTx signed ^. bodyTxL . vldtTxBodyL
                 strict = \case SJust (SlotNo s) -> Just s; SNothing -> Nothing
             map (field "step") (phased "build") `shouldBe` [Just ("fold" :: Text)]
             map (field "tx") (phased "sign") `shouldBe` [Just txid]
@@ -1056,16 +1202,21 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     TxObserved s _ _ -> s
                 txEvents = [(scope, e) | Trace scope (How (Tx e)) <- events]
             journalled
-                `shouldBe` [("fold", txIdHex folded), ("book", txIdHex booked)]
-            txIdHex folded `shouldNotBe` txIdHex booked
+                `shouldBe` [ ("fold", txIdHex (confirmedTx folded))
+                           , ("book", txIdHex (confirmedTx booked))
+                           ]
+            txIdHex (confirmedTx folded)
+                `shouldNotBe` txIdHex (confirmedTx booked)
             forM_ [("fold", folded), ("book", booked)] $ \(step, signed) -> do
                 let mine = [e | (scope, e) <- txEvents, scope == [InTransaction step]]
                 map stepOf mine `shouldSatisfy` all (== step)
                 [() | TxBuilt{} <- mine] `shouldBe` [()]
-                mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex signed)
+                mapMaybe txOf mine
+                    `shouldBe` replicate 4 (txIdHex (confirmedTx signed))
                 [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
                 [v | TxConfirmed _ _ _ v <- mine] `shouldBe` [Confirmed]
-                [t | TxObserved _ t _ <- mine] `shouldBe` [txIdHex signed]
+                [t | TxObserved _ t _ <- mine]
+                    `shouldBe` [txIdHex (confirmedTx signed)]
             length txEvents `shouldBe` 10
     it
         "names the four places a failure happens as four distinct events, \
@@ -1203,7 +1354,8 @@ narrationRows = describe "the narration of a write (#416)" $ do
         "keeps tracing total: a sink that throws and one on a closed handle change \
         \no outcome, journal or exception, and the other sinks still see every event"
         $ do
-            let scenarios :: [(String, WriteContext -> Fixture -> IO (ConwayTx, ()))]
+            let scenarios
+                    :: [(String, WriteContext -> Fixture -> IO (ConfirmedSubmission, ()))]
                 scenarios =
                     [ ("submitted, confirmed", (`writeVia` id))
                     ,
@@ -1335,7 +1487,7 @@ writeStepVia
     -> WriteContext
     -> (ConwayTx -> ConwayTx)
     -> Fixture
-    -> IO (ConwayTx, ())
+    -> IO (ConfirmedSubmission, ())
 writeStepVia step ctx shape fx =
     submitBuilt ctx step (const (expecting "state")) $ \v -> do
         utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
@@ -1353,7 +1505,7 @@ writeBuilding
     :: WriteContext
     -> Fixture
     -> (Cage.Session NoWitness IO -> IO ConwayTx)
-    -> IO (ConwayTx, ())
+    -> IO (ConfirmedSubmission, ())
 writeBuilding ctx _ build =
     submitBuilt
         ctx
