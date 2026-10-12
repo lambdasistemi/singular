@@ -179,15 +179,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] stub-executable-and-policy-in-its-own-tree",
+      "text": "[x] stub-executable-and-policy-in-its-own-tree",
       "pause": 300
     },
     {
-      "text": "[ ] keri-stub-check-and-job",
+      "text": "[x] keri-stub-check-and-job",
       "pause": 300
     },
     {
-      "text": "[ ] classify-the-stub-in-the-inventory",
+      "text": "[x] classify-the-stub-in-the-inventory",
       "pause": 300
     }
   ],

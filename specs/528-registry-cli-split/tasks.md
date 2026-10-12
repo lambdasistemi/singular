@@ -54,6 +54,6 @@ One group per slice; a task is checked when its slice's candidate gate is green 
 
 ## keri-stub
 
-- [ ] stub-executable-and-policy-in-its-own-tree
-- [ ] keri-stub-check-and-job
-- [ ] classify-the-stub-in-the-inventory
+- [x] stub-executable-and-policy-in-its-own-tree
+- [x] keri-stub-check-and-job
+- [x] classify-the-stub-in-the-inventory
