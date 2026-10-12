@@ -26,11 +26,17 @@
     # dependencies keep their own locked revisions.
     onchain.url = "path:./onchain";
     nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
+    # The Lean compiler the model builds with. It is the version root
+    # `lean-toolchain` names (Lean 4.27.0), pinned to the nixpkgs commit that
+    # packages it ("lean4: 4.26 -> 4.27"), so the compiler moves with this line
+    # and not with the shared documentation tooling above.
+    nixpkgs-lean.url = "github:NixOS/nixpkgs/7f4e8517083e42a1b38907598dadc02c7235b30e";
   };
   outputs =
     {
       self,
       nixpkgs,
+      nixpkgs-lean,
       dev-assets-mkdocs,
       dev-assets-playwright,
       offchain,
@@ -57,6 +63,7 @@
         system:
         import ./nix/model.nix {
           pkgs = import nixpkgs { inherit system; };
+          leanPkgs = import nixpkgs-lean { inherit system; };
           src = self;
         };
       coverage =
@@ -1205,9 +1212,11 @@
           // {
             nativeBuildInputs =
               (old.nativeBuildInputs or [ ])
-              ++ [ offchain.packages.${system}.fourmolu ]
+              ++ [
+                offchain.packages.${system}.fourmolu
+                (import nixpkgs-lean { inherit system; }).lean4
+              ]
               ++ (with import nixpkgs { inherit system; }; [
-                lean4
                 nodejs
                 nixfmt
                 statix

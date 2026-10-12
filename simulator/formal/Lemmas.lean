@@ -516,19 +516,19 @@ theorem foldBatch_inv (s : RegistryState) (batch : List Action) (t : Result)
     batch ≠ [] ∧ foldActions s batch = .ok t := by
   have hne : batch ≠ [] := by
     intro hc; subst hc
-    exact Except.noConfusion (show Except.error "empty-fold" = Except.ok t from h)
+    exact nomatch (show Except.error "empty-fold" = Except.ok t from h)
   refine ⟨hne, ?_⟩
   unfold foldBatch at h
   rw [if_neg (by simpa using hne)] at h
   cases hf : foldActions s batch with
-  | error e => rw [hf] at h; exact Except.noConfusion h
+  | error e => rw [hf] at h; exact nomatch h
   | ok r =>
     rw [hf] at h
     simp only [bind, Except.bind, pure, Except.pure] at h
     split at h
     · have hrt : r = t := by injection h
       exact congrArg Except.ok hrt
-    · exact Except.noConfusion h
+    · exact nomatch h
 
 /-- A terminal leaf survives a whole fold. -/
 theorem foldActions_preserves_terminal (s : RegistryState) (batch : List Action) (t : Result)
@@ -543,12 +543,12 @@ theorem foldActions_preserves_terminal (s : RegistryState) (batch : List Action)
     unfold foldActions at h
     simp only [bind, Except.bind, pure, Except.pure] at h
     cases hs : step s b with
-    | error e => rw [hs] at h; exact Except.noConfusion h
+    | error e => rw [hs] at h; exact nomatch h
     | ok m =>
       rw [hs] at h
       simp only [bind, Except.bind, pure, Except.pure] at h
       cases hr : foldActions m.state bs with
-      | error e => rw [hr] at h; exact Except.noConfusion h
+      | error e => rw [hr] at h; exact nomatch h
       | ok r =>
         rw [hr] at h
         simp only [bind, Except.bind, pure, Except.pure] at h

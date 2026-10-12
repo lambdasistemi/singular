@@ -58,12 +58,12 @@ theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Resu
       unfold foldActions at hr
       simp only [bind, Except.bind, pure, Except.pure] at hr
       cases hs : step u b with
-      | error e => rw [hs] at hr; exact Except.noConfusion hr
+      | error e => rw [hs] at hr; exact nomatch hr
       | ok m =>
         rw [hs] at hr
         simp only [bind, Except.bind, pure, Except.pure] at hr
         cases hrest : foldActions m.state bs with
-        | error e => rw [hrest] at hr; exact Except.noConfusion hr
+        | error e => rw [hrest] at hr; exact nomatch hr
         | ok rr =>
           rw [hrest] at hr
           have hEq : combineResults m rr = r := by injection hr
@@ -84,12 +84,12 @@ theorem booked_at_most_once (s : RegistryState) (batch : List Request) (t : Resu
         unfold foldActions at hr
         simp only [bind, Except.bind, pure, Except.pure] at hr
         cases hs : step u b with
-        | error e => rw [hs] at hr; exact Except.noConfusion hr
+        | error e => rw [hs] at hr; exact nomatch hr
         | ok m =>
           rw [hs] at hr
           simp only [bind, Except.bind, pure, Except.pure] at hr
           cases hrest : foldActions m.state bs with
-          | error e => rw [hrest] at hr; exact Except.noConfusion hr
+          | error e => rw [hrest] at hr; exact nomatch hr
           | ok rr =>
             rw [hrest] at hr
             have hEq : combineResults m rr = r := by injection hr
@@ -138,12 +138,12 @@ theorem terminal_attestation_permanent (s : RegistryState) (acts : List Request)
     unfold foldActions at hacts
     simp only [bind, Except.bind, pure, Except.pure] at hacts
     cases hs : step s b with
-    | error e => rw [hs] at hacts; exact Except.noConfusion hacts
+    | error e => rw [hs] at hacts; exact nomatch hacts
     | ok m =>
       rw [hs] at hacts
       simp only [bind, Except.bind, pure, Except.pure] at hacts
       cases hrest : foldActions m.state bs with
-      | error e => rw [hrest] at hacts; exact Except.noConfusion hacts
+      | error e => rw [hrest] at hacts; exact nomatch hacts
       | ok rr =>
         rw [hrest] at hacts
         have hEq : combineResults m rr = t := by injection hacts
@@ -442,16 +442,16 @@ theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t
       simp only [bind, Except.bind, pure, Except.pure] at hok
       split at hok
       · assumption
-      · exact Except.noConfusion hok
+      · exact nomatch hok
     unfold foldActions at hacts
     simp only [bind, Except.bind, pure, Except.pure] at hacts
     cases hs : step s b with
-    | error e => rw [hs] at hacts; exact Except.noConfusion hacts
+    | error e => rw [hs] at hacts; exact nomatch hacts
     | ok m =>
       rw [hs] at hacts
       simp only [bind, Except.bind, pure, Except.pure] at hacts
       cases hr : foldActions m.state bs with
-      | error e => rw [hr] at hacts; exact Except.noConfusion hacts
+      | error e => rw [hr] at hacts; exact nomatch hacts
       | ok r =>
         rw [hr] at hacts
         have hEq : combineResults m r = t := by injection hacts
@@ -949,7 +949,7 @@ theorem fold_batch_claimed_mint_by_kind_key :
     simp only [bind, Except.bind, pure, Except.pure] at hok
     split at hok
     · assumption
-    · exact Except.noConfusion hok
+    · exact nomatch hok
   · intro s batch m hne hacts hfalse
     unfold foldBatch
     rw [if_neg (by simpa using hne)]
@@ -990,7 +990,7 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
     cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum⟩ with
-    | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact Except.noConfusion h
+    | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact nomatch h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
       injection h with h

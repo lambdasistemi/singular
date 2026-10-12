@@ -176,12 +176,12 @@ theorem foldActions_cons_ok (s : RegistryState) (b : Request) (bs : List Request
   unfold foldActions at h
   simp only [bind, Except.bind, pure, Except.pure] at h
   cases hs : step s b with
-  | error e => rw [hs] at h; exact Except.noConfusion h
+  | error e => rw [hs] at h; exact Except.noConfusion rfl rfl (heq_of_eq h)
   | ok m =>
     rw [hs] at h
     dsimp only at h
     cases hr : foldActions m.state bs with
-    | error e => rw [hr] at h; exact Except.noConfusion h
+    | error e => rw [hr] at h; exact Except.noConfusion rfl rfl (heq_of_eq h)
     | ok r =>
       rw [hr] at h
       dsimp only at h
@@ -313,7 +313,7 @@ theorem bind_ok {α β : Type} {x : Except String α} {f : α → Except String 
   cases x with
   | error e =>
     first
-      | exact Except.noConfusion h
+      | exact Except.noConfusion rfl rfl (heq_of_eq h)
       | cases h
       | (simp [bind, Except.bind] at h)
   | ok a => exact ⟨a, rfl, h⟩
@@ -322,7 +322,7 @@ theorem ensure_ok {c : Bool} {why : String} {u : Unit} (h : ensure c why = .ok u
   cases c with
   | false =>
     first
-      | exact Except.noConfusion h
+      | exact Except.noConfusion rfl rfl (heq_of_eq h)
       | (simp [ensure] at h)
   | true => rfl
 
@@ -417,7 +417,7 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
   | none =>
     simp only [hp] at h
     first
-      | exact Except.noConfusion h
+      | exact Except.noConfusion rfl rfl (heq_of_eq h)
       | (simp at h)
   | some p =>
     simp only [hp] at h
@@ -428,7 +428,7 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
       | none =>
         simp only [he] at h
         first
-          | exact Except.noConfusion h
+          | exact Except.noConfusion rfl rfl (heq_of_eq h)
           | (simp at h)
       | some en =>
         simp only [he] at h
@@ -448,7 +448,7 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
       | none =>
         simp only [ho] at h
         first
-          | exact Except.noConfusion h
+          | exact Except.noConfusion rfl rfl (heq_of_eq h)
           | (simp at h)
       | some o =>
         simp only [ho] at h
@@ -459,7 +459,7 @@ theorem selectRow_spec (w : World) (x : Edge × Key) (row : FoldRow)
         exact ⟨by first | exact hp | rfl, hpm, hpe, hpk, Or.inr ⟨rfl, o, by first | exact ho | rfl, rfl⟩⟩
     | _ =>
       first
-        | exact Except.noConfusion h
+        | exact Except.noConfusion rfl rfl (heq_of_eq h)
         | (simp at h)
 
 /-- An insertion `selectRow` accepts carries a datum. -/
@@ -471,7 +471,7 @@ theorem selectRow_insert_names_datum (w : World) (key : Key) (row : FoldRow)
   | none =>
     simp only [hp] at h
     first
-      | exact Except.noConfusion h
+      | exact Except.noConfusion rfl rfl (heq_of_eq h)
       | (simp at h)
   | some p =>
     simp only [hp] at h
@@ -479,7 +479,7 @@ theorem selectRow_insert_names_datum (w : World) (key : Key) (row : FoldRow)
     | none =>
       simp only [he] at h
       first
-        | exact Except.noConfusion h
+        | exact Except.noConfusion rfl rfl (heq_of_eq h)
         | (simp at h)
     | some en =>
       simp only [he] at h
@@ -708,7 +708,7 @@ theorem fold_shape (w : World) (hc : AppConsistent w) (sel : List (Edge × Key))
     intro o ho
     obtain ⟨row, hr, hsp⟩ := List.mem_filterMap.1 ho
     rcases (hrow row hr).2 with ⟨_, hnone⟩ | ⟨_, o', ho', hsp'⟩
-    · rw [hnone] at hsp; exact Option.noConfusion hsp
+    · rw [hnone] at hsp; exact Option.noConfusion rfl (heq_of_eq hsp)
     · rw [hsp] at hsp'
       have : o = o' := Option.some.inj hsp'
       subst this

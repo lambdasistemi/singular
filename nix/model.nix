@@ -1,4 +1,8 @@
-{ pkgs, src }:
+{
+  pkgs,
+  leanPkgs,
+  src,
+}:
 let
   package = pkgs.stdenv.mkDerivation {
     pname = "singular-model";
@@ -16,7 +20,7 @@ let
         ]);
     };
     nativeBuildInputs = [
-      pkgs.lean4
+      leanPkgs.lean4
       pkgs.python3
     ];
     buildPhase = ''
