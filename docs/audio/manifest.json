@@ -96786,17 +96786,17 @@
    ]
   },
   "docs-demo1-preprod/what-you-run-05": {
-   "audio_sha256": "491f79f6cf20dee6a6ca9e1c01336508b404c019c7d28afb77d113a368a7dd99",
-   "characters": 622,
-   "cost": 0.00038564000000000003,
-   "duration": 41.1,
+   "audio_sha256": "b69c4a0a65505734d1e5494a40fe6f42c891cd680c53338b49f386d8881471fb",
+   "characters": 755,
+   "cost": 0.0007474499999999999,
+   "duration": 49.3,
    "index": 5,
-   "key": "e2eb03e2abb66cf44150df3879b19f273f4cbb2230b0099f776ff89a292bf40e",
+   "key": "323f17414eede70f28fa34c9e65aefd9f2bbb568bb6c239be445d67257cf57b6",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 300,
    "section": "what-you-run",
-   "sent_text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold takes every pending request. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
-   "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold takes every pending request. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
+   "sent_text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles the first that passes, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
+   "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles the first that passes, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
    "words": [
     {
      "end": 0.562,
@@ -96834,558 +96834,688 @@
      "text": "A"
     },
     {
-     "end": 3.125,
+     "end": 2.987,
      "start": 2.5,
      "text": "refused"
     },
     {
-     "end": 3.787,
-     "start": 3.125,
+     "end": 3.55,
+     "start": 2.987,
      "text": "insertion"
     },
     {
-     "end": 4.137,
-     "start": 3.787,
+     "end": 3.838,
+     "start": 3.55,
      "text": "leaves"
     },
     {
-     "end": 4.3,
-     "start": 4.137,
+     "end": 3.938,
+     "start": 3.838,
      "text": "its"
     },
     {
-     "end": 4.775,
-     "start": 4.3,
+     "end": 4.325,
+     "start": 3.938,
      "text": "request"
     },
     {
-     "end": 5.4,
-     "start": 4.775,
+     "end": 5.225,
+     "start": 4.325,
      "text": "pending"
     },
     {
-     "end": 5.5,
-     "start": 5.4,
+     "end": 5.425,
+     "start": 5.225,
      "text": ","
     },
     {
-     "end": 5.613,
-     "start": 5.5,
+     "end": 5.713,
+     "start": 5.625,
      "text": "and"
     },
     {
-     "end": 5.675,
-     "start": 5.613,
+     "end": 5.8,
+     "start": 5.713,
      "text": "a"
     },
     {
-     "end": 6.312,
-     "start": 5.675,
+     "end": 6.463,
+     "start": 5.8,
      "text": "registry's"
     },
     {
-     "end": 6.812,
-     "start": 6.312,
+     "end": 6.887,
+     "start": 6.463,
      "text": "fold"
     },
     {
-     "end": 7.162,
-     "start": 6.812,
-     "text": "takes"
+     "end": 7.338,
+     "start": 6.887,
+     "text": "judges"
     },
     {
-     "end": 7.512,
-     "start": 7.162,
-     "text": "every"
+     "end": 7.637,
+     "start": 7.338,
+     "text": "each"
     },
     {
-     "end": 7.925,
-     "start": 7.512,
+     "end": 8.05,
+     "start": 7.637,
      "text": "pending"
     },
     {
-     "end": 9.075,
-     "start": 7.925,
+     "end": 8.538,
+     "start": 8.05,
      "text": "request"
     },
     {
-     "end": 9.3,
-     "start": 9.075,
-     "text": "."
+     "end": 8.663,
+     "start": 8.538,
+     "text": "on"
     },
     {
-     "end": 9.613,
-     "start": 9.475,
-     "text": "The"
-    },
-    {
-     "end": 9.95,
-     "start": 9.613,
-     "text": "owner"
-    },
-    {
-     "end": 10.462,
-     "start": 9.95,
-     "text": "retracts"
-    },
-    {
-     "end": 10.55,
-     "start": 10.462,
-     "text": "the"
-    },
-    {
-     "end": 10.738,
-     "start": 10.55,
-     "text": "one"
-    },
-    {
-     "end": 10.938,
-     "start": 10.738,
+     "end": 8.825,
+     "start": 8.663,
      "text": "its"
     },
     {
-     "end": 11.188,
-     "start": 10.938,
+     "end": 9.262,
+     "start": 8.825,
      "text": "own"
     },
     {
-     "end": 11.775,
-     "start": 11.188,
-     "text": "insertion"
+     "end": 9.438,
+     "start": 9.262,
+     "text": "and"
     },
     {
-     "end": 12.2,
-     "start": 11.775,
-     "text": "left"
+     "end": 9.85,
+     "start": 9.438,
+     "text": "settles"
     },
     {
-     "end": 12.275,
-     "start": 12.2,
+     "end": 9.988,
+     "start": 9.85,
+     "text": "the"
+    },
+    {
+     "end": 10.312,
+     "start": 9.988,
+     "text": "first"
+    },
+    {
+     "end": 10.475,
+     "start": 10.312,
+     "text": "that"
+    },
+    {
+     "end": 11.675,
+     "start": 10.475,
+     "text": "passes"
+    },
+    {
+     "end": 11.875,
+     "start": 11.675,
      "text": ","
     },
     {
-     "end": 12.762,
-     "start": 12.275,
-     "text": "inside"
+     "end": 12.137,
+     "start": 12.05,
+     "text": "so"
     },
     {
-     "end": 12.9,
-     "start": 12.762,
+     "end": 12.212,
+     "start": 12.137,
+     "text": "the"
+    },
+    {
+     "end": 12.613,
+     "start": 12.212,
+     "text": "refused"
+    },
+    {
+     "end": 12.738,
+     "start": 12.613,
+     "text": "one"
+    },
+    {
+     "end": 13.05,
+     "start": 12.738,
+     "text": "stays"
+    },
+    {
+     "end": 13.925,
+     "start": 13.05,
+     "text": "pending"
+    },
+    {
+     "end": 14.125,
+     "start": 13.925,
+     "text": ","
+    },
+    {
+     "end": 14.587,
+     "start": 14.325,
+     "text": "named"
+    },
+    {
+     "end": 14.712,
+     "start": 14.587,
+     "text": "with"
+    },
+    {
+     "end": 14.9,
+     "start": 14.712,
      "text": "its"
     },
     {
-     "end": 13.425,
-     "start": 12.9,
-     "text": "retract"
+     "end": 15.325,
+     "start": 14.9,
+     "text": "reason"
     },
     {
-     "end": 14.375,
-     "start": 13.425,
-     "text": "window"
+     "end": 15.413,
+     "start": 15.325,
+     "text": "in"
     },
     {
-     "end": 14.65,
-     "start": 14.375,
-     "text": ","
-    },
-    {
-     "end": 15.15,
-     "start": 14.85,
-     "text": "only"
-    },
-    {
-     "end": 15.337,
-     "start": 15.15,
-     "text": "while"
-    },
-    {
-     "end": 15.425,
-     "start": 15.337,
+     "end": 15.5,
+     "start": 15.413,
      "text": "the"
     },
     {
      "end": 15.925,
-     "start": 15.425,
-     "text": "registry"
+     "start": 15.5,
+     "text": "receipt's"
     },
     {
-     "end": 16.212,
+     "end": 16.5,
      "start": 15.925,
-     "text": "still"
+     "text": "excluded"
     },
     {
-     "end": 16.663,
-     "start": 16.212,
-     "text": "reads"
+     "end": 17.3,
+     "start": 16.5,
+     "text": "list"
     },
     {
-     "end": 16.825,
-     "start": 16.663,
-     "text": "as"
-    },
-    {
-     "end": 16.95,
-     "start": 16.825,
-     "text": "the"
-    },
-    {
-     "end": 17.45,
-     "start": 16.95,
-     "text": "readback"
-    },
-    {
-     "end": 17.663,
-     "start": 17.45,
-     "text": "that"
-    },
-    {
-     "end": 17.9,
-     "start": 17.663,
-     "text": "saw"
-    },
-    {
-     "end": 18.0,
-     "start": 17.9,
-     "text": "it"
-    },
-    {
-     "end": 18.4,
-     "start": 18.0,
-     "text": "pending"
-    },
-    {
-     "end": 19.175,
-     "start": 18.4,
-     "text": "did"
-    },
-    {
-     "end": 19.4,
-     "start": 19.175,
-     "text": ";"
-    },
-    {
-     "end": 19.7,
-     "start": 19.6,
-     "text": "the"
-    },
-    {
-     "end": 20.125,
-     "start": 19.7,
-     "text": "verdict"
-    },
-    {
-     "end": 20.75,
-     "start": 20.125,
-     "text": "requires"
-    },
-    {
-     "end": 20.85,
-     "start": 20.75,
-     "text": "the"
-    },
-    {
-     "end": 21.4,
-     "start": 20.85,
-     "text": "retained"
-    },
-    {
-     "end": 21.775,
-     "start": 21.4,
-     "text": "body"
-    },
-    {
-     "end": 21.9,
-     "start": 21.775,
-     "text": "to"
-    },
-    {
-     "end": 22.225,
-     "start": 21.9,
-     "text": "spend"
-    },
-    {
-     "end": 22.45,
-     "start": 22.225,
-     "text": "that"
-    },
-    {
-     "end": 23.087,
-     "start": 22.45,
-     "text": "request"
-    },
-    {
-     "end": 23.212,
-     "start": 23.087,
-     "text": "and"
-    },
-    {
-     "end": 23.337,
-     "start": 23.212,
-     "text": "the"
-    },
-    {
-     "end": 23.75,
-     "start": 23.337,
-     "text": "wallet"
-    },
-    {
-     "end": 23.875,
-     "start": 23.75,
-     "text": "to"
-    },
-    {
-     "end": 24.15,
-     "start": 23.875,
-     "text": "hold"
-    },
-    {
-     "end": 24.725,
-     "start": 24.15,
-     "text": "exactly"
-    },
-    {
-     "end": 24.862,
-     "start": 24.725,
-     "text": "the"
-    },
-    {
-     "end": 25.3,
-     "start": 24.862,
-     "text": "bond"
-    },
-    {
-     "end": 25.837,
-     "start": 25.3,
-     "text": "released"
-    },
-    {
-     "end": 26.075,
-     "start": 25.837,
-     "text": "less"
-    },
-    {
-     "end": 26.212,
-     "start": 26.075,
-     "text": "the"
-    },
-    {
-     "end": 27.2,
-     "start": 26.212,
-     "text": "fee"
-    },
-    {
-     "end": 27.45,
-     "start": 27.2,
+     "end": 17.5,
+     "start": 17.3,
      "text": "."
     },
     {
-     "end": 27.7,
-     "start": 27.625,
-     "text": "A"
+     "end": 17.812,
+     "start": 17.675,
+     "text": "The"
     },
     {
-     "end": 27.938,
-     "start": 27.7,
-     "text": "take"
+     "end": 18.15,
+     "start": 17.812,
+     "text": "owner"
     },
     {
-     "end": 28.25,
-     "start": 27.938,
-     "text": "stops"
+     "end": 18.663,
+     "start": 18.15,
+     "text": "retracts"
     },
     {
-     "end": 28.288,
-     "start": 28.25,
-     "text": ","
-    },
-    {
-     "end": 28.388,
-     "start": 28.288,
-     "text": "with"
-    },
-    {
-     "end": 28.487,
-     "start": 28.388,
-     "text": "its"
-    },
-    {
-     "end": 28.9,
-     "start": 28.487,
-     "text": "receipts"
-    },
-    {
-     "end": 29.6,
-     "start": 28.9,
-     "text": "kept"
-    },
-    {
-     "end": 29.8,
-     "start": 29.6,
-     "text": ","
-    },
-    {
-     "end": 30.125,
-     "start": 30.025,
-     "text": "at"
-    },
-    {
-     "end": 30.35,
-     "start": 30.125,
-     "text": "any"
-    },
-    {
-     "end": 30.775,
-     "start": 30.35,
-     "text": "outcome"
-    },
-    {
-     "end": 30.925,
-     "start": 30.775,
-     "text": "its"
-    },
-    {
-     "end": 31.225,
-     "start": 30.925,
-     "text": "step"
-    },
-    {
-     "end": 31.425,
-     "start": 31.225,
-     "text": "does"
-    },
-    {
-     "end": 31.675,
-     "start": 31.425,
-     "text": "not"
-    },
-    {
-     "end": 32.162,
-     "start": 31.675,
-     "text": "name"
-    },
-    {
-     "end": 32.3,
-     "start": 32.162,
-     "text": "and"
-    },
-    {
-     "end": 32.438,
-     "start": 32.3,
-     "text": "at"
-    },
-    {
-     "end": 32.7,
-     "start": 32.438,
-     "text": "any"
-    },
-    {
-     "end": 33.325,
-     "start": 32.7,
-     "text": "requirement"
-    },
-    {
-     "end": 33.5,
-     "start": 33.325,
-     "text": "that"
-    },
-    {
-     "end": 33.7,
-     "start": 33.5,
-     "text": "does"
-    },
-    {
-     "end": 33.925,
-     "start": 33.7,
-     "text": "not"
-    },
-    {
-     "end": 34.85,
-     "start": 33.925,
-     "text": "hold"
-    },
-    {
-     "end": 35.075,
-     "start": 34.85,
-     "text": ","
-    },
-    {
-     "end": 35.412,
-     "start": 35.3,
-     "text": "and"
-    },
-    {
-     "end": 35.5,
-     "start": 35.412,
-     "text": "it"
-    },
-    {
-     "end": 35.65,
-     "start": 35.5,
-     "text": "is"
-    },
-    {
-     "end": 36.325,
-     "start": 35.65,
-     "text": "refused"
-    },
-    {
-     "end": 36.688,
-     "start": 36.325,
-     "text": "before"
-    },
-    {
-     "end": 36.775,
-     "start": 36.688,
-     "text": "it"
-    },
-    {
-     "end": 37.088,
-     "start": 36.775,
-     "text": "writes"
-    },
-    {
-     "end": 37.625,
-     "start": 37.088,
-     "text": "anything"
-    },
-    {
-     "end": 37.987,
-     "start": 37.625,
-     "text": "unless"
-    },
-    {
-     "end": 38.138,
-     "start": 37.987,
+     "end": 18.75,
+     "start": 18.663,
      "text": "the"
     },
     {
-     "end": 38.775,
-     "start": 38.138,
-     "text": "operator"
+     "end": 18.938,
+     "start": 18.75,
+     "text": "one"
     },
     {
-     "end": 39.138,
-     "start": 38.775,
-     "text": "states"
+     "end": 19.138,
+     "start": 18.938,
+     "text": "its"
     },
     {
-     "end": 39.225,
-     "start": 39.138,
-     "text": "a"
+     "end": 19.388,
+     "start": 19.138,
+     "text": "own"
     },
     {
-     "end": 39.75,
-     "start": 39.225,
-     "text": "collateral"
+     "end": 19.975,
+     "start": 19.388,
+     "text": "insertion"
+    },
+    {
+     "end": 20.4,
+     "start": 19.975,
+     "text": "left"
+    },
+    {
+     "end": 20.475,
+     "start": 20.4,
+     "text": ","
+    },
+    {
+     "end": 20.962,
+     "start": 20.475,
+     "text": "inside"
+    },
+    {
+     "end": 21.1,
+     "start": 20.962,
+     "text": "its"
+    },
+    {
+     "end": 21.625,
+     "start": 21.1,
+     "text": "retract"
+    },
+    {
+     "end": 22.575,
+     "start": 21.625,
+     "text": "window"
+    },
+    {
+     "end": 22.85,
+     "start": 22.575,
+     "text": ","
+    },
+    {
+     "end": 23.35,
+     "start": 23.05,
+     "text": "only"
+    },
+    {
+     "end": 23.538,
+     "start": 23.35,
+     "text": "while"
+    },
+    {
+     "end": 23.625,
+     "start": 23.538,
+     "text": "the"
+    },
+    {
+     "end": 24.125,
+     "start": 23.625,
+     "text": "registry"
+    },
+    {
+     "end": 24.413,
+     "start": 24.125,
+     "text": "still"
+    },
+    {
+     "end": 24.862,
+     "start": 24.413,
+     "text": "reads"
+    },
+    {
+     "end": 25.025,
+     "start": 24.862,
+     "text": "as"
+    },
+    {
+     "end": 25.15,
+     "start": 25.025,
+     "text": "the"
+    },
+    {
+     "end": 25.65,
+     "start": 25.15,
+     "text": "readback"
+    },
+    {
+     "end": 25.862,
+     "start": 25.65,
+     "text": "that"
+    },
+    {
+     "end": 26.1,
+     "start": 25.862,
+     "text": "saw"
+    },
+    {
+     "end": 26.2,
+     "start": 26.1,
+     "text": "it"
+    },
+    {
+     "end": 26.6,
+     "start": 26.2,
+     "text": "pending"
+    },
+    {
+     "end": 27.375,
+     "start": 26.6,
+     "text": "did"
+    },
+    {
+     "end": 27.6,
+     "start": 27.375,
+     "text": ";"
+    },
+    {
+     "end": 27.9,
+     "start": 27.8,
+     "text": "the"
+    },
+    {
+     "end": 28.325,
+     "start": 27.9,
+     "text": "verdict"
+    },
+    {
+     "end": 28.95,
+     "start": 28.325,
+     "text": "requires"
+    },
+    {
+     "end": 29.05,
+     "start": 28.95,
+     "text": "the"
+    },
+    {
+     "end": 29.6,
+     "start": 29.05,
+     "text": "retained"
+    },
+    {
+     "end": 29.975,
+     "start": 29.6,
+     "text": "body"
+    },
+    {
+     "end": 30.1,
+     "start": 29.975,
+     "text": "to"
+    },
+    {
+     "end": 30.425,
+     "start": 30.1,
+     "text": "spend"
+    },
+    {
+     "end": 30.65,
+     "start": 30.425,
+     "text": "that"
+    },
+    {
+     "end": 31.288,
+     "start": 30.65,
+     "text": "request"
+    },
+    {
+     "end": 31.413,
+     "start": 31.288,
+     "text": "and"
+    },
+    {
+     "end": 31.538,
+     "start": 31.413,
+     "text": "the"
+    },
+    {
+     "end": 31.95,
+     "start": 31.538,
+     "text": "wallet"
+    },
+    {
+     "end": 32.075,
+     "start": 31.95,
+     "text": "to"
+    },
+    {
+     "end": 32.35,
+     "start": 32.075,
+     "text": "hold"
+    },
+    {
+     "end": 32.925,
+     "start": 32.35,
+     "text": "exactly"
+    },
+    {
+     "end": 33.062,
+     "start": 32.925,
+     "text": "the"
+    },
+    {
+     "end": 33.5,
+     "start": 33.062,
+     "text": "bond"
+    },
+    {
+     "end": 34.037,
+     "start": 33.5,
+     "text": "released"
+    },
+    {
+     "end": 34.275,
+     "start": 34.037,
+     "text": "less"
+    },
+    {
+     "end": 34.412,
+     "start": 34.275,
+     "text": "the"
+    },
+    {
+     "end": 35.4,
+     "start": 34.412,
+     "text": "fee"
+    },
+    {
+     "end": 35.65,
+     "start": 35.4,
+     "text": "."
+    },
+    {
+     "end": 35.9,
+     "start": 35.825,
+     "text": "A"
+    },
+    {
+     "end": 36.138,
+     "start": 35.9,
+     "text": "take"
+    },
+    {
+     "end": 36.45,
+     "start": 36.138,
+     "text": "stops"
+    },
+    {
+     "end": 36.487,
+     "start": 36.45,
+     "text": ","
+    },
+    {
+     "end": 36.588,
+     "start": 36.487,
+     "text": "with"
+    },
+    {
+     "end": 36.688,
+     "start": 36.588,
+     "text": "its"
+    },
+    {
+     "end": 37.1,
+     "start": 36.688,
+     "text": "receipts"
+    },
+    {
+     "end": 37.8,
+     "start": 37.1,
+     "text": "kept"
+    },
+    {
+     "end": 38.0,
+     "start": 37.8,
+     "text": ","
+    },
+    {
+     "end": 38.325,
+     "start": 38.225,
+     "text": "at"
+    },
+    {
+     "end": 38.55,
+     "start": 38.325,
+     "text": "any"
+    },
+    {
+     "end": 38.975,
+     "start": 38.55,
+     "text": "outcome"
+    },
+    {
+     "end": 39.125,
+     "start": 38.975,
+     "text": "its"
+    },
+    {
+     "end": 39.425,
+     "start": 39.125,
+     "text": "step"
+    },
+    {
+     "end": 39.625,
+     "start": 39.425,
+     "text": "does"
+    },
+    {
+     "end": 39.875,
+     "start": 39.625,
+     "text": "not"
+    },
+    {
+     "end": 40.362,
+     "start": 39.875,
+     "text": "name"
+    },
+    {
+     "end": 40.5,
+     "start": 40.362,
+     "text": "and"
+    },
+    {
+     "end": 40.638,
+     "start": 40.5,
+     "text": "at"
     },
     {
      "end": 40.9,
-     "start": 39.75,
+     "start": 40.638,
+     "text": "any"
+    },
+    {
+     "end": 41.525,
+     "start": 40.9,
+     "text": "requirement"
+    },
+    {
+     "end": 41.7,
+     "start": 41.525,
+     "text": "that"
+    },
+    {
+     "end": 41.9,
+     "start": 41.7,
+     "text": "does"
+    },
+    {
+     "end": 42.125,
+     "start": 41.9,
+     "text": "not"
+    },
+    {
+     "end": 43.05,
+     "start": 42.125,
+     "text": "hold"
+    },
+    {
+     "end": 43.275,
+     "start": 43.05,
+     "text": ","
+    },
+    {
+     "end": 43.612,
+     "start": 43.5,
+     "text": "and"
+    },
+    {
+     "end": 43.7,
+     "start": 43.612,
+     "text": "it"
+    },
+    {
+     "end": 43.85,
+     "start": 43.7,
+     "text": "is"
+    },
+    {
+     "end": 44.525,
+     "start": 43.85,
+     "text": "refused"
+    },
+    {
+     "end": 44.888,
+     "start": 44.525,
+     "text": "before"
+    },
+    {
+     "end": 44.975,
+     "start": 44.888,
+     "text": "it"
+    },
+    {
+     "end": 45.287,
+     "start": 44.975,
+     "text": "writes"
+    },
+    {
+     "end": 45.825,
+     "start": 45.287,
+     "text": "anything"
+    },
+    {
+     "end": 46.188,
+     "start": 45.825,
+     "text": "unless"
+    },
+    {
+     "end": 46.338,
+     "start": 46.188,
+     "text": "the"
+    },
+    {
+     "end": 46.975,
+     "start": 46.338,
+     "text": "operator"
+    },
+    {
+     "end": 47.338,
+     "start": 46.975,
+     "text": "states"
+    },
+    {
+     "end": 47.425,
+     "start": 47.338,
+     "text": "a"
+    },
+    {
+     "end": 47.95,
+     "start": 47.425,
+     "text": "collateral"
+    },
+    {
+     "end": 49.1,
+     "start": 47.95,
      "text": "allowance"
     },
     {
-     "end": 41.1,
-     "start": 40.9,
+     "end": 49.3,
+     "start": 49.1,
      "text": "."
     }
    ]
@@ -190081,17 +190211,17 @@
    ]
   },
   "docs-offchain-fold-responsibilities/one-owner-per-fold-concern-01": {
-   "audio_sha256": "b86dd3de6a9b129966c3cbc8c2e587f1e5216deba22eb88a521663430116930f",
-   "characters": 686,
-   "cost": 0.00042532000000000003,
-   "duration": 46.025,
+   "audio_sha256": "a9e7f5299da5b4becfeda56259491bf3170dee26d604fc5a57a6a623916baa4f",
+   "characters": 951,
+   "cost": 0.00094149,
+   "duration": 64.15,
    "index": 1,
-   "key": "ca3c3f777cd752dfef4b17abbeab35f13ec35faa54d5d78e41dec0adea817566",
+   "key": "26d2d23258a9e2d8c68fdc4d2e4ee4cf05f123408f5c5965a339e35fdfc7815d",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 400,
    "section": "one-owner-per-fold-concern",
-   "sent_text": "The facade holds no algorithm. It runs the fold's sequence — query, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
-   "text": "The facade holds no algorithm. It runs the fold's sequence — query, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+   "sent_text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+   "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
    "words": [
     {
      "end": 0.25,
@@ -190124,618 +190254,873 @@
      "text": "."
     },
     {
-     "end": 2.6,
+     "end": 2.625,
      "start": 2.475,
      "text": "It"
     },
     {
-     "end": 2.925,
-     "start": 2.6,
+     "end": 2.95,
+     "start": 2.625,
      "text": "runs"
     },
     {
-     "end": 3.062,
-     "start": 2.925,
+     "end": 3.088,
+     "start": 2.95,
      "text": "the"
     },
     {
      "end": 3.45,
-     "start": 3.062,
+     "start": 3.088,
      "text": "fold's"
     },
     {
-     "end": 4.05,
+     "end": 4.025,
      "start": 3.45,
      "text": "sequence"
     },
     {
-     "end": 4.137,
-     "start": 4.05,
+     "end": 4.113,
+     "start": 4.025,
      "text": "—"
     },
     {
-     "end": 4.5,
-     "start": 4.137,
+     "end": 4.463,
+     "start": 4.113,
      "text": "query"
     },
     {
-     "end": 4.588,
-     "start": 4.5,
+     "end": 4.537,
+     "start": 4.463,
+     "text": "of"
+    },
+    {
+     "end": 4.637,
+     "start": 4.537,
+     "text": "the"
+    },
+    {
+     "end": 5.05,
+     "start": 4.637,
+     "text": "chosen"
+    },
+    {
+     "end": 5.7,
+     "start": 5.05,
+     "text": "requests"
+    },
+    {
+     "end": 5.762,
+     "start": 5.7,
      "text": ","
     },
     {
-     "end": 5.025,
-     "start": 4.588,
+     "end": 6.2,
+     "start": 5.762,
      "text": "proofs"
     },
     {
-     "end": 5.1,
-     "start": 5.025,
+     "end": 6.25,
+     "start": 6.2,
      "text": ","
     },
     {
-     "end": 5.4,
-     "start": 5.1,
+     "end": 6.55,
+     "start": 6.25,
      "text": "state"
     },
     {
-     "end": 6.05,
-     "start": 5.4,
+     "end": 7.775,
+     "start": 6.55,
      "text": "preparation"
     },
     {
-     "end": 6.1,
-     "start": 6.05,
+     "end": 7.975,
+     "start": 7.775,
      "text": ","
     },
     {
-     "end": 6.625,
-     "start": 6.1,
+     "end": 8.587,
+     "start": 8.15,
      "text": "context"
     },
     {
-     "end": 7.75,
-     "start": 6.625,
+     "end": 9.15,
+     "start": 8.587,
      "text": "completion"
     },
     {
-     "end": 7.95,
-     "start": 7.75,
+     "end": 9.225,
+     "start": 9.15,
      "text": ","
     },
     {
-     "end": 8.45,
-     "start": 8.125,
+     "end": 9.65,
+     "start": 9.225,
      "text": "duties"
     },
     {
-     "end": 8.488,
-     "start": 8.45,
+     "end": 9.7,
+     "start": 9.65,
      "text": ","
     },
     {
-     "end": 8.725,
-     "start": 8.488,
+     "end": 10.0,
+     "start": 9.7,
      "text": "upper"
     },
     {
-     "end": 9.0,
-     "start": 8.725,
+     "end": 10.275,
+     "start": 10.0,
      "text": "slot"
     },
     {
-     "end": 9.05,
-     "start": 9.0,
+     "end": 10.325,
+     "start": 10.275,
      "text": ","
     },
     {
-     "end": 9.95,
-     "start": 9.05,
+     "end": 11.325,
+     "start": 10.325,
      "text": "program"
     },
     {
-     "end": 10.2,
-     "start": 9.95,
+     "end": 11.55,
+     "start": 11.325,
      "text": ","
     },
     {
-     "end": 10.85,
-     "start": 10.4,
+     "end": 12.2,
+     "start": 11.75,
      "text": "build"
-    },
-    {
-     "end": 10.925,
-     "start": 10.85,
-     "text": "—"
-    },
-    {
-     "end": 11.087,
-     "start": 10.925,
-     "text": "and"
-    },
-    {
-     "end": 11.425,
-     "start": 11.087,
-     "text": "every"
-    },
-    {
-     "end": 11.9,
-     "start": 11.425,
-     "text": "decision"
-    },
-    {
-     "end": 12.025,
-     "start": 11.9,
-     "text": "in"
     },
     {
      "end": 12.275,
-     "start": 12.025,
+     "start": 12.2,
+     "text": "—"
+    },
+    {
+     "end": 12.438,
+     "start": 12.275,
+     "text": "and"
+    },
+    {
+     "end": 12.775,
+     "start": 12.438,
+     "text": "every"
+    },
+    {
+     "end": 13.25,
+     "start": 12.775,
+     "text": "decision"
+    },
+    {
+     "end": 13.375,
+     "start": 13.25,
+     "text": "in"
+    },
+    {
+     "end": 13.625,
+     "start": 13.375,
      "text": "that"
     },
     {
-     "end": 12.75,
-     "start": 12.275,
+     "end": 14.1,
+     "start": 13.625,
      "text": "sequence"
     },
     {
-     "end": 13.275,
-     "start": 12.75,
+     "end": 14.625,
+     "start": 14.1,
      "text": "belongs"
     },
     {
-     "end": 13.425,
-     "start": 13.275,
+     "end": 14.775,
+     "start": 14.625,
      "text": "to"
     },
     {
-     "end": 14.05,
-     "start": 13.425,
+     "end": 15.4,
+     "start": 14.775,
      "text": "exactly"
     },
     {
-     "end": 14.212,
-     "start": 14.05,
+     "end": 15.562,
+     "start": 15.4,
      "text": "one"
     },
     {
-     "end": 14.288,
-     "start": 14.212,
+     "end": 15.637,
+     "start": 15.562,
      "text": "of"
     },
     {
-     "end": 14.425,
-     "start": 14.288,
+     "end": 15.775,
+     "start": 15.637,
      "text": "the"
     },
     {
-     "end": 14.75,
-     "start": 14.425,
+     "end": 16.1,
+     "start": 15.775,
      "text": "three"
     },
     {
-     "end": 15.125,
-     "start": 14.75,
+     "end": 16.475,
+     "start": 16.1,
      "text": "owners"
     },
     {
-     "end": 15.475,
-     "start": 15.125,
+     "end": 16.825,
+     "start": 16.475,
      "text": "below"
     },
     {
-     "end": 16.175,
-     "start": 15.475,
+     "end": 17.525,
+     "start": 16.825,
      "text": "it"
     },
     {
-     "end": 16.4,
-     "start": 16.175,
+     "end": 17.75,
+     "start": 17.525,
      "text": "."
     },
     {
-     "end": 16.65,
-     "start": 16.575,
-     "text": "The"
+     "end": 18.163,
+     "start": 17.95,
+     "text": "Which"
     },
     {
-     "end": 16.975,
-     "start": 16.65,
-     "text": "graph"
+     "end": 18.575,
+     "start": 18.163,
+     "text": "pending"
     },
     {
-     "end": 17.138,
-     "start": 16.975,
-     "text": "is"
+     "end": 19.087,
+     "start": 18.575,
+     "text": "requests"
     },
     {
-     "end": 17.862,
-     "start": 17.138,
-     "text": "acyclic"
+     "end": 19.45,
+     "start": 19.087,
+     "text": "reach"
     },
     {
-     "end": 18.0,
-     "start": 17.862,
-     "text": "and"
+     "end": 19.688,
+     "start": 19.45,
+     "text": "that"
     },
     {
-     "end": 18.4,
-     "start": 18.0,
-     "text": "one-way"
+     "end": 20.175,
+     "start": 19.688,
+     "text": "sequence"
     },
     {
-     "end": 18.688,
-     "start": 18.4,
-     "text": "between"
+     "end": 20.7,
+     "start": 20.175,
+     "text": "belongs"
     },
     {
-     "end": 18.775,
-     "start": 18.688,
-     "text": "the"
+     "end": 20.837,
+     "start": 20.7,
+     "text": "to"
     },
     {
-     "end": 19.1,
-     "start": 18.775,
-     "text": "fold"
+     "end": 21.425,
+     "start": 20.837,
+     "text": "Singular"
     },
     {
-     "end": 20.025,
-     "start": 19.1,
-     "text": "owners"
+     "end": 21.525,
+     "start": 21.425,
+     "text": "."
     },
     {
-     "end": 20.225,
-     "start": 20.025,
+     "end": 22.2,
+     "start": 21.525,
+     "text": "Registry"
+    },
+    {
+     "end": 22.325,
+     "start": 22.2,
+     "text": "."
+    },
+    {
+     "end": 23.1,
+     "start": 22.325,
+     "text": "FoldSelection"
+    },
+    {
+     "end": 24.15,
+     "start": 23.1,
+     "text": "alone"
+    },
+    {
+     "end": 24.375,
+     "start": 24.15,
      "text": ":"
     },
     {
-     "end": 21.025,
-     "start": 20.45,
-     "text": "Context"
+     "end": 24.688,
+     "start": 24.575,
+     "text": "it"
     },
     {
-     "end": 21.337,
-     "start": 21.025,
-     "text": "knows"
+     "end": 25.138,
+     "start": 24.688,
+     "text": "judges"
     },
     {
-     "end": 21.75,
-     "start": 21.337,
-     "text": "nothing"
+     "end": 25.487,
+     "start": 25.138,
+     "text": "every"
     },
     {
-     "end": 21.888,
-     "start": 21.75,
-     "text": "of"
+     "end": 25.875,
+     "start": 25.487,
+     "text": "pending"
     },
     {
-     "end": 22.438,
-     "start": 21.888,
-     "text": "duties"
+     "end": 26.337,
+     "start": 25.875,
+     "text": "request"
     },
     {
-     "end": 22.625,
-     "start": 22.438,
-     "text": "or"
+     "end": 26.462,
+     "start": 26.337,
+     "text": "on"
     },
     {
-     "end": 23.325,
-     "start": 22.625,
-     "text": "assembly"
-    },
-    {
-     "end": 23.438,
-     "start": 23.325,
-     "text": ","
-    },
-    {
-     "end": 23.837,
-     "start": 23.438,
-     "text": "Duties"
-    },
-    {
-     "end": 24.2,
-     "start": 23.837,
-     "text": "reads"
-    },
-    {
-     "end": 24.85,
-     "start": 24.2,
-     "text": "Context"
-    },
-    {
-     "end": 25.0,
-     "start": 24.85,
-     "text": "but"
-    },
-    {
-     "end": 25.225,
-     "start": 25.0,
-     "text": "no"
-    },
-    {
-     "end": 25.825,
-     "start": 25.225,
-     "text": "assembly"
-    },
-    {
-     "end": 25.913,
-     "start": 25.825,
-     "text": ","
-    },
-    {
-     "end": 26.2,
-     "start": 25.913,
-     "text": "Build"
-    },
-    {
-     "end": 26.538,
-     "start": 26.2,
-     "text": "reads"
-    },
-    {
-     "end": 26.95,
-     "start": 26.538,
-     "text": "Duties"
-    },
-    {
-     "end": 27.1,
-     "start": 26.95,
-     "text": "but"
-    },
-    {
-     "end": 27.325,
-     "start": 27.1,
-     "text": "no"
-    },
-    {
-     "end": 28.55,
-     "start": 27.325,
-     "text": "facade"
-    },
-    {
-     "end": 28.8,
-     "start": 28.55,
-     "text": "."
-    },
-    {
-     "end": 29.237,
-     "start": 28.975,
-     "text": "Below"
-    },
-    {
-     "end": 29.325,
-     "start": 29.237,
-     "text": "the"
-    },
-    {
-     "end": 29.6,
-     "start": 29.325,
-     "text": "fold"
-    },
-    {
-     "end": 30.4,
-     "start": 29.6,
-     "text": "owners"
-    },
-    {
-     "end": 30.6,
-     "start": 30.4,
-     "text": ","
-    },
-    {
-     "end": 31.138,
-     "start": 30.85,
-     "text": "both"
-    },
-    {
-     "end": 31.6,
-     "start": 31.138,
-     "text": "Duties"
-    },
-    {
-     "end": 31.737,
-     "start": 31.6,
-     "text": "and"
-    },
-    {
-     "end": 32.05,
-     "start": 31.737,
-     "text": "Build"
-    },
-    {
-     "end": 32.425,
-     "start": 32.05,
-     "text": "also"
-    },
-    {
-     "end": 32.675,
-     "start": 32.425,
-     "text": "read"
-    },
-    {
-     "end": 32.812,
-     "start": 32.675,
-     "text": "the"
-    },
-    {
-     "end": 33.225,
-     "start": 32.812,
-     "text": "older"
-    },
-    {
-     "end": 33.763,
-     "start": 33.225,
-     "text": "Internal"
-    },
-    {
-     "end": 34.2,
-     "start": 33.763,
-     "text": "owners"
-    },
-    {
-     "end": 34.912,
-     "start": 34.2,
-     "text": "directly"
-    },
-    {
-     "end": 35.0,
-     "start": 34.912,
-     "text": "—"
-    },
-    {
-     "end": 35.138,
-     "start": 35.0,
-     "text": "the"
-    },
-    {
-     "end": 35.475,
-     "start": 35.138,
-     "text": "duty"
-    },
-    {
-     "end": 36.2,
-     "start": 35.475,
-     "text": "derivation"
-    },
-    {
-     "end": 36.6,
-     "start": 36.2,
-     "text": "shares"
-    },
-    {
-     "end": 36.812,
-     "start": 36.6,
+     "end": 26.625,
+     "start": 26.462,
      "text": "its"
     },
     {
-     "end": 37.388,
-     "start": 36.812,
-     "text": "edge-to-mint"
+     "end": 27.025,
+     "start": 26.625,
+     "text": "own"
     },
     {
-     "end": 37.8,
-     "start": 37.388,
-     "text": "table"
+     "end": 27.1,
+     "start": 27.025,
+     "text": ","
     },
     {
-     "end": 37.938,
-     "start": 37.8,
+     "end": 27.288,
+     "start": 27.1,
+     "text": "by"
+    },
+    {
+     "end": 27.663,
+     "start": 27.288,
+     "text": "seven"
+    },
+    {
+     "end": 28.0,
+     "start": 27.663,
+     "text": "checks"
+    },
+    {
+     "end": 28.125,
+     "start": 28.0,
+     "text": "in"
+    },
+    {
+     "end": 28.975,
+     "start": 28.125,
+     "text": "order"
+    },
+    {
+     "end": 29.225,
+     "start": 28.975,
+     "text": ","
+    },
+    {
+     "end": 29.525,
+     "start": 29.425,
+     "text": "and"
+    },
+    {
+     "end": 30.075,
+     "start": 29.525,
+     "text": "returns"
+    },
+    {
+     "end": 30.3,
+     "start": 30.075,
+     "text": "each"
+    },
+    {
+     "end": 30.475,
+     "start": 30.3,
+     "text": "as"
+    },
+    {
+     "end": 30.938,
+     "start": 30.475,
+     "text": "settled"
+    },
+    {
+     "end": 31.075,
+     "start": 30.938,
+     "text": "or"
+    },
+    {
+     "end": 31.65,
+     "start": 31.075,
+     "text": "excluded"
+    },
+    {
+     "end": 31.788,
+     "start": 31.65,
      "text": "with"
     },
     {
-     "end": 38.062,
-     "start": 37.938,
-     "text": "the"
+     "end": 31.875,
+     "start": 31.788,
+     "text": "a"
     },
     {
-     "end": 38.562,
-     "start": 38.062,
-     "text": "cage"
+     "end": 32.4,
+     "start": 31.875,
+     "text": "reason"
     },
     {
-     "end": 38.838,
-     "start": 38.562,
-     "text": "through"
+     "end": 32.5,
+     "start": 32.4,
+     "text": ","
     },
     {
-     "end": 39.525,
-     "start": 38.838,
-     "text": "Internal"
+     "end": 32.7,
+     "start": 32.5,
+     "text": "up"
     },
     {
-     "end": 39.6,
-     "start": 39.525,
+     "end": 32.787,
+     "start": 32.7,
+     "text": "to"
+    },
+    {
+     "end": 32.85,
+     "start": 32.787,
+     "text": "a"
+    },
+    {
+     "end": 33.425,
+     "start": 32.85,
+     "text": "capacity"
+    },
+    {
+     "end": 34.325,
+     "start": 33.425,
+     "text": "bound"
+    },
+    {
+     "end": 34.525,
+     "start": 34.325,
      "text": "."
     },
     {
-     "end": 40.225,
-     "start": 39.6,
-     "text": "Edges"
+     "end": 34.775,
+     "start": 34.7,
+     "text": "The"
     },
     {
-     "end": 40.3,
-     "start": 40.225,
-     "text": "—"
+     "end": 35.1,
+     "start": 34.775,
+     "text": "graph"
     },
     {
-     "end": 40.425,
-     "start": 40.3,
+     "end": 35.263,
+     "start": 35.1,
+     "text": "is"
+    },
+    {
+     "end": 35.987,
+     "start": 35.263,
+     "text": "acyclic"
+    },
+    {
+     "end": 36.125,
+     "start": 35.987,
      "text": "and"
     },
     {
-     "end": 40.7,
-     "start": 40.425,
-     "text": "both"
+     "end": 36.525,
+     "start": 36.125,
+     "text": "one-way"
     },
     {
-     "end": 40.8,
-     "start": 40.7,
+     "end": 36.812,
+     "start": 36.525,
+     "text": "between"
+    },
+    {
+     "end": 36.9,
+     "start": 36.812,
      "text": "the"
     },
     {
-     "end": 41.388,
-     "start": 40.8,
+     "end": 37.225,
+     "start": 36.9,
+     "text": "fold"
+    },
+    {
+     "end": 38.15,
+     "start": 37.225,
+     "text": "owners"
+    },
+    {
+     "end": 38.35,
+     "start": 38.15,
+     "text": ":"
+    },
+    {
+     "end": 39.15,
+     "start": 38.575,
+     "text": "Context"
+    },
+    {
+     "end": 39.463,
+     "start": 39.15,
+     "text": "knows"
+    },
+    {
+     "end": 39.875,
+     "start": 39.463,
+     "text": "nothing"
+    },
+    {
+     "end": 40.013,
+     "start": 39.875,
+     "text": "of"
+    },
+    {
+     "end": 40.562,
+     "start": 40.013,
+     "text": "duties"
+    },
+    {
+     "end": 40.75,
+     "start": 40.562,
+     "text": "or"
+    },
+    {
+     "end": 41.45,
+     "start": 40.75,
+     "text": "assembly"
+    },
+    {
+     "end": 41.562,
+     "start": 41.45,
+     "text": ","
+    },
+    {
+     "end": 41.963,
+     "start": 41.562,
+     "text": "Duties"
+    },
+    {
+     "end": 42.325,
+     "start": 41.963,
+     "text": "reads"
+    },
+    {
+     "end": 42.975,
+     "start": 42.325,
+     "text": "Context"
+    },
+    {
+     "end": 43.125,
+     "start": 42.975,
+     "text": "but"
+    },
+    {
+     "end": 43.35,
+     "start": 43.125,
+     "text": "no"
+    },
+    {
+     "end": 43.95,
+     "start": 43.35,
+     "text": "assembly"
+    },
+    {
+     "end": 44.037,
+     "start": 43.95,
+     "text": ","
+    },
+    {
+     "end": 44.325,
+     "start": 44.037,
+     "text": "Build"
+    },
+    {
+     "end": 44.662,
+     "start": 44.325,
+     "text": "reads"
+    },
+    {
+     "end": 45.075,
+     "start": 44.662,
+     "text": "Duties"
+    },
+    {
+     "end": 45.225,
+     "start": 45.075,
+     "text": "but"
+    },
+    {
+     "end": 45.45,
+     "start": 45.225,
+     "text": "no"
+    },
+    {
+     "end": 46.675,
+     "start": 45.45,
      "text": "facade"
     },
     {
-     "end": 41.537,
-     "start": 41.388,
+     "end": 46.925,
+     "start": 46.675,
+     "text": "."
+    },
+    {
+     "end": 47.362,
+     "start": 47.1,
+     "text": "Below"
+    },
+    {
+     "end": 47.45,
+     "start": 47.362,
+     "text": "the"
+    },
+    {
+     "end": 47.725,
+     "start": 47.45,
+     "text": "fold"
+    },
+    {
+     "end": 48.525,
+     "start": 47.725,
+     "text": "owners"
+    },
+    {
+     "end": 48.725,
+     "start": 48.525,
+     "text": ","
+    },
+    {
+     "end": 49.263,
+     "start": 48.975,
+     "text": "both"
+    },
+    {
+     "end": 49.725,
+     "start": 49.263,
+     "text": "Duties"
+    },
+    {
+     "end": 49.862,
+     "start": 49.725,
      "text": "and"
     },
     {
-     "end": 41.625,
-     "start": 41.537,
-     "text": "the"
+     "end": 50.175,
+     "start": 49.862,
+     "text": "Build"
     },
     {
-     "end": 41.925,
-     "start": 41.625,
-     "text": "build"
+     "end": 50.55,
+     "start": 50.175,
+     "text": "also"
     },
     {
-     "end": 42.312,
-     "start": 41.925,
-     "text": "owner"
-    },
-    {
-     "end": 42.638,
-     "start": 42.312,
+     "end": 50.8,
+     "start": 50.55,
      "text": "read"
     },
     {
-     "end": 43.55,
-     "start": 42.638,
-     "text": "ConnectedFold"
-    },
-    {
-     "end": 43.662,
-     "start": 43.55,
-     "text": "for"
-    },
-    {
-     "end": 43.8,
-     "start": 43.662,
+     "end": 50.938,
+     "start": 50.8,
      "text": "the"
     },
     {
-     "end": 44.275,
-     "start": 43.8,
+     "end": 51.35,
+     "start": 50.938,
+     "text": "older"
+    },
+    {
+     "end": 51.888,
+     "start": 51.35,
+     "text": "Internal"
+    },
+    {
+     "end": 52.325,
+     "start": 51.888,
+     "text": "owners"
+    },
+    {
+     "end": 53.037,
+     "start": 52.325,
+     "text": "directly"
+    },
+    {
+     "end": 53.125,
+     "start": 53.037,
+     "text": "—"
+    },
+    {
+     "end": 53.263,
+     "start": 53.125,
+     "text": "the"
+    },
+    {
+     "end": 53.6,
+     "start": 53.263,
+     "text": "duty"
+    },
+    {
+     "end": 54.325,
+     "start": 53.6,
+     "text": "derivation"
+    },
+    {
+     "end": 54.725,
+     "start": 54.325,
+     "text": "shares"
+    },
+    {
+     "end": 54.938,
+     "start": 54.725,
+     "text": "its"
+    },
+    {
+     "end": 55.513,
+     "start": 54.938,
+     "text": "edge-to-mint"
+    },
+    {
+     "end": 55.925,
+     "start": 55.513,
+     "text": "table"
+    },
+    {
+     "end": 56.062,
+     "start": 55.925,
+     "text": "with"
+    },
+    {
+     "end": 56.188,
+     "start": 56.062,
+     "text": "the"
+    },
+    {
+     "end": 56.688,
+     "start": 56.188,
+     "text": "cage"
+    },
+    {
+     "end": 56.963,
+     "start": 56.688,
+     "text": "through"
+    },
+    {
+     "end": 57.65,
+     "start": 56.963,
+     "text": "Internal"
+    },
+    {
+     "end": 57.725,
+     "start": 57.65,
+     "text": "."
+    },
+    {
+     "end": 58.35,
+     "start": 57.725,
+     "text": "Edges"
+    },
+    {
+     "end": 58.425,
+     "start": 58.35,
+     "text": "—"
+    },
+    {
+     "end": 58.55,
+     "start": 58.425,
+     "text": "and"
+    },
+    {
+     "end": 58.825,
+     "start": 58.55,
+     "text": "both"
+    },
+    {
+     "end": 58.925,
+     "start": 58.825,
+     "text": "the"
+    },
+    {
+     "end": 59.513,
+     "start": 58.925,
+     "text": "facade"
+    },
+    {
+     "end": 59.662,
+     "start": 59.513,
+     "text": "and"
+    },
+    {
+     "end": 59.75,
+     "start": 59.662,
+     "text": "the"
+    },
+    {
+     "end": 60.05,
+     "start": 59.75,
+     "text": "build"
+    },
+    {
+     "end": 60.438,
+     "start": 60.05,
+     "text": "owner"
+    },
+    {
+     "end": 60.763,
+     "start": 60.438,
+     "text": "read"
+    },
+    {
+     "end": 61.675,
+     "start": 60.763,
+     "text": "ConnectedFold"
+    },
+    {
+     "end": 61.787,
+     "start": 61.675,
+     "text": "for"
+    },
+    {
+     "end": 61.925,
+     "start": 61.787,
+     "text": "the"
+    },
+    {
+     "end": 62.4,
+     "start": 61.925,
      "text": "attached"
     },
     {
-     "end": 44.675,
-     "start": 44.275,
+     "end": 62.8,
+     "start": 62.4,
      "text": "action"
     },
     {
-     "end": 45.775,
-     "start": 44.675,
+     "end": 63.9,
+     "start": 62.8,
      "text": "types"
     },
     {
-     "end": 46.025,
-     "start": 45.775,
+     "end": 64.15,
+     "start": 63.9,
      "text": "."
     }
    ]
@@ -191141,11 +191526,61 @@
    ]
   },
   "docs-offchain-fold-responsibilities/source-04": {
-   "audio_sha256": "9ff2e58854ed2a29407e5b7e893445d568886422e861070d77678c0b61894587",
-   "characters": 144,
-   "cost": 8.928e-05,
-   "duration": 8.825,
+   "audio_sha256": "1859ff17551f7bafd78108bc6a7ef7f262f5c41c2138b1da6fbb203c8c380513",
+   "characters": 42,
+   "cost": 4.157999999999999e-05,
+   "duration": 3.575,
    "index": 4,
+   "key": "afaf40aff894cbda06ad673721e49d8a23386d85db64d07df02afce4d8f73634",
+   "page": "docs/offchain-fold-responsibilities.md",
+   "pause_ms": 300,
+   "section": "source",
+   "sent_text": "Selection: Singular.Registry.FoldSelection",
+   "text": "Selection: Singular.Registry.FoldSelection",
+   "words": [
+    {
+     "end": 1.05,
+     "start": 0.2,
+     "text": "Selection"
+    },
+    {
+     "end": 1.275,
+     "start": 1.05,
+     "text": ":"
+    },
+    {
+     "end": 1.825,
+     "start": 1.475,
+     "text": "Singular"
+    },
+    {
+     "end": 1.875,
+     "start": 1.825,
+     "text": "."
+    },
+    {
+     "end": 2.325,
+     "start": 1.875,
+     "text": "Registry"
+    },
+    {
+     "end": 2.4,
+     "start": 2.325,
+     "text": "."
+    },
+    {
+     "end": 3.575,
+     "start": 2.4,
+     "text": "FoldSelection"
+    }
+   ]
+  },
+  "docs-offchain-fold-responsibilities/source-05": {
+   "audio_sha256": "20187171a290fd5fa44e2ffa7d8618f713656fae752ef30ec5bb7c64aba28e84",
+   "characters": 144,
+   "cost": 0.00014256,
+   "duration": 8.825,
+   "index": 5,
    "key": "1234227df45dcf5cc4b82ee7d38abefffe6d9ab5e2de3d2efce232a9cd979b02",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 400,
@@ -195136,11 +195571,166 @@
    ]
   },
   "docs-offchain-fold-responsibilities/where-common-changes-land-02": {
-   "audio_sha256": "51cd5b2c8a49aa8dc3896c2c6140c53da6df09f77faccda3ddb97362f8057b4b",
-   "characters": 130,
-   "cost": 8.060000000000001e-05,
-   "duration": 8.95,
+   "audio_sha256": "48dfe6c66796f00ed3505465a5d4c3bec2f6dc048d1effd859450c7872abef0b",
+   "characters": 137,
+   "cost": 0.00013562999999999997,
+   "duration": 9.325,
    "index": 2,
+   "key": "d9e537f018747bad46d30fed81f4a8ef6990bce1fbd169bd3a9e42398d2e4327",
+   "page": "docs/offchain-fold-responsibilities.md",
+   "pause_ms": 300,
+   "section": "where-common-changes-land",
+   "sent_text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound: Singular.Registry.FoldSelection, and only there.",
+   "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound: Singular.Registry.FoldSelection, and only there.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.2,
+     "text": "Which"
+    },
+    {
+     "end": 0.825,
+     "start": 0.412,
+     "text": "pending"
+    },
+    {
+     "end": 1.288,
+     "start": 0.825,
+     "text": "requests"
+    },
+    {
+     "end": 1.388,
+     "start": 1.288,
+     "text": "a"
+    },
+    {
+     "end": 1.788,
+     "start": 1.388,
+     "text": "fold"
+    },
+    {
+     "end": 2.35,
+     "start": 1.788,
+     "text": "takes"
+    },
+    {
+     "end": 2.425,
+     "start": 2.35,
+     "text": "—"
+    },
+    {
+     "end": 2.562,
+     "start": 2.425,
+     "text": "the"
+    },
+    {
+     "end": 2.938,
+     "start": 2.562,
+     "text": "seven"
+    },
+    {
+     "end": 3.325,
+     "start": 2.938,
+     "text": "checks"
+    },
+    {
+     "end": 3.362,
+     "start": 3.325,
+     "text": ","
+    },
+    {
+     "end": 3.475,
+     "start": 3.362,
+     "text": "the"
+    },
+    {
+     "end": 4.0,
+     "start": 3.475,
+     "text": "reasons"
+    },
+    {
+     "end": 4.037,
+     "start": 4.0,
+     "text": ","
+    },
+    {
+     "end": 4.125,
+     "start": 4.037,
+     "text": "the"
+    },
+    {
+     "end": 4.7,
+     "start": 4.125,
+     "text": "capacity"
+    },
+    {
+     "end": 5.65,
+     "start": 4.7,
+     "text": "bound"
+    },
+    {
+     "end": 5.875,
+     "start": 5.65,
+     "text": ":"
+    },
+    {
+     "end": 6.45,
+     "start": 6.075,
+     "text": "Singular"
+    },
+    {
+     "end": 6.5,
+     "start": 6.45,
+     "text": "."
+    },
+    {
+     "end": 7.05,
+     "start": 6.5,
+     "text": "Registry"
+    },
+    {
+     "end": 7.15,
+     "start": 7.05,
+     "text": "."
+    },
+    {
+     "end": 7.9,
+     "start": 7.15,
+     "text": "FoldSelection"
+    },
+    {
+     "end": 7.938,
+     "start": 7.9,
+     "text": ","
+    },
+    {
+     "end": 8.05,
+     "start": 7.938,
+     "text": "and"
+    },
+    {
+     "end": 8.35,
+     "start": 8.05,
+     "text": "only"
+    },
+    {
+     "end": 9.125,
+     "start": 8.35,
+     "text": "there"
+    },
+    {
+     "end": 9.325,
+     "start": 9.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-offchain-fold-responsibilities/where-common-changes-land-03": {
+   "audio_sha256": "cefa59b0fc82f5b534ec11879c97b8cd8c05b0f82a19313c4f4e44460948105c",
+   "characters": 130,
+   "cost": 0.00012869999999999998,
+   "duration": 8.95,
+   "index": 3,
    "key": "883b610b71fd408112e345b8fd66dc1ee4075ca86b21d41761f91ffad20c3fa3",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 300,
@@ -195290,12 +195880,12 @@
     }
    ]
   },
-  "docs-offchain-fold-responsibilities/where-common-changes-land-03": {
-   "audio_sha256": "4dadb20597957163b777dfa3ade5bdcf951f2366e474dcc4c33c4a5fffc6b20c",
+  "docs-offchain-fold-responsibilities/where-common-changes-land-04": {
+   "audio_sha256": "1978cf377b4d272013adb5520de0eb6a60604e68f53f59d13529de229f668ffa",
    "characters": 114,
-   "cost": 7.068000000000001e-05,
+   "cost": 0.00011285999999999999,
    "duration": 8.225,
-   "index": 3,
+   "index": 4,
    "key": "516132115833aec2e6588398ce2ab0e5bc392cbebbbc61d61303a39ecf641a04",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 300,
@@ -195415,12 +196005,12 @@
     }
    ]
   },
-  "docs-offchain-fold-responsibilities/where-common-changes-land-04": {
-   "audio_sha256": "a3f6a90a6c2af1f2cb6eaf09af6e524180d6c3accda40af619c53ffd52c9aa44",
+  "docs-offchain-fold-responsibilities/where-common-changes-land-05": {
+   "audio_sha256": "f97172cc42d85219e76bd7da764e4f5f76f4a2e0b2855b953ffc5c1f87f42584",
    "characters": 90,
-   "cost": 5.58e-05,
+   "cost": 8.91e-05,
    "duration": 6.825,
-   "index": 4,
+   "index": 5,
    "key": "ba0c4923db2d82f7d49213412312cc0330928dda1cf4b04e458d444084a124c8",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 300,
@@ -195525,12 +196115,12 @@
     }
    ]
   },
-  "docs-offchain-fold-responsibilities/where-common-changes-land-05": {
-   "audio_sha256": "87af7d71294b7da3568e82df49bd4757f1126ac8e42055214ce2c5dfca64aa27",
+  "docs-offchain-fold-responsibilities/where-common-changes-land-06": {
+   "audio_sha256": "b94d263c2206a56c4dde09234e7a4748c4ae4b326f79b04f5ebd24803e982ade",
    "characters": 86,
-   "cost": 5.332e-05,
+   "cost": 8.513999999999999e-05,
    "duration": 5.65,
-   "index": 5,
+   "index": 6,
    "key": "a890609c5d5f70f58e49665ee2beb579a52d341f8df5bb58631da03aa9df3af3",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 300,
@@ -195671,17 +196261,17 @@
    ]
   },
   "docs-offchain-fold-responsibilities/who-owns-a-registry-fold-01": {
-   "audio_sha256": "e989184166533b779eaa783d8f764911ab46361ea19178181f6da91e225f8ed0",
-   "characters": 614,
-   "cost": 0.00038068000000000005,
-   "duration": 40.7,
+   "audio_sha256": "f01255f7b0b37758e2d4db64c938b1b5515580bfd64095ef6e199e94683cafa0",
+   "characters": 692,
+   "cost": 0.00068508,
+   "duration": 46.15,
    "index": 1,
-   "key": "a67d6959d4ad06d7e7d0b0a1a2315f233848bb74350223e05585df07af55f6ee",
+   "key": "63a48c746abdb560a8a646c8131dc6e311a1a074a0221f16efc4e0f80b1e654f",
    "page": "docs/offchain-fold-responsibilities.md",
    "pause_ms": 400,
    "section": "who-owns-a-registry-fold",
-   "sent_text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
-   "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
+   "sent_text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and Singular.Registry.FoldSelection owns which pending requests a fold takes, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
+   "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and Singular.Registry.FoldSelection owns which pending requests a fold takes, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
    "words": [
     {
      "end": 0.325,
@@ -196139,148 +196729,218 @@
      "text": ","
     },
     {
-     "end": 32.388,
-     "start": 32.3,
+     "end": 32.463,
+     "start": 32.325,
      "text": "and"
     },
     {
-     "end": 32.575,
-     "start": 32.388,
-     "text": "this"
+     "end": 32.95,
+     "start": 32.463,
+     "text": "Singular"
     },
     {
-     "end": 32.925,
-     "start": 32.575,
-     "text": "page"
+     "end": 33.025,
+     "start": 32.95,
+     "text": "."
     },
     {
-     "end": 33.162,
-     "start": 32.925,
-     "text": "tells"
+     "end": 33.65,
+     "start": 33.025,
+     "text": "Registry"
     },
     {
-     "end": 33.225,
-     "start": 33.162,
-     "text": "a"
+     "end": 33.75,
+     "start": 33.65,
+     "text": "."
     },
     {
-     "end": 33.925,
-     "start": 33.225,
-     "text": "contributor"
+     "end": 34.5,
+     "start": 33.75,
+     "text": "FoldSelection"
     },
     {
-     "end": 34.162,
-     "start": 33.925,
+     "end": 34.85,
+     "start": 34.5,
+     "text": "owns"
+    },
+    {
+     "end": 35.062,
+     "start": 34.85,
      "text": "which"
     },
     {
-     "end": 34.463,
-     "start": 34.162,
-     "text": "owner"
+     "end": 35.475,
+     "start": 35.062,
+     "text": "pending"
     },
     {
-     "end": 34.638,
-     "start": 34.463,
-     "text": "their"
+     "end": 35.938,
+     "start": 35.475,
+     "text": "requests"
     },
     {
-     "end": 35.025,
-     "start": 34.638,
-     "text": "change"
+     "end": 36.037,
+     "start": 35.938,
+     "text": "a"
     },
     {
-     "end": 35.513,
-     "start": 35.025,
-     "text": "belongs"
+     "end": 36.375,
+     "start": 36.037,
+     "text": "fold"
     },
     {
-     "end": 35.95,
-     "start": 35.513,
-     "text": "to"
+     "end": 37.35,
+     "start": 36.375,
+     "text": "takes"
     },
     {
-     "end": 36.475,
-     "start": 35.95,
+     "end": 37.55,
+     "start": 37.35,
      "text": ","
     },
     {
-     "end": 36.763,
-     "start": 36.65,
-     "text": "what"
-    },
-    {
-     "end": 36.862,
-     "start": 36.763,
-     "text": "the"
-    },
-    {
-     "end": 37.162,
-     "start": 36.862,
-     "text": "flow"
-    },
-    {
-     "end": 37.375,
-     "start": 37.162,
-     "text": "through"
-    },
-    {
-     "end": 37.65,
-     "start": 37.375,
-     "text": "them"
-    },
-    {
-     "end": 38.0,
-     "start": 37.65,
-     "text": "is"
-    },
-    {
-     "end": 38.075,
-     "start": 38.0,
-     "text": ","
-    },
-    {
-     "end": 38.2,
-     "start": 38.075,
+     "end": 37.838,
+     "start": 37.75,
      "text": "and"
     },
     {
+     "end": 38.025,
+     "start": 37.838,
+     "text": "this"
+    },
+    {
      "end": 38.375,
-     "start": 38.2,
-     "text": "what"
+     "start": 38.025,
+     "text": "page"
     },
     {
-     "end": 38.6,
+     "end": 38.612,
      "start": 38.375,
-     "text": "must"
+     "text": "tells"
     },
     {
-     "end": 38.888,
-     "start": 38.6,
-     "text": "never"
+     "end": 38.675,
+     "start": 38.612,
+     "text": "a"
     },
     {
-     "end": 39.3,
-     "start": 38.888,
+     "end": 39.375,
+     "start": 38.675,
+     "text": "contributor"
+    },
+    {
+     "end": 39.612,
+     "start": 39.375,
+     "text": "which"
+    },
+    {
+     "end": 39.912,
+     "start": 39.612,
+     "text": "owner"
+    },
+    {
+     "end": 40.088,
+     "start": 39.912,
+     "text": "their"
+    },
+    {
+     "end": 40.475,
+     "start": 40.088,
      "text": "change"
     },
     {
-     "end": 39.487,
-     "start": 39.3,
+     "end": 40.963,
+     "start": 40.475,
+     "text": "belongs"
+    },
+    {
+     "end": 41.4,
+     "start": 40.963,
+     "text": "to"
+    },
+    {
+     "end": 41.925,
+     "start": 41.4,
+     "text": ","
+    },
+    {
+     "end": 42.213,
+     "start": 42.1,
+     "text": "what"
+    },
+    {
+     "end": 42.312,
+     "start": 42.213,
+     "text": "the"
+    },
+    {
+     "end": 42.612,
+     "start": 42.312,
+     "text": "flow"
+    },
+    {
+     "end": 42.825,
+     "start": 42.612,
+     "text": "through"
+    },
+    {
+     "end": 43.1,
+     "start": 42.825,
+     "text": "them"
+    },
+    {
+     "end": 43.45,
+     "start": 43.1,
+     "text": "is"
+    },
+    {
+     "end": 43.525,
+     "start": 43.45,
+     "text": ","
+    },
+    {
+     "end": 43.65,
+     "start": 43.525,
+     "text": "and"
+    },
+    {
+     "end": 43.825,
+     "start": 43.65,
+     "text": "what"
+    },
+    {
+     "end": 44.05,
+     "start": 43.825,
+     "text": "must"
+    },
+    {
+     "end": 44.338,
+     "start": 44.05,
+     "text": "never"
+    },
+    {
+     "end": 44.75,
+     "start": 44.338,
+     "text": "change"
+    },
+    {
+     "end": 44.938,
+     "start": 44.75,
      "text": "while"
     },
     {
-     "end": 39.575,
-     "start": 39.487,
+     "end": 45.025,
+     "start": 44.938,
      "text": "it"
     },
     {
-     "end": 40.5,
-     "start": 39.575,
+     "end": 45.95,
+     "start": 45.025,
      "text": "moves"
     },
     {
-     "end": 40.7,
-     "start": 40.5,
+     "end": 46.15,
+     "start": 45.95,
      "text": "."
     }
    ]

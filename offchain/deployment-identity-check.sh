@@ -9,7 +9,10 @@ cd "$offchain"
 work="$(mktemp -d /tmp/s269-identity.XXXXXX)"
 devnet_pid=
 cleanup() {
-  if [ -n "$devnet_pid" ]; then kill "$devnet_pid" 2>/dev/null || true; fi
+  if [ -n "$devnet_pid" ]; then
+    kill "$devnet_pid" 2>/dev/null || true
+    wait "$devnet_pid" 2>/dev/null || true
+  fi
   rm -rf "$work"
 }
 trap cleanup EXIT
