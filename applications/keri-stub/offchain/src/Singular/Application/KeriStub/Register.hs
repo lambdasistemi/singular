@@ -312,7 +312,7 @@ book at a key verb plan = do
                     (bookingOutlay pp (liveRefs live) tx)
                 pure (tx, decided)
             )
-    let request = TxIn (txIdTx booking) (TxIx 0)
+    let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
         readingBack at "book" booking ["requests", "state"] $ \v -> do
             reqs <-
@@ -336,7 +336,7 @@ book at a key verb plan = do
         (wcTracer wc)
         [InRequest (txInText request)]
         (Booked (txInText request) (Just (deadlineMs deadline)))
-    pure (booking, decided, deadline)
+    pure (confirmedTx booking, decided, deadline)
 
 -- | What a booking-only register's receipt names of its pending request.
 pendingFields :: ByteString -> ConwayTx -> Deadline -> [(Text, Value)]
