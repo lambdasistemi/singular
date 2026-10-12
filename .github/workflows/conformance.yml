@@ -121,6 +121,33 @@ jobs:
       # pass criterion is exit 0 with `1 of 1 test suites passed`. Five
       # minutes from the measured 89 seconds plus a cold cache.
       - run: nix run --quiet ./conformance#evaluation-cleanup-controls
+  publication-boundary:
+    name: Publication boundary controls
+    runs-on: nixos
+    timeout-minutes: 10
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562 item 3: the publication boundary control, hosted. The app runs
+      # the publisher definition from nix/release.nix with only gh replaced
+      # by a recorder, through its positive path and its mutated cases; the
+      # pass criterion is exit 0 with the final line ALL CASES HELD.
+      # OUTDIR and EVIDENCE point under RUNNER_TEMP so the tracked evidence
+      # log conformance/coverage/publication-boundary-evidence.log is never
+      # written and the tree stays clean. Ten minutes from the measured
+      # 400 seconds.
+      - run: >-
+          OUTDIR="$RUNNER_TEMP/publication-boundary" EVIDENCE="$RUNNER_TEMP/publication-boundary-evidence.log" nix run --quiet .#publication-boundary-controls
   conformance-checks:
     name: Conformance checks without a devnet
     runs-on: nixos

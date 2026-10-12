@@ -29,17 +29,31 @@
 #     conformance/coverage/publication-boundary-check.sh
 # Full per-case output is retained in the evidence log.
 set -u
-PROVIDER="${PROVIDER:-$(git -C "$(dirname "$0")/../.." rev-parse --show-toplevel)}"
-OUTDIR="${OUTDIR:-$(mktemp -d -t pub-harness-XXXXXX)}"
+# Setup failure is exit 2, never a verdict. Principle VII: this script owns
+# OUTDIR (fixtures, mutant copies, shim, run log) with bounded lifetime
+# under the wrapper scratch; it stops no process.
+# Only the archive-to-mutant setup pipeline runs under pipefail, scoped to
+# its subshell; verdict checks never read from a pipeline ending in grep
+# or head (they match on spooled files), so an early match cannot hide
+# a forbidden entry via SIGPIPE.
+setup_fail() {
+  echo "publication-boundary-check: SETUP: $*" >&2
+  exit 2
+}
+PROVIDER="${PROVIDER:-$(git -C "$(dirname "$0")/../.." rev-parse --show-toplevel 2>/dev/null)}"
+[ -n "${PROVIDER:-}" ] || setup_fail "resolving the provider checkout"
+if [ -z "${OUTDIR:-}" ]; then
+  OUTDIR="$(mktemp -d -t pub-harness-XXXXXX)" || setup_fail "creating the default output directory"
+fi
 EVIDENCE="${EVIDENCE:-$PROVIDER/conformance/coverage/publication-boundary-evidence.log}"
-mkdir -p "$OUTDIR"
+mkdir -p "$OUTDIR" || setup_fail "creating the output directory"
 SHIM="$OUTDIR/shims"
-mkdir -p "$SHIM"
+mkdir -p "$SHIM" || setup_fail "creating the shim directory"
 export GH_CALLS_LOG="$OUTDIR/gh-calls.log"
-cp "$PROVIDER/conformance/coverage/publication_gh_stub.sh" "$SHIM/gh"
-chmod +x "$SHIM/gh"
-: >"$OUTDIR/gh-calls.log"
-: >"$OUTDIR/run.log"
+cp "$PROVIDER/conformance/coverage/publication_gh_stub.sh" "$SHIM/gh" || setup_fail "staging the recorder"
+chmod +x "$SHIM/gh" || setup_fail "making the staged recorder executable"
+: >"$OUTDIR/gh-calls.log" || setup_fail "creating the gh calls log"
+: >"$OUTDIR/run.log" || setup_fail "creating the run log"
 log() { echo "$*" | tee -a "$OUTDIR/run.log"; }
 faillog() {
   echo "CASE-FAIL: $*" | tee -a "$OUTDIR/run.log"
@@ -48,8 +62,10 @@ faillog() {
 
 log "provider: $PROVIDER @ $(git -C "$PROVIDER" rev-parse HEAD)"
 log "provider status: $(git -C "$PROVIDER" status --porcelain | tr '\n' ';')"
-TESTPROG="$(cd "$PROVIDER" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs-boundary-test.program 2>/dev/null)"
-PRODPROG="$(cd "$PROVIDER" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs.program 2>/dev/null)"
+TESTPROG="$(cd "$PROVIDER" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs-boundary-test.program 2>/dev/null)" || setup_fail "evaluating the test publisher program"
+[ -n "${TESTPROG:-}" ] || setup_fail "evaluating the test publisher program: empty result"
+PRODPROG="$(cd "$PROVIDER" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs.program 2>/dev/null)" || setup_fail "evaluating the production publisher program"
+[ -n "${PRODPROG:-}" ] || setup_fail "evaluating the production publisher program: empty result"
 log "test publisher: $TESTPROG"
 log "production publisher: $PRODPROG"
 # Closure composition is verified post-hoc (after the runs below have
@@ -61,9 +77,12 @@ FAIL=0
 # --- fixtures ---------------------------------------------------------
 fixtures_script="$PROVIDER/conformance/coverage/publication_fixtures.sh"
 OUTDIR="$OUTDIR/fixtures" PROVIDER="$PROVIDER" \
-  "$fixtures_script" >"$OUTDIR/fixture-build.log" 2>&1
+  "$fixtures_script" >"$OUTDIR/fixture-build.log" 2>&1 || setup_fail "building the fixtures"
 FULL="$(grep -h FULLCLONE_HEAD "$OUTDIR/fixture-build.log" | cut -d= -f2)"
+[ -n "${FULL:-}" ] || setup_fail "reading FULLCLONE_HEAD"
 MISS="$(grep -h MISSING_HEAD "$OUTDIR/fixture-build.log" | cut -d= -f2)"
+[ -n "${MISS:-}" ] || setup_fail "reading MISSING_HEAD"
+[ -s "$PROVIDER/version.txt" ] || setup_fail "reading version.txt"
 VTAG="v$(tr -d ' \n' <"$PROVIDER/version.txt")"
 DOCS_VERSION="$(tr -d ' \n' <"$PROVIDER/version.txt")"
 log "fullclone fixture: $OUTDIR/fixtures/fullclone @ $FULL"
@@ -71,22 +90,22 @@ log "missing fixture: $OUTDIR/fixtures/missing @ $MISS"
 log "version tag: $VTAG"
 for req in SUFFICIENT_HEAD MISSING_HEAD FULLCLONE_HEAD; do
   grep -q "^$req=[0-9a-f]\\{40\\}$" "$OUTDIR/fixture-build.log" \
-    || { faillog "fixture $req missing or malformed"; }
+    || setup_fail "fixture $req missing or malformed in the fixture build log"
 done
 UNMARKED="$OUTDIR/unmarked"
-git clone -q "$OUTDIR/fixtures/sufficient" "$UNMARKED" 2>/dev/null
-rm "$UNMARKED/conformance/coverage/release-required"
-git -C "$UNMARKED" add -A
-git -C "$UNMARKED" -c user.email=pub@t -c user.name=pub commit -qm "unmarked candidate"
-UNMARKED_HEAD="$(git -C "$UNMARKED" rev-parse HEAD)"
+git clone -q "$OUTDIR/fixtures/sufficient" "$UNMARKED" 2>/dev/null || setup_fail "cloning the sufficient fixture"
+rm "$UNMARKED/conformance/coverage/release-required" || setup_fail "deleting the release marker in the unmarked fixture"
+git -C "$UNMARKED" add -A || setup_fail "staging the unmarked fixture"
+git -C "$UNMARKED" -c user.email=pub@t -c user.name=pub commit -qm "unmarked candidate" || setup_fail "committing the unmarked fixture"
+UNMARKED_HEAD="$(git -C "$UNMARKED" rev-parse HEAD)" || setup_fail "reading the unmarked fixture head"
 log "unmarked fixture: $UNMARKED @ $UNMARKED_HEAD"
 INC="$OUTDIR/incomplete"
-git clone -q "$PROVIDER" "$INC" 2>/dev/null
-git -C "$INC" checkout -q "$(git -C "$PROVIDER" rev-parse HEAD)"
-touch "$INC/conformance/coverage/release-required"
-git -C "$INC" add -A
-git -C "$INC" -c user.email=pub@t -c user.name=pub commit -qm "test marker"
-INC_HEAD="$(git -C "$INC" rev-parse HEAD)"
+git clone -q "$PROVIDER" "$INC" 2>/dev/null || setup_fail "cloning the provider for the incomplete fixture"
+git -C "$INC" checkout -q "$(git -C "$PROVIDER" rev-parse HEAD)" || setup_fail "checking out the provider head in the incomplete fixture"
+touch "$INC/conformance/coverage/release-required" || setup_fail "creating the test marker in the incomplete fixture"
+git -C "$INC" add -A || setup_fail "staging the incomplete fixture"
+git -C "$INC" -c user.email=pub@t -c user.name=pub commit -qm "test marker" || setup_fail "committing the incomplete fixture"
+INC_HEAD="$(git -C "$INC" rev-parse HEAD)" || setup_fail "reading the incomplete fixture head"
 log "incomplete fixture: $INC @ $INC_HEAD (provider HEAD plus test marker)"
 
 # No exit-5 checker crash appears here: no natural input drives the real
@@ -171,9 +190,9 @@ run_pub $TAPP injected-fault "$OUTDIR/fixtures/fullclone" "$VTAG" "$FULL" "00000
 expect_blocked injected-fault 1 "FAIL: checkout .* is not the tag commit"
 
 MARKDEL="$OUTDIR/markdel"
-git clone -q "$INC" "$MARKDEL" 2>/dev/null
-rm "$MARKDEL/conformance/coverage/release-required"
-MARKDEL_HEAD="$(git -C "$MARKDEL" rev-parse HEAD)"
+git clone -q "$INC" "$MARKDEL" 2>/dev/null || setup_fail "cloning the incomplete fixture for the marker-deleted case"
+rm "$MARKDEL/conformance/coverage/release-required" || setup_fail "deleting the release marker in the marker-deleted fixture"
+MARKDEL_HEAD="$(git -C "$MARKDEL" rev-parse HEAD)" || setup_fail "reading the marker-deleted fixture head"
 log "marker-deleted fixture: $MARKDEL @ $MARKDEL_HEAD (dirty tree)"
 run_pub $TAPP marker-deleted "$MARKDEL" "$VTAG" "$MARKDEL_HEAD"
 expect_blocked marker-deleted 1 "FAIL: dirty or unreadable working tree"
@@ -196,17 +215,20 @@ fi
 # mutation with --no-eval-cache and must differ from baseline.
 make_mut_copy() { # name patchfile -> sets MUTDIR; applies the retained patch
   MUTDIR="$OUTDIR/mut-$1"
-  rm -rf "$MUTDIR"
-  mkdir -p "$MUTDIR"
-  git -C "$PROVIDER" archive HEAD | tar -x -C "$MUTDIR"
+  rm -rf "$MUTDIR" || setup_fail "clearing the mutant copy directory"
+  mkdir -p "$MUTDIR" || setup_fail "creating the mutant copy directory"
+  (
+    set -o pipefail
+    git -C "$PROVIDER" archive HEAD | tar -x -C "$MUTDIR"
+  ) || setup_fail "unpacking the provider archive into the mutant copy"
   for f in nix/docs.nix nix/release.nix conformance/coverage/publication_gh_stub.sh; do
-    mkdir -p "$MUTDIR/$(dirname "$f")"
-    cp "$PROVIDER/$f" "$MUTDIR/$f"
+    mkdir -p "$MUTDIR/$(dirname "$f")" || setup_fail "creating the mutant copy directory"
+    cp "$PROVIDER/$f" "$MUTDIR/$f" || setup_fail "copying into the mutant copy"
   done
   (cd "$MUTDIR" && patch -p1 -F0 --dry-run <"$2" >/dev/null) \
-    || { faillog "mutation patch $2 does not apply"; }
+    || setup_fail "dry-running the mutation patch"
   (cd "$MUTDIR" && patch -p1 -F0 <"$2" >/dev/null) \
-    || { faillog "mutation patch $2 failed to apply"; }
+    || setup_fail "applying the mutation patch"
   log "mutant copy $1: $MUTDIR (baseline $(git -C "$PROVIDER" rev-parse HEAD))"
   log "mutation patch: $2 sha256 $(sha256sum "$2" | cut -d' ' -f1)"
   log "mutant tree fingerprint: $(cd "$MUTDIR" && find . -type f | sort | xargs sha256sum 2>/dev/null | sha256sum | cut -d' ' -f1)"
@@ -214,7 +236,8 @@ make_mut_copy() { # name patchfile -> sets MUTDIR; applies the retained patch
 mut_closure() { # copy-dir -> prints test-publisher program path
   (cd "$1" && nix eval --no-eval-cache --raw .#apps.x86_64-linux.publish-docs-boundary-test.program 2>/dev/null)
 }
-BASE_TESTPROG="$(mut_closure "$PROVIDER")"
+BASE_TESTPROG="$(mut_closure "$PROVIDER")" || setup_fail "evaluating the baseline test-publisher program"
+[ -n "${BASE_TESTPROG:-}" ] || setup_fail "evaluating the baseline test-publisher program: empty result"
 log "baseline test-publisher closure: $BASE_TESTPROG"
 
 # Mutation A (guard removed): the incomplete fixture — refused exit 1
@@ -222,7 +245,8 @@ log "baseline test-publisher closure: $BASE_TESTPROG"
 # fixture) — must PASS assembly without it, then stop at the tag check
 # (no v0.3.0 tag in the clone) with no upload.
 make_mut_copy guard-removed "$PROVIDER/conformance/coverage/publication-mutant-guard-removed.diff"
-MUTPROG_A="$(mut_closure "$MUTDIR")"
+MUTPROG_A="$(mut_closure "$MUTDIR")" || setup_fail "evaluating the mutant-A test-publisher program"
+[ -n "${MUTPROG_A:-}" ] || setup_fail "evaluating the mutant-A test-publisher program: empty result"
 log "mutant-A closure: $MUTPROG_A"
 [ "$MUTPROG_A" != "$BASE_TESTPROG" ] \
   || { faillog "mutant-A closure identical to baseline — mutation did not reach the build"; }
@@ -255,7 +279,8 @@ fi
 # effective mutant succeeds at everything except the thing under test:
 # command-not-found, timeout, setup or assembler failure cannot count.
 make_mut_copy no-final "$PROVIDER/conformance/coverage/publication-mutant-no-final.diff"
-MUTPROG_B="$(mut_closure "$MUTDIR")"
+MUTPROG_B="$(mut_closure "$MUTDIR")" || setup_fail "evaluating the mutant-B test-publisher program"
+[ -n "${MUTPROG_B:-}" ] || setup_fail "evaluating the mutant-B test-publisher program: empty result"
 log "mutant-B closure: $MUTPROG_B"
 [ "$MUTPROG_B" != "$BASE_TESTPROG" ] \
   || { faillog "mutant-B closure identical to baseline — mutation did not reach the build"; }
@@ -291,13 +316,15 @@ fi
 # (No production-publisher comparison: realising it is unnecessary —
 # absence of any gh package in the test closure is the stronger claim —
 # and invoking it is forbidden to this control.)
-TESTCLOSURE="$(nix path-info -r "$TESTPROG" 2>/dev/null)"
-[ -n "$TESTCLOSURE" ] || { faillog "cannot inspect invoked test closure"; }
-RECORDER="$(printf '%s' "$TESTCLOSURE" | grep -o '/nix/store/[a-z0-9]*-upload-recorder' | head -1)"
+TESTCLOSURE_FILE="$OUTDIR/test-closure.txt"
+nix path-info -r "$TESTPROG" >"$TESTCLOSURE_FILE" 2>/dev/null || setup_fail "inspecting the invoked test closure"
+[ -s "$TESTCLOSURE_FILE" ] || setup_fail "inspecting the invoked test closure: empty result"
+RECORDER="$(grep -o -m1 '/nix/store/[a-z0-9]*-upload-recorder' "$TESTCLOSURE_FILE" || true)"
 [ -n "$RECORDER" ] || { faillog "invoked test closure lacks the recorder"; }
 log "resolved recorder: $RECORDER"
-if printf '%s' "$TESTCLOSURE" | grep -qE '/nix/store/[a-z0-9]+-gh-[^/]*'; then
-  faillog "invoked test closure contains a gh package: $(printf '%s' "$TESTCLOSURE" | grep -oE '/nix/store/[a-z0-9]+-gh-[^/]*' | head -1)"
+GH_FIRST="$(grep -oE -m1 '/nix/store/[a-z0-9]+-gh-[^/]*' "$TESTCLOSURE_FILE" || true)"
+if [ -n "$GH_FIRST" ]; then
+  faillog "invoked test closure contains a gh package: $GH_FIRST"
 fi
 log "closure audit: recorder present, no gh package present"
 grep -q "$RECORDER/bin" "$TESTPROG" \
@@ -313,5 +340,5 @@ else
 fi
 # Single repo write, after the last nix invocation: the tree (and therefore
 # every closure identity logged above) stays frozen for the whole run.
-cp "$OUTDIR/run.log" "$EVIDENCE"
+cp "$OUTDIR/run.log" "$EVIDENCE" || setup_fail "writing the evidence log"
 exit "$FAIL"

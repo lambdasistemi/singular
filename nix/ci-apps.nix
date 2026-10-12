@@ -110,6 +110,48 @@ in
     }
   );
 
+  # #562 item 3: the publication boundary control. The control script
+  # runs the publisher definition from nix/release.nix with only gh
+  # replaced by a recorder, through its positive path and its mutated
+  # cases; exit 0 with the final line ALL CASES HELD is the pass
+  # criterion. The wrapper owns the outputs the control produces:
+  # OUTDIR and EVIDENCE default into a scratch directory created and
+  # removed on every exit (including setup failure), so the tracked
+  # evidence log conformance/coverage/publication-boundary-evidence.log
+  # is never written by this app and the tree stays clean; a caller may
+  # still set either variable (the hosted job points them under
+  # RUNNER_TEMP) to keep the evidence after the run. Setup failure
+  # (scratch creation) is exit 2, never a verdict; the script's own exit
+  # stays its verdict. Scratch owned: fixtures, mutant copies and the
+  # recorder shim all live under OUTDIR inside the wrapper's scratch;
+  # bounded to the run with trap cleanup; no process is stopped.
+  publication-boundary-controls = app (
+    pkgs.writeShellApplication {
+      name = "publication-boundary-controls";
+      runtimeInputs = with pkgs; [
+        bash
+        coreutils
+        findutils
+        git
+        gnugrep
+        gnutar
+        gnupg
+        nix
+        patch
+      ];
+      text = ''
+        if ! work="$(mktemp -d)"; then
+          echo "publication-boundary-controls: setup failed creating the scratch directory (TMPDIR=''${TMPDIR:-unset})" >&2
+          exit 2
+        fi
+        trap 'rm -rf "$work"' EXIT
+        export OUTDIR="''${OUTDIR:-$work/publication-boundary}"
+        export EVIDENCE="''${EVIDENCE:-$work/publication-boundary-evidence.log}"
+        bash conformance/coverage/publication-boundary-check.sh
+      '';
+    }
+  );
+
   # #562 item 5b: the Haskell format check's negative and positive controls.
   # Supplies the pinned house Fourmolu the offchain lock resolves (the same
   # binary the lint checks run) plus git and core tools the script needs.
