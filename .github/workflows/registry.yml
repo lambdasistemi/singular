@@ -875,115 +875,13 @@ jobs:
       # the credential reaches the indexer and appears nowhere else.
       - name: Run the public-indexer readback against a local indexer
         run: nix run --quiet .#demo1-readback-check
-  cli-recovery-accepting:
-    name: CLI recovery — the accepting path
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #325: after a lost acknowledgement or an interrupted local commit,
-      # the next ordinary write reconciles from chain evidence — the
-      # journalled edge applied to the mirror once, observed once, nothing
-      # sent again — and proceeds; a transaction that never reached the
-      # node stops the next write before anything is built, naming its case
-      # and id. Each control is separate `singular` processes on one
-      # development node, judged from receipts, journals and saved bodies.
-      #
-      # Falsification: on any ancestor without reconciliation in the
-      # ordinary writes, the harness points are inert or the next write
-      # refuses partial, and the verdict table fails.
-      - name: Run the recovery controls for the accepting path
-        run: nix run --quiet .#cli-recovery-accepting
-  cli-recovery-lost-answer:
-    name: CLI recovery — a lost acknowledgement
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #325: after a lost acknowledgement or an interrupted local commit,
-      # the next ordinary write reconciles from chain evidence — the
-      # journalled edge applied to the mirror once, observed once, nothing
-      # sent again — and proceeds; a transaction that never reached the
-      # node stops the next write before anything is built, naming its case
-      # and id. Each control is separate `singular` processes on one
-      # development node, judged from receipts, journals and saved bodies.
-      #
-      # Falsification: on any ancestor without reconciliation in the
-      # ordinary writes, the harness points are inert or the next write
-      # refuses partial, and the verdict table fails.
-      - name: Run the recovery controls for a lost acknowledgement
-        run: nix run --quiet .#cli-recovery-lost-answer
-  cli-recovery-killed:
-    name: CLI recovery — a process killed at its hold points
-    needs: blueprint
-    runs-on: nixos
-    timeout-minutes: 30
-    steps:
-      - name: Reuse this runner's Nix cache
-        run: |
-          cache_dir="$HOME/.cache/singular-ci-nix"
-          mkdir -p "$cache_dir"
-          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: cachix/cachix-action@v17
-        with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #325: after a lost acknowledgement or an interrupted local commit,
-      # the next ordinary write reconciles from chain evidence — the
-      # journalled edge applied to the mirror once, observed once, nothing
-      # sent again — and proceeds; a transaction that never reached the
-      # node stops the next write before anything is built, naming its case
-      # and id. Each control is separate `singular` processes on one
-      # development node, judged from receipts, journals and saved bodies.
-      #
-      # Falsification: on any ancestor without reconciliation in the
-      # ordinary writes, the harness points are inert or the next write
-      # refuses partial, and the verdict table fails.
-      - name: Run the recovery controls for a process killed at its hold points
-        run: nix run --quiet .#cli-recovery-killed
-      - name: Check the private facade's joined lifecycle and fatal failure controls
-        run: nix run --quiet .#facade-lifecycle-controls
-      - name: Check complete history recovery and actual trie observations
-        run: nix run --quiet .#cli-recovery-history
-      - name: Check restored DevNet rollback and actual trie observations
-        run: nix run --quiet .#cli-recovery-rollback
-  # #451 re-cut R2: the cross-wallet case matrix is discovered from the
-  # fold path's own sources — no node — and every discovered case runs as
-  # its own hosted job on its own node and registry.
-  cli-recovery-cross-wallet-parts:
-    name: CLI recovery — discover the cross-wallet case matrix
+  cli-recovery-partitions:
+    name: CLI recovery — discover the hosted partitions
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 15
     outputs:
-      parts: ${{ steps.parts.outputs.parts }}
+      partitions: ${{ steps.partitions.outputs.partitions }}
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -997,22 +895,30 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      - name: Discover every cross-wallet case from the fold path
-        id: parts
-        run: printf 'parts=%s\n' "$(nix run --quiet .#cli-recovery-cross-wallet-parts)" >> "$GITHUB_OUTPUT"
+      # The hosted recovery partitions live in one place in the root flake.
+      # This step prints them (no node) for the matrix below and judges the
+      # census: every scenario part in exactly one partition, every
+      # command-running partition closed by the trie-capability observation.
+      - name: Discover the hosted partitions and check the census
+        id: partitions
+        run: |
+          nix run --quiet .#cli-recovery-partitions > "$RUNNER_TEMP/partitions.json"
+          cat "$RUNNER_TEMP/partitions.json"
+          nix run --quiet .#cli-recovery-partition-check -- "$PWD" "$RUNNER_TEMP/partitions.json"
+          printf 'partitions=%s\n' "$(cat "$RUNNER_TEMP/partitions.json")" >> "$GITHUB_OUTPUT"
       # #451: the specification this part delivers stays presentable —
       # stories, diagrams, no index labels, speech stamps.
       - name: Check the cross-wallet specification's presentation
         run: nix develop --quiet --no-write-lock-file -c python3 tools/check_presentation.py --front specs/451-cross-wallet-fold/spec.md specs/451-cross-wallet-fold
-  cli-recovery-cross-wallet-part:
-    name: "CLI recovery — another wallet's fold: ${{ matrix.part }}"
-    needs: [blueprint, cli-recovery-cross-wallet-parts]
+  cli-recovery-partition:
+    name: "CLI recovery — ${{ matrix.partition.key }}: ${{ matrix.partition.parts }}"
+    needs: [blueprint, cli-recovery-partitions]
     runs-on: nixos
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        part: ${{ fromJSON(needs.cli-recovery-cross-wallet-parts.outputs.parts).part }}
+        partition: ${{ fromJSON(needs.cli-recovery-partitions.outputs.partitions).partition }}
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -1026,32 +932,31 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #451: another funded wallet folds a request the requester booked,
-      # stopped at one declared hold, and the requester's next ordinary
-      # write reconciles the fold — judged from receipts, the journal and
-      # saved bodies. Each case establishes its own prerequisite through
-      # real ordinary commands on its own fresh node and registry; the
-      # unknown/empty selection guards and the ran-proof still hold, and a
-      # case that outgrows this job's thirty minutes is a finding, not a
-      # raised limit. Its measured node-backed invocation time lands in
+      # Each hosted partition runs its parts in order on its own fresh node
+      # and registry: history (accepting, lost answer, killed, never sent,
+      # whole journal) and rollback, each closed by the trie-capability
+      # observation over its own run, and each discovered cross-wallet case
+      # closed the same way. A part that needs earlier state follows it
+      # inside the same partition, so nothing runs twice as a predecessor.
+      # Its measured node-backed invocation time lands in
       # node-execution-time.json at the run root.
       #
-      # Falsification: without the case's own prerequisite the next write
-      # refuses with its receipt naming the missing live key, and the
-      # verdict table fails (the recorded defective run, 15 unmet clauses).
-      - name: Run the selected cross-wallet case
-        run: DEMO1_KEEP_SCRATCH=1 nix run --quiet .#cli-recovery-cross-wallet-part -- '${{ matrix.part }}'
-      # #451 re-cut R1: collect through the packaged collector app — explicit
-      # runtime tools, no ambient runner PATH — then always retain the
-      # bundle. Producer identity is this candidate, run and part; derived
-      # mutation copies, snapshots, funding keys and the node database stay
-      # out by measured extent; an expected record an early failure never
-      # produced is named absent, never fabricated; an upload failure fails
-      # this delivery check.
-      - name: Collect the case's recorded evidence
+      # Falsification: without the partition's own prerequisite the next
+      # write refuses with its receipt naming the missing live key, and the
+      # verdict table fails.
+      - name: Run the partition's parts
+        run: DEMO1_KEEP_SCRATCH=1 nix run --quiet .#cli-recovery-partition -- '${{ matrix.partition.key }}'
+      # Collect through the packaged collector app — explicit runtime tools,
+      # no ambient runner PATH — then always retain the bundle. Producer
+      # identity is this candidate, run and partition; derived mutation
+      # copies, snapshots, funding keys and the node database stay out by
+      # measured extent; an expected record an early failure never produced
+      # is named absent, never fabricated; an upload failure fails this
+      # delivery check.
+      - name: Collect the partition's recorded evidence
         if: always()
         env:
-          CROSS_PART: ${{ matrix.part }}
+          RECOVERY_PARTITION: ${{ matrix.partition.key }}
         run: |
           run_dir=""
           for candidate_dir in "$RUNNER_TEMP"/cli-recovery.*/run; do
@@ -1059,20 +964,43 @@ jobs:
           done
           run_dir="${run_dir:-$RUNNER_TEMP/no-recovery-run}"
           nix run --quiet .#cli-recovery-cross-wallet-evidence -- \
-            "$run_dir" "$RUNNER_TEMP/cross-wallet-evidence" \
-            '${{ github.event.pull_request.head.sha || github.sha }}' '${{ github.run_id }}' "$CROSS_PART"
-          safe="${CROSS_PART//:/-}"
-          echo "ARTIFACT_NAME=cli-recovery-cross-wallet-${{ github.event.pull_request.head.sha || github.sha }}-run${{ github.run_id }}-$safe" >> "$GITHUB_ENV"
-          # The case kept its scratch so this step could copy it. A reused
+            "$run_dir" "$RUNNER_TEMP/recovery-evidence" \
+            '${{ github.event.pull_request.head.sha || github.sha }}' '${{ github.run_id }}' "$RECOVERY_PARTITION"
+          safe="${RECOVERY_PARTITION//:/-}"
+          safe="${safe// /-}"
+          echo "ARTIFACT_NAME=cli-recovery-${{ github.event.pull_request.head.sha || github.sha }}-run${{ github.run_id }}-$safe" >> "$GITHUB_ENV"
+          # The partition kept its scratch so this step could copy it. A reused
           # runner would otherwise retain the node database.
           rm -rf "$RUNNER_TEMP"/cli-recovery.*
-      - name: Retain the case's recorded evidence
+      - name: Retain the partition's recorded evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ runner.temp }}/cross-wallet-evidence
+          path: ${{ runner.temp }}/recovery-evidence
           if-no-files-found: error
+  facade-lifecycle-controls:
+    name: Private facade lifecycle controls
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # The private facade's joined lifecycle and fatal failure controls,
+      # kept as a job of their own named for what they run.
+      - name: Check the private facade's joined lifecycle and fatal failure controls
+        run: nix run --quiet .#facade-lifecycle-controls
   # #449: the demonstration's refusals on one existing registry, as parallel
   # parts; each part creates its own registry on its own node.
   demo1-attach-part:
