@@ -41,22 +41,23 @@ One group per slice, grouped by pull request (the cut of 2026-10-11: pull reques
 
 ### readers-move-to-the-list
 
-- [ ] conformance-controls-and-fixtures-read-the-settled-list
-- [ ] journey-script-and-command-run-specs-read-the-settled-list
+- [x] conformance-controls-and-fixtures-read-the-settled-list
+- [x] journey-script-and-command-run-specs-read-the-settled-list
+- [x] two-actor-journey-and-its-status-test-read-the-settled-list
 
 ### duplicates-removed
 
-- [ ] fold-receipt-no-longer-prints-the-single-request-fields
-- [ ] combined-forms-no-longer-print-the-fold-derived-duplicates
-- [ ] receipt-rows-pin-the-absence-and-the-list
+- [x] fold-receipt-no-longer-prints-the-single-request-fields
+- [x] combined-forms-no-longer-print-the-fold-derived-duplicates
+- [x] receipt-rows-pin-the-absence-and-the-list
 
 ### docs-of-the-other-pages
 
 The cut point of this pull request: if the forecast passes the allowance, the preprod page, the fold responsibilities page and the rehearsal document leave for a docs-only pull request; the node guide sentence stays.
 
-- [ ] the-node-guide-states-the-list-receipt-and-the-removal
+- [x] the-node-guide-states-the-list-receipt-and-the-removal
 - [ ] the-other-pages-state-the-list-receipt
-- [ ] speech-restamped-and-narration-regenerated
+- [x] speech-restamped-and-narration-regenerated
 
 ## Pull request 3: many per fold
 

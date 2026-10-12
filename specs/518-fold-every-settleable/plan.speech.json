@@ -63,7 +63,7 @@
       "pause": 400
     },
     {
-      "text": "Readers on main, found by reading the code and the scripts: the conformance command-line controls and their unit fixtures; the Demo 1 journey script; the command-run specs of the registry and of the open-datum package; the rows of the fold rules spec that pin the earlier fields. The recovery controls script and the control check script read none of the removed fields and are not edited. No page shows the removed fields as a receipt example; the node guide states that they are kept, which stops being true.",
+      "text": "Readers on main, found by reading the code and the scripts: the conformance command-line controls and their unit fixtures; the Demo 1 journey script; the command-run specs of the registry and of the open-datum package; the rows of the fold rules spec that pin the earlier fields. The recovery controls script and the control check script read none of the removed fields and are not edited. That search looked for distinctive field names and missed one reader: the two-actor journey script and its status test read the request and the edge of a fold receipt, and three hosted jobs of the first push failed on them. The search is now by what consumes a fold receipt: every file that reads the JSON printed by registry fold, insert with fold or terminate with fold is listed with a verdict, moved, reads only kept fields, or reads no fold receipt, and the two files above join the readers of slice 1. No page shows the removed fields as a receipt example; the node guide states that they are kept, which stops being true.",
       "pause": 400
     },
     {
@@ -131,6 +131,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "e976344bbc463831f7d61466a6fd9d805193ae2274ced0593055d1e3de107985"
+    "sha256": "e496d79b78f7b631c3ef407f1bb710e3543a09deefd4592030a2efb3935454cc"
   }
 }
