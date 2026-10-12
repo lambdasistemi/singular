@@ -46,6 +46,18 @@ shutil.copyfile(
 for name in ("lakefile.toml", "lean-toolchain"):
     shutil.copyfile(root / name, review / name)
 
+# The model check reads the constitution, the theorems page and the
+# repository README from the review root, so the archive ships them at
+# those paths; the reproduction instructions keep their own name.
+(review / ".specify/memory").mkdir(parents=True)
+shutil.copyfile(
+    root / ".specify/memory/constitution.md",
+    review / ".specify/memory/constitution.md",
+)
+(review / "docs").mkdir()
+shutil.copyfile(root / "docs/theorems.md", review / "docs/theorems.md")
+shutil.copyfile(root / "README.md", review / "README.md")
+
 manifest = {
     str(path.relative_to(site)): hashlib.sha256(path.read_bytes()).hexdigest()
     for path in sorted(artifacts.rglob("*"))

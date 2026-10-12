@@ -31,6 +31,7 @@ names = [
     "js/asciinema-player.min.js",
     "artifacts/contracts/naming-lifecycle-contract.txt",
     "artifacts/review/README.md",
+    "artifacts/review/REPRODUCE.md",
     "artifacts/review/flake.nix",
     "artifacts/review/flake.lock",
     "artifacts/SHA256SUMS",

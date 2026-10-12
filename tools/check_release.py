@@ -76,6 +76,9 @@ with tarfile.open(archive / filename) as bundle:
     required_artifacts = (
         "artifacts/contracts/naming-lifecycle-contract.txt",
         "artifacts/review/README.md",
+        "artifacts/review/REPRODUCE.md",
+        "artifacts/review/.specify/memory/constitution.md",
+        "artifacts/review/docs/theorems.md",
         "artifacts/review/flake.nix",
         "artifacts/review/flake.lock",
         "artifacts/review/lakefile.toml",
@@ -101,6 +104,25 @@ with tarfile.open(archive / filename) as bundle:
     )
     for required in required_artifacts:
         assert required in names, f"release archive misses {required}"
+    # The review root README is the repository README the model check
+    # verifies, not the reproduction instructions: each file must carry
+    # its own content, so a swapped copy fails here rather than late in
+    # the archived check.
+    reproduce = (
+        bundle.extractfile(members["artifacts/review/REPRODUCE.md"]).read().decode()
+    )
+    assert "sha256sum --check artifacts/SHA256SUMS" in reproduce, (
+        "review reproduction instructions state no checksum command"
+    )
+    assert "./artifacts/review#check" in reproduce, (
+        "review reproduction instructions state no archive check command"
+    )
+    shipped_readme = (
+        bundle.extractfile(members["artifacts/review/README.md"]).read().decode()
+    )
+    assert "proved declarations" in shipped_readme, (
+        "review root README carries no declaration counts for the model check"
+    )
     recorded = bundle.extractfile("./artifacts/SHA256SUMS").read().decode().splitlines()
     expected_paths = {
         name

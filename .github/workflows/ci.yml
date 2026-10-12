@@ -574,6 +574,51 @@ jobs:
       # accepting run of the same verifier over the unmutated assets is the
       # Registry workflow's Demo 1 job.
       - run: nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release"
+  release-review-reproduction:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Release review archive reproduction
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #565: the review archive reproduces from its own bytes. The app
+      # assembles the docs release with the same tools the release uses
+      # (tools/prepare_release.py inside the docs derivation, no second
+      # assembler), extracts it outside the checkout, runs the checksum
+      # manifest and the archived check, and proves the check can fail by
+      # removing the constitution with the manifest recomputed. Timeout
+      # from the desk rule (30 minutes cold; the Lean builds are cached).
+      - run: nix run --quiet .#release-review-check
+      # The two archive-app steps run the extracted review flake's check
+      # and default apps from the extraction, exactly as the reproduction
+      # instructions document, so the declared-checks census credits
+      # release-review (the resolver maps the artifacts/review extraction
+      # back onto it). Cache-warm after the app's run above.
+      - name: Run the archived review apps from the extracted archive
+        run: |
+          set -euo pipefail
+          release_out="$(nix build --quiet --no-link --print-out-paths .#docs-release)"
+          extracted="$(mktemp -d "$RUNNER_TEMP/extracted.XXXXXX")"
+          tar -C "$extracted" -xzf "$release_out"/singular-docs-*.tar.gz
+          test ! -e "$extracted/.git" || { echo 'FAIL: the archive carries a git checkout'; exit 1; }
+          cd "$extracted"
+          sha256sum --check artifacts/SHA256SUMS
+          cd "$extracted/artifacts/review"
+          nix run --no-write-lock-file .#check
+          nix run --no-write-lock-file .#default
   preview:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Live documentation preview
