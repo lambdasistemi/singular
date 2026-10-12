@@ -2853,8 +2853,8 @@
     "index": 5,
     "name": "docs-demo1-preprod/what-you-run-05",
     "pause_ms": 300,
-    "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold takes every pending request. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
-    "v": "491f79f6cf20"
+    "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles the first that passes, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
+    "v": "b69c4a0a6550"
    },
    {
     "index": 6,
@@ -5556,8 +5556,8 @@
     "index": 1,
     "name": "docs-offchain-fold-responsibilities/one-owner-per-fold-concern-01",
     "pause_ms": 400,
-    "text": "The facade holds no algorithm. It runs the fold's sequence — query, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
-    "v": "b86dd3de6a9b"
+    "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+    "v": "a9e7f5299da5"
    }
   ],
   "source": [
@@ -5592,9 +5592,16 @@
    {
     "index": 4,
     "name": "docs-offchain-fold-responsibilities/source-04",
+    "pause_ms": 300,
+    "text": "Selection: Singular.Registry.FoldSelection",
+    "v": "1859ff17551f"
+   },
+   {
+    "index": 5,
+    "name": "docs-offchain-fold-responsibilities/source-05",
     "pause_ms": 400,
     "text": "The wider builder map these owners sit in is Builder and blueprint modules; the check commands and their extents are in Checking off-chain code.",
-    "v": "9ff2e58854ed"
+    "v": "20187171a290"
    }
   ],
   "the-flow-a-fold-runs": [
@@ -5664,29 +5671,36 @@
     "index": 2,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-02",
     "pause_ms": 300,
-    "text": "An edge's obligations change — what it mints, where it delivers, what custody it spends or returns: Update.Duties, and only there.",
-    "v": "51cd5b2c8a49"
+    "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound: Singular.Registry.FoldSelection, and only there.",
+    "v": "48dfe6c66796"
    },
    {
     "index": 3,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-03",
     "pause_ms": 300,
-    "text": "The transaction's shape changes — a new input kind, reference scripts, collateral or validity rules: Update.Build.",
-    "v": "4dadb2059795"
+    "text": "An edge's obligations change — what it mints, where it delivers, what custody it spends or returns: Update.Duties, and only there.",
+    "v": "cefa59b0fc82"
    },
    {
     "index": 4,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-04",
     "pause_ms": 300,
-    "text": "What an omitted context field defaults to, or which queries the fold runs: Update.Context.",
-    "v": "a3f6a90a6c2a"
+    "text": "The transaction's shape changes — a new input kind, reference scripts, collateral or validity rules: Update.Build.",
+    "v": "1978cf377b4d"
    },
    {
     "index": 5,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-05",
     "pause_ms": 300,
+    "text": "What an omitted context field defaults to, or which queries the fold runs: Update.Context.",
+    "v": "f97172cc42d8"
+   },
+   {
+    "index": 6,
+    "name": "docs-offchain-fold-responsibilities/where-common-changes-land-06",
+    "pause_ms": 300,
     "text": "The public surface and the fold's sequence: the facade, which must stay a coordinator.",
-    "v": "87af7d71294b"
+    "v": "b94d263c2206"
    }
   ],
   "who-owns-a-registry-fold": [
@@ -5701,8 +5715,8 @@
     "index": 1,
     "name": "docs-offchain-fold-responsibilities/who-owns-a-registry-fold-01",
     "pause_ms": 400,
-    "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
-    "v": "e98918416653"
+    "text": "A contributor changing how the registry folds pending requests — which UTxO it spends, what an edge owes, how the transaction is assembled — wants to change one module and have the review ask one question. Before the extraction, all of that lived in one 890-line module; a change to a custody refund and a change to a slot computation were reviewed in the same file with no boundary between them. Now the fold path is three focused owners behind the same public facade, and Singular.Registry.FoldSelection owns which pending requests a fold takes, and this page tells a contributor which owner their change belongs to, what the flow through them is, and what must never change while it moves.",
+    "v": "f01255f7b0b3"
    }
   ]
  },
