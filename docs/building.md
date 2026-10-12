@@ -189,7 +189,7 @@ from the packaged site build, `nix build .#docs`, so the local site links
 the same generated pages the packaged site and its checks carry; the
 Markdown pages still reload live as they are edited.
 
-To serve the packaged output without a live-reload editor, run `nix run .#docs-serve -- 8000` and open `http://127.0.0.1:8000`.
+To serve the packaged output without a live-reload editor, run the `docs-serve` tool (marked not-a-guarantee) with the port as its argument and open `http://127.0.0.1:8000`.
 
 ## Publication and accessibility
 

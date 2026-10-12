@@ -119,7 +119,7 @@
       "pause": 400
     },
     {
-      "text": "To serve the packaged output without a live-reload editor, run nix run .#docs-serve -- 8000 and open http://127.0.0.1:8000.",
+      "text": "To serve the packaged output without a live-reload editor, run the docs-serve tool (marked not-a-guarantee) with the port as its argument and open http://127.0.0.1:8000.",
       "pause": 400
     }
   ],
@@ -169,6 +169,6 @@
   ],
   "_source": {
     "file": "building.md",
-    "sha256": "caab553f1d52bb1a000646020979a49b331ea32dbde514acdfdf31600dd269ba"
+    "sha256": "65066db2662ed00ef3992cbb8ae743967ad9939cd5e4a473b373279b6b6189fd"
   }
 }

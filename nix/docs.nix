@@ -158,7 +158,13 @@ let
   serve = pkgs.writeShellApplication {
     name = "docs-serve";
     runtimeInputs = [ pkgs.python3 ];
-    text = ''python3 -m http.server --bind 127.0.0.1 --directory ${docs} "''${1:-8000}"'';
+    # The marker line the declared-checks-hosted census reads: this app is a
+    # tool, never cited as evidence. It opens the script the wrapper runs,
+    # so the declaration travels with the served tool itself.
+    text = ''
+      # Tool, not a guarantee: the local documentation site server for reviewing the built site without publishing it.
+      python3 -m http.server --bind 127.0.0.1 --directory ${docs} "''${1:-8000}"
+    '';
   };
 in
 {

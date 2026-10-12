@@ -7,16 +7,24 @@
 #   given they are checked with flake directories resolved against ROOT;
 #   otherwise ROOT/.github/workflows/*.yml is checked.
 #
-# For each non-comment line naming `nix run`, `nix build` or `nix develop`,
-# the script extracts the flake reference with its working directory (the
-# step's `working-directory:` and a leading `cd <dir> &&` on the same line),
-# resolves matrix values it can read from the same file, and requires the
-# attribute to exist:
+# For each step-script line naming `nix run`, `nix build` or `nix develop`
+# where the `nix` word starts a shell command, the script extracts the
+# flake reference with its working directory (the step's `working-directory:`
+# and a leading `cd <dir> &&` on the same line), resolves matrix values it can
+# read from the same file, and requires the attribute to exist:
 #   run:   apps.<system>.<name>.program (falling back to packages)
 #   build: packages (falling back to checks)
 #   external nixpkgs#<pkg>: nixpkgs#<pkg>.name (falling back to .pname),
-#     resolved through the repository's pinned registry. References needing
-# a matrix expansion the file does not list literally, and dynamic scratch
+#     resolved through the repository's pinned registry.
+#
+# A `nix` word inside a quoted string, a heredoc body, an echo/printf
+# argument, or a comment is printed text, not an invocation, and is never
+# credited: the word must open a command (first after the `run:` key, a
+# block line start, or a separator such as && || ; | ( $( ` do then if or
+# `--`) with only VAR=value assignments or env/time/exec/command prefixes
+# before it. The same position rule gates `nix flake check` lines.
+#
+# A matrix expansion the file does not list literally, and dynamic scratch
 # directories, are named as unresolved and do not fail; a network failure
 # while evaluating an external reference is logged and likewise named, never
 # silently skipped. The closing summary counts resolved N of M with every
@@ -24,10 +32,27 @@
 #
 # Exit 0: every static reference resolves. Exit 1: a static reference is
 # missing. Exit 2: the harness failed.
+#
+# With --emit-references as the first argument the script instead prints
+# every statically resolved hosted reference to stdout, one per line, and
+# nothing else: `run <flake-dir> <attr>` for a step that runs an app,
+# `build <flake-dir> <attr>` for a step that builds an attribute (a dotted
+# `checks.<system>.<name>` build or a bare attribute), and
+# `flake-check <flake-dir> -` for a `nix flake check` step, whose base
+# directory comes from the step's working-directory or preceding cd like
+# every other reference. Dynamic references are named on stderr and skipped
+# (stdout stays pure for the census that consumes it); nothing is evaluated
+# and the exit is 0 unless the harness itself failed.
 set -euo pipefail
 
 SYSTEM="x86_64-linux"
 MATRIX_TOKEN="__MATRIX__"
+
+emit=0
+if [ "${1:-}" = "--emit-references" ]; then
+  emit=1
+  shift || true
+fi
 
 root="${1:-$PWD}"
 if [ -d "$root" ]; then
@@ -56,7 +81,11 @@ declare -A seen
 unresolved=()
 
 report_unresolved() {
-  unresolved+=("$1")
+  if [ "$emit" = 1 ]; then
+    echo "unresolved: $1" >&2
+  else
+    unresolved+=("$1")
+  fi
 }
 
 has_dollar() {
@@ -220,6 +249,61 @@ check_external() {
   fail=1
 }
 
+# The two sinks of the one parser. In checking mode a reference is
+# resolved against its flake; in emit mode it is printed once for the
+# census. Dev shells and external registry references host no repository
+# app or check, so emit mode skips them.
+emit_ref() {
+  local kind="$1" dir="$2" attr="$3" key
+  if [ "$dir" = "$root" ]; then
+    dir="."
+  else
+    case "$dir" in
+      "$root"/*) dir="${dir#"$root"/}" ;;
+      *)
+        report_unresolved "reference outside the repository: $kind $dir $attr (skipped)"
+        return 0
+        ;;
+    esac
+  fi
+  key="$kind|$dir|$attr"
+  [ -z "${seen[$key]+x}" ] || return 0
+  seen[$key]=1
+  printf '%s %s %s\n' "$kind" "$dir" "$attr"
+}
+
+ref_run() {
+  if [ "$emit" = 1 ]; then
+    emit_ref run "$1" "$2"
+  else
+    check_run "$1" "$2" "$3"
+  fi
+}
+
+ref_build() {
+  if [ "$emit" = 1 ]; then
+    emit_ref build "$1" "$2"
+  else
+    check_build "$1" "$2" "$3"
+  fi
+}
+
+ref_devshell() {
+  if [ "$emit" = 1 ]; then
+    return 0
+  else
+    check_devshell "$1" "$2"
+  fi
+}
+
+ref_external() {
+  if [ "$emit" = 1 ]; then
+    return 0
+  else
+    check_external "$1" "$2"
+  fi
+}
+
 # Resolve a flake path against an effective base (both relative to root).
 resolve_dir() {
   local base="$1" flake="$2" out
@@ -251,46 +335,299 @@ extracted_suffix() {
   printf '%s' "$s"
 }
 
+# The base flake directory of a `nix flake check` line: the step's
+# working-directory, refined by an inline or preceding static cd, resolved
+# against the root. Emits `flake-check <dir> -`, or names the line
+# unresolved on stderr when the base is dynamic.
+emit_flake_check() {
+  local file="$1" lineno="$2" sanitized="$3" base cd_target pcd suffix rel
+  case "$sanitized" in
+    *"nix flake check"*) ;;
+    *) return 0 ;;
+  esac
+  base=$(step_workdir "$file" "$lineno")
+  [ -n "$base" ] || base="."
+  cd_target=$(printf '%s' "$sanitized" | sed -nE 's/.*cd[[:space:]]+([^ ;&()]+).*/\1/p' || true)
+  if [ -n "$cd_target" ]; then
+    if has_dollar "$cd_target" || has_squote "$cd_target" || has_dquote "$cd_target" || has_matrix "$cd_target"; then
+      if [[ "$cd_target" == *"extracted"* ]]; then
+        suffix=$(extracted_suffix "$cd_target")
+        if has_dollar "$suffix" || [ -z "$suffix" ]; then
+          report_unresolved "$file:$lineno: dynamic cd $cd_target (skipped)"
+          return 0
+        fi
+        base="$suffix"
+      else
+        report_unresolved "$file:$lineno: dynamic cd $cd_target (skipped)"
+        return 0
+      fi
+    else
+      if [ "$base" = "." ]; then
+        base="$cd_target"
+      else
+        base="$base/$cd_target"
+      fi
+    fi
+  else
+    pcd=$(preceding_cd "$file" "$lineno")
+    if [ -n "$pcd" ]; then
+      if has_dollar "$pcd" || has_squote "$pcd" || has_dquote "$pcd" || has_matrix "$pcd"; then
+        if [[ "$pcd" == *"extracted"* ]]; then
+          suffix=$(extracted_suffix "$pcd")
+          if has_dollar "$suffix" || [ -z "$suffix" ]; then
+            report_unresolved "$file:$lineno: dynamic cd $pcd (skipped)"
+            return 0
+          fi
+          base="$suffix"
+        else
+          report_unresolved "$file:$lineno: dynamic cd $pcd (skipped)"
+          return 0
+        fi
+      else
+        if [ "$base" = "." ]; then
+          base="$pcd"
+        else
+          base="$base/$pcd"
+        fi
+      fi
+    fi
+  fi
+  if has_dollar "$base" || has_matrix "$base"; then
+    report_unresolved "$file:$lineno: dynamic base $base (skipped)"
+    return 0
+  fi
+  rel="$base"
+  if [ "$rel" = ".." ] || [[ "$rel" == "../"* ]] || [[ "$rel" == /* ]]; then
+    report_unresolved "$file:$lineno: dynamic directory $rel (skipped)"
+    return 0
+  fi
+  if [ "$rel" = "." ]; then
+    emit_ref flake-check "$root" "-"
+  else
+    emit_ref flake-check "$root/$rel" "-"
+  fi
+}
+
+# The invocation screen (#562): one shell line in, one `E verb match`
+# line per `nix` word out, where E is 1 when the word opens a command
+# and 0 when it is an argument or printed text. A quoted string, a shell
+# comment and (via the caller's heredoc tracking) a heredoc body never
+# yield an occurrence. Command separators (`&& || ; & | ( $( ` { do
+# then if while until else elif --`) reopen command position; between
+# the separator and `nix` only VAR=value assignments and the
+# env/time/exec/command/sudo prefixes may stand. Approximations, all
+# absent from the workflows: a quoted command word (`'nix' run`) is not
+# credited; `--` always reopens (wrapper delegation); heredoc and
+# herestring detection is lexical (`<<NAME` opens, `<<<` never does).
+INVOCATION_AWK=$(
+  cat <<'AWK_EOF'
+{
+  line = $0
+  n = length(line)
+  BQ = sprintf("%c", 96)
+  top = 0
+  kind = "C"
+  expect = 1
+  i = 1
+  while (i <= n) {
+    c = substr(line, i, 1)
+    if (kind == "D") {
+      if (c == "\\") { i += 2; continue }
+      if (c == "\042") { kind = sk[top]; expect = se[top]; top--; i++; continue }
+      if (c == "`") { top++; sk[top] = "D"; se[top] = expect; sp[top] = "Q"; kind = "B"; expect = 1; i++; continue }
+      if (c == "$" && substr(line, i + 1, 1) == "(") { top++; sk[top] = "D"; se[top] = expect; sp[top] = "P"; kind = "C"; expect = 1; i += 2; continue }
+      i++; continue
+    }
+    if (c == "\\") { i += 2; continue }
+    if (c == "\047") {
+      j = index(substr(line, i + 1), "\047")
+      if (j == 0) break
+      i += j + 1
+      if (expect == 1) expect = 0
+      continue
+    }
+    if (c == "\042") { top++; sk[top] = kind; se[top] = expect; sp[top] = "Q"; kind = "D"; i++; continue }
+    if (c == "`") {
+      if (kind == "B") { kind = sk[top]; expect = se[top]; top-- }
+      else { top++; sk[top] = kind; se[top] = expect; sp[top] = "Q"; kind = "B"; expect = 1 }
+      i++; continue
+    }
+    if (c == "$") {
+      d = substr(line, i + 1, 1)
+      if (d == "(") { top++; sk[top] = kind; se[top] = expect; sp[top] = "P"; kind = "C"; expect = 1; i += 2; continue }
+      if (d == "{") { j = index(substr(line, i + 2), "}"); if (j == 0) break; i += j + 2; continue }
+      if (d ~ /[A-Za-z_]/) { j = i + 1; while (j <= n && substr(line, j, 1) ~ /[A-Za-z0-9_]/) j++; i = j; continue }
+      i++; continue
+    }
+    if (c == "(") { top++; sk[top] = kind; se[top] = expect; sp[top] = "P"; kind = "C"; expect = 1; i++; continue }
+    if (c == ")") {
+      if (kind == "C" && top > 0 && sp[top] == "P") { kind = sk[top]; expect = se[top]; top-- }
+      else if (kind == "C" || kind == "B") { expect = 0 }
+      i++; continue
+    }
+    if (c == "{") { expect = 1; i++; continue }
+    if (c == "}") { expect = 0; i++; continue }
+    if (c == "&" || c == "|" || c == ";") { expect = 1; if (substr(line, i + 1, 1) == c) i++; i++; continue }
+    if (c == "#") {
+      if (i == 1) break
+      if (index(" \t;&|(){}!=", substr(line, i - 1, 1)) > 0) break
+      i++; continue
+    }
+    if (c == "-") {
+      if (substr(line, i, 2) == "--") {
+        after = substr(line, i + 2, 1)
+        if (i + 1 >= n || after == "" || index(" \t;&|(){}", after) > 0) { expect = 1; i += 2; continue }
+      }
+      j = i + 1
+      while (j <= n && substr(line, j, 1) ~ /[A-Za-z0-9-]/) j++
+      if (j > i + 1) { i = j; continue }
+      if (expect == 1) expect = 0
+      i++; continue
+    }
+    if (c ~ /[A-Za-z0-9_]/) {
+      j = i
+      while (j <= n && substr(line, j, 1) ~ /[A-Za-z0-9_]/) j++
+      w = substr(line, i, j - i)
+      i = j
+      nx = substr(line, i, 1)
+      if ((nx == "=" || (nx == "+" && substr(line, i + 1, 1) == "=")) && w ~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+        if (nx == "=" && substr(line, i + 1, 1) == "=") { expect = 0; i++; continue }
+        i += (nx == "=" ? 1 : 2)
+        vc = substr(line, i, 1)
+        if (vc == "\042") { top++; sk[top] = kind; se[top] = expect; sp[top] = "Q"; kind = "D"; i++; continue }
+        if (vc == "\047") { k = index(substr(line, i + 1), "\047"); if (k == 0) break; i += k + 1; continue }
+        if (vc == "`") { top++; sk[top] = kind; se[top] = expect; sp[top] = "Q"; kind = "B"; expect = 1; i++; continue }
+        if (vc == "$" && substr(line, i + 1, 1) == "(") { top++; sk[top] = kind; se[top] = expect; sp[top] = "P"; kind = "C"; expect = 1; i += 2; continue }
+        while (i <= n && index((" \t;&|<>(){}#\"'" BQ), substr(line, i, 1)) == 0) i++
+        continue
+      }
+      if (w == "nix") {
+        k = i
+        while (k <= n && (substr(line, k, 1) == " " || substr(line, k, 1) == "\t")) k++
+        kk = k
+        while (kk <= n && substr(line, kk, 1) ~ /[A-Za-z]/) kk++
+        v = substr(line, k, kk - k)
+        after = substr(line, kk, 1)
+        if ((v == "run" || v == "build" || v == "develop" || v == "flake") && (kk > n || after ~ /[^A-Za-z0-9_]/)) {
+          m = ""
+          if (v != "flake") {
+            rest = substr(line, i - 3)
+            if (match(rest, /^nix[ \t]+(run|build|develop)[^#]*#[^ \t]+/) > 0) m = substr(rest, RSTART, RLENGTH)
+          }
+          printf "%d %s %s\n", expect, v, m
+          i = kk
+        }
+        expect = 0
+        continue
+      }
+      if (expect == 1) {
+        if (w == "env" || w == "time" || w == "exec" || w == "command" || w == "sudo" || w == "if" || w == "while" || w == "until" || w == "then" || w == "do" || w == "else" || w == "elif") { }
+        else expect = 0
+      } else {
+        if (w == "then" || w == "do" || w == "else" || w == "elif") expect = 1
+      }
+      continue
+    }
+    i++
+  }
+}
+AWK_EOF
+)
+
 for file in "${files[@]}"; do
   [ -f "$file" ] || {
     echo "workflow-commands-resolve: no file $file" >&2
     exit 2
   }
   lineno=0
+  heredoc_end=""
   while IFS= read -r line || [ -n "$line" ]; do
     lineno=$((lineno + 1))
+    if [ -n "$heredoc_end" ]; then
+      h_stripped=$(printf '%s' "$line" | sed -E 's/^[[:space:]]*//')
+      if [ "$h_stripped" = "$heredoc_end" ]; then
+        heredoc_end=""
+      fi
+      continue
+    fi
     stripped=$(printf '%s' "$line" | sed -E 's/^[[:space:]]*//')
     case "$stripped" in
       \#*) continue ;;
       "") continue ;;
     esac
+    sanitized=$(printf '%s' "$line" | sed -E 's/\$\{\{[^{}]*\}\}/'"$MATRIX_TOKEN"'/g')
+    rest=${sanitized#*<<}
+    if [ "$rest" != "$sanitized" ]; then
+      case "$rest" in
+        "<"*) ;;
+        *)
+          if [[ "$rest" =~ ^-?[[:space:]]*[\'\"\`]?([A-Za-z_][A-Za-z0-9_]*) ]]; then
+            heredoc_end="${BASH_REMATCH[1]}"
+          fi
+          ;;
+      esac
+    fi
     case "$line" in
-      *"nix run"* | *"nix build"* | *"nix develop"*) ;;
+      *"nix run"* | *"nix build"* | *"nix develop"* | *"nix flake check"*) ;;
       *) continue ;;
     esac
-    sanitized=$(printf '%s' "$line" | sed -E 's/\$\{\{[^{}]*\}\}/'"$MATRIX_TOKEN"'/g')
+    shell="$sanitized"
+    if [[ "$shell" =~ ^[[:space:]]*-[[:space:]]+run:[[:space:]]*(\|[+-]?|>[+-]?)?[[:space:]]* ]]; then
+      shell=${shell:${#BASH_REMATCH}}
+    elif [[ "$shell" =~ ^[[:space:]]*run:[[:space:]]*(\|[+-]?|>[+-]?)?[[:space:]]* ]]; then
+      shell=${shell:${#BASH_REMATCH}}
+    fi
+    occ=$(printf '%s\n' "$shell" | awk "$INVOCATION_AWK")
     case "$sanitized" in
       *"nix develop"*)
-        case "$sanitized" in
-          *"#"*) ;;
-          *)
-            base=$(step_workdir "$file" "$lineno")
-            [ -n "$base" ] || base="."
-            if has_dollar "$base"; then
-              report_unresolved "$file:$lineno: dynamic working directory $base"
-            else
-              abs="$root"
-              [ "$base" = "." ] || abs="$root/$base"
-              check_devshell "$abs" "$file:$lineno"
-            fi
-            ;;
-        esac
+        dev_inv=0
+        while IFS= read -r o || [ -n "$o" ]; do
+          [ -n "$o" ] || continue
+          read -r e v _ <<<"$o"
+          if [ "$e" = 1 ] && [ "$v" = "develop" ]; then
+            dev_inv=1
+            break
+          fi
+        done <<<"$occ"
+        if [ "$dev_inv" = 1 ]; then
+          case "$sanitized" in
+            *"#"*) ;;
+            *)
+              base=$(step_workdir "$file" "$lineno")
+              [ -n "$base" ] || base="."
+              if has_dollar "$base"; then
+                report_unresolved "$file:$lineno: dynamic working directory $base"
+              else
+                abs="$root"
+                [ "$base" = "." ] || abs="$root/$base"
+                ref_devshell "$abs" "$file:$lineno"
+              fi
+              ;;
+          esac
+        fi
         ;;
     esac
-    matches=$(printf '%s' "$sanitized" | grep -oE 'nix[[:space:]]+(run|build|develop)[^#]*#[^[:space:]]+' || true)
-    [ -n "$matches" ] || continue
-    while IFS= read -r match || [ -n "$match" ]; do
-      [ -n "$match" ] || continue
+    if [ "$emit" = 1 ]; then
+      flake_inv=0
+      while IFS= read -r o || [ -n "$o" ]; do
+        [ -n "$o" ] || continue
+        read -r e v _ <<<"$o"
+        if [ "$e" = 1 ] && [ "$v" = "flake" ]; then
+          flake_inv=1
+          break
+        fi
+      done <<<"$occ"
+      if [ "$flake_inv" = 1 ]; then
+        emit_flake_check "$file" "$lineno" "$sanitized"
+      fi
+    fi
+    while IFS= read -r o || [ -n "$o" ]; do
+      [ -n "$o" ] || continue
+      read -r e v m <<<"$o"
+      [ "$e" = 1 ] || continue
+      [ "$v" = "flake" ] && continue
+      [ -n "$m" ] || continue
+      match="$m"
       cmd=$(printf '%s' "$match" | sed -E 's/^nix[[:space:]]+(run|build|develop).*/\1/')
       token=$(printf '%s' "$match" | grep -oE '[^[:space:]]+#[^[:space:]]+' | tail -n 1)
       flake=${token%%#*}
@@ -299,7 +636,7 @@ for file in "${files[@]}"; do
       where="$file:$lineno"
       case "$flake" in
         *"nixpkgs"*)
-          check_external "$attr" "$where"
+          ref_external "$attr" "$where"
           continue
           ;;
       esac
@@ -338,9 +675,9 @@ for file in "${files[@]}"; do
             abs="$root/$rel"
           fi
           if [ "$cmd" = "run" ]; then
-            check_run "$abs" "$expanded" "$where (matrix $v)"
+            ref_run "$abs" "$expanded" "$where (matrix $v)"
           else
-            check_build "$abs" "$expanded" "$where (matrix $v)"
+            ref_build "$abs" "$expanded" "$where (matrix $v)"
           fi
         done
         continue
@@ -423,30 +760,36 @@ for file in "${files[@]}"; do
         abs="$root/$rel"
       fi
       [ -d "$abs" ] || {
+        if [ "$emit" = 1 ]; then
+          report_unresolved "$where: no directory $abs for $token (skipped)"
+          continue
+        fi
         echo "FAIL: $where: no directory $abs for $token" >&2
         fail=1
         continue
       }
       if [ "$cmd" = "run" ]; then
-        check_run "$abs" "$attr" "$where"
+        ref_run "$abs" "$attr" "$where"
       elif [ "$cmd" = "build" ]; then
-        check_build "$abs" "$attr" "$where"
+        ref_build "$abs" "$attr" "$where"
       else
         case "$token" in
-          *"#"*) check_build "$abs" "$attr" "$where" ;;
-          *) check_devshell "$abs" "$where" ;;
+          *"#"*) ref_build "$abs" "$attr" "$where" ;;
+          *) ref_devshell "$abs" "$where" ;;
         esac
       fi
-    done <<<"$matches"
+    done <<<"$occ"
   done <"$file"
 done
 
-printf '%s\n' "resolved $resolved_count of ${#seen[@]}, unevaluated ${#unresolved[@]}"
-if [ "${#unresolved[@]}" -gt 0 ]; then
-  printf '  %s\n' "${unresolved[@]}"
+if [ "$emit" = 0 ]; then
+  printf '%s\n' "resolved $resolved_count of ${#seen[@]}, unevaluated ${#unresolved[@]}"
+  if [ "${#unresolved[@]}" -gt 0 ]; then
+    printf '  %s\n' "${unresolved[@]}"
+  fi
+  if [ "$fail" -ne 0 ]; then
+    echo "workflow-commands-resolve: FAIL" >&2
+    exit 1
+  fi
+  echo "workflow-commands-resolve: PASS"
 fi
-if [ "$fail" -ne 0 ]; then
-  echo "workflow-commands-resolve: FAIL" >&2
-  exit 1
-fi
-echo "workflow-commands-resolve: PASS"

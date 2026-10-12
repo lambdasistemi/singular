@@ -19751,112 +19751,157 @@
    ]
   },
   "docs-building/edit-and-serve-03": {
-   "audio_sha256": "1d4884cdd7d094f45e525b661ac4fe3803ba0e920259d1628b262a61cd26c3e0",
-   "characters": 123,
-   "cost": 7.626e-05,
-   "duration": 13.125,
+   "audio_sha256": "d0d134c45ae460ec3fc08b64de5183487ec7e584906d3124ed86b4ef048fa4e4",
+   "characters": 169,
+   "cost": 0.00016731,
+   "duration": 15.175,
    "index": 3,
-   "key": "77c77a8eec9cde819bcb39f5304b1002052a0de681777200723de91941186300",
+   "key": "6bcf8434fc066db8e071b48ea2eb038442d22a674dec4c8243db3d744df294cf",
    "page": "docs/building.md",
    "pause_ms": 400,
    "section": "edit-and-serve",
-   "sent_text": "To serve the packaged output without a live-reload editor, run nix run .#docs-serve -- 8000 and open http://127.0.0.1:8000.",
-   "text": "To serve the packaged output without a live-reload editor, run nix run .#docs-serve -- 8000 and open http://127.0.0.1:8000.",
+   "sent_text": "To serve the packaged output without a live-reload editor, run the docs-serve tool (marked not-a-guarantee) with the port as its argument and open http://127.0.0.1:8000.",
+   "text": "To serve the packaged output without a live-reload editor, run the docs-serve tool (marked not-a-guarantee) with the port as its argument and open http://127.0.0.1:8000.",
    "words": [
     {
-     "end": 0.375,
+     "end": 0.387,
      "start": 0.275,
      "text": "To"
     },
     {
-     "end": 0.7,
-     "start": 0.375,
+     "end": 0.725,
+     "start": 0.387,
      "text": "serve"
     },
     {
-     "end": 0.837,
-     "start": 0.7,
+     "end": 0.863,
+     "start": 0.725,
      "text": "the"
     },
     {
-     "end": 1.35,
-     "start": 0.837,
+     "end": 1.4,
+     "start": 0.863,
      "text": "packaged"
     },
     {
-     "end": 1.875,
-     "start": 1.35,
+     "end": 1.925,
+     "start": 1.4,
      "text": "output"
     },
     {
-     "end": 2.2,
-     "start": 1.875,
+     "end": 2.25,
+     "start": 1.925,
      "text": "without"
     },
     {
-     "end": 2.312,
-     "start": 2.2,
+     "end": 2.362,
+     "start": 2.25,
      "text": "a"
     },
     {
-     "end": 3.025,
-     "start": 2.312,
+     "end": 3.075,
+     "start": 2.362,
      "text": "live-reload"
     },
     {
-     "end": 3.5,
-     "start": 3.025,
+     "end": 3.55,
+     "start": 3.075,
      "text": "editor"
     },
     {
-     "end": 3.612,
-     "start": 3.5,
+     "end": 3.662,
+     "start": 3.55,
      "text": ","
     },
     {
      "end": 3.95,
-     "start": 3.612,
+     "start": 3.662,
      "text": "run"
     },
     {
-     "end": 4.262,
+     "end": 4.088,
      "start": 3.95,
-     "text": "nix"
+     "text": "the"
     },
     {
-     "end": 4.675,
-     "start": 4.262,
-     "text": "run"
-    },
-    {
-     "end": 4.75,
-     "start": 4.675,
-     "text": "."
-    },
-    {
-     "end": 5.4,
-     "start": 4.75,
+     "end": 4.812,
+     "start": 4.088,
      "text": "docs-serve"
     },
     {
-     "end": 6.312,
-     "start": 5.463,
-     "text": "8000"
+     "end": 5.25,
+     "start": 4.812,
+     "text": "tool"
     },
     {
-     "end": 6.488,
-     "start": 6.312,
+     "end": 5.325,
+     "start": 5.25,
+     "text": "("
+    },
+    {
+     "end": 5.625,
+     "start": 5.325,
+     "text": "marked"
+    },
+    {
+     "end": 6.475,
+     "start": 5.625,
+     "text": "not-a-guarantee"
+    },
+    {
+     "end": 6.55,
+     "start": 6.475,
+     "text": ")"
+    },
+    {
+     "end": 6.688,
+     "start": 6.55,
+     "text": "with"
+    },
+    {
+     "end": 6.812,
+     "start": 6.688,
+     "text": "the"
+    },
+    {
+     "end": 7.213,
+     "start": 6.812,
+     "text": "port"
+    },
+    {
+     "end": 7.35,
+     "start": 7.213,
+     "text": "as"
+    },
+    {
+     "end": 7.562,
+     "start": 7.35,
+     "text": "its"
+    },
+    {
+     "end": 8.1,
+     "start": 7.562,
+     "text": "argument"
+    },
+    {
+     "end": 8.238,
+     "start": 8.1,
      "text": "and"
     },
     {
-     "end": 6.887,
-     "start": 6.488,
+     "end": 8.613,
+     "start": 8.238,
      "text": "open"
     },
     {
-     "end": 13.125,
-     "start": 6.887,
+     "end": 14.875,
+     "start": 8.613,
      "text": "http://127.0.0.1:8000"
+    },
+    {
+     "end": 15.175,
+     "start": 14.875,
+     "text": "."
     }
    ]
   },
