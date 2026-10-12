@@ -93,6 +93,7 @@ import Data.List (isInfixOf, nub)
 import Data.Maybe (listToMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Vector qualified as V
 import Lens.Micro ((&), (.~))
 import Singular.Registry.Ledger (ConwayEra)
 import System.Directory
@@ -644,13 +645,13 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
                     alter
                         "run fold by token"
                         "reader"
-                        (\r -> r{rcCommand = fmap (setField "request" "b9#0") (rcCommand r)})
+                        (\r -> r{rcCommand = fmap (setSettledRequest "b9#0") (rcCommand r)})
                         rs
                 otherEnvelope =
                     alter
                         "run fold by token"
                         "reader"
-                        (\r -> r{rcCommand = fmap (setField "envelope" "00") (rcCommand r)})
+                        (\r -> r{rcCommand = fmap (setSettlementEnvelope "00") (rcCommand r)})
                         rs
                 noController =
                     alter
@@ -2438,8 +2439,24 @@ commandReceipt c k updates terminal = case c of
     Insert ->
         object
             [ "outcome" .= ("success" :: String)
-            , "liveOutput" .= ("i#1" :: String)
-            , "envelope" .= envelope "p0"
+            , "settled"
+                .= [ object
+                        [ "request" .= ("b1#0" :: String)
+                        , "key" .= hexOf k
+                        , "edge" .= ("insertActive" :: String)
+                        , "owner" .= ("c0" :: String)
+                        , "settlement"
+                            .= object
+                                [ "liveOutput" .= ("i#1" :: String)
+                                , "envelope" .= envelope "p0"
+                                ]
+                        , "deadline"
+                            .= object ["posixMs" .= (1000 :: Int), "slot" .= (100 :: Int)]
+                        ]
+                   ]
+            , "excluded" .= ([] :: [Value])
+            , "capacity"
+                .= object ["bound" .= (1 :: Int), "provenance" .= ("prov-1" :: String)]
             ]
     Update _ ->
         object
@@ -2451,8 +2468,24 @@ commandReceipt c k updates terminal = case c of
     Terminate ->
         object
             [ "outcome" .= ("success" :: String)
-            , "deposit" .= (2_000_000 :: Int)
-            , "released" .= ("t#1" :: String)
+            , "settled"
+                .= [ object
+                        [ "request" .= ("b1#0" :: String)
+                        , "key" .= hexOf k
+                        , "edge" .= ("updateTerminal" :: String)
+                        , "owner" .= ("c0" :: String)
+                        , "settlement"
+                            .= object
+                                [ "released" .= ("t#1" :: String)
+                                , "deposit" .= (2_000_000 :: Int)
+                                ]
+                        , "deadline"
+                            .= object ["posixMs" .= (1000 :: Int), "slot" .= (100 :: Int)]
+                        ]
+                   ]
+            , "excluded" .= ([] :: [Value])
+            , "capacity"
+                .= object ["bound" .= (1 :: Int), "provenance" .= ("prov-1" :: String)]
             ]
     -- An ordinary fold of the honest booking: the request the booking
     -- left at its output 0, folded whole by the story's second wallet,
@@ -2462,14 +2495,27 @@ commandReceipt c k updates terminal = case c of
     Fold ->
         object
             [ "outcome" .= ("success" :: String)
-            , "request" .= ("b1#0" :: String)
-            , "key" .= hexOf k
-            , "edge" .= ("insertActive" :: String)
             , "folder" .= ("b0" :: String)
             , "fold" .= ("f1" :: String)
-            , "liveOutput" .= ("i#1" :: String)
-            , "envelope" .= envelope "p0"
             , "root" .= ("r1" :: String)
+            , "settled"
+                .= [ object
+                        [ "request" .= ("b1#0" :: String)
+                        , "key" .= hexOf k
+                        , "edge" .= ("insertActive" :: String)
+                        , "owner" .= ("c0" :: String)
+                        , "settlement"
+                            .= object
+                                [ "liveOutput" .= ("i#1" :: String)
+                                , "envelope" .= envelope "p0"
+                                ]
+                        , "deadline"
+                            .= object ["posixMs" .= (1000 :: Int), "slot" .= (100 :: Int)]
+                        ]
+                   ]
+            , "excluded" .= ([] :: [Value])
+            , "capacity"
+                .= object ["bound" .= (1 :: Int), "provenance" .= ("prov-1" :: String)]
             ]
     Inspect
         | terminal ->
@@ -2554,6 +2600,37 @@ setField name value v = case v of
 setNumber :: T.Text -> Int -> Value -> Value
 setNumber name n v = case v of
     Object o -> Object (KeyMap.insert (Key.fromText name) (toJSON n) o)
+    _ -> v
+
+-- | Replace the settled list's first request.
+setSettledRequest :: T.Text -> Value -> Value
+setSettledRequest request v = case v of
+    Object o -> case KeyMap.lookup "settled" o of
+        Just (Array settled) -> case V.toList settled of
+            (Object first : rest) ->
+                let updated = Object (KeyMap.insert "request" (String request) first)
+                in  Object
+                        (KeyMap.insert "settled" (Array (V.fromList (updated : rest))) o)
+            _ -> v
+        _ -> v
+    _ -> v
+
+-- | Replace the settled list's first settlement envelope.
+setSettlementEnvelope :: T.Text -> Value -> Value
+setSettlementEnvelope envelopeValue v = case v of
+    Object o -> case KeyMap.lookup "settled" o of
+        Just (Array settled) -> case V.toList settled of
+            (Object first : rest) -> case KeyMap.lookup "settlement" first of
+                Just (Object settlement) ->
+                    let updatedSettlement =
+                            Object (KeyMap.insert "envelope" (String envelopeValue) settlement)
+                        updated =
+                            Object (KeyMap.insert "settlement" updatedSettlement first)
+                    in  Object
+                            (KeyMap.insert "settled" (Array (V.fromList (updated : rest))) o)
+                _ -> v
+            _ -> v
+        _ -> v
     _ -> v
 
 -- | Remove the holding controller from an inspect receipt's command.

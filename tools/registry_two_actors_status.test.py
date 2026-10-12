@@ -582,9 +582,19 @@ def _owner_valid_base(tmp):
     continue_fold = {
         "command": "fold",
         "outcome": "success",
-        "request": "ghi789#0",
-        "edge": "insertActive",
         "root": "root_continue_000000000000000000000000000003",
+        "settled": [
+            {
+                "request": "ghi789#0",
+                "key": "616c6963652d34",
+                "edge": "insertActive",
+                "owner": "alicehex",
+                "settlement": {"liveOutput": "tx#1", "envelope": {}},
+                "deadline": {"posixMs": 3000000, "slot": 300},
+            }
+        ],
+        "excluded": [],
+        "capacity": {"bound": 1, "provenance": "p"},
     }
     continue_a = {
         "command": "inspect",
@@ -1465,11 +1475,21 @@ def _history_valid_bases(tmp):
     fold = {
         "command": "fold",
         "outcome": "success",
-        "request": "histreq#0",
-        "edge": "insertActive",
         "folder": "ff",
         "root": root,
         "fold": fold_tx,
+        "settled": [
+            {
+                "request": "histreq#0",
+                "key": "6b",
+                "edge": "insertActive",
+                "owner": "ff",
+                "settlement": {"liveOutput": "tx#1", "envelope": {}},
+                "deadline": {"posixMs": 1000, "slot": 100},
+            }
+        ],
+        "excluded": [],
+        "capacity": {"bound": 1, "provenance": "p"},
     }
     withheld_refusal = {
         "command": "inspect",
@@ -2346,11 +2366,21 @@ def _replay_fault_mocked(mod, tmp, faulted_outcome):
         {
             "command": "fold",
             "outcome": "success",
-            "request": "rfreq#0",
-            "edge": "insertActive",
             "folder": "ff",
             "root": root,
             "fold": fold_tx,
+            "settled": [
+                {
+                    "request": "rfreq#0",
+                    "key": "6b",
+                    "edge": "insertActive",
+                    "owner": "ff",
+                    "settlement": {"liveOutput": "tx#1", "envelope": {}},
+                    "deadline": {"posixMs": 1000, "slot": 100},
+                }
+            ],
+            "excluded": [],
+            "capacity": {"bound": 1, "provenance": "p"},
         },
     )
     setup_leg = {
@@ -3294,10 +3324,20 @@ def test_removal_check_flips_row(mod, tmp):
     fold = {
         "command": "fold",
         "outcome": "success",
-        "request": booking_request,
-        "edge": "insertActive",
         "folder": owner_hex,
         "root": root,
+        "settled": [
+            {
+                "request": booking_request,
+                "key": "616c6963652d33",
+                "edge": "insertActive",
+                "owner": owner_hex,
+                "settlement": {"liveOutput": "tx#1", "envelope": {}},
+                "deadline": {"posixMs": 1000, "slot": 100},
+            }
+        ],
+        "excluded": [],
+        "capacity": {"bound": 1, "provenance": "p"},
     }
     after = {
         "command": "inspect",
@@ -3335,6 +3375,110 @@ def test_removal_check_flips_row(mod, tmp):
         )
     else:
         check("removal-check-flips-row", True)
+
+
+def test_fold_settled_list_binds_request_and_edge(mod, tmp):
+    import json as _json
+
+    journey = bare(mod, tmp)
+    root = "cc" * 32
+    booking_request = "abc123#0"
+    owner_hex = "ownerhex000000000000000000000000000000000000000000000001"
+    before = {
+        "command": "inspect",
+        "outcome": "success",
+        "leaf": "unknown",
+        "root": root,
+        "pendingRequests": [],
+    }
+    booking = {
+        "command": "insert",
+        "outcome": "success",
+        "request": booking_request,
+        "requester": owner_hex,
+    }
+    fold = {
+        "command": "fold",
+        "outcome": "success",
+        "folder": owner_hex,
+        "root": root,
+        "settled": [
+            {
+                "request": booking_request,
+                "key": "616c6963652d33",
+                "edge": "insertActive",
+                "owner": owner_hex,
+                "settlement": {"liveOutput": "tx#1", "envelope": {}},
+                "deadline": {"posixMs": 1000, "slot": 100},
+            }
+        ],
+        "excluded": [],
+        "capacity": {"bound": 1, "provenance": "p"},
+    }
+    after = {
+        "command": "inspect",
+        "outcome": "success",
+        "leaf": "active",
+        "root": root,
+        "pendingRequests": [],
+    }
+    _write_receipt(tmp, "settled-inspect-before", before)
+    _write_receipt(tmp, "settled-booking", booking)
+    _write_receipt(tmp, "settled-fold", fold)
+    _write_receipt(tmp, "settled-inspect-after", after)
+    legs = {
+        "alice": {
+            "inspect_before": "settled-inspect-before",
+            "booking": "settled-booking",
+            "fold": "settled-fold",
+            "inspect_after": "settled-inspect-after",
+        }
+    }
+    receipts = Path(tmp)
+    passed, _, _ = journey.run_one_agreement("alice", legs["alice"], receipts)
+    check(
+        "settled-list-valid-passes",
+        passed,
+        "the new-shape fold did not pass",
+    )
+    raw = Path(tmp, "settled-fold.json").read_text()
+    cases = []
+    missing = _json.loads(raw)
+    del missing["settled"]
+    cases.append(("settled-missing", missing))
+    emptied = _json.loads(raw)
+    emptied["settled"] = []
+    cases.append(("settled-emptied", emptied))
+    contradicted = _json.loads(raw)
+    contradicted["settled"][0]["request"] = "ffff#0"
+    cases.append(("settled-request-contradicts", contradicted))
+    wrong_edge = _json.loads(raw)
+    wrong_edge["settled"][0]["edge"] = "updateTerminal"
+    cases.append(("settled-edge-contradicts", wrong_edge))
+    for name, doc in cases:
+        Path(tmp, "settled-fold.json").write_text(_json.dumps(doc) + "\n")
+        failed, _, _ = journey.run_one_agreement("alice", legs["alice"], receipts)
+        check(
+            f"settled-list-{name}-does-not-pass",
+            not failed,
+            f"a fold with {name} still passed",
+        )
+    Path(tmp, "settled-fold.json").write_text(raw)
+    both_absent_fold = _json.loads(raw)
+    del both_absent_fold["settled"]
+    Path(tmp, "settled-fold.json").write_text(_json.dumps(both_absent_fold) + "\n")
+    booking_raw = Path(tmp, "settled-booking.json").read_text()
+    booking_absent = _json.loads(booking_raw)
+    del booking_absent["request"]
+    Path(tmp, "settled-booking.json").write_text(_json.dumps(booking_absent) + "\n")
+    both_failed, _, _ = journey.run_one_agreement("alice", legs["alice"], receipts)
+    check(
+        "settled-list-both-absent-does-not-pass",
+        not both_failed,
+        "a fold and booking both naming no request still passed (None == None)",
+    )
+    Path(tmp, "settled-fold.json").write_text(raw)
+    Path(tmp, "settled-booking.json").write_text(booking_raw)
 
 
 def test_environment_isolates_party_tmp(mod, tmp):
@@ -3842,6 +3986,7 @@ def main():
         test_forwarder_registry_total,
         test_thread_construction_failure_is_setup,
         test_removal_check_flips_row,
+        test_fold_settled_list_binds_request_and_edge,
         test_environment_isolates_party_tmp,
         test_journey_init_creates_worktree,
         test_koios_post_roundtrip,

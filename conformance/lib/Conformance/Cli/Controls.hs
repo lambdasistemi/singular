@@ -2709,6 +2709,27 @@ at path r = go path =<< rcCommand r
 field :: Text -> Either Text Int
 field = Left
 
+-- | A settled request's own fact, from the receipt's settled list.
+settledField :: Text -> Receipt -> Maybe Aeson.Value
+settledField name = at [field "settled", Right 0, field name]
+
+-- | A settled request's settlement fact.
+settlementField :: Text -> Receipt -> Maybe Aeson.Value
+settlementField name =
+    at [field "settled", Right 0, field "settlement", field name]
+
+-- | The path of a settled settlement's envelope control fields.
+settledControlPath :: [Either Text Int]
+settledControlPath =
+    [ field "settled"
+    , Right 0
+    , field "settlement"
+    , field "envelope"
+    , field "fields"
+    , Right 0
+    , field "fields"
+    ]
+
 -- | Fail unless a command receipt says @success@ and its submissions were admitted.
 succeeded :: String -> Receipt -> [String]
 succeeded what r =
@@ -3310,7 +3331,7 @@ check req rs = case (req, rs) of
             <> same
                 "the folded request"
                 (Aeson.String . (<> "#0") <$> rcTxId booking)
-                (at [field "request"] folded)
+                (settledField "request" folded)
             <> [ "the fold is of another key"
                | rcKey booking /= rcKey folded
                ]
@@ -3321,7 +3342,7 @@ check req rs = case (req, rs) of
             <> is "the key's leaf" "active" (at [field "leaf"] seen)
             <> same
                 "the holding's inline envelope"
-                (at [field "envelope"] folded)
+                (settlementField "envelope" folded)
                 (at [field "applicationOutput", field "envelope"] seen)
             <> same
                 "the registry's root"
@@ -3351,31 +3372,35 @@ check req rs = case (req, rs) of
                 "the registry's state policy"
                 (at [field "pins", field "pinState"] c)
                 ( at
-                    (controlPath <> [Right 1, field "fields", Right 0, field "bytes"])
+                    ( settledControlPath
+                        <> [Right 1, field "fields", Right 0, field "bytes"]
+                    )
                     i
                 )
             <> same
                 "the registry's state token"
                 (at [field "token"] c)
                 ( at
-                    (controlPath <> [Right 1, field "fields", Right 1, field "bytes"])
+                    ( settledControlPath
+                        <> [Right 1, field "fields", Right 1, field "bytes"]
+                    )
                     i
                 )
             <> same
                 "the registry's active policy"
                 (at [field "pins", field "pinActive"] c)
-                (at (controlPath <> [Right 2, field "bytes"]) i)
+                (at (settledControlPath <> [Right 2, field "bytes"]) i)
     (Delivered, [i, s]) ->
         succeeded "the insert" i
             <> succeeded "the inspect" s
             <> is "the key's leaf" "active" (at [field "leaf"] s)
             <> same
                 "the holding's output"
-                (at [field "liveOutput"] i)
+                (settlementField "liveOutput" i)
                 (at [field "applicationOutput", field "output"] s)
             <> same
                 "the holding's inline envelope"
-                (at [field "envelope"] i)
+                (settlementField "envelope" i)
                 (at [field "applicationOutput", field "envelope"] s)
             <> case ( at [field "applicationOutput", field "lovelace"] s
                     , at [field "applicationOutput", field "deposit"] s
@@ -3424,8 +3449,8 @@ check req rs = case (req, rs) of
             <> same
                 "the released deposit"
                 (at [field "applicationOutput", field "deposit"] b)
-                (at [field "deposit"] t)
-            <> case at [field "released"] t of
+                (settlementField "deposit" t)
+            <> case settlementField "released" t of
                 Just (Aeson.String _) -> []
                 _ -> ["the terminate names no released output"]
     (CommandSucceeded, [r]) -> succeeded "the command" r
@@ -4797,10 +4822,6 @@ craftedPhrase c = case c of
         "one fold of an insertion and a termination for one controller, folded by another wallet, paying the controller one lovelace short"
     FoldMixedInFull ->
         "that mixed fold paying the controller in full"
-
--- | The path of an insert receipt's envelope control fields.
-controlPath :: [Either Text Int]
-controlPath = [Left "envelope", Left "fields", Right 0, Left "fields"]
 
 {- | The node's rejection, rebuilt from exactly what the receipt carries of
 it — its words for a script that executed and failed, and the hashes of

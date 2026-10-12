@@ -258,9 +258,11 @@ trace_disagreements() {
   jq -s -c --slurpfile r "$receipt" --arg invoked "$key" '
     $r[0] as $r
     | . as $ev
-    | ($r.key // (if $invoked == "" then null else $invoked end)) as $key
+    | (($r | if .command == "fold" then .settled[0].key else .key end)
+       // (if $invoked == "" then null else $invoked end)) as $key
+    | (($r | if .command == "fold" then .settled[0].edge else .edge end)) as $receiptEdge
     | ([$r | .. | objects | select(has("request"))
-        | {request, key, edge, deadline: (.foldDeadline.posixMs // .processingEnds)}]
+        | {request, key, edge, deadline: (.foldDeadline.posixMs // .processingEnds // .deadline.posixMs)}]
        + [$r | .. | objects | select(has("pendingRequest")) | {request: .pendingRequest}]
        + [$r | select(.booking != null) | {request: (((.booking | if type == "object" then .txId else . end) // "") + "#0"), key}]) as $facts
     | (($facts | length == 0) and ($r.outcome != "success")) as $bare_refusal
@@ -310,7 +312,7 @@ trace_disagreements() {
         ($ev[] | select(.event == "booked" and .deadlineMs != null) as $e
          | $facts[] | select(.request == $e.request and .deadline != null and .deadline != $e.deadlineMs)
          | "booked \($e.request) deadline \($e.deadlineMs)"),
-        ($ev[] | edges_of | select(in_role($r.command; $r.edge) | not) | "edge \(.) outside the command role"),
+        ($ev[] | edges_of | select(in_role($r.command; $receiptEdge) | not) | "edge \(.) outside the command role"),
         ($ev[] | select(.event == "key" and $r.leaf != null and .leaf != $r.leaf) | "leaf \(.leaf)"),
         ($ev[] | select(.event == "key" and $r.applicationOutput != null and .holding != $r.applicationOutput.output)
          | "holding \(.holding)"),
@@ -339,7 +341,9 @@ trace_disagreements() {
          | "rejected \(.requests)"),
         ($ev[] | select(.event == "reclaimed") | select(.returned != $r.returned.lovelace) | "reclaimed \(.returned)"),
         ($ev[] | select(.event == "updated") | select(.output != $r.liveOutput) | "updated output \(.output)"),
-        ($ev[] | select(.event == "folded") | select(.output != ($r.liveOutput // $r.released)) | "folded output \(.output)"),
+        ($ev[] | select(.event == "folded")
+         | select(.output != ($r.settled[0].settlement.liveOutput // $r.settled[0].settlement.released))
+         | "folded output \(.output)"),
         ($ev[] | select(.event == "refused") | select(refusal_fits(.kind; $r.outcome) | not)
          | "refusal \(.kind) under outcome \($r.outcome)"),
         (([$ev[] | select(.event == "refused")] | length) as $n
@@ -847,8 +851,8 @@ open_datum="$bob_open_datum_old"
 [ "$(field bob-default-fold .folder)" = "$bobkey" ] \
   || fail "the copied key folded into another wallet's partition"
 jq -e --slurpfile b "$receipts/bob-default-insert.json" '
-    .request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
-    and .folder == $b[0].requester and .edge == "insertActive"
+    .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+    and .folder == $b[0].requester and .settled[0].edge == "insertActive"
     and (.fold | test("^[0-9a-f]{64}$"))' "$receipts/bob-default-fold.json" >/dev/null \
   || fail "fresh bob's fold does not consume his booking's request and deadline with his own key"
 bob_part="$(dirname "$bob_journal")"
@@ -876,7 +880,8 @@ bob_run bob-default-readback success -- inspect --key "$bob_key" \
   --blueprint "$blueprint" --state-token "$state_token" "${node[@]}"
 jq -e --slurpfile b "$receipts/bob-default-insert.json" --slurpfile f "$receipts/bob-default-fold.json" '
     .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
-    and .root == $f[0].root and .applicationOutput.output == $f[0].liveOutput' \
+    and .root == $f[0].root
+    and .applicationOutput.output == $f[0].settled[0].settlement.liveOutput' \
   "$receipts/bob-default-readback.json" >/dev/null \
   || fail "fresh bob's default-path readback is not his folded booking, delivered and observed"
 jq -s -e --arg t "$(field bob-default-fold .fold)" \
@@ -968,8 +973,9 @@ chmod u+rwx "$two_alice"
 [ -s "$two/bob-fold.strace" ] || setup_fail "bob's fold left no trace of its file accesses"
 ! touches_alice "$two/bob-fold.strace" || fail "bob's fold accessed alice's directory: $(grep -F "$two_alice" "$two/bob-fold.strace" | head -n 3)"
 jq -e --slurpfile b "$receipts/two-insert.json" --arg k "$(hexof "$two_key")" --arg bob "$bobkey" '
-    .request == $b[0].request and .folder == $bob and .edge == "insertActive"
-    and .key == $k and .envelope == $b[0].envelope and (.liveOutput | test("#"))' \
+    .settled[0].request == $b[0].request and .folder == $bob and .settled[0].edge == "insertActive"
+    and .settled[0].key == $k and .settled[0].settlement.envelope == $b[0].envelope
+    and (.settled[0].settlement.liveOutput | test("#"))' \
   "$receipts/two-fold.json" >/dev/null \
   || fail "bob's fold does not deliver alice's envelope at her key"
 run two-inspect success -- inspect --key "$two_key" --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}"
@@ -1155,8 +1161,8 @@ fold_ok() {
   local fold_part
   fold_part="$(managed_partition "$reg" "$state_token" "$(field "$1" .folder)")"
   jq -e --slurpfile b "$receipts/$2.json" '
-      .request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
-      and .folder != $b[0].requester and .edge == "'"$3"'"
+      .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+      and .folder != $b[0].requester and .settled[0].edge == "'"$3"'"
       and (.fold | test("^[0-9a-f]{64}$"))
       and (.validUntilSlot | type == "number")
       and (if .foldDeadline.slot != null then .validUntilSlot <= .foldDeadline.slot else true end)
@@ -1207,7 +1213,9 @@ fold_ok() {
 }
 fold_ok fold insert insertActive
 [ "$(field fold .folder)" = "$bobkey" ] || fail "alice's request was not folded with bob's key"
-jq -e --slurpfile e "$receipts/insert.json" --arg k "$(hexof "$key")" '.key == $k and .envelope == $e[0].envelope and (.liveOutput | test("#"))' \
+jq -e --slurpfile e "$receipts/insert.json" --arg k "$(hexof "$key")" '.settled[0].key == $k
+  and .settled[0].settlement.envelope == $e[0].envelope
+  and (.settled[0].settlement.liveOutput | test("#"))' \
   "$receipts/fold.json" >/dev/null || fail "the fold does not deliver alice's envelope at her key"
 run inspect-1 success -- inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-1 .leaf)" = active ] || fail "inspect after insert is not active"
@@ -1325,7 +1333,7 @@ flock --fcntl --nonblock "$alice_lock" true || setup_fail "the lock holder did n
 run insert-after-release success -- insert --fold --key keyC \
   --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '(.booking | test("^[0-9a-f]{64}$")) and (.fold | test("^[0-9a-f]{64}$")) and .booking != .fold
-    and (.liveOutput | test("#")) and has("root")' "$receipts/insert-after-release.json" >/dev/null \
+    and (.settled[0].settlement.liveOutput | test("#")) and has("root")' "$receipts/insert-after-release.json" >/dev/null \
   || fail "the combined insert does not name its booking, its fold and the output it delivered"
 
 # ------------------------------------------------------------------
@@ -1439,7 +1447,7 @@ run bob-terminate-fold success -- fold --request "$(field bob-terminate .request
   "${common[@]}" "${node[@]}" "${alice[@]}"
 fold_ok bob-terminate-fold bob-terminate updateTerminal
 [ "$(field bob-terminate-fold .folder)" = "$alicekey" ] || fail "bob's termination was not folded with alice's key"
-[ "$(field bob-terminate-fold .released)" = "$(field bob-terminate .released)" ] \
+[ "$(field bob-terminate-fold .settled[0].settlement.released)" = "$(field bob-terminate .released)" ] \
   || fail "the fold released another output than the booking named"
 run inspect-4 success -- inspect --key "$bkey" "${common[@]}" "${node[@]}"
 [ "$(field inspect-4 .leaf)" = terminal ] || fail "bob's key is not terminal"
@@ -1602,9 +1610,8 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
 # processing deadline and still pending. A fresh eligible insertion is
 # booked beside it, and `registry fold` names no request: the fold settles
 # the fresh one and leaves the late one out, named with its reason and its
-# source. The earlier top-level fields still describe the settled request
-# alone — a reader written before the lists keeps working — and the capacity
-# bound of 1 states its provenance. Each new assertion is shown able to fail
+# source. The earlier top-level single-request fields are gone; the settled
+# list carries the facts, and the capacity bound of 1 states its provenance. Each new assertion is shown able to fail
 # on a copy of the receipt altered so its property is false.
 eligible_files="$(local_files)"
 eligible_journal_before="$(journal_count "$alice_journal")"
@@ -1619,7 +1626,7 @@ fold_selection_settled() {
       and .settled[0].request == $e[0].request
       and .settled[0].key == $k and .settled[0].edge == "insertActive"
       and .settled[0].owner == $owner
-      and .settled[0].settlement.liveOutput == .liveOutput
+      and (.settled[0].settlement.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
       and (.settled[0].settlement.datumHash | type == "string" and length > 0)
       and .settled[0].deadline.posixMs == $e[0].foldDeadline.posixMs
       and (.settled[0].deadline.slot == $e[0].foldDeadline.slot)' "$1" >/dev/null
@@ -1633,21 +1640,25 @@ fold_selection_excluded() {
       and (.excluded[0].detail | type == "string" and length > 0)' "$1" >/dev/null
 }
 fold_selection_earlier() {
-  jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" '
+  jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" --arg owner "$alicekey" '
       .capacity.bound == 1
       and (.capacity.provenance | type == "string" and length > 0)
-      and .request == $e[0].request and .key == $k and .edge == "insertActive"
+      and ([has("request"), has("key"), has("edge"), has("liveOutput"), has("envelope"), has("released"), has("deposit"), has("datumHash"), has("datumCbor")] | any | not)
       and (.fold | test("^[0-9a-f]{64}$"))
-      and (.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
-      and (.datumHash | type == "string" and length > 0)
-      and (.datumCbor | type == "string" and length > 0)' "$1" >/dev/null
+      and (.settled | length == 1)
+      and .settled[0].request == $e[0].request
+      and .settled[0].key == $k and .settled[0].edge == "insertActive"
+      and .settled[0].owner == $owner
+      and (.settled[0].settlement.liveOutput | test("^[0-9a-f]{64}#[0-9]+$"))
+      and (.settled[0].settlement.datumHash | type == "string" and length > 0)
+      and .settled[0].deadline.posixMs == $e[0].foldDeadline.posixMs' "$1" >/dev/null
 }
 fold_selection_settled "$receipts/fold-selection.json" \
   || fail "the fold's settled list is not exactly the fresh request: $(jq -c .settled "$receipts/fold-selection.json")"
 fold_selection_excluded "$receipts/fold-selection.json" \
   || fail "the fold did not leave the late request out and named: $(jq -c .excluded "$receipts/fold-selection.json")"
 fold_selection_earlier "$receipts/fold-selection.json" \
-  || fail "the fold's earlier fields no longer describe the settled request beside the capacity bound: $(jq -c '{request, key, edge, liveOutput, capacity}' "$receipts/fold-selection.json")"
+  || fail "the fold still prints an earlier single-request field, or its settled list does not carry the request: $(jq -c '{settled, excluded, capacity}' "$receipts/fold-selection.json")"
 fold_selection_tamper() { # NAME JQ-EDIT FILTER
   jq "$2" "$receipts/fold-selection.json" >"$receipts/fold-selection-tampered-$1.json"
   if "$3" "$receipts/fold-selection-tampered-$1.json"; then

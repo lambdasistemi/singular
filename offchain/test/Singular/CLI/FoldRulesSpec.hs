@@ -43,9 +43,8 @@ import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
 import Singular.CLI.FoldRules
-    ( EarlierDelivery (..)
-    , EarlierReceipt (..)
-    , FoldRequestsRefusal (..)
+    ( FoldRequestsRefusal (..)
+    , KeptReceipt (..)
     , SettledForReceipt (..)
     , SpendsRefusal (..)
     , appVerdictOf
@@ -54,11 +53,10 @@ import Singular.CLI.FoldRules
     , assignRefPairing
     , buildLiveFacts
     , buildPendingRequests
-    , combineReceiptFields
     , combineWindowClosedMessage
-    , earlierReceiptFields
     , foldReceiptLists
     , foldRequests
+    , keptReceiptFields
     , neutralAppExecutable
     , pendingDeadlineOf
     , pendingRequestOf
@@ -327,7 +325,6 @@ spec = describe "registry fold takes the selection" $ do
     mismatchedInputsRefuseAsInconsistent
     namedWithNothingSettledStatesCause
     earlyNamedEdgeRefusal
-    earlierFieldsProjectionPerDelivery
     requestFieldsAreReadFromTheOutput
     sameKeySameInteger
     approvalCheckFollowsTheModel
@@ -337,7 +334,7 @@ spec = describe "registry fold takes the selection" $ do
     assembledApprovalCheckReachesTheSelection
     oldRuleUntouched
     receiptListsSettledAndExcluded
-    receiptCombinesEarlierAndAdditions
+    foldReceiptOmitsEarlierFields
     windowClosedKeepsOthers
     oldRuleContrastReference
 
@@ -937,118 +934,190 @@ receiptListsSettledAndExcluded = describe
                 lookup "capacity" got1 `shouldNotBe` lookup "capacity" got9
 
 -- ---------------------------------------------------------
--- The additive combine beside the earlier fields (invariant 7, finding 2)
+-- The fold receipt omits the earlier single-request fields
 -- ---------------------------------------------------------
 
-receiptCombinesEarlierAndAdditions :: Spec
-receiptCombinesEarlierAndAdditions = describe
-    "receipt combines earlier fields with the additions"
-    $ do
+{- | The earlier top-level single-request fields the removal slice deletes:
+@request@, @key@, @edge@, and the delivery fields of every branch
+(@liveOutput@ with @envelope@, @liveOutput@ with @datumHash@ and @datumCbor@,
+@released@ with @deposit@).
+-}
+removedEarlierFields :: [T.Text]
+removedEarlierFields =
+    [ "request"
+    , "key"
+    , "edge"
+    , "liveOutput"
+    , "envelope"
+    , "released"
+    , "deposit"
+    , "datumHash"
+    , "datumCbor"
+    ]
+
+{- | The top-level fields that stay: the transaction facts, the host clock
+facts and the three lists, in the order a reader meets them.
+-}
+keptFieldNames :: [T.Text]
+keptFieldNames =
+    [ "folder"
+    , "fold"
+    , "root"
+    , "foldDeadline"
+    , "validUntilSlot"
+    , "postBuild"
+    , "hostClockMs"
+    , "remainingMs"
+    , "settled"
+    , "excluded"
+    , "capacity"
+    ]
+
+{- | Every retained top-level pair, spelled literally from the fixture
+components (not projected through the production function), so that a
+corrupted retained value fails the rows below. The eight pairs are the
+transaction and clock facts the receipt keeps, in order, before the lists.
+-}
+expectedKeptPairs :: [(T.Text, Value)]
+expectedKeptPairs =
+    [ ("folder", toJSON ("666f6c646572" :: T.Text))
+    , ("fold", toJSON ("aa11" :: T.Text))
+    , ("root", toJSON ("726f6f74" :: T.Text))
+    , ("foldDeadline", object ["posixMs" .= farDeadline])
+    , ("validUntilSlot", toJSON (Just 42 :: Maybe Integer))
+    , ("postBuild", object ["check" .= ("admitted" :: T.Text)])
+    , ("hostClockMs", toJSON nowMs)
+    , ("remainingMs", toJSON (900000 :: Integer))
+    ]
+
+foldReceiptOmitsEarlierFields :: Spec
+foldReceiptOmitsEarlierFields =
+    describe "the fold receipt omits the earlier single-request fields" $ do
         it
-            "keeps a delivered-envelope earlier projection unchanged with the additions after it"
+            "a delivered holding receipt has none of the earlier fields and keeps the list"
             $ do
-                let earlier =
-                        [ ("request", toJSON (renderOutRef t1))
-                        , ("key", toJSON ("6b31" :: T.Text))
-                        , ("edge", toJSON ("insertActive" :: T.Text))
-                        , ("folder", toJSON ("666f6c646572" :: T.Text))
-                        , ("fold", toJSON ("aa" :: T.Text))
-                        , ("liveOutput", toJSON (renderOutRef t1))
-                        , ("envelope", toJSON ("656e76656c6f7065" :: T.Text))
-                        , ("root", toJSON ("726f6f74" :: T.Text))
-                        , ("foldDeadline", toJSON ("deadline" :: T.Text))
-                        , ("validUntilSlot", toJSON (42 :: Int))
-                        , ("postBuild", toJSON ("admitted" :: T.Text))
-                        , ("hostClockMs", toJSON (1000000 :: Integer))
-                        , ("remainingMs", toJSON (900000 :: Integer))
+                let liveOut = renderOutRef (txRef 111)
+                    envelope = toJSON ("656e76656c6f7065" :: T.Text)
+                    settled =
+                        [ SettledForReceipt
+                            (txRef 111)
+                            "6b31"
+                            "insertActive"
+                            "6f776e657231"
+                            (object ["liveOutput" .= liveOut, "envelope" .= envelope])
+                            (object ["posixMs" .= farDeadline])
                         ]
-                    additions = foldReceiptLists [] [] 1 "prov-1"
-                    got = combineReceiptFields earlier additions
-                take (length earlier) got `shouldBe` earlier
-                drop (length earlier) got `shouldBe` additions
-                map fst got `shouldBe` (map fst earlier ++ map fst additions)
-        it
-            "keeps a delivered-datum earlier projection unchanged with the additions after it"
-            $ do
-                let earlier =
-                        [ ("request", toJSON (renderOutRef t1))
-                        , ("key", toJSON ("6b31" :: T.Text))
-                        , ("edge", toJSON ("insertActive" :: T.Text))
-                        , ("folder", toJSON ("666f6c646572" :: T.Text))
-                        , ("fold", toJSON ("aa" :: T.Text))
-                        , ("liveOutput", toJSON (renderOutRef t1))
-                        , ("datumHash", toJSON ("68617368" :: T.Text))
-                        , ("datumCbor", toJSON ("63626f72" :: T.Text))
-                        , ("root", toJSON ("726f6f74" :: T.Text))
-                        , ("foldDeadline", toJSON ("deadline" :: T.Text))
-                        , ("validUntilSlot", toJSON (42 :: Int))
-                        , ("postBuild", toJSON ("admitted" :: T.Text))
-                        , ("hostClockMs", toJSON (1000000 :: Integer))
-                        , ("remainingMs", toJSON (900000 :: Integer))
-                        ]
-                    additions = foldReceiptLists [] [] 1 "prov-1"
-                    got = combineReceiptFields earlier additions
-                take (length earlier) got `shouldBe` earlier
-                drop (length earlier) got `shouldBe` additions
-        it
-            "keeps a released earlier projection unchanged with the additions after it"
-            $ do
-                let earlier =
-                        [ ("request", toJSON (renderOutRef t1))
-                        , ("key", toJSON ("6b32" :: T.Text))
-                        , ("edge", toJSON ("updateTerminal" :: T.Text))
-                        , ("folder", toJSON ("666f6c646572" :: T.Text))
-                        , ("fold", toJSON ("aa" :: T.Text))
-                        , ("released", toJSON (renderOutRef t1))
-                        , ("deposit", toJSON (2000000 :: Integer))
-                        , ("root", toJSON ("726f6f74" :: T.Text))
-                        , ("foldDeadline", toJSON ("deadline" :: T.Text))
-                        , ("validUntilSlot", toJSON (42 :: Int))
-                        , ("postBuild", toJSON ("admitted" :: T.Text))
-                        , ("hostClockMs", toJSON (1000000 :: Integer))
-                        , ("remainingMs", toJSON (900000 :: Integer))
-                        ]
-                    additions = foldReceiptLists [] [] 1 "prov-1"
-                    got = combineReceiptFields earlier additions
-                take (length earlier) got `shouldBe` earlier
-                drop (length earlier) got `shouldBe` additions
-                length got `shouldBe` (length earlier + 3)
-        it
-            "lists every exclusion with reason, source and detail in ledger order"
-            $ do
-                let provenance =
-                        "the journal binds one transition until the multi-request journal ships"
-                            :: T.Text
-                    expected = excludedTxIns nonePairing noneSelection
-                    got = foldReceiptLists [] expected 1 provenance
-                    names = map fst got
-                names `shouldBe` ["settled", "excluded", "capacity"]
-                length expected `shouldBe` 3
-                lookup "settled" got `shouldBe` Just (toJSON ([] :: [Value]))
-                lookup "excluded" got
+                    got =
+                        keptReceiptFields baseKeptComps
+                            <> foldReceiptLists settled [] 1 "prov-1"
+                mapM_
+                    (\name -> lookup name got `shouldBe` Nothing)
+                    removedEarlierFields
+                map fst got `shouldBe` keptFieldNames
+                take (length expectedKeptPairs) got `shouldBe` expectedKeptPairs
+                lookup "settled" got
                     `shouldBe` Just
                         ( toJSON
                             [ object
-                                [ "request" .= renderOutRef tx
-                                , "reason" .= exclusionName exc
-                                , "source" .= exclusionSource exc
-                                , "detail" .= excDetail exc
+                                [ "request" .= liveOut
+                                , "key" .= ("6b31" :: T.Text)
+                                , "edge" .= ("insertActive" :: T.Text)
+                                , "owner" .= ("6f776e657231" :: T.Text)
+                                , "settlement"
+                                    .= object ["liveOutput" .= liveOut, "envelope" .= envelope]
+                                , "deadline" .= object ["posixMs" .= farDeadline]
                                 ]
-                            | (tx, exc) <- expected
                             ]
                         )
-                lookup "capacity" got
-                    `shouldBe` Just (object ["bound" .= (1 :: Int), "provenance" .= provenance])
-                map fst expected `shouldBe` [u1, u2, u3]
-        it "carries the bound with its provenance text" $ do
-            let provenance =
-                    "the journal binds one transition until the multi-request journal ships"
-                        :: T.Text
-                got = foldReceiptLists [] [] 1 provenance
-                names = map fst got
-            names `shouldBe` ["settled", "excluded", "capacity"]
-            lookup "capacity" got
-                `shouldBe` Just (object ["bound" .= (1 :: Int), "provenance" .= provenance])
+        it
+            "a delivered datum receipt has none of the earlier fields and keeps the list"
+            $ do
+                let liveOut = renderOutRef t2
+                    dHash = "6861736832" :: T.Text
+                    dCbor = "63626f7232" :: T.Text
+                    settled =
+                        [ SettledForReceipt
+                            t2
+                            "6b31"
+                            "insertActive"
+                            "6f776e657231"
+                            ( object
+                                [ "liveOutput" .= liveOut
+                                , "datumHash" .= dHash
+                                , "datumCbor" .= dCbor
+                                ]
+                            )
+                            (object ["posixMs" .= farDeadline])
+                        ]
+                    got =
+                        keptReceiptFields baseKeptComps
+                            <> foldReceiptLists settled [] 1 "prov-1"
+                mapM_
+                    (\name -> lookup name got `shouldBe` Nothing)
+                    removedEarlierFields
+                map fst got `shouldBe` keptFieldNames
+                take (length expectedKeptPairs) got `shouldBe` expectedKeptPairs
+                lookup "settled" got
+                    `shouldBe` Just
+                        ( toJSON
+                            [ object
+                                [ "request" .= liveOut
+                                , "key" .= ("6b31" :: T.Text)
+                                , "edge" .= ("insertActive" :: T.Text)
+                                , "owner" .= ("6f776e657231" :: T.Text)
+                                , "settlement"
+                                    .= object
+                                        [ "liveOutput" .= liveOut
+                                        , "datumHash" .= dHash
+                                        , "datumCbor" .= dCbor
+                                        ]
+                                , "deadline" .= object ["posixMs" .= farDeadline]
+                                ]
+                            ]
+                        )
+        it
+            "a released holding receipt has none of the earlier fields and keeps the list"
+            $ do
+                let releasedOut = renderOutRef t3
+                    deposit = 2000000 :: Integer
+                    settled =
+                        [ SettledForReceipt
+                            t3
+                            "6b32"
+                            "updateTerminal"
+                            "6f776e657232"
+                            ( object
+                                [ "released" .= releasedOut
+                                , "deposit" .= deposit
+                                ]
+                            )
+                            (object ["posixMs" .= farDeadline])
+                        ]
+                    got =
+                        keptReceiptFields baseKeptComps
+                            <> foldReceiptLists settled [] 1 "prov-1"
+                mapM_
+                    (\name -> lookup name got `shouldBe` Nothing)
+                    removedEarlierFields
+                map fst got `shouldBe` keptFieldNames
+                take (length expectedKeptPairs) got `shouldBe` expectedKeptPairs
+                lookup "settled" got
+                    `shouldBe` Just
+                        ( toJSON
+                            [ object
+                                [ "request" .= releasedOut
+                                , "key" .= ("6b32" :: T.Text)
+                                , "edge" .= ("updateTerminal" :: T.Text)
+                                , "owner" .= ("6f776e657232" :: T.Text)
+                                , "settlement"
+                                    .= object
+                                        [ "released" .= releasedOut
+                                        , "deposit" .= deposit
+                                        ]
+                                , "deadline" .= object ["posixMs" .= farDeadline]
+                                ]
+                            ]
+                        )
 
 -- ---------------------------------------------------------
 -- The old-rule contrast as a private reference (invariant 9)
@@ -1197,100 +1266,25 @@ earlyNamedEdgeRefusal = describe "an early refusal for a named untakeable edge" 
             T.unpack (excDetail excU) `isInfixOf` said `shouldBe` True
 
 -- ---------------------------------------------------------
--- The earlier fields' production projection, per delivery branch
+-- The kept fields' shared fixture components
 -- ---------------------------------------------------------
 
-{- | The earlier fields' fixture components, shared by every delivery branch:
+{- | The kept fields' fixture components, shared by every delivery branch:
 each value is spelled once and both the projection and its expected pairs
 read the same fields.
 -}
-baseEarlierComps :: EarlierReceipt
-baseEarlierComps =
-    EarlierReceipt
-        { earRequest = renderOutRef t1
-        , earKey = "6b31"
-        , earEdge = "insertActive"
-        , earFolder = "666f6c646572"
-        , earFold = "aa11"
-        , earDelivery =
-            EarlierDelivered (renderOutRef t1) (toJSON ("unused" :: T.Text))
-        , earRoot = "726f6f74"
-        , earDeadline = object ["posixMs" .= farDeadline]
-        , earUpperSlot = Just 42
-        , earPostBuild = object ["check" .= ("admitted" :: T.Text)]
-        , earHostClockMs = nowMs
-        , earRemainingMs = 900000
+baseKeptComps :: KeptReceipt
+baseKeptComps =
+    KeptReceipt
+        { keptFolder = "666f6c646572"
+        , keptFold = "aa11"
+        , keptRoot = "726f6f74"
+        , keptDeadline = object ["posixMs" .= farDeadline]
+        , keptUpperSlot = Just 42
+        , keptPostBuild = object ["check" .= ("admitted" :: T.Text)]
+        , keptHostClockMs = nowMs
+        , keptRemainingMs = 900000
         }
-
-earlierFieldsProjectionPerDelivery :: Spec
-earlierFieldsProjectionPerDelivery =
-    describe
-        "the earlier receipt fields' production projection, per delivery branch"
-        $ do
-            let headPairs c =
-                    [ ("request", toJSON (earRequest c))
-                    , ("key", toJSON (earKey c))
-                    , ("edge", toJSON (earEdge c))
-                    , ("folder", toJSON (earFolder c))
-                    , ("fold", toJSON (earFold c))
-                    ]
-                tailPairs c =
-                    [ ("root", toJSON (earRoot c))
-                    , ("foldDeadline", earDeadline c)
-                    , ("validUntilSlot", toJSON (earUpperSlot c))
-                    , ("postBuild", earPostBuild c)
-                    , ("hostClockMs", toJSON (earHostClockMs c))
-                    , ("remainingMs", toJSON (earRemainingMs c))
-                    ]
-            it
-                "projects a delivered envelope from its components, unchanged and in order"
-                $ do
-                    let liveOut = renderOutRef (txRef 111)
-                        envelope = toJSON ("656e76656c6f7065" :: T.Text)
-                        got =
-                            earlierReceiptFields
-                                baseEarlierComps{earDelivery = EarlierDelivered liveOut envelope}
-                        expected =
-                            headPairs baseEarlierComps
-                                <> [ ("liveOutput", toJSON liveOut)
-                                   , ("envelope", envelope)
-                                   ]
-                                <> tailPairs baseEarlierComps
-                    got `shouldBe` expected
-            it
-                "projects a delivered datum with its hash and cbor from its components, unchanged and in order"
-                $ do
-                    let liveOut = renderOutRef t2
-                        dHash = "6861736832" :: T.Text
-                        dCbor = "63626f7232" :: T.Text
-                        got =
-                            earlierReceiptFields
-                                baseEarlierComps
-                                    { earDelivery = EarlierDeliveredDatum liveOut dHash dCbor
-                                    }
-                        expected =
-                            headPairs baseEarlierComps
-                                <> [ ("liveOutput", toJSON liveOut)
-                                   , ("datumHash", toJSON dHash)
-                                   , ("datumCbor", toJSON dCbor)
-                                   ]
-                                <> tailPairs baseEarlierComps
-                    got `shouldBe` expected
-            it
-                "projects a released output with its deposit from its components, unchanged and in order"
-                $ do
-                    let releasedOut = renderOutRef t3
-                        deposit = 2000000 :: Integer
-                        got =
-                            earlierReceiptFields
-                                baseEarlierComps{earDelivery = EarlierReleased releasedOut deposit}
-                        expected =
-                            headPairs baseEarlierComps
-                                <> [ ("released", toJSON releasedOut)
-                                   , ("deposit", toJSON deposit)
-                                   ]
-                                <> tailPairs baseEarlierComps
-                    got `shouldBe` expected
 
 -- ---------------------------------------------------------
 -- Selection inputs: output-derived fixtures (invariants 1-5)

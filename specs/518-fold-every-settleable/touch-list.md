@@ -1,6 +1,6 @@
 # Touch list
 
-Every file this ticket edits, creates or deletes, so the merge order can be decided from what each pull request touches. Read the [plan](plan.md) for the two pull requests. Base: `main` at `8a99415d`; the command-line split (#528) merged as `c6748950` before this branch's first push. Paths below are the paths at that base. A file not on this list that the work later needs is a question to the epic owner, forwarded to the desk, before it is edited.
+Every file this ticket edits, creates or deletes, so the merge order can be decided from what each pull request touches. Read the [plan](plan.md) for the pull requests. Base of pull request 1: `main` at `8a99415d`; the command-line split (#528) merged as `c6748950` before that branch's first push. Pull request 1 merged as `9d5f4c7a`, the base of pull request 2; the rows marked 2 and 3 use the paths at that head. Paths below are the paths at that base. A file not on this list that the work later needs is a question to the epic owner, forwarded to the desk, before it is edited.
 
 Columns: **PR** is the pull request that touches it, under the cut the epic owner ruled on 2026-10-11 (1: selection, builder, command change, the devnet item for an excluded request and the page describing `registry fold`; 2: the receipt readers that read the new fields and the other pages; 3: many requests per fold, the former pull request 2). **#528 open work** says whether the split still has work on the file after the base: *none*, or the branch of the split that still edits it (the overlap table at the end names them). **Live slices** names another lane whose files this row meets. Rows marked *added at the amendment* were not in the reviewed set `b7c77ae6`; the reason is in the row.
 
@@ -19,8 +19,8 @@ Where the code lives at this base: the registry's command-line modules are the p
 
 | path | PR | change | why | #528 open work | live slices |
 |---|---|---|---|---|---|
-| `offchain/cli/src/Singular/CLI/FoldRules.hs` | 1 | edit | delete `foldTarget`, `FoldTargetRefusal`, `renderTargetRefusal`; add the named-request guard, refusal wording and `spendsSelection`. `boundStartMs`, `fundedView` and `placedEdge` stay exported (`Reclaim` imports them) | none | none |
-| `offchain/cli/src/Singular/CLI/Fold.hs` | 1, 3 | edit | PR 1: `foldPending` (it takes the application value first at this base) reads the live facts, calls the selection, makes one application step per request through the value, prints the list receipt; a termination under the neutral value becomes the exclusion `application-required` in place of the whole-command refusal; PR 3: many requests | none (the booking refusal is in the base) | #485 edits `Fold.hs` |
+| `offchain/cli/src/Singular/CLI/FoldRules.hs` | 1, 2 | edit | PR 1: delete `foldTarget`, `FoldTargetRefusal`, `renderTargetRefusal`; add the named-request guard, refusal wording and `spendsSelection`. `boundStartMs`, `fundedView` and `placedEdge` stay exported (`Reclaim` imports them). PR 2: the earlier single-request receipt fields leave `earlierReceiptFields` (the seven fields the data model names, plus the datum hash and datum bytes of a datum delivery) | none | none |
+| `offchain/cli/src/Singular/CLI/Fold.hs` | 1, 2, 3 | edit | PR 2: `foldedFields` builds the receipt without the earlier single-request fields. PR 1: `foldPending` (it takes the application value first at this base) reads the live facts, calls the selection, makes one application step per request through the value, prints the list receipt; a termination under the neutral value becomes the exclusion `application-required` in place of the whole-command refusal; PR 3: many requests | none (the booking refusal is in the base) | #485 edits `Fold.hs` |
 | `offchain/cli/src/Singular/CLI/Command.hs` | 1 | edit | the module header states "folds the one pending request"; the `--request` help text only if it changes. The documented-flags job compares the help with the pages | none | #485 edits `Command.hs` |
 | `offchain/cli/src/Singular/CLI/Trace.hs` | 1 | edit, only if the narration needs a typed event for an exclusion | the narration must agree with the receipt | none | none |
 | `offchain/cli/src/Singular/CLI/Session.hs` | 3 | edit | **collision.** `Expectation` (one key, edge and root pair becomes a list of transitions), `expecting`, `blankEntry` (the four scalar journal fields) and the prepared-line construction in `journalledSubmit`. PR 1 does not touch this file | none | **#485, #477, #493 own the state-directory and session layer** |
@@ -33,9 +33,10 @@ The split moved the combined forms and their specs here. These rows are the only
 
 | path | PR | change | why | #528 open work | live slices |
 |---|---|---|---|---|---|
-| `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Entry.hs` | 1 | edit | the combined forms (`foldAfter`) read the new fold result and print the same list receipt; the partial stop names the request that stays pending and the exclusion reason | none (the booking refusal is in the base) | #485 edits the entry commands |
+| `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Entry.hs` | 1, 2 | edit | PR 1: the combined forms (`foldAfter`) read the new fold result and print the same list receipt; the partial stop names the request that stays pending and the exclusion reason. PR 2: `insert --fold` and `terminate --fold` stop printing the fold-derived duplicates (`liveOutput`, `envelope`, `released`, `deposit`) beside the list; they keep the booking, the fold transaction, the root and the key fields | none (the booking refusal is in the base) | #485 edits the entry commands |
 | `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Command.hs` | 1 | edit | the module header states "folds the one pending request"; the swap rule removes the sentence with the rule | none | none |
 | `applications/open-datum/offchain/test/Singular/Application/OpenDatum/FoldSpec.hs` | 1 | edit | delete the group that tests `foldTarget` and its refusals (the functions are deleted, so the suite would not compile); the replacements are in `cage-tests`, see the registry tests below | none | #485 |
+| `applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs` | 2 | edit | **added at the second amendment.** Reads `liveOutput` and `released` of receipts (the folded-output check); it reads the list instead, since the top-level fields are gone | none | none |
 | `applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs` | 3 | edit | a pre-change journal line, chained transitions, observation and rollback for many | none | #477 |
 
 ## Tests in the registry package (`cage-tests`)
@@ -44,7 +45,8 @@ The split moved the combined forms and their specs here. These rows are the only
 |---|---|---|---|---|---|
 | `offchain/test/Singular/Registry/FoldSelectionSpec.hs` | 1 | create | the selection: example, independence, one per key, vocabularies, capacity | none | none |
 | `offchain/test/Singular/Registry/TxBuilder/SelectedFoldSpec.hs` | 1, 3 | create | the builder spends exactly the chosen requests among those pending | none | #471 |
-| `offchain/test/Singular/CLI/FoldRulesSpec.hs` | 1 | create | **added at the amendment.** The named-request guard, its refusal wording and `spendsSelection`, tested in the suite a hosted job runs; the old tests of the one-request rule sat in the open-datum `FoldSpec`, which no hosted job runs at the base (see the question that lists these files) | none | none |
+| `offchain/test/Singular/CLI/FoldRulesSpec.hs` | 1, 2 | create, edit | **added at the amendment.** PR 1: the named-request guard, its refusal wording and `spendsSelection`, tested in the suite a hosted job runs; the old tests of the one-request rule sat in the open-datum `FoldSpec`, which no hosted job runs at the base (see the question that lists these files). PR 2: the rows that pin the earlier receipt fields pin their absence and the list | none | none |
+| `offchain/test/Singular/CLI/CommandRunSpec.hs` | 2 | edit | **added at the second amendment.** Reads `liveOutput` and `released` of receipts (the folded-output check); it reads the list instead | none | none |
 | `offchain/test/Main.hs` | 1 | edit | register the three new specs | none | none |
 
 ## Conformance
@@ -61,23 +63,30 @@ The split moved the combined forms and their specs here. These rows are the only
 
 | path | PR | change | why | #528 open work | live slices |
 |---|---|---|---|---|---|
-| `tools/demo1_cli_journey.sh` | 1, 3 | edit | PR 1: an unsettleable request is left and named while an eligible one settles (the journey reads the new `excluded` list; the earlier receipt fields stay); PR 3: two actors book and one fold settles both. It runs `singular` for `registry fold` and `open-datum` for the entry commands | none | **#485, #381** |
-| `tools/cli_recovery_controls.sh` | 2, 3 | edit | PR 2: the list shape; PR 3: interrupt a two-request fold and reconcile both | none (the recovery journeys through both binaries are in the base) | #477 |
-| `tools/demo1_cli_controls_check.sh` | 2 | edit, only if its rows read a fold receipt | the controls follow the shape | none | #485 |
-| `docs/singular-node.md`, its `.speech.json` | 1, 3 | edit | the fold, its receipt, the two vocabularies, the capacity bound, the sentence "exactly one is pending" | none | none |
+| `tools/demo1_cli_journey.sh` | 1, 2, 3 | edit | PR 1: an unsettleable request is left and named while an eligible one settles (the journey reads the new `excluded` list; the earlier receipt fields stay); PR 2: every read of a fold receipt's request, key, edge, envelope or output takes it from the settled list; PR 3: two actors book and one fold settles both. It runs `singular` for `registry fold` and `open-datum` for the entry commands | none | **#485, #381** |
+| `tools/registry_two_actors.py` | 2 | edit | **added at the repair of the first hosted run.** The two-actor journey reads the request and the edge of a fold receipt at eight places (the live checks of the actor, reclaim, termination and cross-insertion legs, and the offline agreements); they now take both from the settled list. The first reader search looked for distinctive field names and missed it; the hosted jobs "Two actors insert and fold from the state token alone", "Two actors, a booking at another actor's state root fails the guard" and "Two actors, a faulted replay refuses RootDoesNotChain without a trie" failed on the first push | none | **#381** (the journey is its) |
+| `tools/registry_two_actors_status.test.py` | 2 | edit | **added at the repair of the first hosted run.** The fixtures that stand for a fold receipt take the settled shape, and one new case binds the request and the edge to the booking and fails when both sides are absent. It runs inside the control job of the two-actor journey, before the development network starts | none | **#381** |
+| `tools/cli_recovery_controls.sh` | 3 | edit | PR 3: interrupt a two-request fold and reconcile both | none (the recovery journeys through both binaries are in the base) | #477 |
+| `docs/singular-node.md`, its `.speech.json` | 1, 2, 3 | edit | PR 1: the fold, its receipt, the two vocabularies, the capacity bound, the sentence "exactly one is pending". PR 2: the sentence that the receipt keeps its earlier fields becomes the statement that they are gone and where each fact is read now (the node guide says it, per the epic owner's condition of 2026-10-11) | none | none |
 | `docs/cli-recovery.md`, its `.speech.json` | 3 | edit | recovery of a many-request fold | none | #477 |
-| `docs/demo1-preprod.md`, its `.speech.json` | 2 | edit | the sentence that a registry's fold takes every pending request | none | none |
-| `docs/offchain-fold-responsibilities.md`, its `.speech.json` | 2 | edit | the selection module is the owner of what a fold takes | none | #471 |
+| `docs/demo1-preprod.md`, its `.speech.json` | 2 (cut point) | edit | the sentence that a registry's fold takes every pending request | none | none |
+| `docs/offchain-fold-responsibilities.md`, its `.speech.json` | 2 (cut point) | edit | the selection module is the owner of what a fold takes | none | #471 |
 | `docs/offchain-api-reference.md`, its `.speech.json` | 1 | edit | **added at the amendment.** The page lists every module of the library and its counts, and the documentation check fails until they agree; the new `Singular.Registry.FoldSelection` changes both | none | **#471 moves modules; #528 edited the page** |
-| `onchain-release/DEMO1.md`, its `.speech.json` | 2, 3 | edit | the rehearsal command and what the fold does | none | none |
+| `onchain-release/DEMO1.md`, its `.speech.json` | 2 (cut point), 3 | edit | the rehearsal command and what the fold does | none | none |
 | `docs/audio/index.json`, `docs/audio/manifest.json`, the clips of the changed pages under `docs/audio/clips/` | 1, 2, 3 | edit, create | narration regenerated from the merged pages after the final rebase, never merged by hand (the standing authorization of the documentation skill) | none | **any lane that edits a page** (the index and manifest are shared and binary clips conflict) |
 | `specs/518-fold-every-settleable/*` | 1 | create | this record | none | none |
+
+Checked at the second amendment and not edited by pull request 2: `tools/cli_recovery_controls.sh` reads only the root of a combined insert and the request of a booking receipt, none of the removed fields (it gains rows in pull request 3); `tools/demo1_cli_controls_check.sh` reads no fold receipt (the controls it runs are in `conformance/lib/Conformance/Cli/Controls.hs`). If a writer finds a reader of a removed field in either, that is a question before the edit.
+
+The repair of the first hosted run swept by what consumes a fold receipt instead of by field names: every file that reads the JSON printed by `registry fold`, `insert --fold` or `terminate --fold` was listed with a verdict (scripts, the conformance package, both test suites, the application package, the Demo 1 and recovery scripts, the site check and the narration tools). Only the two-actor journey script and its status test still read a removed field; the others already read the settled list, read only the kept fields, or read no fold receipt.
 
 No file is deleted. No file outside this table is edited.
 
 ## Overlap with work the split owned
 
 The command-line split merged as `c6748950` and its later branches were part of main by `8a99415d`; no overlap with unmerged work remains. The files that main changed after this branch's first base and that this branch also edits (the API reference page and its speech companion, `offchain/singular-registry.cabal`, the audio index and manifest) were resolved by the rebases, the narration being regenerated from the merged pages and never merged by hand.
+
+Pull request 2 against the open pull requests at `9d5f4c7a`: none of its files is among the ten files of the common-flags change (#547, pull request 554), which edits the flag reader, the two `Command.hs` files, the two cabal files and the two test `Main.hs` files; pull request 2 adds no spec module and edits none of them. The audio index and manifest are shared with the Lean model change (#508): regenerated after the last rebase, never merged by hand. Checked by listing the files of every open pull request against the files of this one.
 
 ## Shared surfaces
 

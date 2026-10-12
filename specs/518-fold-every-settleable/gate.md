@@ -1,6 +1,6 @@
 # Gate
 
-The acceptance of [#518](https://github.com/lambdasistemi/singular/issues/518) is the repository's own CI: each acceptance line of the [spec](spec.md) is bound to the verbatim command of an existing job, with the exit that job asserts. Nothing here is a bespoke check. Version v1, frozen before any code is written (amended once before dispatch, after the plan review, to add the pull request each line belongs to; amended a second time at the stacked base for workflow line numbers and one open row below; amended a third time as v1.2 after the base moved to `58335316`, for workflow line numbers again and the rows under "Gate additions at `58335316`"; v1.3 maps one more acceptance line to an existing row and widens when it runs, at the auditor's addition during the builder run; no settled check changed); changes after the freeze are a new version with the settled rows unchanged.
+The acceptance of [#518](https://github.com/lambdasistemi/singular/issues/518) is the repository's own CI: each acceptance line of the [spec](spec.md) is bound to the verbatim command of an existing job, with the exit that job asserts. Nothing here is a bespoke check. Version v1, frozen before any code is written (amended once before dispatch, after the plan review, to add the pull request each line belongs to; amended a second time at the stacked base for workflow line numbers and one open row below; amended a third time as v1.2 after the base moved to `58335316`, for workflow line numbers again and the rows under "Gate additions at `58335316`"; v1.3 maps one more acceptance line to an existing row and widens when it runs, at the auditor's addition during the builder run; v1.4 re-reads every workflow line at `9d5f4c7a` for pull request 2 and adds its acceptance lines under "Pull request 2 at `9d5f4c7a`"; no settled check changed); changes after the freeze are a new version with the settled rows unchanged.
 
 ## How it was written
 
@@ -87,6 +87,44 @@ Three rows added in v1.2, none replacing a settled one. Each is the verbatim com
 | registry-fold-takes-the-selection | 1, 2 | open-datum-tests; open-datum-build-and-lint (the entry commands that call the same fold compile and their specs run) |
 | combined-forms-take-the-same-selection | 1, 2 | open-datum-tests; open-datum-build-and-lint |
 | all-pending-entry-point-unchanged (invariant of the builder run, added by the auditor in v1.3) | 1 | open-datum-tests: the existing control of the all-pending entry point's empty-set behaviour lives in the application package's `BurnSourceSpec` and the registry suite does not run it |
+
+## Pull request 2 at `9d5f4c7a`
+
+Pull request 1 merged as `9d5f4c7a`. No command or check changed. The workflow lines of the rows above were read again at this head; the lines that moved, for every row that a pull request 2 line below cites:
+
+| row | workflow, job, line at `9d5f4c7a` |
+|---|---|
+| focused-offchain-suite | registry.yml `journey`, step "Run the focused off-chain suite", line 596 |
+| conformance-unit-suite | conformance.yml `conformance-checks`, line 167 |
+| conformance-format, conformance-hlint | conformance.yml `format-check`, lines 86 and 90 |
+| demo1-journey-from-archive | registry.yml `demo1-archive`, line 695 |
+| demo1-two-actor-control | registry.yml `demo1-two-actor-control`, line 722 |
+| demo1-refusal-controls | registry.yml `demo1-refusals`, line 834 |
+| demo1-attach-parts | registry.yml `demo1-attach-part`, line 1093 |
+| demo1-public-readback | registry.yml `demo1-readback`, line 875 |
+| recovery-accepting, recovery-lost-answer, recovery-killed | registry.yml lines 906, 937 and 968 |
+| recovery-cross-wallet-parts | registry.yml `cli-recovery-cross-wallet-part`, line 1035 |
+| cli-flags | registry.yml `cli-flags`, lines 1131 and 1133 |
+| devnet-e2e-lanes | registry.yml `e2e-part`, line 422 |
+| batch-instructions-asked-of-the-model | conformance.yml `conformance-batch`, line 219 |
+| offchain-lint, offchain-component-build | ci.yml lines 64 and 96 |
+| open-datum-tests, open-datum-build-and-lint | ci.yml lines 151, 129 and 130 |
+| application-separation | ci.yml lines 105 and 106 (under a nix-and-git-only PATH, lines 107 and 108) |
+| code-inventory, rendered-docs, presentation-check, release-docs-check, repository-lint | ci.yml lines 241, 289, 338, 363 and 314 |
+
+Acceptance lines of pull request 2, each bound to existing rows:
+
+| acceptance line | PR | rows that prove it |
+|---|---|---|
+| readers-read-the-settled-list | 2 | conformance-unit-suite (the controls and their fixtures); focused-offchain-suite (the command-run spec reads); open-datum-tests (the open-datum command-run spec reads); demo1-journey-from-archive; demo1-refusal-controls |
+| single-request-fields-removed-from-the-fold-receipt | 2 | focused-offchain-suite: rows over the receipt pin the absence of each removed field and the presence of the list, per delivery branch, and fail on the earlier shape |
+| combined-forms-lose-the-fold-derived-duplicates | 2 | open-datum-tests; demo1-journey-from-archive (the combined forms run in the journey) |
+| every-reader-moved | 2 | the removal slice itself: a reader that still reads a removed field fails its own job (conformance-unit-suite, focused-offchain-suite, open-datum-tests, demo1-journey-from-archive, demo1-refusal-controls, recovery-accepting, recovery-lost-answer, recovery-killed, recovery-cross-wallet-parts, demo1-public-readback). Reading the source for the field names is a lead, never the proof |
+| main-stays-green | 2 | hosted CI at the exact head: every row above, every Demo 1 job and every recovery job, because this pull request edits a script both families run |
+| docs-state-the-list-receipt-and-the-removal | 2 | rendered-docs; presentation-check; release-docs-check; cli-flags |
+| fences | 2 | application-separation; the owner path fence (`git diff --stat origin/main...HEAD -- lean onchain naming-onchain simulator/formal` empty) |
+
+The candidate gate keeps its budget of 40 minutes: focused-offchain-suite (narrowed to the receipt rows and the command-run specs), conformance-unit-suite, offchain-lint, offchain-component-build, conformance-format, conformance-hlint, application-separation, rendered-docs on a docs candidate; open-datum-tests with open-datum-build-and-lint on a candidate that edits `applications/open-datum/`. The journey script is exercised only by the Demo 1 jobs: the run that edits it may run `nix run --quiet .#demo1-cli-check` once locally, in a box of its own (the gate's run time, named apart from the writer's minutes); a failure of that one run is one repair, never a campaign. Each run takes `TMPDIR` and `RUNNER_TEMP` from its own `mktemp -d /code/.lanes-tmp/t518/run.XXXXXX`, removed when the run ends (the epic owner's note of 2026-10-11, issue #557). `nix develop --quiet -c just ci` runs once on the final candidate.
 
 ## Root gate
 

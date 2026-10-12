@@ -326,15 +326,13 @@ runInsert env a = case entryMode a of
                         folded <- foldAfter at a booking
                         pure $ case fdDelivery folded of
                             Delivered liveIn holding -> case envelopeFromData (dhDatumData holding) of
-                                Right seen ->
+                                Right _ ->
                                     receipt
                                         "insert"
                                         Success
                                         ( keyFields key
                                             <> [ ("booking", toJSON (txIdHex booking))
                                                , ("fold", toJSON (txIdHex (fdTx folded)))
-                                               , ("liveOutput", toJSON (txInText liveIn))
-                                               , ("envelope", envelopeToJson seen)
                                                , ("root", toJSON (hexT (fdRoot folded)))
                                                ]
                                             <> foldReceiptLists
@@ -539,8 +537,6 @@ runTerminate env a = case entryMode a of
                                     ( keyFields key
                                         <> [ ("booking", toJSON (txIdHex booking))
                                            , ("fold", toJSON (txIdHex (fdTx folded)))
-                                           , ("released", toJSON (txInText released))
-                                           , ("deposit", toJSON deposit)
                                            , ("root", toJSON (hexT (fdRoot folded)))
                                            ]
                                         <> foldReceiptLists

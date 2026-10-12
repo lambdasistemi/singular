@@ -1577,12 +1577,32 @@ requestFacts receipt =
   where
     deadlineIn o = case KeyMap.lookup "foldDeadline" o of
         Just d -> integerAt "posixMs" d
-        Nothing -> integerAt "processingEnds" (Aeson.Object o)
+        Nothing -> case KeyMap.lookup "deadline" o of
+            Just d -> integerAt "posixMs" d
+            Nothing -> integerAt "processingEnds" (Aeson.Object o)
 
 fieldOf :: Aeson.Key -> Aeson.Object -> Maybe Text
 fieldOf k o = case KeyMap.lookup k o of
     Just (Aeson.String t) -> Just t
     _ -> Nothing
+
+-- | The first entry of the receipt's settled list, as an object.
+firstSettled :: Aeson.Value -> Maybe Aeson.Object
+firstSettled v = case elementsAt "settled" v of
+    Just (Aeson.Object o : _) -> Just o
+    _ -> Nothing
+
+-- | A settled request's own text fact, from the receipt's settled list.
+settledField :: Aeson.Key -> Aeson.Value -> Maybe Text
+settledField name v = firstSettled v >>= fieldOf name
+
+-- | A settled request's settlement text fact.
+settledSettlement :: Aeson.Key -> Aeson.Value -> Maybe Text
+settledSettlement name v = do
+    o <- firstSettled v
+    case KeyMap.lookup "settlement" o of
+        Just (Aeson.Object s) -> fieldOf name s
+        _ -> Nothing
 
 integerAt :: Aeson.Key -> Aeson.Value -> Maybe Integer
 integerAt k = \case
@@ -1776,7 +1796,10 @@ disagreements invokedKey receipt events =
           ]
         , [ "folded output " <> show o
           | Trace _ (What (Folded _ _ o)) <- events
-          , Just o /= (textAt "liveOutput" receipt <|> textAt "released" receipt)
+          , Just o
+                /= ( settledSettlement "liveOutput" receipt
+                        <|> settledSettlement "released" receipt
+                   )
           ]
         , [ "refusal " <> show k <> " under outcome " <> show outcome
           | Trace _ (What (Refused k _)) <- events
@@ -1794,8 +1817,16 @@ disagreements invokedKey receipt events =
   where
     outcome = textAt "outcome" receipt
     command = textAt "command" receipt
-    expectedKey = textAt "key" receipt <|> invokedKey
-    receiptEdge = textAt "edge" receipt
+    -- A fold receipt's key and edge live in its settled list; the earlier
+    -- top-level fields are printed beside it until the removal slice.
+    expectedKey
+        | command == Just "fold" =
+            settledField "key" receipt <|> textAt "key" receipt <|> invokedKey
+        | otherwise = textAt "key" receipt <|> invokedKey
+    receiptEdge
+        | command == Just "fold" =
+            settledField "edge" receipt <|> textAt "edge" receipt
+        | otherwise = textAt "edge" receipt
     facts = requestFacts receipt
     subs = submissionsOf receipt
     -- a reference the command found already published: read back, not submitted
