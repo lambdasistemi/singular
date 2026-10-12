@@ -32,8 +32,6 @@
 #                                      text in either citation form (the
 #                                      command form `.#<attribute>` or the
 #                                      path of that file).
-.|cli-recovery-controls|app|hosted under another name: every part this composite serialises is judged in its own hosted job (cli-recovery-accepting, cli-recovery-lost-answer, cli-recovery-killed with the history and rollback steps, and the cli-recovery-cross-wallet-part matrix); the composite itself exceeds the receipt cap and this ticket's recovery-partition slice retires it
-.|cli-recovery-cross-wallet|app|hosted under another name: the cli-recovery-cross-wallet-part matrix job runs every discovered cross-wallet case this composite serialises, each on its own node
 .|default|app|tool: the local documentation site server (the same wrapper as docs-serve)|nix/docs.nix
 .|demo1-cli-attach|app|hosted under another name: the demo1-attach-part matrix job runs each part this composite serialises (demo1-cli-attach-takes through demo1-cli-attach-over-allowance), each with its own registry and node
 .|docs-serve|app|tool: the local documentation site server for reviewing the built site without publishing it|nix/docs.nix

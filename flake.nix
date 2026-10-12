@@ -169,24 +169,7 @@
               fi
             '';
           };
-          parts = pkgs.writeShellApplication {
-            name = "cli-recovery-cross-wallet-parts";
-            runtimeInputs = with pkgs; [
-              bash
-              coreutils
-              gnugrep
-              gnused
-              jq
-            ];
-            text = ''
-              holds=$(grep -rhoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
-                ${./offchain/cli} \
-                | sed -E 's/.*"(SINGULAR_HARNESS_HOLD_[A-Z_]+)".*/\1/' | sort -u)
-              [ -n "$holds" ] || { echo "the fold path declares no hold points" >&2; exit 3; }
-              printf '%s\n' "$holds" | jq -Rsc --arg lost "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer" \
-                '{part: ((split("\n") | map(select(. != "") | "cross-wallet:" + .)) + [$lost])}'
-            '';
-          };
+          # The cross-wallet case census now lives in the partition discovery app below.
         };
       packages = system: {
         default = (project system).docs;
@@ -340,36 +323,98 @@
             procps
             python3
           ];
-          recoveryApp = name: parts: {
+          # The hosted recovery partitions, in one place. Each partition
+          # lists its parts in running order; the discovery app, the
+          # partition check, the per-partition runner and the documented
+          # commands all derive from this list. Cross-wallet cases are
+          # discovered from the fold path at discovery time, one partition
+          # per case closed by the observation, so a new hold point joins
+          # the matrix with nothing to edit here.
+          cliRecoveryPartitions = {
+            history = "accepting lost-answer killed never-sent whole-journal trie-capability";
+            rollback = "rollback trie-capability";
+          };
+          cliRecoveryPartitionNames = {
+            history = "accepting, lost-answer, killed, never-sent and whole-journal with trie observations";
+            rollback = "restored node rollback (rollback trie-capability)";
+          };
+          # #451 re-cut: the shared collector derivation, exposed as an
+          # app; its buildable package form lives in packages.
+          cliRecoveryEvidence = (recoveryTools system).evidence;
+          # One partition per invocation, by key (`history`, `rollback`) or
+          # by discovered cross-wallet case (`cross-wallet:<hold>`), through
+          # the same receipt cap and check wrapper; the controls refuse an
+          # unknown token against the shared census before any node starts.
+          cliRecoveryPartitionApp = {
             type = "app";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
-                inherit name;
+                name = "cli-recovery-partition";
                 runtimeInputs = recoveryRuntimeInputs;
                 text = ''
+                  [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-partition KEY" >&2; exit 2; }
+                  key="$1"
+                  staticParts='${builtins.toJSON cliRecoveryPartitions}'
+                  case "$key" in
+                    cross-wallet:*) parts="$key trie-capability" ;;
+                    *)
+                      parts="$(jq -r --arg k "$key" '.[$k] // empty' <<<"$staticParts")"
+                      [ -n "$parts" ] || { echo "cli-recovery-partition: unknown partition: $key" >&2; exit 2; } ;;
+                  esac
                   bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
-                  CLI_RECOVERY_PARTS="${parts}" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
+                  CLI_RECOVERY_PARTS="$parts" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
                 '';
               }
             );
           };
-          # #451 re-cut: the shared collector and census derivations, exposed
-          # as apps; their buildable package forms live in packages.
-          cliRecoveryEvidence = (recoveryTools system).evidence;
-          cliRecoveryParts = (recoveryTools system).parts;
-          # #451 re-cut R2: one source-discovered case per invocation, through
-          # the same controls and checkwrapper; the controls refuse an unknown
-          # token against the shared census before any node starts.
-          cliRecoveryCrossPartApp = {
+          # The partition census: every static partition with its hosted
+          # name, then one partition per cross-wallet case discovered from
+          # the fold path's own sources. No node; the workflow matrix and
+          # the partition check both read this list.
+          cliRecoveryPartitionsApp = {
             type = "app";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
-                name = "cli-recovery-cross-wallet-part";
-                runtimeInputs = recoveryRuntimeInputs;
+                name = "cli-recovery-partitions";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  gnused
+                  jq
+                ];
                 text = ''
-                  [ "$#" -eq 1 ] && [ -n "$1" ] || { echo "usage: cli-recovery-cross-wallet-part PART" >&2; exit 2; }
-                  bash ${managedScripts}/cli_recovery_receipt_cap.test.sh ${managedScripts}/cli_recovery_controls.sh
-                  CLI_RECOVERY_PARTS="$1" CLI_RECOVERY_CONTROLS=${managedScripts}/cli_recovery_controls.sh bash ${./tools/cli_recovery_controls_check.sh} "$PWD"
+                  staticParts='${builtins.toJSON cliRecoveryPartitions}'
+                  staticNames='${builtins.toJSON cliRecoveryPartitionNames}'
+                  holds=$(grep -rhoE 'harnessHoldAt[[:space:]]+"SINGULAR_HARNESS_HOLD_[A-Z_]+"' \
+                    ${./offchain/cli} | sed -E 's/.*"(SINGULAR_HARNESS_HOLD_[A-Z_]+)".*/\1/' | sort -u)
+                  [ -n "$holds" ] || { echo "cli-recovery-partitions: the fold path declares no hold points" >&2; exit 2; }
+                  jq -c -n --argjson parts "$staticParts" --argjson names "$staticNames" --arg holds "$holds" '
+                    {partition: ([$parts | to_entries[] | {key: .key, name: $names[.key], parts: .value}] + ($holds | split("\n") | map(select(. != "") | {key: ("cross-wallet:" + .), name: ("another wallet fold: cross-wallet:" + . + " with trie observations"), parts: (. | "cross-wallet:" + . + " trie-capability")}) + [{key: "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer", name: "another wallet fold: cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer with trie observations", parts: "cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND:lost-answer trie-capability"}]))}'
+                '';
+              }
+            );
+          };
+          # The hosted check on the partitions: every scenario part in
+          # exactly one partition, every partition closed by the
+          # observation. Reads the discovery list; the controls script it
+          # judges defaults to this checkout, CLI_RECOVERY_CONTROLS
+          # overrides it for the dummy-part plant.
+          cliRecoveryPartitionCheckApp = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "cli-recovery-partition-check";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  gnused
+                  jq
+                ];
+                text = ''
+                  [ "$#" -eq 2 ] || { echo "usage: cli-recovery-partition-check REPO-ROOT PARTITIONS_JSON" >&2; exit 2; }
+                  bash ${./tools/cli_recovery_partition_check.sh} "$1" "$2"
                 '';
               }
             );
@@ -766,13 +811,10 @@
               }
             );
           };
-          # #325: the ordinary CLI's recovery controls, run as `open-datum`
-          # and `singular` processes (open verbs through `open-datum`,
-          # `reject`/`reclaim` through `singular registry`) — a lost
-          # acknowledgement, a local commit interrupted before and after the
-          # mirror is saved, a transaction never sent, and an accepting
-          # control — judged from receipts and journals:
-          # `nix run --quiet .#cli-recovery-controls`.
+          # The private facade's joined lifecycle and fatal failure controls,
+          # run as `open-datum` and `singular` processes — judged from
+          # receipts and journals:
+          # `nix run --quiet .#facade-lifecycle-controls`.
           facade-lifecycle-controls = {
             type = "app";
             program = pkgs.lib.getExe (
@@ -790,27 +832,17 @@
               }
             );
           };
-          cli-recovery-history = recoveryApp "cli-recovery-history" "accepting lost-answer killed never-sent whole-journal trie-capability";
-          cli-recovery-rollback = recoveryApp "cli-recovery-rollback" "rollback trie-capability";
-          cli-recovery-controls = recoveryApp "cli-recovery-controls" "";
-          # #449: the parts seen passing on main since #411, one CI job each.
-          cli-recovery-accepting = recoveryApp "cli-recovery-accepting" "accepting";
-          cli-recovery-lost-answer = recoveryApp "cli-recovery-lost-answer" "lost-answer";
-          cli-recovery-killed = recoveryApp "cli-recovery-killed" "accepting killed";
-          # #451: the cross-wallet part alone, on its own starting state.
-          cli-recovery-cross-wallet = recoveryApp "cli-recovery-cross-wallet" "cross-wallet";
-          # #451 re-cut: the pure case census, one case per invocation, and
-          # the portable collector — the hosted gate runs the census app, the
-          # per-case matrix and the collector app per matrix job.
-          cli-recovery-cross-wallet-parts = {
-            type = "app";
-            program = pkgs.lib.getExe cliRecoveryParts;
-          };
-          cli-recovery-cross-wallet-part = cliRecoveryCrossPartApp;
+          # The portable collector — the hosted gate runs the census app, the
+          # per-partition matrix and the collector app per matrix job.
           cli-recovery-cross-wallet-evidence = {
             type = "app";
             program = pkgs.lib.getExe cliRecoveryEvidence;
           };
+          # The hosted partitions, derived from the single list above:
+          # one runner, one discovery list and one census check.
+          cli-recovery-partition = cliRecoveryPartitionApp;
+          cli-recovery-partitions = cliRecoveryPartitionsApp;
+          cli-recovery-partition-check = cliRecoveryPartitionCheckApp;
         };
     in
     {

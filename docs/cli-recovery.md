@@ -160,16 +160,26 @@ outcome `partial`, alongside the root and chain point it read.
 
 ## What the checks show
 
-The recovery controls run each case as separate `singular` processes
-against one generated development node, and judge every clause from the
-receipts the processes printed, the registry's journal, its saved
-bodies and its files, and — for exclusion and rollback — from the
-node's own answers, read with `devnet probe` and its block adoption
-trace, never through the command under test:
+The recovery controls run each hosted partition as separate `singular`
+processes against its own generated development node, and judge every
+clause from the receipts the processes printed, the registry's journal,
+its saved bodies and its files, and — for exclusion and rollback — from
+the node's own answers, read with `devnet probe` and its block adoption
+trace, never through the command under test. The partitions are listed in
+one place in the root flake; the discovery command prints them for the
+workflow matrix, and each partition runs by key:
 
 ```sh
-nix run --quiet .#cli-recovery-controls
+nix run --quiet .#cli-recovery-partitions
+nix run --quiet .#cli-recovery-partition -- history
+nix run --quiet .#cli-recovery-partition -- rollback
+nix run --quiet .#cli-recovery-partition -- 'cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND'
 ```
+
+The combined `.#cli-recovery-controls` command is retired: it serialised
+every part on one node and exceeded the receipt cap of 52428800 bytes
+before reaching never-sent and rollback. The per-partition commands above
+are generated from the same partition list the workflow matrix uses.
 
 | control | what happens | what the next command does |
 |---|---|---|
