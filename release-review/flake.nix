@@ -2,9 +2,10 @@
   description = "Pinned Singular archive reproduction checks";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/117cc7f94e8072499b0a7aa4c52084fa4e11cc9b";
+  inputs.nixpkgs-lean.url = "github:NixOS/nixpkgs/7f4e8517083e42a1b38907598dadc02c7235b30e";
 
   outputs =
-    { self, nixpkgs }:
+    { self, nixpkgs, nixpkgs-lean }:
     let
       systems = [
         "x86_64-linux"
@@ -16,19 +17,23 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          leanPkgs = import nixpkgs-lean { inherit system; };
           checked = pkgs.stdenv.mkDerivation {
             pname = "singular-archive-review";
             version = "0.1.0";
             src = self;
             nativeBuildInputs = [
-              pkgs.lean4
+              leanPkgs.lean4
               pkgs.nodejs
               pkgs.python3
             ];
             buildPhase = ''
               runHook preBuild
-              test "$(cat lean-toolchain)" = "leanprover/lean4:v4.25.0"
-              lean --version | grep -F 'version 4.25.0'
+              toolchain="$(cat lean-toolchain)"
+              expected_version="''${toolchain#leanprover/lean4:v}"
+              actual_version="$(lean --version)"
+              echo "$actual_version" | grep -F "version $expected_version" \
+                || { echo "compiler mismatch: lean-toolchain wants version $expected_version but lean reports: $actual_version" >&2; exit 1; }
               lake build
               lake env lean tools/axioms.lean > axioms-report.txt
               python3 tools/check_model.py \
