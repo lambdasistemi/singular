@@ -283,7 +283,7 @@ jobs:
     needs: build-gate
     name: Workflow commands resolve and controls
     runs-on: nixos
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Reuse this runner's Nix cache
         run: |

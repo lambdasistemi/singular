@@ -151,14 +151,23 @@
         # offchain flake apps. Each owns its scratch directory (mktemp with
         # trap cleanup, bounded to the run, no process stopped) and runs
         # from the checkout so the scripts' own layout still resolves. Setup
-        # (fetching the pinned git sources) exits 2, distinct from the
-        # verdict exit 1 the scripts use.
+        # (downloading the package index, then fetching the pinned git
+        # sources) exits 2, distinct from the verdict exit 1 the scripts use.
+        # On a clean runner the setup owns its Cabal state: config and
+        # package index under a named reusable cache in XDG_CACHE_HOME,
+        # never $HOME/.config/cabal or $HOME/.cabal; the package lists are
+        # downloaded before the solve (cabal solves against an empty index
+        # otherwise); and the HTTPS download path is declared, its external
+        # transport (curl) in the executables and the certificate bundle
+        # exported.
         buildGraphRuntime = [
           cabalTool
           project.project.pkg-set.config.ghc.package
           pkgs.bash
           pkgs.bzip2
+          pkgs.cacert
           pkgs.coreutils
+          pkgs.curl
           pkgs.findutils
           pkgs.gawk
           pkgs.git
@@ -207,8 +216,35 @@
           fi
           src="$work/copy"
           export PKG_CONFIG_PATH="${pkgs.lib.getDev pkgs.ncurses}/lib/pkgconfig:${pkgs.lib.getDev pkgs.ncurses}/share/pkgconfig:${pkgs.lib.getDev pkgs.libblst}/lib/pkgconfig:${pkgs.lib.getDev pkgs.libblst}/share/pkgconfig:${pkgs.lib.getDev pkgs.libsodium-vrf}/lib/pkgconfig:${pkgs.lib.getDev pkgs.libsodium-vrf}/share/pkgconfig:${pkgs.lib.getDev pkgs.secp256k1}/lib/pkgconfig:${pkgs.lib.getDev pkgs.secp256k1}/share/pkgconfig:${pkgs.lib.getDev pkgs.zlib}/lib/pkgconfig:${pkgs.lib.getDev pkgs.zlib}/share/pkgconfig:${pkgs.lib.getDev pkgs.rocksdb}/lib/pkgconfig:${pkgs.lib.getDev pkgs.rocksdb}/share/pkgconfig:${pkgs.lib.getDev pkgs.bzip2}/lib/pkgconfig:${pkgs.lib.getDev pkgs.bzip2}/share/pkgconfig:${pkgs.lib.getDev pkgs.lz4}/lib/pkgconfig:${pkgs.lib.getDev pkgs.lz4}/share/pkgconfig:${pkgs.lib.getDev pkgs.snappy}/lib/pkgconfig:${pkgs.lib.getDev pkgs.snappy}/share/pkgconfig:${pkgs.lib.getDev pkgs.zstd}/lib/pkgconfig:${pkgs.lib.getDev pkgs.zstd}/share/pkgconfig:${pkgs.lib.getDev pkgs.lmdb}/lib/pkgconfig:${pkgs.lib.getDev pkgs.lmdb}/share/pkgconfig:${pkgs.lib.getDev pkgs.liburing}/lib/pkgconfig:${pkgs.lib.getDev pkgs.liburing}/share/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+          # The app owns its Cabal state: config and package index live in a
+          # named reusable cache directory under XDG_CACHE_HOME (or
+          # HOME/.cache when unset), never in $HOME/.config/cabal or
+          # $HOME/.cabal; a warm copy makes the index bootstrap incremental,
+          # a fresh one downloads it whole. The certificate bundle is
+          # exported for the transport curl and the git fetches alike.
+          cache_root="''${XDG_CACHE_HOME:-''${HOME:+$HOME/.cache}}"
+          [ -n "''${cache_root:-}" ] || {
+            echo "registry-cli-build-graph: no cache location: set XDG_CACHE_HOME or HOME" >&2
+            exit 2
+          }
+          if ! mkdir -p "$cache_root/singular-registry-build-graph-cabal"; then
+            echo "registry-cli-build-graph: setup failed creating the cabal download cache directory" >&2
+            exit 2
+          fi
+          export CABAL_DIR="$cache_root/singular-registry-build-graph-cabal"
+          export CURL_CA_BUNDLE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          export GIT_SSL_CAINFO="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          # On a clean runner cabal solves against an empty index unless the
+          # package lists are downloaded first (hackage and the project's
+          # cardano-haskell-packages repository alike); a warm cache makes
+          # this a fast incremental check.
+          if ! (cd "$src" && cabal update); then
+            echo "registry-cli-build-graph: setup failed updating the package index (cabal update)" >&2
+            exit 2
+          fi
           if ! out="$(cd "$src" && cabal build --dry-run all 2>&1)"; then
-            echo "registry-cli-build-graph: setup failed fetching the pinned git sources (cabal build --dry-run all)" >&2
+            echo "registry-cli-build-graph: setup failed fetching the pinned git sources and the package index (cabal build --dry-run all)" >&2
             printf '%s\n' "$out" >&2
             exit 2
           fi
