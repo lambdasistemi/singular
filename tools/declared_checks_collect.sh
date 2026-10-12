@@ -14,23 +14,37 @@
 # build hosts a check only when the bare installable resolves to that
 # check's derivation, proven by outPath) and flake-check runs onto every
 # check of their flake, collects the workflow job ids once, scans the
-# marker line and the citations of every tool entry, and calls the pure
-# classifier. Building an app is not hosting it.
+# marker line, the attribute naming and the citations of every tool entry,
+# and calls the pure classifier. Building an app is not hosting it.
 #
 # The tool scan (the operator ruling of 2026-10-12): each tool entry names
 # the file that defines its tool, and that file must carry the marker line
-# `Tool, not a guarantee: <purpose>`; and the published text — every
-# tracked file under docs/ plus every tracked README.md plus the pull
-# request template, discovered from the tree so a new page joins without
-# editing this check — must not cite the tool, in either citation form:
-# the command form `.#<attribute>` or the path of the file that defines
-# it. A tool's own file citing its command form is a citation too. The
-# citation extent deliberately excludes the workflows (their run lines
-# are the hosting oracle this census already reads; their comments name
-# hosted carriers and are judged as comments), the frozen specs/
-# acceptance records (dated testimony of closed slices, kept unchanged
-# by this ticket's own design, not live claims), and contributor tooling
-# outside the published text (the justfile, the nix files).
+# `Tool, not a guarantee: <purpose>` and name the attribute it certifies
+# (the marker travels with the defining wrapper; the classifier also
+# requires the file to live in the entry's own flake directory). The
+# published text — every tracked file under docs/ plus every tracked
+# README.md plus the pull request template, discovered from the tree so a
+# new page joins without editing this check — must not cite the tool in
+# any form bound to its flake and app identity: for a root tool the
+# unqualified spellings `.#<attribute>`, `./#<attribute>` and the quoted
+# `'#<attribute>'` / `"#<attribute>`, for another flake's tool only its
+# flake-qualified spellings `<flake>#<attribute>` and
+# `./<flake>#<attribute>` (an unqualified `.#<attribute>` never cites
+# another flake's tool), and for every tool the path of the file that
+# defines it. A tool's own file citing one of its own command forms is a
+# citation too; a file naming its own path is self-reference, not a
+# citation, so the path form is not sought there. Every scan is
+# case-sensitive: installer references are exact identities. The citation
+# extent deliberately excludes the workflows (their run lines are the
+# hosting oracle this census already reads; their comments name hosted
+# carriers and are judged as comments), the frozen specs/ acceptance
+# records (dated testimony of closed slices, kept unchanged by this
+# ticket's own design, not live claims), and contributor tooling outside
+# the published text (the justfile, the nix files).
+#
+# `${GREP_BIN:-grep}` scans the marker, naming and citation patterns, so
+# the failing-scan control can prove a scan failure is a setup failure:
+# the default is the plain grep every other scan in this repository uses.
 #
 # The wrapper owns its scratch directory (created and removed on every
 # exit); no build state lands in the checkout, no process is stopped. Every
@@ -183,8 +197,9 @@ for d in "${!flake_checked[@]}"; do
   done
 done
 
-# The tool entries of the list: the marker file each names, whose state
-# and citations this layer hands to the classifier as plain files.
+# The tool entries of the list: the marker file each names, whose marker
+# state, attribute naming and citations this layer hands to the classifier
+# as plain files.
 declare -A tool_file_of=()
 while IFS='|' read -r tf ta tk tr tfile || [ -n "$tf" ]; do
   case "$tf" in
@@ -200,62 +215,134 @@ escape_ere() {
   printf '%s' "$1" | sed -e 's/[][\.*^$()+?{}|]/\\&/g'
 }
 
+# scan_grep [-i] PATTERN FILE: exit 0 the pattern matches, exit 1 it does
+# not. Any other grep status (a read or I/O failure) is a setup failure
+# with the diagnostic, never a clean scan and never a verdict: an
+# incomplete scan cannot become absence evidence.
+scan_grep() {
+  local status
+  local -a grep_args=(-E -q)
+  if [ "${1:-}" = "-i" ]; then
+    grep_args=(-E -q -i)
+    shift
+  fi
+  if "${GREP_BIN:-grep}" "${grep_args[@]}" -- "$1" "$2" >/dev/null 2>&1; then
+    return 0
+  else
+    status=$?
+  fi
+  if [ "$status" -eq 1 ]; then return 1; fi
+  setup_fail "scanning $2 for a tool marker or citation failed (exit $status)"
+}
+
+# check_citation_own FORM PATTERN: the tool's own defining file matching
+# the pattern is emitted once as `form|path`.
+check_citation_own() {
+  local form="$1" pattern="$2"
+  if scan_grep "$pattern" "$target"; then
+    if [ -z "${citation_done["$form|$tfile"]+x}" ]; then
+      citation_done["$form|$tfile"]=1
+      printf '%s|%s\n' "$form" "$tfile" >>"$work/citations"
+    fi
+  fi
+}
+
+# check_citation FORM PATTERN: every extent member matching the pattern
+# is emitted once as `form|path`. The path form of the defining file is
+# not sought in that file itself: a file naming its own path is
+# self-reference, not a citation.
+check_citation() {
+  local form="$1" pattern="$2" ef
+  for ef in "${extent[@]}"; do
+    if scan_grep "$pattern" "$root/$ef"; then
+      if [ -z "${citation_done["$form|$ef"]+x}" ]; then
+        citation_done["$form|$ef"]=1
+        printf '%s|%s\n' "$form" "$ef" >>"$work/citations"
+      fi
+    fi
+  done
+}
+
 : >"$work/toolmarkers"
 : >"$work/citations"
 if [ "${#tool_file_of[@]}" -gt 0 ]; then
   # The published text a citation would live in, discovered from the
-  # tree. The two fixed members of the floor must be present and tracked:
-  # losing either would silently shrink the extent, so it is a setup
-  # failure, never a quieter scan.
+  # tree. The enumeration is captured to a file and its completion is
+  # checked: an unchecked listing that dies silently would shrink the
+  # extent. The two fixed members of the floor must be present and
+  # tracked: losing either would silently shrink the extent, so it is a
+  # setup failure, never a quieter scan.
+  git -C "$root" ls-files -z -- docs '*README.md' '.github/pull_request_template.md' >"$work/extent.raw" \
+    || setup_fail "listing the citation extent (tracked files under docs/, every README.md, the pull request template) failed"
   extent=()
   while IFS= read -r -d '' ef; do
     extent+=("$ef")
-  done < <(git -C "$root" ls-files -z -- docs '*README.md' '.github/pull_request_template.md')
+  done <"$work/extent.raw"
   [ "${#extent[@]}" -gt 0 ] || setup_fail "the citation extent is empty (no tracked file under docs/, no README.md, no pull request template)"
   [ -n "$(git -C "$root" ls-files -- README.md)" ] \
     || setup_fail "the citation extent lost the root README.md"
   [ -n "$(git -C "$root" ls-files -- .github/pull_request_template.md)" ] \
     || setup_fail "the citation extent lost the pull request template"
-  declare -A marker_status_done=()
+  # Every intended member must exist and be readable: a tracked file
+  # absent from the checkout is a broken scan, never a skipped one.
+  for ef in "${extent[@]}"; do
+    [ -f "$root/$ef" ] \
+      || setup_fail "citation extent member $ef is tracked but missing from the checkout"
+    [ -r "$root/$ef" ] \
+      || setup_fail "citation extent member $ef is tracked but not readable"
+  done
   declare -A citation_done=()
+  marker_pattern='^[[:space:]]*#?[[:space:]]*Tool, not a guarantee: '
   for key in "${!tool_file_of[@]}"; do
     IFS='|' read -r tf ta tk <<<"$key"
     tfile="${tool_file_of["$key"]}"
     target="$root/$tfile"
-    # Several entries may name the same defining file (a wrapper shared
-    # by two apps); the marker line is the file's, so its status is
-    # emitted once per file, never twice.
-    if [ -z "${marker_status_done["$tfile"]+x}" ]; then
-      marker_status_done["$tfile"]=1
-      if [ ! -f "$target" ]; then
-        status=missing
-      elif grep -Eq '^[[:space:]]*#?[[:space:]]*Tool, not a guarantee: ' "$target"; then
+    eattr="$(escape_ere "$ta")"
+    eflake="$(escape_ere "$tf")"
+    if [ ! -f "$target" ]; then
+      status=missing
+      mention=nameless
+    elif [ ! -r "$target" ]; then
+      setup_fail "the file that defines the tool, $tfile, is not readable"
+    else
+      if scan_grep "$marker_pattern" "$target"; then
         status=marked
       else
         status=unmarked
       fi
-      printf '%s %s\n' "$tfile" "$status" >>"$work/toolmarkers"
+      if scan_grep "(^|[^A-Za-z0-9_-])$eattr([^A-Za-z0-9_-]|$)" "$target"; then
+        mention=names
+      else
+        mention=nameless
+      fi
     fi
-    cmd_form=".#$ta"
-    cmd_pattern="$(escape_ere "$cmd_form")([^A-Za-z0-9_-]|$)"
-    path_pattern="$(escape_ere "$tfile")([^A-Za-z0-9_./-]|$)"
-    for ef in "${extent[@]}"; do
-      [ -f "$root/$ef" ] || continue
-      if grep -EqI -- "$cmd_pattern" "$root/$ef" && [ -z "${citation_done["$cmd_form|$ef"]+x}" ]; then
-        citation_done["$cmd_form|$ef"]=1
-        printf '%s|%s\n' "$cmd_form" "$ef" >>"$work/citations"
+    printf '%s|%s|%s %s %s\n' "$tf" "$ta" "$tfile" "$status" "$mention" >>"$work/toolmarkers"
+    # The citation forms bound to the tool's flake and app identity. A
+    # root tool answers every unqualified spelling; another flake's tool
+    # answers only its flake-qualified spellings, so an ordinary
+    # same-named reference elsewhere is never misattributed to it.
+    if [ "$tf" = "." ]; then
+      check_citation ".#$ta" "(^|[^A-Za-z0-9_./-])\\.#$eattr([^A-Za-z0-9_-]|$)"
+      check_citation "./#$ta" "(^|[^A-Za-z0-9_./-])\\./#$eattr([^A-Za-z0-9_-]|$)"
+      check_citation "'#$ta" "'#$eattr([^A-Za-z0-9_-]|$)"
+      check_citation '"'"#$ta" '"'"#$eattr([^A-Za-z0-9_-]|$)"
+    else
+      check_citation "$tf#$ta" "(^|[^A-Za-z0-9_./-])$eflake#$eattr([^A-Za-z0-9_-]|$)"
+      check_citation "./$tf#$ta" "(^|[^A-Za-z0-9_./-])\\./$eflake#$eattr([^A-Za-z0-9_-]|$)"
+    fi
+    check_citation "$tfile" "(^|[^A-Za-z0-9_./-])$(escape_ere "$tfile")([^A-Za-z0-9_./-]|$)"
+    # A tool's own file citing one of its own command forms is a
+    # citation too.
+    if [ -f "$target" ]; then
+      if [ "$tf" = "." ]; then
+        check_citation_own ".#$ta" "(^|[^A-Za-z0-9_./-])\\.#$eattr([^A-Za-z0-9_-]|$)"
+        check_citation_own "./#$ta" "(^|[^A-Za-z0-9_./-])\\./#$eattr([^A-Za-z0-9_-]|$)"
+        check_citation_own "'#$ta" "'#$eattr([^A-Za-z0-9_-]|$)"
+        check_citation_own '"'"#$ta" '"'"#$eattr([^A-Za-z0-9_-]|$)"
+      else
+        check_citation_own "$tf#$ta" "(^|[^A-Za-z0-9_./-])$eflake#$eattr([^A-Za-z0-9_-]|$)"
+        check_citation_own "./$tf#$ta" "(^|[^A-Za-z0-9_./-])\\./$eflake#$eattr([^A-Za-z0-9_-]|$)"
       fi
-      if grep -EqI -- "$path_pattern" "$root/$ef" && [ -z "${citation_done["$tfile|$ef"]+x}" ]; then
-        citation_done["$tfile|$ef"]=1
-        printf '%s|%s\n' "$tfile" "$ef" >>"$work/citations"
-      fi
-    done
-    # A tool's own file citing its own command form is a citation too; a
-    # file naming its own path is self-reference, not a citation, so the
-    # path form is not sought here.
-    if [ -f "$target" ] && grep -EqI -- "$cmd_pattern" "$target" && [ -z "${citation_done["$cmd_form|$tfile"]+x}" ]; then
-      citation_done["$cmd_form|$tfile"]=1
-      printf '%s|%s\n' "$cmd_form" "$tfile" >>"$work/citations"
     fi
   done
 fi

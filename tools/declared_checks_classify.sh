@@ -23,15 +23,23 @@
 #   STATES    optional lines `<number> <open|closed>`: the issue states a
 #             `pending wiring` reason names. Read lazily: a run with no
 #             pending entry needs no source.
-#   TOOLMARKERS optional lines `<path> marked|unmarked|missing`: the state
-#             of the marker line of each tool entry's file, as the
-#             integration layer found it in the tree. Read lazily: a run
-#             with no tool entry needs no source.
+#   TOOLMARKERS optional lines
+#             `<flake>|<attribute>|<path> marked|unmarked|missing
+#             names|nameless`: the state of the marker line of each tool
+#             entry's file and whether that file names the attribute it
+#             certifies, as the integration layer found them in the tree.
+#             Read lazily: a run with no tool entry needs no source.
 #   CITATIONS   optional lines `<citation-form>|<path>`: every occurrence
-#             of a tool's citation forms (the command form `.#<attribute>`
-#             and the path of the file that defines it) in the published
-#             text, as the integration layer discovered it. Read lazily:
-#             a run with no tool entry needs no source.
+#             of a tool's citation forms in the published text, as the
+#             integration layer discovered it. A root tool's forms are the
+#             unqualified spellings `.#<attribute>`, `./#<attribute>` and
+#             the quoted `'#<attribute>'` / `"#<attribute>`, plus the path
+#             of the file that defines it; a tool of another flake is
+#             cited only by its flake-qualified spellings
+#             `<flake>#<attribute>` and `./<flake>#<attribute>`, plus its
+#             defining file's path. An unqualified `.#<attribute>` never
+#             cites another flake's tool. Read lazily: a run with no tool
+#             entry needs no source.
 #
 # The classifier reads no flake, no git tree, no network and no clock, so a
 # test feeds it fixtures. Exit 0: every declared entry hosted or reasoned
@@ -42,10 +50,13 @@
 # The tool class is the operator ruling of 2026-10-12: a runnable check is
 # an obligation (hosted), a tool (marked, never cited as evidence), or
 # temporary (deleted before merging). A tool entry fails when the file that
-# defines the tool is missing or carries no marker line, and when any
-# citation form of the tool appears in the published text, the tool's own
-# file included. Checking the marker's presence is the subject here: the
-# marker text is the declaration.
+# defines the tool is missing or carries no marker line, when that file
+# does not name the attribute it certifies or lives outside the entry's
+# own flake directory (the marker travels with the defining wrapper, so
+# a marked stranger cannot certify an unrelated obligation), and when any
+# citation form bound to the tool's flake and app identity appears in the
+# published text, the tool's own file included. Checking the marker's
+# presence is the subject here: the marker text is the declaration.
 set -euo pipefail
 
 setup_fail() {
@@ -184,28 +195,39 @@ issue_state_of() {
 }
 
 declare -A tool_marker_status=()
+declare -A tool_marker_names=()
 declare -A tool_citation_paths=()
 tool_inputs_loaded=0
 load_tool_inputs() {
-  local entry="$1" line tf tp status
+  local entry="$1" line tf tp tkey tstatus tmention textra kf ka kp kx
   if [ "$tool_inputs_loaded" -eq 0 ]; then
     [ -n "$toolmarkers_file" ] \
-      || setup_fail "$entry: a tool entry needs the tool-marker source handed as the sixth argument (a file of '<path> marked|unmarked|missing' lines)"
+      || setup_fail "$entry: a tool entry needs the tool-marker source handed as the sixth argument (a file of '<flake>|<attribute>|<path> marked|unmarked|missing names|nameless' lines)"
     [ -f "$toolmarkers_file" ] \
       || setup_fail "the tool-marker source $toolmarkers_file does not exist"
     [ -n "$citations_file" ] \
       || setup_fail "$entry: a tool entry needs the citation source handed as the seventh argument (a file of '<citation-form>|<path>' lines)"
     [ -f "$citations_file" ] \
       || setup_fail "the citation source $citations_file does not exist"
-    while IFS=' ' read -r tf status || [ -n "$tf" ]; do
-      [ -n "$tf" ] || continue
-      case "$status" in
+    while IFS=' ' read -r tkey tstatus tmention textra || [ -n "$tkey" ]; do
+      [ -n "$tkey" ] || continue
+      IFS='|' read -r kf ka kp kx <<<"$tkey"
+      [ -n "$kf" ] && [ -n "$ka" ] && [ -n "$kp" ] && [ -z "${kx:-}" ] \
+        || setup_fail "malformed tool-marker key '$tkey' in $toolmarkers_file (expected '<flake>|<attribute>|<path>')"
+      case "$tstatus" in
         marked | unmarked | missing) ;;
-        *) setup_fail "malformed tool-marker line '$tf $status' in $toolmarkers_file (expected '<path> marked|unmarked|missing')" ;;
+        *) setup_fail "malformed tool-marker line '$tkey $tstatus $tmention' in $toolmarkers_file (expected '<flake>|<attribute>|<path> marked|unmarked|missing names|nameless')" ;;
       esac
-      [ -z "${tool_marker_status["$tf"]+x}" ] \
-        || setup_fail "the tool-marker source answers twice for $tf"
-      tool_marker_status["$tf"]="$status"
+      case "$tmention" in
+        names | nameless) ;;
+        *) setup_fail "malformed tool-marker line '$tkey $tstatus $tmention' in $toolmarkers_file (expected '<flake>|<attribute>|<path> marked|unmarked|missing names|nameless')" ;;
+      esac
+      [ -z "${textra:-}" ] \
+        || setup_fail "malformed tool-marker line '$tkey $tstatus $tmention $textra' in $toolmarkers_file (expected '<flake>|<attribute>|<path> marked|unmarked|missing names|nameless')"
+      [ -z "${tool_marker_status["$tkey"]+x}" ] \
+        || setup_fail "the tool-marker source answers twice for $tkey"
+      tool_marker_status["$tkey"]="$tstatus"
+      tool_marker_names["$tkey"]="$tmention"
     done <"$toolmarkers_file"
     while IFS='|' read -r tf tp || [ -n "$tf" ]; do
       [ -n "$tf" ] || continue
@@ -352,8 +374,18 @@ while IFS= read -r line || [ -n "$line" ]; do
       esac
       ;;
     'tool: '*)
+      if [ "$ef" != "." ]; then
+        case "$efile" in
+          "$ef/"*) ;;
+          *)
+            verdict_fail "$where: the file that defines the tool, $efile, lives outside the flake $ef; the marker travels with the file that defines the app"
+            ;;
+        esac
+      fi
       load_tool_inputs "$where"
-      tstatus="${tool_marker_status["$efile"]-}"
+      tkey="$ef|$ea|$efile"
+      tstatus="${tool_marker_status["$tkey"]-}"
+      tmention="${tool_marker_names["$tkey"]-}"
       case "$tstatus" in
         marked) ;;
         unmarked)
@@ -363,10 +395,19 @@ while IFS= read -r line || [ -n "$line" ]; do
           verdict_fail "$where: the file that defines the tool, $efile, does not exist"
           ;;
         *)
-          verdict_fail "$where: no marker status was handed for $efile, the file that defines the tool"
+          verdict_fail "$where: no tool-marker line was handed for $ef $ea ($efile), the file that defines the tool"
           ;;
       esac
-      for cit_form in ".#$ea" "$efile"; do
+      if [ "$tstatus" = marked ] && [ "$tmention" != names ]; then
+        verdict_fail "$where: the file that defines the tool, $efile, does not name the attribute $ea it certifies; the marker must live in the file that defines the app"
+      fi
+      tool_forms=()
+      if [ "$ef" = "." ]; then
+        tool_forms=(".#$ea" "./#$ea" "'#$ea" '"'"#$ea")
+      else
+        tool_forms=("$ef#$ea" "./$ef#$ea")
+      fi
+      for cit_form in "${tool_forms[@]}" "$efile"; do
         if [ -n "${tool_citation_paths["$cit_form"]+x}" ]; then
           verdict_fail "$where: the tool $ea of flake $ef is cited as evidence or guarantee in ${tool_citation_paths["$cit_form"]} (as $cit_form); a tool is never cited"
         fi

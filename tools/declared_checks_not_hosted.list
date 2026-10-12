@@ -69,7 +69,6 @@ conformance|coverage-gate-tests|check|hosted under another name: the coverage-ga
 conformance|format-check|check|hosted under another name: the format-check job runs the format-check app, the same body this check's sandbox executes
 conformance|hlint-check|check|hosted under another name: the format-check job's hlint step runs the hlint-check app, the same body this check's sandbox executes
 applications/open-datum/offchain|open-datum|app|hosted under another name: the registry-two-actors-replay-fault job builds and drives this application CLI (nix build of applications/open-datum/offchain#open-datum is the control's setup)
-applications/open-datum/offchain|singular|app|tool: the registry command line as built inside the application tree, for local use against an application deployment|tools/declared_tools/open-datum-singular.md
 applications/open-datum/offchain|singular-negative|app|hosted under another name: the negative-host-ordinary, negative-host-mutant and negative-host-node-free-controls jobs exercise this instrumented host binary, built from this flake by the negative-host apps
 applications/open-datum/offchain|lint|check|hosted under another name: the open-datum-component-build job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
 applications/open-datum/offchain|open-datum-tests|check|hosted under another name: the open-datum-tests job runs the open-datum-tests app, the same fixture-staged runner this check executes in its sandbox

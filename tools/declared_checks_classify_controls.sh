@@ -207,7 +207,7 @@ cat >"$work/list" <<'EOF'
 .|docs-serve|app|tool: the local documentation site server|nix/docs.nix
 EOF
 cat >"$work/toolmarkers" <<'EOF'
-nix/docs.nix marked
+.|docs-serve|nix/docs.nix marked names
 EOF
 : >"$work/citations"
 cat >"$work/states" <<'EOF'
@@ -435,7 +435,7 @@ cat >"$work/states" <<'EOF'
 565 open
 EOF
 cat >"$work/toolmarkers" <<'EOF'
-nix/docs.nix marked
+.|docs-serve|nix/docs.nix marked names
 EOF
 : >"$work/citations"
 run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
@@ -451,7 +451,7 @@ cat >"$work/list" <<'EOF'
 .|docs-serve|app|tool: the local documentation site server|tools/unmarked.sh
 EOF
 cat >"$work/toolmarkers" <<'EOF'
-tools/unmarked.sh unmarked
+.|docs-serve|tools/unmarked.sh unmarked nameless
 EOF
 : >"$work/citations"
 run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
@@ -463,16 +463,16 @@ cat >"$work/list" <<'EOF'
 .|docs-serve|app|tool: the local documentation site server|tools/gone.sh
 EOF
 cat >"$work/toolmarkers" <<'EOF'
-tools/gone.sh missing
+.|docs-serve|tools/gone.sh missing nameless
 EOF
 run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
 expect "a missing tool file is refused" 1 "the file that defines the tool, tools/gone.sh, does not exist"
 
 cat >"$work/toolmarkers" <<'EOF'
-tools/other.sh marked
+.|docs-serve|tools/other.sh marked names
 EOF
 run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
-expect "an unanswered tool file is refused" 1 "no marker status was handed for tools/gone.sh"
+expect "an unanswered tool file is refused" 1 "no tool-marker line was handed for . docs-serve (tools/gone.sh)"
 
 # 18d. A tool cited in the published text is refused, each citation
 # form named: the command form, the path of the defining file, and the
@@ -481,7 +481,7 @@ cat >"$work/list" <<'EOF'
 .|docs-serve|app|tool: the local documentation site server|nix/docs.nix
 EOF
 cat >"$work/toolmarkers" <<'EOF'
-nix/docs.nix marked
+.|docs-serve|nix/docs.nix marked names
 EOF
 cat >"$work/citations" <<'EOF'
 .#docs-serve|docs/getting-started.md
@@ -501,6 +501,101 @@ EOF
 run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
 expect "a tool cited by its own file is refused" 1 "cited as evidence or guarantee in nix/docs.nix (as .#docs-serve)"
 : >"$work/citations"
+
+# 18f. A tool cited by a quoted or dot-slashed spelling of its command
+# form is refused, each spelling named.
+cat >"$work/citations" <<'EOF'
+'#docs-serve|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a quoted citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as '#docs-serve)"
+
+cat >"$work/citations" <<'EOF'
+./#docs-serve|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a dot-slashed citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as ./#docs-serve)"
+: >"$work/citations"
+
+# 18g. A tool of another flake is cited only by its flake-qualified
+# spellings, each refused and named.
+cat >"$work/declared" <<'EOF'
+sub/dir|app|helper
+EOF
+cat >"$work/hosted" <<'EOF'
+# nothing runs it
+EOF
+cat >"$work/list" <<'EOF'
+sub/dir|helper|app|tool: a helper that stays local|sub/dir/tool.sh
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+sub/dir|helper|sub/dir/tool.sh marked names
+EOF
+cat >"$work/citations" <<'EOF'
+sub/dir#helper|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a flake-qualified citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as sub/dir#helper)"
+
+cat >"$work/citations" <<'EOF'
+./sub/dir#helper|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a dot-slashed flake citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as ./sub/dir#helper)"
+
+# 18h. A same-named reference aimed at another flake is never
+# misattributed to the tool: the unqualified command form and another
+# flake's qualified form both stay green.
+cat >"$work/citations" <<'EOF'
+.#helper|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "an unqualified same-named citation is not misattributed" 0 "declared-checks-classify: PASS"
+expect "the unattributed tool still prints by name" 0 "tools, marked and never cited as evidence: sub/dir helper"
+
+cat >"$work/citations" <<'EOF'
+other#helper|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "another flake's qualified citation is not misattributed" 0 "declared-checks-classify: PASS"
+: >"$work/citations"
+
+# 18i. A marked file outside the entry's own flake directory cannot
+# certify the tool, even when it carries the marker and names it.
+cat >"$work/list" <<'EOF'
+sub/dir|helper|app|tool: a helper that stays local|tools/stranger.md
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+sub/dir|helper|tools/stranger.md marked names
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a marker outside the flake directory is refused" 1 "lives outside the flake sub/dir"
+
+# 18j. A marked file that does not name the attribute it certifies
+# cannot define the tool.
+cat >"$work/declared" <<'EOF'
+.|app|docs-serve
+EOF
+cat >"$work/hosted" <<'EOF'
+# nothing
+EOF
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|tool: the local documentation site server|tools/stranger.md
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+.|docs-serve|tools/stranger.md marked nameless
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a marked file that names no attribute is refused" 1 "does not name the attribute docs-serve"
+
+# 18k. A malformed tool-marker source is a setup failure, never a
+# verdict.
+cat >"$work/toolmarkers" <<'EOF'
+.|docs-serve|nix/docs.nix marked
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a malformed tool-marker line is setup failure" 2 "malformed tool-marker"
+expect_absent "malformed tool markers carry no verdict" "declared-checks-classify: PASS"
 
 # 18e. A tool entry without its fifth field, a non-tool entry with one,
 # and the retired developer-utility class are each refused.
@@ -738,6 +833,25 @@ if setup_git -C "$toolroot" init -q >>"$work/tool-setup.log" 2>&1 \
   expect "a tool cited by its own file is refused by the integration" 1 "cited as evidence or guarantee in tools/declared_tools/local-helper.md (as .#local-helper)"
   clean_tool_marker
 
+  # Plant: a docs page cites the quoted and dot-slashed spellings.
+  printf "\nTry nix run '#local-helper' here.\n" >>"$toolroot/docs/getting-started.md"
+  run_tool_census
+  expect "a quoted citation in a docs page is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as '#local-helper)"
+  clean_tool_docs
+
+  printf '\nTry nix run ./#local-helper here.\n' >>"$toolroot/docs/getting-started.md"
+  run_tool_census
+  expect "a dot-slashed citation in a docs page is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as ./#local-helper)"
+  clean_tool_docs
+
+  # Plant: the defining file no longer names the attribute it certifies.
+  printf 'Tool, not a guarantee: a fixture helper that stays local.\n' >"$toolroot/tools/declared_tools/local-helper.md"
+  run_tool_census
+  expect "a file that names no attribute is refused by the integration" 1 "does not name the attribute local-helper"
+  clean_tool_marker
+  run_tool_census
+  expect "the restored naming is green" 0 "declared-checks-classify: PASS"
+
   # The closing green: the clean tree with its tool.
   run_tool_census
   expect "the clean fixture tree with its tool is green" 0 "declared-checks-classify: PASS"
@@ -747,6 +861,40 @@ else
   cat "$work/tool-setup.log" >&2
   exit 2
 fi
+
+# 21. A broken scan is a setup failure, never absence evidence. Each plant
+# drives the integration layer over the fixture repository above: a
+# tracked extent member missing from the checkout, an unreadable member,
+# and a failing scan each give exit 2, never a clean verdict.
+mv "$toolroot/docs/getting-started.md" "$work/getting-started.md"
+run_tool_census
+expect "a missing extent member is setup failure" 2 "tracked but missing from the checkout"
+expect_absent "a missing extent member is never absence evidence" "declared-checks-classify: PASS"
+mv "$work/getting-started.md" "$toolroot/docs/getting-started.md"
+run_tool_census
+expect "the restored member is green" 0 "declared-checks-classify: PASS"
+
+# An unreadable worktree file breaks the fixture evaluation before the
+# scan runs, so this plant proves the setup type through the first gate
+# that fires; the scan carries its own readability guard behind it for
+# the same failure, with the same type.
+chmod 000 "$toolroot/docs/getting-started.md"
+run_tool_census
+expect "an unreadable extent member is setup failure" 2 "SETUP:"
+expect_absent "an unreadable extent member is never absence evidence" "declared-checks-classify: PASS"
+chmod 644 "$toolroot/docs/getting-started.md"
+run_tool_census
+expect "the readable member is green" 0 "declared-checks-classify: PASS"
+
+printf '#!/usr/bin/env bash\nexit 2\n' >"$work/failgrep"
+chmod +x "$work/failgrep"
+export GREP_BIN="$work/failgrep"
+run_tool_census
+unset GREP_BIN
+expect "a failing scan is setup failure" 2 "for a tool marker or citation failed"
+expect_absent "a failing scan is never absence evidence" "declared-checks-classify: PASS"
+run_tool_census
+expect "the working scan is green" 0 "declared-checks-classify: PASS"
 
 echo "classify-controls: $held held, $broken broken"
 if [ "$broken" -ne 0 ]; then
