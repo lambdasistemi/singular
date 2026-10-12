@@ -528,8 +528,8 @@ foldPending app at FoldSpec{..} = do
                             Nothing
                             (TS.StaleRoot (Root rootBefore) (Root freshRootEarly))
                         )
-                requireTrieSelection s live (atTrie at)
-                leavesPairs <- withTrie (atTrie at) $ \snap ->
+                leavesTrie <- requireTrieSelection s live
+                leavesPairs <- withTrie leavesTrie $ \snap ->
                     traverse
                         ( \kb -> case kb == mempty of
                             True -> pure (kb, LeafUnknown)
@@ -727,8 +727,8 @@ foldPending app at FoldSpec{..} = do
                             Nothing
                             (TS.StaleRoot (Root rootBefore) (Root freshRoot))
                         )
-                requireTrieSelection s live (atTrie at)
-                Root rootAfter <- withTrie (atTrie at) $ \snap -> do
+                viewTrie <- requireTrieSelection s live
+                Root rootAfter <- withTrie viewTrie $ \snap -> do
                     walked <-
                         TS.speculateEdges snap ((key, requestEdge req) :| [])
                             >>= either
@@ -764,7 +764,7 @@ foldPending app at FoldSpec{..} = do
                             pure
                 built <-
                     try
-                        ( withTrie (atTrie at) $ \snap ->
+                        ( withTrie viewTrie $ \snap ->
                             updateTokenSelected cfg funded snap (savedToken s) addr ctx settledNE
                         )
                 unsigned <- case built of
@@ -865,9 +865,8 @@ foldPending app at FoldSpec{..} = do
     holdBeforeCommit
     local <- readingBack at "fold" fold ["state"] $ \v -> do
         afterFold <- attachLive v s
-        context <- openTrie s
-        requireTrieSelection s afterFold context
-        root <- selectedTrieRoot context
+        afterFoldTrie <- requireTrieSelection s afterFold
+        root <- selectedTrieRoot afterFoldTrie
         unless (root == plRootAfter plan) $
             failWith
                 StaleState

@@ -30,8 +30,7 @@ module Singular.CLI.Live
     , valueJson
 
       -- * Public lineage
-    , TrieContext
-    , openTrie
+    , SelectedTrie
     , selectTrie
     , requireTrieSelection
     , withTrie
@@ -53,7 +52,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -261,10 +259,18 @@ applicationReference app l = case appHolding app of
             (u : _) -> Just u
             [] -> Nothing
 
--- | A capability and its caller's selection; no nodes or files are retained.
-newtype TrieContext = TrieContext
-    { trieSelected
-        :: IORef (Either TS.TrieFailure (TS.TrieState IO, TS.TrieSelection))
+{- | A registry's public trie as one successfully selected value: the
+session-bound replay capability and the state point and root it was
+selected at, validated before the value existed. The type exports no
+constructor and no fields, so only 'selectTrie' on success produces one;
+an unselected or unvalidated selection cannot be forged or held. Every
+use revalidates through the capability against the session, registry,
+root and state point it names, so a selection that no longer holds is
+refused at use, and no snapshot is cached beyond it.
+-}
+data SelectedTrie = SelectedTrie
+    { selectedCapability :: TS.TrieState IO
+    , selectedAt :: TS.TrieSelection
     }
 
 savedIdentity :: Saved -> TS.RegistryIdentity
@@ -283,16 +289,18 @@ newStatePoint session output =
             Cage.Bound slot header -> TS.Bound slot header
     in  TS.StatePoint (TS.SessionId label) binding output
 
-openTrie :: Saved -> IO TrieContext
-openTrie saved = TrieContext <$> newIORef (Left (noSelection saved))
-
-selectTrie
-    :: Saved -> Live -> TrieContext -> IO (Either TS.TrieFailure ())
-selectTrie saved live context = case observedRoot live of
-    Left _ -> do
-        let refused = Left (noSelection saved)
-        writeIORef (trieSelected context) refused
-        pure refused
+{- | Select the registry's public trie at its live state output's point
+and root. The selection is validated by running the public replay before
+any value is returned: a replay that fails leaves no selection to use, so
+nothing unvalidated can be written or held. The capability is bound to the
+session that selected it — an immutable value is not a lifetime proof, and
+uses refuse when that session, registry, root or state point no longer
+holds. Reselection returns a new, independent value; the caller passes that
+new value for the operation it serves.
+-}
+selectTrie :: Saved -> Live -> IO (Either TS.TrieFailure SelectedTrie)
+selectTrie saved live = case observedRoot live of
+    Left _ -> pure (Left (noSelection saved))
     Right root -> do
         let chosen =
                 TS.TrieSelection
@@ -300,37 +308,50 @@ selectTrie saved live context = case observedRoot live of
                     (newStatePoint (liveSession live) (fst (liveState live)))
                     (Root root)
             cap = lineageTrieStateObserved (liveSession live) observeTrie
-        writeIORef (trieSelected context) (Right (cap, chosen))
-        TS.withTrieState cap chosen (const (pure ()))
+        validated <- TS.withTrieState cap chosen (const (pure ()))
+        pure (SelectedTrie cap chosen <$ validated)
 
-requireTrieSelection :: Saved -> Live -> TrieContext -> IO ()
-requireTrieSelection saved live context = selectTrie saved live context >>= either failTrie pure
+{- | 'selectTrie', stopping the command with the trie's own refusal when the
+selection fails.
+-}
+requireTrieSelection :: Saved -> Live -> IO SelectedTrie
+requireTrieSelection saved live = selectTrie saved live >>= either failTrie pure
 
-withTrie :: TrieContext -> (TS.TrieSnapshot IO -> IO a) -> IO a
-withTrie context use = do
-    held <- readIORef (trieSelected context)
-    case held of
-        Left why -> failTrie why
-        Right (cap, chosen) -> TS.withTrieState cap chosen use >>= either failTrie pure
+{- | Use a selected trie. The use revalidates the selection through its
+session-bound capability — every use reads the public history source again
+— and refuses with the trie's own refusal when the session, registry, root
+or state point no longer holds. A held value is one point in history, not a
+cache: history that ran ahead along one chain does not invalidate it.
+-}
+withTrie :: SelectedTrie -> (TS.TrieSnapshot IO -> IO a) -> IO a
+withTrie selected use =
+    TS.withTrieState
+        (selectedCapability selected)
+        (selectedAt selected)
+        use
+        >>= either failTrie pure
 
-selectedTrieRoot :: TrieContext -> IO ByteString
-selectedTrieRoot context = withTrie context (pure . unRoot . TS.trieRoot)
+selectedTrieRoot :: SelectedTrie -> IO ByteString
+selectedTrieRoot selected = withTrie selected (pure . unRoot . TS.trieRoot)
 
 -- Preserve proof refusals at the command boundary. History failures use
 -- their existing TrieState name, payload and outcome through failTrie.
 trieLeaf
-    :: TrieContext
+    :: SelectedTrie
     -> ByteString
     -> ByteString
     -> IO (Either Proof.AuthError TS.Leaf)
-trieLeaf context key _ = withTrie context $ \snap -> do
+trieLeaf selected key _ = withTrie selected $ \snap -> do
     result <- TS.leafAt snap key
     case result of
         Right leaf -> pure (Right leaf)
         Left TS.MissingProof{} -> pure (Left (Proof.ProofInconsistent key))
         Left why -> failTrie why
 
--- | No selection is held yet for the saved registry.
+{- | The refusal a registry's trie carries when no selection could be made
+at its live state output: the same payload a selected value's uses report
+for an unheld selection.
+-}
 noSelection :: Saved -> TS.TrieFailure
 noSelection saved = TS.StaleState (savedIdentity saved) Nothing TS.NoSelection
 

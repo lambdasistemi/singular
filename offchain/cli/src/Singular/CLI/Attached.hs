@@ -63,7 +63,7 @@ import Singular.Registry.Wallet (Wallet (..))
 data Attached = Attached
     { atWrite :: WriteContext
     , atLive :: Live
-    , atTrie :: TrieContext
+    , atTrie :: SelectedTrie
     }
 
 {- | Attach a write to its registry. From one view: the registry resolved
@@ -126,8 +126,7 @@ attached app env dir blueprint access roles ws command body = do
                             r <- reconcile app command dir saved v
                             refuseUnreconciled r
                             (,) r <$> attachLive v saved
-                context <- openTrie saved
-                requireTrieSelection saved live context
+                context <- requireTrieSelection saved live
                 observed <- either (failWith StaleState) pure (observedRoot live)
                 report
                     (wcTracer wc)

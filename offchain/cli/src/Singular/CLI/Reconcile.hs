@@ -74,7 +74,6 @@ import Singular.CLI.Live
     , liveOutputFor
     , liveOutputs
     , observedRoot
-    , openTrie
     , requireTrieSelection
     , trieLeaf
     , txInText
@@ -168,11 +167,10 @@ reconcile app command dir saved view = do
     recovered <- recoverInclusion command dir view liveAt
     live <- attachLive view saved
     root <- either (failWith Partial) pure (observedRoot live)
-    context <- openTrie saved
-    requireTrieSelection saved live context
+    selected <- requireTrieSelection saved live
     outs <- liveOutputs app view saved
     let readKey key = do
-            leaf <- trieLeaf context key root
+            leaf <- trieLeaf selected key root
             pure (leaf, liveOutputFor app saved key outs)
     observedNow <- observe command dir (Just readKey) recovered
     remaining <- remainingOf <$> readJournal dir

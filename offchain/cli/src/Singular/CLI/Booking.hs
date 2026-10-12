@@ -52,9 +52,8 @@ import Data.Text.Encoding qualified as TE
 
 import Singular.CLI.Command (RegistryAccess)
 import Singular.CLI.Live
-    ( TrieContext
+    ( SelectedTrie
     , attachLive
-    , openTrie
     , requireTrieSelection
     , resolveSaved
     , trieLeaf
@@ -177,11 +176,11 @@ refusalFields r =
 attached lineage's view of its leaf. An unprovable leaf stops with the
 proof's own refusal instead of a decision.
 -}
-refuseBooking :: TrieContext -> ByteString -> BookingVerb -> IO ()
-refuseBooking context key verb = do
+refuseBooking :: SelectedTrie -> ByteString -> BookingVerb -> IO ()
+refuseBooking selected key verb = do
     found <-
         either (failWith StaleState . renderAuthError) pure
-            =<< trieLeaf context key key
+            =<< trieLeaf selected key key
     case bookingRefusal verb key found of
         Nothing -> pure ()
         Just refusal ->
@@ -215,6 +214,5 @@ precheckBooking app env settings blueprint access roles key verb = do
         readStep (envTracer env) (envSource env) ["state", "key outputs"] caps $ \v -> do
             saved <- resolveSaved app "" release access roles Nothing v
             live <- attachLive v saved
-            context <- openTrie saved
-            requireTrieSelection saved live context
-            refuseBooking context key verb
+            selected <- requireTrieSelection saved live
+            refuseBooking selected key verb

@@ -183,10 +183,9 @@ runPreview app env kind a settings addrText = do
                     (neededRoles (commandOf kind a))
                     (Just addr)
                     v
-            context <- openTrie saved
             live <- attachLive v saved
             observed <- either (failWith StaleState) pure (observedRoot live)
-            requireTrieSelection saved live context
+            context <- requireTrieSelection saved live
             prepared <- case kind of
                 KInsert -> do
                     payloadForInsert <-
