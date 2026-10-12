@@ -55,9 +55,10 @@
                 cat m1-check.txt
                 cat page-build-check.txt
                 tail -n 28 replay-check.txt
-                grep -F '"controlsDiscovered": 43' replay-selftest.txt
-                grep -F '"controlsExecuted": 43' replay-selftest.txt
-                cat lifecycle-replay-check.txt
+                grep -F 'PASS selftest: a law without applicable examples is not reported as exercised' replay-selftest.txt
+                grep -F 'PASS selftest: a witnessless supply violation stays applicable and reads as violated' replay-selftest.txt
+                grep -F 'PASS selftest: the gate fails when it should' replay-selftest.txt
+                grep -F 'PASS simulator: the transcription reproduces the model on every exported row' replay-selftest.txt
                 printf '%s\n' 'PASS archive model and replay reproduction'
               } > "$out/receipt.txt"
             '';
