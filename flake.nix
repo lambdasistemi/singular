@@ -126,16 +126,41 @@
                 find "$source/receipts" -maxdepth 1 -type f \
                   ! -name '*-tampered.json' ! -name '*-red.out' ! -name '*-red.err' ! -name '*-red.exit' \
                   -exec cp -a {} "$out/receipts/" \;
-                if [ -e "$source/registry/journal.jsonl" ]; then
-                  cp -a "$source/registry/journal.jsonl" "$out/registry/"
-                else
-                  note "absent: registry/journal.jsonl"
-                fi
-                if [ -d "$source/registry/submissions" ]; then
-                  cp -a "$source/registry/submissions" "$out/registry/"
-                else
-                  note "absent: registry/submissions"
-                fi
+                # Managed originals (#543): journals and signed bodies live
+                # in managed identity partitions
+                # (ROOT/net-MAGIC/POLICY/wallets/KEYHASH, the mirror of
+                # Singular.CLI.ManagedState.managedDir), never at the legacy
+                # source/registry/journal.jsonl or source/registry/submissions
+                # paths. Collect every journal and every saved signed body
+                # under each managed state root the run used, preserving
+                # SOURCE-relative paths so the manifest below pins each
+                # record's relative identity and bytes. Only journal.jsonl
+                # and submissions/ contents are copied: funding keys
+                # (*.skey), the node database, lock files, snapshots and
+                # unrelated homes stay out by construction, and projections
+                # are never renamed as originals — these bytes are the run's
+                # own records, retained here before the runner cleans up.
+                managed_roots=0
+                managed_journals=0
+                managed_bodies=0
+                for state_root in "$source/registry" "$source/registry-rolled-back"; do
+                  if [ ! -d "$state_root" ]; then
+                    note "absent state root: ''${state_root#"$source"/}"
+                    continue
+                  fi
+                  managed_roots=$((managed_roots + 1))
+                  while IFS= read -r -d ''' record; do
+                    rel="''${record#"$source"/}"
+                    case "$rel" in
+                      */journal.jsonl) managed_journals=$((managed_journals + 1)) ;;
+                      */submissions/*) managed_bodies=$((managed_bodies + 1)) ;;
+                      *) continue ;;
+                    esac
+                    mkdir -p "$out/$(dirname "$rel")"
+                    cp -a "$record" "$out/$rel"
+                  done < <(find "$state_root" -type f -print0 | sort -z)
+                done
+                note "managed: state_roots=$managed_roots journals=$managed_journals signed_bodies=$managed_bodies"
                 for item in verdicts.md fold-holds.list node-execution-time.json \
                   direct-processes.trie.jsonl trie-command-invocations; do
                   if [ -e "$source/$item" ]; then
