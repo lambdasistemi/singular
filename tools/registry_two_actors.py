@@ -587,7 +587,33 @@ RECORD_KEPT_FIELDS = (
     "topUp",
     "stateMaxFee",
     "trieRefusal",
+    "settled",
 )
+
+
+def _settled_entry(fold):
+    """The first settled request of a fold receipt, or None when absent."""
+    if not isinstance(fold, dict):
+        return None
+    settled = fold.get("settled")
+    if not isinstance(settled, list) or not settled:
+        return None
+    first = settled[0]
+    return first if isinstance(first, dict) else None
+
+
+def _settled_request(fold):
+    """A fold receipt's settled request, or None when it names none."""
+    entry = _settled_entry(fold)
+    request = entry.get("request") if entry else None
+    return request if isinstance(request, str) else None
+
+
+def _settled_edge(fold):
+    """A fold receipt's settled edge, or None when it names none."""
+    entry = _settled_entry(fold)
+    edge = entry.get("edge") if entry else None
+    return edge if isinstance(edge, str) else None
 
 
 def trim_record(command, exit_code, raw):
@@ -1423,14 +1449,15 @@ class Journey:
             status == 0 and fold.get("outcome") == "success",
             f"{actor} fold failed: exit {status}, {fold}",
         )
+        settled_request = _settled_request(fold)
         require(
-            fold.get("request") == booking["request"],
-            f"{actor} folded another request: {fold.get('request')} "
+            isinstance(settled_request, str) and settled_request == booking["request"],
+            f"{actor} folded another request: {settled_request} "
             f"!= {booking['request']}",
         )
         require(
-            fold.get("edge") == "insertActive",
-            f"{actor} folded another edge: {fold.get('edge')}",
+            _settled_edge(fold) == "insertActive",
+            f"{actor} folded another edge: {_settled_edge(fold)}",
         )
         require(
             fold.get("folder") == booking.get("requester"),
@@ -2059,12 +2086,14 @@ class Journey:
             status == 0 and continue_fold.get("outcome") == "success",
             f"bob continue fold failed: exit {status}, {continue_fold}",
         )
+        continue_settled_request = _settled_request(continue_fold)
         require(
-            continue_fold.get("request") == continue_booking["request"],
+            isinstance(continue_settled_request, str)
+            and continue_settled_request == continue_booking["request"],
             "bob folded another request after reclaim",
         )
         require(
-            continue_fold.get("edge") == "insertActive",
+            _settled_edge(continue_fold) == "insertActive",
             "bob folded another edge after reclaim",
         )
         require(
@@ -2351,14 +2380,15 @@ class Journey:
             status == 0 and fold.get("outcome") == "success",
             f"{folder} fold failed: exit {status}, {fold}",
         )
+        settled_request = _settled_request(fold)
         require(
-            fold.get("request") == booking["request"],
-            f"{folder} folded another request: {fold.get('request')} "
+            isinstance(settled_request, str) and settled_request == booking["request"],
+            f"{folder} folded another request: {settled_request} "
             f"!= {booking['request']}",
         )
         require(
-            fold.get("edge") == "updateTerminal",
-            f"{folder} folded another edge: {fold.get('edge')}",
+            _settled_edge(fold) == "updateTerminal",
+            f"{folder} folded another edge: {_settled_edge(fold)}",
         )
         require(
             fold.get("folder") != booking.get("requester"),
@@ -2452,14 +2482,15 @@ class Journey:
             status == 0 and fold.get("outcome") == "success",
             f"{folder} fold failed: exit {status}, {fold}",
         )
+        settled_request = _settled_request(fold)
         require(
-            fold.get("request") == booking["request"],
-            f"{folder} folded another request: {fold.get('request')} "
+            isinstance(settled_request, str) and settled_request == booking["request"],
+            f"{folder} folded another request: {settled_request} "
             f"!= {booking['request']}",
         )
         require(
-            fold.get("edge") == "insertActive",
-            f"{folder} folded another edge: {fold.get('edge')}",
+            _settled_edge(fold) == "insertActive",
+            f"{folder} folded another edge: {_settled_edge(fold)}",
         )
         require(
             fold.get("folder") != booking.get("requester"),
@@ -2679,9 +2710,13 @@ class Journey:
             return False, list(leg.values()), "the live key readback"
         if not isinstance(booking.get("request"), str):
             return False, list(leg.values()), "the termination booking request"
-        if fold.get("request") != booking["request"]:
+        settled_request = _settled_request(fold)
+        if (
+            not isinstance(settled_request, str)
+            or settled_request != booking["request"]
+        ):
             return False, list(leg.values()), "the fold of the termination"
-        if fold.get("edge") != "updateTerminal":
+        if _settled_edge(fold) != "updateTerminal":
             return False, list(leg.values()), "the termination fold"
         own_name = legs.get(folder, {}).get("fold")
         own = self.load_receipt(own_name, receipts) if own_name else None
@@ -2740,9 +2775,13 @@ class Journey:
                 return False, found, "the empty pending readback"
             if not isinstance(booking.get("request"), str):
                 return False, found, "the insertion booking request"
-            if fold.get("request") != booking["request"]:
+            settled_request = _settled_request(fold)
+            if (
+                not isinstance(settled_request, str)
+                or settled_request != booking["request"]
+            ):
                 return False, found, "the fold of the insertion"
-            if fold.get("edge") != "insertActive":
+            if _settled_edge(fold) != "insertActive":
                 return False, found, "the insertion fold"
             own_name = legs.get(folder, {}).get("fold")
             own = self.load_receipt(own_name, receipts) if own_name else None
@@ -3338,9 +3377,13 @@ class Journey:
             return False, list(leg.values()), "the reclaimed key readback"
         if not isinstance(continue_booking.get("request"), str):
             return False, list(leg.values()), "the continued booking request"
-        if continue_fold.get("request") != continue_booking["request"]:
+        continue_settled_request = _settled_request(continue_fold)
+        if (
+            not isinstance(continue_settled_request, str)
+            or continue_settled_request != continue_booking["request"]
+        ):
             return False, list(leg.values()), "the fold after reclaim"
-        if continue_fold.get("edge") != "insertActive":
+        if _settled_edge(continue_fold) != "insertActive":
             return False, list(leg.values()), "the continued insertion fold"
         if not continue_fold.get("root"):
             return False, list(leg.values()), "the continued fold root"
@@ -3407,9 +3450,13 @@ class Journey:
             return False, list(leg.values()), "the empty pending readback"
         if not isinstance(booking.get("request"), str):
             return False, list(leg.values()), "the booking request"
-        if fold.get("request") != booking["request"]:
+        settled_request = _settled_request(fold)
+        if (
+            not isinstance(settled_request, str)
+            or settled_request != booking["request"]
+        ):
             return False, list(leg.values()), "the fold of the booking"
-        if fold.get("edge") != "insertActive":
+        if _settled_edge(fold) != "insertActive":
             return False, list(leg.values()), "the insertion fold"
         if fold.get("folder") != booking.get("requester"):
             return False, list(leg.values()), "the folder's own booking"
