@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/lambdasistemi/singular/compare/v0.10.0...v0.10.1) (2026-10-11)
+
+
+### Fixes
+
+* journal rollback through an owned inspect and count every adoption ([ce1dd84](https://github.com/lambdasistemi/singular/commit/ce1dd846431b19b895fd6ff740f209b0f018c157))
+
 ## [0.10.0](https://github.com/lambdasistemi/singular/compare/v0.9.0...v0.10.0) (2026-10-11)
 
 
