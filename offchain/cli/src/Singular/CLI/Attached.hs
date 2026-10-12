@@ -26,12 +26,8 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
-import Data.IORef (readIORef)
-import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Text (Text)
-
-import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.CLI.Command
     ( RegistryAccess (..)
@@ -157,19 +153,19 @@ reading at = Cage.withLatest (provider at)
 
 {- | A read-back of what a confirmed transaction made: one read step, inside
 the scopes the transaction's build placed it in, so it sits with the
-observation it serves.
+observation it serves. Takes the confirmed submission itself, keeping the
+step identity as an explicit argument.
 -}
 readingBack
     :: Attached
     -> Text
-    -> ConwayTx
+    -> ConfirmedSubmission
     -> [Text]
     -> (Cage.Session Cage.NoWitness IO -> IO a)
     -> IO a
-readingBack at step tx items body = do
+readingBack at step confirmed items body = do
     let wc = atWrite at
-    placed <-
-        Map.findWithDefault [] (txIdHex tx) <$> readIORef (wcPlaced wc)
+        placed = confirmedScopes confirmed
     readStep
         (inScopes (placed <> [InTransaction step]) (wcTracer wc))
         (wcSource wc)

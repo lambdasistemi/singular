@@ -176,7 +176,7 @@ book
     -}
     -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
-    -> IO (ConwayTx, r, Deadline)
+    -> IO (ConfirmedSubmission, r, Deadline)
 book at a key verb plan = do
     let s = savedOf at
         cfg = savedCfg s
@@ -215,7 +215,7 @@ book at a key verb plan = do
                     (bookingOutlay pp (liveRefs live) tx)
                 pure (tx, decided)
             )
-    let request = TxIn (txIdTx booking) (TxIx 0)
+    let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
         readingBack at "book" booking ["requests", "state"] $ \v -> do
             reqs <-
@@ -242,11 +242,11 @@ book at a key verb plan = do
     pure (booking, decided, deadline)
 
 -- | What a booking-only command's receipt names of its pending request.
-pendingFields :: ByteString -> ConwayTx -> Deadline -> [(Text, Value)]
+pendingFields :: ByteString -> ConfirmedSubmission -> Deadline -> [(Text, Value)]
 pendingFields requester booking deadline =
-    [ ("booking", toJSON (txIdHex booking))
+    [ ("booking", toJSON (txIdHex (confirmedTx booking)))
     , ("requester", toJSON (hexT requester))
-    , ("request", toJSON (txInText (TxIn (txIdTx booking) (TxIx 0))))
+    , ("request", toJSON (txInText (TxIn (txIdTx (confirmedTx booking)) (TxIx 0))))
     , ("foldDeadline", deadlineJson deadline)
     ]
 
@@ -323,7 +323,7 @@ runInsert env a = case entryMode a of
                         pure (b, ())
                 if entryFold a
                     then do
-                        folded <- foldAfter at a booking
+                        folded <- foldAfter at a (confirmedTx booking)
                         pure $ case fdDelivery folded of
                             Delivered liveIn holding -> case envelopeFromData (dhDatumData holding) of
                                 Right seen ->
@@ -331,7 +331,7 @@ runInsert env a = case entryMode a of
                                         "insert"
                                         Success
                                         ( keyFields key
-                                            <> [ ("booking", toJSON (txIdHex booking))
+                                            <> [ ("booking", toJSON (txIdHex (confirmedTx booking)))
                                                , ("fold", toJSON (txIdHex (fdTx folded)))
                                                , ("liveOutput", toJSON (txInText liveIn))
                                                , ("envelope", envelopeToJson seen)
@@ -478,7 +478,7 @@ runUpdate env a = case entryMode a of
                         "update"
                         Success
                         ( keyFields key
-                            <> [ ("update", toJSON (txIdHex signed))
+                            <> [ ("update", toJSON (txIdHex (confirmedTx signed)))
                                , ("liveOutput", toJSON (txInText liveIn))
                                , ("payload", dataToJson (envPayload seen))
                                , ("root", toJSON (hexT rootAfter))
@@ -530,14 +530,14 @@ runTerminate env a = case entryMode a of
                 let c = envControl envelope
                 if entryFold a
                     then do
-                        folded <- foldAfter at a booking
+                        folded <- foldAfter at a (confirmedTx booking)
                         pure $ case fdDelivery folded of
                             Released released deposit ->
                                 receipt
                                     "terminate"
                                     Success
                                     ( keyFields key
-                                        <> [ ("booking", toJSON (txIdHex booking))
+                                        <> [ ("booking", toJSON (txIdHex (confirmedTx booking)))
                                            , ("fold", toJSON (txIdHex (fdTx folded)))
                                            , ("released", toJSON (txInText released))
                                            , ("deposit", toJSON deposit)

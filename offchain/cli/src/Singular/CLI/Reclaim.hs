@@ -250,7 +250,7 @@ runReclaim env a = do
                 failWith
                     Partial
                     "the reclaim confirmed but its request output is still live"
-            let output = TxIn (txIdTx tx) (TxIx 0)
+            let output = TxIn (txIdTx (confirmedTx tx)) (TxIx 0)
             unless (lookup output ownerOuts == Just returned) $
                 failWith
                     Partial
@@ -273,7 +273,7 @@ runReclaim env a = do
                     "reclaim"
                     Success
                     [ ("request", toJSON (txInText named))
-                    , ("retract", toJSON (txIdHex tx))
+                    , ("retract", toJSON (txIdHex (confirmedTx tx)))
                     , ("owner", toJSON (hexT caller))
                     , ("key", toJSON (hexT (requestKey req)))
                     , ("edge", toJSON (edgeName (requestEdge req)))

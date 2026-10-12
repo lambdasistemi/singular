@@ -155,7 +155,9 @@ import Singular.CLI.RejectRules (rejectGate, renderRejectRefusal)
 import Singular.CLI.RequestWindow (retractEnds, windowOf)
 import Singular.CLI.Session
     ( CommandFailure (..)
+    , ConfirmedSubmission
     , WriteContext (..)
+    , confirmedTx
     , expecting
     , failWith
     , journalObserved
@@ -284,7 +286,7 @@ writeRows = describe "a singular write on injected capabilities (#323)" $ do
         $ \fx -> do
             (signed, ()) <- write fx
             confirmed <- readIORef (fxConfirmed fx)
-            confirmed `shouldBe` [T.unpack (txIdHex signed)]
+            confirmed `shouldBe` [T.unpack (txIdHex (confirmedTx signed))]
             events <- map journalEvent <$> readJournal (fxDir fx)
             events `shouldBe` ["prepared", "submitted", "confirmed"]
     it "hands the node only the body the caller's key signed" $
@@ -614,13 +616,13 @@ withReplayViews use = withFixture $ \fx -> do
     SessionIO.withLatest (capReads (wcCapabilities (writeContext fx))) $ \actualSession -> do
         let record =
                 Cage.HistoricalTransaction
-                    { Cage.historicalId = txIdTx boot
+                    { Cage.historicalId = txIdTx (confirmedTx boot)
                     , Cage.historicalCbor =
-                        BL.toStrict (serialize (eraProtVerHigh @ConwayEra) boot)
-                    , Cage.historicalTx = boot
+                        BL.toStrict (serialize (eraProtVerHigh @ConwayEra) (confirmedTx boot))
+                    , Cage.historicalTx = confirmedTx boot
                     , Cage.spentOutputs = [(seed, seedOut)]
                     , Cage.referenceOutputs = []
-                    , Cage.createdOutputs = [(TxIn (txIdTx boot) (TxIx 0), stateOut)]
+                    , Cage.createdOutputs = [(TxIn (txIdTx (confirmedTx boot)) (TxIx 0), stateOut)]
                     , Cage.scriptValid = True
                     }
             viewOver output = do
@@ -632,7 +634,7 @@ withReplayViews use = withFixture $ \fx -> do
                     restore = writeIORef cell (Right (healthyStream record))
                 pure
                     ( ReplaySource cell restore
-                    , Live session saved [] (TxIn (txIdTx boot) (TxIx 0), output)
+                    , Live session saved [] (TxIn (txIdTx (confirmedTx boot)) (TxIx 0), output)
                     )
             view = viewOver stateOut
             tamperedView wanted = do
@@ -644,7 +646,7 @@ withReplayViews use = withFixture $ \fx -> do
                 snd <$> viewOver other
         (sourceA, liveA) <- view
         (sourceB, liveB) <- view
-        use (sourceA, liveA) (sourceB, liveB) tamperedView fx saved boot
+        use (sourceA, liveA) (sourceB, liveB) tamperedView fx saved (confirmedTx boot)
 
 data Fixture = Fixture
     { fxDir :: FilePath
@@ -655,8 +657,6 @@ data Fixture = Fixture
     , fxBuiltAt :: IORef (Maybe (Aeson.Value, Cage.TipObservation))
     , fxUnsigned :: IORef (Maybe ConwayTx)
     , fxFacts :: IORef [FactRecord]
-    , fxConfirmations :: IORef (Map.Map Text (IO Double))
-    , fxPlacements :: IORef (Map.Map Text [Scope])
     }
 
 magic :: Word32
@@ -694,8 +694,6 @@ withFixture k = withSystemTempDirectory "singular-write" $ \dir -> do
         <*> newIORef Nothing
         <*> newIORef Nothing
         <*> newIORef []
-        <*> newIORef Map.empty
-        <*> newIORef Map.empty
         >>= k
 
 {- | The write context a command would get from composition, over the
@@ -728,21 +726,19 @@ writeContext fx =
         , wcTimeout = Just 5
         , wcTracer = nullTracer
         , wcSource = "fixture"
-        , wcConfirmed = fxConfirmations fx
-        , wcPlaced = fxPlacements fx
         }
 
 {- | One write: spend the wallet's output as the view shows it, moving the
 chain after the view is acquired.
 -}
-write :: Fixture -> IO (ConwayTx, ())
+write :: Fixture -> IO (ConfirmedSubmission, ())
 write fx = writeVia (writeContext fx) id fx
 
 {- | The same write through a given context, shaping the transaction it
 builds with a function.
 -}
 writeVia
-    :: WriteContext -> (ConwayTx -> ConwayTx) -> Fixture -> IO (ConwayTx, ())
+    :: WriteContext -> (ConwayTx -> ConwayTx) -> Fixture -> IO (ConfirmedSubmission, ())
 writeVia ctx shape fx =
     submitBuilt ctx "fold" (const (expecting "state")) $ \v -> do
         utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
@@ -854,8 +850,8 @@ phaseLogRows = describe "the phase log of a write (#363)" $ do
             Cage.observedSlot (snd builtPoint) `shouldNotBe` tip
             objects <- logObjects path
             let phased p = [o | o <- objects, field "phase" o == Just (p :: Text)]
-                txid = txIdHex signed
-                vldt = signed ^. bodyTxL . vldtTxBodyL
+                txid = txIdHex (confirmedTx signed)
+                vldt = confirmedTx signed ^. bodyTxL . vldtTxBodyL
                 strict = \case SJust (SlotNo s) -> Just s; SNothing -> Nothing
             map (field "step") (phased "build") `shouldBe` [Just ("fold" :: Text)]
             map (field "tx") (phased "sign") `shouldBe` [Just txid]
@@ -1192,16 +1188,16 @@ narrationRows = describe "the narration of a write (#416)" $ do
                     TxObserved s _ _ -> s
                 txEvents = [(scope, e) | Trace scope (How (Tx e)) <- events]
             journalled
-                `shouldBe` [("fold", txIdHex folded), ("book", txIdHex booked)]
-            txIdHex folded `shouldNotBe` txIdHex booked
+                `shouldBe` [("fold", txIdHex (confirmedTx folded)), ("book", txIdHex (confirmedTx booked))]
+            txIdHex (confirmedTx folded) `shouldNotBe` txIdHex (confirmedTx booked)
             forM_ [("fold", folded), ("book", booked)] $ \(step, signed) -> do
                 let mine = [e | (scope, e) <- txEvents, scope == [InTransaction step]]
                 map stepOf mine `shouldSatisfy` all (== step)
                 [() | TxBuilt{} <- mine] `shouldBe` [()]
-                mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex signed)
+                mapMaybe txOf mine `shouldBe` replicate 4 (txIdHex (confirmedTx signed))
                 [v | TxSubmitted{submitVerdict = v} <- mine] `shouldBe` [Accepted]
                 [v | TxConfirmed _ _ _ v <- mine] `shouldBe` [Confirmed]
-                [t | TxObserved _ t _ <- mine] `shouldBe` [txIdHex signed]
+                [t | TxObserved _ t _ <- mine] `shouldBe` [txIdHex (confirmedTx signed)]
             length txEvents `shouldBe` 10
     it
         "names the four places a failure happens as four distinct events, \
@@ -1339,7 +1335,7 @@ narrationRows = describe "the narration of a write (#416)" $ do
         "keeps tracing total: a sink that throws and one on a closed handle change \
         \no outcome, journal or exception, and the other sinks still see every event"
         $ do
-            let scenarios :: [(String, WriteContext -> Fixture -> IO (ConwayTx, ()))]
+            let scenarios :: [(String, WriteContext -> Fixture -> IO (ConfirmedSubmission, ()))]
                 scenarios =
                     [ ("submitted, confirmed", (`writeVia` id))
                     ,
@@ -1471,7 +1467,7 @@ writeStepVia
     -> WriteContext
     -> (ConwayTx -> ConwayTx)
     -> Fixture
-    -> IO (ConwayTx, ())
+    -> IO (ConfirmedSubmission, ())
 writeStepVia step ctx shape fx =
     submitBuilt ctx step (const (expecting "state")) $ \v -> do
         utxos <- SessionIO.outputsAt v (walletAddr (fxWallet fx))
@@ -1489,7 +1485,7 @@ writeBuilding
     :: WriteContext
     -> Fixture
     -> (Cage.Session NoWitness IO -> IO ConwayTx)
-    -> IO (ConwayTx, ())
+    -> IO (ConfirmedSubmission, ())
 writeBuilding ctx _ build =
     submitBuilt
         ctx

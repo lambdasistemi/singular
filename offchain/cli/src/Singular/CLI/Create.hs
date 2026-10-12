@@ -109,8 +109,11 @@ import Singular.CLI.Registry
 import Singular.CLI.Session
     ( Building (..)
     , CommandFailure (..)
+    , ConfirmedSubmission
     , Env (..)
     , WriteContext (..)
+    , confirmedTx
+    , confirmedTxId
     , expecting
     , failWith
     , journalObserved
@@ -119,7 +122,6 @@ import Singular.CLI.Session
     , readStep
     , submitBuilt
     , submitBuiltIn
-    , txIdHex
     , withSession
     , withWrite
     )
@@ -524,7 +526,7 @@ boot wc cfg pinned seedIn foundState = do
     let addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
         publish step reserved script = do
-            (signed, refOut) <-
+            (confirmed, refOut) <-
                 submitBuilt
                     wc
                     step
@@ -532,21 +534,24 @@ boot wc cfg pinned seedIn foundState = do
                         (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
                     )
                     (\v -> publishRefScriptTx reserved v addr script)
-            pure (TxIn (txIdTx signed) (TxIx 0), refOut)
+            pure (confirmed, TxIn (txIdTx (confirmedTx confirmed)) (TxIx 0), refOut)
         stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
     -- The state validator, published from outside the seed, unless a live
-    -- carrier of it was found.
-    stateRef@(stateIn, _) <-
-        maybe
-            (publish "publish-state" (Set.singleton seedIn) stateScript)
-            pure
-            foundState
+    -- carrier of it was found. A found carrier has no current-command
+    -- confirmed result; the Maybe below keeps the two paths explicit.
+    (stateConfirmed, stateRef@(stateIn, _)) <-
+        case foundState of
+            Nothing -> do
+                (confirmed, i, o) <-
+                    publish "publish-state" (Set.singleton seedIn) stateScript
+                pure (Just confirmed, (i, o))
+            Just found -> pure (Nothing, found)
     -- A carrier found elsewhere was not submitted by this create.
     let stateTxs = [txInTxId stateIn | null foundState]
-    observeReference wc "publish-state" stateScript stateRef
+    observeReference wc "publish-state" stateScript stateConfirmed stateRef
     -- The boot, consuming the seed and running the state script from the
     -- reference, wherever it sits.
-    (signedBoot, ()) <-
+    (confirmedBoot, ()) <-
         submitBuiltIn
             wc
             "boot"
@@ -556,6 +561,7 @@ boot wc cfg pinned seedIn foundState = do
                 place building [InEdge Booting] (EdgeStarted Booting)
                 (,()) <$> bootTokenFrom cfg stateRef v addr
             )
+    let signedBoot = confirmedTx confirmedBoot
     tid <- case signedBoot ^. bodyTxL . mintTxBodyL of
         MultiAsset m -> case Map.lookup (cagePolicyIdFromCfg cfg) m of
             Just names | [(name, 1)] <- Map.toList names -> pure (TokenId name)
@@ -577,7 +583,7 @@ boot wc cfg pinned seedIn foundState = do
             journalObserved
                 wc
                 "boot"
-                signedBoot
+                confirmedBoot
                 "the state output holds the registry token"
             report
                 (wcTracer wc)
@@ -596,9 +602,9 @@ boot wc cfg pinned seedIn foundState = do
     published <-
         mapM
             ( \(role, script) -> do
-                ref <- publish ("publish-" <> role) Set.empty script
-                observeReference wc ("publish-" <> role) script ref
-                pure (reference role script ref)
+                (confirmed, i, o) <- publish ("publish-" <> role) Set.empty script
+                observeReference wc ("publish-" <> role) script (Just confirmed) (i, o)
+                pure (reference role script (i, o))
             )
             (laterScripts cfg pinned tid)
     pure
@@ -608,11 +614,11 @@ boot wc cfg pinned seedIn foundState = do
             , bootedOutput = seenOutput
             , bootedRoot = unOnChainRoot (stateRoot seenState)
             , bootedState = seenState
-            , bootedBoot = txIdHex signedBoot
+            , bootedBoot = confirmedTxId confirmedBoot
             , bootedRefs = reference "state" stateScript stateRef : published
             , bootedTxs =
                 stateTxs
-                    <> [txIdHex signedBoot]
+                    <> [confirmedTxId confirmedBoot]
                     <> map (txIdOfRef . refOutRef) published
             }
   where
@@ -627,14 +633,22 @@ step, so the step ends failed and no absence is claimed from a read that
 was not made (#416). A read that answered — with the output, another
 script, or nothing — is a fact; a missing or different reference leaves
 the publication at @confirmed@, unresolved.
+
+The fourth argument keeps the two reference paths explicit: 'Just' a
+confirmed value this command published (journalled with its own timer and
+scopes — never the zero/default path), 'Nothing' an already-live reference
+found before this command (journalled by its original id, zero elapsed,
+empty scopes, excluded from submitted transactions, with no signing,
+preparation, submission or confirmation on reuse).
 -}
 observeReference
     :: WriteContext
     -> Text
     -> Script ConwayEra
+    -> Maybe ConfirmedSubmission
     -> (TxIn, TxOut ConwayEra)
     -> IO ()
-observeReference wc step script (i, _) = do
+observeReference wc step script published (i, _) = do
     found <-
         readStep
             (wcTracer wc)
@@ -646,19 +660,19 @@ observeReference wc step script (i, _) = do
                     >>= either throwIO (pure . map snd . value)
             )
     let wanted = hashScript script
+        detail =
+            ( "reference output "
+                <> txInText i
+                <> " is live carrying script "
+                <> hexT (scriptHashBytes wanted)
+            )
+        original = T.takeWhile (/= '#') (txInText i)
     case found of
         [o]
             | SJust carried <- o ^. referenceScriptTxOutL
-            , hashScript carried == wanted ->
-                journalObservedId
-                    wc
-                    step
-                    (T.takeWhile (/= '#') (txInText i))
-                    ( "reference output "
-                        <> txInText i
-                        <> " is live carrying script "
-                        <> hexT (scriptHashBytes wanted)
-                    )
+            , hashScript carried == wanted -> case published of
+                Just confirmed -> journalObserved wc step confirmed detail
+                Nothing -> journalObservedId wc step original detail
         [_] ->
             failWith
                 Partial

@@ -193,6 +193,7 @@ import Singular.CLI.Session
     ( CommandFailure (..)
     , Expectation (..)
     , WriteContext (..)
+    , confirmedTx
     , expecting
     , submitBuilt
     , txIdHex
@@ -943,7 +944,7 @@ withRecordedWrite r evidence answer story =
                     )
             txid <- case outcome of
                 Left _ -> preparedTxId registry
-                Right (signed, _) -> pure (txIdHex signed)
+                Right (signed, _) -> pure (txIdHex (confirmedTx signed))
             (_, saved) <- savedTx registry txid
             story registry txid saved
 
@@ -974,8 +975,6 @@ storyContext
     -> WriteAnswer
     -> IO WriteContext
 storyContext dir wallet recordedReads answer = do
-    confirmed <- newIORef Map.empty
-    placed <- newIORef Map.empty
     let submit = case answer of
             LostAnswer -> const (throwIO (userError "the submission connection was lost"))
             AnsweredAndConfirmed -> pure . Cage.SubmitAccepted . txIdTx . signedTx
@@ -995,8 +994,6 @@ storyContext dir wallet recordedReads answer = do
             , wcTimeout = Just 5
             , wcTracer = nullTracer
             , wcSource = "recorded"
-            , wcConfirmed = confirmed
-            , wcPlaced = placed
             }
 
 -- | The transaction the journal's one @prepared@ line names.
@@ -1120,8 +1117,6 @@ withSyntheticSavedRegistry publishHistory story =
     withSystemTempDirectory "singular-synthetic" $ \dir -> do
         wallet <- storyWallet dir
         historyRef <- newIORef emptyHistory
-        confirmed <- newIORef Map.empty
-        placed <- newIORef Map.empty
         let cfg = Booking.cfg
             seed =
                 either
@@ -1290,8 +1285,6 @@ withSyntheticSavedRegistry publishHistory story =
                     , wcTimeout = Just 5
                     , wcTracer = nullTracer
                     , wcSource = "fixture"
-                    , wcConfirmed = confirmed
-                    , wcPlaced = placed
                     }
         -- Permanent computed guard over the actual constructed request
         -- and holding: absent or foreign carried datum cannot regress
@@ -1325,14 +1318,14 @@ withSyntheticSavedRegistry publishHistory story =
                     boot
                     [(seed, seedOut)]
                     [(bootStateIn, bootStateOut), (bootRequestIn, requestOut)]
-                    signed
+                    (confirmedTx signed)
                 )
         story
             Synthetic
                 { syntheticDir = dir </> "registry"
                 , syntheticSaved = saved
                 , syntheticView = session
-                , syntheticTxId = txIdHex signed
+                , syntheticTxId = txIdHex (confirmedTx signed)
                 , syntheticKey = key
                 , syntheticExpectation = expectation
                 }

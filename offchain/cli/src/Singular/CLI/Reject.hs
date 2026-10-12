@@ -337,7 +337,7 @@ rejectPending at a = do
                 <> " but the replay reaches to 0x"
                 <> T.unpack (hexT local)
             )
-    let txid = txIdTx tx
+    let txid = txIdTx (confirmedTx tx)
     unless
         ( and
             [ any
@@ -364,7 +364,7 @@ rejectPending at a = do
         (wcTracer wc)
         []
         (RootSeen (hexT (plRootBefore plan)) (hexT onChain))
-    pure Rejected{rjTx = tx, rjPlan = plan, rjRejector = callerKey at}
+    pure Rejected{rjTx = confirmedTx tx, rjPlan = plan, rjRejector = callerKey at}
   where
     refuse tip = \case
         NothingToReject ->
