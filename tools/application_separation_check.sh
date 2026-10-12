@@ -9,7 +9,10 @@
 # OpenDatum (comments and documentation included), nor the open-datum
 # script hash, read from the open_datum.open_datum entry of
 # applications/open-datum/onchain/permanent-contract.json at run time and
-# never typed here. No
+# never typed here; nor the module prefix Singular.Application.KeriStub,
+# the words keri-stub and KeriStub, nor the stub script bytes, hash and
+# constant names, read from applications/keri-stub/offchain/script-record.json
+# at run time and never typed here. No
 # registry component lists an application package in build-depends either.
 #
 # Application side: for each application tree, a cabal file, cabal.project,
@@ -30,10 +33,10 @@ root=$(realpath -m "$root")
 
 # The registry trees this checkpoint covers, in one place: since the
 # S5.1 Aiken slice the onchain tree holds the registry only, so it is
-# covered here too.
-registry_trees="offchain onchain"
+# covered here too; the keri-stub slice adds naming-onchain.
+registry_trees="offchain onchain naming-onchain"
 # The application trees covered by the reach rule, in one place.
-application_trees="applications/open-datum"
+application_trees="applications/open-datum applications/keri-stub"
 # The registry packages an application may reach (paths relative to root).
 registry_packages="offchain onchain"
 
@@ -53,6 +56,46 @@ fi
   echo "application-separation-check: no open_datum.open_datum hash in $contract" >&2
   exit 2
 }
+
+# The stub script bytes, hash and constant names, read at run time from
+# the stub tree, never typed. Fail closed on a missing or misshapen
+# record, exactly like the open-datum hash: without them the scan proves
+# nothing.
+stub_record="$root/applications/keri-stub/offchain/script-record.json"
+[ -f "$stub_record" ] || {
+  echo "application-separation-check: no applications/keri-stub/offchain/script-record.json under $root" >&2
+  exit 2
+}
+if ! stub_bytes=$(jq -r '.scriptBytesHex' "$stub_record"); then
+  echo "application-separation-check: cannot read the stub script bytes from $stub_record" >&2
+  exit 2
+fi
+if ! stub_hash=$(jq -r '.scriptHashHex' "$stub_record"); then
+  echo "application-separation-check: cannot read the stub script hash from $stub_record" >&2
+  exit 2
+fi
+if ! mapfile -t stub_names < <(jq -r '.scriptConstantNames[]' "$stub_record"); then
+  echo "application-separation-check: cannot read the stub constant names from $stub_record" >&2
+  exit 2
+fi
+[[ "$stub_bytes" =~ ^[0-9a-f]+$ ]] || {
+  echo "application-separation-check: misshapen stub script bytes in $stub_record" >&2
+  exit 2
+}
+[[ "$stub_hash" =~ ^[0-9a-f]{56}$ ]] || {
+  echo "application-separation-check: misshapen stub script hash in $stub_record" >&2
+  exit 2
+}
+[ "${#stub_names[@]}" -gt 0 ] || {
+  echo "application-separation-check: no stub constant names in $stub_record" >&2
+  exit 2
+}
+for stub_name in "${stub_names[@]}"; do
+  [ -n "$stub_name" ] && [ "$stub_name" != "null" ] || {
+    echo "application-separation-check: misshapen stub constant name in $stub_record" >&2
+    exit 2
+  }
+done
 
 for tree in $registry_trees; do
   [ -d "$root/$tree" ] || {
@@ -110,6 +153,14 @@ scan_token "word OpenDatum" "OpenDatum"
 # applications/ needs the plural), so it gets its own token and plant.
 scan_token "Aiken module application/envelope" "application/envelope"
 scan_token "open-datum script hash" "$app_hash"
+scan_token "module Singular.Application.KeriStub" "Singular.Application.KeriStub"
+scan_token "word keri-stub" "keri-stub"
+scan_token "word KeriStub" "KeriStub"
+scan_token "stub script bytes" "$stub_bytes"
+scan_token "stub script hash" "$stub_hash"
+for stub_name in "${stub_names[@]}"; do
+  scan_token "stub script constant $stub_name" "$stub_name"
+done
 
 # --- registry side: build-depends --------------------------------------
 # The case the retired boundary apps covered: no registry component lists
@@ -134,6 +185,31 @@ for tree in $registry_trees; do
     ' "$cabal")
     if [ -n "$dep_hits" ]; then
       echo "application-separation-check: registry component lists the application package in build-depends:" >&2
+      printf '%s\n' "$dep_hits" >&2
+      fail=1
+    fi
+  done < <(tree_files "$root/$tree" | grep -E '\.cabal$' || true)
+done
+# The keri-stub slice adds the same attribution for the second
+# application package: no registry component lists it either.
+for tree in $registry_trees; do
+  while IFS= read -r cabal; do
+    dep_hits=$(awk '
+      /^library([ \t]|$)/ {
+        if ($0 ~ /^library[ \t]+/) { stanza = "sublib:" $2 } else { stanza = "lib" }
+        indep = 0; next
+      }
+      /^executable[ \t]+/ { stanza = "exe:" $2; indep = 0; next }
+      /^test-suite[ \t]+/ { stanza = "test:" $2; indep = 0; next }
+      /^[^ \t]/ { stanza = ""; indep = 0; next }
+      stanza != "" && /^[ \t]*build-depends:/ { indep = 1 }
+      stanza != "" && indep && /(^|[^A-Za-z0-9_-])keri-stub([^A-Za-z0-9_-]|$)/ {
+        print FILENAME ":" NR ": " stanza ": " $0
+      }
+      stanza != "" && indep && /^[ \t]*[A-Za-z0-9-]+:/ && $0 !~ /^[ \t]*build-depends:/ { indep = 0 }
+    ' "$cabal")
+    if [ -n "$dep_hits" ]; then
+      echo "application-separation-check: registry component lists the stub package in build-depends:" >&2
       printf '%s\n' "$dep_hits" >&2
       fail=1
     fi
@@ -323,6 +399,115 @@ for tree in $application_trees; do
     done <"$sh"
   done < <(tree_files "$root/$tree" | grep -E '\.sh$' || true)
 done
+
+# --- cross-application: the stub names no open datum ---------------------
+# The stub tree must name neither the open-datum module prefix nor the
+# open-datum words and tree. Scanned with the same text-file extent as
+# the registry side; a hit names the file, the line and the name.
+# Every temporary list registers its cleanup at the moment it is
+# acquired, before the next acquisition: if a later mktemp fails, the
+# active trap already covers every earlier list, so no exit leaves one
+# behind.
+stub_list=$(mktemp)
+trap 'rm -f "$registry_list" "$stub_list"' EXIT
+opendatum_list=$(mktemp)
+trap 'rm -f "$registry_list" "$stub_list" "$opendatum_list"' EXIT
+tree_files "$root/applications/keri-stub" | sort -u >"$stub_list"
+[ -s "$stub_list" ] || {
+  echo "application-separation-check: empty stub extent under $root" >&2
+  exit 2
+}
+tree_files "$root/applications/open-datum" | sort -u >"$opendatum_list"
+[ -s "$opendatum_list" ] || {
+  echo "application-separation-check: empty open-datum extent under $root" >&2
+  exit 2
+}
+
+scan_stub_token() {
+  local name="$1"
+  local pattern="$2"
+  local hits
+  hits=$(xargs -0 -r -a <(tr '\n' '\0' <"$stub_list") grep -nI -F -e "$pattern" || true)
+  if [ -n "$hits" ]; then
+    echo "application-separation-check: stub tree names the open datum [$name]:" >&2
+    printf '%s\n' "$hits" >&2
+    fail=1
+  fi
+}
+
+scan_stub_token "module Singular.Application.OpenDatum" "Singular.Application.OpenDatum"
+scan_stub_token "word open-datum" "open-datum"
+scan_stub_token "word OpenDatum" "OpenDatum"
+scan_stub_token "path applications/open-datum" "applications/open-datum"
+
+# The stub cabal depending on the open datum is refused with stanza
+# attribution, as the registry side attributes its own dependencies.
+while IFS= read -r cabal; do
+  dep_hits=$(awk '
+    /^library([ \t]|$)/ {
+      if ($0 ~ /^library[ \t]+/) { stanza = "sublib:" $2 } else { stanza = "lib" }
+      indep = 0; next
+    }
+    /^executable[ \t]+/ { stanza = "exe:" $2; indep = 0; next }
+    /^test-suite[ \t]+/ { stanza = "test:" $2; indep = 0; next }
+    /^[^ \t]/ { stanza = ""; indep = 0; next }
+    stanza != "" && /^[ \t]*build-depends:/ { indep = 1 }
+    stanza != "" && indep && /(^|[^A-Za-z0-9_-])open-datum([^A-Za-z0-9_-]|$)/ {
+      print FILENAME ":" NR ": " stanza ": " $0
+    }
+    stanza != "" && indep && /^[ \t]*[A-Za-z0-9-]+:/ && $0 !~ /^[ \t]*build-depends:/ { indep = 0 }
+  ' "$cabal")
+  if [ -n "$dep_hits" ]; then
+    echo "application-separation-check: stub component lists the open-datum package in build-depends:" >&2
+    printf '%s\n' "$dep_hits" >&2
+    fail=1
+  fi
+done < <(tree_files "$root/applications/keri-stub" | grep -E '\.cabal$' || true)
+
+# --- cross-application: the open datum names no stub ------------------------
+scan_opendatum_token() {
+  local name="$1"
+  local pattern="$2"
+  local hits
+  hits=$(xargs -0 -r -a <(tr '\n' '\0' <"$opendatum_list") grep -nI -F -e "$pattern" || true)
+  if [ -n "$hits" ]; then
+    echo "application-separation-check: open-datum tree names the stub [$name]:" >&2
+    printf '%s\n' "$hits" >&2
+    fail=1
+  fi
+}
+
+scan_opendatum_token "path applications/keri-stub" "applications/keri-stub"
+scan_opendatum_token "module Singular.Application.KeriStub" "Singular.Application.KeriStub"
+scan_opendatum_token "word keri-stub" "keri-stub"
+scan_opendatum_token "word KeriStub" "KeriStub"
+scan_opendatum_token "stub script bytes" "$stub_bytes"
+scan_opendatum_token "stub script hash" "$stub_hash"
+for stub_name in "${stub_names[@]}"; do
+  scan_opendatum_token "stub script constant $stub_name" "$stub_name"
+done
+
+while IFS= read -r cabal; do
+  dep_hits=$(awk '
+    /^library([ \t]|$)/ {
+      if ($0 ~ /^library[ \t]+/) { stanza = "sublib:" $2 } else { stanza = "lib" }
+      indep = 0; next
+    }
+    /^executable[ \t]+/ { stanza = "exe:" $2; indep = 0; next }
+    /^test-suite[ \t]+/ { stanza = "test:" $2; indep = 0; next }
+    /^[^ \t]/ { stanza = ""; indep = 0; next }
+    stanza != "" && /^[ \t]*build-depends:/ { indep = 1 }
+    stanza != "" && indep && /(^|[^A-Za-z0-9_-])keri-stub([^A-Za-z0-9_-]|$)/ {
+      print FILENAME ":" NR ": " stanza ": " $0
+    }
+    stanza != "" && indep && /^[ \t]*[A-Za-z0-9-]+:/ && $0 !~ /^[ \t]*build-depends:/ { indep = 0 }
+  ' "$cabal")
+  if [ -n "$dep_hits" ]; then
+    echo "application-separation-check: open-datum component lists the stub package in build-depends:" >&2
+    printf '%s\n' "$dep_hits" >&2
+    fail=1
+  fi
+done < <(tree_files "$root/applications/open-datum" | grep -E '\.cabal$' || true)
 
 if [ "$fail" -eq 0 ]; then
   echo "application-separation-check: clean (trees: $registry_trees; applications: $application_trees)"
