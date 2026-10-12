@@ -57,6 +57,14 @@
       "file": "applications/open-datum/onchain/validators/open_datum.ak",
       "flip": [{"pair": "short-fold-of-a-booked-termination", "command": "fold"}],
       "control": "stranger-updates-the-key"
+    },
+    {
+      "name": "registry-accepts-a-taken-key",
+      "patch": "registry-accepts-a-taken-key.patch",
+      "registry_source": true,
+      "file": "onchain/lib/registry/fold.ak",
+      "flip": [{"pair": "stranger-registers-a-taken-key", "command": "insert"}, {"pair": "owner-registers-a-taken-key-again", "command": "insert"}, {"pair": "owner-revives-a-terminated-key", "command": "insert"}, {"pair": "stranger-revives-a-terminated-key", "command": "insert"}],
+      "control": "stranger-updates-the-key"
     }
   ]
 }

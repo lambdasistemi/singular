@@ -82,12 +82,14 @@ let
       gawk
       git
       gnugrep
+      gnused
       gnutar
       gzip
       jq
       just
       nix
       procps
+      python3
     ];
     text = ''
       bash ${./../tools/negative_host_mutants.sh} "$PWD" "$@"
