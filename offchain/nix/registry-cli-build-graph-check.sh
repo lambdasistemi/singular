@@ -6,6 +6,13 @@
 # executable and the cage-tests suite compile no cli/src source themselves
 # and depend on the library. Cleanup only: no behaviour change.
 #
+# Flag-dependent implementation (#343 separates recovery hooks into explicit
+# test builds): Singular.CLI.TrieTrace lives outside cli/src, in
+# cli/ordinary and cli/test-harness behind the test-harness flag, while the
+# stanza still exposes it. Leg 3 therefore quantifies over all three
+# directories the sublibrary declares, deduplicated, so a new module in any
+# of them still joins with nothing to edit here.
+#
 # The proof is the build graph. Leg 1 reads the solver's own plan
 # (cabal build --dry-run --offline, --offline so the plan never touches the
 # network), so a component the plan does not know cannot satisfy it. Legs 2
@@ -17,8 +24,9 @@
 # Requires cabal on PATH: run under nix develop from offchain/
 # (nix develop --quiet -c bash nix/registry-cli-build-graph-check.sh).
 # A throwaway copy under test needs cabal.project, singular-registry.cabal,
-# cli/src and dist-newstyle/src (the pinned git sources the offline solver
-# reads); see registry-cli-build-graph-controls.sh.
+# cli/src, cli/ordinary, cli/test-harness and dist-newstyle/src (the pinned
+# git sources the offline solver reads); see
+# registry-cli-build-graph-controls.sh.
 # Exit 0: the graph holds. Exit 1: a leg names its offender. Exit 2: the
 # harness failed (missing tree, no cabal, solver setup failure, empty
 # extent) — a setup failure, never a verdict.
@@ -27,6 +35,8 @@ set -euo pipefail
 root="${1:-$PWD}"
 cabal="$root/singular-registry.cabal"
 cli="$root/cli/src"
+cli_ordinary="$root/cli/ordinary"
+cli_harness="$root/cli/test-harness"
 
 [ -f "$cabal" ] || {
   echo "registry-cli-build-graph-check: no singular-registry.cabal under $root" >&2
@@ -40,13 +50,29 @@ cli="$root/cli/src"
   echo "registry-cli-build-graph-check: no cli/src under $root" >&2
   exit 2
 }
+[ -d "$cli_ordinary" ] || {
+  echo "registry-cli-build-graph-check: no cli/ordinary under $root" >&2
+  exit 2
+}
+[ -d "$cli_harness" ] || {
+  echo "registry-cli-build-graph-check: no cli/test-harness under $root" >&2
+  exit 2
+}
 command -v cabal >/dev/null 2>&1 || {
   echo "registry-cli-build-graph-check: cabal not on PATH (run under nix develop)" >&2
   exit 2
 }
 
 # Fail closed on the extent: a scope that discovers no source proves nothing.
-count=$(find "$cli" -name '*.hs' | wc -l)
+# The cli/src guard stands alone: widening to flag directories must not let
+# their files satisfy it. Only modules that really live outside cli/src may
+# be treated as private.
+src_count=$(find "$cli" -name '*.hs' | wc -l)
+[ "$src_count" -gt 0 ] || {
+  echo "registry-cli-build-graph-check: empty cli/src extent under $root" >&2
+  exit 2
+}
+count=$(find "$cli" "$cli_ordinary" "$cli_harness" -name '*.hs' | wc -l)
 [ "$count" -gt 0 ] || {
   echo "registry-cli-build-graph-check: empty cli/src extent under $root" >&2
   exit 2
@@ -99,8 +125,28 @@ if [ "$holders" != "sublib:registry-cli" ]; then
   fail=1
 fi
 
-# Leg 3: the sublibrary exposes every cli/src module under its unchanged name.
-expected=$(cd "$cli" && find . -name '*.hs' | sed 's|^\./||; s|\.hs$||; s|/|.|g' | sort -u)
+# Leg 3: the sublibrary exposes every command-line module under its unchanged
+# name. Every cli/src module must be exposed (the original protected
+# obligation, unchanged); flag-dependent modules join only when exposed.
+# Only modules that really live outside cli/src may be treated as private:
+# expected is cli/src files plus flag files minus other-modules, never all
+# files minus other-modules (which would hide a src module demoted to
+# private). A discriminating plant moves a src module to other-modules and
+# must fail naming it.
+src_files=$( (cd "$cli" && find . -name '*.hs') | sed 's|^\./||; s|\.hs$||; s|/|.|g' | sort -u)
+flag_files=$( (
+  cd "$cli_ordinary" && find . -name '*.hs'
+  cd "$cli_harness" && find . -name '*.hs'
+) | sed 's|^\./||; s|\.hs$||; s|/|.|g' | sort -u)
+private=$(awk '
+    /^library[ \t]+registry-cli([ \t]|$)/ { inlib = 1; next }
+    /^[^ \t]/ { if (inlib) exit; next }
+    inlib && /^[ \t]*other-modules:/ { inmods = 1; line = $0; sub(/^[^:]*:/, "", line); print line; next }
+    inlib && inmods && /^[ \t]*[a-zA-Z0-9-]+:/ { inmods = 0; next }
+    inlib && inmods { print $0 }
+' "$cabal" | split_names | { grep -v '^$' || true; } | sort -u)
+flag_exposed=$(comm -23 <(printf '%s\n' "$flag_files") <(printf '%s\n' "$private"))
+expected=$(printf '%s\n%s\n' "$src_files" "$flag_exposed" | grep -v '^$' | sort -u)
 got=$(awk '
     /^library[ \t]+registry-cli([ \t]|$)/ { inlib = 1; next }
     /^[^ \t]/ { if (inlib) exit; next }
@@ -112,7 +158,7 @@ if [ -z "$got" ]; then
   echo "registry-cli-build-graph-check: library registry-cli exposes nothing (missing stanza or empty exposed-modules)" >&2
   fail=1
 elif [ "$expected" != "$got" ]; then
-  echo "registry-cli-build-graph-check: registry-cli exposed-modules differ from the cli/src files:" >&2
+  echo "registry-cli-build-graph-check: registry-cli exposed-modules differ from the command-line sources (cli/src, cli/ordinary, cli/test-harness):" >&2
   comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$got") | sed 's/^/  missing from stanza: /' >&2
   comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$got") | sed 's/^/  in stanza but no such file: /' >&2
   fail=1

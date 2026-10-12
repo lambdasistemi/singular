@@ -135,6 +135,135 @@
           checks = haskellChecks;
         };
 
+        # #562 item 2: the pinned cabal the offchain shell carries, so the
+        # build-graph wrappers run under the pinned toolchain without
+        # entering a dev shell. Fail-closed on anything but one match.
+        cabalTool =
+          let
+            matches = builtins.filter (
+              p: builtins.match "cabal-install-exe-cabal-.*" (p.name or "") != null
+            ) project.project.shell.nativeBuildInputs;
+          in
+          assert builtins.length matches == 1;
+          builtins.head matches;
+
+        # #562 item 2: the registry CLI build-graph check and its controls as
+        # offchain flake apps. Each owns its scratch directory (mktemp with
+        # trap cleanup, bounded to the run, no process stopped) and runs
+        # from the checkout so the scripts' own layout still resolves. Setup
+        # (downloading the package index, then fetching the pinned git
+        # sources) exits 2, distinct from the verdict exit 1 the scripts use.
+        # On a clean runner the setup owns its Cabal state: config and
+        # package index under a named reusable cache in XDG_CACHE_HOME,
+        # never $HOME/.config/cabal or $HOME/.cabal; the package lists are
+        # downloaded before the solve (cabal solves against an empty index
+        # otherwise); and the HTTPS download path is declared, its external
+        # transport (curl) in the executables and the certificate bundle
+        # exported.
+        buildGraphRuntime = [
+          cabalTool
+          project.project.pkg-set.config.ghc.package
+          pkgs.bash
+          pkgs.bzip2
+          pkgs.cacert
+          pkgs.coreutils
+          pkgs.curl
+          pkgs.findutils
+          pkgs.gawk
+          pkgs.git
+          pkgs.gnugrep
+          pkgs.gnused
+          pkgs.liburing
+          pkgs.lmdb
+          pkgs.lz4
+          pkgs.ncurses
+          pkgs.pkg-config
+          pkgs.rocksdb
+          pkgs.snappy
+          pkgs.zlib
+          pkgs.zstd
+          pkgs.libblst
+          pkgs.libsodium-vrf
+          pkgs.secp256k1
+        ];
+        buildGraphSetup = ''
+          if [ -f "offchain/singular-registry.cabal" ]; then src0="$PWD/offchain"; else src0="$PWD"; fi
+          [ -f "$src0/singular-registry.cabal" ] || { echo "registry-cli-build-graph: no singular-registry.cabal under $src0" >&2; exit 2; }
+          # The wrapper owns its scratch copy: the whole tree is copied
+          # first, then the copied build outputs (dist-newstyle, dist,
+          # result) are removed so the fetch below repopulates them inside
+          # scratch; the live checkout is never read for build state nor
+          # written. The trap removes scratch on success and on setup
+          # failure alike. Every acquisition and population step maps its
+          # failure to exit 2 (setup) with its diagnostic, never exit 1
+          # (verdict, reserved for the scripts' own refusals).
+          if ! work="$(mktemp -d)"; then
+            echo "registry-cli-build-graph: setup failed creating the scratch directory (TMPDIR=''${TMPDIR:-unset})" >&2
+            exit 2
+          fi
+          trap 'rm -rf "$work"' EXIT
+          if ! mkdir -p "$work/copy"; then
+            echo "registry-cli-build-graph: setup failed creating the scratch copy directory under $work" >&2
+            exit 2
+          fi
+          if ! cp -a "$src0/." "$work/copy/"; then
+            echo "registry-cli-build-graph: setup failed copying the tree to scratch" >&2
+            exit 2
+          fi
+          if ! rm -rf "$work/copy/dist-newstyle" "$work/copy/dist" "$work/copy/result"; then
+            echo "registry-cli-build-graph: setup failed removing copied build outputs in scratch" >&2
+            exit 2
+          fi
+          src="$work/copy"
+          export PKG_CONFIG_PATH="${pkgs.lib.getDev pkgs.ncurses}/lib/pkgconfig:${pkgs.lib.getDev pkgs.ncurses}/share/pkgconfig:${pkgs.lib.getDev pkgs.libblst}/lib/pkgconfig:${pkgs.lib.getDev pkgs.libblst}/share/pkgconfig:${pkgs.lib.getDev pkgs.libsodium-vrf}/lib/pkgconfig:${pkgs.lib.getDev pkgs.libsodium-vrf}/share/pkgconfig:${pkgs.lib.getDev pkgs.secp256k1}/lib/pkgconfig:${pkgs.lib.getDev pkgs.secp256k1}/share/pkgconfig:${pkgs.lib.getDev pkgs.zlib}/lib/pkgconfig:${pkgs.lib.getDev pkgs.zlib}/share/pkgconfig:${pkgs.lib.getDev pkgs.rocksdb}/lib/pkgconfig:${pkgs.lib.getDev pkgs.rocksdb}/share/pkgconfig:${pkgs.lib.getDev pkgs.bzip2}/lib/pkgconfig:${pkgs.lib.getDev pkgs.bzip2}/share/pkgconfig:${pkgs.lib.getDev pkgs.lz4}/lib/pkgconfig:${pkgs.lib.getDev pkgs.lz4}/share/pkgconfig:${pkgs.lib.getDev pkgs.snappy}/lib/pkgconfig:${pkgs.lib.getDev pkgs.snappy}/share/pkgconfig:${pkgs.lib.getDev pkgs.zstd}/lib/pkgconfig:${pkgs.lib.getDev pkgs.zstd}/share/pkgconfig:${pkgs.lib.getDev pkgs.lmdb}/lib/pkgconfig:${pkgs.lib.getDev pkgs.lmdb}/share/pkgconfig:${pkgs.lib.getDev pkgs.liburing}/lib/pkgconfig:${pkgs.lib.getDev pkgs.liburing}/share/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+          # The app owns its Cabal state: config and package index live in a
+          # named reusable cache directory under XDG_CACHE_HOME (or
+          # HOME/.cache when unset), never in $HOME/.config/cabal or
+          # $HOME/.cabal; a warm copy makes the index bootstrap incremental,
+          # a fresh one downloads it whole. The certificate bundle is
+          # exported for the transport curl and the git fetches alike.
+          cache_root="''${XDG_CACHE_HOME:-''${HOME:+$HOME/.cache}}"
+          [ -n "''${cache_root:-}" ] || {
+            echo "registry-cli-build-graph: no cache location: set XDG_CACHE_HOME or HOME" >&2
+            exit 2
+          }
+          if ! mkdir -p "$cache_root/singular-registry-build-graph-cabal"; then
+            echo "registry-cli-build-graph: setup failed creating the cabal download cache directory" >&2
+            exit 2
+          fi
+          export CABAL_DIR="$cache_root/singular-registry-build-graph-cabal"
+          export CURL_CA_BUNDLE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          export GIT_SSL_CAINFO="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          # On a clean runner cabal solves against an empty index unless the
+          # package lists are downloaded first (hackage and the project's
+          # cardano-haskell-packages repository alike); a warm cache makes
+          # this a fast incremental check.
+          if ! (cd "$src" && cabal update); then
+            echo "registry-cli-build-graph: setup failed updating the package index (cabal update)" >&2
+            exit 2
+          fi
+          if ! out="$(cd "$src" && cabal build --dry-run all 2>&1)"; then
+            echo "registry-cli-build-graph: setup failed fetching the pinned git sources and the package index (cabal build --dry-run all)" >&2
+            printf '%s\n' "$out" >&2
+            exit 2
+          fi
+        '';
+        registryCliBuildGraphCheckApp = pkgs.writeShellApplication {
+          name = "registry-cli-build-graph-check";
+          runtimeInputs = buildGraphRuntime;
+          text = buildGraphSetup + ''
+            bash "$src/nix/registry-cli-build-graph-check.sh" "$src"
+          '';
+        };
+        registryCliBuildGraphControlsApp = pkgs.writeShellApplication {
+          name = "registry-cli-build-graph-controls";
+          runtimeInputs = buildGraphRuntime;
+          text = buildGraphSetup + ''
+            bash "$src/nix/registry-cli-build-graph-controls.sh" "$src"
+          '';
+        };
+
         # The bounded journey runner (D-012). A Nix-built binary —
         # haskell.nix resolves every dependency, so a clean runner
         # needs no cabal, no package index and no warm state (D-011)
@@ -615,6 +744,15 @@
           connected-verifier = {
             type = "app";
             program = pkgs.lib.getExe connected-verifier;
+          };
+          # #562 item 2: the registry CLI build-graph check and its controls.
+          registry-cli-build-graph-check = {
+            type = "app";
+            program = pkgs.lib.getExe registryCliBuildGraphCheckApp;
+          };
+          registry-cli-build-graph-controls = {
+            type = "app";
+            program = pkgs.lib.getExe registryCliBuildGraphControlsApp;
           };
         };
 

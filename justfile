@@ -87,7 +87,20 @@ ci:
     just lint
     just lint-controls
 
-# Local bundle for the dev-shell-only checks. Hosted: the Development shell checks job runs application-model, check-presentation, rename-registry-test, no-global-fixture-state, node-confinement, node-confinement-controls and lint-controls; whole-repository `just lint` runs in the Development shell build job; inventory, inventory-controls, format-check and format-controls keep their existing hosted carriers.
+# Local bundle for fast local runs (`just ci` stays the local aggregate).
+# Hosted: the Development shell checks job runs application-model,
+# check-presentation, rename-registry-test, no-global-fixture-state,
+# node-confinement, node-confinement-controls and lint-controls;
+# whole-repository `just lint` runs in the Development shell build job; `just
+# inventory` runs hosted as the baseline of the Code inventory job's Refuse
+# unclassified sources step (the controls script first inventories the real
+# checkout, as `just inventory` does) and locally via `just ci`; `just
+# inventory-controls` orphans run in that Refuse step and test-tags inside its
+# inventory-check step; `just format-check` runs hosted as the baseline of the
+# Conformance format-check job's format-controls step (the controls script
+# first checks the real root, as `just format-check` does) and locally via
+
+# `just ci`; `just format-controls` runs in that format-controls step.
 ci-shell:
     just application-model
     just check-presentation

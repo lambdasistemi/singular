@@ -106,6 +106,37 @@ jobs:
       - run: nix run --quiet .#application-separation-controls
       - run: >-
           env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#application-separation-check && env -i HOME="$HOME" PATH="$(dirname "$(readlink -f "$(command -v nix)")"):$(dirname "$(readlink -f "$(command -v git)")")" nix run --quiet .#application-separation-controls
+  registry-test-vectors:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    name: Registry test vectors
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562 item 8: the offchain cage-test-vectors check executes the
+      # registry test-vectors binary (its JSON mode) inside the check
+      # derivation, so building the check is the hosted execution. No
+      # existing job runs that body: the Cage vectors job in registry.yml
+      # runs the --aiken mode through the vectors-check wrapper, a
+      # different invocation of the same binary. The off-chain component
+      # build job above stays build-only by its own contract, which is
+      # why this executing check is its own job. Thirty minutes: the
+      # check body itself runs in seconds (7 s measured warm); the budget
+      # covers a cold compile of the package the binary comes from.
+      - run: nix build --quiet --no-link .#checks.x86_64-linux.cage-test-vectors
+        working-directory: offchain
   open-datum-component-build:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     name: Open-datum component build
@@ -231,14 +262,73 @@ jobs:
       # #278 slice 1: the machine-checked code inventory. This job runs the
       # inventory over the NIX FLAKE SOURCE — a store copy with no .git
       # directory — which is one of the two contexts the inventory must
-      # reproduce; the tracked-checkout context is carried by `just
-      # inventory` inside the dev-shell job's `just ci`. The inventory maps
-      # every discovered file to a lint and a format policy (or a named
-      # non-code class), fails closed on anything unmapped, and reports
-      # enforced versus pending extents honestly — the negative and positive
-      # controls proving each discovery signal runs in the dev-shell job via
-      # `just inventory-controls`.
+      # reproduce; the tracked-checkout context runs hosted as the baseline
+      # of the Refuse unclassified sources step below (the controls script
+      # first inventories the real checkout, as `just inventory` does) and
+      # locally via `just inventory` inside local `just ci`.
+      # The inventory maps every discovered file to a lint and a format
+      # policy (or a named non-code class), fails closed on anything unmapped,
+      # and reports enforced versus pending extents honestly — the test-tag
+      # controls run in the inventory-check step above, and the orphan
+      # controls proving each discovery signal run in the Refuse
+      # unclassified sources step below (`nix run .#inventory-controls`).
       - run: nix run --quiet .#inventory-check
+      # #562 item 5a: the inventory orphan controls only (the test-tag
+      # controls already run inside inventory-check above). The step refuses
+      # unclassified sources with their intended diagnostics.
+      - name: Refuse unclassified sources
+        run: nix run --quiet .#inventory-controls
+  workflow-commands-resolve:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Workflow commands resolve and controls
+    runs-on: nixos
+    timeout-minutes: 25
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562 item 1: the workflow command resolver and its controls. The
+      # controls script first resolves the clean tree, then plants a missing
+      # app and a missing package and requires both refused. One job covers
+      # the check and its controls; the clean run's summary reaches the log.
+      - run: nix run --quiet .#workflow-commands-resolve-controls
+  registry-cli-build-graph:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Registry CLI build graph
+    runs-on: nixos
+    timeout-minutes: 5
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562 item 2: the registry CLI build-graph check and its controls.
+      # Each app first fetches the pinned git sources as setup (exit 2 on
+      # failure, never a verdict), then runs its script; the controls refuse
+      # both plants with exit 1 naming the offender.
+      - run: nix run --quiet ./offchain#registry-cli-build-graph-check
+      - run: nix run --quiet ./offchain#registry-cli-build-graph-controls
   coverage:
     if: github.event.action != 'closed'
     needs: build-gate
@@ -331,9 +421,14 @@ jobs:
         with:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      # #467: the dev-shell checks no other hosted job runs, each inside the
-      # development shell that pins its tools. Parallel to the Development
-      # shell build job; inventory and format keep their existing carriers.
+      # #467: the dev-shell checks, each inside the development shell that
+      # pins its tools. Parallel to the Development shell build job.
+      # check-presentation additionally runs inside the Rendered documentation
+      # job's docs-check (both run `tools/check_presentation_repo.py`) — a
+      # pre-existing overlap, both kept. Inventory orphan controls run in the
+      # Code inventory job's Refuse unclassified sources step, test-tag
+      # controls inside its inventory-check step; format controls run in the
+      # Conformance format-check job's format-controls step — none of them here.
       - run: nix develop --quiet -c just application-model
       - run: nix develop --quiet -c just check-presentation
       - run: nix develop --quiet -c just rename-registry-test
