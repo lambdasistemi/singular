@@ -666,6 +666,293 @@ else
   broken=$((broken + 1))
 fi
 
+# 22. The shared extraction credits an invocation, not printed command
+# text. A fixture repository declares one app, widget, in its sub flake
+# beside one check, probe; the clean workflow runs widget and
+# flake-checks the sub flake, green. Each non-invocation plant (echo,
+# printf, a quoted argument, a heredoc body, a YAML comment) leaves
+# widget unhosted and the census red, and an echo-planted flake check
+# leaves probe unhosted the same way; each real invocation form stays
+# hosted. Every plant is seen red first, then green again on restore.
+invroot="$work/inv-root"
+mkdir -p "$invroot/.github/workflows" "$invroot/sub" "$invroot/tools"
+cat >"$invroot/flake.nix" <<'EOF'
+{
+  outputs = _: {
+    apps.x86_64-linux = {};
+    checks.x86_64-linux = {};
+  };
+}
+EOF
+cat >"$invroot/sub/flake.nix" <<'EOF'
+{
+  outputs = _: {
+    apps.x86_64-linux.widget = {
+      type = "app";
+      program = "/bin/echo";
+    };
+    checks.x86_64-linux.probe = builtins.derivation {
+      name = "probe-check";
+      system = "x86_64-linux";
+      builder = "/bin/sh";
+      args = [ "-c" ": > $out" ];
+    };
+  };
+}
+EOF
+cat >"$invroot/tools/declared_checks_not_hosted.list" <<'EOF'
+# no declared-not-hosted entries in the fixture
+EOF
+clean_inv_step() {
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: nix run --quiet .#widget
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+}
+run_inv_census() {
+  if bash "$collect" "$invroot" >"$work/last.out" 2>"$work/last.err"; then
+    classify_status=0
+  else
+    classify_status=$?
+  fi
+}
+clean_inv_step
+mkdir -p "$work/no-hooks"
+inv_git() {
+  env GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git -c user.name=census -c user.email=census@example.org -c commit.gpgsign=false -c core.hooksPath="$work/no-hooks" -c init.templatedir="$work/no-hooks" "$@"
+}
+if inv_git -C "$invroot" init -q >>"$work/inv-setup.log" 2>&1 \
+  && inv_git -C "$invroot" add -A >>"$work/inv-setup.log" 2>&1 \
+  && inv_git -C "$invroot" commit -qm fixture >>"$work/inv-setup.log" 2>&1; then
+  run_inv_census
+  expect "the clean invocation fixture is green" 0 "hosted app sub widget"
+
+  # Plant: the blocking scenario, the run line echoing its command text.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: echo 'nix run --quiet .#widget -- --help'
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "an echoed command is not an invocation" 1 "app widget of flake sub is declared and named by no workflow step"
+  clean_inv_step
+  run_inv_census
+  expect "the restored invocation is green" 0 "hosted app sub widget"
+
+  # Plant: printf printing its command text.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: printf '%s\n' 'nix run --quiet .#widget'
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "a printed command is not an invocation" 1 "app widget of flake sub is declared and named by no workflow step"
+  clean_inv_step
+  run_inv_census
+  expect "the restored invocation is green" 0 "hosted app sub widget"
+
+  # Plant: the command text as a quoted argument to another command.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: true "nix run --quiet .#widget"
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "a quoted command string is not an invocation" 1 "app widget of flake sub is declared and named by no workflow step"
+  clean_inv_step
+  run_inv_census
+  expect "the restored invocation is green" 0 "hosted app sub widget"
+
+  # Plant: the command text in a heredoc body the step never executes.
+  # (printf, not a heredoc here: the indented EOF the fixture needs
+  # would trip SC1039 on this file.)
+  printf '%s\n' \
+    'jobs:' \
+    '  widget-job:' \
+    '    steps:' \
+    '      - name: Fixture preamble' \
+    '      - run: |' \
+    '          cat <<EOF' \
+    '          nix run --quiet .#widget' \
+    '          EOF' \
+    '        working-directory: sub' \
+    '      - run: nix flake check' \
+    '        working-directory: sub' \
+    '      - name: Fixture trailer' \
+    >"$invroot/.github/workflows/fixture.yml"
+  run_inv_census
+  expect "a heredoc body is not an invocation" 1 "app widget of flake sub is declared and named by no workflow step"
+  clean_inv_step
+  run_inv_census
+  expect "the restored invocation is green" 0 "hosted app sub widget"
+
+  # Plant: the run line as a YAML comment. Comments never credited, so
+  # this plant is red before and after the repair: it locks the behavior.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      # - run: nix run --quiet .#widget
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "a commented run line is not an invocation" 1 "app widget of flake sub is declared and named by no workflow step"
+  clean_inv_step
+  run_inv_census
+  expect "the restored invocation is green" 0 "hosted app sub widget"
+
+  # Plant: the flake-check line echoing its command text. The probe
+  # check loses its carrier the same way the app did above.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: nix run --quiet .#widget
+        working-directory: sub
+      - run: echo 'nix flake check'
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "an echoed flake check is not an invocation" 1 "check probe of flake sub is declared and named by no workflow step"
+  clean_inv_step
+  run_inv_census
+  expect "the restored invocation is green" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: the dashed run key.
+  run_inv_census
+  expect "the dashed run key stays hosted" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: the bare run key under a named step.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - name: Run widget
+        working-directory: sub
+        run: nix run --quiet .#widget
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "the bare run key stays hosted" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: a cd prefix on the same line.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: cd sub && nix run --quiet .#widget
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "the cd prefix stays hosted" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: the command on a later block line.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: |
+          echo starting
+          nix run --quiet .#widget
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "a later block line stays hosted" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: a parenthesized cd prefix.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: (cd sub && nix run --quiet .#widget)
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "the parenthesized cd stays hosted" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: an environment assignment prefix.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: OUTDIR="$RUNNER_TEMP/x" nix run --quiet .#widget
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "the assignment prefix stays hosted" 0 "hosted app sub widget"
+
+  # Real forms stay hosted: the invocation inside a substitution.
+  cat >"$invroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  widget-job:
+    steps:
+      - name: Fixture preamble
+      - run: printf 'parts=%s\n' "$(nix run --quiet .#widget)" >> "$RUNNER_TEMP/out"
+        working-directory: sub
+      - run: nix flake check
+        working-directory: sub
+      - name: Fixture trailer
+EOF
+  run_inv_census
+  expect "the substitution stays hosted" 0 "hosted app sub widget"
+
+  # The closing green: the clean fixture again.
+  clean_inv_step
+  run_inv_census
+  expect "the clean invocation fixture is green" 0 "hosted app sub widget"
+else
+  echo "classify-controls: SETUP: invocation fixture setup failed" >&2
+  cat "$work/inv-setup.log" >&2
+  exit 2
+fi
+
 # 19. A bare build of a same-named legacy package does not host the
 # check. The fixture flake declares checks.unit beside an unrelated
 # legacy package unit and no packages.unit, with a workflow step running

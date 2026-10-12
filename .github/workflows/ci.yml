@@ -359,9 +359,9 @@ jobs:
       # #562 item 20: the declared-checks-hosted census. Every app and
       # check a repository flake declares is named by a workflow step, or
       # carries a reasoned entry in tools/declared_checks_not_hosted.list.
-      # The table-driven controls run first (fixtures only, about a
-      # second); then the live census evaluates every tracked flake once
-      # and classifies the real tree. The issue-state query is read-only
+      # The table-driven controls run first (pure classifier cases plus
+      # offline fixture flakes, seconds); then the live census evaluates
+      # every tracked flake once and classifies the real tree. The issue-state query is read-only
       # (the job's permissions add nothing but issues read); the census
       # fails on a pending-wiring entry whose issue is closed, and the
       # slice that hosts the wired job removes the entry. Timeout from the
