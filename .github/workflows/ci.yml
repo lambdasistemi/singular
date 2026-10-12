@@ -180,6 +180,36 @@ jobs:
       # #528 slice 4: the application's whole suite, as the journey job
       # runs cage-tests whole.
       - run: cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests
+  open-datum-singular-smoke:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Open-datum registry command line
+    runs-on: nixos
+    timeout-minutes: 30
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562: the application tree's registry command line is an
+      # obligation with no other carrier, so it keeps a job of its own:
+      # this step runs the exact app with a no-effect invocation (the
+      # command list, no node, no state), and that run line is what hosts
+      # applications/open-datum/offchain#singular in the census. Thirty
+      # minutes: the invocation itself runs in about 22 s warm; the
+      # budget covers a cold compile of the registry package it comes
+      # from, like the neighbouring component build.
+      - run: nix run --quiet .#singular -- --help
+        working-directory: applications/open-datum/offchain
   model:
     if: github.event.action != 'closed'
     needs: build-gate
