@@ -43,7 +43,7 @@ permissions:
   contents: read
 concurrency:
   group: blueprint-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 jobs:
   naming-validators:
     name: Naming validators build, refuse, and match their pinned identity
