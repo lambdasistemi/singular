@@ -93370,6 +93370,1441 @@
     }
    ]
   },
+  "docs-demo1-preprod/funding-a-create-from-one-output-00": {
+   "audio_sha256": "1d8a557249073a9066055d9f91a0fd24e04f4bdb7c527e74563961fd6b449928",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.25,
+   "index": 0,
+   "key": "d4cf51fe64af136729bd324f9f976e0886591dc7a699b75659aba055673df640",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 500,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "Funding a create from one output.",
+   "text": "Funding a create from one output.",
+   "words": [
+    {
+     "end": 0.463,
+     "start": 0.175,
+     "text": "Funding"
+    },
+    {
+     "end": 0.525,
+     "start": 0.463,
+     "text": "a"
+    },
+    {
+     "end": 0.875,
+     "start": 0.525,
+     "text": "create"
+    },
+    {
+     "end": 1.025,
+     "start": 0.875,
+     "text": "from"
+    },
+    {
+     "end": 1.212,
+     "start": 1.025,
+     "text": "one"
+    },
+    {
+     "end": 2.05,
+     "start": 1.212,
+     "text": "output"
+    },
+    {
+     "end": 2.25,
+     "start": 2.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-preprod/funding-a-create-from-one-output-01": {
+   "audio_sha256": "13496e01a8d52862eca5c005cf25e24f8bfd9e83f8726ab6c0c3fdb2079c29cd",
+   "characters": 308,
+   "cost": 0.00030492,
+   "duration": 19.9,
+   "index": 1,
+   "key": "b8d4079b2bd5accd6cf5e8c113f1e294d085683d4218be53defbd074d79f31aa",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 400,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "As Carol, I fund a fresh wallet with one output and run create. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
+   "text": "As Carol, I fund a fresh wallet with one output and run create. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
+   "words": [
+    {
+     "end": 0.363,
+     "start": 0.175,
+     "text": "As"
+    },
+    {
+     "end": 0.775,
+     "start": 0.363,
+     "text": "Carol"
+    },
+    {
+     "end": 0.825,
+     "start": 0.775,
+     "text": ","
+    },
+    {
+     "end": 0.975,
+     "start": 0.825,
+     "text": "I"
+    },
+    {
+     "end": 1.163,
+     "start": 0.975,
+     "text": "fund"
+    },
+    {
+     "end": 1.237,
+     "start": 1.163,
+     "text": "a"
+    },
+    {
+     "end": 1.55,
+     "start": 1.237,
+     "text": "fresh"
+    },
+    {
+     "end": 1.95,
+     "start": 1.55,
+     "text": "wallet"
+    },
+    {
+     "end": 2.125,
+     "start": 1.95,
+     "text": "with"
+    },
+    {
+     "end": 2.35,
+     "start": 2.125,
+     "text": "one"
+    },
+    {
+     "end": 2.8,
+     "start": 2.35,
+     "text": "output"
+    },
+    {
+     "end": 2.925,
+     "start": 2.8,
+     "text": "and"
+    },
+    {
+     "end": 3.175,
+     "start": 2.925,
+     "text": "run"
+    },
+    {
+     "end": 4.15,
+     "start": 3.175,
+     "text": "create"
+    },
+    {
+     "end": 4.35,
+     "start": 4.15,
+     "text": "."
+    },
+    {
+     "end": 4.6,
+     "start": 4.525,
+     "text": "The"
+    },
+    {
+     "end": 5.0,
+     "start": 4.6,
+     "text": "preview"
+    },
+    {
+     "end": 5.3,
+     "start": 5.0,
+     "text": "tells"
+    },
+    {
+     "end": 5.45,
+     "start": 5.3,
+     "text": "me"
+    },
+    {
+     "end": 5.625,
+     "start": 5.45,
+     "text": "my"
+    },
+    {
+     "end": 6.2,
+     "start": 5.625,
+     "text": "registry's"
+    },
+    {
+     "end": 6.525,
+     "start": 6.2,
+     "text": "state"
+    },
+    {
+     "end": 7.0,
+     "start": 6.525,
+     "text": "token"
+    },
+    {
+     "end": 7.387,
+     "start": 7.0,
+     "text": "before"
+    },
+    {
+     "end": 7.9,
+     "start": 7.387,
+     "text": "anything"
+    },
+    {
+     "end": 8.025,
+     "start": 7.9,
+     "text": "is"
+    },
+    {
+     "end": 9.05,
+     "start": 8.025,
+     "text": "submitted"
+    },
+    {
+     "end": 9.275,
+     "start": 9.05,
+     "text": "."
+    },
+    {
+     "end": 9.562,
+     "start": 9.45,
+     "text": "Then"
+    },
+    {
+     "end": 9.65,
+     "start": 9.562,
+     "text": "the"
+    },
+    {
+     "end": 9.975,
+     "start": 9.65,
+     "text": "create"
+    },
+    {
+     "end": 10.238,
+     "start": 9.975,
+     "text": "runs"
+    },
+    {
+     "end": 10.35,
+     "start": 10.238,
+     "text": "its"
+    },
+    {
+     "end": 10.675,
+     "start": 10.35,
+     "text": "seven"
+    },
+    {
+     "end": 11.925,
+     "start": 10.675,
+     "text": "transactions"
+    },
+    {
+     "end": 12.125,
+     "start": 11.925,
+     "text": ","
+    },
+    {
+     "end": 12.525,
+     "start": 12.325,
+     "text": "each"
+    },
+    {
+     "end": 12.8,
+     "start": 12.525,
+     "text": "paid"
+    },
+    {
+     "end": 12.938,
+     "start": 12.8,
+     "text": "from"
+    },
+    {
+     "end": 13.025,
+     "start": 12.938,
+     "text": "the"
+    },
+    {
+     "end": 13.312,
+     "start": 13.025,
+     "text": "change"
+    },
+    {
+     "end": 13.387,
+     "start": 13.312,
+     "text": "of"
+    },
+    {
+     "end": 13.475,
+     "start": 13.387,
+     "text": "the"
+    },
+    {
+     "end": 13.663,
+     "start": 13.475,
+     "text": "one"
+    },
+    {
+     "end": 14.55,
+     "start": 13.663,
+     "text": "before"
+    },
+    {
+     "end": 14.775,
+     "start": 14.55,
+     "text": ","
+    },
+    {
+     "end": 15.038,
+     "start": 14.95,
+     "text": "and"
+    },
+    {
+     "end": 15.125,
+     "start": 15.038,
+     "text": "the"
+    },
+    {
+     "end": 15.4,
+     "start": 15.125,
+     "text": "last"
+    },
+    {
+     "end": 15.725,
+     "start": 15.4,
+     "text": "change"
+    },
+    {
+     "end": 16.025,
+     "start": 15.725,
+     "text": "comes"
+    },
+    {
+     "end": 16.3,
+     "start": 16.025,
+     "text": "back"
+    },
+    {
+     "end": 16.388,
+     "start": 16.3,
+     "text": "to"
+    },
+    {
+     "end": 16.525,
+     "start": 16.388,
+     "text": "my"
+    },
+    {
+     "end": 17.35,
+     "start": 16.525,
+     "text": "wallet"
+    },
+    {
+     "end": 17.55,
+     "start": 17.35,
+     "text": "."
+    },
+    {
+     "end": 17.825,
+     "start": 17.725,
+     "text": "I"
+    },
+    {
+     "end": 18.05,
+     "start": 17.825,
+     "text": "never"
+    },
+    {
+     "end": 18.288,
+     "start": 18.05,
+     "text": "split"
+    },
+    {
+     "end": 18.425,
+     "start": 18.288,
+     "text": "my"
+    },
+    {
+     "end": 18.75,
+     "start": 18.425,
+     "text": "wallet"
+    },
+    {
+     "end": 18.925,
+     "start": 18.75,
+     "text": "by"
+    },
+    {
+     "end": 19.7,
+     "start": 18.925,
+     "text": "hand"
+    },
+    {
+     "end": 19.9,
+     "start": 19.7,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-preprod/funding-a-create-from-one-output-02": {
+   "audio_sha256": "5f206384f4e188c2f951cbe725d2c62c3e1f54bc3ed5cecfd66c32644494d2c9",
+   "characters": 407,
+   "cost": 0.00040292999999999997,
+   "duration": 29.6,
+   "index": 2,
+   "key": "4d8c8794ed43c09583e262cef7fda2308b8e794d1cefeae6b6c230a7f3d5107f",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 400,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "Decided, not yet built. Today a funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 (#491) replaces this with a chain from one output:",
+   "text": "Decided, not yet built. Today a funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 (#491) replaces this with a chain from one output:",
+   "words": [
+    {
+     "end": 0.625,
+     "start": 0.175,
+     "text": "Decided"
+    },
+    {
+     "end": 0.663,
+     "start": 0.625,
+     "text": ","
+    },
+    {
+     "end": 0.812,
+     "start": 0.663,
+     "text": "not"
+    },
+    {
+     "end": 1.0,
+     "start": 0.812,
+     "text": "yet"
+    },
+    {
+     "end": 1.7,
+     "start": 1.0,
+     "text": "built"
+    },
+    {
+     "end": 1.9,
+     "start": 1.7,
+     "text": "."
+    },
+    {
+     "end": 2.4,
+     "start": 2.1,
+     "text": "Today"
+    },
+    {
+     "end": 2.513,
+     "start": 2.4,
+     "text": "a"
+    },
+    {
+     "end": 2.925,
+     "start": 2.513,
+     "text": "funded"
+    },
+    {
+     "end": 3.375,
+     "start": 2.925,
+     "text": "wallet"
+    },
+    {
+     "end": 3.662,
+     "start": 3.375,
+     "text": "needs"
+    },
+    {
+     "end": 3.912,
+     "start": 3.662,
+     "text": "two"
+    },
+    {
+     "end": 4.475,
+     "start": 3.912,
+     "text": "ada-only"
+    },
+    {
+     "end": 4.975,
+     "start": 4.475,
+     "text": "outputs"
+    },
+    {
+     "end": 5.35,
+     "start": 4.975,
+     "text": "before"
+    },
+    {
+     "end": 6.3,
+     "start": 5.35,
+     "text": "create"
+    },
+    {
+     "end": 6.5,
+     "start": 6.3,
+     "text": ","
+    },
+    {
+     "end": 7.0,
+     "start": 6.675,
+     "text": "because"
+    },
+    {
+     "end": 7.125,
+     "start": 7.0,
+     "text": "the"
+    },
+    {
+     "end": 7.45,
+     "start": 7.125,
+     "text": "state"
+    },
+    {
+     "end": 8.075,
+     "start": 7.45,
+     "text": "validator"
+    },
+    {
+     "end": 8.238,
+     "start": 8.075,
+     "text": "is"
+    },
+    {
+     "end": 8.675,
+     "start": 8.238,
+     "text": "published"
+    },
+    {
+     "end": 8.887,
+     "start": 8.675,
+     "text": "from"
+    },
+    {
+     "end": 9.3,
+     "start": 8.887,
+     "text": "one"
+    },
+    {
+     "end": 9.488,
+     "start": 9.3,
+     "text": "while"
+    },
+    {
+     "end": 9.613,
+     "start": 9.488,
+     "text": "the"
+    },
+    {
+     "end": 9.925,
+     "start": 9.613,
+     "text": "seed"
+    },
+    {
+     "end": 10.413,
+     "start": 9.925,
+     "text": "stays"
+    },
+    {
+     "end": 11.025,
+     "start": 10.413,
+     "text": "unspent"
+    },
+    {
+     "end": 11.113,
+     "start": 11.025,
+     "text": "in"
+    },
+    {
+     "end": 11.25,
+     "start": 11.113,
+     "text": "the"
+    },
+    {
+     "end": 12.1,
+     "start": 11.25,
+     "text": "other"
+    },
+    {
+     "end": 12.325,
+     "start": 12.1,
+     "text": "."
+    },
+    {
+     "end": 12.613,
+     "start": 12.525,
+     "text": "A"
+    },
+    {
+     "end": 13.025,
+     "start": 12.613,
+     "text": "wallet"
+    },
+    {
+     "end": 13.163,
+     "start": 13.025,
+     "text": "with"
+    },
+    {
+     "end": 13.262,
+     "start": 13.163,
+     "text": "a"
+    },
+    {
+     "end": 13.65,
+     "start": 13.262,
+     "text": "single"
+    },
+    {
+     "end": 14.188,
+     "start": 13.65,
+     "text": "output"
+    },
+    {
+     "end": 14.35,
+     "start": 14.188,
+     "text": "is"
+    },
+    {
+     "end": 14.95,
+     "start": 14.35,
+     "text": "refused"
+    },
+    {
+     "end": 15.337,
+     "start": 14.95,
+     "text": "before"
+    },
+    {
+     "end": 15.8,
+     "start": 15.337,
+     "text": "anything"
+    },
+    {
+     "end": 15.925,
+     "start": 15.8,
+     "text": "is"
+    },
+    {
+     "end": 16.925,
+     "start": 15.925,
+     "text": "submitted"
+    },
+    {
+     "end": 17.15,
+     "start": 16.925,
+     "text": ","
+    },
+    {
+     "end": 17.45,
+     "start": 17.35,
+     "text": "and"
+    },
+    {
+     "end": 18.2,
+     "start": 17.45,
+     "text": "reference-script"
+    },
+    {
+     "end": 18.737,
+     "start": 18.2,
+     "text": "outputs"
+    },
+    {
+     "end": 19.05,
+     "start": 18.737,
+     "text": "left"
+    },
+    {
+     "end": 19.25,
+     "start": 19.05,
+     "text": "by"
+    },
+    {
+     "end": 19.65,
+     "start": 19.25,
+     "text": "earlier"
+    },
+    {
+     "end": 20.188,
+     "start": 19.65,
+     "text": "creates"
+    },
+    {
+     "end": 20.325,
+     "start": 20.188,
+     "text": "do"
+    },
+    {
+     "end": 20.55,
+     "start": 20.325,
+     "text": "not"
+    },
+    {
+     "end": 20.812,
+     "start": 20.55,
+     "text": "count"
+    },
+    {
+     "end": 20.95,
+     "start": 20.812,
+     "text": "as"
+    },
+    {
+     "end": 21.925,
+     "start": 20.95,
+     "text": "funding"
+    },
+    {
+     "end": 22.125,
+     "start": 21.925,
+     "text": "."
+    },
+    {
+     "end": 22.4,
+     "start": 22.325,
+     "text": "The"
+    },
+    {
+     "end": 22.925,
+     "start": 22.4,
+     "text": "decision"
+    },
+    {
+     "end": 23.087,
+     "start": 22.925,
+     "text": "of"
+    },
+    {
+     "end": 24.675,
+     "start": 23.087,
+     "text": "2026-10-12"
+    },
+    {
+     "end": 24.75,
+     "start": 24.675,
+     "text": "("
+    },
+    {
+     "end": 26.15,
+     "start": 24.75,
+     "text": "491"
+    },
+    {
+     "end": 26.25,
+     "start": 26.15,
+     "text": ")"
+    },
+    {
+     "end": 26.85,
+     "start": 26.25,
+     "text": "replaces"
+    },
+    {
+     "end": 27.1,
+     "start": 26.85,
+     "text": "this"
+    },
+    {
+     "end": 27.237,
+     "start": 27.1,
+     "text": "with"
+    },
+    {
+     "end": 27.35,
+     "start": 27.237,
+     "text": "a"
+    },
+    {
+     "end": 27.8,
+     "start": 27.35,
+     "text": "chain"
+    },
+    {
+     "end": 28.0,
+     "start": 27.8,
+     "text": "from"
+    },
+    {
+     "end": 28.225,
+     "start": 28.0,
+     "text": "one"
+    },
+    {
+     "end": 29.375,
+     "start": 28.225,
+     "text": "output"
+    },
+    {
+     "end": 29.6,
+     "start": 29.375,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-demo1-preprod/funding-a-create-from-one-output-03": {
+   "audio_sha256": "20dede5a1f5f5ac0b255732e28406838b65ab880bca8b707cb58baa81fab4aeb",
+   "characters": 171,
+   "cost": 0.00016929,
+   "duration": 11.375,
+   "index": 3,
+   "key": "050c00d5294f4a990550da3ff31d9382955d59de600639929a69d4c88756034a",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 300,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "Why the seed can come second. The state script is the same for every registry and is not tied to any seed, so the seed does not have to exist before the first publication.",
+   "text": "Why the seed can come second. The state script is the same for every registry and is not tied to any seed, so the seed does not have to exist before the first publication.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.175,
+     "text": "Why"
+    },
+    {
+     "end": 0.4,
+     "start": 0.312,
+     "text": "the"
+    },
+    {
+     "end": 0.625,
+     "start": 0.4,
+     "text": "seed"
+    },
+    {
+     "end": 0.75,
+     "start": 0.625,
+     "text": "can"
+    },
+    {
+     "end": 1.013,
+     "start": 0.75,
+     "text": "come"
+    },
+    {
+     "end": 1.85,
+     "start": 1.013,
+     "text": "second"
+    },
+    {
+     "end": 2.05,
+     "start": 1.85,
+     "text": "."
+    },
+    {
+     "end": 2.325,
+     "start": 2.225,
+     "text": "The"
+    },
+    {
+     "end": 2.65,
+     "start": 2.325,
+     "text": "state"
+    },
+    {
+     "end": 3.025,
+     "start": 2.65,
+     "text": "script"
+    },
+    {
+     "end": 3.175,
+     "start": 3.025,
+     "text": "is"
+    },
+    {
+     "end": 3.312,
+     "start": 3.175,
+     "text": "the"
+    },
+    {
+     "end": 3.675,
+     "start": 3.312,
+     "text": "same"
+    },
+    {
+     "end": 3.838,
+     "start": 3.675,
+     "text": "for"
+    },
+    {
+     "end": 4.175,
+     "start": 3.838,
+     "text": "every"
+    },
+    {
+     "end": 4.925,
+     "start": 4.175,
+     "text": "registry"
+    },
+    {
+     "end": 5.062,
+     "start": 4.925,
+     "text": "and"
+    },
+    {
+     "end": 5.2,
+     "start": 5.062,
+     "text": "is"
+    },
+    {
+     "end": 5.475,
+     "start": 5.2,
+     "text": "not"
+    },
+    {
+     "end": 5.738,
+     "start": 5.475,
+     "text": "tied"
+    },
+    {
+     "end": 5.85,
+     "start": 5.738,
+     "text": "to"
+    },
+    {
+     "end": 6.113,
+     "start": 5.85,
+     "text": "any"
+    },
+    {
+     "end": 7.025,
+     "start": 6.113,
+     "text": "seed"
+    },
+    {
+     "end": 7.25,
+     "start": 7.025,
+     "text": ","
+    },
+    {
+     "end": 7.537,
+     "start": 7.45,
+     "text": "so"
+    },
+    {
+     "end": 7.662,
+     "start": 7.537,
+     "text": "the"
+    },
+    {
+     "end": 7.95,
+     "start": 7.662,
+     "text": "seed"
+    },
+    {
+     "end": 8.15,
+     "start": 7.95,
+     "text": "does"
+    },
+    {
+     "end": 8.375,
+     "start": 8.15,
+     "text": "not"
+    },
+    {
+     "end": 8.6,
+     "start": 8.375,
+     "text": "have"
+    },
+    {
+     "end": 8.725,
+     "start": 8.6,
+     "text": "to"
+    },
+    {
+     "end": 9.2,
+     "start": 8.725,
+     "text": "exist"
+    },
+    {
+     "end": 9.538,
+     "start": 9.2,
+     "text": "before"
+    },
+    {
+     "end": 9.637,
+     "start": 9.538,
+     "text": "the"
+    },
+    {
+     "end": 9.95,
+     "start": 9.637,
+     "text": "first"
+    },
+    {
+     "end": 11.175,
+     "start": 9.95,
+     "text": "publication"
+    },
+    {
+     "end": 11.375,
+     "start": 11.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-preprod/funding-a-create-from-one-output-04": {
+   "audio_sha256": "9c6daabdc9384c2c358ec60027f1219ae9591188cb0f1341d913fc07775d0ced",
+   "characters": 259,
+   "cost": 0.00025641,
+   "duration": 18.5,
+   "index": 4,
+   "key": "12de41a9b29373ad32233eb979c08788f64c02a2d0e9f188ac52bc1ea872115f",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 300,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "The identity is still known at preview. The registry's token name is the SHA-256 of the seed's output reference. That reference is the first publication's transaction id and an output number, and the transaction id is computed from the body before submission.",
+   "text": "The identity is still known at preview. The registry's token name is the SHA-256 of the seed's output reference. That reference is the first publication's transaction id and an output number, and the transaction id is computed from the body before submission.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.775,
+     "start": 0.275,
+     "text": "identity"
+    },
+    {
+     "end": 0.875,
+     "start": 0.775,
+     "text": "is"
+    },
+    {
+     "end": 1.1,
+     "start": 0.875,
+     "text": "still"
+    },
+    {
+     "end": 1.312,
+     "start": 1.1,
+     "text": "known"
+    },
+    {
+     "end": 1.4,
+     "start": 1.312,
+     "text": "at"
+    },
+    {
+     "end": 2.3,
+     "start": 1.4,
+     "text": "preview"
+    },
+    {
+     "end": 2.525,
+     "start": 2.3,
+     "text": "."
+    },
+    {
+     "end": 2.8,
+     "start": 2.7,
+     "text": "The"
+    },
+    {
+     "end": 3.375,
+     "start": 2.8,
+     "text": "registry's"
+    },
+    {
+     "end": 3.725,
+     "start": 3.375,
+     "text": "token"
+    },
+    {
+     "end": 4.137,
+     "start": 3.725,
+     "text": "name"
+    },
+    {
+     "end": 4.3,
+     "start": 4.137,
+     "text": "is"
+    },
+    {
+     "end": 4.463,
+     "start": 4.3,
+     "text": "the"
+    },
+    {
+     "end": 6.2,
+     "start": 4.463,
+     "text": "SHA-256"
+    },
+    {
+     "end": 6.287,
+     "start": 6.2,
+     "text": "of"
+    },
+    {
+     "end": 6.412,
+     "start": 6.287,
+     "text": "the"
+    },
+    {
+     "end": 6.812,
+     "start": 6.412,
+     "text": "seed's"
+    },
+    {
+     "end": 7.25,
+     "start": 6.812,
+     "text": "output"
+    },
+    {
+     "end": 8.35,
+     "start": 7.25,
+     "text": "reference"
+    },
+    {
+     "end": 8.575,
+     "start": 8.35,
+     "text": "."
+    },
+    {
+     "end": 9.0,
+     "start": 8.775,
+     "text": "That"
+    },
+    {
+     "end": 9.562,
+     "start": 9.0,
+     "text": "reference"
+    },
+    {
+     "end": 9.725,
+     "start": 9.562,
+     "text": "is"
+    },
+    {
+     "end": 9.863,
+     "start": 9.725,
+     "text": "the"
+    },
+    {
+     "end": 10.175,
+     "start": 9.863,
+     "text": "first"
+    },
+    {
+     "end": 10.925,
+     "start": 10.175,
+     "text": "publication's"
+    },
+    {
+     "end": 11.688,
+     "start": 10.925,
+     "text": "transaction"
+    },
+    {
+     "end": 12.2,
+     "start": 11.688,
+     "text": "id"
+    },
+    {
+     "end": 12.337,
+     "start": 12.2,
+     "text": "and"
+    },
+    {
+     "end": 12.462,
+     "start": 12.337,
+     "text": "an"
+    },
+    {
+     "end": 12.9,
+     "start": 12.462,
+     "text": "output"
+    },
+    {
+     "end": 13.8,
+     "start": 12.9,
+     "text": "number"
+    },
+    {
+     "end": 14.025,
+     "start": 13.8,
+     "text": ","
+    },
+    {
+     "end": 14.312,
+     "start": 14.225,
+     "text": "and"
+    },
+    {
+     "end": 14.4,
+     "start": 14.312,
+     "text": "the"
+    },
+    {
+     "end": 15.087,
+     "start": 14.4,
+     "text": "transaction"
+    },
+    {
+     "end": 15.438,
+     "start": 15.087,
+     "text": "id"
+    },
+    {
+     "end": 15.6,
+     "start": 15.438,
+     "text": "is"
+    },
+    {
+     "end": 16.15,
+     "start": 15.6,
+     "text": "computed"
+    },
+    {
+     "end": 16.288,
+     "start": 16.15,
+     "text": "from"
+    },
+    {
+     "end": 16.375,
+     "start": 16.288,
+     "text": "the"
+    },
+    {
+     "end": 16.8,
+     "start": 16.375,
+     "text": "body"
+    },
+    {
+     "end": 17.175,
+     "start": 16.8,
+     "text": "before"
+    },
+    {
+     "end": 18.3,
+     "start": 17.175,
+     "text": "submission"
+    },
+    {
+     "end": 18.5,
+     "start": 18.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-preprod/funding-a-create-from-one-output-05": {
+   "audio_sha256": "2c6b8e346d8cf777352d8779f6c8ebed57ad2178ab753e141fdb53949ad36751",
+   "characters": 103,
+   "cost": 0.00010197,
+   "duration": 7.9,
+   "index": 5,
+   "key": "2e8c661f645664eeb063d886155c8177564481da3c3a1601cce25a0b78454af9",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 300,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "A half-built create has one way forward. It always continues from the last transaction's change (#478).",
+   "text": "A half-built create has one way forward. It always continues from the last transaction's change (#478).",
+   "words": [
+    {
+     "end": 0.225,
+     "start": 0.175,
+     "text": "A"
+    },
+    {
+     "end": 0.675,
+     "start": 0.225,
+     "text": "half-built"
+    },
+    {
+     "end": 1.025,
+     "start": 0.675,
+     "text": "create"
+    },
+    {
+     "end": 1.225,
+     "start": 1.025,
+     "text": "has"
+    },
+    {
+     "end": 1.413,
+     "start": 1.225,
+     "text": "one"
+    },
+    {
+     "end": 1.587,
+     "start": 1.413,
+     "text": "way"
+    },
+    {
+     "end": 2.475,
+     "start": 1.587,
+     "text": "forward"
+    },
+    {
+     "end": 2.675,
+     "start": 2.475,
+     "text": "."
+    },
+    {
+     "end": 2.975,
+     "start": 2.85,
+     "text": "It"
+    },
+    {
+     "end": 3.35,
+     "start": 2.975,
+     "text": "always"
+    },
+    {
+     "end": 3.975,
+     "start": 3.35,
+     "text": "continues"
+    },
+    {
+     "end": 4.113,
+     "start": 3.975,
+     "text": "from"
+    },
+    {
+     "end": 4.2,
+     "start": 4.113,
+     "text": "the"
+    },
+    {
+     "end": 4.575,
+     "start": 4.2,
+     "text": "last"
+    },
+    {
+     "end": 5.338,
+     "start": 4.575,
+     "text": "transaction's"
+    },
+    {
+     "end": 5.863,
+     "start": 5.338,
+     "text": "change"
+    },
+    {
+     "end": 5.95,
+     "start": 5.863,
+     "text": "("
+    },
+    {
+     "end": 7.65,
+     "start": 5.95,
+     "text": "478"
+    },
+    {
+     "end": 7.85,
+     "start": 7.65,
+     "text": ")"
+    },
+    {
+     "end": 7.9,
+     "start": 7.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-preprod/funding-a-create-from-one-output-06": {
+   "audio_sha256": "8a18e07843f07393cd7d43984ee6f3e8778e017a1c1231af1e5de639f977c695",
+   "characters": 80,
+   "cost": 7.92e-05,
+   "duration": 8.925,
+   "index": 6,
+   "key": "70deb4617ada7119dbfb05ad8a58d9f176e543d82fbeb94ac591e39d01984736",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 400,
+   "section": "funding-a-create-from-one-output",
+   "sent_text": "Until #406, #479 and #491 land, the create still refuses a single-output wallet.",
+   "text": "Until #406, #479 and #491 land, the create still refuses a single-output wallet.",
+   "words": [
+    {
+     "end": 0.488,
+     "start": 0.2,
+     "text": "Until"
+    },
+    {
+     "end": 1.5,
+     "start": 0.488,
+     "text": "406"
+    },
+    {
+     "end": 1.562,
+     "start": 1.5,
+     "text": ","
+    },
+    {
+     "end": 2.95,
+     "start": 1.562,
+     "text": "479"
+    },
+    {
+     "end": 3.1,
+     "start": 2.95,
+     "text": "and"
+    },
+    {
+     "end": 4.375,
+     "start": 3.1,
+     "text": "491"
+    },
+    {
+     "end": 4.9,
+     "start": 4.375,
+     "text": "land"
+    },
+    {
+     "end": 5.0,
+     "start": 4.9,
+     "text": ","
+    },
+    {
+     "end": 5.1,
+     "start": 5.0,
+     "text": "the"
+    },
+    {
+     "end": 5.5,
+     "start": 5.1,
+     "text": "create"
+    },
+    {
+     "end": 5.775,
+     "start": 5.5,
+     "text": "still"
+    },
+    {
+     "end": 6.512,
+     "start": 5.775,
+     "text": "refuses"
+    },
+    {
+     "end": 6.662,
+     "start": 6.512,
+     "text": "a"
+    },
+    {
+     "end": 7.55,
+     "start": 6.662,
+     "text": "single-output"
+    },
+    {
+     "end": 8.675,
+     "start": 7.55,
+     "text": "wallet"
+    },
+    {
+     "end": 8.925,
+     "start": 8.675,
+     "text": "."
+    }
+   ]
+  },
   "docs-demo1-preprod/the-story-00": {
    "audio_sha256": "3f3b27bb82b39bf31276acdbe7579bf609005cd9852eca4671dc6101ea86e6a8",
    "characters": 10,
@@ -95161,221 +96596,6 @@
     {
      "end": 6.85,
      "start": 6.625,
-     "text": "."
-    }
-   ]
-  },
-  "docs-demo1-preprod/what-waits-for-a-decision-04": {
-   "audio_sha256": "96b3cb78cb6830812cbc1055185502de33b28ff21367f9c73bd2e7290d64460d",
-   "characters": 221,
-   "cost": 0.00013702,
-   "duration": 14.85,
-   "index": 4,
-   "key": "fc7c00c4a9d64812643ea183cd1be1a972a2d48c6ae78b87cbe28bfc78d261b7",
-   "page": "docs/demo1-preprod.md",
-   "pause_ms": 400,
-   "section": "what-waits-for-a-decision",
-   "sent_text": "A funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted.",
-   "text": "A funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted.",
-   "words": [
-    {
-     "end": 0.312,
-     "start": 0.225,
-     "text": "A"
-    },
-    {
-     "end": 0.7,
-     "start": 0.312,
-     "text": "funded"
-    },
-    {
-     "end": 1.1,
-     "start": 0.7,
-     "text": "wallet"
-    },
-    {
-     "end": 1.425,
-     "start": 1.1,
-     "text": "needs"
-    },
-    {
-     "end": 1.737,
-     "start": 1.425,
-     "text": "two"
-    },
-    {
-     "end": 2.438,
-     "start": 1.737,
-     "text": "ada-only"
-    },
-    {
-     "end": 2.975,
-     "start": 2.438,
-     "text": "outputs"
-    },
-    {
-     "end": 3.388,
-     "start": 2.975,
-     "text": "before"
-    },
-    {
-     "end": 3.925,
-     "start": 3.388,
-     "text": "create"
-    },
-    {
-     "end": 4.0,
-     "start": 3.925,
-     "text": ","
-    },
-    {
-     "end": 4.3,
-     "start": 4.0,
-     "text": "because"
-    },
-    {
-     "end": 4.438,
-     "start": 4.3,
-     "text": "the"
-    },
-    {
-     "end": 4.775,
-     "start": 4.438,
-     "text": "state"
-    },
-    {
-     "end": 5.4,
-     "start": 4.775,
-     "text": "validator"
-    },
-    {
-     "end": 5.562,
-     "start": 5.4,
-     "text": "is"
-    },
-    {
-     "end": 6.075,
-     "start": 5.562,
-     "text": "published"
-    },
-    {
-     "end": 6.275,
-     "start": 6.075,
-     "text": "from"
-    },
-    {
-     "end": 6.6,
-     "start": 6.275,
-     "text": "one"
-    },
-    {
-     "end": 6.825,
-     "start": 6.6,
-     "text": "while"
-    },
-    {
-     "end": 6.975,
-     "start": 6.825,
-     "text": "the"
-    },
-    {
-     "end": 7.312,
-     "start": 6.975,
-     "text": "seed"
-    },
-    {
-     "end": 7.775,
-     "start": 7.312,
-     "text": "stays"
-    },
-    {
-     "end": 8.425,
-     "start": 7.775,
-     "text": "unspent"
-    },
-    {
-     "end": 8.538,
-     "start": 8.425,
-     "text": "in"
-    },
-    {
-     "end": 8.675,
-     "start": 8.538,
-     "text": "the"
-    },
-    {
-     "end": 9.675,
-     "start": 8.675,
-     "text": "other"
-    },
-    {
-     "end": 9.95,
-     "start": 9.675,
-     "text": "."
-    },
-    {
-     "end": 10.238,
-     "start": 10.15,
-     "text": "A"
-    },
-    {
-     "end": 10.65,
-     "start": 10.238,
-     "text": "wallet"
-    },
-    {
-     "end": 10.788,
-     "start": 10.65,
-     "text": "with"
-    },
-    {
-     "end": 10.887,
-     "start": 10.788,
-     "text": "a"
-    },
-    {
-     "end": 11.275,
-     "start": 10.887,
-     "text": "single"
-    },
-    {
-     "end": 11.812,
-     "start": 11.275,
-     "text": "output"
-    },
-    {
-     "end": 11.975,
-     "start": 11.812,
-     "text": "is"
-    },
-    {
-     "end": 12.625,
-     "start": 11.975,
-     "text": "refused"
-    },
-    {
-     "end": 13.012,
-     "start": 12.625,
-     "text": "before"
-    },
-    {
-     "end": 13.475,
-     "start": 13.012,
-     "text": "anything"
-    },
-    {
-     "end": 13.6,
-     "start": 13.475,
-     "text": "is"
-    },
-    {
-     "end": 14.625,
-     "start": 13.6,
-     "text": "submitted"
-    },
-    {
-     "end": 14.85,
-     "start": 14.625,
      "text": "."
     }
    ]

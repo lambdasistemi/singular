@@ -53,7 +53,31 @@ Nothing in that table is a preprod confirmation, and its pending row is not a cl
 - The recording of the actual commands.
 - The Blockfrost credential, which stays with its owner; the readback takes a reference to a file, never a value.
 
-A funded wallet needs two ada-only outputs before `create`, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted.
+## Funding a create from one output
+
+As Carol, I fund a fresh wallet with one output and run `create`. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.
+
+**Decided, not yet built.** Today a funded wallet needs two ada-only outputs before `create`, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 ([#491](https://github.com/lambdasistemi/singular/issues/491)) replaces this with a chain from one output:
+
+```mermaid
+flowchart TB
+  W["Carol's wallet<br/>one ada-only output"]
+  W --> T1["1. publish the state script"]
+  T1 --> R1["state script<br/>reference output"]
+  T1 --> C1["change<br/>becomes the seed"]
+  C1 --> T2["2. boot<br/>spends the seed,<br/>mints the state token"]
+  T2 --> SO["state output<br/>state token, empty trie root"]
+  T2 --> C2["change"]
+  C2 --> T3["3 to 7. request, witness and<br/>application scripts,<br/>each from the last change"]
+  T3 --> R3["five reference outputs"]
+  T3 --> C7["final change<br/>back in Carol's wallet"]
+```
+
+- **Why the seed can come second.** The state script is the same for every registry and is not tied to any seed, so the seed does not have to exist before the first publication.
+- **The identity is still known at preview.** The registry's token name is the SHA-256 of the seed's output reference. That reference is the first publication's transaction id and an output number, and the transaction id is computed from the body before submission.
+- **A half-built create has one way forward.** It always continues from the last transaction's change ([#478](https://github.com/lambdasistemi/singular/issues/478)).
+
+Until [#406](https://github.com/lambdasistemi/singular/issues/406), [#479](https://github.com/lambdasistemi/singular/issues/479) and [#491](https://github.com/lambdasistemi/singular/issues/491) land, the create still refuses a single-output wallet.
 
 ## What this does not show
 
