@@ -136,7 +136,7 @@ let
       root="$PWD"
       release_out="$(nix build --quiet --no-link --print-out-paths "$root#docs-release")" \
         || setup_fail "building the docs release archive"
-      archive_path=$(echo $release_out/singular-docs-*.tar.gz)
+      archive_path=$(echo "$release_out"/singular-docs-*.tar.gz)
       case "$archive_path" in
         *"*") setup_fail "no docs tarball in $release_out" ;;
       esac
