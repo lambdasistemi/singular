@@ -194,6 +194,10 @@ in
       type = "app";
       program = pkgs.lib.getExe release.releaseArtifacts;
     };
+    release-review-check = {
+      type = "app";
+      program = pkgs.lib.getExe release.releaseReviewCheck;
+    };
     publish-docs = {
       type = "app";
       program = pkgs.lib.getExe release.publisher;

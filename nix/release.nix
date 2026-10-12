@@ -105,6 +105,80 @@ let
     '';
   };
 
+  # #565: reproduce the review archive from its own bytes the way a
+  # reviewer would. The docs release derivation above assembles the
+  # archive with the same tools the release uses
+  # (tools/prepare_release.py over the built site), so this wrapper
+  # builds that same derivation instead of assembling twice, extracts it
+  # to a scratch directory outside the checkout, runs the checksum
+  # manifest and the archived check, then proves the check can fail by
+  # removing one shipped input with the manifest recomputed. The wrapper
+  # owns its scratch directory, created and removed on every exit
+  # (including setup failure); it stops no process. Setup failure is
+  # exit 2, never a verdict.
+  releaseReviewCheck = pkgs.writeShellApplication {
+    name = "release-review-check";
+    runtimeInputs = [
+      pkgs.bash
+      pkgs.coreutils
+      pkgs.git
+      pkgs.gnutar
+      pkgs.gzip
+      pkgs.gnugrep
+      pkgs.nix
+    ];
+    text = ''
+      set -euo pipefail
+      setup_fail() { echo "release-review-check: SETUP: $1" >&2; exit 2; }
+      verdict_fail() { echo "release-review-check: FAIL: $1" >&2; exit 1; }
+      work="$(mktemp -d)" || setup_fail "cannot create a scratch directory"
+      trap 'rm -rf "$work"' EXIT
+      root="$PWD"
+      release_out="$(nix build --quiet --no-link --print-out-paths "$root#docs-release")" \
+        || setup_fail "building the docs release archive"
+      archive_path=$(echo $release_out/singular-docs-*.tar.gz)
+      case "$archive_path" in
+        *"*") setup_fail "no docs tarball in $release_out" ;;
+      esac
+      [ -f "$archive_path" ] || setup_fail "no docs tarball in $release_out"
+      extracted="$work/extracted"
+      mkdir -p "$extracted" || setup_fail "creating the extraction directory"
+      tar -C "$extracted" -xzf "$archive_path" || setup_fail "extracting the docs archive"
+      test ! -e "$extracted/.git" || verdict_fail "the archive carries a git checkout"
+      (cd "$extracted" && sha256sum --check artifacts/SHA256SUMS) \
+        || verdict_fail "checksum manifest mismatch"
+      check_log="$work/check.log"
+      (cd "$extracted/artifacts/review" && nix run --no-write-lock-file .#check >"$check_log" 2>&1) \
+        || verdict_fail "the archived check failed"
+      grep -F "PASS archive model and replay reproduction" "$check_log" >/dev/null \
+        || verdict_fail "the archived check passed without its receipt line"
+      default_log="$work/default.log"
+      (cd "$extracted/artifacts/review" && nix run --no-write-lock-file .#default >"$default_log" 2>&1) \
+        || verdict_fail "the archived default app failed"
+      # The control: one shipped input removed, the manifest recomputed,
+      # so the checksum step stays green and the check must go red for
+      # the missing file, distinguished from a toolchain failure by the
+      # missing path in its diagnostic.
+      mutant="$work/mutant"
+      mkdir -p "$mutant" || setup_fail "creating the control directory"
+      tar -C "$mutant" -xzf "$archive_path" || setup_fail "extracting the control archive"
+      rm "$mutant/artifacts/review/.specify/memory/constitution.md" \
+        || setup_fail "removing the control input"
+      grep -vF "artifacts/review/.specify/memory/constitution.md" "$mutant/artifacts/SHA256SUMS" >"$work/SHA256SUMS" \
+        || setup_fail "recomputing the mutant manifest"
+      mv "$work/SHA256SUMS" "$mutant/artifacts/SHA256SUMS"
+      (cd "$mutant" && sha256sum --check artifacts/SHA256SUMS >/dev/null) \
+        || setup_fail "the mutant manifest does not verify"
+      mutant_log="$work/mutant.log"
+      if (cd "$mutant/artifacts/review" && nix run --no-write-lock-file .#check >"$mutant_log" 2>&1); then
+        verdict_fail "control undetected: the check passed without the constitution"
+      fi
+      grep -F "constitution" "$mutant_log" >/dev/null \
+        || verdict_fail "control failed for the wrong reason (no constitution diagnostic)"
+      echo "release-review-check: PASS — the archived check passes alone, and fails without the constitution"
+    '';
+  };
+
   archive =
     pkgs.runCommand "singular-docs-release-${version}"
       {
@@ -190,6 +264,7 @@ in
     checker
     publisher
     releaseArtifacts
+    releaseReviewCheck
     ;
   check = pkgs.runCommand "singular-release-check" { nativeBuildInputs = [ publisher ]; } ''
     ${pkgs.lib.getExe checker}

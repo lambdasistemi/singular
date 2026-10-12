@@ -74,5 +74,3 @@ applications/keri-stub/offchain|keri-stub|app|hosted under another name: the ker
 applications/keri-stub/offchain|keri-stub-tests|check|hosted under another name: the keri-stub-tests job runs the keri-stub-tests app, the same runner this check executes in its sandbox
 applications/keri-stub/offchain|lint|check|hosted under another name: the keri-stub-component-build job runs .#lint, this same derivation (apps.lint is checks.lint)
 applications/open-datum/onchain|open-datum-aiken-tests|app|hosted under another name: the application-aiken-suite job's nix flake check builds checks.open-datum-aiken-tests, which executes this app's runner inside the check derivation
-release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
-release-review|default|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
