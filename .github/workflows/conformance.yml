@@ -16,7 +16,7 @@ permissions:
   contents: read
 concurrency:
   group: conformance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 jobs:
   lint:
     name: Workflow parses, lints clean, owned docs page bound
