@@ -846,7 +846,7 @@
         };
     in
     {
-      packages = each (system: packages system // { build-gate = buildGate system; });
+      packages = each (system: packages system // { build-gate = buildGate system; } // (import ./nix/result-cache.nix { pkgs = import nixpkgs { inherit system; }; }).identities);
       checks = each (system: {
         docs = (project system).check;
         release = (project system).releaseCheck;
@@ -935,6 +935,7 @@
             };
           }
           // (import ./nix/negative-host.nix { pkgs = import nixpkgs { inherit system; }; })
+          // (import ./nix/result-cache.nix { pkgs = import nixpkgs { inherit system; }; }).apps
           // (
             let
               pkgs = import nixpkgs { inherit system; };
