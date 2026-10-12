@@ -5,7 +5,11 @@
   inputs.nixpkgs-lean.url = "github:NixOS/nixpkgs/7f4e8517083e42a1b38907598dadc02c7235b30e";
 
   outputs =
-    { self, nixpkgs, nixpkgs-lean }:
+    {
+      self,
+      nixpkgs,
+      nixpkgs-lean,
+    }:
     let
       systems = [
         "x86_64-linux"
