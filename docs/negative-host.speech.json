@@ -181,7 +181,7 @@
       "pause": 300
     },
     {
-      "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Seven mutants cover nine of the thirteen pairs today; the four registry pairs (the taken-key and revival insertions) have no mutant of the registry's state validator yet (lambdasistemi/singular#559).",
+      "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
       "pause": 300
     },
     {
@@ -193,12 +193,16 @@
       "pause": 300
     },
     {
+      "text": "The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is stranger-updates-the-key.",
+      "pause": 400
+    },
+    {
       "text": "The mutant table is the honest measure of the refusal evidence: each row names the one rule a validator had to lose before the chain would take the move it refuses today. Beside every mutant a control pair that a different rule refuses must stay refused, so a patch that disabled more than its named rule could not hide.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "negative-host.md",
-    "sha256": "eff46cf2819795d01986d2a7abdb4dc41eef20dbf17e043dd9c04fdf4158fcd8"
+    "sha256": "9907d5bd089f31d273e252ec01871087c4162a94abe6c2cf46092e4c99a16b10"
   }
 }

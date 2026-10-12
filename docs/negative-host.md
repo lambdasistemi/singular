@@ -284,10 +284,7 @@ What is deliberately not there yet:
   move. For every refusing rule a mutant validator removes exactly
   that rule, the release archive is rebuilt from the mutated source,
   and the pair must flip — the node must accept what the rule refuses.
-  Seven mutants cover nine of the thirteen pairs today; the four
-  registry pairs (the taken-key and revival insertions) have no mutant
-  of the registry's state validator yet
-  ([lambdasistemi/singular#559](https://github.com/lambdasistemi/singular/issues/559)).
+  Eight mutants cover all thirteen pairs.
 - **The crafting exists twice.** The conformance harness keeps its own
   copy of the crafted transactions; the host's copy is the one the
   release archive ships
@@ -307,6 +304,9 @@ What is deliberately not there yet:
 | `termination-booking-controller-checks` | a termination booking is the controller's — the owner and controller-signature checks, removed together | `stranger-terminates-the-key` |
 | `release-no-fold` | a holding is released only inside a fold | `controller-withdraws-outside-a-fold` |
 | `release-additive` | a fold pays the controller at least what is owed | `short-fold-of-a-booked-termination` |
+| `registry-accepts-a-taken-key` | the registry's defence of a taken key — the labelled `key-exists` refusal in the fold and the insert step's own precondition (the Merkle-Patricia-Forestry library's insert requires the key to be absent, the same check the label sits behind) — both parts, removed together | `stranger-registers-a-taken-key`, `owner-registers-a-taken-key-again`, `owner-revives-a-terminated-key`, `stranger-revives-a-terminated-key` |
+
+The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is `stranger-updates-the-key`.
 
 The mutant table is the honest measure of the refusal evidence: each
 row names the one rule a validator had to lose before the chain would

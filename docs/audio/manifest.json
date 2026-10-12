@@ -144621,17 +144621,17 @@
    ]
   },
   "docs-negative-host/what-a-run-does-not-show-05": {
-   "audio_sha256": "64cc5ab576cff09efb2bb4e257daac37aa8c6771a5f956b4d7038d80a94cdeb8",
-   "characters": 528,
-   "cost": 0.00052272,
-   "duration": 37.3,
+   "audio_sha256": "c1bf078710fcef6caf0c61a22f264fcadb79a90d4d29f7fb8f00635e06ffe1b5",
+   "characters": 368,
+   "cost": 0.00036432,
+   "duration": 24.275,
    "index": 5,
-   "key": "2c3faa99a258b4de4ba5337e766347a2ee3b9f6a1e26d9abede402c7b0d4a312",
+   "key": "12515c94bc0e2b7093e57f8597095c62a3c2b0dcc3c605882dd0bbc1d4f2f854",
    "page": "docs/negative-host.md",
    "pause_ms": 300,
    "section": "what-a-run-does-not-show",
-   "sent_text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Seven mutants cover nine of the thirteen pairs today; the four registry pairs (the taken-key and revival insertions) have no mutant of the registry's state validator yet (lambdasistemi/singular#559).",
-   "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Seven mutants cover nine of the thirteen pairs today; the four registry pairs (the taken-key and revival insertions) have no mutant of the registry's state validator yet (lambdasistemi/singular#559).",
+   "sent_text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
+   "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
    "words": [
     {
      "end": 0.375,
@@ -144949,173 +144949,38 @@
      "text": "."
     },
     {
-     "end": 22.125,
+     "end": 21.987,
      "start": 21.825,
-     "text": "Seven"
+     "text": "Eight"
     },
     {
-     "end": 22.525,
-     "start": 22.125,
+     "end": 22.35,
+     "start": 21.987,
      "text": "mutants"
     },
     {
-     "end": 22.85,
-     "start": 22.525,
+     "end": 22.6,
+     "start": 22.35,
      "text": "cover"
     },
     {
+     "end": 22.8,
+     "start": 22.6,
+     "text": "all"
+    },
+    {
      "end": 23.2,
-     "start": 22.85,
-     "text": "nine"
-    },
-    {
-     "end": 23.288,
-     "start": 23.2,
-     "text": "of"
-    },
-    {
-     "end": 23.388,
-     "start": 23.288,
-     "text": "the"
-    },
-    {
-     "end": 23.875,
-     "start": 23.388,
+     "start": 22.8,
      "text": "thirteen"
     },
     {
-     "end": 24.225,
-     "start": 23.875,
+     "end": 24.075,
+     "start": 23.2,
      "text": "pairs"
     },
     {
-     "end": 25.0,
-     "start": 24.225,
-     "text": "today"
-    },
-    {
-     "end": 25.25,
-     "start": 25.0,
-     "text": ";"
-    },
-    {
-     "end": 25.587,
-     "start": 25.475,
-     "text": "the"
-    },
-    {
-     "end": 25.825,
-     "start": 25.587,
-     "text": "four"
-    },
-    {
-     "end": 26.388,
-     "start": 25.825,
-     "text": "registry"
-    },
-    {
-     "end": 26.837,
-     "start": 26.388,
-     "text": "pairs"
-    },
-    {
-     "end": 26.875,
-     "start": 26.837,
-     "text": "("
-    },
-    {
-     "end": 26.962,
-     "start": 26.875,
-     "text": "the"
-    },
-    {
-     "end": 27.663,
-     "start": 26.962,
-     "text": "taken-key"
-    },
-    {
-     "end": 27.8,
-     "start": 27.663,
-     "text": "and"
-    },
-    {
-     "end": 28.35,
-     "start": 27.8,
-     "text": "revival"
-    },
-    {
-     "end": 29.15,
-     "start": 28.35,
-     "text": "insertions"
-    },
-    {
-     "end": 29.2,
-     "start": 29.15,
-     "text": ")"
-    },
-    {
-     "end": 29.438,
-     "start": 29.2,
-     "text": "have"
-    },
-    {
-     "end": 29.688,
-     "start": 29.438,
-     "text": "no"
-    },
-    {
-     "end": 30.175,
-     "start": 29.688,
-     "text": "mutant"
-    },
-    {
-     "end": 30.288,
-     "start": 30.175,
-     "text": "of"
-    },
-    {
-     "end": 30.4,
-     "start": 30.288,
-     "text": "the"
-    },
-    {
-     "end": 31.062,
-     "start": 30.4,
-     "text": "registry's"
-    },
-    {
-     "end": 31.462,
-     "start": 31.062,
-     "text": "state"
-    },
-    {
-     "end": 32.112,
-     "start": 31.462,
-     "text": "validator"
-    },
-    {
-     "end": 32.537,
-     "start": 32.112,
-     "text": "yet"
-    },
-    {
-     "end": 32.625,
-     "start": 32.537,
-     "text": "("
-    },
-    {
-     "end": 37.0,
-     "start": 32.625,
-     "text": "lambdasistemi/singular#559"
-    },
-    {
-     "end": 37.25,
-     "start": 37.0,
-     "text": ")"
-    },
-    {
-     "end": 37.3,
-     "start": 37.25,
+     "end": 24.275,
+     "start": 24.075,
      "text": "."
     }
    ]
@@ -145476,11 +145341,661 @@
    ]
   },
   "docs-negative-host/what-a-run-does-not-show-08": {
-   "audio_sha256": "3e497d0884e2b2cff39048dd3f4cd52f9d0fe0171bb329f6dc9424399c617dc7",
+   "audio_sha256": "240269757b72eef93e9d4ee3c0924610b7dd87f610bd502adee8098cc372227e",
+   "characters": 705,
+   "cost": 0.0006979499999999999,
+   "duration": 45.6,
+   "index": 8,
+   "key": "de7aeac2d84ac6b619c4eb5cb8bfebf7cdf2b71186730aca0cf71afa829fe9e7",
+   "page": "docs/negative-host.md",
+   "pause_ms": 400,
+   "section": "what-a-run-does-not-show",
+   "sent_text": "The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is stranger-updates-the-key.",
+   "text": "The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is stranger-updates-the-key.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.775,
+     "start": 0.275,
+     "text": "registry"
+    },
+    {
+     "end": 1.05,
+     "start": 0.775,
+     "text": "row"
+    },
+    {
+     "end": 1.513,
+     "start": 1.05,
+     "text": "removes"
+    },
+    {
+     "end": 1.763,
+     "start": 1.513,
+     "text": "two"
+    },
+    {
+     "end": 2.1,
+     "start": 1.763,
+     "text": "things"
+    },
+    {
+     "end": 2.225,
+     "start": 2.1,
+     "text": "at"
+    },
+    {
+     "end": 2.6,
+     "start": 2.225,
+     "text": "once"
+    },
+    {
+     "end": 2.912,
+     "start": 2.6,
+     "text": "because"
+    },
+    {
+     "end": 3.15,
+     "start": 2.912,
+     "text": "one"
+    },
+    {
+     "end": 3.55,
+     "start": 3.15,
+     "text": "alone"
+    },
+    {
+     "end": 3.75,
+     "start": 3.55,
+     "text": "could"
+    },
+    {
+     "end": 4.062,
+     "start": 3.75,
+     "text": "never"
+    },
+    {
+     "end": 4.925,
+     "start": 4.062,
+     "text": "flip"
+    },
+    {
+     "end": 5.15,
+     "start": 4.925,
+     "text": ":"
+    },
+    {
+     "end": 5.7,
+     "start": 5.35,
+     "text": "taking"
+    },
+    {
+     "end": 5.938,
+     "start": 5.7,
+     "text": "out"
+    },
+    {
+     "end": 6.3,
+     "start": 5.938,
+     "text": "only"
+    },
+    {
+     "end": 6.438,
+     "start": 6.3,
+     "text": "the"
+    },
+    {
+     "end": 6.9,
+     "start": 6.438,
+     "text": "labelled"
+    },
+    {
+     "end": 7.613,
+     "start": 6.9,
+     "text": "refusal"
+    },
+    {
+     "end": 7.975,
+     "start": 7.613,
+     "text": "leaves"
+    },
+    {
+     "end": 8.1,
+     "start": 7.975,
+     "text": "the"
+    },
+    {
+     "end": 8.45,
+     "start": 8.1,
+     "text": "node"
+    },
+    {
+     "end": 9.3,
+     "start": 8.45,
+     "text": "refusing"
+    },
+    {
+     "end": 9.4,
+     "start": 9.3,
+     "text": ","
+    },
+    {
+     "end": 9.625,
+     "start": 9.4,
+     "text": "since"
+    },
+    {
+     "end": 9.788,
+     "start": 9.625,
+     "text": "the"
+    },
+    {
+     "end": 10.275,
+     "start": 9.788,
+     "text": "insert"
+    },
+    {
+     "end": 10.625,
+     "start": 10.275,
+     "text": "step"
+    },
+    {
+     "end": 10.9,
+     "start": 10.625,
+     "text": "makes"
+    },
+    {
+     "end": 11.038,
+     "start": 10.9,
+     "text": "the"
+    },
+    {
+     "end": 11.363,
+     "start": 11.038,
+     "text": "same"
+    },
+    {
+     "end": 11.625,
+     "start": 11.363,
+     "text": "check"
+    },
+    {
+     "end": 12.825,
+     "start": 11.625,
+     "text": "itself"
+    },
+    {
+     "end": 13.05,
+     "start": 12.825,
+     "text": "."
+    },
+    {
+     "end": 13.35,
+     "start": 13.25,
+     "text": "The"
+    },
+    {
+     "end": 13.712,
+     "start": 13.35,
+     "text": "runner"
+    },
+    {
+     "end": 14.075,
+     "start": 13.712,
+     "text": "builds"
+    },
+    {
+     "end": 14.3,
+     "start": 14.075,
+     "text": "this"
+    },
+    {
+     "end": 14.725,
+     "start": 14.3,
+     "text": "mutant"
+    },
+    {
+     "end": 14.863,
+     "start": 14.725,
+     "text": "the"
+    },
+    {
+     "end": 15.2,
+     "start": 14.863,
+     "text": "same"
+    },
+    {
+     "end": 15.4,
+     "start": 15.2,
+     "text": "way"
+    },
+    {
+     "end": 15.538,
+     "start": 15.4,
+     "text": "as"
+    },
+    {
+     "end": 15.675,
+     "start": 15.538,
+     "text": "the"
+    },
+    {
+     "end": 16.175,
+     "start": 15.675,
+     "text": "others"
+    },
+    {
+     "end": 16.288,
+     "start": 16.175,
+     "text": ","
+    },
+    {
+     "end": 16.763,
+     "start": 16.288,
+     "text": "inside"
+    },
+    {
+     "end": 16.925,
+     "start": 16.763,
+     "text": "its"
+    },
+    {
+     "end": 17.175,
+     "start": 16.925,
+     "text": "own"
+    },
+    {
+     "end": 17.575,
+     "start": 17.175,
+     "text": "scratch"
+    },
+    {
+     "end": 17.95,
+     "start": 17.575,
+     "text": "copy"
+    },
+    {
+     "end": 18.925,
+     "start": 17.95,
+     "text": "only"
+    },
+    {
+     "end": 19.175,
+     "start": 18.925,
+     "text": ":"
+    },
+    {
+     "end": 19.425,
+     "start": 19.35,
+     "text": "the"
+    },
+    {
+     "end": 19.663,
+     "start": 19.425,
+     "text": "pin"
+    },
+    {
+     "end": 19.737,
+     "start": 19.663,
+     "text": "of"
+    },
+    {
+     "end": 19.825,
+     "start": 19.737,
+     "text": "the"
+    },
+    {
+     "end": 20.35,
+     "start": 19.825,
+     "text": "registry's"
+    },
+    {
+     "end": 20.675,
+     "start": 20.35,
+     "text": "state"
+    },
+    {
+     "end": 21.15,
+     "start": 20.675,
+     "text": "script"
+    },
+    {
+     "end": 21.225,
+     "start": 21.15,
+     "text": ","
+    },
+    {
+     "end": 21.35,
+     "start": 21.225,
+     "text": "the"
+    },
+    {
+     "end": 21.85,
+     "start": 21.35,
+     "text": "registry"
+    },
+    {
+     "end": 22.975,
+     "start": 21.85,
+     "text": "manifest"
+    },
+    {
+     "end": 23.2,
+     "start": 22.975,
+     "text": ","
+    },
+    {
+     "end": 23.45,
+     "start": 23.375,
+     "text": "the"
+    },
+    {
+     "end": 24.462,
+     "start": 23.45,
+     "text": "permanent-contract"
+    },
+    {
+     "end": 24.938,
+     "start": 24.462,
+     "text": "file"
+    },
+    {
+     "end": 25.062,
+     "start": 24.938,
+     "text": "and"
+    },
+    {
+     "end": 25.15,
+     "start": 25.062,
+     "text": "the"
+    },
+    {
+     "end": 25.775,
+     "start": 25.15,
+     "text": "known-scripts"
+    },
+    {
+     "end": 26.288,
+     "start": 25.775,
+     "text": "module"
+    },
+    {
+     "end": 26.45,
+     "start": 26.288,
+     "text": "are"
+    },
+    {
+     "end": 27.7,
+     "start": 26.45,
+     "text": "regenerated"
+    },
+    {
+     "end": 27.925,
+     "start": 27.7,
+     "text": ","
+    },
+    {
+     "end": 28.225,
+     "start": 28.125,
+     "text": "and"
+    },
+    {
+     "end": 28.5,
+     "start": 28.225,
+     "text": "so"
+    },
+    {
+     "end": 28.587,
+     "start": 28.5,
+     "text": "are"
+    },
+    {
+     "end": 28.675,
+     "start": 28.587,
+     "text": "the"
+    },
+    {
+     "end": 29.413,
+     "start": 28.675,
+     "text": "application's"
+    },
+    {
+     "end": 30.0,
+     "start": 29.413,
+     "text": "blueprint"
+    },
+    {
+     "end": 30.075,
+     "start": 30.0,
+     "text": ","
+    },
+    {
+     "end": 30.7,
+     "start": 30.075,
+     "text": "manifest"
+    },
+    {
+     "end": 30.825,
+     "start": 30.7,
+     "text": "and"
+    },
+    {
+     "end": 31.75,
+     "start": 30.825,
+     "text": "record"
+    },
+    {
+     "end": 31.95,
+     "start": 31.75,
+     "text": ","
+    },
+    {
+     "end": 32.263,
+     "start": 32.15,
+     "text": "so"
+    },
+    {
+     "end": 32.375,
+     "start": 32.263,
+     "text": "the"
+    },
+    {
+     "end": 33.075,
+     "start": 32.375,
+     "text": "executables"
+    },
+    {
+     "end": 33.325,
+     "start": 33.075,
+     "text": "built"
+    },
+    {
+     "end": 33.638,
+     "start": 33.325,
+     "text": "there"
+    },
+    {
+     "end": 34.037,
+     "start": 33.638,
+     "text": "accept"
+    },
+    {
+     "end": 34.125,
+     "start": 34.037,
+     "text": "the"
+    },
+    {
+     "end": 34.6,
+     "start": 34.125,
+     "text": "mutated"
+    },
+    {
+     "end": 35.625,
+     "start": 34.6,
+     "text": "hashes"
+    },
+    {
+     "end": 35.825,
+     "start": 35.625,
+     "text": "."
+    },
+    {
+     "end": 36.138,
+     "start": 36.025,
+     "text": "The"
+    },
+    {
+     "end": 36.6,
+     "start": 36.138,
+     "text": "checkout"
+    },
+    {
+     "end": 36.638,
+     "start": 36.6,
+     "text": ","
+    },
+    {
+     "end": 36.775,
+     "start": 36.638,
+     "text": "the"
+    },
+    {
+     "end": 37.1,
+     "start": 36.775,
+     "text": "shipped"
+    },
+    {
+     "end": 37.475,
+     "start": 37.1,
+     "text": "loader"
+    },
+    {
+     "end": 37.588,
+     "start": 37.475,
+     "text": "and"
+    },
+    {
+     "end": 37.675,
+     "start": 37.588,
+     "text": "the"
+    },
+    {
+     "end": 38.125,
+     "start": 37.675,
+     "text": "permanent"
+    },
+    {
+     "end": 38.7,
+     "start": 38.125,
+     "text": "contract"
+    },
+    {
+     "end": 38.825,
+     "start": 38.7,
+     "text": "are"
+    },
+    {
+     "end": 39.088,
+     "start": 38.825,
+     "text": "not"
+    },
+    {
+     "end": 39.725,
+     "start": 39.088,
+     "text": "changed"
+    },
+    {
+     "end": 39.825,
+     "start": 39.725,
+     "text": ","
+    },
+    {
+     "end": 39.938,
+     "start": 39.825,
+     "text": "and"
+    },
+    {
+     "end": 40.025,
+     "start": 39.938,
+     "text": "the"
+    },
+    {
+     "end": 40.287,
+     "start": 40.025,
+     "text": "run"
+    },
+    {
+     "end": 40.612,
+     "start": 40.287,
+     "text": "checks"
+    },
+    {
+     "end": 41.525,
+     "start": 40.612,
+     "text": "that"
+    },
+    {
+     "end": 41.75,
+     "start": 41.525,
+     "text": "."
+    },
+    {
+     "end": 42.0,
+     "start": 41.925,
+     "text": "The"
+    },
+    {
+     "end": 42.425,
+     "start": 42.0,
+     "text": "control"
+    },
+    {
+     "end": 42.7,
+     "start": 42.425,
+     "text": "pair"
+    },
+    {
+     "end": 42.812,
+     "start": 42.7,
+     "text": "for"
+    },
+    {
+     "end": 43.0,
+     "start": 42.812,
+     "text": "this"
+    },
+    {
+     "end": 43.525,
+     "start": 43.0,
+     "text": "mutant"
+    },
+    {
+     "end": 43.675,
+     "start": 43.525,
+     "text": "is"
+    },
+    {
+     "end": 45.4,
+     "start": 43.675,
+     "text": "stranger-updates-the-key"
+    },
+    {
+     "end": 45.6,
+     "start": 45.4,
+     "text": "."
+    }
+   ]
+  },
+  "docs-negative-host/what-a-run-does-not-show-09": {
+   "audio_sha256": "6af2f5ac3f568678eb12e97468080738f45fa499f3aa95f5f1b13faf440163b9",
    "characters": 320,
    "cost": 0.0003168,
    "duration": 21.05,
-   "index": 8,
+   "index": 9,
    "key": "6f80aeaa7cbc0853ac3c0185d34ba395fe1c1a46869f2dd56e7ba3e7d77e9b5d",
    "page": "docs/negative-host.md",
    "pause_ms": 400,

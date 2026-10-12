@@ -4578,8 +4578,8 @@
     "index": 5,
     "name": "docs-negative-host/what-a-run-does-not-show-05",
     "pause_ms": 300,
-    "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Seven mutants cover nine of the thirteen pairs today; the four registry pairs (the taken-key and revival insertions) have no mutant of the registry's state validator yet (lambdasistemi/singular#559).",
-    "v": "64cc5ab576cf"
+    "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
+    "v": "c1bf078710fc"
    },
    {
     "index": 6,
@@ -4599,8 +4599,15 @@
     "index": 8,
     "name": "docs-negative-host/what-a-run-does-not-show-08",
     "pause_ms": 400,
+    "text": "The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is stranger-updates-the-key.",
+    "v": "240269757b72"
+   },
+   {
+    "index": 9,
+    "name": "docs-negative-host/what-a-run-does-not-show-09",
+    "pause_ms": 400,
     "text": "The mutant table is the honest measure of the refusal evidence: each row names the one rule a validator had to lose before the chain would take the move it refuses today. Beside every mutant a control pair that a different rule refuses must stay refused, so a patch that disabled more than its named rule could not hide.",
-    "v": "3e497d0884e2"
+    "v": "6af2f5ac3f56"
    }
   ],
   "what-each-command-prints": [
