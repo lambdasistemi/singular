@@ -58,7 +58,7 @@ run_classifier() {
       classify_status=$?
     fi
   else
-    if bash "$classify" "$work/declared" "$work/hosted" "$work/list" "$work/jobs" "$1" >"$work/last.out" 2>"$work/last.err"; then
+    if bash "$classify" "$work/declared" "$work/hosted" "$work/list" "$work/jobs" "$@" >"$work/last.out" 2>"$work/last.err"; then
       classify_status=0
     else
       classify_status=$?
@@ -204,9 +204,16 @@ cat >"$work/hosted" <<'EOF'
 run . docs-serve
 EOF
 cat >"$work/list" <<'EOF'
-.|docs-serve|app|developer utility: the local documentation site server
+.|docs-serve|app|tool: the local documentation site server|nix/docs.nix
 EOF
-run_classifier
+cat >"$work/toolmarkers" <<'EOF'
+nix/docs.nix marked
+EOF
+: >"$work/citations"
+cat >"$work/states" <<'EOF'
+565 open
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
 expect "hosted-but-listed entry is refused" 1 "app docs-serve of flake . is in fact hosted (stale entry)"
 
 # 8. A hosted-under-another-name entry whose job id does not exist fails.
@@ -366,8 +373,8 @@ cat >"$work/hosted" <<'EOF'
 # nothing
 EOF
 cat >"$work/list" <<'EOF'
-.|docs-serve|app|developer utility: the local documentation site server
-.|docs-serve|app|developer utility: the local documentation site server
+.|docs-serve|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172
+.|docs-serve|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172
 EOF
 run_classifier
 expect "duplicate entry is refused" 1 "duplicate entry for . docs-serve (app)"
@@ -394,6 +401,126 @@ cat >"$work/states" <<'EOF'
 EOF
 run_classifier "$work/states"
 expect "silent issue states are setup failure" 2 "answers nothing for issue #565"
+
+# 17b. A tool entry with no handed tool sources is a setup failure,
+# never a verdict (the states source is present; the tool sources are
+# not).
+cat >"$work/declared" <<'EOF'
+.|app|docs-serve
+EOF
+cat >"$work/hosted" <<'EOF'
+# nothing
+EOF
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|tool: the local documentation site server|nix/docs.nix
+EOF
+run_classifier "$work/states"
+expect "missing tool sources are setup failure" 2 "a tool entry needs the tool-marker source"
+expect_absent "missing tool sources carry no verdict" "declared-checks-classify: PASS"
+
+# 18a. A marked, uncited tool passes, is counted, and is named in the
+# output next to the pending entries.
+cat >"$work/declared" <<'EOF'
+release-review|app|check
+.|app|docs-serve
+EOF
+cat >"$work/hosted" <<'EOF'
+# nothing runs either
+EOF
+cat >"$work/list" <<'EOF'
+release-review|check|app|pending wiring: #565, the release-archive slice hosts the archive reproduction job
+.|docs-serve|app|tool: the local documentation site server|nix/docs.nix
+EOF
+cat >"$work/states" <<'EOF'
+565 open
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+nix/docs.nix marked
+EOF
+: >"$work/citations"
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a marked uncited tool passes" 0 "declared-checks-classify: PASS"
+expect "the tools are printed by name" 0 "tools, marked and never cited as evidence: . docs-serve"
+expect "the tool count prints beside the pending count" 0 "; 1 pending wiring; 1 tools"
+
+# 18b. A tool entry whose file carries no marker line is refused.
+cat >"$work/declared" <<'EOF'
+.|app|docs-serve
+EOF
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|tool: the local documentation site server|tools/unmarked.sh
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+tools/unmarked.sh unmarked
+EOF
+: >"$work/citations"
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "an unmarked tool file is refused" 1 "carries no 'Tool, not a guarantee:' marker line"
+
+# 18c. A tool entry whose file is missing is refused; so is a file the
+# marker source does not answer for (fail closed).
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|tool: the local documentation site server|tools/gone.sh
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+tools/gone.sh missing
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a missing tool file is refused" 1 "the file that defines the tool, tools/gone.sh, does not exist"
+
+cat >"$work/toolmarkers" <<'EOF'
+tools/other.sh marked
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "an unanswered tool file is refused" 1 "no marker status was handed for tools/gone.sh"
+
+# 18d. A tool cited in the published text is refused, each citation
+# form named: the command form, the path of the defining file, and the
+# tool's own file citing its command form.
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|tool: the local documentation site server|nix/docs.nix
+EOF
+cat >"$work/toolmarkers" <<'EOF'
+nix/docs.nix marked
+EOF
+cat >"$work/citations" <<'EOF'
+.#docs-serve|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a command-form citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as .#docs-serve)"
+
+cat >"$work/citations" <<'EOF'
+nix/docs.nix|docs/getting-started.md
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a defining-file-path citation is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as nix/docs.nix)"
+
+cat >"$work/citations" <<'EOF'
+.#docs-serve|nix/docs.nix
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a tool cited by its own file is refused" 1 "cited as evidence or guarantee in nix/docs.nix (as .#docs-serve)"
+: >"$work/citations"
+
+# 18e. A tool entry without its fifth field, a non-tool entry with one,
+# and the retired developer-utility class are each refused.
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|tool: the local documentation site server
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a tool entry without its marker file field is refused" 1 "a tool entry carries, as its fifth field, the path of the file that holds its marker"
+
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172|nix/docs.nix
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "a non-tool entry with a fifth field is refused" 1 "only a tool entry carries a fifth field"
+
+cat >"$work/list" <<'EOF'
+.|docs-serve|app|developer utility: the local documentation site server
+EOF
+run_classifier "$work/states" "$work/toolmarkers" "$work/citations"
+expect "the retired developer-utility class is refused" 1 "the developer-utility class was retired by the tool class"
 
 # 18. The shared extraction maps working directories, cd targets and
 # flake-check runs onto flake directories. The static lines are the
@@ -508,6 +635,116 @@ if setup_git -C "$shadow" init -q >>"$work/shadow-setup.log" 2>&1 \
 else
   echo "classify-controls: SETUP: shadow fixture setup failed" >&2
   cat "$work/shadow-setup.log" >&2
+  exit 2
+fi
+
+# 20. The tool class through the real integration layer: a fixture
+# repository whose one declared app is a tool. Each plant is seen red
+# first, then green again; the closing run is the clean tree with its
+# tool, green and printing the tool by name beside the pending entries'
+# summary slot.
+toolroot="$work/tool-root"
+mkdir -p "$toolroot/.github/workflows" "$toolroot/tools/declared_tools" "$toolroot/docs"
+cat >"$toolroot/flake.nix" <<'EOF'
+{
+  outputs = _: {
+    apps.x86_64-linux.local-helper = {
+      type = "app";
+      program = "/bin/echo";
+    };
+  };
+}
+EOF
+cat >"$toolroot/.github/workflows/fixture.yml" <<'EOF'
+jobs:
+  noop:
+    steps:
+      - name: A step that names no app
+        run: echo nothing
+EOF
+cat >"$toolroot/README.md" <<'EOF'
+# Fixture
+
+A fixture repository for the tool-class controls.
+EOF
+cat >"$toolroot/.github/pull_request_template.md" <<'EOF'
+## Summary
+
+Describe the change.
+EOF
+cat >"$toolroot/docs/getting-started.md" <<'EOF'
+# Getting started
+
+Read the fixture page; it cites nothing.
+EOF
+cat >"$toolroot/tools/declared_checks_not_hosted.list" <<'EOF'
+.|local-helper|app|tool: a fixture helper that stays local|tools/declared_tools/local-helper.md
+EOF
+clean_tool_marker() {
+  cat >"$toolroot/tools/declared_tools/local-helper.md" <<'EOF'
+Tool, not a guarantee: a fixture helper that stays local.
+
+Marks the `local-helper` app of the fixture root flake.
+EOF
+}
+clean_tool_docs() {
+  cat >"$toolroot/docs/getting-started.md" <<'EOF'
+# Getting started
+
+Read the fixture page; it cites nothing.
+EOF
+}
+run_tool_census() {
+  if bash "$collect" "$toolroot" >"$work/last.out" 2>"$work/last.err"; then
+    classify_status=0
+  else
+    classify_status=$?
+  fi
+}
+clean_tool_marker
+if setup_git -C "$toolroot" init -q >>"$work/tool-setup.log" 2>&1 \
+  && setup_git -C "$toolroot" add -A >>"$work/tool-setup.log" 2>&1 \
+  && setup_git -C "$toolroot" commit -qm fixture >>"$work/tool-setup.log" 2>&1; then
+  # Plant: the defining file lost its marker line. Red first.
+  printf 'no marker here\n' >"$toolroot/tools/declared_tools/local-helper.md"
+  run_tool_census
+  expect "an unmarked tool file is refused by the integration" 1 "carries no 'Tool, not a guarantee:' marker line"
+  clean_tool_marker
+  run_tool_census
+  expect "the restored marker is green" 0 "declared-checks-classify: PASS"
+
+  # Plant: the defining file is gone.
+  rm "$toolroot/tools/declared_tools/local-helper.md"
+  run_tool_census
+  expect "a missing tool file is refused by the integration" 1 "the file that defines the tool, tools/declared_tools/local-helper.md, does not exist"
+  clean_tool_marker
+
+  # Plant: a docs page cites the command form.
+  # shellcheck disable=SC2016 # the planted citation is literal docs text, never expanded
+  printf '\nRun `nix run .#local-helper -- 8000` to try it.\n' >>"$toolroot/docs/getting-started.md"
+  run_tool_census
+  expect "a command-form citation in a docs page is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as .#local-helper)"
+  clean_tool_docs
+
+  # Plant: a docs page cites the path of the defining file.
+  printf '\nSee tools/declared_tools/local-helper.md for the guarantee.\n' >>"$toolroot/docs/getting-started.md"
+  run_tool_census
+  expect "a path-form citation in a docs page is refused" 1 "cited as evidence or guarantee in docs/getting-started.md (as tools/declared_tools/local-helper.md)"
+  clean_tool_docs
+
+  # Plant: the tool's own file cites its command form.
+  printf 'This app is guaranteed by .#local-helper.\n' >>"$toolroot/tools/declared_tools/local-helper.md"
+  run_tool_census
+  expect "a tool cited by its own file is refused by the integration" 1 "cited as evidence or guarantee in tools/declared_tools/local-helper.md (as .#local-helper)"
+  clean_tool_marker
+
+  # The closing green: the clean tree with its tool.
+  run_tool_census
+  expect "the clean fixture tree with its tool is green" 0 "declared-checks-classify: PASS"
+  expect "the clean integration run prints the tool by name" 0 "tools, marked and never cited as evidence: . local-helper"
+else
+  echo "classify-controls: SETUP: tool fixture setup failed" >&2
+  cat "$work/tool-setup.log" >&2
   exit 2
 fi
 

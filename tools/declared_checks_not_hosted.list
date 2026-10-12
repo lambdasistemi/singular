@@ -1,13 +1,13 @@
-# Declared-not-hosted entries: flake | attribute | kind | reason.
+# Declared-not-hosted entries: flake | attribute | kind | reason | file.
 #
 # One line per app or check a repository flake declares that no workflow
 # step runs or builds. The declared-checks-hosted census fails on any
 # entry whose attribute no longer exists, that is in fact hosted, whose
 # reason is empty or of no allowed class, or whose class demands a
-# citation or a live job id it does not carry. Allowed classes:
+# citation, a live job id or a marker line it does not carry. Allowed
+# classes:
 #   retired: ...                       cites the classification and its
 #                                      reason in offchain/nix/component-inventory.nix
-#   developer utility: ...             states what the entry is
 #   hosted under another name: ...     names a declared job identifier
 #                                      (one whitespace-separated token
 #                                      equal to a workflow job id)
@@ -18,11 +18,25 @@
 #                                      Closed membership: only the
 #                                      release-review check and default apps
 #                                      with issue #565 are admitted.
+#   tool: ...|<file>                   a runnable check marked as a tool:
+#                                      never cited as evidence, allowed to
+#                                      stay local (operator ruling of
+#                                      2026-10-12). The fifth field names
+#                                      the repository-relative path of the
+#                                      file that defines the tool and must
+#                                      carry the one-line marker
+#                                      `Tool, not a guarantee: <purpose>`;
+#                                      the census fails the entry when the
+#                                      file is missing, lacks the marker
+#                                      line, or is cited in the published
+#                                      text in either citation form (the
+#                                      command form `.#<attribute>` or the
+#                                      path of that file).
 .|cli-recovery-controls|app|hosted under another name: every part this composite serialises is judged in its own hosted job (cli-recovery-accepting, cli-recovery-lost-answer, cli-recovery-killed with the history and rollback steps, and the cli-recovery-cross-wallet-part matrix); the composite itself exceeds the receipt cap and this ticket's recovery-partition slice retires it
 .|cli-recovery-cross-wallet|app|hosted under another name: the cli-recovery-cross-wallet-part matrix job runs every discovered cross-wallet case this composite serialises, each on its own node
-.|default|app|developer utility: the local documentation site server (python http.server over the built site), the same wrapper as docs-serve
+.|default|app|tool: the local documentation site server (the same wrapper as docs-serve)|nix/docs.nix
 .|demo1-cli-attach|app|hosted under another name: the demo1-attach-part matrix job runs each part this composite serialises (demo1-cli-attach-takes through demo1-cli-attach-over-allowance), each with its own registry and node
-.|docs-serve|app|developer utility: the local documentation site server for reviewing the built site without publishing it
+.|docs-serve|app|tool: the local documentation site server for reviewing the built site without publishing it|nix/docs.nix
 .|publish-docs-boundary-test|app|hosted under another name: the publication-boundary job runs the publication-boundary-controls app, which exercises this same recorded publisher (the unchanged nix/release.nix definition with gh replaced by a recorder) through its positive and mutated cases
 .|browser|check|hosted under another name: the browser job runs the browser-check app, the same checker body this check's sandbox executes
 .|coverage|check|hosted under another name: the coverage job runs the coverage-check app, the same checker body this check's sandbox executes
@@ -41,7 +55,7 @@ offchain|register-rows|app|retired: classified unverified in offchain/nix/compon
 offchain|repair-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/repair/Main.hs imports registerConsumerImpl, removed by 9cba521)
 offchain|retirement-rows|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired Naming Your Assets journey; journey/retirement/Main.hs imports registerConsumerImpl, removed by 9cba521)
 offchain|retirement-verify|app|retired: classified unverified in offchain/nix/component-inventory.nix under #172 (D6-retired retained exhibit of the retirement journey; retired by the current-required-use criterion, no required consumer)
-offchain|singular|app|developer utility: the packaged `singular registry` command-line entry for local use; the demo1-archive job runs the same packaged CLI from the assembled release archive, not this app
+offchain|singular|app|hosted under another name: the demo1-archive job runs this packaged command line from the extracted release archive (the archive assembly builds ./offchain#singular, this app's program, and the journey drives it as separate singular processes)
 offchain|cage-tests|check|hosted under another name: the journey job's focused off-chain suite step runs the cage-tests app, the same wrapped test binary this check executes in its sandbox
 offchain|cage-tests-e2e|check|hosted under another name: the e2e-part matrix jobs run .#cage-tests-e2e, this same wrapped derivation, one lane per job
 offchain|library|check|hosted under another name: the offchain-component-build job builds .#component-build, whose member paths include this library derivation (build only: no test executes)
@@ -55,7 +69,7 @@ conformance|coverage-gate-tests|check|hosted under another name: the coverage-ga
 conformance|format-check|check|hosted under another name: the format-check job runs the format-check app, the same body this check's sandbox executes
 conformance|hlint-check|check|hosted under another name: the format-check job's hlint step runs the hlint-check app, the same body this check's sandbox executes
 applications/open-datum/offchain|open-datum|app|hosted under another name: the registry-two-actors-replay-fault job builds and drives this application CLI (nix build of applications/open-datum/offchain#open-datum is the control's setup)
-applications/open-datum/offchain|singular|app|developer utility: the registry CLI as built inside the application tree, for local use against an application deployment; no workflow runs this app directly
+applications/open-datum/offchain|singular|app|tool: the registry command line as built inside the application tree, for local use against an application deployment|tools/declared_tools/open-datum-singular.md
 applications/open-datum/offchain|singular-negative|app|hosted under another name: the negative-host-ordinary, negative-host-mutant and negative-host-node-free-controls jobs exercise this instrumented host binary, built from this flake by the negative-host apps
 applications/open-datum/offchain|lint|check|hosted under another name: the open-datum-component-build job runs .#lint, this same writeShellApplication derivation (apps.lint is checks.lint)
 applications/open-datum/offchain|open-datum-tests|check|hosted under another name: the open-datum-tests job runs the open-datum-tests app, the same fixture-staged runner this check executes in its sandbox

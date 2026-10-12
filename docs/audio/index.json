@@ -613,8 +613,8 @@
     "index": 3,
     "name": "docs-building/edit-and-serve-03",
     "pause_ms": 400,
-    "text": "To serve the packaged output without a live-reload editor, run nix run .#docs-serve -- 8000 and open http://127.0.0.1:8000.",
-    "v": "1d4884cdd7d0"
+    "text": "To serve the packaged output without a live-reload editor, run the docs-serve tool (marked not-a-guarantee) with the port as its argument and open http://127.0.0.1:8000.",
+    "v": "d0d134c45ae4"
    }
   ],
   "generated-api-references": [

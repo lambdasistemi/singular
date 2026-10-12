@@ -13,8 +13,24 @@
 # workflows once, resolves bare builds onto the check they build (a bare
 # build hosts a check only when the bare installable resolves to that
 # check's derivation, proven by outPath) and flake-check runs onto every
-# check of their flake, collects the workflow job ids once, and calls the
-# pure classifier. Building an app is not hosting it.
+# check of their flake, collects the workflow job ids once, scans the
+# marker line and the citations of every tool entry, and calls the pure
+# classifier. Building an app is not hosting it.
+#
+# The tool scan (the operator ruling of 2026-10-12): each tool entry names
+# the file that defines its tool, and that file must carry the marker line
+# `Tool, not a guarantee: <purpose>`; and the published text — every
+# tracked file under docs/ plus every tracked README.md plus the pull
+# request template, discovered from the tree so a new page joins without
+# editing this check — must not cite the tool, in either citation form:
+# the command form `.#<attribute>` or the path of the file that defines
+# it. A tool's own file citing its command form is a citation too. The
+# citation extent deliberately excludes the workflows (their run lines
+# are the hosting oracle this census already reads; their comments name
+# hosted carriers and are judged as comments), the frozen specs/
+# acceptance records (dated testimony of closed slices, kept unchanged
+# by this ticket's own design, not live claims), and contributor tooling
+# outside the published text (the justfile, the nix files).
 #
 # The wrapper owns its scratch directory (created and removed on every
 # exit); no build state lands in the checkout, no process is stopped. Every
@@ -167,14 +183,91 @@ for d in "${!flake_checked[@]}"; do
   done
 done
 
+# The tool entries of the list: the marker file each names, whose state
+# and citations this layer hands to the classifier as plain files.
+declare -A tool_file_of=()
+while IFS='|' read -r tf ta tk tr tfile || [ -n "$tf" ]; do
+  case "$tf" in
+    '' | '#'*) continue ;;
+  esac
+  case "$tr" in
+    'tool: '*) tool_file_of["$tf|$ta|$tk"]="$tfile" ;;
+  esac
+done <"$list"
+
+escape_ere() {
+  # shellcheck disable=SC2016 # the dollar is a regex anchor inside the sed pattern, never expanded
+  printf '%s' "$1" | sed -e 's/[][\.*^$()+?{}|]/\\&/g'
+}
+
+: >"$work/toolmarkers"
+: >"$work/citations"
+if [ "${#tool_file_of[@]}" -gt 0 ]; then
+  # The published text a citation would live in, discovered from the
+  # tree. The two fixed members of the floor must be present and tracked:
+  # losing either would silently shrink the extent, so it is a setup
+  # failure, never a quieter scan.
+  extent=()
+  while IFS= read -r -d '' ef; do
+    extent+=("$ef")
+  done < <(git -C "$root" ls-files -z -- docs '*README.md' '.github/pull_request_template.md')
+  [ "${#extent[@]}" -gt 0 ] || setup_fail "the citation extent is empty (no tracked file under docs/, no README.md, no pull request template)"
+  [ -n "$(git -C "$root" ls-files -- README.md)" ] \
+    || setup_fail "the citation extent lost the root README.md"
+  [ -n "$(git -C "$root" ls-files -- .github/pull_request_template.md)" ] \
+    || setup_fail "the citation extent lost the pull request template"
+  declare -A marker_status_done=()
+  declare -A citation_done=()
+  for key in "${!tool_file_of[@]}"; do
+    IFS='|' read -r tf ta tk <<<"$key"
+    tfile="${tool_file_of["$key"]}"
+    target="$root/$tfile"
+    # Several entries may name the same defining file (a wrapper shared
+    # by two apps); the marker line is the file's, so its status is
+    # emitted once per file, never twice.
+    if [ -z "${marker_status_done["$tfile"]+x}" ]; then
+      marker_status_done["$tfile"]=1
+      if [ ! -f "$target" ]; then
+        status=missing
+      elif grep -Eq '^[[:space:]]*#?[[:space:]]*Tool, not a guarantee: ' "$target"; then
+        status=marked
+      else
+        status=unmarked
+      fi
+      printf '%s %s\n' "$tfile" "$status" >>"$work/toolmarkers"
+    fi
+    cmd_form=".#$ta"
+    cmd_pattern="$(escape_ere "$cmd_form")([^A-Za-z0-9_-]|$)"
+    path_pattern="$(escape_ere "$tfile")([^A-Za-z0-9_./-]|$)"
+    for ef in "${extent[@]}"; do
+      [ -f "$root/$ef" ] || continue
+      if grep -EqI -- "$cmd_pattern" "$root/$ef" && [ -z "${citation_done["$cmd_form|$ef"]+x}" ]; then
+        citation_done["$cmd_form|$ef"]=1
+        printf '%s|%s\n' "$cmd_form" "$ef" >>"$work/citations"
+      fi
+      if grep -EqI -- "$path_pattern" "$root/$ef" && [ -z "${citation_done["$tfile|$ef"]+x}" ]; then
+        citation_done["$tfile|$ef"]=1
+        printf '%s|%s\n' "$tfile" "$ef" >>"$work/citations"
+      fi
+    done
+    # A tool's own file citing its own command form is a citation too; a
+    # file naming its own path is self-reference, not a citation, so the
+    # path form is not sought here.
+    if [ -f "$target" ] && grep -EqI -- "$cmd_pattern" "$target" && [ -z "${citation_done["$cmd_form|$tfile"]+x}" ]; then
+      citation_done["$cmd_form|$tfile"]=1
+      printf '%s|%s\n' "$cmd_form" "$tfile" >>"$work/citations"
+    fi
+  done
+fi
+
 if [ -n "$issue_states" ]; then
-  if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" "$issue_states" >"$work/classify.out" 2>"$work/classify.err"; then
+  if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" "$issue_states" "$work/toolmarkers" "$work/citations" >"$work/classify.out" 2>"$work/classify.err"; then
     status=0
   else
     status=$?
   fi
 else
-  if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" >"$work/classify.out" 2>"$work/classify.err"; then
+  if bash "$classify" "$work/declared.txt" "$work/hosted.txt" "$list" "$work/jobs.txt" "" "$work/toolmarkers" "$work/citations" >"$work/classify.out" 2>"$work/classify.err"; then
     status=0
   else
     status=$?

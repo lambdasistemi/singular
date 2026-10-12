@@ -13,19 +13,39 @@
 #             resolved to the check they build and flake-check runs expanded
 #             to every check of their flake. Building an app is not hosting
 #             it: only `run` lines host apps.
-#   LIST      lines `flake|attribute|kind|reason`: the declared-not-hosted
-#             entries with their reasons.
+#   LIST      lines `flake|attribute|kind|reason[|file]`: the
+#             declared-not-hosted entries with their reasons. A `tool:`
+#             reason carries a fifth field: the repository-relative path
+#             of the file that defines the tool and must hold the marker
+#             line `Tool, not a guarantee: <purpose>`.
 #   JOBS      one workflow job id per line: what a `hosted under another
 #             name` reason may name.
 #   STATES    optional lines `<number> <open|closed>`: the issue states a
 #             `pending wiring` reason names. Read lazily: a run with no
 #             pending entry needs no source.
+#   TOOLMARKERS optional lines `<path> marked|unmarked|missing`: the state
+#             of the marker line of each tool entry's file, as the
+#             integration layer found it in the tree. Read lazily: a run
+#             with no tool entry needs no source.
+#   CITATIONS   optional lines `<citation-form>|<path>`: every occurrence
+#             of a tool's citation forms (the command form `.#<attribute>`
+#             and the path of the file that defines it) in the published
+#             text, as the integration layer discovered it. Read lazily:
+#             a run with no tool entry needs no source.
 #
 # The classifier reads no flake, no git tree, no network and no clock, so a
 # test feeds it fixtures. Exit 0: every declared entry hosted or reasoned
 # and every list entry live. Exit 1: a verdict failure, each named on
 # stderr. Exit 2: setup failure (a missing input, an empty declared extent,
 # an unreachable or malformed state source) — never a verdict.
+#
+# The tool class is the operator ruling of 2026-10-12: a runnable check is
+# an obligation (hosted), a tool (marked, never cited as evidence), or
+# temporary (deleted before merging). A tool entry fails when the file that
+# defines the tool is missing or carries no marker line, and when any
+# citation form of the tool appears in the published text, the tool's own
+# file included. Checking the marker's presence is the subject here: the
+# marker text is the declaration.
 set -euo pipefail
 
 setup_fail() {
@@ -39,12 +59,14 @@ verdict_fail() {
   fail=1
 }
 
-[ "$#" -ge 4 ] || setup_fail "usage: $0 DECLARED HOSTED LIST JOBS [STATES]"
+[ "$#" -ge 4 ] || setup_fail "usage: $0 DECLARED HOSTED LIST JOBS [STATES [TOOLMARKERS [CITATIONS]]]"
 declared_file="$1"
 hosted_file="$2"
 list_file="$3"
 jobs_file="$4"
 states_file="${5:-}"
+toolmarkers_file="${6:-}"
+citations_file="${7:-}"
 
 [ -f "$declared_file" ] || setup_fail "no declared-entries file $declared_file"
 [ -f "$hosted_file" ] || setup_fail "no hosted-references file $hosted_file"
@@ -161,10 +183,50 @@ issue_state_of() {
   issue_state_value="${issue_state[$number]}"
 }
 
+declare -A tool_marker_status=()
+declare -A tool_citation_paths=()
+tool_inputs_loaded=0
+load_tool_inputs() {
+  local entry="$1" line tf tp status
+  if [ "$tool_inputs_loaded" -eq 0 ]; then
+    [ -n "$toolmarkers_file" ] \
+      || setup_fail "$entry: a tool entry needs the tool-marker source handed as the sixth argument (a file of '<path> marked|unmarked|missing' lines)"
+    [ -f "$toolmarkers_file" ] \
+      || setup_fail "the tool-marker source $toolmarkers_file does not exist"
+    [ -n "$citations_file" ] \
+      || setup_fail "$entry: a tool entry needs the citation source handed as the seventh argument (a file of '<citation-form>|<path>' lines)"
+    [ -f "$citations_file" ] \
+      || setup_fail "the citation source $citations_file does not exist"
+    while IFS=' ' read -r tf status || [ -n "$tf" ]; do
+      [ -n "$tf" ] || continue
+      case "$status" in
+        marked | unmarked | missing) ;;
+        *) setup_fail "malformed tool-marker line '$tf $status' in $toolmarkers_file (expected '<path> marked|unmarked|missing')" ;;
+      esac
+      [ -z "${tool_marker_status["$tf"]+x}" ] \
+        || setup_fail "the tool-marker source answers twice for $tf"
+      tool_marker_status["$tf"]="$status"
+    done <"$toolmarkers_file"
+    while IFS='|' read -r tf tp || [ -n "$tf" ]; do
+      [ -n "$tf" ] || continue
+      [ -n "$tp" ] || setup_fail "malformed citation line '$tf' in $citations_file (expected '<citation-form>|<path>')"
+      if [ -n "${tool_citation_paths["$tf"]+x}" ]; then
+        tool_citation_paths["$tf"]="${tool_citation_paths["$tf"]}, $tp"
+      else
+        tool_citation_paths["$tf"]="$tp"
+      fi
+    done <"$citations_file"
+    tool_inputs_loaded=1
+  fi
+}
+
 declare -A listed=()
 declare -A pending_entry=()
 pending_count=0
 pending_names=""
+declare -A tool_entry=()
+tool_count=0
+tool_names=""
 listed_count=0
 lineno=0
 while IFS= read -r line || [ -n "$line" ]; do
@@ -172,14 +234,14 @@ while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
     '' | '#'*) continue ;;
   esac
-  IFS='|' read -r ef ea ek er extra <<<"$line"
+  IFS='|' read -r ef ea ek er efile extra <<<"$line"
   where="list line $lineno: $line"
   [ -n "$ef" ] && [ -n "$ea" ] && [ -n "$ek" ] || {
     verdict_fail "$where: a flake, attribute and kind are required"
     continue
   }
   [ -z "${extra:-}" ] || {
-    verdict_fail "$where: more than four fields"
+    verdict_fail "$where: more than five fields"
     continue
   }
   case "$ek" in
@@ -222,6 +284,21 @@ while IFS= read -r line || [ -n "$line" ]; do
     verdict_fail "$where: no reason"
     continue
   }
+  if [ -n "${efile:-}" ]; then has_file=yes; else has_file=no; fi
+  case "$er" in
+    'tool: '*)
+      [ "$has_file" = yes ] || {
+        verdict_fail "$where: a tool entry carries, as its fifth field, the path of the file that holds its marker"
+        continue
+      }
+      ;;
+    *)
+      [ "$has_file" = no ] || {
+        verdict_fail "$where: only a tool entry carries a fifth field (the file that holds its marker)"
+        continue
+      }
+      ;;
+  esac
   case "$er" in
     'retired: '*)
       case "$er" in
@@ -231,7 +308,9 @@ while IFS= read -r line || [ -n "$line" ]; do
           ;;
       esac
       ;;
-    'developer utility: '*) ;;
+    'developer utility: '*)
+      verdict_fail "$where: the developer-utility class was retired by the tool class of 2026-10-12; mark the file that defines the entry with a 'Tool, not a guarantee:' line and use a 'tool:' reason"
+      ;;
     'hosted under another name: '*)
       tokens=$(printf '%s' "$er" | tr -cs 'A-Za-z0-9_-' '\n') \
         || setup_fail "reading the job identifier of $where"
@@ -272,8 +351,32 @@ while IFS= read -r line || [ -n "$line" ]; do
           ;;
       esac
       ;;
+    'tool: '*)
+      load_tool_inputs "$where"
+      tstatus="${tool_marker_status["$efile"]-}"
+      case "$tstatus" in
+        marked) ;;
+        unmarked)
+          verdict_fail "$where: the file that defines the tool, $efile, carries no 'Tool, not a guarantee:' marker line"
+          ;;
+        missing)
+          verdict_fail "$where: the file that defines the tool, $efile, does not exist"
+          ;;
+        *)
+          verdict_fail "$where: no marker status was handed for $efile, the file that defines the tool"
+          ;;
+      esac
+      for cit_form in ".#$ea" "$efile"; do
+        if [ -n "${tool_citation_paths["$cit_form"]+x}" ]; then
+          verdict_fail "$where: the tool $ea of flake $ef is cited as evidence or guarantee in ${tool_citation_paths["$cit_form"]} (as $cit_form); a tool is never cited"
+        fi
+      done
+      tool_count=$((tool_count + 1))
+      tool_names="$tool_names$ef $ea, "
+      tool_entry["$ef|$ea|$ek"]=1
+      ;;
     *)
-      verdict_fail "$where: the reason must start with 'retired:', 'developer utility:', 'hosted under another name:' or 'pending wiring:'"
+      verdict_fail "$where: the reason must start with 'retired:', 'hosted under another name:', 'pending wiring:' or 'tool:'"
       continue
       ;;
   esac
@@ -298,6 +401,8 @@ for d in "${!declared_flakes[@]}"; do
       verdict_fail "app $a of flake $d is declared and named by no workflow step, and carries no declared-not-hosted entry"
     elif [ -n "${pending_entry["$d|$a|app"]+x}" ]; then
       printf 'not hosted app %s %s (pending wiring, named below)\n' "$d" "$a"
+    elif [ -n "${tool_entry["$d|$a|app"]+x}" ]; then
+      printf 'not hosted app %s %s (tool, named below)\n' "$d" "$a"
     else
       printf 'not hosted app %s %s (declared-not-hosted list)\n' "$d" "$a"
     fi
@@ -311,6 +416,8 @@ for d in "${!declared_flakes[@]}"; do
       verdict_fail "check $c of flake $d is declared and named by no workflow step, and carries no declared-not-hosted entry"
     elif [ -n "${pending_entry["$d|$c|check"]+x}" ]; then
       printf 'not hosted check %s %s (pending wiring, named below)\n' "$d" "$c"
+    elif [ -n "${tool_entry["$d|$c|check"]+x}" ]; then
+      printf 'not hosted check %s %s (tool, named below)\n' "$d" "$c"
     else
       printf 'not hosted check %s %s (declared-not-hosted list)\n' "$d" "$c"
     fi
@@ -321,10 +428,14 @@ if [ "$fail" -ne 0 ]; then
   echo "declared-checks-classify: FAIL" >&2
   exit 1
 fi
-printf 'declared %d apps and %d checks across %d flakes; hosted %d apps and %d checks; %d reasoned entries; %d pending wiring\n' \
-  "$apps_total" "$checks_total" "${#declared_flakes[@]}" "$hosted_apps_count" "$hosted_checks_count" "$listed_count" "$pending_count"
+printf 'declared %d apps and %d checks across %d flakes; hosted %d apps and %d checks; %d reasoned entries; %d pending wiring; %d tools\n' \
+  "$apps_total" "$checks_total" "${#declared_flakes[@]}" "$hosted_apps_count" "$hosted_checks_count" "$listed_count" "$pending_count" "$tool_count"
 if [ "$pending_count" -gt 0 ]; then
   pending_names="${pending_names%, }"
   printf 'pending wiring, temporary until the slice that hosts them removes the entries: %s\n' "$pending_names"
+fi
+if [ "$tool_count" -gt 0 ]; then
+  tool_names="${tool_names%, }"
+  printf 'tools, marked and never cited as evidence: %s\n' "$tool_names"
 fi
 echo "declared-checks-classify: PASS"

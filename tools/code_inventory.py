@@ -760,6 +760,13 @@ NONCODE_CLASSES: list[dict] = [
         "read by tools/declared_checks_classify.sh (issue #562)",
     },
     {
+        "id": "declared-tools-markers",
+        "pattern": "tools/declared_tools/*.md",
+        "note": "the marker line declaring a tool (a runnable check marked "
+        "never-cited, allowed to stay local) whose defining file cannot "
+        "carry it; read by tools/declared_checks_collect.sh (issue #562)",
+    },
+    {
         "id": "model-revision",
         "pattern": "conformance/model-revision",
         "note": "the application model commit the conformance bindings are "
