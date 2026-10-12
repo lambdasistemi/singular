@@ -754,6 +754,12 @@ NONCODE_CLASSES: list[dict] = [
         "tools/signed_tx_control.sh (issue #326)",
     },
     {
+        "id": "declared-checks-not-hosted-list",
+        "pattern": "tools/declared_checks_not_hosted.list",
+        "note": "one reasoned entry per declared-but-unhosted app or check; "
+        "read by tools/declared_checks_classify.sh (issue #562)",
+    },
+    {
         "id": "model-revision",
         "pattern": "conformance/model-revision",
         "note": "the application model commit the conformance bindings are "

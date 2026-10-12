@@ -24,10 +24,27 @@
 #
 # Exit 0: every static reference resolves. Exit 1: a static reference is
 # missing. Exit 2: the harness failed.
+#
+# With --emit-references as the first argument the script instead prints
+# every statically resolved hosted reference to stdout, one per line, and
+# nothing else: `run <flake-dir> <attr>` for a step that runs an app,
+# `build <flake-dir> <attr>` for a step that builds an attribute (a dotted
+# `checks.<system>.<name>` build or a bare attribute), and
+# `flake-check <flake-dir> -` for a `nix flake check` step, whose base
+# directory comes from the step's working-directory or preceding cd like
+# every other reference. Dynamic references are named on stderr and skipped
+# (stdout stays pure for the census that consumes it); nothing is evaluated
+# and the exit is 0 unless the harness itself failed.
 set -euo pipefail
 
 SYSTEM="x86_64-linux"
 MATRIX_TOKEN="__MATRIX__"
+
+emit=0
+if [ "${1:-}" = "--emit-references" ]; then
+  emit=1
+  shift || true
+fi
 
 root="${1:-$PWD}"
 if [ -d "$root" ]; then
@@ -56,7 +73,11 @@ declare -A seen
 unresolved=()
 
 report_unresolved() {
-  unresolved+=("$1")
+  if [ "$emit" = 1 ]; then
+    echo "unresolved: $1" >&2
+  else
+    unresolved+=("$1")
+  fi
 }
 
 has_dollar() {
@@ -220,6 +241,61 @@ check_external() {
   fail=1
 }
 
+# The two sinks of the one parser. In checking mode a reference is
+# resolved against its flake; in emit mode it is printed once for the
+# census. Dev shells and external registry references host no repository
+# app or check, so emit mode skips them.
+emit_ref() {
+  local kind="$1" dir="$2" attr="$3" key
+  if [ "$dir" = "$root" ]; then
+    dir="."
+  else
+    case "$dir" in
+      "$root"/*) dir="${dir#"$root"/}" ;;
+      *)
+        report_unresolved "reference outside the repository: $kind $dir $attr (skipped)"
+        return 0
+        ;;
+    esac
+  fi
+  key="$kind|$dir|$attr"
+  [ -z "${seen[$key]+x}" ] || return 0
+  seen[$key]=1
+  printf '%s %s %s\n' "$kind" "$dir" "$attr"
+}
+
+ref_run() {
+  if [ "$emit" = 1 ]; then
+    emit_ref run "$1" "$2"
+  else
+    check_run "$1" "$2" "$3"
+  fi
+}
+
+ref_build() {
+  if [ "$emit" = 1 ]; then
+    emit_ref build "$1" "$2"
+  else
+    check_build "$1" "$2" "$3"
+  fi
+}
+
+ref_devshell() {
+  if [ "$emit" = 1 ]; then
+    return 0
+  else
+    check_devshell "$1" "$2"
+  fi
+}
+
+ref_external() {
+  if [ "$emit" = 1 ]; then
+    return 0
+  else
+    check_external "$1" "$2"
+  fi
+}
+
 # Resolve a flake path against an effective base (both relative to root).
 resolve_dir() {
   local base="$1" flake="$2" out
@@ -251,6 +327,79 @@ extracted_suffix() {
   printf '%s' "$s"
 }
 
+# The base flake directory of a `nix flake check` line: the step's
+# working-directory, refined by an inline or preceding static cd, resolved
+# against the root. Emits `flake-check <dir> -`, or names the line
+# unresolved on stderr when the base is dynamic.
+emit_flake_check() {
+  local file="$1" lineno="$2" sanitized="$3" base cd_target pcd suffix rel
+  case "$sanitized" in
+    *"nix flake check"*) ;;
+    *) return 0 ;;
+  esac
+  base=$(step_workdir "$file" "$lineno")
+  [ -n "$base" ] || base="."
+  cd_target=$(printf '%s' "$sanitized" | sed -nE 's/.*cd[[:space:]]+([^ ;&()]+).*/\1/p' || true)
+  if [ -n "$cd_target" ]; then
+    if has_dollar "$cd_target" || has_squote "$cd_target" || has_dquote "$cd_target" || has_matrix "$cd_target"; then
+      if [[ "$cd_target" == *"extracted"* ]]; then
+        suffix=$(extracted_suffix "$cd_target")
+        if has_dollar "$suffix" || [ -z "$suffix" ]; then
+          report_unresolved "$file:$lineno: dynamic cd $cd_target (skipped)"
+          return 0
+        fi
+        base="$suffix"
+      else
+        report_unresolved "$file:$lineno: dynamic cd $cd_target (skipped)"
+        return 0
+      fi
+    else
+      if [ "$base" = "." ]; then
+        base="$cd_target"
+      else
+        base="$base/$cd_target"
+      fi
+    fi
+  else
+    pcd=$(preceding_cd "$file" "$lineno")
+    if [ -n "$pcd" ]; then
+      if has_dollar "$pcd" || has_squote "$pcd" || has_dquote "$pcd" || has_matrix "$pcd"; then
+        if [[ "$pcd" == *"extracted"* ]]; then
+          suffix=$(extracted_suffix "$pcd")
+          if has_dollar "$suffix" || [ -z "$suffix" ]; then
+            report_unresolved "$file:$lineno: dynamic cd $pcd (skipped)"
+            return 0
+          fi
+          base="$suffix"
+        else
+          report_unresolved "$file:$lineno: dynamic cd $pcd (skipped)"
+          return 0
+        fi
+      else
+        if [ "$base" = "." ]; then
+          base="$pcd"
+        else
+          base="$base/$pcd"
+        fi
+      fi
+    fi
+  fi
+  if has_dollar "$base" || has_matrix "$base"; then
+    report_unresolved "$file:$lineno: dynamic base $base (skipped)"
+    return 0
+  fi
+  rel="$base"
+  if [ "$rel" = ".." ] || [[ "$rel" == "../"* ]] || [[ "$rel" == /* ]]; then
+    report_unresolved "$file:$lineno: dynamic directory $rel (skipped)"
+    return 0
+  fi
+  if [ "$rel" = "." ]; then
+    emit_ref flake-check "$root" "-"
+  else
+    emit_ref flake-check "$root/$rel" "-"
+  fi
+}
+
 for file in "${files[@]}"; do
   [ -f "$file" ] || {
     echo "workflow-commands-resolve: no file $file" >&2
@@ -265,7 +414,7 @@ for file in "${files[@]}"; do
       "") continue ;;
     esac
     case "$line" in
-      *"nix run"* | *"nix build"* | *"nix develop"*) ;;
+      *"nix run"* | *"nix build"* | *"nix develop"* | *"nix flake check"*) ;;
       *) continue ;;
     esac
     sanitized=$(printf '%s' "$line" | sed -E 's/\$\{\{[^{}]*\}\}/'"$MATRIX_TOKEN"'/g')
@@ -281,12 +430,15 @@ for file in "${files[@]}"; do
             else
               abs="$root"
               [ "$base" = "." ] || abs="$root/$base"
-              check_devshell "$abs" "$file:$lineno"
+              ref_devshell "$abs" "$file:$lineno"
             fi
             ;;
         esac
         ;;
     esac
+    if [ "$emit" = 1 ]; then
+      emit_flake_check "$file" "$lineno" "$sanitized"
+    fi
     matches=$(printf '%s' "$sanitized" | grep -oE 'nix[[:space:]]+(run|build|develop)[^#]*#[^[:space:]]+' || true)
     [ -n "$matches" ] || continue
     while IFS= read -r match || [ -n "$match" ]; do
@@ -299,7 +451,7 @@ for file in "${files[@]}"; do
       where="$file:$lineno"
       case "$flake" in
         *"nixpkgs"*)
-          check_external "$attr" "$where"
+          ref_external "$attr" "$where"
           continue
           ;;
       esac
@@ -338,9 +490,9 @@ for file in "${files[@]}"; do
             abs="$root/$rel"
           fi
           if [ "$cmd" = "run" ]; then
-            check_run "$abs" "$expanded" "$where (matrix $v)"
+            ref_run "$abs" "$expanded" "$where (matrix $v)"
           else
-            check_build "$abs" "$expanded" "$where (matrix $v)"
+            ref_build "$abs" "$expanded" "$where (matrix $v)"
           fi
         done
         continue
@@ -423,30 +575,36 @@ for file in "${files[@]}"; do
         abs="$root/$rel"
       fi
       [ -d "$abs" ] || {
+        if [ "$emit" = 1 ]; then
+          report_unresolved "$where: no directory $abs for $token (skipped)"
+          continue
+        fi
         echo "FAIL: $where: no directory $abs for $token" >&2
         fail=1
         continue
       }
       if [ "$cmd" = "run" ]; then
-        check_run "$abs" "$attr" "$where"
+        ref_run "$abs" "$attr" "$where"
       elif [ "$cmd" = "build" ]; then
-        check_build "$abs" "$attr" "$where"
+        ref_build "$abs" "$attr" "$where"
       else
         case "$token" in
-          *"#"*) check_build "$abs" "$attr" "$where" ;;
-          *) check_devshell "$abs" "$where" ;;
+          *"#"*) ref_build "$abs" "$attr" "$where" ;;
+          *) ref_devshell "$abs" "$where" ;;
         esac
       fi
     done <<<"$matches"
   done <"$file"
 done
 
-printf '%s\n' "resolved $resolved_count of ${#seen[@]}, unevaluated ${#unresolved[@]}"
-if [ "${#unresolved[@]}" -gt 0 ]; then
-  printf '  %s\n' "${unresolved[@]}"
+if [ "$emit" = 0 ]; then
+  printf '%s\n' "resolved $resolved_count of ${#seen[@]}, unevaluated ${#unresolved[@]}"
+  if [ "${#unresolved[@]}" -gt 0 ]; then
+    printf '  %s\n' "${unresolved[@]}"
+  fi
+  if [ "$fail" -ne 0 ]; then
+    echo "workflow-commands-resolve: FAIL" >&2
+    exit 1
+  fi
+  echo "workflow-commands-resolve: PASS"
 fi
-if [ "$fail" -ne 0 ]; then
-  echo "workflow-commands-resolve: FAIL" >&2
-  exit 1
-fi
-echo "workflow-commands-resolve: PASS"

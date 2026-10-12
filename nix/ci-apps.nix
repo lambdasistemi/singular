@@ -173,4 +173,83 @@ in
       text = ''bash tools/format_controls.sh'';
     }
   );
+
+  # #562 item 20: the declared-checks-hosted census. The classifier is a
+  # pure function over three plain files (declared entries, hosted
+  # references, the exception list with the handed issue states): it reads
+  # no flake, no git tree, no network and no clock. The controls feed its
+  # table fixtures with no evaluation and drive the integration layer over
+  # one offline fixture flake (no network); the whole command costs about
+  # two seconds with a warm evaluation cache and about twenty seconds
+  # cold, dominated by the fixture-flake evaluations. The live census
+  # evaluates every tracked flake once and the shared workflow extraction
+  # once, then calls the classifier. Each wrapper owns
+  # a scratch directory created and removed on every exit (including setup
+  # failure), so no build state lands in the checkout; setup failure is
+  # exit 2, never a verdict; no process is stopped. The job runs the
+  # table test before the live run.
+  declared-checks-classify-controls = app (
+    pkgs.writeShellApplication {
+      name = "declared-checks-classify-controls";
+      # The table test drives the classifier over fixtures, the resolver's
+      # shared extraction over a fixture workflow, and the integration
+      # layer over a scratch fixture repository, so git, nix and jq come
+      # from here too (a stripped-PATH run refused the shadow case until
+      # jq was declared).
+      runtimeInputs = with pkgs; [
+        bash
+        coreutils
+        gawk
+        git
+        gnugrep
+        gnused
+        jq
+        nix
+      ];
+      text = ''bash tools/declared_checks_classify_controls.sh'';
+    }
+  );
+
+  # #562 item 20: the read-only issue-state query. Reads the pending
+  # issue numbers from the declared-not-hosted list and writes
+  # `<number> <open|closed>` lines to the caller's output file through a
+  # read-only query of the repository's issues. Authentication travels
+  # only through the environment (gh reads GH_TOKEN); the script binds,
+  # stores and reads no credential itself. A failed query is a setup
+  # failure, never a verdict. The wrapper owns a scratch directory created
+  # and removed on every exit; the output file is the caller's
+  # deliverable, not scratch. No process is stopped.
+  declared-checks-issue-states = app (
+    pkgs.writeShellApplication {
+      name = "declared-checks-issue-states";
+      runtimeInputs = with pkgs; [
+        bash
+        coreutils
+        gh
+        gnused
+      ];
+      text = ''bash tools/declared_checks_issue_states.sh "$PWD" "$@"'';
+    }
+  );
+
+  declared-checks-hosted = app (
+    pkgs.writeShellApplication {
+      name = "declared-checks-hosted";
+      # The wrapper runs the integration layer, which calls the resolver's
+      # shared extraction as a subprocess in the same strict PATH, so the
+      # resolver's grep, sed and awk come from here too (a stripped-PATH
+      # run refused the census until they were declared).
+      runtimeInputs = with pkgs; [
+        bash
+        coreutils
+        gawk
+        git
+        gnugrep
+        gnused
+        jq
+        nix
+      ];
+      text = ''bash tools/declared_checks_collect.sh "$PWD" "$@"'';
+    }
+  );
 }

@@ -303,6 +303,50 @@ jobs:
       # app and a missing package and requires both refused. One job covers
       # the check and its controls; the clean run's summary reaches the log.
       - run: nix run --quiet .#workflow-commands-resolve-controls
+  declared-checks-hosted:
+    if: github.event.action != 'closed'
+    needs: build-gate
+    name: Declared checks are hosted
+    runs-on: nixos
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #562 item 20: the declared-checks-hosted census. Every app and
+      # check a repository flake declares is named by a workflow step, or
+      # carries a reasoned entry in tools/declared_checks_not_hosted.list.
+      # The table-driven controls run first (fixtures only, about a
+      # second); then the live census evaluates every tracked flake once
+      # and classifies the real tree. The issue-state query is read-only
+      # (the job's permissions add nothing but issues read); the census
+      # fails on a pending-wiring entry whose issue is closed, and the
+      # slice that hosts the wired job removes the entry. Timeout from the
+      # measured live run (about 120 s warm: the flake evaluations dominate).
+      - run: nix run --quiet .#declared-checks-classify-controls
+      # The issue-state query is a repository app (its executables declared
+      # in the flake, never an inline registry command): it reads the
+      # pending-issue numbers from the exception list and answers each with
+      # a read-only query. GH_TOKEN binds the job's read-only workflow
+      # token explicitly; without it the query fails setup, never a verdict.
+      - name: Read the states of the issues the exception list names
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix run --quiet .#declared-checks-issue-states "$RUNNER_TEMP/issue-states.txt"
+      - run: nix run --quiet .#declared-checks-hosted "$RUNNER_TEMP/issue-states.txt"
   registry-cli-build-graph:
     if: github.event.action != 'closed'
     needs: build-gate
