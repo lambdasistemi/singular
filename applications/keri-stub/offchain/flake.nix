@@ -75,7 +75,6 @@
         };
 
         keriStubComponents = project.project.hsPkgs.keri-stub.components;
-        registryComponents = project.project.hsPkgs.singular-registry.components;
 
         inventory = import ./nix/component-inventory.nix {
           inherit pkgs;
@@ -151,7 +150,6 @@
         packages = {
           component-build = componentBuild;
           inherit (keriStubComponents.exes) keri-stub;
-          inherit (registryComponents.exes) singular;
           fourmolu = fourmoluTool;
         };
 
@@ -161,10 +159,6 @@
           keri-stub = {
             type = "app";
             program = pkgs.lib.getExe keriStubComponents.exes.keri-stub;
-          };
-          singular = {
-            type = "app";
-            program = pkgs.lib.getExe registryComponents.exes.singular;
           };
         };
 
