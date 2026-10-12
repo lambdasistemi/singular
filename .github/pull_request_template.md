@@ -15,8 +15,9 @@ this repository. Every claim must be checkable by that reader.
 
 ## How to verify
 
-<!-- Commands runnable from a clean checkout of this repository, or a link to
-     the CI run. Nothing untracked, nothing machine-local. -->
+<!-- For each check, a link to the hosted job that runs it at the exact head.
+     A command that only runs locally is not evidence: list it under Limits,
+     with its issue. Nothing untracked, nothing machine-local. -->
 
 ## Lean correspondence and constitution
 
