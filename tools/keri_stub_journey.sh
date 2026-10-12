@@ -279,14 +279,13 @@ jq -e --arg c "$controller" '.holding.fields[1].bytes == $c' "$receipts/register
 # 3. fold: the stub's own request, folded by the stub's own fold
 # ------------------------------------------------------------------
 run fold success -- fold "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
-jq -e --arg k "$key_hex" '.key == $k and .edge == "insertActive"
-  and (.settled | length == 1)
+jq -e --arg k "$key_hex" '(.settled | length == 1)
   and .settled[0].edge == "insertActive"
   and .settled[0].key == $k' "$receipts/fold.json" >/dev/null \
   || fail "fold: the settled request is not this key's insertActive"
 jq -e --arg k "$key_hex" --arg c "$controller" --arg p "$payload_hex" --argjson d "$deposit" \
   '.settled[0].settlement.envelope == {constructor: 0, fields: [{bytes: $k}, {bytes: $c}, {int: $d}, {bytes: $p}]}
-    and (.liveOutput | type == "string" and length > 0)' \
+    and (.settled[0].settlement.liveOutput | type == "string" and length > 0)' \
   "$receipts/fold.json" >/dev/null \
   || fail "fold: the delivered holding is not the one the booking wrote, derived from the command line's own inputs"
 
@@ -389,16 +388,14 @@ jq -r '.outputsAt.outputs[].output' "$receipts/status-pre.json" | sort >"$work/b
 # 7. fold the termination: the key reads terminal, the holding released
 # ------------------------------------------------------------------
 run convict-fold success -- fold "${common[@]}" "${registry[@]}" "${node[@]}" "${alice[@]}"
-jq -e --arg k "$key_hex" '.key == $k and .edge == "updateTerminal"
-  and (.settled | length == 1)
+jq -e --arg k "$key_hex" '(.settled | length == 1)
   and .settled[0].edge == "updateTerminal"
   and .settled[0].key == $k' "$receipts/convict-fold.json" >/dev/null \
   || fail "convict-fold: the settled request is not this key's updateTerminal"
-[ "$(field convict-fold .released)" = "$(field convict .released)" ] \
+[ "$(field convict-fold .settled[0].settlement.released)" = "$(field convict .released)" ] \
   || fail "convict-fold: the fold released another output than the booking named"
-jq -e --argjson d "$deposit" '.deposit == $d
-  and .settled[0].settlement.deposit == $d
-  and .settled[0].settlement.released == .released' "$receipts/convict-fold.json" >/dev/null \
+jq -e --argjson d "$deposit" '.settled[0].settlement.deposit == $d
+  and (.settled[0].settlement.released | type == "string" and length > 0)' "$receipts/convict-fold.json" >/dev/null \
   || fail "convict-fold: the released output and the deposit paid back are not the holding's, derived from the fold's own settlement"
 run status-terminal success -- status --key "$key" "${common[@]}" "${registry[@]}" "${node[@]}"
 [ "$(field status-terminal .leaf)" = "terminal" ] \
