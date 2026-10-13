@@ -157,7 +157,7 @@ throw, including cancellation; the original stop is rethrown unchanged
 by 'onException', and nothing is written to the manifest path, so the
 no-overwrite rule for an existing manifest is untouched.
 -}
-reportPartial :: IORef [Text] -> IO ()
+reportPartial :: IORef [T.Text] -> IO ()
 reportPartial txs = do
     partial <- reverse <$> readIORef txs
     unless (null partial) $
