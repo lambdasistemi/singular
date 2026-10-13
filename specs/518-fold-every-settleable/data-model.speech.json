@@ -41,6 +41,16 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "deb9c294fba0d9ad932398dfa34ebbac626046eba0ad71b769aab8a9a40ce8b4"
-  }
+    "sha256": "68563216afe9b8e17c13ee10c453ed845af7caf6619fdaa48251fc3a86812fc3"
+  },
+  "pull-request-3-at-e7b55ac9": [
+    {
+      "text": "Pull request 3 at e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "A settled entry holds one request's key, edge, owner, kind, delivery and deadline. A fold's journal line always carries the list of transitions, and its scalar fields mirror the first and the last transition; a line whose scalars disagree with its list is not observed.",
+      "pause": 400
+    }
+  ]
 }

@@ -96,13 +96,17 @@ import Singular.CLI.Fold
     , FoldOrigin (..)
     , FoldSpec (..)
     , Folded (..)
+    , SettledEntry (..)
     , deadlineJson
     , deadlineOf
     , foldPending
+    , settledEntryFor
     )
 import Singular.CLI.FoldRules
-    ( SettledForReceipt (..)
+    ( FoldRequestsRefusal (..)
+    , SettledForReceipt (..)
     , foldReceiptLists
+    , renderFoldRequestsRefusal
     )
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveWalletDir)
@@ -464,8 +468,20 @@ runRegister env a = case entryMode a of
 settled, with the holding it delivered, read back from the delivery.
 -}
 settledReceipt :: ByteString -> ConwayTx -> Folded -> IO Value
-settledReceipt key booking folded =
-    pure $ case fdDelivery folded of
+settledReceipt key booking folded = do
+    let bookingRef = TxIn (txIdTx booking) (TxIx 0)
+    entry <- case settledEntryFor folded bookingRef of
+        Just e -> pure e
+        Nothing ->
+            failWithFields
+                Partial
+                ( "the booking is confirmed and its request "
+                    <> T.unpack (txInText bookingRef)
+                    <> " stays pending; "
+                    <> renderFoldRequestsRefusal (FoldNamedNotPending bookingRef)
+                )
+                [("pendingRequest", toJSON (txInText bookingRef))]
+    pure $ case seDelivery entry of
         Delivered liveIn delivered
             | Right _ <- holdingFromData (dhDatumData delivered) ->
                 receipt
@@ -480,16 +496,16 @@ settledReceipt key booking folded =
                            ]
                         <> foldReceiptLists
                             [ SettledForReceipt
-                                (fdRequest folded)
-                                (hexT (fdKey folded))
-                                (T.pack (edgeName (fdEdge folded)))
-                                (fdOwnerHex folded)
+                                (seRequest entry)
+                                (hexT (seKey entry))
+                                (T.pack (edgeName (seEdge entry)))
+                                (seOwner entry)
                                 ( object
                                     [ "liveOutput" .= txInText liveIn
                                     , "holding" .= dhDatumJson delivered
                                     ]
                                 )
-                                (deadlineJson (fdDeadline folded))
+                                (deadlineJson (seDeadline entry))
                             ]
                             (fdExcluded folded)
                             (fdCapacityBound folded)

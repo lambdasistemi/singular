@@ -45,6 +45,8 @@ never filled from an expectation. No secret is ever written.
 module Singular.CLI.Receipt
     ( -- * Journal
       JournalEntry (..)
+    , FoldTransition (..)
+    , chainTransitions
     , journalPath
     , appendJournal
     , readJournal
@@ -70,6 +72,8 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.List (nub)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Text (Text)
 import Data.Word (Word32)
 import GHC.Generics (Generic)
@@ -135,6 +139,8 @@ data JournalEntry = JournalEntry
     -}
     , journalRootAfter :: Maybe Text
     -- ^ At @prepared@, for a fold: the public root expected after it
+    , journalTransitions :: Maybe [FoldTransition]
+    -- ^ At a fold's @prepared@: the requests it folds, in batch order
     , journalTime :: Maybe Text
     {- ^ When the line was appended, ISO-8601 UTC with millisecond precision.
     Stamped by 'appendJournal'; absent from lines written before it was
@@ -146,6 +152,40 @@ instance ToJSON JournalEntry where
     toJSON = Aeson.genericToJSON Aeson.defaultOptions
 instance FromJSON JournalEntry where
     parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
+
+-- | One request a fold folds: its move and the roots around it.
+data FoldTransition = FoldTransition
+    { transitionRequest :: Text
+    , transitionKey :: Text
+    , transitionEdge :: Integer
+    , transitionExpect :: Text
+    , transitionRootBefore :: Text
+    , transitionRootAfter :: Text
+    }
+    deriving stock (Eq, Show, Generic)
+
+instance ToJSON FoldTransition where
+    toJSON = Aeson.genericToJSON Aeson.defaultOptions
+instance FromJSON FoldTransition where
+    parseJSON = Aeson.genericParseJSON Aeson.defaultOptions
+
+{- | A fold's transitions from its root before and, per request in batch
+order, its output reference, key, edge, expected leaf after and root
+after, over a non-empty list. Each root before is the previous root
+after, the first the fold's root before.
+-}
+chainTransitions
+    :: Text
+    -> NonEmpty (Text, Text, Integer, Text, Text)
+    -> NonEmpty FoldTransition
+chainTransitions = go
+  where
+    go before ((req, key, edge, expect, after) :| []) =
+        FoldTransition req key edge expect before after :| []
+    go before ((req, key, edge, expect, after) :| (next : rest)) =
+        let headT = FoldTransition req key edge expect before after
+            tailT = go after (next :| rest)
+        in  headT NonEmpty.<| tailT
 
 journalPath :: FilePath -> FilePath
 journalPath dir = dir </> "journal.jsonl"

@@ -843,6 +843,7 @@ recoveryBase txid =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTransitions = Nothing
         , journalTime = Nothing
         }
 

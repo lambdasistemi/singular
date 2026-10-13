@@ -454,7 +454,7 @@ spec = do
         it "binds one transition per fold in pull request 1" $ do
             foldCapacity `shouldBe` 1
             foldCapacityProvenance
-                `shouldBe` "the journal binds one transition until the multi-request journal ships"
+                `shouldBe` "recovery reads one transition until the multi-request recovery ships"
 
     describe "window-rule-agrees-with-fold-window" $ do
         it "excludes window-closed exactly when foldWindow reports closed" $ do

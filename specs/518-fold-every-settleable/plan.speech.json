@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "Pull request 1 is merged, as 9d5f4c7a. Pull request 2 is on the branch feat/518-receipt-readers from that head; the bullets below describe the ticket as planned for pull request 1.",
+      "text": "Pull requests 1 and 2 and the docs-only follow-up are merged. Pull request 3 was released on the thirteenth of October against main at e7b55ac9 and is planned below as two pull requests, 3a and 3b, on the branch feat/518-many-per-fold; the bullets below describe the ticket as planned for pull request 1.",
       "pause": 400
     }
   ],
@@ -83,16 +83,6 @@
       "pause": 400
     }
   ],
-  "pull-request-3-many-per-fold": [
-    {
-      "text": "Pull request 3: many per fold.",
-      "pause": 500
-    },
-    {
-      "text": "Runnable outcome: one fold settles every settleable pending request up to the bound of 9, and an interrupted multi-request fold recovers.",
-      "pause": 400
-    }
-  ],
   "the-command-line-split-528-is-the-base": [
     {
       "text": "The command-line split (#528) is the base.",
@@ -125,12 +115,22 @@
       "pause": 500
     },
     {
-      "text": "One team per epic at a time; the operator is on credits. The split is decided above with an estimate per pull request, each followed by 60 to 90 minutes of hosted CI that the merge waits for. The estimates of the first cut were 2 to 3 hours of commit-owner time for pull request 1 and 3 to 4 hours for the former pull request 2; the observed ratio over the estimates is about 1.4, 41 of the first 133 minutes came from the stacked base, and the epic owner ruled an allowance of 7.5 hours for pull request 1. Commit owners are launched one task at a time, each with the terminal condition green, blocked or at capacity. Pull requests 2 and 3 are new dispatches after the pull request before them merges; pull request 3 also waits for the desk to rule on the session-layer collision. A pull request that would run past its estimate by a working day is stopped at its last green checkpoint and the remainder is proposed to the epic owner as a question, not ground out.",
+      "text": "One team per epic at a time; the operator is on credits. The split is decided above with an estimate per pull request, each followed by 60 to 90 minutes of hosted CI that the merge waits for. The estimates of the first cut were 2 to 3 hours of commit-owner time for pull request 1 and 3 to 4 hours for the former pull request 2; the observed ratio over the estimates is about 1.4, 41 of the first 133 minutes came from the stacked base, and the epic owner ruled an allowance of 7.5 hours for pull request 1. Commit owners are launched one task at a time, each with the terminal condition green, blocked or at capacity. Pull requests 2 and 3 are new dispatches after the pull request before them merges. The desk ruled on the session-layer collision on the thirteenth of October, and pull request 3 is released with 240 minutes of writer time, planned as pull request 3a at 155 minutes and pull request 3b at 195 minutes, the second of which needs its own allowance from the epic owner. A pull request that would run past its estimate by a working day is stopped at its last green checkpoint and the remainder is proposed to the epic owner as a question, not ground out.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "e496d79b78f7b631c3ef407f1bb710e3543a09deefd4592030a2efb3935454cc"
-  }
+    "sha256": "bfecc424bab24267cc2f2cd58e3a3f20816226e437efdd5c43cc929e3a3d3a52"
+  },
+  "pull-request-3-many-per-fold-cut-in-two": [
+    {
+      "text": "Pull request 3: many per fold, cut in two.",
+      "pause": 500
+    },
+    {
+      "text": "Main already folds a chosen set of requests in the builder and the guards. What is still one request is the fold routine, the journal line and the observation in the reconciliation code. The estimate is about 350 minutes, more than the 240 allowed for each part, so the pull request is cut in two. Pull request 3a makes the fold, the builder and the journal carry a selection of any size while the bound stays 1, and changes nothing a user sees. Pull request 3b recovers a many-request fold, raises the bound to 9 and proves the whole behaviour on a development network. The bound rises only in the pull request that also recovers a many-request fold, so main never holds a fold it cannot recover. The branch stands on the bookkeeping lane's branch, and every push waits for that merge and a rebase onto main.",
+      "pause": 400
+    }
+  ]
 }

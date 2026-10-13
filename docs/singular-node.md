@@ -168,7 +168,7 @@ sequenceDiagram
     Note over W: Journal and mirror
 ```
 
-`registry fold` judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's `capacity` field states the bound, 1, and why — the journal binds one transition until the multi-request journal ships. A fold is never refused because several requests are pending. The fold folds `insertActive` and `updateTerminal`; any other edge is refused `edge-inadmissible` in the model's words.
+`registry fold` judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's `capacity` field states the bound, 1, and why — recovery reads one transition until the multi-request recovery ships. A fold is never refused because several requests are pending. The fold folds `insertActive` and `updateTerminal`; any other edge is refused `edge-inadmissible` in the model's words.
 
 Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Eight reasons are the model's own refusal words, reported verbatim; six are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.
 
@@ -203,7 +203,7 @@ The receipt no longer carries the single-request fields it once printed at the t
   ],
   "capacity": {
     "bound": 1,
-    "provenance": "the journal binds one transition until the multi-request journal ships"
+    "provenance": "recovery reads one transition until the multi-request recovery ships"
   }
 }
 ```
@@ -225,7 +225,7 @@ clock and the deadline in the receipt.
 The deadline the fold is judged against is the one the booking's receipt
 states. A fold refused for it submitted nothing, and its request stays pending.
 
-What this pull request leaves out, stated plainly: one request per fold, because the journal binds one transition until the multi-request journal ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.
+What this pull request leaves out, stated plainly: one request per fold, because recovery reads one transition until the multi-request recovery ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.
 
 ## Reclaiming your pending request
 

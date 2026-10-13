@@ -60,6 +60,8 @@ module Singular.CLI.Session
     , inScopes
     , Expectation (..)
     , expecting
+    , foldExpectationScalars
+    , expectationJournalFields
     , journalObserved
     , journalObservedId
     , txIdHex
@@ -100,6 +102,7 @@ import Data.IORef
     , writeIORef
     )
 import Data.List (nub)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -149,7 +152,8 @@ import Singular.CLI.Harness
     , holdBeforeLock
     )
 import Singular.CLI.Receipt
-    ( JournalEntry (..)
+    ( FoldTransition (..)
+    , JournalEntry (..)
     , OutcomeClass (..)
     , appendJournal
     , bodiesDir
@@ -548,6 +552,7 @@ blankEntry wc step txid event =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTransitions = Nothing
         , journalTime = Nothing
         }
 
@@ -555,17 +560,56 @@ blankEntry wc step txid event =
 later inspect can check exactly that step's after-state and nothing
 more general.
 -}
-data Expectation = Expectation
-    { exKey :: Maybe ByteString
-    , exAfter :: Text
-    , exEdge :: Maybe Integer
-    , exRootBefore :: Maybe ByteString
-    , exRootAfter :: Maybe ByteString
-    }
+data Expectation
+    = Expectation
+        { exKey :: Maybe ByteString
+        , exAfter :: Text
+        , exEdge :: Maybe Integer
+        , exRootBefore :: Maybe ByteString
+        , exRootAfter :: Maybe ByteString
+        }
+    | FoldExpectation (NonEmpty FoldTransition)
 
 -- | An expectation with no key or roots.
 expecting :: Text -> Expectation
 expecting after = Expectation Nothing after Nothing Nothing Nothing
+
+{- | The scalar journal fields of a fold's transitions: the key,
+expectation and edge of the first transition, the root before of the
+first, the root after of the last, in one function.
+-}
+foldExpectationScalars
+    :: NonEmpty FoldTransition -> (Text, Text, Integer, Text, Text)
+foldExpectationScalars (first :| rest) =
+    let lastT = case rest of
+            [] -> first
+            _ -> last rest
+    in  ( transitionKey first
+        , transitionExpect first
+        , transitionEdge first
+        , transitionRootBefore first
+        , transitionRootAfter lastT
+        )
+
+{- | The prepared line's expectation fields: key, expectation, edge,
+roots and the transition list. For a fold the list and the scalars that
+mirror its first and last transition; otherwise what is written today
+and no list.
+-}
+expectationJournalFields
+    :: Expectation
+    -> ( Maybe Text
+       , Maybe Text
+       , Maybe Integer
+       , Maybe Text
+       , Maybe Text
+       , Maybe [FoldTransition]
+       )
+expectationJournalFields (Expectation k a e rb ra) =
+    (hexT <$> k, Just a, e, hexT <$> rb, hexT <$> ra, Nothing)
+expectationJournalFields (FoldExpectation ts) =
+    let (k, e, edge, rb, ra) = foldExpectationScalars ts
+    in  (Just k, Just e, Just edge, Just rb, Just ra, Just (toList ts))
 
 {- | Build one transaction from one view of the node, then sign it and
 submit it journalled under that view's chain point and the expectation
@@ -784,6 +828,8 @@ journalledSubmit tracer wc step ex scope unsigned = do
         bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
     createDirectoryIfMissing True (bodiesDir dir)
     durableWrite bodyPath (B16.encode bytes)
+    let (jKey, jExpect, jEdge, jRootBefore, jRootAfter, jTransitions) =
+            expectationJournalFields ex
     appendJournal
         dir
         (blankEntry wc step txid "prepared")
@@ -797,11 +843,12 @@ journalledSubmit tracer wc step ex scope unsigned = do
             , journalChainPoint = Nothing
             , journalSession = Just scope
             , journalObservedTip = Nothing
-            , journalKey = hexT <$> exKey ex
-            , journalExpect = Just (exAfter ex)
-            , journalEdge = exEdge ex
-            , journalRootBefore = hexT <$> exRootBefore ex
-            , journalRootAfter = hexT <$> exRootAfter ex
+            , journalKey = jKey
+            , journalExpect = jExpect
+            , journalEdge = jEdge
+            , journalRootBefore = jRootBefore
+            , journalRootAfter = jRootAfter
+            , journalTransitions = jTransitions
             }
     answer <-
         harnessSubmission

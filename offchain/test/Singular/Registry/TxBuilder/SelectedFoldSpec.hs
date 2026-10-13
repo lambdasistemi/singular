@@ -131,10 +131,11 @@ txIn c i =
 stateIn :: TxIn
 stateIn = txIn 'b' 0
 
-reqIn1, reqIn2, reqIn3 :: TxIn
+reqIn1, reqIn2, reqIn3, reqIn4 :: TxIn
 reqIn1 = txIn 'a' 0
 reqIn2 = txIn 'a' 1
 reqIn3 = txIn 'a' 2
+reqIn4 = txIn 'a' 3
 
 feeIn :: TxIn
 feeIn = txIn 'e' 0
@@ -142,15 +143,17 @@ feeIn = txIn 'e' 0
 missingIn :: TxIn
 missingIn = txIn 'f' 9
 
-key1, key2, key3 :: ByteString
+key1, key2, key3, key4 :: ByteString
 key1 = "test-key-1"
 key2 = "test-key-2"
 key3 = "test-key-3"
+key4 = "test-key-4"
 
-submitted1, submitted2, submitted3 :: Integer
+submitted1, submitted2, submitted3, submitted4 :: Integer
 submitted1 = 1_000
 submitted2 = 2_000
 submitted3 = 3_000
+submitted4 = 4_000
 
 requestOut :: ByteString -> Integer -> TxOut ConwayEra
 requestOut key submittedAt =
@@ -175,6 +178,9 @@ pendingReqs =
     , (reqIn2, requestOut key2 submitted2)
     , (reqIn3, requestOut key3 submitted3)
     ]
+
+pendingReqs4 :: [(TxIn, TxOut ConwayEra)]
+pendingReqs4 = pendingReqs <> [(reqIn4, requestOut key4 submitted4)]
 
 deadlineOf :: Integer -> Integer
 deadlineOf submittedAt = submittedAt + defaultProcessTime cfg
@@ -231,6 +237,9 @@ chainViewWith reqs =
 chainView :: Session NoWitness IO
 chainView = chainViewWith pendingReqs
 
+chainView4 :: Session NoWitness IO
+chainView4 = chainViewWith pendingReqs4
+
 emptyView :: Session NoWitness IO
 emptyView = chainViewWith []
 
@@ -280,6 +289,15 @@ ctx0 =
 
 buildSelected :: TxIn -> IO ConwayTx
 buildSelected = buildSelectedOn chainView
+
+buildSelectedMany :: NonEmpty TxIn -> IO ConwayTx
+buildSelectedMany = buildSelectedManyOn chainView
+
+buildSelectedManyOn
+    :: Session NoWitness IO -> NonEmpty TxIn -> IO ConwayTx
+buildSelectedManyOn view refs = do
+    let ctx = ctx0
+    updateTokenSelected cfg view snapshot tokenId payer ctx refs
 
 buildSelectedOn :: Session NoWitness IO -> TxIn -> IO ConwayTx
 buildSelectedOn view ref = do
@@ -350,3 +368,58 @@ spec = describe "The fold builder over a chosen pending request" $ do
         upperAll `shouldBe` expectedAll
         (upperMid == upperAll) `shouldBe` False
         upperEarly `shouldBe` upperAll
+    it
+        "spends the state output and exactly two chosen requests, not the first pending"
+        $ do
+            let chosen = reqIn2 :| [reqIn3]
+                pendingRefs = map fst pendingReqs
+                unchosen = [r | r <- pendingRefs, r `notElem` (reqIn2 : [reqIn3])]
+            tx <- buildSelectedMany chosen
+            let spent = inputsOf tx
+            (reqIn2 `Set.member` spent) `shouldBe` True
+            (reqIn3 `Set.member` spent) `shouldBe` True
+            (stateIn `Set.member` spent) `shouldBe` True
+            map (`Set.member` spent) unchosen `shouldBe` [False]
+            actions <- actionsOf tx
+            length actions `shouldBe` 2
+    it
+        "spends the state output and exactly three chosen requests among four pending"
+        $ do
+            let chosen = reqIn2 :| [reqIn3, reqIn4]
+            tx <- buildSelectedManyOn chainView4 chosen
+            let spent = inputsOf tx
+            (reqIn2 `Set.member` spent) `shouldBe` True
+            (reqIn3 `Set.member` spent) `shouldBe` True
+            (reqIn4 `Set.member` spent) `shouldBe` True
+            (stateIn `Set.member` spent) `shouldBe` True
+            (reqIn1 `Set.member` spent) `shouldBe` False
+            actions <- actionsOf tx
+            length actions `shouldBe` 3
+    it
+        "bounds the fold by the earliest deadline among the chosen, not the first chosen"
+        $ do
+            let chosen = reqIn3 :| [reqIn1]
+            tx <- buildSelectedMany chosen
+            let upper = upperOf tx
+                expectedEarly = SlotNo (fromInteger (deadlineOf submitted1 `div` 1000))
+                firstDeadline = SlotNo (fromInteger (deadlineOf submitted3 `div` 1000))
+            upper `shouldBe` expectedEarly
+            (upper == firstDeadline) `shouldBe` False
+            let chosen3 = reqIn4 :| [reqIn3, reqIn1]
+            tx3 <- buildSelectedManyOn chainView4 chosen3
+            let upper3 = upperOf tx3
+            upper3 `shouldBe` expectedEarly
+            (upper3 == SlotNo (fromInteger (deadlineOf submitted4 `div` 1000)))
+                `shouldBe` False
+    it
+        "refuses a chosen reference that is not pending among several chosen, naming it"
+        $ do
+            result <-
+                try (buildSelectedMany (reqIn1 :| [reqIn2, missingIn]))
+                    :: IO (Either SomeException ConwayTx)
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf (show missingIn)
+                Right _ ->
+                    expectationFailure
+                        "chosen references with one not pending built a fold"

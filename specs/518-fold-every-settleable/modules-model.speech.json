@@ -23,6 +23,16 @@
   ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "20f0391603c6c64c7fc0f7e1af98ff979acb1d1519cd813dc9a7f6a44587e9b4"
-  }
+    "sha256": "1f606bebb68477199d917591767c51575cbcb7b8b714edfbcfba411bd411de6f"
+  },
+  "pull-request-3-at-e7b55ac9": [
+    {
+      "text": "Pull request 3 at e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "The journal changes in pull request 3a and recovery in 3b, so main never holds a fold it cannot recover. A combined form reads its own settled entry from the result's list.",
+      "pause": 400
+    }
+  ]
 }
