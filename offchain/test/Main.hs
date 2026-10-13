@@ -6,6 +6,7 @@ import Naming.RegisterSpec qualified
 import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
+import Singular.CLI.CreateFundingSpec qualified
 import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.ReclaimSpec qualified
@@ -37,6 +38,7 @@ import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
+import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
@@ -69,6 +71,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.PublicationFunding" [Builders])
+        Singular.Registry.TxBuilder.PublicationFundingSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.SelectedFold" [Builders])
         Singular.Registry.TxBuilder.SelectedFoldSpec.spec
@@ -168,6 +173,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec
+    describe
+        (tagged "Singular.CLI.CreateFunding" [Cli, Builders])
+        Singular.CLI.CreateFundingSpec.spec
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec

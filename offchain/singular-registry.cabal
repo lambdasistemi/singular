@@ -960,6 +960,7 @@ test-suite cage-tests
     Paths_singular_registry
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
+    Singular.CLI.CreateFundingSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.ReclaimSpec
@@ -1001,6 +1002,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookEdgeSpec
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
+    Singular.Registry.TxBuilder.PublicationFundingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec

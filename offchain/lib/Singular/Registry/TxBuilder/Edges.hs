@@ -37,6 +37,11 @@ module Singular.Registry.TxBuilder.Edges
     , publishRefScript
     , publishRefScriptReserving
     , publishRefScriptTx
+    , PublicationFundingError (..)
+    , selectPublicationInputs
+    , publicationFee
+    , publicationMinChange
+    , publicationRefCoin
     , publishStateRef
     , publishStateRefReserving
     , stateRefIn
@@ -74,6 +79,7 @@ import Lens.Micro ((&), (.~), (^.))
 
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Api.PParams (ppCoinsPerUTxOByteL, ppMaxTxSizeL)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
@@ -102,6 +108,8 @@ import Cardano.Ledger.Api.Tx.Wits
     , scriptTxWitsL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
+import Cardano.Ledger.Coin (CoinPerByte (..))
+import Cardano.Ledger.Compactible (fromCompact)
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (PParams, Script, hashScript)
 import Cardano.Ledger.Credential
@@ -263,6 +271,104 @@ selectFunding chosen utxos = case chosen of
   where
     usable = filter (adaOnlyOut . snd) utxos
 
+{- | The flat fee a publication pays, and the change it must leave strictly
+above. One owner (#406): the builder and the whole-run judgement share
+these with the pure selection below, never a second copy.
+-}
+publicationFee :: Integer
+publicationFee = 1_000_000
+
+publicationMinChange :: Integer
+publicationMinChange = 1_000_000
+
+{- | The reference output a publication creates at the payer's address:
+the ledger minimum for the script plus one million lovelace. One owner:
+both the selection and the whole-run need share it.
+-}
+publicationRefCoin
+    :: PParams ConwayEra -> Addr -> Script ConwayEra -> Integer
+publicationRefCoin pp payerAddr script =
+    let probe =
+            mkBasicTxOut payerAddr (MaryValue (Coin 0) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        Coin minCoin = getMinCoinTxOut pp probe
+    in  minCoin + 1_000_000
+
+{- | Why one publication cannot be funded: too little in total, or a
+covering prefix too large for the protocol maximum transaction size.
+-}
+data PublicationFundingError
+    = PublicationShortfall
+        { pfeNeeded :: Integer
+        , pfeHeld :: Integer
+        , pfeLargest :: Integer
+        }
+    | PublicationOversize
+        { pfeSize :: Integer
+        , pfeLimit :: Integer
+        }
+    deriving stock (Eq, Show)
+
+{- | One owner of the publication arithmetic (#406): the shortest
+largest-first prefix of the permitted outputs whose total covers the
+reference output plus the fee plus a change strictly above the minimum,
+with the inputs, the reference output and the change; or the shortfall
+it names (needed total, held total, largest output). A covering prefix
+whose transaction would exceed the protocol maximum size is refused up
+front, naming size and limit, so a wallet of many dust outputs never
+reaches submission.
+
+The permitted outputs are ada-only with no reference script, the seed
+withheld before the boot. A covering output spends exactly one input
+and it is the largest; otherwise no output that is not needed is spent.
+-}
+selectPublicationInputs
+    :: PParams ConwayEra
+    -> Addr
+    -> Script ConwayEra
+    -> [(k, TxOut ConwayEra)]
+    -> Either
+        PublicationFundingError
+        ([(k, TxOut ConwayEra)], TxOut ConwayEra, Integer)
+selectPublicationInputs pp payerAddr script permitted = do
+    let ordered = sortOn (Down . (^. coinTxOutL) . snd) permitted
+        coins = [c | (_, o) <- ordered, let Coin c = o ^. coinTxOutL]
+        held = sum coins
+        largest = case coins of
+            [] -> 0
+            (c : _) -> c
+        refCoin = publicationRefCoin pp payerAddr script
+        needed = refCoin + publicationFee + publicationMinChange
+        refOut =
+            mkBasicTxOut payerAddr (MaryValue (Coin refCoin) mempty)
+                & referenceScriptTxOutL .~ SJust script
+        covering = takeCovering needed ordered 0
+    prefix <- case covering of
+        Nothing -> Left (PublicationShortfall needed held largest)
+        Just chosen -> pure chosen
+    let total = sum [c | (_, o) <- prefix, let Coin c = o ^. coinTxOutL]
+        change = total - publicationFee - refCoin
+        CoinPerByte compactPerByte = pp ^. ppCoinsPerUTxOByteL
+        Coin perByte = fromCompact compactPerByte
+        limit = fromIntegral (pp ^. ppMaxTxSizeL)
+        size =
+            if perByte <= 0
+                then 0
+                else (refCoin `div` perByte) + fromIntegral (length prefix) * 40 + 300
+    if limit > 0 && size > limit
+        then Left (PublicationOversize size limit)
+        else pure (prefix, refOut, change)
+  where
+    takeCovering _ [] _ = Nothing
+    takeCovering need ((k, o) : rest) acc =
+        let Coin c = o ^. coinTxOutL
+            acc' = acc + c
+        in  if acc' > need
+                then Just [(k, o)]
+                else case takeCovering need rest acc' of
+                    Nothing -> Nothing
+                    Just chosen -> Just ((k, o) : chosen)
+
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript
     :: (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)
@@ -290,8 +396,8 @@ publishRefScriptReserving reserved prov submit payerAddr script = do
     pure (TxIn (txIdTx signed) (TxIx 0), refOut)
 
 {- | The unsigned publication of one reference script, funded by the
-largest ada-only output outside the reservation, and the reference
-output it creates.
+shortest largest-first prefix of the ada-only outputs outside the
+reservation, and the reference output it creates.
 -}
 publishRefScriptTx
     :: Set.Set TxIn
@@ -302,40 +408,38 @@ publishRefScriptTx
 publishRefScriptTx reserved v payerAddr script = do
     pp <- Cage.parameters v
     utxos <- Cage.outputsAt v payerAddr
-    fund <-
-        case sortOn
-            (Down . (^. coinTxOutL) . snd)
-            (filter (\(i, o) -> adaOnlyOut o && Set.notMember i reserved) utxos) of
-            [] -> error "publishRefScript: the payer wallet has no ada-only output"
-            (u : _) -> pure u
-    let probe =
-            mkBasicTxOut payerAddr (MaryValue (Coin 0) mempty)
-                & referenceScriptTxOutL .~ SJust script
-        Coin minCoin = getMinCoinTxOut pp probe
-        refCoin = minCoin + 1_000_000
-        refOut =
-            mkBasicTxOut payerAddr (MaryValue (Coin refCoin) mempty)
-                & referenceScriptTxOutL .~ SJust script
-        fee = 1_000_000
-        Coin inCoin = snd fund ^. coinTxOutL
-        changeCoin = inCoin - fee - refCoin
-    unless (changeCoin > 1_000_000) $
-        error
-            ( "publishRefScript: the funding output holds "
-                <> show inCoin
-                <> ", which does not cover a reference output of "
-                <> show refCoin
-                <> " plus fees"
-            )
+    let permitted =
+            filter (\(i, o) -> adaOnlyOut o && Set.notMember i reserved) utxos
+    (funds, refOut, changeCoin) <- case selectPublicationInputs pp payerAddr script permitted of
+        Left (PublicationShortfall needed held largest) ->
+            if null permitted
+                then error "publishRefScript: the payer wallet has no ada-only output"
+                else
+                    error
+                        ( "publishRefScript: the funding outputs hold "
+                            <> show held
+                            <> ", which does not cover a reference output of "
+                            <> show (needed - publicationFee - publicationMinChange)
+                            <> " plus fees; largest holds "
+                            <> show largest
+                        )
+        Left (PublicationOversize size limit) ->
+            error
+                ( "publishRefScript: the funding transaction would be "
+                    <> show size
+                    <> " bytes, over the protocol maximum "
+                    <> show limit
+                )
+        Right chosen -> pure chosen
     let body =
             mkBasicTxBody
-                & inputsTxBodyL .~ Set.singleton (fst fund)
+                & inputsTxBodyL .~ Set.fromList (map fst funds)
                 & outputsTxBodyL
                     .~ StrictSeq.fromList
                         [ refOut
                         , mkBasicTxOut payerAddr (MaryValue (Coin changeCoin) mempty)
                         ]
-                & feeTxBodyL .~ Coin fee
+                & feeTxBodyL .~ Coin publicationFee
     pure (mkBasicTx body, refOut)
 
 {- | Publish the state validator as a reference output, once, before any

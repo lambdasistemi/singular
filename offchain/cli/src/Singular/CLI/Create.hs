@@ -240,14 +240,46 @@ runCreate app env a = do
                     (parseEnterpriseAddress magic addrText)
             readOnce env settings ["wallet outputs"] $ \caps v -> do
                 utxos <- Cage.outputsAt v addr
-                (_, identity) <- previewIdentity app False a rel addr utxos
+                ((seedIn, cfg, pinned), identity) <-
+                    previewIdentity app False a rel addr utxos
                 scope <- sessionReceipt caps v
+                judged <- case lookup "createRefusal" identity of
+                    Just Aeson.Null -> do
+                        pp <- Cage.parameters v
+                        foundState <- stateReference app v addr rel seedIn
+                        let stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
+                            beforeBoot = case foundState of
+                                Just _ -> []
+                                Nothing -> [("state", stateScript)]
+                            token = stateTokenOf rel seedIn
+                            carrier =
+                                fromMaybe
+                                    ( seedIn
+                                    , mkBasicTxOut addr (MaryValue (Coin 0) mempty)
+                                        & referenceScriptTxOutL .~ SJust stateScript
+                                    )
+                                    foundState
+                        pure $ case publicationFunding
+                            pp
+                            seedIn
+                            (bootCostBound pp carrier)
+                            beforeBoot
+                            (laterScripts cfg pinned (TokenId (snd token)))
+                            utxos of
+                            Left err -> Just (T.pack (renderIdentityError err))
+                            Right _ -> Nothing
+                    _ -> pure Nothing
+                let identity' = case judged of
+                        Nothing -> identity
+                        Just refusal ->
+                            ("createRefusal", toJSON refusal)
+                                : filter ((/= "createRefusal") . fst) identity
                 pure $
                     receipt
                         "create"
                         Success
                         ( [("preview", toJSON True), ("sessionEvidence", scope)]
-                            <> identity
+                            <> identity'
                         )
         Submit ws -> createWith app env a rel ws
 
@@ -329,13 +361,50 @@ createWith app env a rel ws = do
         dir = managedDir root magic token (walletPartition caller)
     -- A preview writes nothing: no lock, no directory, no journal.
     if createPreview a
-        then withSession env dir "create" ws $ \_ ->
+        then withSession env dir "create" ws $ \wc -> do
+            judged <- case lookup "createRefusal" identity of
+                Just Aeson.Null -> do
+                    (foundState, pp) <-
+                        readStep
+                            (wcTracer wc)
+                            (wcSource wc)
+                            ["reference scripts"]
+                            (wcCapabilities wc)
+                            $ \v -> do
+                                found <- stateReference app v addr rel seedIn
+                                (found,) <$> Cage.parameters v
+                    let stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
+                        beforeBoot = case foundState of
+                            Just _ -> []
+                            Nothing -> [("state", stateScript)]
+                        carrier =
+                            fromMaybe
+                                ( seedIn
+                                , mkBasicTxOut addr (MaryValue (Coin 0) mempty)
+                                    & referenceScriptTxOutL .~ SJust stateScript
+                                )
+                                foundState
+                    pure $ case publicationFunding
+                        pp
+                        seedIn
+                        (bootCostBound pp carrier)
+                        beforeBoot
+                        (laterScripts cfg pinned (TokenId (snd token)))
+                        utxos of
+                        Left err -> Just (T.pack (renderIdentityError err))
+                        Right _ -> Nothing
+                _ -> pure Nothing
+            let identity' = case judged of
+                    Nothing -> identity
+                    Just refusal ->
+                        ("createRefusal", toJSON refusal)
+                            : filter ((/= "createRefusal") . fst) identity
             pure $
                 receipt
                     "create"
                     Success
                     ( [("preview", toJSON True), ("sessionEvidence", scope)]
-                        <> identity
+                        <> identity'
                     )
         else do
             refuseExisting dir
