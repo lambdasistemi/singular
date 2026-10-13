@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Ticket 494, child of epic 498. Base: main e3c9ab01 (the two-edge model, constitution 1.14.0). The rulings are in decisions; the technical route is in plan. This ticket changes the Lean model and everything that consumes it. It changes no validator, no off-chain builder and no shipped command; those belong to the neighbouring tickets named under out of scope.",
+      "text": "Ticket 494, child of epic 498. Base: main e7b55ac9 (the two-edge model, constitution 1.15.0). The rulings are in decisions; the technical route is in plan. This ticket changes the Lean model and everything that consumes it. It changes no validator, no off-chain builder and no shipped command; those belong to the neighbouring tickets named under out of scope.",
       "pause": 400
     }
   ],
@@ -201,7 +201,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] The eight required checks that failed on pull request 508 are green on the exact head, or the one that cannot be is published unmet as the pending decision on the decisions page directs.",
+      "text": "[ ] The eight required checks that failed on pull request 508 are green on the exact head, or the one that cannot be is published unmet as the decision on the decisions page directs.",
       "pause": 300
     },
     {
@@ -221,6 +221,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "010bcfaebcadef7e0ae4aa59c54d8b83117f366da8c84f1384090470ea929eda"
+    "sha256": "ed48fc9fe62d0cc67017f189e1e3cf26c9df0fd9e1ade4f8c61cd70440959faf"
   }
 }

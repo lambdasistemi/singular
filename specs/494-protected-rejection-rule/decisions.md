@@ -18,7 +18,8 @@ The insertion folds to Active. The same request can instead be rejected with no 
 unchanged registry state, no mint and a deposit-only refund to the owner, while the
 modelled inputs exceed the modelled outputs by the tip.
 
-The tree this ticket starts from (`e3c9ab01`, the two-edge model) has the same defect:
+The tree this ticket starts from (the two-edge model, byte-identical in `lean/Singular/Model.lean`
+at `e3c9ab01` and at `e7b55ac9`) has the same defect:
 its `exitAdmission` answers no refusal for `Exit.reject`, so the same scenario is
 accepted. The scenario is therefore the failing control of the first coding slice that
 changes rejection, and it is kept as historical behavior: it is run against the base
@@ -90,13 +91,22 @@ choose them silently.
 | A request naming an excluded edge is incompatible at every leaf | `transition` is empty for the five excluded tags, so a mismatch rejection of such a request is admitted for any leaf. The request can never fold, so waiting for expiry protects nobody. | Ruled by the epic owner on 9 October 2026 as an application of the first ruling, not a new operator decision: such a request is incompatible with every current state and is rejectable at once with the lifecycle evidence. |
 | Refusals other than the lifecycle are not grounds | A request with a wrong approval, a short deposit or a missing token is refused by a fold but is not thereby rejectable early; only mismatch and expiry are. | Follows from the scope confirmation. |
 
-## Decision pending: what the public suite shows until the validators change
+## Decision: what the public suite shows until the validators change
 
 Once the model refuses an in-window rejection of a foldable request, the required check
 named "early rejection inside the windows" cannot agree between model and chain, because
-the validators (ticket 495) still accept it. The question and its three options are in the
-ticket owner's question file for the epic owner; the plan marks every row that depends on
-it. It is not decided here.
+the validators (ticket 495) still accept it. The operator ruled on 9 October 2026 for the option
+that merges this ticket alone, ahead of ticket 495 (option B).
+
+| Row | Model | Chain | Published as |
+|---|---|---|---|
+| Rejection at once, with lifecycle evidence, of a request that cannot be folded | accepts | accepts, owner refunded | agreement (green) |
+| Rejection, inside the windows, of a foldable `insertActive` request for a key not yet registered | refuses | accepts | unmet by ruling, never counted as passing |
+
+A tripwire turns red unless ticket 495 changes the validators so that the second row agrees, and
+ticket 495's acceptance includes that flip. The row books a foldable insertion because the insertion
+the standing row books today names an edge the two-edge model excludes, which is rejectable at once
+and would leave the row without its subject.
 
 ## What is carried forward unchanged from the earlier candidate
 

@@ -61,7 +61,7 @@
       "pause": 500
     },
     {
-      "text": "Make the retraction window read the request's booked submission time and nothing else, and make every copy of the model say so. The reference is the earlier attempt on branch feat/protected-rejection at a7224021; port its design, do not copy its files, because the base has moved.",
+      "text": "Make the retraction window read the request's booked submission time and nothing else, and make every copy of the model say so. The reference is the earlier attempt on branch feat/protected-rejection at a7224021; port its design, do not copy its files, because the base has moved. The toolchain is now 4.27.0, where an impossible Except equation is closed with exact nomatch h, as lean/Singular/Lemmas.lean and lean/Singular/Statements.lean now write it.",
       "pause": 400
     },
     {
@@ -85,7 +85,7 @@
       "pause": 300
     },
     {
-      "text": "Open constitution version 1.15.0 with the retraction row restated.",
+      "text": "Open constitution version 1.16.0 with the retraction row restated.",
       "pause": 300
     },
     {
@@ -135,6 +135,6 @@
   ],
   "_source": {
     "file": "slice-one-booked-clock.md",
-    "sha256": "36a943557f86d9918bdc5e2a5726864826c436a6a98d00fc6ce02321e412cb6f"
+    "sha256": "af38d3994c94ba2259dd651a760a468ae31b3a67d1e653fde43c0ea640a31b30"
   }
 }

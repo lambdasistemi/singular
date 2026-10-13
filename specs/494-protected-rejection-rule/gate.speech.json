@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "This page is the frozen gate for ticket 494. It is the union of two tables written independently from the specification and its acceptance lines, one by the ticket owner and one by a GLM gate author who never saw the first, synthesized once here. Every command is an existing step of .github/workflows/ci.yml or .github/workflows/conformance.yml at base e3c9ab01; nothing is invented. Hosted checks on the exact pushed head are the net for every row.",
+      "text": "This page is the frozen gate for ticket 494. It is the union of two tables written independently from the specification and its acceptance lines, one by the ticket owner and one by a GLM gate author who never saw the first, synthesized once here. Every command is an existing step of .github/workflows/ci.yml or .github/workflows/conformance.yml at base e7b55ac9; nothing is invented. Hosted checks on the exact pushed head are the net for every row.",
       "pause": 400
     }
   ],
@@ -25,7 +25,21 @@
       "pause": 500
     },
     {
-      "text": "Conflicts, resolved by the workflow line that decides them. The author listed the retire-active-key row as re-based onto evidenced rejection; the workflow (conformance.yml:266-306) runs a row with no rejection step, so it stays a guard that a fold's question did not change. The author listed the batch row under slice four; the batch harness story is re-based in slice two and only re-run in slice four. The author's rows for the release assembly, the build gate and the off-chain lint reach no file of this ticket and are left to the hosted checks. One row is the ticket owner's alone: the repository's aggregate run once on each final candidate.",
+      "text": "Conflicts, resolved by the workflow line that decides them. The author listed the retire-active-key row as re-based onto evidenced rejection; the workflow (conformance.yml:302-381) runs a row with no rejection step, so it stays a guard that a fold's question did not change. The author listed the batch row under slice four; the batch harness story is re-based in slice two and only re-run in slice four. The author's rows for the release assembly, the build gate and the off-chain lint reach no file of this ticket and are left to the hosted checks. One row is the ticket owner's alone: the repository's aggregate run once on each final candidate.",
+      "pause": 400
+    }
+  ],
+  "the-rebase-onto-e7b55ac9": [
+    {
+      "text": "The rebase onto e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "Checked on 13 October 2026 by finding every command below in the two workflows on the new base: none of the commands changed, and the jobs that carry them kept their names. Only their line numbers moved, so the citations below are the new ones. The only change inside a job a row uses is a new format-controls step in the format and lint job, which first checks the real root exactly as the format check does. The conformance workflow now also starts on a change under applications/, which this ticket's regenerated application files will trigger. Because no existing row changed its command or its subject, no gate author was commissioned again.",
+      "pause": 400
+    },
+    {
+      "text": "Two hosted jobs that did not exist at the old base can be broken by this ticket's files; they are the ticket owner's rows, listed in the last row of the table and run only on the pushed head: \"Release review archive reproduction\" archives the Lean model, the simulator, the constitution, the theorem page and the transport source and re-checks them from the extracted bytes, and \"Declared checks are hosted\" refuses any flake app or check that no workflow step names. The jobs for the open-datum application's Haskell, the registry test vectors and the negative host read none of the files this ticket edits.",
       "pause": 400
     }
   ],
@@ -75,6 +89,6 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "6ca90a294e7246b007a3a57520998522d5b560dcae6f7f10f0e3b524b4f966b8"
+    "sha256": "a983ed6d66cd1ea2f41b790f067e00d837f1b955b5c67d728a24b9dce46c8d8f"
   }
 }

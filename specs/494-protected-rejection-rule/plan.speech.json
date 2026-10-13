@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Ticket 494 under epic 498. Base e3c9ab01, branch feat/494-protected-rejection-rule, worktree /code/singular-issue-494. Read the specification for what must hold, the rulings for why, the research for the evidence behind the tables below, and the touch list for the files. Planning only: no coding starts before the command-line split (528) merges and the desk grants a slot.",
+      "text": "Ticket 494 under epic 498. Base e7b55ac9 (the plan was first written on e3c9ab01 and rebased on 13 October 2026), branch feat/494-protected-rejection-rule, worktree /code/singular-issue-494. Read the specification for what must hold, the rulings for why, the research for the evidence behind the tables below, and the touch list for the files. No coder starts before the rebased plan has been reviewed.",
       "pause": 400
     }
   ],
@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "Planning artifacts written and committed locally. One question is open (what the public suite shows for an in-window rejection until the validators change); it blocks slice three and the frozen gate's last rows only. The gate has two independent authors, synthesized once in the gate.",
+      "text": "Planning artifacts written, committed locally and rebased onto the current main. The one open question is settled: the public suite shows the in-window rejection of a foldable request as unmet by ruling until the validators change (decision B, recorded in the mandate and the decisions). The gate had two independent authors, synthesized once in the gate; the rebase moved line numbers and added hosted jobs, and the gate page records which rows that touched.",
       "pause": 400
     }
   ],
@@ -53,7 +53,7 @@
       "pause": 400
     },
     {
-      "text": "Slice one is the smallest and is independent of the pending question. Slice two carries the weight of the proofs and is where the historical scenario is run before and after.",
+      "text": "Slice one is the smallest. Slice two carries the weight of the proofs and is where the historical scenario is run before and after.",
       "pause": 400
     }
   ],
@@ -63,11 +63,15 @@
       "pause": 500
     },
     {
-      "text": "Each check failed at a7224021 on an assertion found in the hosted log (see the research page for the line). Each was green at the attempt's own base 23964e66 and on main at e3c9ab01, so the attempt introduced it and none is flaky. The classes are named for what they mean, with the epic owner's letter in parentheses: moves-with-the-model (a), where the model change contradicts an expectation that must move with it in this ticket; needs-the-validators (b), where the expectation can only hold once ticket 495 changes the validators; stale-against-main (c), fixed by re-deriving on e3c9ab01; and other (d). The table says which slice cures each.",
+      "text": "Each check failed at a7224021 on an assertion found in the hosted log (see the research page for the line). Each was green at the attempt's own base 23964e66 and on main at e3c9ab01, so the attempt introduced it and none is flaky. The classes are named for what they mean, with the epic owner's letter in parentheses: moves-with-the-model (a), where the model change contradicts an expectation that must move with it in this ticket; needs-the-validators (b), where the expectation can only hold once ticket 495 changes the validators; stale-against-main (c), fixed by re-deriving on the current main; and other (d). The table says which slice cures each.",
       "pause": 400
     },
     {
-      "text": "Only the early-rejection row cannot be made to agree by this ticket. That is the pending question.",
+      "text": "Re-checked on 13 October 2026 against main at e7b55ac9: all eight hosted jobs still exist under the same names and run the same commands, and none of the merged lanes removed a cause (the model files and the rows' scripts are byte-identical to e3c9ab01 apart from the proof idiom of the toolchain bump), so the classification stands.",
+      "pause": 400
+    },
+    {
+      "text": "Only the in-window rejection of a foldable request cannot be made to agree by this ticket. Decision B publishes it as unmet, in the generic session's standing unmet row; the eight checks themselves end green, and a tripwire turns red the day the chain starts to refuse it.",
       "pause": 400
     }
   ],
@@ -77,7 +81,7 @@
       "pause": 500
     },
     {
-      "text": "Recommendation to the epic owner, for a decision when coding is released; nothing is closed now: re-derive the change on this branch and close 508 as superseded when this branch opens its pull request. The reasons: its base is 74 commits and 514 files behind and models seven edges; a rebase would conflict in every Lean file and every generated corpus, and the corpus is regenerated anyway; its constitution amendment collides in number and content with the one on main; and its design is not lost, because this plan ports it name for name (the data model lists the one difference) and its two source reviews stay in the epic's record as evidence for the design, not for the new code. The branch feat/protected-rejection is kept, never deleted, as historical evidence.",
+      "text": "Settled at the coding release of 13 October 2026: this branch re-derives the change and supersedes 508. This branch's pull request names the superseded head a7224021 in its body, and 508 is closed once that pull request exists; the ticket owner does not close it. The reasons: its base was 74 commits and 514 files behind the plan's first base and models seven edges; a rebase would conflict in every Lean file and every generated corpus, and the corpus is regenerated anyway; its constitution amendment collides in number and content with the one on main; and its design is not lost, because this plan ports it name for name (the data model lists the one difference) and its two source reviews stay in the epic's record as evidence for the design, not for the new code. The branch feat/protected-rejection is kept, never deleted, as historical evidence.",
       "pause": 400
     }
   ],
@@ -87,7 +91,7 @@
       "pause": 500
     },
     {
-      "text": "This ticket sits in the validators-and-Lean surface of the merge queue: after 505 (merged), before 495, 529 and 506, which stay strictly serial behind it. It follows the command-line split (528) and the logic lanes the desk orders before it. It rebases only at a safe boundary after each merge and never under a running coder. The touch list names the shared surfaces, which lane owns each, and the one open pull request (525) that touches the conformance cabal file and its test entry point.",
+      "text": "This ticket sits in the validators-and-Lean surface of the merge queue: after 505 (merged), before 495, 529 and 506, which stay strictly serial behind it. The command-line split (528) has merged. It rebases only at a safe boundary after each merge and never under a running coder. The touch list names the shared surfaces, which lane owns each, and the files that live lanes also change.",
       "pause": 400
     }
   ],
@@ -101,13 +105,13 @@
       "pause": 400
     }
   ],
-  "pending-question-and-what-it-changes": [
+  "decision-b-and-what-it-changes": [
     {
-      "text": "Pending question and what it changes.",
+      "text": "Decision B and what it changes.",
       "pause": 500
     },
     {
-      "text": "The question file asks what the suite shows for the in-window row until the validators change. Option B (recommended) rewrites the row into a lawful mismatch rejection that both sides accept and adds an unmet row with a tripwire that ticket 495 must flip. Option A holds the rule's push until 495. Option C is refused. Until it is answered the plan treats B as the working assumption and marks slice three and the last gate rows \"pending the question\".",
+      "text": "The question was what the suite shows for the in-window row until the validators change. The answer is option B. The dedicated row becomes a lawful rejection at once, with lifecycle evidence, of a request that cannot be folded, which model and chain both accept. The generic session's standing unmet row books a foldable insertion, the model refuses its rejection inside the windows while the chain accepts it, and the row stays published as unmet with a tripwire that ticket 495 must flip. This ticket merges alone, ahead of ticket 495. Options A (hold the push until 495) and C are not taken. Slice three's direction and the last gate rows follow from this decision.",
       "pause": 400
     }
   ],
@@ -117,7 +121,7 @@
       "pause": 500
     },
     {
-      "text": "One team per epic at a time: the coder is Muse and the persistent auditor GLM, both launched only at coding release. The operator is on credits; no seat beyond those named is authorized.",
+      "text": "One team per epic at a time: the coder is Muse and the persistent auditor Grok, both launched only after the rebased plan is reviewed. The operator is on credits; no seat beyond those named is authorized, and while the GLM quota is out (until 14 October 2026) no seat alternates or races.",
       "pause": 400
     }
   ],
@@ -129,6 +133,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "5a3cefc06f1a96d408966a951fc284a1d9a3cfc8045fa64963a2da2937749407"
+    "sha256": "c25af2fbbf5279574d7fe7a61955882f1ab4bb93262c287160ea784f5ef2b5f1"
   }
 }

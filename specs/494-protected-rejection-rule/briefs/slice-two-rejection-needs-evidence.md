@@ -36,10 +36,10 @@ rejectable at once with the lifecycle evidence.
 
 | Field | Value |
 |---|---|
-| Role | commit owner for slice two, launched only at coding release |
+| Role | commit owner for slice two, launched after the rebased plan is reviewed |
 | Launcher | `/home/paolino/.local/bin/muse --approve`, working directory `/code/singular-issue-494` |
 | Runtime root | `<ticket owner root>/commit-owner-2`; your journal is its `STATUS.md` |
-| Auditor | GLM, mute, beside you from your first run; you never address it |
+| Auditor | Grok, mute, beside you from your first run; you never address it |
 | Commit authority | Local commits only, one patch with `stg`; no push, no rebase, no comment on GitHub |
 
 You are not alone in the codebase; do not revert edits made by others. Write no `Co-Authored-By` and
@@ -50,7 +50,9 @@ no attribution in any commit. Plain words, no coined abbreviations.
 Port the earlier attempt's rejection design (branch `feat/protected-rejection`, `a7224021`, read with
 `git show`) onto the two-edge model, as the data and functions models state it. Its differences are
 listed in the data model: the evidence carries no separate registry identity; a fold's question is not
-widened. Do not weaken, drop or reorder a refusal reason.
+widened. Do not weaken, drop or reorder a refusal reason. The earlier proofs were written for toolchain
+4.25.0; the toolchain is now 4.27.0, where an impossible `Except` equation is closed with
+`exact nomatch h`, as `lean/Singular/Lemmas.lean` and `lean/Singular/Statements.lean` now write it.
 
 1. Failing control first. Port the historical scenario (an empty registry and an approved insertion of
    key 5 for owner 42, destination 99, deposit 2,000,000, tip 1,000,000, rejected with no signers) to the
@@ -67,12 +69,16 @@ widened. Do not weaken, drop or reorder a refusal reason.
 5. Transport and harness. Decode a rejection question with its booked metadata and evidence; refuse
    one without them and evidence attached to another exit. The harness allocates the registry identity
    while acting, reads the booked time from the request datum and builds mismatch and expiry evidence.
+   Principle VII of the constitution, added on main, applies to this code: the question builders take
+   their inputs explicitly, anything that holds the allocated identity has a named owner, a bounded
+   lifetime and a stated concurrency contract beside it, and no thread or hidden environment read is
+   added. The pull request body maps these.
 6. Re-base the lawful rows: the running book, the refund controls, the generic rows and the batch
    harness place their rejects after both windows with expiry evidence. Edit their workflow assertions
    only as that requires. The dedicated early-rejection row and the generic session's unmet
    consumer-requirement row are slice three: leave them as they are.
 7. Regenerate every copy the change moves, as in slice one, and extend the restatement table.
-8. Restate the rejection row, the outcome-class row and the reconciliation in the constitution's 1.15.0
+8. Restate the rejection row, the outcome-class row and the reconciliation in the constitution's 1.16.0
    entry.
 
 ## Checkpoints

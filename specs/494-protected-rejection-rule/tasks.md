@@ -25,7 +25,7 @@ into a neighbouring ticket.
 - [ ] `regenerate-after-slice-one` — corpora, theorem register and digests, simulator mirror,
   application corpus and the coverage record are regenerated from the model, with a published
   restatement table for every changed identity. (consumers-state-the-rule, unmet-stays-unmet)
-- [ ] `amendment-opened` — constitution version 1.15.0 is opened with the retraction row restated.
+- [ ] `amendment-opened` — constitution version 1.16.0 is opened with the retraction row restated.
   (consumers-state-the-rule)
 
 Terminal condition: every command of slice one's gate exits as the gate states, on a clean
@@ -67,16 +67,16 @@ Terminal condition as slice one. The in-window row is expected red at this head 
 ## Slice three: the in-window rows
 
 - [ ] `in-window-rows-per-ruling` — the dedicated early-rejection row and the generic session's standing
-  unmet row, with their workflow assertions, say what the ruling on the pending question directs.
-  Under the recommended option: the dedicated row becomes a lawful mismatch rejection that both
-  sides accept inside the windows; the unmet row books a foldable request and records its three
-  steps as the divergences they now are, so that it stops matching the day the chain refuses.
+  unmet row, with their workflow assertions, say what decision B directs: the dedicated row becomes
+  a lawful mismatch rejection that both sides accept inside the windows; the unmet row books a
+  foldable `insertActive` request for a key not yet registered and records its three steps as the
+  divergences they now are, so that it stops matching the day the chain refuses.
   (unmet-stays-unmet)
 - [ ] `consumer-record-updated` — the consumer conformance record, the book and the evidence page
   say the same, including the history of ticket 320's early rejection, without editing the history
   itself. (unmet-stays-unmet)
 
-Terminal condition as slice one; this slice is not started before the question is answered.
+Terminal condition as slice one. The slice follows decision B and is independent of slice four.
 
 ## Slice four: mixed batches
 
@@ -90,7 +90,7 @@ Terminal condition as slice one; this slice is not started before the question i
   of the same fresh key accepted, the reverse refused, an empty batch refused) and the transport
   support. (consumers-state-the-rule)
 - [ ] `regenerate-after-slice-four` — as slice one's regeneration. (consumers-state-the-rule)
-- [ ] `amendment-completed` — the mixed-batch row is added and the 1.15.0 entry is complete.
+- [ ] `amendment-completed` — the mixed-batch row is added and the 1.16.0 entry is complete.
   (consumers-state-the-rule)
 
 Terminal condition as slice one.

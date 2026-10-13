@@ -1,6 +1,6 @@
 # Protected rejection in the Lean model: stories and requirements
 
-Ticket 494, child of epic 498. Base: main `e3c9ab01` (the two-edge model, constitution 1.14.0).
+Ticket 494, child of epic 498. Base: main `e7b55ac9` (the two-edge model, constitution 1.15.0).
 The rulings are in [decisions](decisions.md); the technical route is in [plan](plan.md).
 This ticket changes the Lean model and everything that consumes it. It changes no validator,
 no off-chain builder and no shipped command; those belong to the neighbouring tickets named
@@ -155,7 +155,7 @@ check of each item and the plan names the slice that delivers it.
       and the history of ticket 320's early rejection are updated; uncovered behavior stays
       uncovered.
 - [ ] The eight required checks that failed on pull request 508 are green on the exact head, or
-      the one that cannot be is published unmet as the pending decision on the decisions page directs.
+      the one that cannot be is published unmet as the decision on the decisions page directs.
 - [ ] An exact accepted model revision and the written evidence contract are released for the
       validator and builder tickets.
 

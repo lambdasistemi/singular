@@ -67,7 +67,7 @@ The conformance suite already has a recorded state `unmet-by-ruling`, used for t
 requirement that a folder must not reject a request during its processing window. That row says
 the chain accepts the reject and the consuming project requires it refused. The model after this
 ticket sides with the consumer; the chain does not until ticket 495. That is the precedent the
-pending question relies on.
+in-window decision relies on.
 
 The earlier ticket 395 recorded that the model "reads no time for a reject" and that a validator
 property admits a reject under every validity range. Those statements describe the base and

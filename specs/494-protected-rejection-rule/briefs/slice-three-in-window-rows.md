@@ -1,9 +1,8 @@
 # Coder brief, slice three: the in-window rows
 
-The whole of slice three for the commit owner, with its terminal condition. This slice is not
-dispatched until the pending question about the public suite is answered; the answer is copied into
-the top of this page as "Direction" before dispatch. The binding and limits are in the
-[mandate](../mandate.md); the proof is the [gate](../gate.md). Slices one and two are on the branch.
+The whole of slice three for the commit owner, with its terminal condition. The binding and limits are
+in the [mandate](../mandate.md); the proof is the [gate](../gate.md). Slices one and two are on the
+branch.
 
 ## Story
 
@@ -14,10 +13,19 @@ pass, and what will turn that label into agreement.
 
 ## Direction
 
-To be filled by the ticket owner from the answer to the pending question before dispatch. Until then the
-working assumption is the recommended option: Lean first, the divergence published as unmet. If the
-answer is to hold the rule's push until the validators, this slice instead makes the rows assert that
-model and chain both refuse, marks them held for the validator head, and the ticket owner holds the push.
+Decision B of 9 October 2026 (operator ruling, recorded in the [mandate](../mandate.md)): this ticket
+merges alone, ahead of ticket 495. After it the suite shows two rows.
+
+1. The rejection at once, with lifecycle evidence, of a request that cannot be folded: model and chain
+   both accept and the owner is refunded. Green.
+2. The rejection, inside the windows, of a foldable `insertActive` request for a key not yet
+   registered: the model refuses, the chain accepts. Published as unmet by ruling and never counted as
+   passing. A tripwire turns red unless ticket 495 changes the validators so that the two agree;
+   ticket 495's acceptance includes that flip.
+
+The row books a foldable insertion on a fresh key, because the insertion the standing row books today
+names an edge the two-edge model excludes, which is rejectable at once and would leave the row without
+its subject.
 
 ## Rulings this slice implements
 
@@ -43,16 +51,16 @@ rejectable at once with the lifecycle evidence.
 
 | Field | Value |
 |---|---|
-| Role | commit owner for slice three, launched only at coding release |
+| Role | commit owner for slice three, launched after the rebased plan is reviewed |
 | Launcher | `/home/paolino/.local/bin/muse --approve`, working directory `/code/singular-issue-494` |
 | Runtime root | `<ticket owner root>/commit-owner-3`; your journal is its `STATUS.md` |
-| Auditor | GLM, mute, beside you; you never address it |
+| Auditor | Grok, mute, beside you; you never address it |
 | Commit authority | Local commits only, one patch with `stg`; no push, no rebase, no comment on GitHub |
 
 You are not alone in the codebase; do not revert edits made by others. No `Co-Authored-By`, no
 attribution. Plain words, no coined abbreviations.
 
-## The task, under the recommended option
+## The task
 
 1. The dedicated early-rejection row ("early rejection inside the windows") becomes a lawful rejection
    that model and chain both accept inside the windows: a request to register a key that is already

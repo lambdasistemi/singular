@@ -34,10 +34,10 @@ The batch rests on the two admission rulings of slice two:
 
 | Field | Value |
 |---|---|
-| Role | commit owner for slice four, launched only at coding release |
+| Role | commit owner for slice four, launched after the rebased plan is reviewed |
 | Launcher | `/home/paolino/.local/bin/muse --approve`, working directory `/code/singular-issue-494` |
 | Runtime root | `<ticket owner root>/commit-owner-4`; your journal is its `STATUS.md` |
-| Auditor | GLM, mute, beside you; you never address it |
+| Auditor | Grok, mute, beside you; you never address it |
 | Commit authority | Local commits only, one patch with `stg`; no push, no rebase, no comment on GitHub |
 
 You are not alone in the codebase; do not revert edits made by others. No `Co-Authored-By`, no
@@ -45,7 +45,9 @@ attribution. Plain words, no coined abbreviations.
 
 ## The task
 
-Port the earlier attempt's ordered batch design as the functions model states it.
+Port the earlier attempt's ordered batch design as the functions model states it. The toolchain is
+now 4.27.0, where an impossible `Except` equation is closed with `exact nomatch h`, as
+`lean/Singular/Lemmas.lean` and `lean/Singular/Statements.lean` now write it.
 
 1. Failing control first: add the two corpus scenarios above (fold then reject accepted; reject then
    fold refused) and an empty batch refused; they fail on the branch as it stands because the
@@ -61,7 +63,7 @@ Port the earlier attempt's ordered batch design as the functions model states it
    rows, and the transport support; re-pin the surface digest. No live row is added: no mixed
    transaction is built here, so a live mixed batch is published uncovered.
 6. Regenerate every copy the change moves, extend the restatement table, add the mixed-batch row to the
-   constitution and complete the 1.15.0 entry.
+   constitution and complete the 1.16.0 entry.
 
 ## Checkpoints
 

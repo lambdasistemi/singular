@@ -65,7 +65,7 @@
       "pause": 500
     },
     {
-      "text": "Port the earlier attempt's ordered batch design as the functions model states it.",
+      "text": "Port the earlier attempt's ordered batch design as the functions model states it. The toolchain is now 4.27.0, where an impossible Except equation is closed with exact nomatch h, as lean/Singular/Lemmas.lean and lean/Singular/Statements.lean now write it.",
       "pause": 400
     },
     {
@@ -89,7 +89,7 @@
       "pause": 300
     },
     {
-      "text": "Regenerate every copy the change moves, extend the restatement table, add the mixed-batch row to the constitution and complete the 1.15.0 entry.",
+      "text": "Regenerate every copy the change moves, extend the restatement table, add the mixed-batch row to the constitution and complete the 1.16.0 entry.",
       "pause": 300
     }
   ],
@@ -125,6 +125,6 @@
   ],
   "_source": {
     "file": "slice-four-mixed-batches.md",
-    "sha256": "d544bd16fc2a6a4f7e83d31cffb46b652d7d84bbda0dc218c1c40d76b888484a"
+    "sha256": "21134190182d6f3e99a10c34aac7ffc88c1318e44b26dcaf03fd3376b784ca9c"
   }
 }

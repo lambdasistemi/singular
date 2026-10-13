@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "This page lists each file or group of files the four slices change, whether it is written by hand or regenerated, which shared surface it belongs to, and which other lane owns that surface and in which order. A coder who needs a file not listed here, or finds another lane's change in a listed one, stops and asks the ticket owner before continuing (merge queue rule five). The base is e3c9ab01. Slice numbers follow the plan.",
+      "text": "This page lists each file or group of files the four slices change, whether it is written by hand or regenerated, which shared surface it belongs to, and which other lane owns that surface and in which order. A coder who needs a file not listed here, or finds another lane's change in a listed one, stops and asks the ticket owner before continuing (merge queue rule five). The base is e7b55ac9; every path below was re-checked against it on 13 October 2026. Slice numbers follow the plan.",
       "pause": 400
     }
   ],
@@ -43,17 +43,35 @@
       "pause": 500
     },
     {
-      "text": "The pinned model revision file conformance/model-revision (moving it to the merge commit is a follow-up the release record names, because a commit cannot contain its own hash). Everything under onchain/, offchain/, naming-onchain/, onchain-release/, release-review/, nix/ and the root flake.nix; the state-directory, funding and fold-builder layers; every CLI module; specs/320-early-request-rejection/ and specs/395-reject-lower-bound/ (history); the branch feat/protected-rejection and pull request 508.",
+      "text": "The pinned model revision file conformance/model-revision (moving it to the merge commit is a follow-up the release record names, because a commit cannot contain its own hash). Everything under onchain/, offchain/, naming-onchain/, onchain-release/, release-review/, nix/ and the root flake.nix; the state-directory, funding and fold-builder layers; every CLI module; the open-datum and keri-stub applications (their Lean project, offchain and onchain trees and the negative host), apart from regenerating the open-datum application's two committed generated files named above; specs/320-early-request-rejection/ and specs/395-reject-lower-bound/ (history); the branch feat/protected-rejection and pull request 508.",
       "pause": 400
     }
   ],
-  "collision-check-done-at-planning-time": [
+  "collision-check-redone-at-the-rebase": [
     {
-      "text": "Collision check done at planning time.",
+      "text": "Collision check, redone at the rebase.",
       "pause": 500
     },
     {
-      "text": "Open pull requests were searched for the paths above. Only pull request 525 (two conformance files), pull request 433 (the narration index and manifest) and the pull request being superseded (508) share any. Lanes that have no pull request yet (concurrent booking, creation, recovery, forbidden actions, 495, 529, 506) are ordered by the queue, not by files, and are re-checked by the ticket owner at each rebase.",
+      "text": "On 13 October 2026 the open pull requests and every unmerged branch and worktree of the repository were searched for the paths above. Of the open pull requests only the pull request being superseded (508) shares any; the others change the negative-host result cache (597), the release (574), the specification pages of ticket 471 (516) and the task list of ticket 233 (384). Lanes that have no pull request yet (495, 529, 506) are ordered by the queue, not by files; their branches share no path with this list.",
+      "pause": 400
+    }
+  ],
+  "shared-with-live-lanes": [
+    {
+      "text": "Shared with live lanes.",
+      "pause": 500
+    },
+    {
+      "text": "The release names two lanes working in parallel, the create funding lane (ticket 406) and epic 545 (command effects and state). Their changed files were listed from their branches and compared with this page path by path, not by file name.",
+      "pause": 400
+    },
+    {
+      "text": "The release also names Session.hs, Receipt.hs and Reconcile.hs and the command-line evidence collector. Those files are offchain/cli/src/Singular/CLI/Session.hs, Receipt.hs and Reconcile.hs, the Koios recorder and the recovery evidence check; this list names a different Receipt.hs, conformance/lib/Conformance/Receipt.hs (the suite's receipt vocabulary). No path is common.",
+      "pause": 400
+    },
+    {
+      "text": "Branches that share paths with this list but are parked or unmerged, not live, are named so that whoever merges second knows to rebase and regenerate:",
       "pause": 400
     }
   ],
@@ -69,6 +87,6 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "9dc45015a39b79f47b8e3b7fd6a9e53370e41b594d065ca2320c2766050e803a"
+    "sha256": "79a35c0228a28accf8fd1f7185310f82164d04c877e6eb418e7eaac88ae528b1"
   }
 }

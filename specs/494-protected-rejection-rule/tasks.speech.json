@@ -45,7 +45,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] amendment-opened — constitution version 1.15.0 is opened with the retraction row restated. (consumers-state-the-rule)",
+      "text": "[ ] amendment-opened — constitution version 1.16.0 is opened with the retraction row restated. (consumers-state-the-rule)",
       "pause": 300
     },
     {
@@ -121,7 +121,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] in-window-rows-per-ruling — the dedicated early-rejection row and the generic session's standing unmet row, with their workflow assertions, say what the ruling on the pending question directs. Under the recommended option: the dedicated row becomes a lawful mismatch rejection that both sides accept inside the windows; the unmet row books a foldable request and records its three steps as the divergences they now are, so that it stops matching the day the chain refuses. (unmet-stays-unmet)",
+      "text": "[ ] in-window-rows-per-ruling — the dedicated early-rejection row and the generic session's standing unmet row, with their workflow assertions, say what decision B directs: the dedicated row becomes a lawful mismatch rejection that both sides accept inside the windows; the unmet row books a foldable insertActive request for a key not yet registered and records its three steps as the divergences they now are, so that it stops matching the day the chain refuses. (unmet-stays-unmet)",
       "pause": 300
     },
     {
@@ -129,7 +129,7 @@
       "pause": 300
     },
     {
-      "text": "Terminal condition as slice one; this slice is not started before the question is answered.",
+      "text": "Terminal condition as slice one. The slice follows decision B and is independent of slice four.",
       "pause": 400
     }
   ],
@@ -159,7 +159,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] amendment-completed — the mixed-batch row is added and the 1.15.0 entry is complete. (consumers-state-the-rule)",
+      "text": "[ ] amendment-completed — the mixed-batch row is added and the 1.16.0 entry is complete. (consumers-state-the-rule)",
       "pause": 300
     },
     {
@@ -183,6 +183,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "c57622a79ee5691d5c9583ee9f62f3b187073ab1ba75b11b8ff35b9f57b15275"
+    "sha256": "c28bfec824b6a76f0a912febe1c3f5a7f828ed9f585ceaefb9fdf93ddf379f8c"
   }
 }

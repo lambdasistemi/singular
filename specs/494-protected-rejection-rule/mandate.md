@@ -3,8 +3,8 @@
 This page is the whole contract a coder and an auditor are given for ticket 494. It binds the
 work to an exact tree, quotes the rulings that govern it, lists the acceptance items with the
 check that proves each, names what is out of scope, and states the evidence the pull request will
-carry before any work starts. Planning only: the coder and the auditor named below are launched at
-coding release, never before.
+carry before any work starts. The coder and the auditor named below are launched only after the plan,
+rebased onto the current main, has been reviewed.
 
 ## Story
 
@@ -19,12 +19,12 @@ auditor judges against a stale tree.
 | Ticket | 494 under epic 498 |
 | Worktree | `/code/singular-issue-494` |
 | Branch | `feat/494-protected-rejection-rule` |
-| Base commit | `e3c9ab01` (merge of 505, the two-edge model) |
-| Runtime root | `/code/singular-protected-rejection/.orch/protected-rejection/to-494-sonnet-1` |
-| Lean revision | `lean/` at `e3c9ab01`; toolchain pinned by `lean-toolchain` |
-| Constitution | `.specify/memory/constitution.md` version 1.14.0 at `e3c9ab01`, moving to 1.15.0 in this ticket |
+| Base commit | `e7b55ac9` (main after the two-edge model, the command-line split, fold selection and the negative host); the plan was first written on `e3c9ab01` |
+| Runtime root | `/code/singular-protected-rejection/.orch/protected-rejection/to-494-sonnet-2` |
+| Lean revision | `lean/` at `e7b55ac9`; toolchain 4.27.0 pinned by `lean-toolchain` |
+| Constitution | `.specify/memory/constitution.md` version 1.15.0 at `e7b55ac9` (the effects-and-state principle was added there), moving to 1.16.0 in this ticket |
 | Specification set | the pages of `specs/494-protected-rejection-rule/`; their hashes are recorded in the ticket owner's journal at freeze |
-| Earlier attempt | pull request 508, head `a7224021`, base `23964e66`; reference only, never rebased, retargeted or merged |
+| Earlier attempt | pull request 508, head `a7224021`, base `23964e66`; reference only, never rebased, retargeted or merged; superseded by this ticket's pull request |
 
 The ticket touches no shipped command line. It changes the Lean model and everything generated
 from or checked against it; the operator command that will one day carry the rule belongs to
@@ -65,6 +65,21 @@ decision: the first ruling admits rejection on "authenticated incompatibility wi
 lifecycle state". `Singular.transition` gives no successor for an excluded edge at any leaf, so such a
 request is incompatible with every current state and is rejectable at once with the lifecycle evidence.
 
+### What the public suite shows until the validators change
+
+Decision of 9 October 2026 (operator ruling, option B): this ticket merges alone, ahead of ticket 495.
+After it the suite shows two rows, and the second is never counted as passing.
+
+- The rejection at once, with lifecycle evidence, of a request that cannot be folded: model and chain
+  both accept and the owner is refunded. This row is green.
+- The rejection, inside the windows, of a foldable request: an `insertActive` request for a key not yet
+  registered. The model refuses and the chain accepts. The row is published as unmet by ruling, with a
+  tripwire that turns red unless ticket 495 changes the validators so that the two agree; ticket 495's
+  acceptance includes that flip.
+
+The row books a foldable insertion because the insertion the standing row books today names an edge
+the two-edge model excludes, which is rejectable at once and would leave the row without its subject.
+
 ### Only two grounds
 
 Exactly two grounds authorize rejection, a lifecycle mismatch and expiry. A provider failure, a
@@ -93,16 +108,18 @@ rejection and nothing earlier.
 
 > Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.
 
-Applied: ticket owner Claude Sonnet 5.5 at extra-high effort; commit owner Muse (`muse --approve`);
-mute persistent auditor GLM (`/code/llm-settings/pi/glm --approve`) in a read-only
-audit worktree; gate authors are the ticket owner and one GLM seat; no draft tool.
+Applied, as amended for coding on 13 October 2026: ticket owner Claude Sonnet 5.5 at extra-high
+effort; commit owner Muse (`muse --approve`); mute persistent auditor Grok
+(`grok --always-approve -m grok-4.7 --effort high`) in a read-only detached audit worktree; a gate
+author, also Grok, only for a gate row whose command or subject the rebase changed; no draft tool. The
+GLM quota is exhausted until 14 October 2026, so no seat alternates or races while it is out.
 
 > One merge into main at a time, in the order the desk publishes. Nobody rebases, retargets or
 > merges without a slot.
 
 Applied: validators and Lean (505, 494, 495, 529, 506) are one surface and strictly serial in that
-order; this ticket waits for the command-line split (528) and for the desk's slot, and rebases only
-at a safe boundary.
+order. The command-line split (528) and ticket 505 have merged and coding was released on 13 October
+2026; this ticket merges only in the slot the desk grants and rebases only at a safe boundary.
 
 ## Acceptance, each item with the check that proves it
 
@@ -118,7 +135,7 @@ are the net for every item.
 | Each requirement is a proved statement exported as runnable cases; invalid evidence is not evidence | The statements named in the [functions model](functions-model.md), each proved from standard axioms; the model check; the exported refusing rows, one per refusal reason |
 | Batch ordering and root semantics, with refund and tip unchanged and the refund rule not chosen | The batch statements and corpus rows (fold then reject accepted, reverse refused, empty refused); `rejection-effects-unchanged` |
 | Constitution mapping, bindings, consumer record and ticket 320 history are updated; uncovered stays uncovered | The model check's reconciliation, "Rendered documentation", "Theorem coverage gate" and the published restatement table |
-| The eight required checks that failed on 508 are green on the exact head, or the one that cannot be is published unmet as the ruling directs | The eight hosted jobs listed in the plan, run on the pushed head |
+| The eight required checks that failed on 508 are green on the exact head, or the one that cannot be is published unmet as the decision above directs | The eight hosted jobs listed in the plan, run on the pushed head |
 | An exact model revision and the evidence contract are released | The contract's release record, filled from the merge commit and the register |
 
 ## Out of scope, by number
@@ -143,16 +160,18 @@ checkpoint approved.
 
 ## Evidence the pull request will carry, and what stays uncovered
 
-The pull request body is a fill-in of this table; no essay is written at the end.
+The pull request body is a fill-in of the repository's pull request template, whose sections are filled from this table; no essay is written at the end. It names the superseded earlier attempt, pull request 508 at head `a7224021`.
 
-| Field | Filled from |
+| Template section | Filled from |
 |---|---|
-| Exact model revision | The head commit and the register |
-| Mapping from requirement to statement to check | The functions model and the gate |
-| Commands and exit codes | The gate's run receipts |
-| Hosted job identifiers on the exact head | The eight listed in the plan, plus the existing required set |
-| Restatement table | `conformance/coverage/protected-rejection-restatement.md` |
-| Historical scenario | Its exported row before and after |
+| What changed, Why | The story and the paramount story above; the issue |
+| How to verify | Links to the hosted jobs at the exact head: the eight listed in the plan plus the existing required set. A command that only runs locally is listed under Limits, not offered as evidence |
+| Lean correspondence: exact model revision | The head commit and the register |
+| Lean correspondence: requirement to statement to check | The functions model and the gate |
+| Lean correspondence: restatement table | `conformance/coverage/protected-rejection-restatement.md` |
+| Lean correspondence: historical scenario | Its exported row before and after |
+| Principle VII mapping | What the harness change adds: the explicit inputs of the question builders, the owner and lifetime of anything that holds the registry identity, no thread, no hidden environment read |
+| Limits | The list that follows |
 
 Left uncovered by this ticket, and stated as such in the body: the validators (495); evidence
 construction and every builder (496); any ledger acceptance of protected rejection (497); a
@@ -164,4 +183,4 @@ admission is unchanged.
 ## Budget
 
 One team per epic at a time. Each slice is one coder run and is cut again if it will run for hours.
-The operator is on credits: the coder is Muse, the auditor is GLM, and no further seat is authorized.
+The operator is on credits: the coder is Muse, the auditor is Grok, and no further seat is authorized.

@@ -29,11 +29,11 @@ A lifecycle mismatch permits immediate rejection:
 
 | Field | Value |
 |---|---|
-| Role | commit owner for slice one, launched only at coding release |
+| Role | commit owner for slice one, launched after the rebased plan is reviewed |
 | Launcher | `/home/paolino/.local/bin/muse --approve`, working directory `/code/singular-issue-494` |
-| Branch and base | `feat/494-protected-rejection-rule`, from `e3c9ab01` (or the base the desk names at release) |
+| Branch and base | `feat/494-protected-rejection-rule`, from `e7b55ac9` |
 | Runtime root | `<ticket owner root>/commit-owner-1`; your journal is its `STATUS.md` |
-| Auditor | GLM, mute, beside you from your first run; you never address it |
+| Auditor | Grok, mute, beside you from your first run; you never address it |
 | Commit authority | Local commits on the branch only, kept as one patch with `stg`; no push, no rebase, no comment on GitHub |
 
 You are not alone in the codebase; do not revert edits made by others. Write no `Co-Authored-By`
@@ -45,7 +45,8 @@ words; coin no abbreviation.
 Make the retraction window read the request's booked submission time and nothing else, and make
 every copy of the model say so. The reference is the earlier attempt on branch
 `feat/protected-rejection` at `a7224021`; port its design, do not copy its files, because the base has
-moved.
+moved. The toolchain is now 4.27.0, where an impossible `Except` equation is closed with
+`exact nomatch h`, as `lean/Singular/Lemmas.lean` and `lean/Singular/Statements.lean` now write it.
 
 1. Add the booked submission time to a request, serialized, zero when absent.
 2. Make the window lemma, the retraction admission and the statements over them read it; the
@@ -58,7 +59,7 @@ moved.
    committed corpus, the coverage record with a published restatement table in
    `conformance/coverage/protected-rejection-restatement.md`. Restate nothing by hand that a tool
    regenerates. No obligation is dropped; a restated identity starts uncovered.
-6. Open constitution version 1.15.0 with the retraction row restated.
+6. Open constitution version 1.16.0 with the retraction row restated.
 
 The tasks, by name, are those of slice one in the [tasks](../tasks.md).
 

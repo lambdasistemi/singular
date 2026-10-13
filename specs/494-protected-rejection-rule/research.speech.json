@@ -55,7 +55,7 @@
       "pause": 500
     },
     {
-      "text": "The conformance suite already has a recorded state unmet-by-ruling, used for the consumer requirement that a folder must not reject a request during its processing window. That row says the chain accepts the reject and the consuming project requires it refused. The model after this ticket sides with the consumer; the chain does not until ticket 495. That is the precedent the pending question relies on.",
+      "text": "The conformance suite already has a recorded state unmet-by-ruling, used for the consumer requirement that a folder must not reject a request during its processing window. That row says the chain accepts the reject and the consuming project requires it refused. The model after this ticket sides with the consumer; the chain does not until ticket 495. That is the precedent the in-window decision relies on.",
       "pause": 400
     },
     {
@@ -79,6 +79,6 @@
   ],
   "_source": {
     "file": "research.md",
-    "sha256": "c4180853197e9d1d8c15fc9c92e6f65864d623d82c86a4609edcde09891d049f"
+    "sha256": "263ab885d0e868b57dad6b36d9cf40969061561ef66a966ddd82055b3d472c70"
   }
 }

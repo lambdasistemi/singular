@@ -3,7 +3,7 @@
 This page owns the fields, relationships, validation and state invariants that ticket 494
 adds or changes in the model. It names no function body and no proof. Where a signature is
 needed see [functions](functions-model.md); where a thing belongs see
-[modules](modules-model.md). The base is the two-edge model at `e3c9ab01`.
+[modules](modules-model.md). The base is the two-edge model, unchanged between `e3c9ab01` and `e7b55ac9`.
 
 ## Story
 

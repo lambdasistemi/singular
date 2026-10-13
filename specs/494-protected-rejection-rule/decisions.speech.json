@@ -23,7 +23,7 @@
       "pause": 400
     },
     {
-      "text": "The tree this ticket starts from (e3c9ab01, the two-edge model) has the same defect: its exitAdmission answers no refusal for Exit.reject, so the same scenario is accepted. The scenario is therefore the failing control of the first coding slice that changes rejection, and it is kept as historical behavior: it is run against the base model before the change (it must report the rejection accepted) and against the changed model after it (it must report the rejection refused). It is model evidence only; it is not a ledger attack and does not prove any validator behavior.",
+      "text": "The tree this ticket starts from (the two-edge model, byte-identical in lean/Singular/Model.lean at e3c9ab01 and at e7b55ac9) has the same defect: its exitAdmission answers no refusal for Exit.reject, so the same scenario is accepted. The scenario is therefore the failing control of the first coding slice that changes rejection, and it is kept as historical behavior: it is run against the base model before the change (it must report the rejection accepted) and against the changed model after it (it must report the rejection refused). It is model evidence only; it is not a ledger attack and does not prove any validator behavior.",
       "pause": 400
     }
   ],
@@ -101,13 +101,17 @@
       "pause": 400
     }
   ],
-  "decision-pending-what-the-public-suite-shows-until-the-validators-change": [
+  "decision-what-the-public-suite-shows-until-the-validators-change": [
     {
-      "text": "Decision pending: what the public suite shows until the validators change.",
+      "text": "Decision: what the public suite shows until the validators change.",
       "pause": 500
     },
     {
-      "text": "Once the model refuses an in-window rejection of a foldable request, the required check named \"early rejection inside the windows\" cannot agree between model and chain, because the validators (ticket 495) still accept it. The question and its three options are in the ticket owner's question file for the epic owner; the plan marks every row that depends on it. It is not decided here.",
+      "text": "Once the model refuses an in-window rejection of a foldable request, the required check named \"early rejection inside the windows\" cannot agree between model and chain, because the validators (ticket 495) still accept it. The operator ruled on 9 October 2026 for the option that merges this ticket alone, ahead of ticket 495 (option B).",
+      "pause": 400
+    },
+    {
+      "text": "A tripwire turns red unless ticket 495 changes the validators so that the second row agrees, and ticket 495's acceptance includes that flip. The row books a foldable insertion because the insertion the standing row books today names an edge the two-edge model excludes, which is rejectable at once and would leave the row without its subject.",
       "pause": 400
     }
   ],
@@ -123,6 +127,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "966964d20a0351bae5051b574cc790fb175d79369d47d0a74725bde40be98cfd"
+    "sha256": "a8e3aa5a369ca91ec1dc45924da88d6a3bd7150e77eb868dd9a668038a054395"
   }
 }

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "This page owns the fields, relationships, validation and state invariants that ticket 494 adds or changes in the model. It names no function body and no proof. Where a signature is needed see functions; where a thing belongs see modules. The base is the two-edge model at e3c9ab01.",
+      "text": "This page owns the fields, relationships, validation and state invariants that ticket 494 adds or changes in the model. It names no function body and no proof. Where a signature is needed see functions; where a thing belongs see modules. The base is the two-edge model, unchanged between e3c9ab01 and e7b55ac9.",
       "pause": 400
     }
   ],
@@ -153,6 +153,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "72b7e4d612e2eb06756b0eb40a62bdbc959fddb68f50e011ac9d91c1d8464622"
+    "sha256": "448cc56afc6b693890828682b12a86c0057ce4d2a47312b6b8adeb819b33ca60"
   }
 }

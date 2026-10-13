@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "The whole of slice three for the commit owner, with its terminal condition. This slice is not dispatched until the pending question about the public suite is answered; the answer is copied into the top of this page as \"Direction\" before dispatch. The binding and limits are in the mandate; the proof is the gate. Slices one and two are on the branch.",
+      "text": "The whole of slice three for the commit owner, with its terminal condition. The binding and limits are in the mandate; the proof is the gate. Slices one and two are on the branch.",
       "pause": 400
     }
   ],
@@ -25,7 +25,19 @@
       "pause": 500
     },
     {
-      "text": "To be filled by the ticket owner from the answer to the pending question before dispatch. Until then the working assumption is the recommended option: Lean first, the divergence published as unmet. If the answer is to hold the rule's push until the validators, this slice instead makes the rows assert that model and chain both refuse, marks them held for the validator head, and the ticket owner holds the push.",
+      "text": "Decision B of 9 October 2026 (operator ruling, recorded in the mandate): this ticket merges alone, ahead of ticket 495. After it the suite shows two rows.",
+      "pause": 400
+    },
+    {
+      "text": "The rejection at once, with lifecycle evidence, of a request that cannot be folded: model and chain both accept and the owner is refunded. Green.",
+      "pause": 300
+    },
+    {
+      "text": "The rejection, inside the windows, of a foldable insertActive request for a key not yet registered: the model refuses, the chain accepts. Published as unmet by ruling and never counted as passing. A tripwire turns red unless ticket 495 changes the validators so that the two agree; ticket 495's acceptance includes that flip.",
+      "pause": 300
+    },
+    {
+      "text": "The row books a foldable insertion on a fresh key, because the insertion the standing row books today names an edge the two-edge model excludes, which is rejectable at once and would leave the row without its subject.",
       "pause": 400
     }
   ],
@@ -73,9 +85,9 @@
       "pause": 400
     }
   ],
-  "the-task-under-the-recommended-option": [
+  "the-task": [
     {
-      "text": "The task, under the recommended option.",
+      "text": "The task.",
       "pause": 500
     },
     {
@@ -131,6 +143,6 @@
   ],
   "_source": {
     "file": "slice-three-in-window-rows.md",
-    "sha256": "64213d64313577e09fd5417118b3143c6322aef14de0ecd0b1ed77c28dabac41"
+    "sha256": "c010b7850d71c081671a13430ce1f2bbc788afdd0ff5bed61c4360af481f92b6"
   }
 }

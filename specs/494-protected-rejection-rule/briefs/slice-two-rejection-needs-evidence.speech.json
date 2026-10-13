@@ -69,7 +69,7 @@
       "pause": 500
     },
     {
-      "text": "Port the earlier attempt's rejection design (branch feat/protected-rejection, a7224021, read with git show) onto the two-edge model, as the data and functions models state it. Its differences are listed in the data model: the evidence carries no separate registry identity; a fold's question is not widened. Do not weaken, drop or reorder a refusal reason.",
+      "text": "Port the earlier attempt's rejection design (branch feat/protected-rejection, a7224021, read with git show) onto the two-edge model, as the data and functions models state it. Its differences are listed in the data model: the evidence carries no separate registry identity; a fold's question is not widened. Do not weaken, drop or reorder a refusal reason. The earlier proofs were written for toolchain 4.25.0; the toolchain is now 4.27.0, where an impossible Except equation is closed with exact nomatch h, as lean/Singular/Lemmas.lean and lean/Singular/Statements.lean now write it.",
       "pause": 400
     },
     {
@@ -89,7 +89,7 @@
       "pause": 300
     },
     {
-      "text": "Transport and harness. Decode a rejection question with its booked metadata and evidence; refuse one without them and evidence attached to another exit. The harness allocates the registry identity while acting, reads the booked time from the request datum and builds mismatch and expiry evidence.",
+      "text": "Transport and harness. Decode a rejection question with its booked metadata and evidence; refuse one without them and evidence attached to another exit. The harness allocates the registry identity while acting, reads the booked time from the request datum and builds mismatch and expiry evidence. Principle VII of the constitution, added on main, applies to this code: the question builders take their inputs explicitly, anything that holds the allocated identity has a named owner, a bounded lifetime and a stated concurrency contract beside it, and no thread or hidden environment read is added. The pull request body maps these.",
       "pause": 300
     },
     {
@@ -101,7 +101,7 @@
       "pause": 300
     },
     {
-      "text": "Restate the rejection row, the outcome-class row and the reconciliation in the constitution's 1.15.0 entry.",
+      "text": "Restate the rejection row, the outcome-class row and the reconciliation in the constitution's 1.16.0 entry.",
       "pause": 300
     }
   ],
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "slice-two-rejection-needs-evidence.md",
-    "sha256": "b55c38e86aa9a5626af20787105b981f3f751276917b8a3758f6f38b9c1c58cf"
+    "sha256": "a635fe45b6da6a4ab2c77b39359749f6533b628fc52b349c3196246760f48709"
   }
 }
