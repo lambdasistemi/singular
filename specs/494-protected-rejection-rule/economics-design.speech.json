@@ -113,12 +113,12 @@
       "pause": 500
     },
     {
-      "text": "The model has floors and conservation, not fees, execution units or markets. Costs in lovelace are real; the value of a key, opportunity cost and fee volatility are outside the model, so claims that involve them are derived by hand from proved transfer lemmas and labelled so. An honest requester loses no deposit and no bond, but may lose the tip, and after the reclaim window has closed has no way to leave the queue on its own: it depends on a processor's incentive to reject. The correspondence between this model and the validators is evidenced by the conformance suite, not proved, and is named as an assumption.",
+      "text": "The model has floors and conservation, not fees, execution units or markets. Costs in lovelace are real; the value of a key, opportunity cost and fee volatility are outside the model, so claims that involve them are derived by hand from proved transfer lemmas and labelled so. An honest requester loses no deposit and no bond, but may lose the tip. After the reclaim window has closed it can still leave the queue on its own by rejecting its expired request itself, since a rejection requires no signer; it then pays only fees, and its capital stays locked until it does or a processor does for it. The correspondence between this model and the validators is evidenced by the conformance suite, not proved, and is named as an assumption.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "a5ae3421c7e7a947bebfdf185a5bd6531ba904eb3d0a28c16b57a0108890c22c"
+    "sha256": "dbc12b9e1bd2ea6106344b17c359e530cdeb0457eea171d0f32b4ec5b02de125"
   }
 }

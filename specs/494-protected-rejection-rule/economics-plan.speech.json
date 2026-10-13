@@ -25,7 +25,7 @@
       "pause": 500
     },
     {
-      "text": "Registry configuration gains the bond, the processor split (a numerator and a denominator) and the termination fee; each defaults to zero in old input and is preserved by every fold. A request gains its bond, the termination fee it carries, and the root it recorded at booking. A transaction gains a treasury donation amount. A new payment recipient, the treasury, is owed the donation. Every new field defaults to zero, so every existing row of the public suite, which builds requests without them, behaves exactly as before. No validator, builder or command-line file is touched.",
+      "text": "Registry configuration gains the bond, the processor split (a numerator and a denominator) and the termination fee; each defaults to zero in old input and is preserved by every fold. The model has no booking transition (a request is an argument, not a state), so the booking rule is a defined admission: the request's bond is at least the registry bond, a terminate request carries at least the registry fee, and the root it recorded equals the root of the state read at booking. The request-tag mint must enforce exactly that admission, and the honesty theorems quantify over requests that passed it. A request gains its bond, the termination fee it carries, and the root it recorded at booking. A transaction gains a treasury donation amount. A new payment recipient, the treasury, is owed the donation. Every new field defaults to zero, so every existing row of the public suite, which builds requests without them, behaves exactly as before. No validator, builder or command-line file is touched.",
       "pause": 400
     }
   ],
@@ -77,18 +77,18 @@
       "pause": 400
     }
   ],
-  "plan-questions-for-the-desk": [
+  "assumptions": [
     {
-      "text": "Plan questions for the desk.",
+      "text": "Assumptions.",
       "pause": 500
     },
     {
-      "text": "Assumptions made, to be returned if wrong: the booking proof is carried by the rejection evidence as the whole map (a logical read, one state earlier) and root collision resistance is a named assumption; the processor chooses the ground, and only the mismatch ground with a valid booking proof forfeits; the model folds a request whatever bond it carries, and the honesty theorems assume the bond equals the registry parameter (the booking mint enforces that after the demo); the termination donation floor is the registry fee, the request's carried fee being checked by the mint; the donation encoding follows the ledger, so a zero amount omits the field.",
+      "text": "The booking proof is carried by the rejection evidence as the whole map (a logical read, one state earlier) and root collision resistance is a named assumption of the theorems. The processor chooses the ground, and only the mismatch ground with a valid booking proof forfeits. The booking admission is a defined rule, not a transition; the request-tag mint must enforce it and the honesty theorems quantify over the requests that passed it. The termination donation floor is the registry fee, the request's carried fee being checked by the booking admission. The donation encoding follows the ledger, so a zero amount omits the field. The owner of an expired request exits by rejecting it itself, because a rejection requires no signer; what remains of the delay attack is the capital locked until someone does.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "a5421edfb5d3e37013bf8131228217a1c443a6b696e4fde6fa3e5f36cdf40359"
+    "sha256": "226031a403801e327fdf704f3bbad0e0da939e0381a44a0008e77d2eecbeb182"
   }
 }

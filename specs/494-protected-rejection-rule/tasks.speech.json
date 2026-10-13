@@ -191,6 +191,10 @@
       "pause": 300
     },
     {
+      "text": "[ ] booking-admission — the booking rule exists as a defined admission with a refusal reason per failure: the bond is at least the registry bond, a terminate request carries at least the registry fee, and the recorded root equals the root of the state read at booking; the request-tag mint must enforce exactly it.",
+      "pause": 300
+    },
+    {
       "text": "[ ] donation-field — a transaction carries a treasury donation amount, zero when absent.",
       "pause": 300
     },
@@ -337,6 +341,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "3fb7b90d62cbc23560dc021f2b0d1d5c28545eda9e73df4ef2995536b4256886"
+    "sha256": "d958614448f6d9318ea270d294abfce5060fe1e4c1c3dcfc8bf833a339e517a8"
   }
 }

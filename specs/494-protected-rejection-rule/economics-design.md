@@ -112,6 +112,7 @@ holding a key terminal. Each constraint names the model definition it is read fr
 
 The model has floors and conservation, not fees, execution units or markets. Costs in lovelace are real; the value of a key,
 opportunity cost and fee volatility are outside the model, so claims that involve them are derived by hand from proved transfer
-lemmas and labelled so. An honest requester loses no deposit and no bond, but may lose the tip, and after the reclaim window has
-closed has no way to leave the queue on its own: it depends on a processor's incentive to reject. The correspondence between this
+lemmas and labelled so. An honest requester loses no deposit and no bond, but may lose the tip. After the reclaim window has closed it can still leave the queue on
+its own by rejecting its expired request itself, since a rejection requires no signer; it then pays only fees, and its capital stays locked
+until it does or a processor does for it. The correspondence between this
 model and the validators is evidenced by the conformance suite, not proved, and is named as an assumption.

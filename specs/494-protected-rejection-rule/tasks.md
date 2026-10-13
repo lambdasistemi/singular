@@ -103,6 +103,7 @@ Planned in the [economics plan](economics-plan.md); started only after the desk 
 
 - [ ] `registry-parameters` — the bond, the processor split and the termination fee exist in the registry configuration, default to zero in old input and are preserved by every fold.
 - [ ] `request-economic-fields` — a request carries its bond, the termination fee it carries and the root it recorded at booking, each serialized and zero when absent.
+- [ ] `booking-admission` — the booking rule exists as a defined admission with a refusal reason per failure: the bond is at least the registry bond, a terminate request carries at least the registry fee, and the recorded root equals the root of the state read at booking; the request-tag mint must enforce exactly it.
 - [ ] `donation-field` — a transaction carries a treasury donation amount, zero when absent.
 - [ ] `protocol-eight` — the driver protocol version moves and the surface digest follows.
 - [ ] `regenerate-after-slice-five` — corpora, register and digests, simulator mirror, application corpus, coverage record and the restatement table follow.
