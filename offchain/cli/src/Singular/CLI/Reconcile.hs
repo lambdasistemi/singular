@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
@@ -26,6 +25,12 @@ module Singular.CLI.Reconcile
     , reconcile
     , reconcileIncomplete
     , refuseUnreconciled
+    , observe
+    , observeVerdicts
+    , rollBack
+    , recoverInclusion
+    , KeyRead
+    , LiveAt
 
       -- * Receipts
     , reconciledJson
@@ -33,16 +38,17 @@ module Singular.CLI.Reconcile
     , renderPoint
     ) where
 
-import Control.Monad (forM, forM_)
+import Control.Monad (forM, forM_, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
+import Data.Either (isRight, rights)
 import Data.Foldable (toList)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (nub)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes, isJust, listToMaybe)
+import Data.Maybe (catMaybes, listToMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -80,11 +86,14 @@ import Singular.CLI.Live
     )
 import Singular.CLI.Proof (AuthError, Leaf (..))
 import Singular.CLI.Receipt
-    ( JournalEntry (..)
+    ( FoldTransition (..)
+    , JournalEntry (..)
     , OutcomeClass (..)
     , SubmissionCase (..)
     , appendJournal
     , caseName
+    , foldScalarsAgree
+    , foldTransitions
     , readJournal
     , submissionCase
     , unresolved
@@ -120,7 +129,11 @@ import Singular.Registry.TxBuilder.Internal
     , toPlcData
     , txInToRef
     )
-import Singular.Registry.Types (CageDatum (..))
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
+    )
 
 -- | What one reconciliation found and did.
 data Reconciliation = Reconciliation
@@ -359,8 +372,9 @@ rollBack command dir view liveAt = do
                 case rollbackEvidence (Just CaseIncluded) inclusion of
                     Nothing -> pure Nothing
                     Just found -> do
-                        let returnsTo = prepared >>= journalRootBefore
-                            isFold = isJust (prepared >>= journalEdge)
+                        let transitions = maybe [] foldTransitions prepared
+                            isFold = not (null transitions)
+                            returnsTo = transitionRootBefore <$> listToMaybe transitions
                         appendJournal
                             dir
                             ( recoveryLine
@@ -370,7 +384,13 @@ rollBack command dir view liveAt = do
                                 ( "its first output is not live and "
                                     <> T.pack (show (length found))
                                     <> " input(s) it spends are live again: it is no longer on the chain"
-                                    <> (if isFold then "; the public state returns to its root before" else "")
+                                    <> ( if isFold
+                                            then
+                                                "; its "
+                                                    <> T.pack (show (length transitions))
+                                                    <> " request(s) are pending again and the public state returns to its root before"
+                                            else ""
+                                       )
                                 )
                             )
                                 { journalChainPoint = Nothing
@@ -495,47 +515,74 @@ type KeyRead =
         , Either String ((TxIn, TxOut ConwayEra), DecodedHolding)
         )
 
-{- | Journal @observed@ for each included transaction whose prepared
-after-state is read back now. A key-bound after-state is read for the
-key its own @prepared@ line names; without a key reader none is.
+{- | The readback verdicts for one included transaction's prepared
+after-state: for a fold (a @prepared@ line with a non-empty
+'foldTransitions'), the scalar agreement with its list, the state output
+carrying the last transition's root after, and each distinct key the list
+touches read against the expectation of the last transition that moves
+it; for any other step, the one verdict of its single after-state.
 -}
-observe
-    :: Text -> FilePath -> Maybe KeyRead -> [Recovery] -> IO [Text]
-observe command dir readKey recovered = do
-    found <-
-        fmap catMaybes . forM recovered $ \r ->
-            case (recIncluded r, recPrepared r, recFirstOutput r) of
-                (True, Just p, Just out0) -> fmap (r,) <$> holds p out0
-                _ -> pure Nothing
-    forM_ found $ \(r, what) ->
-        appendJournal dir (recoveryLine command (recLast r) "observed" what)
-    pure (map (recTx . fst) found)
+observeVerdicts
+    :: Text
+    -> JournalEntry
+    -> TxOut ConwayEra
+    -> Maybe KeyRead
+    -> IO [Either Text Text]
+observeVerdicts command p out0 readKey = case foldTransitions p of
+    [] ->
+        maybe
+            [Left (command <> ": its after-state is not read back")]
+            (\d -> [Right d])
+            <$> holds p out0
+    ts
+        | not (foldScalarsAgree p) ->
+            pure
+                [Left (command <> ": its scalars disagree with its transition list")]
+        | otherwise -> do
+            keys <-
+                forM (lastPerKey ts) $ \t -> case decodeKey (transitionKey t) of
+                    Nothing -> pure (Left ("the key " <> transitionKey t <> " is not hex"))
+                    Just key -> keyVerdict key (transitionExpect t)
+            pure (rootVerdict out0 (last ts) : keys)
   where
-    keyOf p =
-        journalKey p
-            >>= either (const Nothing) Just . B16.decode . BC.pack . T.unpack
-    withKey p k = case (readKey, keyOf p) of
-        (Just reader, Just key) -> k key <$> reader key
-        _ -> pure Nothing
-    holds p out0 = case T.breakOn ":" <$> journalExpect p of
-        Just ("reference", h)
-            | SJust sc <- out0 ^. referenceScriptTxOutL
-            , ":" <> hexT (scriptHashBytes (hashScript sc)) == h ->
-                pure
-                    (Just (command <> ": the reference output is live carrying its script"))
-        Just ("state", _)
-            | Just (StateDatum _) <- extractCageDatum out0 ->
-                pure (Just (command <> ": the state output is live"))
-        Just ("request", _)
-            | Just (RequestDatum _) <- extractCageDatum out0 ->
-                pure (Just (command <> ": the request output is live"))
-        Just ("reclaim", h)
-            | Right request <- parseOutRef (T.drop 1 h)
-            , Just inputs <- journalInputs p
-            , txInText request `elem` inputs
-            , out0 ^. datumTxOutL == mkInlineDatum (toPlcData (txInToRef request)) ->
-                pure (Just (command <> ": the request-bound return output is live"))
-        Just ("active", h) -> withKey p $ \key -> \case
+    -- Each key the fold touches, in the order it first touches it, with
+    -- the transition that moves it last: only that after-state is read.
+    lastPerKey moves =
+        [ last [t | t <- moves, transitionKey t == k]
+        | k <- nub (map transitionKey moves)
+        ]
+    -- The fold's first output is the registry's new state output.
+    rootVerdict out t = case extractCageDatum out of
+        Just (StateDatum st)
+            | hexT (unOnChainRoot (stateRoot st)) == transitionRootAfter t ->
+                Right
+                    ( command
+                        <> ": the state output carries the fold's root after 0x"
+                        <> transitionRootAfter t
+                    )
+        _ ->
+            Left
+                ( command
+                    <> ": the state output does not carry the fold's root after 0x"
+                    <> transitionRootAfter t
+                )
+    decodeKey = either (const Nothing) Just . B16.decode . BC.pack . T.unpack
+    keyVerdict key expect = case readKey of
+        Nothing -> pure (Left (command <> ": no key reader for key 0x" <> hexT key))
+        Just reader -> do
+            got <- reader key
+            pure
+                ( maybe
+                    ( Left
+                        (command <> ": key 0x" <> hexT key <> " has not reached " <> expect)
+                    )
+                    Right
+                    (keyHolds key expect got)
+                )
+    -- The one check of a key against the leaf it must read back, shared
+    -- by the single-key path below and every transition of a fold.
+    keyHolds key expect (leafE, holdE) = case T.breakOn ":" expect of
+        ("active", h) -> case (leafE, holdE) of
             (Right Active, Right (_, dh))
                 | ":" <> hexT (dhDatumHash dh) == h ->
                     Just
@@ -545,7 +592,7 @@ observe command dir readKey recovered = do
                             <> " Active against the ledger's root and its one holding carries the envelope"
                         )
             _ -> Nothing
-        Just ("payload", h) -> withKey p $ \key -> \case
+        ("payload", h) -> case (leafE, holdE) of
             (Right Active, Right (_, dh))
                 | ":" <> hexT (dhDatumHash dh) == h ->
                     Just
@@ -555,7 +602,7 @@ observe command dir readKey recovered = do
                             <> "'s one holding carries the updated envelope"
                         )
             _ -> Nothing
-        Just ("terminal", _) -> withKey p $ \key -> \case
+        ("terminal", _) -> case (leafE, holdE) of
             (Right Terminal, Left _) ->
                 Just
                     ( command
@@ -564,7 +611,63 @@ observe command dir readKey recovered = do
                         <> " Terminal against the ledger's root and no holding of it is live"
                     )
             _ -> Nothing
+        _ -> Nothing
+    keyOf entry =
+        journalKey entry
+            >>= either (const Nothing) Just . B16.decode . BC.pack . T.unpack
+    withKey entry expect k = case (readKey, keyOf entry) of
+        (Just reader, Just key) -> k key expect <$> reader key
         _ -> pure Nothing
+    holds entry out = case T.breakOn ":" <$> journalExpect entry of
+        Just ("reference", h)
+            | SJust sc <- out ^. referenceScriptTxOutL
+            , ":" <> hexT (scriptHashBytes (hashScript sc)) == h ->
+                pure
+                    (Just (command <> ": the reference output is live carrying its script"))
+        Just ("state", _)
+            | Just (StateDatum _) <- extractCageDatum out ->
+                pure (Just (command <> ": the state output is live"))
+        Just ("request", _)
+            | Just (RequestDatum _) <- extractCageDatum out ->
+                pure (Just (command <> ": the request output is live"))
+        Just ("reclaim", h)
+            | Right request <- parseOutRef (T.drop 1 h)
+            , Just inputs <- journalInputs entry
+            , txInText request `elem` inputs
+            , out ^. datumTxOutL == mkInlineDatum (toPlcData (txInToRef request)) ->
+                pure (Just (command <> ": the request-bound return output is live"))
+        Just _
+            | Just expect <- journalExpect entry ->
+                withKey entry expect keyHolds
+        _ -> pure Nothing
+
+{- | Journal @observed@ for each included transaction whose prepared
+after-state is read back now. A key-bound after-state is read for the
+key its own @prepared@ line names; without a key reader none is.
+-}
+observe
+    :: Text -> FilePath -> Maybe KeyRead -> [Recovery] -> IO [Text]
+observe command dir readKey recovered = do
+    verdicts <-
+        forM
+            [ (r, p, out0)
+            | r <- recovered
+            , recIncluded r
+            , Just p <- [recPrepared r]
+            , Just out0 <- [recFirstOutput r]
+            ]
+            $ \(r, p, out0) -> (r,) <$> observeVerdicts command p out0 readKey
+    forM_ verdicts $ \(r, vs) ->
+        when (not (null vs) && all isRight vs) $
+            appendJournal
+                dir
+                ( recoveryLine
+                    command
+                    (recLast r)
+                    "observed"
+                    (T.intercalate "; " (rights vs))
+                )
+    pure [recTx r | (r, vs) <- verdicts, not (null vs), all isRight vs]
 
 -- | A journal line reconciliation appends for a recovered transaction.
 recoveryLine :: Text -> JournalEntry -> Text -> Text -> JournalEntry
@@ -586,4 +689,5 @@ recoveryLine command e event detail =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTransitions = Nothing
         }
