@@ -55,15 +55,9 @@
       "pause": 400
     }
   ],
-  "docs-of-many-per-fold": [
-    {
-      "text": "docs-of-many-per-fold.",
-      "pause": 500
-    }
-  ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "9a5dd9fa6bf65b8ba953aa4857e8d48a6416c903ab86348e41a9691e146058aa"
+    "sha256": "66c0d7973284921f49dba0e5372a1fd77aa8c238f5fecb3002783aa40bd69cf3"
   },
   "readers-move-to-the-list": [
     {
@@ -101,12 +95,6 @@
       "pause": 500
     }
   ],
-  "pull-request-3b-recovery-of-many-bound-9-executed-evidence": [
-    {
-      "text": "Pull request 3b: recovery of many, bound 9, executed evidence.",
-      "pause": 500
-    }
-  ],
   "reconcile-reads-every-transition": [
     {
       "text": "Reconcile reads every transition.",
@@ -128,6 +116,30 @@
   "devnet-interrupted-two-request-fold": [
     {
       "text": "Devnet, interrupted two-request fold.",
+      "pause": 500
+    }
+  ],
+  "pull-request-3b-bound-9-the-sweep-of-readers-the-two-actor-devnet-item": [
+    {
+      "text": "Pull request 3b: bound 9, the sweep of readers, the two-actor devnet item.",
+      "pause": 500
+    }
+  ],
+  "docs-of-the-node-guide": [
+    {
+      "text": "Docs of the node guide.",
+      "pause": 500
+    }
+  ],
+  "pull-request-3c-the-interrupted-fold-executed-on-a-devnet-and-the-other-pages": [
+    {
+      "text": "Pull request 3c: the interrupted fold, executed on a devnet, and the other pages.",
+      "pause": 500
+    }
+  ],
+  "docs-of-recovery-and-the-other-pages": [
+    {
+      "text": "Docs of recovery and the other pages.",
       "pause": 500
     }
   ]

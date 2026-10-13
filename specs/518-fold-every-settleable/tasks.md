@@ -88,7 +88,7 @@ The bound stays 1. Re-derived on 2026-10-13 against `main` at `e7b55ac9` and reb
 - [x] provenance-of-bound-one-states-the-recovery-reason
 - [x] node-guide-sentence-matches-it-narration-regenerated-speech-restamped
 
-## Pull request 3b: recovery of many, bound 9, executed evidence
+## Pull request 3b: bound 9, the sweep of readers, the two-actor devnet item
 
 ### reconcile-reads-every-transition
 
@@ -111,12 +111,19 @@ The bound stays 1. Re-derived on 2026-10-13 against `main` at `e7b55ac9` and reb
 - [ ] two-actors-book-concurrently-and-one-fold-settles-both-each-payout-to-its-owner
 - [ ] tampered-receipts-of-the-two-request-fold-are-refused
 
+### docs-of-the-node-guide
+
+- [ ] the-node-guide-states-the-bound-the-whole-behaviour-and-its-limits
+- [ ] speech-restamped-and-narration-regenerated-for-the-node-guide
+
+## Pull request 3c: the interrupted fold, executed on a devnet, and the other pages
+
 ### devnet-interrupted-two-request-fold
 
 - [ ] an-interrupted-two-request-fold-reconciles-both-keys-once
 - [ ] the-part-is-hosted-by-the-partition-list
 
-### docs-of-many-per-fold
+### docs-of-recovery-and-the-other-pages
 
-- [ ] pages-state-the-bound-the-whole-behaviour-and-its-limits
+- [ ] the-recovery-page-the-preprod-page-the-fold-responsibilities-page-and-the-rehearsal-document-state-the-bound-and-the-whole-behaviour
 - [ ] speech-restamped-and-narration-regenerated
