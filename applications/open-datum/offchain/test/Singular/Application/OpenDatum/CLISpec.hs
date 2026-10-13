@@ -697,7 +697,7 @@ keyFile dir c = do
 creatorChecks :: Spec
 creatorChecks = describe "a creator's seed and directory" $ do
     it
-        "refuses a seed the wallet does not hold, one that is not ada-only, or one with no funding beside it"
+        "refuses a seed the wallet does not hold or one that is not ada-only; a sole output is held (#406 slice 2)"
         $ do
             seed <- either fail pure (parseOutRef (T.pack seedText))
             other <-
@@ -713,22 +713,52 @@ creatorChecks = describe "a creator's seed and directory" $ do
                     `shouldSatisfy` isLeftWith isNotInWallet
                 checkSeed seed [(seed, withScript)]
                     `shouldSatisfy` isLeftWith isNotAdaOnly
-                -- the seed stays unspent while the first publication is paid from
-                -- another ada-only output: a wallet with only the seed, or whose
-                -- other outputs hold a script, cannot create
-                checkSeed seed [(seed, plain)]
-                    `shouldSatisfy` isLeftWith isNoFunding
-                checkSeed seed [(seed, plain), (other, withScript)]
-                    `shouldSatisfy` isLeftWith isNoFunding
-                -- an identity needs only the seed held: a preview of such a
-                -- wallet computes it and reports the refusal above
+                -- the refusal that really refuses or accepts is the seed
+                -- selection (it knows whether the state must be published),
+                -- not `checkSeed` (which is `seedHeld`): an explicit sole
+                -- output while publishing is refused with omit-`--seed`.
+                let dummyState = scriptFromBytes "state" "\1"
+                case selectSeed
+                    (Just seed)
+                    [(seed, plain)]
+                    undefined
+                    dummyState
+                    (walletAddr w)
+                    True
+                    True of
+                    Right _ ->
+                        expectationFailure
+                            "an explicit sole seed was accepted while publishing"
+                    Left err -> do
+                        let text = renderIdentityError err
+                        text `shouldSatisfy` ("omit `--seed`" `isInfixOf`)
+                        text `shouldSatisfy` (not . ("second ada-only output" `isInfixOf`))
+                selectSeed
+                    (Just seed)
+                    [(seed, plain)]
+                    undefined
+                    dummyState
+                    (walletAddr w)
+                    False
+                    True
+                    `shouldBe` Right (seed, "output")
+                selectSeed
+                    (Just seed)
+                    [(seed, plain), (other, plain)]
+                    undefined
+                    dummyState
+                    (walletAddr w)
+                    True
+                    True
+                    `shouldBe` Right (seed, "output")
+                -- an identity needs only the seed held
                 fmap fst (seedHeld seed [(seed, plain)]) `shouldBe` Right seed
                 seedHeld seed [(other, plain)]
                     `shouldSatisfy` isLeftWith isNotInWallet
                 seedHeld seed [(seed, withScript), (other, plain)]
                     `shouldSatisfy` isLeftWith isNotAdaOnly
     it
-        "previews a one-output wallet's identity, naming the refusal its create meets, and refuses that create"
+        "previews a one-output wallet's identity with no seed refusal; funding is judged later (#406 slice 2)"
         $ do
             seed <- either fail pure (parseOutRef (T.pack seedText))
             other <-
@@ -736,27 +766,36 @@ creatorChecks = describe "a creator's seed and directory" $ do
             withTempDir $ \dir -> do
                 w <- keyFile dir 'k'
                 let plain = mkBasicTxOut (walletAddr w) (MaryValue (Coin 5_000_000) mempty)
-                    refusal = Prelude.lookup "createRefusal"
-                -- the preview's accepting control: the seed alone is enough
-                case seedChecks False seed [(seed, plain)] of
-                    Right fields -> case refusal fields of
-                        Just (Aeson.String why) ->
-                            T.unpack why
-                                `shouldSatisfy` ( \s ->
-                                                    seedText `isInfixOf` s
-                                                        && "only ada-only output" `isInfixOf` s
-                                                )
-                        other' -> expectationFailure ("createRefusal is " <> show other')
-                    Left e -> expectationFailure ("the preview refused: " <> show e)
-                -- with funding beside the seed it reports no refusal
-                fmap refusal (seedChecks False seed [(seed, plain), (other, plain)])
-                    `shouldBe` Right (Just Aeson.Null)
-                -- the create itself refuses the one-output wallet, and adds nothing
-                -- when it can proceed
-                seedChecks True seed [(seed, plain)]
-                    `shouldSatisfy` isLeftWith isNoFunding
-                seedChecks True seed [(seed, plain), (other, plain)]
-                    `shouldBe` Right []
+                    dummyState = scriptFromBytes "state" "\1"
+                -- with a live carrier the seed is an output: auto selects the
+                -- largest, explicit names a held output (no PParams needed).
+                selectSeed
+                    Nothing
+                    [(seed, plain)]
+                    undefined
+                    dummyState
+                    (walletAddr w)
+                    False
+                    False
+                    `shouldBe` Right (seed, "output")
+                selectSeed
+                    (Just seed)
+                    [(seed, plain)]
+                    undefined
+                    dummyState
+                    (walletAddr w)
+                    False
+                    False
+                    `shouldBe` Right (seed, "output")
+                selectSeed
+                    (Just seed)
+                    [(seed, plain), (other, plain)]
+                    undefined
+                    dummyState
+                    (walletAddr w)
+                    False
+                    True
+                    `shouldBe` Right (seed, "output")
                 -- a preview still refuses a seed the wallet does not hold
                 seedChecks False seed [(other, plain)]
                     `shouldSatisfy` isLeftWith isNotInWallet
@@ -779,7 +818,6 @@ creatorChecks = describe "a creator's seed and directory" $ do
   where
     isNotInWallet = \case SeedNotInWallet _ -> True; _ -> False
     isNotAdaOnly = \case SeedNotAdaOnly _ -> True; _ -> False
-    isNoFunding = \case NoFundingBesideSeed _ -> True; _ -> False
 
 -- ---------------------------------------------------------
 -- The journal

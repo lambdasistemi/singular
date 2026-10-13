@@ -35,6 +35,7 @@ module Singular.CLI.Registry
     , checkSeed
     , seedHeld
     , seedChecks
+    , selectSeed
     , refuseExisting
     , publicationFunding
     , checkPendingToken
@@ -97,6 +98,7 @@ import Singular.Registry.StateToken (Release (..), renderStateToken)
 import Singular.Registry.TxBuilder.Edges
     ( PublicationFundingError (..)
     , adaOnlyOut
+    , firstPublicationChange
     , publicationFee
     , publicationMinChange
     , publicationRefCoin
@@ -255,7 +257,8 @@ pendingPath dir = dir </> "registry.pending.json"
 data IdentityError
     = SeedNotInWallet Text
     | SeedNotAdaOnly Text
-    | NoFundingBesideSeed Text
+    | SoleSeedWhilePublishing Text
+    | WalletChangedSinceNamed Text Text
     | RegistryExists FilePath
     | {- | A publication the wallet cannot fund: its role, the total it needs,
       and the largest single output, the total held and the whole run's
@@ -279,10 +282,16 @@ renderIdentityError = \case
         "the seed "
             <> T.unpack seed
             <> " carries a token or a reference script; a seed must hold ada only"
-    NoFundingBesideSeed seed ->
+    SoleSeedWhilePublishing seed ->
         "the seed "
             <> T.unpack seed
-            <> " is the only ada-only output the wallet holds; the registry's first publication is paid from another one while the seed stays unspent, so fund the wallet with a second ada-only output first"
+            <> " is the wallet's only ada-only output and the state script must be published from it; omit `--seed`: the first publication's change becomes the seed"
+    WalletChangedSinceNamed expected actual ->
+        "the wallet changed since the identity was named: expected "
+            <> T.unpack expected
+            <> ", now "
+            <> T.unpack actual
+            <> "; preview again and retry with the new seed"
     RegistryExists dir ->
         dir
             <> " already holds your state or its journal; create never \
@@ -321,25 +330,22 @@ seedHeld seed utxos = case [u | u@(i, _) <- utxos, i == seed] of
         | adaOnlyOut out -> Right u
         | otherwise -> Left (SeedNotAdaOnly (renderOutRef seed))
 
-{- | The seed, as a create needs it: held ('seedHeld'), with another ada-only
-output beside it to pay the first publication from while the seed stays
-unspent.
+{- | The seed, as a create needs it: held ('seedHeld'). A wallet of one
+ada-only output completes from the chained seed (#406 slice 2); the
+sole-explicit-seed-while-publishing refusal lives in 'createWith', where
+the chain says the state script must be published, not here.
 -}
 checkSeed
     :: TxIn
     -> [(TxIn, TxOut ConwayEra)]
     -> Either IdentityError (TxIn, TxOut ConwayEra)
-checkSeed seed utxos = do
-    u <- seedHeld seed utxos
-    if null [() | (i, o) <- utxos, i /= seed, adaOnlyOut o]
-        then Left (NoFundingBesideSeed (renderOutRef seed))
-        else Right u
+checkSeed = seedHeld
 
 {- | The seed checks a create applies, and the receipt fields they add. A
-create about to submit needs the seed held with another ada-only output
-beside it ('checkSeed') and adds nothing. A preview needs only the seed held
-('seedHeld') and adds @createRefusal@: the refusal a create from this wallet
-would meet now, or null.
+create about to submit needs the seed held ('checkSeed') and adds nothing.
+A preview needs only the seed held ('seedHeld') and adds @createRefusal@:
+null when held (the whole-run judgement in 'createWith' names funding),
+or the held refusal itself.
 -}
 seedChecks
     :: Bool
@@ -351,15 +357,63 @@ seedChecks submitting seedIn utxos
     | submitting = [] <$ checkSeed seedIn utxos
     | otherwise = do
         _ <- seedHeld seedIn utxos
-        pure
-            [
-                ( "createRefusal"
-                , toJSON
-                    ( either (Just . T.pack . renderIdentityError) (const Nothing) $
-                        checkSeed seedIn utxos
-                    )
-                )
-            ]
+        pure [("createRefusal", toJSON (Nothing :: Maybe Text))]
+
+{- | The seed a create boots from (#406 slice 2), decided from the wallet
+view and whether the state script must be published, before anything is
+written. With a live carrier the seed is the wallet's largest ada-only
+output; otherwise it is the first publication's change, computed from the
+body before submission. An explicit seed names a held output, or the
+previewed chained seed to pin the identity; any other unheld seed is
+refused. A held sole output while the state must be published is refused
+for submit (omit-`--seed`); for preview it is named with @output@ so the
+caller reports the omit refusal itself. Pure in the wallet view, the
+parameters, the state script and the carrier decision: no node read.
+-}
+selectSeed
+    :: Maybe TxIn
+    -- ^ explicit @--seed@, already parsed
+    -> [(TxIn, TxOut ConwayEra)]
+    -- ^ the wallet view
+    -> PParams ConwayEra
+    -> Script ConwayEra
+    -- ^ the state script (seed-independent)
+    -> Addr
+    -- ^ the payer, for the change address
+    -> Bool
+    -- ^ whether the state script must be published (no live carrier)
+    -> Bool
+    -- ^ whether the identity is for a create about to submit
+    -> Either IdentityError (TxIn, Text)
+    -- ^ the seed and @seedFrom@ (@output@ or @publication-change@)
+selectSeed explicit utxos pp stateScript payerAddr mustPublish submitting = case explicit of
+    Just wanted -> case seedHeld wanted utxos of
+        Right _ ->
+            let sole = null [() | (i, o) <- utxos, i /= wanted, adaOnlyOut o]
+            in  if sole && mustPublish && submitting
+                    then Left (SoleSeedWhilePublishing (renderOutRef wanted))
+                    else Right (wanted, "output")
+        Left (SeedNotInWallet _) -> case (mustPublish, chainedNow) of
+            (True, Right (chained, _, _, _, _))
+                | chained == wanted ->
+                    Right (wanted, "publication-change")
+            _ -> Left (SeedNotInWallet (renderOutRef wanted))
+        Left err -> Left err
+    Nothing ->
+        if mustPublish
+            then case chainedNow of
+                Right (chained, _, _, _, _) -> Right (chained, "publication-change")
+                Left (PublicationShortfall needed held largest) ->
+                    Left (PublicationUnfunded "state" needed (largest, held, needed))
+                Left (PublicationOversize size limit) ->
+                    Left (PublicationTooLarge "state" size limit)
+            else case sortOn
+                (Down . (^. coinTxOutL) . snd)
+                [u | u@(_, o) <- utxos, adaOnlyOut o] of
+                ((i, _) : _) -> Right (i, "output")
+                [] -> Left (SeedNotInWallet "no ada-only output")
+  where
+    chainedNow = firstPublicationChange pp payerAddr stateScript utxos
 
 {- | Refuse a directory that holds an actor's journal or a pending create.
 Any other file, a @registry.json@ an earlier release wrote included, is
@@ -413,8 +467,11 @@ parseEnterpriseAddress magic text = do
 with the boot between them, as the real transactions spend it. Each
 publication funds from the shortest largest-first prefix of the ada-only
 outputs, with its change returned, as 'Singular.Registry.TxBuilder.Edges.selectPublicationInputs'
-funds it; the publications before the boot leave the seed alone. The boot spends
-the seed and the largest ada-only output beside it, as
+funds it. When the seed is an output the wallet holds, the publications
+before the boot leave it alone; when it is the first publication's change
+(#406 slice 2, not held), the first publication spends a prefix of all the
+ada-only outputs (nothing withheld) and its change is the seed. The boot spends
+the seed and the largest ada-only output beside it (or the seed alone), as
 'Singular.Registry.TxBuilder.Boot.bootTokenFrom' does, and returns what is
 left of them after its cost as change, which the publications after it may
 spend. Checked before anything is submitted; the first publication the
@@ -425,7 +482,7 @@ the largest output and the whole run's lowest total need.
 publicationFunding
     :: PParams ConwayEra
     -> TxIn
-    -- ^ The seed
+    -- ^ The seed: held ("output") or the first publication's change
     -> Integer
     {- ^ The most the boot takes from its inputs
     ('Singular.Registry.TxBuilder.Boot.bootCostBound')
@@ -450,11 +507,42 @@ publicationFunding pp seed bootCost before after wallet = do
                 + fromIntegral (length before + length after) * publicationFee
                 + bootCost
                 + publicationMinChange
-    left <-
-        publishing payerAddr runNeed before [(Left i, o) | (i, o) <- wallet]
-    booted <- booting runNeed left
-    _ <- publishing payerAddr runNeed after booted
-    pure ()
+        held0 = [(Left i, o) | (i, o) <- wallet]
+        seedHeldNow = seed `elem` map fst wallet
+    if seedHeldNow
+        then do
+            left <- publishing payerAddr runNeed before held0
+            booted <- booting runNeed left
+            _ <- publishing payerAddr runNeed after booted
+            pure ()
+        else case before of
+            [] ->
+                let (heldTotal, largest) = heldTotals held0
+                in  Left
+                        ( PublicationUnfunded
+                            "boot"
+                            (bootCost + publicationMinChange)
+                            (largest, heldTotal, runNeed)
+                        )
+            (role0, script0) : rest0 -> do
+                -- The first publication from all ada-only outputs; its
+                -- change is the seed the boot spends.
+                let permitted0 = [u | u@(_, o) <- held0, adaOnlyOut o]
+                (funds0, _, change0) <- case selectPublicationInputs pp payerAddr script0 permitted0 of
+                    Left (PublicationShortfall needed heldTotal largest) ->
+                        Left (PublicationUnfunded role0 needed (largest, heldTotal, runNeed))
+                    Left (PublicationOversize size limit) ->
+                        Left (PublicationTooLarge role0 size limit)
+                    Right chosen -> pure chosen
+                let spent0 = map fst funds0
+                    seedOut = mkBasicTxOut payerAddr (MaryValue (Coin change0) mempty)
+                    held1 =
+                        [u | u@(k, _) <- held0, k `notElem` spent0]
+                            <> [(Left seed, seedOut)]
+                left <- publishing payerAddr runNeed rest0 held1
+                booted <- booting runNeed left
+                _ <- publishing payerAddr runNeed after booted
+                pure ()
   where
     heldTotals held =
         let coins = [c | (_, o) <- held, adaOnlyOut o, let Coin c = o ^. coinTxOutL]

@@ -39,6 +39,7 @@ module Singular.Registry.TxBuilder.Edges
     , publishRefScriptTx
     , PublicationFundingError (..)
     , selectPublicationInputs
+    , firstPublicationChange
     , publicationFee
     , publicationMinChange
     , publicationRefCoin
@@ -368,6 +369,38 @@ selectPublicationInputs pp payerAddr script permitted = do
                 else case takeCovering need rest acc' of
                     Nothing -> Nothing
                     Just chosen -> Just ((k, o) : chosen)
+
+{- | The change output a first publication makes from the whole wallet, and
+the seed it becomes (#406 slice 2): the shortest largest-first prefix of
+all the ada-only outputs (nothing withheld) funds the state publication,
+its change at index 1 is the chained seed. The body is exactly the one
+'publishRefScriptTx' builds from the same view (flat fee, no validity
+interval), so the transaction id — and the token it derives — is the same
+in preview and in create. The arithmetic is 'selectPublicationInputs''s;
+this accessor adds only the body and its id.
+-}
+firstPublicationChange
+    :: PParams ConwayEra
+    -> Addr
+    -> Script ConwayEra
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Either
+        PublicationFundingError
+        (TxIn, ConwayTx, TxOut ConwayEra, [(TxIn, TxOut ConwayEra)], Integer)
+firstPublicationChange pp payerAddr script wallet = do
+    let permitted = [u | u@(_, o) <- wallet, adaOnlyOut o]
+    (funds, refOut, changeCoin) <-
+        selectPublicationInputs pp payerAddr script permitted
+    let changeOut = mkBasicTxOut payerAddr (MaryValue (Coin changeCoin) mempty)
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.fromList (map fst funds)
+                & outputsTxBodyL
+                    .~ StrictSeq.fromList [refOut, changeOut]
+                & feeTxBodyL .~ Coin publicationFee
+        tx = mkBasicTx body
+        seed = TxIn (txIdTx tx) (TxIx 1)
+    pure (seed, tx, refOut, funds, changeCoin)
 
 -- | Publish one script as a reference output at the payer's own address.
 publishRefScript

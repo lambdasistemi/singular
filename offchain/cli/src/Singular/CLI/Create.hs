@@ -6,18 +6,22 @@ Module      : Singular.CLI.Create
 Description : @singular registry create@: boot a registry from the caller's seed
 License     : Apache-2.0
 
-The caller names a seed: an unspent, ada-only output of their own wallet.
 The seed decides the registry's identity — its state token name, and so
 the application applied to that identity and the three witness
 policies — so every pin is derived before anything is submitted, and
-@--preview@ stops there, submitting nothing and writing nothing.
+@--preview@ stops there, submitting nothing and writing nothing. When a
+live carrier of the state validator exists, the seed is the wallet's
+largest ada-only output, as before; otherwise it is the first
+publication's change, computed from the body before submission, so preview
+and create name the same token from one wallet view.
 
 Otherwise, before anything is submitted, a live carrier of the state
 validator is looked for by its hash (the provider, then the wallet) and the
 wallet is checked to fund every publication still to make.
 Then, in order, each submission journalled and each result read back before
-the next: the state validator is published from outside the seed unless a
-carrier was found (the seed survives the publication); the boot consumes
+the next: the state validator is published first when no carrier was found
+(its change is the seed) and from outside the seed when one was found (the
+seed survives the publication); the boot consumes
 the seed and creates the state output at the empty root, running the state
 validator from that reference; the request validator, the three witness
 policies and the applied application are published as reference outputs to
@@ -42,6 +46,7 @@ import Control.Exception
     , throwIO
     , try
     )
+import Control.Monad (when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -49,10 +54,8 @@ import Data.Aeson.Key qualified as Key
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
-import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
-import Data.Ord (Down (..))
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -65,12 +68,11 @@ import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
-    , coinTxOutL
     , mkBasicTxOut
     , referenceScriptTxOutL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
-import Cardano.Ledger.Core (Script, hashScript)
+import Cardano.Ledger.Core (PParams, Script, hashScript)
 import Cardano.Ledger.Mary.Value
     ( MaryValue (..)
     , MultiAsset (..)
@@ -94,7 +96,8 @@ import Singular.CLI.ManagedState
     )
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
-    ( Release (..)
+    ( IdentityError (..)
+    , Release (..)
     , economics
     , hexT
     , parseEnterpriseAddress
@@ -105,6 +108,8 @@ import Singular.CLI.Registry
     , registryConfigFor
     , renderIdentityError
     , seedChecks
+    , seedHeld
+    , selectSeed
     )
 import Singular.CLI.Session
     ( Building (..)
@@ -146,6 +151,7 @@ import Singular.Registry.Deployment
     ( ReferenceScript (..)
     , parseOutRef
     , renderAddrBytes
+    , renderOutRef
     )
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
@@ -167,7 +173,12 @@ import Singular.Registry.StateToken
     )
 import Singular.Registry.TxBuilder.Boot (bootCostBound, bootTokenFrom)
 import Singular.Registry.TxBuilder.Edges
-    ( adaOnlyOut
+    ( PublicationFundingError (..)
+    , adaOnlyOut
+    , firstPublicationChange
+    , publicationFee
+    , publicationMinChange
+    , publicationRefCoin
     , publishRefScriptTx
     , witnessScriptOf
     )
@@ -240,13 +251,15 @@ runCreate app env a = do
                     (parseEnterpriseAddress magic addrText)
             readOnce env settings ["wallet outputs"] $ \caps v -> do
                 utxos <- Cage.outputsAt v addr
-                ((seedIn, cfg, pinned), identity) <-
-                    previewIdentity app False a rel addr utxos
+                pp <- Cage.parameters v
+                mustPub <- mustPublishState v addr rel
+                ((seedIn, cfg, pinned, _seedFrom), identity) <-
+                    previewIdentity app False a rel addr utxos pp mustPub
                 scope <- sessionReceipt caps v
                 judged <- case lookup "createRefusal" identity of
                     Just Aeson.Null -> do
-                        pp <- Cage.parameters v
-                        foundState <- stateReference app v addr rel seedIn
+                        foundState <-
+                            if mustPub then pure Nothing else stateReference app v addr rel seedIn
                         let stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
                             beforeBoot = case foundState of
                                 Just _ -> []
@@ -344,19 +357,29 @@ createWith app env a rel ws = do
     -- instead of silently booting another registry. A provider the selection
     -- read cannot use is reported as node-unavailable, as a session
     -- established for a write would report it, never as a client refusal.
-    (utxos, scope) <-
+    (utxos, ppPre, mustPubPre, scope) <-
         readOnce
             env
             settings
             ["wallet outputs"]
             ( \caps v -> do
                 outputs <- Cage.outputsAt v addr
+                pp <- Cage.parameters v
+                mustPub <- mustPublishState v addr rel
                 evidence <- sessionReceipt caps v
-                pure (outputs, evidence)
+                pure (outputs, pp, mustPub, evidence)
             )
             `catchSelection` settings
-    ((seedIn, cfg, pinned), identity) <-
-        previewIdentity app (not (createPreview a)) a rel addr utxos
+    ((seedIn, cfg, pinned, seedFromPre), identity) <-
+        previewIdentity
+            app
+            (not (createPreview a))
+            a
+            rel
+            addr
+            utxos
+            ppPre
+            mustPubPre
     let token = stateTokenOf rel seedIn
         dir = managedDir root magic token (walletPartition caller)
     -- A preview writes nothing: no lock, no directory, no journal.
@@ -419,7 +442,8 @@ createWith app env a rel ws = do
                 refuseExisting dir
                     >>= either (failWith ClientRefusal . renderIdentityError) pure
                 let addrUnder = walletAddr (wcWallet wc)
-                (freshUtxos, _) <-
+                    stateScriptPre = scriptFromBytes "state" (releaseState rel)
+                (freshUtxos, ppFreshPre, mustPubFresh) <-
                     readStep
                         (wcTracer wc)
                         (wcSource wc)
@@ -427,14 +451,77 @@ createWith app env a rel ws = do
                         (wcCapabilities wc)
                         ( \v -> do
                             outputs <- Cage.outputsAt v addrUnder
-                            evidence <- sessionReceipt (wcCapabilities wc) v
-                            pure (outputs, evidence)
+                            pp <- Cage.parameters v
+                            mustPub <- mustPublishState v addrUnder rel
+                            pure (outputs, pp, mustPub)
                         )
+                -- The pin: a chained identity names its body before the lock;
+                -- the wallet again must build the same body, or the create is
+                -- refused before anything is written, like today's seed-spent
+                -- refusal. An output identity still needs its seed held.
                 _ <-
-                    either
-                        (failWith ClientRefusal . renderIdentityError)
-                        pure
-                        (seedChecks True seedIn freshUtxos)
+                    if seedFromPre == "publication-change"
+                        then do
+                            when (mustPubFresh /= mustPubPre) $
+                                failWith
+                                    ClientRefusal
+                                    ( renderIdentityError
+                                        ( WalletChangedSinceNamed
+                                            (txInText seedIn)
+                                            ( if mustPubFresh
+                                                then "no live carrier"
+                                                else "a live carrier now exists"
+                                            )
+                                        )
+                                    )
+                            freshChained <- case firstPublicationChange ppFreshPre addrUnder stateScriptPre freshUtxos of
+                                Right (freshSeed, _, _, _, _) -> pure (Just freshSeed)
+                                Left _ -> pure Nothing
+                            case freshChained of
+                                Just freshSeed | freshSeed == seedIn -> pure []
+                                Just freshSeed ->
+                                    failWith
+                                        ClientRefusal
+                                        ( renderIdentityError
+                                            (WalletChangedSinceNamed (txInText seedIn) (txInText freshSeed))
+                                        )
+                                Nothing ->
+                                    failWith
+                                        ClientRefusal
+                                        ( renderIdentityError
+                                            ( WalletChangedSinceNamed
+                                                (txInText seedIn)
+                                                "the wallet no longer funds its first publication"
+                                            )
+                                        )
+                        else do
+                            when (mustPubFresh /= mustPubPre) $
+                                failWith
+                                    ClientRefusal
+                                    ( renderIdentityError
+                                        ( WalletChangedSinceNamed
+                                            (txInText seedIn)
+                                            ( if mustPubFresh
+                                                then "no live carrier"
+                                                else "a live carrier now exists"
+                                            )
+                                        )
+                                    )
+                            _ <-
+                                either
+                                    (failWith ClientRefusal . renderIdentityError)
+                                    pure
+                                    (seedChecks True seedIn freshUtxos)
+                            -- A held sole output while the state must be published
+                            -- names omit---seed, never a second output.
+                            case seedHeld seedIn freshUtxos of
+                                Right _
+                                    | null [() | (i, o) <- freshUtxos, i /= seedIn, adaOnlyOut o]
+                                    , mustPubFresh ->
+                                        failWith
+                                            ClientRefusal
+                                            (renderIdentityError (SoleSeedWhilePublishing (renderOutRef seedIn)))
+                                _ -> pure []
                 -- The state reference, found by its hash wherever it sits,
                 -- and the funding of every publication still to make, all
                 -- decided before anything is written or submitted.
@@ -486,7 +573,15 @@ createWith app env a rel ws = do
                             )
                         )
                     )
-                booted <- boot wc cfg pinned seedIn foundState
+                booted <-
+                    boot
+                        wc
+                        cfg
+                        pinned
+                        seedIn
+                        foundState
+                        (seedFromPre == "publication-change")
+                        (pendingPath dir)
                 -- The registry is its token: nothing of it stays on disk.
                 removeFile (pendingPath dir)
                 pure
@@ -550,6 +645,27 @@ stateReference app v wallet rel seedIn = do
         Left refusal ->
             failWith NodeUnavailable (T.unpack (renderReferenceRefusal refusal))
 
+{- | Whether the state script must be published (#406 slice 2): no live
+carrier of it by hash through the provider, then the wallet. The state
+hash is seed-independent, so this decides the seed rule before any seed
+exists.
+-}
+mustPublishState
+    :: LP.Session NoWitness IO
+    -> Addr
+    -> Release
+    -> IO Bool
+mustPublishState v wallet rel = do
+    let stateHash = computeScriptHash (releaseState rel)
+        expected = Map.singleton RoleState stateHash
+    found <-
+        findReferences v (Just wallet) expected (Set.singleton RoleState)
+    case found of
+        Right chosen -> pure (Map.notMember RoleState chosen)
+        Left (ReferenceMissing _ _) -> pure True
+        Left refusal ->
+            failWith NodeUnavailable (T.unpack (renderReferenceRefusal refusal))
+
 {- | The scripts published after the boot, by role, as the registry runs them.
 A hash pin publishes none for the application (slice 2: its script bytes
 do not exist); a script pin publishes it as today.
@@ -588,12 +704,28 @@ boot
     -> CageConfig
     -> NamingCodes
     -> TxIn
+    -- ^ The named seed: held (output) or the first publication's change
     -> Maybe (TxIn, TxOut ConwayEra)
     -- ^ A live carrier of the state script, if one was found
+    -> Bool
+    -- ^ Whether the seed is chained (the first publication's change)
+    -> FilePath
+    {- ^ The pending file, removed when the first publication is refused
+    before anything is submitted (nothing may stay behind)
+    -}
     -> IO Booted
-boot wc cfg pinned seedIn foundState = do
+boot wc cfg pinned seedIn foundState isChained pendingFile = do
     let addr = walletAddr (wcWallet wc)
         -- One transaction, built from one view, journalled with its point.
+        -- A first-publication refusal happens before any submission, so the
+        -- pending file just written is removed and nothing stays behind.
+        publishFirst step reserved script = do
+            result <- try (publish step reserved script)
+            case result of
+                Right ok -> pure ok
+                Left (e :: SomeException) -> do
+                    _ <- try (removeFile pendingFile) :: IO (Either SomeException ())
+                    throwIO e
         publish step reserved script = do
             (confirmed, refOut) <-
                 submitBuilt
@@ -605,16 +737,69 @@ boot wc cfg pinned seedIn foundState = do
                     (\v -> publishRefScriptTx reserved v addr script)
             pure
                 (confirmed, TxIn (txIdTx (confirmedTx confirmed)) (TxIx 0), refOut)
+        -- The chained first publication, built once inside the submission
+        -- step: the pure function computes it from the fresh view, its id
+        -- must equal the named one, and only then is that very value
+        -- submitted. A different id or a shortfall is a client-refusal with
+        -- typed text, never `error`; no second construction remains.
+        publishChainedState step script namedSeed = do
+            result <-
+                try $
+                    submitBuilt
+                        wc
+                        step
+                        ( const
+                            (expecting ("reference:" <> hexT (scriptHashBytes (hashScript script))))
+                        )
+                        ( \v -> do
+                            pp <- Cage.parameters v
+                            utxos <- Cage.outputsAt v addr
+                            case firstPublicationChange pp addr script utxos of
+                                Left (PublicationShortfall{}) ->
+                                    failWith
+                                        ClientRefusal
+                                        ( renderIdentityError
+                                            ( WalletChangedSinceNamed
+                                                (txInText namedSeed)
+                                                "the wallet no longer funds its first publication"
+                                            )
+                                        )
+                                Left (PublicationOversize size limit) ->
+                                    failWith
+                                        ClientRefusal
+                                        (renderIdentityError (PublicationTooLarge "state" size limit))
+                                Right (freshSeed, tx, refOut, _, _) ->
+                                    if freshSeed == namedSeed
+                                        then pure (tx, refOut)
+                                        else
+                                            failWith
+                                                ClientRefusal
+                                                ( renderIdentityError
+                                                    (WalletChangedSinceNamed (txInText namedSeed) (txInText freshSeed))
+                                                )
+                        )
+            case result of
+                Right (confirmed, refOut) ->
+                    pure
+                        ( Just confirmed
+                        , (TxIn (txIdTx (confirmedTx confirmed)) (TxIx 0), refOut)
+                        )
+                Left (e :: SomeException) -> do
+                    _ <- try (removeFile pendingFile) :: IO (Either SomeException ())
+                    throwIO e
         stateScript = scriptFromBytes "state" (cageScriptBytes cfg)
     -- The state validator, published from outside the seed, unless a live
     -- carrier of it was found. A found carrier has no current-command
     -- confirmed result; the Maybe below keeps the two paths explicit.
     (stateConfirmed, stateRef@(stateIn, _)) <-
         case foundState of
-            Nothing -> do
-                (confirmed, i, o) <-
-                    publish "publish-state" (Set.singleton seedIn) stateScript
-                pure (Just confirmed, (i, o))
+            Nothing ->
+                if isChained
+                    then publishChainedState "publish-state" stateScript seedIn
+                    else do
+                        (confirmed, i, o) <-
+                            publishFirst "publish-state" (Set.singleton seedIn) stateScript
+                        pure (Just confirmed, (i, o))
             Just found -> pure (Nothing, found)
     -- A carrier found elsewhere was not submitted by this create.
     let stateTxs = [txInTxId stateIn | null foundState]
@@ -795,15 +980,16 @@ pinApplicationName pin = case pin of
     PinByHash policy -> hexT (SBS.fromShort policy)
     PinFromState -> "from-state"
 
-{- | The registry identity a seed would give: the chosen or the largest
-ada-only output of the caller, checked to be held and ada only, the
-configuration and pins every later command derives again, and the receipt
-fields that name them. Nothing is written or submitted.
-
-A create must also find another ada-only output beside the seed
-('checkSeed'): it refuses without one. A preview computes the identity
-regardless and reports, as @createRefusal@, the refusal a create from this
-wallet would meet now, or null.
+{- | The registry identity a seed would give (#406 slice 2): either the
+wallet's largest ada-only output (a live state carrier exists, so no
+publication comes first) or the first publication's change (the state
+script must be published, so the seed is the change output of that
+publication, computed from the body before submission). An explicit
+@--seed@ names a held output, or the previewed chained seed to pin the
+identity; any other unheld seed is refused. A held sole output while the
+state must be published is refused with omit-@--seed@ remedy. The receipt
+carries @seedFrom@ (@output@ or @publication-change@). Nothing is written
+or submitted.
 -}
 previewIdentity
     :: Application
@@ -813,23 +999,114 @@ previewIdentity
     -> Release
     -> Addr
     -> [(TxIn, TxOut ConwayEra)]
-    -> IO ((TxIn, CageConfig, NamingCodes), [(Text, Value)])
-previewIdentity app submitting a rel addr utxos = do
-    seedIn <- case createSeed a of
-        Just s -> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
-        Nothing -> case sortOn
-            (Down . (^. coinTxOutL) . snd)
-            (filter (adaOnlyOut . snd) utxos) of
-            ((i, _) : _) -> pure i
-            [] ->
-                failWith
-                    ClientRefusal
-                    "the wallet holds no ada-only output to preview a seed with"
+    -> PParams ConwayEra
+    -> Bool
+    -- ^ whether the state script must be published (no live carrier)
+    -> IO ((TxIn, CageConfig, NamingCodes, Text), [(Text, Value)])
+previewIdentity app submitting a rel addr utxos pp mustPublish = do
+    let stateScript = scriptFromBytes "state" (releaseState rel)
+        adaOnlyHeld = [u | u@(_, o) <- utxos, adaOnlyOut o]
+        -- A shortfall at the first publication (auto chained, no carrier)
+        -- names no seed. Preview (both modes) succeeds with `createRefusal`
+        -- carrying the whole-run refusal and null seed fields, without
+        -- calling the funding judgement; create fails with client-refusal
+        -- and the same text before anything is written. The whole-run figure
+        -- uses a dummy largest-held identity (applied params are
+        -- fixed-length, so script sizes and the figure are exact).
+        -- `SoleSeedWhilePublishing` is only for an explicit `--seed`.
+        wholeRunText err = case (err, adaOnlyHeld) of
+            (PublicationUnfunded _ needed (largest, held, _), (dummy, _) : _) ->
+                let chosenDummy =
+                        economics
+                            { reProcessTime = createProcessTime a
+                            , reRetractTime = createRetractTime a
+                            }
+                    (cfgDummy, pinnedDummy) =
+                        registryConfigFor app rel chosenDummy (txInToRef dummy)
+                    tokenDummy = stateTokenOf rel dummy
+                    laterDummy = laterScripts cfgDummy pinnedDummy (TokenId (snd tokenDummy))
+                    dummyCarrier =
+                        ( dummy
+                        , mkBasicTxOut addr (MaryValue (Coin 0) mempty)
+                            & referenceScriptTxOutL .~ SJust stateScript
+                        )
+                    bootCostDummy = bootCostBound pp dummyCarrier
+                    refCoinsDummy =
+                        [ publicationRefCoin pp addr script
+                        | (_, script) <- ("state", stateScript) : laterDummy
+                        ]
+                    runNeedDummy =
+                        sum refCoinsDummy
+                            + fromIntegral (1 + length laterDummy) * publicationFee
+                            + bootCostDummy
+                            + publicationMinChange
+                in  renderIdentityError
+                        (PublicationUnfunded "state" needed (largest, held, runNeedDummy))
+            _ -> renderIdentityError err
+        firstMarker = case adaOnlyHeld of
+            ((dummy, _) : _) -> (dummy, "output-first-failure")
+            [] -> error "previewIdentity: empty wallet reached first failure"
+    explicit <- case createSeed a of
+        Just s ->
+            Just <$> either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
+        Nothing -> pure Nothing
+    when (isNothing explicit && null adaOnlyHeld) $
+        failWith
+            ClientRefusal
+            "the wallet holds no ada-only output to preview a seed with"
+    (seedIn, seedFrom) <- case selectSeed explicit utxos pp stateScript addr mustPublish submitting of
+        Right chosen -> pure chosen
+        Left (SeedNotInWallet "no ada-only output") ->
+            failWith
+                ClientRefusal
+                "the wallet holds no ada-only output to preview a seed with"
+        Left err@(PublicationUnfunded "state" _ _)
+            | isNothing explicit && mustPublish ->
+                if submitting
+                    then failWith ClientRefusal (wholeRunText err)
+                    else pure firstMarker
+        Left err@(PublicationTooLarge "state" _ _)
+            | isNothing explicit && mustPublish ->
+                if submitting
+                    then failWith ClientRefusal (wholeRunText err)
+                    else pure firstMarker
+        Left err -> failWith ClientRefusal (renderIdentityError err)
+    let isChained = seedFrom == "publication-change"
+        isFirstFailure = seedFrom == "output-first-failure"
+        soleHeld = case seedHeld seedIn utxos of
+            Right _ -> null [() | (i, o) <- utxos, i /= seedIn, adaOnlyOut o]
+            Left _ -> False
+        omitNow = soleHeld && mustPublish && seedFrom == "output"
+        firstRefusalText = case selectSeed explicit utxos pp stateScript addr mustPublish submitting of
+            Left err -> wholeRunText err
+            Right _ ->
+                error
+                    "previewIdentity: first-failure marker without selection refusal"
     funding <-
-        either
-            (failWith ClientRefusal . renderIdentityError)
-            pure
-            (seedChecks submitting seedIn utxos)
+        if isFirstFailure
+            then pure [("createRefusal", toJSON (T.pack firstRefusalText))]
+            else
+                if isChained
+                    then
+                        pure
+                            [("createRefusal", toJSON (Nothing :: Maybe Text)) | not submitting]
+                    else
+                        if omitNow && not submitting
+                            then
+                                pure
+                                    [
+                                        ( "createRefusal"
+                                        , toJSON
+                                            ( T.pack
+                                                (renderIdentityError (SoleSeedWhilePublishing (renderOutRef seedIn)))
+                                            )
+                                        )
+                                    ]
+                            else
+                                either
+                                    (failWith ClientRefusal . renderIdentityError)
+                                    pure
+                                    (seedChecks submitting seedIn utxos)
     let chosen =
             economics
                 { reProcessTime = createProcessTime a
@@ -839,11 +1116,23 @@ previewIdentity app submitting a rel addr utxos = do
             registryConfigFor app rel chosen (txInToRef seedIn)
         identity =
             [ ("application", toJSON (pinApplicationName (appPin app)))
-            , ("stateToken", toJSON (renderStateToken (stateTokenOf rel seedIn)))
-            , ("seed", toJSON (txInText seedIn))
+            ,
+                ( "stateToken"
+                , if isFirstFailure
+                    then toJSON Aeson.Null
+                    else toJSON (renderStateToken (stateTokenOf rel seedIn))
+                )
+            ,
+                ( "seed"
+                , if isFirstFailure then toJSON Aeson.Null else toJSON (txInText seedIn)
+                )
+            ,
+                ( "seedFrom"
+                , if isFirstFailure then toJSON Aeson.Null else toJSON seedFrom
+                )
             , ("wallet", toJSON (T.pack (bech32Address addr)))
             , ("walletKeyHash", toJSON (hexT (addrKeyHashBytes addr)))
-            , ("pins", toJSON (pinsOf cfg))
             ]
+                <> ([("pins", toJSON (pinsOf cfg)) | not isFirstFailure])
                 <> funding
-    pure ((seedIn, cfg, pinned), identity)
+    pure ((seedIn, cfg, pinned, seedFrom), identity)
