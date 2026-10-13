@@ -17,7 +17,7 @@ model change, no wire change.
   own transaction (the fold reserve), so only it needs the post-build judgement;
   for `update`, `reject` and `reclaim` the built body proves the wallet pays the
   fee. The same function is also called once before building with the fold
-  reserve alone, which the parameters give without a body, so a wallet that cannot
+  reserve alone, which the parameters and the reference scripts give without a body, so a wallet that cannot
   cover even that is refused before anything is built.
 - **One pure function, one effect.** `walletShortfall` (pure, beside `Outlay`)
   decides from the wallet's outputs and a required lovelace amount.

@@ -43,7 +43,7 @@ af16bad4:
   reserve for a later transaction, which a successful build does not prove.
 - `wallet-below-the-fold-reserve-refused-before-building`: before the booking is
   built, a wallet holding less than the bound on the fold that follows it (known
-  from the network's parameters alone) is refused: nothing can cover a booking
+  from the network's parameters and the reference scripts the fold reads) is refused: nothing can cover a booking
   that cannot cover that.
 - `empty-wallet-refused-before-building`: for `insert`, `terminate` and `update`,
   a wallet with no ada-only output to fund from, or with the output named by
