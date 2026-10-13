@@ -1,12 +1,13 @@
 {- |
 Module      : Singular.Registry.Funding
-Description : The funding floor a run must clear before it starts
+Description : The fixed floor the conformance runner keeps for its scenarios
 License     : Apache-2.0
 
-The one place the pre-run funding check lives: what the funding wallet
-must hold before the first transaction is built, the diagnostic that
-names the address, what is required, what is there, and the faucet
-step, and the rendering of lovelace amounts that diagnostic reads.
+The one place the conformance runner's pre-run funding check lives: what
+that runner requires before the first transaction is built, the diagnostic
+that names the address, what is required, what is there, and the faucet
+step, and the rendering of lovelace amounts that diagnostic reads. Writes
+judge the wallet on the measured outlay as client policy, not on this floor.
 -}
 module Singular.Registry.Funding
     ( -- * Funding
@@ -27,10 +28,10 @@ import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.Wallet (bech32Address)
 
-{- | What the funding wallet must hold before the first transaction is
-built. A floor, not a guarantee: it catches the empty and the
-nearly-empty wallet at the start of a run rather than inside a balance
-exception halfway through one.
+{- | What the conformance runner requires before the first transaction
+is built. A floor, not a guarantee: it catches the empty and the
+nearly-empty wallet at the start of a conformance run rather than inside
+a balance exception halfway through one. Writes do not use it.
 -}
 data FundingFloor = FundingFloor
     { floorTotal :: Integer

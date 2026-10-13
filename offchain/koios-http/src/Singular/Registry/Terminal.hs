@@ -34,7 +34,6 @@ import Singular.Provider.Koios.Runtime (koiosSource, newIORuntime)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Confirmation (awaitTransaction)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
-import Singular.Registry.Funding (checkFunding, defaultFundingFloor)
 import Singular.Registry.LedgerProvider
     ( LedgerProvider
     , Network (..)
@@ -137,8 +136,9 @@ withReadsObserved backend reading observe settings action = do
         Control.Monad.void (SessionIO.parameters session)
     action capabilities
 
-{- | The same, with the wallet's funding checked first, its reads traced into
-the second tracer.
+{- | The same, opening the provider with no wallet threshold.
+Its reads are traced into the second tracer. The wallet
+argument stays as a residual; nothing reads it.
 -}
 withWrites
     :: Tracer IO BackendEvent
@@ -149,7 +149,11 @@ withWrites
     -> IO a
 withWrites backend reading = withWritesObserved backend reading (const (pure ()))
 
--- | Startup and funding belong to the same command evidence.
+{- | Startup with no wallet threshold. The wallet argument
+stays as a residual; nothing reads it. Opening reads the
+provider; the operation judges the wallet where its cost
+is measured.
+-}
 withWritesObserved
     :: Tracer IO BackendEvent
     -> Tracer IO ReadEvent
@@ -158,12 +162,8 @@ withWritesObserved
     -> Wallet
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
-withWritesObserved backend reading observe settings wallet action = withReadsObserved backend reading observe settings $ \capabilities -> do
-    checkFunding
-        (tracedReads koiosSource reading capabilities)
-        (walletAddr wallet)
-        defaultFundingFloor
-    action capabilities
+withWritesObserved backend reading observe settings _wallet =
+    withReadsObserved backend reading observe settings
 
 -- | Sign with the caller's explicit wallet and confirm only these signed bytes.
 submitWithWallet

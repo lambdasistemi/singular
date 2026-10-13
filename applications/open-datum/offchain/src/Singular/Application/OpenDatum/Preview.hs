@@ -93,15 +93,23 @@ import Singular.CLI.Outlay
     , bookingOutlay
     , collateralOf
     , collateralOfFee
+    , outlayTotal
     , updateOutlay
     )
+import Singular.CLI.Plan (emptyFields)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
     ( hexT
     , keyFields
     , parseEnterpriseAddress
     )
-import Singular.CLI.Session (Env (..), failWith, readsIn, txIdHex)
+import Singular.CLI.Session
+    ( Env (..)
+    , failWith
+    , failWithFields
+    , readsIn
+    , txIdHex
+    )
 import Singular.Registry.Application
     ( Application
     , datumFromJson
@@ -110,8 +118,12 @@ import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
+import Singular.Registry.TxBuilder.Edges
+    ( bookEdgeMeasured
+    , selectFunding
+    )
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 
 -- | Which entry command is being prepared.
@@ -208,6 +220,17 @@ runPreview app env kind a settings addrText = do
                     outs <- liveOutputs app v saved
                     refuseBooking context key BookUpdate
                     (holding, _) <- planUpdate live caller key outs
+                    walletUtxos <- Cage.outputsAt v addr
+                    _ <-
+                        either
+                            ( \msg ->
+                                failWithFields
+                                    ClientRefusal
+                                    (msg <> " (client policy)")
+                                    (emptyFields addr walletUtxos)
+                            )
+                            pure
+                            (selectFunding (entryFund a) walletUtxos)
                     tx <- buildUpdate v live addr (entryFund a) holding payload
                     let outlay = updateOutlay tx
                     refuseOver (entryMaxOutlay a) outlay
@@ -253,6 +276,19 @@ previewBooking a v live addr key b = do
     let s = liveSaved live
         cfg = savedCfg s
     pp <- Cage.parameters v
+    walletUtxos <- Cage.outputsAt v addr
+    _ <-
+        either
+            ( \msg ->
+                failWithFields
+                    ClientRefusal
+                    (msg <> " (client policy)")
+                    (emptyFields addr walletUtxos)
+            )
+            pure
+            (selectFunding (entryFund a) walletUtxos)
+    let Coin reserve = protocolFeeReserve pp (liveRefs live)
+    refuseUnderfunded addr walletUtxos reserve "fold reserve"
     booking <-
         bookEdgeMeasured
             cfg
@@ -268,6 +304,11 @@ previewBooking a v live addr key b = do
             (entryFund a)
     let outlay = bookingOutlay pp (liveRefs live) booking
     refuseOver (entryMaxOutlay a) outlay
+    refuseUnderfunded
+        addr
+        walletUtxos
+        (outlayTotal outlay)
+        "measured outlay"
     pure
         [ ("booking", bodyReport pp booking)
         , ("fold", foldBound pp live outlay)

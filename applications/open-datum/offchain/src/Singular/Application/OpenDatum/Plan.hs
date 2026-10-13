@@ -34,6 +34,7 @@ module Singular.Application.OpenDatum.Plan
 
       -- * What it costs
     , refuseOver
+    , refuseUnderfunded
     , outlayReport
     ) where
 
@@ -75,7 +76,12 @@ import Singular.Application.OpenDatum.Update
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command (EntryArgs (..), Key (..))
 import Singular.CLI.Live
-import Singular.CLI.Plan (outlayReport, readJson, refuseOver)
+import Singular.CLI.Plan
+    ( outlayReport
+    , readJson
+    , refuseOver
+    , refuseUnderfunded
+    )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session (failWith)
@@ -292,6 +298,6 @@ buildUpdate v live addr chosen holding payload = do
             }
         >>= either (failWith ClientRefusal) pure
 
--- Generic planning (readJson, refuseOver, outlayReport) comes from
+-- Generic planning (readJson, refuseOver, refuseUnderfunded, outlayReport) comes from
 -- Singular.CLI.Plan, the one module both binaries plan through, and is
 -- re-exported here so existing callers keep importing this module.
