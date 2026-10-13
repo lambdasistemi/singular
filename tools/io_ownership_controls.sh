@@ -53,21 +53,44 @@ if ! bash "$check" "$root" >"$work/baseline.log" 2>&1; then
 fi
 echo "controls: baseline PASS — the tree's 95 gated sites are allowlisted, B1-B5 hold"
 
-# One hardlinked baseline copy; each control derives its own scratch from it.
+# One baseline copy; each control derives its own scratch from it.
 # Hardlinks are read-only sharing: EVERY plant step below removes its target
 # first (rm + create/append), because writing through a shared inode would
 # mutate the baseline, every sibling scratch AND the working tree. An
 # in-place append (>> , >) through a hardlink is a worktree edit.
-if ! cp -al "$root" "$work/base" 2>/dev/null; then
-  cp -a "$root" "$work/base"
-fi
+#
+# Cross-device copies cannot hardlink: a naive `cp -al || cp -a` fallback
+# nests the source inside the partial destination left by the failed
+# hardlink attempt (dest/base/...), so every plant misses its target and
+# the check mis-reports the setup loss as a wrong-reason rejection
+# (hosted PR620 red). The copy below always starts from an absent dest and
+# asserts a sentinel afterwards; a copy defect is a loud SETUP-FAILURE,
+# never a cascade.
+copy_tree() { # copy_tree <src> <dest> — complete copy or loud failure
+  local src=$1 dest=$2
+  rm -rf "$dest"
+  if ! cp -al "$src" "$dest" 2>/dev/null; then
+    rm -rf "$dest"
+    cp -a "$src" "$dest"
+  fi
+  [ -f "$dest/tools/io_ownership_inventory.py" ] || {
+    echo "controls: SETUP FAILURE — scratch copy $dest lacks the inventory tool" >&2
+    exit 1
+  }
+}
+copy_tree "$root" "$work/base"
 rm -rf "$work/base/.git"
 
 scratch() { # scratch <name> — fresh derived copy of the baseline
-  local dest="$work/$1"
-  if ! cp -al "$work/base" "$dest" 2>/dev/null; then
-    cp -a "$work/base" "$dest"
-  fi
+  copy_tree "$work/base" "$work/$1"
+}
+
+plant_target() { # plant_target <scratch> <relpath> — require the plant site
+  local target="$work/$1/$2"
+  [ -f "$target" ] || {
+    echo "controls: SETUP FAILURE — scratch $1 lacks plant target $2" >&2
+    exit 1
+  }
 }
 
 expect_reject() { # expect_reject <name> <required-substring> [more…]
@@ -114,6 +137,7 @@ expect_reject c1-new-ioref-site \
 # c2 — an unsafe escape added to a covered production file.
 scratch c2-unsafe-escape
 c2target="$work/c2-unsafe-escape/offchain/lib/Singular/Registry/Trie/PureManager.hs"
+plant_target c2-unsafe-escape offchain/lib/Singular/Registry/Trie/PureManager.hs
 cp "$c2target" "$c2target.plant" && rm "$c2target" && mv "$c2target.plant" "$c2target"
 printf '\nimport System.IO.Unsafe (unsafePerformIO)\n' >>"$c2target"
 printf '\norphanEscaped :: Int\norphanEscaped = unsafePerformIO (pure 1)\n' >>"$c2target"
@@ -124,6 +148,7 @@ expect_reject c2-unsafe-escape \
 # c3 — a forkIO site added to a tool file.
 scratch c3-fork-site
 c3target="$work/c3-fork-site/offchain/deployment/Deployment/Node.hs"
+plant_target c3-fork-site offchain/deployment/Deployment/Node.hs
 cp "$c3target" "$c3target.plant" && rm "$c3target" && mv "$c3target.plant" "$c3target"
 printf '\nimport Control.Concurrent (forkIO)\n' >>"$c3target"
 printf '\norphanThread :: IO ()\norphanThread = forkIO (pure ()) >> pure ()\n' >>"$c3target"
@@ -152,6 +177,7 @@ fi
 # c5 — a stale allowlist entry names no gated effect (Types.hs is clean).
 scratch c5-stale-entry
 c5allow="$work/c5-stale-entry/tools/io-ownership.allow"
+plant_target c5-stale-entry tools/io-ownership.allow
 cp "$c5allow" "$c5allow.plant" && rm "$c5allow" && mv "$c5allow.plant" "$c5allow"
 cat >>"$c5allow" <<'EOF'
 offchain/lib/Singular/Registry/Types.hs: ioref — bogus stale entry: this module names no gated effect
@@ -163,6 +189,7 @@ expect_reject c5-stale-entry \
 # c6 — a conformance library module importing the runner breaks B1.
 scratch c6-boundary-drift
 c6target="$work/c6-boundary-drift/conformance/lib/Conformance/Receipt.hs"
+plant_target c6-boundary-drift conformance/lib/Conformance/Receipt.hs
 cp "$c6target" "$c6target.plant" && rm "$c6target" && mv "$c6target.plant" "$c6target"
 printf '\nimport Conformance.Run.Live\n' >>"$c6target"
 expect_reject c6-boundary-drift \
@@ -172,6 +199,7 @@ expect_reject c6-boundary-drift \
 # c7 — an unknown class token in the bound input is rejected.
 scratch c7-bound-input
 c7allow="$work/c7-bound-input/tools/io-ownership.allow"
+plant_target c7-bound-input tools/io-ownership.allow
 cp "$c7allow" "$c7allow.plant" && rm "$c7allow" && mv "$c7allow.plant" "$c7allow"
 cat >>"$c7allow" <<'EOF'
 offchain/lib/Singular/Registry/Types.hs: frobnicate — bogus class token: changed bound input must fail
@@ -186,6 +214,7 @@ expect_reject c7-bound-input \
 # green; only the site-count binding may reject it.
 scratch c8-new-site-same-class
 c8target="$work/c8-new-site-same-class/offchain/lib/Singular/Registry/Trie/PureManager.hs"
+plant_target c8-new-site-same-class offchain/lib/Singular/Registry/Trie/PureManager.hs
 cp "$c8target" "$c8target.plant" && rm "$c8target" && mv "$c8target.plant" "$c8target"
 printf '\norphanExtraRef :: IO (IORef ())\norphanExtraRef = newIORef ()\n' >>"$c8target"
 if ! grep -q '^import Data.IORef' "$c8target"; then
@@ -203,6 +232,7 @@ expect_reject c8-new-site-same-class \
 # what the count-only binding accepted (observed PASS before the fix).
 scratch c9-substitution-across-functions
 c9target="$work/c9-substitution-across-functions/offchain/cli/src/Singular/CLI/Session.hs"
+plant_target c9-substitution-across-functions offchain/cli/src/Singular/CLI/Session.hs
 cp "$c9target" "$c9target.plant" && rm "$c9target" && mv "$c9target.plant" "$c9target"
 sed -i 's/connected <- newIORef False/connected <- pure False/' "$c9target"
 # Insert the new site inside submitBuiltIn's body (line 607 is its header).
