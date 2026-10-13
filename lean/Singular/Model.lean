@@ -1175,12 +1175,12 @@ phase 2. An admitted retraction is the `retract` exit, unchanged; a refused one
 names the first check it fails and is refused before anything it spends or pays
 is looked at. -/
 
-/-- What a retraction's admission reads beyond the request: when the request was
-submitted (its datum's `submitted_at`), the retraction transaction's validity
+/-- What a retraction's admission reads beyond the request: the transaction's validity
 bounds as the request script receives them, and its signatories. Times are POSIX
 milliseconds; `validFrom` is the interval's lower bound, included, and `validTo`
 its upper bound, excluded, as the ledger hands a script a transaction's validity. -/
 structure RetractWitness where
+  /-- Legacy wire field retained for compatibility. Admission uses the request booked time. -/
   submittedAt : Nat
   validFrom : Nat
   validTo : Nat
@@ -1201,9 +1201,9 @@ follows it has run out. The first instant allowed is
 `submittedAt + processTime`, included; the upper bound, being excluded, may reach
 `submittedAt + processTime + retractTime` and not pass it. This is the request
 script's `in_phase2` over a finite interval. -/
-def inPhase2 (c : Config) (w : RetractWitness) : Bool :=
-  decide (w.submittedAt + c.processTime ≤ w.validFrom) &&
-    decide (w.validTo ≤ w.submittedAt + c.processTime + c.retractTime)
+def inPhase2 (c : Config) (r : Request) (w : RetractWitness) : Bool :=
+  decide (r.submittedAt + c.processTime ≤ w.validFrom) &&
+    decide (w.validTo ≤ r.submittedAt + c.processTime + c.retractTime)
 
 /-- Why a retraction of `r` is not admitted, in the request script's order: a
 request that neither inserts a key nor reads a terminal one is
@@ -1213,7 +1213,7 @@ admits. -/
 def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option String :=
   if !retractableEdge r.edge then some "withdraw-insert-only"
   else if !w.signatories.contains r.owner then some "retract-owner"
-  else if !inPhase2 c w then some "not-phase2"
+  else if !inPhase2 c r w then some "not-phase2"
   else none
 
 /-- The finite, excluded upper validity bound the ledger hands to a fold. -/

@@ -171,13 +171,13 @@
     "name": "Singular.Statements.retract_admitted_iff",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+    "statementSha256": "30f9c66828032bcc4337dc96e5c7e9c8dec6514b0f5c9ad3c0969846e19ce55c"
   },
   {
     "name": "Singular.Statements.retract_refusal_first_failing",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+    "statementSha256": "a91793ff8a3c12a3bf4a12632c53a53f4e0d25ff42f40766443a6e4b1d417f71"
   },
   {
     "name": "Singular.Statements.admitted_exit_is_the_exit",

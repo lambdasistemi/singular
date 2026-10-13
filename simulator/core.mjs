@@ -69,6 +69,7 @@ const requestSchema = {
   deposit: N,
   tip: N,
   reference: N,
+  submittedAt: N,
   output: N,
   datum: { $option: N },
   submittedAt: N,

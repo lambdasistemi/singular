@@ -13,19 +13,19 @@ into a neighbouring ticket.
 
 ## Slice one: one booked clock
 
-- [ ] `booked-time-on-request` — a request records its booked submission time, serialized, zero
+- [x] `booked-time-on-request` — a request records its booked submission time, serialized, zero
   when absent from older input. (one-booked-clock)
-- [ ] `window-reads-booked-time` — the retraction window, its admission and the restated window
+- [x] `window-reads-booked-time` — the retraction window, its admission and the restated window
   statements read the request's time and ignore the witness's legacy field. (one-booked-clock)
-- [ ] `retract-question-carries-booked-time` — the transport and the harness give a retraction
+- [x] `retract-question-carries-booked-time` — the transport and the harness give a retraction
   question the booked time read from the request datum; a fold question is unchanged.
   (one-booked-clock, admission-changes-no-effect)
-- [ ] `protocol-seven` — the driver's protocol version moves to 7 and the surface digest pin follows.
+- [x] `protocol-seven` — the driver's protocol version moves to 7 and the surface digest pin follows.
   (consumers-state-the-rule)
-- [ ] `regenerate-after-slice-one` — corpora, theorem register and digests, simulator mirror,
+- [x] `regenerate-after-slice-one` — corpora, theorem register and digests, simulator mirror,
   application corpus and the coverage record are regenerated from the model, with a published
   restatement table for every changed identity. (consumers-state-the-rule, unmet-stays-unmet)
-- [ ] `amendment-opened` — constitution version 1.16.0 is opened with the retraction row restated.
+- [x] `amendment-opened` — constitution version 1.16.0 is opened with the retraction row restated.
   (consumers-state-the-rule)
 
 Terminal condition: every command of slice one's gate exits as the gate states, on a clean

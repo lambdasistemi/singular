@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "All 45 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 66 in total, each with its own manifest and its own compiled gate.",
+      "text": "All 36 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 57 in total, each with its own manifest and its own compiled gate.",
       "pause": 400
     },
     {
@@ -61,10 +61,6 @@
       "pause": 500
     },
     {
-      "text": "A batch cannot create an active holding and terminate it in the same batch. Termination must use a holding from before the batch. Independent requests on distinct keys can form an accepted non-empty batch when each admits alone and claims its own edge mint. This is an acceptance guarantee; the model builds no batch transaction and makes no comparison of singleton or reordered batch effects.",
-      "pause": 400
-    },
-    {
       "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will: that is what the operator's rulings, the interface and the simulation are for. A theorem can also be true and narrower than its name, so the column above says what each one states rather than leaving the name to imply it.",
       "pause": 400
     },
@@ -79,6 +75,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "78a727c29ea3092ac19b225e9e5ce5796a0aa81f357b5d0c61665bde563c164c"
+    "sha256": "72a64689bf0f62a0a81c5906ffe0218071a8986ac5004e14b4f68f0c85936ecb"
   }
 }

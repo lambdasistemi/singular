@@ -162,7 +162,7 @@ structure SurfaceIdentity where
 
 def surface : SurfaceIdentity :=
   { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 6
+  , protocolVersion := 7
   , operations := declaredOperations
   , observations := declaredObservations
   , unobservable := declaredUnobservable

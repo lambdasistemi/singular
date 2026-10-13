@@ -1910,7 +1910,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "50d22862aadc190778edc5024af5f628f3d176c88a26666c37c957408486b89d",
+  "corpusSourceSha256": "66cc75feef7cee79dbfe592ffcbd6a63e4923edc1325b137de262e462d32442a",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2039,20 +2039,20 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "09283f0990dcef0d2f056b4d2d39f497466d6a71affcdbd1a959a82555e36bf1",
-  "payloadSha256": "968750e3a7c2f9e42bc9e4f2ced2dc11e6d1c242cd82bfe1e5c6d679740ec769",
+  "modelSha256": "8079fda0c5c42db56180e4e4c0490796d9a133c6e542a52c3701f627a1b29133",
+  "payloadSha256": "d2dbab66b4e136bfcb38ad2be98307750747b4b7f5e42aaef0fa02264c6f8cfd",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "50d22862aadc190778edc5024af5f628f3d176c88a26666c37c957408486b89d",
+    "lean/Main.lean": "66cc75feef7cee79dbfe592ffcbd6a63e4923edc1325b137de262e462d32442a",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "e22bbbfe9bc009789a021e2200b5ba4db47b9cead2480ab63e55cd37ddbaa7d6",
-    "lean/Singular/Lemmas.lean": "34ce08292ed74b0833e766e5cca4d1cfbe6b0a9c7267c6145eb726fa492fecba",
-    "lean/Singular/Model.lean": "09283f0990dcef0d2f056b4d2d39f497466d6a71affcdbd1a959a82555e36bf1",
-    "lean/Singular/Statements.lean": "77a0d2d899913eb9c403f85899f24bb2d5253a0408c921e870a28bfc86dd0d69"
+    "lean/Singular/Driver.lean": "dbdbf2b508c2868fe6134d84ef2395439e652eec8395ee94b6af3d502f11a3a5",
+    "lean/Singular/Lemmas.lean": "d07a4b85ff3f78b8d9b66d4dd720b61b066495d317fd005a0ebc0291e5e13694",
+    "lean/Singular/Model.lean": "8079fda0c5c42db56180e4e4c0490796d9a133c6e542a52c3701f627a1b29133",
+    "lean/Singular/Statements.lean": "1e9dd041b99bb76b5a60d4a08b1aa8c95d92990a054c30b389474d0b6e58562d"
   },
-  "statementsSha256": "77a0d2d899913eb9c403f85899f24bb2d5253a0408c921e870a28bfc86dd0d69",
-  "theoremManifestSha256": "659b1b1e0697f0e6399be7a84108e212f176d5c7482e13f65b78014459ce4cb6",
+  "statementsSha256": "1e9dd041b99bb76b5a60d4a08b1aa8c95d92990a054c30b389474d0b6e58562d",
+  "theoremManifestSha256": "1f61ec5e15a36843b7ce6c5e556df0a1fa3cb5c20c69154a54081945890920d8",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,

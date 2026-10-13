@@ -430,7 +430,7 @@ structure Request where
   request's destination is an address and the datum itself, and the receiving
   output must carry exactly it: no datum when the request carries none. -/
   datum : Option Nat := none
-  /-- The request datum's submission time, in POSIX milliseconds. -/
+  /-- The time the request was booked, in milliseconds since the epoch, as its datum carries it. -/
   submittedAt : Nat := 0
   deriving Repr, BEq, DecidableEq
 
@@ -448,9 +448,9 @@ instance : ToJson Request where
     , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
     , ("tip", toJson r.tip)
     , ("reference", toJson r.reference)
+    , ("submittedAt", toJson r.submittedAt)
     , ("output", toJson r.output)
     , ("datum", datumJson r.datum)
-    , ("submittedAt", toJson r.submittedAt)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
         Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
@@ -1175,12 +1175,12 @@ phase 2. An admitted retraction is the `retract` exit, unchanged; a refused one
 names the first check it fails and is refused before anything it spends or pays
 is looked at. -/
 
-/-- What a retraction's admission reads beyond the request: when the request was
-submitted (its datum's `submitted_at`), the retraction transaction's validity
+/-- What a retraction's admission reads beyond the request: the transaction's validity
 bounds as the request script receives them, and its signatories. Times are POSIX
 milliseconds; `validFrom` is the interval's lower bound, included, and `validTo`
 its upper bound, excluded, as the ledger hands a script a transaction's validity. -/
 structure RetractWitness where
+  /-- Legacy wire field retained for compatibility. Admission uses the request booked time. -/
   submittedAt : Nat
   validFrom : Nat
   validTo : Nat
@@ -1201,9 +1201,9 @@ follows it has run out. The first instant allowed is
 `submittedAt + processTime`, included; the upper bound, being excluded, may reach
 `submittedAt + processTime + retractTime` and not pass it. This is the request
 script's `in_phase2` over a finite interval. -/
-def inPhase2 (c : Config) (w : RetractWitness) : Bool :=
-  decide (w.submittedAt + c.processTime ≤ w.validFrom) &&
-    decide (w.validTo ≤ w.submittedAt + c.processTime + c.retractTime)
+def inPhase2 (c : Config) (r : Request) (w : RetractWitness) : Bool :=
+  decide (r.submittedAt + c.processTime ≤ w.validFrom) &&
+    decide (w.validTo ≤ r.submittedAt + c.processTime + c.retractTime)
 
 /-- Why a retraction of `r` is not admitted, in the request script's order: a
 request that neither inserts a key nor reads a terminal one is
@@ -1213,38 +1213,15 @@ admits. -/
 def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option String :=
   if !retractableEdge r.edge then some "withdraw-insert-only"
   else if !w.signatories.contains r.owner then some "retract-owner"
-  else if !inPhase2 c w then some "not-phase2"
+  else if !inPhase2 c r w then some "not-phase2"
   else none
 
-/-- The finite, excluded upper validity bound the ledger hands to a fold. -/
-structure FoldWitness where
-  validTo : Nat
-  deriving Repr, BEq, DecidableEq, ToJson, FromJson
-
-/-- Whether the fold's upper bound is at or before this request's deadline. -/
-def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
-  decide (validTo ≤ submittedAt + c.processTime)
-
-/-- Fold admission, before the law: fixed edges, then every request's window. -/
-def foldAdmission (c : Config) (batch : List Request) (w : FoldWitness) : Option String :=
-  if !batch.all (fun r => allowed r.edge) then some "edge-inadmissible"
-  else if !batch.all (fun r => inPhase1 c r.submittedAt w.validTo) then some "not-phase1"
-  else none
-
-/-- A batch under its finite validity witness, admission before the batch law. -/
-def admittedFoldBatch (s : RegistryState) (batch : List Request) (w : FoldWitness) :
-    Except String Result :=
-  match foldAdmission s.config batch w with
-  | some why => .error why
-  | none => foldBatch s batch
-
-/-- A fold reads the upper bound against its request's own submission time.
-A retract keeps its separate witness and admission; a reject reads no time. -/
+/-- The admission an exit is subject to: a retract's is `retractAdmission`; a
+fold and a reject have none here, and ignore the witness. -/
 def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
   match exit with
   | .retract => retractAdmission c r w
-  | .fold _ => foldAdmission c [r] { validTo := w.validTo }
-  | .reject => none
+  | .fold _ | .reject => none
 
 /-- One exit as a model step, admission first: refused with the admission's
 reason, otherwise exactly `exitStep`. -/

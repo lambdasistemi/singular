@@ -84,10 +84,10 @@ def onlyRetractOwesTheTipDigest : String :=
   "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
 def retractAdmittedIff : String := "Singular.Statements.retract_admitted_iff"
 def retractAdmittedIffDigest : String :=
-  "6c9c65f00e1b9054319ae2151908af4336717df5642f31aace963aa80cb29f57"
+  "30f9c66828032bcc4337dc96e5c7e9c8dec6514b0f5c9ad3c0969846e19ce55c"
 def retractRefusalFirstFailing : String := "Singular.Statements.retract_refusal_first_failing"
 def retractRefusalFirstFailingDigest : String :=
-  "506966483299dfa897bb988c179646373d3dfcf7a1a20728fdf0cae217197ffc"
+  "a91793ff8a3c12a3bf4a12632c53a53f4e0d25ff42f40766443a6e4b1d417f71"
 def deliveredDatumIsRequestDatum : String :=
   "Singular.Statements.delivered_datum_is_request_datum"
 def deliveredDatumIsRequestDatumDigest : String :=
@@ -130,7 +130,8 @@ def registerTaken : Request := { request .insertActive 42 43 556 0 55 with tip :
 
 /-- A registration of key 7 by owner 77 with deposit 55 and tip 7, retracted by
 its owner: everything it held, deposit and tip, goes back. -/
-def registerRetracted : Request := { request .insertActive 7 77 777 0 55 with tip := 7 }
+def registerRetracted : Request :=
+  { request .insertActive 7 77 777 0 55 with tip := 7, submittedAt := 10000 }
 
 /-- The retraction of a request submitted at 10000 by its owner 77 and a second
 party 3, valid over the whole of phase 2 under `sTimed`: from 11000, included, to
@@ -140,7 +141,8 @@ def retractionWitness : RetractWitness :=
 
 /-- An update of key 7 by owner 77: pending like the registration, and not one its
 owner can take back. -/
-def updateRetracted : Request := { request .updateActive 7 77 777 0 55 with tip := 7 }
+def updateRetracted : Request :=
+  { request .updateActive 7 77 777 0 55 with tip := 7, submittedAt := 10000 }
 
 /-- A request claiming exactly the mint its own edge makes: the lawful claim a
 batch's mint guard compares with what the batch folds. -/
@@ -263,6 +265,19 @@ def existingScenarios : List Scenario :=
     , requiresReachableState := true, start := sTimed, setup := [registerActive]
     , exit := .retract, request := registerRetracted, lovelace := lovelace
     , witness := some { retractionWitness with validTo := 11501 } }
+  , { id := "PR-retract-forged-time"
+    , theoremName := retractRefusalFirstFailing
+    , statementSha256 := retractRefusalFirstFailingDigest
+    , kind := "mutant", mutates := some "DR09-retract-pending"
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with submittedAt := 11000, validFrom := 12000, validTo := 12001 } }
+  , { id := "PR-retract-ignores-witness-time"
+    , theoremName := retractAdmittedIff, statementSha256 := retractAdmittedIffDigest
+    , kind := "witness", mutates := none
+    , requiresReachableState := true, start := sTimed, setup := [registerActive]
+    , exit := .retract, request := registerRetracted, lovelace := lovelace
+    , witness := some { retractionWitness with submittedAt := 0 } }
     -- The active registration claiming the token its edge mints: the single step a
     -- one-request batch must fold exactly as.
   , { id := "DR14-register-active-claimed"
@@ -282,6 +297,11 @@ def existingScenarios : List Scenario :=
   , foreignDatumDelivery
   , carrierlessDelivery
   ]
+
+#guard scenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
+  (runSurface sc).2.reason == some "not-phase2"
+#guard scenarios.any fun sc => sc.id == "PR-retract-ignores-witness-time" &&
+  (runSurface sc).2.outcome == .accepted
 
 /-- The batch questions: a lawful two-request fold and its refused mutants — a
 crossed claim, an empty batch, a later request the law refuses — a batch of one

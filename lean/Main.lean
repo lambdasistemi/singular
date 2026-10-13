@@ -663,7 +663,7 @@ def exitState : RegistryState := legacyAbsent (booked (booked s0 3) 4) 6
 
 /-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
 def exitStepRequest (e : Edge) (k : Nat) : Request :=
-  { req e k 42 99 with deposit := 55, tip := 7 }
+  { req e k 42 99 with deposit := 55, tip := 7, submittedAt := 100 }
 
 /-- The keys the rows range over: active, absent, and unbound. -/
 def exitKeys : List Nat := [4, 6, 9]
@@ -800,7 +800,7 @@ def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
 -- the surface's protocol moved for each, and again when a request came to carry
 -- its datum.
 #guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 6
+#guard surface.protocolVersion == 7
 #guard surface.judgements == ["spend", "settle"]
 #guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
 #guard surface.batchQuestions.all fun q => !q.2.contains "tx"

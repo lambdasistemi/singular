@@ -2247,6 +2247,10 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
             ]
                 <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
                    ]
+                <> [ "submittedAt" .= snd (requestDatumOf out)
+                   | exit == Live.Retract
+                   , Right out <- [requestOut]
+                   ]
 
 {- | Observation only looks up identities allocated while acting. The
 concrete trie root is checked before its leaves are translated.

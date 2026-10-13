@@ -1241,14 +1241,14 @@ theorem retract_admitted_iff (s : RegistryState) (r : Request) (w : RetractWitne
     (∃ t, admittedExitStep s .retract r w = .ok t) ↔
       (r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) ∧
       r.owner ∈ w.signatories ∧
-      w.submittedAt + s.config.processTime ≤ w.validFrom ∧
-      w.validTo ≤ w.submittedAt + s.config.processTime + s.config.retractTime := by
+      r.submittedAt + s.config.processTime ≤ w.validFrom ∧
+      w.validTo ≤ r.submittedAt + s.config.processTime + s.config.retractTime := by
   have hr := retractableEdge_iff r.edge
-  have hp := inPhase2_iff s.config w
+  have hp := inPhase2_iff s.config r w
   simp only [admittedExitStep, exitAdmission, retractAdmission, exitStep]
   cases h1 : retractableEdge r.edge <;>
     cases h2 : w.signatories.contains r.owner <;>
-    cases h3 : inPhase2 s.config w <;> simp_all
+    cases h3 : inPhase2 s.config r w <;> simp_all
 
 /-- Why a retraction is refused: the first check it fails, in the request
 script's order.
@@ -1266,11 +1266,11 @@ theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : Ret
       admittedExitStep s .retract r w = .error "retract-owner") ∧
     ((r.edge = .insertAbsent ∨ r.edge = .insertActive ∨ r.edge = .witnessTerminal) →
       r.owner ∈ w.signatories →
-      ¬ (w.submittedAt + s.config.processTime ≤ w.validFrom ∧
-        w.validTo ≤ w.submittedAt + s.config.processTime + s.config.retractTime) →
+      ¬ (r.submittedAt + s.config.processTime ≤ w.validFrom ∧
+        w.validTo ≤ r.submittedAt + s.config.processTime + s.config.retractTime) →
       admittedExitStep s .retract r w = .error "not-phase2") := by
   have hr := retractableEdge_iff r.edge
-  have hp := inPhase2_iff s.config w
+  have hp := inPhase2_iff s.config r w
   refine ⟨?_, ?_, ?_⟩
   · intro n1 n2 n3
     have e1 : retractableEdge r.edge = false := by
@@ -1283,8 +1283,8 @@ theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : Ret
     simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO]
   · intro hR hO hW
     have e1 : retractableEdge r.edge = true := hr.mpr hR
-    have e3 : inPhase2 s.config w = false := by
-      cases h : inPhase2 s.config w
+    have e3 : inPhase2 s.config r w = false := by
+      cases h : inPhase2 s.config r w
       · rfl
       · exact absurd (hp.mp h) hW
     simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO, e3]
