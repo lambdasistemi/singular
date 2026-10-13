@@ -43,6 +43,16 @@
       "pause": 400
     }
   ],
+  "gate-version-2-the-book-the-generic-rows-and-the-extent-check-turn-green-in-slice-three": [
+    {
+      "text": "Gate version 2: the book, the generic rows and the extent check turn green in slice three.",
+      "pause": 500
+    },
+    {
+      "text": "Found while slice two was built: the running book contains every program that has a chapter, among them the dedicated early-rejection program, and the generic session contains the standing unmet consumer-requirement row. Decision B turns both lawful in slice three, so at the end of slice two they cannot agree and these three rows cannot exit 0. Slices two and three are pushed together, so no red head is pushed. Version 2 moves three rows from slice two to the final tier of slice three and changes nothing else: the running book, the generic rows and the refusal extent check. The slice-two commit places the lawful rejects of those rows after both windows with expiry evidence; their end-to-end proof is the hosted run on the head that includes slice three.",
+      "pause": 400
+    }
+  ],
   "the-rows": [
     {
       "text": "The rows.",
@@ -89,6 +99,6 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "a983ed6d66cd1ea2f41b790f067e00d837f1b955b5c67d728a24b9dce46c8d8f"
+    "sha256": "7575a83a99fe8f9c57309deef9f926ec9a168c30f88c94db02785a52d06ec7b4"
   }
 }

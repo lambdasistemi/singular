@@ -60,6 +60,8 @@ def main():
             question["foldWitness"] = row["foldWitness"]
         if row["operation"] == "retract":
             question["witness"] = row["witness"]
+        if row["operation"] == "reject" and "rejection" in row:
+            question["rejection"] = row["rejection"]
         result = evaluate(question)
         for field in ("outcome", "reason", "observations"):
             assert result[field] == row[field], (row["id"], field)

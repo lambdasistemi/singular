@@ -1037,10 +1037,10 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
     (∀ tx : Tx, txOf s r lovelace = .ok tx → tx.signers = []) ∧
     step s (withSignatures r sigs) = step s r ∧
     txOf s (withSignatures r sigs) lovelace = txOf s r lovelace := by
-  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt⟩ := r
+  obtain ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt, registryId⟩ := r
   refine ⟨?_, ?_, ?_⟩
   · intro tx h
-    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt⟩ with
+    cases hs : step s ⟨edge, key, owner, refundAddress, deposit, output, approval, claimed, tip, reference, datum, submittedAt, registryId⟩ with
     | error why => rw [txOf_of_step_error _ _ _ _ hs] at h; exact nomatch h
     | ok t =>
       rw [txOf_of_step_ok _ _ _ _ hs] at h
@@ -1289,14 +1289,17 @@ theorem retract_refusal_first_failing (s : RegistryState) (r : Request) (w : Ret
       · exact absurd (hp.mp h) hW
     simp [admittedExitStep, exitAdmission, retractAdmission, e1, hO, e3]
 
-/-- An exit admitted under its witness is exactly the existing exit, both
-its step and its built transaction. Folds require fold admission, retractions
-require their own admission, and rejects are always admitted. -/
+/-- An admitted retraction is the retract exit, and admission changes no other exit.
+
+For every state, exit, request, witness, lovelace and rejection evidence: when admission lets the exit
+through, the admitted step is exactly `exitStep` and the admitted transaction exactly `txOfExit` —
+what the exit pays, what it leaves of the registry and who must sign its transaction are the
+exit's own, whatever the witnesses say. -/
 theorem admitted_exit_is_the_exit (s : RegistryState) (exit : Exit) (r : Request)
-    (w : RetractWitness) (lovelace : Nat)
-    (admitted : exitAdmission s.config exit r w = none) :
-    admittedExitStep s exit r w = exitStep s exit r ∧
-      admittedTxOfExit s exit r w lovelace = txOfExit s exit r lovelace := by
+    (w : RetractWitness) (lovelace : Nat) (rejection : Option RejectWitness)
+    (admitted : exitAdmission s exit r w rejection = none) :
+    admittedExitStep s exit r w rejection = exitStep s exit r ∧
+      admittedTxOfExit s exit r w lovelace rejection = txOfExit s exit r lovelace := by
   simp [admittedExitStep, admittedTxOfExit, admitted]
 
 /-- **#304** — a fold's transaction describes a destination output exactly when
@@ -1406,17 +1409,22 @@ example (s : RegistryState) (k : Key) :
       { edge := .insertActive, key := k }).length = 1 := by
   simp +decide [txDestinationOutputs, routedPayment, mintRoutedTo, route]
 
-/-- An admission refusal wins before building, spending or payment judgement.
-An admitted exit is judged by spendRefusal, then settle, unchanged. -/
+/-- An admission refusal precedes spending and settlement for every exit;
+a successfully admitted exit is judged by those existing obligations.
+
+For every state, exit, request, witness, lovelace and rejection evidence: an exit its admission
+refuses builds no transaction and is refused with admission's reason whatever the transaction
+spends and pays; an exit admission lets through is judged exactly as before: what it spends
+(`spendRefusal`), then what it pays (`settle`). -/
 theorem admission_refuses_first (s : RegistryState) (exit : Exit) (r : Request)
-    (w : RetractWitness) (lovelace : Nat) :
-    (∀ why, exitAdmission s.config exit r w = some why →
-      admittedTxOfExit s exit r w lovelace = .error why ∧
-      ∀ inputs outputs, exitRefusal s.config exit r w inputs outputs = some why) ∧
-    (exitAdmission s.config exit r w = none →
-      ∀ inputs outputs, exitRefusal s.config exit r w inputs outputs =
+    (w : RetractWitness) (lovelace : Nat) (rejection : Option RejectWitness) :
+    (∀ why, exitAdmission s exit r w rejection = some why →
+      admittedTxOfExit s exit r w lovelace rejection = .error why ∧
+      ∀ inputs outputs, exitRefusal s exit r w inputs outputs rejection = some why) ∧
+    (exitAdmission s exit r w rejection = none →
+      ∀ inputs outputs, exitRefusal s exit r w inputs outputs rejection =
         (spendRefusal exit inputs).orElse fun _ => settle (obligations exit r) outputs) := by
-  refine ⟨?_, ?_⟩
+  constructor
   · intro why refused
     exact ⟨by simp [admittedTxOfExit, refused],
       fun _ _ => by simp [exitRefusal, refused]⟩
@@ -1634,13 +1642,82 @@ theorem fold_admission_precedes_the_law (s : RegistryState) (batch : List Reques
     simpa [hw] using refused
   simp [admittedExitStep, admittedTxOfExit, exitAdmission, single]
 
-/-- A reject reads no time, regardless of its request or the supplied witness. -/
-theorem reject_reads_no_time (s : RegistryState) (r : Request) (w : RetractWitness)
-    (lovelace : Nat) :
-    exitAdmission s.config .reject r w = none ∧
-      admittedExitStep s .reject r w = exitStep s .reject r ∧
-      admittedTxOfExit s .reject r w lovelace = txOfExit s .reject r lovelace := by
-  simp [exitAdmission, admittedExitStep, admittedTxOfExit]
+/-- A rejection uses its own evidence admission, independently of the fold deadline.
+Every retraction witness, including its upper bound, gives the same rejection admission. -/
+theorem rejection_uses_its_own_admission (s : RegistryState) (r : Request)
+    (w : RetractWitness) (rejection : Option RejectWitness) :
+    exitAdmission s .reject r w rejection = rejectAdmission s r rejection := by
+  rfl
+
+/-- Rejection is admitted exactly for identity-bound evidence and one of its two positive
+conditions. The root check uses the model's logical map. -/
+theorem rejection_admitted_iff (s : RegistryState) (r : Request) (w : RejectWitness) :
+    rejectAdmission s r (some w) = none ↔
+      r.registryId = s.config.registryId ∧
+      w.evidence.registry = s.config ∧
+      s.config.root = rootOf s.trie ∧
+      w.evidence.request = r ∧
+      w.validFrom < w.validTo ∧
+      (match w.evidence.reason with
+       | .mismatch leaf => leaf = trieGet s.trie r.key ∧ transition r.edge leaf = none
+       | .expired => r.submittedAt + s.config.processTime + s.config.retractTime ≤ w.validFrom) := by
+  unfold rejectAdmission
+  cases h : w.evidence.reason <;>
+    simp only [h] <;>
+    (repeat' split <;> simp_all [bne, Bool.or_eq_true, Nat.not_le, Option.isSome_iff_ne_none])
+  all_goals grind
+
+/-- A lifecycle-compatible request cannot be rejected before expiry, regardless of the
+evidence the processor chooses to supply. -/
+theorem live_compatible_request_protected (s : RegistryState) (r : Request) (w : RejectWitness)
+    (compatible : transition r.edge (trieGet s.trie r.key) ≠ none)
+    (live : w.validFrom < r.submittedAt + s.config.processTime + s.config.retractTime) :
+    rejectAdmission s r (some w) ≠ none := by
+  intro admitted
+  obtain ⟨_, _, _, _, _, condition⟩ := (rejection_admitted_iff s r w).mp admitted
+  cases h : w.evidence.reason with
+  | mismatch leaf =>
+    simp only [h] at condition
+    obtain ⟨same, refused⟩ := condition
+    rw [same] at refused
+    exact compatible refused
+  | expired =>
+    simp only [h] at condition
+    omega
+
+/-- A missing proof never authorizes rejection, even when refunds are paid. -/
+theorem rejection_without_evidence (s : RegistryState) (r : Request) (w : RetractWitness)
+    (lovelace : Nat) (inputs : List TxInput) (outputs : List TxOutput) :
+    admittedExitStep s .reject r w = .error "reject-evidence-missing" ∧
+    admittedTxOfExit s .reject r w lovelace = .error "reject-evidence-missing" ∧
+    exitRefusal s .reject r w inputs outputs = some "reject-evidence-missing" := by
+  simp [admittedExitStep, admittedTxOfExit, exitRefusal, exitAdmission, rejectAdmission]
+
+/-- Every admitted rejection preserves the full intermediate state, mints nothing, and pays
+the existing deposit obligation. Admission changes no refund rule. -/
+theorem protected_rejection_effects (s : RegistryState) (r : Request) (w : RetractWitness)
+    (e : Option RejectWitness) (t : Result)
+    (h : admittedExitStep s .reject r w e = .ok t) :
+    t.state = s ∧ t.mint = [] ∧ t.paid = [(r.owner, r.deposit)] := by
+  unfold admittedExitStep at h
+  split at h
+  · cases h
+  · simp [exitStep, emptyResult, obligations, paymentPaid] at h
+    cases h
+    exact ⟨rfl, rfl, rfl⟩
+
+/-- An admitted expiry rejection begins after every admitted retraction's excluded upper
+bound for the same booked request, regardless of witness time. -/
+theorem expiry_after_reclaim (s : RegistryState) (r : Request)
+    (rw : RetractWitness) (jw : RejectWitness) (t : Result)
+    (retracted : admittedExitStep s .retract r rw = .ok t)
+    (rejected : rejectAdmission s r (some jw) = none)
+    (expired : jw.evidence.reason = .expired) :
+    rw.validTo ≤ jw.validFrom := by
+  have reclaim := (retract_admitted_iff s r rw).mp ⟨t, retracted⟩
+  have expiry := (rejection_admitted_iff s r jw).mp rejected
+  simp only [expired] at expiry
+  omega
 
 end Statements
 end Singular

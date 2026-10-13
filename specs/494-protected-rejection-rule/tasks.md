@@ -33,33 +33,33 @@ committed head; or a question is filed; or capacity is reached with a handoff.
 
 ## Slice two: rejection needs evidence
 
-- [ ] `historical-scenario-accepted-on-base` — the unguarded-rejection scenario is ported to the
+- [x] `historical-scenario-accepted-on-base` — the unguarded-rejection scenario is ported to the
   base API and run against the base model before any change; it reports the rejection accepted.
   This is the failing control. (rejection-needs-evidence, foldable-request-is-protected)
-- [ ] `registry-identity` — a configuration and a request carry the abstract registry identity;
+- [x] `registry-identity` — a configuration and a request carry the abstract registry identity;
   every step preserves it. (evidence-is-bound)
-- [ ] `evidence-types` — reason, evidence and witness exist as the data model states them.
+- [x] `evidence-types` — reason, evidence and witness exist as the data model states them.
   (evidence-is-bound, two-grounds-only)
-- [ ] `rejection-admission` — admission refuses in the stated order and admits exactly the two
+- [x] `rejection-admission` — admission refuses in the stated order and admits exactly the two
   grounds; the exit admission takes the state. (all requirements of rejection)
-- [ ] `rejection-statements` — the statements named in the functions model for this slice are stated
+- [x] `rejection-statements` — the statements named in the functions model for this slice are stated
   and proved over the two-edge model. (every requirement named there)
-- [ ] `all-reject-batch-witnesses` — an all-reject batch carries one witness per request and one
+- [x] `all-reject-batch-witnesses` — an all-reject batch carries one witness per request and one
   shared interval and judges each request in order. (batch-judged-action-by-action)
-- [ ] `rejection-corpus` — the corpus exports the truth table cell by cell for the two admitted
+- [x] `rejection-corpus` — the corpus exports the truth table cell by cell for the two admitted
   edges, one row per excluded tag, the three time positions, each refusal reason, unknown against
   Absent, and the historical scenario. (consumers-state-the-rule)
-- [ ] `historical-scenario-refused-after` — the same scenario against the changed model reports the
+- [x] `historical-scenario-refused-after` — the same scenario against the changed model reports the
   rejection refused. (foldable-request-is-protected)
-- [ ] `transport-decodes-evidence` — a rejection question without its booked metadata is refused at
+- [x] `transport-decodes-evidence` — a rejection question without its booked metadata is refused at
   decode; evidence attached to another exit is refused. (evidence-is-bound)
-- [ ] `harness-supplies-evidence` — the harness allocates the registry identity while acting, reads
+- [x] `harness-supplies-evidence` — the harness allocates the registry identity while acting, reads
   the booked time from the request datum, and builds expiry and mismatch evidence.
   (evidence-is-bound)
-- [ ] `lawful-rows-rebased` — the running book, the refund controls, the generic rows and the batch
+- [x] `lawful-rows-rebased` — the running book, the refund controls, the generic rows and the batch
   harness place their rejects after both windows with expiry evidence. (unmet-stays-unmet)
-- [ ] `regenerate-after-slice-two` — as slice one's regeneration. (consumers-state-the-rule)
-- [ ] `amendment-reject-row` — the rejection row, the outcome-class row and the reconciliation are
+- [x] `regenerate-after-slice-two` — as slice one's regeneration. (consumers-state-the-rule)
+- [x] `amendment-reject-row` — the rejection row, the outcome-class row and the reconciliation are
   restated. (consumers-state-the-rule)
 
 Terminal condition as slice one. The in-window row is expected red at this head and is slice three.

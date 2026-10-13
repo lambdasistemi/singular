@@ -477,7 +477,7 @@ runSurplusFoldActions env = do
 
 {- | The batch harness (#344): the story language's two batch instructions,
 executed on the devnet — a fold of two registrations in one transaction, then a
-reject of two more in one transaction while they can still be folded — and each
+reject of two more in one transaction after both windows with expiry evidence — and each
 asked of the model's matching batch question through the transport. It belongs
 to no requirement and its receipt is read by no row. Both batches are lawful, so
 it requires that both ran and that the chain and the model each accepted each
@@ -518,7 +518,7 @@ runBatchHarness env = do
                 ]
         _ <-
             Live.rejectBatchWithin
-                Live.InProcessingWindow
+                Live.AfterTheWindows
                 registry
                 [ Live.EdgeRequest Live.InsertActive "batch-rejected-one" holder
                 , Live.EdgeRequest Live.InsertActive "batch-rejected-two" holder

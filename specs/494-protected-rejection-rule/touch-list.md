@@ -49,6 +49,9 @@ this ticket regenerates.
 | `specs/287-traced-refusal-reasons/extent.md` (and its speech companion) | 2, 3 | The committed table that classifies every live refusal; its row for the rejection-before-deadline requirement says the model gives a reject no admission, which stops being true; the extent check reads it |
 | `.specify/memory/constitution.md` | 1, 2, 4 | Version 1.16.0 and the translation rows |
 | `tools/check_model.py` | 2, 4 | Reconciliation of the declared surface with the translation rows |
+| `tools/check_m1_transport.py` | 2, 4 | The replay of the permanent contract's scenarios passes a rejection's evidence the way it passes a retraction's witness |
+| `conformance/test/Conformance/Support/ObservedTx.hs` | 2 | Names the step record's new rejection field with no evidence, as the runner does for a fold |
+| `README.md` (and its speech companion) | 2, 4 | The proved-declaration count the model check derives from the theorem manifests |
 | `simulator/core.mjs`, `simulator/actions.mjs` | 1, 2 | Request metadata only; no rejection interface is claimed |
 | `conformance/coverage/protected-rejection-restatement.md` (new) | 1, 2, 4 | The published restatement table: old and new identity of every changed statement |
 

@@ -47,7 +47,7 @@ check as unclassified.
 | register-active-key | two-key batch whose claimed mint disagrees per key | `net-mint-mismatch` (Model.lean:667); the driver evaluates one request per transaction | none | B |
 | fold-against-superseded-root | fold with claims against a superseded root | the model's root is an abstract commitment; a stale proof is not an input of `step` | attribution only | C |
 | wrong-redeemer-constructor-index | redeemer at a wrong constructor index | serialization below the model's vocabulary | attribution only | C |
-| reject-before-deadline-consumer-requirement | reject while the request is still in phase 1 | `exitStep .reject` has no admission and succeeds (Model.lean:1060-1072, 1198-1204) | attribution only | D (operator question (Q-003); comparison-unmet hold) |
+| reject-before-deadline-consumer-requirement | reject while the request is still in phase 1 | `rejectAdmission` admits rejection only with bound mismatch or expiry evidence (Model.lean:1240-1265) | attribution only | D (operator question (Q-003); comparison-unmet hold) |
 | request-value-and-refund-routing | crossed refund allocation | consumer-model conflict already recorded as unresolved in the row | attribution only | D (existing) |
 
 ## Discovered table (from-receipts-replay-index-discover-complete)

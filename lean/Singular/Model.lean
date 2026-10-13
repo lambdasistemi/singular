@@ -171,9 +171,7 @@ def transition (e : Edge) (before : Leaf) : Option Leaf :=
   | .updateTerminal, .known .active => some (.known .terminal)
   | _, _ => none
 
-/-- The state configuration: eight fields. All eight are pinned when the
-registry's seed is spent; the four policies are equal before and after every
-fold (I-P1), while `root` tracks the authenticated map. -/
+/-- The state configuration: eight fields plus the abstract registry identity. All pins and the identity are preserved when the registry's seed is spent; the four policies are equal before and after every fold (I-P1), while `root` tracks the authenticated map. -/
 structure Config where
   root : ByteArray
   maxFee : Nat
@@ -183,11 +181,13 @@ structure Config where
   activePolicy : Nat
   absentPolicy : Nat
   terminalPolicy : Nat
+  /-- Abstract identity of the registry state token, allocated by the consumer. -/
+  registryId : Nat := 0
   deriving BEq, DecidableEq
 
 instance : ToJson Config where
   toJson c := Json.mkObj
-    [ ("root", toJson c.root), ("maxFee", toJson c.maxFee)
+    [ ("registryId", toJson c.registryId), ("root", toJson c.root), ("maxFee", toJson c.maxFee)
     , ("processTime", toJson c.processTime), ("retractTime", toJson c.retractTime)
     , ("applicationPolicy", toJson c.applicationPolicy)
     , ("activePolicy", toJson c.activePolicy)
@@ -204,8 +204,11 @@ instance : FromJson Config where
     let activePolicy ← j.getObjVal? "activePolicy" >>= fromJson?
     let absentPolicy ← j.getObjVal? "absentPolicy" >>= fromJson?
     let terminalPolicy ← j.getObjVal? "terminalPolicy" >>= fromJson?
+    let registryId ← match j.getObjVal? "registryId" with
+      | .error _ => pure 0
+      | .ok x => fromJson? x
     pure { root, maxFee, processTime, retractTime, applicationPolicy
-         , activePolicy, absentPolicy, terminalPolicy }
+         , activePolicy, absentPolicy, terminalPolicy, registryId }
 
 /-- The policy a token kind is minted under, read off the registry's pins. -/
 def kindPolicy (c : Config) : TokenKind → Nat
@@ -432,13 +435,15 @@ structure Request where
   datum : Option Nat := none
   /-- The request datum's submission time, in POSIX milliseconds. -/
   submittedAt : Nat := 0
+  /-- Abstract identity of the registry the request was booked into, allocated by the consumer. -/
+  registryId : Nat := 0
   deriving Repr, BEq, DecidableEq
 
 /-- A request that holds nothing beyond its deposit, given field by field in
 declaration order. It sits at reference 0. -/
 @[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
     (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
-  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none 0
+  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none 0 0
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -448,6 +453,7 @@ instance : ToJson Request where
     , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
     , ("tip", toJson r.tip)
     , ("reference", toJson r.reference)
+    , ("registryId", toJson r.registryId)
     , ("output", toJson r.output)
     , ("datum", datumJson r.datum)
     , ("submittedAt", toJson r.submittedAt)
@@ -676,9 +682,9 @@ registry's pinned fee ceiling. -/
 def lovelaceCoversTip (c : Config) (lovelace : Nat) : Bool := c.maxFee ≤ lovelace
 
 /-- Every pin of the configuration except the root is unchanged: the state
-output carries the same eight-field datum with one field moved. -/
+output carries the same datum with one field moved. -/
 def onlyRootChanged (before after : Config) : Bool :=
-  after.maxFee == before.maxFee && after.processTime == before.processTime &&
+  after.registryId == before.registryId && after.maxFee == before.maxFee && after.processTime == before.processTime &&
   after.retractTime == before.retractTime &&
   after.applicationPolicy == before.applicationPolicy &&
   after.activePolicy == before.activePolicy &&
@@ -1238,37 +1244,86 @@ def admittedFoldBatch (s : RegistryState) (batch : List Request) (w : FoldWitnes
   | some why => .error why
   | none => foldBatch s batch
 
-/-- A fold reads the upper bound against its request's own submission time.
-A retract keeps its separate witness and admission; a reject reads no time. -/
-def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
+/-! ### Protected rejection
+
+Evidence is an authenticated logical read, not Merkle proof bytes. Its full
+registry configuration (including root and identity), request and reason must match the actual
+state. A concrete verifier must establish this correspondence: invalid proof
+bytes are never evidence of lifecycle incompatibility.
+-/
+
+inductive RejectReason where
+  | mismatch (leaf : Leaf)
+  | expired
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+structure RejectEvidence where
+  registry : Config
+  request : Request
+  reason : RejectReason
+  deriving BEq, DecidableEq
+
+/-- A finite lower-inclusive, upper-exclusive transaction interval carrying the evidence. -/
+structure RejectWitness where
+  evidence : RejectEvidence
+  validFrom : Nat
+  validTo : Nat
+  deriving BEq, DecidableEq
+
+/-- Only a verified lifecycle mismatch or expiry after both windows authorizes
+rejection. Evidence is bound to this request and this intermediate state, in the order the
+data model states: evidence present; registry, request identity and root; request; interval;
+then the ground. -/
+def rejectAdmission (s : RegistryState) (r : Request) (w : Option RejectWitness) : Option String :=
+  match w with
+  | none => some "reject-evidence-missing"
+  | some w =>
+    if decide (w.evidence.registry ≠ s.config) || r.registryId != s.config.registryId ||
+        s.config.root != rootOf s.trie then
+      some "reject-registry-mismatch"
+    else if w.evidence.request ≠ r then some "reject-request-mismatch"
+    else if w.validFrom >= w.validTo then some "reject-invalid-interval"
+    else match w.evidence.reason with
+      | .mismatch leaf =>
+        if leaf != trieGet s.trie r.key then some "reject-leaf-mismatch"
+        else if (transition r.edge leaf).isSome then some "reject-compatible"
+        else none
+      | .expired =>
+        if r.submittedAt + s.config.processTime + s.config.retractTime ≤ w.validFrom then none
+        else some "reject-not-expired"
+
+/-- The admission an exit is subject to: a retract's is `retractAdmission`; a rejection's is
+`rejectAdmission`; a fold uses `foldAdmission` with the finite upper bound. -/
+def exitAdmission (s : RegistryState) (exit : Exit) (r : Request) (w : RetractWitness)
+    (rejection : Option RejectWitness := none) : Option String :=
   match exit with
-  | .retract => retractAdmission c r w
-  | .fold _ => foldAdmission c [r] { validTo := w.validTo }
-  | .reject => none
+  | .retract => retractAdmission s.config r w
+  | .reject => rejectAdmission s r rejection
+  | .fold _ => foldAdmission s.config [r] { validTo := w.validTo }
 
 /-- One exit as a model step, admission first: refused with the admission's
 reason, otherwise exactly `exitStep`. -/
 def admittedExitStep (state : RegistryState) (exit : Exit) (request : Request)
-    (witness : RetractWitness) : Except String Result :=
-  match exitAdmission state.config exit request witness with
+    (witness : RetractWitness) (rejection : Option RejectWitness := none) : Except String Result :=
+  match exitAdmission state exit request witness rejection with
   | some why => .error why
   | none => exitStep state exit request
 
 /-- The transaction of an exit, admission first: refused with the admission's
 reason, otherwise exactly the transaction `txOfExit` builds. -/
 def admittedTxOfExit (state : RegistryState) (exit : Exit) (request : Request)
-    (witness : RetractWitness) (lovelace : Nat) : Except String Tx :=
-  match exitAdmission state.config exit request witness with
+    (witness : RetractWitness) (lovelace : Nat) (rejection : Option RejectWitness := none) : Except String Tx :=
+  match exitAdmission state exit request witness rejection with
   | some why => .error why
   | none => txOfExit state exit request lovelace
 
 /-- The refusal an exit's transaction earns, in the request script's order:
 admission, then what it spends (`spendRefusal`), then what it pays (`settle`).
-A retraction refused admission is refused with that reason whatever it spends
+A rejection or retraction refused admission is refused with that reason whatever it spends
 and pays. -/
-def exitRefusal (c : Config) (exit : Exit) (request : Request) (witness : RetractWitness)
-    (inputs : List TxInput) (outputs : List TxOutput) : Option String :=
-  (exitAdmission c exit request witness).orElse fun _ =>
+def exitRefusal (s : RegistryState) (exit : Exit) (request : Request) (witness : RetractWitness)
+    (inputs : List TxInput) (outputs : List TxOutput) (rejection : Option RejectWitness := none) : Option String :=
+  (exitAdmission s exit request witness rejection).orElse fun _ =>
     (spendRefusal exit inputs).orElse fun _ => settle (obligations exit request) outputs
 
 /-! The oracle observation surface. Ten total observations under

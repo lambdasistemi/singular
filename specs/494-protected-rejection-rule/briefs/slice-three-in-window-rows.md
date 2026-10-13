@@ -89,7 +89,9 @@ recorded; the final head.
 ## Gate
 
 The slice-three rows of the [gate](../gate.md): the two devnet rows locally once each, the non-devnet
-conformance commands, format and lint, the workflow lint and the documents check.
+conformance commands, format and lint, the workflow lint and the documents check. The running book, the generic
+rows and the refusal extent check, moved here from slice two (gate version 2), run once on the final candidate after the
+two rows above.
 
 ## Terminal condition
 

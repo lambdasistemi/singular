@@ -46,6 +46,16 @@ checks are hosted" refuses any flake app or check that no workflow step names. T
 open-datum application's Haskell, the registry test vectors and the negative host read none of the
 files this ticket edits.
 
+## Gate version 2: the book, the generic rows and the extent check turn green in slice three
+
+Found while slice two was built: the running book contains every program that has a chapter, among them the dedicated
+early-rejection program, and the generic session contains the standing unmet consumer-requirement row. Decision B turns
+both lawful in slice three, so at the end of slice two they cannot agree and these three rows cannot exit 0. Slices two
+and three are pushed together, so no red head is pushed. Version 2 moves three rows from slice two to the final tier of
+slice three and changes nothing else: the running book, the generic rows and the refusal extent check. The slice-two
+commit places the lawful rejects of those rows after both windows with expiry evidence; their end-to-end proof is the
+hosted run on the head that includes slice three.
+
 ## The rows
 
 Commands run from the repository root unless a working directory is given. "Candidate" means every
@@ -66,11 +76,11 @@ runs. The red run column is the earlier attempt's hosted run (`a7224021`, run 37
 | Wrong-reason control | the job "a wrong model reason fails the row" (`conformance.yml:688-738`) | 1 | final | 1, devnet | 0 | 37755208632: `the altered row did not fail naming both reasons` |
 | Batch harness row | `REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run batch --receipts-dir "$receipts"` (`conformance.yml:278`) | 2 4 | candidate (2), final (4) | 2, devnet | 0 | 37757702122: `the model refused a lawful batch` |
 | Refund controls row | the job "reject and retract refund controls": `bash test/ci/dedicated-row.sh reject-and-retract-refund-controls -- ...` then its assertions (`conformance.yml:382-499`) | 2 | candidate | 2, devnet | 0 | 37757702122: `chain=deposit-returned lean=reject-evidence-missing` |
-| Running book | `... nix run --quiet .#conformance -- book --receipts-dir "$receipts"` (`conformance.yml:301`) | 2 | final | 9, devnet | 0 | 37757702122: same reason mismatch |
-| Generic rows | in `conformance`: `bash ../.github/scripts/ci_generic_rows.sh` (`conformance.yml:764`) | 2 3 | final | 9, devnet | 0 (the handled session-debt exit is asserted inside the step) | 37757702122: `disagree for reject at cg08-key`; CI change in this ticket (slice three) |
+| Running book | `... nix run --quiet .#conformance -- book --receipts-dir "$receipts"` (`conformance.yml:301`) | 3 | final | 9, devnet | 0 | 37757702122: same reason mismatch |
+| Generic rows | in `conformance`: `bash ../.github/scripts/ci_generic_rows.sh` (`conformance.yml:764`) | 3 | final | 9, devnet | 0 (the handled session-debt exit is asserted inside the step) | 37757702122: `disagree for reject at cg08-key`; CI change in this ticket (slice three) |
 | Retire-active-key row | the job "retire-active-key": `bash test/ci/dedicated-row.sh retire-active-key -- ... run permanent-retire-active-key`, then `bash test/ci/permanent-retirement-evidence.sh` (`conformance.yml:302-381`) | 2 | final | 3, devnet | 0 | 37757702122: `retirement evidence moved` |
 | Early-rejection row | the job "early rejection inside the windows": `bash test/ci/dedicated-row.sh reject-inside-processing-and-retraction-windows -- ...` with its assertions and placement counts (`conformance.yml:500-596`) | 3 | candidate | 4, devnet | 0 | 37757702122: `lean=reject-evidence-missing`; CI change in this ticket |
-| Refusal extent | in `conformance`: `nix run --quiet .#conformance-extent -- ../specs/287-traced-refusal-reasons/extent.md <the rows' receipt directories>` (`conformance.yml:1091`) | 2 3 | final, after the rows above | 1 | 0 | runs 37446336658, 37452765931: job failed |
+| Refusal extent | in `conformance`: `nix run --quiet .#conformance-extent -- ../specs/287-traced-refusal-reasons/extent.md <the rows' receipt directories>` (`conformance.yml:1091`) | 3 | final, after the rows above | 1 | 0 | runs 37446336658, 37452765931: job failed |
 | Workflow lint | `for f in .github/workflows/*.yml; do nix run --quiet nixpkgs#yq-go -- eval '.' "$f" > /dev/null; done`; the `actionlint` step; the `presentation-check` step (`conformance.yml:22-56`) | 2 3 | candidate | 1 | 0 | none found |
 | Documents | `nix run --quiet .#docs-check` (`ci.yml:453`); `nix develop --quiet -c just check-presentation`; `nix run --quiet .#release-check` (`ci.yml:532`) | all | final | 17 | 0 | 37905345631: `only a program's receipt carries steps` |
 | Code inventory | `nix run --quiet .#inventory-check` (`ci.yml:305`) | all | final | 4 | 0 | 37763865424: `5 unmapped/unknown files` |
@@ -89,8 +99,8 @@ cover: the coverage gate, the strict coverage report, the release check and the 
 | Slice | Every candidate | Once before the push |
 |---|---|---|
 | One | 44 minutes: the rows marked candidate, the retraction row once | about 53: the aggregate, the strict coverage report, the release check, the wrong-reason control |
-| Two | 47 | about 74: the aggregate, the strict coverage report, the release check, the running book, the generic rows, the retire row, the extent |
-| Three | 9 | about 54: the aggregate, the release check, the generic rows, the extent |
+| Two | 47 | about 50: the aggregate, the strict coverage report, the release check, the retire row |
+| Three | 9 | about 80: the aggregate, the release check, the running book, the generic rows, the extent |
 | Four | 40 | about 54: the aggregate, the strict coverage report, the release check, the batch row |
 
 Rows run in parallel where independent. A candidate over budget has its devnet rows moved to the

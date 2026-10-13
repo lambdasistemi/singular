@@ -243,7 +243,8 @@ def model_refusal_vocabulary(root):
     assert exit_vocabulary, (
         "EMPTY EXTENT: no refusal reasons discovered in Singular.exitStep"
     )
-    vocabulary |= exit_vocabulary
+    rejection_body = source.split("\ndef rejectAdmission ", 1)[1].split("\n/--", 1)[0]
+    vocabulary |= exit_vocabulary | set(REFUSAL_LITERAL.findall(rejection_body))
     vocabulary |= set(model_fold_admission(root)["reasons"].values())
     return vocabulary
 

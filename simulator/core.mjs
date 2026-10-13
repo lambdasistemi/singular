@@ -50,6 +50,7 @@ const configSchema = {
   activePolicy: N,
   absentPolicy: N,
   terminalPolicy: N,
+  registryId: N,
 };
 const custody = { key: N, refundAddress: N, value: N };
 // A holding keeps the datum its delivery wrote — the request's own, or null for
@@ -70,6 +71,7 @@ const requestSchema = {
   tip: N,
   reference: N,
   submittedAt: N,
+  registryId: N,
   output: N,
   datum: { $option: N },
   submittedAt: N,
@@ -342,6 +344,7 @@ export const initial = (config) => ({
     activePolicy: 8,
     absentPolicy: 9,
     terminalPolicy: 10,
+    registryId: 0,
     ...config,
   },
   trie: [],

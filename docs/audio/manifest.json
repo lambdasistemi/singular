@@ -31,17 +31,17 @@
    ]
   },
   "README/design-status-01": {
-   "audio_sha256": "a7431059f87fd55f7f2203954ba8e93d2d1603d7f67268ccfbe20884bf3966f1",
+   "audio_sha256": "522c99de49a20899c740bc0e03bd8382de42f21ea3d6f535552a7626c569089c",
    "characters": 1010,
    "cost": 0.0009999,
-   "duration": 70.475,
+   "duration": 70.225,
    "index": 1,
-   "key": "5278d94c9daab157df7d8bf03d71db21731138e556904071eab496fec9790b7a",
+   "key": "64a45c92c1bc59b8ad0645ea104985af0e2730f5cf02868d00821cecad3dffbd",
    "page": "README.md",
    "pause_ms": 400,
    "section": "design-status",
-   "sent_text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 66 proved declarations — 45 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-   "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 66 proved declarations — 45 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+   "sent_text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 62 proved declarations — 41 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+   "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 62 proved declarations — 41 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
    "words": [
     {
      "end": 0.45,
@@ -149,728 +149,728 @@
      "text": "candidate"
     },
     {
-     "end": 9.212,
+     "end": 9.188,
      "start": 8.975,
      "text": "has"
     },
     {
-     "end": 9.962,
-     "start": 9.212,
-     "text": "66"
+     "end": 9.887,
+     "start": 9.188,
+     "text": "62"
     },
     {
-     "end": 10.35,
-     "start": 9.962,
+     "end": 10.275,
+     "start": 9.887,
      "text": "proved"
     },
     {
-     "end": 11.337,
-     "start": 10.35,
+     "end": 11.262,
+     "start": 10.275,
      "text": "declarations"
     },
     {
-     "end": 11.438,
-     "start": 11.337,
+     "end": 11.363,
+     "start": 11.262,
      "text": "—"
+    },
+    {
+     "end": 12.0,
+     "start": 11.363,
+     "text": "41"
+    },
+    {
+     "end": 12.113,
+     "start": 12.0,
+     "text": "for"
     },
     {
      "end": 12.2,
-     "start": 11.438,
-     "text": "45"
-    },
-    {
-     "end": 12.312,
-     "start": 12.2,
-     "text": "for"
-    },
-    {
-     "end": 12.4,
-     "start": 12.312,
+     "start": 12.113,
      "text": "the"
     },
     {
-     "end": 13.625,
-     "start": 12.4,
+     "end": 13.4,
+     "start": 12.2,
      "text": "registry"
     },
     {
-     "end": 13.9,
-     "start": 13.625,
+     "end": 13.65,
+     "start": 13.4,
      "text": ","
     },
     {
-     "end": 14.45,
-     "start": 14.125,
+     "end": 14.2,
+     "start": 13.875,
      "text": "7"
     },
     {
-     "end": 14.562,
-     "start": 14.45,
+     "end": 14.312,
+     "start": 14.2,
      "text": "for"
     },
     {
-     "end": 14.675,
-     "start": 14.562,
+     "end": 14.425,
+     "start": 14.312,
      "text": "the"
     },
     {
-     "end": 15.012,
-     "start": 14.675,
+     "end": 14.762,
+     "start": 14.425,
      "text": "naming"
     },
     {
-     "end": 15.65,
-     "start": 15.012,
+     "end": 15.4,
+     "start": 14.762,
      "text": "instance"
     },
     {
-     "end": 15.762,
-     "start": 15.65,
+     "end": 15.512,
+     "start": 15.4,
      "text": ","
     },
     {
-     "end": 16.1,
-     "start": 15.762,
+     "end": 15.85,
+     "start": 15.512,
      "text": "9"
     },
     {
-     "end": 16.212,
-     "start": 16.1,
+     "end": 15.962,
+     "start": 15.85,
      "text": "for"
     },
     {
-     "end": 16.4,
-     "start": 16.212,
+     "end": 16.15,
+     "start": 15.962,
      "text": "its"
     },
     {
-     "end": 17.1,
-     "start": 16.4,
+     "end": 16.85,
+     "start": 16.15,
      "text": "lifecycle"
     },
     {
-     "end": 17.237,
-     "start": 17.1,
+     "end": 16.987,
+     "start": 16.85,
      "text": "and"
     },
     {
-     "end": 17.625,
-     "start": 17.237,
+     "end": 17.375,
+     "start": 16.987,
      "text": "5"
     },
     {
-     "end": 17.737,
-     "start": 17.625,
+     "end": 17.487,
+     "start": 17.375,
      "text": "for"
     },
     {
-     "end": 17.938,
-     "start": 17.737,
+     "end": 17.688,
+     "start": 17.487,
      "text": "its"
     },
     {
-     "end": 18.325,
-     "start": 17.938,
+     "end": 18.075,
+     "start": 17.688,
      "text": "wire"
     },
     {
-     "end": 19.425,
-     "start": 18.325,
+     "end": 19.175,
+     "start": 18.075,
      "text": "encoding"
     },
     {
-     "end": 19.625,
-     "start": 19.425,
+     "end": 19.375,
+     "start": 19.175,
      "text": ","
     },
     {
-     "end": 20.225,
-     "start": 19.85,
+     "end": 19.975,
+     "start": 19.6,
      "text": "counts"
     },
     {
-     "end": 20.4,
-     "start": 20.225,
+     "end": 20.15,
+     "start": 19.975,
      "text": "that"
     },
     {
-     "end": 20.538,
-     "start": 20.4,
+     "end": 20.288,
+     "start": 20.15,
      "text": "the"
     },
     {
-     "end": 20.938,
-     "start": 20.538,
+     "end": 20.688,
+     "start": 20.288,
      "text": "model"
     },
     {
-     "end": 21.237,
-     "start": 20.938,
+     "end": 20.987,
+     "start": 20.688,
      "text": "check"
     },
     {
-     "end": 21.825,
-     "start": 21.237,
+     "end": 21.575,
+     "start": 20.987,
      "text": "derives"
     },
     {
-     "end": 21.987,
-     "start": 21.825,
+     "end": 21.737,
+     "start": 21.575,
      "text": "from"
     },
     {
-     "end": 22.112,
-     "start": 21.987,
+     "end": 21.862,
+     "start": 21.737,
      "text": "the"
     },
     {
-     "end": 22.55,
-     "start": 22.112,
+     "end": 22.3,
+     "start": 21.862,
      "text": "theorem"
     },
     {
-     "end": 23.4,
-     "start": 22.55,
+     "end": 23.15,
+     "start": 22.3,
      "text": "manifests"
     },
     {
-     "end": 23.475,
-     "start": 23.4,
+     "end": 23.225,
+     "start": 23.15,
      "text": "—"
     },
     {
-     "end": 23.75,
-     "start": 23.475,
+     "end": 23.5,
+     "start": 23.225,
      "text": "plus"
     },
     {
-     "end": 23.862,
-     "start": 23.75,
+     "end": 23.612,
+     "start": 23.5,
      "text": "a"
     },
     {
-     "end": 24.438,
-     "start": 23.862,
+     "end": 24.188,
+     "start": 23.612,
      "text": "playable"
     },
     {
-     "end": 25.2,
-     "start": 24.438,
+     "end": 24.95,
+     "start": 24.188,
      "text": "simulation"
     },
     {
-     "end": 25.9,
-     "start": 25.2,
+     "end": 25.65,
+     "start": 24.95,
      "text": "transcribed"
     },
     {
-     "end": 26.1,
-     "start": 25.9,
+     "end": 25.85,
+     "start": 25.65,
      "text": "from"
     },
     {
-     "end": 26.975,
-     "start": 26.1,
+     "end": 26.725,
+     "start": 25.85,
      "text": "them"
     },
     {
-     "end": 27.175,
-     "start": 26.975,
+     "end": 26.925,
+     "start": 26.725,
      "text": "."
     },
     {
-     "end": 27.487,
-     "start": 27.375,
+     "end": 27.237,
+     "start": 27.125,
      "text": "The"
     },
     {
-     "end": 27.938,
-     "start": 27.487,
+     "end": 27.688,
+     "start": 27.237,
      "text": "focused"
     },
     {
-     "end": 28.275,
-     "start": 27.938,
+     "end": 28.025,
+     "start": 27.688,
      "text": "checks"
     },
     {
-     "end": 28.688,
-     "start": 28.275,
+     "end": 28.438,
+     "start": 28.025,
      "text": "replay"
     },
     {
-     "end": 29.325,
-     "start": 28.688,
+     "end": 29.075,
+     "start": 28.438,
      "text": "29"
     },
     {
-     "end": 29.8,
-     "start": 29.325,
+     "end": 29.55,
+     "start": 29.075,
      "text": "registry"
     },
     {
-     "end": 30.25,
-     "start": 29.8,
+     "end": 30.0,
+     "start": 29.55,
      "text": "rows"
     },
     {
-     "end": 30.362,
-     "start": 30.25,
+     "end": 30.112,
+     "start": 30.0,
      "text": ","
     },
     {
-     "end": 30.85,
-     "start": 30.362,
+     "end": 30.6,
+     "start": 30.112,
      "text": "15"
     },
     {
-     "end": 31.225,
-     "start": 30.85,
+     "end": 30.975,
+     "start": 30.6,
      "text": "naming"
     },
     {
-     "end": 31.675,
-     "start": 31.225,
+     "end": 31.425,
+     "start": 30.975,
      "text": "rows"
     },
     {
-     "end": 31.8,
-     "start": 31.675,
+     "end": 31.55,
+     "start": 31.425,
      "text": "and"
     },
     {
-     "end": 32.35,
-     "start": 31.8,
+     "end": 32.1,
+     "start": 31.55,
      "text": "21"
     },
     {
-     "end": 32.925,
-     "start": 32.35,
+     "end": 32.675,
+     "start": 32.1,
      "text": "lifecycle"
     },
     {
-     "end": 33.975,
-     "start": 32.925,
+     "end": 33.725,
+     "start": 32.675,
      "text": "rows"
     },
     {
-     "end": 34.175,
-     "start": 33.975,
+     "end": 33.925,
+     "start": 33.725,
      "text": ";"
     },
     {
-     "end": 34.513,
-     "start": 34.375,
+     "end": 34.263,
+     "start": 34.125,
      "text": "they"
     },
     {
-     "end": 34.85,
-     "start": 34.513,
+     "end": 34.6,
+     "start": 34.263,
      "text": "test"
     },
     {
-     "end": 35.7,
-     "start": 34.85,
+     "end": 35.45,
+     "start": 34.6,
      "text": "correspondence"
     },
     {
-     "end": 35.85,
-     "start": 35.7,
+     "end": 35.6,
+     "start": 35.45,
      "text": "on"
     },
     {
-     "end": 36.138,
-     "start": 35.85,
+     "end": 35.888,
+     "start": 35.6,
      "text": "those"
     },
     {
-     "end": 36.6,
-     "start": 36.138,
+     "end": 36.35,
+     "start": 35.888,
      "text": "finite"
     },
     {
-     "end": 37.213,
-     "start": 36.6,
+     "end": 36.963,
+     "start": 36.35,
      "text": "inputs"
     },
     {
-     "end": 37.6,
-     "start": 37.213,
+     "end": 37.35,
+     "start": 36.963,
      "text": "rather"
     },
     {
-     "end": 37.775,
-     "start": 37.6,
+     "end": 37.525,
+     "start": 37.35,
      "text": "than"
     },
     {
-     "end": 38.15,
-     "start": 37.775,
+     "end": 37.9,
+     "start": 37.525,
      "text": "proving"
     },
     {
-     "end": 38.6,
-     "start": 38.15,
+     "end": 38.35,
+     "start": 37.9,
      "text": "browser"
     },
     {
-     "end": 39.162,
-     "start": 38.6,
+     "end": 38.912,
+     "start": 38.35,
      "text": "behaviour"
     },
     {
-     "end": 40.3,
-     "start": 39.162,
+     "end": 40.05,
+     "start": 38.912,
      "text": "generally"
     },
     {
-     "end": 40.5,
-     "start": 40.3,
+     "end": 40.25,
+     "start": 40.05,
      "text": "."
     },
     {
-     "end": 40.888,
-     "start": 40.7,
+     "end": 40.638,
+     "start": 40.45,
      "text": "No"
     },
     {
-     "end": 41.325,
-     "start": 40.888,
+     "end": 41.075,
+     "start": 40.638,
      "text": "independent"
     },
     {
-     "end": 41.562,
-     "start": 41.325,
+     "end": 41.312,
+     "start": 41.075,
      "text": "audit"
     },
     {
-     "end": 42.1,
-     "start": 41.562,
+     "end": 41.85,
+     "start": 41.312,
      "text": "acceptance"
     },
     {
-     "end": 42.25,
-     "start": 42.1,
+     "end": 42.0,
+     "start": 41.85,
      "text": "is"
     },
     {
-     "end": 43.1,
-     "start": 42.25,
+     "end": 42.85,
+     "start": 42.0,
      "text": "claimed"
     },
     {
-     "end": 43.3,
-     "start": 43.1,
+     "end": 43.05,
+     "start": 42.85,
      "text": "."
     },
     {
-     "end": 43.575,
-     "start": 43.5,
+     "end": 43.325,
+     "start": 43.25,
      "text": "The"
     },
     {
-     "end": 44.1,
-     "start": 43.575,
+     "end": 43.85,
+     "start": 43.325,
      "text": "compiled"
     },
     {
-     "end": 44.888,
-     "start": 44.1,
+     "end": 44.638,
+     "start": 43.85,
      "text": "validators"
     },
     {
-     "end": 45.013,
-     "start": 44.888,
+     "end": 44.763,
+     "start": 44.638,
      "text": "and"
     },
     {
-     "end": 45.112,
-     "start": 45.013,
+     "end": 44.862,
+     "start": 44.763,
      "text": "a"
     },
     {
-     "end": 45.675,
-     "start": 45.112,
+     "end": 45.425,
+     "start": 44.862,
      "text": "registry"
     },
     {
-     "end": 46.237,
-     "start": 45.675,
+     "end": 45.987,
+     "start": 45.425,
      "text": "deployed"
     },
     {
-     "end": 46.338,
-     "start": 46.237,
+     "end": 46.088,
+     "start": 45.987,
      "text": "on"
     },
     {
-     "end": 46.438,
-     "start": 46.338,
+     "end": 46.188,
+     "start": 46.088,
      "text": "the"
     },
     {
-     "end": 46.85,
-     "start": 46.438,
+     "end": 46.6,
+     "start": 46.188,
      "text": "public"
     },
     {
-     "end": 47.325,
-     "start": 46.85,
+     "end": 47.075,
+     "start": 46.6,
      "text": "preprod"
     },
     {
-     "end": 47.888,
-     "start": 47.325,
+     "end": 47.638,
+     "start": 47.075,
      "text": "network"
     },
     {
-     "end": 48.05,
-     "start": 47.888,
+     "end": 47.8,
+     "start": 47.638,
      "text": "are"
     },
     {
-     "end": 48.625,
-     "start": 48.05,
+     "end": 48.375,
+     "start": 47.8,
      "text": "recorded"
     },
     {
-     "end": 48.737,
-     "start": 48.625,
+     "end": 48.487,
+     "start": 48.375,
      "text": "in"
     },
     {
-     "end": 48.825,
-     "start": 48.737,
+     "end": 48.575,
+     "start": 48.487,
      "text": "the"
     },
     {
-     "end": 49.35,
-     "start": 48.825,
+     "end": 49.1,
+     "start": 48.575,
      "text": "preprod"
     },
     {
-     "end": 50.375,
-     "start": 49.35,
+     "end": 50.125,
+     "start": 49.1,
      "text": "record"
     },
     {
-     "end": 50.6,
-     "start": 50.375,
+     "end": 50.35,
+     "start": 50.125,
      "text": ","
     },
     {
-     "end": 50.912,
-     "start": 50.825,
+     "end": 50.662,
+     "start": 50.575,
      "text": "and"
     },
     {
-     "end": 51.0,
-     "start": 50.912,
+     "end": 50.75,
+     "start": 50.662,
      "text": "the"
     },
     {
-     "end": 51.65,
-     "start": 51.0,
+     "end": 51.4,
+     "start": 50.75,
      "text": "conformance"
     },
     {
-     "end": 52.162,
-     "start": 51.65,
+     "end": 51.912,
+     "start": 51.4,
      "text": "evidence"
     },
     {
-     "end": 52.575,
-     "start": 52.162,
+     "end": 52.325,
+     "start": 51.912,
      "text": "states"
     },
     {
-     "end": 52.775,
-     "start": 52.575,
+     "end": 52.525,
+     "start": 52.325,
      "text": "which"
     },
     {
-     "end": 53.375,
-     "start": 52.775,
+     "end": 53.125,
+     "start": 52.525,
      "text": "consumer"
     },
     {
-     "end": 54.237,
-     "start": 53.375,
+     "end": 53.987,
+     "start": 53.125,
      "text": "requirements"
     },
     {
-     "end": 54.375,
-     "start": 54.237,
+     "end": 54.125,
+     "start": 53.987,
      "text": "a"
     },
     {
-     "end": 54.838,
-     "start": 54.375,
+     "end": 54.588,
+     "start": 54.125,
      "text": "named"
     },
     {
-     "end": 55.225,
-     "start": 54.838,
+     "end": 54.975,
+     "start": 54.588,
      "text": "code"
     },
     {
-     "end": 55.812,
-     "start": 55.225,
+     "end": 55.562,
+     "start": 54.975,
      "text": "revision"
     },
     {
-     "end": 56.575,
-     "start": 55.812,
+     "end": 56.325,
+     "start": 55.562,
      "text": "demonstrated"
     },
     {
-     "end": 56.975,
-     "start": 56.575,
+     "end": 56.725,
+     "start": 56.325,
      "text": "against"
     },
     {
-     "end": 57.85,
-     "start": 56.975,
+     "end": 57.6,
+     "start": 56.725,
      "text": "them"
     },
     {
-     "end": 58.05,
-     "start": 57.85,
+     "end": 57.8,
+     "start": 57.6,
      "text": "."
     },
     {
-     "end": 58.325,
-     "start": 58.225,
+     "end": 58.075,
+     "start": 57.975,
      "text": "The"
     },
     {
-     "end": 58.775,
-     "start": 58.325,
+     "end": 58.525,
+     "start": 58.075,
      "text": "coverage"
     },
     {
-     "end": 59.1,
-     "start": 58.775,
+     "end": 58.85,
+     "start": 58.525,
      "text": "ledger"
     },
     {
-     "end": 59.925,
-     "start": 59.1,
+     "end": 59.675,
+     "start": 58.85,
      "text": "distinguishes"
     },
     {
-     "end": 60.412,
-     "start": 59.925,
+     "end": 60.162,
+     "start": 59.675,
      "text": "finite"
     },
     {
-     "end": 61.125,
-     "start": 60.412,
+     "end": 60.875,
+     "start": 60.162,
      "text": "executable"
     },
     {
-     "end": 61.575,
-     "start": 61.125,
+     "end": 61.325,
+     "start": 60.875,
      "text": "evidence"
     },
     {
-     "end": 61.775,
-     "start": 61.575,
+     "end": 61.525,
+     "start": 61.325,
      "text": "from"
     },
     {
-     "end": 63.0,
-     "start": 61.775,
+     "end": 62.75,
+     "start": 61.525,
      "text": "conditions"
     },
     {
-     "end": 63.2,
-     "start": 63.0,
+     "end": 62.95,
+     "start": 62.75,
      "text": ","
     },
     {
-     "end": 63.963,
-     "start": 63.375,
+     "end": 63.713,
+     "start": 63.125,
      "text": "abstractions"
     },
     {
-     "end": 64.075,
-     "start": 63.963,
+     "end": 63.825,
+     "start": 63.713,
      "text": "and"
     },
     {
-     "end": 65.075,
-     "start": 64.075,
+     "end": 64.825,
+     "start": 63.825,
      "text": "omissions"
     },
     {
-     "end": 65.275,
-     "start": 65.075,
+     "end": 65.025,
+     "start": 64.825,
      "text": ","
     },
     {
-     "end": 65.562,
-     "start": 65.475,
+     "end": 65.312,
+     "start": 65.225,
      "text": "and"
     },
     {
-     "end": 65.65,
-     "start": 65.562,
+     "end": 65.4,
+     "start": 65.312,
      "text": "the"
     },
     {
-     "end": 66.075,
-     "start": 65.65,
+     "end": 65.825,
+     "start": 65.4,
      "text": "clarity"
     },
     {
-     "end": 66.475,
-     "start": 66.075,
+     "end": 66.225,
+     "start": 65.825,
      "text": "record"
     },
     {
-     "end": 66.863,
-     "start": 66.475,
+     "end": 66.613,
+     "start": 66.225,
      "text": "states"
     },
     {
-     "end": 67.412,
-     "start": 66.863,
+     "end": 67.162,
+     "start": 66.613,
      "text": "plainly"
     },
     {
-     "end": 67.662,
-     "start": 67.412,
+     "end": 67.412,
+     "start": 67.162,
      "text": "how"
     },
     {
-     "end": 67.95,
-     "start": 67.662,
+     "end": 67.7,
+     "start": 67.412,
      "text": "much"
     },
     {
-     "end": 68.675,
-     "start": 67.95,
+     "end": 68.425,
+     "start": 67.7,
      "text": "independence"
     },
     {
-     "end": 68.825,
-     "start": 68.675,
+     "end": 68.575,
+     "start": 68.425,
      "text": "that"
     },
     {
-     "end": 69.275,
-     "start": 68.825,
+     "end": 69.025,
+     "start": 68.575,
      "text": "evidence"
     },
     {
-     "end": 70.25,
-     "start": 69.275,
+     "end": 70.0,
+     "start": 69.025,
      "text": "has"
     },
     {
-     "end": 70.475,
-     "start": 70.25,
+     "end": 70.225,
+     "start": 70.0,
      "text": "."
     }
    ]
@@ -84866,17 +84866,17 @@
    ]
   },
   "docs-consumer-onboarding/check-the-archive-and-build-its-commands-02": {
-   "audio_sha256": "f8992cc9aa1d35adf3a8cd5fc3f6f89dcb5ff838317b58774ddc05dd8c99f347",
-   "characters": 564,
-   "cost": 0.0005583599999999999,
-   "duration": 38.025,
+   "audio_sha256": "f120057f553d1f520a0b8a941933de17a987a903c661f4e67da9671f0777a4d6",
+   "characters": 354,
+   "cost": 0.00021948000000000003,
+   "duration": 24.0,
    "index": 2,
-   "key": "a0db1f35db17843daeebc52ea316e6a811ecf2b930fde638d6b2315b9ebc0e3a",
+   "key": "5ae64949cc90621d1d5b0a8a0c604279e24b953f98c919a2aaa0f509ffabfe0d",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "check-the-archive-and-build-its-commands",
-   "sent_text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies. The extracted archive's own singular reads the registry page from its blueprint and the adjacent version file; the Demo 1 run page reads the page right after create with the command the create receipt printed.",
-   "text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies. The extracted archive's own singular reads the registry page from its blueprint and the adjacent version file; the Demo 1 run page reads the page right after create with the command the create receipt printed.",
+   "sent_text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies.",
+   "text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies.",
    "words": [
     {
      "end": 0.3,
@@ -85146,191 +85146,6 @@
     {
      "end": 24.0,
      "start": 23.775,
-     "text": "."
-    },
-    {
-     "end": 24.325,
-     "start": 24.2,
-     "text": "The"
-    },
-    {
-     "end": 24.95,
-     "start": 24.325,
-     "text": "extracted"
-    },
-    {
-     "end": 25.525,
-     "start": 24.95,
-     "text": "archive's"
-    },
-    {
-     "end": 25.763,
-     "start": 25.525,
-     "text": "own"
-    },
-    {
-     "end": 26.337,
-     "start": 25.763,
-     "text": "singular"
-    },
-    {
-     "end": 26.7,
-     "start": 26.337,
-     "text": "reads"
-    },
-    {
-     "end": 26.825,
-     "start": 26.7,
-     "text": "the"
-    },
-    {
-     "end": 27.337,
-     "start": 26.825,
-     "text": "registry"
-    },
-    {
-     "end": 27.75,
-     "start": 27.337,
-     "text": "page"
-    },
-    {
-     "end": 27.913,
-     "start": 27.75,
-     "text": "from"
-    },
-    {
-     "end": 28.112,
-     "start": 27.913,
-     "text": "its"
-    },
-    {
-     "end": 28.825,
-     "start": 28.112,
-     "text": "blueprint"
-    },
-    {
-     "end": 28.962,
-     "start": 28.825,
-     "text": "and"
-    },
-    {
-     "end": 29.1,
-     "start": 28.962,
-     "text": "the"
-    },
-    {
-     "end": 29.675,
-     "start": 29.1,
-     "text": "adjacent"
-    },
-    {
-     "end": 30.087,
-     "start": 29.675,
-     "text": "version"
-    },
-    {
-     "end": 31.125,
-     "start": 30.087,
-     "text": "file"
-    },
-    {
-     "end": 31.325,
-     "start": 31.125,
-     "text": ";"
-    },
-    {
-     "end": 31.638,
-     "start": 31.525,
-     "text": "the"
-    },
-    {
-     "end": 32.062,
-     "start": 31.638,
-     "text": "Demo"
-    },
-    {
-     "end": 32.325,
-     "start": 32.062,
-     "text": "1"
-    },
-    {
-     "end": 32.588,
-     "start": 32.325,
-     "text": "run"
-    },
-    {
-     "end": 33.138,
-     "start": 32.588,
-     "text": "page"
-    },
-    {
-     "end": 33.525,
-     "start": 33.138,
-     "text": "reads"
-    },
-    {
-     "end": 33.638,
-     "start": 33.525,
-     "text": "the"
-    },
-    {
-     "end": 34.05,
-     "start": 33.638,
-     "text": "page"
-    },
-    {
-     "end": 34.35,
-     "start": 34.05,
-     "text": "right"
-    },
-    {
-     "end": 34.688,
-     "start": 34.35,
-     "text": "after"
-    },
-    {
-     "end": 35.175,
-     "start": 34.688,
-     "text": "create"
-    },
-    {
-     "end": 35.312,
-     "start": 35.175,
-     "text": "with"
-    },
-    {
-     "end": 35.4,
-     "start": 35.312,
-     "text": "the"
-    },
-    {
-     "end": 35.95,
-     "start": 35.4,
-     "text": "command"
-    },
-    {
-     "end": 36.062,
-     "start": 35.95,
-     "text": "the"
-    },
-    {
-     "end": 36.475,
-     "start": 36.062,
-     "text": "create"
-    },
-    {
-     "end": 36.825,
-     "start": 36.475,
-     "text": "receipt"
-    },
-    {
-     "end": 37.8,
-     "start": 36.825,
-     "text": "printed"
-    },
-    {
-     "end": 38.025,
-     "start": 37.8,
      "text": "."
     }
    ]
@@ -275446,17 +275261,17 @@
    ]
   },
   "docs-registry-page/read-it-03": {
-   "audio_sha256": "6f819bf244a8b422d889b00f9a66d28077921e43854940a7131c3bd8fde086ac",
-   "characters": 644,
-   "cost": 0.0006375599999999999,
-   "duration": 42.7,
+   "audio_sha256": "b7e602d689772bee1cf5c928106c1ee5cf4eb4e0f2745f467c4db7cd5a49c39d",
+   "characters": 420,
+   "cost": 0.00041579999999999997,
+   "duration": 28.25,
    "index": 3,
-   "key": "19e0f895a1d8e8bd0e94384f7ce619d56fc256168e43e5330d2ee57a08eb37c7",
+   "key": "9f5ccaafb554f36ebcb6f41b706038ca7fe0d2fcabf7d4728f0e6754cd5c1854",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
    "section": "read-it",
-   "sent_text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. From an extracted release archive, run the archive's own singular with its blueprint and the adjacent version file: the Demo 1 journey reads the page this way right after create, from the command the create receipt printed. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
-   "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. From an extracted release archive, run the archive's own singular with its blueprint and the adjacent version file: the Demo 1 journey reads the page this way right after create, from the command the create receipt printed. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
+   "sent_text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
+   "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
    "words": [
     {
      "end": 0.275,
@@ -275774,313 +275589,108 @@
      "text": "."
     },
     {
-     "end": 20.462,
+     "end": 20.4,
      "start": 20.325,
-     "text": "From"
-    },
-    {
-     "end": 20.55,
-     "start": 20.462,
-     "text": "an"
-    },
-    {
-     "end": 21.225,
-     "start": 20.55,
-     "text": "extracted"
-    },
-    {
-     "end": 21.6,
-     "start": 21.225,
-     "text": "release"
-    },
-    {
-     "end": 22.15,
-     "start": 21.6,
-     "text": "archive"
-    },
-    {
-     "end": 22.237,
-     "start": 22.15,
-     "text": ","
-    },
-    {
-     "end": 22.462,
-     "start": 22.237,
-     "text": "run"
-    },
-    {
-     "end": 22.6,
-     "start": 22.462,
-     "text": "the"
-    },
-    {
-     "end": 23.2,
-     "start": 22.6,
-     "text": "archive's"
-    },
-    {
-     "end": 23.487,
-     "start": 23.2,
-     "text": "own"
-    },
-    {
-     "end": 24.025,
-     "start": 23.487,
-     "text": "singular"
-    },
-    {
-     "end": 24.163,
-     "start": 24.025,
-     "text": "with"
-    },
-    {
-     "end": 24.362,
-     "start": 24.163,
-     "text": "its"
-    },
-    {
-     "end": 25.013,
-     "start": 24.362,
-     "text": "blueprint"
-    },
-    {
-     "end": 25.138,
-     "start": 25.013,
-     "text": "and"
-    },
-    {
-     "end": 25.275,
-     "start": 25.138,
-     "text": "the"
-    },
-    {
-     "end": 25.85,
-     "start": 25.275,
-     "text": "adjacent"
-    },
-    {
-     "end": 26.263,
-     "start": 25.85,
-     "text": "version"
-    },
-    {
-     "end": 27.325,
-     "start": 26.263,
-     "text": "file"
-    },
-    {
-     "end": 27.525,
-     "start": 27.325,
-     "text": ":"
-    },
-    {
-     "end": 27.837,
-     "start": 27.725,
-     "text": "the"
-    },
-    {
-     "end": 28.25,
-     "start": 27.837,
-     "text": "Demo"
-    },
-    {
-     "end": 28.487,
-     "start": 28.25,
-     "text": "1"
-    },
-    {
-     "end": 28.913,
-     "start": 28.487,
-     "text": "journey"
-    },
-    {
-     "end": 29.275,
-     "start": 28.913,
-     "text": "reads"
-    },
-    {
-     "end": 29.413,
-     "start": 29.275,
-     "text": "the"
-    },
-    {
-     "end": 29.875,
-     "start": 29.413,
-     "text": "page"
-    },
-    {
-     "end": 30.1,
-     "start": 29.875,
-     "text": "this"
-    },
-    {
-     "end": 30.375,
-     "start": 30.1,
-     "text": "way"
-    },
-    {
-     "end": 30.65,
-     "start": 30.375,
-     "text": "right"
-    },
-    {
-     "end": 30.925,
-     "start": 30.65,
-     "text": "after"
-    },
-    {
-     "end": 31.525,
-     "start": 30.925,
-     "text": "create"
-    },
-    {
-     "end": 31.625,
-     "start": 31.525,
-     "text": ","
-    },
-    {
-     "end": 31.788,
-     "start": 31.625,
-     "text": "from"
-    },
-    {
-     "end": 31.875,
-     "start": 31.788,
-     "text": "the"
-    },
-    {
-     "end": 32.425,
-     "start": 31.875,
-     "text": "command"
-    },
-    {
-     "end": 32.537,
-     "start": 32.425,
-     "text": "the"
-    },
-    {
-     "end": 32.95,
-     "start": 32.537,
-     "text": "create"
-    },
-    {
-     "end": 33.325,
-     "start": 32.95,
-     "text": "receipt"
-    },
-    {
-     "end": 34.35,
-     "start": 33.325,
-     "text": "printed"
-    },
-    {
-     "end": 34.575,
-     "start": 34.35,
-     "text": "."
-    },
-    {
-     "end": 34.85,
-     "start": 34.775,
      "text": "A"
     },
     {
-     "end": 35.25,
-     "start": 34.85,
+     "end": 20.8,
+     "start": 20.4,
      "text": "success"
     },
     {
-     "end": 35.513,
-     "start": 35.25,
+     "end": 21.062,
+     "start": 20.8,
      "text": "prints"
     },
     {
-     "end": 35.6,
-     "start": 35.513,
+     "end": 21.15,
+     "start": 21.062,
      "text": "the"
     },
     {
-     "end": 35.888,
-     "start": 35.6,
+     "end": 21.438,
+     "start": 21.15,
      "text": "page"
     },
     {
-     "end": 36.25,
-     "start": 35.888,
+     "end": 21.8,
+     "start": 21.438,
      "text": "alone"
     },
     {
-     "end": 36.362,
-     "start": 36.25,
+     "end": 21.913,
+     "start": 21.8,
      "text": "and"
     },
     {
-     "end": 36.625,
-     "start": 36.362,
+     "end": 22.175,
+     "start": 21.913,
      "text": "writes"
     },
     {
-     "end": 36.812,
-     "start": 36.625,
+     "end": 22.362,
+     "start": 22.175,
      "text": "no"
     },
     {
-     "end": 37.675,
-     "start": 36.812,
+     "end": 23.225,
+     "start": 22.362,
      "text": "file"
     },
     {
-     "end": 37.875,
-     "start": 37.675,
+     "end": 23.425,
+     "start": 23.225,
      "text": ";"
     },
     {
-     "end": 38.35,
-     "start": 38.075,
+     "end": 23.9,
+     "start": 23.625,
      "text": "every"
     },
     {
-     "end": 38.85,
-     "start": 38.35,
+     "end": 24.4,
+     "start": 23.9,
      "text": "refusal"
     },
     {
-     "end": 39.188,
-     "start": 38.85,
+     "end": 24.737,
+     "start": 24.4,
      "text": "prints"
     },
     {
-     "end": 39.463,
-     "start": 39.188,
+     "end": 25.013,
+     "start": 24.737,
      "text": "one"
     },
     {
-     "end": 40.2,
-     "start": 39.463,
+     "end": 25.75,
+     "start": 25.013,
      "text": "JSON"
     },
     {
-     "end": 40.763,
-     "start": 40.2,
+     "end": 26.312,
+     "start": 25.75,
      "text": "receipt"
     },
     {
-     "end": 40.9,
-     "start": 40.763,
+     "end": 26.45,
+     "start": 26.312,
      "text": "and"
     },
     {
-     "end": 41.3,
-     "start": 40.9,
+     "end": 26.85,
+     "start": 26.45,
      "text": "exits"
     },
     {
-     "end": 42.475,
-     "start": 41.3,
+     "end": 28.025,
+     "start": 26.85,
      "text": "non-zero"
     },
     {
-     "end": 42.7,
-     "start": 42.475,
+     "end": 28.25,
+     "start": 28.025,
      "text": "."
     }
    ]
@@ -305346,17 +304956,17 @@
    ]
   },
   "docs-singular-node/naming-the-registry-by-its-state-token-01": {
-   "audio_sha256": "557d4dbb6ae995b0518b6da79a0e51ba25f5de4b0b66c69b4b60dd5c4910863a",
-   "characters": 650,
-   "cost": 0.0006434999999999999,
-   "duration": 43.075,
+   "audio_sha256": "82306beed4531c216407956193dd8b8471a801594a4f0c2d5153e401676af3f3",
+   "characters": 324,
+   "cost": 0.00020088000000000001,
+   "duration": 21.75,
    "index": 1,
-   "key": "70440962c5510f09540c65749be9f95001ffa4ac633d12aaf7794b7a50b147bf",
+   "key": "89ba892dccb1cf2f90263f0b6c0a75a2ef38984fcb9a3820b71fd40c55b084da",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "naming-the-registry-by-its-state-token",
-   "sent_text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
-   "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+   "sent_text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+   "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
    "words": [
     {
      "end": 0.363,
@@ -305439,18 +305049,18 @@
      "text": "receipt"
     },
     {
-     "end": 5.15,
+     "end": 5.175,
      "start": 4.875,
      "text": "names"
     },
     {
-     "end": 6.0,
-     "start": 5.15,
+     "end": 6.025,
+     "start": 5.175,
      "text": "stateToken"
     },
     {
      "end": 6.1,
-     "start": 6.0,
+     "start": 6.025,
      "text": ","
     },
     {
@@ -305459,523 +305069,213 @@
      "text": "the"
     },
     {
-     "end": 6.8,
+     "end": 6.775,
      "start": 6.225,
      "text": "registry's"
     },
     {
-     "end": 7.125,
-     "start": 6.8,
+     "end": 7.1,
+     "start": 6.775,
      "text": "state"
     },
     {
-     "end": 7.475,
-     "start": 7.125,
+     "end": 7.45,
+     "start": 7.1,
      "text": "token"
     },
     {
-     "end": 7.625,
-     "start": 7.475,
+     "end": 7.6,
+     "start": 7.45,
      "text": "as"
     },
     {
-     "end": 8.3,
-     "start": 7.625,
+     "end": 8.275,
+     "start": 7.6,
      "text": "POLICY.NAME"
     },
     {
-     "end": 8.425,
-     "start": 8.3,
+     "end": 8.4,
+     "start": 8.275,
      "text": "in"
     },
     {
-     "end": 9.325,
-     "start": 8.425,
+     "end": 9.3,
+     "start": 8.4,
      "text": "hex"
     },
     {
-     "end": 9.525,
-     "start": 9.325,
-     "text": ","
-    },
-    {
-     "end": 9.788,
-     "start": 9.7,
-     "text": "and"
-    },
-    {
-     "end": 10.875,
-     "start": 9.788,
-     "text": "describeCommand"
-    },
-    {
-     "end": 11.075,
-     "start": 10.875,
-     "text": ","
-    },
-    {
-     "end": 11.35,
-     "start": 11.25,
-     "text": "the"
-    },
-    {
-     "end": 11.775,
-     "start": 11.35,
-     "text": "working"
-    },
-    {
-     "end": 12.3,
-     "start": 11.775,
-     "text": "singular"
-    },
-    {
-     "end": 12.95,
-     "start": 12.3,
-     "text": "registry"
-    },
-    {
-     "end": 13.475,
-     "start": 12.95,
-     "text": "describe"
-    },
-    {
-     "end": 13.887,
-     "start": 13.475,
-     "text": "line"
-    },
-    {
-     "end": 14.15,
-     "start": 13.887,
-     "text": "built"
-    },
-    {
-     "end": 14.288,
-     "start": 14.15,
-     "text": "from"
-    },
-    {
-     "end": 14.4,
-     "start": 14.288,
-     "text": "the"
-    },
-    {
-     "end": 14.975,
-     "start": 14.4,
-     "text": "arguments"
-    },
-    {
-     "end": 15.075,
-     "start": 14.975,
-     "text": "the"
-    },
-    {
-     "end": 15.475,
-     "start": 15.075,
-     "text": "create"
-    },
-    {
-     "end": 15.775,
-     "start": 15.475,
-     "text": "ran"
-    },
-    {
-     "end": 16.525,
-     "start": 15.775,
-     "text": "with"
-    },
-    {
-     "end": 16.775,
-     "start": 16.525,
-     "text": ":"
-    },
-    {
-     "end": 17.05,
-     "start": 16.975,
-     "text": "the"
-    },
-    {
-     "end": 17.562,
-     "start": 17.05,
-     "text": "blueprint"
-    },
-    {
-     "end": 17.763,
-     "start": 17.562,
-     "text": "as"
-    },
-    {
-     "end": 18.175,
-     "start": 17.763,
-     "text": "given"
-    },
-    {
-     "end": 18.225,
-     "start": 18.175,
-     "text": ","
-    },
-    {
-     "end": 18.362,
-     "start": 18.225,
-     "text": "the"
-    },
-    {
-     "end": 18.612,
-     "start": 18.362,
-     "text": "new"
-    },
-    {
-     "end": 18.987,
-     "start": 18.612,
-     "text": "state"
-    },
-    {
-     "end": 19.5,
-     "start": 18.987,
-     "text": "token"
-    },
-    {
-     "end": 19.575,
-     "start": 19.5,
-     "text": ","
-    },
-    {
-     "end": 19.675,
-     "start": 19.575,
-     "text": "the"
-    },
-    {
-     "end": 20.275,
-     "start": 19.675,
-     "text": "provider"
-    },
-    {
-     "end": 20.4,
-     "start": 20.275,
-     "text": "and"
-    },
-    {
-     "end": 20.8,
-     "start": 20.4,
-     "text": "network"
-    },
-    {
-     "end": 21.35,
-     "start": 20.8,
-     "text": "settings"
-    },
-    {
-     "end": 21.425,
-     "start": 21.35,
-     "text": ","
-    },
-    {
-     "end": 21.538,
-     "start": 21.425,
-     "text": "and"
-    },
-    {
-     "end": 21.625,
-     "start": 21.538,
-     "text": "the"
-    },
-    {
-     "end": 22.038,
-     "start": 21.625,
-     "text": "network"
-    },
-    {
-     "end": 22.375,
-     "start": 22.038,
-     "text": "time"
-    },
-    {
-     "end": 22.975,
-     "start": 22.375,
-     "text": "directory"
-    },
-    {
-     "end": 23.175,
-     "start": 22.975,
-     "text": "when"
-    },
-    {
-     "end": 24.2,
-     "start": 23.175,
-     "text": "given"
-    },
-    {
-     "end": 24.425,
-     "start": 24.2,
+     "end": 9.5,
+     "start": 9.3,
      "text": "."
     },
     {
-     "end": 24.725,
-     "start": 24.6,
-     "text": "It"
-    },
-    {
-     "end": 25.038,
-     "start": 24.725,
-     "text": "names"
-    },
-    {
-     "end": 25.312,
-     "start": 25.038,
-     "text": "no"
-    },
-    {
-     "end": 25.712,
-     "start": 25.312,
-     "text": "wallet"
-    },
-    {
-     "end": 26.112,
-     "start": 25.712,
-     "text": "key"
-    },
-    {
-     "end": 26.25,
-     "start": 26.112,
-     "text": "and"
-    },
-    {
-     "end": 26.475,
-     "start": 26.25,
-     "text": "no"
-    },
-    {
-     "end": 27.013,
-     "start": 26.475,
-     "text": "credential"
-    },
-    {
-     "end": 27.6,
-     "start": 27.013,
-     "text": "file"
-    },
-    {
-     "end": 27.737,
-     "start": 27.6,
-     "text": "."
-    },
-    {
-     "end": 28.025,
-     "start": 27.737,
-     "text": "Run"
-    },
-    {
-     "end": 28.15,
-     "start": 28.025,
-     "text": "it"
-    },
-    {
-     "end": 28.3,
-     "start": 28.15,
-     "text": "as"
-    },
-    {
-     "end": 28.65,
-     "start": 28.3,
-     "text": "printed"
-    },
-    {
-     "end": 28.775,
-     "start": 28.65,
-     "text": "to"
-    },
-    {
-     "end": 29.013,
-     "start": 28.775,
-     "text": "read"
-    },
-    {
-     "end": 29.1,
-     "start": 29.013,
-     "text": "the"
-    },
-    {
-     "end": 29.6,
-     "start": 29.1,
-     "text": "registry"
-    },
-    {
-     "end": 30.6,
-     "start": 29.6,
-     "text": "page"
-    },
-    {
-     "end": 30.825,
-     "start": 30.6,
-     "text": "."
-    },
-    {
-     "end": 31.125,
-     "start": 31.0,
+     "end": 9.8,
+     "start": 9.675,
      "text": "I"
     },
     {
-     "end": 31.525,
-     "start": 31.125,
+     "end": 10.2,
+     "start": 9.8,
      "text": "publish"
     },
     {
-     "end": 31.85,
-     "start": 31.525,
+     "end": 10.525,
+     "start": 10.2,
      "text": "nothing"
     },
     {
-     "end": 32.213,
-     "start": 31.85,
+     "end": 10.887,
+     "start": 10.525,
      "text": "else"
     },
     {
-     "end": 32.35,
-     "start": 32.213,
+     "end": 11.025,
+     "start": 10.887,
      "text": "and"
     },
     {
-     "end": 32.6,
-     "start": 32.35,
+     "end": 11.275,
+     "start": 11.025,
      "text": "keep"
     },
     {
-     "end": 32.787,
-     "start": 32.6,
+     "end": 11.462,
+     "start": 11.275,
      "text": "no"
     },
     {
-     "end": 33.125,
-     "start": 32.787,
+     "end": 11.8,
+     "start": 11.462,
      "text": "file"
     },
     {
-     "end": 33.412,
-     "start": 33.125,
+     "end": 12.087,
+     "start": 11.8,
      "text": "anyone"
     },
     {
-     "end": 33.65,
-     "start": 33.412,
+     "end": 12.325,
+     "start": 12.087,
      "text": "else"
     },
     {
-     "end": 34.55,
-     "start": 33.65,
+     "end": 13.225,
+     "start": 12.325,
      "text": "needs"
     },
     {
-     "end": 34.75,
-     "start": 34.55,
+     "end": 13.425,
+     "start": 13.225,
      "text": ":"
     },
     {
-     "end": 35.3,
-     "start": 34.975,
+     "end": 13.975,
+     "start": 13.65,
      "text": "create"
     },
     {
-     "end": 35.662,
-     "start": 35.3,
+     "end": 14.337,
+     "start": 13.975,
      "text": "writes"
     },
     {
-     "end": 35.975,
-     "start": 35.662,
+     "end": 14.65,
+     "start": 14.337,
      "text": "no"
     },
     {
-     "end": 36.562,
-     "start": 35.975,
+     "end": 15.238,
+     "start": 14.65,
      "text": "identity"
     },
     {
-     "end": 37.075,
-     "start": 36.562,
+     "end": 15.75,
+     "start": 15.238,
      "text": "file"
     },
     {
-     "end": 37.175,
-     "start": 37.075,
+     "end": 15.85,
+     "start": 15.75,
      "text": ","
     },
     {
-     "end": 37.287,
-     "start": 37.175,
+     "end": 15.962,
+     "start": 15.85,
      "text": "and"
     },
     {
-     "end": 37.388,
-     "start": 37.287,
+     "end": 16.062,
+     "start": 15.962,
      "text": "the"
     },
     {
-     "end": 37.812,
-     "start": 37.388,
+     "end": 16.487,
+     "start": 16.062,
      "text": "pending"
     },
     {
-     "end": 38.375,
-     "start": 37.812,
+     "end": 17.05,
+     "start": 16.487,
      "text": "identity"
     },
     {
-     "end": 38.5,
-     "start": 38.375,
+     "end": 17.175,
+     "start": 17.05,
      "text": "it"
     },
     {
-     "end": 39.1,
-     "start": 38.5,
+     "end": 17.775,
+     "start": 17.175,
      "text": "records"
     },
     {
-     "end": 39.475,
-     "start": 39.1,
+     "end": 18.15,
+     "start": 17.775,
      "text": "before"
     },
     {
-     "end": 39.688,
-     "start": 39.475,
+     "end": 18.362,
+     "start": 18.15,
      "text": "its"
     },
     {
-     "end": 39.975,
-     "start": 39.688,
+     "end": 18.65,
+     "start": 18.362,
      "text": "first"
     },
     {
-     "end": 40.55,
-     "start": 39.975,
+     "end": 19.225,
+     "start": 18.65,
      "text": "submission"
     },
     {
-     "end": 40.7,
-     "start": 40.55,
+     "end": 19.375,
+     "start": 19.225,
      "text": "is"
     },
     {
-     "end": 41.275,
-     "start": 40.7,
+     "end": 19.95,
+     "start": 19.375,
      "text": "removed"
     },
     {
-     "end": 41.513,
-     "start": 41.275,
+     "end": 20.188,
+     "start": 19.95,
      "text": "once"
     },
     {
-     "end": 41.65,
-     "start": 41.513,
+     "end": 20.325,
+     "start": 20.188,
      "text": "it"
     },
     {
-     "end": 42.875,
-     "start": 41.65,
+     "end": 21.55,
+     "start": 20.325,
      "text": "finishes"
     },
     {
-     "end": 43.075,
-     "start": 42.875,
+     "end": 21.75,
+     "start": 21.55,
      "text": "."
     }
    ]
@@ -321656,17 +320956,17 @@
    ]
   },
   "docs-theorems/theorem-manifest-02": {
-   "audio_sha256": "a48d57c648500209ae7d48ef5f1c09a1553d7275a886a6081e9a8684df6c99de",
+   "audio_sha256": "65a02e4f8b0146a41058bc58518534dd291e525aab1c14eea3dafe52944dbd37",
    "characters": 294,
    "cost": 0.00029106,
-   "duration": 21.4,
+   "duration": 21.175,
    "index": 2,
-   "key": "41e6908424a936e0db902068d2315d7f56f9e230afe7181ee5cb9802c502e113",
+   "key": "c82ecfb7e5f9c54a7d665569a99b01fb23ef226209428c10c4404f452969bf84",
    "page": "docs/theorems.md",
    "pause_ms": 400,
    "section": "theorem-manifest",
-   "sent_text": "All 45 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 66 in total, each with its own manifest and its own compiled gate.",
-   "text": "All 45 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 66 in total, each with its own manifest and its own compiled gate.",
+   "sent_text": "All 41 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 62 in total, each with its own manifest and its own compiled gate.",
+   "text": "All 41 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 62 in total, each with its own manifest and its own compiled gate.",
    "words": [
     {
      "end": 0.55,
@@ -321674,283 +320974,283 @@
      "text": "All"
     },
     {
-     "end": 1.275,
+     "end": 1.125,
      "start": 0.55,
-     "text": "45"
+     "text": "41"
     },
     {
-     "end": 2.037,
-     "start": 1.275,
+     "end": 1.913,
+     "start": 1.125,
      "text": "declarations"
     },
     {
-     "end": 2.112,
-     "start": 2.037,
+     "end": 1.987,
+     "start": 1.913,
      "text": "of"
     },
     {
-     "end": 2.2,
-     "start": 2.112,
+     "end": 2.075,
+     "start": 1.987,
      "text": "the"
     },
     {
-     "end": 2.775,
-     "start": 2.2,
+     "end": 2.65,
+     "start": 2.075,
      "text": "registry's"
     },
     {
-     "end": 3.025,
-     "start": 2.775,
+     "end": 2.9,
+     "start": 2.65,
      "text": "own"
     },
     {
-     "end": 3.475,
-     "start": 3.025,
+     "end": 3.35,
+     "start": 2.9,
      "text": "statement"
     },
     {
-     "end": 3.963,
-     "start": 3.475,
+     "end": 3.838,
+     "start": 3.35,
      "text": "module"
     },
     {
-     "end": 4.137,
-     "start": 3.963,
+     "end": 4.012,
+     "start": 3.838,
      "text": "are"
     },
     {
-     "end": 4.525,
-     "start": 4.137,
+     "end": 4.4,
+     "start": 4.012,
      "text": "PROVED"
     },
     {
-     "end": 4.688,
-     "start": 4.525,
+     "end": 4.562,
+     "start": 4.4,
      "text": "from"
     },
     {
-     "end": 4.787,
-     "start": 4.688,
+     "end": 4.662,
+     "start": 4.562,
      "text": "the"
     },
     {
-     "end": 5.312,
-     "start": 4.787,
+     "end": 5.188,
+     "start": 4.662,
      "text": "standard"
     },
     {
-     "end": 5.975,
-     "start": 5.312,
+     "end": 5.85,
+     "start": 5.188,
      "text": "axioms"
     },
     {
-     "end": 6.05,
-     "start": 5.975,
+     "end": 5.925,
+     "start": 5.85,
      "text": "—"
     },
     {
-     "end": 6.7,
-     "start": 6.05,
+     "end": 6.6,
+     "start": 5.925,
      "text": "propext"
     },
     {
-     "end": 6.787,
-     "start": 6.7,
+     "end": 6.688,
+     "start": 6.6,
      "text": ","
     },
     {
-     "end": 7.675,
-     "start": 6.787,
+     "end": 7.575,
+     "start": 6.688,
      "text": "Classical.choice"
     },
     {
-     "end": 7.738,
-     "start": 7.675,
+     "end": 7.637,
+     "start": 7.575,
      "text": ","
     },
     {
-     "end": 8.8,
-     "start": 7.738,
+     "end": 8.7,
+     "start": 7.637,
      "text": "Quot.sound"
     },
     {
-     "end": 8.875,
-     "start": 8.8,
+     "end": 8.775,
+     "start": 8.7,
      "text": "—"
     },
     {
-     "end": 9.0,
-     "start": 8.875,
+     "end": 8.9,
+     "start": 8.775,
      "text": "and"
     },
     {
-     "end": 9.35,
-     "start": 9.0,
+     "end": 9.25,
+     "start": 8.9,
      "text": "nothing"
     },
     {
-     "end": 10.4,
-     "start": 9.35,
+     "end": 10.3,
+     "start": 9.25,
      "text": "else"
     },
     {
-     "end": 10.65,
-     "start": 10.4,
+     "end": 10.55,
+     "start": 10.3,
      "text": "."
     },
     {
-     "end": 10.95,
-     "start": 10.85,
+     "end": 10.85,
+     "start": 10.75,
      "text": "The"
     },
     {
-     "end": 11.312,
-     "start": 10.95,
+     "end": 11.212,
+     "start": 10.85,
      "text": "naming"
     },
     {
-     "end": 11.812,
-     "start": 11.312,
+     "end": 11.712,
+     "start": 11.212,
      "text": "instance"
     },
     {
-     "end": 12.15,
-     "start": 11.812,
+     "end": 12.05,
+     "start": 11.712,
      "text": "adds"
     },
     {
-     "end": 12.625,
-     "start": 12.15,
+     "end": 12.5,
+     "start": 12.05,
      "text": "7"
     },
     {
-     "end": 12.7,
-     "start": 12.625,
+     "end": 12.575,
+     "start": 12.5,
      "text": ","
     },
     {
-     "end": 12.913,
-     "start": 12.7,
+     "end": 12.788,
+     "start": 12.575,
      "text": "its"
     },
     {
-     "end": 13.55,
-     "start": 12.913,
+     "end": 13.425,
+     "start": 12.788,
      "text": "lifecycle"
     },
     {
-     "end": 13.925,
-     "start": 13.55,
+     "end": 13.8,
+     "start": 13.425,
      "text": "9"
     },
     {
-     "end": 14.038,
-     "start": 13.925,
+     "end": 13.913,
+     "start": 13.8,
      "text": "and"
     },
     {
-     "end": 14.212,
-     "start": 14.038,
+     "end": 14.087,
+     "start": 13.913,
      "text": "its"
     },
     {
-     "end": 14.625,
-     "start": 14.212,
+     "end": 14.5,
+     "start": 14.087,
      "text": "wire"
     },
     {
-     "end": 15.137,
-     "start": 14.625,
+     "end": 15.012,
+     "start": 14.5,
      "text": "encoding"
     },
     {
-     "end": 15.65,
-     "start": 15.137,
+     "end": 15.525,
+     "start": 15.012,
      "text": "5"
     },
     {
-     "end": 15.75,
-     "start": 15.65,
+     "end": 15.625,
+     "start": 15.525,
      "text": ","
     },
     {
-     "end": 15.913,
-     "start": 15.75,
+     "end": 15.788,
+     "start": 15.625,
      "text": "for"
     },
     {
-     "end": 16.6,
-     "start": 15.913,
-     "text": "66"
+     "end": 16.375,
+     "start": 15.788,
+     "text": "62"
     },
     {
-     "end": 16.75,
-     "start": 16.6,
+     "end": 16.525,
+     "start": 16.375,
      "text": "in"
     },
     {
-     "end": 17.75,
-     "start": 16.75,
+     "end": 17.525,
+     "start": 16.525,
      "text": "total"
     },
     {
-     "end": 17.975,
-     "start": 17.75,
+     "end": 17.75,
+     "start": 17.525,
      "text": ","
     },
     {
-     "end": 18.362,
-     "start": 18.175,
+     "end": 18.138,
+     "start": 17.95,
      "text": "each"
     },
     {
-     "end": 18.487,
-     "start": 18.362,
+     "end": 18.263,
+     "start": 18.138,
      "text": "with"
     },
     {
-     "end": 18.6,
-     "start": 18.487,
+     "end": 18.375,
+     "start": 18.263,
      "text": "its"
     },
     {
-     "end": 18.8,
-     "start": 18.6,
+     "end": 18.575,
+     "start": 18.375,
      "text": "own"
     },
     {
-     "end": 19.513,
-     "start": 18.8,
+     "end": 19.288,
+     "start": 18.575,
      "text": "manifest"
     },
     {
-     "end": 19.638,
-     "start": 19.513,
+     "end": 19.413,
+     "start": 19.288,
      "text": "and"
     },
     {
-     "end": 19.75,
-     "start": 19.638,
+     "end": 19.525,
+     "start": 19.413,
      "text": "its"
     },
     {
-     "end": 19.975,
-     "start": 19.75,
+     "end": 19.75,
+     "start": 19.525,
      "text": "own"
     },
     {
-     "end": 20.425,
-     "start": 19.975,
+     "end": 20.2,
+     "start": 19.75,
      "text": "compiled"
     },
     {
-     "end": 21.2,
-     "start": 20.425,
+     "end": 20.975,
+     "start": 20.2,
      "text": "gate"
     },
     {
-     "end": 21.4,
-     "start": 21.2,
+     "end": 21.175,
+     "start": 20.975,
      "text": "."
     }
    ]
@@ -322771,376 +322071,11 @@
    ]
   },
   "docs-theorems/what-this-establishes-and-what-it-does-not-01": {
-   "audio_sha256": "ae867744beea172bdd59d608fe4ef40a02215d515605ac67b12aa571d0206499",
-   "characters": 393,
-   "cost": 0.00038907,
-   "duration": 26.075,
-   "index": 1,
-   "key": "ce7c25c661521296560c87bce0ab32800d417c17b48638dc8178c65af6bbcf2f",
-   "page": "docs/theorems.md",
-   "pause_ms": 400,
-   "section": "what-this-establishes-and-what-it-does-not",
-   "sent_text": "A batch cannot create an active holding and terminate it in the same batch. Termination must use a holding from before the batch. Independent requests on distinct keys can form an accepted non-empty batch when each admits alone and claims its own edge mint. This is an acceptance guarantee; the model builds no batch transaction and makes no comparison of singleton or reordered batch effects.",
-   "text": "A batch cannot create an active holding and terminate it in the same batch. Termination must use a holding from before the batch. Independent requests on distinct keys can form an accepted non-empty batch when each admits alone and claims its own edge mint. This is an acceptance guarantee; the model builds no batch transaction and makes no comparison of singleton or reordered batch effects.",
-   "words": [
-    {
-     "end": 0.275,
-     "start": 0.2,
-     "text": "A"
-    },
-    {
-     "end": 0.6,
-     "start": 0.275,
-     "text": "batch"
-    },
-    {
-     "end": 0.95,
-     "start": 0.6,
-     "text": "cannot"
-    },
-    {
-     "end": 1.263,
-     "start": 0.95,
-     "text": "create"
-    },
-    {
-     "end": 1.388,
-     "start": 1.263,
-     "text": "an"
-    },
-    {
-     "end": 1.75,
-     "start": 1.388,
-     "text": "active"
-    },
-    {
-     "end": 2.237,
-     "start": 1.75,
-     "text": "holding"
-    },
-    {
-     "end": 2.375,
-     "start": 2.237,
-     "text": "and"
-    },
-    {
-     "end": 2.9,
-     "start": 2.375,
-     "text": "terminate"
-    },
-    {
-     "end": 3.025,
-     "start": 2.9,
-     "text": "it"
-    },
-    {
-     "end": 3.112,
-     "start": 3.025,
-     "text": "in"
-    },
-    {
-     "end": 3.2,
-     "start": 3.112,
-     "text": "the"
-    },
-    {
-     "end": 3.475,
-     "start": 3.2,
-     "text": "same"
-    },
-    {
-     "end": 4.375,
-     "start": 3.475,
-     "text": "batch"
-    },
-    {
-     "end": 4.6,
-     "start": 4.375,
-     "text": "."
-    },
-    {
-     "end": 5.55,
-     "start": 4.775,
-     "text": "Termination"
-    },
-    {
-     "end": 5.762,
-     "start": 5.55,
-     "text": "must"
-    },
-    {
-     "end": 5.912,
-     "start": 5.762,
-     "text": "use"
-    },
-    {
-     "end": 5.975,
-     "start": 5.912,
-     "text": "a"
-    },
-    {
-     "end": 6.375,
-     "start": 5.975,
-     "text": "holding"
-    },
-    {
-     "end": 6.512,
-     "start": 6.375,
-     "text": "from"
-    },
-    {
-     "end": 6.863,
-     "start": 6.512,
-     "text": "before"
-    },
-    {
-     "end": 6.95,
-     "start": 6.863,
-     "text": "the"
-    },
-    {
-     "end": 7.8,
-     "start": 6.95,
-     "text": "batch"
-    },
-    {
-     "end": 8.0,
-     "start": 7.8,
-     "text": "."
-    },
-    {
-     "end": 8.8,
-     "start": 8.2,
-     "text": "Independent"
-    },
-    {
-     "end": 9.387,
-     "start": 8.8,
-     "text": "requests"
-    },
-    {
-     "end": 9.55,
-     "start": 9.387,
-     "text": "on"
-    },
-    {
-     "end": 10.113,
-     "start": 9.55,
-     "text": "distinct"
-    },
-    {
-     "end": 10.562,
-     "start": 10.113,
-     "text": "keys"
-    },
-    {
-     "end": 10.788,
-     "start": 10.562,
-     "text": "can"
-    },
-    {
-     "end": 11.15,
-     "start": 10.788,
-     "text": "form"
-    },
-    {
-     "end": 11.25,
-     "start": 11.15,
-     "text": "an"
-    },
-    {
-     "end": 11.775,
-     "start": 11.25,
-     "text": "accepted"
-    },
-    {
-     "end": 12.325,
-     "start": 11.775,
-     "text": "non-empty"
-    },
-    {
-     "end": 12.725,
-     "start": 12.325,
-     "text": "batch"
-    },
-    {
-     "end": 12.913,
-     "start": 12.725,
-     "text": "when"
-    },
-    {
-     "end": 13.225,
-     "start": 12.913,
-     "text": "each"
-    },
-    {
-     "end": 13.625,
-     "start": 13.225,
-     "text": "admits"
-    },
-    {
-     "end": 14.25,
-     "start": 13.625,
-     "text": "alone"
-    },
-    {
-     "end": 14.4,
-     "start": 14.25,
-     "text": "and"
-    },
-    {
-     "end": 14.8,
-     "start": 14.4,
-     "text": "claims"
-    },
-    {
-     "end": 15.012,
-     "start": 14.8,
-     "text": "its"
-    },
-    {
-     "end": 15.325,
-     "start": 15.012,
-     "text": "own"
-    },
-    {
-     "end": 15.587,
-     "start": 15.325,
-     "text": "edge"
-    },
-    {
-     "end": 16.6,
-     "start": 15.587,
-     "text": "mint"
-    },
-    {
-     "end": 16.825,
-     "start": 16.6,
-     "text": "."
-    },
-    {
-     "end": 17.175,
-     "start": 17.0,
-     "text": "This"
-    },
-    {
-     "end": 17.288,
-     "start": 17.175,
-     "text": "is"
-    },
-    {
-     "end": 17.362,
-     "start": 17.288,
-     "text": "an"
-    },
-    {
-     "end": 17.9,
-     "start": 17.362,
-     "text": "acceptance"
-    },
-    {
-     "end": 18.95,
-     "start": 17.9,
-     "text": "guarantee"
-    },
-    {
-     "end": 19.15,
-     "start": 18.95,
-     "text": ";"
-    },
-    {
-     "end": 19.45,
-     "start": 19.35,
-     "text": "the"
-    },
-    {
-     "end": 19.825,
-     "start": 19.45,
-     "text": "model"
-    },
-    {
-     "end": 20.188,
-     "start": 19.825,
-     "text": "builds"
-    },
-    {
-     "end": 20.425,
-     "start": 20.188,
-     "text": "no"
-    },
-    {
-     "end": 20.75,
-     "start": 20.425,
-     "text": "batch"
-    },
-    {
-     "end": 21.562,
-     "start": 20.75,
-     "text": "transaction"
-    },
-    {
-     "end": 21.688,
-     "start": 21.562,
-     "text": "and"
-    },
-    {
-     "end": 21.962,
-     "start": 21.688,
-     "text": "makes"
-    },
-    {
-     "end": 22.2,
-     "start": 21.962,
-     "text": "no"
-    },
-    {
-     "end": 22.85,
-     "start": 22.2,
-     "text": "comparison"
-    },
-    {
-     "end": 22.987,
-     "start": 22.85,
-     "text": "of"
-    },
-    {
-     "end": 23.725,
-     "start": 22.987,
-     "text": "singleton"
-    },
-    {
-     "end": 23.938,
-     "start": 23.725,
-     "text": "or"
-    },
-    {
-     "end": 24.475,
-     "start": 23.938,
-     "text": "reordered"
-    },
-    {
-     "end": 24.775,
-     "start": 24.475,
-     "text": "batch"
-    },
-    {
-     "end": 25.875,
-     "start": 24.775,
-     "text": "effects"
-    },
-    {
-     "end": 26.075,
-     "start": 25.875,
-     "text": "."
-    }
-   ]
-  },
-  "docs-theorems/what-this-establishes-and-what-it-does-not-02": {
-   "audio_sha256": "7d2cfbe22709f5ebac5c3d13a1483db5f50eb938a3ca1f37a5b1da9da55e96b4",
+   "audio_sha256": "ea608fe8760f81e56e70c2cc2c764d377944a7b72550e2c7cedbba57a34e10fc",
    "characters": 350,
-   "cost": 0.0003465,
+   "cost": 0.00021700000000000002,
    "duration": 22.05,
-   "index": 2,
+   "index": 1,
    "key": "9b3364dfa351b33b9318331adbfa75408bdf15092a38aea0deb04a6aa6cbe575",
    "page": "docs/theorems.md",
    "pause_ms": 400,
@@ -323505,12 +322440,12 @@
     }
    ]
   },
-  "docs-theorems/what-this-establishes-and-what-it-does-not-03": {
-   "audio_sha256": "41faf6aa95013efc912dac984c1b236f32355268211c0a8e3415592161ade41d",
+  "docs-theorems/what-this-establishes-and-what-it-does-not-02": {
+   "audio_sha256": "4d421db0914991db6cf8de9b54bda6fe44ed05b9c963a6422f43ef85e36f7028",
    "characters": 346,
-   "cost": 0.00034254,
+   "cost": 0.00021452000000000003,
    "duration": 23.15,
-   "index": 3,
+   "index": 2,
    "key": "fb60765ec58052acc173c9fe60a4637a2ccdfe3c803402c0fd63594f73160985",
    "page": "docs/theorems.md",
    "pause_ms": 400,
@@ -323830,12 +322765,12 @@
     }
    ]
   },
-  "docs-theorems/what-this-establishes-and-what-it-does-not-04": {
-   "audio_sha256": "615fe756b5faf3fb4672e1b26515e008cefe5c758b06f9264afe3eeecfdd502c",
+  "docs-theorems/what-this-establishes-and-what-it-does-not-03": {
+   "audio_sha256": "0b10672ad1b25f3454a1fe8ee87fd58b094a78a34281213c4f1dcbdc4e221909",
    "characters": 1237,
-   "cost": 0.00122463,
+   "cost": 0.00076694,
    "duration": 83.6,
-   "index": 4,
+   "index": 3,
    "key": "adb2c1fa9316a10da6f2926df466100d69906dd58923a7b278111b712d036dd2",
    "page": "docs/theorems.md",
    "pause_ms": 400,

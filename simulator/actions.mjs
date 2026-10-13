@@ -14,6 +14,7 @@ export const request = (edge, key, opts = {}) => ({
   tip: opts.tip ?? 0,
   reference: opts.reference ?? 0,
   submittedAt: opts.submittedAt ?? 0,
+  registryId: opts.registryId ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
   submittedAt: opts.submittedAt ?? 0,

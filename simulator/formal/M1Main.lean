@@ -24,6 +24,9 @@ def request (edge : Edge) (key : Nat := 5) : Request :=
 def witness : RetractWitness :=
   { submittedAt := 0, validFrom := 1000, validTo := 1500, signatories := [42] }
 
+def rejectWitness : RejectWitness :=
+  { evidence := { registry := config, request := request .insertActive, reason := .expired }, validFrom := 1500, validTo := 1501 }
+
 def scenario (name : String) (exit : Exit) (setup : List Request := []) : Scenario :=
   { id := name, theoremName := "Singular.M1.Statements." ++
       (match exit with
@@ -33,8 +36,7 @@ def scenario (name : String) (exit : Exit) (setup : List Request := []) : Scenar
   , statementSha256 := "", kind := "witness", mutates := none
   , requiresReachableState := !setup.isEmpty, start := initial, setup := setup
   , exit := exit, request := request (match exit with | .fold e => e | _ => .insertActive)
-  , foldWitness := match exit with | .fold _ => some { validTo := 1000 } | _ => none
-  , lovelace := 20, witness := match exit with | .retract => some witness | _ => none }
+  , lovelace := 20, witness := match exit with | .retract => some witness | _ => none, rejection := match exit with | .reject => some rejectWitness | _ => none }
 
 def cases : List Scenario :=
   [scenario "Register an active key" (.fold .insertActive)
@@ -52,27 +54,21 @@ def cases : List Scenario :=
       if sc.request.edge == .witnessTerminal then { sc with request := { sc.request with approval := none } }
       else sc
 
-def foldWitness : FoldWitness := { validTo := 1000 }
-
-def admittedBatch (batch : List Request) : Except String Result :=
-  M1.admittedFoldBatch initial batch foldWitness
-
 def batches : List (String × List Request × Except String Result) :=
   let allowed := [request .insertActive, request .updateTerminal]
   let excluded := request .witnessTerminal
   [("Register two distinct keys in one atomic batch", [request .insertActive, request .insertActive 6],
-      admittedBatch [request .insertActive, request .insertActive 6])
-  , ("Register then terminate in one atomic batch", allowed, admittedBatch allowed)
+      M1.foldBatch initial [request .insertActive, request .insertActive 6])
+  , ("Register then terminate in one atomic batch", allowed, M1.foldBatch initial allowed)
   , ("Refuse a mixed batch's excluded final member", allowed ++ [excluded],
-      admittedBatch (allowed ++ [excluded]))
+      M1.foldBatch initial (allowed ++ [excluded]))
   , ("Refuse an excluded first member", [excluded, request .insertActive],
-      admittedBatch [excluded, request .insertActive])
-  , ("Refuse an empty batch", [], admittedBatch [])]
+      M1.foldBatch initial [excluded, request .insertActive])
+  , ("Refuse an empty batch", [], M1.foldBatch initial [])]
 
 def batchJson (item : String × List Request × Except String Result) : Json :=
   let (name, requests, result) := item
   Json.mkObj [("requirement", toJson name), ("requests", toJson requests)
-    , ("foldWitness", toJson foldWitness)
     , ("outcome", toJson (match result with | .ok _ => "accepted" | .error _ => "refused"))
     , ("reason", match result with | .ok _ => Json.null | .error why => toJson why)
     , ("observations", match result with

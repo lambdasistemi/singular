@@ -114,6 +114,10 @@ def rejectBatchOfOne : String := "Singular.Statements.reject_batch_of_one_is_rej
 def rejectBatchOfOneDigest : String :=
   "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"
 
+def rejectTheorem : String := "Singular.Statements.rejection_admitted_iff"
+def rejectDigest : String :=
+  "cdd9b2e62391bc21750ed601e8e3045ce271467db5af493c8925ca2037091350"
+
 /-- The active registration this corpus retires: key 42, owner 42, routed to
 output 555 with deposit 55, which goes there with the token. One request, reused
 as the retirement row's setup so the two rows share an actual history. -/
@@ -127,6 +131,13 @@ def retireRegistered : Request := request .updateTerminal 42 42 555 0 55
 law refuses it once 42 is registered, so a folder rejects it and the owner is
 paid the deposit back. -/
 def registerTaken : Request := { request .insertActive 42 43 556 0 55 with tip := 7 }
+
+/-- The historical unguarded rejection: an empty registry and an approved insertion of key 5 for owner 42, destination 99, deposit 2000000, tip 1000000, rejected with no signers. On the base it is accepted; after the change it must be refused with its evidence missing. -/
+def historicalRequest : Request := { request .insertActive 5 42 99 0 2000000 with tip := 1000000, reference := 7, submittedAt := 10000, claimed := [(.active, 1)] }
+
+def historicalWitness : RetractWitness := { submittedAt := 10000, validFrom := 10001, validTo := 10002, signatories := [] }
+
+def historicalScenario : Scenario := { id := "historical-unguarded-rejection", theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest, kind := "witness", mutates := none, requiresReachableState := false, start := s0, setup := [], exit := .reject, request := historicalRequest, lovelace := lovelace }
 
 /-- A registration of key 7 by owner 77 with deposit 55 and tip 7, retracted by
 its owner: everything it held, deposit and tip, goes back. -/
@@ -158,6 +169,111 @@ def registerTakenAgain : Request := { request .insertActive 42 44 557 0 40 with 
 /-- Owner 43 asking for key 42 a second time, with deposit 40: two requests of one
 owner, owed back together. -/
 def registerTakenTwice : Request := { request .insertActive 42 43 558 0 40 with tip := 3 }
+
+/-- The synthetic absent state at key 5: known absent with its custody entry, so the premise
+holds and the leaf differs from unknown. -/
+def absentState : RegistryState :=
+  let trie : Trie := [(5, .known .absent)]
+  { config := { cfg0 with root := rootOf trie }
+  , trie := trie
+  , custody := [{ key := 5, refundAddress := 91, value := 55 }]
+  , held := [] }
+
+/-- Explicit producer evidence; the driver itself never creates a proof. -/
+def rejectionFor (s : RegistryState) (r : Request) (reason : RejectReason) (lo hi : Nat) : RejectWitness :=
+  { evidence := { registry := s.config, request := r, reason := reason }, validFrom := lo, validTo := hi }
+
+def protectedScenario (id : String) (start : RegistryState) (setup : List Request) (r : Request)
+    (rejection : Option RejectWitness) : Scenario :=
+  { id, theoremName := rejectTheorem, statementSha256 := rejectDigest
+  , kind := "witness", mutates := none, requiresReachableState := !setup.isEmpty
+  , start, setup, exit := .reject, request := r, lovelace := lovelace, rejection }
+
+def rejInsertUnknown : Request := request .insertActive 5 42 99 0 55
+def rejInsertAbsent : Request := request .insertActive 5 42 99 0 55
+def rejUpdateUnknown : Request := request .updateTerminal 5 42 99 0 55
+def rejUpdateAbsent : Request := request .updateTerminal 5 42 99 0 55
+
+def rejActiveSetup : List Request := [request .insertActive 5 42 99 0 55]
+def rejTerminalSetup : List Request := [request .insertActive 5 42 99 0 55, request .updateTerminal 5 42 99 0 55]
+
+def rejActiveState : RegistryState := (runSetup s0 rejActiveSetup).2.1
+def rejTerminalState : RegistryState := (runSetup s0 rejTerminalSetup).2.1
+
+/-- Truth table for the two admitted edges, plus one row per excluded tag at unknown. -/
+def rejectionTable : List (Scenario × Bool) :=
+  [ (protectedScenario "PR-table-insertActive-unknown" s0 [] rejInsertUnknown
+      (some (rejectionFor s0 rejInsertUnknown (.mismatch .unknown) 0 1)), false)
+  , (protectedScenario "PR-table-insertActive-absent" absentState [] rejInsertAbsent
+      (some (rejectionFor absentState rejInsertAbsent (.mismatch (.known .absent)) 0 1)), true)
+  , (protectedScenario "PR-table-insertActive-active" s0 rejActiveSetup (request .insertActive 5 42 99 0 55)
+      (some (rejectionFor rejActiveState (request .insertActive 5 42 99 0 55) (.mismatch (.known .active)) 0 1)), true)
+  , (protectedScenario "PR-table-insertActive-terminal" s0 rejTerminalSetup (request .insertActive 5 42 99 0 55)
+      (some (rejectionFor rejTerminalState (request .insertActive 5 42 99 0 55) (.mismatch (.known .terminal)) 0 1)), true)
+  , (protectedScenario "PR-table-updateTerminal-unknown" s0 [] rejUpdateUnknown
+      (some (rejectionFor s0 rejUpdateUnknown (.mismatch .unknown) 0 1)), true)
+  , (protectedScenario "PR-table-updateTerminal-absent" absentState [] rejUpdateAbsent
+      (some (rejectionFor absentState rejUpdateAbsent (.mismatch (.known .absent)) 0 1)), true)
+  , (protectedScenario "PR-table-updateTerminal-active" s0 rejActiveSetup (request .updateTerminal 5 42 99 0 55)
+      (some (rejectionFor rejActiveState (request .updateTerminal 5 42 99 0 55) (.mismatch (.known .active)) 0 1)), false)
+  , (protectedScenario "PR-table-updateTerminal-terminal" s0 rejTerminalSetup (request .updateTerminal 5 42 99 0 55)
+      (some (rejectionFor rejTerminalState (request .updateTerminal 5 42 99 0 55) (.mismatch (.known .terminal)) 0 1)), true)
+  , (protectedScenario "PR-table-insertAbsent-unknown" s0 [] (request .insertAbsent 5 42 99 0 55)
+      (some (rejectionFor s0 (request .insertAbsent 5 42 99 0 55) (.mismatch .unknown) 0 1)), true)
+  , (protectedScenario "PR-table-updateActive-unknown" s0 [] (request .updateActive 5 42 99 0 55)
+      (some (rejectionFor s0 (request .updateActive 5 42 99 0 55) (.mismatch .unknown) 0 1)), true)
+  , (protectedScenario "PR-table-deleteAbsent-unknown" s0 [] (request .deleteAbsent 5 42 99 0 55)
+      (some (rejectionFor s0 (request .deleteAbsent 5 42 99 0 55) (.mismatch .unknown) 0 1)), true)
+  , (protectedScenario "PR-table-deleteActive-unknown" s0 [] (request .deleteActive 5 42 99 0 55)
+      (some (rejectionFor s0 (request .deleteActive 5 42 99 0 55) (.mismatch .unknown) 0 1)), true)
+  , (protectedScenario "PR-table-witnessTerminal-unknown" s0 [] (request .witnessTerminal 5 42 99 0 55)
+      (some (rejectionFor s0 (request .witnessTerminal 5 42 99 0 55) (.mismatch .unknown) 0 1)), true) ]
+
+def expiryReq : Request := { request .insertActive 5 42 99 0 55 with submittedAt := 10000 }
+
+/-- Three time positions with the one-instant boundary either side of expiry. -/
+def rejectionTimes : List (Scenario × Option String) :=
+  [ (protectedScenario "PR-expiry-before-processing" sTimed [] expiryReq
+      (some (rejectionFor sTimed expiryReq .expired 10500 10501)), some "reject-not-expired")
+  , (protectedScenario "PR-expiry-inside-reclaim" sTimed [] expiryReq
+      (some (rejectionFor sTimed expiryReq .expired 11200 11201)), some "reject-not-expired")
+  , (protectedScenario "PR-expiry-one-before" sTimed [] expiryReq
+      (some (rejectionFor sTimed expiryReq .expired 11499 11500)), some "reject-not-expired")
+  , (protectedScenario "PR-expiry-at-threshold" sTimed [] expiryReq
+      (some (rejectionFor sTimed expiryReq .expired 11500 11501)), none) ]
+
+def mismatchReq : Request := request .insertActive 5 42 99 0 55
+def mismatchState : RegistryState := rejActiveState
+def mismatchGood : RejectWitness := rejectionFor mismatchState mismatchReq (.mismatch (.known .active)) 0 1
+
+/-- Every refusal reason with its binding failure. -/
+def rejectionControls : List (Scenario × Option String) :=
+  [ (protectedScenario "PR-refuse-registry" s0 rejActiveSetup mismatchReq
+      (some { mismatchGood with evidence := { mismatchGood.evidence with registry := s0.config } }),
+      some "reject-registry-mismatch")
+  , (protectedScenario "PR-refuse-request" s0 rejActiveSetup mismatchReq
+      (some { mismatchGood with evidence := { mismatchGood.evidence with request := { mismatchReq with reference := 99 } } }),
+      some "reject-request-mismatch")
+  , (protectedScenario "PR-refuse-interval" s0 rejActiveSetup mismatchReq
+      (some (rejectionFor mismatchState mismatchReq (.mismatch (.known .active)) 1 1)),
+      some "reject-invalid-interval")
+  , (protectedScenario "PR-refuse-leaf" s0 rejActiveSetup mismatchReq
+      (some (rejectionFor mismatchState mismatchReq (.mismatch .unknown) 0 1)),
+      some "reject-leaf-mismatch") ]
+
+#guard rejectionTable.length == 13
+#guard rejectionTable.all fun (sc, expected) =>
+  let result := (runSurface sc).2
+  result.premiseChecked && result.outcome == (if expected then .accepted else .refused) &&
+    result.reason == (if expected then none else some "reject-compatible")
+#guard rejectionTimes.all fun (sc, reason) =>
+  let result := (runSurface sc).2
+  result.premiseChecked && result.reason == reason &&
+    result.outcome == (if reason.isNone then .accepted else .refused)
+#guard rejectionControls.all fun (sc, reason) =>
+  let result := (runSurface sc).2
+  result.premiseChecked && result.reason == reason &&
+    result.outcome == (if reason.isNone then .accepted else .refused)
 
 /-- An owner output paying `lovelace` to `owner`'s key, as a caller observes it. -/
 def ownerPaid (owner lovelace : Nat) : TxOutput :=
@@ -221,7 +337,8 @@ def existingScenarios : List Scenario :=
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive]
-    , exit := .reject, request := registerTaken, lovelace := lovelace }
+    , exit := .reject, request := registerTaken, lovelace := lovelace
+    , rejection := some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTaken (.mismatch (.known .active)) 0 1) }
   , { id := "DR08-retract-registration"
     , theoremName := onlyRetractOwesTheTip, statementSha256 := onlyRetractOwesTheTipDigest
     , kind := "witness", mutates := none, requiresReachableState := false
@@ -296,7 +413,11 @@ def existingScenarios : List Scenario :=
     , lovelace := lovelace }
   , foreignDatumDelivery
   , carrierlessDelivery
-  ]
+  , historicalScenario
+  ] ++ rejectionTable.map Prod.fst ++ rejectionTimes.map Prod.fst ++ rejectionControls.map Prod.fst
+
+#guard (runSurface historicalScenario).2.outcome == .refused
+#guard (runSurface historicalScenario).2.reason == some "reject-evidence-missing"
 
 #guard scenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
   (runSurface sc).2.reason == some "not-phase2"
@@ -346,12 +467,14 @@ def existingBatchScenarios : List BatchScenario :=
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive]
     , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenAgain)]
+    , rejections := [some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTaken (.mismatch (.known .active)) 0 1), some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTakenAgain (.mismatch (.known .active)) 0 1)]
     , outputs := some [ownerPaid 43 55, ownerPaid 44 40] }
   , { id := "BR07-reject-two-short"
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest
     , kind := "mutant", mutates := some "BR06-reject-two-paid"
     , requiresReachableState := true, start := s0, setup := [registerActive]
     , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenAgain)]
+    , rejections := [some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTaken (.mismatch (.known .active)) 0 1), some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTakenAgain (.mismatch (.known .active)) 0 1)]
     , outputs := some [ownerPaid 43 55, ownerPaid 44 39] }
     -- Two rejects owed to owner 43, 55 and 40, paid by one output of 55: each
     -- deposit alone is covered, their sum is not.
@@ -360,12 +483,14 @@ def existingBatchScenarios : List BatchScenario :=
     , kind := "mutant", mutates := some "BR06-reject-two-paid"
     , requiresReachableState := true, start := s0, setup := [registerActive]
     , question := .rejectBatch [(.reject, registerTaken), (.reject, registerTakenTwice)]
+    , rejections := [some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTaken (.mismatch (.known .active)) 0 1), some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTakenTwice (.mismatch (.known .active)) 0 1)]
     , outputs := some [ownerPaid 43 55] }
   , { id := "BR09-reject-one"
     , theoremName := rejectBatchOfOne, statementSha256 := rejectBatchOfOneDigest
     , kind := "witness", mutates := none, requiresReachableState := true
     , start := s0, setup := [registerActive]
     , question := .rejectBatch [(.reject, registerTaken)]
+    , rejections := [some (rejectionFor ((runSetup s0 [registerActive]).2.1) registerTaken (.mismatch (.known .active)) 0 1)]
     , outputs := some [ownerPaid 43 55] }
   , { id := "BR10-reject-mixed-with-fold"
     , theoremName := noExitStrandsTheDeposit, statementSha256 := noExitStrandsTheDepositDigest

@@ -310,6 +310,8 @@ data LiveStep = LiveStep
     -- ^ what the model's admission reads of a retraction, from the retraction as built
     , lsFoldWitness :: Maybe Value
     -- ^ the fold upper bound read from the built transaction
+    , lsRejection :: Maybe Value
+    -- ^ what the model's admission reads of a rejection, from the rejection as built
     , lsRequestLovelace :: Integer
     , lsAfter :: Maybe OnChainTokenState
     , lsWitness :: Maybe (TxIn, TxOut ConwayEra)
@@ -331,6 +333,11 @@ data LiveState = LiveState
     , liveRegistryKeys :: IORef (Map.Map String [ByteString])
     , liveRegistryWallets :: IORef (Map.Map String [Addr])
     , liveRegistryIds :: IORef (Map.Map String Integer)
+    {- ^ The abstract registry identity allocated while acting.
+    Owner: the row runner (runLiveNamed) that creates the LiveState.
+    Lifetime: one row's story; empty at creation, filled by enterRegistry.
+    Concurrency: single-threaded story interpreter; no thread shares it.
+    -}
     , livePendingRequests
         :: IORef
             (Map.Map (String, String, Int, ByteString) (TxIn, TxOut ConwayEra))
@@ -594,6 +601,7 @@ submitEdge env state cage exit alteration placement request = do
         wallet = Live.requestWallet request
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
+    registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
     noteRequest (genesisAddr env) state cage registry request
     refs <- storyReferences env cage key edge
@@ -631,6 +639,7 @@ submitEdge env state cage exit alteration placement request = do
                         (genesisAddr env)
                         ids
                         cfg
+                        registryIdentity
                         exit
                         request
                         cgDeposit
@@ -676,6 +685,7 @@ submitEdge env state cage exit alteration placement request = do
                     (genesisAddr env)
                     ids
                     cfg
+                    registryIdentity
                     exit
                     request
                     deposit
@@ -834,6 +844,13 @@ submitEdge env state cage exit alteration placement request = do
                 if exit == Live.Fold
                     then Just <$> foldWitnessOf env signed
                     else pure Nothing
+            -- What the model's admission reads of a rejection is read off the
+            -- rejection as built, after it has been submitted.
+            rejection <-
+                if exit == Live.Reject
+                    then
+                        Just <$> rejectionWitness env state cage before modelRequest signed
+                    else pure Nothing
             case result of
                 SubmitAccepted _ -> do
                     modifyIORef' (livePendingRequests state) (Map.delete pendingKey)
@@ -875,6 +892,7 @@ submitEdge env state cage exit alteration placement request = do
                             modelRequest
                             retraction
                             foldWitness
+                            rejection
                             bond
                             (Just after)
                             witness
@@ -912,6 +930,7 @@ submitEdge env state cage exit alteration placement request = do
                             modelRequest
                             retraction
                             foldWitness
+                            rejection
                             bond
                             Nothing
                             witness
@@ -956,6 +975,7 @@ submitBatch env state cage exit placement alteration requests = do
     let cfg = rcCfg cage
         ids = liveIds state
     (tid, before) <- enterRegistry env state cage
+    registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
         pendingKeyOf request =
             ( registry
@@ -997,6 +1017,7 @@ submitBatch env state cage exit placement alteration requests = do
                 owner
                 ids
                 cfg
+                registryIdentity
                 exit
                 request
                 deposit
@@ -1132,6 +1153,33 @@ submitBatch env state cage exit placement alteration requests = do
                 _ -> object ["exit" .= String "reject", "request" .= modelRequest]
             | ((request, _), modelRequest) <- zip booked modelRequests
             ]
+    -- What the model's rejection admission reads for a reject batch, read off
+    -- the batch as built: the intermediate configuration with its root and
+    -- allocated identity, each complete request, the expiry ground, and the
+    -- batch transaction's validity bounds shared by every witness.
+    batchRejections <- case exit of
+        Live.Reject -> do
+            registryConfig <- intermediateAbstractConfig env state cage before
+            (validFrom, validTo) <- case signed ^. bodyTxL . vldtTxBodyL of
+                ValidityInterval (SJust rejLower) (SJust rejUpper) ->
+                    (,)
+                        <$> slotStartMs (envProv env) rejLower
+                        <*> slotStartMs (envProv env) rejUpper
+                _ -> failWith "a reject batch is built without both validity bounds"
+            pure
+                [ object
+                    [ "evidence"
+                        .= object
+                            [ "registry" .= registryConfig
+                            , "request" .= modelRequest
+                            , "reason" .= String "expired"
+                            ]
+                    , "validFrom" .= validFrom
+                    , "validTo" .= validTo
+                    ]
+                | modelRequest <- modelRequests
+                ]
+        _ -> pure []
     result <- submitTxResilient (envSubmit env) signedWitnessed
     measured <- case result of
         SubmitAccepted _ -> do
@@ -1178,6 +1226,7 @@ submitBatch env state cage exit placement alteration requests = do
         alteration
         (map snd booked)
         asked
+        batchRejections
         signed
         result
         measured
@@ -1223,12 +1272,13 @@ batchRecord
     -> Maybe (Either Live.BatchTamper Live.RefundTamper)
     -> [(TxIn, TxOut ConwayEra)]
     -> [Value]
+    -> [Value]
     -> ConwayTx
     -> SubmitResult
     -> Maybe (Integer, Integer, Integer)
     -> (PurposeMeasurements, PurposeUnits)
     -> IO Value
-batchRecord env state cage exit alteration booked asked signed result units (measured, declared) = do
+batchRecord env state cage exit alteration booked asked rejections signed result units (measured, declared) = do
     let cfg = rcCfg cage
         ids = liveIds state
         txid = T.pack (txIdHex signed)
@@ -1298,6 +1348,7 @@ batchRecord env state cage exit alteration booked asked signed result units (mea
                 , "start" .= startValue
                 , "setup" .= setup
                 , "requests" .= asked
+                , "rejections" .= rejections
                 ]
                     <> ["outputs" .= outputs | Just outputs <- [judged]]
                     <> ["foldWitness" .= w | Just w <- [foldWitness]]
@@ -2001,6 +2052,103 @@ foldWitnessOf env transaction = case transaction ^. bodyTxL . vldtTxBodyL of
         pure (object ["validTo" .= validTo])
     _ -> failWith "a fold is built without a validity upper bound"
 
+{- | The abstract registry configuration the model's rejection admission reads,
+as it stands at the action: the chain-read state before submission, translated
+to the model's vocabulary, with the allocated registry identity.
+Owner: the row runner; lifetime: one model question; concurrency: single-threaded.
+Explicit inputs: the chain-read state before submission; no hidden environment
+read, no thread.
+-}
+intermediateAbstractConfig
+    :: Env -> LiveState -> RowCage -> OnChainTokenState -> IO Value
+intermediateAbstractConfig env state cage before = do
+    tid <- cageTid cage
+    let registry = show tid
+        cfg = rcCfg cage
+    registryIdentity <- modelRegistryIdentity state cage
+    (application, active, absent, terminal) <-
+        observePins (liveIds state) cfg
+    keys <-
+        maybe (failWith "rejection evidence has no allocated keys") pure
+            . Map.lookup registry
+            =<< readIORef (liveRegistryKeys state)
+    (committed, membership) <- withTrie (envTm env) tid $ \trie -> do
+        root <- CageTrie.getRoot trie
+        values <- mapM (CageTrie.lookup trie) keys
+        pure (root, zip keys (map isJust values))
+    require
+        "rejection evidence chain root differs from committed trie"
+        (unOnChainRoot (stateRoot before) == unRoot committed)
+    classified <-
+        classifyLeaves membership (unOnChainRoot (stateRoot before))
+    translated <- mapM translateLeaf classified
+    let root =
+            Compare.rootOf
+                [(identifier, ordinal) | (identifier, ordinal, _) <- translated]
+    pure
+        ( abstractConfig
+            before
+            registryIdentity
+            application
+            active
+            absent
+            terminal
+            root
+        )
+  where
+    ids = liveIds state
+    translateLeaf (key, value) = do
+        identifier <- observeIdentity (liveKeys ids) (KeyIdentity key)
+        (ordinal, name) <-
+            if value == leafAbsent
+                then pure (0, String "absent")
+                else
+                    if value == leafActive
+                        then pure (1, String "active")
+                        else
+                            if value == leafTerminal
+                                then pure (2, String "terminal")
+                                else failWith ("unrecognized trie leaf for " <> show key)
+        pure (identifier, ordinal, name)
+
+{- | What the model's rejection admission reads, read off the rejection as built,
+after it has been submitted: the intermediate configuration with its root and
+allocated identity, the complete request, the expiry ground, and the transaction's
+validity bounds. Lawful rejects are placed after both windows, so expiry is the
+ground; in-window rejects are refused with not-expired, which keeps slice three red.
+Owner: the row runner; lifetime: one model question; concurrency: single-threaded.
+Explicit inputs: the chain-read state before submission, the model request, and
+the built transaction; no hidden environment read, no thread.
+-}
+rejectionWitness
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> OnChainTokenState
+    -> Value
+    -> ConwayTx
+    -> IO Value
+rejectionWitness env state cage before modelRequest transaction = do
+    registryConfig <- intermediateAbstractConfig env state cage before
+    (validFrom, validTo) <- case transaction ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval (SJust lower) (SJust upper) ->
+            (,)
+                <$> slotStartMs (envProv env) lower
+                <*> slotStartMs (envProv env) upper
+        _ -> failWith "a rejection is built without both validity bounds"
+    pure
+        ( object
+            [ "evidence"
+                .= object
+                    [ "registry" .= registryConfig
+                    , "request" .= modelRequest
+                    , "reason" .= String "expired"
+                    ]
+            , "validFrom" .= validFrom
+            , "validTo" .= validTo
+            ]
+        )
+
 {- | The POSIX slot-start time from one acquired view's validated finite
 material, through the fixed common conversion.
 -}
@@ -2161,6 +2309,7 @@ storyModelRequest
     :: Addr
     -> LiveIdentities
     -> CageConfig
+    -> Integer
     -> Live.Exit
     -> Live.EdgeRequest Addr
     -> Integer
@@ -2175,6 +2324,7 @@ storyModelRequestBy
     :: Addr
     -> LiveIdentities
     -> CageConfig
+    -> Integer
     -> Live.Exit
     -> Live.EdgeRequest Addr
     -> Integer
@@ -2182,7 +2332,7 @@ storyModelRequestBy
     -> Maybe Integer
     -> Either (Maybe RegistryEdges.BookingApproval) (TxOut ConwayEra)
     -> IO Value
-storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut = do
+storyModelRequestBy booker ids cfg registryIdentity _exit request deposit tip reference requestOut = do
     let wallet = Live.requestWallet request
         key = TE.encodeUtf8 (T.pack (Live.requestKey request))
     modelKey <- observeIdentity (liveKeys ids) (KeyIdentity key)
@@ -2243,13 +2393,10 @@ storyModelRequestBy booker ids cfg exit request deposit tip reference requestOut
             , "approval" .= approval
             , "tip" .= tip
             , "datum" .= datum
-            , "submittedAt" .= submittedAt
+            , "registryId" .= registryIdentity
             ]
-                <> [ "reference" .= bound | exit == Live.Retract, Just bound <- [reference]
-                   ]
-                <> [ "submittedAt" .= snd (requestDatumOf out)
-                   | exit == Live.Retract
-                   , Right out <- [requestOut]
+                <> ["reference" .= bound | Just bound <- [reference]]
+                <> [ "submittedAt" .= snd (requestDatumOf out) | Right out <- [requestOut]
                    ]
 
 {- | Observation only looks up identities allocated while acting. The
@@ -2320,7 +2467,16 @@ observeAcceptedStep env state step transaction = do
                     [(identifier, name) | (identifier, _, name) <- translated]
                 )
     (application, active, absent, terminal) <- observePins ids cfg
-    let config = abstractConfig after application active absent terminal root
+    registryIdentity <- modelRegistryIdentity state cage
+    let config =
+            abstractConfig
+                after
+                registryIdentity
+                application
+                active
+                absent
+                terminal
+                root
         activeBytes = SBS.fromShort (cfgActivePolicy cfg)
         terminalBytes = SBS.fromShort (cfgTerminalPolicy cfg)
     holdings <-
@@ -3282,6 +3438,7 @@ askModel _env state step judged = do
                 ]
                     <> ["witness" .= witness | Just witness <- [lsRetraction step]]
                     <> ["foldWitness" .= witness | Just witness <- [lsFoldWitness step]]
+                    <> ["rejection" .= rejection | Just rejection <- [lsRejection step]]
                     <> concat
                         [ ["inputs" .= inputs, "outputs" .= outputs]
                         | Just (inputs, outputs) <- [judged]
@@ -3326,6 +3483,16 @@ askModel _env state step judged = do
     LeanOracle.expectedObservation evaluator [] asked
         >>= either failWith pure
 
+{- | The registry identity allocated while entering this concrete registry.
+Owner: the row runner; lifetime: one row; concurrency: single-threaded.
+-}
+modelRegistryIdentity :: LiveState -> RowCage -> IO Integer
+modelRegistryIdentity state cage = do
+    tid <- cageTid cage
+    maybe (failWith "model registry identity was not allocated") pure
+        . Map.lookup (show tid)
+        =<< readIORef (liveRegistryIds state)
+
 {- | Where every model question about a registry starts: the empty registry the
 chain held when the story first acted on it, under its pins, and the setup trace
 of the folds since compared or submitted in a batch the chain accepted.
@@ -3334,6 +3501,7 @@ modelStart
     :: LiveState -> RowCage -> IO (OnChainTokenState, Value, [Value])
 modelStart state cage = do
     tid <- cageTid cage
+    registryIdentity <- modelRegistryIdentity state cage
     let registry = show tid
     start <-
         maybe (failWith "model question has no chain-read start") pure
@@ -3349,6 +3517,7 @@ modelStart state cage = do
             [ "config"
                 .= abstractConfig
                     start
+                    registryIdentity
                     application
                     active
                     absent
@@ -3942,11 +4111,13 @@ abstractConfig
     -> Integer
     -> Integer
     -> Integer
+    -> Integer
     -> [Word8]
     -> Value
-abstractConfig state application active absent terminal root =
+abstractConfig state registryIdentity application active absent terminal root =
     object
         [ "root" .= root
+        , "registryId" .= registryIdentity
         , "maxFee" .= stateMaxFee state
         , "processTime" .= stateProcessTime state
         , "retractTime" .= stateRetractTime state

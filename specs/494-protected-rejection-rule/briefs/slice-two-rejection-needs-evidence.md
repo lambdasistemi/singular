@@ -90,7 +90,7 @@ admission and statements green; the corpus and transport green; the lawful rows 
 
 The slice-two rows of the [gate](../gate.md), once per candidate on a clean committed tree. The devnet
 rows run on the hosted checks; run locally the two rows you edited most, once. The early-rejection row
-is red at this head by design and is not part of this slice's gate.
+is red at this head by design and is not part of this slice's gate. Neither are the running book, the generic rows and the refusal extent check (gate version 2): they hold the in-window chapters that slice three turns lawful, and they are slice three's final rows.
 
 ## Terminal condition
 

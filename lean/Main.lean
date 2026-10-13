@@ -929,7 +929,7 @@ def failingWitness : RetractWitness := retractWitness [] 0 1000
 /-- Every admitted exit keeps its step and transaction. Refused admission wins
 for both, including a fold under a late upper bound. -/
 def admittedExitFailures : List String :=
-  let others := (allExits.filter (· != .retract)).flatMap fun x =>
+  let others := (exitEdges.map Exit.fold).flatMap fun x =>
     exitEdges.flatMap fun e => paidKeys.flatMap fun k =>
       let r := exitStepRequest e k
       let expectedStep := match exitAdmission paidState.config x r failingWitness with
@@ -969,7 +969,7 @@ def judgementRows : List (String × Exit × Request × RetractWitness × List Tx
   , ("RJ05-admitted-paid-short", .retract, r, signed, spent, short, some "deposit-returned")
   , ("RJ06-admitted-as-built", .retract, r, signed, spent, paid, none)
   , ("RJ07-reject-under-a-failing-witness", .reject, r, failingWitness,
-      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), none)
+      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), some "reject-evidence-missing")
   , ("RJ08-fold-past-deadline", .fold .insertActive, r, failingWitness,
       txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), some "not-phase1")
   , ("RJ09-fold-at-deadline", .fold .insertActive, r, { failingWitness with validTo := r.submittedAt + exitState.config.processTime },
@@ -977,7 +977,7 @@ def judgementRows : List (String × Exit × Request × RetractWitness × List Tx
 
 def judgementFailures : List String :=
   judgementRows.flatMap fun (id, x, r, w, inputs, outputs, expected) =>
-    let got := exitRefusal exitState.config x r w inputs outputs
+    let got := exitRefusal exitState x r w inputs outputs
     if got == expected then [] else [s!"{id}: judged {got}, expected {expected}"]
 
 -- The judgement rows are not vacuous: the retraction and the exits under a

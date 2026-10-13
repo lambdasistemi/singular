@@ -71,6 +71,7 @@ scenarioQuestion row =
                     , "lovelace"
                     , "witness"
                     , "foldWitness"
+                    , "rejection"
                     ]
                     row
                 )
@@ -91,6 +92,7 @@ batchQuestion row =
                     , "requests"
                     , "foldWitness"
                     , "outputs"
+                    , "rejections"
                     ]
                     row
                 )
@@ -121,6 +123,23 @@ canonicalClaims other = other
 
 answered :: [Key.Key]
 answered = ["outcome", "reason", "premise", "observations", "setup"]
+
+-- | A fold scenario row, for transport decoding controls.
+foldRow :: [Value] -> Maybe Value
+foldRow scenarios = case [ row | row <- scenarios, field "operation" row == Just (String "fold")
+                         ] of
+    (row : _) -> Just row
+    [] -> case scenarios of
+        (row : _) -> Just row
+        [] -> Nothing
+
+-- | Delete a field of the request a single-request question carries.
+deleteRequestField :: Key.Key -> Value -> Value
+deleteRequestField name (Object fields) = case KM.lookup "request" fields of
+    Just (Object request) ->
+        Object (KM.insert "request" (Object (KM.delete name request)) fields)
+    _ -> Object fields
+deleteRequestField _ other = other
 
 spec :: Spec
 spec = describe "Appendix — the transport answers as the driver did" $ do
@@ -167,3 +186,40 @@ spec = describe "Appendix — the transport answers as the driver did" $ do
                 `shouldBe` computed
                     (answered <> ["question", "requests", "folded", "settle"])
                     row
+    case foldRow scenarios of
+        Nothing -> pure ()
+        Just row -> do
+            let foldQuestion = scenarioQuestion row
+            it "ignores missing booked metadata on a fold" $ do
+                let withoutMetadata =
+                        deleteRequestField
+                            "submittedAt"
+                            (deleteRequestField "registryId" foldQuestion)
+                answer <-
+                    expectedObservation evaluator [] withoutMetadata
+                        >>= either error pure
+                computed answered answer `shouldBe` computed answered row
+            it "refuses missing booked metadata on a rejection" $ do
+                let asReject = case foldQuestion of
+                        Object fields -> Object (KM.insert "exit" (String "reject") fields)
+                        other -> other
+                    withoutRegistry = deleteRequestField "registryId" asReject
+                result <- expectedObservation evaluator [] withoutRegistry
+                result `shouldSatisfy` either (const True) (const False)
+            it "refuses rejection evidence on another exit" $ do
+                let misplaced = case foldQuestion of
+                        Object fields ->
+                            Object
+                                ( KM.insert
+                                    "rejection"
+                                    ( object
+                                        [ "evidence" .= object []
+                                        , "validFrom" .= (0 :: Int)
+                                        , "validTo" .= (1 :: Int)
+                                        ]
+                                    )
+                                    fields
+                                )
+                        other -> other
+                result <- expectedObservation evaluator [] misplaced
+                result `shouldSatisfy` either (const True) (const False)

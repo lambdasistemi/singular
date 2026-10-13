@@ -127,7 +127,7 @@
       "pause": 500
     },
     {
-      "text": "The slice-three rows of the gate: the two devnet rows locally once each, the non-devnet conformance commands, format and lint, the workflow lint and the documents check.",
+      "text": "The slice-three rows of the gate: the two devnet rows locally once each, the non-devnet conformance commands, format and lint, the workflow lint and the documents check. The running book, the generic rows and the refusal extent check, moved here from slice two (gate version 2), run once on the final candidate after the two rows above.",
       "pause": 400
     }
   ],
@@ -143,6 +143,6 @@
   ],
   "_source": {
     "file": "slice-three-in-window-rows.md",
-    "sha256": "c010b7850d71c081671a13430ce1f2bbc788afdd0ff5bed61c4360af481f92b6"
+    "sha256": "9b3b3b4a17af09791c1d8fbdeba077b8de24d45e6233b1988cbd14b5093380f8"
   }
 }

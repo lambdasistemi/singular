@@ -926,21 +926,16 @@ def admissionFailures : List String :=
 phase 2. -/
 def failingWitness : RetractWitness := retractWitness [] 0 1000
 
-/-- Every admitted exit keeps its step and transaction. Refused admission wins
-for both, including a fold under a late upper bound. -/
+/-- Retraction admission does not change folds: under a failing retraction
+witness each fold steps and builds as before; and an
+admitted retraction steps and builds exactly as the retract exit. -/
 def admittedExitFailures : List String :=
-  let others := (allExits.filter (· != .retract)).flatMap fun x =>
+  let others := (exitEdges.map Exit.fold).flatMap fun x =>
     exitEdges.flatMap fun e => paidKeys.flatMap fun k =>
       let r := exitStepRequest e k
-      let expectedStep := match exitAdmission paidState.config x r failingWitness with
-        | none => exitStep paidState x r
-        | some why => .error why
-      let expectedTx := match exitAdmission paidState.config x r failingWitness with
-        | none => txOfExit paidState x r 3
-        | some why => .error why
-      if sameStep (admittedExitStep paidState x r failingWitness) expectedStep
-          && sameTx (admittedTxOfExit paidState x r failingWitness 3) expectedTx
-      then [] else [s!"{repr x} at {repr e}/{k}: the exit differs from its admission then its law"]
+      if sameStep (admittedExitStep paidState x r failingWitness) (exitStep paidState x r)
+          && sameTx (admittedTxOfExit paidState x r failingWitness 3) (txOfExit paidState x r 3)
+      then [] else [s!"{repr x} at {repr e}/{k}: admission changed an exit that is not a retract"]
   let r := exitStepRequest .insertActive 9
   let w := retractWitness [42, 77] 102 105
   let retracted :=
@@ -969,15 +964,13 @@ def judgementRows : List (String × Exit × Request × RetractWitness × List Tx
   , ("RJ05-admitted-paid-short", .retract, r, signed, spent, short, some "deposit-returned")
   , ("RJ06-admitted-as-built", .retract, r, signed, spent, paid, none)
   , ("RJ07-reject-under-a-failing-witness", .reject, r, failingWitness,
-      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), none)
-  , ("RJ08-fold-past-deadline", .fold .insertActive, r, failingWitness,
-      txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), some "not-phase1")
-  , ("RJ09-fold-at-deadline", .fold .insertActive, r, { failingWitness with validTo := r.submittedAt + exitState.config.processTime },
+      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), some "reject-evidence-missing")
+  , ("RJ08-fold-under-a-failing-witness", .fold .insertActive, r, failingWitness,
       txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), none) ]
 
 def judgementFailures : List String :=
   judgementRows.flatMap fun (id, x, r, w, inputs, outputs, expected) =>
-    let got := exitRefusal exitState.config x r w inputs outputs
+    let got := exitRefusal exitState x r w inputs outputs
     if got == expected then [] else [s!"{id}: judged {got}, expected {expected}"]
 
 -- The judgement rows are not vacuous: the retraction and the exits under a
