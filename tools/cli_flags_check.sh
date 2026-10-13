@@ -233,9 +233,9 @@ number_word() {
 has_cmd() { # has_cmd BINARY CMD: that binary's help names the command
   local bin="$1" cmd="$2"
   if [ "$bin" = singular ]; then
-    printf '%s\n' "${singular_commands[@]}" | grep -qx "$cmd"
+    grep -qx -- "$cmd" <<<"$(printf '%s\n' "${singular_commands[@]}")"
   else
-    printf '%s\n' "${od_commands[@]}" | grep -qx "$cmd"
+    grep -qx -- "$cmd" <<<"$(printf '%s\n' "${od_commands[@]}")"
   fi
 }
 awk '/^## The settings you give/ { t = 1; next } t && /^## / { exit } t && /^\| `--/' "$table_doc" >"$scratch/rows"
