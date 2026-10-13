@@ -1,0 +1,178 @@
+{
+  "who-owns-an-effect": [
+    {
+      "text": "Who owns an effect.",
+      "pause": 500
+    },
+    {
+      "text": "A contributor adding a mutable cell, a worker thread or an environment read wants to know where it belongs, who releases it and what check will ask about it. A reviewer wants to see each effect's owner, lifetime and reason in one place instead of reconstructing them from imports. This page is that map: what the census covers, which effects are allowed where, which way the module boundaries run, what evidence backs each predecessor ticket, and what stays openly unfulfilled.",
+      "pause": 400
+    }
+  ],
+  "the-story-this-serves": [
+    {
+      "text": "The story this serves.",
+      "pause": 500
+    },
+    {
+      "text": "As a contributor, I add a counter to a command, a retry loop to a client or a coordination flag to a test, and the ownership check tells me exactly which file to classify it in, what to write beside it and what happens if I do not — before the review starts.",
+      "pause": 400
+    },
+    {
+      "text": "As a reviewer, I open this page and can tell which effects are necessary, who owns them, how long they live and which conformance-state work is still unfulfilled — without reading four hundred modules.",
+      "pause": 400
+    },
+    {
+      "text": "As an integrator, I learn that the product is single-threaded unless a written reason says otherwise, that no thread outlives its command, and that the unsafe escape hatch is absent from the tree — each with the check that would catch a regression.",
+      "pause": 400
+    }
+  ],
+  "what-the-census-covers": [
+    {
+      "text": "What the census covers.",
+      "pause": 500
+    },
+    {
+      "text": "The census discovers every Haskell source by walking the tree — no per-file list — and puts each in exactly one structural category. Anything it cannot classify fails the run instead of slipping through.",
+      "pause": 400
+    },
+    {
+      "text": "449 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
+      "pause": 400
+    }
+  ],
+  "which-effects-are-gated-and-which-only-recorded": [
+    {
+      "text": "Which effects are gated, and which only recorded.",
+      "pause": 500
+    },
+    {
+      "text": "A gated effect needs a file-level entry in the ownership allowlist naming its owner, lifetime, access model and reason. A new file naming one without an entry fails; an entry whose effect is gone fails as stale.",
+      "pause": 400
+    },
+    {
+      "text": "Three rows deserve emphasis. No module imports the unsafe IO library, so no unsafe escape exists in the tree; the control that plants one proves the check rejects it. No module calls forkIO; the product's only concurrency is the Async library's scoped combinators. No module uses STM; the one match for the word is a theorem name, not a transaction, which is why the STM class is import-anchored rather than token-anchored.",
+      "pause": 400
+    },
+    {
+      "text": "Two further surfaces are recorded by the census but enforced elsewhere. Timeout bounds belong to the calling-thread confirmation design, whose deadline tests own them. Environment reads belong to the explicit-input rule, whose release-build exclusion the release controls own. Their carriers are named in the evidence map below.",
+      "pause": 400
+    }
+  ],
+  "where-the-production-effects-live": [
+    {
+      "text": "Where the production effects live.",
+      "pause": 500
+    },
+    {
+      "text": "Every production effect below is allowlisted with the prose beside its implementation. The allowlist is the machine register; this table is the reader's summary.",
+      "pause": 400
+    },
+    {
+      "text": "The two trie adapters used to read as mutable state smuggled into pure computations. They are compatibility adapters with named callers and no locking: sharing one across threads without external serialization is a defect, and the haddock above each constructor says so.",
+      "pause": 400
+    }
+  ],
+  "why-the-product-stays-single-threaded": [
+    {
+      "text": "Why the product stays single-threaded.",
+      "pause": 500
+    },
+    {
+      "text": "The product runs on the calling thread unless a written, compelling reason says otherwise, and no thread outlives the command that started it. Four sites carry such reasons, each beside its implementation with its join:",
+      "pause": 400
+    },
+    {
+      "text": "The devnet probe runs a node and a client together, joined before the probe returns.",
+      "pause": 300
+    },
+    {
+      "text": "The private facade serves sessions beside their followers, each session cancelling and joining its children before the next starts.",
+      "pause": 300
+    },
+    {
+      "text": "The conformance node runner holds one node-to-client thread per session, joined before the session ends.",
+      "pause": 300
+    },
+    {
+      "text": "The CLI-backend control bounds one confirmation wait with an explicit cancel, observed and joined before the run ends.",
+      "pause": 300
+    },
+    {
+      "text": "The test parallelism (two mapConcurrently_ shards over independent examples) and the test coordinations (entered/released/hold flags joined by withAsync before each example ends) are harness-owned: they run only under the suites, never in a release build. A newly introduced forkIO, async or concurrently site in a product package fails the ownership check until it is classified with its reason and its join.",
+      "pause": 400
+    }
+  ],
+  "which-way-dependencies-run": [
+    {
+      "text": "Which way dependencies run.",
+      "pause": 500
+    },
+    {
+      "text": "Effects flow one way: libraries expose capabilities, commands and runners compose them, tests drive them. Five boundaries hold this shape over the discovered extent — namespaces, not file lists, so a moved module is rechecked with nothing to edit:",
+      "pause": 400
+    },
+    {
+      "text": "the conformance library never imports the runner (the library stays runnable without live effects);",
+      "pause": 300
+    },
+    {
+      "text": "the offchain libraries never import the command layer (commands consume the libraries, never the reverse);",
+      "pause": 300
+    },
+    {
+      "text": "each journey executable keeps its local modules (old runners are never extended by sharing);",
+      "pause": 300
+    },
+    {
+      "text": "no ordinary executable links a host module (the adversary stays outside the release, its test-only reader excepted);",
+      "pause": 300
+    },
+    {
+      "text": "the command layer is imported only at composition — commands, applications and tests.",
+      "pause": 300
+    }
+  ],
+  "decisions-this-design-took": [
+    {
+      "text": "Decisions this design took.",
+      "pause": 500
+    }
+  ],
+  "what-backs-the-predecessors-and-what-stays-open": [
+    {
+      "text": "What backs the predecessors, and what stays open.",
+      "pause": 500
+    },
+    {
+      "text": "Each row names the accepted evidence or the explicitly open requirement. Local paths are never public evidence; the hosted records below are.",
+      "pause": 400
+    }
+  ],
+  "how-to-change-effect-code": [
+    {
+      "text": "How to change effect code.",
+      "pause": 500
+    },
+    {
+      "text": "Write the owner, lifetime and reason beside the implementation, not only in the allowlist.",
+      "pause": 300
+    },
+    {
+      "text": "Regenerate the site binding from the tree and review its diff beside the code change; commit both together.",
+      "pause": 300
+    },
+    {
+      "text": "Run the ownership check and its controls; hosted CI repeats them at the candidate head.",
+      "pause": 300
+    },
+    {
+      "text": "A change touching the session, receipt or reconcile modules beyond comments needs the stacked follow-on lane's attention first; ask before growing there.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "io-ownership.md",
+    "sha256": "9fe83ab2218ef53083a39780932188d060d84f2399f13a80fbd75dcc444487aa"
+  }
+}

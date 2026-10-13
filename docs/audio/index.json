@@ -3365,6 +3365,294 @@
    }
   ]
  },
+ "docs/io-ownership.md": {
+  "decisions-this-design-took": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/decisions-this-design-took-00",
+    "pause_ms": 500,
+    "text": "Decisions this design took.",
+    "v": "ab142bf5e0e3"
+   }
+  ],
+  "how-to-change-effect-code": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/how-to-change-effect-code-00",
+    "pause_ms": 500,
+    "text": "How to change effect code.",
+    "v": "a599082f7319"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/how-to-change-effect-code-01",
+    "pause_ms": 300,
+    "text": "Write the owner, lifetime and reason beside the implementation, not only in the allowlist.",
+    "v": "9281a1e9d8c5"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/how-to-change-effect-code-02",
+    "pause_ms": 300,
+    "text": "Regenerate the site binding from the tree and review its diff beside the code change; commit both together.",
+    "v": "d613863d7d57"
+   },
+   {
+    "index": 3,
+    "name": "docs-io-ownership/how-to-change-effect-code-03",
+    "pause_ms": 300,
+    "text": "Run the ownership check and its controls; hosted CI repeats them at the candidate head.",
+    "v": "180352bf6273"
+   },
+   {
+    "index": 4,
+    "name": "docs-io-ownership/how-to-change-effect-code-04",
+    "pause_ms": 400,
+    "text": "A change touching the session, receipt or reconcile modules beyond comments needs the stacked follow-on lane's attention first; ask before growing there.",
+    "v": "2b2b35adb171"
+   }
+  ],
+  "the-story-this-serves": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/the-story-this-serves-00",
+    "pause_ms": 500,
+    "text": "The story this serves.",
+    "v": "b9eacef12f4e"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/the-story-this-serves-01",
+    "pause_ms": 400,
+    "text": "As a contributor, I add a counter to a command, a retry loop to a client or a coordination flag to a test, and the ownership check tells me exactly which file to classify it in, what to write beside it and what happens if I do not — before the review starts.",
+    "v": "6a263de078ba"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/the-story-this-serves-02",
+    "pause_ms": 400,
+    "text": "As a reviewer, I open this page and can tell which effects are necessary, who owns them, how long they live and which conformance-state work is still unfulfilled — without reading four hundred modules.",
+    "v": "fed5bc0ea787"
+   },
+   {
+    "index": 3,
+    "name": "docs-io-ownership/the-story-this-serves-03",
+    "pause_ms": 400,
+    "text": "As an integrator, I learn that the product is single-threaded unless a written reason says otherwise, that no thread outlives its command, and that the unsafe escape hatch is absent from the tree — each with the check that would catch a regression.",
+    "v": "cc164063e448"
+   }
+  ],
+  "what-backs-the-predecessors-and-what-stays-open": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/what-backs-the-predecessors-and-what-stays-open-00",
+    "pause_ms": 500,
+    "text": "What backs the predecessors, and what stays open.",
+    "v": "3d907948a6f8"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/what-backs-the-predecessors-and-what-stays-open-01",
+    "pause_ms": 400,
+    "text": "Each row names the accepted evidence or the explicitly open requirement. Local paths are never public evidence; the hosted records below are.",
+    "v": "ea053ed42786"
+   }
+  ],
+  "what-the-census-covers": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/what-the-census-covers-00",
+    "pause_ms": 500,
+    "text": "What the census covers.",
+    "v": "7deab429e131"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/what-the-census-covers-01",
+    "pause_ms": 400,
+    "text": "The census discovers every Haskell source by walking the tree — no per-file list — and puts each in exactly one structural category. Anything it cannot classify fails the run instead of slipping through.",
+    "v": "af2bba7ac683"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/what-the-census-covers-02",
+    "pause_ms": 400,
+    "text": "449 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
+    "v": "44ba27dff236"
+   }
+  ],
+  "where-the-production-effects-live": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/where-the-production-effects-live-00",
+    "pause_ms": 500,
+    "text": "Where the production effects live.",
+    "v": "39cb300d304c"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/where-the-production-effects-live-01",
+    "pause_ms": 400,
+    "text": "Every production effect below is allowlisted with the prose beside its implementation. The allowlist is the machine register; this table is the reader's summary.",
+    "v": "2909012dd8fb"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/where-the-production-effects-live-02",
+    "pause_ms": 400,
+    "text": "The two trie adapters used to read as mutable state smuggled into pure computations. They are compatibility adapters with named callers and no locking: sharing one across threads without external serialization is a defect, and the haddock above each constructor says so.",
+    "v": "01f660d6bb6b"
+   }
+  ],
+  "which-effects-are-gated-and-which-only-recorded": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/which-effects-are-gated-and-which-only-recorded-00",
+    "pause_ms": 500,
+    "text": "Which effects are gated, and which only recorded.",
+    "v": "d1cf91bf64ee"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/which-effects-are-gated-and-which-only-recorded-01",
+    "pause_ms": 400,
+    "text": "A gated effect needs a file-level entry in the ownership allowlist naming its owner, lifetime, access model and reason. A new file naming one without an entry fails; an entry whose effect is gone fails as stale.",
+    "v": "7e6873039a33"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/which-effects-are-gated-and-which-only-recorded-02",
+    "pause_ms": 400,
+    "text": "Three rows deserve emphasis. No module imports the unsafe IO library, so no unsafe escape exists in the tree; the control that plants one proves the check rejects it. No module calls forkIO; the product's only concurrency is the Async library's scoped combinators. No module uses STM; the one match for the word is a theorem name, not a transaction, which is why the STM class is import-anchored rather than token-anchored.",
+    "v": "710db89adc02"
+   },
+   {
+    "index": 3,
+    "name": "docs-io-ownership/which-effects-are-gated-and-which-only-recorded-03",
+    "pause_ms": 400,
+    "text": "Two further surfaces are recorded by the census but enforced elsewhere. Timeout bounds belong to the calling-thread confirmation design, whose deadline tests own them. Environment reads belong to the explicit-input rule, whose release-build exclusion the release controls own. Their carriers are named in the evidence map below.",
+    "v": "f8fd69db7135"
+   }
+  ],
+  "which-way-dependencies-run": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/which-way-dependencies-run-00",
+    "pause_ms": 500,
+    "text": "Which way dependencies run.",
+    "v": "283bd54af3e2"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/which-way-dependencies-run-01",
+    "pause_ms": 400,
+    "text": "Effects flow one way: libraries expose capabilities, commands and runners compose them, tests drive them. Five boundaries hold this shape over the discovered extent — namespaces, not file lists, so a moved module is rechecked with nothing to edit:",
+    "v": "5df72ef3bbc6"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/which-way-dependencies-run-02",
+    "pause_ms": 300,
+    "text": "the conformance library never imports the runner (the library stays runnable without live effects);",
+    "v": "f0fc2a6b6d40"
+   },
+   {
+    "index": 3,
+    "name": "docs-io-ownership/which-way-dependencies-run-03",
+    "pause_ms": 300,
+    "text": "the offchain libraries never import the command layer (commands consume the libraries, never the reverse);",
+    "v": "ca49fb616041"
+   },
+   {
+    "index": 4,
+    "name": "docs-io-ownership/which-way-dependencies-run-04",
+    "pause_ms": 300,
+    "text": "each journey executable keeps its local modules (old runners are never extended by sharing);",
+    "v": "5f2a76442246"
+   },
+   {
+    "index": 5,
+    "name": "docs-io-ownership/which-way-dependencies-run-05",
+    "pause_ms": 300,
+    "text": "no ordinary executable links a host module (the adversary stays outside the release, its test-only reader excepted);",
+    "v": "cb98e519be86"
+   },
+   {
+    "index": 6,
+    "name": "docs-io-ownership/which-way-dependencies-run-06",
+    "pause_ms": 300,
+    "text": "the command layer is imported only at composition — commands, applications and tests.",
+    "v": "d49135e9f37b"
+   }
+  ],
+  "who-owns-an-effect": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/who-owns-an-effect-00",
+    "pause_ms": 500,
+    "text": "Who owns an effect.",
+    "v": "c72d921c6f8f"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/who-owns-an-effect-01",
+    "pause_ms": 400,
+    "text": "A contributor adding a mutable cell, a worker thread or an environment read wants to know where it belongs, who releases it and what check will ask about it. A reviewer wants to see each effect's owner, lifetime and reason in one place instead of reconstructing them from imports. This page is that map: what the census covers, which effects are allowed where, which way the module boundaries run, what evidence backs each predecessor ticket, and what stays openly unfulfilled.",
+    "v": "40c2a3fc7589"
+   }
+  ],
+  "why-the-product-stays-single-threaded": [
+   {
+    "index": 0,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-00",
+    "pause_ms": 500,
+    "text": "Why the product stays single-threaded.",
+    "v": "59785883e07b"
+   },
+   {
+    "index": 1,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-01",
+    "pause_ms": 400,
+    "text": "The product runs on the calling thread unless a written, compelling reason says otherwise, and no thread outlives the command that started it. Four sites carry such reasons, each beside its implementation with its join:",
+    "v": "ac73f9bca665"
+   },
+   {
+    "index": 2,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-02",
+    "pause_ms": 300,
+    "text": "The devnet probe runs a node and a client together, joined before the probe returns.",
+    "v": "21b117cc6ea4"
+   },
+   {
+    "index": 3,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-03",
+    "pause_ms": 300,
+    "text": "The private facade serves sessions beside their followers, each session cancelling and joining its children before the next starts.",
+    "v": "37a6af59fd82"
+   },
+   {
+    "index": 4,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-04",
+    "pause_ms": 300,
+    "text": "The conformance node runner holds one node-to-client thread per session, joined before the session ends.",
+    "v": "b380e35c8619"
+   },
+   {
+    "index": 5,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-05",
+    "pause_ms": 300,
+    "text": "The CLI-backend control bounds one confirmation wait with an explicit cancel, observed and joined before the run ends.",
+    "v": "8c8800e7f5b2"
+   },
+   {
+    "index": 6,
+    "name": "docs-io-ownership/why-the-product-stays-single-threaded-06",
+    "pause_ms": 400,
+    "text": "The test parallelism (two mapConcurrently_ shards over independent examples) and the test coordinations (entered/released/hold flags joined by withAsync before each example ends) are harness-owned: they run only under the suites, never in a release build. A newly introduced forkIO, async or concurrently site in a product package fails the ownership check until it is classified with its reason and its join.",
+    "v": "24e96e351680"
+   }
+  ]
+ },
  "docs/lifecycle.md": {
   "application-evolution-keep-the-same-representative": [
    {

@@ -51,6 +51,7 @@ nav:
   - Runtime service ownership: docs/offchain-node-ownership.md
   - Deployment record ownership: docs/offchain-deployment-owners.md
   - Registry command owners: docs/offchain-command-entrypoints.md
+  - Who owns an effect: docs/io-ownership.md
   - The Koios client: docs/offchain-koios-client.md
   - Recovering a registry command: docs/cli-recovery.md
   - State validator owners: docs/onchain-validator-owners.md

@@ -82,6 +82,8 @@ ci:
     just node-confinement-controls
     just inventory
     just inventory-controls
+    just io-ownership-check
+    just io-ownership-controls
     just format-check
     just format-controls
     just lint
@@ -90,7 +92,8 @@ ci:
 # Local bundle for fast local runs (`just ci` stays the local aggregate).
 # Hosted: the Development shell checks job runs application-model,
 # check-presentation, rename-registry-test, no-global-fixture-state,
-# node-confinement, node-confinement-controls and lint-controls;
+# node-confinement, node-confinement-controls, io-ownership-check,
+# io-ownership-controls and lint-controls;
 # whole-repository `just lint` runs in the Development shell build job; `just
 # inventory` runs hosted as the baseline of the Code inventory job's Refuse
 # unclassified sources step (the controls script first inventories the real
@@ -110,6 +113,8 @@ ci-shell:
     just node-confinement-controls
     just inventory
     just inventory-controls
+    just io-ownership-check
+    just io-ownership-controls
     just format-check
     just format-controls
     just lint-controls
@@ -141,6 +146,33 @@ inventory:
 inventory-controls:
     bash tools/code_inventory_controls.sh
     python3 tools/test_tags_controls.py
+
+# #544: machine-checked IO ownership census — every Haskell source in one
+# structural category, every gated effect site (ioref/mvar/stm/unsafe/fork/
+# async) allowlisted with owner/lifetime/reason, every site token count per
+# top-level function bound in tools/io-ownership.sites (NOTE-001: a new site
+# of an allowed class with unchanged imports changes a count and fails;
+# NOTE-002: a site moved between functions changes the per-function counts
+# with file totals untouched and fails), and the B1-B5 module boundaries
+# held over the discovered extent.
+
+# Census every Haskell source and bind its effect classes and site counts.
+io-inventory:
+    python3 tools/io_ownership_inventory.py
+
+# Check the allowlist, the site binding and the module boundaries.
+io-ownership-check:
+    bash tools/io_ownership_check.sh
+
+# Negative and positive controls for the ownership check (#544, NOTE-001):
+# each plants one synthetic defect in a scratch copy and requires the
+# intended diagnostic. Scratch copies break hardlinks before planting, and
+# the run refuses to finish if the working tree changed. The working tree
+# is never touched; no deliberate source defect is ever committed.
+
+# Run the IO ownership check's negative and positive controls.
+io-ownership-controls:
+    bash tools/io_ownership_controls.sh
 
 # #278 terminal-attestation-permanent: apply the house Fourmolu configuration (fourmolu.yaml at the
 # repository root) to every discovered Haskell source — offchain and
