@@ -822,7 +822,7 @@ receiptListsSettledAndExcluded = describe
     $ do
         it "lists two settled requests with distinct payloads in ledger order" $ do
             let provenance =
-                    "the journal binds one transition until the multi-request journal ships"
+                    "recovery reads one transition until the multi-request recovery ships"
                         :: T.Text
                 settlement1 = object ["liveOutput" .= renderOutRef v1]
                 deadline1 = object ["posixMs" .= (farDeadline :: Integer)]
@@ -895,7 +895,7 @@ receiptListsSettledAndExcluded = describe
             "lists every exclusion with reason, source and detail in ledger order, both vocabularies"
             $ do
                 let provenance =
-                        "the journal binds one transition until the multi-request journal ships"
+                        "recovery reads one transition until the multi-request recovery ships"
                             :: T.Text
                     expected = excludedTxIns nonePairing noneSelection
                     got = foldReceiptLists [] expected 1 provenance
@@ -934,7 +934,7 @@ receiptListsSettledAndExcluded = describe
             "carries the bound with its provenance text, and a second bound differs"
             $ do
                 let provenance1 =
-                        "the journal binds one transition until the multi-request journal ships"
+                        "recovery reads one transition until the multi-request recovery ships"
                             :: T.Text
                     provenance9 =
                         "preprod execution budget of 14 million memory units, bound by trie-proof verification, unmeasured"
