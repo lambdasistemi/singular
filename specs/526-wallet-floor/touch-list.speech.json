@@ -49,18 +49,18 @@
       "pause": 500
     }
   ],
-  "needs-a-ruling": [
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "c6c17a5300e96ab958f937448f57f1569fc9ea71d908f04f409fd2862237ca1e"
+  },
+  "rulings-taken": [
     {
-      "text": "Needs a ruling.",
+      "text": "Rulings taken.",
       "pause": 500
     },
     {
-      "text": "Two script comments mention the old floor. The controls script comment can change in this pull request. The journey script comment belongs to the other lane.",
+      "text": "The plan review approved the scope, the outcome class, the unused wallet argument, the open datum registrations and the script comments. After the first hosted run the desk ruled that the end-to-end row asserting the removed floor is replaced, that the faucet step stays in the empty-wallet refusal and that the devnet part joins the gate. Because the end-to-end suite cannot run the insert command, the replacement reads an unfunded wallet on the devnet and runs the shared judgement, with one dependency line in the registry cabal file; a devnet insert from an empty wallet is a follow-up.",
       "pause": 500
     }
-  ],
-  "_source": {
-    "file": "touch-list.md",
-    "sha256": "2645bb7ac4d2a6ba2327f142095787e308cfaf69e8ae577001fad80b1893cd81"
-  }
+  ]
 }

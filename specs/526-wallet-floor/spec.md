@@ -48,7 +48,11 @@ af16bad4:
 - `empty-wallet-refused-before-building`: for `insert`, `terminate` and `update`,
   a wallet with no ada-only output to fund from, or with the output named by
   `--fund-input` not among its ada-only outputs, is refused before the
-  transaction is built.
+  transaction is built. The refusal names the wallet address and, for a wallet with
+  no ada-only output, ends with the faucet step the old floor printed (rulings of
+  13 October 2026 after the first hosted run); a foreign `--fund-input` is refused
+  without it. One function decides it for all four call sites and for the devnet
+  row below.
 - `shortfall-is-a-client-refusal-that-names-the-wallet`: the refusal is outcome
   `client-refusal` (exit 10), its reason states "(client policy)", and its fields
   carry the wallet address, `held`, `required` and `shortfall` in lovelace, the
@@ -79,6 +83,12 @@ af16bad4:
   booking's single funding output is proved by the builder succeeding; the fold's
   own funding and collateral are proved when the fold is built, as today. A wallet
   of many small outputs can pass the total and still fail the builder.
+- A devnet `insert` from an empty wallet, as a clause of the Demo 1 refusal
+  controls story, is not covered here: the offchain end-to-end suite cannot run
+  the insert command (application separation). The end-to-end row instead reads
+  an unfunded wallet's real outputs on the devnet and runs the shared judgement
+  the insert calls. The typed-shortfall and the devnet-insert follow-ups are filed
+  by the milestone owner after this merges.
 - No transaction is submitted on a live network by this work. The preprod
   reproduction is the issue's; this change is proved by hosted tests over the
   in-memory chain and the scripted provider.

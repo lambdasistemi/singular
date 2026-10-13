@@ -35,7 +35,7 @@
       "pause": 500
     },
     {
-      "text": "Opening a write session applies no wallet threshold. Insert and terminate judge the wallet against the measured outlay after building and before signing, and against the reserve for the fold that follows before building. An empty wallet is refused before building. The refusal is a client refusal labelled client policy, with the wallet's figures in its fields, and never a node failure. Preview and write make the same judgements at the same points. The conformance runner keeps its own floor.",
+      "text": "Opening a write session applies no wallet threshold. Insert and terminate judge the wallet against the measured outlay after building and before signing, and against the reserve for the fold that follows before building. An empty wallet is refused before building, naming the wallet and, when it has no ada-only output, ending with the faucet step; one function decides it for every call site and for the devnet row. The refusal is a client refusal labelled client policy, with the wallet figures in its fields, and never a node failure. Preview and write make the same judgements at the same points. The conformance runner keeps its own floor.",
       "pause": 500
     }
   ],
@@ -45,12 +45,12 @@
       "pause": 500
     },
     {
-      "text": "Update, reject, reclaim, the standalone fold and create are no longer refused by the floor, but a wallet too small for their own build is still reported in the builder's words. Naming it needs files other lanes are changing, and is a follow-up. The judgement counts the wallet's total, so it is necessary and not sufficient. No live transaction is submitted by this work.",
+      "text": "Update, reject, reclaim, the standalone fold and create are no longer refused by the floor, but a wallet too small for their own build is still reported in the builder words. Naming it needs files other lanes are changing, and is a follow-up, as is a devnet insert from an empty wallet through the refusal controls, which the end-to-end suite cannot run. The judgement counts the wallet total, so it is necessary and not sufficient. No live transaction is submitted by this work.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "cb6fc9419b2d69dfa72b04e0f006d8ae31a33b3132869aef7f13032469524186"
+    "sha256": "56de77e7a8a076d340b3a3b70dc9a3eea1021ff25346d7c620390acf76ba277b"
   }
 }

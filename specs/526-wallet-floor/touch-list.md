@@ -9,10 +9,13 @@ owner's ruling before it is touched. Base: main af16bad4.
 |---|---|
 | `offchain/koios-http/src/Singular/Registry/Terminal.hs` | Remove the `checkFunding` call in `withWritesObserved`, its imports and the stale comment. The `Wallet` argument stays (plan, "Wallet argument retained"). |
 | `offchain/cli/src/Singular/CLI/Outlay.hs` | Add `walletShortfall`, pure. |
-| `offchain/cli/src/Singular/CLI/Plan.hs` | Add `refuseUnderfunded` beside `refuseOver`. |
+| `offchain/cli/src/Singular/CLI/Plan.hs` | Add `refuseUnderfunded` beside `refuseOver`, and `resolveFunding`, the one empty-wallet judgement that the four call sites and the devnet row share. |
 | `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Plan.hs` | Re-export `refuseUnderfunded` as it re-exports `refuseOver`. |
 | `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Entry.hs` | Call the three checks in `book`; the empty-wallet check in the update path. |
 | `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Preview.hs` | The same calls in `previewBooking` and the update arm of `runPreview`. |
+| `offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs` | The row that asserted the removed fixed floor becomes a devnet row on the shared empty-wallet judgement (desk rulings of 13 October 2026). |
+| `offchain/singular-registry.cabal` | One dependency line: `singular-registry:registry-cli` in the `e2e-tests` build-depends. Nothing else in the file. |
+| `tools/demo1_cli_controls.sh` | The comment at line 71 only. |
 | `offchain/lib/Singular/Registry/Funding.hs` | Module and type descriptions only: the fixed floor belongs to the conformance runner. No code change. |
 
 ## Documentation
@@ -41,13 +44,14 @@ No workflow, flake or script changes.
 `Session.hs`, `Receipt.hs`, `Reconcile.hs`, `Fold*.hs`, `Command.hs` and both
 `CommandRunSpec.hs` (#518 pull request 3 and #503); `Create.hs`, `CLI/Registry.hs`,
 `TxBuilder/Edges.hs`, `CreateFundingSpec.hs`, `tools/demo1_cli_journey.sh` (#406);
-`Describe*.hs`, `Inspect.hs`, `offchain/singular-registry.cabal`,
-`offchain/test/Main.hs` (#503); everything under `conformance/`; `Reject.hs`,
+`Describe*.hs`, `Inspect.hs`, `offchain/test/Main.hs` (#503; the cabal file of the
+registry package only gets the one dependency line above); everything under `conformance/`; `Reject.hs`,
 `Reclaim.hs` (plan: the built body proves the fee).
 
-## Needs a ruling
+## Rulings taken
 
-| File | Why | Recommendation |
-|---|---|---|
-| `tools/demo1_cli_controls.sh` line 71 | A comment says the wallet is sized to pass "the write session's 100 ada funding floor". It will be false. | Replace the comment in this pull request (comment only; not on the #406 list). |
-| `tools/demo1_cli_journey.sh` line 995 | The same comment, in the #406 lane's file. | Leave to the #406 owner, or a comment-only commit after that lane merges. |
+| Question | Ruling |
+|---|---|
+| Scope, outcome class, unused wallet argument, open-datum registrations, script comments | All approved as recommended (plan review). The journey script comment waits for the one-output create lane. |
+| An end-to-end row asserted the fixed floor | Replace it; keep the faucet step in the empty-wallet refusal; add the devnet part to the gate (gate version 2). |
+| The end-to-end suite cannot run the insert command | Devnet row on the shared judgement with the real chain read, one dependency line in the offchain cabal file; the devnet insert from an empty wallet is a follow-up. |
