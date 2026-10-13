@@ -2,7 +2,7 @@
 
 As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.
 
-The full draft lives beside this page as a PDF: <a href="../economics-paper.pdf">economics-paper.pdf</a>. It is built from LaTeX sources under `paper/economics` by the documentation build, so the PDF on the site always matches the committed sources.
+The full draft lives beside this page as a PDF: <a href="https://lambdasistemi.github.io/singular/docs/economics-paper.pdf">economics-paper.pdf</a>. It is built from LaTeX sources under `paper/economics` by the documentation build, so the PDF on the site always matches the committed sources.
 
 ```mermaid
 flowchart TD
