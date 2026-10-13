@@ -3743,6 +3743,251 @@ def test_receipt_loaders_handle_absence(mod, tmp):
     )
 
 
+def _write_text(tmp, name, text, exit_code=0):
+    Path(tmp, f"{name}.txt").write_text(text)
+    Path(tmp, f"{name}.exit").write_text(f"{exit_code}\n")
+
+
+def _page_valid_base(tmp):
+    root_before = "aa" * 32
+    root_after = "bb" * 32
+    create_tx = "cc" * 32
+    fold_tx = "dd" * 32
+    booking_request = "abc123#0"
+    owner_hex = "ownerhex000000000000000000000000000000000000000000000001"
+    _write_receipt(
+        tmp,
+        "page-inspect-before",
+        {
+            "command": "inspect",
+            "outcome": "success",
+            "root": root_before,
+            "pendingRequests": [],
+        },
+    )
+    _write_receipt(
+        tmp,
+        "page-booking",
+        {
+            "command": "insert",
+            "outcome": "success",
+            "request": booking_request,
+            "requester": owner_hex,
+        },
+    )
+    # The removal control unlinks exactly this name; keep it literal.
+    _write_receipt(
+        tmp,
+        "alice-fold",
+        {
+            "command": "fold",
+            "outcome": "success",
+            "folder": owner_hex,
+            "root": root_after,
+            "fold": fold_tx,
+        },
+    )
+    _write_receipt(
+        tmp,
+        "page-inspect-after",
+        {
+            "command": "inspect",
+            "outcome": "success",
+            "root": root_after,
+            "pendingRequests": [],
+        },
+    )
+
+    def page_json(root, active, folds, last):
+        return {
+            "command": "describe",
+            "outcome": "success",
+            "state": {
+                "root": root,
+                "activeKeys": active,
+                "terminalKeys": 0,
+                "foldsSinceCreate": folds,
+                "createTransaction": create_tx,
+                "lastFold": last,
+                "stateOutput": "state#0",
+                "pendingRequests": [],
+            },
+        }
+
+    def page_text(root, active, folds, last):
+        return (
+            "\n".join(
+                [
+                    "command: describe",
+                    "state:",
+                    f"  root: {root}",
+                    f"  activeKeys: {active}",
+                    "  terminalKeys: 0",
+                    f"  foldsSinceCreate: {folds}",
+                    f"  createTransaction: {create_tx}",
+                    f"  lastFold: {last if last else 'none'}",
+                ]
+            )
+            + "\n"
+        )
+
+    before_json = page_json(root_before, 0, 0, None)
+    after_json = page_json(root_after, 1, 1, fold_tx)
+    _write_receipt(tmp, "alice-page-before-json", before_json, exit_code=0)
+    _write_receipt(tmp, "alice-page-before-json-rep", before_json, exit_code=0)
+    _write_receipt(tmp, "alice-page-after-json", after_json, exit_code=0)
+    _write_receipt(tmp, "alice-page-after-json-rep", after_json, exit_code=0)
+    before_text = page_text(root_before, 0, 0, None)
+    after_text = page_text(root_after, 1, 1, fold_tx)
+    _write_text(tmp, "alice-page-before-text", before_text)
+    _write_text(tmp, "alice-page-before-text-rep", before_text)
+    _write_text(tmp, "alice-page-after-text", after_text)
+    _write_text(tmp, "alice-page-after-text-rep", after_text)
+    home = {"files": [{"path": "a", "sha256": "b"}]}
+    _write_receipt(tmp, "alice-home-before-before", home)
+    _write_receipt(tmp, "alice-home-before-after", home)
+    _write_receipt(tmp, "alice-home-after-before", home)
+    _write_receipt(tmp, "alice-home-after-after", home)
+    return {
+        "inspect_before": "page-inspect-before",
+        "booking": "page-booking",
+        "fold": "alice-fold",
+        "inspect_after": "page-inspect-after",
+        "page_before_text": "alice-page-before-text",
+        "page_before_text-rep": "alice-page-before-text-rep",
+        "page_before_json": "alice-page-before-json",
+        "page_before_json-rep": "alice-page-before-json-rep",
+        "page_after_text": "alice-page-after-text",
+        "page_after_text-rep": "alice-page-after-text-rep",
+        "page_after_json": "alice-page-after-json",
+        "page_after_json-rep": "alice-page-after-json-rep",
+        "home_before_before": "alice-home-before-before",
+        "home_before_after": "alice-home-before-after",
+        "home_after_before": "alice-home-after-before",
+        "home_after_after": "alice-home-after-after",
+    }
+
+
+def test_page_agreement_passes(mod, tmp):
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    passed, receipts, waiting = journey.page_agreement("alice", leg, Path(tmp))
+    check("page-agreement-passes", passed, f"waiting on {waiting}")
+    check(
+        "page-agreement-names-receipts",
+        len(receipts) == len(leg),
+        f"{len(receipts)} receipts, want {len(leg)}",
+    )
+
+
+def test_page_agreement_missing_reading_pends(mod, tmp):
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    (Path(tmp) / "alice-page-after-json.json").unlink()
+    passed, _, waiting = journey.page_agreement("alice", leg, Path(tmp))
+    check("page-missing-reading-pends", not passed, "a missing reading passed")
+    check(
+        "page-missing-reading-named",
+        "page_after_json" in waiting,
+        f"waiting on {waiting!r}",
+    )
+    check(
+        "page-text-loaders-handle-absence",
+        journey.load_text("no-such-page", Path(tmp)) is None,
+        "a missing page text did not read as absent",
+    )
+
+
+def test_page_agreement_root_mismatch_pends(mod, tmp):
+    import json as _json
+
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    path = Path(tmp) / "alice-page-after-json.json"
+    doc = _json.loads(path.read_text())
+    doc["state"]["root"] = "ff" * 32
+    path.write_text(_json.dumps(doc) + "\n")
+    passed, _, _ = journey.page_agreement("alice", leg, Path(tmp))
+    check("page-root-mismatch-pends", not passed, "a mismatched root passed")
+
+
+def test_page_removal_flips_row(mod, tmp):
+    import shutil as _shutil
+
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    scratch = Path(tmp) / "scratch-page"
+    scratch.mkdir()
+    for path in Path(tmp).glob("alice-*"):
+        _shutil.copy(path, scratch / path.name)
+    (scratch / "alice-page-after-json.json").unlink()
+    passed, _, _ = journey.page_agreement("alice", leg, scratch)
+    check("page-removal-flips-row", not passed, "a removed reading passed")
+
+
+def test_removal_check_covers_page_row(mod, tmp):
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    try:
+        journey.removal_check({"alice": leg})
+    except Exception as error:  # noqa: BLE001 - escape is the finding
+        check(
+            "removal-check-covers-page-row",
+            False,
+            f"escaped as {type(error).__name__}: {error}",
+        )
+    else:
+        check("removal-check-covers-page-row", True)
+
+
+def test_partial_legs_keep_page_rows_pending(mod, tmp):
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    rows = journey.compute_rows({"alice": leg})
+    by_name = {row["requirement"]: row for row in rows}
+    check(
+        "partial-legs-alice-page-passes",
+        by_name[mod.PAGE_ROWS[0]]["state"] == "passed",
+        f"alice page is {by_name[mod.PAGE_ROWS[0]]['state']}",
+    )
+    check(
+        "partial-legs-bob-page-pends",
+        by_name[mod.PAGE_ROWS[1]]["state"] == "pending",
+        f"bob page is {by_name[mod.PAGE_ROWS[1]]['state']}",
+    )
+    check(
+        "partial-legs-exit-nonzero",
+        journey.exit_for(rows) == 1,
+        "partial legs exited 0",
+    )
+
+
+def test_exit_for_counts_page_rows(mod, tmp):
+    journey = bare(mod, tmp)
+    rows = [
+        {
+            "requirement": name,
+            "state": "passed",
+            "receipts": [],
+            "dependencies": [],
+            "waitingOn": "",
+        }
+        for name in mod.REQUIREMENTS
+    ]
+    check(
+        "exit-for-all-passed",
+        journey.exit_for(rows) == 0,
+        "an all-passed report did not exit 0",
+    )
+    rows[0]["state"] = "pending"
+    rows[0]["waitingOn"] = "the actor's page readings"
+    check(
+        "exit-for-page-pending",
+        journey.exit_for(rows) == 1,
+        "a pending page row still exited 0",
+    )
+
+
 def _stop_calls_script(fail_index, fail_with):
     seen = []
 
@@ -3997,6 +4242,13 @@ def main():
         test_altered_leg_accepted_is_row_failure,
         test_fixture_blowup_tears_down,
         test_guard_keeps_status_through_teardown_failure,
+        test_page_agreement_passes,
+        test_page_agreement_missing_reading_pends,
+        test_page_agreement_root_mismatch_pends,
+        test_page_removal_flips_row,
+        test_removal_check_covers_page_row,
+        test_partial_legs_keep_page_rows_pending,
+        test_exit_for_counts_page_rows,
         test_teardown_failure_after_success_is_setup,
         test_real_stop_needs_its_tools,
     ]

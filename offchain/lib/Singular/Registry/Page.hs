@@ -54,6 +54,7 @@ import Data.Scientific (floatingOrInteger)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Text.Read (readMaybe)
 
 -- ---------------------------------------------------------
 -- Release
@@ -184,19 +185,29 @@ describeRegistry inputs =
         (inputs{pagePendingRequests = sortPending (pagePendingRequests inputs)})
         (releaseLinks (pageRelease inputs))
 
--- | Pending requests in one fixed order: by request output reference.
+{- | Pending requests in one fixed order: by request output reference,
+the transaction then the index, as the ledger orders outputs. Entries
+without one sort by their bytes.
+-}
 sortPending :: [Value] -> [Value]
 sortPending = List.sortOn pendingOrder
 
--- | What an entry sorts by: its request reference, or its bytes when it has none.
-pendingOrder :: Value -> Text
+{- | What an entry sorts by: its request output reference, or its bytes
+when it has none.
+-}
+pendingOrder :: Value -> (Text, Integer)
 pendingOrder = \case
     Object o -> case KeyMap.lookup "request" o of
-        Just (String ref) -> ref
-        _ -> encoded o
-    v -> encoded v
+        Just (String ref) -> splitRef ref
+        _ -> (encoded o, -1)
+    v -> (encoded v, -1)
   where
     encoded w = TE.decodeUtf8 (BL.toStrict (Aeson.encode w))
+    splitRef ref = case T.splitOn "#" ref of
+        [txid, index] -> case readMaybe (T.unpack index) of
+            Just n -> (txid, n)
+            _ -> (ref, -1)
+        _ -> (ref, -1)
 
 -- | The JSON rendering: a receipt-shaped object with the page sections.
 renderPageJson :: Page -> Value

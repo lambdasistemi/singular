@@ -44,7 +44,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy.Char8 qualified as BLC
 import Data.ByteString.Short qualified as SBS
-import Data.List qualified as List
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -118,6 +117,7 @@ import Singular.Registry.TrieState (Leaf (..))
 import Singular.Registry.TrieState qualified as TS
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
+    , findRequestUtxos
     , requestAddrFromCfg
     , scriptHashBytes
     )
@@ -217,7 +217,9 @@ runDescribe app env a = do
                 v
                 (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
         let cfg = savedCfg saved
-            pending = map pendingJson (List.sortOn fst requests)
+            -- This registry's requests, as inspect lists them; the page
+            -- renders them in one fixed order.
+            pending = map pendingJson (findRequestUtxos (savedToken saved) requests)
         pure $
             describeRegistry
                 PageInputs
