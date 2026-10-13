@@ -96,7 +96,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
-      cp ${economicsPaper}/economics-paper.pdf site/economics-paper.pdf
+      cp ${economicsPaper}/economics-paper.pdf site/docs/economics-paper.pdf
       python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc}
       python3 tools/api_reference.py manifest --library conformance site ${apiConformanceHaddock.doc} ${conformance.outPath} ${apiConformancePackageDb}
       python3 tools/aiken_reference.py publish site ${aikenReference} onchain ${

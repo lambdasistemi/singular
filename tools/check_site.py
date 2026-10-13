@@ -259,7 +259,7 @@ for required in (
     "docs/decisions/index.html",
     "docs/simulation/index.html",
     "docs/economics-paper/index.html",
-    "economics-paper.pdf",
+    "docs/economics-paper.pdf",
 ):
     assert (site / required).exists(), required
 # The economics page links the paper PDF it describes; the built site must
