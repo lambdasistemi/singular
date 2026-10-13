@@ -111,7 +111,6 @@ import Singular.CLI.Outlay
     , outlayTotal
     , updateOutlay
     )
-import Singular.CLI.Plan (emptyFields)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
@@ -127,10 +126,7 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges
-    ( bookEdgeMeasured
-    , selectFunding
-    )
+import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , requestAddrFromCfg
@@ -200,16 +196,7 @@ book at a key verb plan = do
                 let edge = T.pack (edgeName (bookedEdge b))
                     payerAddr = walletAddr (wcWallet wc)
                 walletUtxos <- Cage.outputsAt v payerAddr
-                _ <-
-                    either
-                        ( \msg ->
-                            failWithFields
-                                ClientRefusal
-                                (msg <> " (client policy)")
-                                (emptyFields payerAddr walletUtxos)
-                        )
-                        pure
-                        (selectFunding (entryFund a) walletUtxos)
+                _ <- resolveFunding payerAddr walletUtxos (entryFund a)
                 pp <- Cage.parameters v
                 let Coin reserve =
                         protocolFeeReserve pp (liveRefs live)
@@ -467,16 +454,7 @@ runUpdate env a = case entryMode a of
                                     pure
                                     (envelopeFromData (dhDatumData dh))
                             walletUtxos <- Cage.outputsAt v addr
-                            _ <-
-                                either
-                                    ( \msg ->
-                                        failWithFields
-                                            ClientRefusal
-                                            (msg <> " (client policy)")
-                                            (emptyFields addr walletUtxos)
-                                    )
-                                    pure
-                                    (selectFunding (entryFund a) walletUtxos)
+                            _ <- resolveFunding addr walletUtxos (entryFund a)
                             place building placed (EdgeStarted Updating)
                             unsigned <-
                                 buildUpdate v live addr (entryFund a) holding payload

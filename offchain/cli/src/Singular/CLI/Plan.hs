@@ -19,6 +19,8 @@ module Singular.CLI.Plan
     , refuseOver
     , refuseUnderfunded
     , emptyFields
+    , faucetStep
+    , resolveFunding
     , outlayReport
     ) where
 
@@ -42,6 +44,7 @@ import Singular.CLI.Outlay
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.TxBuilder.Edges (selectFunding)
 import Singular.Registry.Wallet (bech32Address)
 
 -- | A JSON document the caller named, or a client refusal saying why not.
@@ -128,3 +131,52 @@ emptyFields addr utxos =
     , ("held", toJSON (walletHeld utxos))
     , ("policy", toJSON ("client" :: Text))
     ]
+
+{- | The faucet step an empty wallet refusal ends with: how
+to fund the wallet, in the floor's own words.
+-}
+faucetStep :: String
+faucetStep =
+    "Fund this address, then rerun. On preprod the faucet is "
+        <> "https://docs.cardano.org/cardano-testnets/tools/faucet"
+        <> ". It pays a single output; send one self-payment "
+        <> "afterwards so the wallet also holds an ada-only "
+        <> "output to spend as collateral."
+
+{- | The wallet output a write is funded from, or the refusal
+that stops it before anything is built: the caller's chosen
+output when it is an ada-only output of the wallet, else the
+largest ada-only output. A wallet with no ada-only output is
+refused with the wallet address and the faucet step; a foreign
+funding choice from a funded wallet is refused with the wallet
+address and without it. Both carry the wallet fields and the
+client policy.
+-}
+resolveFunding
+    :: Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> Maybe TxIn
+    -> IO (TxIn, TxOut ConwayEra)
+resolveFunding addr utxos chosen =
+    case selectFunding chosen utxos of
+        Right funded -> pure funded
+        Left msg -> case selectFunding Nothing utxos of
+            Left _ ->
+                failWithFields
+                    ClientRefusal
+                    ( msg
+                        <> " for wallet "
+                        <> bech32Address addr
+                        <> " (client policy). "
+                        <> faucetStep
+                    )
+                    (emptyFields addr utxos)
+            Right _ ->
+                failWithFields
+                    ClientRefusal
+                    ( msg
+                        <> " for wallet "
+                        <> bech32Address addr
+                        <> " (client policy)"
+                    )
+                    (emptyFields addr utxos)

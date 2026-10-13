@@ -42,6 +42,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
+import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
@@ -77,7 +78,10 @@ import Data.Aeson ((.=))
 import Singular.Application.OpenDatum.Command (parseOpenDatumCommand)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.CLI.Outlay (walletShortfall)
-import Singular.CLI.Plan (refuseUnderfunded)
+import Singular.CLI.Plan
+    ( faucetStep
+    , refuseUnderfunded
+    )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (loadReleaseCodes)
 import Singular.CLI.Session (CommandFailure (..), Env (..))
@@ -271,6 +275,30 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                 (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
         outcomeOf (runReceipt folded) `shouldBe` Just "success"
         emptyKey <- emptyWalletKey rig
+        emptyWallet <- loadWallet (fromIntegral magic) emptyKey
+        let emptyAddr = bech32Address (walletAddr emptyWallet)
+        emptyPreview <-
+            run
+                rig
+                "insert preview with an empty wallet"
+                ( [ "open-datum"
+                  , "insert"
+                  , "--key"
+                  , "alice-2"
+                  , "--payload"
+                  , rigDir rig </> "payload.json"
+                  , "--preview"
+                  , "--wallet-address"
+                  , emptyAddr
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt emptyPreview)
+            `shouldBe` Just "client-refusal"
+        reasonOf emptyPreview
+            `shouldSatisfy` isInfixOf "(client policy)"
+        reasonOf emptyPreview
+            `shouldSatisfy` isInfixOf faucetStep
         emptyInsert <-
             runWithKey
                 emptyKey
@@ -285,8 +313,12 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                   ]
                     <> tokenArgs t
                 )
-        outcomeOf (runReceipt emptyInsert) `shouldBe` Just "client-refusal"
-        reasonOf emptyInsert `shouldSatisfy` ("(client policy)" `isSuffixOf`)
+        outcomeOf (runReceipt emptyInsert)
+            `shouldBe` Just "client-refusal"
+        reasonOf emptyInsert
+            `shouldSatisfy` isInfixOf "(client policy)"
+        reasonOf emptyInsert
+            `shouldSatisfy` isInfixOf faucetStep
         policyOfRun emptyInsert `shouldBe` Just "client"
         walletOfRun emptyInsert `shouldSatisfy` isJust
         countOfRun emptyInsert `shouldSatisfy` isJust
@@ -305,8 +337,12 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                   ]
                     <> tokenArgs t
                 )
-        outcomeOf (runReceipt emptyUpdate) `shouldBe` Just "client-refusal"
-        reasonOf emptyUpdate `shouldSatisfy` ("(client policy)" `isSuffixOf`)
+        outcomeOf (runReceipt emptyUpdate)
+            `shouldBe` Just "client-refusal"
+        reasonOf emptyUpdate
+            `shouldSatisfy` isInfixOf "(client policy)"
+        reasonOf emptyUpdate
+            `shouldSatisfy` isInfixOf faucetStep
         policyOfRun emptyUpdate `shouldBe` Just "client"
         walletOfRun emptyUpdate `shouldBe` Just (T.pack (previewAddr rig))
         countOfRun emptyUpdate `shouldSatisfy` isJust
@@ -333,9 +369,12 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                   ]
                     <> tokenArgs t
                 )
-        outcomeOf (runReceipt foreignInsert) `shouldBe` Just "client-refusal"
+        outcomeOf (runReceipt foreignInsert)
+            `shouldBe` Just "client-refusal"
         reasonOf foreignInsert
             `shouldSatisfy` ("(client policy)" `isSuffixOf`)
+        reasonOf foreignInsert
+            `shouldSatisfy` (not . isInfixOf faucetStep)
         policyOfRun foreignInsert `shouldBe` Just "client"
         walletOfRun foreignInsert `shouldBe` Just (T.pack (previewAddr rig))
         countOfRun foreignInsert `shouldSatisfy` isJust

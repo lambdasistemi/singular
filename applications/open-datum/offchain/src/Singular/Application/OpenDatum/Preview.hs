@@ -96,7 +96,6 @@ import Singular.CLI.Outlay
     , outlayTotal
     , updateOutlay
     )
-import Singular.CLI.Plan (emptyFields)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
     ( hexT
@@ -106,7 +105,6 @@ import Singular.CLI.Registry
 import Singular.CLI.Session
     ( Env (..)
     , failWith
-    , failWithFields
     , readsIn
     , txIdHex
     )
@@ -120,10 +118,7 @@ import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges
-    ( bookEdgeMeasured
-    , selectFunding
-    )
+import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
 
 -- | Which entry command is being prepared.
@@ -221,16 +216,7 @@ runPreview app env kind a settings addrText = do
                     refuseBooking context key BookUpdate
                     (holding, _) <- planUpdate live caller key outs
                     walletUtxos <- Cage.outputsAt v addr
-                    _ <-
-                        either
-                            ( \msg ->
-                                failWithFields
-                                    ClientRefusal
-                                    (msg <> " (client policy)")
-                                    (emptyFields addr walletUtxos)
-                            )
-                            pure
-                            (selectFunding (entryFund a) walletUtxos)
+                    _ <- resolveFunding addr walletUtxos (entryFund a)
                     tx <- buildUpdate v live addr (entryFund a) holding payload
                     let outlay = updateOutlay tx
                     refuseOver (entryMaxOutlay a) outlay
@@ -277,16 +263,7 @@ previewBooking a v live addr key b = do
         cfg = savedCfg s
     pp <- Cage.parameters v
     walletUtxos <- Cage.outputsAt v addr
-    _ <-
-        either
-            ( \msg ->
-                failWithFields
-                    ClientRefusal
-                    (msg <> " (client policy)")
-                    (emptyFields addr walletUtxos)
-            )
-            pure
-            (selectFunding (entryFund a) walletUtxos)
+    _ <- resolveFunding addr walletUtxos (entryFund a)
     let Coin reserve = protocolFeeReserve pp (liveRefs live)
     refuseUnderfunded addr walletUtxos reserve "fold reserve"
     booking <-
