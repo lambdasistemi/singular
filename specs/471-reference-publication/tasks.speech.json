@@ -1,0 +1,110 @@
+{
+  "reference-publication-tasks-and-acceptance-evidence": [
+    {
+      "text": "Reference publication: tasks and acceptance evidence.",
+      "pause": 500
+    },
+    {
+      "text": "All boxes start unaccepted. Parent #437 T018–T021/T023–T024, restoration evidence from T026 and this child's T034–T036 stay bound by plan.md; this list does not retire them.",
+      "pause": 400
+    }
+  ],
+  "baseline-and-coherent-capability-boundary": [
+    {
+      "text": "Baseline and coherent capability boundary.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Record clean inherited #501 candidate and current model; inspect preserved PR2 work selectively.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Run the clean branch baseline and classify actual failures without relabelling feature RED.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Observe legal-use compilation and planted forbidden raw session/query/history/wallet/provider accesses with actual production dependencies.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Migrate every ordinary selector onto opaque WalletOutputs and one funding projection; delete duplicate predicates/selectors in the coherent change.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Preserve chosen-input restriction, seed reservation, required burn-asset inputs, reclaim separation and provider read-failure attribution.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Build moved components and prove confirmation, address-wide recovery/refund and inspect receipt observations survive.",
+      "pause": 300
+    }
+  ],
+  "explicit-publication-and-command-behavior": [
+    {
+      "text": "Explicit publication and command behavior.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Reproduce absent publication command and actual #479 insufficient chosen output alongside larger permitted funds.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Deliver selected/all-missing role publication with bound script hashes and independent mismatch controls.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Verify process preview reports actual destination/hash/minimum ADA/fee with no signing, submission or registry writes.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Verify real publication receipt/readback, no registry or token creation, and no registry-state change.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Exercise insufficient-funds/no-submission and timeout/interrupted-confirmation recovery retaining transaction identity without duplicate submission.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Preserve protected 300 ADA carrier/token holding while existing writes/publication use permitted plain funds.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Deliver explicit opt-in missing-role restoration on dependent commands while preserving default refusal and Demo2 no-auto policy.",
+      "pause": 300
+    }
+  ],
+  "connected-delivery-and-review": [
+    {
+      "text": "Connected delivery and review.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Run independent actors through missing-reference refusal, explicit restoration and successful consuming fold with transactions/readbacks and receipt-derived public clauses.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Verify public grammar/interpreter/renderer over discovered extent, with harness evidence confined to its appendix.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Ship help/docs/canonical speech/audio and invoke the command from the actual release archive.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Freeze coherent source, run required scoped/local CI and exact-head hosted checks, preserving pending examples and uncovered requirements.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Update this child's PR using the repository template and exact model/evidence/limits; retain #501 dependency and E371 acceptance/merge authority.",
+      "pause": 300
+    },
+    {
+      "text": "New retirement and page delivery remain in #502/#503. Every behavioral repair observes its meaningful failing check before success. Deliberate capability compiler negatives need a passing legal-use/setup control. Source/build/fixture evidence never replaces a connected ledger claim; old receipts do not certify changed inputs. No task stamp before acceptance.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "ab0389b2d2f00438015605799a664135c57d02e850a540a07f167372ce24090b"
+  }
+}
