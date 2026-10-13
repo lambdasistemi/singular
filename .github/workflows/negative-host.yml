@@ -219,7 +219,7 @@ jobs:
   negative-host-pairs:
     name: Negative host pairs
     needs: [negative-host-parts, negative-host-part]
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: nixos
     timeout-minutes: 5
     steps:
@@ -233,7 +233,7 @@ jobs:
   negative-host-mutants:
     name: Negative host mutants
     needs: [negative-host-mutant-list, negative-host-mutant]
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: nixos
     timeout-minutes: 5
     steps:

@@ -425,7 +425,7 @@ jobs:
   e2e:
     name: Devnet E2E on the fresh blueprint
     needs: [e2e-plan, e2e-part]
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: nixos
     timeout-minutes: 5
     steps:
@@ -1034,7 +1034,7 @@ jobs:
   demo1-attach:
     name: Demo 1 refusals on one existing registry
     needs: demo1-attach-part
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: nixos
     timeout-minutes: 5
     steps:
