@@ -297,6 +297,7 @@
             cp ${./tools/managed_state.sh} $out/managed_state.sh
             cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
             cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
+            cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
             cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
           '';
           # #449: the recovery controls as one app per part, each on its own
@@ -774,6 +775,55 @@
                     DEMO1_CONTROLS_RAN=${./tools/demo1_cli_controls_ran.sh} \
                     DEMO1_CONTROLS_COMPOSITION=${./tools/demo1_cli_controls_composition.sh} \
                     bash ${./tools/demo1_cli_controls_check.sh} "$PWD"
+                '';
+              }
+            );
+          };
+          # #406 slice 2: Carol funds a fresh wallet with one ada-only output
+          # and runs create on its own fresh devnet with no state carrier
+          # anywhere: `nix run --quiet .#demo1-cli-one-output-create`.
+          demo1-cli-one-output-create = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-one-output-create";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  gawk
+                  git
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                  procps
+                  util-linux
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-one-output}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/run.XXXXXX")/one-output"
+                  echo "one-output create: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  root="$PWD"
+                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                    echo "demo1-cli-one-output-create: run from the repository root" >&2
+                    exit 3
+                  }
+                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                  open_datum="$open_datum_out/bin/open-datum"
+                  singular_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#singular")" || exit 3
+                  singular="$singular_out/bin/singular"
+                  devnet_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")" || exit 3
+                  devnet="$devnet_out/bin/devnet"
+                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                  [ -f "$deployment_bp" ] || {
+                    echo "demo1-cli-one-output-create: no deployment blueprint" >&2
+                    exit 3
+                  }
+                  bash ${managedScripts}/demo1_cli_one_output_create.sh "$singular" "$open_datum" "$devnet" "$deployment_bp" "$work"
                 '';
               }
             );
