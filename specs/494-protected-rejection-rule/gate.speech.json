@@ -97,8 +97,26 @@
       "pause": 400
     }
   ],
+  "gate-version-3-the-rows-of-slices-five-to-ten": [
+    {
+      "text": "Gate version 3: the rows of slices five to ten.",
+      "pause": 500
+    },
+    {
+      "text": "Added before the first economic coder, from existing CI commands only. Two independent tables were synthesized once: the ticket owner's (the slice rows above carried to the model slices, plus the documentation rows) and a Grok gate author's, read from the workflows at the plan commit (handoffs/gate-table.md in the author's runtime root, sha256 bf90020c3812cfa1b458431d9e4f5ea7066b934f209fa8c551367df690c07c52). The author found seven acceptance lines with no command; the disposition of each is below, and three of them become \"CI change in this ticket\" rows. The settled rows above are unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Acceptance lines with no command, and what is done:",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: slices five to eight about 40 minutes, the rows marked final about 60 once before a push; slices nine and ten about 5 and 25.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "7575a83a99fe8f9c57309deef9f926ec9a168c30f88c94db02785a52d06ec7b4"
+    "sha256": "a2181d6645b7c35d74e1575262d6f49bb60b84a18b5a689036449abe1d09a5d2"
   }
 }

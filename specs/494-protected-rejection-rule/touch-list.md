@@ -131,12 +131,14 @@ lane's change in one that is, stops and asks. Every new runnable file is an obli
 | Path | Slices | Why |
 |---|---|---|
 | `lean/Singular/Model.lean`, `Statements.lean`, `Driver.lean`, `Lemmas.lean`, `Audit.lean`, `M1.lean`, `M1Driver.lean`, `lean/DriverMain.lean`, `lean/Main.lean`, `lean/M1Main.lean` | five to eight | Fields, outcomes, obligations, statements, corpus rows |
-| `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | six to eight | Outcomes, the transfer table and the economic theorems, imported by the root module |
+| `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | six to eight | Outcomes and the transfer table as definitions, imported by the root module; the economic theorems and the kept counterexamples are declared in `Statements.lean` so the existing axioms guard covers them |
 | `conformance/lean/DriverTransport.lean`, `conformance/test/Conformance/Support/DriverTransport.hs` | five to seven | Questions carrying the new fields |
 | `paper/economics/**` (new) | nine, ten | LaTeX source, bibliography, vendored class if needed |
 | `docs/economics-paper.md` (new, with its speech companion) and `mkdocs.yml` | nine, ten | The page and its navigation entry |
 | `nix/docs.nix` | nine | Builds the PDF into the documentation site; shared with the release review lane, so the desk clears it first |
 | A table generator under `tools/` (new, marked as a tool or run by the documents check) | nine | The theorem-to-Lean table is generated from the audit report, never typed |
+| `tools/check_site.py` | nine | Asserts the paper PDF is in the built site and the page links it |
+| `tools/code_inventory.py` | nine | Classifies the paper sources (`.tex`, `.bib`, class files), which the inventory refuses otherwise |
 | The generated copies of slices one and two (corpora, register, theorem page and its speech, simulator mirror, application corpus, coverage record, restatement table, constitution) | five to eight | As before |
 
 Not touched: the root `flake.nix` and `.github/workflows/ci.yml` unless the desk finds the docs build cannot carry the PDF; everything

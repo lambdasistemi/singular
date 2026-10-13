@@ -39,6 +39,10 @@
       "pause": 400
     },
     {
+      "text": "The economic theorems and the kept counterexamples are declared in Statements.lean, the namespace the axioms guard and the register already cover; the new Economics.lean holds definitions only. The termination fee is deliberately expensive: the paper derives its lower bound from what it must deter and says plainly that an honest owner pays it once at the end of a key's life; the contract enforces no floor.",
+      "pause": 400
+    },
+    {
       "text": "Where the desk's guide claims the cost of squat-and-terminate as the fee plus the deposit plus the tip, the model returns the deposit at termination, so the proved floor is the fee; the deposit is capital, not cost. The statement is written that way and the difference is explained in the paper. Conservation is stated for a balanced transaction (inputs equal outputs plus donation plus fee), because the model has no ledger fee; the balance is a named premise, not a model rule.",
       "pause": 400
     }
@@ -89,6 +93,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "226031a403801e327fdf704f3bbad0e0da939e0381a44a0008e77d2eecbeb182"
+    "sha256": "7d91ea1abe893ecc758a72849dc587a10579e774ded9ce7f49fd4f969fc58368"
   }
 }

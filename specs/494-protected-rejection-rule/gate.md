@@ -125,3 +125,43 @@ right reason: slice one's retraction scenarios, slice two's historical scenario 
 slice four's two-batch scenarios. Each failure class a row covers has a cited red run above; a row
 with none found is covered by that control or by the aggregate. Falsifying the unchanged guard rows
 (retire-active-key, wrong-reason) is their hosted reds on the earlier attempt.
+
+## Gate version 3: the rows of slices five to ten
+
+Added before the first economic coder, from existing CI commands only. Two independent tables were synthesized once: the ticket owner's (the
+slice rows above carried to the model slices, plus the documentation rows) and a Grok gate author's, read from the workflows at the plan commit
+(`handoffs/gate-table.md` in the author's runtime root, sha256 `bf90020c3812cfa1b458431d9e4f5ea7066b934f209fa8c551367df690c07c52`). The author
+found seven acceptance lines with no command; the disposition of each is below, and three of them become "CI change in this ticket" rows. The
+settled rows above are unchanged.
+
+| Row | Command | Slices | Tier | Min | Exit | Red run |
+|---|---|---|---|---|---|---|
+| Model check, including the axioms guard (every proved statement depends only on `propext`, `Classical.choice`, `Quot.sound`, and `sorryAx` or `Lean.ofReduceBool` fail) | `nix run --quiet .#model-check` (`ci.yml:232`); the guard is `tools/check_model.py:141` and `lean/Singular/Audit.lean` during the build | 5 6 7 8 | candidate | 20 | 0 | the slice's own failing control; none found hosted |
+| Simulator check | `nix run --quiet .#simulator-check` (`ci.yml:252`) | 5 6 7 8 | candidate | 8 | 0 | 37755208565: `Error: identity/formal/Driver.lean` |
+| Application corpus | `nix develop --quiet -c just application-model` (`ci.yml:506`) | 5 6 7 8 | candidate | 8 | 0 | 37757702153: `FAIL the regenerated corpus equals the committed corpus` |
+| Coverage gate and real-tree tests | `nix build --quiet --no-link .#coverageGateTests`, `.#coverageGateSnapshot`; `nix run --quiet ./conformance#coverage-gate -- --root . inventory`, `ratchet`, `completion` (`conformance.yml:1131-1165`); `nix run --quiet .#coverage-tests` (`ci.yml:433`) | 5 6 7 8 | candidate | 3 | 0, completion 1 | 37757702122: `FAIL-CLOSED population`; 37755208565: `AssertionError: 79 != 67` |
+| Conformance without a devnet, transport tests | `nix run --quiet .#conformance-appendix-tests` and the neighbouring commands (`conformance.yml:215-229`) | 5 6 7 | candidate | 2 | 0 | 37755208632: unit suite exit 1 |
+| Format and lint of the Haskell the transport touches | `nix run --quiet .#format-check` then `.#hlint-check` in `conformance` (`conformance.yml:89,93`) | 5 6 7 | candidate | 2 | 0 | 38110736278: `Suggestion: Redundant $` |
+| Batch asked of the model, once, because the transport reaches it with the new fields absent | the job "batch instructions asked of the model" (`conformance.yml:278`) | 5 6 7 | candidate, once | 3, devnet | 0 | 37757702122: `the model refused a lawful batch` |
+| Lint of the files the slices add | `nix develop --quiet -c just lint` (`ci.yml:478`) | 5 to 10 | final | 2 | 0 | 38357384720: `lint: FAILED` |
+| Documents, including narration and speech of every edited page | `nix run --quiet .#docs-check` (`ci.yml:453`); `nix develop --quiet -c just check-presentation` (`ci.yml:507`); `nix run --quiet .#release-check` (`ci.yml:532`) | 5 to 10 | final | 17 | 0 | 38119535187: `missing speech` |
+| Code inventory, which must classify the paper sources | `nix run --quiet .#inventory-check` (`ci.yml:305`); CI change in this ticket (slice nine): `tools/code_inventory.py` classifies `paper/**` | 5 to 10 | final | 4 | 0 | 37763865424: `5 unmapped/unknown files` |
+| Strict coverage report, browser check | `nix run --quiet .#coverage-check` (`ci.yml:430`); `nix run --quiet .#browser-check` (`ci.yml:272`) | 5 6 7 8 | final | 8 | 0 | 37755208565 |
+| The built site contains the paper PDF; CI change in this ticket (slice nine) | `nix run --quiet .#docs-check` (`ci.yml:453`) once `tools/check_site.py` asserts the PDF is in the built site and the page links it | 9 10 | candidate | 2 | 0 | the current red `docs-check` runs show the checker fails; the new assertion is falsified by the slice's failing control |
+| The paper's theorem table equals the audit report and every Lean name the paper cites resolves; CI change in this ticket (slice nine): a table generator under `tools/`, run by the documents check | `nix run --quiet .#docs-check` (`ci.yml:453`) with the generator's check step added to `nix/docs.nix` | 9 10 | candidate | 2 | 0 | the slice's failing control |
+| Repository sanity | `nix develop --quiet -c just ci` | 5 to 10 | final, once | 40 | 0 | the ticket owner's own row |
+| Review archive and declared checks | the jobs of the version 2 section (`ci.yml:577-621`, `ci.yml:336-379`) | 5 to 10 | hosted | | 0 | the ticket owner's row |
+| Hosted aggregate | the devnet rows of the conformance workflow, which ask the same driver with the new fields absent, and the rest of the CI and registry workflows | 5 to 10 | hosted | | 0 | fence check: no slice touches their files |
+
+Acceptance lines with no command, and what is done:
+
+| Line | Disposition |
+|---|---|
+| Economic theorems live outside the files the axioms guard walks | The theorems and the kept counterexamples are declared in `lean/Singular/Statements.lean`, in the namespace the guard and the register already cover; `lean/Singular/Economics.lean` holds definitions only. No new check is needed. |
+| Each statement expected to fail has its counterexample kept | Each is a named theorem in that namespace stating that the counterexample exists, so the register, the audit report and the paper's table list it. |
+| The restatement table | A published record of old and new identities, committed as data, not a runnable check. |
+| No sentence of the paper claims more than the Lean statement it cites | No command can read a sentence. The generator's check (previous table) makes every cited name resolve, and the persistent auditor reads the paper against the statements at the final checkpoint of slices nine and ten. |
+| The constitution version string | The reconciliation reads declared names only; the persistent auditor reads the version at the final checkpoint of slice five. |
+
+Budget per candidate: slices five to eight about 40 minutes, the rows marked final about 60 once before a push; slices nine and ten about 5
+and 25.

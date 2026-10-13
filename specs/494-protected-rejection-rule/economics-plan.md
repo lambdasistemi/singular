@@ -65,6 +65,10 @@ the statement is false in the model, and a Lean example with the counterexample 
 | `honest_loses_tip_on_race` | A requester that lost a race loses its tip | shows the exact scope of the honesty theorem | eight |
 | `key_capture_not_priced` | A front-runner that registers the key first is not charged for the capture | **expected to fail as a defence**; example kept | eight |
 
+The economic theorems and the kept counterexamples are declared in `Statements.lean`, the namespace the axioms guard and the register already cover;
+the new `Economics.lean` holds definitions only. The termination fee is deliberately expensive: the paper derives its lower bound from what it
+must deter and says plainly that an honest owner pays it once at the end of a key's life; the contract enforces no floor.
+
 Where the desk's guide claims the cost of squat-and-terminate as the fee plus the deposit plus the tip, the model returns the deposit
 at termination, so the proved floor is the fee; the deposit is capital, not cost. The statement is written that way and the difference
 is explained in the paper. Conservation is stated for a balanced transaction (inputs equal outputs plus donation plus fee), because the
@@ -78,7 +82,7 @@ model has no ledger fee; the balance is a named premise, not a model rule.
 | Six: outcomes and transfers | The five outcomes, the transfer table as a definition, bond returns in fold, retraction and rejection obligations, the treasury recipient and donation settlement, zero-donation handling | As five, plus the rows of the driver corpus |
 | Seven: fault proof, forfeit, termination fee | The booking proof in rejection evidence, forfeit and split on the mismatch ground, no forfeit on expiry or without proof, the termination fee owed by a terminating fold, refusals naming the bond and the fee | As six |
 | Eight: theorems and counterexamples | The proved economic theorems, the kept counterexamples, the audit report entries and the theorem-to-name table | The theorem page and register |
-| Nine: paper build and first sections | The LaTeX source, its Nix build into the documentation site, the docs page with abstract, theorem table and PDF link, sections one to four | Documentation site, preview |
+| Nine: paper build and first sections | The LaTeX source, its Nix build into the documentation site, the docs page with abstract, theorem table and PDF link, sections one to four; the documents check gains two assertions (the PDF is in the built site, the table equals the audit report and every cited Lean name resolves) and the code inventory classifies the paper sources | Documentation site, preview |
 | Ten: paper completion | Sections five to ten, related work, limitations with every counterexample, the appendix generated from the audit report | Documentation site |
 
 One writer at a time, Muse; Grok audits every slice; the paper's claims are audited against the Lean statements they cite. Each slice
