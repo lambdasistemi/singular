@@ -197,21 +197,21 @@ retrySpec = describe "retries" $ do
                 `shouldSatisfy` (\case Just (_, TimedOut) -> True; _ -> False)
             diffUTCTime end start `shouldSatisfy` (< 1.8)
 
-    -- Quarantined: fails under full-suite load (#531, tracked in #594).
-    xit "starts no retry that would end past the per-call ceiling" $
+    -- Even the shortest jittered delay (half of 4 s) ends past the 1 s
+    -- ceiling, so the outcome depends neither on the jitter nor on how
+    -- long a loaded runner takes to answer or to sleep (#531).
+    it "starts no retry that would end past the per-call ceiling" $
         withFakeKoios (\_ _ -> respond 503 [] "busy") $ \base logOf -> do
             k <-
                 clientFor
                     (fast base)
                         { httpAttempts = 10
-                        , httpBaseDelay = 0.2
-                        , httpMaxDelay = 0.2
-                        , httpCallCeiling = 0.5
+                        , httpBaseDelay = 4
+                        , httpMaxDelay = 4
+                        , httpCallCeiling = 1
                         }
-            Just (attempts, ServerFailing 503 _) <- reasonOf <$> tip k
-            count <- countAt "/tip" <$> logOf
-            count `shouldBe` attempts
-            count `shouldSatisfy` (< 10)
+            reasonOf <$> tip k `shouldReturn` Just (1, ServerFailing 503 "busy")
+            countAt "/tip" <$> logOf `shouldReturn` 1
 
     it "does not retry a 401 or a 400 on a read"
         $ withFakeKoios
