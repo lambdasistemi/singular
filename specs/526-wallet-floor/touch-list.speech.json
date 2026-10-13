@@ -1,0 +1,66 @@
+{
+  "a-write-asks-the-wallet-for-what-it-costs-touch-list": [
+    {
+      "text": "A write asks the wallet for what it costs: touch list.",
+      "pause": 500
+    },
+    {
+      "text": "The only files the writer may change. A file outside this list needs the milestone owner's ruling first.",
+      "pause": 500
+    }
+  ],
+  "production": [
+    {
+      "text": "Production.",
+      "pause": 500
+    },
+    {
+      "text": "The terminal composition loses the floor call. The outlay module gains the pure judgement and the plan module the refusal. The entry and preview modules call them. The funding module's descriptions change, with no code change.",
+      "pause": 500
+    }
+  ],
+  "documentation": [
+    {
+      "text": "Documentation.",
+      "pause": 500
+    },
+    {
+      "text": "The node documentation states the wallet rule beside the outlay rule. The ownership page corrects the funding module's row.",
+      "pause": 500
+    }
+  ],
+  "tests": [
+    {
+      "text": "Tests.",
+      "pause": 500
+    },
+    {
+      "text": "Rows in the outlay spec, and one new spec in the open datum suite, registered in its cabal file and main module. The hosted job is the open datum tests job. No workflow, flake or script changes.",
+      "pause": 500
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "The session, receipt and fold files and the command header that other lanes are changing, the create and edges files, the describe and inspect files, the conformance directory, and the reject and reclaim files.",
+      "pause": 500
+    }
+  ],
+  "needs-a-ruling": [
+    {
+      "text": "Needs a ruling.",
+      "pause": 500
+    },
+    {
+      "text": "Two script comments mention the old floor. The controls script comment can change in this pull request. The journey script comment belongs to the other lane.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "2645bb7ac4d2a6ba2327f142095787e308cfaf69e8ae577001fad80b1893cd81"
+  }
+}

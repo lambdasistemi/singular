@@ -1,0 +1,56 @@
+{
+  "a-write-asks-the-wallet-for-what-it-costs-plan": [
+    {
+      "text": "A write asks the wallet for what it costs: plan.",
+      "pause": 500
+    },
+    {
+      "text": "One pull request, one slice, about one hundred and eighty writer minutes. A behaviour change on client policy, with no on-chain code, no model change and no wire change.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    },
+    {
+      "text": "Remove the floor from the session opening. Judge the wallet where the cost is measured, beside the allowance check, so preview and write cannot differ. One pure function decides and one effect refuses. The outcome is the existing client refusal, not a new class. An empty wallet is named before building. The wallet argument of the write session stays for now, to avoid a change through files other lanes own.",
+      "pause": 500
+    }
+  ],
+  "slice-wallet-judged-on-the-measured-outlay": [
+    {
+      "text": "Slice: wallet judged on the measured outlay.",
+      "pause": 500
+    },
+    {
+      "text": "Remove the floor call. Add the pure judgement and the refusal. Call them in the booking and update paths, in preview and in write. Document the rule. Test it in the open datum suite: the story's wallet goes through, the underfunded wallet is refused with equal figures in preview and write, the empty wallet is refused before building, and the session opens for a funded wallet.",
+      "pause": 500
+    }
+  ],
+  "failure-modes-this-change-alters": [
+    {
+      "text": "Failure modes this change alters.",
+      "pause": 500
+    },
+    {
+      "text": "A nearly empty wallet used to be stopped at session opening. It is now stopped in the body with named fields for bookings, or by the builder's own message for the other writes, which is the stated limit. A wallet the floor accepted is refused only when it holds less than the measured outlay.",
+      "pause": 500
+    }
+  ],
+  "gate-budget-about-30-minutes": [
+    {
+      "text": "Gate, budget about thirty minutes.",
+      "pause": 500
+    },
+    {
+      "text": "The open datum test suite, the format and lint checks in the two packages, and the documentation check. One aggregate run on the final head. Hosted continuous integration is the net.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "503fd6f8917d641bf13ca27905e442b22e53bb610a21fe5332446db9086a8c72"
+  }
+}

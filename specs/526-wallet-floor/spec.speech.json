@@ -1,0 +1,56 @@
+{
+  "a-write-asks-the-wallet-for-what-it-costs": [
+    {
+      "text": "A write asks the wallet for what it costs.",
+      "pause": 500
+    },
+    {
+      "text": "Every write command refuses a wallet that holds under one hundred ada, whatever the operation costs, and reports the refusal as a node failure. This page records the cause, what changes and how it is proved.",
+      "pause": 500
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "Alice holds twenty ada in two outputs. The insert preview shows a total within her allowance, and the same insert with her key goes through, because her wallet covers what the operation costs. When a wallet does not cover it, the command refuses before signing anything, as a client refusal that names the wallet, what it holds, what the operation needs and the shortfall. The preview of the same wallet refuses with the same figures.",
+      "pause": 500
+    }
+  ],
+  "what-is-established": [
+    {
+      "text": "What is established.",
+      "pause": 500
+    },
+    {
+      "text": "The fixed floor is checked while the command session is still opening, so the session reports it as a node failure although the provider answered. The preview never opens a write session, so it never meets the floor. It builds the real booking from the wallet's own outputs.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "Opening a write session applies no wallet threshold. Insert and terminate judge the wallet against the measured outlay after building and before signing, and against the reserve for the fold that follows before building. An empty wallet is refused before building. The refusal is a client refusal labelled client policy, with the wallet's figures in its fields, and never a node failure. Preview and write make the same judgements at the same points. The conformance runner keeps its own floor.",
+      "pause": 500
+    }
+  ],
+  "stated-limits": [
+    {
+      "text": "Stated limits.",
+      "pause": 500
+    },
+    {
+      "text": "Update, reject, reclaim, the standalone fold and create are no longer refused by the floor, but a wallet too small for their own build is still reported in the builder's words. Naming it needs files other lanes are changing, and is a follow-up. The judgement counts the wallet's total, so it is necessary and not sufficient. No live transaction is submitted by this work.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "e9cfcddf91bd0978bfeba98f6ae468e1aa42d8a205c094b53a52ac7ba55f47fc"
+  }
+}
