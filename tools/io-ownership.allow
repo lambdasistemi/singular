@@ -1,0 +1,116 @@
+# Modules allowed to name gated effects (tools/io_ownership_check.sh).
+# One per line: <path from the repository root>: <classes> — <owner, lifetime,
+# access model and reason>.
+# Classes: ioref mvar stm unsafe fork async (see tools/io_ownership_inventory.py).
+# A file naming a gated class without an entry here fails the check; an entry
+# whose class the file no longer names fails as stale; an entry without a
+# reason fails as reasonless. Timeout bounds and environment reads are
+# census facts, not gated here: their carriers are #540 (calling-thread
+# timeout) and #343 (release-hook exclusion).
+
+# ---- production: libraries shipped in release builds ----
+offchain/cli/src/Singular/CLI/Session.hs: ioref — owner=the CLI session of one command; lifetime=single command run; serial on the calling thread; connection flag and blueprint-progress refs threaded through the session, never shared between commands
+offchain/cli/src/Singular/CLI/Reconcile.hs: ioref — owner=one reconcile view-cache lookup; lifetime=single liveReader call; serial on the calling thread; the fresh per-call cache sits beside the implementation
+offchain/koios-http/src/Singular/Provider/Koios/Recorder.hs: ioref — owner=one fixture-recording run; lifetime=single recorder command; serial; accumulates recorded exchanges before writing them as fixtures
+offchain/koios-http/src/Singular/Registry/Terminal.hs: ioref — owner=the Capabilities value of one acquisition; lifetime=one observed session; serial callbacks on the calling thread; newest-first raw/fact buffers reversed on read, partial evidence preserved on exceptions
+offchain/lib/Singular/Provider/Koios/Runtime.hs: ioref — owner=the Koios provider runtime of one process composition; lifetime=process; serial session allocation under mask with finally release; open-session registry only
+offchain/lib/Singular/Registry/Trie/Pure.hs: ioref — owner=each caller for one serial builder, replay or mirror lifetime; mutable compatibility adapter over the pure MPF backend; externally serialized, no locking, never shared between threads
+offchain/lib/Singular/Registry/Trie/PureManager.hs: ioref — owner=each caller for one serial builder, replay, fixture or mirror lifetime; per-token in-memory map with speculative State snapshots; externally serialized, never shared between threads
+offchain/local-services/Singular/Registry/SessionIO.hs: ioref — owner=one local-services observation session; lifetime=single withLatest call; serial; last-observation cell keeps horizon continuity across polls
+
+# ---- tools: standalone operator executables ----
+offchain/deployment/Deployment/Deploy.hs: ioref — owner=one deployment command; lifetime=single command; serial; newest-first tx accumulator reversed for the bootstrap manifest, partial narration preserved on throw
+offchain/deployment/Deployment/Node.hs: ioref — owner=the deployment node session; lifetime=single command; serial; caller-supplied tx sink threaded through the node callbacks
+offchain/devnet/Devnet/Probe.hs: async — owner=one devnet probe run; lifetime=single probe command; link withAsync over the probe thread, cancelled and joined before the command returns; the harness must run node and client together
+offchain/devnet/Main.hs: mvar — owner=one devnet command; lifetime=single command; serial output lock for interleaved narration, released by withMVar
+offchain/koios-http/app/Main.hs: ioref — owner=one recorder probe run; lifetime=single command; serial failure flag folded into the exit status
+
+# ---- conformance runner: the live effects, never the library ----
+conformance/app-cli/Conformance/Cli/Admission.hs: ioref — owner=one cli-controls run; lifetime=single run; serial; admission-step accumulator for the control under test
+conformance/app-cli/Conformance/Cli/Backend.hs: async,ioref — owner=one CLI-backend control run; lifetime=single run; step counter and journals serial on the runner thread; one bounded confirmation waiter via async, observed through waitCatch with an explicit cancel and joined before the run ends
+conformance/app-cli/Conformance/Cli/FoldHistory.hs: ioref — owner=one cli-controls run; lifetime=single run; serial; fold-history accumulator for the control under test
+conformance/app-cli/Conformance/Cli/Withhold.hs: ioref — owner=one cli-controls run; lifetime=single run; serial; withhold-flag accumulator for the control under test
+conformance/app/Conformance/ForkKeys.hs: ioref — owner=one fork-keys run; lifetime=single run; serial; mirror root read back from the run-owned ref for the comparison
+conformance/app/Conformance/Mirror.hs: ioref — owner=one mirror run; lifetime=single run; serial; run-owned refs carry the mirrored state between steps
+conformance/app/Conformance/Run.hs: ioref — owner=one row run; lifetime=single run; serial; run-owned refs carry the row state between steps
+conformance/app/Conformance/Run/CaRows.hs: ioref — owner=one row run; lifetime=single run; serial; observation accumulators for the row's comparisons
+conformance/app/Conformance/Run/Cage.hs: ioref — owner=one cage run; lifetime=single run; serial; observation accumulators for the cage vectors
+conformance/app/Conformance/Run/CgRows.hs: ioref — owner=one row run; lifetime=single run; serial; observation accumulators for the row's comparisons
+conformance/app/Conformance/Run/CsRows.hs: ioref — owner=one row run; lifetime=single run; serial; observation accumulators for the row's comparisons
+conformance/app/Conformance/Run/Environment.hs: ioref — owner=one row session; lifetime=single session; serial; the session record carries refs for keys, worlds, holdings and failures between steps
+conformance/app/Conformance/Run/Fold.hs: ioref — owner=one fold run; lifetime=single run; serial; observation accumulators for the fold comparisons
+conformance/app/Conformance/Run/Live.hs: ioref — owner=one live run; lifetime=single run; serial; pending-comparison and start-state refs for the row under execution
+conformance/app/Conformance/Run/Node.hs: async — owner=one row session needing a node; lifetime=single session; link withAsync over the node-to-client thread, joined before the session ends; the harness must run node and client together
+conformance/app/Conformance/Run/Receipts.hs: ioref — owner=one receipt run; lifetime=single run; serial; receipt accumulators validated before rendering
+conformance/app/Conformance/Run/Replay.hs: ioref — owner=one replay run; lifetime=single run; serial; row identity and entry accumulators for the replayed evidence
+conformance/app/Conformance/Run/Temporary.hs: mvar — owner=process composition (TmpDirOwner); lifetime=process; MVar occupancy forbids nested or overlapping TMPDIR mutation; acquisition and cleanup masked
+conformance/app/Conformance/Run/Wallet.hs: ioref — owner=one row session; lifetime=single session; serial; wallet observation accumulators for the row
+conformance/coverage/evaluation/spike-app/Main.hs: ioref — owner=one evaluation-spike run; lifetime=single run; serial; fixture refs for the spike harness
+
+# ---- application host: adversarial, never linked by ordinary executables ----
+applications/open-datum/negative/src/Negative/Craft.hs: ioref — owner=one adversarial crafting run; lifetime=single run; serial; the hostile builder accumulates its own mutations; no ordinary executable links a host module
+
+# ---- old journeys: retained runners, never extended ----
+offchain/journey/Journey/Proofs.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; proof observations for the retained runner
+offchain/journey/Journey/Scenario.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; scenario state for the retained runner
+offchain/journey/li-refusals/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
+offchain/journey/lmlc/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
+offchain/journey/recovery/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
+offchain/journey/register/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
+offchain/journey/repair/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
+offchain/journey/retirement/Main.hs: ioref — owner=one journey command; lifetime=single command; serial on the command thread; run observations for the retained runner
+
+# ---- tests and harness: owned by the test run, joined before the example ends ----
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/BuildersSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/BurnSourceSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/IndependentActorsSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RecoverySpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/RegistryStateTokenSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/StateTokenFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/StateTokenSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs: async,ioref — harness; owner=the examples in this file; lifetime=single example; independent example shards joined by mapConcurrently_; trace refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Provider/Koios/FakeServer.hs: ioref — harness; owner=one fake-server session; lifetime=single example; serial; scripted-answer refs for the fake transport
+applications/open-datum/offchain/test/Singular/Provider/Koios/Scripted.hs: ioref — harness; owner=one scripted session; lifetime=single example; serial; scripted-answer refs for the fake transport
+applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; raw-chain fixture refs for assertions
+applications/open-datum/offchain/test/Singular/Registry/StubSession.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; stub-session refs for assertions
+conformance/test/Conformance/Support/CliControls.hs: ioref — harness; owner=the control examples in this file; lifetime=single example; serial; control-state refs for assertions
+conformance/test/Conformance/Support/Fixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+conformance/test/Conformance/Support/FoldHistory.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fold-history refs for assertions
+conformance/test/Conformance/Support/FoldSelection.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; selection refs for assertions
+conformance/test/Conformance/Support/ObservedTx.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; observed-tx refs for assertions
+conformance/test/Conformance/Support/RunReplay.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; replay refs for assertions
+conformance/test/Conformance/Support/Temporary.hs: async,ioref,mvar — harness; owner=the TMPDIR examples in this file; lifetime=single example; entered/blocked coordination via MVars with the worker joined by withAsync and waitCatch; environment restored and owner released before the example ends
+conformance/test/Conformance/Support/Withhold.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; withhold refs for assertions
+conformance/test/fold-budget/Conformance/FoldFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fold-budget fixture refs for assertions
+offchain/e2e-test/Singular/Registry/E2E/Fixture.hs: ioref,mvar — harness; owner=one e2e fixture session; lifetime=single example; serial registry lock via MVar with withMVar release; fixture refs for assertions
+offchain/e2e-test/Singular/Registry/E2E/Fork81Spec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs: async,ioref — harness; owner=the examples in this file; lifetime=single example; node and client run together under link withAsync, joined before the example ends; observation refs for assertions
+offchain/e2e-test/Singular/Registry/E2E/ReplayHistory.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; replay-history refs for assertions
+offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+offchain/private-facade/Singular/Registry/Private/Facade.hs: async,ioref — harness; owner=one facade session; lifetime=single session; archive and event refs serial under withAsync sessions that cancel and join their children before the next session starts; the harness must run node and client together
+offchain/private-facade/Singular/Registry/Private/Smoke.hs: mvar — harness; owner=one smoke run; lifetime=single run; serial journal lock via MVar with withMVar release
+offchain/test/Singular/CLI/CommandRunSpec.hs: async,ioref,mvar — harness; owner=the command examples in this file; lifetime=single example; entered/released/hold coordination via MVars with the command joined by withAsync and waitCatch; command refs for assertions
+offchain/test/Singular/Provider/Koios/FakeServer.hs: ioref — harness; owner=one fake-server session; lifetime=single example; serial; scripted-answer refs for the fake transport
+offchain/test/Singular/Provider/Koios/ProviderSpec.hs: ioref,mvar — harness; owner=the provider examples in this file; lifetime=single example; entered/released/hold coordination via MVars with the loopback server joined before the example ends; provider refs for assertions
+offchain/test/Singular/Provider/Koios/Scripted.hs: ioref — harness; owner=one scripted session; lifetime=single example; serial; scripted-answer refs for the fake transport
+offchain/test/Singular/Registry/ContractMemory.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; contract-memory refs for assertions
+offchain/test/Singular/Registry/ContractNode.hs: async — harness; owner=the contract examples in this file; lifetime=single example; oracle and wallet legs run under link withAsync, joined by wait before the example ends
+offchain/test/Singular/Registry/ContractSuite.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; suite refs accumulated for assertions
+offchain/test/Singular/Registry/DeploymentSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; deployment refs for assertions
+offchain/test/Singular/Registry/LineageSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; lineage refs for assertions
+offchain/test/Singular/Registry/LocalServicesCallerSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; caller refs for assertions
+offchain/test/Singular/Registry/PhaseLogSpec.hs: async,ioref — harness; owner=the examples in this file; lifetime=single example; independent example shards joined by mapConcurrently_; phase-log counts accumulated for assertions
+offchain/test/Singular/Registry/RawChainFixture.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; raw-chain fixture refs for assertions
+offchain/test/Singular/Registry/StubSession.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; stub-session refs for assertions
+offchain/test/Singular/Registry/TrieStateSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; trie-state refs for assertions
+offchain/test/Singular/Registry/TxBuilder/BookEdgeSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; booking refs for assertions
+offchain/test/Singular/Registry/TxBuilder/BootSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; boot refs for assertions
+offchain/test/Singular/Registry/TxBuilder/MeasuredBookingSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; booking refs for assertions
+offchain/test/Singular/Registry/TxBuilder/UpperSlotSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; booking refs for assertions
+offchain/test/Singular/Registry/WaitSpec.hs: async,ioref — harness; owner=the wait examples in this file; lifetime=single example; the interrupt probe runs under withAsync and is joined before the example ends; wait refs for assertions
+offchain/test/local-services-record/ConfirmationProbe.hs: ioref — harness; owner=one probe run; lifetime=single run; serial; probe refs for the recorded evidence
+offchain/test/local-services-record/ConfirmationSmoke.hs: async,ioref — harness; owner=one smoke run; lifetime=single run; HTTP confirmation driven under link withAsync, joined before the run ends; smoke refs for assertions
+offchain/test/local-services-record/Main.hs: async — harness; owner=one record run; lifetime=single run; node clients run together under withAsync, joined before the run ends
