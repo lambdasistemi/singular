@@ -80,7 +80,7 @@ the parameter values from the attacks they must deter.  Its claims
 are checked against a mechanized model written in Lean.  The model is
 being built while this draft is reviewed, so every statement carries
 either a Lean name that resolves to a proved theorem or a visible
-label saying the proof has not landed yet.  Section~10 maps each
+label saying the proof has not landed yet.  The appendix maps each
 statement to its declaration, file, line, commit and axioms.
 
 Section~2 describes the ledger surface the mechanism runs on.
@@ -103,11 +103,12 @@ registry keeps one state output holding the map from keys to leaves,
 and commits to that map with a trie root stored beside it.  We write
 $R$ for a state and $\mathrm{root}(R)$ for its root.  A reader who
 holds the root can verify any leaf presented with its path; tags on
-commitments are assumed collision free, which Section~10 records as
+commitments are assumed collision free, which the appendix records as
 an explicit assumption about the hash function in use.
 
-A request names an edge of the registry law --- booking a free key,
-updating a live key, retiring a key, witnessing a terminal key ---
+A request names an edge of the registry law --- the registry admits two,
+registering a free key and terminating a live key; every other edge
+of the full law is excluded and its request is refused at once ---
 together with the key, the owner, the destination that should receive
 the token, a deposit $D$, a bond $B$, a tip $\tau$ and the root the
 requester read at booking, written $\rho_{b}$.  The request lives in
@@ -120,7 +121,7 @@ recorded root equal the root of the state read at booking.  The
 request-tag mint must enforce exactly this admission, and every
 honesty statement quantifies only over requests that passed it.
 
-Time is measured in slots.  Each request carries its booked submission
+Time is measured in milliseconds of ledger time.  Each request carries its booked submission
 time.  Two windows govern its life.  The processing window of length
 $W_{p}$ is the time during which a processor should fold it.  The
 reclaim window of length $W_{r}$ follows, during which the owner may
@@ -636,8 +637,7 @@ registry here fixes its amounts at creation instead.  Bonded
 challenges appear in Arbitrum~\cite{Arbitrum18}.  Squatting is as
 old as decentralized names: Kalodner and coauthors draw lessons
 from Namecoin~\cite{Namecoin15}, Johnson specifies the Ethereum
-name service~\cite{EIP137}, and the prior-art record of this
-project surveys further namespace designs.  Treasury withdrawals
+name service~\cite{EIP137}.  Treasury withdrawals
 on this ledger follow the Conway governance design~\cite{CIP1694},
 which does not mention donations; the donation field the forfeit
 and the termination fee use is a separate transaction field that
