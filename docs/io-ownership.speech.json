@@ -37,7 +37,7 @@
       "pause": 400
     },
     {
-      "text": "451 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
+      "text": "455 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
       "pause": 400
     }
   ],
@@ -173,6 +173,6 @@
   ],
   "_source": {
     "file": "io-ownership.md",
-    "sha256": "4d6f49eaf5fa6e5368a4d234b2b483a0ab02296212d085dd7659aa50a776e0cf"
+    "sha256": "a63318a66a782c15a1d797118bb9478af5988972ac3717daee889691359dfe46"
   }
 }

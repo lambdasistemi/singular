@@ -32,15 +32,15 @@ classify fails the run instead of slipping through.
 
 | Category | Directories | Sources |
 | --- | --- | --- |
-| Production | the registry library, the naming sources, the local-services and Koios libraries, the command library, the application libraries | 141 |
+| Production | the registry library, the naming sources, the local-services and Koios libraries, the command library, the application libraries | 143 |
 | Tools | deployment, devnet, the recorder entry points, the archive commands, the application entry points, the `singular` entry | 31 |
 | Conformance library | the suite's programs, bindings, comparisons and receipts | 33 |
 | Conformance runner | the live row runners and their command-line controls | 40 |
 | Application host | the adversarial host package | 6 |
-| Tests and harness | every suite, fixture, fake and harness library | 181 |
+| Tests and harness | every suite, fixture, fake and harness library | 183 |
 | Old journeys | the retained registry journey executables | 19 |
 
-451 sources in total. The census establishes structural facts — which files
+455 sources in total. The census establishes structural facts — which files
 can name which effects — and never runtime behavior. That a module can name
 a mutable cell says nothing about what it does with it; what a command does
 is settled by the cage tests, the journeys and the hosted runs below, not
