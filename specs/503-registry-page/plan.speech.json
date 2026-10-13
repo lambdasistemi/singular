@@ -35,7 +35,7 @@
       "pause": 500
     },
     {
-      "text": "Writer time in minutes, about 250 in all. Cut rule: if slice 5 ends past minute 210, slice 6 moves to the second pull request below; nothing else moves.",
+      "text": "Writer time in minutes, about 250 in all. Cut rule: if slice 5 ends past minute 210, slice 6 moves to the second pull request below; nothing else moves. Applied: slice 5 ended past minute 210, so slice 6 is in the second pull request, which holds slices 6, 7 and 8.",
       "pause": 400
     }
   ],
@@ -119,6 +119,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "bd51db98757401592196c5e83c52e59fa2db00945c57c56b4973f6059537750c"
+    "sha256": "ec467dde305c945c42811597d5203ad28331d49965354c1d0288b1ca826cfdfe"
   }
 }

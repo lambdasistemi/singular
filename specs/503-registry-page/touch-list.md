@@ -44,8 +44,8 @@ that shares the file, or none.
 | `registry_two_actors.py` | 4 | edit | stage the release, read the page, compute the two rows, home check, exit status | none |
 | `registry_two_actors_status.test.py` | 4 | edit | the new rows and their removal control | none |
 | `registry_two_actors_control.test.sh` | 4 | edit, only if the wrapper's stand-in output names the rows | the wrapper judges real legs | none |
-| `assemble_onchain_release.py` | 6 | edit | stage `version.txt` beside the blueprint | none |
-| `check_release.py` | 6 | edit | version, asset name and checksum agreement | none |
+| `assemble_onchain_release.py` | 6 (second pull request) | edit | stage `version.txt` beside the blueprint | none |
+| `check_release.py` | 6 (second pull request) | edit | version, asset name and checksum agreement | none |
 
 ## Documentation
 
@@ -76,3 +76,12 @@ that shares the file, or none.
 | `tools/demo1_cli_check.sh` and its controls | 8 | edit | run `describe` from the extraction, compare with `inspect`, follow the new step | same |
 | `docs/` pages that show a create receipt, their speech and clips | 7, 8 | edit | agree with the new receipt | same |
 | `flake.nix`, `.github/workflows/registry.yml` | 8 | only if the archive job needs a new input or step; the desk is asked first | held by the bookkeeping work | same |
+
+## Added during delivery (first pull request)
+
+| path | slice | change | why | ruling |
+|---|---|---|---|---|
+| `offchain/test/Singular/CLI/CommandRunSpec.hs` | 3 | edit | one describe run through the existing rig; its extent row enumerates the commands the `Command` type names | desk, standing leave for command-extent checks |
+| `tools/cli_flags_check.sh` | 5 | edit | a six-singular-commands branch beside the five and six branches; also fixes the intermittent unknown-command report under `pipefail` (issue 616) | same leave; the desk asked for the fix |
+| `tools/cli_flags_controls.sh` | 5 | edit | the case for the new branch | same leave |
+| `docs/offchain-api-reference.md` and its speech companion | 5 | edit | the module list enumerates the library's modules; one entry for `Singular.Registry.Page` and the count | ticket owner, same class as the leave |

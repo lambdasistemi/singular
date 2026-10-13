@@ -55,8 +55,14 @@
       "pause": 500
     }
   ],
+  "added-during-delivery-first-pull-request": [
+    {
+      "text": "Added during delivery (first pull request).",
+      "pause": 500
+    }
+  ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "a1cf8cb295524ee51ee5a6c4df5254fab1d9e00e4f6c18a96d7caed8ff46f979"
+    "sha256": "b014873a0174ca6a5e6335bf6ad06d73015f7b32cf0bdde14ba78fa17201f7b5"
   }
 }

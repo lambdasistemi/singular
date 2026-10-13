@@ -59,14 +59,16 @@ fields.
 - `page-names-its-release-or-refuses`: the version label is read from `version.txt` beside the
   blueprint. A missing, unreadable or malformed `version.txt` is refused by name, with no label.
   A blueprint that derives a state script hash other than the token's is refused by name.
-- `page-limits-are-stated-not-claimed`: the page's provenance line states that it shows only
-  state fields from a checked replay and claims nothing beyond them; provider answers are labelled
-  unverified, the release label is labelled the archive's claim, and the page is labelled
-  unsigned. No limit is written by hand: the page links to the documentation of the claimed
-  version.
+- `page-limits-are-stated-not-claimed`: the page's provenance states, in fixed text, what was
+  replayed (the public history of the state token from create to the live state output, each
+  fold's rebuilt root compared with the root in its state datum), from which provider (Koios,
+  named, not its address), that the provider's answers are not verified (it serves no ledger
+  proofs and Demo 1 has no anchor), that the release label is the archive's own claim and that the
+  page is unsigned. Nothing, in the page or the documentation, is worded as verified chain state.
+  No limit is written by hand: the page links to the documentation of the claimed version.
 - `release-archive-carries-its-version`: the on-chain release archive stages `version.txt` beside
   its blueprint and the release check refuses an archive whose version, asset name or checksum
-  disagree.
+  disagree. Delivered by the second pull request: the cut rule moved it there.
 
 ## Named refusals
 
@@ -83,10 +85,12 @@ does. A success prints the page, and nothing else.
 
 ## Not in the first pull request
 
-Two lines of the issue are on the Demo 1 path and are delivered by a second pull request of this
-ticket, planned in the [plan](plan.md#second-pull-request-the-demo-1-path): `create` prints the
-working `describe` command, and `describe` runs from the extracted release archive against a node,
-with Demo 1's run page starting from the page. Three lines are accepted follow-ups, listed with
+Three lines of the issue are delivered by a second pull request of this ticket, planned in the
+[plan](plan.md#second-pull-request-the-demo-1-path): the release archive stages `version.txt`
+beside its blueprint (until then `describe` run from the extracted archive refuses by name, with no
+release label), `create` prints the working `describe` command, and `describe` runs from the
+extracted release archive against a node, with Demo 1's run page starting from the page. Three
+lines are accepted follow-ups, listed with
 their reason in the [plan](plan.md#follow-ups-outside-both-pull-requests): a block anchor for the
 last fold, documentation links verified against a published asset, and the independently derived
 action identity in the public conformance report. The issue stays open until they are delivered or
@@ -99,8 +103,8 @@ Lean source `20b35407c8a8e955dea396e59ae926b7c9e13d03`, model tree
 eight-field configuration, the leaf kinds and the root, and proves that a fold is built from the
 public view. It has no report command. The page shows only state fields from a checked replay and
 claims nothing beyond them: the desk ruled this a page with no Lean row and not a stop condition.
-The page's provenance line says exactly that, in fixed text: the facts are state fields read from
-a replay checked from create, the indexer's answers are unverified, the release label is the
-archive's own claim, and the page is unsigned. The count of active and terminal keys is the number
+The page's provenance says exactly that, in fixed text: the facts are state fields read from a
+replay of the public history, the provider is named and its answers are unverified, the release
+label is the archive's own claim, and the page is unsigned. The count of active and terminal keys is the number
 of keys whose replayed leaf is `active` or `terminal`. No Lean change, no validator change and no
 blueprint change.
