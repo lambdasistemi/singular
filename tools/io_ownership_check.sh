@@ -200,7 +200,7 @@ check_boundary "B3c" offchain/update-terminal '^import[[:space:]]+(qualified[[:s
 echo "boundary B4: no ordinary executable links a host module"
 check_boundary "B4" EMPTY '^import[[:space:]]+(qualified[[:space:]]+)?Negative\b' applications/open-datum/negative applications/open-datum/offchain/test
 echo "boundary B5: the command layer is imported only at composition (commands, applications, tests)"
-check_boundary "B5" EMPTY '^import[[:space:]]+(qualified[[:space:]]+)?Singular\.CLI\.' offchain/cli offchain/test applications
+check_boundary "B5" EMPTY '^import[[:space:]]+(qualified[[:space:]]+)?Singular\.CLI\.' offchain/cli offchain/test offchain/e2e-test applications
 
 if [ $status -ne 0 ]; then
   echo "FAIL io-ownership: see the lines above" >&2

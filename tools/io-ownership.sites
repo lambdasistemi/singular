@@ -50,6 +50,16 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.h
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs entryPoint readIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs fanOutRows mapConcurrently_ 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/TraceSpec.hs fanOutRows readIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs <decl> IORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs capabilities readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs capabilities writeIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs runVia readIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs runVia writeIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs spec newIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs spec readIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs spec writeIORef 2
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs withRigIn modifyIORef' 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/WalletShortfallSpec.hs withRigIn newIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs <decl> IORef 6
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs inputRows readIORef 4
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/WriteSpec.hs narrationRows readIORef 5
@@ -267,9 +277,6 @@ offchain/e2e-test/Singular/Registry/E2E/Fixture.hs withRecordedWrites readIORef 
 offchain/e2e-test/Singular/Registry/E2E/Fixture.hs withRecordedWrites writeIORef 1
 offchain/e2e-test/Singular/Registry/E2E/Fork81Spec.hs fork81Spec newIORef 1
 offchain/e2e-test/Singular/Registry/E2E/Fork81Spec.hs fork81Spec readIORef 1
-offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs spec newIORef 1
-offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs spec readIORef 1
-offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs spec writeIORef 1
 offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs withPrivateConnection link 1
 offchain/e2e-test/Singular/Registry/E2E/NodeSpec.hs withPrivateConnection withAsync 1
 offchain/e2e-test/Singular/Registry/E2E/ReplayHistory.hs <decl> IORef 2
