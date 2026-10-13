@@ -8072,22 +8072,29 @@
     "index": 12,
     "name": "docs-singular-node/booking-and-folding-12",
     "pause_ms": 400,
-    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-    "v": "edf28019216a"
+    "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. It pays a single output; send one self-payment afterwards so the wallet also holds an ada-only output to spend as collateral — while the foreign funding choice does not. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
+    "v": "f8f1181e8c63"
    },
    {
     "index": 13,
     "name": "docs-singular-node/booking-and-folding-13",
     "pause_ms": 400,
-    "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
-    "v": "322f6ab47dbc"
+    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+    "v": "93ebc86737cd"
    },
    {
     "index": 14,
     "name": "docs-singular-node/booking-and-folding-14",
     "pause_ms": 400,
+    "text": "The deadline the fold is judged against is the one the booking's receipt states. A fold refused for it submitted nothing, and its request stays pending.",
+    "v": "2df953909902"
+   },
+   {
+    "index": 15,
+    "name": "docs-singular-node/booking-and-folding-15",
+    "pause_ms": 400,
     "text": "What this pull request leaves out, stated plainly: one request per fold, because recovery reads one transition until the multi-request recovery ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
-    "v": "613ce85fe78b"
+    "v": "e2e702e21dfa"
    }
   ],
   "choosing-a-registrys-windows": [
