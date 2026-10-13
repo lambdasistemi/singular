@@ -69,7 +69,7 @@ import Data.List (isInfixOf, isPrefixOf, tails)
 import Data.Maybe (fromMaybe)
 import PlutusCore.Data qualified as PLC
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (ConwayEra)
+import Singular.Registry.Surface (ConwayEra)
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.TxBuilder.Internal.Identity
     ( computeScriptHash

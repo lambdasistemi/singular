@@ -23,7 +23,7 @@ import Cardano.Ledger.BaseTypes (Network)
 import Cardano.Ledger.Hashes (ScriptHash)
 
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.Registry.Ledger (Coin (..))
+import Singular.Registry.Surface (Coin (..))
 import Singular.Registry.Types
     ( OnChainRoot (..)
     , OnChainTokenState (..)

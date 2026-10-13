@@ -190,6 +190,7 @@ common live-runner
     , cardano-ledger-mary
     , singular-registry
     , singular-registry:local-services
+    , singular-registry:ledger-kernel
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-strict-containers

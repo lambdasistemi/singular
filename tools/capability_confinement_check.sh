@@ -42,9 +42,14 @@ root=${1:-.}
 allow="$root/tools/capability-confinement.allow"
 
 # Raw capability modules: importing one outside the boundary names the
-# capability. Kernel plain modules (Evidence, Ledger, NetworkTime,
-# Signing, Trace) are not confined: builders may name plain types.
-modules='Singular\.Registry\.(LedgerProvider|SessionIO|SessionServices|SessionEvidence|WalletOutputs|Wallet|ProviderSettings|ProviderTrace|TimeSource|TraceRender|WaitTypes|LocalEvaluation|NetworkTime|Capabilities)'
+# capability. In the main library the kernel plain modules are confined
+# too (R-001: main names no ledger-kernel): builders take plain types
+# from the surface. The boundary CLI modules keep their kernel imports
+# under the same allowlist.
+cap_modules='Singular\.Registry\.(LedgerProvider|SessionIO|SessionServices|SessionEvidence|WalletOutputs|Wallet|ProviderSettings|ProviderTrace|TimeSource|TraceRender|WaitTypes|LocalEvaluation|NetworkTime|Capabilities)'
+# R-001: the main library names no ledger-kernel either; plain types
+# come from the surface. Boundary CLI modules keep kernel imports.
+kernel_modules='Singular\.Registry\.(Evidence|Ledger|NetworkTime|Signing|Trace)'
 
 # Raw capability vocabulary that no fixed-query named read exposes:
 # acquisition, session fields, the generic output queries, the provider

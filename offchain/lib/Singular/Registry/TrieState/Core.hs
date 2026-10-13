@@ -18,7 +18,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import MPF.Backend.Pure (MPFInMemoryDB, emptyMPFInMemoryDB)
 import MPF.Verify (verifyAikenInclusionProof)
-import Singular.Registry.Ledger (Root (..))
+import Singular.Registry.Surface (Root (..))
 import Singular.Registry.Trie.Pure
     ( exclusionFromDb
     , membershipFromDb

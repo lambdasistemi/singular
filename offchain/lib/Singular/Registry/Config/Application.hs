@@ -34,7 +34,7 @@ import Singular.Application.OpenDatum.Script
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger (Coin)
+import Singular.Registry.Surface (Coin)
 import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash

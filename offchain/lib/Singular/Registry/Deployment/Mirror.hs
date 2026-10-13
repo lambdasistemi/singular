@@ -58,7 +58,7 @@ import System.Posix.Unistd (fileSynchronise)
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
 import Singular.Registry.Deployment.Manifest (die, hex, mirrorPathFor)
-import Singular.Registry.Ledger (AssetName (..), TokenId (..))
+import Singular.Registry.Surface (AssetName (..), TokenId (..))
 
 -- ---------------------------------------------------------
 -- The proof mirror

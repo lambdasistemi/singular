@@ -51,7 +51,7 @@ import Singular.Application.OpenDatum.Envelope
     , Envelope (..)
     , envelopeFromData
     )
-import Singular.Registry.Ledger (ConwayEra, TxIn)
+import Singular.Registry.Surface (ConwayEra, TxIn)
 import Singular.Registry.TxBuilder.Internal
     ( policyIdFromPin
     , scriptFromBytes

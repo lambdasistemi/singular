@@ -37,7 +37,7 @@ import MPF.Backend.Pure
     , emptyMPFInMemoryDB
     )
 
-import Singular.Registry.Ledger (TokenId)
+import Singular.Registry.Surface (TokenId)
 import Singular.Registry.Trie (Trie, TrieManager (..))
 import Singular.Registry.Trie.Pure
     ( mkPureTrieFromRef

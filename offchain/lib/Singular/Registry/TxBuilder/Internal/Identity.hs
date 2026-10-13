@@ -111,7 +111,7 @@ import PlutusTx.IsData.Class
     )
 import Singular.Registry.Blueprint.Params (applyRequestParams)
 import Singular.Registry.Config (CageConfig (..))
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( AssetName (..)
     , ConwayEra
     , TokenId (..)

@@ -52,7 +52,7 @@ import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Config
     ( CageConfig (..)
     )
-import Singular.Registry.Ledger
+import Singular.Registry.Surface
     ( ConwayEra
     , PParams
     , TxIn

@@ -21,7 +21,7 @@ module Singular.Registry.Trie
 
 import Data.ByteString (ByteString)
 
-import Singular.Registry.Ledger (Root, TokenId)
+import Singular.Registry.Surface (Root, TokenId)
 import Singular.Registry.Types (ProofStep)
 
 -- | Manager for per-token tries.

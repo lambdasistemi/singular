@@ -71,7 +71,7 @@ import PlutusTx.Builtins.Internal
     )
 
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Ledger (ConwayEra, Root (..))
+import Singular.Registry.Surface (ConwayEra, Root (..))
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.TrieState
     ( Incomplete (..)

@@ -79,8 +79,8 @@ import MPF.Proof.Insertion
     )
 import MPF.Verify (verifyAikenInclusionProof)
 
-import Singular.Registry.Ledger (Root (..))
 import Singular.Registry.Proof (serializeProof, toProofSteps)
+import Singular.Registry.Surface (Root (..))
 import Singular.Registry.Trie (Trie (..))
 import Singular.Registry.Types (ProofStep)
 

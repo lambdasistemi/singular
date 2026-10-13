@@ -70,7 +70,6 @@ library
     , plutus-ledger-api
     , plutus-tx
     , process
-    , singular-registry:ledger-kernel
     , singular-registry:registry-surface
     , text                              >=2.0  && <2.2
     , time
@@ -151,10 +150,6 @@ library
   -- above: Singular.Registry.Deployment re-exports the unchanged
   -- public surface from these three, each declaration beside its own
   -- concern, and the generated API reference documents them here.
-  reexported-modules:
-    , Singular.Registry.Ledger
-    , Singular.Registry.Evidence
-    , Singular.Registry.Signing
 
 -- Common derived services are public and independent of node transport.
 library ledger-kernel
