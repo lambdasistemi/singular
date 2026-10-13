@@ -56,7 +56,7 @@ if hlint "$tmp/Hinted.hs" >/dev/null 2>&1; then
 fi
 
 # Aggregate jobs: the two stable check names. Each aggregate needs exactly
-# the discovery and the matrix job of its family, carries `if: always()`,
+# the discovery and the matrix job of its family, carries `if: ${{ !cancelled() }}`,
 # and passes exactly when every needed result is success (registry.yml
 # precedent: `e2e` and `demo1-attach`). yq-go comes from the lint app's
 # runtimeInputs. The result guard executes the aggregate's own run script
@@ -77,9 +77,10 @@ aggregate_needs() {
 }
 
 aggregate_if() {
-  # One guard: the job carries `if: always()`.
+  # One guard: the job carries `if: ${{ !cancelled() }}`, so a cancelled run
+  # skips it instead of failing it.
   local file="$1" agg="$2"
-  [ "$(yq eval ".jobs.\"$agg\".if" "$file")" = "always()" ] || return 1
+  [ "$(yq eval ".jobs.\"$agg\".if" "$file")" = '${{ !cancelled() }}' ] || return 1
 }
 
 aggregate_result() {
