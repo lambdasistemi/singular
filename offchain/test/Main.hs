@@ -9,6 +9,7 @@ import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.CreateFundingSpec qualified
 import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
+import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -170,6 +171,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.FoldRules" [Cli])
         Singular.CLI.FoldRulesSpec.spec
+    describe
+        (tagged "Singular.CLI.JournalTransitions" [Cli])
+        Singular.CLI.JournalTransitionsSpec.spec
     describe
         (tagged "Singular.CLI.CommandRun" [Cli])
         Singular.CLI.CommandRunSpec.spec

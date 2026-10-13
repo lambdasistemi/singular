@@ -904,6 +904,7 @@ journal = describe "the journal of a write" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTransitions = Nothing
             , journalTime = Nothing
             }
 
@@ -1048,6 +1049,7 @@ recovery = describe "recovery after an uncertain submission" $ do
             , journalEdge = Nothing
             , journalRootBefore = Nothing
             , journalRootAfter = Nothing
+            , journalTransitions = Nothing
             , journalTime = Nothing
             }
 
@@ -1200,6 +1202,7 @@ jline t e =
         , journalEdge = Nothing
         , journalRootBefore = Nothing
         , journalRootAfter = Nothing
+        , journalTransitions = Nothing
         , journalTime = Nothing
         }
 

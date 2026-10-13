@@ -107,7 +107,7 @@ import Singular.CLI.Outlay
     , outlayTotal
     )
 import Singular.CLI.Plan (outlayReport, refuseOver)
-import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Receipt (OutcomeClass (..), chainTransitions)
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
 import Singular.CLI.Trace
@@ -431,16 +431,22 @@ foldPending app at FoldSpec{..} = do
             "fold"
             ["state", "requests"]
             ( \p ->
-                Expectation
-                    (Just (plKey p))
-                    ( case plKind p of
+                let expectAfter = case plKind p of
                         FoldInsertion ->
                             "active:" <> maybe "" (hexT . datumHash) (plDatum p)
                         FoldTermination -> "terminal"
-                    )
-                    (Just (plEdge p))
-                    (Just rootBefore)
-                    (Just (plRootAfter p))
+                in  FoldExpectation
+                        ( chainTransitions
+                            (hexT rootBefore)
+                            ( ( txInText (plRequest p)
+                              , hexT (plKey p)
+                              , plEdge p
+                              , expectAfter
+                              , hexT (plRootAfter p)
+                              )
+                                :| []
+                            )
+                        )
             )
             ( \building v -> do
                 pendingRaw <-

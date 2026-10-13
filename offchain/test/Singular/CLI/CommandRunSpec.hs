@@ -89,7 +89,7 @@ import GHC.Generics
     , conName
     , (:+:)
     )
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import System.Directory
     ( createDirectory
     , doesDirectoryExist
@@ -123,16 +123,26 @@ import System.Posix.Types (Fd)
 import System.Timeout (timeout)
 import Test.Hspec
 
+import Cardano.Ledger.Address (serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out
+    ( addrTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    )
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
-import Cardano.Ledger.Mary.Value (AssetName (..), MaryValue (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Word (Word64)
 
+import PlutusCore.Data qualified as PLC
 import Singular.CLI (runCommand)
 import Singular.CLI.Command
     ( CLIError (..)
@@ -140,6 +150,7 @@ import Singular.CLI.Command
     , parseCommand
     , renderCLIError
     )
+import Singular.CLI.Receipt (FoldTransition (..), JournalEntry (..))
 import Singular.CLI.Registry
     ( economics
     , loadRelease
@@ -156,6 +167,7 @@ import Singular.Registry.Application
     , neutralApplication
     )
 import Singular.Registry.Capabilities (Capabilities (..))
+import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence
@@ -185,11 +197,18 @@ import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.Trace (ReadEvent (Evaluated))
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Internal
-    ( cageAddrFromCfg
+    ( addrKeyHashBytes
+    , approvalDestination
+    , approvalName
+    , cageAddrFromCfg
     , cagePolicyIdFromCfg
     , computeScriptHash
+    , currentPosixMs
     , extractCageDatum
     , findStateUtxo
+    , mkInlineDatum
+    , mkRequestDatumWith
+    , policyIdFromPin
     , requestAddrFromCfg
     , scriptHashBytes
     )
@@ -214,6 +233,7 @@ spec =
         >> permanentRecognition
         >> applicationPolicyRows
         >> confirmationLifetime
+        >> journalTransitionsRow
 
 confirmationLifetime :: Spec
 confirmationLifetime = describe "CLI confirmation lifetime" $ do
@@ -2163,3 +2183,117 @@ mechanicOfItsTransaction = \case
 -- | Whether a receipt's outcome is a refusal: its stream carries exactly one refusal event.
 refusalOutcome :: Maybe Text -> Bool
 refusalOutcome = (`elem` map Just ["client-refusal", "ledger-refusal"])
+
+-- ---------------------------------------------------------
+-- The fold's journal line lists its one transition
+-- ---------------------------------------------------------
+
+{- | A fold of one writes its list of one: after a fold command the
+prepared line's list has one entry equal to the scalars.
+-}
+journalTransitionsRow :: Spec
+journalTransitionsRow = describe "a fold's journal line lists its transition" $ do
+    it "writes one transition equal to the scalars" $ withRig $ \rig -> do
+        seed <- fundSeed rig
+        create <-
+            run
+                rig
+                "create"
+                (["registry", "create", "--seed", seed] <> policyArgs)
+        outcomeOf (runReceipt create) `shouldBe` Just "success"
+        t1 <- tokenOf create
+        reqIn <- plantFoldableRequest rig t1 seed
+        folded <-
+            run rig "fold journal" (["registry", "fold"] <> tokenArgs t1)
+        outcomeOf (runReceipt folded) `shouldBe` Just "success"
+        entries <- foldPreparedEntries rig "registry"
+        case entries of
+            [entry] -> do
+                case journalTransitions entry of
+                    Just [transition] -> do
+                        transitionRequest transition `shouldBe` renderOutRef reqIn
+                        Just (transitionKey transition) `shouldBe` journalKey entry
+                        Just (transitionEdge transition) `shouldBe` journalEdge entry
+                        Just (transitionExpect transition) `shouldBe` journalExpect entry
+                        Just (transitionRootBefore transition)
+                            `shouldBe` journalRootBefore entry
+                        Just (transitionRootAfter transition)
+                            `shouldBe` journalRootAfter entry
+                    other ->
+                        expectationFailure ("expected one transition, found: " <> show other)
+            other ->
+                expectationFailure
+                    ("expected one prepared fold line, found: " <> show (length other))
+
+{- | Plant one insertion request a neutral fold settles: its destination
+carries a datum at the wallet address, and its output carries the
+approval asset the selection expects, so the seven checks pass.
+-}
+plantFoldableRequest :: Rig -> String -> String -> IO TxIn
+plantFoldableRequest rig tokenStr seedStr = do
+    seedIn <-
+        either
+            (fail . ("plantFoldableRequest seed: " <>))
+            pure
+            (parseOutRef (T.pack seedStr))
+    tid <- parseTokenId tokenStr
+    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
+    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
+    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
+        reqAddr = requestAddrFromCfg cfg tid Testnet
+        walletAt = walletAddr (rigWallet rig)
+        keyBytes = "fold-journal-key" :: BS.ByteString
+        edge = edgeInsertActive
+    now <- currentPosixMs
+    let destBytes = serialiseAddr walletAt
+        carried = PLC.Constr 0 [PLC.B "journal"]
+        dest = (destBytes, Just carried)
+        ownerBytes = addrKeyHashBytes walletAt
+        expectedName = approvalName edge keyBytes ownerBytes (approvalDestination dest)
+        pinned = cfgApplicationPolicy cfg
+        approvalAsset =
+            MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin pinned)
+                    (Map.singleton (AssetName (SBS.toShort expectedName)) 1)
+                )
+        deposit = 4_000_000 :: Integer
+        tip = 1_000_000 :: Integer
+        bond = deposit + tip
+        datum = mkRequestDatumWith tid walletAt keyBytes edge deposit now dest
+        reqOut =
+            mkBasicTxOut reqAddr (MaryValue (Coin bond) approvalAsset)
+                & datumTxOutL .~ mkInlineDatum datum
+        reqIn =
+            either
+                (error . ("plantFoldableRequest outref: " <>))
+                id
+                (parseOutRef (T.pack (replicate 64 'e' <> "#0")))
+    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
+    pure reqIn
+
+-- | Every prepared fold line in a registry's journal.
+foldPreparedEntries :: Rig -> FilePath -> IO [JournalEntry]
+foldPreparedEntries rig registry = do
+    names <- listDirectoryRecursive (rigDir rig </> registry)
+    let journals = [p | p <- names, takeFileName p == "journal.jsonl"]
+    journalRel <- case journals of
+        [found] -> pure found
+        _ ->
+            fail
+                ( "expected exactly one journal under "
+                    <> registry
+                    <> ", found "
+                    <> show (length journals)
+                )
+    raw <- BS.readFile (rigDir rig </> registry </> journalRel)
+    entries <-
+        mapM
+            (maybe (fail "a journal line is not JSON") pure . Aeson.decodeStrict)
+            (BC.lines raw)
+    pure
+        [ e
+        | e <- entries
+        , journalStep e == "fold"
+        , journalEvent e == "prepared"
+        ]
