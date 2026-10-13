@@ -141,7 +141,7 @@ setup_fail() {
   echo "recovery: SETUP: $*" >&2
   exit 3
 }
-known_parts="accepting lost-answer killed cross-wallet never-sent whole-journal rollback trie-capability"
+known_parts="accepting lost-answer killed two-requests cross-wallet never-sent whole-journal rollback trie-capability"
 for requested in ${CLI_RECOVERY_PARTS:-}; do
   # cross-wallet:<hold>[:lost-answer] tokens are validated against the
   # source census below, before any node starts.
@@ -523,6 +523,8 @@ since() { tail -c +"$(($(stat -c %s "$snaps/$1.jsonl") + 1))" "$journal" | jq -s
 # The journal's prepared line of TX.
 prepared_of() { jq -c --arg t "$1" 'select(.journalTxId == $t and .journalEvent == "prepared")' "$journal"; }
 prepared_once() { [ "$(jq -s --arg t "$1" '[.[] | select(.journalTxId == $t and .journalEvent == "prepared")] | length' "$journal")" = 1 ]; }
+# Each send attempt writes exactly one of the three send events.
+sent_once() { [ "$(jq -s --arg t "$1" '[.[] | select(.journalTxId == $t and (.journalEvent == "submitted" or .journalEvent == "submit-unknown" or .journalEvent == "rejected"))] | length' "$journal")" = 1 ]; }
 events_of() { jq -s -c --arg t "$1" '[.[] | select(.journalTxId == $t) | .journalEvent]' "$journal"; }
 event_count() {
   jq -s --arg t "$1" --arg e "$2" '[.[] | select(.journalTxId == $t and .journalEvent == $e)] | length' "$journal"
@@ -843,6 +845,149 @@ if part killed; then
   run inspect-g inspect --key-hex 6b10 "${common[@]}" "${node[@]}"
   clause "inspect reads the killed insert's key active" is_equal "$(field inspect-g '.outcome + "/" + .leaf')" success/active
   clause "the journal was only appended to and no body changed" appended_only s5
+
+# ------------------------------------------------------------------
+fi
+if part two-requests; then
+  # an interrupted fold of two requests, booked by two wallets
+  # ------------------------------------------------------------------
+  # Alice books one insertion and bob books another, each booking alone
+  # (insert without --fold books and stops). Bob folds both pending in one
+  # standalone fold, which names no request; he booked one of the two, not
+  # both. The fold is interrupted twice, each time with two fresh bookings:
+  # once with its answer lost, once killed before the observation. The next
+  # ordinary command recovers, every included request reconciled once,
+  # nothing sent twice.
+  control="two requests, lost answer"
+  journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+  snap two-a-alice
+  run two-book-a1 insert --key-hex 6b20 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  clause "alice's booking of 6b20 succeeds" outcome_is two-book-a1 success
+  clause "alice's booking names her as the requester" is_equal "$(field two-book-a1 .requester)" "$alicekey"
+  journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+  run two-book-a2 insert --key-hex 6b21 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}"
+  clause "bob's booking of 6b21 succeeds" outcome_is two-book-a2 success
+  clause "bob's booking names him as the requester" is_equal "$(field two-book-a2 .requester)" "$bobkey"
+  book_a1="$(field two-book-a1 .request)"
+  book_a2="$(field two-book-a2 .request)"
+  clause "the two bookings name distinct requests" bash -c '[ "$1" != "$2" ] && [ -n "$1" ] && [ -n "$2" ]' _ "$book_a1" "$book_a2"
+  # Bob's fold journals to his partition.
+  journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+  snap two-a
+  # Held right after the fold is sent, before its answer is journalled.
+  at_two_send() {
+    two_sent_tx="$(fold_since two-a)"
+    two_sent_last="$(last_event "$two_sent_tx")"
+    two_sent_bound=1
+    body_bound "$two_sent_tx" && two_sent_bound=0
+  }
+  two_sent_tx="" two_sent_last="" two_sent_bound=1 two_reached=0
+  export SINGULAR_HARNESS_DROP_ANSWER=fold SINGULAR_HARNESS_HOLD_STEP=fold
+  paused two-fold-a SINGULAR_HARNESS_HOLD_AFTER_SEND at_two_send fold \
+    "${common[@]}" "${node[@]}" "${bob[@]}" || two_reached=1
+  unset SINGULAR_HARNESS_DROP_ANSWER SINGULAR_HARNESS_HOLD_STEP
+  lost_two="$(submission_tx two-fold-a fold)"
+  clause "the two-request fold was held once sent, before the answer" is_equal "$two_reached" 0
+  clause "at that moment the fold's prepared line was its last phase" is_equal "$two_sent_last" prepared
+  clause "at that moment the fold's body was saved, bound by hash" is_equal "$two_sent_bound" 0
+  clause "the held fold is the one the receipt names" is_equal "$two_sent_tx" "$lost_two"
+  clause "the fold stops partial (exit 15)" exit_is two-fold-a 15
+  clause "its receipt names the fold's case unknown" is_equal "$(submission_case two-fold-a fold)" unknown
+  clause "the fold's last journalled phase is submit-unknown" is_equal "$(last_event "$lost_two")" submit-unknown
+  clause "the interrupted fold's prepared line lists two transitions" \
+    is_equal "$(prepared_of "$lost_two" | jq -r '.journalTransitions | length')" 2
+  clause "the two transitions chain from the root before to the root after" \
+    is_equal "$(prepared_of "$lost_two" | jq -r '.journalTransitions[1].transitionRootBefore == .journalTransitions[0].transitionRootAfter')" true
+  clause "the scalars mirror the first and the last transition" \
+    is_equal "$(prepared_of "$lost_two" | jq -r '.journalKey == .journalTransitions[0].transitionKey and .journalEdge == .journalTransitions[0].transitionEdge and .journalExpect == .journalTransitions[0].transitionExpect and .journalRootBefore == .journalTransitions[0].transitionRootBefore and .journalRootAfter == .journalTransitions[1].transitionRootAfter')" true
+  clause "the transitions carry both booked requests" \
+    is_equal "$(prepared_of "$lost_two" | jq -r --arg a "$book_a1" --arg b "$book_a2" '([.journalTransitions[].transitionRequest] | sort) == ([$a, $b] | sort)')" true
+  # The next ordinary writes. While the fold is not yet on chain each is
+  # refused before building anything; once it is, it reconciles and proceeds.
+  two_refusals_clean=0
+  for i in $(seq 1 40); do
+    snap "two-a-try-$i"
+    run two-recover-a insert --fold --key-hex 6b22 --payload "$work/insert-payload.json" \
+      "${common[@]}" "${node[@]}" "${bob[@]}"
+    outcome_is two-recover-a partial || break
+    if ! journal_same "two-a-try-$i" || ! trie_files_absent \
+      || [ "$(field two-recover-a .unresolved.tx)" != "$lost_two" ]; then
+      two_refusals_clean=1
+    fi
+    sleep 2
+  done
+  clause "every write refused while the fold was unknown named it and moved nothing" is_equal "$two_refusals_clean" 0
+  clause "the next write reconciles and succeeds" outcome_is two-recover-a success
+  clause "it observed the lost two-request fold" is_equal "$(field two-recover-a "[.reconciled.observed[]? | select(. == \"$lost_two\")] | length")" 1
+  clause "the lost fold was prepared once" prepared_once "$lost_two"
+  clause "the lost fold was sent once and never sent again" sent_once "$lost_two"
+  clause "the lost fold is observed exactly once in the journal" is_equal "$(event_count "$lost_two" observed)" 1
+  clause "the lost fold's observation was journalled by the reconciling insert" \
+    is_equal "$(since two-a | jq -r --arg t "$lost_two" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" insert
+  clause "the fold started from the root before the lost answer" is_equal "$(root_before_of "$lost_two")" "$(cat "$snaps/two-a.root")"
+  clause "the next fold started from the lost fold's root after" \
+    is_equal "$(root_before_of "$(submission_tx two-recover-a fold)")" "$(root_after_of "$lost_two")"
+  run inspect-two-a1 inspect --key-hex 6b20 "${common[@]}" "${node[@]}"
+  clause "inspect reads the lost fold's first key 6b20 active" is_equal "$(field inspect-two-a1 '.outcome + "/" + .leaf')" success/active
+  run inspect-two-a2 inspect --key-hex 6b21 "${common[@]}" "${node[@]}"
+  clause "inspect reads the lost fold's second key 6b21 active" is_equal "$(field inspect-two-a2 '.outcome + "/" + .leaf')" success/active
+  clause "the journal was only appended to and no body changed" appended_only two-a
+  journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+  clause "alice's journal was only appended to and no body changed" appended_only two-a-alice
+
+  # ------------------------------------------------------------------
+  # killed before the observation
+  # ------------------------------------------------------------------
+  control="two requests, killed before the observation"
+  journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+  snap two-b-alice
+  run two-book-b1 insert --key-hex 6b30 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${alice[@]}"
+  clause "alice's booking of 6b30 succeeds" outcome_is two-book-b1 success
+  journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+  run two-book-b2 insert --key-hex 6b31 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}"
+  clause "bob's booking of 6b31 succeeds" outcome_is two-book-b2 success
+  book_b1="$(field two-book-b1 .request)"
+  book_b2="$(field two-book-b2 .request)"
+  clause "the two fresh bookings name distinct requests" bash -c '[ "$1" != "$2" ] && [ -n "$1" ] && [ -n "$2" ]' _ "$book_b1" "$book_b2"
+  journal="$(managed_journal "$reg" "$state_token" "$bobkey")"
+  snap two-b
+  two_b_reached=0
+  export SINGULAR_HARNESS_HOLD_STEP=fold
+  held two-fold-b SINGULAR_HARNESS_HOLD_BEFORE_OBSERVED fold \
+    "${common[@]}" "${node[@]}" "${bob[@]}" || two_b_reached=1
+  unset SINGULAR_HARNESS_HOLD_STEP
+  clause "the two-request fold reached the hold before observation" is_equal "$two_b_reached" 0
+  killed_two="$(fold_since two-b)"
+  clause "the fold's last journalled phase is confirmed" is_equal "$(last_event "$killed_two")" confirmed
+  snap two-b-killed
+  clause "the killed fold's prepared line lists two transitions" \
+    is_equal "$(prepared_of "$killed_two" | jq -r '.journalTransitions | length')" 2
+  clause "the killed fold's transitions chain from the root before to the root after" \
+    is_equal "$(prepared_of "$killed_two" | jq -r '.journalTransitions[1].transitionRootBefore == .journalTransitions[0].transitionRootAfter')" true
+  clause "the killed fold's scalars mirror the first and the last transition" \
+    is_equal "$(prepared_of "$killed_two" | jq -r '.journalKey == .journalTransitions[0].transitionKey and .journalEdge == .journalTransitions[0].transitionEdge and .journalExpect == .journalTransitions[0].transitionExpect and .journalRootBefore == .journalTransitions[0].transitionRootBefore and .journalRootAfter == .journalTransitions[1].transitionRootAfter')" true
+  clause "the killed fold's transitions carry both fresh requests" \
+    is_equal "$(prepared_of "$killed_two" | jq -r --arg a "$book_b1" --arg b "$book_b2" '([.journalTransitions[].transitionRequest] | sort) == ([$a, $b] | sort)')" true
+  run two-recover-b insert --fold --key-hex 6b32 --payload "$work/insert-payload.json" \
+    "${common[@]}" "${node[@]}" "${bob[@]}"
+  clause "the next write reconciles and succeeds" outcome_is two-recover-b success
+  clause "the killed fold is observed exactly once, by the insert" \
+    is_equal "$(since two-b-killed | jq -r --arg t "$killed_two" '[.[] | select(.journalTxId == $t and .journalEvent == "observed") | .journalCommand] | join(",")')" insert
+  clause "the killed fold was prepared once" prepared_once "$killed_two"
+  clause "the killed fold was sent once and never sent again" sent_once "$killed_two"
+  clause "the next fold started from the killed fold's root after" \
+    is_equal "$(root_before_of "$(submission_tx two-recover-b fold)")" "$(root_after_of "$killed_two")"
+  run inspect-two-b1 inspect --key-hex 6b30 "${common[@]}" "${node[@]}"
+  clause "inspect reads the killed fold's first key 6b30 active" is_equal "$(field inspect-two-b1 '.outcome + "/" + .leaf')" success/active
+  run inspect-two-b2 inspect --key-hex 6b31 "${common[@]}" "${node[@]}"
+  clause "inspect reads the killed fold's second key 6b31 active" is_equal "$(field inspect-two-b2 '.outcome + "/" + .leaf')" success/active
+  clause "the journal was only appended to and no body changed" appended_only two-b
+  journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
+  clause "alice's journal was only appended to and no body changed" appended_only two-b-alice
 
 # ------------------------------------------------------------------
 fi
