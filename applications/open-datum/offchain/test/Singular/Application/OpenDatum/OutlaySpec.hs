@@ -45,14 +45,14 @@ import Cardano.Ledger.Api.Tx.Out
     , mkBasicTxOut
     , referenceScriptTxOutL
     )
-import Cardano.Ledger.BaseTypes (StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Coin
     ( Coin (..)
     , CoinPerByte (..)
     , CompactForm (CompactCoin)
     )
 import Cardano.Ledger.Mary.Value (MaryValue (..))
-import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -84,6 +84,16 @@ bookingWith fee bond =
 refIn :: TxIn
 refIn =
     either error id (parseOutRef (T.pack (replicate 64 '8' <> "#0")))
+
+-- | A wallet holding these lovelace amounts in as many outputs.
+walletOf :: [Integer] -> [(TxIn, TxOut ConwayEra)]
+walletOf amounts =
+    [ (TxIn txid (TxIx ix), mkBasicTxOut payer coin)
+    | (ix, c) <- zip [0 ..] amounts
+    , let coin = MaryValue (Coin c) mempty
+    ]
+  where
+    TxIn txid _ = refIn
 
 -- | An output carrying a published script of realistic size.
 published :: TxOut ConwayEra
@@ -184,6 +194,34 @@ spec = describe "a command's outlay against an approved allowance (#300)" $ do
                 `shouldBe` 1_500_000
             collateralOf preprodParams (bookingWith 1_000_001 3_000_000)
                 `shouldBe` 1_500_002
+    it "holds nothing back when the wallet covers what is required (#526)" $ do
+        let outs = walletOf [10_000_000, 10_000_000]
+            held = 10_000_000 + 10_000_000
+        walletShortfall outs held `shouldBe` Nothing
+        walletShortfall outs (held - 1) `shouldBe` Nothing
+        walletShortfall outs 1 `shouldBe` Nothing
+    it
+        "names what the wallet lacks, to the lovelace, at the boundary (#526)"
+        $ do
+            let outs = walletOf [10_000_000, 10_000_000]
+                held = 10_000_000 + 10_000_000
+                fee = 10_000_000
+                bond = 8_000_000
+                bound = 5_000_000
+                required = fee + bond + bound
+            -- Well under: the shortfall is the arithmetic difference.
+            walletShortfall outs required
+                `shouldBe` Just (held, required - held)
+            -- One lovelace under: still refused, shortfall of one.
+            walletShortfall outs (held + 1) `shouldBe` Just (held, 1)
+            -- An empty wallet holds nothing and lacks all of it.
+            walletShortfall [] required `shouldBe` Just (0, required)
+    it "totals every output the wallet holds, over more than one (#526)" $ do
+        let outs = walletOf [1_000_000, 2_000_000, 3_000_000]
+            held = 1_000_000 + 2_000_000 + 3_000_000
+        walletShortfall outs (held + 500_000)
+            `shouldBe` Just (held, 500_000)
+        walletShortfall outs held `shouldBe` Nothing
   where
     fees = chooseInteger (155_381, 4_000_000) :: Gen Integer
     bonds = chooseInteger (2_000_000, 8_000_000) :: Gen Integer

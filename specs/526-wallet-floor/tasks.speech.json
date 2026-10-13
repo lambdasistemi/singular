@@ -1,0 +1,26 @@
+{
+  "a-write-asks-the-wallet-for-what-it-costs-tasks": [
+    {
+      "text": "A write asks the wallet for what it costs: tasks.",
+      "pause": 500
+    },
+    {
+      "text": "Story, requirements and limits are in the spec. Decisions and the gate are in the plan. The files this work may touch are in the touch list.",
+      "pause": 500
+    }
+  ],
+  "slice-wallet-judged-on-the-measured-outlay": [
+    {
+      "text": "Slice: wallet judged on the measured outlay.",
+      "pause": 500
+    },
+    {
+      "text": "Opening a write session applies no floor. One pure judgement of a wallet against a required amount. Insert and terminate refuse a wallet under the fold reserve before building and under the measured outlay before signing. Insert, terminate and update refuse an empty wallet before building. The story's wallet previews and writes. The underfunded refusal names the wallet, equal in preview and write. The documentation states the rule. The narrowed gate passes on the final head.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "f6e41dd07a734ff4a008bcabf3637e55b31287496c6456c129a2678a135fa658"
+  }
+}

@@ -56,14 +56,13 @@ import Cardano.Node.Client.N2C.LocalStateQuery
     )
 import Cardano.Node.Client.N2C.Types (LSQChannel)
 import Control.Concurrent.Async (link, withAsync)
-import Control.Exception (ErrorCall (..), finally, throwIO, try)
+import Control.Exception (finally, throwIO, try)
 import Control.Monad (forM_, unless)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
-import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
@@ -89,6 +88,9 @@ import Ouroboros.Network.Protocol.Handshake.Type
     ( HandshakeProtocolError (HandshakeError)
     , RefuseReason (Refused)
     )
+import Singular.CLI.Plan (faucetStep, resolveFunding)
+import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Session (CommandFailure (..))
 import Singular.Provider.Koios.Wire (txIdHex)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.E2E.Fixture
@@ -196,20 +198,24 @@ spec = aroundAll withSource $ do
                                 (map fst spent)
                                 (elem (TxIn (txIdTx (signedTx spend)) (TxIx 0)))
         it
-            "refuses an unfunded wallet before any transaction, naming the address, the amounts and the faucet"
-            $ \(settings, _, _, _) -> withSkeyFile unfundedKey $ \key -> do
+            "an empty wallet is refused before any transaction, naming the wallet and the faucet step"
+            $ \(settings, _, _, caps) -> withSkeyFile unfundedKey $ \key -> do
                 wallet <- loadWallet (providerMagic settings) key
-                ran <- newIORef False
+                outputs <- Services.withLatest (capReads caps) $ \session ->
+                    Services.outputsAt session (walletAddr wallet)
+                outputs `shouldSatisfy` null
                 result <-
-                    try @ErrorCall
-                        (withRecordedWrites settings wallet (\_ -> writeIORef ran True))
-                shouldReturn (readIORef ran) False
+                    try @CommandFailure
+                        (resolveFunding (walletAddr wallet) outputs Nothing)
                 case result of
-                    Right () -> fail "a run started with an unfunded caller wallet"
-                    Left (ErrorCall message) -> do
-                        shouldSatisfy message (isInfixOf (bech32Address (walletAddr wallet)))
-                        shouldSatisfy message (isInfixOf "faucet")
-                        shouldSatisfy message (isInfixOf "100000000 lovelace")
+                    Right _ -> fail "an empty wallet funded a transaction"
+                    Left (CommandFailure cls reason fields) -> do
+                        cls `shouldBe` ClientRefusal
+                        reason `shouldSatisfy` isInfixOf (bech32Address (walletAddr wallet))
+                        reason `shouldSatisfy` isInfixOf faucetStep
+                        lookup "held" fields `shouldBe` Just (toJSON (0 :: Integer))
+                        lookup "wallet" fields
+                            `shouldBe` Just (toJSON (Text.pack (bech32Address (walletAddr wallet))))
         it
             "confirmation requests the exact transaction output through the generic capability, then compares full readback to the independent ledger"
             $ \(_, socket, wallet, caps) -> do

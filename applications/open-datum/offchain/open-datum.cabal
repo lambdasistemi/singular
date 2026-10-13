@@ -112,6 +112,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.RegistryStateTokenSpec
     Singular.Application.OpenDatum.BurnSourceSpec
     Singular.Application.OpenDatum.OutlaySpec
+    Singular.Application.OpenDatum.WalletShortfallSpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.FakeServer
     Singular.Provider.Koios.Scripted
@@ -162,6 +163,7 @@ test-suite open-datum-tests
     , singular-registry
     , singular-registry:local-services
     , singular-registry:registry-cli
+    , singular-registry:koios-http
     , temporary
     , wai
     , warp

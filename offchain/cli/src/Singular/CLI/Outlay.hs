@@ -26,6 +26,8 @@ module Singular.CLI.Outlay
     , withinAllowance
     , collateralOf
     , collateralOfFee
+    , walletHeld
+    , walletShortfall
     ) where
 
 import Data.Foldable (toList)
@@ -127,6 +129,22 @@ bookingSpent booking =
 -- | Whether an outlay is inside an approved allowance; no allowance approves any.
 withinAllowance :: Maybe Integer -> Outlay -> Bool
 withinAllowance allowance o = maybe True (outlayTotal o <=) allowance
+
+-- | What the wallet holds in total lovelace, over its outputs.
+walletHeld :: [(TxIn, TxOut ConwayEra)] -> Integer
+walletHeld utxos = sum [c | (_, o) <- utxos, let Coin c = o ^. coinTxOutL]
+
+{- | What the wallet lacks against a required amount: nothing
+when its total lovelace holds at least that, else what it
+holds and what it lacks, to the lovelace.
+-}
+walletShortfall
+    :: [(TxIn, TxOut ConwayEra)]
+    -> Integer
+    -> Maybe (Integer, Integer)
+walletShortfall utxos required =
+    let held = walletHeld utxos
+    in  if held < required then Just (held, required - held) else Nothing
 
 feeOf :: ConwayTx -> Integer
 feeOf tx = let Coin f = tx ^. bodyTxL . feeTxBodyL in f

@@ -19,6 +19,7 @@ import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
 import Singular.Application.OpenDatum.TraceSpec qualified
+import Singular.Application.OpenDatum.WalletShortfallSpec qualified
 import Singular.Application.OpenDatum.WriteSpec qualified
 import Test.Hspec (describe, hspec)
 import Test.Tags (Area (..), tagged)
@@ -31,6 +32,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.Outlay" [Cli])
         Singular.Application.OpenDatum.OutlaySpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.WalletShortfall" [Cli])
+        Singular.Application.OpenDatum.WalletShortfallSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Application" [Application])
         Singular.Application.OpenDatum.ApplicationSpec.spec

@@ -1218,6 +1218,7 @@ test-suite e2e-tests
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
+    , singular-registry:registry-cli
     , temporary
     , text
     , time

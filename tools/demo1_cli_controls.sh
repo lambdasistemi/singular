@@ -68,9 +68,9 @@ first_receipt() {
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/wallet.skey"
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/stranger.skey"
 # One 5 ada output beside twenty-four 4 ada outputs: 101 ada in all, so
-# the write session's 100 ada funding floor and its 5 ada collateral
-# input pass, while the seed and the largest output beside it cannot
-# fund the boot. The story's underfunded create uses this wallet.
+# the wallet covers what its operations cost, while the seed and the
+# largest output beside it cannot fund the boot. The story's underfunded
+# create uses this wallet.
 od -An -tx1 -N32 /dev/urandom | tr -d ' \n' >"$work/underfunded.skey"
 
 # Stop the node before touching the tree. The caller still reads receipts
