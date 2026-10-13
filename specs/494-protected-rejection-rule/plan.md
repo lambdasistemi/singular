@@ -128,6 +128,12 @@ accepts it, and the row stays published as unmet with a tripwire that ticket 495
 merges alone, ahead of ticket 495. Options A (hold the push until 495) and C are not taken. Slice
 three's direction and the last gate rows follow from this decision.
 
+## After slice four: the economic model and the paper
+
+Operator order of 13 October 2026: the model states the whole economic design and a formal paper explains it. The [design](economics-design.md)
+records the amounts and the attacks; the [economics plan](economics-plan.md) lists the theorems, the ones expected to fail, six more slices
+and the paper. The desk reviews that plan before any of it is built.
+
 ## Budget and ceilings
 
 | Item | Ceiling |

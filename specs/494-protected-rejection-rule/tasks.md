@@ -95,6 +95,55 @@ Terminal condition as slice one. The slice follows decision B and is independent
 
 Terminal condition as slice one.
 
+## Slices five to ten: the economic model and the paper
+
+Planned in the [economics plan](economics-plan.md); started only after the desk reviews that plan and after slice four.
+
+### Slice five: parameters and fields
+
+- [ ] `registry-parameters` — the bond, the processor split and the termination fee exist in the registry configuration, default to zero in old input and are preserved by every fold.
+- [ ] `request-economic-fields` — a request carries its bond, the termination fee it carries and the root it recorded at booking, each serialized and zero when absent.
+- [ ] `donation-field` — a transaction carries a treasury donation amount, zero when absent.
+- [ ] `protocol-eight` — the driver protocol version moves and the surface digest follows.
+- [ ] `regenerate-after-slice-five` — corpora, register and digests, simulator mirror, application corpus, coverage record and the restatement table follow.
+- [ ] `amendment-economics` — a new constitution version states the economic fields in the translation.
+
+### Slice six: outcomes and transfers
+
+- [ ] `outcomes-and-transfers` — the five outcomes and the transfer table exist as definitions.
+- [ ] `bond-returned-without-fault` — a fold, a retraction and a rejection without proof or on expiry owe the owner the bond.
+- [ ] `treasury-recipient` — the treasury is a recipient and its donation is settled against the transaction field.
+- [ ] `zero-donation-omitted` — an owed amount of zero imposes no donation.
+- [ ] `regenerate-after-slice-six` — as slice five.
+
+### Slice seven: fault proof, forfeit and termination fee
+
+- [ ] `booking-proof-in-evidence` — rejection evidence may carry the map that commits to the recorded booking root.
+- [ ] `forfeit-and-split` — a mismatch rejection with a valid booking proof owes the treasury the bond minus the processor share and the owner the deposit.
+- [ ] `expiry-and-no-proof-return-bond` — a rejection on expiry or without a valid booking proof forfeits nothing.
+- [ ] `termination-fee-owed` — a fold that terminates a key owes the treasury at least the fee per terminated key.
+- [ ] `refusals-name-bond-and-fee` — a transaction that does not donate what is owed is refused with a reason naming the bond or the fee.
+- [ ] `regenerate-after-slice-seven` — as slice five.
+
+### Slice eight: theorems and counterexamples
+
+- [ ] `economic-theorems` — the proved statements of the economics plan are stated and proved from standard axioms.
+- [ ] `counterexamples-kept` — each statement expected to fail has a Lean example that exhibits the counterexample.
+- [ ] `audit-report-covers-economics` — the audit report lists every economic statement with its axioms.
+- [ ] `regenerate-after-slice-eight` — as slice five.
+
+### Slice nine: the paper builds and its first sections
+
+- [ ] `paper-builds-into-site` — the paper builds in a Nix derivation into the documentation site.
+- [ ] `paper-page-and-table` — a documentation page carries the abstract, the theorem-to-Lean table generated from the audit report and the PDF link.
+- [ ] `paper-sections-one-to-four` — system model, adversary and cost model, mechanism and properties are written, each claim citing its Lean statement.
+
+### Slice ten: the paper is complete
+
+- [ ] `paper-sections-five-to-ten` — parameter constraints, related work, limitations and the appendix are written.
+- [ ] `paper-appendix-from-audit` — the appendix maps every theorem to its Lean name, file, line and pinned commit with the axioms printed and the trusted base stated.
+- [ ] `paper-claims-checked-against-lean` — an audit confirms that no claim of the paper goes beyond the statement it cites.
+
 ## Closing the ticket
 
 - [ ] `release-record` — the contract's release record is filled with the model revision, statement

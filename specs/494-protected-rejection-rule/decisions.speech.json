@@ -115,6 +115,16 @@
       "pause": 400
     }
   ],
+  "ruling-the-economic-design": [
+    {
+      "text": "Ruling: the economic design.",
+      "pause": 500
+    },
+    {
+      "text": "On 13 October 2026 the operator adopted a bond, a booking-root forfeit, a split between the proving processor and the treasury, the tip paying the processor on every rejection, the return of the bond on expiry and a termination fee, and ordered the model and a paper before anything else. The mandate quotes the ruling; the design gives its stories and the amounts in every outcome.",
+      "pause": 400
+    }
+  ],
   "what-is-carried-forward-unchanged-from-the-earlier-candidate": [
     {
       "text": "What is carried forward unchanged from the earlier candidate.",
@@ -127,6 +137,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "a8e3aa5a369ca91ec1dc45924da88d6a3bd7150e77eb868dd9a668038a054395"
+    "sha256": "a27e2c123e67f571274d21acf589d43f53dee0e8fcf1857967498d226301ab36"
   }
 }

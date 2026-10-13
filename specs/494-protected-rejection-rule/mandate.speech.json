@@ -115,6 +115,24 @@
       "pause": 400
     }
   ],
+  "the-economic-design-and-the-paper": [
+    {
+      "text": "The economic design and the paper.",
+      "pause": 500
+    },
+    {
+      "text": "Operator, 13 October 2026: \"provable rejection must be punished but not with the deposit\"; \"it's a new parameter bond\"; \"termination should pay the treasury\"; and on the order of work: \"what I want is the lean model done, and from it the full economic system explained in a paper, so I get a review now\"; \"the paper will be reviewed by a scientist; do not gloss over details\". The adopted design, as it was worded for planning:",
+      "pause": 400
+    },
+    {
+      "text": "1. A registry parameter, the bond, carried by every request beside its deposit. 2. A rejection forfeits the bond only on a fault proved against the root the request recorded at booking. Without that proof, a rejection refunds deposit and bond. 3. The tip pays the processor for the slot on every rejection, as on a fold. 4. The forfeited bond is split between the proving processor and the treasury (treasury donation); the split is a registry parameter. 5. Rejection on expiry returns the bond. 6. A registry parameter, the termination fee: a fold that terminates a key donates at least the fee to the treasury; the terminate request carries it.",
+      "pause": 400
+    },
+    {
+      "text": "The model states all of it, with the treasury donation as a transaction field it owes; its properties are theorems, and where a property does not hold the model says so with the counterexample and no statement is weakened to make it prove. The design and the plan hold the detail. Validators, the request tag, builders and verification move after Demo 1.",
+      "pause": 400
+    }
+  ],
   "only-two-grounds": [
     {
       "text": "Only two grounds.",
@@ -151,6 +169,10 @@
       "pause": 400
     },
     {
+      "text": "Amended on 13 October 2026 by the operator's order above: the bond, its forfeit and its split are modelled in this ticket by the economic slices; the request tag and its mint stay with ticket 529, and no validator, builder or command is touched.",
+      "pause": 400
+    },
+    {
       "text": "Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.",
       "pause": 400
     },
@@ -183,7 +205,7 @@
       "pause": 500
     },
     {
-      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the request tag, bond and forfeit), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
+      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the request tag and its mint; the bond is modelled here), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
       "pause": 400
     }
   ],
@@ -223,6 +245,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "9f38bcdabe2ffea692953a804242e878d6c9dc3b78c2f1949918c50e13165d1f"
+    "sha256": "ea7dcb7bfc2d4723b770d553659a27232a112b13c830ca7f6854eae5f52aef00"
   }
 }

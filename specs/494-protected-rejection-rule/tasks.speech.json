@@ -167,6 +167,160 @@
       "pause": 400
     }
   ],
+  "slices-five-to-ten-the-economic-model-and-the-paper": [
+    {
+      "text": "Slices five to ten: the economic model and the paper.",
+      "pause": 500
+    },
+    {
+      "text": "Planned in the economics plan; started only after the desk reviews that plan and after slice four.",
+      "pause": 400
+    }
+  ],
+  "slice-five-parameters-and-fields": [
+    {
+      "text": "Slice five: parameters and fields.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] registry-parameters — the bond, the processor split and the termination fee exist in the registry configuration, default to zero in old input and are preserved by every fold.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] request-economic-fields — a request carries its bond, the termination fee it carries and the root it recorded at booking, each serialized and zero when absent.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] donation-field — a transaction carries a treasury donation amount, zero when absent.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] protocol-eight — the driver protocol version moves and the surface digest follows.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] regenerate-after-slice-five — corpora, register and digests, simulator mirror, application corpus, coverage record and the restatement table follow.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] amendment-economics — a new constitution version states the economic fields in the translation.",
+      "pause": 300
+    }
+  ],
+  "slice-six-outcomes-and-transfers": [
+    {
+      "text": "Slice six: outcomes and transfers.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] outcomes-and-transfers — the five outcomes and the transfer table exist as definitions.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] bond-returned-without-fault — a fold, a retraction and a rejection without proof or on expiry owe the owner the bond.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] treasury-recipient — the treasury is a recipient and its donation is settled against the transaction field.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] zero-donation-omitted — an owed amount of zero imposes no donation.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] regenerate-after-slice-six — as slice five.",
+      "pause": 300
+    }
+  ],
+  "slice-seven-fault-proof-forfeit-and-termination-fee": [
+    {
+      "text": "Slice seven: fault proof, forfeit and termination fee.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] booking-proof-in-evidence — rejection evidence may carry the map that commits to the recorded booking root.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] forfeit-and-split — a mismatch rejection with a valid booking proof owes the treasury the bond minus the processor share and the owner the deposit.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] expiry-and-no-proof-return-bond — a rejection on expiry or without a valid booking proof forfeits nothing.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] termination-fee-owed — a fold that terminates a key owes the treasury at least the fee per terminated key.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] refusals-name-bond-and-fee — a transaction that does not donate what is owed is refused with a reason naming the bond or the fee.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] regenerate-after-slice-seven — as slice five.",
+      "pause": 300
+    }
+  ],
+  "slice-eight-theorems-and-counterexamples": [
+    {
+      "text": "Slice eight: theorems and counterexamples.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] economic-theorems — the proved statements of the economics plan are stated and proved from standard axioms.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] counterexamples-kept — each statement expected to fail has a Lean example that exhibits the counterexample.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] audit-report-covers-economics — the audit report lists every economic statement with its axioms.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] regenerate-after-slice-eight — as slice five.",
+      "pause": 300
+    }
+  ],
+  "slice-nine-the-paper-builds-and-its-first-sections": [
+    {
+      "text": "Slice nine: the paper builds and its first sections.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] paper-builds-into-site — the paper builds in a Nix derivation into the documentation site.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] paper-page-and-table — a documentation page carries the abstract, the theorem-to-Lean table generated from the audit report and the PDF link.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] paper-sections-one-to-four — system model, adversary and cost model, mechanism and properties are written, each claim citing its Lean statement.",
+      "pause": 300
+    }
+  ],
+  "slice-ten-the-paper-is-complete": [
+    {
+      "text": "Slice ten: the paper is complete.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] paper-sections-five-to-ten — parameter constraints, related work, limitations and the appendix are written.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] paper-appendix-from-audit — the appendix maps every theorem to its Lean name, file, line and pinned commit with the axioms printed and the trusted base stated.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] paper-claims-checked-against-lean — an audit confirms that no claim of the paper goes beyond the statement it cites.",
+      "pause": 300
+    }
+  ],
   "closing-the-ticket": [
     {
       "text": "Closing the ticket.",
@@ -183,6 +337,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "a91b26847798de03f3dc16f032f3ef68f4f16b02be13a708640b9a16422ba5a9"
+    "sha256": "3fb7b90d62cbc23560dc021f2b0d1d5c28545eda9e73df4ef2995536b4256886"
   }
 }

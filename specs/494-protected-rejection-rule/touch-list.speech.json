@@ -85,8 +85,22 @@
       "pause": 400
     }
   ],
+  "slices-five-to-ten-the-economic-model-and-the-paper": [
+    {
+      "text": "Slices five to ten: the economic model and the paper.",
+      "pause": 500
+    },
+    {
+      "text": "Planned in the economics plan; nothing here is committed yet. A coder who needs a file not listed, or finds another lane's change in one that is, stops and asks. Every new runnable file is an obligation with a hosted job, a marked tool, or temporary.",
+      "pause": 400
+    },
+    {
+      "text": "Not touched: the root flake.nix and .github/workflows/ci.yml unless the desk finds the docs build cannot carry the PDF; everything under onchain/, offchain/, the builders and the command line.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "21f5013ffa1e5f35537b275de9b14fcd78234f6f24136f55f668f6470bd399f7"
+    "sha256": "07d70d8e42a050c6694be356d38e65516e812bc6216418c0b2ee30798080ffc9"
   }
 }

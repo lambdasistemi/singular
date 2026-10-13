@@ -108,6 +108,12 @@ ticket 495's acceptance includes that flip. The row books a foldable insertion b
 the standing row books today names an edge the two-edge model excludes, which is rejectable at once
 and would leave the row without its subject.
 
+## Ruling: the economic design
+
+On 13 October 2026 the operator adopted a bond, a booking-root forfeit, a split between the proving processor and the treasury, the tip paying
+the processor on every rejection, the return of the bond on expiry and a termination fee, and ordered the model and a paper before anything
+else. The mandate quotes the ruling; the [design](economics-design.md) gives its stories and the amounts in every outcome.
+
 ## What is carried forward unchanged from the earlier candidate
 
 The earlier candidate was reviewed twice by an independent model and its design is the

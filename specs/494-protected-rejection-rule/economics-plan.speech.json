@@ -1,0 +1,94 @@
+{
+  "plan-the-economic-model-its-theorems-and-the-paper": [
+    {
+      "text": "Plan: the economic model, its theorems and the paper.",
+      "pause": 500
+    },
+    {
+      "text": "This page plans the work after slice four: the whole economic design of the design page stated in the Lean model, its properties as theorems, and a formal paper written from them. It names every theorem the model should prove, says which ones are expected not to hold and why, cuts the work into slices, and outlines the paper. Planning only: no model or paper work starts before the desk answers the plan question.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the operator receiving a review, I read one page and learn which economic properties will be proved in Lean, which will be shown false with a counterexample, which are argued by hand from proved lemmas, in what order the work lands and where the paper appears, so that I can say yes or return a line before anyone writes a proof.",
+      "pause": 400
+    }
+  ],
+  "the-model-additions-in-plain-words": [
+    {
+      "text": "The model additions, in plain words.",
+      "pause": 500
+    },
+    {
+      "text": "Registry configuration gains the bond, the processor split (a numerator and a denominator) and the termination fee; each defaults to zero in old input and is preserved by every fold. A request gains its bond, the termination fee it carries, and the root it recorded at booking. A transaction gains a treasury donation amount. A new payment recipient, the treasury, is owed the donation. Every new field defaults to zero, so every existing row of the public suite, which builds requests without them, behaves exactly as before. No validator, builder or command-line file is touched.",
+      "pause": 400
+    }
+  ],
+  "theorems": [
+    {
+      "text": "Theorems.",
+      "pause": 500
+    },
+    {
+      "text": "Status: proved means a Lean theorem with only the standard axioms; argued means derived by hand from proved lemmas and labelled so in the paper (it involves the value of a key, fees or opportunity cost, which the model does not contain); expected to fail means the statement is false in the model, and a Lean example with the counterexample is kept instead.",
+      "pause": 400
+    },
+    {
+      "text": "Where the desk's guide claims the cost of squat-and-terminate as the fee plus the deposit plus the tip, the model returns the deposit at termination, so the proved floor is the fee; the deposit is capital, not cost. The statement is written that way and the difference is explained in the paper. Conservation is stated for a balanced transaction (inputs equal outputs plus donation plus fee), because the model has no ledger fee; the balance is a named premise, not a model rule.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "One writer at a time, Muse; Grok audits every slice; the paper's claims are audited against the Lean statements they cite. Each slice is cut again if it runs for hours. Slices five to eight touch only Lean, its runners and corpora, the model rows of the conformance suite and generated copies; nine and ten touch documentation only.",
+      "pause": 400
+    }
+  ],
+  "the-paper": [
+    {
+      "text": "The paper.",
+      "pause": 500
+    },
+    {
+      "text": "Format: LaTeX in the LIPIcs style, built in a Nix derivation into the documentation site, with a page carrying the abstract, the theorem-to-Lean table and the PDF link so that the pull request preview shows it. If the LIPIcs class is not available in the pinned package set, the class file is vendored under its licence, or the plain article class is used and the page says so.",
+      "pause": 400
+    },
+    {
+      "text": "Sections, as the operator and the desk specified: system model; adversary and cost model (what an attacker controls: block production, mempool view, ordering; what each action costs); mechanism (the transfer table as one table); properties as definitions and theorems with proofs or mechanized references; parameter constraints as derived inequalities with worked lovelace examples; related work (only verified entries); limitations, including every property that does not hold with its counterexample; appendix mapping every theorem to its Lean name, file, line and pinned commit with the axioms printed, the trusted base stated and the model-to-validator correspondence named as an assumption with the checks that have no counterpart listed as gaps. Statements are quantified over reachable states and say so. Every claim cites its Lean theorem; nothing is claimed that the model does not prove; unproved statements are marked in the first draft.",
+      "pause": 400
+    }
+  ],
+  "touch-list": [
+    {
+      "text": "Touch list.",
+      "pause": 500
+    },
+    {
+      "text": "The files of slices five to ten, all new work, are listed in the touch list, section \"Slices five to ten\". Not touched: the root flake.nix and .github/workflows/ci.yml unless the desk finds the docs build cannot carry the PDF, in which case that is a question; everything under onchain/, offchain/, builders and the command line.",
+      "pause": 400
+    }
+  ],
+  "plan-questions-for-the-desk": [
+    {
+      "text": "Plan questions for the desk.",
+      "pause": 500
+    },
+    {
+      "text": "Assumptions made, to be returned if wrong: the booking proof is carried by the rejection evidence as the whole map (a logical read, one state earlier) and root collision resistance is a named assumption; the processor chooses the ground, and only the mismatch ground with a valid booking proof forfeits; the model folds a request whatever bond it carries, and the honesty theorems assume the bond equals the registry parameter (the booking mint enforces that after the demo); the termination donation floor is the registry fee, the request's carried fee being checked by the mint; the donation encoding follows the ledger, so a zero amount omits the field.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "economics-plan.md",
+    "sha256": "a5421edfb5d3e37013bf8131228217a1c443a6b696e4fde6fa3e5f36cdf40359"
+  }
+}

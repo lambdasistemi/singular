@@ -122,3 +122,22 @@ edits them by accident and so that the owning child is named.
 | `offchain/lib/Singular/Registry/TxBuilder/Reject.hs`, `Internal/Lookup.hs` (the refund computation) | The reject builder pays each owner an ada-only output; the balancer sends the approval to change | 496 |
 | `onchain/lib/registry/settlement.ak` (the refund check), `discharge.ak` in the same folder | The refund check reads lovelace only | 495 decides whether validators enforce the approval's destination |
 | `conformance/test/Conformance/Support/Payments.hs` (the reject case), `RegistrationComparison.hs` (the retirement comparison of a returned approval), `conformance/lib/Conformance/Observe/Payments.hs` | The reject comparison sums lovelace only | 496, with the builder fix, for the reason in the plan |
+
+## Slices five to ten: the economic model and the paper
+
+Planned in the [economics plan](economics-plan.md); nothing here is committed yet. A coder who needs a file not listed, or finds another
+lane's change in one that is, stops and asks. Every new runnable file is an obligation with a hosted job, a marked tool, or temporary.
+
+| Path | Slices | Why |
+|---|---|---|
+| `lean/Singular/Model.lean`, `Statements.lean`, `Driver.lean`, `Lemmas.lean`, `Audit.lean`, `M1.lean`, `M1Driver.lean`, `lean/DriverMain.lean`, `lean/Main.lean`, `lean/M1Main.lean` | five to eight | Fields, outcomes, obligations, statements, corpus rows |
+| `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | six to eight | Outcomes, the transfer table and the economic theorems, imported by the root module |
+| `conformance/lean/DriverTransport.lean`, `conformance/test/Conformance/Support/DriverTransport.hs` | five to seven | Questions carrying the new fields |
+| `paper/economics/**` (new) | nine, ten | LaTeX source, bibliography, vendored class if needed |
+| `docs/economics-paper.md` (new, with its speech companion) and `mkdocs.yml` | nine, ten | The page and its navigation entry |
+| `nix/docs.nix` | nine | Builds the PDF into the documentation site; shared with the release review lane, so the desk clears it first |
+| A table generator under `tools/` (new, marked as a tool or run by the documents check) | nine | The theorem-to-Lean table is generated from the audit report, never typed |
+| The generated copies of slices one and two (corpora, register, theorem page and its speech, simulator mirror, application corpus, coverage record, restatement table, constitution) | five to eight | As before |
+
+Not touched: the root `flake.nix` and `.github/workflows/ci.yml` unless the desk finds the docs build cannot carry the PDF; everything
+under `onchain/`, `offchain/`, the builders and the command line.

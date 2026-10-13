@@ -80,6 +80,23 @@ After it the suite shows two rows, and the second is never counted as passing.
 The row books a foldable insertion because the insertion the standing row books today names an edge
 the two-edge model excludes, which is rejectable at once and would leave the row without its subject.
 
+### The economic design and the paper
+
+Operator, 13 October 2026: "provable rejection must be punished but not with the deposit"; "it's a new parameter bond"; "termination should pay the
+treasury"; and on the order of work: "what I want is the lean model done, and from it the full economic system explained in a paper, so I get a
+review now"; "the paper will be reviewed by a scientist; do not gloss over details". The adopted design, as it was worded for planning:
+
+> 1. A registry parameter, the bond, carried by every request beside its deposit.
+> 2. A rejection forfeits the bond only on a fault proved against the root the request recorded at booking. Without that proof, a rejection refunds deposit and bond.
+> 3. The tip pays the processor for the slot on every rejection, as on a fold.
+> 4. The forfeited bond is split between the proving processor and the treasury (treasury donation); the split is a registry parameter.
+> 5. Rejection on expiry returns the bond.
+> 6. A registry parameter, the termination fee: a fold that terminates a key donates at least the fee to the treasury; the terminate request carries it.
+
+The model states all of it, with the treasury donation as a transaction field it owes; its properties are theorems, and where a property does
+not hold the model says so with the counterexample and no statement is weakened to make it prove. The [design](economics-design.md) and the
+[plan](economics-plan.md) hold the detail. Validators, the request tag, builders and verification move after Demo 1.
+
 ### Only two grounds
 
 Exactly two grounds authorize rejection, a lifecycle mismatch and expiry. A provider failure, a
@@ -105,6 +122,9 @@ The handoff is the "What a rejection does" and "What a batch binds" sections of 
 [evidence contract](contracts/rejection-evidence-contract.md): an admitted rejection leaves the
 state, mints nothing and owes the deposit; ticket 529 attaches the bond forfeit to an admitted
 rejection and nothing earlier.
+
+Amended on 13 October 2026 by the operator's order above: the bond, its forfeit and its split are modelled in this ticket by the economic
+slices; the request tag and its mint stay with ticket 529, and no validator, builder or command is touched.
 
 > Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.
 
@@ -141,7 +161,7 @@ are the net for every item.
 ## Out of scope, by number
 
 Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487
-(rejection as a separate command), 529 (the request tag, bond and forfeit), 361 (the refund policy),
+(rejection as a separate command), 529 (the request tag and its mint; the bond is modelled here), 361 (the refund policy),
 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge
 contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum
 application, except regenerating its committed corpus). A coder
