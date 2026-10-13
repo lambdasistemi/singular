@@ -7,6 +7,7 @@ import Naming.RetireVerifySpec qualified
 import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.CreateFundingSpec qualified
+import Singular.CLI.DescribeSpec qualified
 import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.JournalTransitionsSpec qualified
@@ -30,6 +31,7 @@ import Singular.Registry.LocalEvaluationSpec qualified
 import Singular.Registry.LocalServicesCallerSpec qualified
 import Singular.Registry.NetworkTimeSpec qualified
 import Singular.Registry.OneViewSpec qualified
+import Singular.Registry.PageSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
@@ -121,6 +123,9 @@ main = hspec $ do
         (tagged "Singular.Registry.OneView" [Provider])
         Singular.Registry.OneViewSpec.spec
     describe
+        (tagged "Singular.Registry.Page" [Trie])
+        Singular.Registry.PageSpec.spec
+    describe
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
@@ -171,6 +176,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.FoldRules" [Cli])
         Singular.CLI.FoldRulesSpec.spec
+    describe
+        (tagged "Singular.CLI.Describe" [Cli])
+        Singular.CLI.DescribeSpec.spec
     describe
         (tagged "Singular.CLI.JournalTransitions" [Cli])
         Singular.CLI.JournalTransitionsSpec.spec

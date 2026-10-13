@@ -7,6 +7,7 @@ boundaries; ledger coverage comes from the packaged connected journeys.
 -}
 module Singular.Registry.TrieStateSpec (spec, produced, edgeCases) where
 
+import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Control.Exception
     ( SomeException
     , displayException
@@ -18,8 +19,10 @@ import Control.Monad.State.Strict (runState)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.IORef (newIORef)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Map.Strict qualified as Map
 import MPF.Backend.Pure (MPFInMemoryDB (..), emptyMPFInMemoryDB)
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.CLI.Proof
     ( AuthError (..)
     , Leaf (..)
@@ -28,11 +31,20 @@ import Singular.CLI.Proof
     , rootOfDb
     , rootOfDbPure
     )
-import Singular.Registry.Deployment (loadMirror, saveMirror)
+import Singular.Registry.Deployment
+    ( loadMirror
+    , parseOutRef
+    , saveMirror
+    )
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Root (..)
     , TokenId (..)
+    )
+import Singular.Registry.Replay
+    ( Replayed (..)
+    , appliedKeys
+    , replayedLineage
     )
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
 import Singular.Registry.Trie.Pure
@@ -40,15 +52,33 @@ import Singular.Registry.Trie.Pure
     , mkPureTrieFromRef
     , provesAbsent
     , provesMember
+    , rootFromDb
     , stateTrie
     )
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
+import Singular.Registry.TrieState hiding (Leaf (..))
+import Singular.Registry.TrieState.Fixture
+    ( fixtureSnapshot
+    , fixtureStore
+    )
 import Singular.Registry.TxBuilder.Internal (walkEdge)
-import Singular.Registry.Types (ProofStep)
+import Singular.Registry.Types
+    ( OnChainRequest (..)
+    , OnChainTokenId (..)
+    , ProofStep
+    , RequestAction (..)
+    )
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    , shouldReturn
+    )
 import Test.QuickCheck
     ( Gen
     , chooseInt
@@ -327,6 +357,46 @@ spec = describe "TrieState preservation oracle (existing IO producer)" $ do
             check $ \trie -> do
                 _ <- insert trie "new" (leafBytes Active)
                 error "action failed after mutation"
+    it "reports the distinct keys applied updates named, ascending" $ do
+        let updates =
+                [ request "b" 1 (Update [])
+                , request "a" 1 (Update [])
+                , request "b" 3 (Update [])
+                , request "c" 1 Rejected
+                , request "a" 3 (Update [])
+                , request "b" 1 (Update [])
+                , request "b" 1 Rejected
+                ]
+        appliedKeys updates `shouldBe` ["a", "b"]
+    it "reports no public lineage for a fixture snapshot" $ do
+        let token = TokenId (AssetName "lineage-fixture")
+            identity =
+                RegistryIdentity
+                    (StatePolicyId (BS.replicate 28 9))
+                    (AssetName "lineage-fixture")
+        (nodes, Root root, _) <- produced token [("a", 1)]
+        output <-
+            either fail pure $
+                parseOutRef
+                    "1111111111111111111111111111111111111111111111111111111111111111#0"
+        let point = StatePoint (SessionId "lineage-fixture") Unbound output
+            from = TrieSelection identity point (rootFromDb emptyMPFInMemoryDB)
+            to = TrieSelection identity point (Root root)
+            folds = [ObservedFold from to (("a", 1) :| [])]
+            store =
+                fixtureStore [(to, Just (CreateRecord identity output), folds, nodes)]
+        case fixtureSnapshot store to :: Either TrieFailure (TrieSnapshot IO) of
+            Left failure ->
+                expectationFailure ("no fixture snapshot: " <> show failure)
+            Right snapshot -> trieLineage snapshot `shouldBe` Nothing
+    it "reports a replayed lineage as its create, folds in order and keys" $ do
+        let replayed = Replayed (txOf 1) [txOf 2, txOf 3] ["a", "b"]
+        replayedLineage replayed
+            `shouldBe` PublicLineage
+                { lineageCreate = txOf 1
+                , lineageFolds = [txOf 2, txOf 3]
+                , lineageKeys = ["a", "b"]
+                }
 
 -- Distinct byte keys and generated multi-key registration/retirement
 -- lifecycles, with refused raw encodings inserted between admitted moves.
@@ -396,3 +466,34 @@ frozenSpeculation
 frozenSpeculation db action = do
     copyRef <- newIORef db
     action (mkPureTrieFromRef copyRef)
+
+-- | One applied or rejected update naming a key, for the lineage projection.
+request
+    :: ByteString
+    -> Integer
+    -> RequestAction
+    -> (OnChainRequest, RequestAction)
+request key edge action =
+    ( OnChainRequest
+        { requestToken = OnChainTokenId (BuiltinByteString "lineage-token")
+        , requestOwner = BuiltinByteString (BS.replicate 28 0)
+        , requestKey = key
+        , requestEdge = edge
+        , requestDeposit = 0
+        , requestSubmittedAt = 0
+        , requestDestination = (BS.empty, Nothing)
+        }
+    , action
+    )
+
+-- | A transaction identifier by position: three identifiers differing in one digit.
+txOf :: Int -> TxId
+txOf n =
+    let refs =
+            [ "1111111111111111111111111111111111111111111111111111111111111111#0"
+            , "2222222222222222222222222222222222222222222222222222222222222222#0"
+            , "3333333333333333333333333333333333333333333333333333333333333333#0"
+            ]
+    in  case parseOutRef (refs !! (n - 1)) of
+            Right (TxIn tid _) -> tid
+            Left why -> error why

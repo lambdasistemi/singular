@@ -32,7 +32,7 @@ the chain evidences is applied at most once and observed, for whichever
 key it concerns. It does so only while holding the registry's lock; when
 another process holds it, inspect reads without reconciling and says so.
 -}
-module Singular.CLI.Inspect (runInspect) where
+module Singular.CLI.Inspect (runInspect, pendingJson) where
 
 import Control.Exception
     ( SomeException

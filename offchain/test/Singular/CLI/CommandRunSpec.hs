@@ -98,7 +98,7 @@ import System.Directory
     , removePathForcibly
     )
 import System.Exit (ExitCode (..))
-import System.FilePath (takeFileName, (</>))
+import System.FilePath (takeDirectory, takeFileName, (</>))
 import System.IO
     ( IOMode (..)
     , hClose
@@ -600,6 +600,7 @@ constructorOf :: Command -> String
 constructorOf = \case
     Help -> "Help"
     Create _ _ -> "Create"
+    Describe _ -> "Describe"
     Fold _ -> "Fold"
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
@@ -1180,7 +1181,20 @@ lifecycle rig = do
             "empty-actor"
             "inspect from an empty directory with the state token"
             (["registry", "inspect", "--key", "alice-1"] <> tokenArgs t1)
-    pure [create, reclaim, create2, reject, nothingPending, emptyDir]
+    -- A stateless page read by token alone, as JSON for its receipt. The
+    -- label is the fixture release's own claim; links are computed, never
+    -- fetched.
+    writeFile
+        (takeDirectory (rigBlueprint rig) </> "version.txt")
+        "0.10.1\n"
+    page <-
+        runAt
+            rig
+            "registry"
+            "describe by state token"
+            (["registry", "describe", "--json"] <> tokenArgs t1)
+    pure
+        [create, reclaim, create2, reject, nothingPending, emptyDir, page]
 
 -- | The state token's name as a 'TokenId'.
 parseTokenId :: String -> IO TokenId
@@ -1349,9 +1363,8 @@ runAtTxIn answer rig =
 commandLine :: Rig -> FilePath -> [String] -> [String]
 commandLine rig registry args =
     args
-        <> [ "--state-dir"
-           , rigDir rig </> registry
-           , "--blueprint"
+        <> (if wantsDir then ["--state-dir", rigDir rig </> registry] else [])
+        <> [ "--blueprint"
            , rigBlueprint rig
            , "--koios-url"
            , "http://fixture.invalid"
@@ -1361,7 +1374,12 @@ commandLine rig registry args =
         <> ["--wallet-skey" | wantsKey]
         <> [rigKey rig | wantsKey]
   where
-    wantsKey = take 2 args /= ["registry", "inspect"]
+    -- Describe reads the page from the chain alone: no state directory
+    -- and no signing key reach its parser.
+    wantsDir = take 2 args /= ["registry", "describe"]
+    wantsKey =
+        take 2 args /= ["registry", "inspect"]
+            && take 2 args /= ["registry", "describe"]
 
 -- ---------------------------------------------------------
 -- --application-policy (#528)

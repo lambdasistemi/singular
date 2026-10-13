@@ -33,7 +33,7 @@ import Data.ByteString.Lazy qualified as LBS
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Data.List (elemIndex, nub)
+import Data.List (elemIndex, nub, sort)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -364,10 +364,12 @@ replaySpec = do
                 (result, db) <-
                     replayAt h (historyResolved h) (historyTxs h) (historyToken h) p
                 rebuilt <- rootOf db
+                keys <- expectedKeys h k
                 let lineage =
                         Replayed
                             (txIdTx (pointTx (historyCreate h)))
                             (map (txIdTx . pointTx) (take k (historyFolds h)))
+                            keys
                 pure (pointLabel p, verdict h lineage (pointRoot p) result rebuilt)
             observed `shouldBe` [(pointLabel p, rebuiltChainRoot) | p <- points h]
 
@@ -486,11 +488,13 @@ replaySpec = do
                     (inOrder, db0) <-
                         replayAt h (historyResolved h) txs (historyToken h) (lastPoint h)
                     r0 <- rootOf db0
+                    keys <- expectedKeys h (length (historyFolds h))
                     inOrder
                         `shouldBe` Right
                             ( Replayed
                                 (txIdTx (pointTx (historyCreate h)))
                                 (map (txIdTx . pointTx) (historyFolds h))
+                                keys
                             )
                     r0 `shouldBe` pointRoot (lastPoint h)
                     forM_ [reverse txs, rotate 3 txs, rotate 7 (reverse txs)] $ \shuffled -> do
@@ -624,10 +628,12 @@ replaySpec = do
                     -- identifier, and must change nothing. The expected
                     -- lineage and root are the chain's.
                     observed <- forM (zip [0 ..] (points h)) $ \(k, selected) -> do
+                        keys <- expectedKeys h k
                         let lineage =
                                 Replayed
                                     (txIdTx (pointTx (historyCreate h)))
                                     (map (txIdTx . pointTx) (take k (historyFolds h)))
+                                    keys
                         forM (points h) $ \copied -> do
                             bad <- failedCopy (pointTx copied)
                             (result, db) <-
@@ -1321,6 +1327,17 @@ isRejected _ = False
 
 isApplied :: RequestAction -> Bool
 isApplied = not . isRejected
+
+-- | The distinct keys the applied updates of the first k folds named, ascending.
+expectedKeys :: History -> Int -> IO [ByteString]
+expectedKeys h k = do
+    paired <- mapM (foldPairs h . pointTx) (take k (historyFolds h))
+    pure
+        ( nub
+            ( sort
+                [requestKey r | pairs <- paired, (r, a) <- pairs, isApplied a]
+            )
+        )
 
 isRight' :: Either a b -> Bool
 isRight' = either (const False) (const True)

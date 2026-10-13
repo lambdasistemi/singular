@@ -115,6 +115,7 @@ library
     Singular.Registry.FoldSelection
     Singular.Registry.Funding
     Singular.Registry.Lifecycle
+    Singular.Registry.Page
     Singular.Registry.Proof
     Singular.Registry.Replay
     Singular.Registry.StateToken
@@ -194,6 +195,7 @@ library registry-cli
     Singular.CLI.Booking
     Singular.CLI.Command
     Singular.CLI.Create
+    Singular.CLI.Describe
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
     Singular.CLI.Fold
@@ -961,6 +963,7 @@ test-suite cage-tests
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
     Singular.CLI.CreateFundingSpec
+    Singular.CLI.DescribeSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
@@ -989,6 +992,7 @@ test-suite cage-tests
     Singular.Registry.LocalServicesCallerSpec
     Singular.Registry.NetworkTimeSpec
     Singular.Registry.OneViewSpec
+    Singular.Registry.PageSpec
     Singular.Registry.PhaseLogSpec
     Singular.Registry.Private.Archive
     Singular.Registry.Private.ArchiveSpec

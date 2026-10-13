@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeApplications #-}
 
 -- | Fresh, session-bound public replay. No nodes or selections survive a read.
@@ -36,7 +37,11 @@ import Lens.Micro ((^.))
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.LedgerProvider qualified as LP
-import Singular.Registry.Replay (Replayed (..), replayLineage)
+import Singular.Registry.Replay
+    ( Replayed (..)
+    , replayLineage
+    , replayedLineage
+    )
 import Singular.Registry.Trie.Pure (stateTrie)
 import Singular.Registry.TrieState.Core (snapshotObserved)
 import Singular.Registry.TrieState.Types
@@ -78,7 +83,7 @@ lineageTrieStateObserved session emit = TrieState select accept
                                     emptyMPFInMemoryDB
                         case answer of
                             Left why -> pure (Left why)
-                            Right Replayed{replayedFolds} -> do
+                            Right replayed@Replayed{replayedFolds} -> do
                                 emit (Selected chosen)
                                 Right
                                     <$> use
@@ -87,6 +92,7 @@ lineageTrieStateObserved session emit = TrieState select accept
                                             chosen
                                             nodes
                                             (CompleteFromCreate (length replayedFolds))
+                                            (Just (replayedLineage replayed))
                                         )
       where
         who = trieSelectionIdentity chosen
