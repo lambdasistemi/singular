@@ -113491,326 +113491,326 @@
    ]
   },
   "docs-io-ownership/what-the-census-covers-02": {
-   "audio_sha256": "44ba27dff23683a4c6f51649196c6c457ec243b2d05b09c4fd51d2820319a288",
+   "audio_sha256": "355961e0ffa8a5d1500fc26bc382bdf0ea9a22970c582da536e7b5f6e9ee8ac3",
    "characters": 307,
    "cost": 0.00030393,
-   "duration": 21.125,
+   "duration": 20.775,
    "index": 2,
-   "key": "ae13edbac1d7b925f73961ec674271d4c1535e3faea31a13940887f004f7891e",
+   "key": "b36e088f3ec9d9de79886796f02ac220023a85caeb4181bd2fe3f4cfde340191",
    "page": "docs/io-ownership.md",
    "pause_ms": 400,
    "section": "what-the-census-covers",
-   "sent_text": "449 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
-   "text": "449 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
+   "sent_text": "450 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
+   "text": "450 sources in total. The census establishes structural facts — which files can name which effects — and never runtime behavior. That a module can name a mutable cell says nothing about what it does with it; what a command does is settled by the cage tests, the journeys and the hosted runs below, not here.",
    "words": [
     {
-     "end": 1.25,
+     "end": 0.925,
      "start": 0.2,
-     "text": "449"
+     "text": "450"
     },
     {
-     "end": 1.725,
-     "start": 1.25,
+     "end": 1.4,
+     "start": 0.925,
      "text": "sources"
     },
     {
-     "end": 1.875,
-     "start": 1.725,
+     "end": 1.55,
+     "start": 1.4,
      "text": "in"
     },
     {
-     "end": 2.7,
-     "start": 1.875,
+     "end": 2.35,
+     "start": 1.55,
      "text": "total"
     },
     {
-     "end": 2.9,
-     "start": 2.7,
+     "end": 2.55,
+     "start": 2.35,
      "text": "."
     },
     {
-     "end": 3.213,
-     "start": 3.1,
+     "end": 2.862,
+     "start": 2.75,
      "text": "The"
     },
     {
-     "end": 3.7,
-     "start": 3.213,
+     "end": 3.35,
+     "start": 2.862,
      "text": "census"
     },
     {
-     "end": 4.375,
-     "start": 3.7,
+     "end": 4.025,
+     "start": 3.35,
      "text": "establishes"
     },
     {
-     "end": 4.963,
-     "start": 4.375,
+     "end": 4.613,
+     "start": 4.025,
      "text": "structural"
     },
     {
-     "end": 5.488,
-     "start": 4.963,
+     "end": 5.137,
+     "start": 4.613,
      "text": "facts"
     },
     {
-     "end": 5.55,
-     "start": 5.488,
+     "end": 5.2,
+     "start": 5.137,
      "text": "—"
     },
     {
-     "end": 5.787,
-     "start": 5.55,
+     "end": 5.438,
+     "start": 5.2,
      "text": "which"
     },
     {
-     "end": 6.225,
-     "start": 5.787,
+     "end": 5.875,
+     "start": 5.438,
      "text": "files"
     },
     {
-     "end": 6.375,
-     "start": 6.225,
+     "end": 6.025,
+     "start": 5.875,
      "text": "can"
     },
     {
-     "end": 6.65,
-     "start": 6.375,
+     "end": 6.3,
+     "start": 6.025,
      "text": "name"
     },
     {
-     "end": 6.85,
-     "start": 6.65,
+     "end": 6.5,
+     "start": 6.3,
      "text": "which"
     },
     {
-     "end": 7.4,
-     "start": 6.85,
+     "end": 7.05,
+     "start": 6.5,
      "text": "effects"
     },
     {
-     "end": 7.475,
-     "start": 7.4,
+     "end": 7.125,
+     "start": 7.05,
      "text": "—"
     },
     {
-     "end": 7.625,
-     "start": 7.475,
+     "end": 7.275,
+     "start": 7.125,
      "text": "and"
     },
     {
-     "end": 7.925,
-     "start": 7.625,
+     "end": 7.575,
+     "start": 7.275,
      "text": "never"
     },
     {
-     "end": 8.375,
-     "start": 7.925,
+     "end": 8.025,
+     "start": 7.575,
      "text": "runtime"
     },
     {
-     "end": 9.575,
-     "start": 8.375,
+     "end": 9.225,
+     "start": 8.025,
      "text": "behavior"
     },
     {
-     "end": 9.825,
-     "start": 9.575,
+     "end": 9.475,
+     "start": 9.225,
      "text": "."
     },
     {
-     "end": 10.137,
-     "start": 10.0,
+     "end": 9.788,
+     "start": 9.65,
      "text": "That"
     },
     {
-     "end": 10.238,
-     "start": 10.137,
+     "end": 9.887,
+     "start": 9.788,
      "text": "a"
     },
     {
-     "end": 10.725,
-     "start": 10.238,
+     "end": 10.375,
+     "start": 9.887,
      "text": "module"
     },
     {
-     "end": 10.9,
-     "start": 10.725,
+     "end": 10.55,
+     "start": 10.375,
      "text": "can"
     },
     {
-     "end": 11.113,
-     "start": 10.9,
+     "end": 10.762,
+     "start": 10.55,
      "text": "name"
     },
     {
-     "end": 11.2,
-     "start": 11.113,
+     "end": 10.85,
+     "start": 10.762,
      "text": "a"
     },
     {
-     "end": 11.663,
-     "start": 11.2,
+     "end": 11.312,
+     "start": 10.85,
      "text": "mutable"
     },
     {
-     "end": 12.087,
-     "start": 11.663,
+     "end": 11.738,
+     "start": 11.312,
      "text": "cell"
     },
     {
-     "end": 12.375,
-     "start": 12.087,
+     "end": 12.025,
+     "start": 11.738,
      "text": "says"
     },
     {
-     "end": 12.8,
-     "start": 12.375,
+     "end": 12.45,
+     "start": 12.025,
      "text": "nothing"
     },
     {
-     "end": 13.1,
-     "start": 12.8,
+     "end": 12.75,
+     "start": 12.45,
      "text": "about"
     },
     {
-     "end": 13.238,
-     "start": 13.1,
+     "end": 12.887,
+     "start": 12.75,
      "text": "what"
     },
     {
-     "end": 13.325,
-     "start": 13.238,
+     "end": 12.975,
+     "start": 12.887,
      "text": "it"
     },
     {
-     "end": 13.575,
-     "start": 13.325,
+     "end": 13.225,
+     "start": 12.975,
      "text": "does"
     },
     {
-     "end": 13.788,
-     "start": 13.575,
+     "end": 13.438,
+     "start": 13.225,
      "text": "with"
     },
     {
-     "end": 14.475,
-     "start": 13.788,
+     "end": 14.125,
+     "start": 13.438,
      "text": "it"
     },
     {
-     "end": 14.675,
-     "start": 14.475,
+     "end": 14.325,
+     "start": 14.125,
      "text": ";"
     },
     {
-     "end": 14.988,
-     "start": 14.875,
+     "end": 14.637,
+     "start": 14.525,
      "text": "what"
     },
     {
-     "end": 15.05,
-     "start": 14.988,
+     "end": 14.7,
+     "start": 14.637,
      "text": "a"
     },
     {
-     "end": 15.475,
-     "start": 15.05,
+     "end": 15.125,
+     "start": 14.7,
      "text": "command"
     },
     {
-     "end": 15.75,
-     "start": 15.475,
+     "end": 15.4,
+     "start": 15.125,
      "text": "does"
     },
     {
-     "end": 15.913,
-     "start": 15.75,
+     "end": 15.562,
+     "start": 15.4,
      "text": "is"
     },
     {
-     "end": 16.325,
-     "start": 15.913,
+     "end": 15.975,
+     "start": 15.562,
      "text": "settled"
     },
     {
-     "end": 16.5,
-     "start": 16.325,
+     "end": 16.15,
+     "start": 15.975,
      "text": "by"
     },
     {
-     "end": 16.638,
-     "start": 16.5,
+     "end": 16.288,
+     "start": 16.15,
      "text": "the"
     },
     {
-     "end": 17.013,
-     "start": 16.638,
+     "end": 16.663,
+     "start": 16.288,
      "text": "cage"
     },
     {
-     "end": 17.55,
-     "start": 17.013,
+     "end": 17.2,
+     "start": 16.663,
      "text": "tests"
     },
     {
-     "end": 17.625,
-     "start": 17.55,
+     "end": 17.275,
+     "start": 17.2,
      "text": ","
     },
     {
-     "end": 17.763,
-     "start": 17.625,
+     "end": 17.413,
+     "start": 17.275,
      "text": "the"
     },
     {
-     "end": 18.25,
-     "start": 17.763,
+     "end": 17.9,
+     "start": 17.413,
      "text": "journeys"
     },
     {
-     "end": 18.362,
-     "start": 18.25,
+     "end": 18.013,
+     "start": 17.9,
      "text": "and"
     },
     {
-     "end": 18.45,
-     "start": 18.362,
+     "end": 18.1,
+     "start": 18.013,
      "text": "the"
     },
     {
-     "end": 18.938,
-     "start": 18.45,
+     "end": 18.587,
+     "start": 18.1,
      "text": "hosted"
     },
     {
-     "end": 19.275,
-     "start": 18.938,
+     "end": 18.925,
+     "start": 18.587,
      "text": "runs"
     },
     {
-     "end": 19.7,
-     "start": 19.275,
+     "end": 19.35,
+     "start": 18.925,
      "text": "below"
     },
     {
-     "end": 19.775,
-     "start": 19.7,
+     "end": 19.425,
+     "start": 19.35,
      "text": ","
     },
     {
-     "end": 20.0,
-     "start": 19.775,
+     "end": 19.65,
+     "start": 19.425,
      "text": "not"
     },
     {
-     "end": 20.875,
-     "start": 20.0,
+     "end": 20.525,
+     "start": 19.65,
      "text": "here"
     },
     {
-     "end": 21.125,
-     "start": 20.875,
+     "end": 20.775,
+     "start": 20.525,
      "text": "."
     }
    ]

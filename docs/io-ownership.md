@@ -37,10 +37,10 @@ classify fails the run instead of slipping through.
 | Conformance library | the suite's programs, bindings, comparisons and receipts | 33 |
 | Conformance runner | the live row runners and their command-line controls | 40 |
 | Application host | the adversarial host package | 6 |
-| Tests and harness | every suite, fixture, fake and harness library | 179 |
+| Tests and harness | every suite, fixture, fake and harness library | 180 |
 | Old journeys | the retained registry journey executables | 19 |
 
-449 sources in total. The census establishes structural facts — which files
+450 sources in total. The census establishes structural facts — which files
 can name which effects — and never runtime behavior. That a module can name
 a mutable cell says nothing about what it does with it; what a command does
 is settled by the cage tests, the journeys and the hosted runs below, not
