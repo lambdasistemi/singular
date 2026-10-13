@@ -69,9 +69,35 @@
     {
       "text": "The Blockfrost credential, which stays with its owner; the readback takes a reference to a file, never a value.",
       "pause": 300
+    }
+  ],
+  "funding-a-create-from-one-output": [
+    {
+      "text": "Funding a create from one output.",
+      "pause": 500
     },
     {
-      "text": "A funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted.",
+      "text": "As Carol, I fund a fresh wallet with one output and run create. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
+      "pause": 400
+    },
+    {
+      "text": "Decided, not yet built. Today a funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 (#491) replaces this with a chain from one output:",
+      "pause": 400
+    },
+    {
+      "text": "Why the seed can come second. The state script is the same for every registry and is not tied to any seed, so the seed does not have to exist before the first publication.",
+      "pause": 300
+    },
+    {
+      "text": "The identity is still known at preview. The registry's token name is the SHA-256 of the seed's output reference. That reference is the first publication's transaction id and an output number, and the transaction id is computed from the body before submission.",
+      "pause": 300
+    },
+    {
+      "text": "A half-built create has one way forward. It always continues from the last transaction's change (#478).",
+      "pause": 300
+    },
+    {
+      "text": "Until #406, #479 and #491 land, the create still refuses a single-output wallet.",
       "pause": 400
     }
   ],
@@ -87,6 +113,6 @@
   ],
   "_source": {
     "file": "demo1-preprod.md",
-    "sha256": "8f778b73d4adb87e09e4b1c97de377b7113d60361022253297fb03d99dba2fff"
+    "sha256": "a91b8d6aac9fef00c4088c91520962711bfb587a16c7ba9692da087de728dadb"
   }
 }
