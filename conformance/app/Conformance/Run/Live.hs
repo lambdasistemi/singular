@@ -3637,6 +3637,12 @@ compareStep env state step observation = do
         chainReason = case reasonCheck of
             Just (lean, Agrees) -> Just lean
             _ -> Nothing
+        -- The differing reasons a lawful row fails loudly on: kept on the record
+        -- so the program check names both, while the receipt keeps no trace.
+        differsReasons = case reasonCheck of
+            Just (_, Differs{chainReason = admitted, leanReason = controlled}) ->
+                Just (admitted, controlled)
+            _ -> Nothing
         (chainOutcome, chain) = case lsOutcome step of
             StepAccepted transaction units ->
                 ( String "accepted"
@@ -3746,6 +3752,7 @@ compareStep env state step observation = do
                 [ "registry" .= registryId
                 , "edge" .= Live.edgeName (Live.requestEdge (lsRequest step))
                 , "exit" .= exitNamed
+                , "requestKey" .= Live.requestKey (lsRequest step)
                 , "request" .= lsModelRequest step
                 , "tamper" .= fmap Live.tamperName (lsTamper step)
                 , "model" .= model
@@ -3756,6 +3763,9 @@ compareStep env state step observation = do
                 , "perturbation" .= perturbation
                 , "differences" .= map differenceJson differing
                 ]
+                    <> ["chainReason" .= admitted | Just (admitted, _) <- [differsReasons]]
+                    <> [ "leanReason" .= controlled | Just (_, controlled) <- [differsReasons]
+                       ]
                     <> ["witness" .= witness | Just witness <- [lsRetraction step]]
                     <> ["foldWitness" .= witness | Just witness <- [lsFoldWitness step]]
                     <> [ "requestScript" .= requestMarkerOf stepCfg stepTid

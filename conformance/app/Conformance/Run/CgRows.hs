@@ -157,10 +157,12 @@ for the chain, logged as a known divergence and never a pass.
 -}
 expect :: String -> (Int, Expected, Value) -> IO ()
 expect row (index, expected, record) = case expected of
-    Agrees ->
-        require
-            (row <> " record " <> show index <> " does not agree with the model")
-            (field ["comparison"] record == Just (String "agrees"))
+    Agrees -> case differsMessage record of
+        Just message -> failWith message
+        Nothing ->
+            require
+                (row <> " record " <> show index <> " does not agree with the model")
+                (field ["comparison"] record == Just (String "agrees"))
     Diverges
         { divergenceChain
         , divergenceModel
@@ -216,6 +218,36 @@ expect row (index, expected, record) = case expected of
     text path value = case field path value of
         Just (String t) -> Just t
         _ -> Nothing
+    -- A lawful row meeting a different-reason refusal fails loudly, naming both
+    -- reasons from the record's own fields, before any receipt is written.
+    differsMessage value =
+        case ( field ["comparison"] value
+             , field ["chain", "outcome"] value
+             , field ["model", "outcome"] value
+             , text ["exit"] value
+             , text ["requestKey"] value
+             , text ["chainReason"] value
+             , text ["leanReason"] value
+             ) of
+            ( Just (String "disagrees")
+                , Just (String "refused")
+                , Just (String "refused")
+                , Just exit
+                , Just key
+                , Just chainReason
+                , Just leanReason
+                ) ->
+                    Just
+                        ( "model and chain refuse for different reasons for "
+                            <> T.unpack exit
+                            <> " at "
+                            <> T.unpack key
+                            <> ": chain="
+                            <> T.unpack chainReason
+                            <> " lean="
+                            <> T.unpack leanReason
+                        )
+            _ -> Nothing
     replayReasons value = case field ["chain", "refusal", "replay"] value of
         Just (Array entries) ->
             [ reason
