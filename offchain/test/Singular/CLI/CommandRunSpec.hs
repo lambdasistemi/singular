@@ -123,15 +123,22 @@ import System.Posix.Types (Fd)
 import System.Timeout (timeout)
 import Test.Hspec
 
-import Cardano.Ledger.Address (serialiseAddr)
+import Cardano.Crypto.Hash.Class (hashFromBytes)
+import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
 import Cardano.Ledger.Api.Tx.Out
     ( addrTxOutL
     , datumTxOutL
     , mkBasicTxOut
+    , valueTxOutL
     )
 import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -147,9 +154,12 @@ import Singular.CLI (runCommand)
 import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
+    , FoldArgs (..)
     , parseCommand
     , renderCLIError
     )
+import Singular.CLI.Finish (finish)
+import Singular.CLI.Fold (runFoldBounded)
 import Singular.CLI.Receipt (FoldTransition (..), JournalEntry (..))
 import Singular.CLI.Registry
     ( economics
@@ -163,6 +173,10 @@ import Singular.CLI.Trace
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
+    , DecodedHolding (..)
+    , HoldingRules (..)
+    , datumCbor
+    , datumHash
     , hashPinnedApplication
     , neutralApplication
     )
@@ -214,6 +228,7 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
+import Singular.Registry.TxBuilder.Update (RegistryContext (..))
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
@@ -234,6 +249,7 @@ spec =
         >> applicationPolicyRows
         >> confirmationLifetime
         >> journalTransitionsRow
+        >> foldOverSeveralRequestsRow
 
 confirmationLifetime :: Spec
 confirmationLifetime = describe "CLI confirmation lifetime" $ do
@@ -2297,3 +2313,505 @@ foldPreparedEntries rig registry = do
         , journalStep e == "fold"
         , journalEvent e == "prepared"
         ]
+
+-- ---------------------------------------------------------
+-- The fold over several requests (bound seam, #518 pull request 3a)
+-- ---------------------------------------------------------
+
+{- | Plant one insertion request a bounded fold settles, with explicit key,
+carried datum bytes, fake reference character (ledger order) and submission
+time override (0 uses the clock): its destination carries the datum at the
+wallet address, and its output carries the approval asset the selection
+expects, so the seven checks pass under the neutral value.
+-}
+plantFoldableRequestAt
+    :: Rig
+    -> String
+    -> String
+    -> BS.ByteString
+    -> BS.ByteString
+    -> Char
+    -> Integer
+    -> IO TxIn
+plantFoldableRequestAt rig tokenStr seedStr keyBytes carriedBytes fakeChar submittedOverride = do
+    seedIn <-
+        either
+            (fail . ("plantFoldableRequestAt seed: " <>))
+            pure
+            (parseOutRef (T.pack seedStr))
+    tid <- parseTokenId tokenStr
+    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
+    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
+    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
+        reqAddr = requestAddrFromCfg cfg tid Testnet
+        walletAt = walletAddr (rigWallet rig)
+        edge = edgeInsertActive
+    now0 <- currentPosixMs
+    let now = if submittedOverride == 0 then now0 else submittedOverride
+        destBytes = serialiseAddr walletAt
+        carried = PLC.Constr 0 [PLC.B carriedBytes]
+        dest = (destBytes, Just carried)
+        ownerBytes = addrKeyHashBytes walletAt
+        expectedName = approvalName edge keyBytes ownerBytes (approvalDestination dest)
+        pinned = cfgApplicationPolicy cfg
+        approvalAsset =
+            MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin pinned)
+                    (Map.singleton (AssetName (SBS.toShort expectedName)) 1)
+                )
+        deposit = 4_000_000 :: Integer
+        tip = 1_000_000 :: Integer
+        bond = deposit + tip
+        datum = mkRequestDatumWith tid walletAt keyBytes edge deposit now dest
+        reqOut =
+            mkBasicTxOut reqAddr (MaryValue (Coin bond) approvalAsset)
+                & datumTxOutL .~ mkInlineDatum datum
+        reqIn =
+            either
+                (error . ("plantFoldableRequestAt outref: " <>))
+                id
+                (parseOutRef (T.pack (replicate 64 fakeChar <> "#0")))
+    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
+    pure reqIn
+
+{- | One fold at an explicit capacity bound, through the same dispatch and
+receipt plumbing as 'run': parses the fold command line for its addresses
+and funding, then finishes through 'runFoldBounded' instead of production.
+-}
+runFoldAtBoundApp :: Rig -> Int -> Application -> String -> IO Run
+runFoldAtBoundApp rig bound app tokenStr = do
+    writeIORef (rigEvents rig) []
+    let args = ["registry", "fold"] <> tokenArgs tokenStr
+    command <-
+        either
+            (fail . show)
+            pure
+            (parseCommand (commandLine rig "registry" args))
+    case command of
+        Fold fargs -> do
+            (code, out, _) <-
+                captured
+                    ( finish
+                        (envTracer (envOf rig))
+                        "fold"
+                        (foldReceipt fargs)
+                        (runFoldBounded bound app (envOf rig) fargs)
+                    )
+            receipt <-
+                maybe
+                    ( fail
+                        ("no receipt for fold-at-bound " <> show bound <> ": " <> show out)
+                    )
+                    pure
+                    (Aeson.decodeStrict out)
+            events <- readIORef (rigEvents rig)
+            pure
+                Run
+                    { runName = "Fold"
+                    , runLabel = "fold at bound " <> show bound
+                    , runExit = code
+                    , runReceipt = receipt
+                    , runEvents = events
+                    , runKey = Nothing
+                    }
+        _ -> fail "runFoldAtBoundApp: not a fold command"
+
+runFoldAtBound :: Rig -> Int -> String -> IO Run
+runFoldAtBound rig bound = runFoldAtBoundApp rig bound neutralApplication
+
+-- | Every settled entry of the receipt, in order.
+settledEntries :: Aeson.Value -> [Aeson.Object]
+settledEntries v = case elementsAt "settled" v of
+    Just xs -> [o | Aeson.Object o <- xs]
+    _ -> []
+
+-- | The request references of the settled list, in order.
+settledRequestRefs :: Aeson.Value -> [Text]
+settledRequestRefs v =
+    [t | o <- settledEntries v, Just t <- [fieldOf "request" o]]
+
+-- | A settlement's live output, when it carries one.
+settledLiveOutput :: Aeson.Value -> Maybe Text
+settledLiveOutput s = case s of
+    Aeson.Object o -> fieldOf "liveOutput" o
+    _ -> Nothing
+
+-- | The journal's observed fold lines.
+foldObservedEntries :: Rig -> FilePath -> IO [JournalEntry]
+foldObservedEntries rig registry = do
+    names <- listDirectoryRecursive (rigDir rig </> registry)
+    let journals = [p | p <- names, takeFileName p == "journal.jsonl"]
+    journalRel <- case journals of
+        [found] -> pure found
+        _ -> fail ("expected exactly one journal under " <> registry)
+    raw <- BS.readFile (rigDir rig </> registry </> journalRel)
+    entries <-
+        mapM
+            (maybe (fail "a journal line is not JSON") pure . Aeson.decodeStrict)
+            (BC.lines raw)
+    pure
+        [ e
+        | e <- entries
+        , journalStep e == "fold"
+        , journalEvent e == "observed"
+        ]
+
+{- | The fold settles every selected request in one transaction: rows at
+bound 3 (and 2) over settleable pending insertions. RED with the bound
+seam stubbed (one folds): each row asserting two settles fails by assertion.
+-}
+foldOverSeveralRequestsRow :: Spec
+foldOverSeveralRequestsRow = describe "the fold settles every selected request in one transaction" $ do
+    it
+        "two insertions of different keys settle in ledger order at bound 3"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t1 <- tokenOf create
+            reqE <-
+                plantFoldableRequestAt rig t1 seed "fold-many-a" "many-a" 'e' 0
+            reqF <-
+                plantFoldableRequestAt rig t1 seed "fold-many-b" "many-b" 'f' 0
+            folded <- runFoldAtBound rig 3 t1
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            settledRequestRefs (runReceipt folded)
+                `shouldBe` [renderOutRef reqE, renderOutRef reqF]
+            length (settledEntries (runReceipt folded)) `shouldBe` 2
+            entries <- foldPreparedEntries rig "registry"
+            case entries of
+                [entry] -> case journalTransitions entry of
+                    Just [first, second] -> do
+                        transitionRequest first `shouldBe` renderOutRef reqE
+                        transitionRequest second `shouldBe` renderOutRef reqF
+                        transitionRootAfter first `shouldBe` transitionRootBefore second
+                        transitionRootAfter first `shouldNotBe` transitionRootAfter second
+                        Just (transitionKey first) `shouldBe` journalKey entry
+                        Just (transitionRootBefore first) `shouldBe` journalRootBefore entry
+                        Just (transitionRootAfter second) `shouldBe` journalRootAfter entry
+                    other ->
+                        expectationFailure
+                            ("expected two chained transitions, found: " <> show other)
+                other ->
+                    expectationFailure
+                        ("expected one prepared fold line, found: " <> show (length other))
+            observed <- foldObservedEntries rig "registry"
+            length observed `shouldBe` 1
+    it
+        "three pending at bound 2 settles two and excludes the third capacity"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t1 <- tokenOf create
+            reqE <- plantFoldableRequestAt rig t1 seed "fold-cap-a" "cap-a" 'd' 0
+            reqF <- plantFoldableRequestAt rig t1 seed "fold-cap-b" "cap-b" 'e' 0
+            _reqG <- plantFoldableRequestAt rig t1 seed "fold-cap-c" "cap-c" 'f' 0
+            folded <- runFoldAtBound rig 2 t1
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            settledRequestRefs (runReceipt folded)
+                `shouldBe` [renderOutRef reqE, renderOutRef reqF]
+            case elementsAt "excluded" (runReceipt folded) of
+                Just [Aeson.Object o] -> fieldOf "reason" o `shouldBe` Just "capacity"
+                other ->
+                    expectationFailure
+                        ("expected one capacity exclusion, found: " <> show other)
+    it "the earlier deadline of the second request bounds the fold" $ withRig $ \rig -> do
+        seed <- fundSeed rig
+        create <-
+            run
+                rig
+                "create"
+                (["registry", "create", "--seed", seed] <> policyArgs)
+        outcomeOf (runReceipt create) `shouldBe` Just "success"
+        t1 <- tokenOf create
+        now0 <- currentPosixMs
+        _reqE <-
+            plantFoldableRequestAt rig t1 seed "fold-dl-a" "dl-a" 'e' now0
+        _reqF <-
+            plantFoldableRequestAt
+                rig
+                t1
+                seed
+                "fold-dl-b"
+                "dl-b"
+                'f'
+                (now0 - 300_000)
+        folded <- runFoldAtBound rig 3 t1
+        outcomeOf (runReceipt folded) `shouldBe` Just "success"
+        length (settledEntries (runReceipt folded)) `shouldBe` 2
+        let deadlines =
+                [ d
+                | o <- settledEntries (runReceipt folded)
+                , Just d <-
+                    [integerAt "posixMs" =<< valueAt "deadline" (Aeson.Object o)]
+                ]
+        case deadlines of
+            [first, second] -> (second < first) `shouldBe` True
+            other ->
+                expectationFailure
+                    ("expected two entry deadlines, found: " <> show other)
+        case ( valueAt "foldDeadline" (runReceipt folded) >>= integerAt "posixMs"
+             , deadlines
+             ) of
+            (Just top, _ : second : _) -> top `shouldBe` second
+            other ->
+                expectationFailure
+                    ( "expected the top deadline to follow the second entry, found: "
+                        <> show other
+                    )
+        case ( integerAt "hostClockMs" (runReceipt folded)
+             , integerAt "remainingMs" (runReceipt folded)
+             , deadlines
+             ) of
+            (Just clock, Just remaining, _ : second : _) ->
+                (remaining + clock) `shouldBe` second
+            other ->
+                expectationFailure
+                    ( "expected the window to follow the second entry, found: "
+                        <> show other
+                    )
+    it
+        "two insertions of the same datum to the same destination are both found distinct"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t1 <- tokenOf create
+            reqE <-
+                plantFoldableRequestAt rig t1 seed "fold-same-a" "same-datum" 'e' 0
+            reqF <-
+                plantFoldableRequestAt rig t1 seed "fold-same-b" "same-datum" 'f' 0
+            folded <- runFoldAtBound rig 3 t1
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            settledRequestRefs (runReceipt folded)
+                `shouldBe` [renderOutRef reqE, renderOutRef reqF]
+            let liveOuts =
+                    [ t
+                    | o <- settledEntries (runReceipt folded)
+                    , Just s <- [valueAt "settlement" (Aeson.Object o)]
+                    , Just t <- [settledLiveOutput s]
+                    ]
+            length liveOuts `shouldBe` 2
+            case liveOuts of
+                [firstOut, secondOut] -> (firstOut == secondOut) `shouldBe` False
+                _ ->
+                    expectationFailure
+                        ("expected two distinct live outputs, found: " <> show liveOuts)
+    it
+        "two insertions and one termination settle with the termination release at bound 3"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t1 <- tokenOf create
+            _priorReq <-
+                plantFoldableRequestAt rig t1 seed "fold-term-key" "term-prior" 'd' 0
+            priorFold <- runFoldAtBound rig 1 t1
+            outcomeOf (runReceipt priorFold) `shouldBe` Just "success"
+            plantActiveTokenFor rig t1 seed "fold-term-key"
+            reqA <- plantFoldableRequestAt rig t1 seed "fold-mix-a" "mix-a" 'e' 0
+            reqB <- plantFoldableRequestAt rig t1 seed "fold-mix-b" "mix-b" 'f' 0
+            reqC <- plantFoldableTerminationAt rig t1 seed "fold-term-key" 'c'
+            folded <- runFoldAtBoundApp rig 3 (testAppExpecting 1) t1
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            length (settledEntries (runReceipt folded)) `shouldBe` 3
+            let byRequest =
+                    [ (r, o)
+                    | o <- settledEntries (runReceipt folded)
+                    , Just r <- [fieldOf "request" o]
+                    ]
+                termObjs = [o | (r, o) <- byRequest, r == renderOutRef reqC]
+            length termObjs `shouldBe` 1
+            case termObjs of
+                [o] -> case valueAt "settlement" (Aeson.Object o) of
+                    Just (Aeson.Object s) -> do
+                        fieldOf "released" s `shouldSatisfy` isJust
+                        case KeyMap.lookup "deposit" s of
+                            Just (Aeson.Number _) -> pure ()
+                            other ->
+                                expectationFailure
+                                    ( "expected a deposit in the termination settlement, found: "
+                                        <> show other
+                                    )
+                    other ->
+                        expectationFailure
+                            ( "expected a settlement object for the termination, found: "
+                                <> show other
+                            )
+                _ -> expectationFailure "expected exactly one termination entry"
+            settledRequestRefs (runReceipt folded)
+                `shouldSatisfy` ( \refs -> renderOutRef reqA `elem` refs && renderOutRef reqB `elem` refs
+                                )
+
+{- | Plant one termination request for a key known active: edge updateTerminal
+with the approval asset the selection expects, at a fresh fake reference.
+-}
+plantFoldableTerminationAt
+    :: Rig -> String -> String -> BS.ByteString -> Char -> IO TxIn
+plantFoldableTerminationAt rig tokenStr seedStr keyBytes fakeChar = do
+    seedIn <-
+        either
+            (fail . ("plantFoldableTerminationAt seed: " <>))
+            pure
+            (parseOutRef (T.pack seedStr))
+    tid <- parseTokenId tokenStr
+    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
+    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
+    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
+        reqAddr = requestAddrFromCfg cfg tid Testnet
+        walletAt = walletAddr (rigWallet rig)
+        edge = edgeUpdateTerminal
+    now <- currentPosixMs
+    let destBytes = serialiseAddr walletAt
+        carried = PLC.Constr 0 [PLC.B "term"]
+        dest = (destBytes, Just carried)
+        ownerBytes = addrKeyHashBytes walletAt
+        expectedName = approvalName edge keyBytes ownerBytes (approvalDestination dest)
+        pinned = cfgApplicationPolicy cfg
+        approvalAsset =
+            MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin pinned)
+                    (Map.singleton (AssetName (SBS.toShort expectedName)) 1)
+                )
+        deposit = 4_000_000 :: Integer
+        tip = 1_000_000 :: Integer
+        bond = deposit + tip
+        datum = mkRequestDatumWith tid walletAt keyBytes edge deposit now dest
+        reqOut =
+            mkBasicTxOut reqAddr (MaryValue (Coin bond) approvalAsset)
+                & datumTxOutL .~ mkInlineDatum datum
+        reqIn =
+            either
+                (error . ("plantFoldableTerminationAt outref: " <>))
+                id
+                (parseOutRef (T.pack (replicate 64 fakeChar <> "#0")))
+    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
+    pure reqIn
+
+{- | Plant one output at the application address carrying the key's active
+token, so the selection's live-facts see a present token for a termination.
+-}
+plantActiveTokenFor
+    :: Rig -> String -> String -> BS.ByteString -> IO ()
+plantActiveTokenFor rig tokenStr seedStr keyBytes = do
+    seedIn <-
+        either
+            (fail . ("plantActiveTokenFor seed: " <>))
+            pure
+            (parseOutRef (T.pack seedStr))
+    _tid <- parseTokenId tokenStr
+    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
+    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
+    let (cfg, _) = registryConfigFor dummy rel economics (txInToRef seedIn)
+        active = cfgActivePolicy cfg
+        appAddr = case hashFromBytes (SBS.fromShort (cfgApplicationPolicy cfg)) of
+            Just h -> Addr Testnet (ScriptHashObj (ScriptHash h)) StakeRefNull
+            Nothing -> error "plantActiveTokenFor: pinned policy is not 28 bytes"
+        activeAsset =
+            MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin active)
+                    (Map.singleton (AssetName (SBS.toShort keyBytes)) 1)
+                )
+        out = mkBasicTxOut appAddr (MaryValue (Coin 2_000_000) activeAsset)
+        plantedIn =
+            either
+                (error . ("plantActiveTokenFor outref: " <>))
+                id
+                (parseOutRef (T.pack (replicate 64 'b' <> "#0")))
+    advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert plantedIn out (csUTxO facts)}
+
+{- | A test value with holding rules for the release row: carried datums read
+as one constant, live holdings are canned per key with that constant, and
+the context entry checks it receives every release (exactly the expected
+count) before adding the holdings to the builder inventory. It names no
+shipped application.
+-}
+testAppExpecting :: Int -> Application
+testAppExpecting expected =
+    neutralApplication
+        { appName = Just "fold-many-test"
+        , appExecutable = Just "fold-many-test"
+        , appHolding = Just rules
+        }
+  where
+    constantDatum = PLC.Constr 0 [PLC.B "fold-many-constant"]
+    canned key =
+        DecodedHolding
+            { dhDatumData = constantDatum
+            , dhDatumCbor = datumCbor constantDatum
+            , dhDatumHash = datumHash constantDatum
+            , dhKey = key
+            , dhDeposit = 4_000_000
+            , dhController = BS.replicate 28 9
+            , dhPayload = PLC.I 0
+            , dhDatumJson = Aeson.object ["constant" .= (1 :: Int)]
+            , dhPayloadJson = Aeson.object ["constant" .= (0 :: Int)]
+            }
+    rules =
+        HoldingRules
+            { hrCheckCarried = const (Right constantDatum)
+            , hrFindHoldings = \_ _ _ _ -> []
+            , hrLiveOutputFor = \cfg _ key outs ->
+                let active = cfgActivePolicy cfg
+                    carries (_, o) = case o ^. valueTxOutL of
+                        MaryValue _ (MultiAsset m) -> case Map.lookup (policyIdFromPin active) m of
+                            Just names -> Map.member (AssetName (SBS.toShort key)) names
+                            Nothing -> False
+                    found = [u | u@(_, _) <- outs, carries u]
+                    fakeIn =
+                        either
+                            (error "testApp live output")
+                            id
+                            (parseOutRef (T.pack (replicate 64 'a' <> "#0")))
+                    dummyHash = case hashFromBytes (BS.replicate 28 8) of
+                        Just h -> h
+                        Nothing -> error "testApp hash"
+                    dummyAddr = Addr Testnet (ScriptHashObj (ScriptHash dummyHash)) StakeRefNull
+                    activeAsset =
+                        MultiAsset
+                            ( Map.singleton
+                                (policyIdFromPin active)
+                                (Map.singleton (AssetName (SBS.toShort key)) 1)
+                            )
+                    fakeOut = mkBasicTxOut dummyAddr (MaryValue (Coin 2_000_000) activeAsset)
+                in  case found of
+                        (u : _) -> Right (u, canned key)
+                        [] -> Right ((fakeIn, fakeOut), canned key)
+            , hrReleaseOf = \_ _ -> Left "unused"
+            , hrWithApplication = \_ _ live ctx ->
+                if length live == expected
+                    then Right ctx{rcHolderUtxos = rcHolderUtxos ctx <> live}
+                    else
+                        Left
+                            ( T.pack
+                                ( "testApp expected "
+                                    <> show expected
+                                    <> " holdings, got "
+                                    <> show (length live)
+                                )
+                            )
+            }
