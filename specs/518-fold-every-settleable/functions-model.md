@@ -31,3 +31,16 @@ New or changed signatures only: names, explicit arguments, argument and result t
 | model-agreement example | a state, a pending list, a capacity bound | pass or fail | runs `selectFold`, asks the model's `foldBatch` question (driver `runFoldBatch`) about the selected batch, requires acceptance and equal state, mint and paid; a same-key batch is refused with the first refusing step's reason |
 
 Removed: `foldTarget`, `FoldTargetRefusal`, `renderTargetRefusal`.
+
+## Pull request 3 at `e7b55ac9`
+
+New and changed signatures of pull request 3a (3b changes no signature; it changes what `observe` does with the list). Names and fields are in the [data model](data-model.md).
+
+| name | arguments | result | constraint |
+|---|---|---|---|
+| `foldPendingBounded` | `bound`: capacity bound; the arguments of `foldPending` | fold result | `foldPending` is this with the production bound; another bound is used only by a test |
+| `Folded` (changed) | | a non-empty list of settled entries and the facts of the transaction | replaces the single-request fields (the swap rule); the fold deadline is the earliest among the settled entries |
+| `settledEntryFor` | `folded`: fold result; `request`: reference | the settled entry or nothing | how a combined form finds its own booking |
+| `foldTransitions` (pull request 3b) | `entry`: journal entry | list of fold transitions | the entry's list; without one, the scalar fields as a list of one; empty for a line that carries neither |
+| `chainTransitions` | `rootBefore`; per request: reference, key, edge, expectation, root after | list of fold transitions | each root before is the previous root after |
+| `Expectation` (changed) | a second constructor `FoldExpectation`: the non-empty list of fold transitions | | the first constructor and its fields are unchanged; the journal scalars of a `FoldExpectation` are the first transition's key, expectation, edge and root before and the last transition's root after |

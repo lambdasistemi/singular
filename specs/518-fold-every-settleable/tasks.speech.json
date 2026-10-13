@@ -55,36 +55,6 @@
       "pause": 400
     }
   ],
-  "pull-request-3-many-per-fold": [
-    {
-      "text": "Pull request 3: many per fold.",
-      "pause": 500
-    }
-  ],
-  "builder-over-many": [
-    {
-      "text": "builder-over-many.",
-      "pause": 500
-    }
-  ],
-  "journal-and-recovery-for-many": [
-    {
-      "text": "journal-and-recovery-for-many.",
-      "pause": 500
-    }
-  ],
-  "capacity-nine-and-the-command": [
-    {
-      "text": "capacity-nine-and-the-command.",
-      "pause": 500
-    }
-  ],
-  "devnet-two-actors-and-interruption": [
-    {
-      "text": "devnet-two-actors-and-interruption.",
-      "pause": 500
-    }
-  ],
   "docs-of-many-per-fold": [
     {
       "text": "docs-of-many-per-fold.",
@@ -93,7 +63,7 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "c22fd6ff178bf7a1c0035a6d419a8970689cade769844fcda7b78c553dbf4291"
+    "sha256": "9a5dd9fa6bf65b8ba953aa4857e8d48a6416c903ab86348e41a9691e146058aa"
   },
   "readers-move-to-the-list": [
     {
@@ -104,6 +74,60 @@
   "duplicates-removed": [
     {
       "text": "duplicates-removed.",
+      "pause": 500
+    }
+  ],
+  "pull-request-3a-the-fold-over-several-requests-the-journal-listing-every-transition": [
+    {
+      "text": "Pull request 3a: the fold over several requests, the journal listing every transition.",
+      "pause": 500
+    }
+  ],
+  "journal-carries-the-transitions": [
+    {
+      "text": "Journal carries the transitions.",
+      "pause": 500
+    }
+  ],
+  "fold-over-several-requests": [
+    {
+      "text": "Fold over several requests.",
+      "pause": 500
+    }
+  ],
+  "docs-of-the-reason-for-the-bound": [
+    {
+      "text": "Docs of the reason for the bound.",
+      "pause": 500
+    }
+  ],
+  "pull-request-3b-recovery-of-many-bound-9-executed-evidence": [
+    {
+      "text": "Pull request 3b: recovery of many, bound 9, executed evidence.",
+      "pause": 500
+    }
+  ],
+  "reconcile-reads-every-transition": [
+    {
+      "text": "Reconcile reads every transition.",
+      "pause": 500
+    }
+  ],
+  "capacity-nine": [
+    {
+      "text": "Capacity nine.",
+      "pause": 500
+    }
+  ],
+  "devnet-two-actors-one-fold": [
+    {
+      "text": "Devnet, two actors, one fold.",
+      "pause": 500
+    }
+  ],
+  "devnet-interrupted-two-request-fold": [
+    {
+      "text": "Devnet, interrupted two-request fold.",
       "pause": 500
     }
   ]

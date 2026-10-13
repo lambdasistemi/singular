@@ -81,7 +81,7 @@
       "pause": 400
     },
     {
-      "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's capacity field states the bound, 1, and why — the journal binds one transition until the multi-request journal ships. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
+      "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's capacity field states the bound, 1, and why — recovery reads one transition until the multi-request recovery ships. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
       "pause": 400
     },
     {
@@ -109,6 +109,10 @@
       "pause": 400
     },
     {
+      "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve is refused, and so is a wallet with no ada-only output or with a funding input that is not one of its ada-only outputs. After the booking is built and before it is signed, a wallet holding less than the measured outlay is refused. Each refusal is a client refusal that says it is client policy and names the wallet, what it holds and its number of outputs. The two amount refusals also name what is required and the shortfall. The empty-wallet refusal ends with the faucet step; a foreign funding choice does not.",
+      "pause": 400
+    },
+    {
       "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
       "pause": 400
     },
@@ -117,7 +121,7 @@
       "pause": 400
     },
     {
-      "text": "What this pull request leaves out, stated plainly: one request per fold, because the journal binds one transition until the multi-request journal ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
+      "text": "What this pull request leaves out, stated plainly: one request per fold, because recovery reads one transition until the multi-request recovery ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
       "pause": 400
     }
   ],
@@ -265,6 +269,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "e61b9a70a42c6a693c41a6ab2a4582c78378f75192d852957afef2f69b88679d"
+    "sha256": "46559c09af4c285e27e8d1cbaa3b1524ba92af652c72fb0b2aaa524186fb86c1"
   }
 }

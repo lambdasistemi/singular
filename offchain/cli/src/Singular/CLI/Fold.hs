@@ -34,14 +34,21 @@ the request that stays pending.
 module Singular.CLI.Fold
     ( -- * The command
       runFold
+    , runFoldBounded
 
       -- * The one fold routine
     , FoldOrigin (..)
     , FoldSpec (..)
     , Folded (..)
+    , SettledEntry (..)
+    , Plan (..)
+    , PlanEntry (..)
     , Delivery (..)
     , foldPending
+    , foldPendingBounded
     , foldedFields
+    , settledEntryFor
+    , foldDeadline
     , neutralTerminationRefusal
     , slotAt
 
@@ -58,7 +65,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (forM_, unless, when)
+import Control.Monad (foldM, forM_, unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.List (isPrefixOf, sortOn)
@@ -107,7 +114,7 @@ import Singular.CLI.Outlay
     , outlayTotal
     )
 import Singular.CLI.Plan (outlayReport, refuseOver)
-import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Receipt (OutcomeClass (..), chainTransitions)
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
 import Singular.CLI.Trace
@@ -247,18 +254,96 @@ data Delivery
       DeliveredDatum TxIn PLC.Data
     | -- | The live output the fold released, and the deposit it paid back
       Released TxIn Integer
+    deriving stock (Eq, Show)
 
--- | A confirmed, committed and observed fold.
+{- | One settled request of a fold, in ledger order.
+
+A fold of one carries a list of one; the fold over several requests of
+the next run carries one entry per settled request, in order.
+-}
+data SettledEntry = SettledEntry
+    { seRequest :: TxIn
+    , seKey :: ByteString
+    , seEdge :: Edge
+    , seOwner :: Text
+    , seKind :: FoldKind
+    , seDelivery :: Delivery
+    , seDeadline :: Deadline
+    }
+    deriving stock (Eq, Show)
+
+-- | One planned request of a fold, in ledger order.
+data PlanEntry = PlanEntry
+    { peRequest :: TxIn
+    , peKey :: ByteString
+    , peEdge :: Edge
+    , peKind :: FoldKind
+    , peDatum :: Maybe PLC.Data
+    -- ^ The datum an insertion delivers (the request's own, through the value)
+    , peDestination :: Maybe (ByteString, Maybe PLC.Data)
+    -- ^ Where the insertion delivers (the request's own destination)
+    , peHolding :: Maybe ((TxIn, TxOut ConwayEra), DecodedHolding)
+    -- ^ The holding a termination releases (through the value; absent on neutral)
+    , peRootAfter :: ByteString
+    , peDeadline :: Deadline
+    , peOwnerHex :: Text
+    }
+    deriving stock (Eq, Show)
+
+-- | One settled request gathered before the build, without its root after.
+data Gathered = Gathered
+    { gTx :: TxIn
+    , gReq :: OnChainRequest
+    , gKind :: FoldKind
+    , gDeadline :: Deadline
+    , gKey :: ByteString
+    , gDest :: (ByteString, Maybe PLC.Data)
+    , gDatum :: Maybe PLC.Data
+    , gHolding :: Maybe ((TxIn, TxOut ConwayEra), DecodedHolding)
+    , gOwner :: Text
+    }
+    deriving stock (Eq, Show)
+
+-- | A gathered request with its root after becomes one plan entry.
+toPlanEntry :: Gathered -> ByteString -> PlanEntry
+toPlanEntry g rootAfter =
+    PlanEntry
+        { peRequest = gTx g
+        , peKey = gKey g
+        , peEdge = requestEdge (gReq g)
+        , peKind = gKind g
+        , peDatum = gDatum g
+        , peDestination = Just (gDest g)
+        , peHolding = gHolding g
+        , peRootAfter = rootAfter
+        , peDeadline = gDeadline g
+        , peOwnerHex = gOwner g
+        }
+
+-- | A plan entry with its read-back delivery becomes one settled entry.
+toSettled :: PlanEntry -> Delivery -> SettledEntry
+toSettled entry delivery =
+    SettledEntry
+        { seRequest = peRequest entry
+        , seKey = peKey entry
+        , seEdge = peEdge entry
+        , seOwner = peOwnerHex entry
+        , seKind = peKind entry
+        , seDelivery = delivery
+        , seDeadline = peDeadline entry
+        }
+
+{- | A confirmed, committed and observed fold.
+
+The result lists its settled requests; the fold-level facts stay single.
+The fold's deadline is the earliest among the settled entries.
+-}
 data Folded = Folded
-    { fdRequest :: TxIn
-    , fdKey :: ByteString
-    , fdEdge :: Edge
+    { fdSettled :: NonEmpty SettledEntry
     , fdFolder :: ByteString
     -- ^ The payment key hash of the wallet that signed and funded the fold
     , fdTx :: ConwayTx
     , fdRoot :: ByteString
-    , fdDelivery :: Delivery
-    , fdDeadline :: Deadline
     , fdUpperSlot :: Maybe SlotNo
     -- ^ The fold's validity upper bound, from the built transaction
     , fdPostBuild :: Value
@@ -267,8 +352,6 @@ data Folded = Folded
     -- ^ The host's UTC clock, in POSIX milliseconds, when the fold was decided
     , fdRemaining :: Integer
     -- ^ Milliseconds between the moment the fold was decided and the deadline
-    , fdOwnerHex :: Text
-    -- ^ The settled request's owner hex, as the selection carries it
     , fdExcluded :: [(TxIn, Exclusion)]
     -- ^ Every excluded pending request with its reason, in ledger order
     , fdCapacityBound :: Int
@@ -279,27 +362,39 @@ data Folded = Folded
 
 -- | What the fold's view decided before anything was signed.
 data Plan = Plan
-    { plRequest :: TxIn
-    , plKey :: ByteString
-    , plEdge :: Edge
-    , plKind :: FoldKind
-    , plDatum :: Maybe PLC.Data
-    -- ^ The datum an insertion delivers (the request's own, through the value)
-    , plDestination :: Maybe (ByteString, Maybe PLC.Data)
-    -- ^ Where the insertion delivers (the request's own destination)
-    , plHolding :: Maybe ((TxIn, TxOut ConwayEra), DecodedHolding)
-    -- ^ The holding a termination releases (through the value; absent on neutral)
-    , plRootAfter :: ByteString
-    , plDeadline :: Deadline
+    { plEntries :: NonEmpty PlanEntry
     , plUpper :: Maybe SlotNo
     , plDecidedAt :: Integer
     , plPostBuild :: Value
     , plRemaining :: Integer
-    , plOwnerHex :: Text
     , plExcluded :: [(TxIn, Exclusion)]
     , plCapacityBound :: Int
     , plCapacityProvenance :: Text
     }
+
+-- | The fold's deadline: the earliest among its settled entries.
+foldDeadline :: Folded -> Deadline
+foldDeadline f =
+    seDeadline
+        ( case fdSettled f of
+            e :| es -> foldr earliest e es
+        )
+  where
+    earliest a b
+        | deadlineMs (seDeadline a) <= deadlineMs (seDeadline b) = a
+        | otherwise = b
+
+{- | The settled entry for a request reference, or nothing when the request
+is not among the settled requests.
+-}
+settledEntryFor :: Folded -> TxIn -> Maybe SettledEntry
+settledEntryFor f ref = case fdSettled f of
+    e :| es -> go (e : es)
+  where
+    go [] = Nothing
+    go (x : xs)
+        | seRequest x == ref = Just x
+        | otherwise = go xs
 
 {- | Why a termination with no holding rules is refused, before anything is
 built or signed: the registry's pinned application policy (hex), and the
@@ -325,7 +420,14 @@ by this wallet, and journal it. Whoever booked the request, the fold journals
 in this wallet's own managed partition.
 -}
 runFold :: Application -> Env -> FoldArgs -> IO Value
-runFold app env a = do
+runFold = runFoldBounded foldCapacity
+
+{- | 'runFold' with the capacity bound as an argument, so a command-run test
+can fold two or three requests without a second production path. The packaged
+dispatch uses 'runFold'; the bound travels only through tests.
+-}
+runFoldBounded :: Int -> Application -> Env -> FoldArgs -> IO Value
+runFoldBounded bound app env a = do
     let ws = foldWrite a
     dir <-
         resolveWalletDir
@@ -344,7 +446,8 @@ runFold app env a = do
         "fold"
         $ \at -> do
             folded <-
-                foldPending
+                foldPendingBounded
+                    bound
                     app
                     at
                     FoldSpec
@@ -369,27 +472,29 @@ foldedFields f =
             { keptFolder = hexT (fdFolder f)
             , keptFold = txIdHex (fdTx f)
             , keptRoot = hexT (fdRoot f)
-            , keptDeadline = deadlineJson (fdDeadline f)
+            , keptDeadline = deadlineJson (foldDeadline f)
             , keptUpperSlot = toInteger . unSlotNo <$> fdUpperSlot f
             , keptPostBuild = fdPostBuild f
             , keptHostClockMs = fdDecidedAt f
             , keptRemainingMs = fdRemaining f
             }
         <> foldReceiptLists
-            [settledEntry]
+            (map settledForReceipt settledList)
             (fdExcluded f)
             (fdCapacityBound f)
             (fdCapacityProvenance f)
   where
-    settledEntry =
+    settledList = case fdSettled f of
+        e :| es -> e : es
+    settledForReceipt entry =
         SettledForReceipt
-            (fdRequest f)
-            (hexT (fdKey f))
-            (T.pack (edgeName (fdEdge f)))
-            (fdOwnerHex f)
-            settlement
-            (deadlineJson (fdDeadline f))
-    settlement = case fdDelivery f of
+            (seRequest entry)
+            (hexT (seKey entry))
+            (T.pack (edgeName (seEdge entry)))
+            (seOwner entry)
+            (settlement (seDelivery entry))
+            (deadlineJson (seDeadline entry))
+    settlement = \case
         Delivered out holding ->
             object
                 [ "liveOutput" .= txInText out
@@ -416,7 +521,17 @@ there happens before anything is signed. The speculative walk and the
 journalled after-root are that one edge.
 -}
 foldPending :: Application -> Attached -> FoldSpec -> IO Folded
-foldPending app at FoldSpec{..} = do
+foldPending = foldPendingBounded foldCapacity
+
+{- | 'foldPending' with the capacity bound as an argument, so a command-run
+test can fold two or three requests without a second production path.
+'Standalone' production folds use 'foldCapacity' (still 1); another bound is
+used only by a test. The selection, the prefix walk, the application context,
+the validity bound and the readback all cover every settled request.
+-}
+foldPendingBounded
+    :: Int -> Application -> Attached -> FoldSpec -> IO Folded
+foldPendingBounded bound app at FoldSpec{..} = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
@@ -430,17 +545,24 @@ foldPending app at FoldSpec{..} = do
             wc
             "fold"
             ["state", "requests"]
-            ( \p ->
-                Expectation
-                    (Just (plKey p))
-                    ( case plKind p of
-                        FoldInsertion ->
-                            "active:" <> maybe "" (hexT . datumHash) (plDatum p)
-                        FoldTermination -> "terminal"
-                    )
-                    (Just (plEdge p))
-                    (Just rootBefore)
-                    (Just (plRootAfter p))
+            ( \p -> case plEntries p of
+                e :| es ->
+                    let toTuple entry =
+                            let expectAfter = case peKind entry of
+                                    FoldInsertion ->
+                                        "active:" <> maybe "" (hexT . datumHash) (peDatum entry)
+                                    FoldTermination -> "terminal"
+                            in  ( txInText (peRequest entry)
+                                , hexT (peKey entry)
+                                , peEdge entry
+                                , expectAfter
+                                , hexT (peRootAfter entry)
+                                )
+                    in  FoldExpectation
+                            ( chainTransitions
+                                (hexT rootBefore)
+                                (toTuple e :| map toTuple es)
+                            )
             )
             ( \building v -> do
                 pendingRaw <-
@@ -533,7 +655,7 @@ foldPending app at FoldSpec{..} = do
                 let leavesMap = Map.fromList leavesPairs
                     liveFacts = buildLiveFacts leavesMap presentMap keyMap
                 nowSel <- currentPosixMs
-                let selection = selectFold foldCapacity nowSel foldMarginMs liveFacts pendings
+                let selection = selectFold bound nowSel foldMarginMs liveFacts pendings
                     intToTx = [(r, tx) | (tx, r) <- pairing]
                     excludedTxs =
                         [ (tx, exc)
@@ -617,61 +739,97 @@ foldPending app at FoldSpec{..} = do
                             Nothing -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
                 let selectedTxs = case settledNE of
                         x :| xs -> x : xs
-                    chosen = case settledNE of
-                        c :| _ -> c
-                    chosenRef = case lookup chosen pairing of
-                        Just r -> r
-                        Nothing -> -1
-                    ownerHex = case [prOwner p | p <- pendings, prRef p == chosenRef] of
-                        o : _ -> o
-                        [] -> ""
+                    settledList = selectedTxs
+                    ownerOf tx = case lookup tx pairing of
+                        Just r -> case [prOwner p | p <- pendings, prRef p == r] of
+                            o : _ -> o
+                            [] -> ""
+                        Nothing -> ""
                     boundUsed = selectionBound selection
                     provUsed = selectionProvenance selection
-                reqOut <- case lookup chosen pending of
-                    Just o -> pure o
-                    Nothing -> stop' ClientRefusal "the pending request vanished" []
-                req <- case extractCageDatum reqOut of
-                    Just (RequestDatum r) -> pure r
-                    _ ->
-                        stop' ClientRefusal "the pending request carries no request datum" []
-                let seen dl =
-                        found
-                            building
-                            [InRequest (txInText chosen)]
-                            ( RequestSeen
-                                (txInText chosen)
-                                (edgeText (requestEdge req))
-                                (requestKey req)
-                                (deadlineMs <$> dl)
-                                (unSlotNo <$> (dl >>= deadlineSlot))
-                            )
-                    request = chosen
-                kind <-
-                    either
-                        (\why -> seen Nothing >> stop' ClientRefusal why [])
+                outsLive <- liveOutputs app v s
+                -- Per request, before the build: output, datum, edge kind,
+                -- deadline, carried-datum/holding, one RequestSeen each.
+                let gatherOneLocal tx = do
+                        reqOut <- case lookup tx pending of
+                            Just o -> pure o
+                            Nothing -> stop' ClientRefusal "the pending request vanished" []
+                        req <- case extractCageDatum reqOut of
+                            Just (RequestDatum r) -> pure r
+                            _ ->
+                                stop' ClientRefusal "the pending request carries no request datum" []
+                        let seen dl =
+                                found
+                                    building
+                                    [InRequest (txInText tx)]
+                                    ( RequestSeen
+                                        (txInText tx)
+                                        (edgeText (requestEdge req))
+                                        (requestKey req)
+                                        (deadlineMs <$> dl)
+                                        (unSlotNo <$> (dl >>= deadlineSlot))
+                                    )
+                        kind <-
+                            either
+                                (\why -> seen Nothing >> stop' ClientRefusal why [])
+                                pure
+                                (foldKind (requestEdge req))
+                        deadline <- deadlineOf v req st
+                        seen (Just deadline)
+                        let key = requestKey req
+                            dest = requestDestination req
+                        (datum, holding) <- case kind of
+                            FoldInsertion -> do
+                                d <-
+                                    either
+                                        (\why -> seen Nothing >> stop' ClientRefusal why [])
+                                        pure
+                                        (checkCarriedDatum app req)
+                                pure (Just d, Nothing)
+                            FoldTermination -> do
+                                h <-
+                                    either
+                                        (\why -> stop' ClientRefusal why [])
+                                        pure
+                                        (liveOutputFor app s key outsLive)
+                                pure (Nothing, Just h)
                         pure
-                        (foldKind (requestEdge req))
-                deadline <- deadlineOf v req st
-                seen (Just deadline)
+                            Gathered
+                                { gTx = tx
+                                , gReq = req
+                                , gKind = kind
+                                , gDeadline = deadline
+                                , gKey = key
+                                , gDest = dest
+                                , gDatum = datum
+                                , gHolding = holding
+                                , gOwner = ownerOf tx
+                                }
+                perReq <- traverse gatherOneLocal settledList
+                let earliestGathered = foldr1 earlierGathered perReq
+                    earlierGathered a b
+                        | deadlineMs (gDeadline a) <= deadlineMs (gDeadline b) = a
+                        | otherwise = b
+                    earliest = gDeadline earliestGathered
                 place
                     building
-                    [ InRequest (txInText request)
-                    , InEdge (Folding (edgeText (requestEdge req)))
-                    ]
-                    (EdgeStarted (Folding (edgeText (requestEdge req))))
+                    ( [InRequest (txInText (gTx r)) | r <- perReq]
+                        <> [InEdge (Folding (edgeText (requestEdge (gReq r)))) | r <- perReq]
+                    )
+                    (EdgeStarted (Folding (edgeText (requestEdge (gReq earliestGathered)))))
                 now <- currentPosixMs
-                remaining <- case foldWindow foldMarginMs now (deadlineMs deadline) of
+                remaining <- case foldWindow foldMarginMs now (deadlineMs earliest) of
                     FoldOpen left -> pure left
                     FoldClosed left ->
                         stop'
                             ClientRefusal
                             ( "the request's processing deadline, "
-                                <> show (deadlineMs deadline)
+                                <> show (deadlineMs earliest)
                                 <> " ms"
                                 <> maybe
                                     ""
                                     ((" (slot " <>) . (<> ")") . show . unSlotNo)
-                                    (deadlineSlot deadline)
+                                    (deadlineSlot earliest)
                                 <> ", "
                                 <> ( if left <= 0
                                         then "has passed"
@@ -684,28 +842,10 @@ foldPending app at FoldSpec{..} = do
                                    )
                                 <> ": no fold is built"
                             )
-                            [ ("foldDeadline", deadlineJson deadline)
+                            [ ("foldDeadline", deadlineJson earliest)
                             , ("hostClockMs", toJSON now)
                             , ("remainingMs", toJSON left)
                             ]
-                let key = requestKey req
-                    dest = requestDestination req
-                (datum, holding) <- case kind of
-                    FoldInsertion -> do
-                        d <-
-                            either
-                                (\why -> seen Nothing >> stop' ClientRefusal why [])
-                                pure
-                                (checkCarriedDatum app req)
-                        pure (Just d, Nothing)
-                    FoldTermination -> do
-                        outs <- liveOutputs app v s
-                        h <-
-                            either
-                                (\why -> stop' ClientRefusal why [])
-                                pure
-                                (liveOutputFor app s key outs)
-                        pure (Nothing, Just h)
                 freshRoot <- either (failWith ClientRefusal) pure (observedRoot live)
                 unless (freshRoot == rootBefore) $
                     failTrie
@@ -715,18 +855,22 @@ foldPending app at FoldSpec{..} = do
                             (TS.StaleRoot (Root rootBefore) (Root freshRoot))
                         )
                 viewTrie <- requireTrieSelection s live
-                Root rootAfter <- withTrie viewTrie $ \snap -> do
-                    walked <-
-                        TS.speculateEdges snap ((key, requestEdge req) :| [])
-                            >>= either
-                                ( \why ->
-                                    stop'
-                                        ClientRefusal
-                                        ("TrieState " <> T.unpack (TS.trieFailureName why))
-                                        (TS.trieFailureFields why)
-                                )
-                                pure
-                    pure (TS.walkRoot walked)
+                -- Roots between transitions: walk the trie once per prefix.
+                rootsAfter <- withTrie viewTrie $ \snap ->
+                    let walkOne prefix = do
+                            walked <-
+                                TS.speculateEdges snap prefix
+                                    >>= either
+                                        ( \why ->
+                                            stop'
+                                                ClientRefusal
+                                                ("TrieState " <> T.unpack (TS.trieFailureName why))
+                                                (TS.trieFailureFields why)
+                                        )
+                                        pure
+                            case TS.walkRoot walked of
+                                Root bytes -> pure bytes
+                    in  traverse walkOne (prefixPairs perReq)
                 ctx0 <-
                     registryContextFor cfg (savedCodes s) v (liveRefs (atLive at))
                 ctx <- case appHolding app of
@@ -738,7 +882,7 @@ foldPending app at FoldSpec{..} = do
                                 rules
                                 (applied s)
                                 Nothing
-                                (maybe [] (pure . fst) holding)
+                                [fst h | r <- perReq, Just h <- [gHolding r]]
                                 ctx0
                             )
                     Nothing -> pure ctx0
@@ -795,16 +939,16 @@ foldPending app at FoldSpec{..} = do
                 -- the up-front guard above is only the fast refusal.
                 postNow <- currentPosixMs
                 let upperI = toInteger . unSlotNo <$> upper
-                    deadlineSlotI = toInteger . unSlotNo <$> deadlineSlot deadline
+                    deadlineSlotI = toInteger . unSlotNo <$> deadlineSlot earliest
                 (verdict, boundTime) <-
                     postBuildDecision
                         (fmap (fmap (toInteger . unSlotNo)) . slotAt v)
                         postNow
-                        (deadlineMs deadline)
+                        (deadlineMs earliest)
                         deadlineSlotI
                         upperI
                 let postBuildFields =
-                        [ ("foldDeadline", deadlineJson deadline)
+                        [ ("foldDeadline", deadlineJson earliest)
                         , ("hostClockMs", toJSON postNow)
                         , ("validUntilSlot", toJSON upperI)
                         , ("validUntilMs", toJSON boundTime)
@@ -821,15 +965,9 @@ foldPending app at FoldSpec{..} = do
                 pure
                     ( unsigned
                     , Plan
-                        { plRequest = request
-                        , plKey = key
-                        , plEdge = requestEdge req
-                        , plKind = kind
-                        , plDatum = datum
-                        , plDestination = Just dest
-                        , plHolding = holding
-                        , plRootAfter = rootAfter
-                        , plDeadline = deadline
+                        { plEntries = case zipWith toPlanEntry perReq rootsAfter of
+                            [] -> error "foldPendingBounded: no settled request"
+                            (x : xs) -> x :| xs
                         , plUpper = upper
                         , plPostBuild =
                             object
@@ -840,118 +978,53 @@ foldPending app at FoldSpec{..} = do
                                 ]
                         , plDecidedAt = now
                         , plRemaining = remaining
-                        , plOwnerHex = ownerHex
                         , plExcluded = excludedTxs
                         , plCapacityBound = boundUsed
                         , plCapacityProvenance = provUsed
                         }
                     )
             )
-    let key = plKey plan
-        edge = plEdge plan
+    let entries = case plEntries plan of
+            e :| es -> e : es
+        lastEntry = last entries
     holdBeforeCommit
     local <- readingBack at "fold" fold ["state"] $ \v -> do
         afterFold <- attachLive v s
         afterFoldTrie <- requireTrieSelection s afterFold
         root <- selectedTrieRoot afterFoldTrie
-        unless (root == plRootAfter plan) $
+        unless (root == peRootAfter lastEntry) $
             failWith
                 StaleState
                 "after the fold the public lineage reaches another root"
         pure root
-    (delivery, detail) <- case (plKind plan, plDatum plan, plHolding plan) of
-        (FoldInsertion, Just datum, _) -> case appHolding app of
-            Just _ -> do
-                outs <-
-                    readingBack at "fold" fold ["key outputs"] (\v -> liveOutputs app v s)
-                ((liveIn, _), seen) <-
-                    either (failWith Partial) pure (liveOutputFor app s key outs)
-                unless (dhDatumData seen == datum) $
-                    failWith Partial "the delivered output carries another envelope"
-                pure
-                    ( Delivered liveIn seen
-                    , "key live at "
-                        <> txInText liveIn
-                        <> " under its envelope; root 0x"
-                        <> hexT local
-                    )
-            Nothing -> do
-                let destAddr = maybe "" fst (plDestination plan)
-                outs <- readingBack at "fold" fold ["key outputs"] $ \view ->
-                    case addrFromBytes destAddr of
-                        Nothing ->
-                            failWith
-                                Partial
-                                "the insertion's request names an address this fold cannot decode"
-                        Just destAt -> Cage.outputsAt view destAt
-                let wanted = datumHash datum
-                    matching =
-                        [ u
-                        | u@(_, o) <- outs
-                        , Just (_, h) <- [txOutDatum o]
-                        , h == wanted
-                        ]
-                liveIn <- case matching of
-                    [(i, _)] -> pure i
-                    [] ->
-                        failWith Partial "the delivered output carries another datum"
-                    _ ->
-                        failWith
-                            Partial
-                            "more than one live output carries the delivered datum"
-                pure
-                    ( DeliveredDatum liveIn datum
-                    , "key live at "
-                        <> txInText liveIn
-                        <> " under its datum; root 0x"
-                        <> hexT local
-                    )
-        (FoldTermination, _, Just ((liveIn, _), holding)) -> do
-            after <-
-                readingBack at "fold" fold ["key outputs"] (\v -> liveOutputs app v s)
-            when (any ((== liveIn) . fst) after) $
-                failWith
-                    Partial
-                    "the fold confirmed but the live output is still unspent"
-            pure
-                ( Released liveIn (dhDeposit holding)
-                , "live output "
-                    <> txInText liveIn
-                    <> " released; root 0x"
-                    <> hexT local
-                )
-        _ ->
-            failWith
-                Partial
-                "the fold's plan carries neither a datum nor a holding"
+    (entryDeliveries, detail) <-
+        readBackEntries app at s fold local entries
     holdBeforeObserved
     journalObserved wc "fold" fold detail
-    report
-        (wcTracer wc)
-        [ InRequest (txInText (plRequest plan))
-        , InEdge (Folding (edgeText edge))
-        ]
-        ( Trace.Folded (edgeText edge) key $ case delivery of
-            Delivered out _ -> txInText out
-            DeliveredDatum out _ -> txInText out
-            Released out _ -> txInText out
-        )
+    forM_ entryDeliveries $ \(entry, delivery) ->
+        report
+            (wcTracer wc)
+            [ InRequest (txInText (peRequest entry))
+            , InEdge (Folding (edgeText (peEdge entry)))
+            ]
+            ( Trace.Folded (edgeText (peEdge entry)) (peKey entry) $ case delivery of
+                Delivered out _ -> txInText out
+                DeliveredDatum out _ -> txInText out
+                Released out _ -> txInText out
+            )
     report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT local))
     pure
         Folded
-            { fdRequest = plRequest plan
-            , fdKey = key
-            , fdEdge = edge
+            { fdSettled = case [toSettled entry delivery | (entry, delivery) <- entryDeliveries] of
+                [] -> error "foldPendingBounded: no settled entry"
+                (x : xs) -> x :| xs
             , fdFolder = callerKey at
             , fdTx = confirmedTx fold
             , fdRoot = local
-            , fdDelivery = delivery
-            , fdDeadline = plDeadline plan
             , fdUpperSlot = plUpper plan
             , fdPostBuild = plPostBuild plan
             , fdDecidedAt = plDecidedAt plan
             , fdRemaining = plRemaining plan
-            , fdOwnerHex = plOwnerHex plan
             , fdExcluded = plExcluded plan
             , fdCapacityBound = plCapacityBound plan
             , fdCapacityProvenance = plCapacityProvenance plan
@@ -983,6 +1056,103 @@ renderPostBuildRefusal = \case
         "its validity upper bound begins at "
             <> show t
             <> " ms, after the request's processing deadline"
+
+{- | The trie pairs per prefix of the selection: the first request, then the
+first two, and so on. Each prefix walks from the fold's root before to the
+root after its last request.
+-}
+prefixPairs :: [Gathered] -> [NonEmpty (ByteString, Edge)]
+prefixPairs = go []
+  where
+    go _ [] = []
+    go acc (r : rs) =
+        let prefix = acc ++ [(gKey r, requestEdge (gReq r))]
+        in  case prefix of
+                [] -> go prefix rs
+                (x : xs) -> (x :| xs) : go prefix rs
+
+{- | One delivery readback per settled request, in ledger order. An insertion
+under holding rules is found by key; a neutral insertion by destination and
+datum hash, with distinct outputs for same-datum insertions (fewer matching
+than such insertions is 'Partial'); a termination's release is checked per
+entry. A fold of one keeps main's wording exactly, including the
+"more than one..." refusal.
+-}
+readBackEntries
+    :: Application
+    -> Attached
+    -> Saved
+    -> ConfirmedSubmission
+    -> ByteString
+    -> [PlanEntry]
+    -> IO ([(PlanEntry, Delivery)], Text)
+readBackEntries app at s fold local entries = do
+    let single = length entries == 1
+    (revPairs, _) <- foldM (step single) ([], Set.empty) entries
+    let pairs = reverse revPairs
+        fragments = [fragment e d | (e, d) <- pairs]
+        detail = T.intercalate "; " fragments <> "; root 0x" <> hexT local
+    pure (pairs, detail)
+  where
+    fragment _ delivery = case delivery of
+        Delivered out _ -> "key live at " <> txInText out <> " under its envelope"
+        DeliveredDatum out _ -> "key live at " <> txInText out <> " under its datum"
+        Released out _ -> "live output " <> txInText out <> " released"
+    step isSingle (acc, used) entry = case (peKind entry, peDatum entry, peHolding entry) of
+        (FoldInsertion, Just datum, _) -> case appHolding app of
+            Just _ -> do
+                outs <-
+                    readingBack at "fold" fold ["key outputs"] (\v -> liveOutputs app v s)
+                ((liveIn, _), seen) <-
+                    either
+                        (failWith Partial)
+                        pure
+                        (liveOutputFor app s (peKey entry) outs)
+                unless (dhDatumData seen == datum) $
+                    failWith Partial "the delivered output carries another envelope"
+                pure ((entry, Delivered liveIn seen) : acc, used)
+            Nothing -> do
+                let destAddr = maybe "" fst (peDestination entry)
+                outs <- readingBack at "fold" fold ["key outputs"] $ \view ->
+                    case addrFromBytes destAddr of
+                        Nothing ->
+                            failWith
+                                Partial
+                                "the insertion's request names an address this fold cannot decode"
+                        Just destAt -> Cage.outputsAt view destAt
+                let wanted = datumHash datum
+                    matching =
+                        [ u
+                        | u@(_, o) <- outs
+                        , Just (_, h) <- [txOutDatum o]
+                        , h == wanted
+                        ]
+                liveIn <- case (isSingle, matching) of
+                    (True, [(i, _)]) -> pure i
+                    (True, []) -> failWith Partial "the delivered output carries another datum"
+                    (True, _) ->
+                        failWith
+                            Partial
+                            "more than one live output carries the delivered datum"
+                    (False, _) ->
+                        let unused = [i | (i, _) <- sortOn fst matching, i `Set.notMember` used]
+                        in  case unused of
+                                (i : _) -> pure i
+                                [] -> failWith Partial "the delivered output carries another datum"
+                let used' = Set.insert liveIn used
+                pure ((entry, DeliveredDatum liveIn datum) : acc, used')
+        (FoldTermination, _, Just ((liveIn, _), holding)) -> do
+            after <-
+                readingBack at "fold" fold ["key outputs"] (\v -> liveOutputs app v s)
+            when (any ((== liveIn) . fst) after) $
+                failWith
+                    Partial
+                    "the fold confirmed but the live output is still unspent"
+            pure ((entry, Released liveIn (dhDeposit holding)) : acc, used)
+        _ ->
+            failWith
+                Partial
+                "the fold's plan carries neither a datum nor a holding"
 
 {- | Stop before anything is signed. Run after its own booking, a fold that
 cannot be built or signed leaves that booking's request pending, so the

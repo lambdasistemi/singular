@@ -96,13 +96,17 @@ import Singular.CLI.Fold
     , FoldOrigin (..)
     , FoldSpec (..)
     , Folded (..)
+    , SettledEntry (..)
     , deadlineJson
     , deadlineOf
     , foldPending
+    , settledEntryFor
     )
 import Singular.CLI.FoldRules
-    ( SettledForReceipt (..)
+    ( FoldRequestsRefusal (..)
+    , SettledForReceipt (..)
     , foldReceiptLists
+    , renderFoldRequestsRefusal
     )
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveWalletDir)
@@ -344,7 +348,19 @@ runInsert env a = case entryMode a of
                 if entryFold a
                     then do
                         folded <- foldAfter at a (confirmedTx booking)
-                        pure $ case fdDelivery folded of
+                        let bookingRef = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
+                        entry <- case settledEntryFor folded bookingRef of
+                            Just e -> pure e
+                            Nothing ->
+                                failWithFields
+                                    Partial
+                                    ( "the booking is confirmed and its request "
+                                        <> T.unpack (txInText bookingRef)
+                                        <> " stays pending; "
+                                        <> renderFoldRequestsRefusal (FoldNamedNotPending bookingRef)
+                                    )
+                                    [("pendingRequest", toJSON (txInText bookingRef))]
+                        pure $ case seDelivery entry of
                             Delivered liveIn holding -> case envelopeFromData (dhDatumData holding) of
                                 Right _ ->
                                     receipt
@@ -357,16 +373,16 @@ runInsert env a = case entryMode a of
                                                ]
                                             <> foldReceiptLists
                                                 [ SettledForReceipt
-                                                    (fdRequest folded)
-                                                    (hexT (fdKey folded))
-                                                    (T.pack (edgeName (fdEdge folded)))
-                                                    (fdOwnerHex folded)
+                                                    (seRequest entry)
+                                                    (hexT (seKey entry))
+                                                    (T.pack (edgeName (seEdge entry)))
+                                                    (seOwner entry)
                                                     ( object
                                                         [ "liveOutput" .= txInText liveIn
                                                         , "envelope" .= dhDatumJson holding
                                                         ]
                                                     )
-                                                    (deadlineJson (fdDeadline folded))
+                                                    (deadlineJson (seDeadline entry))
                                                 ]
                                                 (fdExcluded folded)
                                                 (fdCapacityBound folded)
@@ -551,7 +567,19 @@ runTerminate env a = case entryMode a of
                 if entryFold a
                     then do
                         folded <- foldAfter at a (confirmedTx booking)
-                        pure $ case fdDelivery folded of
+                        let bookingRef = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
+                        entry <- case settledEntryFor folded bookingRef of
+                            Just e -> pure e
+                            Nothing ->
+                                failWithFields
+                                    Partial
+                                    ( "the booking is confirmed and its request "
+                                        <> T.unpack (txInText bookingRef)
+                                        <> " stays pending; "
+                                        <> renderFoldRequestsRefusal (FoldNamedNotPending bookingRef)
+                                    )
+                                    [("pendingRequest", toJSON (txInText bookingRef))]
+                        pure $ case seDelivery entry of
                             Released released deposit ->
                                 receipt
                                     "terminate"
@@ -563,16 +591,16 @@ runTerminate env a = case entryMode a of
                                            ]
                                         <> foldReceiptLists
                                             [ SettledForReceipt
-                                                (fdRequest folded)
-                                                (hexT (fdKey folded))
-                                                (T.pack (edgeName (fdEdge folded)))
-                                                (fdOwnerHex folded)
+                                                (seRequest entry)
+                                                (hexT (seKey entry))
+                                                (T.pack (edgeName (seEdge entry)))
+                                                (seOwner entry)
                                                 ( object
                                                     [ "released" .= txInText released
                                                     , "deposit" .= deposit
                                                     ]
                                                 )
-                                                (deadlineJson (fdDeadline folded))
+                                                (deadlineJson (seDeadline entry))
                                             ]
                                             (fdExcluded folded)
                                             (fdCapacityBound folded)

@@ -277296,17 +277296,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-05": {
-   "audio_sha256": "1f9a4d9c3158415fb118a2dd7a7c04362f3ecdc5b82b4cc7934bab9b43f1f45d",
-   "characters": 556,
-   "cost": 0.0005504399999999999,
-   "duration": 36.775,
+   "audio_sha256": "993a53acb586f7d3bea025e062f689535c69ab2caca652e2e1544ae1412402dd",
+   "characters": 554,
+   "cost": 0.00054846,
+   "duration": 37.05,
    "index": 5,
-   "key": "8d3ec04c5d9c404df398c20a8b4dbd1cb1cffbfab1a1bbc84d96884f35969c31",
+   "key": "ec5656114141665ef1ce04c4f0c0e6b7512e125aa1950f9f5217cc3c80f56aa9",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's capacity field states the bound, 1, and why — the journal binds one transition until the multi-request journal ships. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
-   "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's capacity field states the bound, 1, and why — the journal binds one transition until the multi-request journal ships. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
+   "sent_text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's capacity field states the bound, 1, and why — recovery reads one transition until the multi-request recovery ships. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
+   "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's capacity field states the bound, 1, and why — recovery reads one transition until the multi-request recovery ships. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
    "words": [
     {
      "end": 0.837,
@@ -277589,218 +277589,213 @@
      "text": ","
     },
     {
-     "end": 19.612,
+     "end": 19.6,
      "start": 19.475,
      "text": "and"
     },
     {
-     "end": 20.0,
-     "start": 19.612,
+     "end": 19.925,
+     "start": 19.6,
      "text": "why"
     },
     {
-     "end": 20.062,
-     "start": 20.0,
+     "end": 20.0,
+     "start": 19.925,
      "text": "—"
     },
     {
-     "end": 20.163,
-     "start": 20.062,
-     "text": "the"
+     "end": 20.688,
+     "start": 20.0,
+     "text": "recovery"
     },
     {
-     "end": 20.55,
-     "start": 20.163,
-     "text": "journal"
+     "end": 21.038,
+     "start": 20.688,
+     "text": "reads"
     },
     {
-     "end": 20.987,
-     "start": 20.55,
-     "text": "binds"
-    },
-    {
-     "end": 21.25,
-     "start": 20.987,
+     "end": 21.3,
+     "start": 21.038,
      "text": "one"
     },
     {
      "end": 22.025,
-     "start": 21.25,
+     "start": 21.3,
      "text": "transition"
     },
     {
-     "end": 22.288,
+     "end": 22.312,
      "start": 22.025,
      "text": "until"
     },
     {
-     "end": 22.4,
-     "start": 22.288,
+     "end": 22.425,
+     "start": 22.312,
      "text": "the"
     },
     {
-     "end": 23.175,
-     "start": 22.4,
+     "end": 23.225,
+     "start": 22.425,
      "text": "multi-request"
     },
     {
-     "end": 23.513,
-     "start": 23.175,
-     "text": "journal"
+     "end": 23.788,
+     "start": 23.225,
+     "text": "recovery"
     },
     {
-     "end": 24.45,
-     "start": 23.513,
+     "end": 24.725,
+     "start": 23.788,
      "text": "ships"
     },
     {
-     "end": 24.65,
-     "start": 24.45,
+     "end": 24.925,
+     "start": 24.725,
      "text": "."
     },
     {
-     "end": 24.938,
-     "start": 24.85,
+     "end": 25.212,
+     "start": 25.125,
      "text": "A"
     },
     {
-     "end": 25.3,
-     "start": 24.938,
+     "end": 25.575,
+     "start": 25.212,
      "text": "fold"
     },
     {
-     "end": 25.45,
-     "start": 25.3,
+     "end": 25.725,
+     "start": 25.575,
      "text": "is"
     },
     {
-     "end": 25.7,
-     "start": 25.45,
+     "end": 25.975,
+     "start": 25.725,
      "text": "never"
     },
     {
-     "end": 26.325,
-     "start": 25.7,
+     "end": 26.6,
+     "start": 25.975,
      "text": "refused"
     },
     {
-     "end": 26.688,
-     "start": 26.325,
+     "end": 26.962,
+     "start": 26.6,
      "text": "because"
     },
     {
-     "end": 27.025,
-     "start": 26.688,
+     "end": 27.3,
+     "start": 26.962,
      "text": "several"
     },
     {
-     "end": 27.55,
-     "start": 27.025,
+     "end": 27.825,
+     "start": 27.3,
      "text": "requests"
     },
     {
-     "end": 27.65,
-     "start": 27.55,
+     "end": 27.925,
+     "start": 27.825,
      "text": "are"
     },
     {
-     "end": 28.625,
-     "start": 27.65,
+     "end": 28.9,
+     "start": 27.925,
      "text": "pending"
     },
     {
-     "end": 28.825,
-     "start": 28.625,
+     "end": 29.1,
+     "start": 28.9,
      "text": "."
     },
     {
-     "end": 29.138,
-     "start": 29.025,
+     "end": 29.413,
+     "start": 29.3,
      "text": "The"
     },
     {
-     "end": 29.562,
-     "start": 29.138,
+     "end": 29.837,
+     "start": 29.413,
      "text": "fold"
     },
     {
-     "end": 30.013,
-     "start": 29.562,
+     "end": 30.288,
+     "start": 29.837,
      "text": "folds"
     },
     {
-     "end": 30.95,
-     "start": 30.013,
+     "end": 31.225,
+     "start": 30.288,
      "text": "insertActive"
     },
     {
-     "end": 31.075,
-     "start": 30.95,
+     "end": 31.35,
+     "start": 31.225,
      "text": "and"
     },
     {
-     "end": 32.075,
-     "start": 31.075,
+     "end": 32.35,
+     "start": 31.35,
      "text": "updateTerminal"
     },
     {
-     "end": 32.175,
-     "start": 32.075,
+     "end": 32.45,
+     "start": 32.35,
      "text": ";"
     },
     {
-     "end": 32.425,
-     "start": 32.175,
+     "end": 32.7,
+     "start": 32.45,
      "text": "any"
     },
     {
-     "end": 32.725,
-     "start": 32.425,
+     "end": 33.0,
+     "start": 32.7,
      "text": "other"
     },
     {
-     "end": 33.062,
-     "start": 32.725,
+     "end": 33.338,
+     "start": 33.0,
      "text": "edge"
     },
     {
-     "end": 33.225,
-     "start": 33.062,
+     "end": 33.5,
+     "start": 33.338,
      "text": "is"
     },
     {
-     "end": 33.912,
-     "start": 33.225,
+     "end": 34.188,
+     "start": 33.5,
      "text": "refused"
     },
     {
-     "end": 34.875,
-     "start": 33.912,
+     "end": 35.15,
+     "start": 34.188,
      "text": "edge-inadmissible"
     },
     {
-     "end": 34.987,
-     "start": 34.875,
+     "end": 35.263,
+     "start": 35.15,
      "text": "in"
     },
     {
-     "end": 35.075,
-     "start": 34.987,
+     "end": 35.35,
+     "start": 35.263,
      "text": "the"
     },
     {
-     "end": 35.5,
-     "start": 35.075,
+     "end": 35.775,
+     "start": 35.35,
      "text": "model's"
     },
     {
-     "end": 36.55,
-     "start": 35.5,
+     "end": 36.825,
+     "start": 35.775,
      "text": "words"
     },
     {
-     "end": 36.775,
-     "start": 36.55,
+     "end": 37.05,
+     "start": 36.825,
      "text": "."
     }
    ]
@@ -282571,17 +282566,17 @@
    ]
   },
   "docs-singular-node/booking-and-folding-14": {
-   "audio_sha256": "aadca4b35b2de856cf3f7ffa8d9e543247bbe80021a86ee9ae95d00844dabf5c",
-   "characters": 392,
-   "cost": 0.00038807999999999996,
-   "duration": 27.125,
+   "audio_sha256": "613ce85fe78bf058f6088df9fa30efeabb775a586120194f335a03bad25e3004",
+   "characters": 390,
+   "cost": 0.0003861,
+   "duration": 27.275,
    "index": 14,
-   "key": "d05d7e4889a4f7a2d09c7674add3dabe43999ee1517a2581ffbb3c93ca1f5153",
+   "key": "e662b63b0e125e5db8726c67a3a1089ad7f6e6fa9fdb9b9f71d80d0189ef62b6",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "booking-and-folding",
-   "sent_text": "What this pull request leaves out, stated plainly: one request per fold, because the journal binds one transition until the multi-request journal ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
-   "text": "What this pull request leaves out, stated plainly: one request per fold, because the journal binds one transition until the multi-request journal ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
+   "sent_text": "What this pull request leaves out, stated plainly: one request per fold, because recovery reads one transition until the multi-request recovery ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
+   "text": "What this pull request leaves out, stated plainly: one request per fold, because recovery reads one transition until the multi-request recovery ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.",
    "words": [
     {
      "end": 0.287,
@@ -282649,34 +282644,29 @@
      "text": "per"
     },
     {
-     "end": 4.65,
+     "end": 4.675,
      "start": 4.188,
      "text": "fold"
     },
     {
-     "end": 4.7,
-     "start": 4.65,
+     "end": 4.725,
+     "start": 4.675,
      "text": ","
     },
     {
-     "end": 5.0,
-     "start": 4.7,
+     "end": 5.025,
+     "start": 4.725,
      "text": "because"
     },
     {
-     "end": 5.113,
-     "start": 5.0,
-     "text": "the"
-    },
-    {
-     "end": 5.525,
-     "start": 5.113,
-     "text": "journal"
+     "end": 5.613,
+     "start": 5.025,
+     "text": "recovery"
     },
     {
      "end": 5.963,
-     "start": 5.525,
-     "text": "binds"
+     "start": 5.613,
+     "text": "reads"
     },
     {
      "end": 6.225,
@@ -282684,278 +282674,278 @@
      "text": "one"
     },
     {
-     "end": 6.975,
+     "end": 6.95,
      "start": 6.225,
      "text": "transition"
     },
     {
-     "end": 7.287,
-     "start": 6.975,
+     "end": 7.262,
+     "start": 6.95,
      "text": "until"
     },
     {
-     "end": 7.4,
-     "start": 7.287,
+     "end": 7.375,
+     "start": 7.262,
      "text": "the"
     },
     {
-     "end": 8.288,
-     "start": 7.4,
+     "end": 8.25,
+     "start": 7.375,
      "text": "multi-request"
     },
     {
-     "end": 8.637,
-     "start": 8.288,
-     "text": "journal"
+     "end": 8.762,
+     "start": 8.25,
+     "text": "recovery"
     },
     {
-     "end": 9.65,
-     "start": 8.637,
+     "end": 9.775,
+     "start": 8.762,
      "text": "ships"
     },
     {
-     "end": 9.85,
-     "start": 9.65,
+     "end": 10.0,
+     "start": 9.775,
      "text": "."
     },
     {
-     "end": 10.1,
-     "start": 10.025,
+     "end": 10.25,
+     "start": 10.175,
      "text": "The"
     },
     {
-     "end": 10.762,
-     "start": 10.1,
+     "end": 10.913,
+     "start": 10.25,
      "text": "capacity"
     },
     {
-     "end": 10.837,
-     "start": 10.762,
+     "end": 10.988,
+     "start": 10.913,
      "text": "of"
     },
     {
-     "end": 10.938,
-     "start": 10.837,
+     "end": 11.087,
+     "start": 10.988,
      "text": "a"
     },
     {
-     "end": 11.363,
-     "start": 10.938,
+     "end": 11.512,
+     "start": 11.087,
      "text": "fold"
     },
     {
-     "end": 11.462,
-     "start": 11.363,
+     "end": 11.613,
+     "start": 11.512,
      "text": "on"
     },
     {
-     "end": 11.55,
-     "start": 11.462,
+     "end": 11.7,
+     "start": 11.613,
      "text": "a"
     },
     {
-     "end": 11.85,
-     "start": 11.55,
+     "end": 12.0,
+     "start": 11.7,
      "text": "real"
     },
     {
-     "end": 12.425,
-     "start": 11.85,
+     "end": 12.575,
+     "start": 12.0,
      "text": "network"
     },
     {
-     "end": 12.6,
-     "start": 12.425,
+     "end": 12.75,
+     "start": 12.575,
      "text": "is"
     },
     {
-     "end": 12.875,
-     "start": 12.6,
+     "end": 13.025,
+     "start": 12.75,
      "text": "not"
     },
     {
-     "end": 13.25,
-     "start": 12.875,
+     "end": 13.4,
+     "start": 13.025,
      "text": "measured"
     },
     {
-     "end": 14.0,
-     "start": 13.25,
+     "end": 14.15,
+     "start": 13.4,
      "text": "here"
     },
     {
-     "end": 14.225,
-     "start": 14.0,
+     "end": 14.375,
+     "start": 14.15,
      "text": ":"
     },
     {
-     "end": 14.538,
-     "start": 14.4,
+     "end": 14.688,
+     "start": 14.55,
      "text": "the"
     },
     {
-     "end": 15.212,
-     "start": 14.538,
+     "end": 15.363,
+     "start": 14.688,
      "text": "operator's"
     },
     {
-     "end": 15.7,
-     "start": 15.212,
+     "end": 15.85,
+     "start": 15.363,
      "text": "estimate"
     },
     {
-     "end": 15.825,
-     "start": 15.7,
+     "end": 15.975,
+     "start": 15.85,
      "text": "of"
     },
     {
-     "end": 16.163,
-     "start": 15.825,
+     "end": 16.312,
+     "start": 15.975,
      "text": "about"
     },
     {
-     "end": 16.5,
-     "start": 16.163,
+     "end": 16.65,
+     "start": 16.312,
      "text": "nine"
     },
     {
-     "end": 17.075,
-     "start": 16.5,
+     "end": 17.225,
+     "start": 16.65,
      "text": "requests"
     },
     {
-     "end": 17.288,
-     "start": 17.075,
+     "end": 17.438,
+     "start": 17.225,
      "text": "per"
     },
     {
-     "end": 17.75,
-     "start": 17.288,
+     "end": 17.9,
+     "start": 17.438,
      "text": "fold"
     },
     {
-     "end": 17.925,
-     "start": 17.75,
+     "end": 18.075,
+     "start": 17.9,
      "text": "on"
     },
     {
-     "end": 18.4,
-     "start": 17.925,
+     "end": 18.55,
+     "start": 18.075,
      "text": "preprod"
     },
     {
-     "end": 19.175,
-     "start": 18.4,
+     "end": 19.325,
+     "start": 18.55,
      "text": "parameters"
     },
     {
-     "end": 19.337,
-     "start": 19.175,
+     "end": 19.487,
+     "start": 19.325,
      "text": "is"
     },
     {
-     "end": 19.462,
-     "start": 19.337,
+     "end": 19.612,
+     "start": 19.487,
      "text": "an"
     },
     {
-     "end": 20.55,
-     "start": 19.462,
+     "end": 20.7,
+     "start": 19.612,
      "text": "estimate"
     },
     {
-     "end": 20.775,
-     "start": 20.55,
+     "end": 20.925,
+     "start": 20.7,
      "text": ","
     },
     {
-     "end": 21.112,
-     "start": 20.975,
+     "end": 21.263,
+     "start": 21.125,
      "text": "not"
     },
     {
-     "end": 21.175,
-     "start": 21.112,
+     "end": 21.325,
+     "start": 21.263,
      "text": "a"
     },
     {
-     "end": 21.575,
-     "start": 21.175,
+     "end": 21.725,
+     "start": 21.325,
      "text": "claim"
     },
     {
-     "end": 21.612,
-     "start": 21.575,
+     "end": 21.763,
+     "start": 21.725,
      "text": ","
     },
     {
-     "end": 21.712,
-     "start": 21.612,
+     "end": 21.862,
+     "start": 21.763,
      "text": "and"
     },
     {
-     "end": 21.875,
-     "start": 21.712,
+     "end": 22.025,
+     "start": 21.862,
      "text": "this"
     },
     {
-     "end": 22.2,
-     "start": 21.875,
+     "end": 22.35,
+     "start": 22.025,
      "text": "page"
     },
     {
-     "end": 22.525,
-     "start": 22.2,
+     "end": 22.675,
+     "start": 22.35,
      "text": "claims"
     },
     {
-     "end": 22.75,
-     "start": 22.525,
+     "end": 22.9,
+     "start": 22.675,
      "text": "no"
     },
     {
-     "end": 23.175,
-     "start": 22.75,
+     "end": 23.325,
+     "start": 22.9,
      "text": "preprod"
     },
     {
-     "end": 24.025,
-     "start": 23.175,
+     "end": 24.175,
+     "start": 23.325,
      "text": "number"
     },
     {
-     "end": 24.25,
-     "start": 24.025,
+     "end": 24.4,
+     "start": 24.175,
      "text": "."
     },
     {
-     "end": 24.837,
-     "start": 24.45,
+     "end": 24.987,
+     "start": 24.6,
      "text": "Measuring"
     },
     {
-     "end": 24.925,
-     "start": 24.837,
+     "end": 25.075,
+     "start": 24.987,
      "text": "it"
     },
     {
-     "end": 25.35,
-     "start": 24.925,
+     "end": 25.5,
+     "start": 25.075,
      "text": "belongs"
     },
     {
-     "end": 25.487,
-     "start": 25.35,
+     "end": 25.638,
+     "start": 25.5,
      "text": "to"
     },
     {
-     "end": 26.925,
-     "start": 25.487,
+     "end": 27.075,
+     "start": 25.638,
      "text": "530"
     },
     {
-     "end": 27.125,
-     "start": 26.925,
+     "end": 27.275,
+     "start": 27.075,
      "text": "."
     }
    ]

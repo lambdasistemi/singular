@@ -172,10 +172,10 @@ type LiveFacts = Map Int (Leaf, Bool)
 foldCapacity :: Int
 foldCapacity = 1
 
--- | Why the bound is 1 in pull request 1.
+-- | recovery reads one transition until the multi-request recovery ships
 foldCapacityProvenance :: Text
 foldCapacityProvenance =
-    "the journal binds one transition until the multi-request journal ships"
+    "recovery reads one transition until the multi-request recovery ships"
 
 -- | The reason's name in the receipt's vocabulary.
 exclusionName :: Exclusion -> Text

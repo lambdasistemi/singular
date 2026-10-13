@@ -83,6 +83,16 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "c5955ea1947cb738c79f71ec0b8bf0502505a117eb700b1f2f5f8103f75addf8"
-  }
+    "sha256": "0af5778a87d0dc1b704bae351a60b1cbbe3c78eec460f4cddd86fd94be759602"
+  },
+  "pull-request-3-at-e7b55ac9": [
+    {
+      "text": "Pull request 3 at e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "Re-derived against main at e7b55ac9 after the desk's ruling on the session layer, and rebased onto the head of the bookkeeping lane's branch, whose only file in common is the reconciliation file, with a comment. The table lists every file of pull request 3a and 3b, including the new consumer in the keri stub, and names the files that are not touched. Every push waits for the bookkeeping merge and a rebase onto main.",
+      "pause": 400
+    }
+  ]
 }

@@ -59,32 +59,64 @@ The cut point of this pull request: if the forecast passes the allowance, the pr
 - [ ] the-other-pages-state-the-list-receipt
 - [x] speech-restamped-and-narration-regenerated
 
-## Pull request 3: many per fold
+## Pull request 3a: the fold over several requests, the journal listing every transition
 
-### builder-over-many
+The bound stays 1. Re-derived on 2026-10-13 against `main` at `e7b55ac9` and rebased onto main `af16bad4`; the runs are named in the [plan](plan.md).
 
-- [ ] build-over-several-chosen-requests
-- [ ] validity-bound-follows-the-earliest-deadline
+### journal-carries-the-transitions
 
-### journal-and-recovery-for-many
+- [x] journal-line-carries-the-chained-transitions
+- [x] the-expectation-carries-the-transitions
+- [x] scalar-fields-mirror-the-first-and-last-transition
+- [x] a-journal-line-written-by-main-still-decodes
 
-- [ ] journal-carries-chained-transitions
+### fold-over-several-requests
+
+- [x] builder-spends-exactly-two-and-three-chosen-requests (run: builder)
+- [x] validity-bound-follows-the-earliest-deadline-not-the-first (run: builder)
+- [x] fold-result-lists-its-settled-requests (run: fold routine)
+- [x] roots-between-transitions-come-from-a-walk-per-prefix (run: fold routine)
+- [x] one-delivery-readback-per-settled-request (run: fold routine)
+- [x] application-context-covers-every-release (run: fold routine; the row requires the exact release count, the mutant that passes only the first holding is not killed by it and closes in 3b with the termination-not-first row)
+- [x] combined-forms-and-the-keri-stub-read-their-own-settled-entry (run: fold routine)
+- [x] receipt-lists-each-settled-request (run: fold routine)
+- [ ] a-lost-race-over-several-requests-is-stale-state (run: fold routine; not a row: the executed race is a stated non-goal of the spec and the refusal is the same code as for one request, covered by the existing rows of TrieRefusalSpec and CommandRunSpec)
+- [x] the-bound-is-an-argument-of-the-fold-routine-for-tests (run: fold routine)
+
+### docs-of-the-reason-for-the-bound
+
+- [x] provenance-of-bound-one-states-the-recovery-reason
+- [x] node-guide-sentence-matches-it-narration-regenerated-speech-restamped
+
+## Pull request 3b: recovery of many, bound 9, executed evidence
+
+### reconcile-reads-every-transition
+
 - [ ] an-earlier-line-reads-as-a-batch-of-one
-- [ ] observe-every-key-against-its-last-transition
-- [ ] rollback-returns-every-included-request
-- [ ] lost-race-is-stale-state
+- [ ] observe-each-key-against-its-last-transition
+- [ ] the-state-output-carries-the-last-root-after
+- [ ] rollback-names-every-request-and-restores-the-first-root-before
+- [ ] scalar-and-list-disagreement-is-not-observed
 
-### capacity-nine-and-the-command
+### capacity-nine
 
-- [ ] capacity-bound-of-nine-with-its-provenance
-- [ ] registry-fold-takes-the-whole-selection
+- [ ] bound-of-nine-with-its-provenance
+- [ ] journey-assertions-of-the-bound-move-to-nine
+- [ ] a-termination-that-is-not-first-settles-and-pays-its-holding
+- [ ] a-regression-passing-only-the-first-holding-fails-a-row
+- [ ] every-reader-of-the-settled-list-finds-its-request-or-has-one-pending-by-construction
 
-### devnet-two-actors-and-interruption
+### devnet-two-actors-one-fold
 
-- [ ] two-actors-book-concurrently-and-one-fold-settles-both
-- [ ] an-interrupted-two-request-fold-reconciles-both
+- [ ] two-actors-book-concurrently-and-one-fold-settles-both-each-payout-to-its-owner
+- [ ] tampered-receipts-of-the-two-request-fold-are-refused
+
+### devnet-interrupted-two-request-fold
+
+- [ ] an-interrupted-two-request-fold-reconciles-both-keys-once
+- [ ] the-part-is-hosted-by-the-partition-list
 
 ### docs-of-many-per-fold
 
-- [ ] pages-state-the-whole-behaviour-and-its-limits
-- [ ] speech-restamped
+- [ ] pages-state-the-bound-the-whole-behaviour-and-its-limits
+- [ ] speech-restamped-and-narration-regenerated

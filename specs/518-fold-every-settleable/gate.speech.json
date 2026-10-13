@@ -67,7 +67,7 @@
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "5f8729e23dc50f4ea149adf847910f94f6ce114b66ae2ce2d372edc26b2f6455"
+    "sha256": "1584005c2d7c870dacefb2e9f2e123160e1ddf86303f819a228a04b20511c55c"
   },
   "pull-request-2-at-9d5f4c7a": [
     {
@@ -84,6 +84,16 @@
     },
     {
       "text": "The candidate gate keeps its budget of 40 minutes: the focused off-chain suite narrowed to the receipt rows and the command-run specs, the conformance unit suite, the off-chain lint, the off-chain component build, the conformance format and lint checks, the application separation check, and the rendered documentation check on a documentation candidate; the open-datum tests with the open-datum build and lint on a candidate that edits the open-datum package. The journey script is exercised only by the Demo 1 jobs: the run that edits it may run the Demo 1 command-line check once locally, in a box of its own, the gate run time, named apart from the writer minutes; a failure of that one run is one repair, never a campaign. Each run takes its temporary folders from its own fresh directory under the lane scratch folder, removed when the run ends. The full repository gate runs once on the final candidate.",
+      "pause": 400
+    }
+  ],
+  "pull-request-3-at-e7b55ac9": [
+    {
+      "text": "Pull request 3 at e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "Version 1.5, frozen before any code of pull request 3a is written, on the head of the bookkeeping lane's branch. The gate of 3a was written twice, independently, by the ticket owner and by the auditor seat, then synthesized once; the two tables agree on every command and every workflow line, and the differences are resolved in a table. The rows bind each acceptance line of pull request 3a and 3b to existing hosted commands, name the tests this ticket adds to suites a hosted job already runs, and list the required checks of the main ruleset.",
       "pause": 400
     }
   ]

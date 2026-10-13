@@ -963,6 +963,7 @@ test-suite cage-tests
     Singular.CLI.CreateFundingSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
+    Singular.CLI.JournalTransitionsSpec
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
     Singular.CLI.TrieRefusalSpec

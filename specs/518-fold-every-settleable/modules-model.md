@@ -26,3 +26,9 @@ Responsibilities, dependency direction and promotion. Names and fields are in th
 - **swap-rule** (invariant): the code the new path replaces (`foldTarget`, `FoldTargetRefusal`, `SeveralPending`, the sentence "exactly one is pending" in the pages) is deleted in the same change.
 - **dependency-direction**: the command line depends on the registry library; the conformance suite depends on the registry library and never on command-line source. The selection is placed in the library for that reason: the Lean driver transport exists only in the conformance package.
 - **promotion**: the selection is promoted from the command line (where the harvested branch kept it) to the registry library, the nearest stable owner both the command line and the conformance suite can use. Nothing else is promoted.
+
+## Pull request 3 at `e7b55ac9`
+
+- **journal-in-3a-recovery-in-3b** (invariant): pull request 3a changes `Receipt` and `Session` (the journal lists the transitions) and not `Reconcile`; the bound stays 1 until pull request 3b, which changes `Reconcile` and raises the bound in the same pull request, so main never holds a fold it cannot recover.
+- **callers-read-their-own-entry** (invariant): a combined form (open datum, keri stub) reads its booking's settled entry from the fold result's list and no other field names one request.
+- The fold routine's callers are the registry command line, the open-datum package and the keri stub; the registry trees still name no application.
