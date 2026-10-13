@@ -151,7 +151,7 @@ deploy args = do
                     <> bech32Address (walletAddr wallet)
                 )
         )
-        `onException` reportPartial txs
+        `onException` reportPartialBestEffort txs
 
 {- | Narrate a deployment that stopped before writing its manifest: the
 bootstrap transactions submitted so far, oldest first. Runs on any
@@ -168,6 +168,14 @@ reportPartial txs = do
             ( "no manifest written; bootstrap transactions so far: "
                 <> T.unpack (T.intercalate " " partial)
             )
+
+{- | Best-effort partial narration that cannot mask the original stop:
+if reporting itself throws (for example stdout is closed), the
+original exception still propagates unchanged from 'onException'.
+-}
+reportPartialBestEffort :: IORef [T.Text] -> IO ()
+reportPartialBestEffort txs =
+    reportPartial txs `catch` \(_ :: SomeException) -> pure ()
 
 {- | A deployment is made once. Given a manifest a node still agrees
 with, say so and stop, rather than booting a second registry that
