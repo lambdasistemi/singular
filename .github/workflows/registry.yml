@@ -724,8 +724,6 @@ jobs:
         run: nix run --quiet .#demo1-two-actor-control
   registry-two-actors:
     name: Two actors insert and fold from the state token alone
-    # Quarantined: the fold misses its validity bound under load (#573, tracked in #594).
-    if: false
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 90
@@ -753,8 +751,6 @@ jobs:
         run: nix run --quiet .#registry-two-actors
   registry-two-actors-control:
     name: Two actors — a booking at another actor's state root fails the guard
-    # Quarantined: the fold misses its validity bound under load (#573, tracked in #594).
-    if: false
     needs: blueprint
     runs-on: nixos
     timeout-minutes: 90

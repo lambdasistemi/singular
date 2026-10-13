@@ -598,13 +598,13 @@
         # baked in for it. The traced blueprint (#287) defaults to this
         # flake's own, provenance beside it (REGISTRY_TRACED_BLUEPRINT).
         #
-        # The copy differs from offchain/e2e-test/genesis in one field:
-        # shelley epochLength, 500 slots raised to 20000. At 0.1s a slot
-        # the original gives a two-epoch conversion horizon of a hundred
-        # seconds, and a ten-row registry-mode session — which books an
-        # approval and folds an edge per row, each its own transaction —
-        # runs past it and cannot convert a deadline to a slot. Every
-        # other file and parameter is byte-identical.
+        # The copy raised shelley epochLength from 500 slots to 20000. At
+        # 0.1s a slot the original gives a two-epoch conversion horizon of
+        # a hundred seconds, and a ten-row registry-mode session — which
+        # books an approval and folds an edge per row, each its own
+        # transaction — runs past it and cannot convert a deadline to a
+        # slot. offchain/e2e-test/genesis took the same epochLength for
+        # #573, so the two are now byte-identical.
         conformance =
           pkgs.runCommand "conformance"
             {
