@@ -972,6 +972,23 @@ jobs:
           # The partition kept its scratch so this step could copy it. A reused
           # runner would otherwise retain the node database.
           rm -rf "$RUNNER_TEMP"/cli-recovery.*
+      # #543: verify the collected bundle before it is uploaded — producer
+      # identity present, every manifest pin re-hashes, nothing unpinned,
+      # managed journals + signed bodies present from at least two wallet
+      # partitions. Cross-wallet-only: history/rollback run a single wallet,
+      # so the two-partition obligation cannot apply there; their bundles
+      # keep the existing collect-and-retain path unchanged.
+      - name: Verify the collected evidence bundle
+        if: always()
+        env:
+          RECOVERY_PARTITION: ${{ matrix.partition.key }}
+        run: |
+          case "$RECOVERY_PARTITION" in
+            cross-wallet:*)
+              bash tools/cli_recovery_evidence_check.sh "${{ runner.temp }}/recovery-evidence" ;;
+            *)
+              echo "evidence: SKIP two-wallet check on single-wallet partition $RECOVERY_PARTITION" ;;
+          esac
       - name: Retain the partition's recorded evidence
         if: always()
         uses: actions/upload-artifact@v7

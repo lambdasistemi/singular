@@ -429,11 +429,25 @@ fetchSchemaRevision client base = do
             | otherwise -> parseSchemaRevision (answerBody a)
 
 {- | Record every exchange the requests make into the directory, and
-return the files written. The token file is read before anything is
-sent, the schema document first among them. An answer whose content
-the client refuses — an absent fact, an answer that does not decode — is
-recorded and recording goes on: the recording is the evidence, and the
-tests judge it.
+return the files written, in request order. The token file is read
+before anything is sent, the schema document first among them. An
+answer whose content the client refuses — an absent fact, an answer
+that does not decode — is recorded and recording goes on: the
+recording is the evidence, and the tests judge it.
+
+Ownership and concurrency contract: the two cells below belong to this
+single 'recordFixtures' invocation. Lifetime: created on entry, read
+after the sequential request loop finishes; no other invocation shares
+them. The product is single-threaded: the loop runs request after
+request on the calling thread, and the recording transport runs inside
+the same thread's 'probe' calls, so plain 'modifyIORef''/'writeIORef'
+are sufficient and no thread outlives the command. The transport
+signature (@RawRequest -> IO Exchange@) cannot carry the write failure
+back explicitly, so the single-write 'broken' latch reports it
+out-of-band; it is written at most once per invocation and read after
+each request. 'written' stores newest-first and reverses on return, so
+repeated recording is O(1) while the caller still observes request
+order, including the fixtures written before a later failure.
 -}
 recordFixtures
     :: RecorderConfig
@@ -470,13 +484,13 @@ recordFixtures cfg requests =
                         case exchangeResult ex of
                             Right answer ->
                                 write revision raw answer >>= \case
-                                    Right path -> modifyIORef' written (<> [path])
+                                    Right path -> modifyIORef' written (path :)
                                     Left failure -> writeIORef broken (Just failure)
                             Left _ -> pure ()
                         pure ex
             k = Koios (recorderClient cfg) recording
             run = \case
-                [] -> Right <$> readIORef written
+                [] -> Right . reverse <$> readIORef written
                 r : rs -> do
                     outcome <- probe k r
                     readIORef broken >>= \case

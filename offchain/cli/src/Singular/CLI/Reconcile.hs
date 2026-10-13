@@ -294,6 +294,17 @@ renderPoint p =
 -- | The outputs live at an address, read once per address per view.
 type LiveAt = Addr -> IO (Set TxIn)
 
+{- | One address-output cache for one acquired view. The cache belongs
+to the 'Cage.Session' passed in: 'reconcile' and 'reconcileIncomplete'
+call 'liveReader' once per view, so two views never share entries and
+nothing leaks across view lifetimes. The product is single-threaded:
+lookups run in order on the calling thread, so plain 'readIORef' /
+'modifyIORef'' suffice and no thread outlives the command. The
+mutation is retained because the read-once behavior is required: a
+second lookup for the same address must return what the view showed
+the first time, not re-read the chain, keeping one view consistent
+while rollback, inclusion and exclusion all consult it.
+-}
 liveReader :: Cage.Session Cage.NoWitness IO -> IO LiveAt
 liveReader view = do
     cache <- newIORef Map.empty

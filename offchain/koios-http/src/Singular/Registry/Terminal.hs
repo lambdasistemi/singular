@@ -52,20 +52,32 @@ import Singular.Registry.Trace (BackendEvent, ReadEvent)
 import Singular.Registry.Wait (boundedSignedSubmission)
 import Singular.Registry.Wallet (Wallet (..))
 
+{- | Owner, lifetime and concurrency contract for the callback buffers.
+
+The two buffers below belong to the single 'Capabilities' value this
+function returns. Lifetime: one acquisition via 'withReadsObserved'
+owns one pair; separate capabilities never share a buffer. The
+product is single-threaded: callbacks run on the calling thread via
+'newIORuntime' and 'observeProvider'; 'atomicModifyIORef'' makes one
+callback append atomic, it does not share state across threads and no
+thread outlives the command. Buffers store newest-first and reverse on
+read, so repeated append is O(1) while 'capFacts' and 'capTrace'
+observe call order including partial evidence after exceptions.
+-}
 newCapabilities
     :: Tracer IO BackendEvent
     -> ProviderSettings
     -> IO (Capabilities NoWitness IO)
 newCapabilities backend settings = do
-    raw <- newIORef []
-    facts <- newIORef []
+    rawRev <- newIORef []
+    factsRev <- newIORef []
     runtime <-
         newIORuntime
             backend
             ( \event ->
                 atomicModifyIORef'
-                    raw
-                    (\previous -> (previous <> [providerEventJson event], ()))
+                    rawRev
+                    (\previous -> (providerEventJson event : previous, ()))
             )
     transport <-
         newHttpTransport
@@ -77,7 +89,8 @@ newCapabilities backend settings = do
         provider =
             observeProvider
                 unverifiedVerifier
-                ( \fact -> atomicModifyIORef' facts (\previous -> (previous <> [fact], ()))
+                ( \fact ->
+                    atomicModifyIORef' factsRev (\previous -> (fact : previous, ()))
                 )
                 $ koiosProvider
                     runtime
@@ -92,8 +105,8 @@ newCapabilities backend settings = do
             { capReads = (network, provider)
             , capSubmit = boundedSignedSubmission 300 (submitTx provider network)
             , capConfirm = awaitTransaction provider network
-            , capFacts = readIORef facts
-            , capTrace = readIORef raw
+            , capFacts = reverse <$> readIORef factsRev
+            , capTrace = reverse <$> readIORef rawRev
             }
 
 {- | The capabilities for the named provider, its own mechanics traced into the
