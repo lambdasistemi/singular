@@ -62,11 +62,9 @@ import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
     , coinTxOutL
-    , getMinCoinTxOut
     , mkBasicTxOut
-    , referenceScriptTxOutL
     )
-import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
+import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Core (PParams, Script)
 import Cardano.Ledger.Credential
     ( Credential (..)
@@ -96,7 +94,14 @@ import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken (Release (..), renderStateToken)
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
+import Singular.Registry.TxBuilder.Edges
+    ( PublicationFundingError (..)
+    , adaOnlyOut
+    , publicationFee
+    , publicationMinChange
+    , publicationRefCoin
+    , selectPublicationInputs
+    )
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
@@ -252,10 +257,16 @@ data IdentityError
     | SeedNotAdaOnly Text
     | NoFundingBesideSeed Text
     | RegistryExists FilePath
-    | {- | A publication the wallet cannot fund: its role, the ada-only output
-      it needs, and the largest the wallet holds for it
+    | {- | A publication the wallet cannot fund: its role, the total it needs,
+      and the largest single output, the total held and the whole run's
+      lowest total need it reports. The triple keeps the three-argument
+      shape existing callers match with wildcards.
       -}
-      PublicationUnfunded Text Integer Integer
+      PublicationUnfunded Text Integer (Integer, Integer, Integer)
+    | {- | A publication whose covering prefix would exceed the protocol
+      maximum transaction size: its role, the size and the limit.
+      -}
+      PublicationTooLarge Text Integer Integer
     deriving stock (Eq, Show)
 
 renderIdentityError :: IdentityError -> String
@@ -276,13 +287,25 @@ renderIdentityError = \case
         dir
             <> " already holds your state or its journal; create never \
                \overwrites one"
-    PublicationUnfunded role needed largest ->
+    PublicationUnfunded role needed (largest, held, runNeed) ->
         "publication-unfunded "
             <> T.unpack role
-            <> ": publishing this reference script needs an ada-only output of more than "
+            <> ": this step needs "
             <> show needed
-            <> " lovelace and the largest the wallet has for it holds "
+            <> " lovelace in total but the wallet holds "
+            <> show held
+            <> " in ada-only outputs (largest "
             <> show largest
+            <> "); the whole run needs at least "
+            <> show runNeed
+            <> " lovelace; nothing was submitted"
+    PublicationTooLarge role size limit ->
+        "publication-unfunded "
+            <> T.unpack role
+            <> ": publishing this reference script needs a transaction size of "
+            <> show size
+            <> " bytes, over the protocol maximum "
+            <> show limit
             <> "; nothing was submitted"
 
 {- | The seed, as this wallet holds it: unspent and ada only. This is all a
@@ -388,15 +411,16 @@ parseEnterpriseAddress magic text = do
 
 {- | Whether the wallet funds every reference publication a create makes,
 with the boot between them, as the real transactions spend it. Each
-publication funds from the largest ada-only output with its change
-returned, as 'Singular.Registry.TxBuilder.Edges.publishRefScriptTx' funds
-it; the publications before the boot leave the seed alone. The boot spends
+publication funds from the shortest largest-first prefix of the ada-only
+outputs, with its change returned, as 'Singular.Registry.TxBuilder.Edges.selectPublicationInputs'
+funds it; the publications before the boot leave the seed alone. The boot spends
 the seed and the largest ada-only output beside it, as
 'Singular.Registry.TxBuilder.Boot.bootTokenFrom' does, and returns what is
 left of them after its cost as change, which the publications after it may
 spend. Checked before anything is submitted; the first publication the
 publisher would refuse is named, or @boot@ when the boot itself is not
-funded.
+funded. The refusal names the short step, the total it needs, the total held,
+the largest output and the whole run's lowest total need.
 -}
 publicationFunding
     :: PParams ConwayEra
@@ -414,15 +438,38 @@ publicationFunding
     -- ^ The wallet
     -> Either IdentityError ()
 publicationFunding pp seed bootCost before after wallet = do
-    left <- publishing before [(Left i, o) | (i, o) <- wallet]
-    booted <- booting left
-    _ <- publishing after booted
+    let payerAddr = case wallet of
+            (_, o) : _ -> o ^. addrTxOutL
+            [] -> error "publicationFunding: empty wallet"
+        refCoins =
+            [ publicationRefCoin pp payerAddr script
+            | (_, script) <- before <> after
+            ]
+        runNeed =
+            sum refCoins
+                + fromIntegral (length before + length after) * publicationFee
+                + bootCost
+                + publicationMinChange
+    left <-
+        publishing payerAddr runNeed before [(Left i, o) | (i, o) <- wallet]
+    booted <- booting runNeed left
+    _ <- publishing payerAddr runNeed after booted
     pure ()
   where
+    heldTotals held =
+        let coins = [c | (_, o) <- held, adaOnlyOut o, let Coin c = o ^. coinTxOutL]
+        in  (sum coins, case coins of [] -> 0; _ -> maximum coins)
     -- The boot spends the seed and the largest ada-only output beside it,
     -- and returns what is left after its cost as change.
-    booting held = case [o | (k, o) <- held, k == Left seed] of
-        [] -> Left (PublicationUnfunded "boot" (bootCost + minimumChange) 0)
+    booting runNeed held = case [o | (k, o) <- held, k == Left seed] of
+        [] ->
+            let (heldTotal, largest) = heldTotals held
+            in  Left
+                    ( PublicationUnfunded
+                        "boot"
+                        (bootCost + publicationMinChange)
+                        (largest, heldTotal, runNeed)
+                    )
         seedOut : _ ->
             let funds =
                     take 1 $
@@ -433,48 +480,41 @@ publicationFunding pp seed bootCost before after wallet = do
                 inCoin =
                     sum [c | o <- seedOut : map snd funds, let Coin c = o ^. coinTxOutL]
                 change = inCoin - bootCost
-            in  if change > minimumChange
+                (heldTotal, largest) = heldTotals held
+            in  if change > publicationMinChange
                     then
                         Right
                             ( [u | u@(k, _) <- held, k `notElem` spent]
                                 <> [(Right (length held), seedOut & coinTxOutL .~ Coin change)]
                             )
                     else
-                        Left (PublicationUnfunded "boot" (bootCost + minimumChange) inCoin)
-    publishing scripts held = foldl (\acc s -> acc >>= publishOne s) (Right held) scripts
-    -- One publication from the largest ada-only output that is not the
+                        Left
+                            ( PublicationUnfunded
+                                "boot"
+                                (bootCost + publicationMinChange)
+                                (largest, heldTotal, runNeed)
+                            )
+    publishing payerAddr runNeed scripts held =
+        foldl
+            (\acc s -> acc >>= publishOne payerAddr runNeed s)
+            (Right held)
+            scripts
+    -- One publication from the shortest largest-first prefix outside the
     -- seed; its change, a fresh output, joins the wallet.
-    publishOne (role, script) held =
-        case sortOn
-            (Down . (^. coinTxOutL) . snd)
-            [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o] of
-            [] -> Left (PublicationUnfunded role (needed script) 0)
-            (fund@(_, out) : _) ->
-                let Coin inCoin = out ^. coinTxOutL
-                    change = inCoin - fee - referenceCoin script
-                in  if change > minimumChange
-                        then
-                            Right
-                                ( filter ((/= fst fund) . fst) held
-                                    <> [
-                                           ( Right (length held)
-                                           , out & coinTxOutL .~ Coin change
-                                           )
-                                       ]
-                                )
-                        else Left (PublicationUnfunded role (needed script) inCoin)
-    -- The reference output is paid to the wallet's own address.
-    referenceCoin script = case wallet of
-        (_, o) : _ ->
-            let probe =
-                    mkBasicTxOut (o ^. addrTxOutL) (MaryValue (Coin 0) mempty)
-                        & referenceScriptTxOutL .~ SJust script
-                Coin minCoin = getMinCoinTxOut pp probe
-            in  minCoin + 1_000_000
-        [] -> 1_000_000
-    needed script = referenceCoin script + fee + minimumChange
-    fee = 1_000_000
-    minimumChange = 1_000_000
+    publishOne payerAddr runNeed (role, script) held =
+        let permitted = [u | u@(k, o) <- held, k /= Left seed, adaOnlyOut o]
+        in  case selectPublicationInputs pp payerAddr script permitted of
+                Left (PublicationShortfall needed heldTotal largest) ->
+                    Left (PublicationUnfunded role needed (largest, heldTotal, runNeed))
+                Left (PublicationOversize size limit) ->
+                    Left (PublicationTooLarge role size limit)
+                Right (funds, _, changeCoin) ->
+                    let spent = map fst funds
+                        changeOut = mkBasicTxOut payerAddr (MaryValue (Coin changeCoin) mempty)
+                    in  Right
+                            ( filter ((`notElem` spent) . fst) held
+                                <> [(Right (length held), changeOut)]
+                            )
 
 {- | An inspect of an interrupted create may read its pending identity only
 when the requested state token is the pending registry's own: the actor's

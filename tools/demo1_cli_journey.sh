@@ -132,6 +132,8 @@ hexkey >"$work/alice.skey"
 hexkey >"$work/bob.skey"
 hexkey >"$work/carol.skey" # never funded
 hexkey >"$work/dave.skey"  # funded small, for the underfunded create
+hexkey >"$work/erin.skey"  # fragmented outputs below the largest remaining need, total covers the run
+hexkey >"$work/frank.skey" # same size, one output short of the whole run
 
 export TMPDIR="$work"
 
@@ -189,6 +191,7 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
 "$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
   --fund-outputs 6 --fund-lovelace 2000000000 \
   --fund "$work/dave.skey:1:5000000" --fund "$work/dave.skey:24:4000000" \
+  --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:4:30000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 # The per-wallet funding group is parsed before any node starts: a
@@ -1012,6 +1015,99 @@ probe_out="$work/dave-seed-probe.json"
 jq -e --arg s "$dave_seed" 'any(.live[]; . == $s)' "$probe_out" >/dev/null \
   || fail "dave's seed was spent by the refused create"
 say "the refused create left dave's seed unspent"
+
+# ------------------------------------------------------------------
+# 7c. a fragmented wallet completes (Erin) and one short is refused (Frank)
+# ------------------------------------------------------------------
+# Erin holds five 30 tADA ada-only outputs and nothing else: the seed stays
+# withheld from the publications, so four outputs fund them. Each output is
+# strictly below the largest remaining single publication need (the
+# application, needs 46966310 as the journey prints; state 11557 bytes is
+# already live and reused, so no state publication remains), but the four
+# permitted outputs cover the whole run (run need 109950687 as the refusals
+# print; the seed is withheld from the publications). Her preview reports no
+# refusal and her create completes;
+# every reference is live carrying its script; at least one publication spent
+# two or more inputs (read from her journal, never typed); Bob reads the
+# registry from the token alone.
+# Frank holds four 30 tADA outputs (seed withheld, so three fund them): the run's
+# lowest total need 109950687 exceeds his total, short by less than one 30 tADA
+# output. His preview and his create give one
+# verdict, naming totals from the refusal itself, never typed; nothing is
+# submitted and every wallet output stays live.
+two_erin="$work/erin-actor"
+erin=(--wallet-skey "$work/erin.skey")
+run erin-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+  --state-dir "$two_erin" --blueprint "$blueprint" "${node[@]}" "${erin[@]}"
+jq -e '.createRefusal == null' "$receipts/erin-preview.json" >/dev/null \
+  || fail "erin's preview refuses a fundable wallet: $(jq -r .createRefusal "$receipts/erin-preview.json")"
+erin_seed="$(field erin-preview .seed)"
+run erin-create success -- create --process-time 120000 --retract-time 30000 \
+  --seed "$erin_seed" --state-dir "$two_erin" --blueprint "$blueprint" "${node[@]}" "${erin[@]}"
+jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
+  "$receipts/erin-create.json" >/dev/null || fail "erin's create did not publish the six references"
+erin_token="$(field erin-create .stateToken)"
+for ref_out in $(jq -r '.references[] | .output' "$receipts/erin-create.json"); do
+  probe_one="$work/erin-ref-probe.json"
+  "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$ref_out" >"$probe_one"
+  jq -e --arg r "$ref_out" 'any(.live[]; . == $r)' "$probe_one" >/dev/null \
+    || fail "erin's reference $ref_out is not live"
+done
+say "erin's fragmented wallet completed; every reference is live"
+erin_key="$(field erin-create .walletKeyHash)"
+erin_journal="$(managed_journal "$two_erin" "$erin_token" "$erin_key")"
+[ -f "$erin_journal" ] || fail "erin's create left no journal"
+max_pub_inputs="$(jq -s '[.[] | select(.journalEvent == "prepared" and (.journalStep | startswith("publish-"))) | (.journalInputs // [] | length)] | max // 0' "$erin_journal")"
+[ -n "$max_pub_inputs" ] || fail "erin's journal names no publication inputs"
+[ "$max_pub_inputs" -ge 2 ] || fail "erin's publications all spent one input (max $max_pub_inputs)"
+say "erin's create spent $max_pub_inputs inputs in one publication"
+bob_erin="$work/bob-erin"
+mkdir -p "$bob_erin"
+run bob-erin-inspect success -- inspect --key keyEmpty --state-token "$erin_token" \
+  --state-dir "$bob_erin" --blueprint "$blueprint" "${node[@]}"
+[ "$(field bob-erin-inspect .leaf)" = unknown ] \
+  || fail "bob did not read erin's registry from the token alone"
+say "bob read erin's registry from the state token alone"
+
+two_frank="$work/frank-actor"
+frank=(--wallet-skey "$work/frank.skey")
+run frank-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+  --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
+jq -e '(.createRefusal // "") | startswith("publication-unfunded")' "$receipts/frank-preview.json" >/dev/null \
+  || fail "frank's preview does not refuse funding: $(jq -r .createRefusal "$receipts/frank-preview.json")"
+frank_seed="$(field frank-preview .seed)"
+frank_refusal="$(field frank-preview .createRefusal)"
+frank_addr="$(field frank-preview .wallet)"
+run frank-pub-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+  --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" --wallet-address "$frank_addr"
+[ "$(field frank-pub-preview .createRefusal)" = "$frank_refusal" ] \
+  || fail "frank's public preview differs from his key preview: $(field frank-pub-preview .createRefusal) vs $frank_refusal"
+say "frank's key and public previews agree"
+run frank-create client-refusal -- create --process-time 120000 --retract-time 30000 \
+  --seed "$frank_seed" --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
+[ "$(field frank-create .reason)" = "$frank_refusal" ] \
+  || fail "frank's create refusal differs from his preview: $(field frank-create .reason) vs $frank_refusal"
+# From the refusal's own numbers, never typed: the shortfall is positive and
+# less than one 30 tADA output.
+read -r frank_needed frank_held <<<"$(printf '%s' "$frank_refusal" | grep -oE '[0-9]+' | head -n 2 | tr '\n' ' ')"
+[ -n "${frank_needed:-}" ] && [ -n "${frank_held:-}" ] \
+  || fail "frank's refusal carries no numbers: $frank_refusal"
+[ "$frank_needed" -gt "$frank_held" ] \
+  || fail "frank's needed $frank_needed does not exceed held $frank_held"
+[ "$((frank_needed - frank_held))" -le 30000000 ] \
+  || fail "frank's shortfall exceeds one 30 tADA output: needed $frank_needed held $frank_held"
+say "frank refused with one verdict: needed $frank_needed held $frank_held"
+[ -z "$(managed_find "$two_frank" journal.jsonl)" ] || fail "the refused frank create wrote a journal"
+[ -z "$(managed_find "$two_frank" registry.pending.json)" ] || fail "the refused frank create wrote a pending identity"
+frank_probe="$work/frank-seed-probe.json"
+"$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$frank_seed" >"$frank_probe"
+jq -e --arg s "$frank_seed" 'any(.live[]; . == $s)' "$frank_probe" >/dev/null \
+  || fail "frank's seed was spent by the refused create"
+run frank-preview2 success -- create --process-time 120000 --retract-time 30000 --preview \
+  --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
+[ "$(field frank-preview2 .createRefusal)" = "$frank_refusal" ] \
+  || fail "frank's wallet changed under the refused create"
+say "the refused frank create left every wallet output unchanged"
 
 # stderr_of NAME ARGS...: a command line the parser refuses before anything
 # is read: exit 2 and a message on stderr, never a receipt.

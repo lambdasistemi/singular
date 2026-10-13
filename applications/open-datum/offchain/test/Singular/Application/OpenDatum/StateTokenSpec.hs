@@ -310,11 +310,27 @@ funding = describe "a create's publication funding" $ do
     it
         "is refused before anything is submitted, naming the first publication the real create would fail"
         $ do
-            let small = walletOf (replicate 8 30_000_000)
-            failed <- createAll Nothing beforeBoot laterScripts small
-            case preflight beforeBoot laterScripts small of
+            -- Probe a tiny wallet for the first publication's need, then build an
+            -- eight-output wallet just short of it in permitted total (amounts
+            -- from the producer, never typed; seed withheld for publications).
+            -- Several-input funding still cannot cover the first step, so both
+            -- sides name it without reaching the boot bound conservatism.
+            stateNeed <- case preflight beforeBoot laterScripts (walletOf [1_000_000]) of
+                Left (PublicationUnfunded _ need _) -> pure need
+                other -> expectationFailure ("probe not refused: " <> show other) >> pure 0
+            let shortEach = (stateNeed - 1) `div` 8
+                short = walletOf (replicate 8 shortEach)
+            failed <- createAll Nothing beforeBoot laterScripts short
+            case preflight beforeBoot laterScripts short of
                 Left (PublicationUnfunded role _ _) -> Just role `shouldBe` failed
                 other -> expectationFailure ("not refused: " <> show other)
+    it
+        "accepts the eight-output wallet that single-output funding refused"
+        $ do
+            let accepted = walletOf (replicate 8 30_000_000)
+            createAll Nothing beforeBoot laterScripts accepted
+                `shouldReturn` Nothing
+            preflight beforeBoot laterScripts accepted `shouldBe` Right ()
     it "never counts the seed toward a publication" $ do
         let onlySeedIsLarge = (seedIn, adaOnly 400_000_000) : drop 1 (walletOf [3_000_000])
         createAll Nothing beforeBoot laterScripts onlySeedIsLarge
