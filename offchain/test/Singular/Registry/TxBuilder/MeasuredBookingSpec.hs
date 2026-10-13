@@ -222,9 +222,32 @@ genTight = do
             , scPinned = Nothing
             }
 
+{- | The smallest output a generated scenario may pin. The first output
+('extra') may be smaller and is never pinned: a pinned output that cannot
+carry the booking is refused, which is 'genTight''s boundary, not this
+generator's domain (#555). 'pinFloor' carrying the costliest booking this
+generator draws is its own row below.
+-}
+pinFloor :: Integer
+pinFloor = 15_000_000
+
+{- | The costliest booking 'genScenario' can draw, pinned to an output of
+exactly 'pinFloor' beside a smaller first output.
+-}
+costliestPinned :: Bool -> Scenario
+costliestPinned byRef =
+    Scenario
+        { scWallet = zipWith Held txIns [2_000_000, pinFloor]
+        , scUnits = ExUnits 14_000_000 1_000_000_000
+        , scSlope = 50
+        , scDeposit = 6_000_000
+        , scByReference = byRef
+        , scPinned = Just 1
+        }
+
 genScenario :: Gen Scenario
 genScenario = do
-    lovelaces <- listOf1 (chooseInteger (9_000_000, 12_000_000_000))
+    lovelaces <- listOf1 (chooseInteger (pinFloor, 12_000_000_000))
     extra <- chooseInteger (2_000_000, 12_000_000_000)
     let wallet = zipWith Held txIns (extra : lovelaces)
     mem <- chooseInteger (1, 14_000_000)
@@ -236,7 +259,7 @@ genScenario = do
     pin <-
         oneof
             [ pure Nothing
-            , Just <$> chooseInteger (0, fromIntegral (length wallet) - 1)
+            , Just <$> chooseInteger (1, fromIntegral (length wallet) - 1)
             ]
     pure
         Scenario
@@ -524,6 +547,15 @@ spec =
                 map (textField "outcome") (phaseLines "build-body" objects)
                     `shouldBe` [Just "ok"]
         it
+            "builds the costliest generated booking from the smallest output a scenario may pin (#555)"
+            $ mapM_
+                ( \byRef -> do
+                    let sc = costliestPinned byRef
+                    tx <- measuredBooking sc
+                    findings sc tx `shouldBe` []
+                )
+                [False, True]
+        it
             "holds for every generated wallet, evaluator reading and funding choice"
             $ property
             $ forAll genScenario
@@ -597,8 +629,7 @@ spec =
                                     )
                 )
                 mutations
-        -- Quarantined: seed-dependent InsufficientFee (#555, tracked in #594).
-        xit
+        it
             "is built, measured and certified from the one view it is handed, whatever a later acquisition answers"
             $ property
             $ forAll genScenario
