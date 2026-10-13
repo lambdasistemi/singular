@@ -1,0 +1,88 @@
+{
+  "economics-of-protected-rejection": [
+    {
+      "text": "Economics of protected rejection.",
+      "pause": 500
+    },
+    {
+      "text": "As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.",
+      "pause": 400
+    },
+    {
+      "text": "The full draft lives beside this page as a PDF: economics-paper.pdf. It is built from LaTeX sources under paper/economics by the documentation build, so the PDF on the site always matches the committed sources.",
+      "pause": 400
+    }
+  ],
+  "who-this-is-for": [
+    {
+      "text": "Who this is for.",
+      "pause": 500
+    },
+    {
+      "text": "A reviewer who was not part of the design and wants the whole economic mechanism on one page before opening the paper: which amounts move in each outcome, which parameters the creator sets, and which statements are proved, argued by hand, or kept as counterexamples.",
+      "pause": 400
+    }
+  ],
+  "abstract": [
+    {
+      "text": "Abstract.",
+      "pause": 500
+    },
+    {
+      "text": "A permissionless registry lets anyone fold a queued request into shared state, so a request that waits in the queue can be cancelled by a stranger who collects the fee for the slot. The paper gives the economic rules of one such registry. Every request carries a bond beside its deposit. A processor that rejects a request forfeits the bond only when it proves, against the state root the request recorded at booking, that the request was already faulty then; any other rejection refunds the bond. The forfeited bond is split between the proving processor and the treasury. A fold that terminates a key donates a termination fee to the treasury. The paper states each property as a definition with a theorem, gives the transfer function as one table, derives every parameter constraint as an inequality with a worked example in lovelace, and lists exactly what the mechanism does not price, with counterexamples.",
+      "pause": 400
+    }
+  ],
+  "format-and-sources": [
+    {
+      "text": "Format and sources.",
+      "pause": 500
+    },
+    {
+      "text": "The paper is written in LaTeX and built into this site by a Nix derivation. The intended style is the LIPIcs class, which is not shipped in the pinned TeX Live set, so this draft uses the llncs class from TeX Live and says so here. The bibliography holds only verified entries: a located whitepaper that could not be found is not cited, and a griefing survey whose author name is unconfirmed is not cited until its author is confirmed.",
+      "pause": 400
+    }
+  ],
+  "what-each-outcome-pays": [
+    {
+      "text": "What each outcome pays.",
+      "pause": 500
+    },
+    {
+      "text": "The transfer function, net per party and excluding the value of the key itself. The deposit returns to the owner except where the edge rule routes it; the bond returns except on a proved fault. The tip returns on a retraction and pays the processor on everything else.",
+      "pause": 400
+    },
+    {
+      "text": "The processor share of a forfeited bond is the floor of the split times the bond; the treasury receives the remainder, so the two shares always add up to the bond exactly. A donation that is zero is omitted from the transaction, since the donation field accepts only positive amounts.",
+      "pause": 400
+    }
+  ],
+  "theorem-to-lean-mapping": [
+    {
+      "text": "Theorem to Lean mapping.",
+      "pause": 500
+    },
+    {
+      "text": "For this draft the table is written from the reviewed plan, with every row marked not yet mechanized. The generator that derives the table from the audit report arrives with the model; until then the names below are the planned declarations, checked against the plan page, and the files are fixed: theorems and kept counterexamples live in the statements module the axioms guard, definitions in the economics module.",
+      "pause": 400
+    },
+    {
+      "text": "Flood cost per faulty request, the griefing factor bound, the processor incentive to clear faults, and the collusion bounds are inequalities derived by hand from the transfer lemmas, since they speak of key value, opportunity cost and fee volatility, which the model does not contain. The paper labels each as a hand argument.",
+      "pause": 400
+    }
+  ],
+  "limitations-in-one-paragraph": [
+    {
+      "text": "Limitations in one paragraph.",
+      "pause": 500
+    },
+    {
+      "text": "Four facts bound the design: duplicate concurrent bookings cost the tip plus fees, not the bond; squatting a key without terminating it is not priced by the termination fee, and the defence is the application approval policy, stated as an assumption; a zero donation cannot be expressed, so the field is omitted; the tip returns on a retraction and pays the processor on every other outcome. The paper lists every property that does not hold with its counterexample, and states the safe price ranges, the liveness hazards, and the model-to-validator correspondence as an assumption with its gaps.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "economics-paper.md",
+    "sha256": "4b916fee30c4c5240bb5b9862522faa50950c802ba5129e7e06a9abe4d3c74c3"
+  }
+}

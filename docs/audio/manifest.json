@@ -111120,6 +111120,4206 @@
     }
    ]
   },
+  "docs-economics-paper/abstract-00": {
+   "audio_sha256": "90bf4930d6b53a58b5d0d1280145fe19dad5da6ac152d4f72bc79b36a87d38a2",
+   "characters": 9,
+   "cost": 8.91e-06,
+   "duration": 1.275,
+   "index": 0,
+   "key": "1f7121d00ba43ccbb2583db7a9244b708f7e4fe0c123fd601f0866bcdf649907",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "abstract",
+   "sent_text": "Abstract.",
+   "text": "Abstract.",
+   "words": [
+    {
+     "end": 1.075,
+     "start": 0.2,
+     "text": "Abstract"
+    },
+    {
+     "end": 1.275,
+     "start": 1.075,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/abstract-01": {
+   "audio_sha256": "f1211edf3119a5c82c21d2b899de505c15d8ae54d882edbee779fd4965ab6d4b",
+   "characters": 912,
+   "cost": 0.0009028799999999999,
+   "duration": 60.25,
+   "index": 1,
+   "key": "44efcea61bd6abacd3f866f901cc5d9c5ce883d2b2bbbd369884ba5146ac2101",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "abstract",
+   "sent_text": "A permissionless registry lets anyone fold a queued request into shared state, so a request that waits in the queue can be cancelled by a stranger who collects the fee for the slot. The paper gives the economic rules of one such registry. Every request carries a bond beside its deposit. A processor that rejects a request forfeits the bond only when it proves, against the state root the request recorded at booking, that the request was already faulty then; any other rejection refunds the bond. The forfeited bond is split between the proving processor and the treasury. A fold that terminates a key donates a termination fee to the treasury. The paper states each property as a definition with a theorem, gives the transfer function as one table, derives every parameter constraint as an inequality with a worked example in lovelace, and lists exactly what the mechanism does not price, with counterexamples.",
+   "text": "A permissionless registry lets anyone fold a queued request into shared state, so a request that waits in the queue can be cancelled by a stranger who collects the fee for the slot. The paper gives the economic rules of one such registry. Every request carries a bond beside its deposit. A processor that rejects a request forfeits the bond only when it proves, against the state root the request recorded at booking, that the request was already faulty then; any other rejection refunds the bond. The forfeited bond is split between the proving processor and the treasury. A fold that terminates a key donates a termination fee to the treasury. The paper states each property as a definition with a theorem, gives the transfer function as one table, derives every parameter constraint as an inequality with a worked example in lovelace, and lists exactly what the mechanism does not price, with counterexamples.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.25,
+     "text": "A"
+    },
+    {
+     "end": 0.988,
+     "start": 0.325,
+     "text": "permissionless"
+    },
+    {
+     "end": 1.625,
+     "start": 0.988,
+     "text": "registry"
+    },
+    {
+     "end": 1.913,
+     "start": 1.625,
+     "text": "lets"
+    },
+    {
+     "end": 2.45,
+     "start": 1.913,
+     "text": "anyone"
+    },
+    {
+     "end": 2.812,
+     "start": 2.45,
+     "text": "fold"
+    },
+    {
+     "end": 2.912,
+     "start": 2.812,
+     "text": "a"
+    },
+    {
+     "end": 3.275,
+     "start": 2.912,
+     "text": "queued"
+    },
+    {
+     "end": 3.875,
+     "start": 3.275,
+     "text": "request"
+    },
+    {
+     "end": 4.2,
+     "start": 3.875,
+     "text": "into"
+    },
+    {
+     "end": 4.613,
+     "start": 4.2,
+     "text": "shared"
+    },
+    {
+     "end": 5.1,
+     "start": 4.613,
+     "text": "state"
+    },
+    {
+     "end": 5.213,
+     "start": 5.1,
+     "text": ","
+    },
+    {
+     "end": 5.375,
+     "start": 5.213,
+     "text": "so"
+    },
+    {
+     "end": 5.45,
+     "start": 5.375,
+     "text": "a"
+    },
+    {
+     "end": 6.0,
+     "start": 5.45,
+     "text": "request"
+    },
+    {
+     "end": 6.213,
+     "start": 6.0,
+     "text": "that"
+    },
+    {
+     "end": 6.575,
+     "start": 6.213,
+     "text": "waits"
+    },
+    {
+     "end": 6.688,
+     "start": 6.575,
+     "text": "in"
+    },
+    {
+     "end": 6.812,
+     "start": 6.688,
+     "text": "the"
+    },
+    {
+     "end": 7.238,
+     "start": 6.812,
+     "text": "queue"
+    },
+    {
+     "end": 7.412,
+     "start": 7.238,
+     "text": "can"
+    },
+    {
+     "end": 7.562,
+     "start": 7.412,
+     "text": "be"
+    },
+    {
+     "end": 8.1,
+     "start": 7.562,
+     "text": "cancelled"
+    },
+    {
+     "end": 8.275,
+     "start": 8.1,
+     "text": "by"
+    },
+    {
+     "end": 8.387,
+     "start": 8.275,
+     "text": "a"
+    },
+    {
+     "end": 8.95,
+     "start": 8.387,
+     "text": "stranger"
+    },
+    {
+     "end": 9.113,
+     "start": 8.95,
+     "text": "who"
+    },
+    {
+     "end": 9.6,
+     "start": 9.113,
+     "text": "collects"
+    },
+    {
+     "end": 9.75,
+     "start": 9.6,
+     "text": "the"
+    },
+    {
+     "end": 10.087,
+     "start": 9.75,
+     "text": "fee"
+    },
+    {
+     "end": 10.225,
+     "start": 10.087,
+     "text": "for"
+    },
+    {
+     "end": 10.363,
+     "start": 10.225,
+     "text": "the"
+    },
+    {
+     "end": 11.5,
+     "start": 10.363,
+     "text": "slot"
+    },
+    {
+     "end": 11.75,
+     "start": 11.5,
+     "text": "."
+    },
+    {
+     "end": 12.0,
+     "start": 11.925,
+     "text": "The"
+    },
+    {
+     "end": 12.4,
+     "start": 12.0,
+     "text": "paper"
+    },
+    {
+     "end": 12.637,
+     "start": 12.4,
+     "text": "gives"
+    },
+    {
+     "end": 12.75,
+     "start": 12.637,
+     "text": "the"
+    },
+    {
+     "end": 13.325,
+     "start": 12.75,
+     "text": "economic"
+    },
+    {
+     "end": 13.775,
+     "start": 13.325,
+     "text": "rules"
+    },
+    {
+     "end": 13.925,
+     "start": 13.775,
+     "text": "of"
+    },
+    {
+     "end": 14.175,
+     "start": 13.925,
+     "text": "one"
+    },
+    {
+     "end": 14.425,
+     "start": 14.175,
+     "text": "such"
+    },
+    {
+     "end": 15.475,
+     "start": 14.425,
+     "text": "registry"
+    },
+    {
+     "end": 15.7,
+     "start": 15.475,
+     "text": "."
+    },
+    {
+     "end": 16.163,
+     "start": 15.9,
+     "text": "Every"
+    },
+    {
+     "end": 16.575,
+     "start": 16.163,
+     "text": "request"
+    },
+    {
+     "end": 16.888,
+     "start": 16.575,
+     "text": "carries"
+    },
+    {
+     "end": 16.95,
+     "start": 16.888,
+     "text": "a"
+    },
+    {
+     "end": 17.3,
+     "start": 16.95,
+     "text": "bond"
+    },
+    {
+     "end": 17.663,
+     "start": 17.3,
+     "text": "beside"
+    },
+    {
+     "end": 17.775,
+     "start": 17.663,
+     "text": "its"
+    },
+    {
+     "end": 18.85,
+     "start": 17.775,
+     "text": "deposit"
+    },
+    {
+     "end": 19.05,
+     "start": 18.85,
+     "text": "."
+    },
+    {
+     "end": 19.325,
+     "start": 19.25,
+     "text": "A"
+    },
+    {
+     "end": 19.975,
+     "start": 19.325,
+     "text": "processor"
+    },
+    {
+     "end": 20.125,
+     "start": 19.975,
+     "text": "that"
+    },
+    {
+     "end": 20.513,
+     "start": 20.125,
+     "text": "rejects"
+    },
+    {
+     "end": 20.575,
+     "start": 20.513,
+     "text": "a"
+    },
+    {
+     "end": 21.225,
+     "start": 20.575,
+     "text": "request"
+    },
+    {
+     "end": 21.7,
+     "start": 21.225,
+     "text": "forfeits"
+    },
+    {
+     "end": 21.8,
+     "start": 21.7,
+     "text": "the"
+    },
+    {
+     "end": 22.212,
+     "start": 21.8,
+     "text": "bond"
+    },
+    {
+     "end": 22.513,
+     "start": 22.212,
+     "text": "only"
+    },
+    {
+     "end": 22.638,
+     "start": 22.513,
+     "text": "when"
+    },
+    {
+     "end": 22.725,
+     "start": 22.638,
+     "text": "it"
+    },
+    {
+     "end": 23.725,
+     "start": 22.725,
+     "text": "proves"
+    },
+    {
+     "end": 23.925,
+     "start": 23.725,
+     "text": ","
+    },
+    {
+     "end": 24.438,
+     "start": 24.125,
+     "text": "against"
+    },
+    {
+     "end": 24.525,
+     "start": 24.438,
+     "text": "the"
+    },
+    {
+     "end": 24.85,
+     "start": 24.525,
+     "text": "state"
+    },
+    {
+     "end": 25.175,
+     "start": 24.85,
+     "text": "root"
+    },
+    {
+     "end": 25.275,
+     "start": 25.175,
+     "text": "the"
+    },
+    {
+     "end": 25.712,
+     "start": 25.275,
+     "text": "request"
+    },
+    {
+     "end": 26.112,
+     "start": 25.712,
+     "text": "recorded"
+    },
+    {
+     "end": 26.2,
+     "start": 26.112,
+     "text": "at"
+    },
+    {
+     "end": 27.1,
+     "start": 26.2,
+     "text": "booking"
+    },
+    {
+     "end": 27.3,
+     "start": 27.1,
+     "text": ","
+    },
+    {
+     "end": 27.587,
+     "start": 27.475,
+     "text": "that"
+    },
+    {
+     "end": 27.663,
+     "start": 27.587,
+     "text": "the"
+    },
+    {
+     "end": 28.062,
+     "start": 27.663,
+     "text": "request"
+    },
+    {
+     "end": 28.225,
+     "start": 28.062,
+     "text": "was"
+    },
+    {
+     "end": 28.612,
+     "start": 28.225,
+     "text": "already"
+    },
+    {
+     "end": 29.025,
+     "start": 28.612,
+     "text": "faulty"
+    },
+    {
+     "end": 29.75,
+     "start": 29.025,
+     "text": "then"
+    },
+    {
+     "end": 29.95,
+     "start": 29.75,
+     "text": ";"
+    },
+    {
+     "end": 30.438,
+     "start": 30.15,
+     "text": "any"
+    },
+    {
+     "end": 30.75,
+     "start": 30.438,
+     "text": "other"
+    },
+    {
+     "end": 31.438,
+     "start": 30.75,
+     "text": "rejection"
+    },
+    {
+     "end": 32.025,
+     "start": 31.438,
+     "text": "refunds"
+    },
+    {
+     "end": 32.125,
+     "start": 32.025,
+     "text": "the"
+    },
+    {
+     "end": 32.725,
+     "start": 32.125,
+     "text": "bond"
+    },
+    {
+     "end": 32.825,
+     "start": 32.725,
+     "text": "."
+    },
+    {
+     "end": 32.963,
+     "start": 32.825,
+     "text": "The"
+    },
+    {
+     "end": 33.475,
+     "start": 32.963,
+     "text": "forfeited"
+    },
+    {
+     "end": 33.9,
+     "start": 33.475,
+     "text": "bond"
+    },
+    {
+     "end": 34.037,
+     "start": 33.9,
+     "text": "is"
+    },
+    {
+     "end": 34.4,
+     "start": 34.037,
+     "text": "split"
+    },
+    {
+     "end": 34.713,
+     "start": 34.4,
+     "text": "between"
+    },
+    {
+     "end": 34.8,
+     "start": 34.713,
+     "text": "the"
+    },
+    {
+     "end": 35.2,
+     "start": 34.8,
+     "text": "proving"
+    },
+    {
+     "end": 35.938,
+     "start": 35.2,
+     "text": "processor"
+    },
+    {
+     "end": 36.062,
+     "start": 35.938,
+     "text": "and"
+    },
+    {
+     "end": 36.15,
+     "start": 36.062,
+     "text": "the"
+    },
+    {
+     "end": 37.3,
+     "start": 36.15,
+     "text": "treasury"
+    },
+    {
+     "end": 37.525,
+     "start": 37.3,
+     "text": "."
+    },
+    {
+     "end": 37.812,
+     "start": 37.725,
+     "text": "A"
+    },
+    {
+     "end": 38.175,
+     "start": 37.812,
+     "text": "fold"
+    },
+    {
+     "end": 38.362,
+     "start": 38.175,
+     "text": "that"
+    },
+    {
+     "end": 38.938,
+     "start": 38.362,
+     "text": "terminates"
+    },
+    {
+     "end": 39.037,
+     "start": 38.938,
+     "text": "a"
+    },
+    {
+     "end": 39.525,
+     "start": 39.037,
+     "text": "key"
+    },
+    {
+     "end": 39.987,
+     "start": 39.525,
+     "text": "donates"
+    },
+    {
+     "end": 40.088,
+     "start": 39.987,
+     "text": "a"
+    },
+    {
+     "end": 40.838,
+     "start": 40.088,
+     "text": "termination"
+    },
+    {
+     "end": 41.075,
+     "start": 40.838,
+     "text": "fee"
+    },
+    {
+     "end": 41.162,
+     "start": 41.075,
+     "text": "to"
+    },
+    {
+     "end": 41.25,
+     "start": 41.162,
+     "text": "the"
+    },
+    {
+     "end": 42.275,
+     "start": 41.25,
+     "text": "treasury"
+    },
+    {
+     "end": 42.475,
+     "start": 42.275,
+     "text": "."
+    },
+    {
+     "end": 42.725,
+     "start": 42.65,
+     "text": "The"
+    },
+    {
+     "end": 43.125,
+     "start": 42.725,
+     "text": "paper"
+    },
+    {
+     "end": 43.475,
+     "start": 43.125,
+     "text": "states"
+    },
+    {
+     "end": 43.7,
+     "start": 43.475,
+     "text": "each"
+    },
+    {
+     "end": 44.312,
+     "start": 43.7,
+     "text": "property"
+    },
+    {
+     "end": 44.438,
+     "start": 44.312,
+     "text": "as"
+    },
+    {
+     "end": 44.5,
+     "start": 44.438,
+     "text": "a"
+    },
+    {
+     "end": 45.125,
+     "start": 44.5,
+     "text": "definition"
+    },
+    {
+     "end": 45.263,
+     "start": 45.125,
+     "text": "with"
+    },
+    {
+     "end": 45.362,
+     "start": 45.263,
+     "text": "a"
+    },
+    {
+     "end": 46.325,
+     "start": 45.362,
+     "text": "theorem"
+    },
+    {
+     "end": 46.525,
+     "start": 46.325,
+     "text": ","
+    },
+    {
+     "end": 46.912,
+     "start": 46.7,
+     "text": "gives"
+    },
+    {
+     "end": 47.0,
+     "start": 46.912,
+     "text": "the"
+    },
+    {
+     "end": 47.425,
+     "start": 47.0,
+     "text": "transfer"
+    },
+    {
+     "end": 47.938,
+     "start": 47.425,
+     "text": "function"
+    },
+    {
+     "end": 48.1,
+     "start": 47.938,
+     "text": "as"
+    },
+    {
+     "end": 48.35,
+     "start": 48.1,
+     "text": "one"
+    },
+    {
+     "end": 49.175,
+     "start": 48.35,
+     "text": "table"
+    },
+    {
+     "end": 49.375,
+     "start": 49.175,
+     "text": ","
+    },
+    {
+     "end": 50.088,
+     "start": 49.575,
+     "text": "derives"
+    },
+    {
+     "end": 50.425,
+     "start": 50.088,
+     "text": "every"
+    },
+    {
+     "end": 51.0,
+     "start": 50.425,
+     "text": "parameter"
+    },
+    {
+     "end": 51.688,
+     "start": 51.0,
+     "text": "constraint"
+    },
+    {
+     "end": 51.812,
+     "start": 51.688,
+     "text": "as"
+    },
+    {
+     "end": 51.9,
+     "start": 51.812,
+     "text": "an"
+    },
+    {
+     "end": 52.7,
+     "start": 51.9,
+     "text": "inequality"
+    },
+    {
+     "end": 52.862,
+     "start": 52.7,
+     "text": "with"
+    },
+    {
+     "end": 52.963,
+     "start": 52.862,
+     "text": "a"
+    },
+    {
+     "end": 53.263,
+     "start": 52.963,
+     "text": "worked"
+    },
+    {
+     "end": 53.775,
+     "start": 53.263,
+     "text": "example"
+    },
+    {
+     "end": 53.925,
+     "start": 53.775,
+     "text": "in"
+    },
+    {
+     "end": 55.025,
+     "start": 53.925,
+     "text": "lovelace"
+    },
+    {
+     "end": 55.225,
+     "start": 55.025,
+     "text": ","
+    },
+    {
+     "end": 55.55,
+     "start": 55.425,
+     "text": "and"
+    },
+    {
+     "end": 55.875,
+     "start": 55.55,
+     "text": "lists"
+    },
+    {
+     "end": 56.475,
+     "start": 55.875,
+     "text": "exactly"
+    },
+    {
+     "end": 56.612,
+     "start": 56.475,
+     "text": "what"
+    },
+    {
+     "end": 56.7,
+     "start": 56.612,
+     "text": "the"
+    },
+    {
+     "end": 57.325,
+     "start": 56.7,
+     "text": "mechanism"
+    },
+    {
+     "end": 57.525,
+     "start": 57.325,
+     "text": "does"
+    },
+    {
+     "end": 57.75,
+     "start": 57.525,
+     "text": "not"
+    },
+    {
+     "end": 58.225,
+     "start": 57.75,
+     "text": "price"
+    },
+    {
+     "end": 58.3,
+     "start": 58.225,
+     "text": ","
+    },
+    {
+     "end": 58.5,
+     "start": 58.3,
+     "text": "with"
+    },
+    {
+     "end": 60.05,
+     "start": 58.5,
+     "text": "counterexamples"
+    },
+    {
+     "end": 60.25,
+     "start": 60.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/economics-of-protected-rejection-00": {
+   "audio_sha256": "0a8e6c61bb148100c754462c8e726a29ef13448bfd6b27433e98b410d794cf69",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.5,
+   "index": 0,
+   "key": "2b23394e7c0db6e6332c9ab7a6b38e72e05ccbd9532e73683eb9fab3f3535e64",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "economics-of-protected-rejection",
+   "sent_text": "Economics of protected rejection.",
+   "text": "Economics of protected rejection.",
+   "words": [
+    {
+     "end": 0.712,
+     "start": 0.175,
+     "text": "Economics"
+    },
+    {
+     "end": 0.8,
+     "start": 0.712,
+     "text": "of"
+    },
+    {
+     "end": 1.263,
+     "start": 0.8,
+     "text": "protected"
+    },
+    {
+     "end": 2.3,
+     "start": 1.263,
+     "text": "rejection"
+    },
+    {
+     "end": 2.5,
+     "start": 2.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/economics-of-protected-rejection-01": {
+   "audio_sha256": "9ad37905163c60e80eac87a44705a4cfab79a89cbaf4e1823fc2307abd9838d2",
+   "characters": 309,
+   "cost": 0.00030590999999999995,
+   "duration": 19.675,
+   "index": 1,
+   "key": "4a3ded2cba5c1ad394420bff38a4acdfc8521635f311d52721c41302c0b7c01e",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "economics-of-protected-rejection",
+   "sent_text": "As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.",
+   "text": "As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.512,
+     "start": 0.412,
+     "text": "a"
+    },
+    {
+     "end": 1.125,
+     "start": 0.512,
+     "text": "scientist"
+    },
+    {
+     "end": 1.575,
+     "start": 1.125,
+     "text": "reviewing"
+    },
+    {
+     "end": 1.7,
+     "start": 1.575,
+     "text": "the"
+    },
+    {
+     "end": 2.175,
+     "start": 1.7,
+     "text": "registry"
+    },
+    {
+     "end": 2.8,
+     "start": 2.175,
+     "text": "economics"
+    },
+    {
+     "end": 3.0,
+     "start": 2.8,
+     "text": "from"
+    },
+    {
+     "end": 3.438,
+     "start": 3.0,
+     "text": "outside"
+    },
+    {
+     "end": 3.525,
+     "start": 3.438,
+     "text": "the"
+    },
+    {
+     "end": 4.2,
+     "start": 3.525,
+     "text": "project"
+    },
+    {
+     "end": 4.312,
+     "start": 4.2,
+     "text": ","
+    },
+    {
+     "end": 4.625,
+     "start": 4.312,
+     "text": "read"
+    },
+    {
+     "end": 4.863,
+     "start": 4.625,
+     "text": "this"
+    },
+    {
+     "end": 5.35,
+     "start": 4.863,
+     "text": "page"
+    },
+    {
+     "end": 5.488,
+     "start": 5.35,
+     "text": "and"
+    },
+    {
+     "end": 5.825,
+     "start": 5.488,
+     "text": "learn"
+    },
+    {
+     "end": 5.988,
+     "start": 5.825,
+     "text": "what"
+    },
+    {
+     "end": 6.075,
+     "start": 5.988,
+     "text": "the"
+    },
+    {
+     "end": 6.463,
+     "start": 6.075,
+     "text": "paper"
+    },
+    {
+     "end": 7.05,
+     "start": 6.463,
+     "text": "claims"
+    },
+    {
+     "end": 7.125,
+     "start": 7.05,
+     "text": ","
+    },
+    {
+     "end": 7.363,
+     "start": 7.125,
+     "text": "which"
+    },
+    {
+     "end": 7.675,
+     "start": 7.363,
+     "text": "Lean"
+    },
+    {
+     "end": 8.375,
+     "start": 7.675,
+     "text": "declaration"
+    },
+    {
+     "end": 8.637,
+     "start": 8.375,
+     "text": "each"
+    },
+    {
+     "end": 8.988,
+     "start": 8.637,
+     "text": "claim"
+    },
+    {
+     "end": 9.425,
+     "start": 8.988,
+     "text": "cites"
+    },
+    {
+     "end": 9.475,
+     "start": 9.425,
+     "text": ","
+    },
+    {
+     "end": 9.587,
+     "start": 9.475,
+     "text": "and"
+    },
+    {
+     "end": 9.812,
+     "start": 9.587,
+     "text": "which"
+    },
+    {
+     "end": 10.163,
+     "start": 9.812,
+     "text": "proofs"
+    },
+    {
+     "end": 10.325,
+     "start": 10.163,
+     "text": "have"
+    },
+    {
+     "end": 11.45,
+     "start": 10.325,
+     "text": "landed"
+    },
+    {
+     "end": 11.7,
+     "start": 11.45,
+     "text": "."
+    },
+    {
+     "end": 12.2,
+     "start": 11.9,
+     "text": "Every"
+    },
+    {
+     "end": 12.425,
+     "start": 12.2,
+     "text": "row"
+    },
+    {
+     "end": 12.887,
+     "start": 12.425,
+     "text": "below"
+    },
+    {
+     "end": 13.062,
+     "start": 12.887,
+     "text": "is"
+    },
+    {
+     "end": 13.462,
+     "start": 13.062,
+     "text": "marked"
+    },
+    {
+     "end": 13.7,
+     "start": 13.462,
+     "text": "not"
+    },
+    {
+     "end": 13.925,
+     "start": 13.7,
+     "text": "yet"
+    },
+    {
+     "end": 14.65,
+     "start": 13.925,
+     "text": "mechanized"
+    },
+    {
+     "end": 14.938,
+     "start": 14.65,
+     "text": "until"
+    },
+    {
+     "end": 15.025,
+     "start": 14.938,
+     "text": "the"
+    },
+    {
+     "end": 15.375,
+     "start": 15.025,
+     "text": "model"
+    },
+    {
+     "end": 15.788,
+     "start": 15.375,
+     "text": "behind"
+    },
+    {
+     "end": 15.9,
+     "start": 15.788,
+     "text": "it"
+    },
+    {
+     "end": 16.062,
+     "start": 15.9,
+     "text": "is"
+    },
+    {
+     "end": 16.975,
+     "start": 16.062,
+     "text": "built"
+    },
+    {
+     "end": 17.175,
+     "start": 16.975,
+     "text": ";"
+    },
+    {
+     "end": 17.7,
+     "start": 17.375,
+     "text": "nothing"
+    },
+    {
+     "end": 17.925,
+     "start": 17.7,
+     "text": "here"
+    },
+    {
+     "end": 18.025,
+     "start": 17.925,
+     "text": "is"
+    },
+    {
+     "end": 18.4,
+     "start": 18.025,
+     "text": "stated"
+    },
+    {
+     "end": 18.513,
+     "start": 18.4,
+     "text": "as"
+    },
+    {
+     "end": 18.575,
+     "start": 18.513,
+     "text": "a"
+    },
+    {
+     "end": 19.475,
+     "start": 18.575,
+     "text": "result"
+    },
+    {
+     "end": 19.675,
+     "start": 19.475,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/economics-of-protected-rejection-02": {
+   "audio_sha256": "1f7f70e546e0be7ee37706ef6f37995facd346ed00614db8f1463b12116fc3e4",
+   "characters": 210,
+   "cost": 0.00020789999999999998,
+   "duration": 15.375,
+   "index": 2,
+   "key": "a33f95803072470804c71fba2620241c6282627b762e6b515c6efea398972381",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "economics-of-protected-rejection",
+   "sent_text": "The full draft lives beside this page as a PDF: economics-paper.pdf. It is built from LaTeX sources under paper/economics by the documentation build, so the PDF on the site always matches the committed sources.",
+   "text": "The full draft lives beside this page as a PDF: economics-paper.pdf. It is built from LaTeX sources under paper/economics by the documentation build, so the PDF on the site always matches the committed sources.",
+   "words": [
+    {
+     "end": 0.262,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.5,
+     "start": 0.262,
+     "text": "full"
+    },
+    {
+     "end": 0.85,
+     "start": 0.5,
+     "text": "draft"
+    },
+    {
+     "end": 1.125,
+     "start": 0.85,
+     "text": "lives"
+    },
+    {
+     "end": 1.462,
+     "start": 1.125,
+     "text": "beside"
+    },
+    {
+     "end": 1.625,
+     "start": 1.462,
+     "text": "this"
+    },
+    {
+     "end": 2.013,
+     "start": 1.625,
+     "text": "page"
+    },
+    {
+     "end": 2.138,
+     "start": 2.013,
+     "text": "as"
+    },
+    {
+     "end": 2.2,
+     "start": 2.138,
+     "text": "a"
+    },
+    {
+     "end": 3.3,
+     "start": 2.2,
+     "text": "PDF"
+    },
+    {
+     "end": 3.5,
+     "start": 3.3,
+     "text": ":"
+    },
+    {
+     "end": 5.55,
+     "start": 3.675,
+     "text": "economics-paper.pdf"
+    },
+    {
+     "end": 5.75,
+     "start": 5.55,
+     "text": "."
+    },
+    {
+     "end": 6.05,
+     "start": 5.925,
+     "text": "It"
+    },
+    {
+     "end": 6.2,
+     "start": 6.05,
+     "text": "is"
+    },
+    {
+     "end": 6.475,
+     "start": 6.2,
+     "text": "built"
+    },
+    {
+     "end": 6.675,
+     "start": 6.475,
+     "text": "from"
+    },
+    {
+     "end": 7.125,
+     "start": 6.675,
+     "text": "LaTeX"
+    },
+    {
+     "end": 7.625,
+     "start": 7.125,
+     "text": "sources"
+    },
+    {
+     "end": 7.887,
+     "start": 7.625,
+     "text": "under"
+    },
+    {
+     "end": 9.0,
+     "start": 7.887,
+     "text": "paper/economics"
+    },
+    {
+     "end": 9.175,
+     "start": 9.0,
+     "text": "by"
+    },
+    {
+     "end": 9.275,
+     "start": 9.175,
+     "text": "the"
+    },
+    {
+     "end": 10.175,
+     "start": 9.275,
+     "text": "documentation"
+    },
+    {
+     "end": 11.05,
+     "start": 10.175,
+     "text": "build"
+    },
+    {
+     "end": 11.275,
+     "start": 11.05,
+     "text": ","
+    },
+    {
+     "end": 11.587,
+     "start": 11.475,
+     "text": "so"
+    },
+    {
+     "end": 11.675,
+     "start": 11.587,
+     "text": "the"
+    },
+    {
+     "end": 12.238,
+     "start": 11.675,
+     "text": "PDF"
+    },
+    {
+     "end": 12.337,
+     "start": 12.238,
+     "text": "on"
+    },
+    {
+     "end": 12.438,
+     "start": 12.337,
+     "text": "the"
+    },
+    {
+     "end": 12.812,
+     "start": 12.438,
+     "text": "site"
+    },
+    {
+     "end": 13.2,
+     "start": 12.812,
+     "text": "always"
+    },
+    {
+     "end": 13.65,
+     "start": 13.2,
+     "text": "matches"
+    },
+    {
+     "end": 13.75,
+     "start": 13.65,
+     "text": "the"
+    },
+    {
+     "end": 14.125,
+     "start": 13.75,
+     "text": "committed"
+    },
+    {
+     "end": 15.175,
+     "start": 14.125,
+     "text": "sources"
+    },
+    {
+     "end": 15.375,
+     "start": 15.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/format-and-sources-00": {
+   "audio_sha256": "6eaa308b0bedbf1e9ac7060fa4d478b07ad9b8da2d436fb623f10f0e0b0214c9",
+   "characters": 19,
+   "cost": 1.8809999999999998e-05,
+   "duration": 1.775,
+   "index": 0,
+   "key": "159125b7d185a1c94684feb451ac6d8bb34a17b0046cbfd1090dd16f1e35fc5b",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "format-and-sources",
+   "sent_text": "Format and sources.",
+   "text": "Format and sources.",
+   "words": [
+    {
+     "end": 0.538,
+     "start": 0.175,
+     "text": "Format"
+    },
+    {
+     "end": 0.65,
+     "start": 0.538,
+     "text": "and"
+    },
+    {
+     "end": 1.575,
+     "start": 0.65,
+     "text": "sources"
+    },
+    {
+     "end": 1.775,
+     "start": 1.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/format-and-sources-01": {
+   "audio_sha256": "e365a78e7dcd3fe93695a2968492aa67b5a5fef1d1be69fea00f46869b611176",
+   "characters": 435,
+   "cost": 0.00043065,
+   "duration": 30.475,
+   "index": 1,
+   "key": "87a5d33bcdd144243b99933f7f12fcacfadd0e549b6787b2e27b5f22be26db66",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "format-and-sources",
+   "sent_text": "The paper is written in LaTeX and built into this site by a Nix derivation. The intended style is the LIPIcs class, which is not shipped in the pinned TeX Live set, so this draft uses the llncs class from TeX Live and says so here. The bibliography holds only verified entries: a located whitepaper that could not be found is not cited, and a griefing survey whose author name is unconfirmed is not cited until its author is confirmed.",
+   "text": "The paper is written in LaTeX and built into this site by a Nix derivation. The intended style is the LIPIcs class, which is not shipped in the pinned TeX Live set, so this draft uses the llncs class from TeX Live and says so here. The bibliography holds only verified entries: a located whitepaper that could not be found is not cited, and a griefing survey whose author name is unconfirmed is not cited until its author is confirmed.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.65,
+     "start": 0.25,
+     "text": "paper"
+    },
+    {
+     "end": 0.812,
+     "start": 0.65,
+     "text": "is"
+    },
+    {
+     "end": 1.1,
+     "start": 0.812,
+     "text": "written"
+    },
+    {
+     "end": 1.25,
+     "start": 1.1,
+     "text": "in"
+    },
+    {
+     "end": 1.862,
+     "start": 1.25,
+     "text": "LaTeX"
+    },
+    {
+     "end": 2.0,
+     "start": 1.862,
+     "text": "and"
+    },
+    {
+     "end": 2.263,
+     "start": 2.0,
+     "text": "built"
+    },
+    {
+     "end": 2.5,
+     "start": 2.263,
+     "text": "into"
+    },
+    {
+     "end": 2.688,
+     "start": 2.5,
+     "text": "this"
+    },
+    {
+     "end": 3.0,
+     "start": 2.688,
+     "text": "site"
+    },
+    {
+     "end": 3.175,
+     "start": 3.0,
+     "text": "by"
+    },
+    {
+     "end": 3.287,
+     "start": 3.175,
+     "text": "a"
+    },
+    {
+     "end": 3.575,
+     "start": 3.287,
+     "text": "Nix"
+    },
+    {
+     "end": 4.825,
+     "start": 3.575,
+     "text": "derivation"
+    },
+    {
+     "end": 5.025,
+     "start": 4.825,
+     "text": "."
+    },
+    {
+     "end": 5.287,
+     "start": 5.2,
+     "text": "The"
+    },
+    {
+     "end": 5.725,
+     "start": 5.287,
+     "text": "intended"
+    },
+    {
+     "end": 6.075,
+     "start": 5.725,
+     "text": "style"
+    },
+    {
+     "end": 6.213,
+     "start": 6.075,
+     "text": "is"
+    },
+    {
+     "end": 6.3,
+     "start": 6.213,
+     "text": "the"
+    },
+    {
+     "end": 6.725,
+     "start": 6.3,
+     "text": "LIPIcs"
+    },
+    {
+     "end": 7.55,
+     "start": 6.725,
+     "text": "class"
+    },
+    {
+     "end": 7.75,
+     "start": 7.55,
+     "text": ","
+    },
+    {
+     "end": 8.087,
+     "start": 7.925,
+     "text": "which"
+    },
+    {
+     "end": 8.2,
+     "start": 8.087,
+     "text": "is"
+    },
+    {
+     "end": 8.488,
+     "start": 8.2,
+     "text": "not"
+    },
+    {
+     "end": 8.762,
+     "start": 8.488,
+     "text": "shipped"
+    },
+    {
+     "end": 8.837,
+     "start": 8.762,
+     "text": "in"
+    },
+    {
+     "end": 8.925,
+     "start": 8.837,
+     "text": "the"
+    },
+    {
+     "end": 9.212,
+     "start": 8.925,
+     "text": "pinned"
+    },
+    {
+     "end": 9.7,
+     "start": 9.212,
+     "text": "TeX"
+    },
+    {
+     "end": 9.988,
+     "start": 9.7,
+     "text": "Live"
+    },
+    {
+     "end": 10.725,
+     "start": 9.988,
+     "text": "set"
+    },
+    {
+     "end": 10.925,
+     "start": 10.725,
+     "text": ","
+    },
+    {
+     "end": 11.225,
+     "start": 11.125,
+     "text": "so"
+    },
+    {
+     "end": 11.425,
+     "start": 11.225,
+     "text": "this"
+    },
+    {
+     "end": 11.825,
+     "start": 11.425,
+     "text": "draft"
+    },
+    {
+     "end": 12.2,
+     "start": 11.825,
+     "text": "uses"
+    },
+    {
+     "end": 12.363,
+     "start": 12.2,
+     "text": "the"
+    },
+    {
+     "end": 13.225,
+     "start": 12.363,
+     "text": "llncs"
+    },
+    {
+     "end": 13.625,
+     "start": 13.225,
+     "text": "class"
+    },
+    {
+     "end": 13.837,
+     "start": 13.625,
+     "text": "from"
+    },
+    {
+     "end": 14.35,
+     "start": 13.837,
+     "text": "TeX"
+    },
+    {
+     "end": 14.788,
+     "start": 14.35,
+     "text": "Live"
+    },
+    {
+     "end": 14.925,
+     "start": 14.788,
+     "text": "and"
+    },
+    {
+     "end": 15.15,
+     "start": 14.925,
+     "text": "says"
+    },
+    {
+     "end": 15.375,
+     "start": 15.15,
+     "text": "so"
+    },
+    {
+     "end": 16.2,
+     "start": 15.375,
+     "text": "here"
+    },
+    {
+     "end": 16.425,
+     "start": 16.2,
+     "text": "."
+    },
+    {
+     "end": 16.675,
+     "start": 16.6,
+     "text": "The"
+    },
+    {
+     "end": 17.4,
+     "start": 16.675,
+     "text": "bibliography"
+    },
+    {
+     "end": 17.737,
+     "start": 17.4,
+     "text": "holds"
+    },
+    {
+     "end": 18.05,
+     "start": 17.737,
+     "text": "only"
+    },
+    {
+     "end": 18.575,
+     "start": 18.05,
+     "text": "verified"
+    },
+    {
+     "end": 19.5,
+     "start": 18.575,
+     "text": "entries"
+    },
+    {
+     "end": 19.7,
+     "start": 19.5,
+     "text": ":"
+    },
+    {
+     "end": 19.975,
+     "start": 19.9,
+     "text": "a"
+    },
+    {
+     "end": 20.5,
+     "start": 19.975,
+     "text": "located"
+    },
+    {
+     "end": 21.1,
+     "start": 20.5,
+     "text": "whitepaper"
+    },
+    {
+     "end": 21.25,
+     "start": 21.1,
+     "text": "that"
+    },
+    {
+     "end": 21.4,
+     "start": 21.25,
+     "text": "could"
+    },
+    {
+     "end": 21.612,
+     "start": 21.4,
+     "text": "not"
+    },
+    {
+     "end": 21.763,
+     "start": 21.612,
+     "text": "be"
+    },
+    {
+     "end": 22.2,
+     "start": 21.763,
+     "text": "found"
+    },
+    {
+     "end": 22.375,
+     "start": 22.2,
+     "text": "is"
+    },
+    {
+     "end": 22.638,
+     "start": 22.375,
+     "text": "not"
+    },
+    {
+     "end": 23.5,
+     "start": 22.638,
+     "text": "cited"
+    },
+    {
+     "end": 23.725,
+     "start": 23.5,
+     "text": ","
+    },
+    {
+     "end": 24.013,
+     "start": 23.925,
+     "text": "and"
+    },
+    {
+     "end": 24.087,
+     "start": 24.013,
+     "text": "a"
+    },
+    {
+     "end": 24.562,
+     "start": 24.087,
+     "text": "griefing"
+    },
+    {
+     "end": 25.075,
+     "start": 24.562,
+     "text": "survey"
+    },
+    {
+     "end": 25.288,
+     "start": 25.075,
+     "text": "whose"
+    },
+    {
+     "end": 25.65,
+     "start": 25.288,
+     "text": "author"
+    },
+    {
+     "end": 25.975,
+     "start": 25.65,
+     "text": "name"
+    },
+    {
+     "end": 26.138,
+     "start": 25.975,
+     "text": "is"
+    },
+    {
+     "end": 27.1,
+     "start": 26.138,
+     "text": "unconfirmed"
+    },
+    {
+     "end": 27.288,
+     "start": 27.1,
+     "text": "is"
+    },
+    {
+     "end": 27.587,
+     "start": 27.288,
+     "text": "not"
+    },
+    {
+     "end": 28.0,
+     "start": 27.587,
+     "text": "cited"
+    },
+    {
+     "end": 28.312,
+     "start": 28.0,
+     "text": "until"
+    },
+    {
+     "end": 28.513,
+     "start": 28.312,
+     "text": "its"
+    },
+    {
+     "end": 28.875,
+     "start": 28.513,
+     "text": "author"
+    },
+    {
+     "end": 29.025,
+     "start": 28.875,
+     "text": "is"
+    },
+    {
+     "end": 30.25,
+     "start": 29.025,
+     "text": "confirmed"
+    },
+    {
+     "end": 30.475,
+     "start": 30.25,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/limitations-in-one-paragraph-00": {
+   "audio_sha256": "caca01022877ac273013a69a396ff5506a887c3da151bb11c07e4dfbfb19664d",
+   "characters": 29,
+   "cost": 2.8709999999999998e-05,
+   "duration": 2.35,
+   "index": 0,
+   "key": "7315d95c4cc91d4e24c61ff61833325358ae1a42b7b7fbfcd3bd4e0f47e02580",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "limitations-in-one-paragraph",
+   "sent_text": "Limitations in one paragraph.",
+   "text": "Limitations in one paragraph.",
+   "words": [
+    {
+     "end": 0.825,
+     "start": 0.2,
+     "text": "Limitations"
+    },
+    {
+     "end": 0.925,
+     "start": 0.825,
+     "text": "in"
+    },
+    {
+     "end": 1.15,
+     "start": 0.925,
+     "text": "one"
+    },
+    {
+     "end": 2.15,
+     "start": 1.15,
+     "text": "paragraph"
+    },
+    {
+     "end": 2.35,
+     "start": 2.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/limitations-in-one-paragraph-01": {
+   "audio_sha256": "bd201fb793bc5539e4b2c21563db2d3af3b7cad4054bc4b1a1026e151664bb84",
+   "characters": 596,
+   "cost": 0.0005900399999999999,
+   "duration": 39.25,
+   "index": 1,
+   "key": "4a03165d0479324dfeb799c6f9969f214b152857812e75ef04011ab42c09f760",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "limitations-in-one-paragraph",
+   "sent_text": "Four facts bound the design: duplicate concurrent bookings cost the tip plus fees, not the bond; squatting a key without terminating it is not priced by the termination fee, and the defence is the application approval policy, stated as an assumption; a zero donation cannot be expressed, so the field is omitted; the tip returns on a retraction and pays the processor on every other outcome. The paper lists every property that does not hold with its counterexample, and states the safe price ranges, the liveness hazards, and the model-to-validator correspondence as an assumption with its gaps.",
+   "text": "Four facts bound the design: duplicate concurrent bookings cost the tip plus fees, not the bond; squatting a key without terminating it is not priced by the termination fee, and the defence is the application approval policy, stated as an assumption; a zero donation cannot be expressed, so the field is omitted; the tip returns on a retraction and pays the processor on every other outcome. The paper lists every property that does not hold with its counterexample, and states the safe price ranges, the liveness hazards, and the model-to-validator correspondence as an assumption with its gaps.",
+   "words": [
+    {
+     "end": 0.4,
+     "start": 0.175,
+     "text": "Four"
+    },
+    {
+     "end": 0.7,
+     "start": 0.4,
+     "text": "facts"
+    },
+    {
+     "end": 0.913,
+     "start": 0.7,
+     "text": "bound"
+    },
+    {
+     "end": 0.988,
+     "start": 0.913,
+     "text": "the"
+    },
+    {
+     "end": 1.875,
+     "start": 0.988,
+     "text": "design"
+    },
+    {
+     "end": 2.075,
+     "start": 1.875,
+     "text": ":"
+    },
+    {
+     "end": 2.7,
+     "start": 2.275,
+     "text": "duplicate"
+    },
+    {
+     "end": 3.2,
+     "start": 2.7,
+     "text": "concurrent"
+    },
+    {
+     "end": 3.675,
+     "start": 3.2,
+     "text": "bookings"
+    },
+    {
+     "end": 3.963,
+     "start": 3.675,
+     "text": "cost"
+    },
+    {
+     "end": 4.05,
+     "start": 3.963,
+     "text": "the"
+    },
+    {
+     "end": 4.3,
+     "start": 4.05,
+     "text": "tip"
+    },
+    {
+     "end": 4.613,
+     "start": 4.3,
+     "text": "plus"
+    },
+    {
+     "end": 5.025,
+     "start": 4.613,
+     "text": "fees"
+    },
+    {
+     "end": 5.075,
+     "start": 5.025,
+     "text": ","
+    },
+    {
+     "end": 5.262,
+     "start": 5.075,
+     "text": "not"
+    },
+    {
+     "end": 5.35,
+     "start": 5.262,
+     "text": "the"
+    },
+    {
+     "end": 6.275,
+     "start": 5.35,
+     "text": "bond"
+    },
+    {
+     "end": 6.475,
+     "start": 6.275,
+     "text": ";"
+    },
+    {
+     "end": 7.088,
+     "start": 6.675,
+     "text": "squatting"
+    },
+    {
+     "end": 7.188,
+     "start": 7.088,
+     "text": "a"
+    },
+    {
+     "end": 7.475,
+     "start": 7.188,
+     "text": "key"
+    },
+    {
+     "end": 7.838,
+     "start": 7.475,
+     "text": "without"
+    },
+    {
+     "end": 8.525,
+     "start": 7.838,
+     "text": "terminating"
+    },
+    {
+     "end": 8.688,
+     "start": 8.525,
+     "text": "it"
+    },
+    {
+     "end": 8.85,
+     "start": 8.688,
+     "text": "is"
+    },
+    {
+     "end": 9.1,
+     "start": 8.85,
+     "text": "not"
+    },
+    {
+     "end": 9.475,
+     "start": 9.1,
+     "text": "priced"
+    },
+    {
+     "end": 9.613,
+     "start": 9.475,
+     "text": "by"
+    },
+    {
+     "end": 9.7,
+     "start": 9.613,
+     "text": "the"
+    },
+    {
+     "end": 10.387,
+     "start": 9.7,
+     "text": "termination"
+    },
+    {
+     "end": 11.2,
+     "start": 10.387,
+     "text": "fee"
+    },
+    {
+     "end": 11.45,
+     "start": 11.2,
+     "text": ","
+    },
+    {
+     "end": 11.762,
+     "start": 11.65,
+     "text": "and"
+    },
+    {
+     "end": 11.85,
+     "start": 11.762,
+     "text": "the"
+    },
+    {
+     "end": 12.35,
+     "start": 11.85,
+     "text": "defence"
+    },
+    {
+     "end": 12.488,
+     "start": 12.35,
+     "text": "is"
+    },
+    {
+     "end": 12.625,
+     "start": 12.488,
+     "text": "the"
+    },
+    {
+     "end": 13.3,
+     "start": 12.625,
+     "text": "application"
+    },
+    {
+     "end": 13.75,
+     "start": 13.3,
+     "text": "approval"
+    },
+    {
+     "end": 14.375,
+     "start": 13.75,
+     "text": "policy"
+    },
+    {
+     "end": 14.512,
+     "start": 14.375,
+     "text": ","
+    },
+    {
+     "end": 15.0,
+     "start": 14.512,
+     "text": "stated"
+    },
+    {
+     "end": 15.137,
+     "start": 15.0,
+     "text": "as"
+    },
+    {
+     "end": 15.225,
+     "start": 15.137,
+     "text": "an"
+    },
+    {
+     "end": 16.35,
+     "start": 15.225,
+     "text": "assumption"
+    },
+    {
+     "end": 16.55,
+     "start": 16.35,
+     "text": ";"
+    },
+    {
+     "end": 16.825,
+     "start": 16.75,
+     "text": "a"
+    },
+    {
+     "end": 17.15,
+     "start": 16.825,
+     "text": "zero"
+    },
+    {
+     "end": 17.675,
+     "start": 17.15,
+     "text": "donation"
+    },
+    {
+     "end": 18.013,
+     "start": 17.675,
+     "text": "cannot"
+    },
+    {
+     "end": 18.15,
+     "start": 18.013,
+     "text": "be"
+    },
+    {
+     "end": 18.775,
+     "start": 18.15,
+     "text": "expressed"
+    },
+    {
+     "end": 18.85,
+     "start": 18.775,
+     "text": ","
+    },
+    {
+     "end": 18.987,
+     "start": 18.85,
+     "text": "so"
+    },
+    {
+     "end": 19.112,
+     "start": 18.987,
+     "text": "the"
+    },
+    {
+     "end": 19.45,
+     "start": 19.112,
+     "text": "field"
+    },
+    {
+     "end": 19.612,
+     "start": 19.45,
+     "text": "is"
+    },
+    {
+     "end": 20.575,
+     "start": 19.612,
+     "text": "omitted"
+    },
+    {
+     "end": 20.775,
+     "start": 20.575,
+     "text": ";"
+    },
+    {
+     "end": 21.062,
+     "start": 20.95,
+     "text": "the"
+    },
+    {
+     "end": 21.325,
+     "start": 21.062,
+     "text": "tip"
+    },
+    {
+     "end": 21.862,
+     "start": 21.325,
+     "text": "returns"
+    },
+    {
+     "end": 21.962,
+     "start": 21.862,
+     "text": "on"
+    },
+    {
+     "end": 22.025,
+     "start": 21.962,
+     "text": "a"
+    },
+    {
+     "end": 22.837,
+     "start": 22.025,
+     "text": "retraction"
+    },
+    {
+     "end": 22.987,
+     "start": 22.837,
+     "text": "and"
+    },
+    {
+     "end": 23.375,
+     "start": 22.987,
+     "text": "pays"
+    },
+    {
+     "end": 23.475,
+     "start": 23.375,
+     "text": "the"
+    },
+    {
+     "end": 24.175,
+     "start": 23.475,
+     "text": "processor"
+    },
+    {
+     "end": 24.362,
+     "start": 24.175,
+     "text": "on"
+    },
+    {
+     "end": 24.7,
+     "start": 24.362,
+     "text": "every"
+    },
+    {
+     "end": 25.0,
+     "start": 24.7,
+     "text": "other"
+    },
+    {
+     "end": 26.05,
+     "start": 25.0,
+     "text": "outcome"
+    },
+    {
+     "end": 26.25,
+     "start": 26.05,
+     "text": "."
+    },
+    {
+     "end": 26.5,
+     "start": 26.425,
+     "text": "The"
+    },
+    {
+     "end": 26.9,
+     "start": 26.5,
+     "text": "paper"
+    },
+    {
+     "end": 27.237,
+     "start": 26.9,
+     "text": "lists"
+    },
+    {
+     "end": 27.575,
+     "start": 27.237,
+     "text": "every"
+    },
+    {
+     "end": 28.225,
+     "start": 27.575,
+     "text": "property"
+    },
+    {
+     "end": 28.362,
+     "start": 28.225,
+     "text": "that"
+    },
+    {
+     "end": 28.55,
+     "start": 28.362,
+     "text": "does"
+    },
+    {
+     "end": 28.775,
+     "start": 28.55,
+     "text": "not"
+    },
+    {
+     "end": 29.125,
+     "start": 28.775,
+     "text": "hold"
+    },
+    {
+     "end": 29.263,
+     "start": 29.125,
+     "text": "with"
+    },
+    {
+     "end": 29.45,
+     "start": 29.263,
+     "text": "its"
+    },
+    {
+     "end": 30.875,
+     "start": 29.45,
+     "text": "counterexample"
+    },
+    {
+     "end": 31.075,
+     "start": 30.875,
+     "text": ","
+    },
+    {
+     "end": 31.337,
+     "start": 31.25,
+     "text": "and"
+    },
+    {
+     "end": 31.638,
+     "start": 31.337,
+     "text": "states"
+    },
+    {
+     "end": 31.725,
+     "start": 31.638,
+     "text": "the"
+    },
+    {
+     "end": 32.0,
+     "start": 31.725,
+     "text": "safe"
+    },
+    {
+     "end": 32.275,
+     "start": 32.0,
+     "text": "price"
+    },
+    {
+     "end": 32.8,
+     "start": 32.275,
+     "text": "ranges"
+    },
+    {
+     "end": 32.85,
+     "start": 32.8,
+     "text": ","
+    },
+    {
+     "end": 32.95,
+     "start": 32.85,
+     "text": "the"
+    },
+    {
+     "end": 33.375,
+     "start": 32.95,
+     "text": "liveness"
+    },
+    {
+     "end": 34.4,
+     "start": 33.375,
+     "text": "hazards"
+    },
+    {
+     "end": 34.6,
+     "start": 34.4,
+     "text": ","
+    },
+    {
+     "end": 34.888,
+     "start": 34.8,
+     "text": "and"
+    },
+    {
+     "end": 34.975,
+     "start": 34.888,
+     "text": "the"
+    },
+    {
+     "end": 36.075,
+     "start": 34.975,
+     "text": "model-to-validator"
+    },
+    {
+     "end": 37.0,
+     "start": 36.075,
+     "text": "correspondence"
+    },
+    {
+     "end": 37.138,
+     "start": 37.0,
+     "text": "as"
+    },
+    {
+     "end": 37.225,
+     "start": 37.138,
+     "text": "an"
+    },
+    {
+     "end": 37.8,
+     "start": 37.225,
+     "text": "assumption"
+    },
+    {
+     "end": 37.938,
+     "start": 37.8,
+     "text": "with"
+    },
+    {
+     "end": 38.125,
+     "start": 37.938,
+     "text": "its"
+    },
+    {
+     "end": 39.05,
+     "start": 38.125,
+     "text": "gaps"
+    },
+    {
+     "end": 39.25,
+     "start": 39.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/theorem-to-lean-mapping-00": {
+   "audio_sha256": "728a8f29f93ac4ebb548b1e4987a4a70db6bbacdaefbce2bf4dcec3bda1290c4",
+   "characters": 24,
+   "cost": 2.3759999999999996e-05,
+   "duration": 1.875,
+   "index": 0,
+   "key": "34e9b903c50e056cf4e83e49cbfe47a69cf5c193e4444d63f20ee57d881d1e9a",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "theorem-to-lean-mapping",
+   "sent_text": "Theorem to Lean mapping.",
+   "text": "Theorem to Lean mapping.",
+   "words": [
+    {
+     "end": 0.525,
+     "start": 0.175,
+     "text": "Theorem"
+    },
+    {
+     "end": 0.613,
+     "start": 0.525,
+     "text": "to"
+    },
+    {
+     "end": 0.8,
+     "start": 0.613,
+     "text": "Lean"
+    },
+    {
+     "end": 1.675,
+     "start": 0.8,
+     "text": "mapping"
+    },
+    {
+     "end": 1.875,
+     "start": 1.675,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/theorem-to-lean-mapping-01": {
+   "audio_sha256": "5d974e18a53a0a361a06e251638c4fb00081e07cee2cbc1854fb117a13488af5",
+   "characters": 416,
+   "cost": 0.00041183999999999996,
+   "duration": 26.375,
+   "index": 1,
+   "key": "b209cacb8713da6696fc06ee2df2afb7fc55b98b6ef90ab52c7ae818085bdf24",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "theorem-to-lean-mapping",
+   "sent_text": "For this draft the table is written from the reviewed plan, with every row marked not yet mechanized. The generator that derives the table from the audit report arrives with the model; until then the names below are the planned declarations, checked against the plan page, and the files are fixed: theorems and kept counterexamples live in the statements module the axioms guard, definitions in the economics module.",
+   "text": "For this draft the table is written from the reviewed plan, with every row marked not yet mechanized. The generator that derives the table from the audit report arrives with the model; until then the names below are the planned declarations, checked against the plan page, and the files are fixed: theorems and kept counterexamples live in the statements module the axioms guard, definitions in the economics module.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.2,
+     "text": "For"
+    },
+    {
+     "end": 0.538,
+     "start": 0.325,
+     "text": "this"
+    },
+    {
+     "end": 0.925,
+     "start": 0.538,
+     "text": "draft"
+    },
+    {
+     "end": 1.038,
+     "start": 0.925,
+     "text": "the"
+    },
+    {
+     "end": 1.45,
+     "start": 1.038,
+     "text": "table"
+    },
+    {
+     "end": 1.612,
+     "start": 1.45,
+     "text": "is"
+    },
+    {
+     "end": 1.95,
+     "start": 1.612,
+     "text": "written"
+    },
+    {
+     "end": 2.138,
+     "start": 1.95,
+     "text": "from"
+    },
+    {
+     "end": 2.225,
+     "start": 2.138,
+     "text": "the"
+    },
+    {
+     "end": 2.638,
+     "start": 2.225,
+     "text": "reviewed"
+    },
+    {
+     "end": 3.15,
+     "start": 2.638,
+     "text": "plan"
+    },
+    {
+     "end": 3.225,
+     "start": 3.15,
+     "text": ","
+    },
+    {
+     "end": 3.412,
+     "start": 3.225,
+     "text": "with"
+    },
+    {
+     "end": 3.75,
+     "start": 3.412,
+     "text": "every"
+    },
+    {
+     "end": 4.037,
+     "start": 3.75,
+     "text": "row"
+    },
+    {
+     "end": 4.4,
+     "start": 4.037,
+     "text": "marked"
+    },
+    {
+     "end": 4.625,
+     "start": 4.4,
+     "text": "not"
+    },
+    {
+     "end": 4.85,
+     "start": 4.625,
+     "text": "yet"
+    },
+    {
+     "end": 6.075,
+     "start": 4.85,
+     "text": "mechanized"
+    },
+    {
+     "end": 6.3,
+     "start": 6.075,
+     "text": "."
+    },
+    {
+     "end": 6.588,
+     "start": 6.475,
+     "text": "The"
+    },
+    {
+     "end": 7.2,
+     "start": 6.588,
+     "text": "generator"
+    },
+    {
+     "end": 7.375,
+     "start": 7.2,
+     "text": "that"
+    },
+    {
+     "end": 7.9,
+     "start": 7.375,
+     "text": "derives"
+    },
+    {
+     "end": 8.012,
+     "start": 7.9,
+     "text": "the"
+    },
+    {
+     "end": 8.425,
+     "start": 8.012,
+     "text": "table"
+    },
+    {
+     "end": 8.562,
+     "start": 8.425,
+     "text": "from"
+    },
+    {
+     "end": 8.712,
+     "start": 8.562,
+     "text": "the"
+    },
+    {
+     "end": 9.025,
+     "start": 8.712,
+     "text": "audit"
+    },
+    {
+     "end": 9.625,
+     "start": 9.025,
+     "text": "report"
+    },
+    {
+     "end": 10.15,
+     "start": 9.625,
+     "text": "arrives"
+    },
+    {
+     "end": 10.288,
+     "start": 10.15,
+     "text": "with"
+    },
+    {
+     "end": 10.375,
+     "start": 10.288,
+     "text": "the"
+    },
+    {
+     "end": 11.3,
+     "start": 10.375,
+     "text": "model"
+    },
+    {
+     "end": 11.5,
+     "start": 11.3,
+     "text": ";"
+    },
+    {
+     "end": 11.925,
+     "start": 11.675,
+     "text": "until"
+    },
+    {
+     "end": 12.137,
+     "start": 11.925,
+     "text": "then"
+    },
+    {
+     "end": 12.225,
+     "start": 12.137,
+     "text": "the"
+    },
+    {
+     "end": 12.6,
+     "start": 12.225,
+     "text": "names"
+    },
+    {
+     "end": 13.062,
+     "start": 12.6,
+     "text": "below"
+    },
+    {
+     "end": 13.2,
+     "start": 13.062,
+     "text": "are"
+    },
+    {
+     "end": 13.337,
+     "start": 13.2,
+     "text": "the"
+    },
+    {
+     "end": 13.8,
+     "start": 13.337,
+     "text": "planned"
+    },
+    {
+     "end": 14.7,
+     "start": 13.8,
+     "text": "declarations"
+    },
+    {
+     "end": 14.788,
+     "start": 14.7,
+     "text": ","
+    },
+    {
+     "end": 15.087,
+     "start": 14.788,
+     "text": "checked"
+    },
+    {
+     "end": 15.413,
+     "start": 15.087,
+     "text": "against"
+    },
+    {
+     "end": 15.5,
+     "start": 15.413,
+     "text": "the"
+    },
+    {
+     "end": 15.85,
+     "start": 15.5,
+     "text": "plan"
+    },
+    {
+     "end": 16.275,
+     "start": 15.85,
+     "text": "page"
+    },
+    {
+     "end": 16.35,
+     "start": 16.275,
+     "text": ","
+    },
+    {
+     "end": 16.462,
+     "start": 16.35,
+     "text": "and"
+    },
+    {
+     "end": 16.562,
+     "start": 16.462,
+     "text": "the"
+    },
+    {
+     "end": 17.0,
+     "start": 16.562,
+     "text": "files"
+    },
+    {
+     "end": 17.15,
+     "start": 17.0,
+     "text": "are"
+    },
+    {
+     "end": 18.2,
+     "start": 17.15,
+     "text": "fixed"
+    },
+    {
+     "end": 18.425,
+     "start": 18.2,
+     "text": ":"
+    },
+    {
+     "end": 19.225,
+     "start": 18.65,
+     "text": "theorems"
+    },
+    {
+     "end": 19.362,
+     "start": 19.225,
+     "text": "and"
+    },
+    {
+     "end": 19.688,
+     "start": 19.362,
+     "text": "kept"
+    },
+    {
+     "end": 20.7,
+     "start": 19.688,
+     "text": "counterexamples"
+    },
+    {
+     "end": 21.013,
+     "start": 20.7,
+     "text": "live"
+    },
+    {
+     "end": 21.112,
+     "start": 21.013,
+     "text": "in"
+    },
+    {
+     "end": 21.2,
+     "start": 21.112,
+     "text": "the"
+    },
+    {
+     "end": 21.763,
+     "start": 21.2,
+     "text": "statements"
+    },
+    {
+     "end": 22.175,
+     "start": 21.763,
+     "text": "module"
+    },
+    {
+     "end": 22.337,
+     "start": 22.175,
+     "text": "the"
+    },
+    {
+     "end": 22.9,
+     "start": 22.337,
+     "text": "axioms"
+    },
+    {
+     "end": 23.425,
+     "start": 22.9,
+     "text": "guard"
+    },
+    {
+     "end": 23.538,
+     "start": 23.425,
+     "text": ","
+    },
+    {
+     "end": 24.275,
+     "start": 23.538,
+     "text": "definitions"
+    },
+    {
+     "end": 24.362,
+     "start": 24.275,
+     "text": "in"
+    },
+    {
+     "end": 24.475,
+     "start": 24.362,
+     "text": "the"
+    },
+    {
+     "end": 25.1,
+     "start": 24.475,
+     "text": "economics"
+    },
+    {
+     "end": 26.175,
+     "start": 25.1,
+     "text": "module"
+    },
+    {
+     "end": 26.375,
+     "start": 26.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/theorem-to-lean-mapping-02": {
+   "audio_sha256": "a8d7b9da00af9829b4c4bf1b09e5c8e48d4203a9861a1a0ed2d410c9921e2af6",
+   "characters": 326,
+   "cost": 0.00032273999999999996,
+   "duration": 20.225,
+   "index": 2,
+   "key": "346b0d56002795ca6a4964ca6633ee3c75cb8b0f1fe40487aa91c47150799661",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "theorem-to-lean-mapping",
+   "sent_text": "Flood cost per faulty request, the griefing factor bound, the processor incentive to clear faults, and the collusion bounds are inequalities derived by hand from the transfer lemmas, since they speak of key value, opportunity cost and fee volatility, which the model does not contain. The paper labels each as a hand argument.",
+   "text": "Flood cost per faulty request, the griefing factor bound, the processor incentive to clear faults, and the collusion bounds are inequalities derived by hand from the transfer lemmas, since they speak of key value, opportunity cost and fee volatility, which the model does not contain. The paper labels each as a hand argument.",
+   "words": [
+    {
+     "end": 0.512,
+     "start": 0.25,
+     "text": "Flood"
+    },
+    {
+     "end": 0.9,
+     "start": 0.512,
+     "text": "cost"
+    },
+    {
+     "end": 1.087,
+     "start": 0.9,
+     "text": "per"
+    },
+    {
+     "end": 1.475,
+     "start": 1.087,
+     "text": "faulty"
+    },
+    {
+     "end": 2.1,
+     "start": 1.475,
+     "text": "request"
+    },
+    {
+     "end": 2.15,
+     "start": 2.1,
+     "text": ","
+    },
+    {
+     "end": 2.25,
+     "start": 2.15,
+     "text": "the"
+    },
+    {
+     "end": 2.688,
+     "start": 2.25,
+     "text": "griefing"
+    },
+    {
+     "end": 3.125,
+     "start": 2.688,
+     "text": "factor"
+    },
+    {
+     "end": 3.525,
+     "start": 3.125,
+     "text": "bound"
+    },
+    {
+     "end": 3.575,
+     "start": 3.525,
+     "text": ","
+    },
+    {
+     "end": 3.688,
+     "start": 3.575,
+     "text": "the"
+    },
+    {
+     "end": 4.3,
+     "start": 3.688,
+     "text": "processor"
+    },
+    {
+     "end": 4.925,
+     "start": 4.3,
+     "text": "incentive"
+    },
+    {
+     "end": 5.062,
+     "start": 4.925,
+     "text": "to"
+    },
+    {
+     "end": 5.375,
+     "start": 5.062,
+     "text": "clear"
+    },
+    {
+     "end": 5.9,
+     "start": 5.375,
+     "text": "faults"
+    },
+    {
+     "end": 5.975,
+     "start": 5.9,
+     "text": ","
+    },
+    {
+     "end": 6.088,
+     "start": 5.975,
+     "text": "and"
+    },
+    {
+     "end": 6.175,
+     "start": 6.088,
+     "text": "the"
+    },
+    {
+     "end": 6.675,
+     "start": 6.175,
+     "text": "collusion"
+    },
+    {
+     "end": 7.125,
+     "start": 6.675,
+     "text": "bounds"
+    },
+    {
+     "end": 7.275,
+     "start": 7.125,
+     "text": "are"
+    },
+    {
+     "end": 8.05,
+     "start": 7.275,
+     "text": "inequalities"
+    },
+    {
+     "end": 8.575,
+     "start": 8.05,
+     "text": "derived"
+    },
+    {
+     "end": 8.788,
+     "start": 8.575,
+     "text": "by"
+    },
+    {
+     "end": 9.175,
+     "start": 8.788,
+     "text": "hand"
+    },
+    {
+     "end": 9.337,
+     "start": 9.175,
+     "text": "from"
+    },
+    {
+     "end": 9.425,
+     "start": 9.337,
+     "text": "the"
+    },
+    {
+     "end": 9.9,
+     "start": 9.425,
+     "text": "transfer"
+    },
+    {
+     "end": 10.5,
+     "start": 9.9,
+     "text": "lemmas"
+    },
+    {
+     "end": 10.6,
+     "start": 10.5,
+     "text": ","
+    },
+    {
+     "end": 10.825,
+     "start": 10.6,
+     "text": "since"
+    },
+    {
+     "end": 10.988,
+     "start": 10.825,
+     "text": "they"
+    },
+    {
+     "end": 11.35,
+     "start": 10.988,
+     "text": "speak"
+    },
+    {
+     "end": 11.512,
+     "start": 11.35,
+     "text": "of"
+    },
+    {
+     "end": 11.788,
+     "start": 11.512,
+     "text": "key"
+    },
+    {
+     "end": 12.3,
+     "start": 11.788,
+     "text": "value"
+    },
+    {
+     "end": 12.375,
+     "start": 12.3,
+     "text": ","
+    },
+    {
+     "end": 13.038,
+     "start": 12.375,
+     "text": "opportunity"
+    },
+    {
+     "end": 13.5,
+     "start": 13.038,
+     "text": "cost"
+    },
+    {
+     "end": 13.637,
+     "start": 13.5,
+     "text": "and"
+    },
+    {
+     "end": 13.85,
+     "start": 13.637,
+     "text": "fee"
+    },
+    {
+     "end": 14.6,
+     "start": 13.85,
+     "text": "volatility"
+    },
+    {
+     "end": 14.675,
+     "start": 14.6,
+     "text": ","
+    },
+    {
+     "end": 14.875,
+     "start": 14.675,
+     "text": "which"
+    },
+    {
+     "end": 15.0,
+     "start": 14.875,
+     "text": "the"
+    },
+    {
+     "end": 15.375,
+     "start": 15.0,
+     "text": "model"
+    },
+    {
+     "end": 15.575,
+     "start": 15.375,
+     "text": "does"
+    },
+    {
+     "end": 15.825,
+     "start": 15.575,
+     "text": "not"
+    },
+    {
+     "end": 17.075,
+     "start": 15.825,
+     "text": "contain"
+    },
+    {
+     "end": 17.325,
+     "start": 17.075,
+     "text": "."
+    },
+    {
+     "end": 17.575,
+     "start": 17.5,
+     "text": "The"
+    },
+    {
+     "end": 17.95,
+     "start": 17.575,
+     "text": "paper"
+    },
+    {
+     "end": 18.362,
+     "start": 17.95,
+     "text": "labels"
+    },
+    {
+     "end": 18.65,
+     "start": 18.362,
+     "text": "each"
+    },
+    {
+     "end": 18.763,
+     "start": 18.65,
+     "text": "as"
+    },
+    {
+     "end": 18.825,
+     "start": 18.763,
+     "text": "a"
+    },
+    {
+     "end": 19.087,
+     "start": 18.825,
+     "text": "hand"
+    },
+    {
+     "end": 20.025,
+     "start": 19.087,
+     "text": "argument"
+    },
+    {
+     "end": 20.225,
+     "start": 20.025,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/what-each-outcome-pays-00": {
+   "audio_sha256": "f4fed3a750b360d4e51802b134d5411637b3edbf42b9f6176d3bacc5a4ea430d",
+   "characters": 23,
+   "cost": 2.277e-05,
+   "duration": 1.9,
+   "index": 0,
+   "key": "11fea5e80fbd31b4746f3f6fac31d08d98483fb81e7e7af91b5f9d6540897fa8",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "what-each-outcome-pays",
+   "sent_text": "What each outcome pays.",
+   "text": "What each outcome pays.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.525,
+     "start": 0.3,
+     "text": "each"
+    },
+    {
+     "end": 0.9,
+     "start": 0.525,
+     "text": "outcome"
+    },
+    {
+     "end": 1.7,
+     "start": 0.9,
+     "text": "pays"
+    },
+    {
+     "end": 1.9,
+     "start": 1.7,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/what-each-outcome-pays-01": {
+   "audio_sha256": "2cca89f6d50b50522f5f07429eded4b8be60388371dcc64ac5cf7fca3e9c09f8",
+   "characters": 268,
+   "cost": 0.00026532,
+   "duration": 17.5,
+   "index": 1,
+   "key": "8556ff63a91531e857d81ab3dd90f1f60a3172333a1007676afb3b0fd39f5afb",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "what-each-outcome-pays",
+   "sent_text": "The transfer function, net per party and excluding the value of the key itself. The deposit returns to the owner except where the edge rule routes it; the bond returns except on a proved fault. The tip returns on a retraction and pays the processor on everything else.",
+   "text": "The transfer function, net per party and excluding the value of the key itself. The deposit returns to the owner except where the edge rule routes it; the bond returns except on a proved fault. The tip returns on a retraction and pays the processor on everything else.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.725,
+     "start": 0.25,
+     "text": "transfer"
+    },
+    {
+     "end": 1.25,
+     "start": 0.725,
+     "text": "function"
+    },
+    {
+     "end": 1.325,
+     "start": 1.25,
+     "text": ","
+    },
+    {
+     "end": 1.525,
+     "start": 1.325,
+     "text": "net"
+    },
+    {
+     "end": 1.688,
+     "start": 1.525,
+     "text": "per"
+    },
+    {
+     "end": 2.213,
+     "start": 1.688,
+     "text": "party"
+    },
+    {
+     "end": 2.338,
+     "start": 2.213,
+     "text": "and"
+    },
+    {
+     "end": 2.862,
+     "start": 2.338,
+     "text": "excluding"
+    },
+    {
+     "end": 2.95,
+     "start": 2.862,
+     "text": "the"
+    },
+    {
+     "end": 3.338,
+     "start": 2.95,
+     "text": "value"
+    },
+    {
+     "end": 3.412,
+     "start": 3.338,
+     "text": "of"
+    },
+    {
+     "end": 3.5,
+     "start": 3.412,
+     "text": "the"
+    },
+    {
+     "end": 3.725,
+     "start": 3.5,
+     "text": "key"
+    },
+    {
+     "end": 4.8,
+     "start": 3.725,
+     "text": "itself"
+    },
+    {
+     "end": 5.0,
+     "start": 4.8,
+     "text": "."
+    },
+    {
+     "end": 5.25,
+     "start": 5.175,
+     "text": "The"
+    },
+    {
+     "end": 5.8,
+     "start": 5.25,
+     "text": "deposit"
+    },
+    {
+     "end": 6.275,
+     "start": 5.8,
+     "text": "returns"
+    },
+    {
+     "end": 6.363,
+     "start": 6.275,
+     "text": "to"
+    },
+    {
+     "end": 6.5,
+     "start": 6.363,
+     "text": "the"
+    },
+    {
+     "end": 6.912,
+     "start": 6.5,
+     "text": "owner"
+    },
+    {
+     "end": 7.312,
+     "start": 6.912,
+     "text": "except"
+    },
+    {
+     "end": 7.438,
+     "start": 7.312,
+     "text": "where"
+    },
+    {
+     "end": 7.562,
+     "start": 7.438,
+     "text": "the"
+    },
+    {
+     "end": 7.825,
+     "start": 7.562,
+     "text": "edge"
+    },
+    {
+     "end": 8.1,
+     "start": 7.825,
+     "text": "rule"
+    },
+    {
+     "end": 8.387,
+     "start": 8.1,
+     "text": "routes"
+    },
+    {
+     "end": 9.05,
+     "start": 8.387,
+     "text": "it"
+    },
+    {
+     "end": 9.25,
+     "start": 9.05,
+     "text": ";"
+    },
+    {
+     "end": 9.562,
+     "start": 9.45,
+     "text": "the"
+    },
+    {
+     "end": 9.95,
+     "start": 9.562,
+     "text": "bond"
+    },
+    {
+     "end": 10.55,
+     "start": 9.95,
+     "text": "returns"
+    },
+    {
+     "end": 10.975,
+     "start": 10.55,
+     "text": "except"
+    },
+    {
+     "end": 11.125,
+     "start": 10.975,
+     "text": "on"
+    },
+    {
+     "end": 11.238,
+     "start": 11.125,
+     "text": "a"
+    },
+    {
+     "end": 11.725,
+     "start": 11.238,
+     "text": "proved"
+    },
+    {
+     "end": 12.325,
+     "start": 11.725,
+     "text": "fault"
+    },
+    {
+     "end": 12.45,
+     "start": 12.325,
+     "text": "."
+    },
+    {
+     "end": 12.587,
+     "start": 12.45,
+     "text": "The"
+    },
+    {
+     "end": 12.85,
+     "start": 12.587,
+     "text": "tip"
+    },
+    {
+     "end": 13.363,
+     "start": 12.85,
+     "text": "returns"
+    },
+    {
+     "end": 13.488,
+     "start": 13.363,
+     "text": "on"
+    },
+    {
+     "end": 13.55,
+     "start": 13.488,
+     "text": "a"
+    },
+    {
+     "end": 14.312,
+     "start": 13.55,
+     "text": "retraction"
+    },
+    {
+     "end": 14.462,
+     "start": 14.312,
+     "text": "and"
+    },
+    {
+     "end": 14.825,
+     "start": 14.462,
+     "text": "pays"
+    },
+    {
+     "end": 14.925,
+     "start": 14.825,
+     "text": "the"
+    },
+    {
+     "end": 15.55,
+     "start": 14.925,
+     "text": "processor"
+    },
+    {
+     "end": 15.75,
+     "start": 15.55,
+     "text": "on"
+    },
+    {
+     "end": 16.275,
+     "start": 15.75,
+     "text": "everything"
+    },
+    {
+     "end": 17.275,
+     "start": 16.275,
+     "text": "else"
+    },
+    {
+     "end": 17.5,
+     "start": 17.275,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/what-each-outcome-pays-02": {
+   "audio_sha256": "fec3471a7577790450ce670ac217404a84597a740fab3d1ce0d0261005a3580a",
+   "characters": 284,
+   "cost": 0.00028115999999999997,
+   "duration": 19.025,
+   "index": 2,
+   "key": "fd505dc1f65e3f660dcd6df83d4296ca651bb351024afdedc184f87d345cfd00",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "what-each-outcome-pays",
+   "sent_text": "The processor share of a forfeited bond is the floor of the split times the bond; the treasury receives the remainder, so the two shares always add up to the bond exactly. A donation that is zero is omitted from the transaction, since the donation field accepts only positive amounts.",
+   "text": "The processor share of a forfeited bond is the floor of the split times the bond; the treasury receives the remainder, so the two shares always add up to the bond exactly. A donation that is zero is omitted from the transaction, since the donation field accepts only positive amounts.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.887,
+     "start": 0.25,
+     "text": "processor"
+    },
+    {
+     "end": 1.225,
+     "start": 0.887,
+     "text": "share"
+    },
+    {
+     "end": 1.312,
+     "start": 1.225,
+     "text": "of"
+    },
+    {
+     "end": 1.413,
+     "start": 1.312,
+     "text": "a"
+    },
+    {
+     "end": 1.95,
+     "start": 1.413,
+     "text": "forfeited"
+    },
+    {
+     "end": 2.5,
+     "start": 1.95,
+     "text": "bond"
+    },
+    {
+     "end": 2.675,
+     "start": 2.5,
+     "text": "is"
+    },
+    {
+     "end": 2.825,
+     "start": 2.675,
+     "text": "the"
+    },
+    {
+     "end": 3.213,
+     "start": 2.825,
+     "text": "floor"
+    },
+    {
+     "end": 3.287,
+     "start": 3.213,
+     "text": "of"
+    },
+    {
+     "end": 3.375,
+     "start": 3.287,
+     "text": "the"
+    },
+    {
+     "end": 3.725,
+     "start": 3.375,
+     "text": "split"
+    },
+    {
+     "end": 4.037,
+     "start": 3.725,
+     "text": "times"
+    },
+    {
+     "end": 4.125,
+     "start": 4.037,
+     "text": "the"
+    },
+    {
+     "end": 5.075,
+     "start": 4.125,
+     "text": "bond"
+    },
+    {
+     "end": 5.3,
+     "start": 5.075,
+     "text": ";"
+    },
+    {
+     "end": 5.613,
+     "start": 5.5,
+     "text": "the"
+    },
+    {
+     "end": 6.175,
+     "start": 5.613,
+     "text": "treasury"
+    },
+    {
+     "end": 6.7,
+     "start": 6.175,
+     "text": "receives"
+    },
+    {
+     "end": 6.8,
+     "start": 6.7,
+     "text": "the"
+    },
+    {
+     "end": 7.475,
+     "start": 6.8,
+     "text": "remainder"
+    },
+    {
+     "end": 7.575,
+     "start": 7.475,
+     "text": ","
+    },
+    {
+     "end": 7.75,
+     "start": 7.575,
+     "text": "so"
+    },
+    {
+     "end": 7.887,
+     "start": 7.75,
+     "text": "the"
+    },
+    {
+     "end": 8.125,
+     "start": 7.887,
+     "text": "two"
+    },
+    {
+     "end": 8.562,
+     "start": 8.125,
+     "text": "shares"
+    },
+    {
+     "end": 8.988,
+     "start": 8.562,
+     "text": "always"
+    },
+    {
+     "end": 9.212,
+     "start": 8.988,
+     "text": "add"
+    },
+    {
+     "end": 9.4,
+     "start": 9.212,
+     "text": "up"
+    },
+    {
+     "end": 9.488,
+     "start": 9.4,
+     "text": "to"
+    },
+    {
+     "end": 9.575,
+     "start": 9.488,
+     "text": "the"
+    },
+    {
+     "end": 9.925,
+     "start": 9.575,
+     "text": "bond"
+    },
+    {
+     "end": 11.05,
+     "start": 9.925,
+     "text": "exactly"
+    },
+    {
+     "end": 11.275,
+     "start": 11.05,
+     "text": "."
+    },
+    {
+     "end": 11.55,
+     "start": 11.475,
+     "text": "A"
+    },
+    {
+     "end": 12.175,
+     "start": 11.55,
+     "text": "donation"
+    },
+    {
+     "end": 12.337,
+     "start": 12.175,
+     "text": "that"
+    },
+    {
+     "end": 12.538,
+     "start": 12.337,
+     "text": "is"
+    },
+    {
+     "end": 13.062,
+     "start": 12.538,
+     "text": "zero"
+    },
+    {
+     "end": 13.25,
+     "start": 13.062,
+     "text": "is"
+    },
+    {
+     "end": 13.75,
+     "start": 13.25,
+     "text": "omitted"
+    },
+    {
+     "end": 13.913,
+     "start": 13.75,
+     "text": "from"
+    },
+    {
+     "end": 14.0,
+     "start": 13.913,
+     "text": "the"
+    },
+    {
+     "end": 14.9,
+     "start": 14.0,
+     "text": "transaction"
+    },
+    {
+     "end": 15.0,
+     "start": 14.9,
+     "text": ","
+    },
+    {
+     "end": 15.225,
+     "start": 15.0,
+     "text": "since"
+    },
+    {
+     "end": 15.325,
+     "start": 15.225,
+     "text": "the"
+    },
+    {
+     "end": 15.913,
+     "start": 15.325,
+     "text": "donation"
+    },
+    {
+     "end": 16.325,
+     "start": 15.913,
+     "text": "field"
+    },
+    {
+     "end": 16.812,
+     "start": 16.325,
+     "text": "accepts"
+    },
+    {
+     "end": 17.163,
+     "start": 16.812,
+     "text": "only"
+    },
+    {
+     "end": 17.675,
+     "start": 17.163,
+     "text": "positive"
+    },
+    {
+     "end": 18.825,
+     "start": 17.675,
+     "text": "amounts"
+    },
+    {
+     "end": 19.025,
+     "start": 18.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/who-this-is-for-00": {
+   "audio_sha256": "f49c8be09d2d70142afdf2d1c296896a462ce266b3f806b73108edbe7adec1f7",
+   "characters": 16,
+   "cost": 1.5839999999999997e-05,
+   "duration": 1.525,
+   "index": 0,
+   "key": "f0c29c4fa3ac14f144862935e1c61f575abaa291e2555be714508ff934021db6",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 500,
+   "section": "who-this-is-for",
+   "sent_text": "Who this is for.",
+   "text": "Who this is for.",
+   "words": [
+    {
+     "end": 0.35,
+     "start": 0.175,
+     "text": "Who"
+    },
+    {
+     "end": 0.55,
+     "start": 0.35,
+     "text": "this"
+    },
+    {
+     "end": 0.7,
+     "start": 0.55,
+     "text": "is"
+    },
+    {
+     "end": 1.275,
+     "start": 0.7,
+     "text": "for"
+    },
+    {
+     "end": 1.525,
+     "start": 1.275,
+     "text": "."
+    }
+   ]
+  },
+  "docs-economics-paper/who-this-is-for-01": {
+   "audio_sha256": "5866d80c8a4bb24dc52557b43adb25dd9e6dd317219840606dc7a47a4af5cc73",
+   "characters": 266,
+   "cost": 0.00026334,
+   "duration": 17.45,
+   "index": 1,
+   "key": "89972ef734dc366fcf3fc82398155694507371d7db5fd5ccd7909be29a3c3ea2",
+   "page": "docs/economics-paper.md",
+   "pause_ms": 400,
+   "section": "who-this-is-for",
+   "sent_text": "A reviewer who was not part of the design and wants the whole economic mechanism on one page before opening the paper: which amounts move in each outcome, which parameters the creator sets, and which statements are proved, argued by hand, or kept as counterexamples.",
+   "text": "A reviewer who was not part of the design and wants the whole economic mechanism on one page before opening the paper: which amounts move in each outcome, which parameters the creator sets, and which statements are proved, argued by hand, or kept as counterexamples.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 0.875,
+     "start": 0.3,
+     "text": "reviewer"
+    },
+    {
+     "end": 1.0,
+     "start": 0.875,
+     "text": "who"
+    },
+    {
+     "end": 1.175,
+     "start": 1.0,
+     "text": "was"
+    },
+    {
+     "end": 1.425,
+     "start": 1.175,
+     "text": "not"
+    },
+    {
+     "end": 1.688,
+     "start": 1.425,
+     "text": "part"
+    },
+    {
+     "end": 1.763,
+     "start": 1.688,
+     "text": "of"
+    },
+    {
+     "end": 1.85,
+     "start": 1.763,
+     "text": "the"
+    },
+    {
+     "end": 2.438,
+     "start": 1.85,
+     "text": "design"
+    },
+    {
+     "end": 2.575,
+     "start": 2.438,
+     "text": "and"
+    },
+    {
+     "end": 2.9,
+     "start": 2.575,
+     "text": "wants"
+    },
+    {
+     "end": 3.037,
+     "start": 2.9,
+     "text": "the"
+    },
+    {
+     "end": 3.412,
+     "start": 3.037,
+     "text": "whole"
+    },
+    {
+     "end": 4.0,
+     "start": 3.412,
+     "text": "economic"
+    },
+    {
+     "end": 4.625,
+     "start": 4.0,
+     "text": "mechanism"
+    },
+    {
+     "end": 4.838,
+     "start": 4.625,
+     "text": "on"
+    },
+    {
+     "end": 5.113,
+     "start": 4.838,
+     "text": "one"
+    },
+    {
+     "end": 5.613,
+     "start": 5.113,
+     "text": "page"
+    },
+    {
+     "end": 6.0,
+     "start": 5.613,
+     "text": "before"
+    },
+    {
+     "end": 6.387,
+     "start": 6.0,
+     "text": "opening"
+    },
+    {
+     "end": 6.475,
+     "start": 6.387,
+     "text": "the"
+    },
+    {
+     "end": 7.55,
+     "start": 6.475,
+     "text": "paper"
+    },
+    {
+     "end": 7.8,
+     "start": 7.55,
+     "text": ":"
+    },
+    {
+     "end": 8.15,
+     "start": 7.975,
+     "text": "which"
+    },
+    {
+     "end": 8.613,
+     "start": 8.15,
+     "text": "amounts"
+    },
+    {
+     "end": 8.925,
+     "start": 8.613,
+     "text": "move"
+    },
+    {
+     "end": 9.05,
+     "start": 8.925,
+     "text": "in"
+    },
+    {
+     "end": 9.275,
+     "start": 9.05,
+     "text": "each"
+    },
+    {
+     "end": 9.825,
+     "start": 9.275,
+     "text": "outcome"
+    },
+    {
+     "end": 9.9,
+     "start": 9.825,
+     "text": ","
+    },
+    {
+     "end": 10.1,
+     "start": 9.9,
+     "text": "which"
+    },
+    {
+     "end": 10.712,
+     "start": 10.1,
+     "text": "parameters"
+    },
+    {
+     "end": 10.8,
+     "start": 10.712,
+     "text": "the"
+    },
+    {
+     "end": 11.25,
+     "start": 10.8,
+     "text": "creator"
+    },
+    {
+     "end": 12.1,
+     "start": 11.25,
+     "text": "sets"
+    },
+    {
+     "end": 12.3,
+     "start": 12.1,
+     "text": ","
+    },
+    {
+     "end": 12.587,
+     "start": 12.5,
+     "text": "and"
+    },
+    {
+     "end": 12.75,
+     "start": 12.587,
+     "text": "which"
+    },
+    {
+     "end": 13.212,
+     "start": 12.75,
+     "text": "statements"
+    },
+    {
+     "end": 13.337,
+     "start": 13.212,
+     "text": "are"
+    },
+    {
+     "end": 13.925,
+     "start": 13.337,
+     "text": "proved"
+    },
+    {
+     "end": 14.025,
+     "start": 13.925,
+     "text": ","
+    },
+    {
+     "end": 14.4,
+     "start": 14.025,
+     "text": "argued"
+    },
+    {
+     "end": 14.587,
+     "start": 14.4,
+     "text": "by"
+    },
+    {
+     "end": 15.075,
+     "start": 14.587,
+     "text": "hand"
+    },
+    {
+     "end": 15.15,
+     "start": 15.075,
+     "text": ","
+    },
+    {
+     "end": 15.312,
+     "start": 15.15,
+     "text": "or"
+    },
+    {
+     "end": 15.6,
+     "start": 15.312,
+     "text": "kept"
+    },
+    {
+     "end": 15.75,
+     "start": 15.6,
+     "text": "as"
+    },
+    {
+     "end": 17.25,
+     "start": 15.75,
+     "text": "counterexamples"
+    },
+    {
+     "end": 17.45,
+     "start": 17.25,
+     "text": "."
+    }
+   ]
+  },
   "docs-first-demo/first-demo-registry-handoff-on-preprod-00": {
    "audio_sha256": "baea52117c1b2f595769f7a500a5f5b8407a4dc6757a43677629065216280d7e",
    "characters": 40,

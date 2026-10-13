@@ -3294,6 +3294,141 @@
    }
   ]
  },
+ "docs/economics-paper.md": {
+  "abstract": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/abstract-00",
+    "pause_ms": 500,
+    "text": "Abstract.",
+    "v": "90bf4930d6b5"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/abstract-01",
+    "pause_ms": 400,
+    "text": "A permissionless registry lets anyone fold a queued request into shared state, so a request that waits in the queue can be cancelled by a stranger who collects the fee for the slot. The paper gives the economic rules of one such registry. Every request carries a bond beside its deposit. A processor that rejects a request forfeits the bond only when it proves, against the state root the request recorded at booking, that the request was already faulty then; any other rejection refunds the bond. The forfeited bond is split between the proving processor and the treasury. A fold that terminates a key donates a termination fee to the treasury. The paper states each property as a definition with a theorem, gives the transfer function as one table, derives every parameter constraint as an inequality with a worked example in lovelace, and lists exactly what the mechanism does not price, with counterexamples.",
+    "v": "f1211edf3119"
+   }
+  ],
+  "economics-of-protected-rejection": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/economics-of-protected-rejection-00",
+    "pause_ms": 500,
+    "text": "Economics of protected rejection.",
+    "v": "0a8e6c61bb14"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/economics-of-protected-rejection-01",
+    "pause_ms": 400,
+    "text": "As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.",
+    "v": "9ad37905163c"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/economics-of-protected-rejection-02",
+    "pause_ms": 400,
+    "text": "The full draft lives beside this page as a PDF: economics-paper.pdf. It is built from LaTeX sources under paper/economics by the documentation build, so the PDF on the site always matches the committed sources.",
+    "v": "1f7f70e546e0"
+   }
+  ],
+  "format-and-sources": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/format-and-sources-00",
+    "pause_ms": 500,
+    "text": "Format and sources.",
+    "v": "6eaa308b0bed"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/format-and-sources-01",
+    "pause_ms": 400,
+    "text": "The paper is written in LaTeX and built into this site by a Nix derivation. The intended style is the LIPIcs class, which is not shipped in the pinned TeX Live set, so this draft uses the llncs class from TeX Live and says so here. The bibliography holds only verified entries: a located whitepaper that could not be found is not cited, and a griefing survey whose author name is unconfirmed is not cited until its author is confirmed.",
+    "v": "e365a78e7dcd"
+   }
+  ],
+  "limitations-in-one-paragraph": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/limitations-in-one-paragraph-00",
+    "pause_ms": 500,
+    "text": "Limitations in one paragraph.",
+    "v": "caca01022877"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/limitations-in-one-paragraph-01",
+    "pause_ms": 400,
+    "text": "Four facts bound the design: duplicate concurrent bookings cost the tip plus fees, not the bond; squatting a key without terminating it is not priced by the termination fee, and the defence is the application approval policy, stated as an assumption; a zero donation cannot be expressed, so the field is omitted; the tip returns on a retraction and pays the processor on every other outcome. The paper lists every property that does not hold with its counterexample, and states the safe price ranges, the liveness hazards, and the model-to-validator correspondence as an assumption with its gaps.",
+    "v": "bd201fb793bc"
+   }
+  ],
+  "theorem-to-lean-mapping": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/theorem-to-lean-mapping-00",
+    "pause_ms": 500,
+    "text": "Theorem to Lean mapping.",
+    "v": "728a8f29f93a"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/theorem-to-lean-mapping-01",
+    "pause_ms": 400,
+    "text": "For this draft the table is written from the reviewed plan, with every row marked not yet mechanized. The generator that derives the table from the audit report arrives with the model; until then the names below are the planned declarations, checked against the plan page, and the files are fixed: theorems and kept counterexamples live in the statements module the axioms guard, definitions in the economics module.",
+    "v": "5d974e18a53a"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/theorem-to-lean-mapping-02",
+    "pause_ms": 400,
+    "text": "Flood cost per faulty request, the griefing factor bound, the processor incentive to clear faults, and the collusion bounds are inequalities derived by hand from the transfer lemmas, since they speak of key value, opportunity cost and fee volatility, which the model does not contain. The paper labels each as a hand argument.",
+    "v": "a8d7b9da00af"
+   }
+  ],
+  "what-each-outcome-pays": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/what-each-outcome-pays-00",
+    "pause_ms": 500,
+    "text": "What each outcome pays.",
+    "v": "f4fed3a750b3"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/what-each-outcome-pays-01",
+    "pause_ms": 400,
+    "text": "The transfer function, net per party and excluding the value of the key itself. The deposit returns to the owner except where the edge rule routes it; the bond returns except on a proved fault. The tip returns on a retraction and pays the processor on everything else.",
+    "v": "2cca89f6d50b"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/what-each-outcome-pays-02",
+    "pause_ms": 400,
+    "text": "The processor share of a forfeited bond is the floor of the split times the bond; the treasury receives the remainder, so the two shares always add up to the bond exactly. A donation that is zero is omitted from the transaction, since the donation field accepts only positive amounts.",
+    "v": "fec3471a7577"
+   }
+  ],
+  "who-this-is-for": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/who-this-is-for-00",
+    "pause_ms": 500,
+    "text": "Who this is for.",
+    "v": "f49c8be09d2d"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/who-this-is-for-01",
+    "pause_ms": 400,
+    "text": "A reviewer who was not part of the design and wants the whole economic mechanism on one page before opening the paper: which amounts move in each outcome, which parameters the creator sets, and which statements are proved, argued by hand, or kept as counterexamples.",
+    "v": "5866d80c8a4b"
+   }
+  ]
+ },
  "docs/first-demo.md": {
   "first-demo-registry-handoff-on-preprod": [
    {
