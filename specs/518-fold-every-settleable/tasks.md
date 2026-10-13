@@ -65,28 +65,28 @@ The bound stays 1. Re-derived on 2026-10-13 against `main` at `e7b55ac9` and reb
 
 ### journal-carries-the-transitions
 
-- [ ] journal-line-carries-the-chained-transitions
-- [ ] the-expectation-carries-the-transitions
-- [ ] scalar-fields-mirror-the-first-and-last-transition
-- [ ] a-journal-line-written-by-main-still-decodes
+- [x] journal-line-carries-the-chained-transitions
+- [x] the-expectation-carries-the-transitions
+- [x] scalar-fields-mirror-the-first-and-last-transition
+- [x] a-journal-line-written-by-main-still-decodes
 
 ### fold-over-several-requests
 
-- [ ] builder-spends-exactly-two-and-three-chosen-requests (run: builder)
-- [ ] validity-bound-follows-the-earliest-deadline-not-the-first (run: builder)
-- [ ] fold-result-lists-its-settled-requests (run: fold routine)
-- [ ] roots-between-transitions-come-from-a-walk-per-prefix (run: fold routine)
-- [ ] one-delivery-readback-per-settled-request (run: fold routine)
-- [ ] application-context-covers-every-release (run: fold routine)
-- [ ] combined-forms-and-the-keri-stub-read-their-own-settled-entry (run: fold routine)
-- [ ] receipt-lists-each-settled-request (run: fold routine)
-- [ ] a-lost-race-over-several-requests-is-stale-state (run: fold routine)
-- [ ] the-bound-is-an-argument-of-the-fold-routine-for-tests (run: fold routine)
+- [x] builder-spends-exactly-two-and-three-chosen-requests (run: builder)
+- [x] validity-bound-follows-the-earliest-deadline-not-the-first (run: builder)
+- [x] fold-result-lists-its-settled-requests (run: fold routine)
+- [x] roots-between-transitions-come-from-a-walk-per-prefix (run: fold routine)
+- [x] one-delivery-readback-per-settled-request (run: fold routine)
+- [x] application-context-covers-every-release (run: fold routine; the row requires the exact release count, the mutant that passes only the first holding is not killed by it and closes in 3b with the termination-not-first row)
+- [x] combined-forms-and-the-keri-stub-read-their-own-settled-entry (run: fold routine)
+- [x] receipt-lists-each-settled-request (run: fold routine)
+- [ ] a-lost-race-over-several-requests-is-stale-state (run: fold routine; not a row: the executed race is a stated non-goal of the spec and the refusal is the same code as for one request, covered by the existing rows of TrieRefusalSpec and CommandRunSpec)
+- [x] the-bound-is-an-argument-of-the-fold-routine-for-tests (run: fold routine)
 
 ### docs-of-the-reason-for-the-bound
 
-- [ ] provenance-of-bound-one-states-the-recovery-reason
-- [ ] node-guide-sentence-matches-it-narration-regenerated-speech-restamped
+- [x] provenance-of-bound-one-states-the-recovery-reason
+- [x] node-guide-sentence-matches-it-narration-regenerated-speech-restamped
 
 ## Pull request 3b: recovery of many, bound 9, executed evidence
 
