@@ -189,6 +189,7 @@ import Singular.Registry.Evidence
     , NoWitness
     , unverifiedVerifier
     )
+import Singular.Registry.FoldSelection (foldCapacity)
 import Singular.Registry.Ledger (Coin (..), TokenId (..))
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
@@ -2682,6 +2683,73 @@ foldOverSeveralRequestsRow = describe "the fold settles every selected request i
             settledRequestRefs (runReceipt folded)
                 `shouldSatisfy` ( \refs -> renderOutRef reqA `elem` refs && renderOutRef reqB `elem` refs
                                 )
+    it
+        "an insertion first and a termination second settle with the termination payout at the production bound"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t1 <- tokenOf create
+            _priorReq <-
+                plantFoldableRequestAt
+                    rig
+                    t1
+                    seed
+                    "fold-term-last-key"
+                    "term-last-prior"
+                    'c'
+                    0
+            priorFold <- runFoldAtBound rig 1 t1
+            outcomeOf (runReceipt priorFold) `shouldBe` Just "success"
+            plantActiveTokenFor rig t1 seed "fold-term-last-key"
+            reqA <-
+                plantFoldableRequestAt rig t1 seed "fold-last-a" "last-a" 'd' 0
+            reqB <-
+                plantFoldableRequestAt rig t1 seed "fold-last-b" "last-b" 'e' 0
+            reqC <-
+                plantFoldableTerminationAt rig t1 seed "fold-term-last-key" 'f'
+            folded <- runFoldAtBoundApp rig foldCapacity (testAppExpecting 1) t1
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            -- the termination settles last: it is not first in ledger order.
+            settledRequestRefs (runReceipt folded)
+                `shouldBe` [renderOutRef reqA, renderOutRef reqB, renderOutRef reqC]
+            let byRequest =
+                    [ (r, o)
+                    | o <- settledEntries (runReceipt folded)
+                    , Just r <- [fieldOf "request" o]
+                    ]
+                termObjs = [o | (r, o) <- byRequest, r == renderOutRef reqC]
+            length termObjs `shouldBe` 1
+            case termObjs of
+                [o] -> do
+                    fieldOf "edge" o `shouldBe` Just "updateTerminal"
+                    case valueAt "settlement" (Aeson.Object o) of
+                        Just (Aeson.Object s) -> do
+                            fieldOf "released" s
+                                `shouldBe` Just (T.pack (replicate 64 'b' <> "#0"))
+                            integerAt "deposit" (Aeson.Object s) `shouldBe` Just 4_000_000
+                        other ->
+                            expectationFailure
+                                ( "expected a settlement object for the termination, found: "
+                                    <> show other
+                                )
+                _ -> expectationFailure "expected exactly one termination entry"
+            case valueAt "capacity" (runReceipt folded) of
+                Just (Aeson.Object c) -> do
+                    integerAt "bound" (Aeson.Object c) `shouldBe` Just 9
+                    fieldOf "provenance" c
+                        `shouldBe` Just
+                            "an estimate, not a measurement: about nine requests fit in a fold under preprod's execution budget of 14 million memory units, bound by trie-proof verification"
+                other ->
+                    expectationFailure
+                        ( "expected a capacity object in the fold receipt, found: "
+                            <> show other
+                        )
 
 {- | Plant one termination request for a key known active: edge updateTerminal
 with the approval asset the selection expects, at a fresh fake reference.

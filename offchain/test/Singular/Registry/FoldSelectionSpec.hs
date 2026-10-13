@@ -451,10 +451,10 @@ spec = do
             verdict 1 (prRef r4) `shouldBe` ["window-closed"]
             verdict 2 (prRef r4) `shouldBe` ["window-closed"]
             verdict 9 (prRef r4) `shouldBe` ["window-closed"]
-        it "binds one transition per fold in pull request 1" $ do
-            foldCapacity `shouldBe` 1
+        it "binds nine requests per fold" $ do
+            foldCapacity `shouldBe` 9
             foldCapacityProvenance
-                `shouldBe` "recovery reads one transition until the multi-request recovery ships"
+                `shouldBe` "an estimate, not a measurement: about nine requests fit in a fold under preprod's execution budget of 14 million memory units, bound by trie-proof verification"
 
     describe "window-rule-agrees-with-fold-window" $ do
         it "excludes window-closed exactly when foldWindow reports closed" $ do
