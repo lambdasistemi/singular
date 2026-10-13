@@ -305,7 +305,6 @@ second lookup for the same address must return what the view showed
 the first time, not re-read the chain, keeping one view consistent
 while rollback, inclusion and exclusion all consult it.
 -}
-
 liveReader :: Cage.Session Cage.NoWitness IO -> IO LiveAt
 liveReader view = do
     cache <- newIORef Map.empty

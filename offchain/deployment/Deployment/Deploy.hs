@@ -83,73 +83,74 @@ deploy args = do
         } <-
         deployOptions args
     unbound <- loadCompiled
-    {- | Owner, lifetime and concurrency contract for the deployment tx
-    accumulator. It belongs to this single 'deploy' invocation:
-    created once, threaded explicitly through publication, boot and
-    registration, read once for the manifest. 'submitted' conses each
-    accepted transaction newest-first and 'deploy' reverses for the
-    manifest, so repeated recording is O(1) while the manifest keeps
-    receipt order. The product is single-threaded: one command submits
-    in order on the calling thread, so plain 'readIORef'/'writeIORef'
-    suffice and no thread outlives the command. A stop before the
-    manifest reports the accumulator through 'reportPartial' below.
-    -}
+    -- \| Owner, lifetime and concurrency contract for the deployment tx
+    --    accumulator. It belongs to this single 'deploy' invocation:
+    --    created once, threaded explicitly through publication, boot and
+    --    registration, read once for the manifest. 'submitted' conses each
+    --    accepted transaction newest-first and 'deploy' reverses for the
+    --    manifest, so repeated recording is O(1) while the manifest keeps
+    --    receipt order. The product is single-threaded: one command submits
+    --    in order on the calling thread, so plain 'readIORef'/'writeIORef'
+    --    suffice and no thread outlives the command. A stop before the
+    --    manifest reports the accumulator through 'reportPartial' below.
+    --
     txs <- newIORef []
-    (withRunner $ \wallet caps -> do
-        let prov = capReads caps
-        refuseIfAlreadyDeployed prov out unbound
-        -- A registry boots only by reference: the state validator is
-        -- published before the boot, which resolves it from there.
-        (stateIn, _) <-
-            publishOne
-                wallet
-                prov
-                caps
-                txs
-                (scriptFromBytes "state" (cStateBytes unbound))
-        (cfg, tok, bootTx, seedIn, compiled) <-
-            bootRegistry wallet prov caps unbound txs processTime retractTime
-        registerCredentials wallet prov caps compiled txs
-        refs <- publishAll wallet prov caps cfg tok compiled stateIn txs
-        bootstrap <- reverse <$> readIORef txs
-        let Ledger.Network magic = fst prov
-        let dep =
-                Deployment
-                    { depRelease = release
-                    , depLeanRevision = leanRev
-                    , depNetworkMagic = magic
-                    , depSeedOutRef = renderOutRef seedIn
-                    , depCageToken = tokenText tok
-                    , depStatePolicy =
-                        hexT (scriptHashBytes (cfgScriptHash cfg))
-                    , depRequestHash =
-                        hexT (scriptHashBytes (hashScript (mkRequestScript cfg tok)))
-                    , depApplicationHash =
-                        hexT (scriptHashBytes (computeScriptHash (cAppBytes compiled)))
-                    , depRepresentativePolicy =
-                        hexT (SBS.fromShort (cfgActivePolicy cfg))
-                    , depProcessTime = defaultProcessTime cfg
-                    , depRetractTime = defaultRetractTime cfg
-                    , depTip = let Coin c = defaultTip cfg in c
-                    , depReferenceScripts = refs
-                    , depBootstrapTxs = bootstrap
-                    }
-        writeDeployment out dep
-        emit "manifest" ("wrote " <> out)
-        claims <- verifyRegisteredDeployment prov dep compiled
-        mapM_ (emit "verified") claims
-        emit
-            "complete"
-            ( "registry "
-                <> T.unpack (tokenText tok)
-                <> " booted in "
-                <> T.unpack (txText bootTx)
-                <> "; "
-                <> show (length refs)
-                <> " reference scripts published; funded by "
-                <> bech32Address (walletAddr wallet)
-            )
-        ) `onException` reportPartial txs
+    ( withRunner $ \wallet caps -> do
+            let prov = capReads caps
+            refuseIfAlreadyDeployed prov out unbound
+            -- A registry boots only by reference: the state validator is
+            -- published before the boot, which resolves it from there.
+            (stateIn, _) <-
+                publishOne
+                    wallet
+                    prov
+                    caps
+                    txs
+                    (scriptFromBytes "state" (cStateBytes unbound))
+            (cfg, tok, bootTx, seedIn, compiled) <-
+                bootRegistry wallet prov caps unbound txs processTime retractTime
+            registerCredentials wallet prov caps compiled txs
+            refs <- publishAll wallet prov caps cfg tok compiled stateIn txs
+            bootstrap <- reverse <$> readIORef txs
+            let Ledger.Network magic = fst prov
+            let dep =
+                    Deployment
+                        { depRelease = release
+                        , depLeanRevision = leanRev
+                        , depNetworkMagic = magic
+                        , depSeedOutRef = renderOutRef seedIn
+                        , depCageToken = tokenText tok
+                        , depStatePolicy =
+                            hexT (scriptHashBytes (cfgScriptHash cfg))
+                        , depRequestHash =
+                            hexT (scriptHashBytes (hashScript (mkRequestScript cfg tok)))
+                        , depApplicationHash =
+                            hexT (scriptHashBytes (computeScriptHash (cAppBytes compiled)))
+                        , depRepresentativePolicy =
+                            hexT (SBS.fromShort (cfgActivePolicy cfg))
+                        , depProcessTime = defaultProcessTime cfg
+                        , depRetractTime = defaultRetractTime cfg
+                        , depTip = let Coin c = defaultTip cfg in c
+                        , depReferenceScripts = refs
+                        , depBootstrapTxs = bootstrap
+                        }
+            writeDeployment out dep
+            emit "manifest" ("wrote " <> out)
+            claims <- verifyRegisteredDeployment prov dep compiled
+            mapM_ (emit "verified") claims
+            emit
+                "complete"
+                ( "registry "
+                    <> T.unpack (tokenText tok)
+                    <> " booted in "
+                    <> T.unpack (txText bootTx)
+                    <> "; "
+                    <> show (length refs)
+                    <> " reference scripts published; funded by "
+                    <> bech32Address (walletAddr wallet)
+                )
+        )
+        `onException` reportPartial txs
 
 {- | Narrate a deployment that stopped before writing its manifest: the
 bootstrap transactions submitted so far, oldest first. Runs on any
