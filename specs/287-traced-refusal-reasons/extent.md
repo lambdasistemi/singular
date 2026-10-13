@@ -53,14 +53,17 @@ check as unclassified.
 ## Discovered table (from-receipts-replay-index-discover-complete)
 
 Rebound 2026-10-02 to main `13f2b2e` (#320's validators, #344's batch
-questions) under the operator's narrowed acceptance. Class A is not listed: it
+questions) under the operator's narrowed acceptance, amended 2026-10-13 for decision B
+(protected rejection in-window: the dedicated mismatch row green, the foldable row unmet
+for `lambdasistemi/singular#495`). Class A is not listed: it
 is every refusal whose step or batch carries an executed model reason, recorded
 by the runner — the story rows' refused steps (insert-occupied-key, retract-outside-window, register-active-key, retire-active-key, reject-and-retract-refund-controls,
-reject-inside-processing-and-retraction-windows), the fold batches (empty-fold's empty fold, register-active-key's two-key batch whose mint is
+reject-inside-processing-and-retraction-windows with lifecycle mismatch), the fold batches (empty-fold's empty fold, register-active-key's two-key batch whose mint is
 moved onto its first key) and the reject batches (request-value-and-refund-routing's crossed refunds and its
-rejected-floor control, reject-before-deadline-consumer-requirement's short reject control), each compared with the
-reason the traced replay admits for the state script. reject-before-deadline-consumer-requirement's row transaction is
-accepted by the chain and by the model, so it is no refusal; its consumer
+rejected-floor control), each compared with the
+reason the traced replay admits for the state script. reject-before-deadline-consumer-requirement's two tampered
+batches are refused by both for different reasons (model `reject-not-expired`, replay `deposit-returned`);
+its untampered batch is accepted by the chain with no refusal, so it is no refusal; its consumer
 requirement stays unmet by ruling (operator 2026-10-01).
 
 Every other discovered refusal is listed below. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index have no
@@ -74,7 +77,7 @@ answers otherwise (class D):
 |---|---|---|---|---|
 | fold-against-superseded-root | fold whose proof was built against a superseded root | `key-exists` | the model takes no proof and no authenticated root, and admits the insertion on that unoccupied key | C — model comparison unmet, lambdasistemi/singular#346 |
 | surplus-fold-actions | surplus action; missing-action control | `surplus-actions`, `missing-action` | the model takes no action list | C — model comparison unmet, lambdasistemi/singular#345 |
-| reject-before-deadline-consumer-requirement | known divergence control: a reject paying its owner one lovelace short at the refund's position and the remainder in another output at the owner's key | `deposit-returned` | `settle` sums the owner's outputs and `rejectBatch` accepts | D — recorded divergence, never a pass, lambdasistemi/singular#361 |
+| reject-before-deadline-consumer-requirement | two refund tampers in-window with expiry evidence: model `reject-not-expired`, replay `deposit-returned` | `deposit-returned` | model refuses for admission first while the chain refuses for the refund | D — recorded divergences (two batches), never a pass, `lambdasistemi/singular#495` (validators must flip the row; the untampered accept has no refusal entry) |
 | wrong-redeemer-constructor-index | fold redeemer at a wrong constructor index | witness `no-fold`; state and request `no-user-trace`, a failure with no user-defined trace | the model has no redeemer decoding vocabulary | C — model comparison unmet, lambdasistemi/singular#347 |
 
 The earlier leads "register-active-key two-key batch `net-mint-mismatch`" and "empty-fold, request-value-and-refund-routing held
@@ -86,17 +89,21 @@ Gaps C stay in the denominator and in the book's limits. A reason comparison
 over class A is never called completion of the issue's every-row claim while a
 C row remains.
 
-## A conflict the compared rejects avoid
+## A conflict the compared lawful rejects avoid
 
-The reject comparisons (reject-before-deadline-consumer-requirement's control, request-value-and-refund-routing's crossed refunds and its
-rejected-floor control, and the story chapters' one-lovelace-short rejects)
+The lawful reject comparisons (request-value-and-refund-routing's crossed refunds and its
+rejected-floor control, and the story chapters' one-lovelace-short rejects, including the
+dedicated mismatch row's tampered refunds)
 agree only for the shape their fixtures give the transaction: every output at a
 request owner's key is that owner's refund. The chain and the model read an
 owner's payment differently, and a transaction of another shape separates them.
-Operator ruling 2026-10-02, "Record now, fix later": reject-before-deadline-consumer-requirement submits that shape on
-the devnet and records the disagreement in its receipt (the class D row above),
-never as a pass; reject-refund equivalence in general stays unmet,
-lambdasistemi/singular#361.
+Operator ruling 2026-10-02, "Record now, fix later": the split shape (one lovelace short
+at the refund's position and two ada more in another output at the owner's key) is refused
+by the chain for `deposit-returned` while the model, summing the owner's outputs, would accept;
+reject-refund equivalence in general stays unmet,
+lambdasistemi/singular#361. In-window while protected holds, the foldable row's split no longer
+diverges as `361` (the model refuses first for `reject-not-expired`); its chain refusal for
+`deposit-returned` stays in replay as part of the protected divergences above.
 
 | Case | Chain | Lean | Class |
 |---|---|---|---|

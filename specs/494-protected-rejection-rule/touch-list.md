@@ -36,9 +36,11 @@ this ticket regenerates.
 | `lean/Singular/M1.lean`, `lean/Singular/M1Driver.lean` | 2, 4 | Compatibility names and their restated statements; the driver file only renames what a changed signature forces |
 | `lean/DriverMain.lean`, `lean/Main.lean`, `lean/M1Main.lean` | 1, 2, 4 | Corpus rows, protocol guard, settlement and holding guards |
 | `conformance/lean/DriverTransport.lean` | 1, 2, 4 | Questions carrying evidence and booked metadata |
-| `conformance/app/Conformance/Run/Live.hs` | 1, 2 | Registry identity allocated while acting, booked time read from the datum, evidence built |
-| `conformance/app/Conformance/Run/CgRows.hs` | 2 | The batch harness story re-based after both windows |
+| `conformance/app/Conformance/Run/Live.hs` | 1, 2, 3 | Registry identity allocated while acting, booked time read from the datum, evidence built; mismatch evidence for a single rejection inside the windows, and the unmet row's divergences recorded instead of thrown |
+| `conformance/app/Conformance/Run/CgRows.hs` | 2, 3 | The batch harness story re-based after both windows; the expectation of a recorded divergence |
 | `conformance/lib/Conformance/Story/Live.hs` | 2, 3 | Story vocabulary for a rejection with evidence; the placements already exist |
+| `conformance/lib/Conformance/Extent.hs` | 3 | The refusal-extent check accepts the protected difference only while the in-window row is published unmet (desk clearance, with controls) |
+| `conformance/test/Conformance/Story/Usage.hs` | 3 | Derived counts and book phrases follow the rows (mechanical consumer fixes) |
 | `conformance/lib/Conformance/Edge/Programs.hs`, `EarlyReject.hs` | 2, 3 | The lawful rejection rows; the in-window rows |
 | `conformance/lib/Conformance/Book.hs`, `Receipt.hs`, `EvidencePage.hs` | 3 | Prose and the recorded divergence only if the ruling needs it; no row identifier changes |
 | `conformance/rows.json`, `conformance/BOOK.md` | 3 | Row notes |

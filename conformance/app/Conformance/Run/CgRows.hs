@@ -178,22 +178,36 @@ expect row (index, expected, record) = case expected of
                 ( field ["comparison"] record == Just (String "disagrees")
                     && field ["chain", "outcome"] record == Just (String divergenceChain)
                     && field ["model", "outcome"] record == Just (String divergenceModel)
-                    && divergenceTrace `elem` replayReasons record
+                    && ( if divergenceChain == "accepted"
+                            then field ["model", "reason"] record == Just (String divergenceTrace)
+                            else divergenceTrace `elem` replayReasons record
+                       )
                 )
             emit
                 "divergence"
-                ( row
-                    <> " KNOWN DIVERGENCE ("
-                    <> T.unpack divergenceIssue
-                    <> "): the chain "
-                    <> T.unpack divergenceChain
-                    <> " it for "
-                    <> T.unpack divergenceTrace
-                    <> " (tx="
-                    <> maybe "?" T.unpack (text ["chain", "txid"] record)
-                    <> ") and the model "
-                    <> T.unpack divergenceModel
-                    <> " it; recorded, never a pass"
+                ( if divergenceChain == "accepted"
+                    then
+                        row
+                            <> " KNOWN DIVERGENCE ("
+                            <> T.unpack divergenceIssue
+                            <> "): the chain accepted it (tx="
+                            <> maybe "?" T.unpack (text ["chain", "txid"] record)
+                            <> ") and the model refused it for "
+                            <> T.unpack divergenceTrace
+                            <> "; recorded, never a pass"
+                    else
+                        row
+                            <> " KNOWN DIVERGENCE ("
+                            <> T.unpack divergenceIssue
+                            <> "): the chain "
+                            <> T.unpack divergenceChain
+                            <> " it for "
+                            <> T.unpack divergenceTrace
+                            <> " (tx="
+                            <> maybe "?" T.unpack (text ["chain", "txid"] record)
+                            <> ") and the model "
+                            <> T.unpack divergenceModel
+                            <> " it; recorded, never a pass"
                 )
   where
     field [] value = Just value

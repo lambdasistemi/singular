@@ -849,7 +849,16 @@ submitEdge env state cage exit alteration placement request = do
             rejection <-
                 if exit == Live.Reject
                     then
-                        Just <$> rejectionWitness env state cage before modelRequest signed
+                        Just
+                            <$> rejectionWitness
+                                env
+                                state
+                                cage
+                                before
+                                modelRequest
+                                signed
+                                placement
+                                key
                     else pure Nothing
             case result of
                 SubmitAccepted _ -> do
@@ -1458,20 +1467,10 @@ batchRecord env state cage exit alteration booked asked rejections signed result
             <> " txid="
             <> T.unpack txid
         )
-    case reasonCheck of
-        Just
-            (_, Differs{chainReason = chainSideReason, leanReason = leanSide}) ->
-                failWith
-                    ( "model and chain refuse for different reasons for "
-                        <> T.unpack batchName
-                        <> " of "
-                        <> show (length booked)
-                        <> " requests: chain="
-                        <> T.unpack chainSideReason
-                        <> " lean="
-                        <> T.unpack leanSide
-                    )
-        _ -> pure ()
+    -- A disagreement is recorded, never thrown: an unmet row's Diverges expects it
+    -- (the two refund tampers refused by both for different reasons, the untampered
+    -- refused by the model and accepted by the chain); a lawful row expecting agreement
+    -- fails later at its program check, which requires agreement.
     pure record
   where
     tamperOf = either Live.batchTamperName Live.refundTamperName
@@ -2113,12 +2112,13 @@ intermediateAbstractConfig env state cage before = do
 
 {- | What the model's rejection admission reads, read off the rejection as built,
 after it has been submitted: the intermediate configuration with its root and
-allocated identity, the complete request, the expiry ground, and the transaction's
-validity bounds. Lawful rejects are placed after both windows, so expiry is the
-ground; in-window rejects are refused with not-expired, which keeps slice three red.
+allocated identity, the complete request, the ground the placement names, and the transaction's
+validity bounds. Lawful rejects placed after both windows carry expiry; in-window rejects carry
+the lifecycle mismatch leaf the chain holds for the request's key at the action.
 Owner: the row runner; lifetime: one model question; concurrency: single-threaded.
-Explicit inputs: the chain-read state before submission, the model request, and
-the built transaction; no hidden environment read, no thread.
+Explicit inputs: the chain-read state before submission, the model request, the built
+transaction, the placement the story names and the request key bytes; no hidden environment
+read, no thread.
 -}
 rejectionWitness
     :: Env
@@ -2127,8 +2127,10 @@ rejectionWitness
     -> OnChainTokenState
     -> Value
     -> ConwayTx
+    -> Maybe Live.Placement
+    -> ByteString
     -> IO Value
-rejectionWitness env state cage before modelRequest transaction = do
+rejectionWitness env state cage before modelRequest transaction placed requestKey = do
     registryConfig <- intermediateAbstractConfig env state cage before
     (validFrom, validTo) <- case transaction ^. bodyTxL . vldtTxBodyL of
         ValidityInterval (SJust lower) (SJust upper) ->
@@ -2136,18 +2138,68 @@ rejectionWitness env state cage before modelRequest transaction = do
                 <$> slotStartMs (envProv env) lower
                 <*> slotStartMs (envProv env) upper
         _ -> failWith "a rejection is built without both validity bounds"
+    reason <- case placed of
+        Just Live.AfterTheWindows -> pure (String "expired")
+        Just Live.InProcessingWindow -> mismatchReason
+        Just Live.InRetractionWindow -> mismatchReason
+        Nothing -> failWith "setup: a reject reached the witness without a placement"
     pure
         ( object
             [ "evidence"
                 .= object
                     [ "registry" .= registryConfig
                     , "request" .= modelRequest
-                    , "reason" .= String "expired"
+                    , "reason" .= reason
                     ]
             , "validFrom" .= validFrom
             , "validTo" .= validTo
             ]
         )
+  where
+    mismatchReason = do
+        leaf <- mismatchLeafFor env state cage before requestKey
+        pure (object ["mismatch" .= object ["leaf" .= leaf]])
+
+{- | The model's mismatch leaf for the request key, read off the chain-read trie
+at the action: unknown when the key holds no leaf, otherwise the known leaf
+the trie holds. Owner: the row runner; lifetime: one model question; concurrency: single-threaded.
+Explicit inputs: the chain-read state before submission and the request key bytes;
+no hidden environment read, no thread.
+-}
+mismatchLeafFor
+    :: Env
+    -> LiveState
+    -> RowCage
+    -> OnChainTokenState
+    -> ByteString
+    -> IO Value
+mismatchLeafFor env state cage before requestKey = do
+    tid <- cageTid cage
+    let registry = show tid
+    keys <-
+        maybe (failWith "rejection evidence has no allocated keys") pure
+            . Map.lookup registry
+            =<< readIORef (liveRegistryKeys state)
+    (committed, membership) <- withTrie (envTm env) tid $ \trie -> do
+        root <- CageTrie.getRoot trie
+        values <- mapM (CageTrie.lookup trie) keys
+        pure (root, zip keys (map isJust values))
+    require
+        "rejection evidence chain root differs from committed trie"
+        (unOnChainRoot (stateRoot before) == unRoot committed)
+    classified <-
+        classifyLeaves membership (unOnChainRoot (stateRoot before))
+    case lookup requestKey classified of
+        Nothing -> pure (String "unknown")
+        Just leafBytes
+            | leafBytes == leafAbsent ->
+                pure (object ["known" .= object ["s" .= String "absent"]])
+            | leafBytes == leafActive ->
+                pure (object ["known" .= object ["s" .= String "active"]])
+            | leafBytes == leafTerminal ->
+                pure (object ["known" .= object ["s" .= String "terminal"]])
+            | otherwise ->
+                failWith ("unrecognized trie leaf for " <> show requestKey)
 
 {- | The POSIX slot-start time from one acquired view's validated finite
 material, through the fixed common conversion.
@@ -3769,29 +3821,9 @@ compareStep env state step observation = do
                         <> T.unpack (oneLine maxStepLineReasonChars reason)
                     )
             _ -> failWith "unsupported comparison lacks an observed reason"
-        _ -> case reasonCheck of
-            Just (_, Differs{chainReason = chainSide, leanReason = leanSide}) ->
-                failWith
-                    ( "model and chain refuse for different reasons for "
-                        <> exitNamed
-                        <> " at "
-                        <> Live.requestKey (lsRequest step)
-                        <> ": chain="
-                        <> T.unpack chainSide
-                        <> " lean="
-                        <> T.unpack leanSide
-                    )
-            _ ->
-                failWith
-                    ( "model and chain disagree for "
-                        <> exitNamed
-                        <> " at "
-                        <> Live.requestKey (lsRequest step)
-                        <> ": model="
-                        <> show modelOutcome
-                        <> " chain="
-                        <> show chainOutcome
-                    )
+        -- A disagreement is recorded, never thrown: an unmet row's Diverges expects it;
+        -- a lawful row expecting agreement fails later at its program check.
+        _ -> pure ()
     pure record
   where
     exitNamed = Live.exitName (lsExit step) (Live.requestEdge (lsRequest step))

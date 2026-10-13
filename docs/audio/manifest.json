@@ -71766,17 +71766,17 @@
    ]
   },
   "docs-consumer-conformance/the-issue-70-generic-rows-04": {
-   "audio_sha256": "d00ac7146e8529c0e2f199c8a1b613450c6a8d6dfd1ec6b90b63878d39a501fb",
-   "characters": 2272,
-   "cost": 0.00140864,
-   "duration": 172.625,
+   "audio_sha256": "94f4b3418bbcc2b8844432594529e6708a339e794767d0d6b6eced3fdf6848ae",
+   "characters": 1218,
+   "cost": 0.00120582,
+   "duration": 99.75,
    "index": 4,
-   "key": "3a675d301c7429a8b26c8cae362db3114cc9bc20600be7ec957825ed5246574e",
+   "key": "23a2b7d0c66976b127310a5003035adad82236b19637da1f8c5edfec13bfe58d",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
    "section": "the-issue-70-generic-rows",
-   "sent_text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0 e 6 3 8 f a d, blob d 3 8 e 8 1 c 0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
-   "text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0e638fad, blob d38e81c0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
+   "sent_text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0 e 6 3 8 f a d, blob d 3 8 e 8 1 c 0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass.",
+   "text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0e638fad, blob d38e81c0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass.",
    "words": [
     {
      "end": 0.475,
@@ -72609,828 +72609,1483 @@
      "text": "."
     },
     {
-     "end": 95.287,
-     "start": 95.175,
+     "end": 95.262,
+     "start": 95.15,
      "text": "The"
     },
     {
-     "end": 95.7,
-     "start": 95.287,
+     "end": 95.675,
+     "start": 95.262,
      "text": "session"
     },
     {
-     "end": 96.0,
-     "start": 95.7,
+     "end": 95.925,
+     "start": 95.675,
      "text": "ends"
     },
     {
-     "end": 96.7,
-     "start": 96.0,
+     "end": 96.55,
+     "start": 95.925,
      "text": "non-zero"
     },
     {
-     "end": 96.938,
-     "start": 96.7,
+     "end": 96.775,
+     "start": 96.55,
      "text": "while"
     },
     {
-     "end": 97.262,
-     "start": 96.938,
+     "end": 96.975,
+     "start": 96.775,
      "text": "any"
     },
     {
-     "end": 97.55,
-     "start": 97.262,
+     "end": 97.2,
+     "start": 96.975,
      "text": "row"
     },
     {
-     "end": 97.713,
-     "start": 97.55,
+     "end": 97.35,
+     "start": 97.2,
      "text": "is"
     },
     {
-     "end": 98.275,
-     "start": 97.713,
+     "end": 97.9,
+     "start": 97.35,
      "text": "unmet"
     },
     {
-     "end": 98.35,
-     "start": 98.275,
+     "end": 98.0,
+     "start": 97.9,
      "text": ";"
     },
     {
-     "end": 98.475,
-     "start": 98.35,
+     "end": 98.125,
+     "start": 98.0,
      "text": "it"
     },
     {
-     "end": 98.637,
-     "start": 98.475,
+     "end": 98.275,
+     "start": 98.125,
      "text": "is"
     },
     {
-     "end": 98.912,
-     "start": 98.637,
+     "end": 98.512,
+     "start": 98.275,
      "text": "never"
     },
     {
-     "end": 99.0,
-     "start": 98.912,
+     "end": 98.575,
+     "start": 98.512,
      "text": "a"
     },
     {
-     "end": 99.6,
-     "start": 99.0,
+     "end": 99.525,
+     "start": 98.575,
      "text": "pass"
     },
     {
-     "end": 99.762,
-     "start": 99.6,
-     "text": "."
-    },
-    {
-     "end": 100.075,
-     "start": 99.762,
-     "text": "Held"
-    },
-    {
-     "end": 100.125,
-     "start": 100.075,
-     "text": "("
-    },
-    {
-     "end": 102.275,
-     "start": 100.125,
-     "text": "held-q002"
-    },
-    {
-     "end": 102.575,
-     "start": 102.275,
-     "text": ";"
-    },
-    {
-     "end": 103.6,
-     "start": 102.775,
-     "text": "empty-fold"
-    },
-    {
-     "end": 103.65,
-     "start": 103.6,
-     "text": ","
-    },
-    {
-     "end": 105.575,
-     "start": 103.65,
-     "text": "request-value-and-refund-routing"
-    },
-    {
-     "end": 105.688,
-     "start": 105.575,
-     "text": ":"
-    },
-    {
-     "end": 106.45,
-     "start": 105.688,
-     "text": "executed"
-    },
-    {
-     "end": 106.525,
-     "start": 106.45,
-     "text": ","
-    },
-    {
-     "end": 106.662,
-     "start": 106.525,
-     "text": "with"
-    },
-    {
-     "end": 106.75,
-     "start": 106.662,
-     "text": "the"
-    },
-    {
-     "end": 107.325,
-     "start": 106.75,
-     "text": "consumer"
-    },
-    {
-     "end": 107.988,
-     "start": 107.325,
-     "text": "requirements"
-    },
-    {
-     "end": 108.363,
-     "start": 107.988,
-     "text": "still"
-    },
-    {
-     "end": 109.45,
-     "start": 108.363,
-     "text": "unmet"
-    },
-    {
-     "end": 109.675,
-     "start": 109.45,
-     "text": "."
-    },
-    {
-     "end": 110.55,
-     "start": 109.875,
-     "text": "empty-fold"
-    },
-    {
-     "end": 111.037,
-     "start": 110.55,
-     "text": "recorded"
-    },
-    {
-     "end": 111.137,
-     "start": 111.037,
-     "text": "a"
-    },
-    {
-     "end": 111.825,
-     "start": 111.137,
-     "text": "conflict"
-    },
-    {
-     "end": 111.963,
-     "start": 111.825,
-     "text": "with"
-    },
-    {
-     "end": 112.05,
-     "start": 111.963,
-     "text": "the"
-    },
-    {
-     "end": 112.713,
-     "start": 112.05,
-     "text": "pre-revision"
-    },
-    {
-     "end": 113.225,
-     "start": 112.713,
-     "text": "Singular"
-    },
-    {
-     "end": 114.125,
-     "start": 113.225,
-     "text": "model"
-    },
-    {
-     "end": 114.325,
-     "start": 114.125,
-     "text": ";"
-    },
-    {
-     "end": 115.025,
-     "start": 114.525,
-     "text": "rejecting"
-    },
-    {
-     "end": 115.325,
-     "start": 115.025,
-     "text": "empty"
-    },
-    {
-     "end": 115.775,
-     "start": 115.325,
-     "text": "batches"
-    },
-    {
-     "end": 115.9,
-     "start": 115.775,
-     "text": "is"
-    },
-    {
-     "end": 116.1,
-     "start": 115.9,
-     "text": "now"
-    },
-    {
-     "end": 117.05,
-     "start": 116.1,
-     "text": "approved"
-    },
-    {
-     "end": 117.25,
-     "start": 117.05,
-     "text": "."
-    },
-    {
-     "end": 119.262,
-     "start": 117.45,
-     "text": "request-value-and-refund-routing"
-    },
-    {
-     "end": 119.925,
-     "start": 119.262,
-     "text": "requires"
-    },
-    {
-     "end": 120.088,
-     "start": 119.925,
-     "text": "the"
-    },
-    {
-     "end": 121.275,
-     "start": 120.088,
-     "text": "operation-specific"
-    },
-    {
-     "end": 121.975,
-     "start": 121.275,
-     "text": "value-routing"
-    },
-    {
-     "end": 123.025,
-     "start": 121.975,
-     "text": "repair"
-    },
-    {
-     "end": 123.225,
-     "start": 123.025,
-     "text": "."
-    },
-    {
-     "end": 123.537,
-     "start": 123.425,
-     "text": "The"
-    },
-    {
-     "end": 123.988,
-     "start": 123.537,
-     "text": "rows"
-    },
-    {
-     "end": 124.287,
-     "start": 123.988,
-     "text": "move"
-    },
-    {
-     "end": 124.762,
-     "start": 124.287,
-     "text": "only"
-    },
-    {
-     "end": 125.037,
-     "start": 124.762,
-     "text": "after"
-    },
-    {
-     "end": 125.125,
-     "start": 125.037,
-     "text": "the"
-    },
-    {
-     "end": 125.7,
-     "start": 125.125,
-     "text": "required"
-    },
-    {
-     "end": 126.575,
-     "start": 125.7,
-     "text": "implementation"
-    },
-    {
-     "end": 126.7,
-     "start": 126.575,
-     "text": "and"
-    },
-    {
-     "end": 127.35,
-     "start": 126.7,
-     "text": "execution"
-    },
-    {
-     "end": 127.912,
-     "start": 127.35,
-     "text": "evidence"
-    },
-    {
-     "end": 128.075,
-     "start": 127.912,
-     "text": "is"
-    },
-    {
-     "end": 129.225,
-     "start": 128.075,
-     "text": "accepted"
-    },
-    {
-     "end": 129.45,
-     "start": 129.225,
-     "text": "."
-    },
-    {
-     "end": 130.637,
-     "start": 129.65,
-     "text": "Resolved-by-ruling"
-    },
-    {
-     "end": 130.675,
-     "start": 130.637,
-     "text": "("
-    },
-    {
-     "end": 132.05,
-     "start": 130.675,
-     "text": "historical-owner-change"
-    },
-    {
-     "end": 132.188,
-     "start": 132.05,
-     "text": ":"
-    },
-    {
-     "end": 132.312,
-     "start": 132.188,
-     "text": "a"
-    },
-    {
-     "end": 132.762,
-     "start": 132.312,
-     "text": "ruling"
-    },
-    {
-     "end": 133.137,
-     "start": 132.762,
-     "text": "settled"
-    },
-    {
-     "end": 133.225,
-     "start": 133.137,
-     "text": "the"
-    },
-    {
-     "end": 133.55,
-     "start": 133.225,
-     "text": "row's"
-    },
-    {
-     "end": 134.55,
-     "start": 133.55,
-     "text": "question"
-    },
-    {
-     "end": 134.75,
-     "start": 134.55,
-     "text": ";"
-    },
-    {
-     "end": 135.075,
-     "start": 134.95,
-     "text": "the"
-    },
-    {
-     "end": 135.875,
-     "start": 135.075,
-     "text": "observation"
-    },
-    {
-     "end": 136.025,
-     "start": 135.875,
-     "text": "is"
-    },
-    {
-     "end": 136.688,
-     "start": 136.025,
-     "text": "retained"
-    },
-    {
-     "end": 136.9,
-     "start": 136.688,
-     "text": "as"
-    },
-    {
-     "end": 137.438,
-     "start": 136.9,
-     "text": "defect"
-    },
-    {
-     "end": 137.925,
-     "start": 137.438,
-     "text": "evidence"
-    },
-    {
-     "end": 138.012,
-     "start": 137.925,
-     "text": "of"
-    },
-    {
-     "end": 138.15,
-     "start": 138.012,
-     "text": "the"
-    },
-    {
-     "end": 138.85,
-     "start": 138.15,
-     "text": "outstanding"
-    },
-    {
-     "end": 139.188,
-     "start": 138.85,
-     "text": "owner"
-    },
-    {
-     "end": 139.712,
-     "start": 139.188,
-     "text": "gate"
-    },
-    {
-     "end": 139.8,
-     "start": 139.712,
-     "text": "—"
-    },
-    {
-     "end": 140.038,
-     "start": 139.8,
-     "text": "never"
-    },
-    {
-     "end": 140.137,
-     "start": 140.038,
-     "text": "a"
-    },
-    {
-     "end": 140.675,
-     "start": 140.137,
-     "text": "pass"
-    },
-    {
-     "end": 140.762,
-     "start": 140.675,
-     "text": ","
-    },
-    {
-     "end": 141.062,
-     "start": 140.762,
-     "text": "never"
-    },
-    {
-     "end": 141.175,
-     "start": 141.062,
-     "text": "an"
-    },
-    {
-     "end": 142.062,
-     "start": 141.175,
-     "text": "owner-semantics"
-    },
-    {
-     "end": 143.175,
-     "start": 142.062,
-     "text": "claim"
-    },
-    {
-     "end": 143.4,
-     "start": 143.175,
-     "text": "."
-    },
-    {
-     "end": 144.4,
-     "start": 143.625,
-     "text": "Superseded"
-    },
-    {
-     "end": 144.45,
-     "start": 144.4,
-     "text": "("
-    },
-    {
-     "end": 146.025,
-     "start": 144.45,
-     "text": "historical-owner-signed-sweep"
-    },
-    {
-     "end": 146.1,
-     "start": 146.025,
-     "text": ","
-    },
-    {
-     "end": 147.575,
-     "start": 146.1,
-     "text": "historical-non-owner-sweep"
-    },
-    {
-     "end": 147.65,
-     "start": 147.575,
-     "text": ","
-    },
-    {
-     "end": 150.15,
-     "start": 147.65,
-     "text": "historical-registry-termination"
-    },
-    {
-     "end": 150.35,
-     "start": 150.15,
-     "text": ":"
-    },
-    {
-     "end": 150.675,
-     "start": 150.55,
-     "text": "the"
-    },
-    {
-     "end": 151.575,
-     "start": 150.675,
-     "text": "expectation"
-    },
-    {
-     "end": 152.05,
-     "start": 151.575,
-     "text": "asserted"
-    },
-    {
-     "end": 152.75,
-     "start": 152.05,
-     "text": "authority"
-    },
-    {
-     "end": 152.863,
-     "start": 152.75,
-     "text": ","
-    },
-    {
-     "end": 153.0,
-     "start": 152.863,
-     "text": "a"
-    },
-    {
-     "end": 153.462,
-     "start": 153.0,
-     "text": "sweep"
-    },
-    {
-     "end": 153.6,
-     "start": 153.462,
-     "text": "or"
-    },
-    {
-     "end": 153.7,
-     "start": 153.6,
-     "text": "a"
-    },
-    {
-     "end": 154.425,
-     "start": 153.7,
-     "text": "termination"
-    },
-    {
-     "end": 154.562,
-     "start": 154.425,
-     "text": "that"
-    },
-    {
-     "end": 154.75,
-     "start": 154.562,
-     "text": "does"
-    },
-    {
-     "end": 154.975,
-     "start": 154.75,
-     "text": "not"
-    },
-    {
-     "end": 155.425,
-     "start": 154.975,
-     "text": "exist"
-    },
-    {
-     "end": 155.525,
-     "start": 155.425,
-     "text": "at"
-    },
-    {
-     "end": 155.725,
-     "start": 155.525,
-     "text": "this"
-    },
-    {
-     "end": 156.725,
-     "start": 155.725,
-     "text": "commit"
-    },
-    {
-     "end": 156.95,
-     "start": 156.725,
-     "text": ";"
-    },
-    {
-     "end": 157.875,
-     "start": 157.15,
-     "text": "observations"
-    },
-    {
-     "end": 157.975,
-     "start": 157.875,
-     "text": "are"
-    },
-    {
-     "end": 158.6,
-     "start": 157.975,
-     "text": "preserved"
-    },
-    {
-     "end": 158.688,
-     "start": 158.6,
-     "text": ","
-    },
-    {
-     "end": 159.175,
-     "start": 158.688,
-     "text": "claims"
-    },
-    {
-     "end": 159.325,
-     "start": 159.175,
-     "text": "are"
-    },
-    {
-     "end": 160.0,
-     "start": 159.325,
-     "text": "withdrawn"
-    },
-    {
-     "end": 160.075,
-     "start": 160.0,
-     "text": ","
-    },
-    {
-     "end": 160.2,
-     "start": 160.075,
-     "text": "and"
-    },
-    {
-     "end": 160.475,
-     "start": 160.2,
-     "text": "no"
-    },
-    {
-     "end": 161.15,
-     "start": 160.475,
-     "text": "execution"
-    },
-    {
-     "end": 161.475,
-     "start": 161.15,
-     "text": "credit"
-    },
-    {
-     "end": 162.675,
-     "start": 161.475,
-     "text": "attaches"
-    },
-    {
-     "end": 162.875,
-     "start": 162.675,
-     "text": "."
-    },
-    {
-     "end": 163.637,
-     "start": 163.075,
-     "text": "Retired"
-    },
-    {
-     "end": 163.675,
-     "start": 163.637,
-     "text": "("
-    },
-    {
-     "end": 165.425,
-     "start": 163.675,
-     "text": "retired-stake-hook-with-withdrawal"
-    },
-    {
-     "end": 165.525,
-     "start": 165.425,
-     "text": ","
-    },
-    {
-     "end": 167.825,
-     "start": 165.525,
-     "text": "retired-stake-hook-without-withdrawal"
-    },
-    {
-     "end": 168.025,
-     "start": 167.825,
-     "text": ":"
-    },
-    {
-     "end": 168.3,
-     "start": 168.2,
-     "text": "the"
-    },
-    {
-     "end": 168.788,
-     "start": 168.3,
-     "text": "registry"
-    },
-    {
-     "end": 169.3,
-     "start": 168.788,
-     "text": "interface"
-    },
-    {
-     "end": 169.512,
-     "start": 169.3,
-     "text": "has"
-    },
-    {
-     "end": 169.75,
-     "start": 169.512,
-     "text": "no"
-    },
-    {
-     "end": 170.375,
-     "start": 169.75,
-     "text": "stake_script"
-    },
-    {
-     "end": 170.7,
-     "start": 170.375,
-     "text": "hook"
-    },
-    {
-     "end": 170.8,
-     "start": 170.7,
-     "text": ","
-    },
-    {
-     "end": 170.975,
-     "start": 170.8,
-     "text": "so"
-    },
-    {
-     "end": 171.325,
-     "start": 170.975,
-     "text": "nothing"
-    },
-    {
-     "end": 171.65,
-     "start": 171.325,
-     "text": "runs"
-    },
-    {
-     "end": 172.425,
-     "start": 171.65,
-     "text": "them"
-    },
-    {
-     "end": 172.625,
-     "start": 172.425,
+     "end": 99.75,
+     "start": 99.525,
      "text": "."
     }
    ]
   },
   "docs-consumer-conformance/the-issue-70-generic-rows-05": {
-   "audio_sha256": "7bda9d527063008493e5ad86606b3170ddb523fe59e2463d793243a08b649b0c",
-   "characters": 613,
-   "cost": 0.00038006000000000004,
-   "duration": 52.05,
+   "audio_sha256": "4c54f59dc9a86db7f09d92d593fb191aeaed6972209a4ef2750538240ecd3b66",
+   "characters": 1797,
+   "cost": 0.0017790299999999998,
+   "duration": 131.125,
    "index": 5,
+   "key": "f6727d9bd4b27aa7e7516bfc09f53bb345169a261c138fcc0d7712ffe2dd0870",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "the-issue-70-generic-rows",
+   "sent_text": "Dated note, 2026-10-13 (decision B, ticket 494 slice three, ahead of validators 495): the dedicated in-window row is now a lawful lifecycle-mismatch rejection (a second insertActive for a key already Active, with bound mismatch evidence, both sides accepting, owner refunded) and stays green; the generic standing row now books a foldable insertActive for a fresh key with expiry evidence in-window, refused by the model for reject-not-expired and accepted by the chain (tampered refunds refused by both for different reasons), published as unmet with a tripwire for lambdasistemi/singular#495 (the validators ticket that must flip the row by refusing the untampered in-window reject). Ticket 320's early-rejection history above is not edited. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
+   "text": "Dated note, 2026-10-13 (decision B, ticket 494 slice three, ahead of validators 495): the dedicated in-window row is now a lawful lifecycle-mismatch rejection (a second insertActive for a key already Active, with bound mismatch evidence, both sides accepting, owner refunded) and stays green; the generic standing row now books a foldable insertActive for a fresh key with expiry evidence in-window, refused by the model for reject-not-expired and accepted by the chain (tampered refunds refused by both for different reasons), published as unmet with a tripwire for lambdasistemi/singular#495 (the validators ticket that must flip the row by refusing the untampered in-window reject). Ticket 320's early-rejection history above is not edited. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
+   "words": [
+    {
+     "end": 0.625,
+     "start": 0.25,
+     "text": "Dated"
+    },
+    {
+     "end": 0.9,
+     "start": 0.625,
+     "text": "note"
+    },
+    {
+     "end": 0.95,
+     "start": 0.9,
+     "text": ","
+    },
+    {
+     "end": 2.825,
+     "start": 0.95,
+     "text": "2026-10-13"
+    },
+    {
+     "end": 2.875,
+     "start": 2.825,
+     "text": "("
+    },
+    {
+     "end": 3.35,
+     "start": 2.875,
+     "text": "decision"
+    },
+    {
+     "end": 3.75,
+     "start": 3.35,
+     "text": "B"
+    },
+    {
+     "end": 3.888,
+     "start": 3.75,
+     "text": ","
+    },
+    {
+     "end": 4.262,
+     "start": 3.888,
+     "text": "ticket"
+    },
+    {
+     "end": 5.512,
+     "start": 4.262,
+     "text": "494"
+    },
+    {
+     "end": 5.938,
+     "start": 5.512,
+     "text": "slice"
+    },
+    {
+     "end": 6.4,
+     "start": 5.938,
+     "text": "three"
+    },
+    {
+     "end": 6.5,
+     "start": 6.4,
+     "text": ","
+    },
+    {
+     "end": 6.762,
+     "start": 6.5,
+     "text": "ahead"
+    },
+    {
+     "end": 6.85,
+     "start": 6.762,
+     "text": "of"
+    },
+    {
+     "end": 7.537,
+     "start": 6.85,
+     "text": "validators"
+    },
+    {
+     "end": 9.575,
+     "start": 7.537,
+     "text": "495"
+    },
+    {
+     "end": 9.825,
+     "start": 9.575,
+     "text": ":"
+    },
+    {
+     "end": 10.137,
+     "start": 10.025,
+     "text": "the"
+    },
+    {
+     "end": 10.775,
+     "start": 10.137,
+     "text": "dedicated"
+    },
+    {
+     "end": 11.387,
+     "start": 10.775,
+     "text": "in-window"
+    },
+    {
+     "end": 11.788,
+     "start": 11.387,
+     "text": "row"
+    },
+    {
+     "end": 11.962,
+     "start": 11.788,
+     "text": "is"
+    },
+    {
+     "end": 12.275,
+     "start": 11.962,
+     "text": "now"
+    },
+    {
+     "end": 12.387,
+     "start": 12.275,
+     "text": "a"
+    },
+    {
+     "end": 12.887,
+     "start": 12.387,
+     "text": "lawful"
+    },
+    {
+     "end": 14.15,
+     "start": 12.887,
+     "text": "lifecycle-mismatch"
+    },
+    {
+     "end": 14.962,
+     "start": 14.15,
+     "text": "rejection"
+    },
+    {
+     "end": 15.05,
+     "start": 14.962,
+     "text": "("
+    },
+    {
+     "end": 15.137,
+     "start": 15.05,
+     "text": "a"
+    },
+    {
+     "end": 15.525,
+     "start": 15.137,
+     "text": "second"
+    },
+    {
+     "end": 16.325,
+     "start": 15.525,
+     "text": "insertActive"
+    },
+    {
+     "end": 16.45,
+     "start": 16.325,
+     "text": "for"
+    },
+    {
+     "end": 16.562,
+     "start": 16.45,
+     "text": "a"
+    },
+    {
+     "end": 16.913,
+     "start": 16.562,
+     "text": "key"
+    },
+    {
+     "end": 17.312,
+     "start": 16.913,
+     "text": "already"
+    },
+    {
+     "end": 18.475,
+     "start": 17.312,
+     "text": "Active"
+    },
+    {
+     "end": 18.7,
+     "start": 18.475,
+     "text": ","
+    },
+    {
+     "end": 19.05,
+     "start": 18.875,
+     "text": "with"
+    },
+    {
+     "end": 19.375,
+     "start": 19.05,
+     "text": "bound"
+    },
+    {
+     "end": 19.825,
+     "start": 19.375,
+     "text": "mismatch"
+    },
+    {
+     "end": 20.325,
+     "start": 19.825,
+     "text": "evidence"
+    },
+    {
+     "end": 20.375,
+     "start": 20.325,
+     "text": ","
+    },
+    {
+     "end": 20.675,
+     "start": 20.375,
+     "text": "both"
+    },
+    {
+     "end": 21.05,
+     "start": 20.675,
+     "text": "sides"
+    },
+    {
+     "end": 21.625,
+     "start": 21.05,
+     "text": "accepting"
+    },
+    {
+     "end": 21.7,
+     "start": 21.625,
+     "text": ","
+    },
+    {
+     "end": 22.025,
+     "start": 21.7,
+     "text": "owner"
+    },
+    {
+     "end": 22.575,
+     "start": 22.025,
+     "text": "refunded"
+    },
+    {
+     "end": 22.625,
+     "start": 22.575,
+     "text": ")"
+    },
+    {
+     "end": 22.75,
+     "start": 22.625,
+     "text": "and"
+    },
+    {
+     "end": 23.125,
+     "start": 22.75,
+     "text": "stays"
+    },
+    {
+     "end": 24.1,
+     "start": 23.125,
+     "text": "green"
+    },
+    {
+     "end": 24.3,
+     "start": 24.1,
+     "text": ";"
+    },
+    {
+     "end": 24.6,
+     "start": 24.5,
+     "text": "the"
+    },
+    {
+     "end": 25.075,
+     "start": 24.6,
+     "text": "generic"
+    },
+    {
+     "end": 25.575,
+     "start": 25.075,
+     "text": "standing"
+    },
+    {
+     "end": 25.825,
+     "start": 25.575,
+     "text": "row"
+    },
+    {
+     "end": 26.138,
+     "start": 25.825,
+     "text": "now"
+    },
+    {
+     "end": 26.425,
+     "start": 26.138,
+     "text": "books"
+    },
+    {
+     "end": 26.55,
+     "start": 26.425,
+     "text": "a"
+    },
+    {
+     "end": 27.1,
+     "start": 26.55,
+     "text": "foldable"
+    },
+    {
+     "end": 27.95,
+     "start": 27.1,
+     "text": "insertActive"
+    },
+    {
+     "end": 28.075,
+     "start": 27.95,
+     "text": "for"
+    },
+    {
+     "end": 28.188,
+     "start": 28.075,
+     "text": "a"
+    },
+    {
+     "end": 28.538,
+     "start": 28.188,
+     "text": "fresh"
+    },
+    {
+     "end": 28.962,
+     "start": 28.538,
+     "text": "key"
+    },
+    {
+     "end": 29.15,
+     "start": 28.962,
+     "text": "with"
+    },
+    {
+     "end": 29.675,
+     "start": 29.15,
+     "text": "expiry"
+    },
+    {
+     "end": 30.15,
+     "start": 29.675,
+     "text": "evidence"
+    },
+    {
+     "end": 31.35,
+     "start": 30.15,
+     "text": "in-window"
+    },
+    {
+     "end": 31.625,
+     "start": 31.35,
+     "text": ","
+    },
+    {
+     "end": 32.425,
+     "start": 31.85,
+     "text": "refused"
+    },
+    {
+     "end": 32.6,
+     "start": 32.425,
+     "text": "by"
+    },
+    {
+     "end": 32.725,
+     "start": 32.6,
+     "text": "the"
+    },
+    {
+     "end": 33.125,
+     "start": 32.725,
+     "text": "model"
+    },
+    {
+     "end": 33.287,
+     "start": 33.125,
+     "text": "for"
+    },
+    {
+     "end": 34.662,
+     "start": 33.287,
+     "text": "reject-not-expired"
+    },
+    {
+     "end": 34.787,
+     "start": 34.662,
+     "text": "and"
+    },
+    {
+     "end": 35.3,
+     "start": 34.787,
+     "text": "accepted"
+    },
+    {
+     "end": 35.475,
+     "start": 35.3,
+     "text": "by"
+    },
+    {
+     "end": 35.625,
+     "start": 35.475,
+     "text": "the"
+    },
+    {
+     "end": 36.175,
+     "start": 35.625,
+     "text": "chain"
+    },
+    {
+     "end": 36.25,
+     "start": 36.175,
+     "text": "("
+    },
+    {
+     "end": 36.7,
+     "start": 36.25,
+     "text": "tampered"
+    },
+    {
+     "end": 37.3,
+     "start": 36.7,
+     "text": "refunds"
+    },
+    {
+     "end": 37.9,
+     "start": 37.3,
+     "text": "refused"
+    },
+    {
+     "end": 38.112,
+     "start": 37.9,
+     "text": "by"
+    },
+    {
+     "end": 38.45,
+     "start": 38.112,
+     "text": "both"
+    },
+    {
+     "end": 38.575,
+     "start": 38.45,
+     "text": "for"
+    },
+    {
+     "end": 38.875,
+     "start": 38.575,
+     "text": "different"
+    },
+    {
+     "end": 40.1,
+     "start": 38.875,
+     "text": "reasons"
+    },
+    {
+     "end": 40.3,
+     "start": 40.1,
+     "text": ")"
+    },
+    {
+     "end": 40.35,
+     "start": 40.3,
+     "text": ","
+    },
+    {
+     "end": 41.037,
+     "start": 40.575,
+     "text": "published"
+    },
+    {
+     "end": 41.263,
+     "start": 41.037,
+     "text": "as"
+    },
+    {
+     "end": 41.75,
+     "start": 41.263,
+     "text": "unmet"
+    },
+    {
+     "end": 41.888,
+     "start": 41.75,
+     "text": "with"
+    },
+    {
+     "end": 41.987,
+     "start": 41.888,
+     "text": "a"
+    },
+    {
+     "end": 42.737,
+     "start": 41.987,
+     "text": "tripwire"
+    },
+    {
+     "end": 42.963,
+     "start": 42.737,
+     "text": "for"
+    },
+    {
+     "end": 47.013,
+     "start": 42.963,
+     "text": "lambdasistemi/singular#495"
+    },
+    {
+     "end": 47.075,
+     "start": 47.013,
+     "text": "("
+    },
+    {
+     "end": 47.15,
+     "start": 47.075,
+     "text": "the"
+    },
+    {
+     "end": 47.812,
+     "start": 47.15,
+     "text": "validators"
+    },
+    {
+     "end": 48.25,
+     "start": 47.812,
+     "text": "ticket"
+    },
+    {
+     "end": 48.425,
+     "start": 48.25,
+     "text": "that"
+    },
+    {
+     "end": 48.713,
+     "start": 48.425,
+     "text": "must"
+    },
+    {
+     "end": 49.0,
+     "start": 48.713,
+     "text": "flip"
+    },
+    {
+     "end": 49.138,
+     "start": 49.0,
+     "text": "the"
+    },
+    {
+     "end": 49.537,
+     "start": 49.138,
+     "text": "row"
+    },
+    {
+     "end": 49.725,
+     "start": 49.537,
+     "text": "by"
+    },
+    {
+     "end": 50.3,
+     "start": 49.725,
+     "text": "refusing"
+    },
+    {
+     "end": 50.463,
+     "start": 50.3,
+     "text": "the"
+    },
+    {
+     "end": 51.188,
+     "start": 50.463,
+     "text": "untampered"
+    },
+    {
+     "end": 51.775,
+     "start": 51.188,
+     "text": "in-window"
+    },
+    {
+     "end": 53.025,
+     "start": 51.775,
+     "text": "reject"
+    },
+    {
+     "end": 53.4,
+     "start": 53.025,
+     "text": ")"
+    },
+    {
+     "end": 53.45,
+     "start": 53.4,
+     "text": "."
+    },
+    {
+     "end": 54.013,
+     "start": 53.65,
+     "text": "Ticket"
+    },
+    {
+     "end": 55.025,
+     "start": 54.013,
+     "text": "320's"
+    },
+    {
+     "end": 55.875,
+     "start": 55.025,
+     "text": "early-rejection"
+    },
+    {
+     "end": 56.338,
+     "start": 55.875,
+     "text": "history"
+    },
+    {
+     "end": 56.838,
+     "start": 56.338,
+     "text": "above"
+    },
+    {
+     "end": 57.013,
+     "start": 56.838,
+     "text": "is"
+    },
+    {
+     "end": 57.3,
+     "start": 57.013,
+     "text": "not"
+    },
+    {
+     "end": 57.95,
+     "start": 57.3,
+     "text": "edited"
+    },
+    {
+     "end": 58.088,
+     "start": 57.95,
+     "text": "."
+    },
+    {
+     "end": 58.45,
+     "start": 58.088,
+     "text": "Held"
+    },
+    {
+     "end": 58.5,
+     "start": 58.45,
+     "text": "("
+    },
+    {
+     "end": 60.775,
+     "start": 58.5,
+     "text": "held-q002"
+    },
+    {
+     "end": 61.075,
+     "start": 60.775,
+     "text": ";"
+    },
+    {
+     "end": 62.1,
+     "start": 61.275,
+     "text": "empty-fold"
+    },
+    {
+     "end": 62.15,
+     "start": 62.1,
+     "text": ","
+    },
+    {
+     "end": 64.075,
+     "start": 62.15,
+     "text": "request-value-and-refund-routing"
+    },
+    {
+     "end": 64.188,
+     "start": 64.075,
+     "text": ":"
+    },
+    {
+     "end": 64.95,
+     "start": 64.188,
+     "text": "executed"
+    },
+    {
+     "end": 65.025,
+     "start": 64.95,
+     "text": ","
+    },
+    {
+     "end": 65.162,
+     "start": 65.025,
+     "text": "with"
+    },
+    {
+     "end": 65.25,
+     "start": 65.162,
+     "text": "the"
+    },
+    {
+     "end": 65.825,
+     "start": 65.25,
+     "text": "consumer"
+    },
+    {
+     "end": 66.488,
+     "start": 65.825,
+     "text": "requirements"
+    },
+    {
+     "end": 66.863,
+     "start": 66.488,
+     "text": "still"
+    },
+    {
+     "end": 67.95,
+     "start": 66.863,
+     "text": "unmet"
+    },
+    {
+     "end": 68.175,
+     "start": 67.95,
+     "text": "."
+    },
+    {
+     "end": 69.05,
+     "start": 68.375,
+     "text": "empty-fold"
+    },
+    {
+     "end": 69.537,
+     "start": 69.05,
+     "text": "recorded"
+    },
+    {
+     "end": 69.637,
+     "start": 69.537,
+     "text": "a"
+    },
+    {
+     "end": 70.325,
+     "start": 69.637,
+     "text": "conflict"
+    },
+    {
+     "end": 70.463,
+     "start": 70.325,
+     "text": "with"
+    },
+    {
+     "end": 70.55,
+     "start": 70.463,
+     "text": "the"
+    },
+    {
+     "end": 71.213,
+     "start": 70.55,
+     "text": "pre-revision"
+    },
+    {
+     "end": 71.725,
+     "start": 71.213,
+     "text": "Singular"
+    },
+    {
+     "end": 72.625,
+     "start": 71.725,
+     "text": "model"
+    },
+    {
+     "end": 72.825,
+     "start": 72.625,
+     "text": ";"
+    },
+    {
+     "end": 73.525,
+     "start": 73.025,
+     "text": "rejecting"
+    },
+    {
+     "end": 73.825,
+     "start": 73.525,
+     "text": "empty"
+    },
+    {
+     "end": 74.275,
+     "start": 73.825,
+     "text": "batches"
+    },
+    {
+     "end": 74.4,
+     "start": 74.275,
+     "text": "is"
+    },
+    {
+     "end": 74.6,
+     "start": 74.4,
+     "text": "now"
+    },
+    {
+     "end": 75.55,
+     "start": 74.6,
+     "text": "approved"
+    },
+    {
+     "end": 75.75,
+     "start": 75.55,
+     "text": "."
+    },
+    {
+     "end": 77.762,
+     "start": 75.95,
+     "text": "request-value-and-refund-routing"
+    },
+    {
+     "end": 78.425,
+     "start": 77.762,
+     "text": "requires"
+    },
+    {
+     "end": 78.588,
+     "start": 78.425,
+     "text": "the"
+    },
+    {
+     "end": 79.775,
+     "start": 78.588,
+     "text": "operation-specific"
+    },
+    {
+     "end": 80.475,
+     "start": 79.775,
+     "text": "value-routing"
+    },
+    {
+     "end": 81.525,
+     "start": 80.475,
+     "text": "repair"
+    },
+    {
+     "end": 81.725,
+     "start": 81.525,
+     "text": "."
+    },
+    {
+     "end": 82.037,
+     "start": 81.925,
+     "text": "The"
+    },
+    {
+     "end": 82.488,
+     "start": 82.037,
+     "text": "rows"
+    },
+    {
+     "end": 82.787,
+     "start": 82.488,
+     "text": "move"
+    },
+    {
+     "end": 83.262,
+     "start": 82.787,
+     "text": "only"
+    },
+    {
+     "end": 83.537,
+     "start": 83.262,
+     "text": "after"
+    },
+    {
+     "end": 83.625,
+     "start": 83.537,
+     "text": "the"
+    },
+    {
+     "end": 84.2,
+     "start": 83.625,
+     "text": "required"
+    },
+    {
+     "end": 85.075,
+     "start": 84.2,
+     "text": "implementation"
+    },
+    {
+     "end": 85.2,
+     "start": 85.075,
+     "text": "and"
+    },
+    {
+     "end": 85.85,
+     "start": 85.2,
+     "text": "execution"
+    },
+    {
+     "end": 86.412,
+     "start": 85.85,
+     "text": "evidence"
+    },
+    {
+     "end": 86.575,
+     "start": 86.412,
+     "text": "is"
+    },
+    {
+     "end": 87.725,
+     "start": 86.575,
+     "text": "accepted"
+    },
+    {
+     "end": 87.95,
+     "start": 87.725,
+     "text": "."
+    },
+    {
+     "end": 89.137,
+     "start": 88.15,
+     "text": "Resolved-by-ruling"
+    },
+    {
+     "end": 89.175,
+     "start": 89.137,
+     "text": "("
+    },
+    {
+     "end": 90.55,
+     "start": 89.175,
+     "text": "historical-owner-change"
+    },
+    {
+     "end": 90.688,
+     "start": 90.55,
+     "text": ":"
+    },
+    {
+     "end": 90.812,
+     "start": 90.688,
+     "text": "a"
+    },
+    {
+     "end": 91.262,
+     "start": 90.812,
+     "text": "ruling"
+    },
+    {
+     "end": 91.637,
+     "start": 91.262,
+     "text": "settled"
+    },
+    {
+     "end": 91.725,
+     "start": 91.637,
+     "text": "the"
+    },
+    {
+     "end": 92.05,
+     "start": 91.725,
+     "text": "row's"
+    },
+    {
+     "end": 93.05,
+     "start": 92.05,
+     "text": "question"
+    },
+    {
+     "end": 93.25,
+     "start": 93.05,
+     "text": ";"
+    },
+    {
+     "end": 93.575,
+     "start": 93.45,
+     "text": "the"
+    },
+    {
+     "end": 94.375,
+     "start": 93.575,
+     "text": "observation"
+    },
+    {
+     "end": 94.525,
+     "start": 94.375,
+     "text": "is"
+    },
+    {
+     "end": 95.188,
+     "start": 94.525,
+     "text": "retained"
+    },
+    {
+     "end": 95.4,
+     "start": 95.188,
+     "text": "as"
+    },
+    {
+     "end": 95.938,
+     "start": 95.4,
+     "text": "defect"
+    },
+    {
+     "end": 96.425,
+     "start": 95.938,
+     "text": "evidence"
+    },
+    {
+     "end": 96.512,
+     "start": 96.425,
+     "text": "of"
+    },
+    {
+     "end": 96.65,
+     "start": 96.512,
+     "text": "the"
+    },
+    {
+     "end": 97.35,
+     "start": 96.65,
+     "text": "outstanding"
+    },
+    {
+     "end": 97.688,
+     "start": 97.35,
+     "text": "owner"
+    },
+    {
+     "end": 98.213,
+     "start": 97.688,
+     "text": "gate"
+    },
+    {
+     "end": 98.3,
+     "start": 98.213,
+     "text": "—"
+    },
+    {
+     "end": 98.537,
+     "start": 98.3,
+     "text": "never"
+    },
+    {
+     "end": 98.637,
+     "start": 98.537,
+     "text": "a"
+    },
+    {
+     "end": 99.175,
+     "start": 98.637,
+     "text": "pass"
+    },
+    {
+     "end": 99.262,
+     "start": 99.175,
+     "text": ","
+    },
+    {
+     "end": 99.562,
+     "start": 99.262,
+     "text": "never"
+    },
+    {
+     "end": 99.675,
+     "start": 99.562,
+     "text": "an"
+    },
+    {
+     "end": 100.562,
+     "start": 99.675,
+     "text": "owner-semantics"
+    },
+    {
+     "end": 101.675,
+     "start": 100.562,
+     "text": "claim"
+    },
+    {
+     "end": 101.9,
+     "start": 101.675,
+     "text": "."
+    },
+    {
+     "end": 102.9,
+     "start": 102.125,
+     "text": "Superseded"
+    },
+    {
+     "end": 102.95,
+     "start": 102.9,
+     "text": "("
+    },
+    {
+     "end": 104.525,
+     "start": 102.95,
+     "text": "historical-owner-signed-sweep"
+    },
+    {
+     "end": 104.6,
+     "start": 104.525,
+     "text": ","
+    },
+    {
+     "end": 106.075,
+     "start": 104.6,
+     "text": "historical-non-owner-sweep"
+    },
+    {
+     "end": 106.15,
+     "start": 106.075,
+     "text": ","
+    },
+    {
+     "end": 108.65,
+     "start": 106.15,
+     "text": "historical-registry-termination"
+    },
+    {
+     "end": 108.85,
+     "start": 108.65,
+     "text": ":"
+    },
+    {
+     "end": 109.175,
+     "start": 109.05,
+     "text": "the"
+    },
+    {
+     "end": 110.075,
+     "start": 109.175,
+     "text": "expectation"
+    },
+    {
+     "end": 110.55,
+     "start": 110.075,
+     "text": "asserted"
+    },
+    {
+     "end": 111.25,
+     "start": 110.55,
+     "text": "authority"
+    },
+    {
+     "end": 111.363,
+     "start": 111.25,
+     "text": ","
+    },
+    {
+     "end": 111.5,
+     "start": 111.363,
+     "text": "a"
+    },
+    {
+     "end": 111.963,
+     "start": 111.5,
+     "text": "sweep"
+    },
+    {
+     "end": 112.1,
+     "start": 111.963,
+     "text": "or"
+    },
+    {
+     "end": 112.2,
+     "start": 112.1,
+     "text": "a"
+    },
+    {
+     "end": 112.925,
+     "start": 112.2,
+     "text": "termination"
+    },
+    {
+     "end": 113.062,
+     "start": 112.925,
+     "text": "that"
+    },
+    {
+     "end": 113.25,
+     "start": 113.062,
+     "text": "does"
+    },
+    {
+     "end": 113.475,
+     "start": 113.25,
+     "text": "not"
+    },
+    {
+     "end": 113.925,
+     "start": 113.475,
+     "text": "exist"
+    },
+    {
+     "end": 114.025,
+     "start": 113.925,
+     "text": "at"
+    },
+    {
+     "end": 114.225,
+     "start": 114.025,
+     "text": "this"
+    },
+    {
+     "end": 115.225,
+     "start": 114.225,
+     "text": "commit"
+    },
+    {
+     "end": 115.45,
+     "start": 115.225,
+     "text": ";"
+    },
+    {
+     "end": 116.375,
+     "start": 115.65,
+     "text": "observations"
+    },
+    {
+     "end": 116.475,
+     "start": 116.375,
+     "text": "are"
+    },
+    {
+     "end": 117.1,
+     "start": 116.475,
+     "text": "preserved"
+    },
+    {
+     "end": 117.188,
+     "start": 117.1,
+     "text": ","
+    },
+    {
+     "end": 117.675,
+     "start": 117.188,
+     "text": "claims"
+    },
+    {
+     "end": 117.825,
+     "start": 117.675,
+     "text": "are"
+    },
+    {
+     "end": 118.5,
+     "start": 117.825,
+     "text": "withdrawn"
+    },
+    {
+     "end": 118.575,
+     "start": 118.5,
+     "text": ","
+    },
+    {
+     "end": 118.7,
+     "start": 118.575,
+     "text": "and"
+    },
+    {
+     "end": 118.975,
+     "start": 118.7,
+     "text": "no"
+    },
+    {
+     "end": 119.65,
+     "start": 118.975,
+     "text": "execution"
+    },
+    {
+     "end": 119.975,
+     "start": 119.65,
+     "text": "credit"
+    },
+    {
+     "end": 121.175,
+     "start": 119.975,
+     "text": "attaches"
+    },
+    {
+     "end": 121.375,
+     "start": 121.175,
+     "text": "."
+    },
+    {
+     "end": 122.137,
+     "start": 121.575,
+     "text": "Retired"
+    },
+    {
+     "end": 122.175,
+     "start": 122.137,
+     "text": "("
+    },
+    {
+     "end": 123.925,
+     "start": 122.175,
+     "text": "retired-stake-hook-with-withdrawal"
+    },
+    {
+     "end": 124.025,
+     "start": 123.925,
+     "text": ","
+    },
+    {
+     "end": 126.325,
+     "start": 124.025,
+     "text": "retired-stake-hook-without-withdrawal"
+    },
+    {
+     "end": 126.525,
+     "start": 126.325,
+     "text": ":"
+    },
+    {
+     "end": 126.8,
+     "start": 126.7,
+     "text": "the"
+    },
+    {
+     "end": 127.287,
+     "start": 126.8,
+     "text": "registry"
+    },
+    {
+     "end": 127.8,
+     "start": 127.287,
+     "text": "interface"
+    },
+    {
+     "end": 128.012,
+     "start": 127.8,
+     "text": "has"
+    },
+    {
+     "end": 128.25,
+     "start": 128.012,
+     "text": "no"
+    },
+    {
+     "end": 128.875,
+     "start": 128.25,
+     "text": "stake_script"
+    },
+    {
+     "end": 129.2,
+     "start": 128.875,
+     "text": "hook"
+    },
+    {
+     "end": 129.3,
+     "start": 129.2,
+     "text": ","
+    },
+    {
+     "end": 129.475,
+     "start": 129.3,
+     "text": "so"
+    },
+    {
+     "end": 129.825,
+     "start": 129.475,
+     "text": "nothing"
+    },
+    {
+     "end": 130.15,
+     "start": 129.825,
+     "text": "runs"
+    },
+    {
+     "end": 130.925,
+     "start": 130.15,
+     "text": "them"
+    },
+    {
+     "end": 131.125,
+     "start": 130.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/the-issue-70-generic-rows-06": {
+   "audio_sha256": "dc86e4258b87a08da7a2dd5d3c32d06859938c60ca5365ee9133e9fd0179baf7",
+   "characters": 613,
+   "cost": 0.00060687,
+   "duration": 52.025,
+   "index": 6,
    "key": "3a4b12dadeac1a765b9f10996a86743968aa38f4063da56dcc5bf79be57509d6",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -73804,343 +74459,343 @@
      "text": "and"
     },
     {
-     "end": 28.375,
+     "end": 28.35,
      "start": 27.275,
      "text": "measurements"
     },
     {
-     "end": 28.55,
-     "start": 28.375,
+     "end": 28.525,
+     "start": 28.35,
      "text": ")"
     },
     {
-     "end": 28.6,
-     "start": 28.55,
+     "end": 28.575,
+     "start": 28.525,
      "text": "."
     },
     {
-     "end": 30.513,
-     "start": 28.825,
+     "end": 30.487,
+     "start": 28.8,
      "text": "historical-permissionless-fold's"
     },
     {
-     "end": 30.85,
-     "start": 30.513,
+     "end": 30.825,
+     "start": 30.487,
      "text": "first"
     },
     {
-     "end": 31.45,
-     "start": 30.85,
+     "end": 31.425,
+     "start": 30.825,
      "text": "post-repair"
     },
     {
-     "end": 32.25,
-     "start": 31.45,
+     "end": 32.225,
+     "start": 31.425,
      "text": "execution"
     },
     {
-     "end": 32.463,
-     "start": 32.25,
+     "end": 32.438,
+     "start": 32.225,
      "text": "was"
     },
     {
-     "end": 32.638,
-     "start": 32.463,
+     "end": 32.612,
+     "start": 32.438,
      "text": "at"
     },
     {
-     "end": 33.037,
-     "start": 32.638,
+     "end": 33.013,
+     "start": 32.612,
      "text": "clean"
     },
     {
-     "end": 33.287,
-     "start": 33.037,
+     "end": 33.263,
+     "start": 33.013,
      "text": "tip"
     },
     {
-     "end": 33.662,
-     "start": 33.287,
+     "end": 33.638,
+     "start": 33.263,
      "text": "7"
     },
     {
-     "end": 33.925,
-     "start": 33.662,
+     "end": 33.9,
+     "start": 33.638,
      "text": "4"
     },
     {
-     "end": 34.2,
-     "start": 33.925,
+     "end": 34.175,
+     "start": 33.9,
      "text": "8"
     },
     {
-     "end": 34.65,
-     "start": 34.2,
+     "end": 34.625,
+     "start": 34.175,
      "text": "c"
     },
     {
-     "end": 34.875,
-     "start": 34.65,
+     "end": 34.85,
+     "start": 34.625,
      "text": "4"
     },
     {
-     "end": 34.987,
-     "start": 34.875,
+     "end": 34.963,
+     "start": 34.85,
      "text": "a"
     },
     {
-     "end": 35.475,
-     "start": 34.987,
+     "end": 35.45,
+     "start": 34.963,
      "text": "9"
     },
     {
-     "end": 35.55,
-     "start": 35.475,
+     "end": 35.525,
+     "start": 35.45,
      "text": "("
     },
     {
-     "end": 36.013,
-     "start": 35.55,
+     "end": 35.987,
+     "start": 35.525,
      "text": "txid"
     },
     {
-     "end": 36.3,
-     "start": 36.013,
+     "end": 36.275,
+     "start": 35.987,
      "text": "f"
     },
     {
-     "end": 36.463,
-     "start": 36.3,
+     "end": 36.438,
+     "start": 36.275,
      "text": "e"
     },
     {
-     "end": 36.838,
-     "start": 36.463,
+     "end": 36.812,
+     "start": 36.438,
      "text": "5"
     },
     {
-     "end": 37.162,
-     "start": 36.838,
+     "end": 37.138,
+     "start": 36.812,
      "text": "4"
     },
     {
-     "end": 37.45,
-     "start": 37.162,
+     "end": 37.425,
+     "start": 37.138,
      "text": "d"
     },
     {
-     "end": 37.825,
-     "start": 37.45,
+     "end": 37.8,
+     "start": 37.425,
      "text": "3"
     },
     {
-     "end": 37.95,
-     "start": 37.825,
+     "end": 37.925,
+     "start": 37.8,
      "text": "a"
     },
     {
-     "end": 39.05,
-     "start": 37.95,
+     "end": 39.025,
+     "start": 37.925,
      "text": "6"
     },
     {
-     "end": 39.325,
-     "start": 39.05,
+     "end": 39.3,
+     "start": 39.025,
      "text": "…"
+    },
+    {
+     "end": 39.325,
+     "start": 39.3,
+     "text": ")"
     },
     {
      "end": 39.35,
      "start": 39.325,
-     "text": ")"
-    },
-    {
-     "end": 39.375,
-     "start": 39.35,
      "text": ";"
     },
     {
-     "end": 39.737,
-     "start": 39.575,
+     "end": 39.713,
+     "start": 39.55,
      "text": "its"
     },
     {
-     "end": 40.2,
-     "start": 39.737,
+     "end": 40.175,
+     "start": 39.713,
      "text": "ship-run"
     },
     {
-     "end": 40.862,
-     "start": 40.2,
+     "end": 40.838,
+     "start": 40.175,
      "text": "repetition"
     },
     {
-     "end": 41.037,
-     "start": 40.862,
+     "end": 41.013,
+     "start": 40.838,
      "text": "at"
     },
     {
-     "end": 41.3,
-     "start": 41.037,
+     "end": 41.275,
+     "start": 41.013,
      "text": "1"
     },
     {
-     "end": 41.475,
-     "start": 41.3,
+     "end": 41.45,
+     "start": 41.275,
      "text": "d"
     },
     {
-     "end": 41.862,
-     "start": 41.475,
+     "end": 41.838,
+     "start": 41.45,
      "text": "9"
     },
     {
-     "end": 42.125,
-     "start": 41.862,
+     "end": 42.1,
+     "start": 41.838,
      "text": "8"
     },
     {
-     "end": 42.338,
-     "start": 42.125,
+     "end": 42.312,
+     "start": 42.1,
      "text": "d"
     },
     {
-     "end": 42.713,
-     "start": 42.338,
+     "end": 42.688,
+     "start": 42.312,
      "text": "5"
     },
     {
-     "end": 43.225,
-     "start": 42.713,
+     "end": 43.2,
+     "start": 42.688,
      "text": "1"
     },
     {
-     "end": 43.438,
-     "start": 43.225,
+     "end": 43.412,
+     "start": 43.2,
      "text": "is"
     },
     {
-     "end": 43.75,
-     "start": 43.438,
+     "end": 43.725,
+     "start": 43.412,
      "text": "4"
     },
     {
-     "end": 44.013,
-     "start": 43.75,
+     "end": 43.987,
+     "start": 43.725,
      "text": "1"
     },
     {
-     "end": 44.263,
-     "start": 44.013,
+     "end": 44.237,
+     "start": 43.987,
      "text": "4"
     },
     {
-     "end": 44.65,
-     "start": 44.263,
+     "end": 44.625,
+     "start": 44.237,
      "text": "2"
     },
     {
-     "end": 44.888,
-     "start": 44.65,
+     "end": 44.862,
+     "start": 44.625,
      "text": "f"
     },
     {
-     "end": 45.25,
-     "start": 44.888,
+     "end": 45.225,
+     "start": 44.862,
      "text": "7"
     },
     {
-     "end": 45.438,
-     "start": 45.25,
+     "end": 45.412,
+     "start": 45.225,
      "text": "d"
     },
     {
-     "end": 46.45,
-     "start": 45.438,
+     "end": 46.425,
+     "start": 45.412,
      "text": "6"
     },
     {
-     "end": 46.675,
-     "start": 46.45,
+     "end": 46.65,
+     "start": 46.425,
      "text": "…"
     },
     {
-     "end": 46.725,
-     "start": 46.675,
+     "end": 46.7,
+     "start": 46.65,
      "text": "."
     },
     {
-     "end": 47.037,
-     "start": 46.9,
+     "end": 47.013,
+     "start": 46.875,
      "text": "The"
     },
     {
-     "end": 47.65,
-     "start": 47.037,
+     "end": 47.625,
+     "start": 47.013,
      "text": "overwritten"
     },
     {
-     "end": 48.175,
-     "start": 47.65,
+     "end": 48.15,
+     "start": 47.625,
      "text": "pre-repair"
     },
     {
-     "end": 48.763,
-     "start": 48.175,
+     "end": 48.737,
+     "start": 48.15,
      "text": "receipts"
     },
     {
-     "end": 48.9,
-     "start": 48.763,
+     "end": 48.875,
+     "start": 48.737,
      "text": "are"
     },
     {
-     "end": 49.45,
-     "start": 48.9,
+     "end": 49.425,
+     "start": 48.875,
      "text": "retained"
     },
     {
-     "end": 49.888,
-     "start": 49.45,
+     "end": 49.862,
+     "start": 49.425,
      "text": "only"
     },
     {
-     "end": 50.062,
-     "start": 49.888,
+     "end": 50.037,
+     "start": 49.862,
      "text": "as"
     },
     {
-     "end": 50.537,
-     "start": 50.062,
+     "end": 50.513,
+     "start": 50.037,
      "text": "evidence"
     },
     {
-     "end": 50.625,
-     "start": 50.537,
+     "end": 50.6,
+     "start": 50.513,
      "text": "of"
     },
     {
-     "end": 50.875,
-     "start": 50.625,
+     "end": 50.85,
+     "start": 50.6,
      "text": "that"
     },
     {
-     "end": 51.85,
-     "start": 50.875,
+     "end": 51.825,
+     "start": 50.85,
      "text": "defect"
     },
     {
-     "end": 52.05,
-     "start": 51.85,
+     "end": 52.025,
+     "start": 51.825,
      "text": "."
     }
    ]
   },
-  "docs-consumer-conformance/the-issue-70-generic-rows-06": {
-   "audio_sha256": "f85a41dd2526e9afbd5df5010d03384948d6605b8c9385d78a4aedde5b91301f",
+  "docs-consumer-conformance/the-issue-70-generic-rows-07": {
+   "audio_sha256": "8c77aaa8588fa40b9439a4c5da18cee4cfce542c0d0c73578db4725b0467202b",
    "characters": 2777,
-   "cost": 0.00172174,
+   "cost": 0.0027492299999999996,
    "duration": 202.663,
-   "index": 6,
+   "index": 7,
    "key": "ea12685baf54e969e6c89819c3f7c3548153592e494016f31b28904ec0414fd8",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -76465,12 +77120,12 @@
     }
    ]
   },
-  "docs-consumer-conformance/the-issue-70-generic-rows-07": {
-   "audio_sha256": "1a8650c486259b928f31ccb47492862f7ec9c85dd71c5870844512955c538f94",
+  "docs-consumer-conformance/the-issue-70-generic-rows-08": {
+   "audio_sha256": "0d468834bea02eb5a463e38f392e3d105393a3d58ff3b3eb6670f49c3e24d500",
    "characters": 1138,
-   "cost": 0.00070556,
+   "cost": 0.00112662,
    "duration": 77.075,
-   "index": 7,
+   "index": 8,
    "key": "1a6aea90b12bbd22d048acbb6ae8e355ca53da81f7aab67d49731c0a5cd217e2",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -77440,12 +78095,12 @@
     }
    ]
   },
-  "docs-consumer-conformance/the-issue-70-generic-rows-08": {
-   "audio_sha256": "1656549cc6417ff3745235a9a24aedec96955aeccc4bdb489ea5f9e5f203887c",
+  "docs-consumer-conformance/the-issue-70-generic-rows-09": {
+   "audio_sha256": "794d2bec2f2d6a07892fff41902c44c7efcf9c29827aef1e101430ac6e5033ee",
    "characters": 1121,
-   "cost": 0.0006950200000000001,
+   "cost": 0.00110979,
    "duration": 84.75,
-   "index": 8,
+   "index": 9,
    "key": "a8f1243118d4a6ee8295ddc0a5819080668ae673c9bd0e3c817ebacf562f2b29",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -78570,12 +79225,12 @@
     }
    ]
   },
-  "docs-consumer-conformance/the-issue-70-generic-rows-09": {
-   "audio_sha256": "2f3c2ee379618727c7253b992692738377c4b53e67583bb3282078fd69a7fa72",
+  "docs-consumer-conformance/the-issue-70-generic-rows-10": {
+   "audio_sha256": "ca303093ec094f38397314d80d580eb3e74ea5229ea5f0a450ef7cf7bd2c9a2c",
    "characters": 820,
-   "cost": 0.0005084,
+   "cost": 0.0008117999999999999,
    "duration": 58.425,
-   "index": 9,
+   "index": 10,
    "key": "8015e40d58e344c3ca76852aee5499e29c574d2f7aca51778d7ca1f9f0f584e9",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -79145,12 +79800,12 @@
     }
    ]
   },
-  "docs-consumer-conformance/the-issue-70-generic-rows-10": {
-   "audio_sha256": "7c06de145496f2105b2686472eecb2b3f8d222d76130f6db5ad310170874d660",
+  "docs-consumer-conformance/the-issue-70-generic-rows-11": {
+   "audio_sha256": "9618e668db3833211682ff64e37eed464826fa975aa3f04ffa09c82c12975b31",
    "characters": 1309,
-   "cost": 0.0008115800000000001,
+   "cost": 0.00129591,
    "duration": 90.8,
-   "index": 10,
+   "index": 11,
    "key": "1acb6aea2d318b1766ddc0903483049720d547b4f226899a4695aad632643a57",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -80180,12 +80835,12 @@
     }
    ]
   },
-  "docs-consumer-conformance/the-issue-70-generic-rows-11": {
-   "audio_sha256": "ac363d2b144c6bafdc86fc535581468eb78aaffdf1f3da5640b000be195d08a8",
+  "docs-consumer-conformance/the-issue-70-generic-rows-12": {
+   "audio_sha256": "e242da316bf87bd23299a61d14dfc19ac1ff8f626eee04b9620178fc03247799",
    "characters": 275,
-   "cost": 0.0001705,
+   "cost": 0.00027225,
    "duration": 17.325,
-   "index": 11,
+   "index": 12,
    "key": "8e7e762c79b5efe1282a435f983b6f2b0b1c8e04d3b0e3e9bc4b64c810430e66",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,

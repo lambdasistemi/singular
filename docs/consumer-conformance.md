@@ -352,6 +352,15 @@ fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructo
 with, kept unmet by operator ruling 2026-10-02 ("Narrow #287"); follow-ups: fold-against-superseded-root [lambdasistemi/singular#346](https://github.com/lambdasistemi/singular/issues/346),
 surplus-fold-actions [lambdasistemi/singular#345](https://github.com/lambdasistemi/singular/issues/345), wrong-redeemer-constructor-index [lambdasistemi/singular#347](https://github.com/lambdasistemi/singular/issues/347).
 The session ends non-zero while any row is unmet; it is never a pass.
+
+> Dated note, 2026-10-13 (decision B, ticket 494 slice three, ahead of validators 495): the dedicated
+> in-window row is now a lawful lifecycle-mismatch rejection (a second `insertActive` for a key already
+> Active, with bound mismatch evidence, both sides accepting, owner refunded) and stays green; the generic
+> standing row now books a foldable `insertActive` for a fresh key with expiry evidence in-window, refused
+> by the model for `reject-not-expired` and accepted by the chain (tampered refunds refused by both for
+different reasons), published as unmet with a tripwire for `lambdasistemi/singular#495` (the validators
+> ticket that must flip the row by refusing the untampered in-window reject). Ticket 320's early-rejection
+> history above is not edited.
 **Held** (`held-q002`; empty-fold, request-value-and-refund-routing): executed, with the consumer
 requirements still unmet. empty-fold recorded
 a conflict with the pre-revision

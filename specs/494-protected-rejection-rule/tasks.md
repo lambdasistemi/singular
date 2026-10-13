@@ -66,13 +66,13 @@ Terminal condition as slice one. The in-window row is expected red at this head 
 
 ## Slice three: the in-window rows
 
-- [ ] `in-window-rows-per-ruling` — the dedicated early-rejection row and the generic session's standing
+- [x] `in-window-rows-per-ruling` — the dedicated early-rejection row and the generic session's standing
   unmet row, with their workflow assertions, say what decision B directs: the dedicated row becomes
   a lawful mismatch rejection that both sides accept inside the windows; the unmet row books a
   foldable `insertActive` request for a key not yet registered and records its three steps as the
   divergences they now are, so that it stops matching the day the chain refuses.
   (unmet-stays-unmet)
-- [ ] `consumer-record-updated` — the consumer conformance record, the book and the evidence page
+- [x] `consumer-record-updated` — the consumer conformance record, the book and the evidence page
   say the same, including the history of ticket 320's early rejection, without editing the history
   itself. (unmet-stays-unmet)
 

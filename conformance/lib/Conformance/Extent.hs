@@ -25,7 +25,7 @@ module Conformance.Extent
     , extentCount
     ) where
 
-import Conformance.Receipt (Outcome (..), Receipt (..))
+import Conformance.Receipt (Outcome (..), Receipt (..), Verdict (..))
 import Conformance.Replay (acceptingControlGaps)
 import Control.Applicative ((<|>))
 import Control.Monad (foldM)
@@ -185,6 +185,16 @@ extentProblems table entries receipts =
         <> acceptingControlGaps entries
   where
     indexed = refusals entries
+    -- Decision B binds the protected allowance to the published unmet row: the class-A
+    -- difference is accepted only while the in-window rejection row is published as unmet.
+    -- A row marked met, or missing, fails the same difference (tripwire for ticket 495).
+    unmetPublished =
+        any
+            ( \r ->
+                receiptRow r == "reject-before-deadline-consumer-requirement"
+                    && receiptVerdict r == UnmetByRuling
+            )
+            receipts
     txids = mapMaybe (textOf "rejectedTxId") indexed
     entryOf txid = find ((== Just txid) . textOf "rejectedTxId") indexed
     recorded =
@@ -229,8 +239,10 @@ extentProblems table entries receipts =
                         Just "uncompared"
                             | namesCause e -> []
                             | otherwise -> [name <> " is uncompared without a named cause"]
-                        Just "differs" ->
-                            [name <> ": the replay's reason differs from the model's"]
+                        Just "differs"
+                            | isProtectedDiffers unmetPublished e -> []
+                            | otherwise ->
+                                [name <> ": the replay's reason differs from the model's"]
                         other ->
                             [ name
                                 <> " is class A with no comparison ("
@@ -274,6 +286,33 @@ refusals = filter ((== Just "refusal") . textOf "kind")
 
 modelReasonOf :: Value -> Maybe Text
 modelReasonOf = textOf "modelReason"
+
+{- | The protected in-window divergences decision B records, never a pass: a foldable
+`insertActive` rejected in-window with expiry evidence, refused by the model for
+`reject-not-expired` while the traced replay admits `deposit-returned` for the chain.
+Bound to the published unmet row (decision B): accepted only while
+`reject-before-deadline-consumer-requirement` is published as unmet; a row marked met,
+or missing, fails the same difference (tripwire for ticket 495).
+Removed in the validators ticket's pull request (issue `lambdasistemi/singular#495`),
+when the chain refuses the untampered in-window reject.
+Owner: the extent check; lifetime: one check run; concurrency: single-threaded.
+Explicit inputs: whether the unmet row is published, and the replay index entry;
+no hidden environment read, no thread.
+-}
+isProtectedDiffers :: Bool -> Value -> Bool
+isProtectedDiffers unmetPublished e =
+    unmetPublished
+        && textOf "row" e == Just "reject-before-deadline-consumer-requirement"
+        && modelReasonOf e == Just "reject-not-expired"
+        && "deposit-returned" `elem` admittedTraces e
+  where
+    admittedTraces entry = case jsonField "classes" entry of
+        Just (Array classes) ->
+            [ t
+            | c <- toList classes
+            , Just t <- [jsonText "admitted" c]
+            ]
+        _ -> []
 
 textOf :: Key.Key -> Value -> Maybe Text
 textOf = jsonText

@@ -704,6 +704,20 @@ stepsComplete path receipt steps
     | null steps = Left (path <> ": live receipt has no steps")
     | otherwise = do
         mapM_ checkStep steps
+        -- A lawful receipt may not record a disagreement: agreement is what its
+        -- verdict claims. An unmet row records its divergences; a lawful row meeting
+        -- one fails here, so recording instead of throwing in the runner does not
+        -- weaken the suite (decision B tripwire: the day the chain refuses the
+        -- untampered in-window reject, the unmet row's expected divergences stop
+        -- matching and the lawful rows still require agreement).
+        case receiptVerdict receipt of
+            AgreesWithModel
+                | not (all isAgrees steps) ->
+                    Left
+                        ( path
+                            <> ": lawful receipt records a disagreement with the model"
+                        )
+            _ -> Right ()
         let landed =
                 [ txid
                 | step <- steps
@@ -720,6 +734,7 @@ stepsComplete path receipt steps
   where
     at name (Object fields) = KM.lookup name fields
     at _ _ = Nothing
+    isAgrees step = at "comparison" step == Just (String "agrees")
     failure reason = Left (path <> ": invalid live step: " <> reason)
     checkStep step = case at "batch" step of
         Just _ -> batchRecordProblem path step
@@ -1484,7 +1499,22 @@ batchRecordProblem path step = do
 batchSteps :: FilePath -> Receipt -> [Value] -> Either String Receipt
 batchSteps path receipt steps
     | null steps = Left (path <> ": batch steps name no batch")
-    | otherwise = receipt <$ mapM_ (batchRecordProblem path) steps
+    | otherwise = do
+        mapM_ (batchRecordProblem path) steps
+        -- A lawful receipt may not record a disagreement, batch or edge.
+        case receiptVerdict receipt of
+            AgreesWithModel
+                | not (all isAgrees steps) ->
+                    Left
+                        ( path
+                            <> ": lawful receipt records a disagreement with the model"
+                        )
+            _ -> Right ()
+        Right receipt
+  where
+    isAgrees step = case step of
+        Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+        _ -> False
 
 {- | Why a row stands @unmet-by-ruling@: the two meanings the operator's
 rulings give that one verdict, each with the issue that would close it.

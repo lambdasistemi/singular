@@ -470,10 +470,12 @@ jobs:
           cp "$f" "$STORY_RECEIPTS/"
       # reject-inside-processing-and-retraction-windows (#320): a folder rejects a pending request before its owner's
       # retraction deadline. Two insertion requests are booked together in a
-      # registry of their own; the first is rejected inside its processing
-      # window, the second inside its owner's retraction window. In each window
+      # registry of their own and each is registered Active in this run; a second request
+      # for the same key is then rejected inside its processing window (first key),
+      # the second inside its owner's retraction window, each with bound lifecycle
+      # mismatch evidence. In each window
       # a reject refunding the owner one lovelace short and one refunding
-      # another key are refused by the chain and by the model, and the
+      # another key are refused by the chain and by the model for the refund reason, and the
       # untampered reject is accepted by both, refunding the owner the deposit
       # and leaving the registry state as it was. Each refusal is attributed by
       # the state script's hash, and the reason the traced replay of the
@@ -548,11 +550,12 @@ jobs:
             and .verdict == "agrees-with-model"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
-            and (.steps | length) == 6
-            and all(.steps[]; .edge == "insertActive" and .exit == "reject")
-            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address",null])
-            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
-            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
+            and (.steps | length) == 8
+            and all(.steps[]; .edge == "insertActive")
+            and ([.steps[].exit] == ["insertActive","insertActive","reject","reject","reject","reject","reject","reject"])
+            and ([.steps[].tamper] == [null,null,"short-by-one","other-address",null,"short-by-one","other-address",null])
+            and ([.steps[].model.outcome] == ["accepted","accepted","refused","refused","accepted","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["accepted","accepted","refused","refused","accepted","refused","refused","accepted"])
             and all(.steps[]; .comparison == "agrees")
             and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
             and all(.steps[] | select(.model.outcome == "refused");
@@ -561,10 +564,12 @@ jobs:
               and (.chain.refusal.hashes | index($state) != null)
               and (.chain.refusal.scripts | index("state") != null))
             and ([.steps[].registry] | unique | length) == 1
-            and ([.steps[0,1,2].request] | unique | length) == 1
-            and ([.steps[3,4,5].request] | unique | length) == 1
-            and .steps[0].request != .steps[3].request
-            and (.transactions | length) == 2
+            and ([.steps[0,2,3,4].request.key] | unique | length) == 1
+            and ([.steps[1,5,6,7].request.key] | unique | length) == 1
+            and .steps[0].request.key != .steps[1].request.key
+            and .steps[0].request.key == .steps[2].request.key
+            and .steps[1].request.key == .steps[5].request.key
+            and (.transactions | length) == 4
           ' "$f" > /dev/null || { echo 'FAIL: reject-inside-processing-and-retraction-windows early rejection evidence moved'; exit 1; }
           # Each reject is placed in a named window; the interpreter refuses to
           # submit outside it. The run log states each placement with the

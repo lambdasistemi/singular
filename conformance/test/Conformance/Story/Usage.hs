@@ -94,13 +94,13 @@ spec = do
             Live.validateLive unplacedSubmit `shouldSatisfy` isLeft
             Live.validateLive unplacedTamper `shouldSatisfy` isLeft
     it
-        "The early rejection chapter rejects three times in each window and compares all six"
+        "The early rejection chapter folds twice and rejects three times in each window and compares all eight"
         $ do
             let program =
                     EarlyReject.story (Live.Context "early rejection" "holder wallet")
                 rendered = Live.renderLive program
             Live.validateLive program `shouldBe` Right ()
-            occurrences "Compare **" rendered `shouldBe` 6
+            occurrences "Compare **" rendered `shouldBe` 8
             occurrences (Live.placementReading Live.InProcessingWindow) rendered
                 `shouldBe` 3
             occurrences (Live.placementReading Live.InRetractionWindow) rendered
@@ -206,10 +206,10 @@ spec = do
                 , "surplus-fold-actions, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345)"
                 , "empty-fold, an empty fold, with the fold batch over no request"
                 , "request-value-and-refund-routing, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays"
-                , "reject-before-deadline-consumer-requirement's control, a reject refunding its owner one lovelace short, with the reject batch of that one request"
+                , "reject-before-deadline-consumer-requirement's three batches, each with the reject batch of one foldable insertion"
                 , "that requirement stays unmet by ruling"
-                , "A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model: reject-before-deadline-consumer-requirement's receipt records that disagreement from a devnet run, a known divergence and never a pass (lambdasistemi/singular#361)."
-                , "so their agreement holds for that shape only"
+                , "that split shape no longer diverges as `361` in-window while protected holds"
+                , "so their agreement holds for that shape only; the unmet row's divergences hold for the same shape"
                 , "Whether empty-fold and request-value-and-refund-routing meet the consuming project's requirements remains unresolved; the two rows stay held."
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase
