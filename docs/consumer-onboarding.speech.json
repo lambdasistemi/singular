@@ -113,12 +113,12 @@
       "pause": 400
     },
     {
-      "text": "Demo 1 has two users, Alice and Bob, starting with empty homes. Neither creates the registry or receives its creation files. Joining by state token is delivered: each joins with the state token, its own wallet and a Koios URL, with no shared directory — every command carries the state-token flag and no directory option, and neither actor opens the other's files. Not delivered: joining by reading the registry page generated from the chain, which stays pending under issue #503 with its joining receipts attached. Joining by a copied identity file is superseded. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
+      "text": "Demo 1 has two users, Alice and Bob, starting with empty homes. Neither creates the registry or receives its creation files. Joining by state token is delivered: each joins with the state token, its own wallet and a Koios URL, with no shared directory — every command carries --state-token and no directory option, and neither actor opens the other's files. Joining by reading the registry page generated from the chain is delivered: each reads which registry this is, which release it runs, what its rules are and what it holds, from the token and the packaged release alone, as the registry page describes. Joining by a copied identity file is superseded. Not delivered: a block anchor for the last fold, documentation links checked against a published asset, and the independently derived action identity in the public report. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "a328a527aba4aa8fc3349626233f07c3da6c43f4e6aff8a597703e449b7d6495"
+    "sha256": "f8d4376fb44cbaa617bb34a8049d3a31bc18ab314daa84fcefb5e35dd31ef5be"
   }
 }

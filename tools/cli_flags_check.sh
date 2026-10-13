@@ -266,6 +266,23 @@ while IFS= read -r row; do
       status=1
     }
     for c in "${singular_commands[@]}"; do applies+=("singular $c"); done
+  elif [[ "$cmdcell" == *"all six"* && "$cmdcell" == *"singular"* && "$cmdcell" == *"open-datum"* ]]; then
+    [ "${#singular_commands[@]}" = 6 ] || {
+      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_commands[@]} commands (wanted six)" >&2
+      status=1
+    }
+    [ "${#od_commands[@]}" = 6 ] || {
+      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but open-datum --help names ${#od_commands[@]} commands (wanted six)" >&2
+      status=1
+    }
+    for c in "${singular_commands[@]}"; do applies+=("singular $c"); done
+    for c in "${od_commands[@]}"; do applies+=("open-datum $c"); done
+  elif [[ "$cmdcell" == *"all six"* && "$cmdcell" == *"singular"* ]]; then
+    [ "${#singular_commands[@]}" = 6 ] || {
+      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_commands[@]} commands (wanted six)" >&2
+      status=1
+    }
+    for c in "${singular_commands[@]}"; do applies+=("singular $c"); done
   elif [[ "$cmdcell" == *"all six"* ]]; then
     [ "${#od_commands[@]}" = 6 ] || {
       echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but open-datum --help names ${#od_commands[@]} commands (wanted six)" >&2
