@@ -802,7 +802,7 @@
                   util-linux
                 ];
                 text = ''
-                  base="''${REGISTRY_JOURNEY_ROOT:-''${XDG_CACHE_HOME:-$HOME/.cache}/singular-one-output}"
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${TMPDIR:-/tmp}/singular-one-output}"
                   mkdir -p "$base"
                   work="$(mktemp -d "$base/run.XXXXXX")/one-output"
                   echo "one-output create: receipts in $work"

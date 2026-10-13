@@ -101,6 +101,12 @@ hexkey >"$work/hankb.skey"
 hexkey >"$work/bob.skey"
 
 export TMPDIR="$work"
+# The node binds `$TMPDIR/cardano-e2e/node.sock` (22 characters after TMPDIR)
+# and a Unix socket path over 107 bytes cannot be bound: refuse a too-long
+# work directory with its length before any node starts, so it can never
+# again look like a node that does not start.
+[ "$((${#work} + 22))" -le 100 ] \
+  || setup_fail "the work directory is too long for the node's socket path: $((${#work} + 22)) characters"
 
 # Start one fresh devnet with no state carrier anywhere. Arguments are
 # `--fund` groups for this leg's wallets; the chain is fresh, so no carrier
