@@ -80,6 +80,7 @@ aggregate_if() {
   # One guard: the job carries `if: ${{ !cancelled() }}`, so a cancelled run
   # skips it instead of failing it.
   local file="$1" agg="$2"
+  # shellcheck disable=SC2016 # a GitHub expression, compared literally
   [ "$(yq eval ".jobs.\"$agg\".if" "$file")" = '${{ !cancelled() }}' ] || return 1
 }
 
