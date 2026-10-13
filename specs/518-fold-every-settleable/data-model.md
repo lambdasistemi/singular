@@ -28,7 +28,7 @@ State invariants: the verdict of a request with the same live facts, clock, boun
 |---|---|---|
 | fold transition | the request's output reference; key; edge; the expected leaf after; the root before; the root after | the first root before is the state's root; each root after is the next root before; the last root after is the new state's root |
 | journal line (prepared, for a fold) | the existing line fields; an ordered list of fold transitions, non-empty | a line holding only the earlier scalar key, edge and root fields reads as the list of the one transition they describe |
-| expectation (Session) | the list of fold transitions instead of one key, edge and root pair | non-empty for a fold |
+| expectation (Session) | a second constructor carrying the list of fold transitions, beside the one-key constructor | non-empty for a fold |
 
 At a fold's rolled-back line the restored public root is the first transition's root before.
 
@@ -41,3 +41,12 @@ At a fold's rolled-back line the restored public root is the first transition's 
 | fold receipt | settled requests in order; excluded requests in order; the transaction id; the folder; the root before and after; the validity bound and the post-build decision (they follow the earliest deadline among the settled requests); the capacity bound with its provenance |
 
 The earlier single-request fields (`request`, `key`, `edge`, `liveOutput`, `envelope`, `released`, `deposit`) describe the one settled request of a fold of one. In pull request 1 they stay at the top level of the receipt, unchanged, and the lists (`settled`, `excluded`, the capacity bound with its provenance) are added beside them, so that no existing reader changes while main stays green; the lists repeat the settled request in the shape of the table above. In pull request 2 the readers move to the lists and the top-level duplicates are removed in the same change. Readers of the receipt are listed in the [plan](plan.md).
+
+## Pull request 3 at `e7b55ac9`
+
+| name | fields | validation |
+|---|---|---|
+| settled entry | request; key; edge; owner; kind (insertion or termination); the datum an insertion delivers or the holding a termination releases; the delivery read back; the request's own deadline | one per settled request, in ledger input order |
+| journal line scalars (a fold) | key, expectation and edge of the first transition; root before of the first; root after of the last | they agree with the list; a line whose scalars disagree with its list is not observed |
+
+A fold's prepared line always carries the list, one transition for a fold of one. Roots between transitions come from walking the trie once per prefix of the selection.

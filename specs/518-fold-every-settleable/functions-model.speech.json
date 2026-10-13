@@ -33,6 +33,16 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "a659a76708b0dc2d50a6f9492cab4aa85ff6f960cf2359e52a68ea276db354c7"
-  }
+    "sha256": "52942716ff6fdd6fa2ec5a6d53190dff6801081bec65da70c32d3a106c86b009"
+  },
+  "pull-request-3-at-e7b55ac9": [
+    {
+      "text": "Pull request 3 at e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "New and changed signatures of pull request 3a: a bounded variant of the fold routine, the fold result listing its settled entries, a lookup of a caller's own entry, the transitions of a journal line and their chaining.",
+      "pause": 400
+    }
+  ]
 }
