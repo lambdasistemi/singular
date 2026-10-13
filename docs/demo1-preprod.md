@@ -55,9 +55,9 @@ Nothing in that table is a preprod confirmation, and its pending row is not a cl
 
 ## Funding a create from one output
 
-As Carol, I fund a fresh wallet with one output and run `create`. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.
+As Carol, I fund a fresh wallet with one output and run `create` with no `--seed` flag. The preview tells me my registry's state token and its seed before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.
 
-**Decided, not yet built.** Today a funded wallet needs two ada-only outputs before `create`, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 ([#491](https://github.com/lambdasistemi/singular/issues/491)) replaces this with a chain from one output:
+As Carol, I funded Gina with one 200 tADA output on a fresh devnet with no state carrier anywhere: preview named the token with no refusal, `create` completed, the seed was the first publication's change, every reference is live, and Bob read the registry from the token alone. A 5 tADA one-output wallet is refused before anything is submitted with one `publication-unfunded` verdict in preview and in create (the state publication alone needs 53,698,530 lovelace); a 105 tADA one-output wallet covers the first publication but is refused at a later step with one verdict (the whole run needs at least 162,649,217 lovelace). With a live carrier (Grace, one 200 tADA output after Alice), the seed is her output and the boot is paid from it. An explicit `--seed` names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused with omit-`--seed`. Reference-script outputs left by earlier creates do not count as funding. Built under the decision of 2026-10-12 ([#491](https://github.com/lambdasistemi/singular/issues/491)) as a chain from one output:
 
 ```mermaid
 flowchart TB
@@ -77,7 +77,7 @@ flowchart TB
 - **The identity is still known at preview.** The registry's token name is the SHA-256 of the seed's output reference. That reference is the first publication's transaction id and an output number, and the transaction id is computed from the body before submission.
 - **A half-built create has one way forward.** It always continues from the last transaction's change ([#478](https://github.com/lambdasistemi/singular/issues/478)).
 
-Until [#406](https://github.com/lambdasistemi/singular/issues/406), [#479](https://github.com/lambdasistemi/singular/issues/479) and [#491](https://github.com/lambdasistemi/singular/issues/491) land, the create still refuses a single-output wallet.
+Remaining limits: the wallet is read once and an output spent between steps still fails a later step with the wallet changed; there is no resume of a half-made run; the oversize check is an estimate.
 
 ## What this does not show
 
