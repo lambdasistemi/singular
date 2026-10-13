@@ -95,7 +95,8 @@ deploy args = do
     --    manifest reports the accumulator through 'reportPartial' below.
     --
     txs <- newIORef []
-    ( withRunner $ \wallet caps -> do
+    withRunner
+        ( \wallet caps -> do
             let prov = capReads caps
             refuseIfAlreadyDeployed prov out unbound
             -- A registry boots only by reference: the state validator is
