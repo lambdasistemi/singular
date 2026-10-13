@@ -586,6 +586,20 @@ spec = describe "The ordinary CLI's story and boundary, judged from receipts" $ 
             let report = renderControls results controlsStory
             report `shouldSatisfy` isInfixOf "open-datum fold"
     it
+        "does not hold a token-only fold that settled two requests where one was pending"
+        $ do
+            rs <- honestReceipts controlsStory
+            let doubled =
+                    alter
+                        "run fold by token"
+                        "reader"
+                        (\r -> r{rcCommand = fmap doubleSettled (rcCommand r)})
+                        rs
+            clauseStatuses
+                "folds Alice's pending request"
+                (judge doubled controlsStory)
+                `shouldSatisfy` any isNotHeld
+    it
         "names, per action, the executable that runs it"
         $ do
             rs <- honestReceipts controlsStory
@@ -2611,6 +2625,20 @@ setSettledRequest request v = case v of
                 let updated = Object (KeyMap.insert "request" (String request) first)
                 in  Object
                         (KeyMap.insert "settled" (Array (V.fromList (updated : rest))) o)
+            _ -> v
+        _ -> v
+    _ -> v
+
+{- | Double the settled list's first entry, so a one-pending story's fold
+settles two.
+-}
+doubleSettled :: Value -> Value
+doubleSettled v = case v of
+    Object o -> case KeyMap.lookup "settled" o of
+        Just (Array settled) -> case V.toList settled of
+            (first : _) ->
+                Object
+                    (KeyMap.insert "settled" (Array (V.fromList [first, first])) o)
             _ -> v
         _ -> v
     _ -> v

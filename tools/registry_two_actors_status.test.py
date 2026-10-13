@@ -3455,6 +3455,9 @@ def test_fold_settled_list_binds_request_and_edge(mod, tmp):
     wrong_edge = _json.loads(raw)
     wrong_edge["settled"][0]["edge"] = "updateTerminal"
     cases.append(("settled-edge-contradicts", wrong_edge))
+    doubled = _json.loads(raw)
+    doubled["settled"] = [doubled["settled"][0], dict(doubled["settled"][0])]
+    cases.append(("settled-two-entries", doubled))
     for name, doc in cases:
         Path(tmp, "settled-fold.json").write_text(_json.dumps(doc) + "\n")
         failed, _, _ = journey.run_one_agreement("alice", legs["alice"], receipts)

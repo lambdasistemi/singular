@@ -525,7 +525,7 @@ foldPending = foldPendingBounded foldCapacity
 
 {- | 'foldPending' with the capacity bound as an argument, so a command-run
 test can fold two or three requests without a second production path.
-'Standalone' production folds use 'foldCapacity' (still 1); another bound is
+'Standalone' production folds use 'foldCapacity' (now 9); another bound is
 used only by a test. The selection, the prefix walk, the application context,
 the validity bound and the readback all cover every settled request.
 -}

@@ -251,6 +251,7 @@ spec =
         >> confirmationLifetime
         >> journalTransitionsRow
         >> foldOverSeveralRequestsRow
+        >> settledListSingletonRow
 
 confirmationLifetime :: Spec
 confirmationLifetime = describe "CLI confirmation lifetime" $ do
@@ -1856,6 +1857,11 @@ disagreements invokedKey receipt events =
                         <|> settledSettlement "released" receipt
                    )
           ]
+        , [ "the fold's settled list is not exactly the one pending request"
+          | command == Just "fold"
+          , Just xs <- [elementsAt "settled" receipt]
+          , length xs /= 1
+          ]
         , [ "refusal " <> show k <> " under outcome " <> show outcome
           | Trace _ (What (Refused k _)) <- events
           , not (refusalFits k outcome)
@@ -2480,6 +2486,32 @@ foldObservedEntries rig registry = do
 bound 3 (and 2) over settleable pending insertions. RED with the bound
 seam stubbed (one folds): each row asserting two settles fails by assertion.
 -}
+
+-- A fold receipt's settled list holds exactly the one pending request.
+settledListSingletonRow :: Spec
+settledListSingletonRow = describe
+    "a fold receipt's settled list holds exactly the one pending request"
+    $ do
+        it "reports a fold that settled two requests where one was pending" $ do
+            let twoEntry =
+                    Aeson.object
+                        [ "command" .= ("fold" :: Text)
+                        , "settled"
+                            .= [ Aeson.object ["request" .= ("a#0" :: Text)]
+                               , Aeson.object ["request" .= ("b#0" :: Text)]
+                               ]
+                        ]
+            disagreements Nothing twoEntry []
+                `shouldSatisfy` any ("settled list" `isInfixOf`)
+        it "reports nothing about the settled list for a fold of one" $ do
+            let oneEntry =
+                    Aeson.object
+                        [ "command" .= ("fold" :: Text)
+                        , "settled" .= [Aeson.object ["request" .= ("a#0" :: Text)]]
+                        ]
+            disagreements Nothing oneEntry []
+                `shouldSatisfy` (not . any ("settled list" `isInfixOf`))
+
 foldOverSeveralRequestsRow :: Spec
 foldOverSeveralRequestsRow = describe "the fold settles every selected request in one transaction" $ do
     it

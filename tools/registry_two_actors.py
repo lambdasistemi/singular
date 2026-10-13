@@ -592,11 +592,15 @@ RECORD_KEPT_FIELDS = (
 
 
 def _settled_entry(fold):
-    """The first settled request of a fold receipt, or None when absent."""
+    """The only settled request of a fold receipt, or None when absent.
+
+    At bound nine a fold settles every settleable pending request, so a
+    leg that books one request then folds must see exactly one settled
+    entry: a receipt with two entries is not this leg's fold."""
     if not isinstance(fold, dict):
         return None
     settled = fold.get("settled")
-    if not isinstance(settled, list) or not settled:
+    if not isinstance(settled, list) or len(settled) != 1:
         return None
     first = settled[0]
     return first if isinstance(first, dict) else None

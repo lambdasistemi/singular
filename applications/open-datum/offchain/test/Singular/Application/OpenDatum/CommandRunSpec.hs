@@ -175,6 +175,7 @@ spec =
         >> readbackRows
         >> bookingRefusalRows
         >> permanentRecognition
+        >> settledListSingletonRow
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"
@@ -2138,6 +2139,11 @@ disagreements invokedKey receipt events =
                         <|> settledSettlement "released" receipt
                    )
           ]
+        , [ "the fold's settled list is not exactly the one pending request"
+          | command == Just "fold"
+          , Just xs <- [elementsAt "settled" receipt]
+          , length xs /= 1
+          ]
         , [ "refusal " <> show k <> " under outcome " <> show outcome
           | Trace _ (What (Refused k _)) <- events
           , not (refusalFits k outcome)
@@ -2515,3 +2521,28 @@ mechanicOfItsTransaction = \case
 -- | Whether a receipt's outcome is a refusal: its stream carries exactly one refusal event.
 refusalOutcome :: Maybe Text -> Bool
 refusalOutcome = (`elem` map Just ["client-refusal", "ledger-refusal"])
+
+-- A fold receipt's settled list holds exactly the one pending request.
+settledListSingletonRow :: Spec
+settledListSingletonRow = describe
+    "a fold receipt's settled list holds exactly the one pending request"
+    $ do
+        it "reports a fold that settled two requests where one was pending" $ do
+            let twoEntry =
+                    Aeson.object
+                        [ "command" .= ("fold" :: Text)
+                        , "settled"
+                            .= [ Aeson.object ["request" .= ("a#0" :: Text)]
+                               , Aeson.object ["request" .= ("b#0" :: Text)]
+                               ]
+                        ]
+            disagreements Nothing twoEntry []
+                `shouldSatisfy` any (T.isInfixOf "settled list" . T.pack)
+        it "reports nothing about the settled list for a fold of one" $ do
+            let oneEntry =
+                    Aeson.object
+                        [ "command" .= ("fold" :: Text)
+                        , "settled" .= [Aeson.object ["request" .= ("a#0" :: Text)]]
+                        ]
+            disagreements Nothing oneEntry []
+                `shouldSatisfy` (not . any (T.isInfixOf "settled list" . T.pack))
