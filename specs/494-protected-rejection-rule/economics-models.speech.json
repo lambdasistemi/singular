@@ -1,0 +1,56 @@
+{
+  "economic-model-rows-modules-data-and-functions-of-slices-five-to-eight": [
+    {
+      "text": "Economic model rows: modules, data and functions of slices five to eight.",
+      "pause": 500
+    },
+    {
+      "text": "This page owns the new or changed rows of the economic slices, in the same three layers as the modules, data and functions pages of the protected rejection rule, for the economics plan and the design. It contains no bodies and no proofs. Slice five's rows are complete; the rows of slices six to eight are added to this page by the ticket owner, before each of those slices is dispatched, so that no coder chooses a name or a signature.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the coder given an economic slice, I read the rows of that slice and nothing I have to guess, so that the model, the transport and the paper name every amount, parameter and statement the same way.",
+      "pause": 400
+    }
+  ],
+  "slice-five-modules": [
+    {
+      "text": "Slice five: modules.",
+      "pause": 500
+    },
+    {
+      "text": "No new module is added in slice five. The driver, its declared operations and its questions do not change.",
+      "pause": 400
+    }
+  ],
+  "slice-five-data": [
+    {
+      "text": "Slice five: data.",
+      "pause": 500
+    },
+    {
+      "text": "Validation and invariants. An old input without these fields reads as the defaults, so every existing question, scenario and corpus row means what it meant. A fold's question is exactly what it was: nothing is written for a default. Every step preserves the three parameters exactly as it preserves the four policy pins. The split's denominator is positive and its numerator does not exceed it; a configuration that breaks that is refused at decoding.",
+      "pause": 400
+    }
+  ],
+  "slice-five-functions": [
+    {
+      "text": "Slice five: functions.",
+      "pause": 500
+    },
+    {
+      "text": "The booking admission is a defined rule, not a transition: the model has no booking step. The request-tag mint must enforce exactly this admission.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "economics-models.md",
+    "sha256": "830d0982efc5fea643c432467f64abfc9787fd51f1fc0259c85ebb5c36420bb9"
+  }
+}

@@ -115,13 +115,13 @@
       "pause": 400
     }
   ],
-  "after-slice-four-the-economic-model-and-the-paper": [
+  "after-slice-three-the-economic-model-and-the-paper": [
     {
-      "text": "After slice four: the economic model and the paper.",
+      "text": "After slice three: the economic model and the paper.",
       "pause": 500
     },
     {
-      "text": "Operator order of 13 October 2026: the model states the whole economic design and a formal paper explains it. The design records the amounts and the attacks; the economics plan lists the theorems, the ones expected to fail, six more slices and the paper. The desk reviews that plan before any of it is built.",
+      "text": "Operator order of 13 October 2026: the model states the whole economic design and a formal paper explains it, and slices five to eight run before slice four. The design records the amounts and the attacks; the economics plan lists the theorems, the ones expected to fail, six more slices and the paper. The desk reviews that plan before any of it is built.",
       "pause": 400
     }
   ],
@@ -143,6 +143,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "6a2f0484bcaeec84a46a9749f677819c01b6c92fe1dc21b47524923f314b9956"
+    "sha256": "cf9e1c7412814f729c44fc81b44ec467cbc7230f258419a4ac724784695975f0"
   }
 }

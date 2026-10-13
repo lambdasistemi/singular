@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "This page plans the work after slice four: the whole economic design of the design page stated in the Lean model, its properties as theorems, and a formal paper written from them. It names every theorem the model should prove, says which ones are expected not to hold and why, cuts the work into slices, and outlines the paper. Planning only: no model or paper work starts before the desk answers the plan question.",
+      "text": "This page plans the work that runs after slice three and before slice four (operator order of 13 October 2026): the whole economic design of the design page stated in the Lean model, its properties as theorems, and a formal paper written from them. It names every theorem the model should prove, says which ones are expected not to hold and why, cuts the work into slices, and outlines the paper. Planning only: no model or paper work starts before the desk answers the plan question.",
       "pause": 400
     }
   ],
@@ -93,6 +93,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "7d91ea1abe893ecc758a72849dc587a10579e774ded9ce7f49fd4f969fc58368"
+    "sha256": "cb7c66355b647e8a0e002c6adb10faa0bd3a6be85b65e92ab1b1dc450c422305"
   }
 }

@@ -80,6 +80,8 @@ Terminal condition as slice one. The slice follows decision B and is independent
 
 ## Slice four: mixed batches
 
+Runs after slice eight, by the operator's order of 13 October 2026.
+
 - [ ] `action-engine` — the ordered action engine exists and the all-reject batch runs on it, the
   slice-two loop deleted in the same change. (batch-judged-action-by-action)
 - [ ] `mixed-batch` — the mixed-batch function refuses an empty batch, an empty interval and a
@@ -97,7 +99,7 @@ Terminal condition as slice one.
 
 ## Slices five to ten: the economic model and the paper
 
-Planned in the [economics plan](economics-plan.md); started only after the desk reviews that plan and after slice four.
+Planned in the [economics plan](economics-plan.md); started after slice three and after the desk reviewed that plan (it did, with returned lines folded in); slices five to eight run before slice four, by the operator's order of 13 October 2026, and the paper (nine and ten) is written in parallel.
 
 ### Slice five: parameters and fields
 
@@ -107,7 +109,7 @@ Planned in the [economics plan](economics-plan.md); started only after the desk 
 - [ ] `donation-field` — a transaction carries a treasury donation amount, zero when absent.
 - [ ] `protocol-eight` — the driver protocol version moves and the surface digest follows.
 - [ ] `regenerate-after-slice-five` — corpora, register and digests, simulator mirror, application corpus, coverage record and the restatement table follow.
-- [ ] `amendment-economics` — a new constitution version states the economic fields in the translation.
+- [ ] `amendment-economics` — the 1.16.0 entry of the constitution states the economic fields in the translation (one release, one entry).
 
 ### Slice six: outcomes and transfers
 

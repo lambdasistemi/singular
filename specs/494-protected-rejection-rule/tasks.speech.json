@@ -139,6 +139,10 @@
       "pause": 500
     },
     {
+      "text": "Runs after slice eight, by the operator's order of 13 October 2026.",
+      "pause": 400
+    },
+    {
       "text": "[ ] action-engine — the ordered action engine exists and the all-reject batch runs on it, the slice-two loop deleted in the same change. (batch-judged-action-by-action)",
       "pause": 300
     },
@@ -173,7 +177,7 @@
       "pause": 500
     },
     {
-      "text": "Planned in the economics plan; started only after the desk reviews that plan and after slice four.",
+      "text": "Planned in the economics plan; started after slice three and after the desk reviewed that plan (it did, with returned lines folded in); slices five to eight run before slice four, by the operator's order of 13 October 2026, and the paper (nine and ten) is written in parallel.",
       "pause": 400
     }
   ],
@@ -207,7 +211,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] amendment-economics — a new constitution version states the economic fields in the translation.",
+      "text": "[ ] amendment-economics — the 1.16.0 entry of the constitution states the economic fields in the translation (one release, one entry).",
       "pause": 300
     }
   ],
@@ -341,6 +345,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "d012f8ca1f02b517728a68d4b6df62e929e30a7939ac434de974f0f18196f12a"
+    "sha256": "dcfc2f4c2fb1cba941b80a2760a0d5301740aace3a743e9f864813716d2b1a51"
   }
 }

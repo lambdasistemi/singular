@@ -1,6 +1,6 @@
 # Plan: the economic model, its theorems and the paper
 
-This page plans the work after slice four: the whole economic design of the [design page](economics-design.md) stated in the Lean
+This page plans the work that runs after slice three and before slice four (operator order of 13 October 2026): the whole economic design of the [design page](economics-design.md) stated in the Lean
 model, its properties as theorems, and a formal paper written from them. It names every theorem the model should prove, says
 which ones are expected not to hold and why, cuts the work into slices, and outlines the paper. Planning only: no model or paper
 work starts before the desk answers the plan question.
@@ -13,10 +13,11 @@ appears, so that I can say yes or return a line before anyone writes a proof.
 
 ```mermaid
 flowchart LR
-    S4[Slices two to four<br/>protected rejection] --> P5[Slice five<br/>parameters and fields]
+    S3[Slices one to three<br/>protected rejection, in-window rows] --> P5[Slice five<br/>parameters and fields]
     P5 --> P6[Slice six<br/>outcomes, transfers, donation]
     P6 --> P7[Slice seven<br/>fault proof, forfeit, termination fee]
     P7 --> P8[Slice eight<br/>theorems and counterexamples]
+    P8 --> S4[Slice four<br/>mixed batches]
     P8 --> PA[Slice nine<br/>paper: build, page, sections 1 to 4]
     P8 --> PB[Slice ten<br/>paper: sections 5 to 10, appendix]
 ```
