@@ -1,0 +1,62 @@
+{
+  "touch-list": [
+    {
+      "text": "Touch list.",
+      "pause": 500
+    },
+    {
+      "text": "Every file this ticket creates, edits or deletes, by slice. Read the plan for the slices. Base: main at e7b55ac9. A file not on this list that the work later needs is a question to the desk before it is edited. Columns: change is create or edit; meets names a live lane that shares the file, or none.",
+      "pause": 400
+    }
+  ],
+  "registry-library-offchainlibsingularregistry": [
+    {
+      "text": "Registry library (offchain/lib/Singular/Registry/).",
+      "pause": 500
+    }
+  ],
+  "registry-command-line-offchainclisrcsingularcli": [
+    {
+      "text": "Registry command line (offchain/cli/src/Singular/CLI/).",
+      "pause": 500
+    }
+  ],
+  "cabal-and-tests-offchain": [
+    {
+      "text": "Cabal and tests (offchain/).",
+      "pause": 500
+    }
+  ],
+  "journey-and-release-tools-tools": [
+    {
+      "text": "Journey and release tools (tools/).",
+      "pause": 500
+    }
+  ],
+  "documentation": [
+    {
+      "text": "Documentation.",
+      "pause": 500
+    }
+  ],
+  "held-by-live-lanes-and-not-touched": [
+    {
+      "text": "Held by live lanes and not touched.",
+      "pause": 500
+    },
+    {
+      "text": "Session.hs, Receipt.hs, Reconcile.hs, the fold builder, Create.hs, Deploy.hs, Recorder.hs, Terminal.hs, flake.nix, .github/workflows/registry.yml, onchain/, conformance/lib/Conformance/Cli/Controls.hs. onchain-release/DEMO1.md and tools/demo1_cli_check.sh are left for the second pull request below.",
+      "pause": 400
+    }
+  ],
+  "second-pull-request-paths-re-read-at-its-base": [
+    {
+      "text": "Second pull request (paths re-read at its base).",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "a1cf8cb295524ee51ee5a6c4df5254fab1d9e00e4f6c18a96d7caed8ff46f979"
+  }
+}

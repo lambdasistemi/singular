@@ -1,0 +1,124 @@
+{
+  "the-registry-page-plan": [
+    {
+      "text": "The registry page: plan.",
+      "pause": 500
+    },
+    {
+      "text": "Read the spec for the story and the requirements, the touch list for every file, and the tasks for the commit boundaries. Base main at e7b55ac9.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "singular registry describe reuses what inspect already does and adds nothing to the chain side. It selects the registry from its token and the release, runs the same public replay, reads the live request outputs, and renders one value two ways. Three things are new: the replay reports the facts the page needs (create transaction, fold transactions in order, the keys the folds named); a pure page value with a text and a JSON rendering; and the command that composes them. The two-actor journey then reads the page for real and its two waiting rows pass.",
+      "pause": 400
+    }
+  ],
+  "class-and-staffing": [
+    {
+      "text": "Class and staffing.",
+      "pause": 500
+    },
+    {
+      "text": "The command is new product behavior, so the full path applies: one writer, a mute persistent auditor, the existing CI commands as the gate. Staffing is the operator's: ticket owner Claude Sonnet 5.5 at extra-high effort; writer Muse, one at a time; auditor Grok 4.7 at high effort, persistent and mute, an alarm that blocks only with a concrete failure scenario. No gate-author pair and no other seat: the gate below is written by the ticket owner from the workflow files, one hosted command per acceptance line.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "Writer time in minutes, about 250 in all. Cut rule: if slice 5 ends past minute 210, slice 6 moves to the second pull request below; nothing else moves.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "Written by the ticket owner from the workflow files. Each line is an existing command; the budget is 25 minutes per candidate without the journey. The journey is the hosted job at the pushed head: the writer runs it locally while developing slice 4 and it is not a repeated gate. just ci runs once, on the final candidate.",
+      "pause": 400
+    }
+  ],
+  "invariants-the-writer-proves-each-seen-to-fail-first": [
+    {
+      "text": "Invariants the writer proves, each seen to fail first.",
+      "pause": 500
+    }
+  ],
+  "model-rows": [
+    {
+      "text": "Model rows.",
+      "pause": 500
+    },
+    {
+      "text": "Signatures only; no bodies.",
+      "pause": 400
+    },
+    {
+      "text": "The JSON rendering is a receipt: command is describe, outcome is success, then the sections registry, release, rules, state and provenance. state has root, activeKeys, terminalKeys, foldsSinceCreate, createTransaction, lastFold (null when there is none), stateOutput and pendingRequests, whose entries are the objects inspect prints for pending requests. The journey reads these names.",
+      "pause": 400
+    },
+    {
+      "text": "Data rules: the page holds no timestamp, tip or session identity. Pending requests are ordered by request output reference. Active plus terminal plus other counts equal the distinct named keys. The last fold is the final element of the fold list and is absent exactly when the list is empty.",
+      "pause": 400
+    }
+  ],
+  "live-lanes-and-constraints": [
+    {
+      "text": "Live lanes and constraints.",
+      "pause": 500
+    },
+    {
+      "text": "Single-threaded rule: describe starts no thread. Reads only: no signing, no submission, no write under a state directory. Files held by live lanes stay out of the touch list: Session.hs, Receipt.hs, Reconcile.hs, the fold builder, Create.hs, Deploy.hs, Recorder.hs, Terminal.hs, flake.nix, registry.yml and anything under onchain/. Three shared files meet other lanes and are marked in the touch list: Command.hs and singular-registry.cabal (other lanes edit both) and Inspect.hs (the related inspect ticket). A new runnable file gets its hosted job in this pull request: the new specs run in the existing focused suite step, the journey is an existing job.",
+      "pause": 400
+    }
+  ],
+  "second-pull-request-the-demo-1-path": [
+    {
+      "text": "Second pull request: the Demo 1 path.",
+      "pause": 500
+    },
+    {
+      "text": "Ruled by the desk (2026-10-13): two lines are on the Demo 1 path and are this ticket's second pull request, started as soon as their holders merge. The desk sends a note at each merge; until both notes arrive no file below is edited, and the files are re-read at the base the pull request starts from. It follows the first pull request (it needs the command and the archive's version.txt). Deadline: first pull request merged by 17 October, second by 18 October.",
+      "pause": 400
+    },
+    {
+      "text": "Expected files, re-read at the base: offchain/cli/src/Singular/CLI/Create.hs, the create receipt tests under offchain/test/Singular/CLI/, the open-datum create tests, onchain-release/DEMO1.md with its speech companion, tools/demo1_cli_check.sh and its controls, and the docs/ pages that show a create receipt. flake.nix and .github/workflows/registry.yml only if the archive job needs a new input or step, which the desk is asked about first. Gate rows: nix run --quiet .#demo1-cli-check and nix run --quiet .#demo1-cli-test-harness (job \"Demo 1 journey from the release archive\"); cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests; the focused cage-tests match for the create receipt; nix run --quiet .#cli-flags-check; nix run --quiet .#docs-check.",
+      "pause": 400
+    }
+  ],
+  "follow-ups-outside-both-pull-requests": [
+    {
+      "text": "Follow-ups outside both pull requests.",
+      "pause": 500
+    },
+    {
+      "text": "Accepted by the desk as follow-ups. The first pull request's body lists them as limits, and #503 stays open until they are delivered or ruled.",
+      "pause": 400
+    }
+  ],
+  "ceilings": [
+    {
+      "text": "Ceilings.",
+      "pause": 500
+    },
+    {
+      "text": "Spec 130 lines, plan 200, tasks 70, touch list 100. Compiled writer brief 300 lines.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "bd51db98757401592196c5e83c52e59fa2db00945c57c56b4973f6059537750c"
+  }
+}
