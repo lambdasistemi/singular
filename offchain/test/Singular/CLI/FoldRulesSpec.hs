@@ -25,6 +25,8 @@ import Test.Hspec
 import Test.QuickCheck
 
 import Cardano.Ledger.Address (serialiseAddr)
+import Cardano.Ledger.Api.Tx (mkBasicTx)
+import Cardano.Ledger.Api.Tx.Body (mkBasicTxBody)
 import Cardano.Ledger.Api.Tx.Out
     ( datumTxOutL
     , mkBasicTxOut
@@ -37,13 +39,24 @@ import Cardano.Ledger.Mary.Value
     , MultiAsset (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Slotting.Slot (SlotNo (..))
 import Data.Aeson (Value, object, toJSON, (.=))
 import Lens.Micro ((&), (.~))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
+import Singular.CLI.Fold
+    ( Deadline (..)
+    , Delivery (..)
+    , Folded (..)
+    , SettledEntry (..)
+    , foldDeadline
+    , foldedFields
+    , settledEntryFor
+    )
 import Singular.CLI.FoldRules
-    ( FoldRequestsRefusal (..)
+    ( FoldKind (..)
+    , FoldRequestsRefusal (..)
     , KeptReceipt (..)
     , SettledForReceipt (..)
     , SpendsRefusal (..)
@@ -337,6 +350,8 @@ spec = describe "registry fold takes the selection" $ do
     foldReceiptOmitsEarlierFields
     windowClosedKeepsOthers
     oldRuleContrastReference
+    foldResultListsItsSettledRequests
+    settledEntryLookup
 
 -- ---------------------------------------------------------
 -- A named request must be among the settled
@@ -2095,3 +2110,102 @@ assembledApprovalCheckReachesTheSelection = describe "assembled approval check r
                        , "approval-mismatch"
                        , "approval-mismatch"
                        ]
+
+-- ---------------------------------------------------------
+-- The fold result lists its settled requests
+-- ---------------------------------------------------------
+
+twoEntryFolded :: Folded
+twoEntryFolded =
+    Folded
+        { fdSettled = entry1 :| [entry2]
+        , fdFolder = "666f6c646572"
+        , fdTx = mkBasicTx mkBasicTxBody
+        , fdRoot = "726f6f74"
+        , fdUpperSlot = Nothing
+        , fdPostBuild = object ["check" .= ("admitted" :: T.Text)]
+        , fdDecidedAt = nowMs
+        , fdRemaining = 900000
+        , fdExcluded = []
+        , fdCapacityBound = 1
+        , fdCapacityProvenance = "prov-1"
+        }
+  where
+    entry1 =
+        SettledEntry
+            { seRequest = v1
+            , seKey = BC.pack "k1"
+            , seEdge = edgeInsertActive
+            , seOwner = "6f776e657231"
+            , seKind = FoldInsertion
+            , seDelivery = Released v1 2000000
+            , seDeadline = Deadline farDeadline (Just (SlotNo 42))
+            }
+    entry2 =
+        SettledEntry
+            { seRequest = v2
+            , seKey = BC.pack "k2"
+            , seEdge = edgeUpdateTerminal
+            , seOwner = "6f776e657232"
+            , seKind = FoldTermination
+            , seDelivery = Released v2 2000000
+            , seDeadline = Deadline nearDeadline (Just (SlotNo 43))
+            }
+
+foldResultListsItsSettledRequests :: Spec
+foldResultListsItsSettledRequests = describe "the fold result lists its settled requests" $ do
+    it
+        "the settled list of a receipt built from two entries holds both, in order"
+        $ do
+            let fields = foldedFields twoEntryFolded
+                settled = case lookup "settled" fields of
+                    Just v -> v
+                    Nothing -> error "no settled list"
+            settled
+                `shouldBe` toJSON
+                    [ object
+                        [ "request" .= renderOutRef v1
+                        , "key" .= ("6b31" :: T.Text)
+                        , "edge" .= ("insertActive" :: T.Text)
+                        , "owner" .= ("6f776e657231" :: T.Text)
+                        , "settlement"
+                            .= object
+                                [ "released" .= renderOutRef v1
+                                , "deposit" .= (2000000 :: Integer)
+                                ]
+                        , "deadline"
+                            .= object
+                                [ "posixMs" .= farDeadline
+                                , "slot" .= (42 :: Integer)
+                                ]
+                        ]
+                    , object
+                        [ "request" .= renderOutRef v2
+                        , "key" .= ("6b32" :: T.Text)
+                        , "edge" .= ("updateTerminal" :: T.Text)
+                        , "owner" .= ("6f776e657232" :: T.Text)
+                        , "settlement"
+                            .= object
+                                [ "released" .= renderOutRef v2
+                                , "deposit" .= (2000000 :: Integer)
+                                ]
+                        , "deadline"
+                            .= object
+                                [ "posixMs" .= nearDeadline
+                                , "slot" .= (43 :: Integer)
+                                ]
+                        ]
+                    ]
+    it "the fold deadline is the earliest among the entries" $ do
+        deadlineMs (foldDeadline twoEntryFolded) `shouldBe` nearDeadline
+
+settledEntryLookup :: Spec
+settledEntryLookup = describe "settledEntryFor finds the entry for a request" $ do
+    it "returns the right entry among two" $ do
+        settledEntryFor twoEntryFolded v1
+            `shouldBe` Just (case fdSettled twoEntryFolded of e :| _ -> e)
+        case fdSettled twoEntryFolded of
+            _ :| [e2] -> settledEntryFor twoEntryFolded v2 `shouldBe` Just e2
+            _ -> expectationFailure "two entries expected"
+    it "returns nothing for a request not among them" $ do
+        settledEntryFor twoEntryFolded (txRef 9) `shouldBe` Nothing
