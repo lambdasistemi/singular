@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 70 modules in
-three kinds: 53 explicitly exposed modules and 4 re-exported modules
+re-exports under its own name. That complete extent is 71 modules in
+three kinds: 54 explicitly exposed modules and 4 re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -92,6 +92,7 @@ Run: mkdocs serve
 - <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="module">Singular.Registry.LedgerProvider</a> — <a href="../offchain/local-services/Singular/Registry/LedgerProvider.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="module">Singular.Registry.Lifecycle</a> — <a href="../offchain/lib/Singular/Registry/Lifecycle.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Page.hs" data-api="module">Singular.Registry.Page</a> — <a href="../offchain/lib/Singular/Registry/Page.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="module">Singular.Registry.Proof</a> — <a href="../offchain/lib/Singular/Registry/Proof.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="module">Singular.Registry.Replay</a> — <a href="../offchain/lib/Singular/Registry/Replay.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="module">Singular.Registry.Signing</a> — <a href="../offchain/local-services/Singular/Registry/Signing.hs" data-api="source">source</a>
