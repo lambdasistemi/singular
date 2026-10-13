@@ -102,6 +102,14 @@ grep -q 'ghost-flag' "$table" || {
   exit 2
 }
 expect documented-missing 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry'
+# The documentation names a flag neither binary takes (six singular commands).
+fresh
+sed -i '/^| `--receipt FILE`/a | `--ghost-flag X` | all six singular commands | A flag the binary does not take. |' "$table"
+grep -q 'all six singular commands' "$table" || {
+  echo "SETUP-FAIL: the six-command ghost row did not apply" >&2
+  exit 2
+}
+expect documented-missing-six 1 '^documented, not in --help: the settings table gives --ghost-flag to singular registry'
 
 # The documentation names a flag neither binary takes (open-datum side).
 fresh
@@ -277,4 +285,4 @@ for verb in insert update terminate; do
   echo "control removed-$verb: exit $got, refused as unknown"
 done
 
-echo "PASS cli-flags-controls: 31 controls over ${#pages[@]} pages"
+echo "PASS cli-flags-controls: 32 controls over ${#pages[@]} pages"

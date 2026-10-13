@@ -18,7 +18,9 @@ below happens before anything is read or submitted.
 * @registry reject@ rejects every pending request, once each is past both
   its windows, signed and funded by the wallet that runs it;
 * @registry inspect@ reads the registry and one key back, and accepts
-  no signing key at all.
+  no signing key at all;
+* @registry describe@ reads the registry page from the chain alone, and
+  accepts no wallet, key, state directory or other actor file at all.
 
 Write commands name the Koios URL, network and wallet key. Partial settings
 and mainnet are refused before file reads or provider effects. Read commands
@@ -29,6 +31,7 @@ module Singular.CLI.Command
     ( -- * Commands
       Command (..)
     , CreateArgs (..)
+    , DescribeArgs (..)
     , EntryArgs (..)
     , EntryMode (..)
     , FoldArgs (..)
@@ -154,6 +157,24 @@ data CreateArgs = CreateArgs
     }
     deriving stock (Eq, Show)
 
+{- | @registry describe@: the token, the blueprint, a provider and a network.
+
+Never a wallet, key, state directory or other actor file: those are
+refused with their names before anything is read. With @--json@ the
+page prints as JSON, otherwise as text.
+-}
+data DescribeArgs = DescribeArgs
+    { describeBlueprint :: FilePath
+    , describeAccess :: RegistryAccess
+    {- ^ The registry, by its state token: required, as on every command
+    but create.
+    -}
+    , describeProvider :: ProviderSettings
+    , describeJson :: Bool
+    -- ^ With @--json@, print the page as JSON
+    }
+    deriving stock (Eq, Show)
+
 {- | What an entry command does with the transactions it builds: sign and
 submit them with the caller's key, or prepare them for a public address
 and submit nothing. A preview carries no signing key at all.
@@ -275,6 +296,7 @@ data InspectArgs = InspectArgs
 data Command
     = Help
     | Create CreateArgs (Maybe ApplicationPolicy)
+    | Describe DescribeArgs
     | Fold FoldArgs
     | Reject RejectArgs
     | Reclaim ReclaimArgs
@@ -296,6 +318,12 @@ data CLIError
       its name and the command, before any key is read or anything written
       -}
       UnsupportedFlag String String
+    | {- | A setting @registry describe@ does not take: refused with its
+      name, before anything is read. Describe reads the public registry
+      and writes nothing; it takes no wallet, key, state directory or
+      other actor file.
+      -}
+      RefusedSetting String
     deriving stock (Eq, Show)
 
 -- | Parse a command line.
@@ -313,35 +341,51 @@ this to the common group plus this binary's extras.
 parseWithGroup
     :: [String] -> [(String, String)] -> [String] -> Either CLIError Command
 parseWithGroup group environment args = do
-    (words', flags) <- tokenizeWith RemovedSetting BadValue group args
+    let (jsonSwitch, plainArgs) = splitJson args
+    (words', flags) <-
+        tokenizeWith RemovedSetting BadValue group plainArgs
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right Help
         else
-            refuseWindows words' flags >> refuseOutputsAt words' flags >> case words' of
-                [] -> Right Help
-                ["registry"] -> Right Help
-                ["registry", "create"] ->
-                    refuseSpendingFlags "create" flags
-                        >> refuseRequest flags
-                        >> refuseFold flags
-                        >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
-                ["registry", "fold"] ->
-                    refuseApplicationPolicy flags
-                        >> (Fold <$> foldArgs environment flags)
-                ["registry", "reject"] ->
-                    refuseApplicationPolicy flags
-                        >> (Reject <$> rejectArgs environment flags)
-                ["registry", "reclaim"] ->
-                    refuseApplicationPolicy flags
-                        >> (Reclaim <$> reclaimArgs environment flags)
-                ["registry", "inspect"] ->
-                    refuseApplicationPolicy flags
-                        >> refuseSpendingFlags "inspect" flags
-                        >> refuseRequest flags
-                        >> refuseFold flags
-                        >> (Inspect <$> inspectArgs environment flags)
-                _ -> Left (UnknownCommand words')
+            refuseWindows words' flags
+                >> refuseOutputsAt words' flags
+                >> refuseJson words' jsonSwitch
+                >> case words' of
+                    [] -> Right Help
+                    ["registry"] -> Right Help
+                    ["registry", "create"] ->
+                        refuseSpendingFlags "create" flags
+                            >> refuseRequest flags
+                            >> refuseFold flags
+                            >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
+                    ["registry", "fold"] ->
+                        refuseApplicationPolicy flags
+                            >> (Fold <$> foldArgs environment flags)
+                    ["registry", "reject"] ->
+                        refuseApplicationPolicy flags
+                            >> (Reject <$> rejectArgs environment flags)
+                    ["registry", "reclaim"] ->
+                        refuseApplicationPolicy flags
+                            >> (Reclaim <$> reclaimArgs environment flags)
+                    ["registry", "inspect"] ->
+                        refuseApplicationPolicy flags
+                            >> refuseSpendingFlags "inspect" flags
+                            >> refuseRequest flags
+                            >> refuseFold flags
+                            >> (Inspect <$> inspectArgs environment flags)
+                    ["registry", "describe"] ->
+                        refuseApplicationPolicy flags
+                            >> refuseDescribeSettings flags
+                            >> (Describe <$> describeArgs environment flags jsonSwitch)
+                    _ -> Left (UnknownCommand words')
   where
+    refuseJson words' json =
+        when (json && words' /= ["registry", "describe"]) $
+            Left
+                ( BadValue
+                    "--json"
+                    "is a registry describe flag: only describe prints the page as JSON"
+                )
     refuseWindows words' flags =
         unless (words' == ["registry", "create"]) $
             forM_ ["--process-time", "--retract-time"] $ \flag ->
@@ -395,6 +439,31 @@ parseWithGroup group environment args = do
                     "--application-policy"
                     "is a registry create flag: only create pins an application policy"
                 )
+    -- @registry describe@ reads the public registry and writes nothing:
+    -- every setting below names something it neither enforces nor keeps,
+    -- so each is refused with its own name.
+    refuseDescribeSettings flags =
+        forM_ describeRefusedFlags $ \flag ->
+            when (isJust (lookup flag flags)) $
+                Left (RefusedSetting flag)
+    describeRefusedFlags :: [String]
+    describeRefusedFlags =
+        [ "--wallet-skey"
+        , "--state-dir"
+        , "--receipt"
+        , "--wallet-address"
+        , "--seed"
+        , "--key"
+        , "--key-hex"
+        , "--deposit"
+        , "--payload"
+        , "--fund-input"
+        , "--max-outlay"
+        , "--confirm-timeout"
+        , "--preview"
+        , "--request"
+        , "--fold"
+        ]
     createArgs flags = do
         when (isJust (lookup "--state-token" flags)) $
             Left
@@ -601,6 +670,17 @@ parseWithGroup group environment args = do
             _ ->
                 Left
                     (BadValue "--max-outlay" "is not a positive number of lovelace")
+    describeArgs env flags json = do
+        bp <- required "--blueprint" flags
+        settings <- readProviderSettings MissingFlag BadValue flags
+        access <- registryAccess env flags
+        pure
+            DescribeArgs
+                { describeBlueprint = bp
+                , describeAccess = access
+                , describeProvider = settings
+                , describeJson = json
+                }
     inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
@@ -689,6 +769,15 @@ pins an application policy, and no other command reads it.
 extraValuedFlags :: [String]
 extraValuedFlags = ["--application-policy"]
 
+{- | Split the @--json@ switch off a command line: describe reads it, no
+other command takes it. Only the exact switch is taken; anything else
+spells a value or is refused by the tokenizer. A @--key@ value spelled
+exactly @--json@ is taken as the switch: spell those bytes with
+@--key-hex@.
+-}
+splitJson :: [String] -> (Bool, [String])
+splitJson args = ("--json" `elem` args, filter (/= "--json") args)
+
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
 renderCLIError = \case
@@ -720,6 +809,9 @@ renderCLIError = \case
             <> " is not accepted by `registry "
             <> command
             <> "`: only fold, reclaim and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
+    RefusedSetting flag ->
+        flag
+            <> " is not accepted by `registry describe`: describe reads the public registry and writes nothing"
 
 -- | The supported commands.
 usage :: String
@@ -748,6 +840,8 @@ usage =
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
         , "      [--wallet-address ADDR]"
+        , "  singular registry describe --blueprint PLUTUS_JSON --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N [--json]"
         , ""
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
@@ -802,6 +896,13 @@ usage =
         , "base16. A key is named once, by one of the two."
         , "inspect also lists the registry's pending requests with what each actually locks,"
         , "and the outputs at a public address it is given: reads apart from any write."
+        , "describe reads the registry page from the chain alone: which registry this is,"
+        , "which release it runs, what its rules are and what it holds now. It takes no"
+        , "wallet, key, state directory or other actor file: every such setting is refused"
+        , "by name before anything is read. With the json switch it prints the page as JSON,"
+        , "otherwise as text; a success prints the page alone and writes no file. The version"
+        , "label comes from the version file beside the blueprint and is refused by name when"
+        , "missing, unreadable or malformed."
         , "Each command prints one JSON receipt on standard output. inspect reads"
         , "only: it takes no signing key and submits nothing. Given a wallet address"
         , "it reconciles that caller's managed journal, as a write would; without one"
@@ -815,6 +916,7 @@ references it looks up.
 neededRoles :: Command -> Set ReferenceRole
 neededRoles = \case
     Create _ _ -> Set.singleton RoleState
+    Describe _ -> Set.empty
     Fold _ -> everything
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty

@@ -40,7 +40,13 @@ fixtureSnapshot (FixtureStore entries) chosen = do
     if chosen == entrySelection entry
         then
             Right
-                (snapshotObserved (const (pure ())) chosen (entryNodes entry) coverage)
+                ( snapshotObserved
+                    (const (pure ()))
+                    chosen
+                    (entryNodes entry)
+                    coverage
+                    Nothing
+                )
         else
             Left
                 ( StaleState

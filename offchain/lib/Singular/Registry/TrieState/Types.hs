@@ -23,6 +23,7 @@ module Singular.Registry.TrieState.Types
     , Staleness (..)
     , Missing (..)
     , CompleteFromCreate (..)
+    , PublicLineage (..)
     , MembershipProof (..)
     , NonMembershipProof (..)
     , SpeculativeWalk (..)
@@ -73,6 +74,7 @@ data TrieSnapshot m = TrieSnapshot
     , snapshotTriePoint :: StatePoint
     , snapshotTrieRoot :: Root
     , snapshotTrieCoverage :: CompleteFromCreate
+    , snapshotTrieLineage :: Maybe PublicLineage
     , snapshotLeafAt :: ByteString -> m (Either TrieFailure Leaf)
     , snapshotMembership
         :: ByteString -> Leaf -> m (Either TrieFailure MembershipProof)
@@ -199,6 +201,18 @@ data Missing
 
 newtype CompleteFromCreate = CompleteFromCreate {coverageTransitions :: Int}
     deriving stock (Eq, Show)
+
+{- | A replayed registry's public lineage: the transaction that minted
+its state token, every fold from @create@ to the selection in chain
+order, and the distinct keys the applied updates named, ascending.
+-}
+data PublicLineage = PublicLineage
+    { lineageCreate :: TxId
+    , lineageFolds :: [TxId]
+    , lineageKeys :: [ByteString]
+    }
+    deriving stock (Eq, Show)
+
 newtype MembershipProof = MembershipProof {membershipBytes :: ByteString}
     deriving stock (Eq, Show)
 data NonMembershipProof

@@ -29,9 +29,12 @@ be discarded.
 module Singular.Registry.Replay
     ( replayLineage
     , Replayed (..)
+    , appliedKeys
+    , replayedLineage
     ) where
 
 import Control.Monad (foldM, forM_, unless, void, when)
+import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List qualified as List
@@ -77,6 +80,7 @@ import Singular.Registry.TrieState
     ( Incomplete (..)
     , Mismatch (..)
     , Parting (..)
+    , PublicLineage (..)
     , RegistryIdentity (..)
     , Staleness (..)
     , StatePolicyId (..)
@@ -107,8 +111,27 @@ data Replayed = Replayed
     -- ^ The transaction that minted the state token
     , replayedFolds :: [TxId]
     -- ^ Every fold from @create@ to the selected output, in chain order
+    , replayedKeys :: [ByteString]
+    -- ^ The distinct keys the applied updates named, ascending
     }
     deriving stock (Eq, Show)
+
+{- | The distinct keys applied updates named, ascending. Rejected requests
+are not applied and name nothing here.
+-}
+appliedKeys :: [(OnChainRequest, RequestAction)] -> [ByteString]
+appliedKeys pairs =
+    List.sort
+        ( Set.toList
+            (Set.fromList [requestKey r | (r, Update _) <- pairs])
+        )
+
+{- | A replay as its public lineage: the create, the folds in chain order
+and the distinct keys the applied updates named.
+-}
+replayedLineage :: Replayed -> PublicLineage
+replayedLineage Replayed{replayedCreate, replayedFolds, replayedKeys} =
+    PublicLineage replayedCreate replayedFolds replayedKeys
 
 {- | Rebuild the registry's trie into the given trie, from the history of its
 state token up to the selected state output.
@@ -346,10 +369,18 @@ replayFolds trie token Lineage{..} = do
                     token
                     lineageCreate
                     (chained start lineageCreateRoot)
-        else go lineageFolds
+        else go Set.empty lineageFolds
   where
-    go [] = pure (Right (Replayed lineageCreate (map foldId lineageFolds)))
-    go (fold@Fold{foldId, foldRoot} : rest) =
+    go seen [] =
+        pure
+            ( Right
+                ( Replayed
+                    lineageCreate
+                    (map foldId lineageFolds)
+                    (Set.toAscList seen)
+                )
+            )
+    go seen (fold@Fold{foldId, foldRoot} : rest) =
         case pairing token lineageResolve fold of
             Left failure -> pure (Left failure)
             Right pairs -> do
@@ -357,7 +388,7 @@ replayFolds trie token Lineage{..} = do
                 rebuilt <- getRoot trie
                 if rebuilt /= foldRoot
                     then pure (failWith token foldId (chained rebuilt foldRoot))
-                    else go rest
+                    else go (Set.union seen (Set.fromList (appliedKeys pairs))) rest
     apply OnChainRequest{requestKey, requestEdge} = \case
         Update _ -> void (walkEdge trie requestKey requestEdge)
         Rejected -> pure ()

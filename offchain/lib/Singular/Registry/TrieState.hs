@@ -18,6 +18,7 @@ module Singular.Registry.TrieState
     , triePoint
     , trieRoot
     , trieCoverage
+    , trieLineage
     , leafAt
     , membership
     , nonMembership
@@ -41,6 +42,7 @@ module Singular.Registry.TrieState
     , membershipBytes
     , NonMembershipProof
     , verifyNonMembership
+    , PublicLineage (..)
     , SpeculativeWalk
     , walkRoot
     , walkProofs
@@ -86,6 +88,11 @@ trieRoot :: TrieSnapshot m -> Root
 trieRoot = snapshotTrieRoot
 trieCoverage :: TrieSnapshot m -> CompleteFromCreate
 trieCoverage = snapshotTrieCoverage
+
+-- | The public lineage the snapshot was replayed from, or nothing for a fixture snapshot.
+trieLineage :: TrieSnapshot m -> Maybe PublicLineage
+trieLineage = snapshotTrieLineage
+
 leafAt :: TrieSnapshot m -> ByteString -> m (Either TrieFailure Leaf)
 leafAt = snapshotLeafAt
 membership

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As a registry operator, you want to use create, fold, reclaim, reject and inspect through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
     {
@@ -269,6 +269,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "46559c09af4c285e27e8d1cbaa3b1524ba92af652c72fb0b2aaa524186fb86c1"
+    "sha256": "1b9258e8d8c0aa30534e9a38840706dbf0aa41b823c21e87a0655ab3932c4224"
   }
 }

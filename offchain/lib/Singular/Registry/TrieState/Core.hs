@@ -156,6 +156,7 @@ capabilityObserved fetch persist emit = TrieState select accept
                             (entrySelection entry)
                             (entryNodes entry)
                             coverage
+                            Nothing
                         )
     validate chosen entry
         | chosen /= entrySelection entry =
@@ -220,8 +221,9 @@ snapshotObserved
     -> TrieSelection
     -> MPFInMemoryDB
     -> CompleteFromCreate
+    -> Maybe PublicLineage
     -> TrieSnapshot m
-snapshotObserved emit entrySelection entryNodes coverage =
+snapshotObserved emit entrySelection entryNodes coverage lineage =
     let who = trieSelectionIdentity entrySelection
         noProof key = Left (MissingProof who (NoProofFor key))
     in  TrieSnapshot
@@ -229,6 +231,7 @@ snapshotObserved emit entrySelection entryNodes coverage =
             , snapshotTriePoint = trieSelectionPoint entrySelection
             , snapshotTrieRoot = trieSelectionRoot entrySelection
             , snapshotTrieCoverage = coverage
+            , snapshotTrieLineage = lineage
             , snapshotLeafAt = \key ->
                 recordResult
                     emit

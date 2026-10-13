@@ -233,9 +233,9 @@ number_word() {
 has_cmd() { # has_cmd BINARY CMD: that binary's help names the command
   local bin="$1" cmd="$2"
   if [ "$bin" = singular ]; then
-    printf '%s\n' "${singular_commands[@]}" | grep -qx "$cmd"
+    grep -qx -- "$cmd" <<<"$(printf '%s\n' "${singular_commands[@]}")"
   else
-    printf '%s\n' "${od_commands[@]}" | grep -qx "$cmd"
+    grep -qx -- "$cmd" <<<"$(printf '%s\n' "${od_commands[@]}")"
   fi
 }
 awk '/^## The settings you give/ { t = 1; next } t && /^## / { exit } t && /^\| `--/' "$table_doc" >"$scratch/rows"
@@ -263,6 +263,23 @@ while IFS= read -r row; do
   elif [[ "$cmdcell" == *"all five"* ]]; then
     [ "${#singular_commands[@]}" = 5 ] || {
       echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_commands[@]} commands (wanted five)" >&2
+      status=1
+    }
+    for c in "${singular_commands[@]}"; do applies+=("singular $c"); done
+  elif [[ "$cmdcell" == *"all six"* && "$cmdcell" == *"singular"* && "$cmdcell" == *"open-datum"* ]]; then
+    [ "${#singular_commands[@]}" = 6 ] || {
+      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_commands[@]} commands (wanted six)" >&2
+      status=1
+    }
+    [ "${#od_commands[@]}" = 6 ] || {
+      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but open-datum --help names ${#od_commands[@]} commands (wanted six)" >&2
+      status=1
+    }
+    for c in "${singular_commands[@]}"; do applies+=("singular $c"); done
+    for c in "${od_commands[@]}"; do applies+=("open-datum $c"); done
+  elif [[ "$cmdcell" == *"all six"* && "$cmdcell" == *"singular"* ]]; then
+    [ "${#singular_commands[@]}" = 6 ] || {
+      echo "settings table: '${rowflags[*]}' applies to \"$cmdcell\", but singular --help names ${#singular_commands[@]} commands (wanted six)" >&2
       status=1
     }
     for c in "${singular_commands[@]}"; do applies+=("singular $c"); done

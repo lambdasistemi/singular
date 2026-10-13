@@ -938,6 +938,7 @@ class Journey:
         self.tmp.mkdir()
         self.settings = None
         self.state_token = None
+        self.release_blueprint = None
         self.node = None
         self.appendix = []
 
@@ -1080,6 +1081,136 @@ class Journey:
                 f"{result.returncode}, {receipt.get('reason')}"
             )
         return result.returncode, receipt
+
+    def stage_release(self):
+        """Stage the release as the archive lays it: the blueprint as plutus.json with version.txt beside it."""
+        staged = self.work / "release"
+        staged.mkdir(exist_ok=True)
+        shutil.copyfile(self.blueprint, staged / "plutus.json")
+        version = Path.cwd() / "version.txt"
+        if not version.is_file():
+            raise SetupFailure(
+                "no version.txt at the repository root: run from the checkout"
+            )
+        shutil.copyfile(version, staged / "version.txt")
+        self.release_blueprint = str(staged / "plutus.json")
+        print(
+            f"two actors: release staged as {staged}/plutus.json with version.txt",
+            flush=True,
+        )
+
+    def describe_page(self, as_json):
+        """A registry describe over the staged release and the state token alone."""
+        arguments = [
+            "registry",
+            "describe",
+            "--blueprint",
+            self.release_blueprint,
+            "--state-token",
+            self.state_token,
+            *self.node_arguments(),
+        ]
+        if as_json:
+            arguments.append("--json")
+        return arguments
+
+    def run_party_text(self, party, name, arguments, forbidden):
+        """Run one real command printing bytes that are not a receipt (the page as text).
+
+        The access trace is guarded exactly as for receipts; the bytes are
+        kept raw, since identical inputs must give identical bytes.
+        """
+        trace = self.receipts / f"{name}.access"
+        stdout, stderr = (
+            self.receipts / f"{name}.txt",
+            self.receipts / f"{name}.err",
+        )
+        with stdout.open("w") as output, stderr.open("w") as error:
+            try:
+                result = subprocess.run(
+                    self.traced(
+                        trace,
+                        [
+                            (
+                                self.singular
+                                if list(arguments)[:1] == ["registry"]
+                                else self.open_datum
+                            )
+                        ]
+                        + list(arguments),
+                    ),
+                    env=self.environment(party),
+                    cwd=self.homes[party],
+                    stdout=output,
+                    stderr=error,
+                    check=False,
+                    timeout=600,
+                )
+            except subprocess.TimeoutExpired:
+                raise SetupFailure(f"{party} {name} timed out")
+            except OSError as error:
+                raise SetupFailure(f"{party} {name} did not start: {error}")
+        trace_text = trace.read_text() if trace.exists() else ""
+        setup_require(trace_text != "", f"{party} {name} left no access trace")
+        check_access(trace_text, forbidden)
+        raw = stdout.read_text()
+        (self.receipts / f"{name}.exit").write_text(f"{result.returncode}\n")
+        self.appendix.append({"process": f"{party} {name}", "accessTrace": str(trace)})
+        if result.returncode == 12:
+            raise SetupFailure(f"{party} {name} lost the provider: exit 12")
+        return result.returncode, raw
+
+    def home_tree(self, party):
+        """PARTY's home as a sorted list of path and content hash; the page must not change it."""
+        found = []
+        for path in sorted(self.homes[party].rglob("*")):
+            if path.is_file():
+                found.append(
+                    (
+                        str(path.relative_to(self.homes[party])),
+                        hashlib.sha256(path.read_bytes()).hexdigest(),
+                    )
+                )
+        return found
+
+    def write_home_tree(self, name, tree):
+        # A mapping, so the record check reads it as a receipt.
+        (self.receipts / f"{name}.json").write_text(
+            json.dumps(
+                {"files": [{"path": path, "sha256": digest} for path, digest in tree]},
+                indent=2,
+            )
+            + "\n"
+        )
+
+    def page_readings(self, actor, moment):
+        """Read the page in text and JSON, twice each, bracketing the actor's home.
+
+        Returns the leg slots the readings were kept under.
+        """
+        others = tuple(home for party, home in self.homes.items() if party != actor)
+        slots = {}
+        self.write_home_tree(f"{actor}-home-{moment}-before", self.home_tree(actor))
+        slots[f"home_{moment}_before"] = f"{actor}-home-{moment}-before"
+        for as_json, runner in ((False, self.run_party_text), (True, self.run_party)):
+            kind = "json" if as_json else "text"
+            for rep in ("", "-rep"):
+                name = f"{actor}-page-{moment}-{kind}{rep}"
+                status, _ = runner(actor, name, self.describe_page(as_json), others)
+                require(
+                    status == 0,
+                    f"{actor} page-{moment}-{kind}{rep} failed: exit {status}",
+                )
+                slots[f"page_{moment}_{kind}{rep}"] = name
+        self.write_home_tree(f"{actor}-home-{moment}-after", self.home_tree(actor))
+        slots[f"home_{moment}_after"] = f"{actor}-home-{moment}-after"
+        return slots
+
+    def load_text(self, name, receipts=None):
+        path = (receipts or self.receipts) / f"{name}.txt"
+        if not path.exists():
+            return None
+        return path.read_text()
 
     def book(self, party, command, key, name):
         """Book one request; every booking command is assembled here alone.
@@ -1349,6 +1480,7 @@ class Journey:
         setup_require(create.get("stateToken"), "create named no state token")
         self.state_token = create["stateToken"]
         print(f"two actors: registry {self.state_token} created", flush=True)
+        self.stage_release()
         self.fetch_fee_bound()
         self.appendix.append(
             {
@@ -1412,6 +1544,7 @@ class Journey:
             f"{before.get('pendingRequests')}",
         )
         leg["inspect_before"] = f"{actor}-inspect-before"
+        leg.update(self.page_readings(actor, "before"))
         status, booking = self.run_party(
             actor,
             f"{actor}-booking",
@@ -1494,6 +1627,7 @@ class Journey:
             f"{actor} inspect root {after.get('root')} != fold root {fold['root']}",
         )
         leg["inspect_after"] = f"{actor}-inspect-after"
+        leg.update(self.page_readings(actor, "after"))
         other = "bob" if actor == "alice" else "alice"
         other_others = tuple(
             home for party, home in self.homes.items() if party != other
@@ -3417,6 +3551,19 @@ class Journey:
             "the receipt-removal control did not turn the row pending",
         )
         print("two actors: receipt-removal control holds", flush=True)
+        # One page reading removed must turn its row pending, on a scratch copy.
+        if "alice" in legs and "page_after_json" in legs["alice"]:
+            scratch_page = self.work / "scratch-remove-page"
+            if scratch_page.exists():
+                shutil.rmtree(scratch_page)
+            shutil.copytree(self.receipts, scratch_page)
+            (scratch_page / f"{legs['alice']['page_after_json']}.json").unlink()
+            passed, _, _ = self.page_agreement("alice", legs["alice"], scratch_page)
+            require(
+                not passed,
+                "the page-removal control did not turn the row pending",
+            )
+            print("two actors: page-removal control holds", flush=True)
 
     def cap_check(self):
         size = self.directory_bytes(self.receipts)
@@ -3468,23 +3615,158 @@ class Journey:
             return False, list(leg.values()), "the fold root readback"
         return True, list(leg.values()), ""
 
+    def page_agreement(self, actor, leg, receipts=None):
+        """Recompute one page row from its stored readings on disk."""
+        leg = leg or {}
+        base = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in ("inspect_before", "booking", "fold", "inspect_after")
+        }
+        texts = {
+            slot: self.load_text(leg[slot], receipts) if slot in leg else None
+            for slot in (
+                "page_before_text",
+                "page_before_text-rep",
+                "page_after_text",
+                "page_after_text-rep",
+            )
+        }
+        pages = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in (
+                "page_before_json",
+                "page_before_json-rep",
+                "page_after_json",
+                "page_after_json-rep",
+            )
+        }
+        homes = {
+            slot: self.load_receipt(leg[slot], receipts) if slot in leg else None
+            for slot in (
+                "home_before_before",
+                "home_before_after",
+                "home_after_before",
+                "home_after_after",
+            )
+        }
+        missing = [
+            slot
+            for slot, doc in sorted({**base, **texts, **pages, **homes}.items())
+            if doc is None
+        ]
+        if missing:
+            return False, [], f"the actor's {', '.join(missing)} page reading"
+        names = list(leg.values())
+        for slot in (
+            "page_before_text",
+            "page_before_text-rep",
+            "page_before_json",
+            "page_before_json-rep",
+            "page_after_text",
+            "page_after_text-rep",
+            "page_after_json",
+            "page_after_json-rep",
+        ):
+            if self.load_exit(leg[slot], receipts) != 0:
+                return False, names, "the nonzero page exit"
+        before_text, before_json = texts["page_before_text"], pages["page_before_json"]
+        after_text, after_json = texts["page_after_text"], pages["page_after_json"]
+        if before_text != texts["page_before_text-rep"]:
+            return False, names, "the before page text differs between identical reads"
+        if after_text != texts["page_after_text-rep"]:
+            return False, names, "the after page text differs between identical reads"
+        if before_json != pages["page_before_json-rep"]:
+            return False, names, "the before page JSON differs between identical reads"
+        if after_json != pages["page_after_json-rep"]:
+            return False, names, "the after page JSON differs between identical reads"
+        for page, moment, label in (
+            (before_json, base["inspect_before"], "before"),
+            (after_json, base["inspect_after"], "after"),
+        ):
+            if page.get("command") != "describe" or page.get("outcome") != "success":
+                return False, names, f"the {label} page is no success page"
+            state = page.get("state")
+            if not isinstance(state, dict):
+                return False, names, f"the {label} page names no state"
+            if state.get("root") != moment.get("root"):
+                return False, names, f"the {label} page root differs from the readback"
+            if state.get("pendingRequests") != moment.get("pendingRequests"):
+                return (
+                    False,
+                    names,
+                    f"the {label} page pending list differs from the readback",
+                )
+        after_state = after_json["state"]
+        if after_state.get("root") != base["fold"].get("root"):
+            return False, names, "the after page root differs from the fold"
+        if after_state.get("lastFold") != base["fold"].get("fold"):
+            return False, names, "the after page names another last fold"
+        before_state = before_json["state"]
+        try:
+            grew = (
+                after_state["activeKeys"] == before_state["activeKeys"] + 1
+                and after_state["foldsSinceCreate"]
+                == before_state["foldsSinceCreate"] + 1
+            )
+        except (KeyError, TypeError):
+            grew = False
+        if not grew:
+            return False, names, "the after page counts another lifecycle"
+        if after_state.get("terminalKeys") != before_state.get("terminalKeys"):
+            return False, names, "the after page counts another terminal key"
+        if after_state.get("createTransaction") != before_state.get(
+            "createTransaction"
+        ):
+            return False, names, "the page names another create"
+        last_before = before_state.get("lastFold")
+        if last_before is not None and not (
+            isinstance(last_before, str)
+            and len(last_before) == 64
+            and all(c in "0123456789abcdef" for c in last_before)
+        ):
+            return False, names, "the before page names no last fold"
+        for page_json, page_text, label in (
+            (before_json, before_text, "before"),
+            (after_json, after_text, "after"),
+        ):
+            state = page_json["state"]
+            for key in (
+                "root",
+                "activeKeys",
+                "terminalKeys",
+                "foldsSinceCreate",
+                "createTransaction",
+            ):
+                if f"{key}: {state.get(key)}" not in page_text:
+                    return False, names, f"the {label} text lacks {key}"
+            last = state.get("lastFold")
+            want = f"lastFold: {last}" if isinstance(last, str) else "lastFold: none"
+            if want not in page_text:
+                return False, names, f"the {label} text lacks lastFold"
+        for moment in ("before", "after"):
+            if homes[f"home_{moment}_before"] != homes[f"home_{moment}_after"]:
+                return (
+                    False,
+                    names,
+                    f"the actor's home changed across the {moment} page",
+                )
+        return True, names, ""
+
     def compute_rows(self, legs):
         rows = []
         for name in REQUIREMENTS:
             if name in PAGE_ROWS:
                 actor = "alice" if name.startswith("Alice") else "bob"
-                joining = (
-                    [legs[actor]["inspect_before"]]
-                    if "inspect_before" in legs.get(actor, {})
-                    else []
+                passed, receipts, waiting = self.page_agreement(
+                    actor, legs.get(actor, {})
                 )
                 rows.append(
                     {
                         "requirement": name,
-                        "state": "pending",
-                        "receipts": joining,
-                        "dependencies": [ISSUE_503],
-                        "waitingOn": ISSUE_503,
+                        "state": "passed" if passed else "pending",
+                        "receipts": receipts,
+                        "dependencies": [],
+                        "waitingOn": waiting,
                     }
                 )
             elif name in RUN_ONE_ROWS:
@@ -3661,11 +3943,7 @@ class Journey:
         return rows
 
     def exit_for(self, rows):
-        if all(
-            row["state"] == "passed"
-            for row in rows
-            if row["requirement"] not in PAGE_ROWS
-        ):
+        if all(row["state"] == "passed" for row in rows):
             return 0
         return 1
 
