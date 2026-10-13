@@ -93676,26 +93676,26 @@
    ]
   },
   "docs-demo1-preprod/funding-a-create-from-one-output-01": {
-   "audio_sha256": "13496e01a8d52862eca5c005cf25e24f8bfd9e83f8726ab6c0c3fdb2079c29cd",
-   "characters": 308,
-   "cost": 0.00030492,
-   "duration": 19.9,
+   "audio_sha256": "be0db9546ba23f6ca6d82b76763187d20056093035bc95b16112f098e5d62d11",
+   "characters": 341,
+   "cost": 0.00033758999999999997,
+   "duration": 22.15,
    "index": 1,
-   "key": "b8d4079b2bd5accd6cf5e8c113f1e294d085683d4218be53defbd074d79f31aa",
+   "key": "b14ee8fbb574801cbccc9274f4e47c9267ca8e15940592f5ea4d93cbad8b9abc",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 400,
    "section": "funding-a-create-from-one-output",
-   "sent_text": "As Carol, I fund a fresh wallet with one output and run create. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
-   "text": "As Carol, I fund a fresh wallet with one output and run create. The preview tells me my registry's state token before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
+   "sent_text": "As Carol, I fund a fresh wallet with one output and run create with no --seed flag. The preview tells me my registry's state token and its seed before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
+   "text": "As Carol, I fund a fresh wallet with one output and run create with no --seed flag. The preview tells me my registry's state token and its seed before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
    "words": [
     {
-     "end": 0.363,
-     "start": 0.175,
+     "end": 0.387,
+     "start": 0.2,
      "text": "As"
     },
     {
      "end": 0.775,
-     "start": 0.363,
+     "start": 0.387,
      "text": "Carol"
     },
     {
@@ -93719,688 +93719,1428 @@
      "text": "a"
     },
     {
-     "end": 1.55,
+     "end": 1.562,
      "start": 1.237,
      "text": "fresh"
     },
     {
-     "end": 1.95,
-     "start": 1.55,
+     "end": 1.975,
+     "start": 1.562,
      "text": "wallet"
     },
     {
-     "end": 2.125,
-     "start": 1.95,
+     "end": 2.15,
+     "start": 1.975,
      "text": "with"
     },
     {
-     "end": 2.35,
-     "start": 2.125,
+     "end": 2.375,
+     "start": 2.15,
      "text": "one"
     },
     {
-     "end": 2.8,
-     "start": 2.35,
+     "end": 2.963,
+     "start": 2.375,
      "text": "output"
     },
     {
-     "end": 2.925,
-     "start": 2.8,
+     "end": 3.1,
+     "start": 2.963,
      "text": "and"
     },
     {
-     "end": 3.175,
-     "start": 2.925,
+     "end": 3.35,
+     "start": 3.1,
      "text": "run"
     },
     {
-     "end": 4.15,
-     "start": 3.175,
+     "end": 3.8,
+     "start": 3.35,
      "text": "create"
     },
     {
-     "end": 4.35,
-     "start": 4.15,
+     "end": 3.975,
+     "start": 3.8,
+     "text": "with"
+    },
+    {
+     "end": 4.238,
+     "start": 3.975,
+     "text": "no"
+    },
+    {
+     "end": 4.55,
+     "start": 4.238,
+     "text": "--seed"
+    },
+    {
+     "end": 5.525,
+     "start": 4.55,
+     "text": "flag"
+    },
+    {
+     "end": 5.75,
+     "start": 5.525,
      "text": "."
     },
     {
-     "end": 4.6,
-     "start": 4.525,
+     "end": 6.0,
+     "start": 5.925,
      "text": "The"
     },
     {
-     "end": 5.0,
-     "start": 4.6,
+     "end": 6.375,
+     "start": 6.0,
      "text": "preview"
     },
     {
-     "end": 5.3,
-     "start": 5.0,
+     "end": 6.7,
+     "start": 6.375,
      "text": "tells"
     },
     {
-     "end": 5.45,
-     "start": 5.3,
+     "end": 6.875,
+     "start": 6.7,
      "text": "me"
     },
     {
-     "end": 5.625,
-     "start": 5.45,
+     "end": 7.05,
+     "start": 6.875,
      "text": "my"
     },
     {
-     "end": 6.2,
-     "start": 5.625,
+     "end": 7.625,
+     "start": 7.05,
      "text": "registry's"
     },
     {
-     "end": 6.525,
-     "start": 6.2,
+     "end": 7.95,
+     "start": 7.625,
      "text": "state"
     },
     {
-     "end": 7.0,
-     "start": 6.525,
+     "end": 8.55,
+     "start": 7.95,
      "text": "token"
     },
     {
-     "end": 7.387,
-     "start": 7.0,
-     "text": "before"
-    },
-    {
-     "end": 7.9,
-     "start": 7.387,
-     "text": "anything"
-    },
-    {
-     "end": 8.025,
-     "start": 7.9,
-     "text": "is"
-    },
-    {
-     "end": 9.05,
-     "start": 8.025,
-     "text": "submitted"
-    },
-    {
-     "end": 9.275,
-     "start": 9.05,
-     "text": "."
-    },
-    {
-     "end": 9.562,
-     "start": 9.45,
-     "text": "Then"
-    },
-    {
-     "end": 9.65,
-     "start": 9.562,
-     "text": "the"
-    },
-    {
-     "end": 9.975,
-     "start": 9.65,
-     "text": "create"
-    },
-    {
-     "end": 10.238,
-     "start": 9.975,
-     "text": "runs"
-    },
-    {
-     "end": 10.35,
-     "start": 10.238,
-     "text": "its"
-    },
-    {
-     "end": 10.675,
-     "start": 10.35,
-     "text": "seven"
-    },
-    {
-     "end": 11.925,
-     "start": 10.675,
-     "text": "transactions"
-    },
-    {
-     "end": 12.125,
-     "start": 11.925,
-     "text": ","
-    },
-    {
-     "end": 12.525,
-     "start": 12.325,
-     "text": "each"
-    },
-    {
-     "end": 12.8,
-     "start": 12.525,
-     "text": "paid"
-    },
-    {
-     "end": 12.938,
-     "start": 12.8,
-     "text": "from"
-    },
-    {
-     "end": 13.025,
-     "start": 12.938,
-     "text": "the"
-    },
-    {
-     "end": 13.312,
-     "start": 13.025,
-     "text": "change"
-    },
-    {
-     "end": 13.387,
-     "start": 13.312,
-     "text": "of"
-    },
-    {
-     "end": 13.475,
-     "start": 13.387,
-     "text": "the"
-    },
-    {
-     "end": 13.663,
-     "start": 13.475,
-     "text": "one"
-    },
-    {
-     "end": 14.55,
-     "start": 13.663,
-     "text": "before"
-    },
-    {
-     "end": 14.775,
-     "start": 14.55,
-     "text": ","
-    },
-    {
-     "end": 15.038,
-     "start": 14.95,
+     "end": 8.688,
+     "start": 8.55,
      "text": "and"
     },
     {
-     "end": 15.125,
-     "start": 15.038,
-     "text": "the"
+     "end": 8.875,
+     "start": 8.688,
+     "text": "its"
     },
     {
-     "end": 15.4,
-     "start": 15.125,
-     "text": "last"
+     "end": 9.225,
+     "start": 8.875,
+     "text": "seed"
     },
     {
-     "end": 15.725,
-     "start": 15.4,
-     "text": "change"
+     "end": 9.613,
+     "start": 9.225,
+     "text": "before"
     },
     {
-     "end": 16.025,
-     "start": 15.725,
-     "text": "comes"
+     "end": 10.125,
+     "start": 9.613,
+     "text": "anything"
     },
     {
-     "end": 16.3,
-     "start": 16.025,
-     "text": "back"
+     "end": 10.25,
+     "start": 10.125,
+     "text": "is"
     },
     {
-     "end": 16.388,
-     "start": 16.3,
-     "text": "to"
+     "end": 11.3,
+     "start": 10.25,
+     "text": "submitted"
     },
     {
-     "end": 16.525,
-     "start": 16.388,
-     "text": "my"
-    },
-    {
-     "end": 17.35,
-     "start": 16.525,
-     "text": "wallet"
-    },
-    {
-     "end": 17.55,
-     "start": 17.35,
+     "end": 11.525,
+     "start": 11.3,
      "text": "."
     },
     {
-     "end": 17.825,
-     "start": 17.725,
-     "text": "I"
+     "end": 11.812,
+     "start": 11.7,
+     "text": "Then"
     },
     {
-     "end": 18.05,
-     "start": 17.825,
-     "text": "never"
+     "end": 11.9,
+     "start": 11.812,
+     "text": "the"
     },
     {
-     "end": 18.288,
-     "start": 18.05,
-     "text": "split"
+     "end": 12.225,
+     "start": 11.9,
+     "text": "create"
     },
     {
-     "end": 18.425,
-     "start": 18.288,
+     "end": 12.488,
+     "start": 12.225,
+     "text": "runs"
+    },
+    {
+     "end": 12.6,
+     "start": 12.488,
+     "text": "its"
+    },
+    {
+     "end": 12.925,
+     "start": 12.6,
+     "text": "seven"
+    },
+    {
+     "end": 14.175,
+     "start": 12.925,
+     "text": "transactions"
+    },
+    {
+     "end": 14.375,
+     "start": 14.175,
+     "text": ","
+    },
+    {
+     "end": 14.775,
+     "start": 14.575,
+     "text": "each"
+    },
+    {
+     "end": 15.05,
+     "start": 14.775,
+     "text": "paid"
+    },
+    {
+     "end": 15.188,
+     "start": 15.05,
+     "text": "from"
+    },
+    {
+     "end": 15.275,
+     "start": 15.188,
+     "text": "the"
+    },
+    {
+     "end": 15.562,
+     "start": 15.275,
+     "text": "change"
+    },
+    {
+     "end": 15.637,
+     "start": 15.562,
+     "text": "of"
+    },
+    {
+     "end": 15.725,
+     "start": 15.637,
+     "text": "the"
+    },
+    {
+     "end": 15.913,
+     "start": 15.725,
+     "text": "one"
+    },
+    {
+     "end": 16.8,
+     "start": 15.913,
+     "text": "before"
+    },
+    {
+     "end": 17.025,
+     "start": 16.8,
+     "text": ","
+    },
+    {
+     "end": 17.288,
+     "start": 17.2,
+     "text": "and"
+    },
+    {
+     "end": 17.375,
+     "start": 17.288,
+     "text": "the"
+    },
+    {
+     "end": 17.65,
+     "start": 17.375,
+     "text": "last"
+    },
+    {
+     "end": 17.975,
+     "start": 17.65,
+     "text": "change"
+    },
+    {
+     "end": 18.275,
+     "start": 17.975,
+     "text": "comes"
+    },
+    {
+     "end": 18.55,
+     "start": 18.275,
+     "text": "back"
+    },
+    {
+     "end": 18.638,
+     "start": 18.55,
+     "text": "to"
+    },
+    {
+     "end": 18.775,
+     "start": 18.638,
      "text": "my"
     },
     {
-     "end": 18.75,
-     "start": 18.425,
+     "end": 19.6,
+     "start": 18.775,
      "text": "wallet"
     },
     {
-     "end": 18.925,
-     "start": 18.75,
+     "end": 19.8,
+     "start": 19.6,
+     "text": "."
+    },
+    {
+     "end": 20.075,
+     "start": 19.975,
+     "text": "I"
+    },
+    {
+     "end": 20.3,
+     "start": 20.075,
+     "text": "never"
+    },
+    {
+     "end": 20.538,
+     "start": 20.3,
+     "text": "split"
+    },
+    {
+     "end": 20.675,
+     "start": 20.538,
+     "text": "my"
+    },
+    {
+     "end": 21.0,
+     "start": 20.675,
+     "text": "wallet"
+    },
+    {
+     "end": 21.175,
+     "start": 21.0,
      "text": "by"
     },
     {
-     "end": 19.7,
-     "start": 18.925,
+     "end": 21.95,
+     "start": 21.175,
      "text": "hand"
     },
     {
-     "end": 19.9,
-     "start": 19.7,
+     "end": 22.15,
+     "start": 21.95,
      "text": "."
     }
    ]
   },
   "docs-demo1-preprod/funding-a-create-from-one-output-02": {
-   "audio_sha256": "5f206384f4e188c2f951cbe725d2c62c3e1f54bc3ed5cecfd66c32644494d2c9",
-   "characters": 407,
-   "cost": 0.00040292999999999997,
-   "duration": 29.6,
+   "audio_sha256": "fa442fa2a5474a83e693fdbc9bd9be753bf07802b29097ae4115b3dc8d7c8c4f",
+   "characters": 1069,
+   "cost": 0.00105831,
+   "duration": 82.525,
    "index": 2,
-   "key": "4d8c8794ed43c09583e262cef7fda2308b8e794d1cefeae6b6c230a7f3d5107f",
+   "key": "0a91539d59f0b03a44cc9f834fcb1c6b5efcd76eb4847b5ee1ab3c8ba6574c06",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 400,
    "section": "funding-a-create-from-one-output",
-   "sent_text": "Decided, not yet built. Today a funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 (#491) replaces this with a chain from one output:",
-   "text": "Decided, not yet built. Today a funded wallet needs two ada-only outputs before create, because the state validator is published from one while the seed stays unspent in the other. A wallet with a single output is refused before anything is submitted, and reference-script outputs left by earlier creates do not count as funding. The decision of 2026-10-12 (#491) replaces this with a chain from one output:",
+   "sent_text": "As Carol, I funded Gina with one 200 tee ADA output on a fresh devnet with no state carrier anywhere: preview named the token with no refusal, create completed, the seed was the first publication's change, every reference is live, and Bob read the registry from the token alone. A 5 tee ADA one-output wallet is refused before anything is submitted with one publication-unfunded verdict in preview and in create (the state publication alone needs 53,698,530 lovelace); a 105 tee ADA one-output wallet covers the first publication but is refused at a later step with one verdict (the whole run needs at least 162,649,217 lovelace). With a live carrier (Grace, one 200 tee ADA output after Alice), the seed is her output and the boot is paid from it. An explicit --seed names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused with omit---seed. Reference-script outputs left by earlier creates do not count as funding. Built under the decision of 2026-10-12 (#491) as a chain from one output:",
+   "text": "As Carol, I funded Gina with one 200 tADA output on a fresh devnet with no state carrier anywhere: preview named the token with no refusal, create completed, the seed was the first publication's change, every reference is live, and Bob read the registry from the token alone. A 5 tADA one-output wallet is refused before anything is submitted with one publication-unfunded verdict in preview and in create (the state publication alone needs 53,698,530 lovelace); a 105 tADA one-output wallet covers the first publication but is refused at a later step with one verdict (the whole run needs at least 162,649,217 lovelace). With a live carrier (Grace, one 200 tADA output after Alice), the seed is her output and the boot is paid from it. An explicit --seed names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused with omit---seed. Reference-script outputs left by earlier creates do not count as funding. Built under the decision of 2026-10-12 (#491) as a chain from one output:",
    "words": [
     {
-     "end": 0.625,
-     "start": 0.175,
-     "text": "Decided"
+     "end": 0.387,
+     "start": 0.2,
+     "text": "As"
     },
     {
-     "end": 0.663,
-     "start": 0.625,
+     "end": 0.8,
+     "start": 0.387,
+     "text": "Carol"
+    },
+    {
+     "end": 0.875,
+     "start": 0.8,
      "text": ","
     },
     {
-     "end": 0.812,
-     "start": 0.663,
-     "text": "not"
+     "end": 1.038,
+     "start": 0.875,
+     "text": "I"
     },
     {
-     "end": 1.0,
-     "start": 0.812,
-     "text": "yet"
-    },
-    {
-     "end": 1.7,
-     "start": 1.0,
-     "text": "built"
-    },
-    {
-     "end": 1.9,
-     "start": 1.7,
-     "text": "."
-    },
-    {
-     "end": 2.4,
-     "start": 2.1,
-     "text": "Today"
-    },
-    {
-     "end": 2.513,
-     "start": 2.4,
-     "text": "a"
-    },
-    {
-     "end": 2.925,
-     "start": 2.513,
+     "end": 1.413,
+     "start": 1.038,
      "text": "funded"
     },
     {
-     "end": 3.375,
-     "start": 2.925,
-     "text": "wallet"
+     "end": 1.8,
+     "start": 1.413,
+     "text": "Gina"
     },
     {
-     "end": 3.662,
-     "start": 3.375,
-     "text": "needs"
+     "end": 1.987,
+     "start": 1.8,
+     "text": "with"
     },
     {
-     "end": 3.912,
-     "start": 3.662,
-     "text": "two"
+     "end": 2.287,
+     "start": 1.987,
+     "text": "one"
     },
     {
-     "end": 4.475,
-     "start": 3.912,
-     "text": "ada-only"
+     "end": 2.888,
+     "start": 2.287,
+     "text": "200"
     },
     {
-     "end": 4.975,
-     "start": 4.475,
-     "text": "outputs"
+     "end": 3.162,
+     "start": 2.888,
+     "text": "tee"
     },
     {
-     "end": 5.35,
-     "start": 4.975,
-     "text": "before"
+     "end": 3.463,
+     "start": 3.162,
+     "text": "ADA"
     },
     {
-     "end": 6.3,
-     "start": 5.35,
-     "text": "create"
+     "end": 4.0,
+     "start": 3.463,
+     "text": "output"
     },
     {
-     "end": 6.5,
-     "start": 6.3,
-     "text": ","
+     "end": 4.137,
+     "start": 4.0,
+     "text": "on"
     },
     {
-     "end": 7.0,
-     "start": 6.675,
-     "text": "because"
+     "end": 4.25,
+     "start": 4.137,
+     "text": "a"
     },
     {
-     "end": 7.125,
-     "start": 7.0,
-     "text": "the"
+     "end": 4.613,
+     "start": 4.25,
+     "text": "fresh"
     },
     {
-     "end": 7.45,
-     "start": 7.125,
+     "end": 5.1,
+     "start": 4.613,
+     "text": "devnet"
+    },
+    {
+     "end": 5.287,
+     "start": 5.1,
+     "text": "with"
+    },
+    {
+     "end": 5.55,
+     "start": 5.287,
+     "text": "no"
+    },
+    {
+     "end": 5.875,
+     "start": 5.55,
      "text": "state"
     },
     {
-     "end": 8.075,
-     "start": 7.45,
-     "text": "validator"
+     "end": 6.3,
+     "start": 5.875,
+     "text": "carrier"
     },
     {
-     "end": 8.238,
-     "start": 8.075,
-     "text": "is"
+     "end": 7.425,
+     "start": 6.3,
+     "text": "anywhere"
     },
     {
-     "end": 8.675,
-     "start": 8.238,
-     "text": "published"
+     "end": 7.675,
+     "start": 7.425,
+     "text": ":"
     },
     {
-     "end": 8.887,
-     "start": 8.675,
-     "text": "from"
+     "end": 8.225,
+     "start": 7.85,
+     "text": "preview"
     },
     {
-     "end": 9.3,
-     "start": 8.887,
-     "text": "one"
+     "end": 8.438,
+     "start": 8.225,
+     "text": "named"
     },
     {
-     "end": 9.488,
-     "start": 9.3,
-     "text": "while"
-    },
-    {
-     "end": 9.613,
-     "start": 9.488,
+     "end": 8.525,
+     "start": 8.438,
      "text": "the"
     },
     {
-     "end": 9.925,
-     "start": 9.613,
-     "text": "seed"
+     "end": 8.95,
+     "start": 8.525,
+     "text": "token"
     },
     {
-     "end": 10.413,
-     "start": 9.925,
-     "text": "stays"
-    },
-    {
-     "end": 11.025,
-     "start": 10.413,
-     "text": "unspent"
-    },
-    {
-     "end": 11.113,
-     "start": 11.025,
-     "text": "in"
-    },
-    {
-     "end": 11.25,
-     "start": 11.113,
-     "text": "the"
-    },
-    {
-     "end": 12.1,
-     "start": 11.25,
-     "text": "other"
-    },
-    {
-     "end": 12.325,
-     "start": 12.1,
-     "text": "."
-    },
-    {
-     "end": 12.613,
-     "start": 12.525,
-     "text": "A"
-    },
-    {
-     "end": 13.025,
-     "start": 12.613,
-     "text": "wallet"
-    },
-    {
-     "end": 13.163,
-     "start": 13.025,
+     "end": 9.125,
+     "start": 8.95,
      "text": "with"
     },
     {
-     "end": 13.262,
-     "start": 13.163,
-     "text": "a"
+     "end": 9.35,
+     "start": 9.125,
+     "text": "no"
     },
     {
-     "end": 13.65,
-     "start": 13.262,
-     "text": "single"
+     "end": 10.025,
+     "start": 9.35,
+     "text": "refusal"
     },
     {
-     "end": 14.188,
-     "start": 13.65,
-     "text": "output"
-    },
-    {
-     "end": 14.35,
-     "start": 14.188,
-     "text": "is"
-    },
-    {
-     "end": 14.95,
-     "start": 14.35,
-     "text": "refused"
-    },
-    {
-     "end": 15.337,
-     "start": 14.95,
-     "text": "before"
-    },
-    {
-     "end": 15.8,
-     "start": 15.337,
-     "text": "anything"
-    },
-    {
-     "end": 15.925,
-     "start": 15.8,
-     "text": "is"
-    },
-    {
-     "end": 16.925,
-     "start": 15.925,
-     "text": "submitted"
-    },
-    {
-     "end": 17.15,
-     "start": 16.925,
+     "end": 10.125,
+     "start": 10.025,
      "text": ","
     },
     {
-     "end": 17.45,
-     "start": 17.35,
+     "end": 10.45,
+     "start": 10.125,
+     "text": "create"
+    },
+    {
+     "end": 11.45,
+     "start": 10.45,
+     "text": "completed"
+    },
+    {
+     "end": 11.675,
+     "start": 11.45,
+     "text": ","
+    },
+    {
+     "end": 11.962,
+     "start": 11.85,
+     "text": "the"
+    },
+    {
+     "end": 12.3,
+     "start": 11.962,
+     "text": "seed"
+    },
+    {
+     "end": 12.462,
+     "start": 12.3,
+     "text": "was"
+    },
+    {
+     "end": 12.587,
+     "start": 12.462,
+     "text": "the"
+    },
+    {
+     "end": 12.875,
+     "start": 12.587,
+     "text": "first"
+    },
+    {
+     "end": 13.613,
+     "start": 12.875,
+     "text": "publication's"
+    },
+    {
+     "end": 14.15,
+     "start": 13.613,
+     "text": "change"
+    },
+    {
+     "end": 14.288,
+     "start": 14.15,
+     "text": ","
+    },
+    {
+     "end": 14.6,
+     "start": 14.288,
+     "text": "every"
+    },
+    {
+     "end": 15.075,
+     "start": 14.6,
+     "text": "reference"
+    },
+    {
+     "end": 15.225,
+     "start": 15.075,
+     "text": "is"
+    },
+    {
+     "end": 16.125,
+     "start": 15.225,
+     "text": "live"
+    },
+    {
+     "end": 16.325,
+     "start": 16.125,
+     "text": ","
+    },
+    {
+     "end": 16.625,
+     "start": 16.525,
      "text": "and"
     },
     {
-     "end": 18.2,
-     "start": 17.45,
-     "text": "reference-script"
+     "end": 16.95,
+     "start": 16.625,
+     "text": "Bob"
     },
     {
-     "end": 18.737,
-     "start": 18.2,
-     "text": "outputs"
+     "end": 17.112,
+     "start": 16.95,
+     "text": "read"
     },
     {
-     "end": 19.05,
-     "start": 18.737,
-     "text": "left"
+     "end": 17.2,
+     "start": 17.112,
+     "text": "the"
     },
     {
-     "end": 19.25,
-     "start": 19.05,
-     "text": "by"
+     "end": 17.7,
+     "start": 17.2,
+     "text": "registry"
     },
     {
-     "end": 19.65,
-     "start": 19.25,
-     "text": "earlier"
-    },
-    {
-     "end": 20.188,
-     "start": 19.65,
-     "text": "creates"
-    },
-    {
-     "end": 20.325,
-     "start": 20.188,
-     "text": "do"
-    },
-    {
-     "end": 20.55,
-     "start": 20.325,
-     "text": "not"
-    },
-    {
-     "end": 20.812,
-     "start": 20.55,
-     "text": "count"
-    },
-    {
-     "end": 20.95,
-     "start": 20.812,
-     "text": "as"
-    },
-    {
-     "end": 21.925,
-     "start": 20.95,
-     "text": "funding"
-    },
-    {
-     "end": 22.125,
-     "start": 21.925,
-     "text": "."
-    },
-    {
-     "end": 22.4,
-     "start": 22.325,
-     "text": "The"
-    },
-    {
-     "end": 22.925,
-     "start": 22.4,
-     "text": "decision"
-    },
-    {
-     "end": 23.087,
-     "start": 22.925,
-     "text": "of"
-    },
-    {
-     "end": 24.675,
-     "start": 23.087,
-     "text": "2026-10-12"
-    },
-    {
-     "end": 24.75,
-     "start": 24.675,
-     "text": "("
-    },
-    {
-     "end": 26.15,
-     "start": 24.75,
-     "text": "491"
-    },
-    {
-     "end": 26.25,
-     "start": 26.15,
-     "text": ")"
-    },
-    {
-     "end": 26.85,
-     "start": 26.25,
-     "text": "replaces"
-    },
-    {
-     "end": 27.1,
-     "start": 26.85,
-     "text": "this"
-    },
-    {
-     "end": 27.237,
-     "start": 27.1,
-     "text": "with"
-    },
-    {
-     "end": 27.35,
-     "start": 27.237,
-     "text": "a"
-    },
-    {
-     "end": 27.8,
-     "start": 27.35,
-     "text": "chain"
-    },
-    {
-     "end": 28.0,
-     "start": 27.8,
+     "end": 17.837,
+     "start": 17.7,
      "text": "from"
     },
     {
-     "end": 28.225,
-     "start": 28.0,
+     "end": 17.925,
+     "start": 17.837,
+     "text": "the"
+    },
+    {
+     "end": 18.25,
+     "start": 17.925,
+     "text": "token"
+    },
+    {
+     "end": 19.15,
+     "start": 18.25,
+     "text": "alone"
+    },
+    {
+     "end": 19.35,
+     "start": 19.15,
+     "text": "."
+    },
+    {
+     "end": 19.688,
+     "start": 19.6,
+     "text": "A"
+    },
+    {
+     "end": 20.062,
+     "start": 19.688,
+     "text": "5"
+    },
+    {
+     "end": 20.362,
+     "start": 20.062,
+     "text": "tee"
+    },
+    {
+     "end": 20.737,
+     "start": 20.362,
+     "text": "ADA"
+    },
+    {
+     "end": 21.413,
+     "start": 20.737,
+     "text": "one-output"
+    },
+    {
+     "end": 21.875,
+     "start": 21.413,
+     "text": "wallet"
+    },
+    {
+     "end": 22.025,
+     "start": 21.875,
+     "text": "is"
+    },
+    {
+     "end": 22.725,
+     "start": 22.025,
+     "text": "refused"
+    },
+    {
+     "end": 23.112,
+     "start": 22.725,
+     "text": "before"
+    },
+    {
+     "end": 23.675,
+     "start": 23.112,
+     "text": "anything"
+    },
+    {
+     "end": 23.8,
+     "start": 23.675,
+     "text": "is"
+    },
+    {
+     "end": 24.375,
+     "start": 23.8,
+     "text": "submitted"
+    },
+    {
+     "end": 24.587,
+     "start": 24.375,
+     "text": "with"
+    },
+    {
+     "end": 24.938,
+     "start": 24.587,
      "text": "one"
     },
     {
-     "end": 29.375,
-     "start": 28.225,
-     "text": "output"
+     "end": 26.212,
+     "start": 24.938,
+     "text": "publication-unfunded"
+    },
+    {
+     "end": 26.675,
+     "start": 26.212,
+     "text": "verdict"
+    },
+    {
+     "end": 26.825,
+     "start": 26.675,
+     "text": "in"
+    },
+    {
+     "end": 27.562,
+     "start": 26.825,
+     "text": "preview"
+    },
+    {
+     "end": 27.75,
+     "start": 27.562,
+     "text": "and"
+    },
+    {
+     "end": 27.913,
+     "start": 27.75,
+     "text": "in"
+    },
+    {
+     "end": 28.45,
+     "start": 27.913,
+     "text": "create"
+    },
+    {
+     "end": 28.5,
+     "start": 28.45,
+     "text": "("
+    },
+    {
+     "end": 28.575,
+     "start": 28.5,
+     "text": "the"
+    },
+    {
+     "end": 28.9,
+     "start": 28.575,
+     "text": "state"
     },
     {
      "end": 29.6,
-     "start": 29.375,
+     "start": 28.9,
+     "text": "publication"
+    },
+    {
+     "end": 30.0,
+     "start": 29.6,
+     "text": "alone"
+    },
+    {
+     "end": 30.3,
+     "start": 30.0,
+     "text": "needs"
+    },
+    {
+     "end": 31.625,
+     "start": 30.3,
+     "text": "53"
+    },
+    {
+     "end": 31.925,
+     "start": 31.625,
+     "text": ","
+    },
+    {
+     "end": 33.325,
+     "start": 32.125,
+     "text": "698"
+    },
+    {
+     "end": 33.412,
+     "start": 33.325,
+     "text": ","
+    },
+    {
+     "end": 34.325,
+     "start": 33.412,
+     "text": "530"
+    },
+    {
+     "end": 35.3,
+     "start": 34.325,
+     "text": "lovelace"
+    },
+    {
+     "end": 35.475,
+     "start": 35.3,
+     "text": ")"
+    },
+    {
+     "end": 35.525,
+     "start": 35.475,
+     "text": ";"
+    },
+    {
+     "end": 35.85,
+     "start": 35.775,
+     "text": "a"
+    },
+    {
+     "end": 36.812,
+     "start": 35.85,
+     "text": "105"
+    },
+    {
+     "end": 37.125,
+     "start": 36.812,
+     "text": "tee"
+    },
+    {
+     "end": 37.513,
+     "start": 37.125,
+     "text": "ADA"
+    },
+    {
+     "end": 38.188,
+     "start": 37.513,
+     "text": "one-output"
+    },
+    {
+     "end": 38.662,
+     "start": 38.188,
+     "text": "wallet"
+    },
+    {
+     "end": 39.1,
+     "start": 38.662,
+     "text": "covers"
+    },
+    {
+     "end": 39.237,
+     "start": 39.1,
+     "text": "the"
+    },
+    {
+     "end": 39.55,
+     "start": 39.237,
+     "text": "first"
+    },
+    {
+     "end": 40.35,
+     "start": 39.55,
+     "text": "publication"
+    },
+    {
+     "end": 40.5,
+     "start": 40.35,
+     "text": "but"
+    },
+    {
+     "end": 40.65,
+     "start": 40.5,
+     "text": "is"
+    },
+    {
+     "end": 41.35,
+     "start": 40.65,
+     "text": "refused"
+    },
+    {
+     "end": 41.45,
+     "start": 41.35,
+     "text": "at"
+    },
+    {
+     "end": 41.562,
+     "start": 41.45,
+     "text": "a"
+    },
+    {
+     "end": 41.963,
+     "start": 41.562,
+     "text": "later"
+    },
+    {
+     "end": 42.325,
+     "start": 41.963,
+     "text": "step"
+    },
+    {
+     "end": 42.5,
+     "start": 42.325,
+     "text": "with"
+    },
+    {
+     "end": 42.737,
+     "start": 42.5,
+     "text": "one"
+    },
+    {
+     "end": 43.487,
+     "start": 42.737,
+     "text": "verdict"
+    },
+    {
+     "end": 43.575,
+     "start": 43.487,
+     "text": "("
+    },
+    {
+     "end": 43.675,
+     "start": 43.575,
+     "text": "the"
+    },
+    {
+     "end": 43.95,
+     "start": 43.675,
+     "text": "whole"
+    },
+    {
+     "end": 44.25,
+     "start": 43.95,
+     "text": "run"
+    },
+    {
+     "end": 44.575,
+     "start": 44.25,
+     "text": "needs"
+    },
+    {
+     "end": 44.7,
+     "start": 44.575,
+     "text": "at"
+    },
+    {
+     "end": 44.975,
+     "start": 44.7,
+     "text": "least"
+    },
+    {
+     "end": 46.85,
+     "start": 44.975,
+     "text": "162"
+    },
+    {
+     "end": 47.2,
+     "start": 46.85,
+     "text": ","
+    },
+    {
+     "end": 48.65,
+     "start": 47.4,
+     "text": "649"
+    },
+    {
+     "end": 48.737,
+     "start": 48.65,
+     "text": ","
+    },
+    {
+     "end": 49.825,
+     "start": 48.737,
+     "text": "217"
+    },
+    {
+     "end": 50.825,
+     "start": 49.825,
+     "text": "lovelace"
+    },
+    {
+     "end": 51.025,
+     "start": 50.825,
+     "text": ")"
+    },
+    {
+     "end": 51.1,
+     "start": 51.025,
+     "text": "."
+    },
+    {
+     "end": 51.438,
+     "start": 51.3,
+     "text": "With"
+    },
+    {
+     "end": 51.525,
+     "start": 51.438,
+     "text": "a"
+    },
+    {
+     "end": 51.862,
+     "start": 51.525,
+     "text": "live"
+    },
+    {
+     "end": 52.4,
+     "start": 51.862,
+     "text": "carrier"
+    },
+    {
+     "end": 52.475,
+     "start": 52.4,
+     "text": "("
+    },
+    {
+     "end": 52.875,
+     "start": 52.475,
+     "text": "Grace"
+    },
+    {
+     "end": 52.95,
+     "start": 52.875,
+     "text": ","
+    },
+    {
+     "end": 53.188,
+     "start": 52.95,
+     "text": "one"
+    },
+    {
+     "end": 53.763,
+     "start": 53.188,
+     "text": "200"
+    },
+    {
+     "end": 54.037,
+     "start": 53.763,
+     "text": "tee"
+    },
+    {
+     "end": 54.325,
+     "start": 54.037,
+     "text": "ADA"
+    },
+    {
+     "end": 54.8,
+     "start": 54.325,
+     "text": "output"
+    },
+    {
+     "end": 55.125,
+     "start": 54.8,
+     "text": "after"
+    },
+    {
+     "end": 55.6,
+     "start": 55.125,
+     "text": "Alice"
+    },
+    {
+     "end": 55.675,
+     "start": 55.6,
+     "text": ")"
+    },
+    {
+     "end": 55.725,
+     "start": 55.675,
+     "text": ","
+    },
+    {
+     "end": 55.875,
+     "start": 55.725,
+     "text": "the"
+    },
+    {
+     "end": 56.2,
+     "start": 55.875,
+     "text": "seed"
+    },
+    {
+     "end": 56.312,
+     "start": 56.2,
+     "text": "is"
+    },
+    {
+     "end": 56.487,
+     "start": 56.312,
+     "text": "her"
+    },
+    {
+     "end": 57.062,
+     "start": 56.487,
+     "text": "output"
+    },
+    {
+     "end": 57.188,
+     "start": 57.062,
+     "text": "and"
+    },
+    {
+     "end": 57.287,
+     "start": 57.188,
+     "text": "the"
+    },
+    {
+     "end": 57.525,
+     "start": 57.287,
+     "text": "boot"
+    },
+    {
+     "end": 57.688,
+     "start": 57.525,
+     "text": "is"
+    },
+    {
+     "end": 58.025,
+     "start": 57.688,
+     "text": "paid"
+    },
+    {
+     "end": 58.225,
+     "start": 58.025,
+     "text": "from"
+    },
+    {
+     "end": 59.025,
+     "start": 58.225,
+     "text": "it"
+    },
+    {
+     "end": 59.25,
+     "start": 59.025,
+     "text": "."
+    },
+    {
+     "end": 59.55,
+     "start": 59.45,
+     "text": "An"
+    },
+    {
+     "end": 60.138,
+     "start": 59.55,
+     "text": "explicit"
+    },
+    {
+     "end": 60.5,
+     "start": 60.138,
+     "text": "--seed"
+    },
+    {
+     "end": 60.75,
+     "start": 60.5,
+     "text": "names"
+    },
+    {
+     "end": 60.825,
+     "start": 60.75,
+     "text": "a"
+    },
+    {
+     "end": 61.1,
+     "start": 60.825,
+     "text": "held"
+    },
+    {
+     "end": 61.7,
+     "start": 61.1,
+     "text": "output"
+    },
+    {
+     "end": 61.812,
+     "start": 61.7,
+     "text": ","
+    },
+    {
+     "end": 62.0,
+     "start": 61.812,
+     "text": "or"
+    },
+    {
+     "end": 62.1,
+     "start": 62.0,
+     "text": "the"
+    },
+    {
+     "end": 62.562,
+     "start": 62.1,
+     "text": "previewed"
+    },
+    {
+     "end": 62.938,
+     "start": 62.562,
+     "text": "chained"
+    },
+    {
+     "end": 63.3,
+     "start": 62.938,
+     "text": "seed"
+    },
+    {
+     "end": 63.425,
+     "start": 63.3,
+     "text": "to"
+    },
+    {
+     "end": 63.638,
+     "start": 63.425,
+     "text": "pin"
+    },
+    {
+     "end": 63.787,
+     "start": 63.638,
+     "text": "the"
+    },
+    {
+     "end": 64.95,
+     "start": 63.787,
+     "text": "identity"
+    },
+    {
+     "end": 65.15,
+     "start": 64.95,
+     "text": ";"
+    },
+    {
+     "end": 65.425,
+     "start": 65.35,
+     "text": "a"
+    },
+    {
+     "end": 65.713,
+     "start": 65.425,
+     "text": "held"
+    },
+    {
+     "end": 66.025,
+     "start": 65.713,
+     "text": "sole"
+    },
+    {
+     "end": 66.475,
+     "start": 66.025,
+     "text": "output"
+    },
+    {
+     "end": 66.662,
+     "start": 66.475,
+     "text": "while"
+    },
+    {
+     "end": 66.75,
+     "start": 66.662,
+     "text": "the"
+    },
+    {
+     "end": 67.075,
+     "start": 66.75,
+     "text": "state"
+    },
+    {
+     "end": 67.262,
+     "start": 67.075,
+     "text": "must"
+    },
+    {
+     "end": 67.375,
+     "start": 67.262,
+     "text": "be"
+    },
+    {
+     "end": 68.025,
+     "start": 67.375,
+     "text": "published"
+    },
+    {
+     "end": 68.2,
+     "start": 68.025,
+     "text": "is"
+    },
+    {
+     "end": 68.762,
+     "start": 68.2,
+     "text": "refused"
+    },
+    {
+     "end": 68.938,
+     "start": 68.762,
+     "text": "with"
+    },
+    {
+     "end": 69.3,
+     "start": 68.938,
+     "text": "omit"
+    },
+    {
+     "end": 70.175,
+     "start": 69.3,
+     "text": "seed"
+    },
+    {
+     "end": 70.4,
+     "start": 70.175,
+     "text": "."
+    },
+    {
+     "end": 71.325,
+     "start": 70.6,
+     "text": "Reference-script"
+    },
+    {
+     "end": 71.838,
+     "start": 71.325,
+     "text": "outputs"
+    },
+    {
+     "end": 72.15,
+     "start": 71.838,
+     "text": "left"
+    },
+    {
+     "end": 72.35,
+     "start": 72.15,
+     "text": "by"
+    },
+    {
+     "end": 72.75,
+     "start": 72.35,
+     "text": "earlier"
+    },
+    {
+     "end": 73.287,
+     "start": 72.75,
+     "text": "creates"
+    },
+    {
+     "end": 73.425,
+     "start": 73.287,
+     "text": "do"
+    },
+    {
+     "end": 73.65,
+     "start": 73.425,
+     "text": "not"
+    },
+    {
+     "end": 73.925,
+     "start": 73.65,
+     "text": "count"
+    },
+    {
+     "end": 74.075,
+     "start": 73.925,
+     "text": "as"
+    },
+    {
+     "end": 75.05,
+     "start": 74.075,
+     "text": "funding"
+    },
+    {
+     "end": 75.25,
+     "start": 75.05,
+     "text": "."
+    },
+    {
+     "end": 75.75,
+     "start": 75.45,
+     "text": "Built"
+    },
+    {
+     "end": 75.963,
+     "start": 75.75,
+     "text": "under"
+    },
+    {
+     "end": 76.05,
+     "start": 75.963,
+     "text": "the"
+    },
+    {
+     "end": 76.575,
+     "start": 76.05,
+     "text": "decision"
+    },
+    {
+     "end": 76.738,
+     "start": 76.575,
+     "text": "of"
+    },
+    {
+     "end": 78.3,
+     "start": 76.738,
+     "text": "2026-10-12"
+    },
+    {
+     "end": 78.375,
+     "start": 78.3,
+     "text": "("
+    },
+    {
+     "end": 79.825,
+     "start": 78.375,
+     "text": "491"
+    },
+    {
+     "end": 79.95,
+     "start": 79.825,
+     "text": ")"
+    },
+    {
+     "end": 80.15,
+     "start": 79.95,
+     "text": "as"
+    },
+    {
+     "end": 80.275,
+     "start": 80.15,
+     "text": "a"
+    },
+    {
+     "end": 80.75,
+     "start": 80.275,
+     "text": "chain"
+    },
+    {
+     "end": 80.95,
+     "start": 80.75,
+     "text": "from"
+    },
+    {
+     "end": 81.175,
+     "start": 80.95,
+     "text": "one"
+    },
+    {
+     "end": 82.3,
+     "start": 81.175,
+     "text": "output"
+    },
+    {
+     "end": 82.525,
+     "start": 82.3,
      "text": ":"
     }
    ]
@@ -94966,96 +95706,216 @@
    ]
   },
   "docs-demo1-preprod/funding-a-create-from-one-output-06": {
-   "audio_sha256": "8a18e07843f07393cd7d43984ee6f3e8778e017a1c1231af1e5de639f977c695",
-   "characters": 80,
-   "cost": 7.92e-05,
-   "duration": 8.925,
+   "audio_sha256": "a912217694e1f98c60c282694faeb160d204d69d598a809e571ea773bbcb57c4",
+   "characters": 199,
+   "cost": 0.00019700999999999999,
+   "duration": 13.25,
    "index": 6,
-   "key": "70deb4617ada7119dbfb05ad8a58d9f176e543d82fbeb94ac591e39d01984736",
+   "key": "b0bd9eea2bc63d8090c83adc2b0de4f090b3bdf149e5026c38d2465424d2f5d0",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 400,
    "section": "funding-a-create-from-one-output",
-   "sent_text": "Until #406, #479 and #491 land, the create still refuses a single-output wallet.",
-   "text": "Until #406, #479 and #491 land, the create still refuses a single-output wallet.",
+   "sent_text": "Remaining limits: the wallet is read once and an output spent between steps still fails a later step with the wallet changed; there is no resume of a half-made run; the oversize check is an estimate.",
+   "text": "Remaining limits: the wallet is read once and an output spent between steps still fails a later step with the wallet changed; there is no resume of a half-made run; the oversize check is an estimate.",
    "words": [
     {
-     "end": 0.488,
+     "end": 0.6,
      "start": 0.2,
-     "text": "Until"
+     "text": "Remaining"
     },
     {
-     "end": 1.5,
-     "start": 0.488,
-     "text": "406"
+     "end": 1.35,
+     "start": 0.6,
+     "text": "limits"
     },
     {
-     "end": 1.562,
-     "start": 1.5,
-     "text": ","
+     "end": 1.55,
+     "start": 1.35,
+     "text": ":"
     },
     {
-     "end": 2.95,
-     "start": 1.562,
-     "text": "479"
-    },
-    {
-     "end": 3.1,
-     "start": 2.95,
-     "text": "and"
-    },
-    {
-     "end": 4.375,
-     "start": 3.1,
-     "text": "491"
-    },
-    {
-     "end": 4.9,
-     "start": 4.375,
-     "text": "land"
-    },
-    {
-     "end": 5.0,
-     "start": 4.9,
-     "text": ","
-    },
-    {
-     "end": 5.1,
-     "start": 5.0,
+     "end": 1.862,
+     "start": 1.75,
      "text": "the"
     },
     {
-     "end": 5.5,
-     "start": 5.1,
-     "text": "create"
-    },
-    {
-     "end": 5.775,
-     "start": 5.5,
-     "text": "still"
-    },
-    {
-     "end": 6.512,
-     "start": 5.775,
-     "text": "refuses"
-    },
-    {
-     "end": 6.662,
-     "start": 6.512,
-     "text": "a"
-    },
-    {
-     "end": 7.55,
-     "start": 6.662,
-     "text": "single-output"
-    },
-    {
-     "end": 8.675,
-     "start": 7.55,
+     "end": 2.225,
+     "start": 1.862,
      "text": "wallet"
     },
     {
-     "end": 8.925,
+     "end": 2.388,
+     "start": 2.225,
+     "text": "is"
+    },
+    {
+     "end": 2.688,
+     "start": 2.388,
+     "text": "read"
+    },
+    {
+     "end": 3.112,
+     "start": 2.688,
+     "text": "once"
+    },
+    {
+     "end": 3.237,
+     "start": 3.112,
+     "text": "and"
+    },
+    {
+     "end": 3.362,
+     "start": 3.237,
+     "text": "an"
+    },
+    {
+     "end": 3.85,
+     "start": 3.362,
+     "text": "output"
+    },
+    {
+     "end": 4.1,
+     "start": 3.85,
+     "text": "spent"
+    },
+    {
+     "end": 4.463,
+     "start": 4.1,
+     "text": "between"
+    },
+    {
+     "end": 4.887,
+     "start": 4.463,
+     "text": "steps"
+    },
+    {
+     "end": 5.287,
+     "start": 4.887,
+     "text": "still"
+    },
+    {
+     "end": 5.65,
+     "start": 5.287,
+     "text": "fails"
+    },
+    {
+     "end": 5.762,
+     "start": 5.65,
+     "text": "a"
+    },
+    {
+     "end": 6.15,
+     "start": 5.762,
+     "text": "later"
+    },
+    {
+     "end": 6.5,
+     "start": 6.15,
+     "text": "step"
+    },
+    {
+     "end": 6.637,
+     "start": 6.5,
+     "text": "with"
+    },
+    {
+     "end": 6.75,
+     "start": 6.637,
+     "text": "the"
+    },
+    {
+     "end": 7.137,
+     "start": 6.75,
+     "text": "wallet"
+    },
+    {
+     "end": 8.275,
+     "start": 7.137,
+     "text": "changed"
+    },
+    {
+     "end": 8.5,
+     "start": 8.275,
+     "text": ";"
+    },
+    {
+     "end": 8.825,
      "start": 8.675,
+     "text": "there"
+    },
+    {
+     "end": 8.988,
+     "start": 8.825,
+     "text": "is"
+    },
+    {
+     "end": 9.25,
+     "start": 8.988,
+     "text": "no"
+    },
+    {
+     "end": 9.663,
+     "start": 9.25,
+     "text": "resume"
+    },
+    {
+     "end": 9.738,
+     "start": 9.663,
+     "text": "of"
+    },
+    {
+     "end": 9.8,
+     "start": 9.738,
+     "text": "a"
+    },
+    {
+     "end": 10.325,
+     "start": 9.8,
+     "text": "half-made"
+    },
+    {
+     "end": 10.675,
+     "start": 10.325,
+     "text": "run"
+    },
+    {
+     "end": 10.75,
+     "start": 10.675,
+     "text": ";"
+    },
+    {
+     "end": 10.9,
+     "start": 10.75,
+     "text": "the"
+    },
+    {
+     "end": 11.512,
+     "start": 10.9,
+     "text": "oversize"
+    },
+    {
+     "end": 11.825,
+     "start": 11.512,
+     "text": "check"
+    },
+    {
+     "end": 11.938,
+     "start": 11.825,
+     "text": "is"
+    },
+    {
+     "end": 12.025,
+     "start": 11.938,
+     "text": "an"
+    },
+    {
+     "end": 13.05,
+     "start": 12.025,
+     "text": "estimate"
+    },
+    {
+     "end": 13.25,
+     "start": 13.05,
      "text": "."
     }
    ]
