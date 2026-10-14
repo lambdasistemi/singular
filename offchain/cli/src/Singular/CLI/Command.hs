@@ -492,13 +492,13 @@ parseWithGroup group environment args = do
                             UnsafeSettings
                             WriteSettings
                             flags
+        -- No `--seed` flag auto-selects (#406 slice 2): the largest ada-only
+        -- output with a live carrier, else the first publication's change.
         seed <- case lookup "--seed" flags of
             Just (Just s) -> case parseOutRef (T.pack s) of
                 Right _ -> Right (Just s)
                 Left err -> Left (BadValue "--seed" err)
-            _
-                | preview -> Right Nothing
-                | otherwise -> Left (MissingFlag "--seed")
+            _ -> Right Nothing
         pure
             CreateArgs
                 { createStateDir = dir
@@ -819,7 +819,7 @@ usage =
     unlines
         [ "usage:"
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      (--seed TXID#IX | --preview) [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      [--seed TXID#IX] [--preview] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"

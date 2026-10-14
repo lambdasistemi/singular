@@ -964,6 +964,7 @@ test-suite cage-tests
     Singular.CLI.CommandRunSpec
     Singular.CLI.CreateFundingSpec
     Singular.CLI.DescribeSpec
+    Singular.CLI.OneOutputCreateSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec

@@ -134,6 +134,7 @@ hexkey >"$work/carol.skey" # never funded
 hexkey >"$work/dave.skey"  # funded small, for the underfunded create
 hexkey >"$work/erin.skey"  # fragmented outputs below the largest remaining need, total covers the run
 hexkey >"$work/frank.skey" # same size, one output short of the whole run
+hexkey >"$work/grace.skey" # one 200 tADA output, state carrier reused after Alice
 
 export TMPDIR="$work"
 
@@ -192,6 +193,7 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
   --fund-outputs 6 --fund-lovelace 2000000000 \
   --fund "$work/dave.skey:1:5000000" --fund "$work/dave.skey:24:4000000" \
   --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:4:30000000" \
+  --fund "$work/grace.skey:1:200000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 # The per-wallet funding group is parsed before any node starts: a
@@ -718,7 +720,13 @@ common+=(--state-token "$state_token")
 
 # This registry exercises absent flags and never books a timed request.
 # The rest of the journey keeps its explicit development-network windows.
-run create-defaults success -- create --seed "$(field bob-preview .seed)" \
+# Bob's early preview named a chained seed with no carrier; Alice has since
+# published the carrier, so that pin is stale. Re-preview Bob with the carrier
+# (largest output, as today) and boot from the fresh pin.
+run bob-preview2 success -- create --process-time 120000 --retract-time 30000 --preview \
+  --state-dir "$work/bob-preview2" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+[ ! -e "$work/bob-preview2" ] || fail "bob's second preview created its target"
+run create-defaults success -- create --seed "$(field bob-preview2 .seed)" \
   --state-dir "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 run inspect-defaults success -- inspect --key default-window-key \
   --state-dir "$work/default-registry" --blueprint "$blueprint" \
@@ -992,8 +1000,8 @@ say "two actors: bob folded alice's insertion from the state token alone; her en
 # 7b. an underfunded create refuses before boot (J)
 # ------------------------------------------------------------------
 # Dave's wallet holds one 5 ada output beside twenty-four 4 ada outputs:
-# 101 ada in all, so the write session's 100 ada funding floor and its
-# 5 ada collateral input pass. A state carrier of this release is already
+# 101 ada in all, below the whole run's lowest total need, with a 5 ada
+# ada-only output usable as collateral. A state carrier of this release is already
 # live and reused, so his create would publish no state script; the seed
 # and the largest output beside it cannot fund the boot, and the refusal
 # comes before anything is submitted: no journal, no pending identity,
@@ -1108,6 +1116,61 @@ run frank-preview2 success -- create --process-time 120000 --retract-time 30000 
 [ "$(field frank-preview2 .createRefusal)" = "$frank_refusal" ] \
   || fail "frank's wallet changed under the refused create"
 say "the refused frank create left every wallet output unchanged"
+
+# ------------------------------------------------------------------
+# 7d. a one-output wallet with the state carrier reused (Grace)
+# ------------------------------------------------------------------
+# Grace holds one 200 tADA ada-only output and nothing else. Alice's create
+# already published this release's state script, so Grace's create publishes
+# none: the seed is her sole output (the largest, as today, so identities of
+# creates from wallets with a live carrier do not change) and the boot is
+# paid from it. Her preview reports no refusal and her create completes;
+# every reference is live; Bob reads the registry from the token alone.
+# Fails on base: the preview reports the NoFundingBesideSeed refusal and the
+# create is refused before anything is submitted.
+two_grace="$work/grace-actor"
+grace=(--wallet-skey "$work/grace.skey")
+run grace-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+  --state-dir "$two_grace" --blueprint "$blueprint" "${node[@]}" "${grace[@]}"
+jq -e '.createRefusal == null' "$receipts/grace-preview.json" >/dev/null \
+  || fail "grace's preview refuses a fundable one-output wallet: $(jq -r .createRefusal "$receipts/grace-preview.json")"
+jq -e '.seedFrom == "output"' "$receipts/grace-preview.json" >/dev/null \
+  || fail "grace's reused-carrier preview does not name an output seed: $(jq -r .seedFrom "$receipts/grace-preview.json")"
+grace_seed="$(field grace-preview .seed)"
+grace_token_preview="$(field grace-preview .stateToken)"
+# The seed is her funded output, read from the chain at run time: live
+# before the create (her wallet holds one output, funded 1x200 tADA).
+grace_seed_probe="$work/grace-seed-probe.json"
+"$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$grace_seed" >"$grace_seed_probe"
+jq -e --arg s "$grace_seed" 'any(.live[]; . == $s)' "$grace_seed_probe" >/dev/null \
+  || fail "grace's previewed seed $grace_seed is not live before her create"
+# The story is the command with no seed flag: it boots from her sole output.
+run grace-create success -- create --process-time 120000 --retract-time 30000 \
+  --state-dir "$two_grace" --blueprint "$blueprint" "${node[@]}" "${grace[@]}"
+[ "$(field grace-create .stateToken)" = "$grace_token_preview" ] \
+  || fail "grace's create made another token: $(field grace-create .stateToken) vs $grace_token_preview"
+[ "$(field grace-create .seed)" = "$grace_seed" ] \
+  || fail "grace's create booted from another seed: $(field grace-create .seed) vs $grace_seed"
+jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
+  "$receipts/grace-create.json" >/dev/null || fail "grace's create did not publish the six references"
+grace_token="$(field grace-create .stateToken)"
+for ref_out in $(jq -r '.references[] | .output' "$receipts/grace-create.json"); do
+  probe_one="$work/grace-ref-probe.json"
+  "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$ref_out" >"$probe_one"
+  jq -e --arg r "$ref_out" 'any(.live[]; . == $r)' "$probe_one" >/dev/null \
+    || fail "grace's reference $ref_out is not live"
+done
+say "grace's one-output wallet with a reused carrier completed; every reference is live"
+grace_key="$(field grace-create .walletKeyHash)"
+grace_journal="$(managed_journal "$two_grace" "$grace_token" "$grace_key")"
+[ -f "$grace_journal" ] || fail "grace's create left no journal"
+bob_grace="$work/bob-grace"
+mkdir -p "$bob_grace"
+run bob-grace-inspect success -- inspect --key keyEmpty --state-token "$grace_token" \
+  --state-dir "$bob_grace" --blueprint "$blueprint" "${node[@]}"
+[ "$(field bob-grace-inspect .leaf)" = unknown ] \
+  || fail "bob did not read grace's registry from the token alone"
+say "bob read grace's registry from the state token alone"
 
 # stderr_of NAME ARGS...: a command line the parser refuses before anything
 # is read: exit 2 and a message on stderr, never a receipt.
@@ -1619,6 +1682,10 @@ if [ "$mode" = test-harness ]; then
   done
   jq -e '.incompleteCreate.seed' "$receipts/inspect-interrupted.json" >/dev/null \
     || fail "inspect did not read the incomplete create's identity"
+  [ "$(jq -er .incompleteCreate.seed "$receipts/inspect-interrupted.json")" = "$seed_i" ] \
+    || fail "the interrupted pending identity names another seed"
+  [ "$(jq -er .incompleteCreate.stateToken "$receipts/inspect-interrupted.json")" = "$inter_token" ] \
+    || fail "the interrupted pending identity names another token"
   [ "$(field inspect-interrupted .leaf)" = null ] || fail "an incomplete create printed a leaf"
   jq -e --arg t "$first_tx" 'select(.journalTxId == $t and .journalEvent == "observed")' \
     "$inter_journal" >/dev/null || fail "the killed create's accepted submission was never observed"
