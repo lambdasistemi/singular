@@ -16,11 +16,12 @@
 #    and its fold by another wallet among them, with the archive's own
 #    blueprint. Injected process controls run in the separate explicit test carrier.
 # 3. The run page, DEMO1.md, in that extraction must number exactly the
-#    fifteen commands, each in its position: create, insert, fold, inspect,
-#    update, inspect, terminate, fold, inspect, reject, insert, fold, reclaim,
-#    insert, fold. Copies of the
-#    page without the fold of the insertion, without update, without the inspection that
-#    follows update, without the termination and without the reject must each fail that same
+#    sixteen commands, each in its position: create, the page reading,
+#    insert, fold, inspect, update, inspect, terminate, fold, inspect,
+#    reject, insert, fold, reclaim, insert, fold. Copies of the
+#    page without the page reading, without the fold of the insertion, without
+#    update, without the inspection that follows update, without the
+#    termination and without the reject must each fail that same
 #    check (its own controls).
 # 4. The retained insert-active and update-terminal archive commands run
 #    from the same extracted archive with their accepting and refusing
@@ -101,25 +102,44 @@ page_steps() {
   # shellcheck disable=SC2016 # the backticks are the page's own Markdown
   sed -n -e 's/^\([0-9][0-9]*\)\. \*\*`singular registry \([a-z][a-z]*\)`\*\*.*/\1:singular:\2/p' -e 's/^\([0-9][0-9]*\)\. \*\*`open-datum \([a-z][a-z]*\)`\*\*.*/\1:open-datum:\2/p' "$1" | tr '\n' ' '
 }
-# The page documents exactly the fifteen commands of the journey, in position,
-# per binary: every open-datum verb through `open-datum`, reject and reclaim
-# through `singular registry`.
+# The page documents exactly the sixteen commands of the journey, in position,
+# per binary: create and the page reading after it, every open-datum verb
+# through `open-datum`, describe, reject and reclaim through `singular registry`.
 page_ok() {
-  [ "$(page_steps "$1")" = "1:open-datum:create 2:open-datum:insert 3:open-datum:fold 4:open-datum:inspect 5:open-datum:update 6:open-datum:inspect 7:open-datum:terminate 8:open-datum:fold 9:open-datum:inspect 10:singular:reject 11:open-datum:insert 12:open-datum:fold 13:singular:reclaim 14:open-datum:insert 15:open-datum:fold " ]
+  [ "$(page_steps "$1")" = "1:open-datum:create 2:singular:describe 3:open-datum:insert 4:open-datum:fold 5:open-datum:inspect 6:open-datum:update 7:open-datum:inspect 8:open-datum:terminate 9:open-datum:fold 10:open-datum:inspect 11:singular:reject 12:open-datum:insert 13:open-datum:fold 14:singular:reclaim 15:open-datum:insert 16:open-datum:fold " ]
 }
 # without STEP: the page with its numbered step STEP removed, either binary.
 # shellcheck disable=SC2016 # the backticks are the page's own Markdown
 without() { grep -v "^$2"'\. \*\*`\(singular registry \|open-datum \)' "$1"; }
 test -f "$extracted/DEMO1.md" || fail "the archive carries no DEMO1.md run page"
 page_ok "$extracted/DEMO1.md" \
-  || fail "DEMO1.md's numbered steps are not the fifteen commands in position: $(page_steps "$extracted/DEMO1.md")"
-for control in "7 terminate" "3 fold-of-the-insertion" "5 update" "6 inspect-after-update" "10 reject" "13 reclaim" "15 fold-after-reclaim"; do
+  || fail "DEMO1.md's numbered steps are not the sixteen commands in position: $(page_steps "$extracted/DEMO1.md")"
+for control in "2 describe" "8 terminate" "4 fold-of-the-insertion" "6 update" "7 inspect-after-update" "11 reject" "14 reclaim" "16 fold-after-reclaim"; do
   step="${control%% *}" what="${control#* }"
   without "$extracted/DEMO1.md" "$step" >"$scratch/DEMO1-without-$what.md"
   if page_ok "$scratch/DEMO1-without-$what.md"; then
     fail "control: a page without $what passed the page check"
   fi
 done
+# Control: the ordinary journey refuses by name when the archive's version
+# file is absent, instead of reading a page; the harness path skips the page
+# steps instead. The check runs the journey's own function, read from the
+# journey the archive run uses.
+eval "$(sed -n '/^require_archive_layout() {/,/^}$/p' "$root/tools/demo1_cli_journey.sh")"
+mkdir -p "$scratch/no-version/onchain"
+: >"$scratch/no-version/onchain/plutus.json"
+if require_archive_layout "$scratch/no-version/onchain/plutus.json" ordinary 2>"$scratch/no-version.err"; then
+  fail "control: the ordinary journey read past a missing version file"
+fi
+grep -q "the archive's blueprint has no version.txt beside it" "$scratch/no-version.err" \
+  || fail "control: the refusal names another cause"
+require_archive_layout "$extracted/onchain/plutus.json" ordinary \
+  || fail "control: the archive layout failed its own version check"
+require_archive_layout "$extracted/onchain/plutus.json" test-harness \
+  || fail "control: the harness path refused a present version file"
+if require_archive_layout "$scratch/no-version/onchain/plutus.json" test-harness; then
+  fail "control: the harness path ran past a missing version file"
+fi
 
 cd "$extracted/offchain"
 

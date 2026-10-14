@@ -64,7 +64,12 @@ open-datum insert --state-dir ./work --blueprint plutus.json \
 ## Naming the registry by its state token
 
 As Carol, the creator, I run `create` from an empty directory. Its receipt
-names `stateToken`, the registry's state token as `POLICY.NAME` in hex. I
+names `stateToken`, the registry's state token as `POLICY.NAME` in hex, and
+`describeCommand`, the working `singular registry describe` line built from
+the arguments the create ran with: the blueprint as given, the new state
+token, the provider and network settings, and the network time directory
+when given. It names no wallet key and no credential file. Run it as printed
+to read the registry page. I
 publish nothing else and keep no file anyone else needs: `create` writes no
 identity file, and the pending identity it records before its first submission
 is removed once it finishes.

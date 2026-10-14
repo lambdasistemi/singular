@@ -113,17 +113,17 @@
       "pause": 500
     },
     {
-      "text": "[ ] final-local-gate: lint, format, focused suites, flags, docs, then just ci once.",
+      "text": "[x] final-local-gate: lint, format, focused suites, flags, docs, then just ci once.",
       "pause": 300
     },
     {
-      "text": "[ ] pull-request-record: the template filled with the model revision, maps, evidence and limits.",
+      "text": "[x] pull-request-record: the template filled with the model revision, maps, evidence and limits.",
       "pause": 300
     }
   ],
-  "second-pull-request-the-desks-notes-that-create-funding-and-the-bookkeeping-work-merged-have-arrived": [
+  "second-pull-request-base-0272dadc-slices-6-and-7-start-now-slice-8-on-the-desks-note-that-518-pull-request-3b-merged": [
     {
-      "text": "Second pull request (the desk's notes that create funding and the bookkeeping work merged have arrived).",
+      "text": "Second pull request (base 0272dadc; slices 6 and 7 start now, slice 8 on the desk's note that #518 pull request 3b merged).",
       "pause": 500
     }
   ],
@@ -133,11 +133,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] archive-stages-version: version.txt beside the archive's blueprint.",
+      "text": "[x] archive-stages-version: onchain/version.txt beside the archive's onchain/plutus.json.",
       "pause": 300
     },
     {
-      "text": "[ ] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.",
+      "text": "[x] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.",
+      "pause": 300
+    },
+    {
+      "text": "[x] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed version each refused by name on an archive that is otherwise valid.",
       "pause": 300
     }
   ],
@@ -147,11 +151,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] create-prints-describe-command-red: the create receipt carries no describe command on the base; the test runs the printed command as printed and expects the page.",
+      "text": "[x] create-prints-describe-command-red: the create receipt carries no describe command on the base; the test runs the printed command as printed and expects the page.",
       "pause": 300
     },
     {
-      "text": "[ ] create-receipt-carries-the-command: built from the arguments create ran with, with the new state token, never a wallet key; both the registry and the open-datum create.",
+      "text": "[x] create-receipt-carries-the-command: built from the arguments create ran with, with the new state token, never a wallet key; both the registry and the open-datum create.",
+      "pause": 300
+    },
+    {
+      "text": "[x] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or signing flag; a planted one fails the check.",
       "pause": 300
     }
   ],
@@ -161,24 +169,24 @@
       "pause": 500
     },
     {
-      "text": "[ ] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.",
+      "text": "[x] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.",
       "pause": 300
     },
     {
-      "text": "[ ] archive-job-runs-describe: the archive job extracts the release, runs the archive's own singular and blueprint with the adjacent version.txt, and compares the page with inspect after the lifecycle; commands and outputs are recorded.",
+      "text": "[x] archive-job-runs-describe: the archive job extracts the release, runs the archive's own singular and blueprint with the adjacent version.txt, and compares the page with inspect after the lifecycle; commands and outputs are recorded.",
       "pause": 300
     },
     {
-      "text": "[ ] run-page-step-check-follows: the numbered-step check and its controls follow the new step.",
+      "text": "[x] run-page-step-check-follows: the numbered-step check and its controls follow the new step.",
       "pause": 300
     },
     {
-      "text": "[ ] narration-and-docs-follow: speech and clips regenerated for the changed pages.",
+      "text": "[x] narration-and-docs-follow: speech and clips regenerated for the changed pages.",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "14da88d627fdf9b62f73d0eccdc75a747ca8bb8d73683aeea447419168cee377"
+    "sha256": "8e3f9aaa905667dc091cd3540ebcff34b00e9dc41ecdd14c12bfe06cdce268f5"
   }
 }

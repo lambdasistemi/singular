@@ -172,6 +172,23 @@ if onchain_present:
     with tarfile.open(onchain_path) as bundle:
         members = {m.name.removeprefix("./"): m for m in bundle.getmembers()}
         names = set(members)
+        version_member = "onchain/version.txt"
+        if version_member not in names:
+            assert False, "onchain/version.txt is missing"
+        staged_version = (
+            bundle.extractfile(members[version_member]).read().decode().strip()
+        )
+        file_version = onchain_path.name.removeprefix("singular-onchain-").removesuffix(
+            ".tar.gz"
+        )
+        if staged_version != version or staged_version != file_version:
+            assert False, "onchain/version.txt differs from the release version"
+        inner_lines = (
+            bundle.extractfile(members["SHA256SUMS"]).read().decode().splitlines()
+        )
+        inner_names = {line.split("  ", 1)[1] for line in inner_lines}
+        if version_member not in inner_names:
+            assert False, "onchain/version.txt is not covered by the archive checksums"
         for required in (
             "README.md",
             "RELEASE.md",
@@ -218,6 +235,7 @@ if onchain_present:
             "lean-toolchain",
             "flake.lock",
             "onchain/plutus.json",
+            "onchain/version.txt",
             "onchain/script-identity.json",
             "onchain/aiken.toml",
             "onchain/aiken.lock",

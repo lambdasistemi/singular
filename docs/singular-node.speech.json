@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
       "pause": 400
     },
     {
@@ -269,6 +269,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "09f513bad8f65480ceebf2c75749fb5206307edbc09305ade0100392ab64ad86"
+    "sha256": "8dab220bd3a0912cdb9e3a97a3bbb8edee5950e00b60f5c6df34c372b03065d7"
   }
 }

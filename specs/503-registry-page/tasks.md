@@ -52,28 +52,32 @@ before it is made to pass, and the failing run is kept.
 
 ## Close of the first pull request
 
-- [ ] final-local-gate: lint, format, focused suites, flags, docs, then `just ci` once.
-- [ ] pull-request-record: the template filled with the model revision, maps, evidence and limits.
+- [x] final-local-gate: lint, format, focused suites, flags, docs, then `just ci` once.
+- [x] pull-request-record: the template filled with the model revision, maps, evidence and limits.
 
-## Second pull request (the desk's notes that create funding and the bookkeeping work merged have arrived)
+## Second pull request (base `0272dadc`; slices 6 and 7 start now, slice 8 on the desk's note that #518 pull request 3b merged)
 
 ### Slice 6: archive version (moved here by the cut rule)
 
-- [ ] archive-stages-version: `version.txt` beside the archive's blueprint.
-- [ ] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.
+- [x] archive-stages-version: `onchain/version.txt` beside the archive's `onchain/plutus.json`.
+- [x] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.
+- [x] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed
+  version each refused by name on an archive that is otherwise valid.
 
 ### Slice 7: create prints the command
 
-- [ ] create-prints-describe-command-red: the create receipt carries no `describe` command on the
+- [x] create-prints-describe-command-red: the create receipt carries no `describe` command on the
   base; the test runs the printed command as printed and expects the page.
-- [ ] create-receipt-carries-the-command: built from the arguments create ran with, with the new
+- [x] create-receipt-carries-the-command: built from the arguments create ran with, with the new
   state token, never a wallet key; both the registry and the open-datum create.
+- [x] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or
+  signing flag; a planted one fails the check.
 
 ### Slice 8: page from the archive
 
-- [ ] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.
-- [ ] archive-job-runs-describe: the archive job extracts the release, runs the archive's own
+- [x] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.
+- [x] archive-job-runs-describe: the archive job extracts the release, runs the archive's own
   `singular` and blueprint with the adjacent `version.txt`, and compares the page with `inspect`
   after the lifecycle; commands and outputs are recorded.
-- [ ] run-page-step-check-follows: the numbered-step check and its controls follow the new step.
-- [ ] narration-and-docs-follow: speech and clips regenerated for the changed pages.
+- [x] run-page-step-check-follows: the numbered-step check and its controls follow the new step.
+- [x] narration-and-docs-follow: speech and clips regenerated for the changed pages.

@@ -1,7 +1,7 @@
 # Touch list
 
 Every file this ticket creates, edits or deletes, by slice. Read the [plan](plan.md) for the
-slices. Base: `main` at `e7b55ac9`. A file not on this list that the work later needs is a question
+slices. Base: `main` at `e7b55ac9` (second pull request: `0272dadc`). A file not on this list that the work later needs is a question
 to the desk before it is edited. Columns: **change** is create or edit; **meets** names a live lane
 that shares the file, or none.
 
@@ -65,17 +65,30 @@ that shares the file, or none.
 `conformance/lib/Conformance/Cli/Controls.hs`. `onchain-release/DEMO1.md` and
 `tools/demo1_cli_check.sh` are left for the second pull request below.
 
-## Second pull request (paths re-read at its base)
+## Second pull request (paths re-read at `main` `0272dadc`)
 
-| path | slice | change | why | waits for |
+The one-output create (#406, PR 625) and the bookkeeping work (#543) have merged. Slices 6 and 7
+start now; slice 8 waits for the desk's note that #518 pull request 3b merged, because it edits
+the same Demo 1 files.
+
+| path | slice | change | why | meets |
 |---|---|---|---|---|
-| `offchain/cli/src/Singular/CLI/Create.hs` | 7 | edit | the receipt carries the working `describe` command | create funding (#406) merged |
-| `offchain/test/Singular/CLI/` (create receipt spec) | 7 | create or edit | the printed command run as printed | same |
-| `applications/open-datum/offchain/` create tests | 7 | edit | the open-datum create receipt | same |
-| `onchain-release/DEMO1.md` and its speech companion | 8 | edit | the run page starts from the page | bookkeeping (#543) merged |
-| `tools/demo1_cli_check.sh` and its controls | 8 | edit | run `describe` from the extraction, compare with `inspect`, follow the new step | same |
-| `docs/` pages that show a create receipt, their speech and clips | 7, 8 | edit | agree with the new receipt | same |
-| `flake.nix`, `.github/workflows/registry.yml` | 8 | only if the archive job needs a new input or step; the desk is asked first | held by the bookkeeping work | same |
+| `tools/assemble_onchain_release.py` | 6 | edit | stage `onchain/version.txt` beside `onchain/plutus.json` | none |
+| `tools/check_release.py` | 6 | edit | require the file; refuse a missing, other or unchecksummed version by name | none |
+| `tools/release_surface_control.sh` | 6 | edit | the control: each refusal is checked on an archive that is otherwise valid (runs inside `release-artifacts`) | none |
+| `offchain/cli/src/Singular/CLI/Create.hs` | 7 | edit | `describeCommand` in the receipt's identity fields, beside `stateToken`; no other function changes | none now |
+| `offchain/test/Singular/CLI/CommandRunSpec.hs` | 7 | edit | the registry create receipt carries the command, run as printed through the existing rig | #518 3b (receipt reads), additive both sides |
+| `applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs` | 7 | edit | the open-datum create receipt carries the command | none known |
+| `docs/registry-page.md`, `docs/singular-node.md`, `docs/consumer-onboarding.md`, their speech companions | 7, 8 | edit | pages that show a create receipt show the new field | #518 3b may edit `docs/singular-node.md` |
+| `onchain-release/DEMO1.md` and its speech companion | 8 | edit | the run page reads the page right after create | #518 3b |
+| `tools/demo1_cli_journey.sh` | 8 | edit | `describe` from the extracted archive right after create and after the lifecycle, compared with `inspect` and the fold receipts | #518 3b |
+| `tools/demo1_cli_check.sh` | 8 | edit | `page_steps` and `page_ok` and their removal controls follow the new step | #518 3b may edit it |
+| `docs/audio/` clips and index | 8 | regenerate | narration of the changed pages, by the tool, under the standing authorization | none |
+| `flake.nix`, `.github/workflows/registry.yml` | 8 | only if the archive job needs a new input or step; the desk is asked first | the archive job | none known |
+
+A test that names things by extent (commands, receipt fields, module counts) and fails only because
+of the new field or step gets the same additive edit under the desk's standing leave (A-002); each
+such file is journaled by name.
 
 ## Added during delivery (first pull request)
 

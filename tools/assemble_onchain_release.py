@@ -130,6 +130,9 @@ def assemble(
     )
     shutil.copyfile(onchain_bp, farm / "onchain" / "plutus.json")
     shutil.copyfile(naming_bp, farm / "naming-onchain" / "plutus.json")
+    # The release label the page reads from the extracted archive: the
+    # repository version file beside the blueprint it describes.
+    shutil.copyfile(root / "version.txt", farm / "onchain" / "version.txt")
     # S5.2: the archive's onchain/plutus.json is the merged deployment
     # document (14 validators), so its script-identity.json is the merged
     # manifest (union of the two committed manifests, same schema/compiler).

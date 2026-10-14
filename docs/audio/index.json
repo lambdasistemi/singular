@@ -2423,8 +2423,8 @@
     "index": 2,
     "name": "docs-consumer-onboarding/check-the-archive-and-build-its-commands-02",
     "pause_ms": 400,
-    "text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies.",
-    "v": "f120057f553d"
+    "text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies. The extracted archive's own singular reads the registry page from its blueprint and the adjacent version file; the Demo 1 run page reads the page right after create with the command the create receipt printed.",
+    "v": "f8992cc9aa1d"
    }
   ],
   "choose-the-network-and-api": [
@@ -7935,8 +7935,8 @@
     "index": 3,
     "name": "docs-registry-page/read-it-03",
     "pause_ms": 400,
-    "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
-    "v": "b7e602d68977"
+    "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. From an extracted release archive, run the archive's own singular with its blueprint and the adjacent version file: the Demo 1 journey reads the page this way right after create, from the command the create receipt printed. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
+    "v": "6f819bf244a8"
    },
    {
     "index": 4,
@@ -8659,8 +8659,8 @@
     "index": 1,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-01",
     "pause_ms": 400,
-    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
-    "v": "82306beed453"
+    "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+    "v": "557d4dbb6ae9"
    },
    {
     "index": 2,

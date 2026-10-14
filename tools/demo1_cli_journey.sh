@@ -600,11 +600,14 @@ def out_of:
   | .assets = [(if (.v | type) == "array" then .v[1][]? else empty end) | .[0] as $p | .[1][] | {policy: $p, name: .[0], quantity: .[1]}]
   | del(.v);
 def tx_outputs: decode | .[0] | mapget(1) | map(out_of);
+def tx_inputs: decode | .[0] | mapget(0) | (if type == "object" then .value else . end) | map(.[0] + "#" + (.[1] | tostring));
 # the hex of a signed transaction's body alone: the bytes whose hash is its id
 def body_span: tobytes as $b | (if $b[0] == 132 then dec($b; 1) else error("not a four-element transaction") end) as [$v, $q] | $b[1:$q] | bytehex;
 JQ
 # tx_outputs_of TXID: the outputs of the signed transaction the managed journal saved.
 tx_outputs_of() { jq -R -c "$(cat "$work/cbor.jq") tx_outputs" "$(managed_body "$reg" "$1")"; }
+# tx_inputs_of TXID: the spent inputs of the signed transaction the managed journal saved, one TXID#index per line.
+tx_inputs_of() { jq -R -r "$(cat "$work/cbor.jq") tx_inputs | .[]" "$(managed_body "$reg" "$1")"; }
 
 # payload FILE: the nested payload every insert of this journey carries.
 payload() {
@@ -718,6 +721,141 @@ say "an actor with an empty directory read the registry from its state token alo
 # Every later command names the registry by its token; the directory is only
 # the actor's journal.
 common+=(--state-token "$state_token")
+
+# ------------------------------------------------------------------
+# 1c. the registry page right after create, from the receipt's command
+# ------------------------------------------------------------------
+# The create receipt prints the working describe command; run it as printed,
+# with only the program name resolving to this archive's singular, and print
+# the page text to the journey log. The read leaves the actor's state
+# directory exactly as it was. The page steps run only where the archive
+# layout is present; in test-harness mode without it the journey says so
+# once below and runs none of them.
+# require_archive_layout BLUEPRINT MODE: 0 iff version.txt sits beside the
+# blueprint. It never exits: in ordinary mode it names the missing file and
+# returns 1, and the caller fails the journey by that same name; in
+# test-harness mode the caller skips the page steps and says so once instead.
+require_archive_layout() {
+  local blueprint="$1" mode="$2"
+  if [ -f "$(dirname "$blueprint")/version.txt" ]; then
+    return 0
+  fi
+  if [ "$mode" = ordinary ]; then
+    echo "the archive's blueprint has no version.txt beside it" >&2
+  fi
+  return 1
+}
+page_steps_run=0
+if require_archive_layout "$blueprint" "$mode"; then
+  page_steps_run=1
+  describe_cmd="$(jq -r .describeCommand "$receipts/create.json")"
+  [ "$describe_cmd" != "null" ] && [ -n "$describe_cmd" ] || fail "create printed no describe command"
+  mkdir -p "$work/archive-bin"
+  ln -sf "$singular" "$work/archive-bin/singular"
+  describe_tree_before="$(cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+  path_before="$PATH"
+  PATH="$work/archive-bin:$PATH"
+  describe_status=0
+  eval "$describe_cmd" >"$receipts/describe-after-create.txt" 2>"$receipts/describe-after-create.err" || describe_status=$?
+  PATH="$path_before"
+  [ "$describe_status" -eq 0 ] || fail "the printed describe command failed after create: $(tail -n 3 "$receipts/describe-after-create.txt" "$receipts/describe-after-create.err" | tr '\n' ' ')"
+  [ -s "$receipts/describe-after-create.txt" ] || fail "the page after create is empty"
+  cat "$receipts/describe-after-create.txt"
+  path_before="$PATH"
+  PATH="$work/archive-bin:$PATH"
+  describe_status=0
+  eval "$describe_cmd --json" >"$receipts/describe-after-create.json" 2>"$receipts/describe-after-create.err" || describe_status=$?
+  PATH="$path_before"
+  [ "$describe_status" -eq 0 ] || fail "the printed describe command failed as JSON after create"
+  jq -e '.command == "describe" and .outcome == "success"' "$receipts/describe-after-create.json" >/dev/null \
+    || fail "the page after create is no success page"
+  describe_tree_after="$(cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+  [ "$describe_tree_after" = "$describe_tree_before" ] || fail "a page read changed the actor's state directory"
+  say "the registry page reads after create from the receipt's command"
+elif [ "$mode" = test-harness ]; then
+  say "the page steps belong to the archive journey; skipped in this mode"
+else
+  # Ordinary without the layout never skips: the function named the missing
+  # file above, and the same name fails the journey here.
+  fail "the archive's blueprint has no version.txt beside it"
+fi
+
+# This registry's own folds, in journey order: every fold command of the
+# journey runs on its token, so the page's counts are read from their
+# receipts at run time below. The test-harness path's killed terminate fold
+# never printed a receipt; its settled edge enters from the journal where it
+# was accepted.
+main_folds=(empty-actor-insert bob-default-fold fold bob-fold insert-after-release terminate-ordinary bob-terminate-fold fold-selection fold-after-insert fold-after-reclaim)
+# page_agrees PAGE INSPECT LASTFOLD ACTIVE TERMINAL FOLDS: the page's six
+# facts equal the readback the caller passes: root and pending list from the
+# inspect receipt, the last fold (empty expects none), the key counts and the
+# folds since create. Callers read every value from receipts at run time.
+page_agrees() {
+  local page="$1" inspect="$2" lastfold="$3" active="$4" terminal="$5" folds="$6"
+  jq -e --slurpfile inspect "$inspect" --arg lastfold "$lastfold" \
+    --argjson active "$active" --argjson terminal "$terminal" --argjson folds "$folds" '
+      .command == "describe" and .outcome == "success"
+      and .state.root == $inspect[0].root
+      and .state.pendingRequests == $inspect[0].pendingRequests
+      and (if $lastfold == "" then .state.lastFold == null else .state.lastFold == $lastfold end)
+      and .state.activeKeys == $active
+      and .state.terminalKeys == $terminal
+      and .state.foldsSinceCreate == $folds' "$page" >/dev/null
+}
+# main_fold_settled: the settled key and edge of every fold receipt of this
+# registry so far, in journey order, read from the receipts at run time.
+main_fold_settled() {
+  local f
+  for f in "${main_folds[@]}"; do
+    if [ -e "$receipts/$f.json" ]; then
+      jq -c '.settled[]? | {key, edge}' "$receipts/$f.json"
+    fi
+  done
+}
+# main_fold_count: how many of this registry's fold receipts exist so far.
+main_fold_count() {
+  local f n=0
+  for f in "${main_folds[@]}"; do
+    if [ -e "$receipts/$f.json" ]; then
+      n=$((n + 1))
+    fi
+  done
+  printf '%s' "$n"
+}
+# page_tamper_demo PAGE INSPECT LASTFOLD ACTIVE TERMINAL FOLDS: a page with a
+# planted difference in any one compared fact disagrees with the same
+# readback, shown for each of the six facts in turn.
+page_tamper_demo() {
+  local page="$1"
+  shift
+  local altered
+  for altered in \
+    '.state.root = "00"' \
+    '.state.pendingRequests = [{}]' \
+    '.state.lastFold = "00"' \
+    '.state.activeKeys += 1' \
+    '.state.terminalKeys += 1' \
+    '.state.foldsSinceCreate += 1'; do
+    jq "$altered" "$page" >"$work/page-tampered.json"
+    if page_agrees "$work/page-tampered.json" "$@"; then
+      fail "a page altered by $altered still agreed with the readback"
+    fi
+  done
+}
+# No fold ran on this registry yet: the settled history so far is empty, so
+# the counts, the folds since create and the last fold are read from the
+# receipts at run time, not stated.
+if [ "$page_steps_run" = 1 ]; then
+  after_create_counts="$(main_fold_settled | jq -s -c '{active: ([.[] | select(.edge == "insertActive")] | length), terminal: ([.[] | select(.edge == "updateTerminal")] | length)}')"
+  after_create_active="$(jq -r .active <<<"$after_create_counts")"
+  after_create_terminal="$(jq -r .terminal <<<"$after_create_counts")"
+  after_create_folds="$(main_fold_count)"
+  page_agrees "$receipts/describe-after-create.json" "$receipts/empty-actor-inspect.json" "" "$after_create_active" "$after_create_terminal" "$after_create_folds" \
+    || fail "the page after create differs from the empty-actor readback"
+  say "the page after create agrees with the empty-actor readback: $after_create_active active, $after_create_terminal terminal, $after_create_folds folds"
+  page_tamper_demo "$receipts/describe-after-create.json" "$receipts/empty-actor-inspect.json" "" "$after_create_active" "$after_create_terminal" "$after_create_folds"
+  say "a planted difference in any compared fact fails the page comparison"
+fi
 
 # This registry exercises absent flags and never books a timed request.
 # The rest of the journey keeps its explicit development-network windows.
@@ -2264,6 +2402,82 @@ fold_ok fold-after-reclaim insert-after-reclaim insertActive
 run inspect-after-reclaim-fold success -- inspect --key keyG "${common[@]}" "${node[@]}"
 [ "$(field inspect-after-reclaim-fold .leaf)" = active ] || fail "a new request did not fold after reclaim"
 say "the owner's reclaim: whole bound return checked independently, root unchanged, and a new request folds"
+
+# ------------------------------------------------------------------
+# 7e. the registry page after the lifecycle agrees with the readback
+# ------------------------------------------------------------------
+# The receipt's describe command reads the page again as JSON; its six facts
+# equal the final inspect receipt and this registry's own fold receipts,
+# every value read at run time, never typed. The read leaves the actor's
+# state directory exactly as it was. This runs only where the page steps ran
+# after create; elsewhere it is skipped silently (the skip line above is the
+# record).
+if [ "$page_steps_run" = 1 ]; then
+  describe_tree_before="$(cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+  path_before="$PATH"
+  PATH="$work/archive-bin:$PATH"
+  describe_status=0
+  eval "$describe_cmd --json" >"$receipts/describe-final.json" 2>"$receipts/describe-final.err" || describe_status=$?
+  PATH="$path_before"
+  [ "$describe_status" -eq 0 ] || fail "the printed describe command failed after the lifecycle: $(tail -n 3 "$receipts/describe-final.json" "$receipts/describe-final.err" | tr '\n' ' ')"
+  describe_tree_after="$(cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+  [ "$describe_tree_after" = "$describe_tree_before" ] || fail "a page read changed the actor's state directory"
+  # Every named fold receipt names a real fold transaction.
+  for f in "${main_folds[@]}"; do
+    if [ -e "$receipts/$f.json" ]; then
+      jq -e '.fold | test("^[0-9a-f]{64}$")' "$receipts/$f.json" >/dev/null \
+        || fail "the fold receipt $f names no fold transaction"
+    fi
+  done
+  # The test-harness path's killed terminate fold never printed a receipt; its
+  # settled edge enters from the journal line where it was accepted.
+  killed_folds=0
+  if [ "$mode" = test-harness ]; then
+    jq -e --arg t "$fold_tx" 'select(.journalTxId == $t and .journalEvent == "submitted" and .journalStep == "fold")' "$alice_journal" >/dev/null \
+      || fail "the killed fold left no submitted journal line"
+    killed_folds=1
+  fi
+  final_counts="$({
+    main_fold_settled
+    if [ "$killed_folds" = 1 ]; then jq -n --arg k "$(hexof "$key")" '{key: $k, edge: "updateTerminal"}'; fi
+  } | jq -s -c 'reduce .[] as $s ({}; .[$s.key] = $s.edge) | {active: ([to_entries[] | select(.value == "insertActive")] | length), terminal: ([to_entries[] | select(.value == "updateTerminal")] | length)}')"
+  final_active="$(jq -r .active <<<"$final_counts")"
+  final_terminal="$(jq -r .terminal <<<"$final_counts")"
+  # The reject spends the live state output and recreates it with the same
+  # root, so the lineage counts it as a fold since create; the reclaim spends
+  # no state output. Both facts are read from this run's saved bodies: the
+  # state outputs are create's and each fold's own output zero, a layout both
+  # pages prove on this run through their live state outputs.
+  create_out="$(jq -r .state.createTransaction "$receipts/describe-after-create.json")#0"
+  [ "$create_out" != "null#0" ] || fail "the after-create page names no create transaction"
+  state_outputs=("$create_out")
+  for f in "${main_folds[@]}"; do
+    if [ -e "$receipts/$f.json" ]; then
+      state_outputs+=("$(field "$f" .fold)#0")
+    fi
+  done
+  reject_tx="$(field reject .reject)"
+  [ "$reject_tx" != "null" ] && [ -n "$reject_tx" ] || fail "the reject receipt names no transaction"
+  reject_folds=0
+  for out in "${state_outputs[@]}"; do
+    if tx_inputs_of "$reject_tx" | grep -qxF "$out"; then
+      reject_folds=1
+      break
+    fi
+  done
+  [ "$reject_folds" = 1 ] || fail "the reject spent no state output of this registry"
+  final_folds=$(($(main_fold_count) + killed_folds + reject_folds))
+  [ "$final_folds" -gt 1 ] || fail "the fold history holds $final_folds folds; the comparison needs more than one"
+  last_fold="$(field fold-after-reclaim .fold)"
+  [ "$last_fold" != "null" ] && [ -n "$last_fold" ] || fail "the last fold receipt names no fold transaction"
+  page_agrees "$receipts/describe-final.json" "$receipts/inspect-after-reclaim-fold.json" "$last_fold" "$final_active" "$final_terminal" "$final_folds" \
+    || fail "the page after the lifecycle differs from the inspect and fold receipts"
+  [ "$(jq -r .state.root "$receipts/describe-final.json")" = "$(field fold-after-reclaim .root)" ] \
+    || fail "the page root differs from the last fold's root"
+  say "the page after the lifecycle agrees with the readback: $final_active active, $final_terminal terminal, $final_folds folds, last $last_fold"
+  page_tamper_demo "$receipts/describe-final.json" "$receipts/inspect-after-reclaim-fold.json" "$last_fold" "$final_active" "$final_terminal" "$final_folds"
+  say "a planted difference in any final fact fails the page comparison"
+fi
 
 # Local journal roots/edges are not trie reconstruction material. Copies of
 # the settled registry with those records omitted or altered prove the same key.
