@@ -11,23 +11,38 @@
           "registryId": 0,
           "retractTime": 500,
           "root": [
-            76,
-            17,
-            37,
-            97,
-            139,
-            77,
-            123,
-            99
+            36,
+            108,
+            78,
+            23,
+            255,
+            160,
+            6,
+            211
           ],
           "terminalPolicy": 10
         },
         "custody": [],
-        "held": [],
+        "held": [
+          {
+            "key": 6,
+            "kind": "active",
+            "output": 99
+          },
+          {
+            "key": 5,
+            "kind": "active",
+            "output": 99
+          }
+        ],
         "leaf": [
           {
             "key": 5,
-            "leaf": "terminal"
+            "leaf": "active"
+          },
+          {
+            "key": 6,
+            "leaf": "active"
           }
         ],
         "mint": [
@@ -36,19 +51,26 @@
             "key": 5,
             "kind": "active",
             "policy": 8,
-            "quantity": 0
+            "quantity": 1
+          },
+          {
+            "assetName": 6,
+            "key": 6,
+            "kind": "active",
+            "policy": 8,
+            "quantity": 1
           }
         ],
         "paid": [],
         "root": [
-          76,
-          17,
-          37,
-          97,
-          139,
-          77,
-          123,
-          99
+          36,
+          108,
+          78,
+          23,
+          255,
+          160,
+          6,
+          211
         ],
         "state": {
           "config": {
@@ -60,29 +82,110 @@
             "registryId": 0,
             "retractTime": 500,
             "root": [
-              76,
-              17,
-              37,
-              97,
-              139,
-              77,
-              123,
-              99
+              36,
+              108,
+              78,
+              23,
+              255,
+              160,
+              6,
+              211
             ],
             "terminalPolicy": 10
           },
           "custody": [],
-          "held": [],
+          "held": [
+            {
+              "datum": 13,
+              "key": 6,
+              "kind": "active",
+              "output": 99
+            },
+            {
+              "datum": 13,
+              "key": 5,
+              "kind": "active",
+              "output": 99
+            }
+          ],
           "trie": [
             {
+              "key": 6,
+              "leaf": "active"
+            },
+            {
               "key": 5,
-              "leaf": "terminal"
+              "leaf": "active"
             }
           ]
         }
       },
       "outcome": "accepted",
       "reason": null,
+      "requests": [
+        {
+          "approval": {
+            "assetName": 2610692272,
+            "destination": 99,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          },
+          "claimed": [
+            {
+              "kind": "active",
+              "quantity": 1
+            }
+          ],
+          "datum": 13,
+          "deposit": 10,
+          "edge": "insertActive",
+          "key": 5,
+          "output": 99,
+          "owner": 42,
+          "reference": 5,
+          "refundAddress": 42,
+          "registryId": 0,
+          "submittedAt": 0,
+          "tip": 1
+        },
+        {
+          "approval": {
+            "assetName": 545464877,
+            "destination": 99,
+            "edge": "insertActive",
+            "key": 6,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          },
+          "claimed": [
+            {
+              "kind": "active",
+              "quantity": 1
+            }
+          ],
+          "datum": 13,
+          "deposit": 10,
+          "edge": "insertActive",
+          "key": 6,
+          "output": 99,
+          "owner": 42,
+          "reference": 6,
+          "refundAddress": 42,
+          "registryId": 0,
+          "submittedAt": 0,
+          "tip": 1
+        }
+      ],
+      "requirement": "Register two distinct keys in one atomic batch"
+    },
+    {
+      "observations": null,
+      "outcome": "refused",
+      "reason": "token-missing",
       "requests": [
         {
           "approval": {
@@ -315,7 +418,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "acbee7044c0b61558bcebcbf2c099a8e552771909e6f1140797c02c1c0c365b2",
+  "payloadSha256": "2a921bc8a965672411d89cc9e463ddfa6cdd932f60d4b3114ba9b82b8ea6b85e",
   "scenarios": [
     {
       "id": "Register an active key",
@@ -1992,13 +2095,13 @@
     }
   ],
   "sourceHashes": {
-    "lean/DriverMain.lean": "e4155cf39467b765db10acea245ddbdcc9443c08726d3c40e1938dfcf7bf1bd5",
+    "lean/DriverMain.lean": "80d757e792b5b6a2263171e20c439c25b5d831c455373d4de2192a944b465ab9",
     "lean/DriverMain/Fixtures.lean": "25c67cc7914d9ffeeca9bbfb6992174796544156666db59a60174327afa456b0",
     "lean/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
     "lean/DriverMain/Scenarios.lean": "cc6cc444edf752cc918b3fca6c1beb5e60ae6d2d70e4010d3db6a167e3b04ffa",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/M1Main.lean": "34d5cd197c8f714bd145cd53ca916ff551b7eb6352b097795bbf176873b1d641",
-    "lean/Main.lean": "8421176a9824b871ba3db9db7905287fb2af9c3a65d5e947626ef51bcf47227a",
+    "lean/M1Main.lean": "a5bda4b9f2bc5f5485da4242eed5282caa6b046fb5d0eb05c8bf687ecfb5e4e8",
+    "lean/Main.lean": "4733e5be74ddee5a2bad834a88bf8cb539104344b7153e955d04c92ee288e273",
     "lean/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
@@ -2014,14 +2117,14 @@
     "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
     "lean/Singular/Economics/Booking.lean": "c164cbaf2088fe114134851ef3220b69861652e0508f3a092b94082e4d27ed99",
     "lean/Singular/Economics/World.lean": "973f03859c4a35a013eeb1d206e4671197fbae333fb73947b03df6c2f64e6bb0",
-    "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
+    "lean/Singular/Lemmas.lean": "d38a553cea5da0f378ce04e76968bbe0787e2491740e8e55e50dec6a25481cfb",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
     "lean/Singular/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
-    "lean/Singular/Model.lean": "26978bee3832c9c52e7ba77b435179ed1a566384f9682fc21077619d60527ca2",
+    "lean/Singular/Model.lean": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
@@ -2038,7 +2141,7 @@
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "27c4d59505568c75304a1e00b7931feea06e1e92428ea4f305959034e78b587b",
+    "lean/Singular/Statements.lean": "d5d71272ed475e0adf17db53cfdeabfb8aa50e7f06d2d2139462d6f157fd8e6b",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Booking.lean": "13dc5397b550ec11381c7298159cbe35f81a446b34e6915ea00645a115c0bed1",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",

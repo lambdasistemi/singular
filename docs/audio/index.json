@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 73 proved declarations — 52 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "8793366dd7c3"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 76 proved declarations — 55 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "3d0ef55d880a"
    },
    {
     "index": 2,
@@ -9305,8 +9305,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 52 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 73 in total, each with its own manifest and its own compiled gate.",
-    "v": "d74df5bf9155"
+    "text": "All 55 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 76 in total, each with its own manifest and its own compiled gate.",
+    "v": "37644863fddc"
    },
    {
     "index": 3,
@@ -9352,21 +9352,21 @@
     "name": "docs-theorems/what-this-establishes-and-what-it-does-not-01",
     "pause_ms": 400,
     "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will: that is what the operator's rulings, the interface and the simulation are for. A theorem can also be true and narrower than its name, so the column above says what each one states rather than leaving the name to imply it.",
-    "v": "ea608fe8760f"
+    "v": "f49c274cfbea"
    },
    {
     "index": 2,
     "name": "docs-theorems/what-this-establishes-and-what-it-does-not-02",
     "pause_ms": 400,
     "text": "The model is abstract where the chain is concrete. Commitments stand for collision-free canonical commitments, the trie is a logical authenticated map, and an approval's asset name is a commitment over the tuple it scopes rather than a real BLAKE2b digest. The executable consumer supplies the real hashes; the model fixes the complete preimages.",
-    "v": "4d421db09149"
+    "v": "08143ca813a7"
    },
    {
     "index": 3,
     "name": "docs-theorems/what-this-establishes-and-what-it-does-not-03",
     "pause_ms": 400,
     "text": "Retraction admission is stated over a finite validity interval. Its bounds are read off the request script's in_phase2 and the ledger's validity interval, whose lower bound is included and upper bound excluded. The model's bounds are finite, so an interval open at either end is not a case it can be asked: that is a named non-goal, not a gap waiting on a ticket, and the chain side is pinned by the request validator's Aiken exact-outcome tests — they admit an owner-signed retraction at the window's included lower bound and where its excluded upper bound reaches the retraction time's end, and refuse it with the named not-phase2 one unit before the lower bound and one unit past the upper, and for an interval with no lower or no upper bound alike. The finite cases are compared live: the retraction-window row (retract-outside-window) submits an owner-signed retraction before phase 2 and one after it on a devnet, both refused by the request script and answered not-phase2 by the model, which agrees on every step. The deployed validators are compiled without traces, so this run's live refusals expose no name: they are attributed to the applied request script, and the name itself is never described as a live observation (#287).",
-    "v": "0b10672ad1b2"
+    "v": "555fb7aca3da"
    }
   ]
  },

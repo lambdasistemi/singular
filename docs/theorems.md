@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 52 declarations of the registry's own statement module are **PROVED**
+All 55 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **73** in total, each with its own
+and its wire encoding 5, for **76** in total, each with its own
 manifest and its own compiled gate.
 
 The operator-authorized source removal retires ten declarations about excluded success behavior. Their historical proofs and receipts remain on `preserve/m2/pre-m1-source-removal`; they do not certify permanent contract. The active model retains the applicable invariant, exit, refund, datum and public-fold laws. Public unmet consumer requirements remain uncovered.
@@ -55,7 +55,7 @@ consequences rather than as separate arguments.
 | `Singular.Statements.exit_settles_on_lovelace_received` | Value an exit does not owe is unconstrained, for every exit alike: when each recipient the exit owes that some output of a first list reaches is reached by some output of a second, and receives at least as much from the second as from the first — the summed lovelace of the outputs paying it by role, address and, for a destination, datum, or for a retraction's return bound to its request the largest such output — the second settles whenever the first does: adding outputs or lovelace never unsettles a transaction, and fees and the folder's tip play no part | `efdbcb44050b3bebb5c73d95e04fe8653ebe92e0c8c4a81b7b87347872427a12` | PROVED |
 | `Singular.Statements.expiry_after_reclaim` | An admitted expiry rejection begins after every admitted retraction's excluded upper bound for the same booked request, regardless of witness time | `f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952` | PROVED |
 | `Singular.Statements.fold_batch_claimed_mint_by_kind_key` | the fold's mint guard is per `(TokenKind, Key)`, strictly finer than a per-kind one, witnessed by a reachable state whose equal-per-kind batch is observed to be refused | `9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988` | PROVED |
-| `Singular.Statements.fold_batch_cons` | — | `9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | PROVED |
+| `Singular.Statements.fold_batch_cons` | — | `a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f` | PROVED |
 | `Singular.Statements.fold_batch_of_one_is_step` | A batch of one folds as its step — for one request whose claimed mint is its own edge's delta, `foldBatch` over that request alone is exactly `step`: refused for the same reason, or accepted with the same state, mint and payments | `09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87` | PROVED |
 | `Singular.Statements.fold_inputs_public` | #419 — fold inputs are public: the transaction a fold builds is the one any party builds from the public view, the registry state with its holdings and their datums and the request pending at the cage, found by its own output reference | `ece9dd0fd104368b34cf5bf210ed46ffca39a13ba70f05ead901d381a6cb0d1f` | PROVED |
 | `Singular.Statements.fold_refuses_foreign_datum` | #419 — a foreign datum is refused: an observed fold delivering a token, whatever the request's deposit, whose every destination output carries a datum other than the request's — another value, a datum where none is carried, none where one is, a datum presented by hash — or that has no destination output at all, is refused `destination`, as the cage refuses a carrier that does not match | `fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba` | PROVED |
@@ -93,6 +93,9 @@ consequences rather than as separate arguments.
 | `Singular.Statements.booked_time_is_interval_end` | The pool keeps the booking transaction's interval, and the pending registration's booked time is exactly its upper end. | `86d8a38ebe2a03232e278407a4deb3f51ad82f4d942140d8b5c86990ef50ef65` | PROVED |
 | `Singular.Statements.booked_time_not_before_inclusion` | For every actual inclusion time within the original half-open interval, the booked time is no earlier. Hence the expiry threshold is no earlier than both windows after inclusion. This states the threshold, not exit admission. | `63ebcb7a3f9d8bf326674e19c297fc13187eade456c13637641a1e8e34a0bdb3` | PROVED |
 | `Singular.Statements.booking_width_within_limit` | Every pending registration was booked in a nonempty interval whose width is at most the pinned maximum. Empty and reversed intervals cannot exploit natural-number subtraction to pass the width rule. | `5d12a9178a46bc78852ba4af63ee95a28713b278e2c9b7e37d1c8c5ac32e1c49` | PROVED |
+| `Singular.Statements.batch_cannot_consume_what_it_creates` | After all steps admit and the keyed mint balances, an insertion followed later in the same batch by termination of its key is refused token-missing | `bbefd4458236ec7ab7e28fe8f7f7690a9e05fb31b3d93ae54b524dca7085afad` | PROVED |
+| `Singular.Statements.batch_burns_only_live_holdings` | Every termination in an accepted batch has an active holding in the state from before that batch | `a41747f7a66da028b998e3ce27edf19c4419ee232ce0030092291a0e82009e06` | PROVED |
+| `Singular.Statements.independent_requests_fold_as_a_batch` | A non-empty batch on pairwise distinct keys is accepted when each request admits alone from the same state and claims its own keyed edge mint | `24f639316fc0122e22647bc7d230a6dfabdacfd4b75c8d28cb4f9b46623f2756` | PROVED |
 
 The naming, lifecycle and wire declarations are listed in their own manifests:
 [naming-theorem-debt.json](../lean/naming-theorem-debt.json),

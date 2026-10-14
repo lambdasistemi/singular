@@ -35,7 +35,7 @@ open Singular.Driver
 
 def foldBatchCons : String := "Singular.Statements.fold_batch_cons"
 def foldBatchConsDigest : String :=
-  "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+  "a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f"
 /-- The batch questions: a lawful two-request fold and its refused mutants — a
 crossed claim, an empty batch, a later request the law refuses — a batch of one
 beside the single step it preserves; two rejects judged paid, short, and short in
@@ -119,6 +119,26 @@ def batchScenarios : List BatchScenario :=
     , kind := "mutant", mutates := some "BR06-reject-two-paid"
     , requiresReachableState := true, start := s0, setup := [registerActive]
     , question := .rejectBatch [(.retract, registerTaken)] }
+  , { id := "BR13-fold-register-then-terminate"
+    , theoremName := foldBatchCons, statementSha256 := foldBatchConsDigest
+    , kind := "mutant", mutates := some "BR01-fold-two-registrations"
+    , requiresReachableState := false, start := s0, setup := []
+    , question := .foldBatch [registerActiveClaimed, claiming retireRegistered] }
+  , { id := "BR14-fold-terminate-then-register"
+    , theoremName := foldBatchCons, statementSha256 := foldBatchConsDigest
+    , kind := "mutant", mutates := some "BR01-fold-two-registrations"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .foldBatch [claiming retireRegistered, registerActiveClaimed] }
+  , { id := "BR15-fold-terminate-twice"
+    , theoremName := foldBatchCons, statementSha256 := foldBatchConsDigest
+    , kind := "mutant", mutates := some "BR01-fold-two-registrations"
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .foldBatch [claiming retireRegistered, claiming retireRegistered] }
+  , { id := "BR16-fold-live-holding-and-distinct-registration"
+    , theoremName := foldBatchCons, statementSha256 := foldBatchConsDigest
+    , kind := "witness", mutates := none
+    , requiresReachableState := true, start := s0, setup := [registerActive]
+    , question := .foldBatch [claiming retireRegistered, claiming (request .insertActive 5 91 556 0 55)] }
   ]
 
 /-- The digest the surface carries is over the declared names themselves, so a

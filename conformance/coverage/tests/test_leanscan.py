@@ -109,7 +109,7 @@ class TrickyNameGrammarTest(unittest.TestCase):
 
 
 class RealTreeDiscoveryTest(unittest.TestCase):
-    """The current tree: 126 = 72 manifest-bound + 54 unclassified.
+    """The current tree: 150 = 86 manifest-bound + 64 unclassified.
 
     The permanent M1 surface adds ten audited statements to the preserved
     broader tree. They stay in the denominator even without live coverage.
@@ -141,7 +141,7 @@ class RealTreeDiscoveryTest(unittest.TestCase):
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            139,
+            150,
             "base population drifted; the denominator must be re-examined",
         )
         statement_namespaces = (
@@ -151,7 +151,7 @@ class RealTreeDiscoveryTest(unittest.TestCase):
             "Singular.NamingWireStatements.",
         )
         statements = [d for d in decls if d.name.startswith(statement_namespaces)]
-        self.assertEqual(len(statements), 73)
+        self.assertEqual(len(statements), 76)
         self.assertEqual(
             len([d for d in decls if d.source == "lean/Singular/M1.lean"]), 10
         )
