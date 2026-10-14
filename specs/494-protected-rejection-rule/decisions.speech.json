@@ -135,8 +135,18 @@
       "pause": 400
     }
   ],
+  "constitution-number": [
+    {
+      "text": "Constitution number.",
+      "pause": 500
+    },
+    {
+      "text": "On 14 October 2026 main took version 1.16.0 for the first change of the fold admission lane (a batch cannot burn a holding it creates). This ticket's amendment, opened as 1.16.0 for the booked clock of retraction and extended by each slice, is renumbered 1.17.0 with its text intact.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "0b5e081bfe4d73f98828c8f3d2b9b2cb986e3605f2c3e901866f137abdea58d9"
+    "sha256": "998ee6a738b4395a3cf56c4217f51a737abdfdf3710225cd627432ffe114d673"
   }
 }

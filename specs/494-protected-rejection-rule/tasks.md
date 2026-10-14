@@ -25,7 +25,7 @@ into a neighbouring ticket.
 - [x] `regenerate-after-slice-one` — corpora, theorem register and digests, simulator mirror,
   application corpus and the coverage record are regenerated from the model, with a published
   restatement table for every changed identity. (consumers-state-the-rule, unmet-stays-unmet)
-- [x] `amendment-opened` — constitution version 1.16.0 is opened with the retraction row restated.
+- [x] `amendment-opened` — constitution version 1.17.0 (taken after the fold lane's 1.16.0) is opened with the retraction row restated.
   (consumers-state-the-rule)
 
 Terminal condition: every command of slice one's gate exits as the gate states, on a clean
@@ -92,7 +92,7 @@ Withdrawn on 14 October 2026, with the economic design: a rejection never spends
   of the same fresh key accepted, the reverse refused, an empty batch refused) and the transport
   support. (consumers-state-the-rule)
 - [ ] `regenerate-after-slice-four` — as slice one's regeneration. (consumers-state-the-rule)
-- [ ] `amendment-completed` — the mixed-batch row is added and the 1.16.0 entry is complete.
+- [ ] `amendment-completed` — the mixed-batch row is added and the 1.17.0 entry is complete.
   (consumers-state-the-rule)
 
 Terminal condition as slice one.
@@ -168,7 +168,7 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 - [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.
 - [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the singular tag, the syntax tag and the application tag and donates held minus tip; a registration fold burns the syntax tag and the application tag and mints the singular tag at the destination.
 - [ ] `statements-ten` — statements 7 (first half), 10, 11 and 12 and the two supporting statements (including that the supply of each tag equals the count of pending requests) are proved.
-- [ ] `amendment-economics` — the 1.16.0 entry of the constitution states the economic rows in the translation (one release, one entry).
+- [ ] `amendment-economics` — the 1.17.0 entry of the constitution states the economic rows in the translation (one release, one entry).
 - [ ] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-ten` — as slice five, and the full list of the thirteen statements with their status.
 

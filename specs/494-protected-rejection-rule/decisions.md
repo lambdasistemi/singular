@@ -127,3 +127,7 @@ request's booked submission time; evidence binds the registry's abstract identit
 complete configuration including the intermediate root, and the complete request; an
 empty batch is refused; all-reject batches share the mixed-batch engine. The data model
 page names each of these; any difference from the earlier candidate is listed there.
+
+## Constitution number
+
+On 14 October 2026 main took version 1.16.0 for the first change of the fold admission lane (a batch cannot burn a holding it creates). This ticket's amendment, opened as 1.16.0 for the booked clock of retraction and extended by each slice, is renumbered 1.17.0 with its text intact.

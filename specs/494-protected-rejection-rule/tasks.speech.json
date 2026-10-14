@@ -45,7 +45,7 @@
       "pause": 300
     },
     {
-      "text": "[x] amendment-opened — constitution version 1.16.0 is opened with the retraction row restated. (consumers-state-the-rule)",
+      "text": "[x] amendment-opened — constitution version 1.17.0 (taken after the fold lane's 1.16.0) is opened with the retraction row restated. (consumers-state-the-rule)",
       "pause": 300
     },
     {
@@ -163,7 +163,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] amendment-completed — the mixed-batch row is added and the 1.16.0 entry is complete. (consumers-state-the-rule)",
+      "text": "[ ] amendment-completed — the mixed-batch row is added and the 1.17.0 entry is complete. (consumers-state-the-rule)",
       "pause": 300
     },
     {
@@ -399,7 +399,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] amendment-economics — the 1.16.0 entry of the constitution states the economic rows in the translation (one release, one entry).",
+      "text": "[ ] amendment-economics — the 1.17.0 entry of the constitution states the economic rows in the translation (one release, one entry).",
       "pause": 300
     },
     {
@@ -427,6 +427,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "bad0b6ded309eeb7bc07a427285f5e83f8036bbbae622ec7feeb42fe89f9b0c8"
+    "sha256": "94397ffb7f7a4f5f73808a079c840a423062ec4b3207314de762ed1f17e70ec1"
   }
 }
