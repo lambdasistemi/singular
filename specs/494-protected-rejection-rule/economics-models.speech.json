@@ -25,7 +25,7 @@
       "pause": 500
     },
     {
-      "text": "The new modules are imported by the root module so the axiom gate and the audit report walk them. Whether the vocabulary is a module of its own or part of the model is the writer's call if the dependency direction above holds.",
+      "text": "The new module is imported by the root module so the axiom gate and the audit report walk it. The model checker refuses a change to the imports of Singular.Model beyond the naming layer's, which is why the vocabulary types sit in the model file and only functions over them sit in Singular.Economics.",
       "pause": 400
     }
   ],
@@ -49,8 +49,22 @@
       "pause": 400
     }
   ],
+  "slice-five-signed-rows": [
+    {
+      "text": "Slice five: signed rows.",
+      "pause": 500
+    },
+    {
+      "text": "Names and shapes the writer keeps; anything not stated is the writer's to choose, and a name that another slice or the paper depends on is stated here.",
+      "pause": 400
+    },
+    {
+      "text": "The driver protocol version moves only if a declared question's written form changes; with every new field omitted at its default none does, and the writer says so in the first checkpoint.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "19d67d270670686112652542812b8dec9f2446548fa18f7de81ee1f0c8b54244"
+    "sha256": "da169e7282b769c37dacabf018a73ab4656743f908c17f178db95d6edb033fdf"
   }
 }

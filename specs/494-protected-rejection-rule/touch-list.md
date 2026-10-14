@@ -134,7 +134,8 @@ obligation with a hosted job, a marked tool, or temporary.
 | Path | Slices | Why |
 |---|---|---|
 | `lean/Singular/Model.lean`, `Statements.lean`, `Driver.lean`, `Lemmas.lean`, `Audit.lean`, `M1.lean`, `M1Driver.lean`, `lean/DriverMain.lean`, `lean/Main.lean`, `lean/M1Main.lean` | five to ten | Parameters, the transaction record, requests, rejection, exits, statements, corpus rows |
-| `lean/Singular/Ledger.lean` and `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | five to ten | The vocabulary and the economic definitions, imported by the root module; the statements and the kept variants are declared in `Statements.lean` so the existing axiom gate covers them |
+| `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | five to ten | The economic definitions, imported by the root module; the statements and the kept variants are declared in `Statements.lean` so the existing axiom gate covers them |
+| `tools/check_model.py` | five | The frozen source extent of the generic corpus lists the generic modules (`GENERIC_SOURCES`); the new module is added there, a mechanical consumer change, so that the corpus binds it. Nothing else of the checker changes |
 | `conformance/lean/DriverTransport.lean`, `conformance/test/Conformance/Support/DriverTransport.hs`, `conformance/app/Conformance/Run/Live.hs` and its tests | five to ten, where a declared question changes | Questions carrying the new fields; no live row is added, because no validator or builder produces the new transactions |
 | The generated copies of slices one to three (corpora, register, theorem page and its speech, simulator mirror, application corpus, coverage record, restatement table, constitution) | five to ten | As before; the constitution's 1.16.0 entry is extended by each slice for its own rows |
 | `specs/494-protected-rejection-rule/**` | planning and the closing of each slice | Tasks stamped, rows added before dispatch |
