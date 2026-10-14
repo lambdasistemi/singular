@@ -134,26 +134,42 @@ pull request: the new specs run in the existing focused suite step, the journey 
 ## Second pull request: the Demo 1 path
 
 Ruled by the desk (2026-10-13): two lines are on the Demo 1 path and are this ticket's second pull
-request, started as soon as their holders merge. The desk sends a note at each merge; until both
-notes arrive no file below is edited, and the files are re-read at the base the pull request starts
-from. It follows the first pull request (it needs the command and the archive's `version.txt`).
-Deadline: first pull request merged by 17 October, second by 18 October.
+request. Both holders have merged: the one-output create (PR 625) put `main` at `0272dadc`, the base
+of this pull request, and the files are re-read there. Slices 6 and 7 start now. Slice 8 edits Demo
+1's run page and journey scripts, which #518 pull request 3b also edits, so it starts on the desk's
+note that 3b merged. Deadline: second pull request merged by 18 October.
 
 | slice | outcome a person can observe | waits for | time |
 |---|---|---|---|
-| 6 archive version | the on-chain archive stages `version.txt` beside its blueprint; the release check refuses disagreement of version, asset name or checksum (gate rows: `nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"` and `nix run --quiet .#release-check`) | the first pull request | 20 |
-| 7 create prints the command | the `create` receipt (the registry command and the open-datum command, which share `Create.hs`) carries the working `describe` command built from the arguments create ran with: blueprint as given, the new state token, provider and network settings, never a wallet key; run as printed, it prints the page | create funding (#406) merged | 40 |
-| 8 page from the archive | Demo 1's run page starts from the page; the hosted archive job extracts the release, runs the archive's own `singular` and blueprint with the adjacent `version.txt` against the node, prints the page, and compares it with `inspect` after the actor lifecycle; exact commands and outputs are recorded; the numbered-step check of the run page follows the new step | bookkeeping (#543) merged | 60 |
+| 6 archive version | the on-chain archive stages `onchain/version.txt` beside its blueprint; the release check refuses a missing, other or unchecksummed version by name, each shown on an otherwise valid archive | none | 20 |
+| 7 create prints the command | the `create` receipt (registry and open-datum, one `Create.hs`) carries `describeCommand`, the working `describe` command built from the arguments create ran with: blueprint as given, the new state token, provider and network settings, the network time directory when given; never a wallet key; run as printed, it prints the page | none | 40 |
+| 8 page from the archive | Demo 1's run page reads the page right after create; the archive journey runs the archive's own `singular`, blueprint and adjacent `version.txt` against the node right after create and after the lifecycle, prints the page to the log and compares it with `inspect` and the fold receipts; the step check of the run page follows | #518 pull request 3b merged | 60 |
 
-Expected files, re-read at the base: `offchain/cli/src/Singular/CLI/Create.hs`, the create receipt
-tests under `offchain/test/Singular/CLI/`, the open-datum create tests, `onchain-release/DEMO1.md`
-with its speech companion, `tools/demo1_cli_check.sh` and its controls, and the `docs/` pages that
-show a create receipt. `flake.nix` and `.github/workflows/registry.yml` only if the archive job
-needs a new input or step, which the desk is asked about first. Gate rows:
-`nix run --quiet .#demo1-cli-check` and `nix run --quiet .#demo1-cli-test-harness` (job "Demo 1
-journey from the release archive"); `cd applications/open-datum/offchain && nix run --quiet
-.#open-datum-tests`; the focused `cage-tests` match for the create receipt;
-`nix run --quiet .#cli-flags-check`; `nix run --quiet .#docs-check`.
+Invariants, each seen to fail first (BLOCKING fails the checkpoint, ADVISORY is a note):
+
+| name | fails when | passes when |
+|---|---|---|
+| `no-secret-in-the-printed-command` (BLOCKING) | the receipt's command names a wallet key path, a credential path or a signing flag | it carries only blueprint, token, provider URL, network and time directory |
+| `printed-command-prints-the-page` (ADVISORY) | the command, run as printed, does not exit 0 with the page | it does |
+| `archive-describe-agrees-with-readback` (BLOCKING) | the page from the extracted archive differs from `inspect` and the fold receipts after the lifecycle | root, counts, last fold and pending list are equal |
+| `run-page-follows-the-journey` (ADVISORY) | the run page lacks the page step or its step check passes a page without it | the check fails on a page without it |
+| `archive-version-agreement` (ADVISORY) | an archive with a missing, other or unchecksummed `version.txt` passes the release check | each is refused by name |
+
+Gate, existing commands only, budget 25 minutes per candidate without the archive journey (the
+journey is the hosted job at the pushed head; local runs while developing are not repeated gates;
+`just` recipes run with `TMPDIR` outside `/tmp`, issue 621):
+
+| acceptance line | command | hosted job |
+|---|---|---|
+| lint and compile | `(cd offchain && nix run --quiet .#lint)`; `(cd offchain && nix build --quiet .#component-build)` | Off-chain lint; Off-chain component build |
+| create receipt, registry and open-datum | `(cd offchain && nix run --quiet .#cage-tests -- --match "Create" --fail-on=empty)`; `(cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests)` | focused suite step; Open datum tests |
+| flags and docs | `nix run --quiet .#cli-flags-check`; `.#cli-flags-controls`; `.#docs-check` | flags and docs jobs |
+| archive version | `nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"`; `nix run --quiet .#release-check` | On-chain release assembly; Documentation release checks |
+| journey from the archive | `nix run --quiet .#demo1-cli-check`; `nix run --quiet .#demo1-cli-test-harness` | Demo 1 journey from the release archive |
+| final head, once | the first-pull-request gate list, `just` recipes included | hosted CI is the net; the browser recipe cannot run in the author sandbox |
+
+Seats as in the first pull request: writer Muse one at a time, persistent mute auditor Grok, no
+gate-author pair. Checkpoints: RED, slice 6, slice 7, slice 8, pre-push.
 
 ## Follow-ups outside both pull requests
 

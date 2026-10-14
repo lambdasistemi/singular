@@ -2,7 +2,7 @@
 
 Ticket [#503](https://github.com/lambdasistemi/singular/issues/503), a vertical slice of the
 [join-by-token plan](../437-join-by-token/spec.md). Read the [plan](plan.md) for the slices and the
-[touch list](touch-list.md) for the files. Base: `main` at `e7b55ac9`.
+[touch list](touch-list.md) for the files. Base: `main` at `e7b55ac9`; second pull request `0272dadc`.
 
 ## Story
 
@@ -69,6 +69,17 @@ fields.
 - `release-archive-carries-its-version`: the on-chain release archive stages `version.txt` beside
   its blueprint and the release check refuses an archive whose version, asset name or checksum
   disagree. Delivered by the second pull request: the cut rule moved it there.
+- `create-receipt-prints-the-describe-command`: the receipt of `registry create` and of
+  `open-datum create` carries `describeCommand`, one shell-quoted line built from the arguments
+  create ran with: the blueprint as given, the new state token, the provider and network settings
+  and the network time directory when given. It names no wallet key, no credential path and no
+  signing flag. Run as printed, it exits 0 with the page.
+- `archive-describe-agrees-with-readback`: the Demo 1 journey runs `describe` from the extracted
+  archive (its own `singular`, its blueprint, the adjacent `version.txt`) right after create and
+  again after the lifecycle. The second page equals what `inspect` and the fold receipts show:
+  root, key counts, folds since create, last fold and pending requests.
+- `run-page-follows-the-journey`: Demo 1's run page numbers the page reading right after create,
+  and its step check fails a page without that step.
 
 ## Named refusals
 

@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "Every file this ticket creates, edits or deletes, by slice. Read the plan for the slices. Base: main at e7b55ac9. A file not on this list that the work later needs is a question to the desk before it is edited. Columns: change is create or edit; meets names a live lane that shares the file, or none.",
+      "text": "Every file this ticket creates, edits or deletes, by slice. Read the plan for the slices. Base: main at e7b55ac9 (second pull request: 0272dadc). A file not on this list that the work later needs is a question to the desk before it is edited. Columns: change is create or edit; meets names a live lane that shares the file, or none.",
       "pause": 400
     }
   ],
@@ -49,10 +49,18 @@
       "pause": 400
     }
   ],
-  "second-pull-request-paths-re-read-at-its-base": [
+  "second-pull-request-paths-re-read-at-main-0272dadc": [
     {
-      "text": "Second pull request (paths re-read at its base).",
+      "text": "Second pull request (paths re-read at main 0272dadc).",
       "pause": 500
+    },
+    {
+      "text": "The one-output create (#406, PR 625) and the bookkeeping work (#543) have merged. Slices 6 and 7 start now; slice 8 waits for the desk's note that #518 pull request 3b merged, because it edits the same Demo 1 files.",
+      "pause": 400
+    },
+    {
+      "text": "A test that names things by extent (commands, receipt fields, module counts) and fails only because of the new field or step gets the same additive edit under the desk's standing leave (A-002); each such file is journaled by name.",
+      "pause": 400
     }
   ],
   "added-during-delivery-first-pull-request": [
@@ -63,6 +71,6 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "b014873a0174ca6a5e6335bf6ad06d73015f7b32cf0bdde14ba78fa17201f7b5"
+    "sha256": "e285c8ee138de734d45863fac97ce34543eab53ab8aa0c164e4f9f1bcb4a4db4"
   }
 }

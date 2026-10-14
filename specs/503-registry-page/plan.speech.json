@@ -89,11 +89,19 @@
       "pause": 500
     },
     {
-      "text": "Ruled by the desk (2026-10-13): two lines are on the Demo 1 path and are this ticket's second pull request, started as soon as their holders merge. The desk sends a note at each merge; until both notes arrive no file below is edited, and the files are re-read at the base the pull request starts from. It follows the first pull request (it needs the command and the archive's version.txt). Deadline: first pull request merged by 17 October, second by 18 October.",
+      "text": "Ruled by the desk (2026-10-13): two lines are on the Demo 1 path and are this ticket's second pull request. Both holders have merged: the one-output create (PR 625) put main at 0272dadc, the base of this pull request, and the files are re-read there. Slices 6 and 7 start now. Slice 8 edits Demo 1's run page and journey scripts, which #518 pull request 3b also edits, so it starts on the desk's note that 3b merged. Deadline: second pull request merged by 18 October.",
       "pause": 400
     },
     {
-      "text": "Expected files, re-read at the base: offchain/cli/src/Singular/CLI/Create.hs, the create receipt tests under offchain/test/Singular/CLI/, the open-datum create tests, onchain-release/DEMO1.md with its speech companion, tools/demo1_cli_check.sh and its controls, and the docs/ pages that show a create receipt. flake.nix and .github/workflows/registry.yml only if the archive job needs a new input or step, which the desk is asked about first. Gate rows: nix run --quiet .#demo1-cli-check and nix run --quiet .#demo1-cli-test-harness (job \"Demo 1 journey from the release archive\"); cd applications/open-datum/offchain && nix run --quiet .#open-datum-tests; the focused cage-tests match for the create receipt; nix run --quiet .#cli-flags-check; nix run --quiet .#docs-check.",
+      "text": "Invariants, each seen to fail first (BLOCKING fails the checkpoint, ADVISORY is a note):",
+      "pause": 400
+    },
+    {
+      "text": "Gate, existing commands only, budget 25 minutes per candidate without the archive journey (the journey is the hosted job at the pushed head; local runs while developing are not repeated gates; just recipes run with TMPDIR outside /tmp, issue 621):",
+      "pause": 400
+    },
+    {
+      "text": "Seats as in the first pull request: writer Muse one at a time, persistent mute auditor Grok, no gate-author pair. Checkpoints: RED, slice 6, slice 7, slice 8, pre-push.",
       "pause": 400
     }
   ],
@@ -119,6 +127,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "ec467dde305c945c42811597d5203ad28331d49965354c1d0288b1ca826cfdfe"
+    "sha256": "6a902a7fe6b1c30cbb4b1532cff26789a2e214bd09a9feeaeecd7c548eb01443"
   }
 }

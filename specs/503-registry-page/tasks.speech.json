@@ -113,17 +113,17 @@
       "pause": 500
     },
     {
-      "text": "[ ] final-local-gate: lint, format, focused suites, flags, docs, then just ci once.",
+      "text": "[x] final-local-gate: lint, format, focused suites, flags, docs, then just ci once.",
       "pause": 300
     },
     {
-      "text": "[ ] pull-request-record: the template filled with the model revision, maps, evidence and limits.",
+      "text": "[x] pull-request-record: the template filled with the model revision, maps, evidence and limits.",
       "pause": 300
     }
   ],
-  "second-pull-request-the-desks-notes-that-create-funding-and-the-bookkeeping-work-merged-have-arrived": [
+  "second-pull-request-base-0272dadc-slices-6-and-7-start-now-slice-8-on-the-desks-note-that-518-pull-request-3b-merged": [
     {
-      "text": "Second pull request (the desk's notes that create funding and the bookkeeping work merged have arrived).",
+      "text": "Second pull request (base 0272dadc; slices 6 and 7 start now, slice 8 on the desk's note that #518 pull request 3b merged).",
       "pause": 500
     }
   ],
@@ -133,11 +133,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] archive-stages-version: version.txt beside the archive's blueprint.",
+      "text": "[ ] archive-stages-version: onchain/version.txt beside the archive's onchain/plutus.json.",
       "pause": 300
     },
     {
       "text": "[ ] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed version each refused by name on an archive that is otherwise valid.",
       "pause": 300
     }
   ],
@@ -152,6 +156,10 @@
     },
     {
       "text": "[ ] create-receipt-carries-the-command: built from the arguments create ran with, with the new state token, never a wallet key; both the registry and the open-datum create.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or signing flag; a planted one fails the check.",
       "pause": 300
     }
   ],
@@ -179,6 +187,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "14da88d627fdf9b62f73d0eccdc75a747ca8bb8d73683aeea447419168cee377"
+    "sha256": "437c2337df94332f7fdf62413b06333d079fa97a0c9be4a33b965fda82294707"
   }
 }
