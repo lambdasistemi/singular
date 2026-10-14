@@ -153,6 +153,23 @@ mutate_model_revision_altered() {
   printf '%040d\n' 0 >"$1/MODEL-REVISION"
 }
 
+# The version member the archive stages beside its blueprint: the release
+# version from the source tree. Each variant works on an archive whose both
+# manifests are otherwise valid, so only the version assertion can fire.
+mutate_version_missing() {
+  rm -f "$1/onchain/version.txt"
+}
+
+mutate_version_other() {
+  mkdir -p "$1/onchain"
+  correct="$(tr -d ' \t\n\r' <"$root/version.txt")"
+  if [ "$correct" = "0.0.0" ]; then
+    printf '9.9.9\n' >"$1/onchain/version.txt"
+  else
+    printf '0.0.0\n' >"$1/onchain/version.txt"
+  fi
+}
+
 run_variant() { # $1 = name, $2 = mutator, $3 = expected reason fragment
   local name="$1" work vdir
   work="$(mktemp -d)"
@@ -177,15 +194,94 @@ run_variant() { # $1 = name, $2 = mutator, $3 = expected reason fragment
     exit 1
   fi
   case "$out" in
-    *"checksum manifest drift"* | *"checksum"*)
-      echo "CONTROL-FAIL: variant $name refused at checksums, not the surface:" >&2
+    *"$3"*) echo "control: variant $name refused specifically ($3)" ;;
+    *)
+      case "$out" in
+        *"checksum manifest drift"* | *"checksum"*)
+          echo "CONTROL-FAIL: variant $name refused at checksums, not the surface:" >&2
+          echo "$out" >&2
+          exit 1
+          ;;
+      esac
+      echo "CONTROL-FAIL: variant $name refused, but not for the surface reason:" >&2
       echo "$out" >&2
       exit 1
       ;;
   esac
+}
+
+# The uncovered version member needs its own manifest handling: the inner
+# manifest lists every other file exactly, the version member is present
+# with the release version but has no line, and the outer manifest covers
+# both tarballs. Only the version coverage assertion can fire.
+write_manifest_without_version() { # $1 = dir
+  python3 - "$1" <<'EOF'
+import hashlib, sys
+from pathlib import Path
+work = Path(sys.argv[1])
+lines = sorted(
+    f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(work).as_posix()}\n"
+    for p in work.rglob("*")
+    if p.is_file() and p.name != "SHA256SUMS" and p.relative_to(work).as_posix() != "onchain/version.txt"
+)
+(work / "SHA256SUMS").write_text("".join(lines))
+EOF
+}
+
+prove_integrity_without_version() { # $1 = dir, $2 = label
+  python3 - "$1" <<'EOF'
+import hashlib, sys
+from pathlib import Path
+work = Path(sys.argv[1])
+expect = {}
+for line in (work / "SHA256SUMS").read_text().splitlines():
+    digest, name = line.split("  ", 1)
+    expect[name] = digest
+actual = {
+    p.relative_to(work).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+    for p in work.rglob("*")
+    if p.is_file() and p.name != "SHA256SUMS" and p.relative_to(work).as_posix() != "onchain/version.txt"
+}
+assert expect == actual, f"integrity proof failed: {set(expect) ^ set(actual)}"
+assert (work / "onchain/version.txt").is_file(), "version member missing from uncovered variant"
+assert "onchain/version.txt" not in expect, "version member is covered in uncovered variant"
+EOF
+  echo "control: $2 internal integrity proved except the uncovered version (all other files covered)"
+}
+
+run_version_unchecksummed_variant() {
+  local name="version-unchecksummed" work vdir correct
+  work="$(mktemp -d)"
+  tar -xzf "$onchain_tarball" -C "$work"
+  mkdir -p "$work/onchain"
+  correct="$(tr -d ' \t\n\r' <"$root/version.txt")"
+  printf '%s\n' "$correct" >"$work/onchain/version.txt"
+  write_manifest_without_version "$work"
+  prove_integrity_without_version "$work" "$name"
+  vdir="$(mktemp -d)"
+  tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -C "$work" -cf - . | gzip -n >"$vdir/$(basename "$onchain_tarball")"
+  for docs_tarball in "$archive"/singular-docs-*.tar.gz; do
+    cp "$docs_tarball" "$vdir/"
+  done
+  (cd "$vdir" && sha256sum ./*.tar.gz | sed 's|  \./|  |' >SHA256SUMS)
+  prove_release_dir_integrity "$vdir" "$name"
+  local out rc=0
+  out="$(python3 "$root/tools/check_release.py" "$root" "$vdir" 2>&1)" && rc=$? || rc=$?
+  rm -rf "$work" "$vdir"
+  if [ "$rc" -eq 0 ]; then
+    echo "CONTROL-FAIL: variant $name unexpectedly PASSED" >&2
+    exit 1
+  fi
   case "$out" in
-    *"$3"*) echo "control: variant $name refused specifically ($3)" ;;
+    *"onchain/version.txt is not covered by the archive checksums"*) echo "control: variant $name refused specifically (onchain/version.txt is not covered by the archive checksums)" ;;
     *)
+      case "$out" in
+        *"checksum manifest drift"* | *"checksum"*)
+          echo "CONTROL-FAIL: variant $name refused at checksums, not the surface:" >&2
+          echo "$out" >&2
+          exit 1
+          ;;
+      esac
       echo "CONTROL-FAIL: variant $name refused, but not for the surface reason:" >&2
       echo "$out" >&2
       exit 1
@@ -205,4 +301,9 @@ run_variant "model-revision-removed" mutate_model_revision_removed \
   "misses MODEL-REVISION"
 run_variant "model-revision-altered" mutate_model_revision_altered \
   "differs from the conformance evidence's"
-echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure, the per-row retained status, the release-text consistency and the stated model revision each refuse specifically"
+run_variant "version-missing" mutate_version_missing \
+  "onchain/version.txt is missing"
+run_variant "version-other" mutate_version_other \
+  "onchain/version.txt differs from the release version"
+run_version_unchecksummed_variant
+echo "CONTROL-PASS: ordinary archive passes; the verified-command promise, the retained-command disclosure, the per-row retained status, the release-text consistency, the stated model revision and the staged version each refuse specifically"
