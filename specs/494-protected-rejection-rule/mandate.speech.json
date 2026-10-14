@@ -137,7 +137,7 @@
       "pause": 300
     },
     {
-      "text": "a termination carries the key's token and the application's approval, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;",
+      "text": "a termination carries the singular tag and the application tag, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;",
       "pause": 300
     },
     {
@@ -197,7 +197,7 @@
       "pause": 400
     },
     {
-      "text": "Amended on 14 October 2026 by the decided design: the economic slices model the request tag as far as the design needs it, that is, what a booking guarantees about a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.",
+      "text": "Amended on 14 October 2026 by the decided design: the economic slices model the syntax tag as far as the design needs it, that is, what a booking guarantees about a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.",
       "pause": 400
     },
     {
@@ -233,7 +233,7 @@
       "pause": 500
     },
     {
-      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the request tag and its mint; the bond is modelled here), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
+      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the syntax tag and its mint; the bond is modelled here), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
       "pause": 400
     }
   ],
@@ -273,6 +273,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "8da1bc34cc53a35e7c00bacc30c799916f2db789fbd9cc834d968d1e4e41bf77"
+    "sha256": "542d53f2fcda1063d1431a10ca55b3176902ff5d8bfc61d42123e0f215ce5e50"
   }
 }

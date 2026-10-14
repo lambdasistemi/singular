@@ -114,7 +114,7 @@ On 13 October 2026 the operator adopted a bond, a booking-root forfeit, a split 
 the processor on every rejection, the return of the bond on expiry and a termination fee, and ordered the model and a paper before anything
 else. After the review of the paper's first draft the operator ruled every point again, and that design was withdrawn: no bond, no split, no booking root and no
 termination fee; a registration cost donated to the treasury on a successful registration; rejection by reference read, batchable, never spending the state output;
-terminations that carry the token and the approval and can be neither rejected, retracted nor expired; a pinned minimum tip; the booked time the upper end of a bounded
+terminations that carry the token and the application tag and can be neither rejected, retracted nor expired; a pinned minimum tip; the booked time the upper end of a bounded
 booking interval; every parameter fixed at creation. The [design](economics-design.md) is the decided text; the [plan](economics-plan.md) rebuilds the model on it, and
 the paper is written after the model, on 14 October 2026 by the operator's order.
 

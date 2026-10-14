@@ -221,7 +221,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-six — a dirty request, hidden surplus, a forged tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.",
+      "text": "[ ] failing-controls-six — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.",
       "pause": 300
     },
     {
@@ -229,7 +229,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the tag minted once.",
+      "text": "[ ] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the syntax tag minted once.",
       "pause": 300
     },
     {
@@ -251,7 +251,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-seven — a forged token or approval, a second pending termination and a token not in custody fail on the branch as it stands.",
+      "text": "[ ] failing-controls-seven — a forged singular tag or application tag, a second pending termination and a token not in custody fail on the branch as it stands.",
       "pause": 300
     },
     {
@@ -333,11 +333,11 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-ten — a termination stranded by a fold-time check, one donation counted for many keys, a forged approval and an unbalanced fold fail on the branch as it stands.",
+      "text": "[ ] failing-controls-ten — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag and an unbalanced fold fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] fold-obligations — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the approval and donates held minus tip.",
+      "text": "[ ] fold-obligations — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the application tag and donates held minus tip.",
       "pause": 300
     },
     {
@@ -373,6 +373,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "b6e688506a99ceac7bc2de9cd5f830f8d5a8dfab35ccea22dc1342d8633525bd"
+    "sha256": "365b34683d02b65bb898904cabcf6b96e3fa850c64295dcd32c9aa1acc58eb6f"
   }
 }

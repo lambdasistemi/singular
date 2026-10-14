@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "Terminology (operator): Singular has no controller concept. The application is the controller. It authorizes every operation through its approval and governs the token at the destination it names. A registration request carries a refund address, its owner field.",
+      "text": "Terminology (operator): Singular has no controller concept. The application is the controller. It authorizes every operation through its application tag and governs the singular tag at the destination it names. A registration request carries a refund address, its owner field.",
       "pause": 400
     }
   ],
@@ -65,7 +65,7 @@
       "pause": 500
     },
     {
-      "text": "The request policy, the minting policy that tags a booked request, refuses any request whose contents are not exactly the following (\"dirty requests\").",
+      "text": "The request policy, the minting policy that mints a booked request's syntax tag, refuses any request whose contents are not exactly the following (\"dirty requests\").",
       "pause": 400
     },
     {
@@ -81,7 +81,7 @@
       "pause": 300
     },
     {
-      "text": "Singular checks the application's approval, not the application's rule. Everything the fold checks for a termination is fixed at booking. The application's approval policy must allow burning its approval at any time with no further condition. Otherwise a booked termination, which has no other exit, could be stranded.",
+      "text": "Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. The application tag policy must allow burning its application tag at any time with no further condition. Otherwise a booked termination, which has no other exit, could be stranded.",
       "pause": 400
     }
   ],
@@ -191,7 +191,7 @@
       "pause": 300
     },
     {
-      "text": "on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip), approvals included;",
+      "text": "on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip), application tags included;",
       "pause": 300
     },
     {
@@ -219,7 +219,7 @@
       "pause": 300
     },
     {
-      "text": "Only terminations carrying the application's approval fold.",
+      "text": "Only terminations carrying the application tag fold.",
       "pause": 300
     },
     {
@@ -307,11 +307,11 @@
       "pause": 300
     },
     {
-      "text": "A termination carries the active token, the tip and the carrier ada, with no refund address and no time.",
+      "text": "A termination carries the singular tag, the tip and the carrier ada, with no refund address and no time.",
       "pause": 300
     },
     {
-      "text": "Both carry the approval and the request-policy tag, with its provenance.",
+      "text": "Both carry the application tag and the syntax tag, with its provenance.",
       "pause": 300
     },
     {
@@ -367,7 +367,7 @@
       "pause": 300
     },
     {
-      "text": "Termination burns the active token and the approval and donates held − tip.",
+      "text": "Termination burns the singular tag and the application tag and donates held − tip.",
       "pause": 300
     },
     {
@@ -403,7 +403,7 @@
       "pause": 300
     },
     {
-      "text": "a forged tag, token or approval;",
+      "text": "a forged syntax tag, singular tag or application tag;",
       "pause": 300
     },
     {
@@ -437,7 +437,7 @@
       "pause": 500
     },
     {
-      "text": "Registration approval on a successful fold: returned to the refund address, as today, or burned like the termination's. If returned, its output is a restitution cost that t_min must cover.",
+      "text": "Registration application tag on a successful fold: returned to the refund address, as today, or burned like the termination's. If returned, its output is a restitution cost that t_min must cover.",
       "pause": 300
     },
     {
@@ -459,6 +459,6 @@
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "2cd27976fe7f5ca1002016ea73c2b07d8dfc2e08001dbab54d97bbf85dee5020"
+    "sha256": "bb01e2580d1a7d4ebdae5bee069124097937f54a70aec3c226f99074507b6ca8"
   }
 }

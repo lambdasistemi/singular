@@ -29,6 +29,20 @@
       "pause": 400
     }
   ],
+  "names": [
+    {
+      "text": "Names.",
+      "pause": 500
+    },
+    {
+      "text": "The operator agreed these names on 14 October 2026; the plan and the model use them from slice six on. Declarations that already exist keep their names until a slice restates them.",
+      "pause": 400
+    },
+    {
+      "text": "The syntax tag's minting checks only that the tags are present, never the application's rule: for a registration the application tag; for a termination the singular tag and the application tag.",
+      "pause": 400
+    }
+  ],
   "the-statements": [
     {
       "text": "The statements.",
@@ -57,11 +71,11 @@
       "pause": 300
     },
     {
-      "text": "Six: registrations. *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application's approval, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the request-policy tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The mint validator stays with ticket 529; this slice models what the tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged tag, a backdated booking, a booking wider than the maximum.",
+      "text": "Six: registrations. *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application tag, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the syntax tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The mint validator stays with ticket 529; this slice models what the syntax tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged syntax tag, a backdated booking, a booking wider than the maximum.",
       "pause": 300
     },
     {
-      "text": "Seven: terminations. *As an application, I release a key's token into a termination request with my approval; as anyone, I see at most one termination pending per key and the supply still adds up.* Adds the termination request (token, tip, carrier ada, approval; no refund address, no time), its booking step (the token moves from the application's custody into the request) and the supply laws counting tokens held by pending requests. Statement 9 and the two supporting statements. Controls: a forged token or approval, a second termination of one key, a termination whose token is not in custody.",
+      "text": "Seven: terminations. *As an application, I release a key's singular tag into a termination request with my application tag; as anyone, I see at most one termination pending per key and the supply still adds up.* Adds the termination request (token, tip, carrier ada, application tag; no refund address, no time), its booking step (the token moves from the application's custody into the request) and the supply laws counting tokens held by pending requests. Statement 9 and the two supporting statements. Controls: a forged singular tag or application tag, a second termination of one key, a termination whose token is not in custody.",
       "pause": 300
     },
     {
@@ -73,7 +87,7 @@
       "pause": 300
     },
     {
-      "text": "Ten: folds. *As the treasury, I receive at least the registration cost for each key registered and everything but the tip of each terminated key; as a requester with a booked termination, I see it can always be folded.* Adds the fold of a registration (the processing window; routing of the cost, tip and carrier) and of a termination (no window; the token and the approval burned; everything but the tip donated), the donation floor and the processors' take. Statements 7 (first half), 10, 11 and 12 and one supporting statement. Controls: a termination stranded by a check made at fold time, one donation counted for many keys, a forged approval, an unbalanced fold.",
+      "text": "Ten: folds. *As the treasury, I receive at least the registration cost for each key registered and everything but the tip of each terminated key; as a requester with a booked termination, I see it can always be folded.* Adds the fold of a registration (the processing window; routing of the cost, tip and carrier) and of a termination (no window; the token and the application tag burned; everything but the tip donated), the donation floor and the processors' take. Statements 7 (first half), 10, 11 and 12 and one supporting statement. Controls: a termination stranded by a check made at fold time, one donation counted for many keys, a forged application tag, an unbalanced fold.",
       "pause": 300
     }
   ],
@@ -137,6 +151,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "a9335c0d1dd482733c33ae33edc475279fb425317544c89ebdfa55de87478ddb"
+    "sha256": "f535039bd524834b2d585836135382264b42b06c9d8429b36f314cb85f0d0d18"
   }
 }

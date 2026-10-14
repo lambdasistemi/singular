@@ -42,9 +42,9 @@ beyond the naming layer's, which is why the vocabulary types sit in the model fi
 | Output reference (`OutRef`) | The identity of the transaction that made the output and the output's position in it | What a transaction spends or reads | five | Required on a spent or read input |
 | Transaction | `referenceInputs`, `validity`, `fee`, `donation` | Outputs read and not spent; the finite interval, lower end included and upper end excluded; the ledger fee; the treasury donation | five | Empty, none, zero, zero; a zero donation is not written |
 | Registry state token | Policy and asset name | The exact identity a rejection checks on the output it reads | five | The existing registry identity names it |
-| Registration request | Refund address, destination, booked time, registration cost, declared tip, carrier ada, approval, tag | What a registration holds and promises | six | The booked time is the upper end of the booking interval |
+| Registration request | Refund address, destination, booked time, registration cost, declared tip, carrier ada, application tag, syntax tag | What a registration holds and promises | six | The booked time is the upper end of the booking interval |
 | Request pool | The pending requests of a world | Requests booked and neither folded, rejected nor retracted | six | Empty at genesis |
-| Termination request | Active token, declared tip, carrier ada, approval, tag | What a termination holds; no refund address, no time | seven | |
+| Termination request | Singular tag, declared tip, carrier ada, application tag, syntax tag | What a termination holds; no refund address, no time | seven | |
 | World | The registry state with the pool | What the statements quantify over | six | The registry state alone for every existing row |
 | Treasury recipient | A recipient in the payment vocabulary | Owed the donation | ten | |
 
@@ -59,10 +59,10 @@ produced it. The supply of a token kind counts the tokens held at the applicatio
 | `applyTx` | five | Removes spent inputs from the unspent set, adds the outputs, leaves reference inputs in place; refuses a reference to an output not in the set |
 | `balanced` | five | Inputs plus mint equal outputs plus donation plus fee, for native assets and lovelace |
 | `exactContents` | six, seven | A request holds exactly the amounts its kind allows; a tip of at least the minimum is declared apart from the held value |
-| `book` | six, seven | Registration: interval no wider than the maximum, booked time its upper end, exact contents, tag minted once. Termination: the token moves from custody into the request, exact contents, approval bound to terminate, key, destination |
+| `book` | six, seven | Registration: interval no wider than the maximum, booked time its upper end, exact contents, syntax tag minted once. Termination: the token moves from custody into the request, exact contents, application tag bound to terminate, key, destination |
 | `rejectionAccepted` | eight | Over a transaction and the unspent set: state output referenced with the exact token, no state output spent, request inputs distinct, one interval, every member admitted by a current mismatch or by expiry, no termination |
-| `refundObligations` | nine | Held minus tip to each refund address, summed per address, approval included; a retraction returns everything held |
-| `foldObligations` | ten | The registration cost to the treasury, the tip to the processor, the carrier with the token; a termination burns the token and the approval and donates held minus tip |
+| `refundObligations` | nine | Held minus tip to each refund address, summed per address, application tag included; a retraction returns everything held |
+| `foldObligations` | ten | The registration cost to the treasury, the tip to the processor, the carrier with the token; a termination burns the token and the application tag and donates held minus tip |
 
 A statement is declared where the plan puts it, never beside its definition in `Economics`, so the axiom gate and the register cover it.
 

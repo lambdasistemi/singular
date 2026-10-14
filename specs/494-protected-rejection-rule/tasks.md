@@ -115,16 +115,16 @@ controls and ends with the list of its statements, each with its fully qualified
 
 ### Slice six: registrations
 
-- [ ] `failing-controls-six` — a dirty request, hidden surplus, a forged tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
+- [ ] `failing-controls-six` — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
 - [ ] `registration-request-and-pool` — the registration request, the exact-contents rule, the pending pool and the world exist.
-- [ ] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the tag minted once.
+- [ ] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the syntax tag minted once.
 - [ ] `statements-six` — the four supporting statements of slice six are proved.
 - [ ] `regenerate-after-slice-six` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-six` — as slice five.
 
 ### Slice seven: terminations
 
-- [ ] `failing-controls-seven` — a forged token or approval, a second pending termination and a token not in custody fail on the branch as it stands.
+- [ ] `failing-controls-seven` — a forged singular tag or application tag, a second pending termination and a token not in custody fail on the branch as it stands.
 - [ ] `termination-request-and-booking` — the termination request and its booking exist; the token moves from custody into the request.
 - [ ] `supply-counts-pending-requests` — the supply laws count tokens held by pending requests.
 - [ ] `statements-seven` — statement 9 and the two supporting statements are proved.
@@ -149,8 +149,8 @@ controls and ends with the list of its statements, each with its fully qualified
 
 ### Slice ten: folds
 
-- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged approval and an unbalanced fold fail on the branch as it stands.
-- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the approval and donates held minus tip.
+- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag and an unbalanced fold fail on the branch as it stands.
+- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the application tag and donates held minus tip.
 - [ ] `statements-ten` — statements 7 (first half), 10, 11 and 12 and the supporting statement are proved.
 - [ ] `amendment-economics` — the 1.16.0 entry of the constitution states the economic rows in the translation (one release, one entry).
 - [ ] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)

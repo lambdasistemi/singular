@@ -89,7 +89,7 @@ at a booking root, a processor split and a termination fee) is withdrawn. The de
 - no bond, no split, no booking root and no termination fee;
 - a successful registration donates a registration cost to the treasury;
 - a rejection reads the registry state output by reference, is batchable and never spends it;
-- a termination carries the key's token and the application's approval, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;
+- a termination carries the singular tag and the application tag, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;
 - a minimum tip pinned by the registry is checked at booking;
 - the booked time is the upper end of a booking interval at most a pinned width wide;
 - every parameter is fixed at creation, with no authority to change it;
@@ -126,7 +126,7 @@ The handoff is the "What a rejection does" and "What a batch binds" sections of 
 state, mints nothing and owes the deposit; ticket 529 attaches the bond forfeit to an admitted
 rejection and nothing earlier.
 
-Amended on 14 October 2026 by the decided design: the economic slices model the request tag as far as the design needs it, that is, what a booking guarantees about
+Amended on 14 October 2026 by the decided design: the economic slices model the syntax tag as far as the design needs it, that is, what a booking guarantees about
 a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.
 
 > Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.
@@ -164,7 +164,7 @@ are the net for every item.
 ## Out of scope, by number
 
 Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487
-(rejection as a separate command), 529 (the request tag and its mint; the bond is modelled here), 361 (the refund policy),
+(rejection as a separate command), 529 (the syntax tag and its mint; the bond is modelled here), 361 (the refund policy),
 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge
 contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum
 application, except regenerating its committed corpus). A coder

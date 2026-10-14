@@ -172,7 +172,7 @@ touch one stops and reports it instead.
 | 496 | Building rejection evidence in the production fold path, including the reject command's lower validity bound. |
 | 497 | Connected acceptance of protected rejection on a ledger through the packaged command line. |
 | 487 | Making rejection a separate all-or-nothing command rather than part of a fold. |
-| 529 | The request tag and the mint that checks it. The economic slices of this ticket model what a booking guarantees about a pending request (see the [economics plan](economics-plan.md)); the mint that enforces it is not modelled. |
+| 529 | The syntax tag and the mint that checks it. The economic slices of this ticket model what a booking guarantees about a pending request (see the [economics plan](economics-plan.md)); the mint that enforces it is not modelled. |
 | 361 | The unresolved refund policy: the model sums by owner, the validator pays by position. Refund amounts stay as they are. |
 | 500 | Research on address pollution and malformed deposits. |
 | 528 | The command-line split. The ticket builds against the library's request and fold, not the open-datum envelope. |
