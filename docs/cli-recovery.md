@@ -14,7 +14,9 @@ you do next. Every write records each transaction it submits in the
 registry's journal, `journal.jsonl`, phase by phase, before taking the
 next step: `prepared` (the signed body saved beside the journal,
 before it is sent), the node's answer, the confirmation, and
-`observed` (what the transaction made, read back from the chain). The
+`observed` (what the transaction made, read back from the chain). A fold's
+`prepared` line lists every request it folds, one transition per request,
+chained from the root before to the root after. The
 journal is only ever appended to; saved bodies are never rewritten.
 
 ## The request keeps its registry's windows
@@ -53,7 +55,9 @@ prepared once, and the journal shows exactly one `prepared` line for it.
 ## The next command reconciles
 
 After an inclusion, the command selects its proof state from public state-token
-history and reads back the step's after-state before appending `observed`.
+history and reads back the step's after-state before appending `observed`. For a
+fold of several requests, it reads back every key the fold touches and the
+registry's state output carrying the last transition's root after.
 The next ordinary write or `inspect` reconciles unfinished observations from
 public chain evidence before proceeding, without submitting anything. Proof
 state is reconstructed afresh; no mirror or saved-root file is read or written.
@@ -72,8 +76,9 @@ flowchart TD
 The journal tracks this actor's submissions. It never supplies a replay edge,
 proof or root. Missing history and a root that does not chain are named
 refusals; an empty trie cannot substitute for unavailable history. The
-observation concerns the interrupted step's key, even when the current command
-targets another key.
+observation concerns every key the interrupted step touched, even when the current command
+targets another key: for a fold, every key its transitions name and the registry's
+state output.
 
 A write reports reconciliation under `reconciled`: `rolledBack`, `recovery`,
 `excluded` and `observed`. Inspect reports the same fields at the receipt's top
@@ -88,7 +93,8 @@ it reads: when its first output is not live and an input it spends is
 live again, it is no longer on the chain, since a transaction on the
 chain has consumed every input it spends. The command appends a
 `rolled-back` line naming the chain point it read and the inputs it
-found live; the `observed` line it supersedes stays where it was.
+found live; for a fold, the line names that its requests are pending again and
+the public state returns to its root before. The `observed` line it supersedes stays where it was.
 
 ```mermaid
 flowchart TD
@@ -172,6 +178,7 @@ workflow matrix, and each partition runs by key:
 ```sh
 nix run --quiet .#cli-recovery-partitions
 nix run --quiet .#cli-recovery-partition -- history
+nix run --quiet .#cli-recovery-partition -- two-requests
 nix run --quiet .#cli-recovery-partition -- rollback
 nix run --quiet .#cli-recovery-partition -- 'cross-wallet:SINGULAR_HARNESS_HOLD_AFTER_SEND'
 ```
@@ -187,6 +194,7 @@ are generated from the same partition list the workflow matrix uses.
 | lost answer | the node accepts a fold but its answer is lost | the prepared line and saved body predate the send; the next command reconstructs public state, observes the fold once and proceeds |
 | killed before the commit | a fold confirms, then its process is killed before fresh replay | the next command reconstructs public state, observes the fold once and proceeds |
 | killed before the observation | a fold's replay is checked, then its process is killed before observed | the next command reconstructs public state, observes the fold once and proceeds |
+| two requests | two bookings, a fold of both interrupted by a lost answer and by a kill before the observation | each time the next ordinary command recovers the fold, both keys reconciled once, nothing sent twice |
 | never sent, past its upper bound | a fold never reaches the node, and the tip passes its upper bound | the next write journals excluded with the chain point and live inputs, then proceeds from fresh public replay |
 | never sent, without an upper bound | a booking never reaches the node | the next write stops naming the booking and unknown; it neither resubmits nor invents its inclusion |
 | rolled back | the generated node restores a database copy from before an observed booking and fold | public reads show their inputs live again; the journal appends rolled-back, writes stop naming the booking and no transaction is resent |

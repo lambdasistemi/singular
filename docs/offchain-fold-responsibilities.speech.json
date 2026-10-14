@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+      "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound of nine requests per fold, an estimate under preprod's execution budget of 14 million memory units, bound by trie-proof verification, not measured on a real network (measuring it belongs to #530). The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
       "pause": 400
     }
   ],
@@ -69,7 +69,7 @@
       "pause": 300
     },
     {
-      "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound: Singular.Registry.FoldSelection, and only there.",
+      "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound of nine, an estimate not measured on a real network: Singular.Registry.FoldSelection, and only there.",
       "pause": 300
     },
     {
@@ -123,6 +123,6 @@
   ],
   "_source": {
     "file": "offchain-fold-responsibilities.md",
-    "sha256": "68c1a5da94e7ea6d768371e7dc0c6ab16e8d673f3d21533bd1b0f78fef12f444"
+    "sha256": "5edd705395b2cb1b6aad9c6e32b7b5d41e513930f8c46d7e80b01c48b4f78589"
   }
 }
