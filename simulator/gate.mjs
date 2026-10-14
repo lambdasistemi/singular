@@ -345,6 +345,7 @@ const SECTION_CLASS = {
   transactions: 'evidence',
   economicControls: 'uncovered',
   registrationBookings: 'uncovered',
+  terminationBookings: 'uncovered',
 };
 const classifySections = (c) => {
   const exported = Object.keys(c).filter((k) => Array.isArray(c[k]));

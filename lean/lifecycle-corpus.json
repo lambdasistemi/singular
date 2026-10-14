@@ -33,7 +33,7 @@
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "254573d5dfc399e46463a46fad0c1b159266a54b95f4f1923a29b82d32e08174",
+  "payloadSha256": "ff5934850d053183d19bbd76d755510696289f43f7667fd4828cfcbf3de73ce1",
   "recovery": [
     {
       "detail": true,
@@ -110,7 +110,7 @@
     "lean/DriverMain/Scenarios.lean": "cc6cc444edf752cc918b3fca6c1beb5e60ae6d2d70e4010d3db6a167e3b04ffa",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "lean/M1Main.lean": "a5bda4b9f2bc5f5485da4242eed5282caa6b046fb5d0eb05c8bf687ecfb5e4e8",
-    "lean/Main.lean": "4733e5be74ddee5a2bad834a88bf8cb539104344b7153e955d04c92ee288e273",
+    "lean/Main.lean": "c7215d84506e60ae2775f883fcbba53461b2a69088becf61e59bdbeadc3147f0",
     "lean/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
@@ -125,7 +125,8 @@
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
     "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
     "lean/Singular/Economics/Booking.lean": "c164cbaf2088fe114134851ef3220b69861652e0508f3a092b94082e4d27ed99",
-    "lean/Singular/Economics/World.lean": "973f03859c4a35a013eeb1d206e4671197fbae333fb73947b03df6c2f64e6bb0",
+    "lean/Singular/Economics/Termination.lean": "aa9b6b98de14461d29c9bcf8c9a217f924762470064eae2eca53b3990448855a",
+    "lean/Singular/Economics/World.lean": "8bfb55d322468fa82ac75f37cfa6373d0ed4468ffa86e420ec272a7677d38f81",
     "lean/Singular/Lemmas.lean": "d38a553cea5da0f378ce04e76968bbe0787e2491740e8e55e50dec6a25481cfb",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
@@ -139,6 +140,7 @@
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "a011adeff9c4b0e7fb2165f4d3bbea26ae7178038719f98c6aca5af864d736ac",
     "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
+    "lean/Singular/Model/Termination.lean": "8195f3734f306be89e62c5a983263884be4cc0a6e6045453b84a5a50fe49c236",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
     "lean/Singular/Naming.lean": "7a3cf3d6914af5e0ca52fef453ed90a70c37af15f533c91dcaaed2fae36f1baf",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
@@ -150,11 +152,12 @@
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "d5d71272ed475e0adf17db53cfdeabfb8aa50e7f06d2d2139462d6f157fd8e6b",
+    "lean/Singular/Statements.lean": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
-    "lean/Singular/Statements/Booking.lean": "13dc5397b550ec11381c7298159cbe35f81a446b34e6915ea00645a115c0bed1",
+    "lean/Singular/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
-    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
+    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb",
+    "lean/Singular/Statements/Termination.lean": "bf6565d2281591ea3ba0c92ec3f59576175a7d182f004d2d86f3df98baf1fe9a"
   },
   "steps": [
     {

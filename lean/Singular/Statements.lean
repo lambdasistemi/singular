@@ -2,6 +2,7 @@ import Singular.Statements.Accounting
 import Singular.Statements.Booking
 import Singular.Statements.Payments
 import Singular.Statements.Rejection
+import Singular.Statements.Termination
 import Singular.Lemmas
 import Singular.Driver
 import Singular.Economics

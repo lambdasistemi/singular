@@ -328,5 +328,29 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "bc7f7681634a2db1d3c5f0b149fcdab99bfe82bed17d56bcb00afae67b8f6047"
+  },
+  {
+    "name": "Singular.Statements.termination_booking_has_exact_contents",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "15dff9f8e1426baeb35591b5b8fde46c363c6a1d828ef1fbfc39b4175b47861a"
+  },
+  {
+    "name": "Singular.Statements.world_supply_sync",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "677482a96629adb878cea08b3d4d76db1fccf65ee06e8622a3abd67a1deb4d14"
+  },
+  {
+    "name": "Singular.Statements.at_most_one_pending_termination",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fc59d58c6b0f3723b28f48a68a51abca044a10b3a34554fa734d6c8b6e48d6c2"
+  },
+  {
+    "name": "Singular.Statements.termination_request_carries_genuine_token",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fb922d86fb9583f36711401337968e922d9da0a58a01c90e6ed7dfb8a36b5559"
   }
 ]

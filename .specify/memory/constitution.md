@@ -22,6 +22,25 @@ controls as uncovered. No validator, builder or live implementation acceptance
 follows from these model proofs. The agreed economic design and the declared
 carrier ruling authorize this extension; Principles I-VII, AGENTS.md and the
 pull request template continue to apply unchanged.
+Slice seven, 2026-10-14: termination booking transfers the genuine singular tag
+from application custody to a pending request with exact declared contents.
+Both request tags are minted with the booking; the application tag binds the
+termination, key and destination. A termination has no refund address or booked
+time. The new world-level supply law counts actual tags in custody and pending
+outputs: one exactly for an active key and none otherwise. It proves at most
+one pending termination per key and retains the accepted booking that took its
+tag from custody. The registry component alone need not satisfy its old supply
+law after this transfer; all registry-level statements and reachability remain
+unchanged. Four new statement identities, including the supporting exact-booking
+statement, start uncovered and are appended to the restatement table. Existing
+registration statements retain their statements over the extended world.
+Corpora, theorem register, theorem page, simulator mirror and coverage record
+follow the model. The simulator marks termination booking uncovered. Carrier
+ada stays declared; token identities remain abstract; no relation between the
+old fee pin and minimum tip is assumed. Folds, exits, driver questions, protocol
+and transaction baseline are unchanged. No validator, builder, application
+release-rule or ledger acceptance follows. The decided economic design
+authorizes this extension; Principles I-VII and contributor guidance are unchanged.
 -->
 
 <!--

@@ -69,3 +69,14 @@ The four booking statements are new identities. Each starts uncovered; their Lea
 | `Singular.Statements.booked_time_is_interval_end` | none (new declaration) | `86d8a38ebe2a03232e278407a4deb3f51ad82f4d942140d8b5c86990ef50ef65` | registration booking | uncovered |
 | `Singular.Statements.booked_time_not_before_inclusion` | none (new declaration) | `63ebcb7a3f9d8bf326674e19c297fc13187eade456c13637641a1e8e34a0bdb3` | registration booking | uncovered |
 | `Singular.Statements.booking_width_within_limit` | none (new declaration) | `5d12a9178a46bc78852ba4af63ee95a28713b278e2c9b7e37d1c8c5ac32e1c49` | registration booking | uncovered |
+
+## Termination booking
+
+The world supply, pending uniqueness, custody provenance and exact booking statements are new identities. Each starts uncovered. They count the actual tags in pending requests as well as custody; the registry-level laws remain unchanged. These model proofs do not establish validator, builder or application conformance.
+
+| Statement | Old identity | New identity | Slice | Coverage after |
+|---|---|---|---|---|
+| `Singular.Statements.termination_booking_has_exact_contents` | none (new declaration) | `15dff9f8e1426baeb35591b5b8fde46c363c6a1d828ef1fbfc39b4175b47861a` | termination booking | uncovered |
+| `Singular.Statements.world_supply_sync` | none (new declaration) | `677482a96629adb878cea08b3d4d76db1fccf65ee06e8622a3abd67a1deb4d14` | termination booking | uncovered |
+| `Singular.Statements.at_most_one_pending_termination` | none (new declaration) | `fc59d58c6b0f3723b28f48a68a51abca044a10b3a34554fa734d6c8b6e48d6c2` | termination booking | uncovered |
+| `Singular.Statements.termination_request_carries_genuine_token` | none (new declaration) | `fb922d86fb9583f36711401337968e922d9da0a58a01c90e6ed7dfb8a36b5559` | termination booking | uncovered |

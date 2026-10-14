@@ -53,6 +53,14 @@ theorem booked_request_has_exact_contents (world : World) (reachable : WorldReac
                     omega
                   exact ⟨by simp [exactContents, shape'.1, amount, tags'.1], tags'.2, application'⟩
         · exact ih old
+  | @termination before after reach transaction accepted ih =>
+    unfold bookTermination at accepted
+    split at accepted
+    next reason => exact nomatch accepted
+    next admitted =>
+      split at accepted
+      next duplicate => exact nomatch accepted
+      next fresh => cases accepted; exact ih pending
 
 /-- The pool keeps the booking transaction's interval, and the pending
 registration's booked time is exactly its upper end. -/
@@ -77,6 +85,14 @@ theorem booked_time_is_interval_end (world : World) (reachable : WorldReachable 
           repeat (split at admitted <;> try simp_all)
           all_goals omega
         · exact ih old
+  | @termination before after reach transaction accepted ih =>
+    unfold bookTermination at accepted
+    split at accepted
+    next reason => exact nomatch accepted
+    next admitted =>
+      split at accepted
+      next duplicate => exact nomatch accepted
+      next fresh => cases accepted; exact ih pending
 
 /-- For every actual inclusion time within the original half-open interval,
 the booked time is no earlier. Hence the expiry threshold is no earlier than
@@ -115,5 +131,13 @@ theorem booking_width_within_limit (world : World) (reachable : WorldReachable w
           repeat (split at admitted <;> try simp_all)
           all_goals omega
         · exact ih old
+  | @termination before after reach transaction accepted ih =>
+    unfold bookTermination at accepted
+    split at accepted
+    next reason => exact nomatch accepted
+    next admitted =>
+      split at accepted
+      next duplicate => exact nomatch accepted
+      next fresh => cases accepted; exact ih pending
 
 end Singular.Statements
