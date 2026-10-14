@@ -133,6 +133,10 @@
       "pause": 500
     },
     {
+      "text": "Withdrawn on 14 October 2026 by the economic design: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. The text below is kept as it was ruled; no task serves it any more, and statement 3 of the economics plan carries the protection of a fold.",
+      "pause": 400
+    },
+    {
       "text": "An ordered batch of folds and evidenced rejections is judged action by action; each action sees the state left by those before it, a rejection leaves that state unchanged, and each rejection's evidence binds the intermediate state's configuration and root. An empty batch is refused. A batch with any refused action is refused whole, with no partial result. An all-reject batch is judged by the same engine as a mixed batch. A foldable request cannot be rejected at any position of an admitted batch. (batch-judged-action-by-action)",
       "pause": 400
     }
@@ -221,6 +225,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "49a364fc0ef0cebaf1898768843ccc6e0dc128246db035f964cd1396ed0435cc"
+    "sha256": "6c4befbec044f9a34eafe667fd6527c7dba918bee5e100c7fa04490ad57a11a7"
   }
 }

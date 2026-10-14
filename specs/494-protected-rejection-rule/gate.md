@@ -194,3 +194,5 @@ Falsification. Each slice commits its failing controls first (the controls named
 for another reason, or a statement proved over the wrong thing, is not the control. Each slice ends with the list of its statements, their fully qualified names and their axiom lines.
 
 Budget per candidate: about 40 minutes for the rows marked always and conditional; about 60 once before a push for the rows marked final. A candidate over budget is cut again.
+
+Slice four is withdrawn (14 October 2026): its batch row and the two-batch scenarios of the falsification paragraph above no longer apply to any slice.

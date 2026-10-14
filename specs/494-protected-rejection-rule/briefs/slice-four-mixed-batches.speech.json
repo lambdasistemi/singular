@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Withdrawn on 14 October 2026: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. This brief is kept as history and is not to be dispatched.",
+      "pause": 400
+    },
+    {
       "text": "The whole of slice four for the commit owner, with its terminal condition. The binding, the rulings and the limits are in the mandate; the call surface is in the functions model; the batch semantics are in the evidence contract; the proof is the gate. Slices one and two are on the branch; slice three is independent of this one.",
       "pause": 400
     }
@@ -125,6 +129,6 @@
   ],
   "_source": {
     "file": "slice-four-mixed-batches.md",
-    "sha256": "21134190182d6f3e99a10c34aac7ffc88c1318e44b26dcaf03fd3376b784ca9c"
+    "sha256": "fad08abeb1ac1ce9d4bd12fe32dfb8ec9a5c56c57145b51bb9dd057d53182233"
   }
 }

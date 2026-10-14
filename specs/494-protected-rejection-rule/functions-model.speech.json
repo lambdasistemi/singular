@@ -35,6 +35,10 @@
     {
       "text": "Singular.Model: the action engine and the mixed batch (slice four).",
       "pause": 500
+    },
+    {
+      "text": "Withdrawn on 14 October 2026: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. The rows below describe the withdrawn slice.",
+      "pause": 400
     }
   ],
   "singulardriver-and-the-transport-slices-two-and-four": [
@@ -59,6 +63,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "df9dbdc2cf3d3271269787f9e5d920796f685862d6ed6e3c09c12214ec64d4b0"
+    "sha256": "f36d539a7a819e5202b89b4b9a8312e58cead22e805633d65572ecc244796cd8"
   }
 }

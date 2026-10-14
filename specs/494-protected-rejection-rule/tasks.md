@@ -80,7 +80,7 @@ Terminal condition as slice one. The slice follows decision B and is independent
 
 ## Slice four: mixed batches
 
-Runs after slice ten, by the operator's order of 13 October 2026; whether it runs at all is a decision of the [economics plan](economics-plan.md).
+Withdrawn on 14 October 2026, with the economic design: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. Its tasks stay unchecked and are not done; the protection of a fold against a rejection ordered before it is statement 3 of the [economics plan](economics-plan.md), carried by slice eight.
 
 - [ ] `action-engine` — the ordered action engine exists and the all-reject batch runs on it, the
   slice-two loop deleted in the same change. (batch-judged-action-by-action)
@@ -99,7 +99,7 @@ Terminal condition as slice one.
 
 ## Slices five to ten: the economic model
 
-Planned in the [economics plan](economics-plan.md) on the decided [design](economics-design.md); started after the plan is cleared; run before slice four, by the
+Planned in the [economics plan](economics-plan.md) on the decided [design](economics-design.md); started after the plan is cleared; run in place of the withdrawn slice four, by the
 operator's order of 13 October 2026. The paper is not a slice of this list: it is written afterwards, from the finished model. Every slice begins with its failing
 controls and ends with the list of its statements, each with its fully qualified name and its axiom line.
 

@@ -108,6 +108,8 @@ retraction may end. (`one-booked-clock`)
 
 ### A batch is judged action by action
 
+Withdrawn on 14 October 2026 by the economic design: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. The text below is kept as it was ruled; no task serves it any more, and statement 3 of the [economics plan](economics-plan.md) carries the protection of a fold.
+
 An ordered batch of folds and evidenced rejections is judged action by action; each action sees
 the state left by those before it, a rejection leaves that state unchanged, and each rejection's
 evidence binds the intermediate state's configuration and root. An empty batch is refused. A

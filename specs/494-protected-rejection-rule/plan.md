@@ -52,7 +52,7 @@ product commit is cut again, not supervised harder.
 | One: one booked clock | As an owner, my retraction window is computed from when my request was booked. | `submittedAt` on a request; the window lemma and retraction admission read it; the retraction question carries it; protocol version 7; constitution amendment opened | Corpora, theorem register and digests, simulator mirror, application corpus, coverage record with a restatement table |
 | Two: rejection needs evidence | As a requester, the model refuses to reject my foldable request and accepts a lawful rejection with its evidence; the historical scenario flips from accepted to refused. | Registry identity; evidence, reason, witness; rejection admission; the extended exit admission; per-request witnesses for an all-reject batch; the lawful rejection rows of the suite | As slice one, plus the transport, the harness and the workflow assertions of the running book, refund controls, generic rows and batch harness |
 | Three: the in-window rows | As a reader of the suite, I see the in-window rows say what is true until the validators change. | The dedicated early-rejection row, the standing unmet consumer-requirement row of the generic session, and their workflow assertions rewritten as decision B directs; the unmet row books a foldable request | Row prose, the consumer record, the book |
-| Four: mixed batches | As a processor, the model accepts fold-then-reject of the same fresh key and refuses the reverse. | The action engine; the mixed-batch question; the all-reject batch moved onto the engine; constitution amendment completed | Corpora, transport, simulator mirror, theorem register |
+| Four: mixed batches (withdrawn on 14 October 2026: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both) | As a processor, the model accepts fold-then-reject of the same fresh key and refuses the reverse. | The action engine; the mixed-batch question; the all-reject batch moved onto the engine; constitution amendment completed | Corpora, transport, simulator mirror, theorem register |
 
 Slice one is the smallest. Slice two carries the weight of the proofs and is where the historical
 scenario is run before and after.
@@ -132,7 +132,7 @@ three's direction and the last gate rows follow from this decision.
 
 Operator order of 13 October 2026: the model states the whole economic design, and a formal paper explains it. After the review of the first draft the design was decided again
 (see the [design](economics-design.md)), and on 14 October 2026 the paper was ordered to wait for the model, so that it can refer to it. The [economics plan](economics-plan.md) lists
-the thirteen statements, the controls and six slices that run before slice four; the paper follows them and is planned on its own.
+the thirteen statements, the controls and six slices; slice four is withdrawn. The paper follows them and is planned on its own.
 
 ## Budget and ceilings
 

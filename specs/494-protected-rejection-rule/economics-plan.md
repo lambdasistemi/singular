@@ -17,7 +17,6 @@ flowchart LR
     P7 --> P8[Slice eight<br/>rejection reads the state]
     P8 --> P9[Slice nine<br/>refunds]
     P9 --> P10[Slice ten<br/>folds: the charge and the donation]
-    P10 -.-> S4[Slice four<br/>decision needed]
     P10 --> Paper[The paper<br/>written from the finished model]
 ```
 
@@ -83,16 +82,18 @@ its statements and their axiom lines (see "Names and receipts"). One writer per 
 A control is a scenario the model must refuse, or a variant of the model for which a statement must fail. Each is kept as corpus rows that are refused for the
 intended reason (the wrong-reason control applies), and, where it is a variant, as a Lean example. The slice of each is above.
 
-## Decisions the plan needs
+## Decisions taken
 
-1. **The old fee pin and the new minimum tip.** The state already carries a pinned `maxFee`, read by the existing tip-cover lemma. The design adds a minimum tip.
-   Until answered the plan keeps both: the minimum tip is a new parameter and `maxFee` is preserved and used as before; their relation is settled when the
-   validators are made to agree with the model.
-2. **Slice four.** The design takes rejection out of the fold's action list, so a batch holds folds only and a rejection never shares a transaction with a
-   fold. The story of slice four (fold one request and reject another in one batch) cannot be told. Until answered slice four stays held, as ordered, and is
-   not planned; slice eight replaces its protection of the fold by statement 3.
+1. **The old fee pin and the new minimum tip.** The state already carries a pinned `maxFee`, read by the existing tip-cover lemma. The design adds a minimum tip. Both are
+   kept: the minimum tip is a new pinned number checked at booking and the fee pin behaves as it did. No statement assumes a relation between them; the relation is an open
+   item, settled when the validators are made to agree with the model.
+2. **Slice four is withdrawn.** The design takes rejection out of the fold's action list: a rejection never spends the state output and never shares a transaction with a
+   fold, so no batch holds both and the story of slice four cannot be told. Statement 3 (a rejection ordered before a fold cannot invalidate it) carries the protection,
+   in slice eight.
 
 ## Open items, kept open
+
+The four items of the design, and a fifth the plan found.
 
 | Open item | Where it meets the model | What the plan does |
 |---|---|---|
@@ -100,6 +101,7 @@ intended reason (the wrong-reason control applies), and, where it is a variant, 
 | 2. Adapting open-datum | Its committed corpus embeds requests | Regenerated mechanically when the serialization moves; its behavior is not changed and its token release stays as it is |
 | 3. Adapting cardano-keri | Its reward and refund differ from the decided termination | Not modelled and not touched |
 | 4. Measured values | The three parameters and the carrier minimum | They are numbers in corpus rows, marked illustrative; statement 13 waits |
+| 5. The relation between the fee pin and the minimum tip | `maxFee` and the minimum tip are both pinned | Both kept; no statement assumes a relation; the paper states it as open |
 
 ## The design page and the paper
 

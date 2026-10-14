@@ -30,6 +30,8 @@ argument order or an error channel that a later ticket then has to reverse.
 
 ## Singular.Model: the action engine and the mixed batch (slice four)
 
+Withdrawn on 14 October 2026: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. The rows below describe the withdrawn slice.
+
 | Name | Arguments | Result | Constraint |
 |---|---|---|---|
 | `ProcessAction.request` | `a : ProcessAction` | `Request` | Slice four. Total. |

@@ -451,10 +451,14 @@
     {
       "text": "Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.",
       "pause": 300
+    },
+    {
+      "text": "The relation between the existing fee pin (maxFee) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "1426c76d8dbf8a666c294b4a8e9a765a6fccaaa08ff2cc9093c824a9bb79312d"
+    "sha256": "2cd27976fe7f5ca1002016ea73c2b07d8dfc2e08001dbab54d97bbf85dee5020"
   }
 }

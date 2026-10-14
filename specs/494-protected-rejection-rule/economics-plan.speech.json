@@ -87,17 +87,17 @@
       "pause": 400
     }
   ],
-  "decisions-the-plan-needs": [
+  "decisions-taken": [
     {
-      "text": "Decisions the plan needs.",
+      "text": "Decisions taken.",
       "pause": 500
     },
     {
-      "text": "The old fee pin and the new minimum tip. The state already carries a pinned maxFee, read by the existing tip-cover lemma. The design adds a minimum tip. Until answered the plan keeps both: the minimum tip is a new parameter and maxFee is preserved and used as before; their relation is settled when the validators are made to agree with the model.",
+      "text": "The old fee pin and the new minimum tip. The state already carries a pinned maxFee, read by the existing tip-cover lemma. The design adds a minimum tip. Both are kept: the minimum tip is a new pinned number checked at booking and the fee pin behaves as it did. No statement assumes a relation between them; the relation is an open item, settled when the validators are made to agree with the model.",
       "pause": 300
     },
     {
-      "text": "Slice four. The design takes rejection out of the fold's action list, so a batch holds folds only and a rejection never shares a transaction with a fold. The story of slice four (fold one request and reject another in one batch) cannot be told. Until answered slice four stays held, as ordered, and is not planned; slice eight replaces its protection of the fold by statement 3.",
+      "text": "Slice four is withdrawn. The design takes rejection out of the fold's action list: a rejection never spends the state output and never shares a transaction with a fold, so no batch holds both and the story of slice four cannot be told. Statement 3 (a rejection ordered before a fold cannot invalidate it) carries the protection, in slice eight.",
       "pause": 300
     }
   ],
@@ -105,6 +105,10 @@
     {
       "text": "Open items, kept open.",
       "pause": 500
+    },
+    {
+      "text": "The four items of the design, and a fifth the plan found.",
+      "pause": 400
     }
   ],
   "the-design-page-and-the-paper": [
@@ -133,6 +137,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "6748e42e48acc2ef96876d1265ecaa85f1f27cb552be3dfc0f30ce1be54fee5e"
+    "sha256": "a9335c0d1dd482733c33ae33edc475279fb425317544c89ebdfa55de87478ddb"
   }
 }

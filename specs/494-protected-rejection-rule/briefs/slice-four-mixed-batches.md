@@ -1,5 +1,7 @@
 # Coder brief, slice four: mixed batches
 
+Withdrawn on 14 October 2026: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. This brief is kept as history and is not to be dispatched.
+
 The whole of slice four for the commit owner, with its terminal condition. The binding, the rulings
 and the limits are in the [mandate](../mandate.md); the call surface is in the
 [functions model](../functions-model.md); the batch semantics are in the

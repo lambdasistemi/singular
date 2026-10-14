@@ -176,3 +176,4 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 2. Adapting open-datum (`applications/open-datum`). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its approval policy already allows pure burns.
 3. Adapting cardano-keri. Its model reaps the token, then refunds a go-request to the reaper and pays the convictor a reward. That differs from the decided termination, so a correspondence design is needed.
 4. Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.
+5. The relation between the existing fee pin (`maxFee`) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.

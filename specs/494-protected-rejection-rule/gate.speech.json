@@ -131,10 +131,14 @@
     {
       "text": "Budget per candidate: about 40 minutes for the rows marked always and conditional; about 60 once before a push for the rows marked final. A candidate over budget is cut again.",
       "pause": 400
+    },
+    {
+      "text": "Slice four is withdrawn (14 October 2026): its batch row and the two-batch scenarios of the falsification paragraph above no longer apply to any slice.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "2c23e5ebe99739cc6fa02298371d2f86ebeb7f89ce8c8c22bbd3cda47055afdc"
+    "sha256": "cbfb59715cd08daae7d771f60a91cc0f43e5081f038b412f0eb5893e101cf5a5"
   }
 }

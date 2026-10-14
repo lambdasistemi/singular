@@ -121,7 +121,7 @@
       "pause": 500
     },
     {
-      "text": "Operator order of 13 October 2026: the model states the whole economic design, and a formal paper explains it. After the review of the first draft the design was decided again (see the design), and on 14 October 2026 the paper was ordered to wait for the model, so that it can refer to it. The economics plan lists the thirteen statements, the controls and six slices that run before slice four; the paper follows them and is planned on its own.",
+      "text": "Operator order of 13 October 2026: the model states the whole economic design, and a formal paper explains it. After the review of the first draft the design was decided again (see the design), and on 14 October 2026 the paper was ordered to wait for the model, so that it can refer to it. The economics plan lists the thirteen statements, the controls and six slices; slice four is withdrawn. The paper follows them and is planned on its own.",
       "pause": 400
     }
   ],
@@ -143,6 +143,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a3fd7ccc5f63f2d019f0c7747164625daadd5bac690655036cd81de7fded1785"
+    "sha256": "b50e6b2e87896191009e439988a6bd68619d05647d8135b8ddc944964f3b10b6"
   }
 }
