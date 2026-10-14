@@ -74,7 +74,10 @@ archive does not acquire this interface from reading this page. The
 [archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md)
 records its runnable components and unverified legacy surfaces. Build the
 registry and naming blueprints from that tree and export `REGISTRY_BLUEPRINT`
-and `NAMING_BLUEPRINT` as the guide specifies.
+and `NAMING_BLUEPRINT` as the guide specifies. The extracted archive's own
+`singular` reads the registry page from its blueprint and the adjacent
+version file; the Demo 1 run page reads the page right after create with
+the command the create receipt printed.
 
 ## Fund a wallet you control
 

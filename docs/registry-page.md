@@ -40,7 +40,10 @@ The command takes the state token, the blueprint of the packaged
 release, a provider and a network. It takes no wallet, no signing key,
 no state directory and no file of any actor; any other setting is
 refused by name before anything is read. The version label comes from
-the version file beside the blueprint. A success prints the page alone
+the version file beside the blueprint. From an extracted release archive,
+run the archive's own `singular` with its blueprint and the adjacent
+version file: the Demo 1 journey reads the page this way right after
+create, from the command the create receipt printed. A success prints the page alone
 and writes no file; every refusal prints one JSON receipt and exits
 non-zero.
 

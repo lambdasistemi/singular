@@ -23,7 +23,7 @@
       "pause": 400
     },
     {
-      "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
+      "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. From an extracted release archive, run the archive's own singular with its blueprint and the adjacent version file: the Demo 1 journey reads the page this way right after create, from the command the create receipt printed. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
       "pause": 400
     },
     {
@@ -77,6 +77,6 @@
   ],
   "_source": {
     "file": "registry-page.md",
-    "sha256": "b27b0b62298145570885bf9954a602c5c3d174323bc05770b1c37ae8f98fe636"
+    "sha256": "64ae86b667c2f58e015fd93bf3f72039ad9c57f358909ff9bf1699d2ca430f5f"
   }
 }

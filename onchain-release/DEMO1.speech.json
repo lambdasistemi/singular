@@ -71,7 +71,11 @@
       "pause": 500
     },
     {
-      "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application.",
+      "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+      "pause": 300
+    },
+    {
+      "text": "singular registry describe reads the registry page with the command the create receipt printed (describeCommand, run as printed): which registry this is, which release it runs, what its rules are and what it holds now. The page shows the public history of the state token from create to the live state output, read through the named provider whose answers are unverified claims; the release label is the archive's own claim, and the page is unsigned.",
       "pause": 300
     },
     {
@@ -231,6 +235,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "834d68a91575f8586899db64540b7cf7814bbfda886eb0f70e1c7d32c364af30"
+    "sha256": "e724d377452b8ea415001df809dc042517b647dbe209d63ed4ae5cf6f0870c03"
   }
 }
