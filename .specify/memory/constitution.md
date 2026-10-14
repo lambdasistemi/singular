@@ -1,6 +1,6 @@
 <!--
 Sync impact report
-Version: 1.15.0 -> 1.16.0 (one booked clock for retraction)
+Version: 1.16.0 -> 1.17.0 (one booked clock for retraction)
 Amended: 2026-10-13
 Authority: ticket 494 slice one under epic 498; operator rulings quoted in specs/494-protected-rejection-rule/mandate.md (expiry follows both windows; lifecycle mismatch permits immediate rejection).
 Changed obligations: a request carries its booked submission time (`Singular.Request.submittedAt`, serialized, zero when absent); the retraction window (`Singular.inPhase2`), its admission (`Singular.retractAdmission`) and the restated window statements (`Singular.Statements.retract_admitted_iff`, `retract_refusal_first_failing`, `inPhase2_iff` in `Singular.Lemmas`) read the booked time and ignore the witness legacy field, which stays on the wire; a retraction question carries the booked time read from the request datum while a fold question is unchanged; the driver protocol version moves to 7 with its digest re-pinned. Corpora, theorem register and digests, theorem page, simulator mirror, application corpus and coverage record are regenerated with a published restatement table in `conformance/coverage/protected-rejection-restatement.md`; no obligation is dropped and a restated identity starts uncovered.
