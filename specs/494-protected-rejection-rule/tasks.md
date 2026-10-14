@@ -139,12 +139,12 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 
 ### Slice seven: terminations
 
-- [ ] `failing-controls-seven` — a forged singular tag or application tag, a second pending termination and a token not in custody fail on the branch as it stands.
-- [ ] `termination-request-and-booking` — the termination request and its booking exist; the token moves from custody into the request.
-- [ ] `supply-counts-pending-requests` — the supply laws count tokens held by pending requests.
-- [ ] `statements-seven` — statement 9 and the two supporting statements are proved.
-- [ ] `regenerate-after-slice-seven` — as slice five. (consumers-state-the-rule)
-- [ ] `names-and-receipts-seven` — as slice five.
+- [x] `failing-controls-seven` — a forged singular tag or application tag, a second pending termination and a token not in custody fail on the branch as it stands.
+- [x] `termination-request-and-booking` — the termination request and its booking exist; the token moves from custody into the request.
+- [x] `supply-counts-pending-requests` — the supply laws count tokens held by pending requests.
+- [x] `statements-seven` — statement 9 and the two supporting statements are proved.
+- [x] `regenerate-after-slice-seven` — as slice five. (consumers-state-the-rule)
+- [x] `names-and-receipts-seven` — as slice five.
 
 ### Slice eight: rejection reads the state
 

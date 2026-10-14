@@ -59,6 +59,20 @@
       "pause": 400
     }
   ],
+  "slice-seven-as-built": [
+    {
+      "text": "Slice seven: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The termination booking is modelled in Singular/Model/Termination.lean and Singular/Economics/Termination.lean (terminationBookingRefusal, terminationExactContents, terminationCustody) and extends the world in Singular/Economics/World.lean (bookTermination, bookTerminations, worldSingularSupply, WorldReachable). The singular tag leaves the application's custody into the pending request; the key's leaf stays active; the supply law counts custody plus pending terminations, so the registry component of a world with a pending termination is not consistent in the registry-level sense and the world-level law replaces it for worlds. A transaction is accepted or refused as a whole. Statements, in Singular/Statements/: at_most_one_pending_termination, world_supply_sync, termination_request_carries_genuine_token, and the supporting termination_booking_has_exact_contents.",
+      "pause": 400
+    },
+    {
+      "text": "What slice ten must follow: the termination fold consumes the pending request and its carried singular tag, burns the singular tag, the syntax tag and the application tag, makes the leaf terminal, leaves no pending termination for it, extends WorldReachable with the real transition and reproves the world law and provenance for the remaining requests; the donation is the held lovelace minus the declared tip; a termination has neither booked time nor refund address, so its fold adds no window; rejection and retraction never consume a termination; reference uniqueness is shared across both pools; the supply of the syntax and application tags across both pools is the planned tag_supplies_equal_pending.",
+      "pause": 400
+    }
+  ],
   "slice-five-signed-rows": [
     {
       "text": "Slice five: signed rows.",
@@ -75,6 +89,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "9e0519dafdb94a14d4799f876b1e5658247e8717419e473a721c2878ecf6f6fb"
+    "sha256": "92f462ccc3bc77eb03e19af8ece0aa22e9b19cf0b302aba0adfb6099c154d605"
   }
 }

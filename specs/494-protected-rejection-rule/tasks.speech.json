@@ -301,27 +301,27 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-seven — a forged singular tag or application tag, a second pending termination and a token not in custody fail on the branch as it stands.",
+      "text": "[x] failing-controls-seven — a forged singular tag or application tag, a second pending termination and a token not in custody fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-request-and-booking — the termination request and its booking exist; the token moves from custody into the request.",
+      "text": "[x] termination-request-and-booking — the termination request and its booking exist; the token moves from custody into the request.",
       "pause": 300
     },
     {
-      "text": "[ ] supply-counts-pending-requests — the supply laws count tokens held by pending requests.",
+      "text": "[x] supply-counts-pending-requests — the supply laws count tokens held by pending requests.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-seven — statement 9 and the two supporting statements are proved.",
+      "text": "[x] statements-seven — statement 9 and the two supporting statements are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-seven — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-seven — as slice five. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] names-and-receipts-seven — as slice five.",
+      "text": "[x] names-and-receipts-seven — as slice five.",
       "pause": 300
     }
   ],
@@ -427,6 +427,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "94397ffb7f7a4f5f73808a079c840a423062ec4b3207314de762ed1f17e70ec1"
+    "sha256": "d9971c45b3648c7ca04bd74f7c0c9af03c7f6017f7d5d8d3976d666faa88e1f9"
   }
 }

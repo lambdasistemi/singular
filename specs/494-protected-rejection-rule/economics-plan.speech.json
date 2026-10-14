@@ -83,7 +83,7 @@
       "pause": 300
     },
     {
-      "text": "Seven: terminations. *As an application, I release a key's singular tag into a termination request with my application tag; as anyone, I see at most one termination pending per key and the supply still adds up.* Adds the termination request (token, tip, carrier ada, application tag; no refund address, no time), its booking step (the token moves from the application's custody into the request) and the supply laws counting tokens held by pending requests. Statement 9 and the two supporting statements. Controls: a forged singular tag or application tag, a second termination of one key, a termination whose token is not in custody.",
+      "text": "Seven: terminations (done). *As an application, I release a key's singular tag into a termination request with my application tag; as anyone, I see at most one termination pending per key and the supply still adds up.* Adds the termination request (token, tip, carrier ada, application tag; no refund address, no time), its booking step (the token moves from the application's custody into the request) and the supply laws counting tokens held by pending requests. Statement 9 and the two supporting statements. Controls: a forged singular tag or application tag, a second termination of one key, a termination whose token is not in custody.",
       "pause": 300
     },
     {
@@ -159,6 +159,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "4ef449e857b81f99fe78f00f21599a9a1896c652793efc913700003f621fca13"
+    "sha256": "8f456f6bfacfa1bbeeba7abb546f7dbbe5d3ef6ad22b0aa2579787081adf1346"
   }
 }
