@@ -3902,7 +3902,7 @@ const STORIES=[
     "terminalPolicy": 10
   },
   "modelSha256": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
-  "payloadSha256": "7a5596ce2f88fd8e3dda87c971229e7027b2ac9f697d30dc2f10b5799c8ccc70",
+  "payloadSha256": "3e9f690be8e6614b7bd10d10333979dc50dc6aad4ef77dae59667bcc7eaccea3",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
     "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
@@ -3910,17 +3910,23 @@ const STORIES=[
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
-    "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
+    "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
+    "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Model.lean": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "a011adeff9c4b0e7fb2165f4d3bbea26ae7178038719f98c6aca5af864d736ac",
     "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd"
+    "lean/Singular/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+    "lean/Singular/Statements/Accounting.lean": "f566e132914ef8307b81ee972cecd7eb7ecb5590d845d52437184e8ae62d737f",
+    "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
+    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
   },
-  "statementsSha256": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd",
-  "theoremManifestSha256": "7d5b8b2044dd312adcd13e8a5800b3f415a228e72bc5fc700ef9ed071a741eab",
+  "statementsSha256": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+  "theoremManifestSha256": "7723896b5b48156e01b4afcf59b1d6bdf0212644c1cb48a611b1f1d89d1f1120",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -4222,36 +4228,6 @@ const STORIES=[
 }
 ;const THEOREMS=[
   {
-    "name": "Singular.Statements.reference_inputs_not_consumed",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "2e125ce1ae73d0f9bdaf0c9ec6de4c940c06ddf60bea10d50934a42f79e8b85f"
-  },
-  {
-    "name": "Singular.Statements.spent_reference_refused",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "07ae6b51c77261364c3d5aff546b6fb3522be49fc3f699ba1c52281db58938ad"
-  },
-  {
-    "name": "Singular.Statements.overlapping_reference_is_spent",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "25057afc351d9ee2b4a83818544cd1758c3321a3d9610c9e855d8e6ce31a3fd3"
-  },
-  {
-    "name": "Singular.Statements.balanced_transaction_creates_no_value",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "68f5c013cc475fa92dee1482ccadc9306627ff270d524d05a0e85aacf3c9fc24"
-  },
-  {
-    "name": "Singular.Statements.zero_donation_omits_field",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291"
-  },
-  {
     "name": "Singular.Statements.parameters_preserved_by_fold",
     "status": "PROVED",
     "debt": "none",
@@ -4378,28 +4354,10 @@ const STORIES=[
     "statementSha256": "7c24885ca77300bda88d97830ff54d237ddca2de3e3fdbd93cb1239a51a3eece"
   },
   {
-    "name": "Singular.Statements.exit_settles_on_lovelace_received",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "efdbcb44050b3bebb5c73d95e04fe8653ebe92e0c8c4a81b7b87347872427a12"
-  },
-  {
     "name": "Singular.Statements.no_exit_strands_the_deposit",
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "a2e9655f8a61d303518851ef9907dcfca817d1d05a8071f7104974c2c522230a"
-  },
-  {
-    "name": "Singular.Statements.only_retract_owes_the_tip",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
-  },
-  {
-    "name": "Singular.Statements.obligations_read_only_the_request",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "7bafe21aa0e17e85bc8221746fe6f484e6f046fe42d237e55a3cdebe93a4017a"
   },
   {
     "name": "Singular.Statements.built_transaction_settles",
@@ -4480,18 +4438,6 @@ const STORIES=[
     "statementSha256": "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba"
   },
   {
-    "name": "Singular.Statements.rejection_admitted_iff",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "cdd9b2e62391bc21750ed601e8e3045ce271467db5af493c8925ca2037091350"
-  },
-  {
-    "name": "Singular.Statements.live_compatible_request_protected",
-    "status": "PROVED",
-    "debt": "none",
-    "statementSha256": "bc7f7681634a2db1d3c5f0b149fcdab99bfe82bed17d56bcb00afae67b8f6047"
-  },
-  {
     "name": "Singular.Statements.rejection_without_evidence",
     "status": "PROVED",
     "debt": "none",
@@ -4508,6 +4454,66 @@ const STORIES=[
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952"
+  },
+  {
+    "name": "Singular.Statements.reference_inputs_not_consumed",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2e125ce1ae73d0f9bdaf0c9ec6de4c940c06ddf60bea10d50934a42f79e8b85f"
+  },
+  {
+    "name": "Singular.Statements.spent_reference_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "07ae6b51c77261364c3d5aff546b6fb3522be49fc3f699ba1c52281db58938ad"
+  },
+  {
+    "name": "Singular.Statements.overlapping_reference_is_spent",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "25057afc351d9ee2b4a83818544cd1758c3321a3d9610c9e855d8e6ce31a3fd3"
+  },
+  {
+    "name": "Singular.Statements.balanced_transaction_creates_no_value",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "68f5c013cc475fa92dee1482ccadc9306627ff270d524d05a0e85aacf3c9fc24"
+  },
+  {
+    "name": "Singular.Statements.zero_donation_omits_field",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291"
+  },
+  {
+    "name": "Singular.Statements.exit_settles_on_lovelace_received",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "efdbcb44050b3bebb5c73d95e04fe8653ebe92e0c8c4a81b7b87347872427a12"
+  },
+  {
+    "name": "Singular.Statements.only_retract_owes_the_tip",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "df27296176ea7a88ac2d8fcaf3047e5521838fe9dabe493183ef26ac21dd624f"
+  },
+  {
+    "name": "Singular.Statements.obligations_read_only_the_request",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7bafe21aa0e17e85bc8221746fe6f484e6f046fe42d237e55a3cdebe93a4017a"
+  },
+  {
+    "name": "Singular.Statements.rejection_admitted_iff",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "cdd9b2e62391bc21750ed601e8e3045ce271467db5af493c8925ca2037091350"
+  },
+  {
+    "name": "Singular.Statements.live_compatible_request_protected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bc7f7681634a2db1d3c5f0b149fcdab99bfe82bed17d56bcb00afae67b8f6047"
   }
 ]
 ;const IDENTITY={
@@ -4530,7 +4536,10 @@ const STORIES=[
     "formal/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "formal/DriverMain.lean": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
     "formal/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
-    "formal/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "formal/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
+    "formal/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
+    "formal/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "formal/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "formal/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "formal/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
     "formal/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
@@ -4555,13 +4564,16 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
     "formal/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
-    "formal/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd",
+    "formal/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+    "formal/Statements/Accounting.lean": "f566e132914ef8307b81ee972cecd7eb7ecb5590d845d52437184e8ae62d737f",
+    "formal/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
+    "formal/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/m1-theorem-debt.json": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
-    "formal/theorem-debt.json": "7d5b8b2044dd312adcd13e8a5800b3f415a228e72bc5fc700ef9ed071a741eab",
+    "formal/theorem-debt.json": "7723896b5b48156e01b4afcf59b1d6bdf0212644c1cb48a611b1f1d89d1f1120",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "fa66cad99314b8881e357ae79d3816c9f50d2b91c1e7d1e35a780b85ae4907d7"
+    "corpus.json": "a297e7769ca6845fe991a2493efb598f3cec341008ef78d77aa601d7a3a6f645"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,
@@ -4592,7 +4604,7 @@ const STORIES=[
   ],
   "modelSha256": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
   "namingStatementsSha256": "3a68713f92c0450ba9f2760ce03d0e5e8a51685ea9669ada3e59ebbfe6b2db55",
-  "payloadSha256": "4ce16f24e31ff36ea20fc2a41eb6fd806a454b09d9289eefaf88ff2e305e3959",
+  "payloadSha256": "e2b1c6b4f360680b22ef78f35230453f245cae1f2fc4ed4f84b828aa5712047f",
   "queues": [
     {
       "actual": true,
@@ -4654,7 +4666,10 @@ const STORIES=[
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
-    "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
+    "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
+    "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
     "lean/Singular/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
@@ -4674,7 +4689,10 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd"
+    "lean/Singular/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+    "lean/Singular/Statements/Accounting.lean": "f566e132914ef8307b81ee972cecd7eb7ecb5590d845d52437184e8ae62d737f",
+    "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
+    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
   },
   "spellings": [
     {
@@ -4792,7 +4810,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "2d7a044b18f660e274d1bff6a591804d619c8e19853c72aa631ad4de99315b9a",
+  "payloadSha256": "32df6467863eb507fb587ff61237e9e9b1801a1152b17c938adadbf37786647c",
   "recovery": [
     {
       "detail": true,
@@ -4872,7 +4890,10 @@ const STORIES=[
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
-    "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
+    "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
+    "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
     "lean/Singular/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
@@ -4892,7 +4913,10 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd"
+    "lean/Singular/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+    "lean/Singular/Statements/Accounting.lean": "f566e132914ef8307b81ee972cecd7eb7ecb5590d845d52437184e8ae62d737f",
+    "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
+    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
   },
   "steps": [
     {

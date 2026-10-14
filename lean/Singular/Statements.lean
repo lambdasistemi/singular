@@ -1,93 +1,19 @@
+import Singular.Statements.Accounting
+import Singular.Statements.Payments
+import Singular.Statements.Rejection
 import Singular.Lemmas
 import Singular.Driver
 import Singular.Economics
 
-/-! The public statement surface of the registry-mode model. The eleven
-promises of the interface — tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound, terminal-attestation-permanent, supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change, active-witness-unique–witness-kinds-exclude — and the seven
-edge inversions, the fold inversions and the read facts. Every declaration
-quantifies over states reachable from genesis by folds; over arbitrary `State`
-values the supply laws are simply false. -/
+/-! The public statement surface of the registry-mode model.
+
+The facade exports transaction accounting, payment and rejection statements.
+The fold properties and inversions remain here. Reachable-state premises guard
+the supply laws; accounting and admission facts state their own premises over
+arbitrary transactions, requests and evidence. -/
 
 namespace Singular
 namespace Statements
-
-/-- A referenced output survives the raw update when the transaction's spent
-and reference inputs are disjoint. Without that premise spending wins; this is
-a state update, not a transaction admission rule. -/
-theorem reference_inputs_not_consumed (u : Utxo) (identity : Nat) (tx : Tx)
-    (ref : OutRef) (output : TxOutput) (input : TxInput)
-    (hu : (ref, output) ∈ u) (hi : input ∈ tx.referenceInputs)
-    (href : input.ref = some ref) (hd : disjointInputs tx = true) :
-    (ref, output) ∈ applyTx u identity tx := by
-  have hn := List.all_eq_true.mp hd input hi
-  simp only [href] at hn
-  apply List.mem_append_left
-  exact List.mem_filter.mpr ⟨hu, hn⟩
-
-/-- A spent reference cannot be read by a later transaction: with a fresh
-creating identity, the raw update has removed it. The later transaction's
-spending inputs are present so the refusal specifically names the reference. -/
-theorem spent_reference_refused (u : Utxo) (identity : Nat) (tx later : Tx)
-    (ref : OutRef) (input : TxInput)
-    (hspent : inputNames tx.inputs ref = true) (hfresh : ref.tx ≠ identity)
-    (hi : input ∈ later.referenceInputs) (href : input.ref = some ref)
-    (hp : later.inputs.all (inputPresent (applyTx u identity tx)) = true) :
-    inputsPresent (applyTx u identity tx) later = some "reference-input-missing" := by
-  have habsent : ∀ output, (ref, output) ∉ applyTx u identity tx := by
-    intro output hmem
-    rcases List.mem_append.mp hmem with hmem | hmem
-    · have hkeep := (List.mem_filter.mp hmem).2
-      simp [hspent] at hkeep
-    · obtain ⟨⟨other, index⟩, _, heq⟩ := List.mem_map.mp hmem
-      have hid := congrArg (fun p : OutRef × TxOutput => p.1.tx) heq
-      exact hfresh hid.symm
-  have hmissing : inputPresent (applyTx u identity tx) input = false := by
-    simp only [inputPresent, href]
-    apply Bool.eq_false_iff.mpr
-    intro hany
-    obtain ⟨⟨found, output⟩, hmem, heq⟩ := List.any_eq_true.mp hany
-    have heq' : found = ref := of_decide_eq_true heq
-    subst found
-    exact habsent output hmem
-  have hnotall : later.referenceInputs.all (inputPresent (applyTx u identity tx)) = false := by
-    apply Bool.eq_false_iff.mpr
-    intro hall
-    have := List.all_eq_true.mp hall input hi
-    simp [hmissing] at this
-  simp [inputsPresent, hp, hnotall]
-
-/-- The disjointness premise is necessary: this concrete overlapping input
-is spent by the raw update, whatever value its output carries. -/
-theorem overlapping_reference_is_spent (output : TxOutput) :
-    let input : TxInput :=
-      { role := .request, datum := .none, stateTokens := 0
-      , approvals := 0, lovelace := 0, ref := some ⟨1, 0⟩ }
-    let tx : Tx :=
-      { inputs := [input], referenceInputs := [input], outputs := []
-      , mint := [], signers := [], refunds := [] }
-    disjointInputs tx = false ∧ applyTx [(⟨1, 0⟩, output)] 2 tx = [] := by
-  simp [disjointInputs, inputNames, applyTx]
-
-/-- The balance judgement conserves lovelace including explicit fee and
-donation, all native assets after mint, and every state-token identity present
-on either side. Only the unspent set supplies spending values. -/
-theorem balanced_transaction_creates_no_value (u : Utxo) (tx : Tx)
-    (h : balanced u tx = true) :
-    outputLovelace (spentOutputs u tx) = outputLovelace tx.outputs + tx.donation + tx.fee ∧
-    (∀ asset, assetKind (outputAssets (spentOutputs u tx) ++ tx.mint) asset =
-      assetKind (outputAssets tx.outputs) asset) ∧
-    (∀ token ∈ stateTokenSupport (spentOutputs u tx) tx.outputs,
-      stateTokenValue (spentOutputs u tx) token = stateTokenValue tx.outputs token) := by
-  simp only [balanced, Bool.and_eq_true, beq_iff_eq] at h
-  exact ⟨h.1.1, (assetSame_iff _ _).mp h.1.2,
-    fun token ht => by simpa using List.all_eq_true.mp h.2 token ht⟩
-
-/-- Zero donation contributes no field to the list actually serialized by
-the transaction encoder. Positive donations remain explicit. -/
-theorem zero_donation_omits_field (c : Config) (tx : Tx) (h : tx.donation = 0) :
-    ∀ value, ("donation", value) ∉ Driver.txFields c tx := by
-  intro value
-  simp [Driver.txFields, h]
 
 /-- Every successful fold step preserves the registration cost, minimum tip,
 maximum booking width, registry identity, windows, fee ceiling and policy pins.
@@ -1151,71 +1077,6 @@ theorem fold_requires_no_signer (s : RegistryState) (r : Request) (lovelace : Na
   · cases approval <;> rfl
   · cases approval <;> rfl
 
-/-- Value an exit does not owe is unconstrained, for every exit alike.
-
-For every exit, every request and any two lists of transaction outputs: when each
-recipient the exit owes that some output of the first list reaches is reached by
-some output of the second, and receives (`receivedBy`: the summed lovelace of the
-outputs that pay it by role, address and, for a destination, datum, or, for a
-retraction's return bound to its request, the largest such output) at least as
-much from the second list as from the first, the second list settles whenever the
-first does. Adding outputs, or adding lovelace to an output, therefore never turns
-a settled transaction into an unsettled one, and whether a transaction settles
-depends only on which recipients the exit owes are reached and the lovelace
-reaching them: fees, the folder's tip and every output that pays none of them play
-no part. -/
-theorem exit_settles_on_lovelace_received (exit : Exit) (request : Request)
-    (outputs more : List TxOutput)
-    (reached : ∀ payment ∈ obligations exit request,
-      (outputs.filter (paysRecipient payment.recipient)).isEmpty = false →
-      (more.filter (paysRecipient payment.recipient)).isEmpty = false)
-    (received : ∀ payment ∈ obligations exit request,
-      receivedBy payment.recipient outputs ≤ receivedBy payment.recipient more) :
-    settle (obligations exit request) outputs = none →
-    settle (obligations exit request) more = none := by
-  -- `settle` judges each recipient the payments name once; a recipient is judged
-  -- on the lovelace of the outputs paying it, which `received` says only grows.
-  have named : ∀ (l acc : List Recipient) (recipient : Recipient),
-      recipient ∈ List.eraseDupsBy.loop (· == ·) l acc → recipient ∈ l ∨ recipient ∈ acc := by
-    intro l
-    induction l with
-    | nil => intro acc recipient h; exact .inr (by simpa [List.eraseDupsBy.loop] using h)
-    | cons head tail ih =>
-      intro acc recipient h
-      simp only [List.eraseDupsBy.loop] at h
-      split at h
-      · rcases ih _ _ h with h | h
-        · exact .inl (List.mem_cons_of_mem _ h)
-        · exact .inr h
-      · rcases ih _ _ h with h | h
-        · exact .inl (List.mem_cons_of_mem _ h)
-        · rcases List.mem_cons.mp h with h | h
-          · exact .inl (h ▸ List.mem_cons_self)
-          · exact .inr h
-  intro settled
-  unfold settle at settled ⊢
-  rw [List.findSome?_eq_none_iff] at settled ⊢
-  intro recipient judged
-  have owed := (named _ [] recipient judged).resolve_right (by simp)
-  obtain ⟨payment, owedPayment, rfl⟩ := List.mem_map.mp owed
-  have before := settled _ judged
-  dsimp only at before ⊢
-  split at before
-  · cases before
-  · next notMissing =>
-    split at before
-    · next paid =>
-      have keep : ¬ ((requiresCarrier payment.recipient &&
-          (more.filter (paysRecipient payment.recipient)).isEmpty) = true) := by
-        intro h
-        simp only [Bool.and_eq_true] at h
-        cases hb : (outputs.filter (paysRecipient payment.recipient)).isEmpty
-        · rw [reached payment owedPayment hb] at h
-          exact Bool.false_ne_true h.2
-        · exact notMissing (by simp [h.1, hb])
-      rw [if_neg keep, if_pos (Nat.le_trans paid (received payment owedPayment))]
-    · cases before
-
 /-- No exit strands a deposit.
 
 For every exit and every request, some payment the exit owes is at least the
@@ -1229,44 +1090,6 @@ theorem no_exit_strands_the_deposit (exit : Exit) (request : Request)
     cases edge <;> simp [allowed, obligations] at admitted ⊢
   | reject => simp [obligations]
   | retract => simp [obligations]
-
-/-- Only a retract owes the tip.
-
-For every exit: what the exit owes is the same for every request whatever tip the
-request holds exactly when the exit is not a retract. Every other exit leaves the
-tip to the folder, and a retract's obligations change with it. -/
-theorem only_retract_owes_the_tip (exit : Exit) :
-    (∀ (request : Request) (tip : Nat),
-      obligations exit { request with tip := tip } = obligations exit request) ↔
-    exit ≠ .retract := by
-  constructor
-  · intro unchanged retract
-    subst retract
-    have tipped := unchanged { edge := .insertAbsent, key := 0 } 1
-    simp [obligations] at tipped
-  · intro notRetract request tip
-    cases exit with
-    | fold edge => cases edge <;> rfl
-    | reject => rfl
-    | retract => exact absurd rfl notRetract
-
-/-- What an exit owes is read off the request alone.
-
-For every exit and any two requests with the same owner, deposit, tip, destination
-— its address and the datum it carries — and output reference, the exit owes the
-same payments. The obligations read no registry state, and nothing else of the
-request: not its edge beyond the destination it names, its key, its refund address,
-its approval or its claimed mint. -/
-theorem obligations_read_only_the_request (exit : Exit) (request other : Request)
-    (sameOwner : other.owner = request.owner) (sameDeposit : other.deposit = request.deposit)
-    (sameTip : other.tip = request.tip)
-    (sameDestination : requestDestination other = requestDestination request)
-    (sameDatum : other.datum = request.datum)
-    (sameReference : other.reference = request.reference) :
-    obligations exit other = obligations exit request := by
-  cases exit with
-  | fold edge => cases edge <;> simp [obligations, *]
-  | reject | retract => simp [obligations, *]
 
 /-- Every transaction an exit builds pays what the exit owes.
 
@@ -1747,42 +1570,6 @@ theorem rejection_uses_its_own_admission (s : RegistryState) (r : Request)
     (w : RetractWitness) (rejection : Option RejectWitness) :
     exitAdmission s .reject r w rejection = rejectAdmission s r rejection := by
   rfl
-
-/-- Rejection is admitted exactly for identity-bound evidence and one of its two positive
-conditions. The root check uses the model's logical map. -/
-theorem rejection_admitted_iff (s : RegistryState) (r : Request) (w : RejectWitness) :
-    rejectAdmission s r (some w) = none ↔
-      r.registryId = s.config.registryId ∧
-      w.evidence.registry = s.config ∧
-      s.config.root = rootOf s.trie ∧
-      w.evidence.request = r ∧
-      w.validFrom < w.validTo ∧
-      (match w.evidence.reason with
-       | .mismatch leaf => leaf = trieGet s.trie r.key ∧ transition r.edge leaf = none
-       | .expired => r.submittedAt + s.config.processTime + s.config.retractTime ≤ w.validFrom) := by
-  unfold rejectAdmission
-  cases h : w.evidence.reason <;>
-    simp only [h] <;>
-    (repeat' split <;> simp_all [bne, Bool.or_eq_true, Nat.not_le, Option.isSome_iff_ne_none])
-  all_goals grind
-
-/-- A lifecycle-compatible request cannot be rejected before expiry, regardless of the
-evidence the processor chooses to supply. -/
-theorem live_compatible_request_protected (s : RegistryState) (r : Request) (w : RejectWitness)
-    (compatible : transition r.edge (trieGet s.trie r.key) ≠ none)
-    (live : w.validFrom < r.submittedAt + s.config.processTime + s.config.retractTime) :
-    rejectAdmission s r (some w) ≠ none := by
-  intro admitted
-  obtain ⟨_, _, _, _, _, condition⟩ := (rejection_admitted_iff s r w).mp admitted
-  cases h : w.evidence.reason with
-  | mismatch leaf =>
-    simp only [h] at condition
-    obtain ⟨same, refused⟩ := condition
-    rw [same] at refused
-    exact compatible refused
-  | expired =>
-    simp only [h] at condition
-    omega
 
 /-- A missing proof never authorizes rejection, even when refunds are paid. -/
 theorem rejection_without_evidence (s : RegistryState) (r : Request) (w : RetractWitness)

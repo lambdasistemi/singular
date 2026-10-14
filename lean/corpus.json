@@ -2179,7 +2179,7 @@
     "terminalPolicy": 10
   },
   "modelSha256": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
-  "payloadSha256": "7a5596ce2f88fd8e3dda87c971229e7027b2ac9f697d30dc2f10b5799c8ccc70",
+  "payloadSha256": "3e9f690be8e6614b7bd10d10333979dc50dc6aad4ef77dae59667bcc7eaccea3",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
     "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
@@ -2187,17 +2187,23 @@
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
-    "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
+    "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
+    "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Model.lean": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "a011adeff9c4b0e7fb2165f4d3bbea26ae7178038719f98c6aca5af864d736ac",
     "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd"
+    "lean/Singular/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+    "lean/Singular/Statements/Accounting.lean": "f566e132914ef8307b81ee972cecd7eb7ecb5590d845d52437184e8ae62d737f",
+    "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
+    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
   },
-  "statementsSha256": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd",
-  "theoremManifestSha256": "7d5b8b2044dd312adcd13e8a5800b3f415a228e72bc5fc700ef9ed071a741eab",
+  "statementsSha256": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+  "theoremManifestSha256": "7723896b5b48156e01b4afcf59b1d6bdf0212644c1cb48a611b1f1d89d1f1120",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,

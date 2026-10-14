@@ -18,11 +18,16 @@ module Conformance.Story.Binding
 
 import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:))
 import Data.ByteString.Lazy qualified as BSL
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, sort)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
-import System.Directory (doesFileExist)
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , listDirectory
+    )
+import System.FilePath (dropExtension, takeExtension, (</>))
 
 -- | A Lean obligation the programs bind to.
 data BoundObligation = BoundObligation
@@ -78,7 +83,7 @@ resolveBinding :: [(String, String)] -> Binding -> Bool
 resolveBinding manifest obligation =
     lookup (boName obligation) manifest == Just (boDigest obligation)
 
--- | Read the bound Lean source.
+-- | Read the statement facade and its adjacent module tree.
 loadStatementSource :: IO (Either String String)
 loadStatementSource = do
     found <-
@@ -90,7 +95,18 @@ loadStatementSource = do
                 ( Left
                     "statement source not found: want ../lean/Singular/Statements.lean"
                 )
-        Just path -> Right <$> readFile path
+        Just path -> do
+            children <- statementFiles (dropExtension path)
+            Right . unlines <$> traverse readFile (path : children)
+  where
+    statementFiles :: FilePath -> IO [FilePath]
+    statementFiles path = do
+        directory <- doesDirectoryExist path
+        if directory
+            then do
+                names <- sort <$> listDirectory path
+                concat <$> traverse (statementFiles . (path </>)) names
+            else pure [path | takeExtension path == ".lean"]
 
 {- | Every anchor quoted anywhere in the inventory appears verbatim in
 the source.
