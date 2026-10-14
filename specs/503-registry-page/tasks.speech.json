@@ -169,24 +169,24 @@
       "pause": 500
     },
     {
-      "text": "[ ] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.",
+      "text": "[x] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.",
       "pause": 300
     },
     {
-      "text": "[ ] archive-job-runs-describe: the archive job extracts the release, runs the archive's own singular and blueprint with the adjacent version.txt, and compares the page with inspect after the lifecycle; commands and outputs are recorded.",
+      "text": "[x] archive-job-runs-describe: the archive job extracts the release, runs the archive's own singular and blueprint with the adjacent version.txt, and compares the page with inspect after the lifecycle; commands and outputs are recorded.",
       "pause": 300
     },
     {
-      "text": "[ ] run-page-step-check-follows: the numbered-step check and its controls follow the new step.",
+      "text": "[x] run-page-step-check-follows: the numbered-step check and its controls follow the new step.",
       "pause": 300
     },
     {
-      "text": "[ ] narration-and-docs-follow: speech and clips regenerated for the changed pages.",
+      "text": "[x] narration-and-docs-follow: speech and clips regenerated for the changed pages.",
       "pause": 300
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "f5be0839e0f196706abc550986b75d43d1df08d998a7092785b029c64bd89aa6"
+    "sha256": "8e3f9aaa905667dc091cd3540ebcff34b00e9dc41ecdd14c12bfe06cdce268f5"
   }
 }

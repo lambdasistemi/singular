@@ -75,9 +75,9 @@ before it is made to pass, and the failing run is kept.
 
 ### Slice 8: page from the archive
 
-- [ ] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.
-- [ ] archive-job-runs-describe: the archive job extracts the release, runs the archive's own
+- [x] run-page-starts-from-the-page: Demo 1's run page gets the page as its first reading after create.
+- [x] archive-job-runs-describe: the archive job extracts the release, runs the archive's own
   `singular` and blueprint with the adjacent `version.txt`, and compares the page with `inspect`
   after the lifecycle; commands and outputs are recorded.
-- [ ] run-page-step-check-follows: the numbered-step check and its controls follow the new step.
-- [ ] narration-and-docs-follow: speech and clips regenerated for the changed pages.
+- [x] run-page-step-check-follows: the numbered-step check and its controls follow the new step.
+- [x] narration-and-docs-follow: speech and clips regenerated for the changed pages.

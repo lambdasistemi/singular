@@ -79,7 +79,7 @@ the same Demo 1 files.
 | `offchain/cli/src/Singular/CLI/Create.hs` | 7 | edit | `describeCommand` in the receipt's identity fields, beside `stateToken`; no other function changes | none now |
 | `offchain/test/Singular/CLI/CommandRunSpec.hs` | 7 | edit | the registry create receipt carries the command, run as printed through the existing rig | #518 3b (receipt reads), additive both sides |
 | `applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs` | 7 | edit | the open-datum create receipt carries the command | none known |
-| `docs/registry-page.md`, `docs/singular-node.md`, `docs/consumer-onboarding.md`, their speech companions | 7 | edit | pages that show a create receipt show the new field | #518 3b may edit `docs/singular-node.md` |
+| `docs/registry-page.md`, `docs/singular-node.md`, `docs/consumer-onboarding.md`, their speech companions | 7, 8 | edit | pages that show a create receipt show the new field | #518 3b may edit `docs/singular-node.md` |
 | `onchain-release/DEMO1.md` and its speech companion | 8 | edit | the run page reads the page right after create | #518 3b |
 | `tools/demo1_cli_journey.sh` | 8 | edit | `describe` from the extracted archive right after create and after the lifecycle, compared with `inspect` and the fold receipts | #518 3b |
 | `tools/demo1_cli_check.sh` | 8 | edit | `page_steps` and `page_ok` and their removal controls follow the new step | #518 3b may edit it |
