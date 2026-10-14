@@ -139,7 +139,7 @@
       "pause": 500
     },
     {
-      "text": "Runs after slice eight, by the operator's order of 13 October 2026.",
+      "text": "Runs after slice ten, by the operator's order of 13 October 2026; whether it runs at all is a decision of the economics plan.",
       "pause": 400
     },
     {
@@ -171,161 +171,189 @@
       "pause": 400
     }
   ],
-  "slices-five-to-ten-the-economic-model-and-the-paper": [
+  "slices-five-to-ten-the-economic-model": [
     {
-      "text": "Slices five to ten: the economic model and the paper.",
+      "text": "Slices five to ten: the economic model.",
       "pause": 500
     },
     {
-      "text": "Planned in the economics plan; started after slice three and after the desk reviewed that plan (it did, with returned lines folded in); slices five to eight run before slice four, by the operator's order of 13 October 2026, and the paper (nine and ten) is written in parallel.",
+      "text": "Planned in the economics plan on the decided design; started after the plan is cleared; run before slice four, by the operator's order of 13 October 2026. The paper is not a slice of this list: it is written afterwards, from the finished model. Every slice begins with its failing controls and ends with the list of its statements, each with its fully qualified name and its axiom line.",
       "pause": 400
     }
   ],
-  "slice-five-parameters-and-fields": [
+  "slice-five-parameters-and-the-transaction-vocabulary": [
     {
-      "text": "Slice five: parameters and fields.",
+      "text": "Slice five: parameters and the transaction vocabulary.",
       "pause": 500
     },
     {
-      "text": "[ ] registry-parameters — the bond, the processor split and the termination fee exist in the registry configuration, default to zero in old input and are preserved by every fold.",
+      "text": "[ ] failing-controls-five — a fold that changes a parameter, a reference to a spent output and an unbalanced transaction fail on the branch as it stands, for the intended reason.",
       "pause": 300
     },
     {
-      "text": "[ ] request-economic-fields — a request carries its bond, the termination fee it carries and the root it recorded at booking, each serialized and zero when absent.",
+      "text": "[ ] registry-parameters — the registration cost, minimum tip and maximum booking width exist in the configuration, default to zero in old input and are preserved by every fold; the width is below the processing window.",
       "pause": 300
     },
     {
-      "text": "[ ] booking-admission — the booking rule exists as a defined admission with a refusal reason per failure: the bond is at least the registry bond, a terminate request carries at least the registry fee, and the recorded root equals the root of the state read at booking; the request-tag mint must enforce exactly it.",
+      "text": "[ ] transaction-vocabulary — output references and the unspent set, reference inputs, the validity interval, the fee and the donation (a zero donation omitted), the exact state token identity and the balance relation exist.",
       "pause": 300
     },
     {
-      "text": "[ ] donation-field — a transaction carries a treasury donation amount, zero when absent.",
+      "text": "[ ] statements-five — statement 1 and the supporting statements of the plan are proved from the standard axioms.",
       "pause": 300
     },
     {
-      "text": "[ ] protocol-eight — the driver protocol version moves and the surface digest follows.",
+      "text": "[ ] protocol-eight — the driver protocol version moves where a declared question changed and the surface digest follows.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-five — corpora, register and digests, simulator mirror, application corpus, coverage record and the restatement table follow.",
+      "text": "[ ] regenerate-after-slice-five — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] amendment-economics — the 1.16.0 entry of the constitution states the economic fields in the translation (one release, one entry).",
+      "text": "[ ] names-and-receipts-five — the slice's statements are listed with fully qualified name and axiom line at the final revision.",
       "pause": 300
     }
   ],
-  "slice-six-outcomes-and-transfers": [
+  "slice-six-registrations": [
     {
-      "text": "Slice six: outcomes and transfers.",
+      "text": "Slice six: registrations.",
       "pause": 500
     },
     {
-      "text": "[ ] outcomes-and-transfers — the five outcomes and the transfer table exist as definitions.",
+      "text": "[ ] failing-controls-six — a dirty request, hidden surplus, a forged tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] bond-returned-without-fault — a fold, a retraction and a rejection without proof or on expiry owe the owner the bond.",
+      "text": "[ ] registration-request-and-pool — the registration request, the exact-contents rule, the pending pool and the world exist.",
       "pause": 300
     },
     {
-      "text": "[ ] treasury-recipient — the treasury is a recipient and its donation is settled against the transaction field.",
+      "text": "[ ] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the tag minted once.",
       "pause": 300
     },
     {
-      "text": "[ ] zero-donation-omitted — an owed amount of zero imposes no donation.",
+      "text": "[ ] statements-six — the four supporting statements of slice six are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-six — as slice five.",
+      "text": "[ ] regenerate-after-slice-six — as slice five. (consumers-state-the-rule)",
+      "pause": 300
+    },
+    {
+      "text": "[ ] names-and-receipts-six — as slice five.",
       "pause": 300
     }
   ],
-  "slice-seven-fault-proof-forfeit-and-termination-fee": [
+  "slice-seven-terminations": [
     {
-      "text": "Slice seven: fault proof, forfeit and termination fee.",
+      "text": "Slice seven: terminations.",
       "pause": 500
     },
     {
-      "text": "[ ] booking-proof-in-evidence — rejection evidence may carry the map that commits to the recorded booking root.",
+      "text": "[ ] failing-controls-seven — a forged token or approval, a second pending termination and a token not in custody fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] forfeit-and-split — a mismatch rejection with a valid booking proof owes the treasury the bond minus the processor share and the owner the deposit.",
+      "text": "[ ] termination-request-and-booking — the termination request and its booking exist; the token moves from custody into the request.",
       "pause": 300
     },
     {
-      "text": "[ ] expiry-and-no-proof-return-bond — a rejection on expiry or without a valid booking proof forfeits nothing.",
+      "text": "[ ] supply-counts-pending-requests — the supply laws count tokens held by pending requests.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-fee-owed — a fold that terminates a key owes the treasury at least the fee per terminated key.",
+      "text": "[ ] statements-seven — statement 9 and the two supporting statements are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] refusals-name-bond-and-fee — a transaction that does not donate what is owed is refused with a reason naming the bond or the fee.",
+      "text": "[ ] regenerate-after-slice-seven — as slice five. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-seven — as slice five.",
+      "text": "[ ] names-and-receipts-seven — as slice five.",
       "pause": 300
     }
   ],
-  "slice-eight-theorems-and-counterexamples": [
+  "slice-eight-rejection-reads-the-state": [
     {
-      "text": "Slice eight: theorems and counterexamples.",
+      "text": "Slice eight: rejection reads the state.",
       "pause": 500
     },
     {
-      "text": "[ ] economic-theorems — the proved statements of the economics plan are stated and proved from standard axioms.",
+      "text": "[ ] failing-controls-eight — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch and a repeated input fail or are refused wrongly on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] counterexamples-kept — each statement expected to fail has a Lean example that exhibits the counterexample.",
+      "text": "[ ] rejection-reads-the-state — the accepted rejection judgement exists over a transaction, the rejection arm leaves the fold, and slices two and three are restated on it.",
       "pause": 300
     },
     {
-      "text": "[ ] audit-report-covers-economics — the audit report lists every economic statement with its axioms.",
+      "text": "[ ] statements-eight — statements 2, 3, 4, 5 and 8 and the supporting statement are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-eight — as slice five.",
+      "text": "[ ] regenerate-after-slice-eight — as slice five. (consumers-state-the-rule)",
+      "pause": 300
+    },
+    {
+      "text": "[ ] names-and-receipts-eight — as slice five.",
       "pause": 300
     }
   ],
-  "slice-nine-the-paper-builds-and-its-first-sections": [
+  "slice-nine-refunds": [
     {
-      "text": "Slice nine: the paper builds and its first sections.",
+      "text": "Slice nine: refunds.",
       "pause": 500
     },
     {
-      "text": "[ ] paper-builds-into-site — the paper builds in a Nix derivation into the documentation site.",
+      "text": "[ ] failing-controls-nine — a reused refund and a refund short of held minus tip fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] paper-page-and-table — a documentation page carries the abstract, the theorem-to-Lean table generated from the audit report and the PDF link.",
+      "text": "[ ] refund-obligations — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.",
       "pause": 300
     },
     {
-      "text": "[ ] paper-sections-one-to-four — system model, adversary and cost model, mechanism and properties are written, each claim citing its Lean statement.",
+      "text": "[ ] statements-nine — statement 6, the second half of statement 7 and the supporting statement are proved.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] regenerate-after-slice-nine — as slice five. (consumers-state-the-rule)",
+      "pause": 300
+    },
+    {
+      "text": "[ ] names-and-receipts-nine — as slice five.",
       "pause": 300
     }
   ],
-  "slice-ten-the-paper-is-complete": [
+  "slice-ten-folds": [
     {
-      "text": "Slice ten: the paper is complete.",
+      "text": "Slice ten: folds.",
       "pause": 500
     },
     {
-      "text": "[ ] paper-sections-five-to-ten — parameter constraints, related work, limitations and the appendix are written.",
+      "text": "[ ] failing-controls-ten — a termination stranded by a fold-time check, one donation counted for many keys, a forged approval and an unbalanced fold fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] paper-appendix-from-audit — the appendix maps every theorem to its Lean name, file, line and pinned commit with the axioms printed and the trusted base stated.",
+      "text": "[ ] fold-obligations — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the approval and donates held minus tip.",
       "pause": 300
     },
     {
-      "text": "[ ] paper-claims-checked-against-lean — an audit confirms that no claim of the paper goes beyond the statement it cites.",
+      "text": "[ ] statements-ten — statements 7 (first half), 10, 11 and 12 and the supporting statement are proved.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] amendment-economics — the 1.16.0 entry of the constitution states the economic rows in the translation (one release, one entry).",
+      "pause": 300
+    },
+    {
+      "text": "[ ] regenerate-after-slice-ten — as slice five. (consumers-state-the-rule)",
+      "pause": 300
+    },
+    {
+      "text": "[ ] names-and-receipts-ten — as slice five, and the full list of the thirteen statements with their status.",
       "pause": 300
     }
   ],
@@ -345,6 +373,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "dcfc2f4c2fb1cba941b80a2760a0d5301740aace3a743e9f864813716d2b1a51"
+    "sha256": "856d9c43a40687d6fe7395b984147a3c42d4d7e2e31c460acd8516ada8b010b8"
   }
 }

@@ -1,59 +1,68 @@
-# Economic model rows: modules, data and functions of slices five to eight
+# Economic model rows: modules, data and functions of slices five to ten
 
 This page owns the new or changed rows of the economic slices, in the same three layers as the [modules](modules-model.md), [data](data-model.md) and
-[functions](functions-model.md) pages of the protected rejection rule, for the [economics plan](economics-plan.md) and the
-[design](economics-design.md). It contains no bodies and no proofs. Slice five's rows are complete; the rows of slices six to eight are added to this
-page by the ticket owner, before each of those slices is dispatched, so that no coder chooses a name or a signature.
+[functions](functions-model.md) pages of the protected rejection rule, for the [economics plan](economics-plan.md) and the [design](economics-design.md).
+It contains no bodies and no proofs. The rows here say what each slice owns; the exact signatures of a slice are added to this page by the ticket owner
+before that slice is dispatched, so that no writer chooses a name that another slice, the transport or the paper depends on.
 
 ## Story
 
-As the coder given an economic slice, I read the rows of that slice and nothing I have to guess, so that the model, the transport and the paper name
-every amount, parameter and statement the same way.
+As the writer given an economic slice, I read the rows of that slice and nothing I have to guess, so that the model, the transport and the paper name every
+amount, parameter and statement the same way.
 
 ```mermaid
 flowchart LR
-    Model[Singular.Model<br/>parameters, request fields, donation field,<br/>booking admission] --> Statements[Singular.Statements<br/>preservation and booking statements]
-    Model --> Main[lean Main<br/>corpus rows for the statements]
+    Ledger[Singular.Ledger<br/>references, reference inputs,<br/>interval, fee, donation, balance] --> Economics[Singular.Economics<br/>parameters, requests, pool,<br/>booking, exits' payments]
+    Economics --> Statements[Singular.Statements<br/>the thirteen statements, supporting statements]
+    Ledger --> Model[Singular.Model<br/>transaction record extended]
     Statements --> Register[theorem register and page]
+    Economics --> Main[lean Main<br/>corpus rows]
     Main --> Corpus[exported corpora]
     Corpus --> Mirror[simulator mirror and application corpus]
-    Model --> Constitution[constitution translation rows]
 ```
 
-## Slice five: modules
+## Modules
 
-| Module | Responsibility | Dependency direction |
+| Module | Responsibility | Slices | Dependency direction |
+|---|---|---|---|
+| `Singular.Ledger` (new) | Output references, the unspent set, reference inputs, the validity interval, fee, donation, the balance relation, the exact state token identity | five | Reads nothing of the registry |
+| `Singular.Economics` (new) | The three parameters' meaning, the registration and termination requests, the exact-contents rule, the pending pool, booking steps, the world and its reachability, the payments of every exit, definitions only | five to ten | Reads Ledger and Model |
+| `Singular.Model` | The configuration gains the three parameters; the transaction record gains the Ledger fields with defaults; the rejection arm leaves the fold | five, eight | Reads Ledger |
+| `Singular.Statements` | The thirteen statements, the supporting statements and the kept variants | five to ten | Reads Model and Economics |
+| `lean/Main.lean`, `Driver.lean` | Corpus rows and, where a declared question changes, its wire form | five to ten | Reads Model, Statements |
+| Generated copies | Corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record, restatement table, constitution entry | five to ten | Produced by tools, never edited |
+
+The new modules are imported by the root module so the axiom gate and the audit report walk them. Whether the vocabulary is a module of its own or part of
+the model is the writer's call if the dependency direction above holds.
+
+## Data
+
+| Entity | Field or shape | Meaning | Slice | Default and encoding |
+|---|---|---|---|---|
+| Registry configuration | `registrationCost`, `minimumTip`, `bookingWidth` | The three parameters, fixed at creation | five | Zero; written only when positive. The width is below the processing window |
+| Output reference | An abstract identity of one output | What a transaction spends or reads | five | Required on a spent or read input |
+| Transaction | `referenceInputs`, `validity`, `fee`, `donation` | Outputs read and not spent; the finite interval, lower end included and upper end excluded; the ledger fee; the treasury donation | five | Empty, none, zero, zero; a zero donation is not written |
+| Registry state token | Policy and asset name | The exact identity a rejection checks on the output it reads | five | The existing registry identity names it |
+| Registration request | Refund address, destination, booked time, registration cost, declared tip, carrier ada, approval, tag | What a registration holds and promises | six | The booked time is the upper end of the booking interval |
+| Request pool | The pending requests of a world | Requests booked and neither folded, rejected nor retracted | six | Empty at genesis |
+| Termination request | Active token, declared tip, carrier ada, approval, tag | What a termination holds; no refund address, no time | seven | |
+| World | The registry state with the pool | What the statements quantify over | six | The registry state alone for every existing row |
+| Treasury recipient | A recipient in the payment vocabulary | Owed the donation | ten | |
+
+Validation and invariants. An old input without these fields reads as the defaults, so every existing question, scenario and corpus row means what it meant
+and a fold's question is exactly what it was. Every step preserves the three parameters exactly as it preserves the pins. A request is pending only if a booking
+produced it. The supply of a token kind counts the tokens held at the application's custody and the tokens held by pending requests until the fold burns them.
+
+## Functions (named here, signed before dispatch)
+
+| Name | Slice | Constraint |
 |---|---|---|
-| `Singular.Model` | Owns the three registry parameters on the configuration, the three economic fields on a request, the donation amount on a transaction and the booking admission | Reads nothing new |
-| `Singular.Statements` | Holds the preservation statement and the booking statements | Reads Model |
-| `lean/Main.lean` | Exports the statements' rows through the existing model runner | Reads Model, Statements |
-| Generated copies | Corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record, restatement table, constitution entry | Produced by tools, never edited |
+| `applyTx` | five | Removes spent inputs from the unspent set, adds the outputs, leaves reference inputs in place; refuses a reference to an output not in the set |
+| `balanced` | five | Inputs plus mint equal outputs plus donation plus fee, for native assets and lovelace |
+| `exactContents` | six, seven | A request holds exactly the amounts its kind allows; a tip of at least the minimum is declared apart from the held value |
+| `book` | six, seven | Registration: interval no wider than the maximum, booked time its upper end, exact contents, tag minted once. Termination: the token moves from custody into the request, exact contents, approval bound to terminate, key, destination |
+| `rejectionAccepted` | eight | Over a transaction and the unspent set: state output referenced with the exact token, no state output spent, request inputs distinct, one interval, every member admitted by a current mismatch or by expiry, no termination |
+| `refundObligations` | nine | Held minus tip to each refund address, summed per address, approval included; a retraction returns everything held |
+| `foldObligations` | ten | The registration cost to the treasury, the tip to the processor, the carrier with the token; a termination burns the token and the approval and donates held minus tip |
 
-No new module is added in slice five. The driver, its declared operations and its questions do not change.
-
-## Slice five: data
-
-| Entity | Field | Meaning | Default and encoding |
-|---|---|---|---|
-| Registry configuration | `bond` | amount every request carries beside its deposit | zero; written only when positive |
-| Registry configuration | `splitNumerator`, `splitDenominator` | the processor's fraction of a forfeited bond; the denominator is positive | zero over one; written only when not the default |
-| Registry configuration | `terminationFee` | amount a terminating fold donates per terminated key | zero; written only when positive |
-| Request | `bond` | the bond the request carries | zero; written only when positive |
-| Request | `fee` | the termination fee a terminate request carries | zero; written only when positive |
-| Request | `bookedRoot` | the root of the state the request read at booking | absent; written only when present |
-| Transaction | `donation` | the treasury donation amount | zero; written only when positive, because the ledger cannot write a zero donation |
-
-Validation and invariants. An old input without these fields reads as the defaults, so every existing question, scenario and corpus row means what it meant.
-A fold's question is exactly what it was: nothing is written for a default. Every step preserves the three parameters exactly as it preserves the four
-policy pins. The split's denominator is positive and its numerator does not exceed it; a configuration that breaks that is refused at decoding.
-
-## Slice five: functions
-
-| Name | Arguments | Result | Constraint |
-|---|---|---|---|
-| `bookingAdmission` | `s : RegistryState`, `r : Request` | `Option String` | `none` admits. Reasons in this order: `bond-below-registry-bond` when the request's bond is below the configuration's; `fee-below-registry-fee` when the request names the terminating edge and its carried fee is below the configuration's; `booked-root-mismatch` when the recorded root is absent or differs from the configuration's root. Reads only its arguments |
-| `Statements.parameters_preserved_by_fold` | a step, a batch | statement | The three parameters are equal before and after every step and every batch |
-| `Statements.booking_admission_iff` | `s`, `r` | statement | The admission is `none` exactly when the three conditions hold; the refusal is the first failing one |
-| Rows for the two statements | in `lean/Main.lean` | corpus rows | Each condition fails alone in one row; one row admits; one row exercises an old request with every economic field at its default against a configuration whose parameters are zero |
-
-The booking admission is a defined rule, not a transition: the model has no booking step. The request-tag mint must enforce exactly this admission.
+A statement is declared where the plan puts it, never beside its definition in `Economics`, so the axiom gate and the register cover it.

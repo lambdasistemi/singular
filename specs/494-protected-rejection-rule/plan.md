@@ -130,9 +130,9 @@ three's direction and the last gate rows follow from this decision.
 
 ## After slice three: the economic model and the paper
 
-Operator order of 13 October 2026: the model states the whole economic design and a formal paper explains it, and slices five to eight run before slice four. The [design](economics-design.md)
-records the amounts and the attacks; the [economics plan](economics-plan.md) lists the theorems, the ones expected to fail, six more slices
-and the paper. The desk reviews that plan before any of it is built.
+Operator order of 13 October 2026: the model states the whole economic design, and a formal paper explains it. After the review of the first draft the design was decided again
+(see the [design](economics-design.md)), and on 14 October 2026 the paper was ordered to wait for the model, so that it can refer to it. The [economics plan](economics-plan.md) lists
+the thirteen statements, the controls and six slices that run before slice four; the paper follows them and is planned on its own.
 
 ## Budget and ceilings
 

@@ -1,11 +1,11 @@
 {
-  "economic-model-rows-modules-data-and-functions-of-slices-five-to-eight": [
+  "economic-model-rows-modules-data-and-functions-of-slices-five-to-ten": [
     {
-      "text": "Economic model rows: modules, data and functions of slices five to eight.",
+      "text": "Economic model rows: modules, data and functions of slices five to ten.",
       "pause": 500
     },
     {
-      "text": "This page owns the new or changed rows of the economic slices, in the same three layers as the modules, data and functions pages of the protected rejection rule, for the economics plan and the design. It contains no bodies and no proofs. Slice five's rows are complete; the rows of slices six to eight are added to this page by the ticket owner, before each of those slices is dispatched, so that no coder chooses a name or a signature.",
+      "text": "This page owns the new or changed rows of the economic slices, in the same three layers as the modules, data and functions pages of the protected rejection rule, for the economics plan and the design. It contains no bodies and no proofs. The rows here say what each slice owns; the exact signatures of a slice are added to this page by the ticket owner before that slice is dispatched, so that no writer chooses a name that another slice, the transport or the paper depends on.",
       "pause": 400
     }
   ],
@@ -15,42 +15,42 @@
       "pause": 500
     },
     {
-      "text": "As the coder given an economic slice, I read the rows of that slice and nothing I have to guess, so that the model, the transport and the paper name every amount, parameter and statement the same way.",
+      "text": "As the writer given an economic slice, I read the rows of that slice and nothing I have to guess, so that the model, the transport and the paper name every amount, parameter and statement the same way.",
       "pause": 400
     }
   ],
-  "slice-five-modules": [
+  "modules": [
     {
-      "text": "Slice five: modules.",
+      "text": "Modules.",
       "pause": 500
     },
     {
-      "text": "No new module is added in slice five. The driver, its declared operations and its questions do not change.",
+      "text": "The new modules are imported by the root module so the axiom gate and the audit report walk them. Whether the vocabulary is a module of its own or part of the model is the writer's call if the dependency direction above holds.",
       "pause": 400
     }
   ],
-  "slice-five-data": [
+  "data": [
     {
-      "text": "Slice five: data.",
+      "text": "Data.",
       "pause": 500
     },
     {
-      "text": "Validation and invariants. An old input without these fields reads as the defaults, so every existing question, scenario and corpus row means what it meant. A fold's question is exactly what it was: nothing is written for a default. Every step preserves the three parameters exactly as it preserves the four policy pins. The split's denominator is positive and its numerator does not exceed it; a configuration that breaks that is refused at decoding.",
+      "text": "Validation and invariants. An old input without these fields reads as the defaults, so every existing question, scenario and corpus row means what it meant and a fold's question is exactly what it was. Every step preserves the three parameters exactly as it preserves the pins. A request is pending only if a booking produced it. The supply of a token kind counts the tokens held at the application's custody and the tokens held by pending requests until the fold burns them.",
       "pause": 400
     }
   ],
-  "slice-five-functions": [
+  "functions-named-here-signed-before-dispatch": [
     {
-      "text": "Slice five: functions.",
+      "text": "Functions (named here, signed before dispatch).",
       "pause": 500
     },
     {
-      "text": "The booking admission is a defined rule, not a transition: the model has no booking step. The request-tag mint must enforce exactly this admission.",
+      "text": "A statement is declared where the plan puts it, never beside its definition in Economics, so the axiom gate and the register cover it.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "830d0982efc5fea643c432467f64abfc9787fd51f1fc0259c85ebb5c36420bb9"
+    "sha256": "19d67d270670686112652542812b8dec9f2446548fa18f7de81ee1f0c8b54244"
   }
 }

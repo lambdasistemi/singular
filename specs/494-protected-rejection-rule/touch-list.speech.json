@@ -85,22 +85,22 @@
       "pause": 400
     }
   ],
-  "slices-five-to-ten-the-economic-model-and-the-paper": [
+  "slices-five-to-ten-the-economic-model": [
     {
-      "text": "Slices five to ten: the economic model and the paper.",
+      "text": "Slices five to ten: the economic model.",
       "pause": 500
     },
     {
-      "text": "Planned in the economics plan; nothing here is committed yet. A coder who needs a file not listed, or finds another lane's change in one that is, stops and asks. Every new runnable file is an obligation with a hosted job, a marked tool, or temporary.",
+      "text": "Planned in the economics plan; nothing here is committed yet. The paper is not part of these slices: it is written after them, from the finished model, and has its own list. A writer who needs a file not listed, or finds another lane's change in one that is, stops and asks. Every new runnable file is an obligation with a hosted job, a marked tool, or temporary.",
       "pause": 400
     },
     {
-      "text": "Not touched: the root flake.nix and .github/workflows/ci.yml unless the desk finds the docs build cannot carry the PDF; everything under onchain/, offchain/, the builders and the command line.",
+      "text": "Not touched: the paper (paper/, docs/economics-paper.md, nix/docs.nix, tools/check_site.py, tools/code_inventory.py) until it is planned on its own; the root flake.nix and .github/workflows/ci.yml; everything under onchain/, offchain/, the builders and the command line.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "c80be7c2052ab14b19966d02af87273a97e3cdcf186d7a85b37a147faf56caa2"
+    "sha256": "dee2c857ba5b0ca62b1e2a2d240aab06746eb5f92b3ec939a01644e741f518a7"
   }
 }

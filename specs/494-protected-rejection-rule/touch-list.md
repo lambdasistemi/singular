@@ -125,23 +125,19 @@ edits them by accident and so that the owning child is named.
 | `onchain/lib/registry/settlement.ak` (the refund check), `discharge.ak` in the same folder | The refund check reads lovelace only | 495 decides whether validators enforce the approval's destination |
 | `conformance/test/Conformance/Support/Payments.hs` (the reject case), `RegistrationComparison.hs` (the retirement comparison of a returned approval), `conformance/lib/Conformance/Observe/Payments.hs` | The reject comparison sums lovelace only | 496, with the builder fix, for the reason in the plan |
 
-## Slices five to ten: the economic model and the paper
+## Slices five to ten: the economic model
 
-Planned in the [economics plan](economics-plan.md); nothing here is committed yet. A coder who needs a file not listed, or finds another
-lane's change in one that is, stops and asks. Every new runnable file is an obligation with a hosted job, a marked tool, or temporary.
+Planned in the [economics plan](economics-plan.md); nothing here is committed yet. The paper is not part of these slices: it is written after them, from the finished
+model, and has its own list. A writer who needs a file not listed, or finds another lane's change in one that is, stops and asks. Every new runnable file is an
+obligation with a hosted job, a marked tool, or temporary.
 
 | Path | Slices | Why |
 |---|---|---|
-| `lean/Singular/Model.lean`, `Statements.lean`, `Driver.lean`, `Lemmas.lean`, `Audit.lean`, `M1.lean`, `M1Driver.lean`, `lean/DriverMain.lean`, `lean/Main.lean`, `lean/M1Main.lean` | five to eight | Fields, outcomes, obligations, statements, corpus rows |
-| `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | six to eight | Outcomes and the transfer table as definitions, imported by the root module; the economic theorems and the kept counterexamples are declared in `Statements.lean` so the existing axioms guard covers them |
-| `conformance/lean/DriverTransport.lean`, `conformance/test/Conformance/Support/DriverTransport.hs` | five to seven | Questions carrying the new fields |
-| `paper/economics/**` (new) | nine, ten | LaTeX source, bibliography, vendored class if needed |
-| `docs/economics-paper.md` (new, with its speech companion) and `mkdocs.yml` | nine, ten | The page and its navigation entry |
-| `nix/docs.nix` | nine | Builds the PDF into the documentation site; shared with the release review lane, so the desk clears it first |
-| A table generator under `tools/` (new, marked as a tool or run by the documents check) | nine | The theorem-to-Lean table is generated from the audit report, never typed |
-| `tools/check_site.py` | nine | Asserts the paper PDF is in the built site and the page links it |
-| `tools/code_inventory.py` | nine | Classifies the paper sources (`.tex`, `.bib`, class files), which the inventory refuses otherwise |
-| The generated copies of slices one and two (corpora, register, theorem page and its speech, simulator mirror, application corpus, coverage record, restatement table, constitution) | five to eight | As before |
+| `lean/Singular/Model.lean`, `Statements.lean`, `Driver.lean`, `Lemmas.lean`, `Audit.lean`, `M1.lean`, `M1Driver.lean`, `lean/DriverMain.lean`, `lean/Main.lean`, `lean/M1Main.lean` | five to ten | Parameters, the transaction record, requests, rejection, exits, statements, corpus rows |
+| `lean/Singular/Ledger.lean` and `lean/Singular/Economics.lean` (new) and `lean/Singular.lean` | five to ten | The vocabulary and the economic definitions, imported by the root module; the statements and the kept variants are declared in `Statements.lean` so the existing axiom gate covers them |
+| `conformance/lean/DriverTransport.lean`, `conformance/test/Conformance/Support/DriverTransport.hs`, `conformance/app/Conformance/Run/Live.hs` and its tests | five to ten, where a declared question changes | Questions carrying the new fields; no live row is added, because no validator or builder produces the new transactions |
+| The generated copies of slices one to three (corpora, register, theorem page and its speech, simulator mirror, application corpus, coverage record, restatement table, constitution) | five to ten | As before; the constitution's 1.16.0 entry is extended by each slice for its own rows |
+| `specs/494-protected-rejection-rule/**` | planning and the closing of each slice | Tasks stamped, rows added before dispatch |
 
-Not touched: the root `flake.nix` and `.github/workflows/ci.yml` unless the desk finds the docs build cannot carry the PDF; everything
-under `onchain/`, `offchain/`, the builders and the command line.
+Not touched: the paper (`paper/`, `docs/economics-paper.md`, `nix/docs.nix`, `tools/check_site.py`, `tools/code_inventory.py`) until it is planned on its own; the root
+`flake.nix` and `.github/workflows/ci.yml`; everything under `onchain/`, `offchain/`, the builders and the command line.

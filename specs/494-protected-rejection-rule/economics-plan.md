@@ -1,121 +1,120 @@
-# Plan: the economic model, its theorems and the paper
+# Plan: the economic model, rebuilt on the decided design
 
-This page plans the work that runs after slice three and before slice four (operator order of 13 October 2026): the whole economic design of the [design page](economics-design.md) stated in the Lean
-model, its properties as theorems, and a formal paper written from them. It names every theorem the model should prove, says
-which ones are expected not to hold and why, cuts the work into slices, and outlines the paper. Planning only: no model or paper
-work starts before the desk answers the plan question.
+This page plans the Lean work that runs after slice three: the whole [economic design](economics-design.md) stated in the model, the thirteen statements the
+design allows the paper to make, and the controls that keep each of them honest. The paper itself waits until this work is done. Planning only: no model
+work starts before this plan is cleared. It replaces the earlier plan, whose bond, split, booking root and termination fee no longer exist.
 
 ## Story
 
-As the operator receiving a review, I read one page and learn which economic properties will be proved in Lean, which will be
-shown false with a counterexample, which are argued by hand from proved lemmas, in what order the work lands and where the paper
-appears, so that I can say yes or return a line before anyone writes a proof.
+As the operator reading one page, I learn which statements the model will prove, in which slice, which scenario guards each one, and which choices the plan
+still needs from me, so that I can clear the plan or return a line before anyone writes a proof.
 
 ```mermaid
 flowchart LR
-    S3[Slices one to three<br/>protected rejection, in-window rows] --> P5[Slice five<br/>parameters and fields]
-    P5 --> P6[Slice six<br/>outcomes, transfers, donation]
-    P6 --> P7[Slice seven<br/>fault proof, forfeit, termination fee]
-    P7 --> P8[Slice eight<br/>theorems and counterexamples]
-    P8 --> S4[Slice four<br/>mixed batches]
-    P8 --> PA[Slice nine<br/>paper: build, page, sections 1 to 4]
-    P8 --> PB[Slice ten<br/>paper: sections 5 to 10, appendix]
+    S3[Slices one to three<br/>on the branch] --> P5[Slice five<br/>parameters and the transaction vocabulary]
+    P5 --> P6[Slice six<br/>registrations: contents and booked time]
+    P6 --> P7[Slice seven<br/>terminations and the supply]
+    P7 --> P8[Slice eight<br/>rejection reads the state]
+    P8 --> P9[Slice nine<br/>refunds]
+    P9 --> P10[Slice ten<br/>folds: the charge and the donation]
+    P10 -.-> S4[Slice four<br/>decision needed]
+    P10 --> Paper[The paper<br/>written from the finished model]
 ```
 
-## The model additions, in plain words
+## What the model has, and what the design adds
 
-Registry configuration gains the bond, the processor split (a numerator and a denominator) and the termination fee; each defaults to
-zero in old input and is preserved by every fold. The model has no booking transition (a request is an argument, not a state), so the booking
-rule is a defined admission: the request's bond is at least the registry bond, a terminate request carries at least the registry fee, and the
-root it recorded equals the root of the state read at booking. The request-tag mint must enforce exactly that admission, and the honesty
-theorems quantify over requests that passed it. A request gains its bond, the termination fee it carries, and the root it recorded at
-booking. A transaction gains a treasury donation amount. A new payment recipient, the treasury, is owed the donation. Every new field
-defaults to zero, so every existing row of the public suite, which builds requests without them, behaves exactly as before. No
-validator, builder or command-line file is touched.
+| Already in the model | Where the new work uses it |
+|---|---|
+| The map, its root, the two supported edges, the token supply laws (`biconditional_supply_sync`, `active_witness_unique`) | Statements 8 and 9, extended to count tokens held by pending requests |
+| Reachability by folds (`Reachable`) | Extended to a world that also holds the pending requests and books into them |
+| Rejection admission over evidence, `live_compatible_request_protected`, `rejection_without_evidence` (slices two and three) | Restated in slice eight for a rejection that reads the state output |
+| Exits and floor payments (`Exit`, `obligations`, `settle`) | Restated for the new request contents in slices nine and ten |
+| The transaction record (inputs, outputs, mint, signers) | Extended in slice five |
+| The booked time of a request (slice one) | Becomes the upper end of the booking interval in slice six |
 
-## Theorems
+The model lacks, and the slices add: output references and a set of unspent outputs; reference inputs beside spent inputs; a validity interval, a ledger fee and a
+donation on a transaction; the registration cost, minimum tip and maximum booking width; a pending-request pool and booking steps (today a request is an
+argument, not a state); the registration and the termination request with their exact contents; the treasury as a recipient. Registration is the edge
+`insertActive` and termination the edge `updateTerminal`; the five refused edges stay refused.
 
-Status: **proved** means a Lean theorem with only the standard axioms; **argued** means derived by hand from proved lemmas and labelled
-so in the paper (it involves the value of a key, fees or opportunity cost, which the model does not contain); **expected to fail** means
-the statement is false in the model, and a Lean example with the counterexample is kept instead.
+## The statements
 
-| Lean name | Statement in words | Status | Slice |
+Numbers are those of the design's list of what the paper may state. Names are planned and live in `Singular.Statements`. A statement is **to prove** until a Lean declaration with only the
+standard axioms exists. Every statement quantifies over accepted transactions in reachable worlds, never over what a builder produces.
+
+| Statement | Planned Lean name | In words | Slice |
 |---|---|---|---|
-| `transfer_conserves` | In every outcome the owner floor, the treasury floor and the processor ceiling add up to what the request held | proved | six |
-| `forfeit_shares_add_up` | Processor share plus treasury share equals the bond exactly | proved | six |
-| `treasury_share_positive` | With the split below one and a positive bond the treasury share is positive | proved | six |
-| `parameters_preserved_by_fold` | Bond, split and termination fee are equal before and after every fold | proved | five |
-| `fold_returns_bond`, `retraction_returns_everything` | A fold and a retraction owe the owner the bond; a retraction owes deposit, tip and bond | proved | six |
-| `expiry_never_forfeits` | A rejection on the expiry ground owes the owner deposit and bond | proved | seven |
-| `termination_donates_fee` | A fold that terminates a key owes the treasury at least the fee per terminated key, also in a batch | proved | seven |
-| `zero_owed_means_no_donation` | A zero owed amount imposes no donation, so the field can be omitted | proved | six |
-| `forfeit_requires_fault_at_booking` | A rejection that forfeits carries a map whose commitment is the recorded booking root and in which the edge has no successor at the key | proved | seven |
-| `no_proof_no_forfeit` | A rejection without a valid booking proof owes the owner deposit and bond | proved | seven |
-| `known_stays_known` | A key that is known never becomes unknown, so a fault at booking of a registration persists as a mismatch | proved | eight |
-| `honest_requester_keeps_bond` | If the request passed the booking admission against a reachable state in which its edge was admissible, and the commitment is collision free, no reachable state and no admitted rejection takes its deposit or its bond | proved | eight |
-| `honest_payoff_floor` | The requester's lovelace outcome is at least minus the tip, before fees | proved | eight |
-| `live_compatible_request_protected` | No request that can be folded now can be rejected before expiry (already proved in slice two) | proved | two |
-| `rejection_without_proof_processor_cap` | On a rejection without proof the processor keeps at most the tip | proved | eight |
-| `self_rejection_cost` | A requester that is also the processor of its own faulty request loses at least the treasury share | proved, needs split below one | eight |
-| `termination_cost_floor` | Ending a key as terminal costs at least the fee | proved | eight |
-| Flood cost per faulty request, griefing factor, processor incentive to clear faults, collusion | Inequalities in the parameters derived from the transfer lemmas | argued | paper |
-| `duplicate_bookings_cost_only_tip` | Concurrent bookings of one untaken key are all admissible at the booking root; the losers cost their tip, not the bond | **expected to fail as a defence**; counterexample kept | eight |
-| `rejection_requires_no_signer` | A rejection requires no signer, so anyone may submit it, the owner of an expired request included | proved | eight |
-| `owner_exit_after_expiry` | After the reclaim window the owner of a request exits by rejecting it itself on the expiry ground: deposit and bond come back to it, and it pays only fees | proved | eight |
-| `full_processor_split_costs_nothing` | With the split equal to one a self-rejecting requester pays nothing | **expected to fail**; shows the constraint | eight |
-| `honest_loses_tip_on_race` | A requester that lost a race loses its tip | shows the exact scope of the honesty theorem | eight |
-| `key_capture_not_priced` | A front-runner that registers the key first is not charged for the capture | **expected to fail as a defence**; example kept | eight |
+| 1 | `parameters_preserved_by_fold` | Every fold keeps the registration cost, minimum tip, maximum booking width and every earlier pin | five |
+| 2 | `rejection_leaves_registry_untouched` | An accepted rejection, or rejection batch, spends no state output and changes neither the map nor the token supply | eight |
+| 3 | `rejection_cannot_invalidate_fold` | A fold stays valid after any accepted rejection ordered before it, when their other inputs are disjoint | eight |
+| 4 | `live_request_not_rejected` | A registration that can still be folded is not rejected before expiry (restates `live_compatible_request_protected`) | eight |
+| 5 | `rejection_requires_referenced_state` | No rejection without the registry's state output referenced (restates `rejection_without_evidence`) | eight |
+| 6 | `rejection_refund_floor`, `retraction_refund_floor` | Each refund address receives at least held minus tip per rejected request, approval included; a retraction returns everything held | nine |
+| 7 | `fold_donates_registration_cost`, `registration_cost_returned_on_exit` | A fold registering n keys donates at least n times the registration cost; the cost comes back on rejection and retraction | ten, nine |
+| 8 | `termination_unrejectable` | In every reachable world no rejection of a termination carrying its key's genuine token is accepted, on either ground | eight |
+| 9 | `at_most_one_pending_termination` | At most one termination per key is pending | seven |
+| 10 | `only_approved_terminations_fold` | Only a termination carrying the application's approval folds | ten |
+| 11 | `booked_termination_foldable` | A booked termination can be folded at any later time, given a folder that accepts its tip and fees inside the sized envelope | ten |
+| 12 | `processors_take_at_most_the_tips` | Across a batch, what the processors take is at most the sum of the tips, with no outside funding | ten |
+| 13 | not a Lean statement in this plan | The minimum tip covers the measured cost of every supported exit; it waits for measured values (open item 4) and the paper states it as conditional | none |
 
-The economic theorems and the kept counterexamples are declared in `Statements.lean`, the namespace the axioms guard and the register already cover;
-the new `Economics.lean` holds definitions only. The termination fee is deliberately expensive: the paper derives its lower bound from what it
-must deter and says plainly that an honest owner pays it once at the end of a key's life; the contract enforces no floor.
+Supporting statements, each in the slice that needs it: `reference_inputs_not_consumed`, `spent_reference_refused`, `balanced_transaction_creates_no_value`,
+`zero_donation_omits_field` (five); `booked_request_has_exact_contents`, `booked_time_is_interval_end`, `booked_time_not_before_inclusion`,
+`booking_width_within_limit` (six); `world_supply_sync`, `termination_request_carries_genuine_token` (seven); `rejection_batch_members_distinct` (eight);
+`refunds_sum_per_address` (nine); `fold_routes_every_amount` (ten). Statement 4 rests on `booked_time_not_before_inclusion`: the booked time is the upper end of
+the interval the booking transaction was valid in, so expiry comes no earlier than both windows after the booking was included.
 
-Where the desk's guide claims the cost of squat-and-terminate as the fee plus the deposit plus the tip, the model returns the deposit
-at termination, so the proved floor is the fee; the deposit is capital, not cost. The statement is written that way and the difference
-is explained in the paper. Conservation is stated for a balanced transaction (inputs equal outputs plus donation plus fee), because the
-model has no ledger fee; the balance is a named premise, not a model rule.
+## The slices
 
-## Slices
+Each slice starts with its failing controls, committed first and failing for the intended reason on the branch as it stands, then the model, the statements,
+the corpus rows, and the regeneration of every copy the change moves (corpora, register and digests, theorem page, simulator mirror, application corpus,
+coverage record, restatement table). The driver protocol version moves in the first slice that changes a declared question. A slice ends with the list of
+its statements and their axiom lines (see "Names and receipts"). One writer per slice; a slice that runs for four hours is cut again.
 
-| Slice | Delivers | Consumers it regenerates |
+- **Five: parameters and the transaction vocabulary.** *As a registry creator, I fix the three parameters once and see every fold leave them as they were; as a reviewer, I read a transaction as the ledger shows it.* Adds the three parameters (default zero in old input, preserved by folds, the maximum booking width below the processing window); output references and the unspent set; reference inputs; the validity interval, fee and donation on a transaction (a zero donation omits the field); the exact state token identity (policy and name); the balance relation. Statement 1 and the five supporting statements. Controls: a fold that changes a parameter; a spent reference; an unbalanced transaction.
+- **Six: registrations.** *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application's approval, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the request-policy tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The mint validator stays with ticket 529; this slice models what the tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged tag, a backdated booking, a booking wider than the maximum.
+- **Seven: terminations.** *As an application, I release a key's token into a termination request with my approval; as anyone, I see at most one termination pending per key and the supply still adds up.* Adds the termination request (token, tip, carrier ada, approval; no refund address, no time), its booking step (the token moves from the application's custody into the request) and the supply laws counting tokens held by pending requests. Statement 9 and the two supporting statements. Controls: a forged token or approval, a second termination of one key, a termination whose token is not in custody.
+- **Eight: rejection reads the state.** *As a processor, I reject mismatching or expired registrations in one batch against the state output I read but do not spend.* Adds the accepted-rejection judgement over a transaction: the state output referenced with the exact token and read for its root, no state output spent, distinct request inputs, one interval, each member admitted on a current mismatch or on expiry, terminations never admitted; the rejection arm leaves the fold. Restates slices two and three. Statements 2, 3, 4, 5 and 8 and one supporting statement. Controls: the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member inside a batch, a repeated input.
+- **Nine: refunds.** *As a requester, I get back everything but the tip when my request is rejected and everything when I retract; as a refund address in a batch, I get exactly my sum.* Adds the refund obligations of rejection and retraction for the new contents, summed per refund address, and the return of the registration cost. Statement 6, the second half of statement 7 and one supporting statement. Controls: a reused refund, a refund short of held minus tip.
+- **Ten: folds.** *As the treasury, I receive at least the registration cost for each key registered and everything but the tip of each terminated key; as a requester with a booked termination, I see it can always be folded.* Adds the fold of a registration (the processing window; routing of the cost, tip and carrier) and of a termination (no window; the token and the approval burned; everything but the tip donated), the donation floor and the processors' take. Statements 7 (first half), 10, 11 and 12 and one supporting statement. Controls: a termination stranded by a check made at fold time, one donation counted for many keys, a forged approval, an unbalanced fold.
+
+## Controls
+
+A control is a scenario the model must refuse, or a variant of the model for which a statement must fail. Each is kept as corpus rows that are refused for the
+intended reason (the wrong-reason control applies), and, where it is a variant, as a Lean example. The slice of each is above.
+
+## Decisions the plan needs
+
+1. **The old fee pin and the new minimum tip.** The state already carries a pinned `maxFee`, read by the existing tip-cover lemma. The design adds a minimum tip.
+   Until answered the plan keeps both: the minimum tip is a new parameter and `maxFee` is preserved and used as before; their relation is settled when the
+   validators are made to agree with the model.
+2. **Slice four.** The design takes rejection out of the fold's action list, so a batch holds folds only and a rejection never shares a transaction with a
+   fold. The story of slice four (fold one request and reject another in one batch) cannot be told. Until answered slice four stays held, as ordered, and is
+   not planned; slice eight replaces its protection of the fold by statement 3.
+
+## Open items, kept open
+
+| Open item | Where it meets the model | What the plan does |
 |---|---|---|
-| Five: parameters and fields | The three registry parameters, the request's bond, carried fee and booking root, the booking admission, the transaction donation field, protocol version, preservation by folds | Corpora, register and digests, transport, simulator mirror, application corpus, coverage record |
-| Six: outcomes and transfers | The five outcomes, the transfer table as a definition, bond returns in fold, retraction and rejection obligations, the treasury recipient and donation settlement, zero-donation handling | As five, plus the rows of the driver corpus |
-| Seven: fault proof, forfeit, termination fee | The booking proof in rejection evidence, forfeit and split on the mismatch ground, no forfeit on expiry or without proof, the termination fee owed by a terminating fold, refusals naming the bond and the fee | As six |
-| Eight: theorems and counterexamples | The proved economic theorems, the kept counterexamples, the audit report entries and the theorem-to-name table | The theorem page and register |
-| Nine: paper build and first sections | The LaTeX source, its Nix build into the documentation site, the docs page with abstract, theorem table and PDF link, sections one to four; the documents check gains two assertions (the PDF is in the built site, the table equals the audit report and every cited Lean name resolves) and the code inventory classifies the paper sources | Documentation site, preview |
-| Ten: paper completion | Sections five to ten, related work, limitations with every counterexample, the appendix generated from the audit report | Documentation site |
+| 1. A registration's approval on a successful fold: returned or burned | The fold's payments in slice ten | No statement names it; the model's transaction builder keeps today's behavior, marked as a default, so the fold's floors leave the approval unconstrained |
+| 2. Adapting open-datum | Its committed corpus embeds requests | Regenerated mechanically when the serialization moves; its behavior is not changed and its token release stays as it is |
+| 3. Adapting cardano-keri | Its reward and refund differ from the decided termination | Not modelled and not touched |
+| 4. Measured values | The three parameters and the carrier minimum | They are numbers in corpus rows, marked illustrative; statement 13 waits |
 
-One writer at a time, Muse; Grok audits every slice; the paper's claims are audited against the Lean statements they cite. Each slice
-is cut again if it runs for hours. Slices five to eight touch only Lean, its runners and corpora, the model rows of the conformance
-suite and generated copies; nine and ten touch documentation only.
+## The design page and the paper
 
-## The paper
+The [design page](economics-design.md) is the decided design, committed with this plan. The paper starts only when this Lean work is done, so that it can refer
+to the model: a fresh writer, briefed from the finished model and the design page. Until then every statement is a plan, not a claim.
 
-Format: LaTeX in the LIPIcs style, built in a Nix derivation into the documentation site, with a page carrying the abstract, the
-theorem-to-Lean table and the PDF link so that the pull request preview shows it. If the LIPIcs class is not available in the pinned
-package set, the class file is vendored under its licence, or the plain article class is used and the page says so.
+**Names and receipts.** Every statement above is declared as a theorem in `Singular.Statements`, the namespace the compiled axiom gate walks, so its fully
+qualified name is `Singular.Statements.<planned name>` and a build that passes proves it uses only `propext`, `Classical.choice` and `Quot.sound`. Each slice ends
+with a list of its new statements, each with its fully qualified name, the `AXIOMS` line that `#audit_statements report` prints for it, and the revision it was
+printed at; the regenerated theorem register and theorem page carry the same names and digests. A definition the paper cites (for example `onlyRootChanged`) is
+cited by its qualified name at the same revision. The paper's brief requires each economic statement to name its declaration by qualified name, exact revision and
+axiom line, and marks nothing proved unless that declaration exists and the gate passed on it.
 
-Sections, as the operator and the desk specified: system model; adversary and cost model (what an attacker controls: block
-production, mempool view, ordering; what each action costs); mechanism (the transfer table as one table); properties as definitions and
-theorems with proofs or mechanized references; parameter constraints as derived inequalities with worked lovelace examples; related
-work (only verified entries); limitations, including every property that does not hold with its counterexample; appendix mapping every
-theorem to its Lean name, file, line and pinned commit with the axioms printed, the trusted base stated and the model-to-validator
-correspondence named as an assumption with the checks that have no counterpart listed as gaps. Statements are quantified over reachable
-states and say so. Every claim cites its Lean theorem; nothing is claimed that the model does not prove; unproved statements are
-marked in the first draft.
+## Staffing and gate
 
-## Touch list
-
-The files of slices five to ten, all new work, are listed in the [touch list](touch-list.md), section "Slices five to ten". Not touched: the
-root `flake.nix` and `.github/workflows/ci.yml` unless the desk finds the docs build cannot carry the PDF, in which case that is a question;
-everything under `onchain/`, `offchain/`, builders and the command line.
-
-## Assumptions
-
-The booking proof is carried by the rejection evidence as the whole map (a logical read, one state earlier) and root collision resistance is
-a named assumption of the theorems. The processor chooses the ground, and only the mismatch ground with a valid booking proof forfeits. The
-booking admission is a defined rule, not a transition; the request-tag mint must enforce it and the honesty theorems quantify over the
-requests that passed it. The termination donation floor is the registry fee, the request's carried fee being checked by the booking
-admission. The donation encoding follows the ledger, so a zero amount omits the field. The owner of an expired request exits by rejecting it
-itself, because a rejection requires no signer; what remains of the delay attack is the capital locked until someone does.
+The Lean writer is Codex `gpt-6-astra` at high effort, the persistent auditor Grok, as for every slice. The [gate](gate.md) version 4 maps the existing
+commands onto these slices. The files are in the [touch list](touch-list.md), section "Slices five to ten"; the modules, data and functions in the
+[model rows](economics-models.md).

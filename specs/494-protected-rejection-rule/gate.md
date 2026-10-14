@@ -166,3 +166,31 @@ Acceptance lines with no command, and what is done:
 
 Budget per candidate: slices five to eight about 40 minutes, the rows marked final about 60 once before a push; slices nine and ten about 5
 and 25.
+
+## Gate version 4: the rows of the rebuilt economic slices
+
+Added on 14 October 2026, before the first economic writer, when the economic design was decided and the slices were cut again (the [economics plan](economics-plan.md):
+parameters and the transaction vocabulary, registrations, terminations, rejection reads the state, refunds, folds). The rows of version 3 are unchanged and keep their commands,
+minutes, exits and red runs; only the slices they apply to change. The paper rows of version 3 (the PDF in the built site, the generated theorem table, the paper sources in the
+code inventory) leave this ticket's model slices: the paper is planned on its own, after the model is finished.
+
+| Row of version 3 | Applies to slices | Condition |
+|---|---|---|
+| Model check, including the axioms guard | five to ten | Always; a statement the paper will cite must pass it, and the audit report's `AXIOMS` line for it is the receipt |
+| Simulator check | five to ten | Always |
+| Application corpus | five to ten | Always |
+| Coverage gate and real-tree tests | five to ten | Always |
+| Conformance without a devnet, transport tests; format and lint of the Haskell the transport touches | five to ten | When the diff touches a file under `conformance/` |
+| Batch asked of the model, once | six, seven, eight | The slices that change a request or a question the transport reaches |
+| Wrong-reason control | six, seven, eight | As the row above: a lawful row that meets a refusal for another reason must still fail loudly |
+| Lint of the files the slices add | five to ten | Final |
+| Documents, including narration and speech of every edited page | five to ten | Final |
+| Code inventory | five to ten | Final; the new Lean modules must be classified |
+| Strict coverage report, browser check | five to ten | Final |
+| Repository sanity | five to ten | Final, once |
+| Review archive and declared checks; hosted aggregate | five to ten | Hosted |
+
+Falsification. Each slice commits its failing controls first (the controls named in the plan), and they must fail on the branch as it stands for the intended reason: a refusal
+for another reason, or a statement proved over the wrong thing, is not the control. Each slice ends with the list of its statements, their fully qualified names and their axiom lines.
+
+Budget per candidate: about 40 minutes for the rows marked always and conditional; about 60 once before a push for the rows marked final. A candidate over budget is cut again.

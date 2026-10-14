@@ -80,7 +80,7 @@ Terminal condition as slice one. The slice follows decision B and is independent
 
 ## Slice four: mixed batches
 
-Runs after slice eight, by the operator's order of 13 October 2026.
+Runs after slice ten, by the operator's order of 13 October 2026; whether it runs at all is a decision of the [economics plan](economics-plan.md).
 
 - [ ] `action-engine` — the ordered action engine exists and the all-reject batch runs on it, the
   slice-two loop deleted in the same change. (batch-judged-action-by-action)
@@ -97,55 +97,64 @@ Runs after slice eight, by the operator's order of 13 October 2026.
 
 Terminal condition as slice one.
 
-## Slices five to ten: the economic model and the paper
+## Slices five to ten: the economic model
 
-Planned in the [economics plan](economics-plan.md); started after slice three and after the desk reviewed that plan (it did, with returned lines folded in); slices five to eight run before slice four, by the operator's order of 13 October 2026, and the paper (nine and ten) is written in parallel.
+Planned in the [economics plan](economics-plan.md) on the decided [design](economics-design.md); started after the plan is cleared; run before slice four, by the
+operator's order of 13 October 2026. The paper is not a slice of this list: it is written afterwards, from the finished model. Every slice begins with its failing
+controls and ends with the list of its statements, each with its fully qualified name and its axiom line.
 
-### Slice five: parameters and fields
+### Slice five: parameters and the transaction vocabulary
 
-- [ ] `registry-parameters` — the bond, the processor split and the termination fee exist in the registry configuration, default to zero in old input and are preserved by every fold.
-- [ ] `request-economic-fields` — a request carries its bond, the termination fee it carries and the root it recorded at booking, each serialized and zero when absent.
-- [ ] `booking-admission` — the booking rule exists as a defined admission with a refusal reason per failure: the bond is at least the registry bond, a terminate request carries at least the registry fee, and the recorded root equals the root of the state read at booking; the request-tag mint must enforce exactly it.
-- [ ] `donation-field` — a transaction carries a treasury donation amount, zero when absent.
-- [ ] `protocol-eight` — the driver protocol version moves and the surface digest follows.
-- [ ] `regenerate-after-slice-five` — corpora, register and digests, simulator mirror, application corpus, coverage record and the restatement table follow.
-- [ ] `amendment-economics` — the 1.16.0 entry of the constitution states the economic fields in the translation (one release, one entry).
+- [ ] `failing-controls-five` — a fold that changes a parameter, a reference to a spent output and an unbalanced transaction fail on the branch as it stands, for the intended reason.
+- [ ] `registry-parameters` — the registration cost, minimum tip and maximum booking width exist in the configuration, default to zero in old input and are preserved by every fold; the width is below the processing window.
+- [ ] `transaction-vocabulary` — output references and the unspent set, reference inputs, the validity interval, the fee and the donation (a zero donation omitted), the exact state token identity and the balance relation exist.
+- [ ] `statements-five` — statement 1 and the supporting statements of the plan are proved from the standard axioms.
+- [ ] `protocol-eight` — the driver protocol version moves where a declared question changed and the surface digest follows.
+- [ ] `regenerate-after-slice-five` — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)
+- [ ] `names-and-receipts-five` — the slice's statements are listed with fully qualified name and axiom line at the final revision.
 
-### Slice six: outcomes and transfers
+### Slice six: registrations
 
-- [ ] `outcomes-and-transfers` — the five outcomes and the transfer table exist as definitions.
-- [ ] `bond-returned-without-fault` — a fold, a retraction and a rejection without proof or on expiry owe the owner the bond.
-- [ ] `treasury-recipient` — the treasury is a recipient and its donation is settled against the transaction field.
-- [ ] `zero-donation-omitted` — an owed amount of zero imposes no donation.
-- [ ] `regenerate-after-slice-six` — as slice five.
+- [ ] `failing-controls-six` — a dirty request, hidden surplus, a forged tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
+- [ ] `registration-request-and-pool` — the registration request, the exact-contents rule, the pending pool and the world exist.
+- [ ] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the tag minted once.
+- [ ] `statements-six` — the four supporting statements of slice six are proved.
+- [ ] `regenerate-after-slice-six` — as slice five. (consumers-state-the-rule)
+- [ ] `names-and-receipts-six` — as slice five.
 
-### Slice seven: fault proof, forfeit and termination fee
+### Slice seven: terminations
 
-- [ ] `booking-proof-in-evidence` — rejection evidence may carry the map that commits to the recorded booking root.
-- [ ] `forfeit-and-split` — a mismatch rejection with a valid booking proof owes the treasury the bond minus the processor share and the owner the deposit.
-- [ ] `expiry-and-no-proof-return-bond` — a rejection on expiry or without a valid booking proof forfeits nothing.
-- [ ] `termination-fee-owed` — a fold that terminates a key owes the treasury at least the fee per terminated key.
-- [ ] `refusals-name-bond-and-fee` — a transaction that does not donate what is owed is refused with a reason naming the bond or the fee.
-- [ ] `regenerate-after-slice-seven` — as slice five.
+- [ ] `failing-controls-seven` — a forged token or approval, a second pending termination and a token not in custody fail on the branch as it stands.
+- [ ] `termination-request-and-booking` — the termination request and its booking exist; the token moves from custody into the request.
+- [ ] `supply-counts-pending-requests` — the supply laws count tokens held by pending requests.
+- [ ] `statements-seven` — statement 9 and the two supporting statements are proved.
+- [ ] `regenerate-after-slice-seven` — as slice five. (consumers-state-the-rule)
+- [ ] `names-and-receipts-seven` — as slice five.
 
-### Slice eight: theorems and counterexamples
+### Slice eight: rejection reads the state
 
-- [ ] `economic-theorems` — the proved statements of the economics plan are stated and proved from standard axioms.
-- [ ] `counterexamples-kept` — each statement expected to fail has a Lean example that exhibits the counterexample.
-- [ ] `audit-report-covers-economics` — the audit report lists every economic statement with its axioms.
-- [ ] `regenerate-after-slice-eight` — as slice five.
+- [ ] `failing-controls-eight` — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch and a repeated input fail or are refused wrongly on the branch as it stands.
+- [ ] `rejection-reads-the-state` — the accepted rejection judgement exists over a transaction, the rejection arm leaves the fold, and slices two and three are restated on it.
+- [ ] `statements-eight` — statements 2, 3, 4, 5 and 8 and the supporting statement are proved.
+- [ ] `regenerate-after-slice-eight` — as slice five. (consumers-state-the-rule)
+- [ ] `names-and-receipts-eight` — as slice five.
 
-### Slice nine: the paper builds and its first sections
+### Slice nine: refunds
 
-- [ ] `paper-builds-into-site` — the paper builds in a Nix derivation into the documentation site.
-- [ ] `paper-page-and-table` — a documentation page carries the abstract, the theorem-to-Lean table generated from the audit report and the PDF link.
-- [ ] `paper-sections-one-to-four` — system model, adversary and cost model, mechanism and properties are written, each claim citing its Lean statement.
+- [ ] `failing-controls-nine` — a reused refund and a refund short of held minus tip fail on the branch as it stands.
+- [ ] `refund-obligations` — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.
+- [ ] `statements-nine` — statement 6, the second half of statement 7 and the supporting statement are proved.
+- [ ] `regenerate-after-slice-nine` — as slice five. (consumers-state-the-rule)
+- [ ] `names-and-receipts-nine` — as slice five.
 
-### Slice ten: the paper is complete
+### Slice ten: folds
 
-- [ ] `paper-sections-five-to-ten` — parameter constraints, related work, limitations and the appendix are written.
-- [ ] `paper-appendix-from-audit` — the appendix maps every theorem to its Lean name, file, line and pinned commit with the axioms printed and the trusted base stated.
-- [ ] `paper-claims-checked-against-lean` — an audit confirms that no claim of the paper goes beyond the statement it cites.
+- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged approval and an unbalanced fold fail on the branch as it stands.
+- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the approval and donates held minus tip.
+- [ ] `statements-ten` — statements 7 (first half), 10, 11 and 12 and the supporting statement are proved.
+- [ ] `amendment-economics` — the 1.16.0 entry of the constitution states the economic rows in the translation (one release, one entry).
+- [ ] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)
+- [ ] `names-and-receipts-ten` — as slice five, and the full list of the thirteen statements with their status.
 
 ## Closing the ticket
 

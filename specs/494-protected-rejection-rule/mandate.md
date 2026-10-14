@@ -82,20 +82,23 @@ the two-edge model excludes, which is rejectable at once and would leave the row
 
 ### The economic design and the paper
 
-Operator, 13 October 2026: "provable rejection must be punished but not with the deposit"; "it's a new parameter bond"; "termination should pay the
-treasury"; and on the order of work: "what I want is the lean model done, and from it the full economic system explained in a paper, so I get a
-review now"; "the paper will be reviewed by a scientist; do not gloss over details". The adopted design, as it was worded for planning:
+Operator, 13 October 2026: "what I want is the lean model done, and from it the full economic system explained in a paper, so I get a review now"; "the paper will be
+reviewed by a scientist; do not gloss over details". The operator then ruled each point of the review of the paper's first draft, and the earlier design (a bond forfeited
+at a booking root, a processor split and a termination fee) is withdrawn. The decided [design](economics-design.md), in short:
 
-> 1. A registry parameter, the bond, carried by every request beside its deposit.
-> 2. A rejection forfeits the bond only on a fault proved against the root the request recorded at booking. Without that proof, a rejection refunds deposit and bond.
-> 3. The tip pays the processor for the slot on every rejection, as on a fold.
-> 4. The forfeited bond is split between the proving processor and the treasury (treasury donation); the split is a registry parameter.
-> 5. Rejection on expiry returns the bond.
-> 6. A registry parameter, the termination fee: a fold that terminates a key donates at least the fee to the treasury; the terminate request carries it.
+- no bond, no split, no booking root and no termination fee;
+- a successful registration donates a registration cost to the treasury;
+- a rejection reads the registry state output by reference, is batchable and never spends it;
+- a termination carries the key's token and the application's approval, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;
+- a minimum tip pinned by the registry is checked at booking;
+- the booked time is the upper end of a booking interval at most a pinned width wide;
+- every parameter is fixed at creation, with no authority to change it;
+- the request policy refuses any request whose contents are not exactly those the design allows.
 
-The model states all of it, with the treasury donation as a transaction field it owes; its properties are theorems, and where a property does
-not hold the model says so with the counterexample and no statement is weakened to make it prove. The [design](economics-design.md) and the
-[plan](economics-plan.md) hold the detail. Validators, the request tag, builders and verification move after Demo 1.
+Operator, 14 October 2026: "the research on the economics is done, so it's time to produce the paper and wake up the lean worker"; then "Let's wait for the lean rework
+before the paper", so that the paper can refer to the model. The model states all of the design with the treasury donation as a transaction field; its properties are
+theorems, and where a property does not hold the model says so with the counterexample and no statement is weakened to make it prove. The [plan](economics-plan.md)
+holds the slices. Validators, builders and verification move after Demo 1.
 
 ### Only two grounds
 
@@ -123,8 +126,8 @@ The handoff is the "What a rejection does" and "What a batch binds" sections of 
 state, mints nothing and owes the deposit; ticket 529 attaches the bond forfeit to an admitted
 rejection and nothing earlier.
 
-Amended on 13 October 2026 by the operator's order above: the bond, its forfeit and its split are modelled in this ticket by the economic
-slices; the request tag and its mint stay with ticket 529, and no validator, builder or command is touched.
+Amended on 14 October 2026 by the decided design: the economic slices model the request tag as far as the design needs it, that is, what a booking guarantees about
+a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.
 
 > Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.
 

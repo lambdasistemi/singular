@@ -115,8 +115,26 @@
       "pause": 400
     }
   ],
+  "gate-version-4-the-rows-of-the-rebuilt-economic-slices": [
+    {
+      "text": "Gate version 4: the rows of the rebuilt economic slices.",
+      "pause": 500
+    },
+    {
+      "text": "Added on 14 October 2026, before the first economic writer, when the economic design was decided and the slices were cut again (the economics plan: parameters and the transaction vocabulary, registrations, terminations, rejection reads the state, refunds, folds). The rows of version 3 are unchanged and keep their commands, minutes, exits and red runs; only the slices they apply to change. The paper rows of version 3 (the PDF in the built site, the generated theorem table, the paper sources in the code inventory) leave this ticket's model slices: the paper is planned on its own, after the model is finished.",
+      "pause": 400
+    },
+    {
+      "text": "Falsification. Each slice commits its failing controls first (the controls named in the plan), and they must fail on the branch as it stands for the intended reason: a refusal for another reason, or a statement proved over the wrong thing, is not the control. Each slice ends with the list of its statements, their fully qualified names and their axiom lines.",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: about 40 minutes for the rows marked always and conditional; about 60 once before a push for the rows marked final. A candidate over budget is cut again.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "f28452e0b7382df6d70d8e4b9484035f1089453c1ec7e5c71cafccb4b8df4ea0"
+    "sha256": "2c23e5ebe99739cc6fa02298371d2f86ebeb7f89ce8c8c22bbd3cda47055afdc"
   }
 }
