@@ -121,6 +121,25 @@ for control in "2 describe" "8 terminate" "4 fold-of-the-insertion" "6 update" "
     fail "control: a page without $what passed the page check"
   fi
 done
+# Control: the ordinary journey refuses by name when the archive's version
+# file is absent, instead of reading a page; the harness path skips the page
+# steps instead. The check runs the journey's own function, read from the
+# journey the archive run uses.
+eval "$(sed -n '/^require_archive_layout() {/,/^}$/p' "$root/tools/demo1_cli_journey.sh")"
+mkdir -p "$scratch/no-version/onchain"
+: >"$scratch/no-version/onchain/plutus.json"
+if require_archive_layout "$scratch/no-version/onchain/plutus.json" ordinary 2>"$scratch/no-version.err"; then
+  fail "control: the ordinary journey read past a missing version file"
+fi
+grep -q "the archive's blueprint has no version.txt beside it" "$scratch/no-version.err" \
+  || fail "control: the refusal names another cause"
+require_archive_layout "$extracted/onchain/plutus.json" ordinary \
+  || fail "control: the archive layout failed its own version check"
+require_archive_layout "$extracted/onchain/plutus.json" test-harness \
+  || fail "control: the harness path refused a present version file"
+if require_archive_layout "$scratch/no-version/onchain/plutus.json" test-harness; then
+  fail "control: the harness path ran past a missing version file"
+fi
 
 cd "$extracted/offchain"
 
