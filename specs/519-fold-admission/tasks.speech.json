@@ -21,7 +21,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] batch-statements-red: an insertion then a termination of one key refused token-missing; a termination of a holding that existed before the batch accepted; an accepted batch burning only live holdings; independent requests folding as a batch; each committed failing",
+      "text": "[x] batch-statements-red: an insertion then a termination of one key refused token-missing; a termination of a holding that existed before the batch accepted; an accepted batch burning only live holdings; independent requests folding as a batch; each committed failing",
       "pause": 300
     }
   ],
@@ -31,19 +31,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] track-the-holdings-a-batch-has-created",
+      "text": "[x] track-the-holdings-a-batch-has-created",
       "pause": 300
     },
     {
-      "text": "[ ] refuse-a-termination-of-a-created-holding-after-the-mint-check",
+      "text": "[x] refuse-a-termination-of-a-created-holding-after-the-mint-check",
       "pause": 300
     },
     {
-      "text": "[ ] repair-the-batch-proofs-and-restate-fold-batch-cons",
+      "text": "[x] repair-the-batch-proofs-and-restate-fold-batch-cons",
       "pause": 300
     },
     {
-      "text": "[ ] reselect-the-permanent-contract-accepted-batch-on-two-keys",
+      "text": "[x] reselect-the-permanent-contract-accepted-batch-on-two-keys",
       "pause": 300
     }
   ],
@@ -53,31 +53,31 @@
       "pause": 500
     },
     {
-      "text": "[ ] rows-for-every-same-key-pair",
+      "text": "[x] rows-for-every-same-key-pair",
       "pause": 300
     },
     {
-      "text": "[ ] corpora-regenerated-in-two-passes",
+      "text": "[x] corpora-regenerated-in-two-passes",
       "pause": 300
     },
     {
-      "text": "[ ] simulator-mirror-rules-and-gate",
+      "text": "[x] simulator-mirror-rules-and-gate",
       "pause": 300
     },
     {
-      "text": "[ ] coverage-record-and-fixed-counts",
+      "text": "[x] coverage-record-and-fixed-counts",
       "pause": 300
     },
     {
-      "text": "[ ] open-datum-application-proofs-repaired",
+      "text": "[x] open-datum-application-proofs-repaired",
       "pause": 300
     },
     {
-      "text": "[ ] register-readme-counts-and-narration",
+      "text": "[x] register-readme-counts-and-narration",
       "pause": 300
     },
     {
-      "text": "[ ] constitution-amendment-for-the-batch-rule",
+      "text": "[x] constitution-amendment-for-the-batch-rule",
       "pause": 300
     }
   ],
@@ -353,6 +353,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "e12cb1d0f240b50412c465c9b8c45037ec0b0d5fbd30349bb81344c46bf85a57"
+    "sha256": "5085cce18a4cb891c9f591c6211a8a85646fcd6a42e98cdcf54e37fe727377d2"
   }
 }

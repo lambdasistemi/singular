@@ -325,7 +325,7 @@
       "pause": 400
     },
     {
-      "text": "Left uncovered, written before the work: the model's batch transaction; equal root bytes for two orders of independent requests; an open validity bound in the model; the retraction witness's duplicate submission time; the ledger's own refusal reason, which the deployed validators do not trace; prose of the pages.",
+      "text": "Left uncovered, written before the work: the model's batch transaction; equal root bytes for two orders of independent requests; the batch's leaves, holdings, mint and payments equal to those of each request folded alone; an open validity bound in the model; the retraction witness's duplicate submission time; the ledger's own refusal reason, which the deployed validators do not trace; prose of the pages.",
       "pause": 400
     }
   ],
@@ -341,6 +341,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b2d14c3db48d9424f459c2d9f7f792d2ee5afa05729ce8cd085a8fd9453efbc5"
+    "sha256": "8c2f8b88c3170fb4fd52d06d4346697dccf87b7946828ad8eb5733998293946a"
   }
 }

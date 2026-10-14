@@ -6,24 +6,24 @@ One group per slice, grouped by pull request. A task is checked when its slice's
 
 ### batch-statements-first
 
-- [ ] batch-statements-red: an insertion then a termination of one key refused `token-missing`; a termination of a holding that existed before the batch accepted; an accepted batch burning only live holdings; independent requests folding as a batch; each committed failing
+- [x] batch-statements-red: an insertion then a termination of one key refused `token-missing`; a termination of a holding that existed before the batch accepted; an accepted batch burning only live holdings; independent requests folding as a batch; each committed failing
 
 ### created-holdings-in-foldBatch
 
-- [ ] track-the-holdings-a-batch-has-created
-- [ ] refuse-a-termination-of-a-created-holding-after-the-mint-check
-- [ ] repair-the-batch-proofs-and-restate-fold-batch-cons
-- [ ] reselect-the-permanent-contract-accepted-batch-on-two-keys
+- [x] track-the-holdings-a-batch-has-created
+- [x] refuse-a-termination-of-a-created-holding-after-the-mint-check
+- [x] repair-the-batch-proofs-and-restate-fold-batch-cons
+- [x] reselect-the-permanent-contract-accepted-batch-on-two-keys
 
 ### consumers-follow-the-batch-rule
 
-- [ ] rows-for-every-same-key-pair
-- [ ] corpora-regenerated-in-two-passes
-- [ ] simulator-mirror-rules-and-gate
-- [ ] coverage-record-and-fixed-counts
-- [ ] open-datum-application-proofs-repaired
-- [ ] register-readme-counts-and-narration
-- [ ] constitution-amendment-for-the-batch-rule
+- [x] rows-for-every-same-key-pair
+- [x] corpora-regenerated-in-two-passes
+- [x] simulator-mirror-rules-and-gate
+- [x] coverage-record-and-fixed-counts
+- [x] open-datum-application-proofs-repaired
+- [x] register-readme-counts-and-narration
+- [x] constitution-amendment-for-the-batch-rule
 
 ## Pull request 2: the model admits a fold only inside its window
 

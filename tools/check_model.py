@@ -766,7 +766,7 @@ BATCH_QUESTIONS = {"foldBatch", "rejectBatch"}
 def model_batch_refusals(root):
     """What a fold batch may be refused for, read off the model: every reason
     `Singular.refusal` gives a request, and `Singular.foldBatch`'s own two — the
-    one on its `isEmpty` line and the one its mint guard throws."""
+    one on its `isEmpty` line and the one its mint guard throws — plus the created-holding scan."""
     source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
     body = source.split("\ndef foldBatch ", 1)[1].split("\n/--", 1)[0]
 
@@ -785,9 +785,13 @@ def model_batch_refusals(root):
     step = source.split("\ndef refusal ", 1)[1].split("\n/--", 1)[0]
     vocabulary = set(REFUSAL_LITERAL.findall(step))
     assert vocabulary, "EMPTY EXTENT: no refusal reasons discovered in Singular.refusal"
+    scan = source.split("\ndef batchConsumesCreated ", 1)[1].split("\n/--", 1)[0]
+    created = REFUSAL_LITERAL.findall(scan)
+    assert len(created) == 1, "created-holding scan must name its refusal"
     return {
         "empty": reason_on("isEmpty"),
-        "mismatch": reason_on("assetSame"),
+        "mismatch": reason_on("else throw"),
+        "created": created[0],
         "step": vocabulary,
     }
 
@@ -992,6 +996,12 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     )
     if claimed != actual:
         return "refused", refusals["mismatch"]
+    created = set()
+    for request in requests:
+        if request["edge"] == "updateTerminal" and request["key"] in created:
+            return "refused", refusals["created"]
+        if request["edge"] == "insertActive":
+            created.add(request["key"])
     return "accepted", None
 
 

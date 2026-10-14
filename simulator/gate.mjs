@@ -169,6 +169,28 @@ for (const edge of EDGES)
 assert.equal(pairs, EDGES.length * 4, 'complement denominator');
 assert.equal(refusedPairs, pairs - 2, 'only the two supported transitions admit a leaf');
 
+// Every exported fold question is replayed, including same-key refusals and
+// termination of a holding produced by the setup rather than by the batch.
+const foldQuestions = json('../lean/driver-corpus.json').batches.filter(
+  (row) => row.question === 'foldBatch',
+);
+assert.ok(foldQuestions.length > 1, 'fold corpus must exercise multiple questions');
+for (const row of foldQuestions) {
+  let state = row.start;
+  for (const setup of row.setup) {
+    const result = step(state, setup.request);
+    assert.ok(result.accepted, 'fold setup/' + row.id);
+    assert.ok(equal(result.value.state, setup.state), 'fold setup state/' + row.id);
+    state = result.value.state;
+  }
+  const result = foldBatch(state, row.requests);
+  assert.equal(result.accepted, row.outcome === 'accepted', 'fold verdict/' + row.id);
+  if (result.accepted)
+    assert.ok(equal(result.value.state, row.observations.state), 'fold state/' + row.id);
+  else assert.equal(result.reason, row.reason, 'fold refusal/' + row.id);
+}
+console.log('driver fold questions replayed: ' + foldQuestions.length);
+
 // ---- 4. the fold: atomicity, the empty batch, the mint check ---------------
 assert.equal(foldBatch(initial(), []).reason, 'empty-fold', 'empty batch');
 {

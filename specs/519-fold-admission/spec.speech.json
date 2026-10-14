@@ -211,7 +211,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] (1) independent-requests-fold-as-a-batch: requests on pairwise distinct keys, each claiming the mint of its own edge and each accepted alone from the same state, are accepted as a batch. model-check",
+      "text": "[ ] (1) independent-requests-fold-as-a-batch: a non-empty batch of requests on pairwise distinct keys, each claiming the mint of its own edge and each accepted alone from the same state, is accepted as a batch; the empty batch keeps its existing refusal. model-check",
       "pause": 300
     },
     {
@@ -303,7 +303,7 @@
       "pause": 300
     },
     {
-      "text": "The distinct-key independence statement covers acceptance, leaves, holdings as a set, mint and payments. It does not claim that the two orders give equal root bytes: the model's root sorts its pairs with a library sort whose behaviour on permuted input the core library does not state, and the constitution already treats the root as the model's own abstract commitment.",
+      "text": "The distinct-key independence statement covers the acceptance of a non-empty batch and nothing else. It does not compare the batch's leaves, holdings, mint or payments with those of folding each request alone, so a claim that the processor's batch equals its parts is a named residual with its own follow-up. It also does not claim that the two orders give equal root bytes: the model's root sorts its pairs with a library sort whose behaviour on permuted input the core library does not state, and the constitution already treats the root as the model's own abstract commitment.",
       "pause": 300
     },
     {
@@ -329,6 +329,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "660635870a84908fc592e3ce8185a49c86c225db11995f87c611cf33ea765dd0"
+    "sha256": "db77777859945ba3a0bd3b1599ae19e6e4503894d8e905fc72c24add99912494"
   }
 }

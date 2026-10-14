@@ -32,7 +32,7 @@ def check(corpus, root):
     body = source.split("def allowed ", 1)[1].split("\ndef delta ", 1)[0]
     allowed = set(re.findall(r"e == \.(\w+)", body))
     assert allowed == {"insertActive", "updateTerminal"}, "permanent admission moved"
-    assert len(corpus["scenarios"]) == 10 and len(corpus["batches"]) == 4
+    assert len(corpus["scenarios"]) == 10 and len(corpus["batches"]) == 5
     exclusions = set()
     for row in corpus["scenarios"]:
         operation = row["operation"]
@@ -48,19 +48,37 @@ def check(corpus, root):
     leaf_bytes, deltas = model_constants(root)
     derived = check_derived(corpus, leaf_bytes, deltas, model_transitions(root))
     for row in corpus["batches"]:
-        admitted = row["requests"] and all(
+        admitted_edges = row["requests"] and all(
             r["edge"] in allowed for r in row["requests"]
         )
+        created = set()
+        consumes_created = False
+        for request in row["requests"]:
+            if request["edge"] == "updateTerminal" and request["key"] in created:
+                consumes_created = True
+            if request["edge"] == "insertActive":
+                created.add(request["key"])
+        admitted = admitted_edges and not consumes_created
         assert (row["outcome"] == "accepted") == bool(admitted)
         if not admitted:
             assert row["observations"] is None
             assert row["reason"] == (
-                "edge-inadmissible" if row["requests"] else "empty-fold"
+                "empty-fold"
+                if not row["requests"]
+                else "edge-inadmissible"
+                if not admitted_edges
+                else "token-missing"
             )
         else:
             state = row["observations"]["state"]
-            assert state["trie"] == [{"key": 5, "leaf": "terminal"}]
-            assert not state["held"] and not state["custody"]
+            keys = [request["key"] for request in row["requests"]]
+            assert len(keys) == len(set(keys)) == 2
+            assert sorted(state["trie"], key=lambda leaf: leaf["key"]) == [
+                {"key": key, "leaf": "active"} for key in sorted(keys)
+            ]
+            assert sorted(h["key"] for h in state["held"]) == sorted(keys)
+            assert all(h["kind"] == "active" for h in state["held"])
+            assert not state["custody"]
             assert state["config"]["root"] == root_of(state["trie"], leaf_bytes)
     return derived
 
@@ -146,7 +164,8 @@ def main():
         "permanent corpus",
     )
     print(
-        f"Permanent M1: 10 scenarios, 4 batches, {derived} derived observations; 2 fault controls detected"
+        f"Permanent M1: {len(corpus['scenarios'])} scenarios, {len(corpus['batches'])} batches, "
+        f"{derived} derived observations; 2 fault controls detected"
     )
 
 

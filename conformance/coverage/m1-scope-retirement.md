@@ -45,3 +45,17 @@ and the ten M1 admission declarations remain separately counted. Public consumer
 requirement rows, rejection, retraction, refunds and public-fold debts remain
 visible and uncovered wherever no qualifying receipt exists. The ratchet still
 refuses the removal of an additional active declaration.
+
+## Within-batch holding rule
+
+The fold inversion now requires the created-holding scan to succeed, after the
+steps and keyed mint. Its previous identity is replaced below; no receipt is
+reused as evidence for the stronger statement. No public consumer row changes
+state. The three new public statements and eight helper lemmas enter the
+discovered population without claiming implementation coverage.
+
+| Previous identity | Current identity |
+| --- | --- |
+| `Singular.Statements.fold_batch_cons@9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | `Singular.Statements.fold_batch_cons@a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f` |
+
+Discovery now reports 132 obligations: 70 manifest-bound and 62 unclassified.

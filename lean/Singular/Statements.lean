@@ -425,13 +425,64 @@ theorem empty_fold_error (s : RegistryState) (batch : List Request)
   subst h
   rfl
 
-/-- A fold succeeds iff every request applies in order and the claimed mint
-matches the summed delta of the folded edges. -/
+/-- A termination cannot burn a holding an earlier insertion in the same
+batch created. Existing step refusals and the keyed mint check take precedence. -/
+theorem batch_cannot_consume_what_it_creates
+    (s : RegistryState) (before middle after : List Request) (insert retire : Request)
+    (m : Result) (hi : insert.edge = .insertActive) (hr : retire.edge = .updateTerminal)
+    (hk : insert.key = retire.key)
+    (hsteps : foldActions s (before ++ insert :: middle ++ retire :: after) = .ok m)
+    (hmint : assetSame (claimedMint (before ++ insert :: middle ++ retire :: after))
+      (actualMint (before ++ insert :: middle ++ retire :: after)) = true) :
+    foldBatch s (before ++ insert :: middle ++ retire :: after) = .error "token-missing" := by
+  have hscan : batchConsumesCreated (before ++ insert :: middle ++ retire :: after) =
+      some "token-missing" := by
+    rcases created_scan_reason [] (before ++ insert :: middle ++ retire :: after) with hn | hrule
+    · have hp := ((created_scan_none [] _).mp hn).2
+      have bad : insert.key ≠ retire.key :=
+        (List.pairwise_append.mp hp).2.2 insert (by simp) retire (by simp) hi hr
+      exact False.elim (bad hk)
+    · exact hrule
+  have hne : (before ++ insert :: middle ++ retire :: after).isEmpty = false := by simp
+  unfold foldBatch
+  simp only [hne, Bool.false_eq_true, if_false, hsteps, bind, Except.bind,
+    hmint, ite_true, hscan]
+  rfl
+
+/-- Every termination in an accepted batch burns an active holding present
+before the batch began. This does not assert a concrete batch transaction. -/
+theorem batch_burns_only_live_holdings (s : RegistryState) (batch : List Request)
+    (t : Result) (hok : foldBatch s batch = .ok t) :
+    ∀ r ∈ batch, r.edge = .updateTerminal →
+      s.held.any (fun h => h.key == r.key && h.kind == .active) = true := by
+  have hp := ((created_scan_none [] batch).mp (foldBatch_scan s batch t hok)).2
+  exact foldActions_live_burns s batch t (foldBatch_inv s batch t hok).2 hp
+
+/-- A non-empty batch of independently admissible requests on distinct keys
+is admissible. No comparison of roots or of reordered effects is claimed. -/
+theorem independent_requests_fold_as_a_batch (s : RegistryState) (batch : List Request)
+    (hne : batch ≠ [])
+    (hkeys : batch.Pairwise (fun a b => a.key ≠ b.key))
+    (hclaims : ∀ r ∈ batch, assetSame (requestClaim r) (assetDelta r) = true)
+    (hsteps : ∀ r ∈ batch, ∃ t, step s r = .ok t) :
+    ∃ t, foldBatch s batch = .ok t := by
+  obtain ⟨t, ht⟩ := foldActions_independent s batch hkeys hsteps
+  have hscan : batchConsumesCreated batch = none := by
+    apply (created_scan_none [] batch).mpr
+    refine ⟨by simp, ?_⟩
+    exact hkeys.imp (by intro a b hab _ _; exact hab)
+  have hn : batch.isEmpty = false := by simpa using hne
+  exact ⟨t, by simp [foldBatch, hn, ht, batch_claims_agree batch hclaims, hscan]⟩
+
+/-- A fold succeeds iff every request applies in order, the claimed mint
+matches the summed delta of the folded edges, and no termination consumes an
+active holding created earlier in the batch. -/
 theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t : Result) :
     foldBatch s (b :: bs) = .ok t ↔
     ∃ m r, step s b = .ok m ∧ foldActions m.state bs = .ok r ∧
       t = { state := r.state, mint := assetPlus m.mint r.mint, paid := m.paid ++ r.paid } ∧
-      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) := by
+      assetSame (claimedMint (b :: bs)) (actualMint (b :: bs)) ∧
+      batchConsumesCreated (b :: bs) = none := by
   constructor
   · intro hok
     have hacts := (foldBatch_inv s (b :: bs) t hok).2
@@ -455,8 +506,8 @@ theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t
       | ok r =>
         rw [hr] at hacts
         have hEq : combineResults m r = t := by injection hacts
-        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta⟩
-  · rintro ⟨m, r, hs, hr, hEq, hdelta⟩
+        exact ⟨m, r, rfl, hr, by rw [← hEq]; rfl, hdelta, foldBatch_scan _ _ _ hok⟩
+  · rintro ⟨m, r, hs, hr, hEq, hdelta, hscan⟩
     unfold foldBatch
     rw [if_neg (by simp)]
     have hacts : foldActions s (b :: bs) = .ok t := by
@@ -469,7 +520,7 @@ theorem fold_batch_cons (s : RegistryState) (b : Request) (bs : List Request) (t
     rw [hacts]
     simp only [bind, Except.bind, pure, Except.pure]
     split
-    · rfl
+    · simp [hscan]
     · rename_i hc; exact absurd hdelta hc
 
 
@@ -1402,6 +1453,8 @@ theorem fold_batch_of_one_is_step (s : RegistryState) (r : Request)
     rw [assetSame_iff] at hclaim ⊢
     intro x
     simp only [claimedMint, actualMint, List.foldl, assetKind_plus, hclaim x]
+  have hscan : batchConsumesCreated [r] = none := by
+    cases r.edge <;> simp [batchConsumesCreated, batchConsumesCreated.go]
   have hnil : assetPlus (assetDelta r) [] = assetDelta r := by
     rcases r with ⟨edge, key⟩
     cases edge <;> simp [assetPlus, assetDelta, delta, assetKind, List.eraseDups_cons]

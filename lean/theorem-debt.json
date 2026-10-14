@@ -84,10 +84,28 @@
     "statementSha256": "8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06"
   },
   {
+    "name": "Singular.Statements.batch_cannot_consume_what_it_creates",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bbefd4458236ec7ab7e28fe8f7f7690a9e05fb31b3d93ae54b524dca7085afad"
+  },
+  {
+    "name": "Singular.Statements.batch_burns_only_live_holdings",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a41747f7a66da028b998e3ce27edf19c4419ee232ce0030092291a0e82009e06"
+  },
+  {
+    "name": "Singular.Statements.independent_requests_fold_as_a_batch",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "24f639316fc0122e22647bc7d230a6dfabdacfd4b75c8d28cb4f9b46623f2756"
+  },
+  {
     "name": "Singular.Statements.fold_batch_cons",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+    "statementSha256": "a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f"
   },
   {
     "name": "Singular.Statements.insert_active_transaction_row",

@@ -278,6 +278,12 @@ export function foldBatch(s, batch) {
     const claimed = batch.reduce((acc, b) => assetPlus(acc, requestClaim(b)), []);
     const actual = batch.reduce((acc, b) => assetPlus(acc, assetDelta(b)), []);
     if (!assetSame(claimed, actual)) return { accepted: false, reason: 'net-mint-mismatch' };
+    const created = new Set();
+    for (const request of batch) {
+      if (request.edge === 'updateTerminal' && created.has(request.key))
+        return { accepted: false, reason: 'token-missing' };
+      if (request.edge === 'insertActive') created.add(request.key);
+    }
     return r;
   } catch (e) {
     return { accepted: false, reason: e.message };

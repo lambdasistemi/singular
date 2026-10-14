@@ -114,7 +114,7 @@ def foldRows : List (String × Bool × String) :=
 def batchOk : Bool :=
   match foldBatch s0
     [ { req .insertActive 5 42 555 with claimed := [(.active, 1)] }
-    , { req .updateTerminal 5 42 555 with claimed := [(.active, -1)] } ] with
+    , { req .insertActive 6 42 556 with claimed := [(.active, 1)] } ] with
   | .ok _ => true | .error _ => false
 
 def batchEmpty : Option String :=

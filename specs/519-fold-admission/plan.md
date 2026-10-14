@@ -173,7 +173,7 @@ Receipts: the failing and passing runs of each slice's focused check; the confor
 | implementation mapping | `Singular.foldAdmission` → the library's `foldAdmission`, the fold validator's `in_phase1`; `Singular.batchConsumesCreated` → the library's function, the burn discharge of the validator; `Singular.foldBatch` → the selection's agreement test |
 | verification limits | the residuals of the spec, one by one with its owning ticket |
 
-Left uncovered, written before the work: the model's batch transaction; equal root bytes for two orders of independent requests; an open validity bound in the model; the retraction witness's duplicate submission time; the ledger's own refusal reason, which the deployed validators do not trace; prose of the pages.
+Left uncovered, written before the work: the model's batch transaction; equal root bytes for two orders of independent requests; the batch's leaves, holdings, mint and payments equal to those of each request folded alone; an open validity bound in the model; the retraction witness's duplicate submission time; the ledger's own refusal reason, which the deployed validators do not trace; prose of the pages.
 
 ## Budget and size
 
