@@ -245,6 +245,10 @@
       "pause": 300
     },
     {
+      "text": "[ ] fold-model-untouched-until-it-lands — the declarations that define or admit a fold are neither moved nor renamed before the fold admission change of another lane is on main; if the slice would otherwise idle it closes without them and they move in slice eight.",
+      "pause": 300
+    },
+    {
       "text": "[ ] consumers-follow — every consumer of a renamed or moved declaration is updated in the same checkpoint. (consumers-state-the-rule)",
       "pause": 300
     },
@@ -423,6 +427,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "6e5343091d544b90ed7f3b477f04e4dd4638eefe0b71da6864fbfefd09a94058"
+    "sha256": "5e57ab5dbd52018f426529f88ad4bac1e9510dac20bdec4584b31e3913786b0c"
   }
 }

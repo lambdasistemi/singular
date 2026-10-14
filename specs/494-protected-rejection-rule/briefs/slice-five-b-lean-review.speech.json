@@ -67,6 +67,10 @@
       "pause": 300
     },
     {
+      "text": "The fold model is out of reach until another lane's change to it is on main: the declarations that define or admit a fold (the fold's refusal and transition, the batch fold and its result, the fold branch of the transaction builder, and the lemmas and statements that unfold them) are neither moved nor renamed in this slice's checkpoints that run before that change lands. The review lists them as findings marked \"after the fold admission change\"; nothing else waits. If the other checkpoints are done and the change is not on main, close the slice without those moves: they are folded into slice eight, which builds on that change anyway.",
+      "pause": 300
+    },
+    {
       "text": "Findings that would change a statement's meaning, or that touch merged work in a way that needs a ruling, are listed with the concrete user story of each option, not applied.",
       "pause": 300
     },
@@ -127,6 +131,6 @@
   ],
   "_source": {
     "file": "slice-five-b-lean-review.md",
-    "sha256": "dde2d57cb2c7b66a19efee56a424eb65b97e3ccaf91fce8102ccde4f49bc8626"
+    "sha256": "f7207608d4e79dce4f9ced87d80fb04f1312499439385547b57c709ada7fcb95"
   }
 }

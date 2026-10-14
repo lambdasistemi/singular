@@ -32,6 +32,7 @@ Judge against two standards only:
   rename, and is listed for a ruling instead of applied.
 - A declaration that exists on `origin/main` may be moved between files of this tree with its qualified name unchanged. Renaming one is listed, not applied: external projects build on this
   library through Lake, and a public name is merged work.
+- The fold model is out of reach until another lane's change to it is on main: the declarations that define or admit a fold (the fold's refusal and transition, the batch fold and its result, the fold branch of the transaction builder, and the lemmas and statements that unfold them) are neither moved nor renamed in this slice's checkpoints that run before that change lands. The review lists them as findings marked "after the fold admission change"; nothing else waits. If the other checkpoints are done and the change is not on main, close the slice without those moves: they are folded into slice eight, which builds on that change anyway.
 - Findings that would change a statement's meaning, or that touch merged work in a way that needs a ruling, are listed with the concrete user story of each option, not applied.
 - The consumers of every renamed or moved declaration are updated in the same checkpoint, by a repository-wide search for the old name and the old file path: the tools that read the model by
   file (`tools/check_model.py`, `tools/check_application_model.py`, `lean/check_insert_absent_mutants.py`, `lean/check_destination_row_mutants.py`, the compiled axiom gate
