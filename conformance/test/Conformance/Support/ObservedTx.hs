@@ -358,6 +358,7 @@ fixtureStep cage edge state witness custody requestOut transaction =
         , lsRequestOut = Just requestOut
         , lsModelRequest = Null
         , lsRetraction = Nothing
+        , lsFoldWitness = Nothing
         , lsRequestLovelace = 4_000_000
         , lsAfter = Nothing
         , lsWitness = witness

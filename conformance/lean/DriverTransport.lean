@@ -51,6 +51,7 @@ def toRequest (j : Json) : Except String Request := do
   -- that names neither describes a request holding its deposit alone, at reference 0.
   let tip ← optionalNat j "tip"
   let reference ← optionalNat j "reference"
+  let submittedAt ← optionalNat j "submittedAt"
   -- The datum the request carries for its delivered output, as the identity the
   -- caller allocated for it while booking: a caller that says nothing describes a
   -- booking carrying none.
@@ -72,7 +73,7 @@ def toRequest (j : Json) : Except String Request := do
     | .ok _ => throw "claimed is not an array"
   let base : Request :=
     { edge, key, owner, refundAddress, deposit, output, approval := none, claimed, tip
-    , reference, datum }
+    , reference, datum, submittedAt }
   let approval ←
     match j.getObjVal? "approval" with
     | .error _ => pure none
@@ -140,6 +141,15 @@ def toWitness (j : Json) (exit : Exit) : Except String (Option RetractWitness) :
   | .ok w, .retract => some <$> fromJson? w
   | .ok _, _ => throw "only a retraction question carries a witness"
 
+/-- A fold's finite upper bound. Absence is passed to the driver so it can
+report unsupported, rather than manufacturing a ledger refusal. -/
+def toFoldWitness (j : Json) (isFold : Bool) : Except String (Option FoldWitness) :=
+  match j.getObjVal? "foldWitness" with
+  | .error _ => pure none
+  | .ok w =>
+    if isFold then some <$> fromJson? w
+    else throw "only a fold question carries a fold witness"
+
 /-- The setup trace a question names, as requests. -/
 def toSetup (j : Json) : Except String (List Request) :=
   match j.getObjVal? "setup" with
@@ -159,11 +169,12 @@ def toScenario (j : Json) : Except String Scenario := do
   let id ← (j.getObjVal? "id") >>= fromJson?
   let exit ← toExit j request
   let witness ← toWitness j exit
+  let foldWitness ← toFoldWitness j (match exit with | .fold _ => true | _ => false)
   pure
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, exit, request, lovelace, witness }
+    , start, setup, exit, request, lovelace, witness, foldWitness }
 
 /-- One input a caller observed, as the driver's judgement reads it: the state
 tokens it holds. `spend` reads nothing else of an input, so nothing else is taken
@@ -220,6 +231,7 @@ def toBatchScenario (j : Json) (question : String) : Except String BatchScenario
     | .error _ => pure none
     | .ok (Json.arr observed) => some <$> observed.toList.mapM toOutput
     | .ok _ => throw "outputs is not an array"
+  let foldWitness ← toFoldWitness j (question == "foldBatch")
   let batch ← match question with
     | "foldBatch" => do
       if outputs.isSome then throw "a fold batch question judges no outputs"
@@ -234,7 +246,7 @@ def toBatchScenario (j : Json) (question : String) : Except String BatchScenario
     { id, theoremName, statementSha256
     , kind := "witness", mutates := none
     , requiresReachableState := !setup.isEmpty
-    , start, setup, question := batch, outputs }
+    , start, setup, question := batch, outputs, foldWitness }
 
 /-- Evaluate, and answer with the row the driver produces. A question carrying the
 inputs and outputs of a transaction the caller observed is also answered with the

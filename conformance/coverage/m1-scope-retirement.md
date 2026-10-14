@@ -59,3 +59,18 @@ discovered population without claiming implementation coverage.
 | `Singular.Statements.fold_batch_cons@9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153` | `Singular.Statements.fold_batch_cons@a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f` |
 
 Discovery now reports 132 obligations: 70 manifest-bound and 62 unclassified.
+
+## Fold admission through each request's deadline
+
+The operator's fold-window ruling restates the three identities below. Their
+old receipts are not evidence for the new signatures. The six new statements
+enter the population uncovered; no public consumer requirement gains coverage.
+Only identities already in the protected baseline are replaced there.
+
+| Previous identity | Current identity |
+| --- | --- |
+| `Singular.Statements.admission_refuses_first@c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7` | `Singular.Statements.admission_refuses_first@e0fa0ecb9342d5d641283ccb9aa79dcf301bafff268773e85f1e8508b48bc5b4` |
+| `Singular.Statements.admitted_exit_is_the_exit@3182f6fcacacf71f257ba4ddd17ec276302e04ba5342726b4833a8be51d68c38` | `Singular.Statements.admitted_exit_is_the_exit@d676fedbea60c9da158ec41e9285e3d929d780dce4e0424d214a670ea0735516` |
+| `Singular.Statements.fold_batch_of_one_is_step@09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87` | `Singular.Statements.fold_batch_of_one_is_step@b6226a82c352b27b0fac2034592963f240da8696a44e088baeaca770d9e7c665` |
+
+Discovery now reports 138 obligations: 76 manifest-bound and 62 unclassified.

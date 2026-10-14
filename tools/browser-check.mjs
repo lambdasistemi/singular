@@ -91,6 +91,16 @@ async function checkPage(page, evidence) {
   await page.click('#edge-insertActive');
   assert(/admitted/.test(await text('#edge-result')), 'a matching approval is admitted');
 
+  await page.click('#btn-reset');
+  await page.fill('#submitted-at-input', '1000');
+  // Read the configured processing time from the same engine the page runs.
+  const processing = await page.evaluate(() => state.config.processTime);
+  await page.fill('#valid-to-input', String(1001 + processing));
+  await page.click('#edge-insertActive');
+  assert(/not-phase1/.test(await text('#edge-result')), 'late playable fold is refused');
+  await page.fill('#valid-to-input', String(1000 + processing));
+  await page.click('#edge-insertActive');
+  assert(/admitted/.test(await text('#edge-result')), 'playable fold at its deadline is admitted');
   await page.selectOption('#profile-picker', 'naming');
   const journey = await page.locator('#naming-journey tr').allInnerTexts();
   assert(journey.length === 3, 'the permanent retirement journey has three steps');

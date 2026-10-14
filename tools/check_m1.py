@@ -21,6 +21,8 @@ from check_model import (
     check_or_compare,
     digest,
     model_constants,
+    model_fold_admission,
+    fold_admission_reason,
     model_transitions,
     root_of,
     statement_inventory,
@@ -34,8 +36,15 @@ def check(corpus, root):
     assert allowed == {"insertActive", "updateTerminal"}, "permanent admission moved"
     assert len(corpus["scenarios"]) == 10 and len(corpus["batches"]) == 5
     exclusions = set()
+    admission = model_fold_admission(root)
     for row in corpus["scenarios"]:
         operation = row["operation"]
+        if row["kind"] != "unsupported" and operation not in {"reject", "retract"}:
+            why = fold_admission_reason(
+                [row["request"]], row["start"]["config"], row["foldWitness"], admission
+            )
+            if why is not None:
+                assert (row["outcome"], row["reason"]) == ("refused", why)
         if row["kind"] == "unsupported":
             assert row["outcome"] == "unsupported" and row["reason"] == "setup-refused"
         elif operation in allowed or operation in {"reject", "retract"}:
@@ -48,6 +57,14 @@ def check(corpus, root):
     leaf_bytes, deltas = model_constants(root)
     derived = check_derived(corpus, leaf_bytes, deltas, model_transitions(root))
     for row in corpus["batches"]:
+        why = fold_admission_reason(
+            row["requests"],
+            corpus["scenarios"][0]["start"]["config"],
+            row["foldWitness"],
+            admission,
+        )
+        if why is not None:
+            assert (row["outcome"], row["reason"]) == ("refused", why)
         admitted_edges = row["requests"] and all(
             r["edge"] in allowed for r in row["requests"]
         )

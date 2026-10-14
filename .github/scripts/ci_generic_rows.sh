@@ -263,13 +263,14 @@ open_params="$(nix run --quiet nixpkgs#jq -- -er '[.validators[] | select(.title
   exit 1
 }
 e="${CONFORMANCE_RECEIPTS}/receipt-register-active-key.json"
+# Each booking writes its own booking time, so the same request re-submitted in another step is compared without that time.
 # jq expands its own --arg variables inside this program.
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
   def complete: (.compared | length) == 9 and (.unobserved | type) == "array"
     and (.perturbation.refused > 0);
-  ([.steps[] | select(.tamper == "other-address") | .request][0]) as $tampered |
+  ([.steps[] | select(.tamper == "other-address") | .request | del(.submittedAt)][0]) as $tampered |
   .row == "register-active-key" and .outcome == "accepted"
   and .verdict == "agrees-with-model" and .venue == "node-submit"
   and (.steps | length) == 8
@@ -298,11 +299,11 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == "short-by-one" and .model.outcome == "refused"
-          and .model.reason == "deposit-returned" and .request == $tampered
+          and .model.reason == "deposit-returned" and (.request | del(.submittedAt)) == $tampered
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == null and .model.outcome == "accepted"
-          and .chain.outcome == "accepted" and .request == $tampered)
+          and .chain.outcome == "accepted" and (.request | del(.submittedAt)) == $tampered)
 ' "$e" >/dev/null || {
   echo 'FAIL: register-active-key step evidence missing or incomplete'
   exit 1
