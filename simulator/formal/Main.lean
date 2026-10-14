@@ -1038,6 +1038,49 @@ def economicTransaction : Tx :=
   { inputs := [economicInput ⟨1, 0⟩], outputs := [economicOutput 10],
     referenceInputs := [economicInput ⟨1, 1⟩], mint := [], signers := [], refunds := [] }
 
+/-- A configured output's identity defaults to its own configuration, even
+when the ambient registry differs. Explicit absence and foreign pairs survive
+both the written form and the full output round trip. -/
+def stateIdentityControls : List (String × Bool) := Id.run do
+  let mut controls := []
+  for c in [cfg, { cfg with registryId := cfg.registryId + 17 }] do
+    let variants : List (String × Option TokenId × Option Json) :=
+      [ ("default identity is omitted", some c.stateToken, none)
+      , ("foreign name is explicit", some ⟨c.registryId, 1⟩,
+          some (toJson ({ policy := c.registryId, name := 1 } : TokenId)))
+      , ("foreign policy is explicit", some ⟨c.registryId + 1, 0⟩,
+          some (toJson ({ policy := c.registryId + 1, name := 0 } : TokenId)))
+      , ("missing identity is explicit null", none, some Json.null) ]
+    for (story, token, expected) in variants do
+      for count in [0, 1, 2] do
+        let output :=
+          { economicOutput 10 with config := some c, stateTokens := count, stateToken := token }
+        let written := txOutputJson cfg output
+        let fieldCorrect := match expected, written.getObjVal? "stateTokenId" with
+          | none, .error _ => true
+          | some value, .ok actual => actual == value
+          | _, _ => false
+        let roundTrip := match txOutputOfJson cfg written with
+          | .ok back => back == output | .error _ => false
+        controls := controls ++ [(story, fieldCorrect && roundTrip)]
+    for token in [none, some c.stateToken] do
+      let output := { economicOutput 10 with stateToken := token }
+      let input := { economicInput ⟨1, 0⟩ with stateToken := token }
+      let expected := token.map toJson
+      for (story, written, roundTrip) in
+          [("unconfigured output identity roundtrip", txOutputJson cfg output,
+            match txOutputOfJson cfg (txOutputJson cfg output) with
+              | .ok back => back == output | .error _ => false),
+           ("input identity roundtrip", txInputJson cfg input,
+            match txInputOfJson cfg (txInputJson cfg input) with
+              | .ok back => back == input | .error _ => false)] do
+        let fieldCorrect := match expected, written.getObjVal? "stateTokenId" with
+          | none, .error _ => true
+          | some value, .ok actual => actual == value
+          | _, _ => false
+        controls := controls ++ [(story, fieldCorrect && roundTrip)]
+  return controls
+
 def economicControls : List (String × Bool) :=
   let tx := economicTransaction
   let after := applyTx economicUnspent 2 tx
@@ -1074,6 +1117,8 @@ def main : IO Unit := do
   | .error reason => throw (IO.userError reason)
   unless parameterCodecControl do
     throw (IO.userError "economic parameter defaults, pins or roundtrip failed")
+  for (story, correct) in stateIdentityControls do
+    unless correct do throw (IO.userError s!"state token identity: {story}")
   for (story, correct) in economicControls do
     unless correct do throw (IO.userError s!"transaction vocabulary: {story}")
   for c in cases do

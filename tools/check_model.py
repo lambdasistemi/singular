@@ -184,6 +184,62 @@ def check_or_compare(target, encoded, export, label):
         assert target.read_text() == encoded, f"{label} identity drift"
 
 
+def check_transaction_compatibility(root, corpus, driver_corpus):
+    """Keep every historical transaction row, including explicit field presence.
+
+    The baseline was extracted from its recorded commit, never from the encoder
+    under test. These two statements were deliberately restated when the model
+    gained the state token identity; only their top-level digest may differ.
+    """
+    restated = {
+        "Singular.Statements.insert_active_transaction_row",
+        "Singular.Statements.update_terminal_transaction_row",
+    }
+    baseline = json.loads((root / "lean/transaction-baseline.json").read_text())
+    current = {
+        "lean/corpus.json": corpus["transactions"],
+        "lean/driver-corpus.json": driver_corpus["scenarios"],
+        "simulator/corpus.json": json.loads(
+            (root / "simulator/corpus.json").read_text()
+        )["transactions"],
+    }
+    assert set(baseline["rows"]) == set(current), "transaction baseline extent differs"
+    checked = 0
+    for path, expected_rows in baseline["rows"].items():
+        key = "id" if path == "lean/driver-corpus.json" else "profile"
+        observed = {row[key]: row for row in current[path]}
+        assert len(observed) == len(current[path]), f"duplicate transaction row: {path}"
+        assert expected_rows, f"empty transaction baseline: {path}"
+        assert len({row[key] for row in expected_rows}) == len(expected_rows)
+        for expected in expected_rows:
+            name = expected[key]
+            assert name in observed, f"missing historical transaction: {path}/{name}"
+            actual = copy.deepcopy(observed[name])
+            if expected["theorem"] in restated:
+                actual["statementSha256"] = expected["statementSha256"]
+            before = json.dumps(expected, indent=2, sort_keys=True)
+            after = json.dumps(actual, indent=2, sort_keys=True)
+            if before != after:
+                import difflib
+
+                delta = "\n".join(
+                    difflib.unified_diff(
+                        before.splitlines(),
+                        after.splitlines(),
+                        fromfile="accepted transaction",
+                        tofile="candidate transaction",
+                    )
+                )
+                raise AssertionError(
+                    f"transaction compatibility: {path}/{name}\n{delta}"
+                )
+            checked += 1
+    print(
+        f"transaction compatibility: {checked} historical rows byte-identical "
+        "apart from the two declared statement digests"
+    )
+
+
 def unreachable_modules(root):
     """Modules on disk that `lake build` will never build.
 
@@ -1714,6 +1770,7 @@ def main():
         "so no scenario, observation or translation row below can be established"
     )
     driver_corpus = json.loads(subprocess.check_output([str(driver_binary)]))
+    check_transaction_compatibility(root, corpus, driver_corpus)
     assert driver_corpus["schema"] == DRIVER_SCHEMA, (
         f"driver corpus schema {driver_corpus['schema']!r} != {DRIVER_SCHEMA!r}"
     )

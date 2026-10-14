@@ -315,7 +315,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "6d9de563768d8338bc564d31ebf807db47eff9430a35f10077e402c0b3d678f1",
+  "payloadSha256": "c140e8f6c766fd931b3794d84ec90a1027f5edcda72e3e6782d5e370451e0413",
   "scenarios": [
     {
       "id": "Register an active key",
@@ -475,11 +475,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 99,
@@ -739,11 +735,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -1551,11 +1543,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -2007,11 +1995,11 @@
     "lean/DriverMain.lean": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "lean/M1Main.lean": "34d5cd197c8f714bd145cd53ca916ff551b7eb6352b097795bbf176873b1d641",
-    "lean/Main.lean": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+    "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "00d63acbd428501e65ce4c6d4be1b2dba70b8d82ca73c5cb7c84a1a30893bbb5",
+    "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
     "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
     "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",

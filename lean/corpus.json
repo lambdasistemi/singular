@@ -1970,7 +1970,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+  "corpusSourceSha256": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
   "economicControls": [
     {
       "result": true,
@@ -2179,13 +2179,13 @@
     "terminalPolicy": 10
   },
   "modelSha256": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
-  "payloadSha256": "c34e5893cf042ced25d3a6330bd6ab2139808a53db0111acc5f1f90d569ed9c1",
+  "payloadSha256": "dbff474d90ff0a34a8150a6387d0c22683e30a86019d42210cbdc3951ef9210a",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+    "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
     "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "00d63acbd428501e65ce4c6d4be1b2dba70b8d82ca73c5cb7c84a1a30893bbb5",
+    "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
     "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
     "lean/Singular/Model.lean": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
@@ -2290,11 +2290,7 @@
             "lovelace": 0,
             "reference": null,
             "role": "state",
-            "stateToken": 1,
-            "stateTokenId": {
-              "name": 0,
-              "policy": 0
-            }
+            "stateToken": 1
           },
           {
             "address": 555,
@@ -2469,11 +2465,7 @@
             "lovelace": 0,
             "reference": null,
             "role": "state",
-            "stateToken": 1,
-            "stateTokenId": {
-              "name": 0,
-              "policy": 0
-            }
+            "stateToken": 1
           },
           {
             "address": 42,

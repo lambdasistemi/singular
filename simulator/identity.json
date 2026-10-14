@@ -15,7 +15,7 @@
   ],
   "files": {
     "formal/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "formal/Driver.lean": "00d63acbd428501e65ce4c6d4be1b2dba70b8d82ca73c5cb7c84a1a30893bbb5",
+    "formal/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "formal/DriverMain.lean": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
     "formal/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
     "formal/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
@@ -24,7 +24,7 @@
     "formal/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "formal/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
     "formal/M1Main.lean": "34d5cd197c8f714bd145cd53ca916ff551b7eb6352b097795bbf176873b1d641",
-    "formal/Main.lean": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+    "formal/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
     "formal/Model.lean": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
     "formal/Naming.lean": "7a3cf3d6914af5e0ca52fef453ed90a70c37af15f533c91dcaaed2fae36f1baf",
     "formal/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
@@ -44,7 +44,7 @@
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
     "formal/theorem-debt.json": "7d5b8b2044dd312adcd13e8a5800b3f415a228e72bc5fc700ef9ed071a741eab",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "b72aa474c5ceba959864f2e829f8792d33724f428155e086c4bc05ca1737b3f8"
+    "corpus.json": "bd38d3cbf75c86721dd2519476e7f030383b244c7e29a064420f9ae090c9d130"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,

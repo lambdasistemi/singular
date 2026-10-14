@@ -3002,7 +3002,7 @@
   ],
   "corpusSourceSha256": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
   "modelSha256": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
-  "payloadSha256": "b7f7673da1600ee55b7275a8839aed1058e4d68731580d8524601ce77c65f46d",
+  "payloadSha256": "05fc84632b8c0f51de43b40af3b1f9f46390bfdedcc73f24f3af5796c96c3eea",
   "scenarios": [
     {
       "id": "DR02-register-active",
@@ -3162,11 +3162,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 555,
@@ -3421,11 +3417,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -3914,11 +3906,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 43,
@@ -5685,11 +5673,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 555,
@@ -5945,11 +5929,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 556,
@@ -6200,11 +6180,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 99,
@@ -6466,11 +6442,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 99,
@@ -6897,11 +6869,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -7197,11 +7165,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -7538,11 +7502,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -7931,11 +7891,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -8215,11 +8171,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -8691,11 +8643,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -9084,11 +9032,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -9351,11 +9295,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -9618,11 +9558,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -9885,11 +9821,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -10152,11 +10084,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -10767,11 +10695,7 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1,
-              "stateTokenId": {
-                "name": 0,
-                "policy": 0
-              }
+              "stateToken": 1
             },
             {
               "address": 42,
@@ -11662,10 +11586,10 @@
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
     "lean/DriverMain.lean": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
-    "lean/Main.lean": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+    "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
     "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "00d63acbd428501e65ce4c6d4be1b2dba70b8d82ca73c5cb7c84a1a30893bbb5",
+    "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
     "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
     "lean/Singular/Model.lean": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",

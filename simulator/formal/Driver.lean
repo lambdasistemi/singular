@@ -73,7 +73,8 @@ def txOutputJson (c : Config) (o : TxOutput) : Json :=
     , ("lovelace", toJson o.lovelace)
     , ("reference", match o.reference with | none => Json.null | some x => toJson x)
     , ("datumValue", datumJson o.datumValue) ] ++
-    (o.stateToken.toList.map fun token => ("stateTokenId", toJson token))
+    (if o.stateToken == o.config.map Config.stateToken then [] else
+      [("stateTokenId", toJson o.stateToken)])
 
 /-- The built transaction, serialized. Every field comes from the `Tx` the model
 constructed; nothing here is assembled beside it. -/
@@ -138,14 +139,14 @@ def txOutputOfJson (c : Config) (j : Json) : Except String TxOutput := do
   let datum ← j.getObjVal? "datum" >>= fromJson?
   let address ← j.getObjVal? "address" >>= fromJson?
   let stateTokens ← j.getObjVal? "stateToken" >>= fromJson?
-  let config ← j.getObjVal? "inlineConfig" >>= fromJson?
+  let config : Option Config ← j.getObjVal? "inlineConfig" >>= fromJson?
   let commitment ← j.getObjVal? "commitment" >>= fromJson?
   let assets ← j.getObjVal? "assets" >>= assetsOfJson c
   let custodyDatum ← defaultField j "custodyDatum" none
   let lovelace ← defaultField j "lovelace" 0
   let reference ← defaultField j "reference" none
   let datumValue ← defaultField j "datumValue" none
-  let stateToken ← defaultField j "stateTokenId" none
+  let stateToken ← defaultField j "stateTokenId" (config.map Config.stateToken)
   pure { role, datum, address, stateTokens, config, commitment, assets
        , custodyDatum, lovelace, reference, datumValue, stateToken }
 
