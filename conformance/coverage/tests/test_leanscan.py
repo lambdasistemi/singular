@@ -144,7 +144,13 @@ class RealTreeDiscoveryTest(unittest.TestCase):
             135,
             "base population drifted; the denominator must be re-examined",
         )
-        statements = [d for d in decls if d.source.endswith("Statements.lean")]
+        statement_namespaces = (
+            "Singular.Statements.",
+            "Singular.NamingStatements.",
+            "Singular.NamingLifecycleStatements.",
+            "Singular.NamingWireStatements.",
+        )
+        statements = [d for d in decls if d.name.startswith(statement_namespaces)]
         self.assertEqual(len(statements), 69)
         self.assertEqual(
             len([d for d in decls if d.source == "lean/Singular/M1.lean"]), 10
