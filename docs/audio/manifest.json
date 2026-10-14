@@ -300331,17 +300331,17 @@
    ]
   },
   "docs-singular-node/naming-the-registry-by-its-state-token-01": {
-   "audio_sha256": "82306beed4531c216407956193dd8b8471a801594a4f0c2d5153e401676af3f3",
-   "characters": 324,
-   "cost": 0.00020088000000000001,
-   "duration": 21.75,
+   "audio_sha256": "557d4dbb6ae995b0518b6da79a0e51ba25f5de4b0b66c69b4b60dd5c4910863a",
+   "characters": 650,
+   "cost": 0.0006434999999999999,
+   "duration": 43.075,
    "index": 1,
-   "key": "89ba892dccb1cf2f90263f0b6c0a75a2ef38984fcb9a3820b71fd40c55b084da",
+   "key": "70440962c5510f09540c65749be9f95001ffa4ac633d12aaf7794b7a50b147bf",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "naming-the-registry-by-its-state-token",
-   "sent_text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
-   "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+   "sent_text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+   "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
    "words": [
     {
      "end": 0.363,
@@ -300424,18 +300424,18 @@
      "text": "receipt"
     },
     {
-     "end": 5.175,
+     "end": 5.15,
      "start": 4.875,
      "text": "names"
     },
     {
-     "end": 6.025,
-     "start": 5.175,
+     "end": 6.0,
+     "start": 5.15,
      "text": "stateToken"
     },
     {
      "end": 6.1,
-     "start": 6.025,
+     "start": 6.0,
      "text": ","
     },
     {
@@ -300444,213 +300444,523 @@
      "text": "the"
     },
     {
-     "end": 6.775,
+     "end": 6.8,
      "start": 6.225,
      "text": "registry's"
     },
     {
-     "end": 7.1,
-     "start": 6.775,
+     "end": 7.125,
+     "start": 6.8,
      "text": "state"
     },
     {
-     "end": 7.45,
-     "start": 7.1,
+     "end": 7.475,
+     "start": 7.125,
      "text": "token"
     },
     {
-     "end": 7.6,
-     "start": 7.45,
+     "end": 7.625,
+     "start": 7.475,
      "text": "as"
     },
     {
-     "end": 8.275,
-     "start": 7.6,
+     "end": 8.3,
+     "start": 7.625,
      "text": "POLICY.NAME"
     },
     {
-     "end": 8.4,
-     "start": 8.275,
+     "end": 8.425,
+     "start": 8.3,
      "text": "in"
     },
     {
-     "end": 9.3,
-     "start": 8.4,
+     "end": 9.325,
+     "start": 8.425,
      "text": "hex"
     },
     {
-     "end": 9.5,
-     "start": 9.3,
-     "text": "."
-    },
-    {
-     "end": 9.8,
-     "start": 9.675,
-     "text": "I"
-    },
-    {
-     "end": 10.2,
-     "start": 9.8,
-     "text": "publish"
-    },
-    {
-     "end": 10.525,
-     "start": 10.2,
-     "text": "nothing"
-    },
-    {
-     "end": 10.887,
-     "start": 10.525,
-     "text": "else"
-    },
-    {
-     "end": 11.025,
-     "start": 10.887,
-     "text": "and"
-    },
-    {
-     "end": 11.275,
-     "start": 11.025,
-     "text": "keep"
-    },
-    {
-     "end": 11.462,
-     "start": 11.275,
-     "text": "no"
-    },
-    {
-     "end": 11.8,
-     "start": 11.462,
-     "text": "file"
-    },
-    {
-     "end": 12.087,
-     "start": 11.8,
-     "text": "anyone"
-    },
-    {
-     "end": 12.325,
-     "start": 12.087,
-     "text": "else"
-    },
-    {
-     "end": 13.225,
-     "start": 12.325,
-     "text": "needs"
-    },
-    {
-     "end": 13.425,
-     "start": 13.225,
-     "text": ":"
-    },
-    {
-     "end": 13.975,
-     "start": 13.65,
-     "text": "create"
-    },
-    {
-     "end": 14.337,
-     "start": 13.975,
-     "text": "writes"
-    },
-    {
-     "end": 14.65,
-     "start": 14.337,
-     "text": "no"
-    },
-    {
-     "end": 15.238,
-     "start": 14.65,
-     "text": "identity"
-    },
-    {
-     "end": 15.75,
-     "start": 15.238,
-     "text": "file"
-    },
-    {
-     "end": 15.85,
-     "start": 15.75,
+     "end": 9.525,
+     "start": 9.325,
      "text": ","
     },
     {
-     "end": 15.962,
-     "start": 15.85,
+     "end": 9.788,
+     "start": 9.7,
      "text": "and"
     },
     {
-     "end": 16.062,
-     "start": 15.962,
+     "end": 10.875,
+     "start": 9.788,
+     "text": "describeCommand"
+    },
+    {
+     "end": 11.075,
+     "start": 10.875,
+     "text": ","
+    },
+    {
+     "end": 11.35,
+     "start": 11.25,
      "text": "the"
     },
     {
-     "end": 16.487,
-     "start": 16.062,
-     "text": "pending"
+     "end": 11.775,
+     "start": 11.35,
+     "text": "working"
+    },
+    {
+     "end": 12.3,
+     "start": 11.775,
+     "text": "singular"
+    },
+    {
+     "end": 12.95,
+     "start": 12.3,
+     "text": "registry"
+    },
+    {
+     "end": 13.475,
+     "start": 12.95,
+     "text": "describe"
+    },
+    {
+     "end": 13.887,
+     "start": 13.475,
+     "text": "line"
+    },
+    {
+     "end": 14.15,
+     "start": 13.887,
+     "text": "built"
+    },
+    {
+     "end": 14.288,
+     "start": 14.15,
+     "text": "from"
+    },
+    {
+     "end": 14.4,
+     "start": 14.288,
+     "text": "the"
+    },
+    {
+     "end": 14.975,
+     "start": 14.4,
+     "text": "arguments"
+    },
+    {
+     "end": 15.075,
+     "start": 14.975,
+     "text": "the"
+    },
+    {
+     "end": 15.475,
+     "start": 15.075,
+     "text": "create"
+    },
+    {
+     "end": 15.775,
+     "start": 15.475,
+     "text": "ran"
+    },
+    {
+     "end": 16.525,
+     "start": 15.775,
+     "text": "with"
+    },
+    {
+     "end": 16.775,
+     "start": 16.525,
+     "text": ":"
     },
     {
      "end": 17.05,
-     "start": 16.487,
-     "text": "identity"
+     "start": 16.975,
+     "text": "the"
     },
     {
-     "end": 17.175,
+     "end": 17.562,
      "start": 17.05,
-     "text": "it"
+     "text": "blueprint"
     },
     {
-     "end": 17.775,
-     "start": 17.175,
-     "text": "records"
+     "end": 17.763,
+     "start": 17.562,
+     "text": "as"
     },
     {
-     "end": 18.15,
-     "start": 17.775,
-     "text": "before"
+     "end": 18.175,
+     "start": 17.763,
+     "text": "given"
+    },
+    {
+     "end": 18.225,
+     "start": 18.175,
+     "text": ","
     },
     {
      "end": 18.362,
-     "start": 18.15,
-     "text": "its"
+     "start": 18.225,
+     "text": "the"
     },
     {
-     "end": 18.65,
+     "end": 18.612,
      "start": 18.362,
-     "text": "first"
+     "text": "new"
     },
     {
-     "end": 19.225,
-     "start": 18.65,
-     "text": "submission"
+     "end": 18.987,
+     "start": 18.612,
+     "text": "state"
     },
     {
-     "end": 19.375,
-     "start": 19.225,
-     "text": "is"
+     "end": 19.5,
+     "start": 18.987,
+     "text": "token"
     },
     {
-     "end": 19.95,
-     "start": 19.375,
-     "text": "removed"
+     "end": 19.575,
+     "start": 19.5,
+     "text": ","
     },
     {
-     "end": 20.188,
-     "start": 19.95,
-     "text": "once"
+     "end": 19.675,
+     "start": 19.575,
+     "text": "the"
     },
     {
-     "end": 20.325,
-     "start": 20.188,
+     "end": 20.275,
+     "start": 19.675,
+     "text": "provider"
+    },
+    {
+     "end": 20.4,
+     "start": 20.275,
+     "text": "and"
+    },
+    {
+     "end": 20.8,
+     "start": 20.4,
+     "text": "network"
+    },
+    {
+     "end": 21.35,
+     "start": 20.8,
+     "text": "settings"
+    },
+    {
+     "end": 21.425,
+     "start": 21.35,
+     "text": ","
+    },
+    {
+     "end": 21.538,
+     "start": 21.425,
+     "text": "and"
+    },
+    {
+     "end": 21.625,
+     "start": 21.538,
+     "text": "the"
+    },
+    {
+     "end": 22.038,
+     "start": 21.625,
+     "text": "network"
+    },
+    {
+     "end": 22.375,
+     "start": 22.038,
+     "text": "time"
+    },
+    {
+     "end": 22.975,
+     "start": 22.375,
+     "text": "directory"
+    },
+    {
+     "end": 23.175,
+     "start": 22.975,
+     "text": "when"
+    },
+    {
+     "end": 24.2,
+     "start": 23.175,
+     "text": "given"
+    },
+    {
+     "end": 24.425,
+     "start": 24.2,
+     "text": "."
+    },
+    {
+     "end": 24.725,
+     "start": 24.6,
+     "text": "It"
+    },
+    {
+     "end": 25.038,
+     "start": 24.725,
+     "text": "names"
+    },
+    {
+     "end": 25.312,
+     "start": 25.038,
+     "text": "no"
+    },
+    {
+     "end": 25.712,
+     "start": 25.312,
+     "text": "wallet"
+    },
+    {
+     "end": 26.112,
+     "start": 25.712,
+     "text": "key"
+    },
+    {
+     "end": 26.25,
+     "start": 26.112,
+     "text": "and"
+    },
+    {
+     "end": 26.475,
+     "start": 26.25,
+     "text": "no"
+    },
+    {
+     "end": 27.013,
+     "start": 26.475,
+     "text": "credential"
+    },
+    {
+     "end": 27.6,
+     "start": 27.013,
+     "text": "file"
+    },
+    {
+     "end": 27.737,
+     "start": 27.6,
+     "text": "."
+    },
+    {
+     "end": 28.025,
+     "start": 27.737,
+     "text": "Run"
+    },
+    {
+     "end": 28.15,
+     "start": 28.025,
      "text": "it"
     },
     {
-     "end": 21.55,
-     "start": 20.325,
+     "end": 28.3,
+     "start": 28.15,
+     "text": "as"
+    },
+    {
+     "end": 28.65,
+     "start": 28.3,
+     "text": "printed"
+    },
+    {
+     "end": 28.775,
+     "start": 28.65,
+     "text": "to"
+    },
+    {
+     "end": 29.013,
+     "start": 28.775,
+     "text": "read"
+    },
+    {
+     "end": 29.1,
+     "start": 29.013,
+     "text": "the"
+    },
+    {
+     "end": 29.6,
+     "start": 29.1,
+     "text": "registry"
+    },
+    {
+     "end": 30.6,
+     "start": 29.6,
+     "text": "page"
+    },
+    {
+     "end": 30.825,
+     "start": 30.6,
+     "text": "."
+    },
+    {
+     "end": 31.125,
+     "start": 31.0,
+     "text": "I"
+    },
+    {
+     "end": 31.525,
+     "start": 31.125,
+     "text": "publish"
+    },
+    {
+     "end": 31.85,
+     "start": 31.525,
+     "text": "nothing"
+    },
+    {
+     "end": 32.213,
+     "start": 31.85,
+     "text": "else"
+    },
+    {
+     "end": 32.35,
+     "start": 32.213,
+     "text": "and"
+    },
+    {
+     "end": 32.6,
+     "start": 32.35,
+     "text": "keep"
+    },
+    {
+     "end": 32.787,
+     "start": 32.6,
+     "text": "no"
+    },
+    {
+     "end": 33.125,
+     "start": 32.787,
+     "text": "file"
+    },
+    {
+     "end": 33.412,
+     "start": 33.125,
+     "text": "anyone"
+    },
+    {
+     "end": 33.65,
+     "start": 33.412,
+     "text": "else"
+    },
+    {
+     "end": 34.55,
+     "start": 33.65,
+     "text": "needs"
+    },
+    {
+     "end": 34.75,
+     "start": 34.55,
+     "text": ":"
+    },
+    {
+     "end": 35.3,
+     "start": 34.975,
+     "text": "create"
+    },
+    {
+     "end": 35.662,
+     "start": 35.3,
+     "text": "writes"
+    },
+    {
+     "end": 35.975,
+     "start": 35.662,
+     "text": "no"
+    },
+    {
+     "end": 36.562,
+     "start": 35.975,
+     "text": "identity"
+    },
+    {
+     "end": 37.075,
+     "start": 36.562,
+     "text": "file"
+    },
+    {
+     "end": 37.175,
+     "start": 37.075,
+     "text": ","
+    },
+    {
+     "end": 37.287,
+     "start": 37.175,
+     "text": "and"
+    },
+    {
+     "end": 37.388,
+     "start": 37.287,
+     "text": "the"
+    },
+    {
+     "end": 37.812,
+     "start": 37.388,
+     "text": "pending"
+    },
+    {
+     "end": 38.375,
+     "start": 37.812,
+     "text": "identity"
+    },
+    {
+     "end": 38.5,
+     "start": 38.375,
+     "text": "it"
+    },
+    {
+     "end": 39.1,
+     "start": 38.5,
+     "text": "records"
+    },
+    {
+     "end": 39.475,
+     "start": 39.1,
+     "text": "before"
+    },
+    {
+     "end": 39.688,
+     "start": 39.475,
+     "text": "its"
+    },
+    {
+     "end": 39.975,
+     "start": 39.688,
+     "text": "first"
+    },
+    {
+     "end": 40.55,
+     "start": 39.975,
+     "text": "submission"
+    },
+    {
+     "end": 40.7,
+     "start": 40.55,
+     "text": "is"
+    },
+    {
+     "end": 41.275,
+     "start": 40.7,
+     "text": "removed"
+    },
+    {
+     "end": 41.513,
+     "start": 41.275,
+     "text": "once"
+    },
+    {
+     "end": 41.65,
+     "start": 41.513,
+     "text": "it"
+    },
+    {
+     "end": 42.875,
+     "start": 41.65,
      "text": "finishes"
     },
     {
-     "end": 21.75,
-     "start": 21.55,
+     "end": 43.075,
+     "start": 42.875,
      "text": "."
     }
    ]
