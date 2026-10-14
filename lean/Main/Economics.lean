@@ -108,8 +108,8 @@ def economicControls : List (String × Bool) :=
   let stateTx := { tx with outputs := [state], referenceInputs := [] }
   let empty : Tx := { inputs := [], outputs := [], mint := [], signers := [], refunds := [] }
   [ ("a balanced transaction reads values from the unspent set", balanced economicUnspent tx)
-  , ("a spent reference is refused as a reference", inputsPresent after later == some "reference-input-missing")
-  , ("a missing spent input has its own reason", inputsPresent after tx == some "spent-input-missing")
+  , ("a spent reference is refused as a reference", inputPresenceRefusal after later == some "reference-input-missing")
+  , ("a missing spent input has its own reason", inputPresenceRefusal after tx == some "spent-input-missing")
   , ("reference inputs remain unspent", after.contains (⟨1, 1⟩, economicOutput 20))
   , ("new outputs receive their position", after.contains (⟨2, 0⟩, economicOutput 10))
   , ("inflation is refused despite the input claim", !balanced economicUnspent { tx with outputs := [economicOutput 11] })

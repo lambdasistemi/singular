@@ -11,7 +11,7 @@ Ledger states have distinct references; the representation does not manufacture
 validity for an arbitrary list. -/
 abbrev Utxo := List (OutRef × TxOutput)
 
-def inputNames (inputs : List TxInput) (ref : OutRef) : Bool :=
+def inputsContainReference (inputs : List TxInput) (ref : OutRef) : Bool :=
   inputs.any fun i => decide (i.ref = some ref)
 
 /-- Reference reads are disjoint from the outputs the transaction spends. -/
@@ -19,7 +19,7 @@ def disjointInputs (tx : Tx) : Bool :=
   tx.referenceInputs.all fun i =>
     match i.ref with
     | none => true
-    | some ref => !inputNames tx.inputs ref
+    | some ref => !inputsContainReference tx.inputs ref
 
 def inputPresent (u : Utxo) (i : TxInput) : Bool :=
   match i.ref with
@@ -28,7 +28,7 @@ def inputPresent (u : Utxo) (i : TxInput) : Bool :=
 
 /-- Presence only, spent inputs first. A missing reference is not a missing
 spending input; neither judgement trusts a value claimed by an input. -/
-def inputsPresent (u : Utxo) (tx : Tx) : Option String :=
+def inputPresenceRefusal (u : Utxo) (tx : Tx) : Option String :=
   if !(tx.inputs.all (inputPresent u)) then some "spent-input-missing"
   else if !(tx.referenceInputs.all (inputPresent u)) then some "reference-input-missing"
   else none
@@ -37,13 +37,13 @@ def inputsPresent (u : Utxo) (tx : Tx) : Option String :=
 Reference preservation requires disjointInputs. The new transaction identity
 must be fresh; admission and identity allocation are outside this raw update. -/
 def applyTx (u : Utxo) (identity : Nat) (tx : Tx) : Utxo :=
-  u.filter (fun p => !inputNames tx.inputs p.1) ++
+  u.filter (fun p => !inputsContainReference tx.inputs p.1) ++
     tx.outputs.zipIdx.map (fun (output, index) => (⟨identity, index⟩, output))
 
 /-- Read the spent values from the set, once per set entry. Duplicate claims
 in the spending list cannot multiply the value available for accounting. -/
 def spentOutputs (u : Utxo) (tx : Tx) : List TxOutput :=
-  (u.filter fun p => inputNames tx.inputs p.1).map Prod.snd
+  (u.filter fun p => inputsContainReference tx.inputs p.1).map Prod.snd
 
 def outputLovelace (outputs : List TxOutput) : Nat := (outputs.map (·.lovelace)).sum
 def outputAssets (outputs : List TxOutput) : List (Asset × Int) := outputs.flatMap (·.assets)

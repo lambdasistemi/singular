@@ -19,7 +19,7 @@
   ],
   "modelSha256": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
   "namingStatementsSha256": "3a68713f92c0450ba9f2760ce03d0e5e8a51685ea9669ada3e59ebbfe6b2db55",
-  "payloadSha256": "fb3ea90f340c4aae055e605d74520da7a32f08779f05e185c6db59c278255937",
+  "payloadSha256": "9b1706bbbc400362f5f3251cf10ee50fe2937822da6429e2de14f06520b30bf9",
   "queues": [
     {
       "actual": true,
@@ -80,7 +80,7 @@
     "lean/M1Main.lean": "34d5cd197c8f714bd145cd53ca916ff551b7eb6352b097795bbf176873b1d641",
     "lean/Main.lean": "f8b3bb0e69341b75b8c4e3369d8378931487ac46651d1c668a25e4d1033e934a",
     "lean/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
-    "lean/Main/Economics.lean": "99f1508d9c9b67098f9b4ca1bc6a8cff87f66c64f2defedc1f3c7e10003def77",
+    "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
     "lean/Main/Retraction.lean": "dfb31a2140732cb8d3b6332fd61ec1f5e5fbd7111ccfce1f18179299eccd3cd1",
@@ -91,7 +91,7 @@
     "lean/Singular/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
-    "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
+    "lean/Singular/Economics.lean": "5f88986f47cfd9552ab18d8e63581a23ddf6d0c95e175fa3de0ddab1f23a34c1",
     "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
@@ -116,7 +116,7 @@
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
     "lean/Singular/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
-    "lean/Singular/Statements/Accounting.lean": "f566e132914ef8307b81ee972cecd7eb7ecb5590d845d52437184e8ae62d737f",
+    "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
     "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
   },

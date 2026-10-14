@@ -43,3 +43,18 @@ Every new or restated identity starts uncovered; no execution evidence is inheri
 | `Singular.Statements.zero_donation_omits_field` | none (new declaration) | `5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291` | parameters and transaction vocabulary | uncovered |
 | `Singular.foldActions_config_root` | none (new declaration) | `209661c772a9e03b951d80cdf93220b923801c714c5e6e6d482addf1864b88cc` | parameters and transaction vocabulary | uncovered |
 | `Singular.step_config_root` | none (new declaration) | `dfa6943275884be44fa845fa11235e938a49965a7eaee4b64584438044ea1bc7` | parameters and transaction vocabulary | uncovered |
+
+## Names clarified without restatement
+
+The following names change without changing a proposition, proof or executable body. Every header and proof is identical after the listed name substitutions; the coverage mappings and their uncovered state are retained. Earlier rows remain historical.
+
+| Old qualified name | New qualified name | Reason |
+|---|---|---|
+| `Singular.Statements.balanced_transaction_creates_no_value` | `Singular.Statements.balanced_transaction_conserves_value` | The judgement conserves value including fees and donations. |
+| `Singular.inputNames` | `Singular.inputsContainReference` | The Boolean asks whether inputs contain a reference. |
+| `Singular.inputsPresent` | `Singular.inputPresenceRefusal` | The result is an optional refusal reason. |
+
+| Old statement identity | New statement identity | Coverage after |
+|---|---|---|
+| `Singular.Statements.spent_reference_refused@07ae6b51c77261364c3d5aff546b6fb3522be49fc3f699ba1c52281db58938ad` | `Singular.Statements.spent_reference_refused@05956cb3b5599c5e49722c67ce1b7f77cf9cd7f7bbfd74513c969c58930138c6` | unchanged: uncovered |
+| `Singular.Statements.balanced_transaction_creates_no_value@68f5c013cc475fa92dee1482ccadc9306627ff270d524d05a0e85aacf3c9fc24` | `Singular.Statements.balanced_transaction_conserves_value@6f463431f4a5d5bb1bf32f641b8d820ddb67ec53c04125e97fd896135283621d` | unchanged: uncovered |

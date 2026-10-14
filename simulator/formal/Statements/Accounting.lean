@@ -24,10 +24,10 @@ creating identity, the raw update has removed it. The later transaction's
 spending inputs are present so the refusal specifically names the reference. -/
 theorem spent_reference_refused (u : Utxo) (identity : Nat) (tx later : Tx)
     (ref : OutRef) (input : TxInput)
-    (hspent : inputNames tx.inputs ref = true) (hfresh : ref.tx ≠ identity)
+    (hspent : inputsContainReference tx.inputs ref = true) (hfresh : ref.tx ≠ identity)
     (hi : input ∈ later.referenceInputs) (href : input.ref = some ref)
     (hp : later.inputs.all (inputPresent (applyTx u identity tx)) = true) :
-    inputsPresent (applyTx u identity tx) later = some "reference-input-missing" := by
+    inputPresenceRefusal (applyTx u identity tx) later = some "reference-input-missing" := by
   have habsent : ∀ output, (ref, output) ∉ applyTx u identity tx := by
     intro output hmem
     rcases List.mem_append.mp hmem with hmem | hmem
@@ -49,7 +49,7 @@ theorem spent_reference_refused (u : Utxo) (identity : Nat) (tx later : Tx)
     intro hall
     have := List.all_eq_true.mp hall input hi
     simp [hmissing] at this
-  simp [inputsPresent, hp, hnotall]
+  simp [inputPresenceRefusal, hp, hnotall]
 
 /-- The disjointness premise is necessary: this concrete overlapping input
 is spent by the raw update, whatever value its output carries. -/
@@ -61,12 +61,12 @@ theorem overlapping_reference_is_spent (output : TxOutput) :
       { inputs := [input], referenceInputs := [input], outputs := []
       , mint := [], signers := [], refunds := [] }
     disjointInputs tx = false ∧ applyTx [(⟨1, 0⟩, output)] 2 tx = [] := by
-  simp [disjointInputs, inputNames, applyTx]
+  simp [disjointInputs, inputsContainReference, applyTx]
 
 /-- The balance judgement conserves lovelace including explicit fee and
 donation, all native assets after mint, and every state-token identity present
 on either side. Only the unspent set supplies spending values. -/
-theorem balanced_transaction_creates_no_value (u : Utxo) (tx : Tx)
+theorem balanced_transaction_conserves_value (u : Utxo) (tx : Tx)
     (h : balanced u tx = true) :
     outputLovelace (spentOutputs u tx) = outputLovelace tx.outputs + tx.donation + tx.fee ∧
     (∀ asset, assetKind (outputAssets (spentOutputs u tx) ++ tx.mint) asset =
