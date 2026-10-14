@@ -212,6 +212,37 @@ theorem ok_of_refusal (s : RegistryState) (a : Action) (h : refusal s a = none) 
     step s a = .ok (applyEdge s a) := by
   unfold step; rw [h]
 
+/-- A successful step replaces exactly the root of the incoming configuration. -/
+theorem step_config_root (s : RegistryState) (a : Action) (t : Result)
+    (h : step s a = .ok t) :
+    t.state.config = { s.config with root := t.state.config.root } := by
+  obtain ⟨_, ht⟩ := step_eq_ok s a t h
+  subst t
+  cases he : a.edge <;> simp [applyEdge, he]
+
+/-- Every successful prefix keeps all configuration fields other than its root. -/
+theorem foldActions_config_root (s : RegistryState) (batch : List Action) (t : Result)
+    (h : foldActions s batch = .ok t) :
+    t.state.config = { s.config with root := t.state.config.root } := by
+  induction batch generalizing s t with
+  | nil =>
+    simp [foldActions] at h
+    subst t
+    rfl
+  | cons a rest ih =>
+    cases hs : step s a with
+    | error reason => simp [foldActions, hs, bind, Except.bind] at h
+    | ok first =>
+      cases hr : foldActions first.state rest with
+      | error reason => simp [foldActions, hs, hr, bind, Except.bind] at h
+      | ok last =>
+        simp [foldActions, hs, hr, bind, Except.bind, pure, Except.pure] at h
+        subst t
+        change last.state.config = { s.config with root := last.state.config.root }
+        have hf := step_config_root s a first hs
+        have hl := ih first.state last hr
+        rw [hl, hf]
+
 theorem error_of_refusal (s : RegistryState) (a : Action) (why : String)
     (h : refusal s a = some why) : step s a = .error why := by
   unfold step; rw [h]

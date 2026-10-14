@@ -3000,9 +3000,9 @@
       "theorem": "Singular.Statements.no_exit_strands_the_deposit"
     }
   ],
-  "corpusSourceSha256": "7e72f83e76bfafc8525da800782ae0ae03ac61621279dc9b391c1420bd83a04d",
-  "modelSha256": "6990e4b0ba14b7a5cc4ea513e91abd618b7107d5c891752fd60fd7ce7770af6c",
-  "payloadSha256": "afa4a8149197e4b49f25369537bf51bd8c38387245170d6d3cf5ce22f6ca93b5",
+  "corpusSourceSha256": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
+  "modelSha256": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
+  "payloadSha256": "b7f7673da1600ee55b7275a8839aed1058e4d68731580d8524601ce77c65f46d",
   "scenarios": [
     {
       "id": "DR02-register-active",
@@ -3162,7 +3162,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 555,
@@ -3252,7 +3256,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
+      "statementSha256": "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868",
       "theorem": "Singular.Statements.insert_active_transaction_row"
     },
     {
@@ -3417,7 +3421,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -3564,7 +3572,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf",
+      "statementSha256": "d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560",
       "theorem": "Singular.Statements.update_terminal_transaction_row"
     },
     {
@@ -3906,7 +3914,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 43,
@@ -5673,7 +5685,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 555,
@@ -5768,7 +5784,7 @@
         "held": [],
         "trie": []
       },
-      "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
+      "statementSha256": "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868",
       "theorem": "Singular.Statements.insert_active_transaction_row"
     },
     {
@@ -5929,7 +5945,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 556,
@@ -6180,7 +6200,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 99,
@@ -6442,7 +6466,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 99,
@@ -6869,7 +6897,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -7165,7 +7197,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -7502,7 +7538,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -7891,7 +7931,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -8171,7 +8215,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -8643,7 +8691,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -9032,7 +9084,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -9295,7 +9351,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -9558,7 +9618,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -9821,7 +9885,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -10084,7 +10152,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -10695,7 +10767,11 @@
               "lovelace": 0,
               "reference": null,
               "role": "state",
-              "stateToken": 1
+              "stateToken": 1,
+              "stateTokenId": {
+                "name": 0,
+                "policy": 0
+              }
             },
             {
               "address": 42,
@@ -11585,16 +11661,17 @@
   ],
   "schema": "singular-driver-corpus-v1",
   "sourceHashes": {
-    "lean/DriverMain.lean": "7e72f83e76bfafc8525da800782ae0ae03ac61621279dc9b391c1420bd83a04d",
-    "lean/Main.lean": "27572fa73ff8ef4390124ad6640cd04a4dfe00b3c65e3507daa290f7d86cea0a",
-    "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
+    "lean/DriverMain.lean": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
+    "lean/Main.lean": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+    "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "a697f12fab57807449d15e626faaf82ed3172010969c395d95eefbe86d797c7f",
-    "lean/Singular/Lemmas.lean": "d07a4b85ff3f78b8d9b66d4dd720b61b066495d317fd005a0ebc0291e5e13694",
-    "lean/Singular/Model.lean": "6990e4b0ba14b7a5cc4ea513e91abd618b7107d5c891752fd60fd7ce7770af6c",
-    "lean/Singular/Statements.lean": "f89a07447ba98ca8ad8c49c2692dfb937d23f142982d7f422961f54df9a799f9"
+    "lean/Singular/Driver.lean": "00d63acbd428501e65ce4c6d4be1b2dba70b8d82ca73c5cb7c84a1a30893bbb5",
+    "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
+    "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "lean/Singular/Model.lean": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
+    "lean/Singular/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd"
   },
-  "statementsSha256": "f89a07447ba98ca8ad8c49c2692dfb937d23f142982d7f422961f54df9a799f9",
+  "statementsSha256": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd",
   "surface": {
     "batchQuestions": {
       "foldBatch": [
@@ -11656,5 +11733,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "4386cba94dc4bc3b2d41bc003a39c9aff0d229af06dd3fca2c566c52fe20b899"
+  "theoremManifestSha256": "7d5b8b2044dd312adcd13e8a5800b3f415a228e72bc5fc700ef9ed071a741eab"
 }

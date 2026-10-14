@@ -32,5 +32,5 @@ updateTerminalRow =
     bindTheorem $
         mkBoundObligation
             "Singular.Statements.update_terminal_transaction_row"
-            "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
+            "d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560"
             "88957e41876911a993c5d9a338f8ab006c9f6843"

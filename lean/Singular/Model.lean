@@ -171,7 +171,33 @@ def transition (e : Edge) (before : Leaf) : Option Leaf :=
   | .updateTerminal, .known .active => some (.known .terminal)
   | _, _ => none
 
-/-- The state configuration: eight fields plus the abstract registry identity. All pins and the identity are preserved when the registry's seed is spent; the four policies are equal before and after every fold (I-P1), while `root` tracks the authenticated map. -/
+/-- A ledger output identified by its creating transaction and position. -/
+structure OutRef where
+  tx : Nat
+  index : Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- A finite validity interval, lower included and upper excluded. -/
+structure Interval where
+  lower : Nat
+  upper : Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+def Interval.width (i : Interval) : Nat := i.upper - i.lower
+def Interval.valid (i : Interval) : Prop := i.lower < i.upper
+def Interval.contains (i : Interval) (time : Nat) : Prop := i.lower ≤ time ∧ time < i.upper
+
+instance (i : Interval) : Decidable i.valid := inferInstanceAs (Decidable (i.lower < i.upper))
+instance (i : Interval) (time : Nat) : Decidable (i.contains time) :=
+  inferInstanceAs (Decidable (i.lower ≤ time ∧ time < i.upper))
+
+/-- Exact token identity, including both policy and asset name. -/
+structure TokenId where
+  policy : Nat
+  name : Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- The state configuration. Every field except the root is fixed at creation. -/
 structure Config where
   root : ByteArray
   maxFee : Nat
@@ -183,16 +209,22 @@ structure Config where
   terminalPolicy : Nat
   /-- Abstract identity of the registry state token, allocated by the consumer. -/
   registryId : Nat := 0
+  registrationCost : Nat := 0
+  minimumTip : Nat := 0
+  bookingWidth : Nat := 0
   deriving BEq, DecidableEq
 
 instance : ToJson Config where
-  toJson c := Json.mkObj
+  toJson c := Json.mkObj <|
     [ ("registryId", toJson c.registryId), ("root", toJson c.root), ("maxFee", toJson c.maxFee)
     , ("processTime", toJson c.processTime), ("retractTime", toJson c.retractTime)
     , ("applicationPolicy", toJson c.applicationPolicy)
     , ("activePolicy", toJson c.activePolicy)
     , ("absentPolicy", toJson c.absentPolicy)
-    , ("terminalPolicy", toJson c.terminalPolicy) ]
+    , ("terminalPolicy", toJson c.terminalPolicy) ] ++
+    (if c.registrationCost == 0 then [] else [("registrationCost", toJson c.registrationCost)]) ++
+    (if c.minimumTip == 0 then [] else [("minimumTip", toJson c.minimumTip)]) ++
+    (if c.bookingWidth == 0 then [] else [("bookingWidth", toJson c.bookingWidth)])
 
 instance : FromJson Config where
   fromJson? j := do
@@ -207,8 +239,31 @@ instance : FromJson Config where
     let registryId ← match j.getObjVal? "registryId" with
       | .error _ => pure 0
       | .ok x => fromJson? x
+    let registrationCost ← match j.getObjVal? "registrationCost" with
+      | .error _ => pure 0
+      | .ok x => fromJson? x
+    let minimumTip ← match j.getObjVal? "minimumTip" with
+      | .error _ => pure 0
+      | .ok x => fromJson? x
+    let bookingWidth ← match j.getObjVal? "bookingWidth" with
+      | .error _ => pure 0
+      | .ok x => fromJson? x
     pure { root, maxFee, processTime, retractTime, applicationPolicy
-         , activePolicy, absentPolicy, terminalPolicy, registryId }
+         , activePolicy, absentPolicy, terminalPolicy, registryId
+         , registrationCost, minimumTip, bookingWidth }
+
+/-- The booking interval is sized below the processing window. This is a
+predicate for booking rules, not a restriction on decoding old configurations. -/
+def Config.bookingWidthSized (c : Config) : Prop := c.bookingWidth < c.processTime
+
+instance (c : Config) : Decidable c.bookingWidthSized :=
+  inferInstanceAs (Decidable (c.bookingWidth < c.processTime))
+
+/-- The expected state token uses the registry identity as an abstract policy
+and the fixed abstract name zero. Observed tokens retain both components.
+Mapping a real registry's token name into this abstraction is a separate
+correspondence obligation; this definition does not establish that mapping. -/
+def Config.stateToken (c : Config) : TokenId := ⟨c.registryId, 0⟩
 
 /-- The policy a token kind is minted under, read off the registry's pins. -/
 def kindPolicy (c : Config) : TokenKind → Nat
@@ -689,7 +744,10 @@ def onlyRootChanged (before after : Config) : Bool :=
   after.applicationPolicy == before.applicationPolicy &&
   after.activePolicy == before.activePolicy &&
   after.absentPolicy == before.absentPolicy &&
-  after.terminalPolicy == before.terminalPolicy
+  after.terminalPolicy == before.terminalPolicy &&
+  after.registrationCost == before.registrationCost &&
+  after.minimumTip == before.minimumTip &&
+  after.bookingWidth == before.bookingWidth
 
 /-- The datum the destination output carries: the scoping tuple of the request
 it settles. -/
@@ -792,6 +850,8 @@ structure TxInput where
   assets : List (Asset × Int) := []
   /-- The datum value the input's inline datum presents, for a witness. -/
   datumValue : Option Nat := none
+  ref : Option OutRef := none
+  stateToken : Option TokenId := none
   deriving BEq, DecidableEq
 
 /-- An output the fold produces. `address` is `none` for the state output: the
@@ -816,6 +876,7 @@ structure TxOutput where
   /-- The datum value the output's inline datum presents, for a destination
   output: the request's own datum. -/
   datumValue : Option Nat := none
+  stateToken : Option TokenId := none
   deriving BEq, DecidableEq
 
 /-- Recover custody identity from one absent asset of quantity one. Neither
@@ -832,6 +893,10 @@ structure Tx where
   mint : List (Asset × Int)
   signers : List Nat
   refunds : List (Nat × Nat)
+  referenceInputs : List TxInput := []
+  validity : Option Interval := none
+  fee : Nat := 0
+  donation : Nat := 0
   deriving BEq, DecidableEq
 
 /-- The minted assets this request routes to one destination, read off the
@@ -905,7 +970,7 @@ configuration the step produced under an inline datum. -/
 def txStateOutput (t : Result) : TxOutput :=
   { role := .state, datum := registryDatumForm, address := none
   , stateTokens := registryStateTokens, config := some t.state.config
-  , commitment := none, assets := [] }
+  , commitment := none, assets := [], stateToken := some t.state.config.stateToken }
 
 /-- The destination output, present only when this edge routes a token to the
 requester: routed to the address the request named, carrying exactly the datum

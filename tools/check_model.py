@@ -33,6 +33,7 @@ GENERIC_SOURCES = [
     "lean/Singular.lean",
     "lean/Singular/Audit.lean",
     "lean/Singular/Driver.lean",
+    "lean/Singular/Economics.lean",
     "lean/Singular/Lemmas.lean",
     "lean/Singular/Model.lean",
     "lean/Singular/Statements.lean",

@@ -1970,7 +1970,85 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "27572fa73ff8ef4390124ad6640cd04a4dfe00b3c65e3507daa290f7d86cea0a",
+  "corpusSourceSha256": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+  "economicControls": [
+    {
+      "result": true,
+      "story": "a balanced transaction reads values from the unspent set"
+    },
+    {
+      "result": true,
+      "story": "a spent reference is refused as a reference"
+    },
+    {
+      "result": true,
+      "story": "a missing spent input has its own reason"
+    },
+    {
+      "result": true,
+      "story": "reference inputs remain unspent"
+    },
+    {
+      "result": true,
+      "story": "new outputs receive their position"
+    },
+    {
+      "result": true,
+      "story": "inflation is refused despite the input claim"
+    },
+    {
+      "result": true,
+      "story": "deflation needs an explicit fee or donation"
+    },
+    {
+      "result": true,
+      "story": "fee and donation explain the difference"
+    },
+    {
+      "result": true,
+      "story": "a native asset cannot be created without mint"
+    },
+    {
+      "result": true,
+      "story": "mint accounts for a native asset"
+    },
+    {
+      "result": true,
+      "story": "duplicate input claims cannot supply extra value"
+    },
+    {
+      "result": true,
+      "story": "the state token is conserved"
+    },
+    {
+      "result": true,
+      "story": "another state token name is refused"
+    },
+    {
+      "result": true,
+      "story": "another state token policy is refused"
+    },
+    {
+      "result": true,
+      "story": "zero donation is omitted"
+    },
+    {
+      "result": true,
+      "story": "positive donation is written"
+    },
+    {
+      "result": true,
+      "story": "old transaction defaults roundtrip"
+    },
+    {
+      "result": true,
+      "story": "all transaction extensions roundtrip"
+    },
+    {
+      "result": true,
+      "story": "the interval includes only its lower end"
+    }
+  ],
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2100,20 +2178,21 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "6990e4b0ba14b7a5cc4ea513e91abd618b7107d5c891752fd60fd7ce7770af6c",
-  "payloadSha256": "efc453f4a504946765b4efd6cb1e7f10c391b8388e02150a50befde92abe3109",
+  "modelSha256": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
+  "payloadSha256": "c34e5893cf042ced25d3a6330bd6ab2139808a53db0111acc5f1f90d569ed9c1",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "27572fa73ff8ef4390124ad6640cd04a4dfe00b3c65e3507daa290f7d86cea0a",
-    "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
+    "lean/Main.lean": "493db86180a8d32de26387947b897eaef075b35d37d6faae000a9afaf52d4e44",
+    "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "a697f12fab57807449d15e626faaf82ed3172010969c395d95eefbe86d797c7f",
-    "lean/Singular/Lemmas.lean": "d07a4b85ff3f78b8d9b66d4dd720b61b066495d317fd005a0ebc0291e5e13694",
-    "lean/Singular/Model.lean": "6990e4b0ba14b7a5cc4ea513e91abd618b7107d5c891752fd60fd7ce7770af6c",
-    "lean/Singular/Statements.lean": "f89a07447ba98ca8ad8c49c2692dfb937d23f142982d7f422961f54df9a799f9"
+    "lean/Singular/Driver.lean": "00d63acbd428501e65ce4c6d4be1b2dba70b8d82ca73c5cb7c84a1a30893bbb5",
+    "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
+    "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",
+    "lean/Singular/Model.lean": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
+    "lean/Singular/Statements.lean": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd"
   },
-  "statementsSha256": "f89a07447ba98ca8ad8c49c2692dfb937d23f142982d7f422961f54df9a799f9",
-  "theoremManifestSha256": "4386cba94dc4bc3b2d41bc003a39c9aff0d229af06dd3fca2c566c52fe20b899",
+  "statementsSha256": "90daae698fcaa57637be63fad457f57e3917f9448bccf75aba38ba80672ea3bd",
+  "theoremManifestSha256": "7d5b8b2044dd312adcd13e8a5800b3f415a228e72bc5fc700ef9ed071a741eab",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -2147,7 +2226,7 @@
         "accepted": false,
         "reason": "key-exists"
       },
-      "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
+      "statementSha256": "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868",
       "theorem": "Singular.Statements.insert_active_transaction_row",
       "tip": 1,
       "transaction": {
@@ -2211,7 +2290,11 @@
             "lovelace": 0,
             "reference": null,
             "role": "state",
-            "stateToken": 1
+            "stateToken": 1,
+            "stateTokenId": {
+              "name": 0,
+              "policy": 0
+            }
           },
           {
             "address": 555,
@@ -2305,7 +2388,7 @@
           "quantity": 1
         }
       ],
-      "statementSha256": "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf",
+      "statementSha256": "d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560",
       "theorem": "Singular.Statements.update_terminal_transaction_row",
       "tip": 1,
       "transaction": {
@@ -2386,7 +2469,11 @@
             "lovelace": 0,
             "reference": null,
             "role": "state",
-            "stateToken": 1
+            "stateToken": 1,
+            "stateTokenId": {
+              "name": 0,
+              "policy": 0
+            }
           },
           {
             "address": 42,

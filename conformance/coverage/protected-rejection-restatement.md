@@ -25,3 +25,21 @@ and their coverage.
 | `Singular.Statements.admission_refuses_first` | `c7ed5cabec1c955cf43772cdabcb547307d9c7023fc45dac90d347f45b61bcc7` | `a021ed02814e177fa37fa6996054ca8a5ed0413e8a3093129e7be5960b0010eb` | rejection needs evidence | uncovered until the refusal order rows replay |
 
 Later slices append their own rows to this table and never edit these lines.
+
+## Parameters and transaction vocabulary
+
+Every new or restated identity starts uncovered; no execution evidence is inherited. The two full transaction equations now name the state token carried by the produced state output.
+
+| Statement | Old identity | New identity | Slice | Coverage after |
+|---|---|---|---|---|
+| `Singular.Statements.balanced_transaction_creates_no_value` | none (new declaration) | `68f5c013cc475fa92dee1482ccadc9306627ff270d524d05a0e85aacf3c9fc24` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.insert_active_transaction_row` | `3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070` | `6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.overlapping_reference_is_spent` | none (new declaration) | `25057afc351d9ee2b4a83818544cd1758c3321a3d9610c9e855d8e6ce31a3fd3` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.parameters_preserved_by_batch` | none (new declaration) | `f3c594ddec6a8d649e94d442da0ddaafcdf3557989fdaf630b15b0f111e4f76a` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.parameters_preserved_by_fold` | none (new declaration) | `c73c54081ec6ae72ee73d9bc4d7d178e2af1e5f4f43db5937a1fb8e9f2598f16` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.reference_inputs_not_consumed` | none (new declaration) | `2e125ce1ae73d0f9bdaf0c9ec6de4c940c06ddf60bea10d50934a42f79e8b85f` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.spent_reference_refused` | none (new declaration) | `07ae6b51c77261364c3d5aff546b6fb3522be49fc3f699ba1c52281db58938ad` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.update_terminal_transaction_row` | `4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf` | `d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560` | parameters and transaction vocabulary | uncovered |
+| `Singular.Statements.zero_donation_omits_field` | none (new declaration) | `5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291` | parameters and transaction vocabulary | uncovered |
+| `Singular.foldActions_config_root` | none (new declaration) | `209661c772a9e03b951d80cdf93220b923801c714c5e6e6d482addf1864b88cc` | parameters and transaction vocabulary | uncovered |
+| `Singular.step_config_root` | none (new declaration) | `dfa6943275884be44fa845fa11235e938a49965a7eaee4b64584438044ea1bc7` | parameters and transaction vocabulary | uncovered |

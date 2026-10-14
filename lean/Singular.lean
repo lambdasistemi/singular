@@ -1,4 +1,5 @@
 import Singular.Model
+import Singular.Economics
 import Singular.Driver
 import Singular.Lemmas
 import Singular.Statements

@@ -1,5 +1,6 @@
 import Singular.Lemmas
 import Singular.Driver
+import Singular.Economics
 
 /-! The public statement surface of the registry-mode model. The eleven
 promises of the interface — tree-change-requires-approval, request-spent-once-in-order, terminal-attestation-sound, terminal-attestation-permanent, supply-matches-leaf-state, booking-requires-untaken-key, terminal-key-cannot-change, active-witness-unique–witness-kinds-exclude — and the seven
@@ -9,6 +10,100 @@ values the supply laws are simply false. -/
 
 namespace Singular
 namespace Statements
+
+/-- A referenced output survives the raw update when the transaction's spent
+and reference inputs are disjoint. Without that premise spending wins; this is
+a state update, not a transaction admission rule. -/
+theorem reference_inputs_not_consumed (u : Utxo) (identity : Nat) (tx : Tx)
+    (ref : OutRef) (output : TxOutput) (input : TxInput)
+    (hu : (ref, output) ∈ u) (hi : input ∈ tx.referenceInputs)
+    (href : input.ref = some ref) (hd : disjointInputs tx = true) :
+    (ref, output) ∈ applyTx u identity tx := by
+  have hn := List.all_eq_true.mp hd input hi
+  simp only [href] at hn
+  apply List.mem_append_left
+  exact List.mem_filter.mpr ⟨hu, hn⟩
+
+/-- A spent reference cannot be read by a later transaction: with a fresh
+creating identity, the raw update has removed it. The later transaction's
+spending inputs are present so the refusal specifically names the reference. -/
+theorem spent_reference_refused (u : Utxo) (identity : Nat) (tx later : Tx)
+    (ref : OutRef) (input : TxInput)
+    (hspent : inputNames tx.inputs ref = true) (hfresh : ref.tx ≠ identity)
+    (hi : input ∈ later.referenceInputs) (href : input.ref = some ref)
+    (hp : later.inputs.all (inputPresent (applyTx u identity tx)) = true) :
+    inputsPresent (applyTx u identity tx) later = some "reference-input-missing" := by
+  have habsent : ∀ output, (ref, output) ∉ applyTx u identity tx := by
+    intro output hmem
+    rcases List.mem_append.mp hmem with hmem | hmem
+    · have hkeep := (List.mem_filter.mp hmem).2
+      simp [hspent] at hkeep
+    · obtain ⟨⟨other, index⟩, _, heq⟩ := List.mem_map.mp hmem
+      have hid := congrArg (fun p : OutRef × TxOutput => p.1.tx) heq
+      exact hfresh hid.symm
+  have hmissing : inputPresent (applyTx u identity tx) input = false := by
+    simp only [inputPresent, href]
+    apply Bool.eq_false_iff.mpr
+    intro hany
+    obtain ⟨⟨found, output⟩, hmem, heq⟩ := List.any_eq_true.mp hany
+    have heq' : found = ref := of_decide_eq_true heq
+    subst found
+    exact habsent output hmem
+  have hnotall : later.referenceInputs.all (inputPresent (applyTx u identity tx)) = false := by
+    apply Bool.eq_false_iff.mpr
+    intro hall
+    have := List.all_eq_true.mp hall input hi
+    simp [hmissing] at this
+  simp [inputsPresent, hp, hnotall]
+
+/-- The disjointness premise is necessary: this concrete overlapping input
+is spent by the raw update, whatever value its output carries. -/
+theorem overlapping_reference_is_spent (output : TxOutput) :
+    let input : TxInput :=
+      { role := .request, datum := .none, stateTokens := 0
+      , approvals := 0, lovelace := 0, ref := some ⟨1, 0⟩ }
+    let tx : Tx :=
+      { inputs := [input], referenceInputs := [input], outputs := []
+      , mint := [], signers := [], refunds := [] }
+    disjointInputs tx = false ∧ applyTx [(⟨1, 0⟩, output)] 2 tx = [] := by
+  simp [disjointInputs, inputNames, applyTx]
+
+/-- The balance judgement conserves lovelace including explicit fee and
+donation, all native assets after mint, and every state-token identity present
+on either side. Only the unspent set supplies spending values. -/
+theorem balanced_transaction_creates_no_value (u : Utxo) (tx : Tx)
+    (h : balanced u tx = true) :
+    outputLovelace (spentOutputs u tx) = outputLovelace tx.outputs + tx.donation + tx.fee ∧
+    (∀ asset, assetKind (outputAssets (spentOutputs u tx) ++ tx.mint) asset =
+      assetKind (outputAssets tx.outputs) asset) ∧
+    (∀ token ∈ stateTokenSupport (spentOutputs u tx) tx.outputs,
+      stateTokenValue (spentOutputs u tx) token = stateTokenValue tx.outputs token) := by
+  simp only [balanced, Bool.and_eq_true, beq_iff_eq] at h
+  exact ⟨h.1.1, (assetSame_iff _ _).mp h.1.2,
+    fun token ht => by simpa using List.all_eq_true.mp h.2 token ht⟩
+
+/-- Zero donation contributes no field to the list actually serialized by
+the transaction encoder. Positive donations remain explicit. -/
+theorem zero_donation_omits_field (c : Config) (tx : Tx) (h : tx.donation = 0) :
+    ∀ value, ("donation", value) ∉ Driver.txFields c tx := by
+  intro value
+  simp [Driver.txFields, h]
+
+/-- Every successful fold step preserves the registration cost, minimum tip,
+maximum booking width, registry identity, windows, fee ceiling and policy pins.
+No relation between the fee ceiling and minimum tip is assumed. -/
+theorem parameters_preserved_by_fold (s : RegistryState) (r : Request) (t : Result)
+    (h : step s r = .ok t) : onlyRootChanged s.config t.state.config = true := by
+  rw [step_config_root s r t h]
+  simp [onlyRootChanged]
+
+/-- Every successful atomic batch preserves every parameter, including when a
+later request reads a state produced by an earlier request in that batch. -/
+theorem parameters_preserved_by_batch (s : RegistryState) (batch : List Action) (t : Result)
+    (h : foldBatch s batch = .ok t) : onlyRootChanged s.config t.state.config = true := by
+  have hf := (foldBatch_inv s batch t h).2
+  rw [foldActions_config_root s batch t hf]
+  simp [onlyRootChanged]
 
 
 
@@ -562,7 +657,8 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
                 , approvals := 1, lovelace := lovelace } ]
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
-                , config := some t.state.config, commitment := none, assets := [] }
+                , config := some t.state.config, commitment := none, assets := []
+                , stateToken := some t.state.config.stateToken }
               , { role := .destination, datum := datumFormOf r.datum
                 , address := some r.output
                 , stateTokens := 0, config := none, commitment := some ap.assetName
@@ -670,7 +766,8 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
                 , approvals := 1, lovelace := lovelace } ]
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
-                , config := some t.state.config, commitment := none, assets := [] }
+                , config := some t.state.config, commitment := none, assets := []
+                , stateToken := some t.state.config.stateToken }
               , { role := .destination, datum := datumFormOf r.datum
                 , address := some r.output
                 , stateTokens := 0, config := none, commitment := some ap.assetName
@@ -765,7 +862,8 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
                 , datumValue := heldValue s r.key .active } ]
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
-                , config := some t.state.config, commitment := none, assets := [] }
+                , config := some t.state.config, commitment := none, assets := []
+                , stateToken := some t.state.config.stateToken }
               , { role := .owner, datum := .none, address := some r.owner
                 , stateTokens := 0, config := none, commitment := some ap.assetName
                 , assets := [], lovelace := r.deposit } ]
@@ -881,7 +979,8 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
                 , datumValue := heldValue s r.key .active } ]
           , outputs :=
               [ { role := .state, datum := .inline, address := none, stateTokens := 1
-                , config := some t.state.config, commitment := none, assets := [] }
+                , config := some t.state.config, commitment := none, assets := []
+                , stateToken := some t.state.config.stateToken }
               , { role := .owner, datum := .none, address := some r.owner
                 , stateTokens := 0, config := none, commitment := some ap.assetName
                 , assets := [], lovelace := r.deposit } ]

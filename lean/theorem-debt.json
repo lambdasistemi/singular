@@ -1,5 +1,47 @@
 [
   {
+    "name": "Singular.Statements.reference_inputs_not_consumed",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2e125ce1ae73d0f9bdaf0c9ec6de4c940c06ddf60bea10d50934a42f79e8b85f"
+  },
+  {
+    "name": "Singular.Statements.spent_reference_refused",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "07ae6b51c77261364c3d5aff546b6fb3522be49fc3f699ba1c52281db58938ad"
+  },
+  {
+    "name": "Singular.Statements.overlapping_reference_is_spent",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "25057afc351d9ee2b4a83818544cd1758c3321a3d9610c9e855d8e6ce31a3fd3"
+  },
+  {
+    "name": "Singular.Statements.balanced_transaction_creates_no_value",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "68f5c013cc475fa92dee1482ccadc9306627ff270d524d05a0e85aacf3c9fc24"
+  },
+  {
+    "name": "Singular.Statements.zero_donation_omits_field",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291"
+  },
+  {
+    "name": "Singular.Statements.parameters_preserved_by_fold",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c73c54081ec6ae72ee73d9bc4d7d178e2af1e5f4f43db5937a1fb8e9f2598f16"
+  },
+  {
+    "name": "Singular.Statements.parameters_preserved_by_batch",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "f3c594ddec6a8d649e94d442da0ddaafcdf3557989fdaf630b15b0f111e4f76a"
+  },
+  {
     "name": "Singular.Statements.no_tree_change_without_approval",
     "status": "PROVED",
     "debt": "none",
@@ -111,13 +153,13 @@
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070"
+    "statementSha256": "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
+    "statementSha256": "d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560"
   },
   {
     "name": "Singular.Statements.fold_batch_claimed_mint_by_kind_key",
