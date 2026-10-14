@@ -1,3 +1,5 @@
+import Singular.Driver.Codec
+import Singular.Driver.Surface
 import Singular.Model
 
 /-! # The generic model driver
@@ -19,7 +21,7 @@ premise that does not hold, a transaction the model cannot build. A driver that
 collapsed the third into the second would let a broken runner earn refusal
 evidence, which is the defect these classes exist to make visible.
 
-The serialization in the first section was written for the corpus producer in
+The serialization exported by `Singular.Driver.Codec` was written for the corpus producer in
 `lean/Main.lean` and is promoted here so that the driver and the corpus speak
 the same bytes; `Main` consumes it from this module rather than keeping a
 second copy. -/
@@ -28,240 +30,6 @@ namespace Singular
 namespace Driver
 
 open Lean
-
-/-! ## Serialization, promoted from the corpus producer -/
-
-/-- One keyed asset, spelled with the on-chain identity the model pins: the
-kind's policy and the asset name, which is the key. -/
-def assetJson (c : Config) (p : Asset × Int) : Json :=
-  Json.mkObj
-    [ ("kind", toJson p.1.1), ("key", toJson p.1.2)
-    , ("policy", toJson (kindPolicy c p.1.1))
-    , ("assetName", toJson (tokenAssetName p.1.1 p.1.2))
-    , ("quantity", toJson p.2) ]
-
-def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
-  Json.arr ((ds.map (assetJson c)).toArray)
-
-def txRoleName : TxRole → String
-  | .state => "state" | .request => "request"
-  | .destination => "destination" | .cage => "cage"
-  | .witness => "witness" | .owner => "owner"
-
-def txInputJson (c : Config) (i : TxInput) : Json :=
-  Json.mkObj <|
-    [ ("role", toJson (txRoleName i.role))
-    , ("datum", toJson (datumFormName i.datum))
-    , ("stateToken", toJson i.stateTokens)
-    , ("approvalQuantity", toJson i.approvals)
-    , ("lovelace", toJson i.lovelace)
-    , ("assets", assetsJson c i.assets)
-    , ("datumValue", datumJson i.datumValue) ] ++
-    (i.ref.toList.map fun ref => ("ref", toJson ref)) ++
-    (i.stateToken.toList.map fun token => ("stateTokenId", toJson token))
-
-def txOutputJson (c : Config) (o : TxOutput) : Json :=
-  Json.mkObj <|
-    [ ("role", toJson (txRoleName o.role))
-    , ("datum", toJson (datumFormName o.datum))
-    , ("address", match o.address with | none => Json.null | some a => toJson a)
-    , ("stateToken", toJson o.stateTokens)
-    , ("inlineConfig", match o.config with | none => Json.null | some cfg => toJson cfg)
-    , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
-    , ("assets", assetsJson c o.assets)
-    , ("custodyDatum", toJson o.custodyDatum)
-    , ("lovelace", toJson o.lovelace)
-    , ("reference", match o.reference with | none => Json.null | some x => toJson x)
-    , ("datumValue", datumJson o.datumValue) ] ++
-    (if o.stateToken == o.config.map Config.stateToken then [] else
-      [("stateTokenId", toJson o.stateToken)])
-
-/-- The built transaction, serialized. Every field comes from the `Tx` the model
-constructed; nothing here is assembled beside it. -/
-def txFields (c : Config) (tx : Tx) : List (String × Json) :=
-    [ ("inputs", Json.arr ((tx.inputs.map (txInputJson c)).toArray))
-    , ("outputs", Json.arr ((tx.outputs.map (txOutputJson c)).toArray))
-    , ("mint", assetsJson c tx.mint)
-    , ("signers", toJson tx.signers)
-    , ("refunds", Json.arr ((tx.refunds.map fun p =>
-        Json.mkObj [("address", toJson p.1), ("value", toJson p.2)]).toArray)) ] ++
-    (if tx.referenceInputs.isEmpty then [] else
-      [("referenceInputs", Json.arr ((tx.referenceInputs.map (txInputJson c)).toArray))]) ++
-    (tx.validity.toList.map fun interval => ("validity", toJson interval)) ++
-    (if tx.fee == 0 then [] else [("fee", toJson tx.fee)]) ++
-    (if tx.donation == 0 then [] else [("donation", toJson tx.donation)])
-
-def txJson (c : Config) (tx : Tx) : Json := Json.mkObj (txFields c tx)
-
-/-- Missing extension fields read as their old defaults; a present malformed
-field is an error rather than a default. -/
-def defaultField [FromJson α] (j : Json) (name : String) (fallback : α) : Except String α :=
-  match j.getObjVal? name with
-  | .error _ => pure fallback
-  | .ok value => fromJson? value
-
-def txRoleOfJson (j : Json) : Except String TxRole := do
-  let name : String ← fromJson? j
-  match name with
-  | "state" => pure .state | "request" => pure .request
-  | "destination" => pure .destination | "cage" => pure .cage
-  | "witness" => pure .witness | "owner" => pure .owner
-  | _ => throw "unknown transaction role"
-
-/-- Decode the registry-scoped assets and check the policy and asset name
-against that registry, rather than silently accepting contradictory identities. -/
-def assetsOfJson (c : Config) (j : Json) : Except String (List (Asset × Int)) := do
-  let entries ← j.getArr?
-  entries.toList.mapM fun entry => do
-    let kind ← entry.getObjVal? "kind" >>= fromJson?
-    let key ← entry.getObjVal? "key" >>= fromJson?
-    let policy : Nat ← entry.getObjVal? "policy" >>= fromJson?
-    let name : Nat ← entry.getObjVal? "assetName" >>= fromJson?
-    let quantity ← entry.getObjVal? "quantity" >>= fromJson?
-    unless policy == kindPolicy c kind && name == tokenAssetName kind key do
-      throw "asset identity disagrees with registry"
-    pure ((kind, key), quantity)
-
-def txInputOfJson (c : Config) (j : Json) : Except String TxInput := do
-  let role ← j.getObjVal? "role" >>= txRoleOfJson
-  let datum ← j.getObjVal? "datum" >>= fromJson?
-  let stateTokens ← j.getObjVal? "stateToken" >>= fromJson?
-  let approvals ← j.getObjVal? "approvalQuantity" >>= fromJson?
-  let lovelace ← j.getObjVal? "lovelace" >>= fromJson?
-  let assets ← j.getObjVal? "assets" >>= assetsOfJson c
-  let datumValue ← defaultField j "datumValue" none
-  let ref ← defaultField j "ref" none
-  let stateToken ← defaultField j "stateTokenId" none
-  pure { role, datum, stateTokens, approvals, lovelace, assets, datumValue, ref, stateToken }
-
-def txOutputOfJson (c : Config) (j : Json) : Except String TxOutput := do
-  let role ← j.getObjVal? "role" >>= txRoleOfJson
-  let datum ← j.getObjVal? "datum" >>= fromJson?
-  let address ← j.getObjVal? "address" >>= fromJson?
-  let stateTokens ← j.getObjVal? "stateToken" >>= fromJson?
-  let config : Option Config ← j.getObjVal? "inlineConfig" >>= fromJson?
-  let commitment ← j.getObjVal? "commitment" >>= fromJson?
-  let assets ← j.getObjVal? "assets" >>= assetsOfJson c
-  let custodyDatum ← defaultField j "custodyDatum" none
-  let lovelace ← defaultField j "lovelace" 0
-  let reference ← defaultField j "reference" none
-  let datumValue ← defaultField j "datumValue" none
-  let stateToken ← defaultField j "stateTokenId" (config.map Config.stateToken)
-  pure { role, datum, address, stateTokens, config, commitment, assets
-       , custodyDatum, lovelace, reference, datumValue, stateToken }
-
-def txOfJson (c : Config) (j : Json) : Except String Tx := do
-  let inputs ← (← (← j.getObjVal? "inputs").getArr?).toList.mapM (txInputOfJson c)
-  let outputs ← (← (← j.getObjVal? "outputs").getArr?).toList.mapM (txOutputOfJson c)
-  let mint ← j.getObjVal? "mint" >>= assetsOfJson c
-  let signers ← j.getObjVal? "signers" >>= fromJson?
-  let refunds ← (← (← j.getObjVal? "refunds").getArr?).toList.mapM fun entry => do
-    let address ← entry.getObjVal? "address" >>= fromJson?
-    let value ← entry.getObjVal? "value" >>= fromJson?
-    pure (address, value)
-  let references ← defaultField j "referenceInputs" ([] : List Json)
-  let referenceInputs ← references.mapM (txInputOfJson c)
-  let validity ← defaultField j "validity" none
-  let fee ← defaultField j "fee" 0
-  let donation ← defaultField j "donation" 0
-  pure { inputs, outputs, mint, signers, refunds, referenceInputs, validity, fee, donation }
-
-/-! ## The declared surface -/
-
-/-- An edge's name is the model's own `ToJson Edge` spelling, so the driver
-cannot acquire a second vocabulary for the seven edges. -/
-def edgeName (e : Edge) : String :=
-  match toJson e with
-  | .str s => s
-  | j => j.compress
-
-/-- An operation's name: a fold is named by its edge, so every fold keeps the
-edge's own spelling; a reject and a retract by their constructor names. -/
-def exitName : Exit → String
-  | .fold e => edgeName e
-  | .reject => "reject"
-  | .retract => "retract"
-
-/-- The nine exits are the declared operations: a fold of each of the seven
-edges, a reject and a retract. The extent is the model's inductives, listed once
-here because Lean has no enumeration of them. -/
-def declaredExits : List Exit :=
-  ([Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal,
-    .deleteAbsent, .deleteActive, .witnessTerminal].map .fold) ++ [.reject, .retract]
-
-def declaredOperations : List String := declaredExits.map exitName
-
-/-- The declared boundary observations. Every accepted scenario reports all of
-them; a row reporting a subset is a per-theorem projection and is rejected by
-the checker rather than counted as conformance. -/
-def declaredObservations : List String :=
-  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state", "tx"]
-
-/-- Fields the model has no vocabulary for, named here so they are a stated
-limit instead of a silent omission. The registry root is the leading case: the
-model's `rootOf` is FNV-1a over the sorted (key, leaf byte) list — its own
-commitment function — and is NOT the concrete trie hash a chain would carry.
-
-`outputMinimumAda` is the second of that kind: a ledger requires every output to
-carry a minimum, and this model says nothing about it. A transaction output's
-`lovelace` here is therefore a floor, not an amount: what the exit owes the
-recipient the output pays — the cage output's deposit, the destination output's
-deposit for a fold delivering a token, an owner output's payment — and a logical
-zero on an output that pays no recipient. It is named so that a consumer compares
-that field as a floor, observed at least the model's, and never reconstructs the
-ledger minimum as an equality the model never claimed. -/
-def declaredUnobservable : List String :=
-  ["concreteTrieHash", "outputMinimumAda", "registryAddress",
-   "scriptExecutionUnits", "transactionId", "utxoReference"]
-
-/-- The declared judgements: questions the driver answers about a transaction a
-caller observed, beside the boundary it reports, in the order it asks them.
-`spend` judges what the observed inputs spend, by `Singular.spendRefusal`;
-`settle` whether the observed outputs pay what the scenario's exit owes, by
-`Singular.settle`. -/
-def declaredJudgements : List String := ["spend", "settle"]
-
-/-- What a batch answer reports: the single-request boundary without its
-transaction, since the model builds none for a batch, and with `leaf` read at
-every distinct request key. -/
-def batchObservations : List String :=
-  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state"]
-
-/-- The declared batch questions, each named with its own observation extent:
-`foldBatch`, answered by `Singular.foldBatch`, and `rejectBatch`, a batch of
-rejects judged by `Singular.settle` over their concatenated obligations. -/
-def declaredBatchQuestions : List (String × List String) :=
-  [("foldBatch", batchObservations), ("rejectBatch", batchObservations)]
-
-/-- D01: the surface identity a scenario is executed against. -/
-structure SurfaceIdentity where
-  declaration : String
-  protocolVersion : Nat
-  operations : List String
-  observations : List String
-  unobservable : List String
-  judgements : List String
-  batchQuestions : List (String × List String)
-
-def surface : SurfaceIdentity :=
-  { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 7
-  , operations := declaredOperations
-  , observations := declaredObservations
-  , unobservable := declaredUnobservable
-  , judgements := declaredJudgements
-  , batchQuestions := declaredBatchQuestions }
-
-def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
-  Json.mkObj
-    [ ("declaration", toJson s.declaration)
-    , ("definitionDigest", toJson definitionDigest)
-    , ("protocolVersion", toJson s.protocolVersion)
-    , ("operations", toJson s.operations)
-    , ("observations", toJson s.observations)
-    , ("unobservable", toJson s.unobservable)
-    , ("judgements", toJson s.judgements)
-    , ("batchQuestions", Json.mkObj (s.batchQuestions.map fun q => (q.1, toJson q.2))) ]
 
 /-! ## The law premise -/
 
@@ -542,16 +310,17 @@ def batchRejects (batch : List (Exit × Request)) : Option (List Request) :=
   if batch.isEmpty then none
   else batch.mapM fun (exit, request) => if exit == .reject then some request else none
 
-/-- A batch of rejects as the model steps it: each request through
-`Singular.admittedExitStep` with `Exit.reject`, from the state the previous left, the
-results combined as `Singular.foldActions` combines a batch's. One witness per request and one
-shared interval; a length mismatch is missing evidence and differing intervals do not combine. -/
+/-- The validity intervals carried by the supplied rejection witnesses. -/
 def rejectBatchIntervals (witnesses : List (Option RejectWitness)) : List (Nat × Nat) :=
   witnesses.filterMap fun w => w.map fun w => (w.validFrom, w.validTo)
 
 def emptyRetractWitness : RetractWitness :=
   { submittedAt := 0, validFrom := 0, validTo := 0, signatories := [] }
 
+/-- A batch of rejects as the model steps it: each request through
+`Singular.admittedExitStep` with `Exit.reject`, from the state the previous left, the
+results combined as `Singular.foldActions` combines a batch's. One witness per request and one
+shared interval; a length mismatch is missing evidence and differing intervals do not combine. -/
 def rejectBatchStep (s : RegistryState) (requests : List Request)
     (witnesses : List (Option RejectWitness) := []) : Except String Result := do
   if requests.length != witnesses.length then throw "reject-evidence-missing"

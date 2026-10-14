@@ -6,6 +6,16 @@ defaultTargets = ["Singular", "singular-corpus", "naming-corpus", "lifecycle-cor
 [[lean_lib]]
 name = "Singular"
 
+[[lean_lib]]
+name = "MainFixtures"
+roots = ["Main"]
+globs = ["Main.+"]
+
+[[lean_lib]]
+name = "DriverFixtures"
+roots = ["DriverMain"]
+globs = ["DriverMain.+"]
+
 [[lean_exe]]
 name = "singular-corpus"
 root = "Main"
