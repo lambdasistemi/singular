@@ -252,6 +252,126 @@ spec =
         >> journalTransitionsRow
         >> foldOverSeveralRequestsRow
         >> settledListSingletonRow
+        >> createDescribeCommandRows
+
+{- | The create receipt carries the working describe line, built from the
+arguments the create ran with. Two registries give two tokens, so a fixed
+line cannot pass. Values the test checks against are read from the run
+itself, never typed. The printed line, run as printed through the same
+fixture, exits successfully with the page.
+-}
+createDescribeCommandRows :: Spec
+createDescribeCommandRows = describe "Create prints the describe command" $ do
+    it "carries the working describe line in each create receipt" $ withRig $ \rig -> do
+        writeFile
+            (takeDirectory (rigBlueprint rig) </> "version.txt")
+            "0.10.1\n"
+        firstSeed <- fundSeed rig
+        previewedRun <-
+            run
+                rig
+                "preview with time directory"
+                ( [ "registry"
+                  , "create"
+                  , "--preview"
+                  , "--seed"
+                  , firstSeed
+                  , "--network-time"
+                  , rigDir rig
+                  ]
+                    <> policyArgs
+                )
+        outcomeOf (runReceipt previewedRun) `shouldBe` Just "success"
+        previewedToken <- tokenOf previewedRun
+        previewedLine <- case valueAt "describeCommand" (runReceipt previewedRun) of
+            Just (Aeson.String line) -> pure line
+            other ->
+                expectationFailure
+                    ("the preview carries no describe line: " <> show other)
+                    >> pure ""
+        checkPrinted rig previewedToken previewedLine True (Just (rigDir rig))
+        firstRun <-
+            run
+                rig
+                "first create"
+                (["registry", "create", "--seed", firstSeed] <> policyArgs)
+        outcomeOf (runReceipt firstRun) `shouldBe` Just "success"
+        firstToken <- tokenOf firstRun
+        firstToken `shouldBe` previewedToken
+        firstLine <- case valueAt "describeCommand" (runReceipt firstRun) of
+            Just (Aeson.String line) -> pure line
+            other ->
+                expectationFailure
+                    ("the first create carries no describe line: " <> show other)
+                    >> pure ""
+        checkPrinted rig firstToken firstLine False Nothing
+        secondSeed <- fundSeed2 rig
+        secondRun <-
+            run
+                rig
+                "second create"
+                (["registry", "create", "--seed", secondSeed] <> policyArgs)
+        outcomeOf (runReceipt secondRun) `shouldBe` Just "success"
+        secondToken <- tokenOf secondRun
+        secondLine <- case valueAt "describeCommand" (runReceipt secondRun) of
+            Just (Aeson.String line) -> pure line
+            other ->
+                expectationFailure
+                    ("the second create carries no describe line: " <> show other)
+                    >> pure ""
+        secondToken `shouldSatisfy` (/= firstToken)
+        secondLine `shouldSatisfy` (/= firstLine)
+        checkPrinted rig secondToken secondLine False Nothing
+        runPrinted rig previewedToken previewedLine
+        runPrinted rig firstToken firstLine
+        runPrinted rig secondToken secondLine
+  where
+    allowedFlags =
+        [ "--blueprint"
+        , "--state-token"
+        , "--koios-url"
+        , "--network-magic"
+        , "--network-time"
+        ]
+    requiredFlags = ["--blueprint", "--state-token", "--koios-url", "--network-magic"]
+    checkPrinted rig token line withTime timeDir = do
+        let parts = words (T.unpack line)
+        take 3 parts `shouldBe` ["singular", "registry", "describe"]
+        let flags = [word | word <- parts, take 2 word == "--"]
+        all (`elem` allowedFlags) flags `shouldBe` True
+        all (`elem` flags) requiredFlags `shouldBe` True
+        ("--json" `elem` flags) `shouldBe` False
+        ("--wallet-skey" `elem` flags) `shouldBe` False
+        ("--wallet-address" `elem` flags) `shouldBe` False
+        ("--koios-token-file" `elem` flags) `shouldBe` False
+        ("--state-dir" `elem` flags) `shouldBe` False
+        ("--receipt" `elem` flags) `shouldBe` False
+        T.isInfixOf (T.pack (rigBlueprint rig)) line `shouldBe` True
+        T.isInfixOf (T.pack token) line `shouldBe` True
+        T.isInfixOf (T.pack (rigKey rig)) line `shouldBe` False
+        T.isInfixOf (T.pack (rigDir rig </> "registry")) line `shouldBe` False
+        case (withTime, timeDir) of
+            (True, Just dir) -> do
+                ("--network-time" `elem` flags) `shouldBe` True
+                T.isInfixOf (T.pack dir) line `shouldBe` True
+            _ -> ("--network-time" `elem` flags) `shouldBe` False
+    runPrinted rig token line = do
+        let parts = words (T.unpack line)
+        commandWords <- case parts of
+            ("singular" : rest) -> pure rest
+            _ ->
+                expectationFailure
+                    ( "the printed line does not start with the binary name: "
+                        <> T.unpack line
+                    )
+                    >> pure []
+        command <- either (fail . show) pure (parseCommand commandWords)
+        (code, out, _) <-
+            captured (runCommand neutralApplication (envOf rig) command)
+        code `shouldBe` ExitSuccess
+        let page = TE.decodeUtf8 out
+        T.isInfixOf "command: describe" page `shouldBe` True
+        T.isInfixOf (T.pack token) page `shouldBe` True
 
 confirmationLifetime :: Spec
 confirmationLifetime = describe "CLI confirmation lifetime" $ do

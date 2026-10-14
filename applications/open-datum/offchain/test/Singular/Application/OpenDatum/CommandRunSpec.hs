@@ -176,6 +176,83 @@ spec =
         >> bookingRefusalRows
         >> permanentRecognition
         >> settledListSingletonRow
+        >> openDatumDescribeCommandRows
+
+{- | The open datum create receipt carries the working describe line. The
+application owns no describe verb, so the line always names the registry
+binary. Two registries give two tokens, so a fixed line cannot pass.
+Values the test checks against are read from the run itself, never typed.
+-}
+openDatumDescribeCommandRows :: Spec
+openDatumDescribeCommandRows = describe "Open datum create prints the describe command" $ do
+    it
+        "carries the registry describe line in each open datum create receipt"
+        $ withRig
+        $ \rig -> do
+            firstSeed <- fundSeed rig
+            firstRun <-
+                run
+                    rig
+                    "first open datum create"
+                    ["open-datum", "create", "--seed", firstSeed]
+            outcomeOf (runReceipt firstRun) `shouldBe` Just "success"
+            firstToken <- tokenOf firstRun
+            firstLine <- case valueAt "describeCommand" (runReceipt firstRun) of
+                Just (Aeson.String line) -> pure line
+                other ->
+                    expectationFailure
+                        ("the first open datum create carries no describe line: " <> show other)
+                        >> pure ""
+            checkPrinted rig firstToken firstLine
+            secondSeed <- fundSeed2 rig
+            secondRun <-
+                run
+                    rig
+                    "second open datum create"
+                    ["open-datum", "create", "--seed", secondSeed]
+            outcomeOf (runReceipt secondRun) `shouldBe` Just "success"
+            secondToken <- tokenOf secondRun
+            secondLine <- case valueAt "describeCommand" (runReceipt secondRun) of
+                Just (Aeson.String line) -> pure line
+                other ->
+                    expectationFailure
+                        ( "the second open datum create carries no describe line: "
+                            <> show other
+                        )
+                        >> pure ""
+            secondToken `shouldSatisfy` (/= firstToken)
+            secondLine `shouldSatisfy` (/= firstLine)
+            checkPrinted rig secondToken secondLine
+            case parseOpenDatumCommand
+                ["open-datum", "describe", "--blueprint", rigBlueprint rig] of
+                Left _ -> pure ()
+                Right command ->
+                    expectationFailure
+                        ("open datum names a describe verb: " <> show command)
+  where
+    allowedFlags =
+        [ "--blueprint"
+        , "--state-token"
+        , "--koios-url"
+        , "--network-magic"
+        , "--network-time"
+        ]
+    requiredFlags = ["--blueprint", "--state-token", "--koios-url", "--network-magic"]
+    checkPrinted rig token line = do
+        let parts = words (T.unpack line)
+        take 3 parts `shouldBe` ["singular", "registry", "describe"]
+        let flags = [word | word <- parts, take 2 word == "--"]
+        all (`elem` allowedFlags) flags `shouldBe` True
+        all (`elem` flags) requiredFlags `shouldBe` True
+        ("--json" `elem` flags) `shouldBe` False
+        ("--wallet-skey" `elem` flags) `shouldBe` False
+        ("--wallet-address" `elem` flags) `shouldBe` False
+        ("--koios-token-file" `elem` flags) `shouldBe` False
+        ("--state-dir" `elem` flags) `shouldBe` False
+        ("--receipt" `elem` flags) `shouldBe` False
+        T.isInfixOf (T.pack (rigBlueprint rig)) line `shouldBe` True
+        T.isInfixOf (T.pack token) line `shouldBe` True
+        T.isInfixOf (T.pack (rigKey rig)) line `shouldBe` False
 
 permanentRecognition :: Spec
 permanentRecognition = describe "Permanent contract recognition"
