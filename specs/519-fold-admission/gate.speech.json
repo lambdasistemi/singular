@@ -1,0 +1,90 @@
+{
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The acceptance of #519 is the repository's own CI: each acceptance line of the spec is bound to the verbatim command of an existing job, with the exit that job asserts. Nothing here is a bespoke check. Version v2, frozen before any code is written: the first gate (version v1, sha256 aa22825b…) re-derived on main 38c7fbc1, with every v1 row and its meaning kept. Changes after the freeze are a new version with the settled rows unchanged.",
+      "pause": 400
+    }
+  ],
+  "how-it-was-written": [
+    {
+      "text": "How it was written.",
+      "pause": 500
+    },
+    {
+      "text": "Two tables were written independently, then synthesized once. The ticket owner's table has sha256 cb6df290b67bebf73c95031b27faf714d600e3dfd74bda196ff206bf90a9484f; the table of the gate-author auditor seat (GLM through the pi harness) has sha256 b14d12a28c7d37b90af064ac39ad56a48f6016486506ef84173950fbbfd72d5a. The owner froze its table before reading the auditor's. Both start from the same nineteen acceptance lines (sha256 f45cb455bfffdd2457939e19ac97915b889b62465647c9cbbb60e985c6ff6bf2); the spec's acceptance lines are the same set, regrouped by pull request and renamed after the cut into four pull requests. One wording of the shared acceptance lines was corrected after both tables were written, with no check changed: line 4 said the window precedes the edge reasons; the validator checks the fixed edge set first, so an excluded edge is edge-inadmissible whatever the window, and the window precedes the approval and leaf reasons. Every command below was first read from the workflows at base e3c9ab01. On 2026-10-14 the plan was re-derived on main 38c7fbc1: every cited workflow line and job name was read again on that base and shows the command it is cited for, four rows were added (the two hosted hygiene checks that appeared since, and the open-datum application's identity and Aiken suite, which share the fixtures module pull request 4 edits), and no settled row, command or expected exit changed. The red-run citations are runs of the earlier base and stay as evidence that the commands can fail. The owner also read each red run the auditor cited and each it found itself, and checked the job's conclusion with gh run view.",
+      "pause": 400
+    },
+    {
+      "text": "Conflicts and gaps, resolved:",
+      "pause": 400
+    }
+  ],
+  "commands": [
+    {
+      "text": "Commands.",
+      "pause": 500
+    },
+    {
+      "text": "Local rows run in minutes on a developer machine; hosted rows run only on the pushed head. Minutes are estimates from the job shape and timeout-minutes. A \"red run\" is a failed GitHub Actions run of that job, the evidence that the command can fail; where none exists in the runs searched the commit owner shows the focused product RED instead.",
+      "pause": 400
+    }
+  ],
+  "acceptance-line-to-commands": [
+    {
+      "text": "Acceptance line to commands.",
+      "pause": 500
+    }
+  ],
+  "root-gate": [
+    {
+      "text": "Root gate.",
+      "pause": 500
+    },
+    {
+      "text": "Every required status check of the main ruleset (93 on 38c7fbc1, read from the ruleset) must be green on the exact pushed head, each one individually. The local candidate gate carries a budget of 40 minutes per candidate, narrowed to what the pull request can break:",
+      "pause": 400
+    },
+    {
+      "text": "nix develop --quiet -c just ci runs once on each final candidate. The lint and format commands are run on the base first as a control, so that a hint present on both is known to be old and a hint only on the candidate is this pull request's. Hosted CI at the exact head, including every conformance devnet job and every Demo 1 and recovery job, is the net; a hosted failure is one repair commit, never a local rerun of the hosted list.",
+      "pause": 400
+    }
+  ],
+  "rows-without-an-existing-command-or-resting-on-this-tickets-own-change": [
+    {
+      "text": "Rows without an existing command, or resting on this ticket's own change.",
+      "pause": 500
+    },
+    {
+      "text": "Builder and model agree on admission needs a new example in the conformance unit suite; the command exists and the test is added in this ticket. Falsified by its own control: a version that admits one past the deadline must fail it.",
+      "pause": 300
+    },
+    {
+      "text": "Compiled-validator evidence is new Aiken tests, new exported contexts and new checker rows inside the existing aiken-suite command. Falsified by the checker's always-accept program, which must fail the new labels, and by the focused product RED: weakening the validator's window rule by one millisecond in a scratch copy turns the new tests red (the scratch copy is never committed).",
+      "pause": 300
+    },
+    {
+      "text": "The live window row is one appended row in the run command of the existing batch job: CI change in this ticket, proved by the pushed head's job. If the suite's own mechanism makes it larger than the pull request's budget, it is cut and filed as a follow-up, and the acceptance line stays unmet and published as such.",
+      "pause": 300
+    },
+    {
+      "text": "Devnet items run in existing jobs whose script content changes here (tools/demo1_cli_journey.sh, tools/demo1_cli_controls.sh): CI change in this ticket, proved by the pushed head's jobs.",
+      "pause": 300
+    },
+    {
+      "text": "Path fence. No job checks that a file was not edited: script-identity and blueprint prove the compiled hashes did not move, not that no validator source changed. The owner checks, at acceptance, that git diff --stat origin/main...HEAD -- onchain/validators onchain/lib applications/open-datum/onchain naming-onchain onchain/script-identity.json onchain/permanent-contract.json ':!onchain/validators/*.tests.ak' ':!onchain/lib/registry_fixtures.ak' is empty. A path fence, not a behaviour check. Its positive control: the same command with no exclusions lists onchain/lib/registry_fixtures.ak and the new test files once pull request 4 is in, so the fence is seen able to report.",
+      "pause": 300
+    },
+    {
+      "text": "Prose of the pages and the conformance book: no job asserts prose; the computed rows are asserted by the docs check. A text claim, a lead, read at acceptance.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "aa148b1599efa83740ff6619df971fa95c145bdd5f411603c9a996f2b58b3b9c"
+  }
+}

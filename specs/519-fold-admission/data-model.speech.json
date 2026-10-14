@@ -1,0 +1,50 @@
+{
+  "data-model": [
+    {
+      "text": "Data model.",
+      "pause": 500
+    },
+    {
+      "text": "Fields, relationships, validation and state invariants of the new or changed data. Signatures are in the functions model; responsibilities in the modules model. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "the-model-pull-requests-1-and-2": [
+    {
+      "text": "The model (pull requests 1 and 2).",
+      "pause": 500
+    },
+    {
+      "text": "Pull request 1 carries the created holdings and the changed batch verdict; pull request 2 carries the request field, the fold witness and the fold admission verdict.",
+      "pause": 400
+    },
+    {
+      "text": "State invariants. A fold's admission reads no registry state beyond the configuration's processing time. Inside the window a fold is exactly the law it was before. A batch accepted by the model burns only holdings that existed in the state it started from. A reject is admitted in any window.",
+      "pause": 400
+    }
+  ],
+  "builder-and-receipt-pull-request-3": [
+    {
+      "text": "Builder and receipt (pull request 3).",
+      "pause": 500
+    },
+    {
+      "text": "Reason names by source after this ticket: model refusal gains not-phase1; selection policy loses window-closed and keeps undecodable, application-datum-unreadable, key-in-batch, capacity.",
+      "pause": 400
+    }
+  ],
+  "validator-evidence-pull-request-4": [
+    {
+      "text": "Validator evidence (pull request 4).",
+      "pause": 500
+    },
+    {
+      "text": "State invariants. Every refused case has an accepted twin that differs in the one mutated field. Counts of exported contexts are derived from the discovered labels, not typed.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "d793f1a95c1768f76d75ad8de48981ca16dc5b73dc905c55ca79beff52772058"
+  }
+}

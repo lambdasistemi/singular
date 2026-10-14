@@ -1,0 +1,96 @@
+{
+  "touch-list": [
+    {
+      "text": "Touch list.",
+      "pause": 500
+    },
+    {
+      "text": "Every file this ticket edits, creates or deletes, so the merge order can be decided from what each pull request touches. Read the plan for the four pull requests. Base: main 38c7fbc1. A file not on this list that the work later needs is a question to the epic owner, forwarded to the desk, before it is edited.",
+      "pause": 400
+    },
+    {
+      "text": "Columns: PR is the pull request that touches it (1 the within-batch rule in the model; 2 the window in the model; 3 the builder, selection and receipt; 4 the compiled-validator evidence). Change says edit, create or regenerate; a regenerated file is derived, written by the command in its row, and never edited or merged by hand, at a rebase least of all. Collides with names a live lane whose files this row meets, measured on 2026-10-14 from the lane's branch or open pull request: 494 is the protected rejection lane (draft pull request 615), 503 the registry page lane (draft pull request 628), 491 the wallet preparation lane, 495, 529 and 506 the other validator and Lean lanes in the desk's serial order (their branches carry plans only, so their rows are what their plans name). Pull requests 516 (#471), 384 (#233) and 597 (a workflow change) share no file with this list. Command-line modules are under offchain/cli/src/Singular/CLI/ and keep their module names after the command-line split (#528).",
+      "pause": 400
+    }
+  ],
+  "files-shared-with-a-live-lane": [
+    {
+      "text": "Files shared with a live lane.",
+      "pause": 500
+    }
+  ],
+  "lean-sources": [
+    {
+      "text": "Lean sources.",
+      "pause": 500
+    },
+    {
+      "text": "The statement audit (lean/Singular/Audit.lean, M1Audit.lean) discovers statements by name and is not edited.",
+      "pause": 400
+    }
+  ],
+  "derived-model-artifacts": [
+    {
+      "text": "Derived model artifacts.",
+      "pause": 500
+    }
+  ],
+  "checkers-and-the-simulator": [
+    {
+      "text": "Checkers and the simulator.",
+      "pause": 500
+    }
+  ],
+  "conformance": [
+    {
+      "text": "Conformance.",
+      "pause": 500
+    },
+    {
+      "text": "The conformance control readers of the receipt (conformance/lib/Conformance/Cli/Controls.hs, conformance/test/Conformance/Support/CliControls.hs) no longer mention window-closed and are not edited.",
+      "pause": 400
+    }
+  ],
+  "application-model": [
+    {
+      "text": "Application model.",
+      "pause": 500
+    }
+  ],
+  "registry-library-and-command-line": [
+    {
+      "text": "Registry library and command line.",
+      "pause": 500
+    },
+    {
+      "text": "offchain/cli/src/Singular/CLI/Entry.hs and offchain/test/Singular/CLI/FoldSpec.hs, which the first plan listed, became open-datum files in #528 and do not mention the window; they are not edited.",
+      "pause": 400
+    }
+  ],
+  "scripts-pages-and-governance": [
+    {
+      "text": "Scripts, pages and governance.",
+      "pause": 500
+    }
+  ],
+  "validator-tests-and-evidence": [
+    {
+      "text": "Validator tests and evidence.",
+      "pause": 500
+    },
+    {
+      "text": "No file is deleted. No validator source file, no blueprint and no script identity entry is edited: onchain/validators/**/*.ak other than the test files above, onchain/lib/** other than registry_fixtures.ak, onchain/script-identity.json, onchain/permanent-contract.json, naming-onchain/, applications/open-datum/onchain/. No file outside this table is edited.",
+      "pause": 400
+    }
+  ],
+  "shared-surfaces": [
+    {
+      "text": "Shared surfaces.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "3aafb26be08369f425fda43d1153c577e83a724bd19d46729c605bd822c00b79"
+  }
+}

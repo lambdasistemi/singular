@@ -1,0 +1,358 @@
+{
+  "tasks": [
+    {
+      "text": "Tasks.",
+      "pause": 500
+    },
+    {
+      "text": "One group per slice, grouped by pull request. A task is checked when its slice's candidate gate is green at the slice head and its checkpoint is approved. Read the plan for the slices and the touch list for the files.",
+      "pause": 400
+    }
+  ],
+  "pull-request-1-the-model-refuses-what-a-batch-creates-and-consumes": [
+    {
+      "text": "Pull request 1: the model refuses what a batch creates and consumes.",
+      "pause": 500
+    }
+  ],
+  "batch-statements-first": [
+    {
+      "text": "batch-statements-first.",
+      "pause": 500
+    },
+    {
+      "text": "[x] batch-statements-red: an insertion then a termination of one key refused token-missing; a termination of a holding that existed before the batch accepted; an accepted batch burning only live holdings; independent requests folding as a batch; each committed failing",
+      "pause": 300
+    }
+  ],
+  "created-holdings-in-foldbatch": [
+    {
+      "text": "created-holdings-in-foldBatch.",
+      "pause": 500
+    },
+    {
+      "text": "[x] track-the-holdings-a-batch-has-created",
+      "pause": 300
+    },
+    {
+      "text": "[x] refuse-a-termination-of-a-created-holding-after-the-mint-check",
+      "pause": 300
+    },
+    {
+      "text": "[x] repair-the-batch-proofs-and-restate-fold-batch-cons",
+      "pause": 300
+    },
+    {
+      "text": "[x] reselect-the-permanent-contract-accepted-batch-on-two-keys",
+      "pause": 300
+    }
+  ],
+  "consumers-follow-the-batch-rule": [
+    {
+      "text": "consumers-follow-the-batch-rule.",
+      "pause": 500
+    },
+    {
+      "text": "[x] rows-for-every-same-key-pair",
+      "pause": 300
+    },
+    {
+      "text": "[x] corpora-regenerated-in-two-passes",
+      "pause": 300
+    },
+    {
+      "text": "[x] simulator-mirror-rules-and-gate",
+      "pause": 300
+    },
+    {
+      "text": "[x] coverage-record-and-fixed-counts",
+      "pause": 300
+    },
+    {
+      "text": "[x] open-datum-application-proofs-repaired",
+      "pause": 300
+    },
+    {
+      "text": "[x] register-readme-counts-and-narration",
+      "pause": 300
+    },
+    {
+      "text": "[x] constitution-amendment-for-the-batch-rule",
+      "pause": 300
+    }
+  ],
+  "pull-request-2-the-model-admits-a-fold-only-inside-its-window": [
+    {
+      "text": "Pull request 2: the model admits a fold only inside its window.",
+      "pause": 500
+    }
+  ],
+  "admission-statements-first": [
+    {
+      "text": "admission-statements-first.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] admission-statements-red: the boundary, any expired request, each request by its own submission time, admission before the law, a reject reading no time; each committed failing",
+      "pause": 300
+    }
+  ],
+  "fold-admission-in-the-model": [
+    {
+      "text": "fold-admission-in-the-model.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] request-carries-its-submission-time",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-witness-and-window-predicate",
+      "pause": 300
+    },
+    {
+      "text": "[ ] fold-admission-and-the-fold-arm-of-exit-admission",
+      "pause": 300
+    },
+    {
+      "text": "[ ] batch-under-a-witness",
+      "pause": 300
+    },
+    {
+      "text": "[ ] permanent-contract-statements-follow-the-admission-order",
+      "pause": 300
+    }
+  ],
+  "driver-and-corpora-under-a-witness": [
+    {
+      "text": "driver-and-corpora-under-a-witness.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] every-fold-scenario-and-batch-carries-a-witness",
+      "pause": 300
+    },
+    {
+      "text": "[ ] a-fold-without-a-witness-is-unsupported",
+      "pause": 300
+    },
+    {
+      "text": "[ ] rows-for-the-boundary-an-expired-request-and-a-batch-in-and-past-its-window",
+      "pause": 300
+    },
+    {
+      "text": "[ ] corpora-regenerated-in-two-passes",
+      "pause": 300
+    }
+  ],
+  "transport-live-driver-simulator": [
+    {
+      "text": "transport-live-driver-simulator.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] transport-reads-the-submission-time-and-the-fold-witness",
+      "pause": 300
+    },
+    {
+      "text": "[ ] live-driver-reads-the-bound-off-the-built-transaction-and-the-time-off-the-datum",
+      "pause": 300
+    },
+    {
+      "text": "[ ] simulator-schema-actions-rules-gate-and-playable-fold",
+      "pause": 300
+    },
+    {
+      "text": "[ ] simulator-mirror-regenerated",
+      "pause": 300
+    }
+  ],
+  "register-book-constitution": [
+    {
+      "text": "register-book-constitution.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] coverage-record-and-fixed-counts",
+      "pause": 300
+    },
+    {
+      "text": "[ ] register-readme-counts-and-narration",
+      "pause": 300
+    },
+    {
+      "text": "[ ] conformance-book-no-longer-calls-the-window-a-discrepancy",
+      "pause": 300
+    },
+    {
+      "text": "[ ] constitution-amendment-for-the-fold-admission",
+      "pause": 300
+    }
+  ],
+  "pull-request-3-the-builder-enforces-it-and-the-receipt-names-it": [
+    {
+      "text": "Pull request 3: the builder enforces it and the receipt names it.",
+      "pause": 500
+    }
+  ],
+  "admission-in-the-library": [
+    {
+      "text": "admission-in-the-library.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] admission-red-tests: the boundary, many requests, the first offender named, the within-batch pair, the agreement with the model at the boundary and one past with its failing control",
+      "pause": 300
+    },
+    {
+      "text": "[ ] pure-fold-admission",
+      "pause": 300
+    },
+    {
+      "text": "[ ] pure-batch-consumes-created",
+      "pause": 300
+    },
+    {
+      "text": "[ ] library-agrees-with-the-model-question",
+      "pause": 300
+    }
+  ],
+  "builder-refuses-before-signing": [
+    {
+      "text": "builder-refuses-before-signing.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] builder-refuses-a-bound-past-a-deadline-reading-the-built-body",
+      "pause": 300
+    },
+    {
+      "text": "[ ] builder-refuses-a-termination-of-a-key-an-earlier-insertion-creates",
+      "pause": 300
+    },
+    {
+      "text": "[ ] connected-fold-refuses-the-same-way",
+      "pause": 300
+    }
+  ],
+  "selection-and-receipt-in-the-models-words": [
+    {
+      "text": "selection-and-receipt-in-the-models-words.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] selection-window-rule-is-the-model-admission-at-the-probe-bound",
+      "pause": 300
+    },
+    {
+      "text": "[ ] delete-window-closed-from-code-readers-scripts-and-pages",
+      "pause": 300
+    },
+    {
+      "text": "[ ] post-build-decision-calls-the-library",
+      "pause": 300
+    },
+    {
+      "text": "[ ] receipt-names-the-request-reason-source-deadline-and-probe-bound",
+      "pause": 300
+    }
+  ],
+  "devnet-expired-request-named-by-the-model": [
+    {
+      "text": "devnet-expired-request-named-by-the-model.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] the-expired-request-is-named-not-phase1-by-the-model-beside-a-settled-in-window-request-on-a-devnet",
+      "pause": 300
+    }
+  ],
+  "docs-of-what-ships": [
+    {
+      "text": "docs-of-what-ships.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] pages-state-the-window-rule-the-vocabularies-and-the-residuals",
+      "pause": 300
+    },
+    {
+      "text": "[ ] speech-restamped-and-narration-regenerated",
+      "pause": 300
+    }
+  ],
+  "pull-request-4-the-compiled-validator-is-shown-to-refuse-the-mutated-transaction": [
+    {
+      "text": "Pull request 4: the compiled validator is shown to refuse the mutated transaction.",
+      "pause": 500
+    }
+  ],
+  "validator-window-and-same-key-tests": [
+    {
+      "text": "validator-window-and-same-key-tests.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] window-boundary-under-an-excluded-upper-bound-with-its-twin",
+      "pause": 300
+    },
+    {
+      "text": "[ ] different-submission-times-an-open-bound-and-an-expired-reject",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reason-precedence",
+      "pause": 300
+    },
+    {
+      "text": "[ ] the-four-same-key-pairs-with-their-reasons",
+      "pause": 300
+    }
+  ],
+  "compiled-contexts-and-fault-control": [
+    {
+      "text": "compiled-contexts-and-fault-control.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] export-the-new-labelled-contexts",
+      "pause": 300
+    },
+    {
+      "text": "[ ] checker-evaluates-them-against-the-compiled-bytes",
+      "pause": 300
+    },
+    {
+      "text": "[ ] the-always-accept-program-fails-the-new-labels",
+      "pause": 300
+    },
+    {
+      "text": "[ ] label-counts-derived-from-the-discovered-set",
+      "pause": 300
+    }
+  ],
+  "live-fold-window-row": [
+    {
+      "text": "live-fold-window-row.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] a-fold-past-a-deadline-is-refused-by-the-ledger-and-answered-not-phase1-by-the-model",
+      "pause": 300
+    }
+  ],
+  "book-and-docs": [
+    {
+      "text": "book-and-docs.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] book-and-pages-follow-and-narration-regenerated",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "5085cce18a4cb891c9f591c6211a8a85646fcd6a42e98cdcf54e37fe727377d2"
+  }
+}

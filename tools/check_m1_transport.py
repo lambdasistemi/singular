@@ -119,7 +119,7 @@ def main():
             + "\n"
         )
     print(
-        "Permanent conformance transport: 10 scenarios and 4 batches; canonical admission and unknown-contract controls detected"
+        "Permanent conformance transport: 10 scenarios and 5 batches; canonical admission and unknown-contract controls detected"
     )
 
 

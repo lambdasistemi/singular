@@ -54,7 +54,9 @@ def cases : List Scenario :=
 def batches : List (String × List Request × Except String Result) :=
   let allowed := [request .insertActive, request .updateTerminal]
   let excluded := request .witnessTerminal
-  [("Register then terminate in one atomic batch", allowed, M1.foldBatch initial allowed)
+  [("Register two distinct keys in one atomic batch", [request .insertActive, request .insertActive 6],
+      M1.foldBatch initial [request .insertActive, request .insertActive 6])
+  , ("Register then terminate in one atomic batch", allowed, M1.foldBatch initial allowed)
   , ("Refuse a mixed batch's excluded final member", allowed ++ [excluded],
       M1.foldBatch initial (allowed ++ [excluded]))
   , ("Refuse an excluded first member", [excluded, request .insertActive],
@@ -88,7 +90,10 @@ def check : IO Unit := do
     unless result.outcome == expected do
       throw (IO.userError s!"{sc.id}: {outcomeName result.outcome}, expected {outcomeName expected}")
   for (name, _, result) in batches do
-    let expected := name == "Register then terminate in one atomic batch"
+    if name == "Register then terminate in one atomic batch" then
+      unless (match result with | .error why => why == "token-missing" | .ok _ => false) do
+        throw (IO.userError s!"{name}: expected token-missing; observed {match result with | .ok _ => "accepted" | .error why => why}")
+    let expected := name == "Register two distinct keys in one atomic batch"
     unless (match result with | .ok _ => true | .error _ => false) == expected do
       throw (IO.userError s!"batch: {name}")
 
@@ -96,5 +101,5 @@ end PermanentCorpus
 
 def main (args : List String) : IO Unit := do
   PermanentCorpus.check
-  if args == ["--check"] then IO.println "Permanent M1: 10 driver scenarios and 4 batch cases checked"
+  if args == ["--check"] then IO.println "Permanent M1: 10 driver scenarios and 5 batch cases checked"
   else IO.println PermanentCorpus.corpus.pretty

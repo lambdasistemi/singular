@@ -595,15 +595,30 @@ def foldActions (s : RegistryState) (batch : List Action) : Except String Result
     let rest ← foldActions first.state bs
     pure (combineResults first rest)
 
+/-- A batch can burn only inputs, never an active holding created by one of
+its earlier requests. Step and mint refusals are checked before this scan. -/
+def batchConsumesCreated (batch : List Request) : Option String := go [] batch
+where
+  go (created : List Key) : List Request → Option String
+    | [] => none
+    | r :: rs =>
+      if r.edge == .updateTerminal && created.contains r.key then some "token-missing"
+      else go (if r.edge == .insertActive then r.key :: created else created) rs
+
 /-- The atomic fold: a zero-request batch is refused; every request applies or
 the whole batch refuses; any claimed mint differing from the summed delta of the
 folded edges at any `(kind, key)` is refused. The guard is per asset, not per
 kind: a batch that claims one key's token twice and another's not at all
-balances per kind and is still refused. -/
+balances per kind and is still refused. After that check, a termination of an
+active holding created earlier in this batch is refused `token-missing`. -/
 def foldBatch (s : RegistryState) (batch : List Action) : Except String Result := do
   if batch.isEmpty then throw "empty-fold"
   let r ← foldActions s batch
-  if assetSame (claimedMint batch) (actualMint batch) then pure r else throw "net-mint-mismatch"
+  if assetSame (claimedMint batch) (actualMint batch) then
+    match batchConsumesCreated batch with
+    | some why => throw why
+    | none => pure r
+  else throw "net-mint-mismatch"
 
 /-- The ledger/trie consistency invariant: the root commits to the map, the
 biconditional supply laws hold for active and absent tokens, and every terminal

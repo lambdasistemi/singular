@@ -1881,7 +1881,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "e88e11e750ad0dbae243db2ddfd96029244c5fd477bfc2fd7176a9e9890871d5",
+  "corpusSourceSha256": "7603043805e38150af340d3a49bfb4879e75866ddab125efe8efdc8915855b93",
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2010,20 +2010,20 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "af220eec1be2733a7930c7fc047da63737ae26667049386eaee7af8a6559907b",
-  "payloadSha256": "9fab8597df2fc9e8c1b1dd26a0a867ce5e89c0d6218cf64e21193c881132d402",
+  "modelSha256": "ae7f460ebd355ded80ff2683ea78cc9a66057212adb63e3fd01c6cdeea00c23f",
+  "payloadSha256": "d8114ee0d61d4185f4282994f05e1fe83532033c8343062f7a7a8c8bc96e9388",
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "e88e11e750ad0dbae243db2ddfd96029244c5fd477bfc2fd7176a9e9890871d5",
+    "lean/Main.lean": "7603043805e38150af340d3a49bfb4879e75866ddab125efe8efdc8915855b93",
     "lean/Singular.lean": "d690425884693d54f5d4316836a6aed243fdab82754cde78612ecac0dd9040ea",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
     "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
-    "lean/Singular/Lemmas.lean": "d8c67ebadb0fd44b65be377ca0ff65e14004b02005bfffb61cec2b86364a3b55",
-    "lean/Singular/Model.lean": "af220eec1be2733a7930c7fc047da63737ae26667049386eaee7af8a6559907b",
-    "lean/Singular/Statements.lean": "87f2401423e3bc129efe5c57ed92d23427aee28207a6d49ea8c2926e238b1f1f"
+    "lean/Singular/Lemmas.lean": "34ce08292ed74b0833e766e5cca4d1cfbe6b0a9c7267c6145eb726fa492fecba",
+    "lean/Singular/Model.lean": "ae7f460ebd355ded80ff2683ea78cc9a66057212adb63e3fd01c6cdeea00c23f",
+    "lean/Singular/Statements.lean": "5e194ea18743f726952b7c233ec45f504f20ca5cee214d6f03ce074fd81cc0e8"
   },
-  "statementsSha256": "87f2401423e3bc129efe5c57ed92d23427aee28207a6d49ea8c2926e238b1f1f",
-  "theoremManifestSha256": "ee333e65a3a73433e7c1de466e6a59e868650efbfaf2421ab7dfd2c933d7aa31",
+  "statementsSha256": "5e194ea18743f726952b7c233ec45f504f20ca5cee214d6f03ce074fd81cc0e8",
+  "theoremManifestSha256": "b226e31b002a4ff6398b3e45569e80e27d7a755308c503b0c4f7e07fe361801f",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,

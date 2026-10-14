@@ -1,5 +1,28 @@
 <!--
 Sync impact report
+Version: 1.15.0 -> 1.16.0 (a batch cannot burn a holding it creates)
+Amended: 2026-10-14
+Authority: the operator's 6 October 2026 ruling on #396, recorded in
+specs/519-fold-admission/ruling.md and released for the first model slice of #519.
+Rationale: an input holding must predate the transaction that burns it. The
+model previously accepted an insertion followed by termination of the same key.
+Principles I-VII unchanged. Singular.foldBatch retains empty-fold, step and
+net-mint-mismatch precedence, then refuses token-missing when a termination names
+an active holding an earlier insertion of this batch created. A pre-existing
+holding can still be terminated. Three new statements prove this refusal,
+original-state holdings for accepted burns, and acceptance of non-empty distinct-key
+batches whose requests each admit alone and claim their own edge's keyed mint.
+The permanent corpus's register-then-terminate batch becomes refused; its accepted
+anchor registers two distinct keys. No validator source or script identity changes.
+Consumers: generic and permanent model exports, theorem register, driver rows,
+simulator and byte mirror, transport check, coverage population and open-datum proofs.
+Translation: foldBatch row updated; declared names, observation extent and protocol
+unchanged. No batch transaction, singleton-effect correspondence or equal-root
+comparison is claimed. AGENTS.md and the PR template checked; neither needs changes.
+-->
+
+<!--
+Sync impact report
 Version: 1.14.0 -> 1.15.0 (effects and state have named owners)
 Amended: 2026-10-11
 Authority: the operator's 11 October 2026 ruling to constitutionalize the
@@ -603,7 +626,7 @@ checked first, and observes no transaction, since the model builds none for it.
 | `witnessTerminal` | realization | `Singular.step` with `Edge.witnessTerminal`: the stable historical encoding is refused `edge-inadmissible` before approval, leaf or token effects. |
 | `reject` | realization | `Singular.exitStep` with `Exit.reject`: a folder turns the request away. It carries no admission, leaves the registry state as it was, mints nothing, and pays the owner the deposit back, as `Singular.obligations` states. |
 | `retract` | realization | `Singular.admittedExitStep` with `Exit.retract`: the owner takes the request back, admitted first by `Singular.retractAdmission` under the scenario's witness (`Singular.RetractWitness`: the request's submission time, the transaction's validity bounds, lower included and upper excluded, and its signatories). It is refused `withdraw-insert-only` unless the request inserts a key or reads a terminal one (`Singular.retractableEdge`), then `retract-owner` unless the request's owner is among the signatories, then `not-phase2` unless the validity interval lies inside phase 2, from `submittedAt + processTime`, included, to `submittedAt + processTime + retractTime`, which the excluded upper bound may reach and not pass (`Singular.inPhase2`), as `Singular.Statements.retract_refusal_first_failing` states. An admitted retraction is exactly `Singular.exitStep` with `Exit.retract` (`Singular.Statements.admitted_exit_is_the_exit`): it leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, through one output bound to the request by its own output reference (`Request.reference`), as `Singular.obligations` states. A retraction scenario with no witness is `unsupported`. On chain the witness is the retraction as built: its required signers, each translated to the wallet identity whose payment key it is; the `submitted_at` of the request's own datum; and its validity bounds, each bounding slot translated to the POSIX time of its start by the node's era history. The chain runs an owner-signed retraction of an insertion whose finite validity interval starts before phase 2, and one whose finite interval ends after it; the request script refuses both and the model answers `not-phase2` (the retract-outside-window conformance receipt carries both). The chain's refusal reason is not observed (#287); the two finite live cases establish the request script's refusal and the model's named reason separately. The model states only finite validity bounds; an open interval is outside them — a named non-goal whose `not-phase2` refusal the Aiken validator tests name; no live or model comparison of an open interval is claimed. |
-| `foldBatch` | realization | a batch question, in `Singular.Driver.runFoldBatch`: `Singular.foldBatch` verbatim over an ordered list of requests, each folded by `Singular.step` on its own edge from the state the previous left. It is refused `empty-fold` for no request, then for the first request's `step` reason, then `net-mint-mismatch` when the batch's claimed mint differs from what its edges mint at any `(kind, key)`; otherwise it reports `config`, `custody`, `held`, `mint`, `paid`, `root` and `state` of the result, its mint the edges' keyed deltas summed per asset and its `paid` the step payment lists, concatenated (empty for supported registry steps), and `leaf` at every distinct key the batch names, in the order it first names them. Beside the answer the row carries each request's step until the first the law refuses. A batch of one request whose claim is its own edge's delta folds exactly as `Singular.step` (`Singular.Statements.fold_batch_of_one_is_step`). No transaction is built or observed. |
+| `foldBatch` | realization | a batch question, in `Singular.Driver.runFoldBatch`: `Singular.foldBatch` verbatim over an ordered list of requests, each folded by `Singular.step` on its own edge from the state the previous left. It is refused `empty-fold` for no request, then for the first request's `step` reason, then `net-mint-mismatch` when the batch's claimed mint differs from what its edges mint at any `(kind, key)`, then `token-missing` when `Singular.batchConsumesCreated` finds a termination of a key an earlier insertion of the same batch created; otherwise it reports `config`, `custody`, `held`, `mint`, `paid`, `root` and `state` of the result, its mint the edges' keyed deltas summed per asset and its `paid` the step payment lists, concatenated (empty for supported registry steps), and `leaf` at every distinct key the batch names, in the order it first names them. Beside the answer the row carries each request's step until the first the law refuses. A batch of one request whose claim is its own edge's delta folds exactly as `Singular.step` (`Singular.Statements.fold_batch_of_one_is_step`). An accepted batch burns only active holdings present in its starting state. A non-empty batch on pairwise distinct keys is accepted when each request is accepted alone from that state and claims its own edge's keyed mint; no equality of singleton or reordered effects is asserted. No transaction is built or observed. |
 | `rejectBatch` | realization | a batch question, in `Singular.Driver.runRejectBatch`: a non-empty list of requests, each taken by `Exit.reject`, stepped by `Singular.exitStep` from the state the previous left. It leaves the registry state as it was, mints nothing and pays each owner the deposit back, as `Singular.obligations` states, reporting the same fields as `foldBatch`. Given the outputs of a transaction a caller observed, its one judgement is `Singular.settle` over the concatenated obligations of its requests (`Singular.Driver.judgeRejectBatch`), so one owner owed by two requests must receive their sum; a batch of one judges exactly as the single reject (`Singular.Statements.reject_batch_of_one_is_reject`). An empty batch, and one naming a fold or a retract, is `unsupported`. No transaction is built or observed. |
 | `config` | realization | the whole eight-field `Singular.Config` of the state the step produced, through the model's own `ToJson Config`. Not the root alone. |
 | `custody` | realization | the raw custody census after the step, retained for encoding/invalid-context observations; empty in states reachable from active M1 genesis. |
@@ -722,4 +745,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.15.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-11
+**Version**: 1.16.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-14
