@@ -193,3 +193,4 @@ The fate of a registration's application tag on a successful fold is decided: it
 2. Adapting cardano-keri. Its model reaps the token, then refunds a go-request to the reaper and pays the convictor a reward. That differs from the decided termination, so a correspondence design is needed.
 3. Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.
 4. The relation between the existing fee pin (`maxFee`) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.
+5. The source of the carrier amount: slice six of the Lean model checks the held value against a carrier allocation the requester declares and makes no claim that it equals the ledger's minimum; whether the amount stays declared or is pinned by the registry is not decided.

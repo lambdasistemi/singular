@@ -271,27 +271,27 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-six — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.",
+      "text": "[x] failing-controls-six — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] registration-request-and-pool — the registration request, the exact-contents rule, the pending pool and the world exist.",
+      "text": "[x] registration-request-and-pool — the registration request, the exact-contents rule, the pending pool and the world exist.",
       "pause": 300
     },
     {
-      "text": "[ ] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end; the syntax tag and the application tag are minted once, with the pending request.",
+      "text": "[x] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end; the syntax tag and the application tag are minted once, with the pending request.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-six — the four supporting statements of slice six are proved.",
+      "text": "[x] statements-six — the four supporting statements of slice six are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-six — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-six — as slice five. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] names-and-receipts-six — as slice five.",
+      "text": "[x] names-and-receipts-six — as slice five.",
       "pause": 300
     }
   ],
@@ -427,6 +427,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "4e6379aca2ec7d6aa180055c4f28b42ec343ad8e7f09906609bac5b235dd7b60"
+    "sha256": "bad0b6ded309eeb7bc07a427285f5e83f8036bbbae622ec7feeb42fe89f9b0c8"
   }
 }

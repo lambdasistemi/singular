@@ -505,10 +505,14 @@
     {
       "text": "The relation between the existing fee pin (maxFee) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.",
       "pause": 300
+    },
+    {
+      "text": "The source of the carrier amount: slice six of the Lean model checks the held value against a carrier allocation the requester declares and makes no claim that it equals the ledger's minimum; whether the amount stays declared or is pinned by the registry is not decided.",
+      "pause": 300
     }
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "e62f79fee9603582fc136c336ef137a178bb249dacaad1c80a878c322cc187fb"
+    "sha256": "d0d387a161fc44067b690b303a7d850bbc16ef981a7a9fcbeff90a4f1853ee44"
   }
 }

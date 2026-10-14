@@ -130,12 +130,12 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 
 ### Slice six: registrations
 
-- [ ] `failing-controls-six` — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
-- [ ] `registration-request-and-pool` — the registration request, the exact-contents rule, the pending pool and the world exist.
-- [ ] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end; the syntax tag and the application tag are minted once, with the pending request.
-- [ ] `statements-six` — the four supporting statements of slice six are proved.
-- [ ] `regenerate-after-slice-six` — as slice five. (consumers-state-the-rule)
-- [ ] `names-and-receipts-six` — as slice five.
+- [x] `failing-controls-six` — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
+- [x] `registration-request-and-pool` — the registration request, the exact-contents rule, the pending pool and the world exist.
+- [x] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end; the syntax tag and the application tag are minted once, with the pending request.
+- [x] `statements-six` — the four supporting statements of slice six are proved.
+- [x] `regenerate-after-slice-six` — as slice five. (consumers-state-the-rule)
+- [x] `names-and-receipts-six` — as slice five.
 
 ### Slice seven: terminations
 

@@ -49,6 +49,16 @@
       "pause": 400
     }
   ],
+  "slice-six-as-built": [
+    {
+      "text": "Slice six: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The registration booking is modelled by RegistrationRequest (with carrierAda, the declared carrier allocation), exactContents, registrationBookingRefusal, the request pool, book, World and WorldReachable, in Singular/Economics/, with the statements in Singular/Statements/Booking.lean. The syntax tag's identity is Config.syntaxTag = (registryId, 1) beside Config.stateToken = (registryId, 0): an abstraction, with no new configuration pin, whose relation to real policy identities and asset names is left to the correspondence work. The application tag keeps the historical Approval type and approvalAssetName. Booking observations separate syntax tags, application tags and other assets, so later slices that burn tags read the same separation.",
+      "pause": 400
+    }
+  ],
   "slice-five-signed-rows": [
     {
       "text": "Slice five: signed rows.",
@@ -65,6 +75,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "331f435f66833550ddca2941338228956e7ada6e898f13da39bca77e56825720"
+    "sha256": "9e0519dafdb94a14d4799f876b1e5658247e8717419e473a721c2878ecf6f6fb"
   }
 }

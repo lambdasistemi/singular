@@ -79,7 +79,7 @@
       "pause": 300
     },
     {
-      "text": "Six: registrations. *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application tag, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the syntax tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The syntax tag and the application tag are minted at booking with the pending request. The mint validator stays with ticket 529; this slice models what the syntax tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged syntax tag, a backdated booking, a booking wider than the maximum.",
+      "text": "Six: registrations (done). *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application tag, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the syntax tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The syntax tag and the application tag are minted at booking with the pending request. The mint validator stays with ticket 529; this slice models what the syntax tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged syntax tag, a backdated booking, a booking wider than the maximum.",
       "pause": 300
     },
     {
@@ -159,6 +159,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "e92d557a8ebbd0cc2ebb5f8e3c8f17ba7388287e0f5045d76e84b020856a623a"
+    "sha256": "4ef449e857b81f99fe78f00f21599a9a1896c652793efc913700003f621fca13"
   }
 }

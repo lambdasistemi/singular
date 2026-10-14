@@ -67,6 +67,10 @@ produced it. The supply of a token kind counts the tokens held at the applicatio
 
 A statement is declared where the plan puts it, never beside its definition in `Economics`, so the axiom gate and the register cover it.
 
+## Slice six: as built
+
+The registration booking is modelled by `RegistrationRequest` (with `carrierAda`, the declared carrier allocation), `exactContents`, `registrationBookingRefusal`, the request pool, `book`, `World` and `WorldReachable`, in `Singular/Economics/`, with the statements in `Singular/Statements/Booking.lean`. The syntax tag's identity is `Config.syntaxTag = (registryId, 1)` beside `Config.stateToken = (registryId, 0)`: an abstraction, with no new configuration pin, whose relation to real policy identities and asset names is left to the correspondence work. The application tag keeps the historical `Approval` type and `approvalAssetName`. Booking observations separate syntax tags, application tags and other assets, so later slices that burn tags read the same separation.
+
 ## Slice five: signed rows
 
 Names and shapes the writer keeps; anything not stated is the writer's to choose, and a name that another slice or the paper depends on is stated here.
