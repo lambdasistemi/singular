@@ -7,6 +7,21 @@ Changed obligations: a request carries its booked submission time (`Singular.Req
 Named limits: validators (495), builders (496), live acceptance (497) and the tag and bond (529) are untouched; the chain comparison of a retraction outside the window is unchanged; no mixed transaction is built.
 Consumers: Lean model, driver and transport, corpora, theorem bindings, simulator mirror, open-datum application corpus, coverage record and this translation. No live caller can claim the rule from the model change alone.
 Templates: no template change required.
+Slice six, 2026-10-14: registration booking adds a separate request, booking
+transaction and pending pool to a world whose only new transition is booking.
+Reachable pending registrations have exact declared contents, both tags minted
+with the request, booked time equal to the valid interval's upper end, and width
+within the configured limit. For every inclusion inside that interval, the
+booked time and the threshold after both windows are no earlier than inclusion
+and its corresponding threshold. Four new statements start uncovered in the
+coverage record and are appended to the restatement table. Carrier ada is a
+requester's declared allocation; no ledger minimum is computed or guaranteed.
+The existing registry reachability, exits, driver questions, protocol version
+and transaction baseline remain unchanged. The simulator classifies booking
+controls as uncovered. No validator, builder or live implementation acceptance
+follows from these model proofs. The agreed economic design and the declared
+carrier ruling authorize this extension; Principles I-VII, AGENTS.md and the
+pull request template continue to apply unchanged.
 -->
 
 <!--

@@ -1,5 +1,6 @@
 import Singular.Model.Request
 import Singular.Model.Transaction
+import Singular.Model.Booking
 
 /-! The registry-mode logical model: the trie answers two questions and nothing
 else — is this key known, and where in its life is it.

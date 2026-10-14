@@ -276,6 +276,30 @@
     "statementSha256": "5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291"
   },
   {
+    "name": "Singular.Statements.booked_request_has_exact_contents",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ec769c8c86bc37e980a9232ca4757735d50eeb6553c00544c2f3b37223802c1e"
+  },
+  {
+    "name": "Singular.Statements.booked_time_is_interval_end",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "86d8a38ebe2a03232e278407a4deb3f51ad82f4d942140d8b5c86990ef50ef65"
+  },
+  {
+    "name": "Singular.Statements.booked_time_not_before_inclusion",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "63ebcb7a3f9d8bf326674e19c297fc13187eade456c13637641a1e8e34a0bdb3"
+  },
+  {
+    "name": "Singular.Statements.booking_width_within_limit",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5d12a9178a46bc78852ba4af63ee95a28713b278e2c9b7e37d1c8c5ac32e1c49"
+  },
+  {
     "name": "Singular.Statements.exit_settles_on_lovelace_received",
     "status": "PROVED",
     "debt": "none",

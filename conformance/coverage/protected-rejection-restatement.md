@@ -58,3 +58,14 @@ The following names change without changing a proposition, proof or executable b
 |---|---|---|
 | `Singular.Statements.spent_reference_refused@07ae6b51c77261364c3d5aff546b6fb3522be49fc3f699ba1c52281db58938ad` | `Singular.Statements.spent_reference_refused@05956cb3b5599c5e49722c67ce1b7f77cf9cd7f7bbfd74513c969c58930138c6` | unchanged: uncovered |
 | `Singular.Statements.balanced_transaction_creates_no_value@68f5c013cc475fa92dee1482ccadc9306627ff270d524d05a0e85aacf3c9fc24` | `Singular.Statements.balanced_transaction_conserves_value@6f463431f4a5d5bb1bf32f641b8d820ddb67ec53c04125e97fd896135283621d` | unchanged: uncovered |
+
+## Registration booking
+
+The four booking statements are new identities. Each starts uncovered; their Lean proofs and executable model controls do not establish implementation coverage. Carrier ada is the declared allocation, with no claim about the ledger minimum.
+
+| Statement | Old identity | New identity | Slice | Coverage after |
+|---|---|---|---|---|
+| `Singular.Statements.booked_request_has_exact_contents` | none (new declaration) | `ec769c8c86bc37e980a9232ca4757735d50eeb6553c00544c2f3b37223802c1e` | registration booking | uncovered |
+| `Singular.Statements.booked_time_is_interval_end` | none (new declaration) | `86d8a38ebe2a03232e278407a4deb3f51ad82f4d942140d8b5c86990ef50ef65` | registration booking | uncovered |
+| `Singular.Statements.booked_time_not_before_inclusion` | none (new declaration) | `63ebcb7a3f9d8bf326674e19c297fc13187eade456c13637641a1e8e34a0bdb3` | registration booking | uncovered |
+| `Singular.Statements.booking_width_within_limit` | none (new declaration) | `5d12a9178a46bc78852ba4af63ee95a28713b278e2c9b7e37d1c8c5ac32e1c49` | registration booking | uncovered |

@@ -1970,7 +1970,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "f8b3bb0e69341b75b8c4e3369d8378931487ac46651d1c668a25e4d1033e934a",
+  "corpusSourceSha256": "8421176a9824b871ba3db9db7905287fb2af9c3a65d5e947626ef51bcf47227a",
   "economicControls": [
     {
       "result": true,
@@ -2178,11 +2178,2627 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
-  "payloadSha256": "cae3aa147855679e536e355766cb9d6337e04587f29d15ca18d6c8882089935c",
+  "modelSha256": "26978bee3832c9c52e7ba77b435179ed1a566384f9682fc21077619d60527ca2",
+  "payloadSha256": "50817701d096984267c325e04a45c406e9410534684dc6ed69dfc86ded88321b",
+  "registrationBookings": [
+    {
+      "actualReason": null,
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": null,
+      "story": "a lawful registration is booked"
+    },
+    {
+      "actualReason": null,
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 27,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 8,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": null,
+      "story": "a larger declared tip is booked"
+    },
+    {
+      "actualReason": null,
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 100,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": null,
+      "story": "the old fee pin does not constrain booking"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [
+              [
+                {
+                  "name": 2,
+                  "policy": 99
+                },
+                1
+              ]
+            ],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an extra asset is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 21,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 16,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "a wrong registration cost is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 21,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 2,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "a tip below the minimum is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 21,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "held value short of the declared carrier is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "updateTerminal",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag for another operation is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 6,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag for another key is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 43,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag for another refund address is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 556,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag for another destination is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 9,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag of another policy is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 0,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag with another commitment is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "a missing application tag is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              },
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "two application tags are refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 32,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "a request for another registry is refused"
+    },
+    {
+      "actualReason": "hidden-surplus",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 23,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "hidden-surplus",
+      "story": "lovelace beyond the declared contents is refused"
+    },
+    {
+      "actualReason": "backdated-booking",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 101
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "backdated-booking",
+      "story": "the booked time cannot be backdated"
+    },
+    {
+      "actualReason": "backdated-booking",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 103
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "backdated-booking",
+      "story": "the booked time cannot be moved beyond the interval"
+    },
+    {
+      "actualReason": "booking-too-wide",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 99,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "booking-too-wide",
+      "story": "an interval wider than the limit is refused"
+    },
+    {
+      "actualReason": "invalid-booking-interval",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 102,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "invalid-booking-interval",
+      "story": "an empty interval is refused"
+    },
+    {
+      "actualReason": "invalid-booking-interval",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 103,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "invalid-booking-interval",
+      "story": "a reversed interval is refused"
+    },
+    {
+      "actualReason": "forged-syntax-tag",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": []
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "forged-syntax-tag",
+      "story": "a syntax tag must be held by the pending request"
+    },
+    {
+      "actualReason": "forged-syntax-tag",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              },
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "forged-syntax-tag",
+      "story": "a second held syntax tag is refused"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "an application tag must be minted with its request"
+    },
+    {
+      "actualReason": "dirty-request",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          },
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "dirty-request",
+      "story": "a second application tag cannot be minted"
+    },
+    {
+      "actualReason": "forged-syntax-tag",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": []
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "forged-syntax-tag",
+      "story": "no syntax tag is minted"
+    },
+    {
+      "actualReason": "forged-syntax-tag",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 31
+          },
+          {
+            "name": 1,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "forged-syntax-tag",
+      "story": "two syntax tags are minted"
+    },
+    {
+      "actualReason": "forged-syntax-tag",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 1,
+            "policy": 32
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "forged-syntax-tag",
+      "story": "another registry's syntax tag is minted"
+    },
+    {
+      "actualReason": "forged-syntax-tag",
+      "booking": {
+        "applicationTagsMinted": [
+          {
+            "assetName": 3818680840,
+            "destination": 555,
+            "edge": "insertActive",
+            "key": 5,
+            "owner": 42,
+            "policy": 7,
+            "signatures": []
+          }
+        ],
+        "interval": {
+          "lower": 100,
+          "upper": 102
+        },
+        "request": {
+          "carrierAda": 2,
+          "contents": {
+            "applicationTags": [
+              {
+                "assetName": 3818680840,
+                "destination": 555,
+                "edge": "insertActive",
+                "key": 5,
+                "owner": 42,
+                "policy": 7,
+                "signatures": []
+              }
+            ],
+            "lovelace": 22,
+            "otherAssets": [],
+            "syntaxTags": [
+              {
+                "name": 1,
+                "policy": 31
+              }
+            ]
+          },
+          "datum": null,
+          "declaredTip": 3,
+          "destination": 555,
+          "key": 5,
+          "reference": {
+            "index": 0,
+            "tx": 71
+          },
+          "refundAddress": 42,
+          "registrationCost": 17,
+          "registryId": 31,
+          "submittedAt": 102
+        },
+        "syntaxTagsMinted": [
+          {
+            "name": 2,
+            "policy": 31
+          }
+        ]
+      },
+      "config": {
+        "absentPolicy": 9,
+        "activePolicy": 8,
+        "applicationPolicy": 7,
+        "bookingWidth": 2,
+        "maxFee": 1,
+        "minimumTip": 3,
+        "processTime": 10,
+        "registrationCost": 17,
+        "registryId": 31,
+        "retractTime": 5,
+        "root": [
+          203,
+          242,
+          156,
+          228,
+          132,
+          34,
+          35,
+          37
+        ],
+        "terminalPolicy": 10
+      },
+      "expectedReason": "forged-syntax-tag",
+      "story": "another syntax tag name is minted"
+    }
+  ],
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "f8b3bb0e69341b75b8c4e3369d8378931487ac46651d1c668a25e4d1033e934a",
+    "lean/Main.lean": "8421176a9824b871ba3db9db7905287fb2af9c3a65d5e947626ef51bcf47227a",
     "lean/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
@@ -2194,24 +4810,28 @@
     "lean/Singular/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
-    "lean/Singular/Economics.lean": "5f88986f47cfd9552ab18d8e63581a23ddf6d0c95e175fa3de0ddab1f23a34c1",
+    "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
+    "lean/Singular/Economics/Booking.lean": "c164cbaf2088fe114134851ef3220b69861652e0508f3a092b94082e4d27ed99",
+    "lean/Singular/Economics/World.lean": "973f03859c4a35a013eeb1d206e4671197fbae333fb73947b03df6c2f64e6bb0",
     "lean/Singular/Lemmas.lean": "65fd213636ec041ebe40eb1bca8d2754f994713446e240c4a9d485eef2875433",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
-    "lean/Singular/Model.lean": "becae36df1f50f6eb71834aa7caa9dc85d4ccd00f3c9d3ee1f43098c795577a4",
+    "lean/Singular/Model.lean": "26978bee3832c9c52e7ba77b435179ed1a566384f9682fc21077619d60527ca2",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
+    "lean/Singular/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "a011adeff9c4b0e7fb2165f4d3bbea26ae7178038719f98c6aca5af864d736ac",
     "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
+    "lean/Singular/Statements.lean": "27c4d59505568c75304a1e00b7931feea06e1e92428ea4f305959034e78b587b",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
+    "lean/Singular/Statements/Booking.lean": "13dc5397b550ec11381c7298159cbe35f81a446b34e6915ea00645a115c0bed1",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
     "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb"
   },
-  "statementsSha256": "f3f0efa5dbdadd75088294154b85cb011f83204afdf19891af09abc9e5b058dc",
-  "theoremManifestSha256": "af26e8748fadffdf53e18a5e4648b7183152663755c24fbde1eaeae4d02ea799",
+  "statementsSha256": "27c4d59505568c75304a1e00b7931feea06e1e92428ea4f305959034e78b587b",
+  "theoremManifestSha256": "1c501b960dc7edc08c7a77f97cd6362caa1ca514a418c956e5e7a06891ff02b3",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,

@@ -5,10 +5,10 @@ registry-mode model supplies, that each one is proved, and from which axioms.
 Every declaration keeps its qualified name and a digest of its statement text, so
 a changed or missing obligation is detectable rather than merely unlikely.
 
-All 48 declarations of the registry's own statement module are **PROVED**
+All 52 declarations of the registry's own statement module are **PROVED**
 from the standard axioms — `propext`, `Classical.choice`, `Quot.sound` — and
 nothing else. The naming instance adds 7, its lifecycle 9
-and its wire encoding 5, for **69** in total, each with its own
+and its wire encoding 5, for **73** in total, each with its own
 manifest and its own compiled gate.
 
 The operator-authorized source removal retires ten declarations about excluded success behavior. Their historical proofs and receipts remain on `preserve/m2/pre-m1-source-removal`; they do not certify permanent contract. The active model retains the applicable invariant, exit, refund, datum and public-fold laws. Public unmet consumer requirements remain uncovered.
@@ -89,6 +89,10 @@ consequences rather than as separate arguments.
 | `Singular.Statements.witness_input_datum_is_held` | #304 — a witness a fold spends presents the datum its holding carries, for every successful permanent contract fold, in its form and its value: the datum the delivering fold wrote, the request's own, so a retirement or deletion spends a witness as the chain holds it | `3ddeb0314193a02c809c78b87719c203760548449f42c538a955617534d1f44c` | PROVED |
 | `Singular.Statements.witness_kinds_exclude` | witness-kinds-exclude — the three kinds exclude each other | `7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a` | PROVED |
 | `Singular.Statements.zero_donation_omits_field` | Zero donation contributes no field to the list actually serialized by the transaction encoder. Positive donations remain explicit. | `5fa265d9c485578f30de49ba67268bb1d27a5af1fbae91d5a2758fefdc39b291` | PROVED |
+| `Singular.Statements.booked_request_has_exact_contents` | Every pending registration has exact contents, including the minimum tip and full application binding. Both tags were minted with that very request. The carrier is a declared allocation, not a measured ledger minimum. | `ec769c8c86bc37e980a9232ca4757735d50eeb6553c00544c2f3b37223802c1e` | PROVED |
+| `Singular.Statements.booked_time_is_interval_end` | The pool keeps the booking transaction's interval, and the pending registration's booked time is exactly its upper end. | `86d8a38ebe2a03232e278407a4deb3f51ad82f4d942140d8b5c86990ef50ef65` | PROVED |
+| `Singular.Statements.booked_time_not_before_inclusion` | For every actual inclusion time within the original half-open interval, the booked time is no earlier. Hence the expiry threshold is no earlier than both windows after inclusion. This states the threshold, not exit admission. | `63ebcb7a3f9d8bf326674e19c297fc13187eade456c13637641a1e8e34a0bdb3` | PROVED |
+| `Singular.Statements.booking_width_within_limit` | Every pending registration was booked in a nonempty interval whose width is at most the pinned maximum. Empty and reversed intervals cannot exploit natural-number subtraction to pass the width rule. | `5d12a9178a46bc78852ba4af63ee95a28713b278e2c9b7e37d1c8c5ac32e1c49` | PROVED |
 
 The naming, lifecycle and wire declarations are listed in their own manifests:
 [naming-theorem-debt.json](../lean/naming-theorem-debt.json),
