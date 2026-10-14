@@ -246,11 +246,11 @@ exit_of() {
 # when every event that carries a receipt-bound fact agrees with it. The same
 # rules as the in-process comparison (offchain/test/Singular/CLI/CommandRunSpec.hs):
 # one end naming the receipt's command and outcome, last; every key an event
-# or its scope carries is the receipt's key, or KEY (base16, the key the
+# or its scope carries is one of the receipt's settled keys, or KEY (base16, the key the
 # command line named) when the receipt names none; every request is one the
 # receipt names (a booking names its output 0), with that request's key, edge
-# and deadline; every edge action is one the command performs, on the edge it
-# books or its receipt names; a key's leaf and holding, the registry's pending
+# and deadline; every edge action is one the command performs, on an edge it
+# books or one its receipt names; a key's leaf and holding, the registry's pending
 # count and root, the outputs, amounts, root and token are the receipt's;
 # every transaction event is one of the receipt's submissions, or the read-back
 # of a reference the command found already published, each submission signed
@@ -263,9 +263,9 @@ trace_disagreements() {
   jq -s -c --slurpfile r "$receipt" --arg invoked "$key" '
     $r[0] as $r
     | . as $ev
-    | (($r | if .command == "fold" then .settled[0].key else .key end)
-       // (if $invoked == "" then null else $invoked end)) as $key
-    | (($r | if .command == "fold" then .settled[0].edge else .edge end)) as $receiptEdge
+    | ([$r | if .command == "fold" then (.settled // [])[].key else .key end] | map(select(. != null))) as $rk
+    | ((if ($rk | length) > 0 then $rk elif $invoked == "" then [] else [$invoked] end)) as $receiptKeys
+    | ([$r | if .command == "fold" then (.settled // [])[].edge else .edge end] | map(select(. != null))) as $receiptEdges
     | ([$r | .. | objects | select(has("request"))
         | {request, key, edge, deadline: (.foldDeadline.posixMs // .processingEnds // .deadline.posixMs)}]
        + [$r | .. | objects | select(has("pendingRequest")) | {request: .pendingRequest}]
@@ -283,14 +283,14 @@ trace_disagreements() {
       def edges_of: (if .event == "edge-started" then {edge, on} else empty end),
         (.scope[]? | select(has("edge")) | {edge, on}),
         (if .event == "folded" then {edge: "fold", on: .edge} else empty end);
-      def in_role($c; $re):
+      def in_role($c; $res):
         ($c == "create" and .edge == "boot")
         or ($c == "insert" and (.edge | IN("book", "fold")) and .on == "insertActive")
         or ($c == "terminate" and (.edge | IN("book", "fold")) and .on == "updateTerminal")
         or ($c == "update" and .edge == "update")
-        or ($c == "fold" and .edge == "fold" and (.on == $re or $re == null))
+        or ($c == "fold" and .edge == "fold" and ((.on | IN($res[])) or ($res | length) == 0))
         or ($c == "reject" and .edge == "reject")
-        or ($c == "reclaim" and .edge == "reclaim" and (.on == $re or $re == null));
+        or ($c == "reclaim" and .edge == "reclaim" and ((.on | IN($res[])) or ($res | length) == 0));
       def fits($v; $c):
         if $v == "accepted" then ($c | IN("acknowledged", "timeout", "included", "rolled-back", "excluded"))
         elif $v == "ledger-refused" or $v == "wrong-network" then $c == "rejected"
@@ -306,7 +306,7 @@ trace_disagreements() {
          | if ($ends | length) == 1 and ($ends[0].command == $r.command) and ($ends[0].outcome == $r.outcome)
               and ($ev | last | .event) == "command-ended"
            then empty else "the stream does not end once with the command and outcome of the receipt" end),
-        ($ev[] | keys_of | select(. != $key) | "key \(.)"),
+        ($ev[] | keys_of | select(. as $k | $receiptKeys | index($k) | not) | "key \(.)"),
         ($ev[] | requests_of | select(. as $q | $facts | map(.request) | index($q) | not) | select($bare_refusal | not) | "request \(.) not named by the receipt"),
         ($ev[] | select(.event == "request") as $e
          | $facts[] | select(.request == $e.request)
@@ -317,7 +317,7 @@ trace_disagreements() {
         ($ev[] | select(.event == "booked" and .deadlineMs != null) as $e
          | $facts[] | select(.request == $e.request and .deadline != null and .deadline != $e.deadlineMs)
          | "booked \($e.request) deadline \($e.deadlineMs)"),
-        ($ev[] | edges_of | select(in_role($r.command; $receiptEdge) | not) | "edge \(.) outside the command role"),
+        ($ev[] | edges_of | select(in_role($r.command; $receiptEdges) | not) | "edge \(.) outside the command role"),
         ($ev[] | select(.event == "key" and $r.leaf != null and .leaf != $r.leaf) | "leaf \(.leaf)"),
         ($ev[] | select(.event == "key" and $r.applicationOutput != null and .holding != $r.applicationOutput.output)
          | "holding \(.holding)"),
@@ -347,7 +347,8 @@ trace_disagreements() {
         ($ev[] | select(.event == "reclaimed") | select(.returned != $r.returned.lovelace) | "reclaimed \(.returned)"),
         ($ev[] | select(.event == "updated") | select(.output != $r.liveOutput) | "updated output \(.output)"),
         ($ev[] | select(.event == "folded")
-         | select(.output != ($r.settled[0].settlement.liveOutput // $r.settled[0].settlement.released))
+         | select(.output as $o
+            | ([$r.settled[]? | .settlement.liveOutput // .settlement.released] | index($o) | not))
          | "folded output \(.output)"),
         ($ev[] | select(.event == "refused") | select(refusal_fits(.kind; $r.outcome) | not)
          | "refusal \(.kind) under outcome \($r.outcome)"),
@@ -862,7 +863,8 @@ open_datum="$bob_open_datum_old"
 [ "$(field bob-default-fold .folder)" = "$bobkey" ] \
   || fail "the copied key folded into another wallet's partition"
 jq -e --slurpfile b "$receipts/bob-default-insert.json" '
-    .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+    (.settled | length == 1)
+    and .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
     and .folder == $b[0].requester and .settled[0].edge == "insertActive"
     and (.fold | test("^[0-9a-f]{64}$"))' "$receipts/bob-default-fold.json" >/dev/null \
   || fail "fresh bob's fold does not consume his booking's request and deadline with his own key"
@@ -984,7 +986,8 @@ chmod u+rwx "$two_alice"
 [ -s "$two/bob-fold.strace" ] || setup_fail "bob's fold left no trace of its file accesses"
 ! touches_alice "$two/bob-fold.strace" || fail "bob's fold accessed alice's directory: $(grep -F "$two_alice" "$two/bob-fold.strace" | head -n 3)"
 jq -e --slurpfile b "$receipts/two-insert.json" --arg k "$(hexof "$two_key")" --arg bob "$bobkey" '
-    .settled[0].request == $b[0].request and .folder == $bob and .settled[0].edge == "insertActive"
+    (.settled | length == 1)
+    and .settled[0].request == $b[0].request and .folder == $bob and .settled[0].edge == "insertActive"
     and .settled[0].key == $k and .settled[0].settlement.envelope == $b[0].envelope
     and (.settled[0].settlement.liveOutput | test("#"))' \
   "$receipts/two-fold.json" >/dev/null \
@@ -995,6 +998,126 @@ jq -e --slurpfile b "$receipts/two-insert.json" --slurpfile f "$receipts/two-fol
     and .root == $f[0].root' "$receipts/two-inspect.json" >/dev/null \
   || fail "the key bob folded is not active under alice's envelope at her destination"
 say "two actors: bob folded alice's insertion from the state token alone; her envelope sits at her destination"
+
+# ------------------------------------------------------------------
+# 7a. two actors book at once and one fold settles both (#518)
+# ------------------------------------------------------------------
+# Alice books first and Bob second, but the settled list keeps ledger input
+# order: pending requests are sorted by output reference, so the receipt
+# names the two bookings in ascending request order, which this leg asserts
+# by set and order rather than by booking position. Each entry is bound to
+# its own booking by request reference; each key reads back under its own
+# booker's envelope at its own delivered output; the two live outputs sit
+# at the one application destination. Every assertion below is shown able to
+# fail on an edited copy of the receipt.
+two_both_started="$(date +%s)"
+two_key_a=keyU
+two_key_b=keyV
+run two-both-insert-alice success -- insert --key "$two_key_a" --payload "$work/payload-insert.json" \
+  --state-dir "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${alice[@]}"
+[ "$(field two-both-insert-alice .requester)" = "$alicekey" ] \
+  || fail "the joint booking's requester is not alice's key"
+run two-both-insert-bob success -- insert --key "$two_key_b" --payload "$work/payload-insert.json" \
+  --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${bob[@]}"
+[ "$(field two-both-insert-bob .requester)" = "$bobkey" ] \
+  || fail "the joint booking's requester is not bob's key"
+booked two-both-insert-alice
+booked two-both-insert-bob
+run two-both-fold success -- fold --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}" "${bob[@]}"
+[ "$(field two-both-fold .folder)" = "$bobkey" ] \
+  || fail "the joint fold was not folded with bob's key"
+two_both_settled() {
+  jq -e --slurpfile a "$receipts/two-both-insert-alice.json" --slurpfile b "$receipts/two-both-insert-bob.json" \
+    --arg ka "$(hexof "$two_key_a")" --arg kb "$(hexof "$two_key_b")" --arg alice "$alicekey" --arg bob "$bobkey" '
+      (.settled | length == 2)
+      and ([.settled[].request] == ([$a[0].request, $b[0].request] | sort))
+      and ((.settled | map(select(.request == $a[0].request)) | .[0]) as $ea
+        | $ea.key == $ka and $ea.edge == "insertActive" and $ea.owner == $alice
+        and $ea.settlement.envelope == $a[0].envelope
+        and $ea.deadline.posixMs == $a[0].foldDeadline.posixMs
+        and ($ea.settlement.liveOutput | test("^[0-9a-f]{64}#[0-9]+$")))
+      and ((.settled | map(select(.request == $b[0].request)) | .[0]) as $eb
+        | $eb.key == $kb and $eb.edge == "insertActive" and $eb.owner == $bob
+        and $eb.settlement.envelope == $b[0].envelope
+        and $eb.deadline.posixMs == $b[0].foldDeadline.posixMs
+        and ($eb.settlement.liveOutput | test("^[0-9a-f]{64}#[0-9]+$")))
+      and $a[0].requester == $alice and $b[0].requester == $bob
+      and .settled[0].settlement.liveOutput != .settled[1].settlement.liveOutput
+      and (.excluded | length == 0)
+      and .capacity.bound == 9
+      and (.capacity.provenance | startswith("an estimate, not a measurement"))
+      and (.fold | test("^[0-9a-f]{64}$"))
+      and .foldDeadline.posixMs == ([.settled[].deadline.posixMs] | min)' "$1" >/dev/null
+}
+two_both_settled "$receipts/two-both-fold.json" \
+  || fail "the joint fold did not settle both bookings in ledger order: $(jq -c .settled "$receipts/two-both-fold.json")"
+two_both_tamper() { # NAME JQ-EDIT FILTER
+  jq "$2" "$receipts/two-both-fold.json" >"$receipts/two-both-tampered-$1.json"
+  if "$3" "$receipts/two-both-tampered-$1.json"; then
+    fail "the two-request fold receipt edited in $1 still passed its assertion"
+  fi
+}
+two_both_tamper settled-empty '.settled = []' two_both_settled
+two_both_tamper one-dropped '.settled |= .[0:1]' two_both_settled
+two_both_tamper order-swapped '.settled |= reverse' two_both_settled
+# shellcheck disable=SC2016 # Single quotes preserve the jq program's variable.
+two_both_tamper owners-swapped '.settled[0].owner as $o | .settled[0].owner = .settled[1].owner | .settled[1].owner = $o' two_both_settled
+# shellcheck disable=SC2016 # Single quotes preserve the jq program's variable.
+two_both_tamper envelope-swapped '.settled[0].settlement.envelope as $e | .settled[0].settlement.envelope = .settled[1].settlement.envelope | .settled[1].settlement.envelope = $e' two_both_settled
+two_both_tamper capacity-bound '.capacity.bound = 1' two_both_settled
+# Each payout reaches its owner: each key reads active under its own booker's
+# envelope at its own delivered output, and the swapped readbacks fail.
+two_both_payout_alice() {
+  jq -e --slurpfile a "$receipts/two-both-insert-alice.json" --slurpfile f "$receipts/two-both-fold.json" '
+    .leaf == "active" and .applicationOutput.envelope == $a[0].envelope
+    and .applicationOutput.output == ($f[0].settled[] | select(.request == $a[0].request) | .settlement.liveOutput)
+    and .root == $f[0].root' "$1" >/dev/null
+}
+two_both_payout_bob() {
+  jq -e --slurpfile b "$receipts/two-both-insert-bob.json" --slurpfile f "$receipts/two-both-fold.json" '
+    .leaf == "active" and .applicationOutput.envelope == $b[0].envelope
+    and .applicationOutput.output == ($f[0].settled[] | select(.request == $b[0].request) | .settlement.liveOutput)
+    and .root == $f[0].root' "$1" >/dev/null
+}
+run two-both-inspect-alice success -- inspect --key "$two_key_a" --state-dir "$two_alice" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}"
+two_both_payout_alice "$receipts/two-both-inspect-alice.json" \
+  || fail "alice's key does not read her envelope at her delivered output"
+run two-both-inspect-bob success -- inspect --key "$two_key_b" --state-dir "$two_bob" --blueprint "$blueprint" --state-token "$two_token" "${node[@]}"
+two_both_payout_bob "$receipts/two-both-inspect-bob.json" \
+  || fail "bob's key does not read his envelope at his delivered output"
+if two_both_payout_bob "$receipts/two-both-inspect-alice.json"; then
+  fail "alice's readback passed under bob's envelope and output"
+fi
+if two_both_payout_alice "$receipts/two-both-inspect-bob.json"; then
+  fail "bob's readback passed under alice's envelope and output"
+fi
+# Both payouts sit at the one application destination: the fold's saved body
+# carries both live outputs at the same address, read apart from the receipt.
+two_both_tx="$(field two-both-fold .fold)"
+two_both_body="$(managed_body "$two_bob" "$two_both_tx")" \
+  || fail "the joint fold's saved body is not under bob's directory"
+two_both_outs="$(jq -R -c "$(cat "$work/cbor.jq") tx_outputs" "$two_both_body")" \
+  || fail "the joint fold's saved body could not be read"
+two_both_addr() { # LIVEOUTPUT OUTSJSON: the address the fold body gives the output
+  jq -r --argjson i "${1##*#}" '.[$i].address // empty' <<<"$2"
+}
+two_both_out_a="$(field two-both-fold .settled[0].settlement.liveOutput)"
+two_both_out_b="$(field two-both-fold .settled[1].settlement.liveOutput)"
+two_both_addr_a="$(two_both_addr "$two_both_out_a" "$two_both_outs")"
+two_both_addr_b="$(two_both_addr "$two_both_out_b" "$two_both_outs")"
+[ -n "$two_both_addr_a" ] && [ "$two_both_addr_a" = "$two_both_addr_b" ] \
+  || fail "the two payouts sit at different addresses: $two_both_addr_a vs $two_both_addr_b"
+two_both_idx_b="${two_both_out_b##*#}"
+if [ "$(two_both_addr "$two_both_out_b" "$(jq --argjson i "$two_both_idx_b" '.[$i].address += "00"' <<<"$two_both_outs")")" = "$two_both_addr_a" ]; then
+  fail "a body read with one payout address changed still agreed"
+fi
+# Both payouts are live on the chain.
+for two_both_out in "$two_both_out_a" "$two_both_out_b"; do
+  "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$two_both_out" >"$work/two-both-probe.json"
+  jq -e --arg o "$two_both_out" 'any(.live[]; . == $o)' "$work/two-both-probe.json" >/dev/null \
+    || fail "the joint payout $two_both_out is not live on the chain"
+done
+say "two actors booked at once and one fold settled both, each payout to its owner, in $(($(date +%s) - two_both_started))s"
 
 # ------------------------------------------------------------------
 # 7b. an underfunded create refuses before boot (J)
@@ -1320,7 +1443,8 @@ fold_ok() {
   local fold_part
   fold_part="$(managed_partition "$reg" "$state_token" "$(field "$1" .folder)")"
   jq -e --slurpfile b "$receipts/$2.json" '
-      .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+      (.settled | length == 1)
+      and .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
       and .folder != $b[0].requester and .settled[0].edge == "'"$3"'"
       and (.fold | test("^[0-9a-f]{64}$"))
       and (.validUntilSlot | type == "number")
@@ -1492,6 +1616,7 @@ flock --fcntl --nonblock "$alice_lock" true || setup_fail "the lock holder did n
 run insert-after-release success -- insert --fold --key keyC \
   --payload "$work/payload-insert.json" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '(.booking | test("^[0-9a-f]{64}$")) and (.fold | test("^[0-9a-f]{64}$")) and .booking != .fold
+    and (.settled | length == 1)
     and (.settled[0].settlement.liveOutput | test("#")) and has("root")' "$receipts/insert-after-release.json" >/dev/null \
   || fail "the combined insert does not name its booking, its fold and the output it delivered"
 
@@ -1774,7 +1899,7 @@ jq -e --slurpfile l "$receipts/late-insert.json" '
 # booked beside it, and `registry fold` names no request: the fold settles
 # the fresh one and leaves the late one out, named with its reason and its
 # source. The earlier top-level single-request fields are gone; the settled
-# list carries the facts, and the capacity bound of 1 states its provenance. Each new assertion is shown able to fail
+# list carries the facts, and the capacity bound of 9 states its provenance. Each new assertion is shown able to fail
 # on a copy of the receipt altered so its property is false.
 eligible_files="$(local_files)"
 eligible_journal_before="$(journal_count "$alice_journal")"
@@ -1804,8 +1929,8 @@ fold_selection_excluded() {
 }
 fold_selection_earlier() {
   jq -e --slurpfile e "$receipts/eligible-insert.json" --arg k "$(hexof keyH)" --arg owner "$alicekey" '
-      .capacity.bound == 1
-      and (.capacity.provenance | type == "string" and length > 0)
+      .capacity.bound == 9
+      and (.capacity.provenance | startswith("an estimate, not a measurement"))
       and ([has("request"), has("key"), has("edge"), has("liveOutput"), has("envelope"), has("released"), has("deposit"), has("datumHash"), has("datumCbor")] | any | not)
       and (.fold | test("^[0-9a-f]{64}$"))
       and (.settled | length == 1)
@@ -1832,7 +1957,7 @@ fold_selection_tamper settled-empty '.settled = []' fold_selection_settled
 fold_selection_tamper reason-changed '.excluded[0].reason = "capacity"' fold_selection_excluded
 fold_selection_tamper excluded-empty '.excluded = []' fold_selection_excluded
 fold_selection_tamper earlier-request '.request = .excluded[0].request' fold_selection_earlier
-fold_selection_tamper capacity-bound '.capacity.bound = 9' fold_selection_earlier
+fold_selection_tamper capacity-bound '.capacity.bound = 1' fold_selection_earlier
 run inspect-eligible success -- inspect --key keyH "${common[@]}" "${node[@]}"
 [ "$(field inspect-eligible .leaf)" = active ] \
   || fail "the fold's settled key did not read active: $(field inspect-eligible .leaf)"

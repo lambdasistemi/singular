@@ -92,6 +92,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BSL
 import Data.ByteString.Short qualified as SBS
 import Data.Char (isSpace)
+import Data.Either qualified as Either
 import Data.Foldable (toList)
 import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -171,11 +172,13 @@ import Singular.CLI.Live
     , applicationAddr
     , txInText
     )
+import Singular.CLI.Proof (Leaf (..))
 import Singular.CLI.Receipt
     ( JournalEntry (..)
     , OutcomeClass (..)
     , appendJournal
     , bodiesDir
+    , chainTransitions
     , durableWrite
     , exitCodeOf
     , readJournal
@@ -183,10 +186,14 @@ import Singular.CLI.Receipt
 import Singular.CLI.Reconcile
     ( Reconciliation (..)
     , Recovery (..)
+    , observe
+    , observeVerdicts
     , reconcile
     , reconcileIncomplete
     , reconciledJson
+    , recoverInclusion
     , refuseUnreconciled
+    , rollBack
     )
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
@@ -195,6 +202,7 @@ import Singular.CLI.Session
     , WriteContext (..)
     , confirmedTx
     , expecting
+    , foldExpectationScalars
     , submitBuilt
     , txIdHex
     )
@@ -215,6 +223,7 @@ import Singular.Provider.Koios.Runtime (newIORuntime)
 import Singular.Provider.Koios.Scripted (koiosWith)
 import Singular.Provider.Koios.Wire (Body (..))
 import Singular.Provider.Koios.Wire qualified as Wire
+import Singular.Registry.Application (DecodedHolding (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config
@@ -266,6 +275,7 @@ import Singular.Registry.Types
     , RequestAction (..)
     , UpdateRedeemer (..)
     , edgeInsertActive
+    , edgeUpdateTerminal
     )
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
@@ -1430,5 +1440,492 @@ syntheticRows =
                             journalBytes (syntheticDir s) `shouldReturn` journalBefore
                             eventsOf (syntheticTxId s) (syntheticDir s)
                                 `shouldReturn` ["prepared", "submitted", "confirmed"]
+            it "observes a fold of three transitions once, naming every key" $
+                withSystemTempDirectory "singular-fold-observe" $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        out0 = foldStateOutput addr foldTestRoot
+                        ref = (foldSeedRef, out0)
+                        prepared =
+                            foldPrepared
+                                "fold-tx-three"
+                                "fold-rb0"
+                                ( ( "fold-req-1"
+                                  , hexT foldKeyA
+                                  , edgeInsertActive
+                                  , "active:" <> hexT foldHashA
+                                  , "fold-rmid1"
+                                  )
+                                    :| [
+                                           ( "fold-req-2"
+                                           , hexT foldKeyB
+                                           , edgeUpdateTerminal
+                                           , "terminal"
+                                           , "fold-rmid2"
+                                           )
+                                       ,
+                                           ( "fold-req-3"
+                                           , hexT foldKeyC
+                                           , edgeInsertActive
+                                           , "active:" <> hexT foldHashB
+                                           , hexT foldTestRoot
+                                           )
+                                       ]
+                                )
+                        reader key
+                            | key == foldKeyA =
+                                pure (Right Active, Right (ref, foldHolding foldKeyA foldHashA))
+                            | key == foldKeyB =
+                                pure (Right Terminal, Left "no holding of it is live")
+                            | key == foldKeyC =
+                                pure (Right Active, Right (ref, foldHolding foldKeyC foldHashB))
+                            | otherwise = pure (Right Unknown, Left "unknown key")
+                    verdicts <- observeVerdicts "inspect" prepared out0 (Just reader)
+                    length verdicts `shouldBe` 4
+                    let details = Either.rights verdicts
+                    length details `shouldBe` 4
+                    forM_ [foldKeyA, foldKeyB, foldKeyC] $ \k ->
+                        any (T.isInfixOf (hexT k)) details `shouldBe` True
+                    observed <-
+                        observe "inspect" dir (Just reader) [foldRecovery prepared out0]
+                    observed `shouldBe` ["fold-tx-three"]
+                    eventsOf "fold-tx-three" dir `shouldReturn` ["observed"]
+                    entries <- readJournal dir
+                    case entries of
+                        [line] -> journalTransitions line `shouldBe` Nothing
+                        _ ->
+                            expectationFailure "the fold was not journalled observed exactly once"
+            it
+                "leaves a fold unobserved when any key misses its leaf, naming that key"
+                $ withSystemTempDirectory "singular-fold-miss"
+                $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        out0 = foldStateOutput addr foldTestRoot
+                        ref = (foldSeedRef, out0)
+                        prepared =
+                            foldPrepared
+                                "fold-tx-miss"
+                                "fold-rb0"
+                                ( ( "fold-req-1"
+                                  , hexT foldKeyA
+                                  , edgeInsertActive
+                                  , "active:" <> hexT foldHashA
+                                  , "fold-rmid1"
+                                  )
+                                    :| [
+                                           ( "fold-req-2"
+                                           , hexT foldKeyB
+                                           , edgeUpdateTerminal
+                                           , "terminal"
+                                           , "fold-rmid2"
+                                           )
+                                       ,
+                                           ( "fold-req-3"
+                                           , hexT foldKeyC
+                                           , edgeInsertActive
+                                           , "active:" <> hexT foldHashB
+                                           , hexT foldTestRoot
+                                           )
+                                       ]
+                                )
+                        healthy key
+                            | key == foldKeyA =
+                                (Right Active, Right (ref, foldHolding foldKeyA foldHashA))
+                            | key == foldKeyB = (Right Terminal, Left "no holding of it is live")
+                            | key == foldKeyC =
+                                (Right Active, Right (ref, foldHolding foldKeyC foldHashB))
+                            | otherwise = (Right Unknown, Left "unknown key")
+                        cases =
+                            [
+                                ( foldKeyA
+                                , \k ->
+                                    pure
+                                        ( if k == foldKeyA
+                                            then (Right Terminal, Left "no holding")
+                                            else healthy k
+                                        )
+                                )
+                            ,
+                                ( foldKeyB
+                                , \k ->
+                                    pure
+                                        ( if k == foldKeyB
+                                            then (Right Active, Right (ref, foldHolding foldKeyB foldHashB))
+                                            else healthy k
+                                        )
+                                )
+                            ,
+                                ( foldKeyC
+                                , \k ->
+                                    pure
+                                        (if k == foldKeyC then (Right Active, Left "no holding") else healthy k)
+                                )
+                            ,
+                                ( foldKeyC
+                                , \k ->
+                                    pure
+                                        ( if k == foldKeyC
+                                            then (Right Active, Right (ref, foldHolding foldKeyC foldHashA))
+                                            else healthy k
+                                        )
+                                )
+                            ]
+                    forM_ cases $ \(badKey, reader) -> do
+                        verdicts <- observeVerdicts "inspect" prepared out0 (Just reader)
+                        observe "inspect" dir (Just reader) [foldRecovery prepared out0]
+                            `shouldReturn` []
+                        let lefts = Either.lefts verdicts
+                        lefts `shouldSatisfy` (not . null)
+                        any (T.isInfixOf (hexT badKey)) lefts `shouldBe` True
+            it
+                "leaves a fold unobserved when the state output carries another root"
+                $ withSystemTempDirectory "singular-fold-root"
+                $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        out0 = foldStateOutput addr foldTestRoot
+                        ref = (foldSeedRef, out0)
+                        prepared =
+                            foldPrepared
+                                "fold-tx-root"
+                                "fold-rb0"
+                                ( ( "fold-req-1"
+                                  , hexT foldKeyA
+                                  , edgeInsertActive
+                                  , "active:" <> hexT foldHashA
+                                  , "fold-rmid1"
+                                  )
+                                    :| [
+                                           ( "fold-req-2"
+                                           , hexT foldKeyB
+                                           , edgeUpdateTerminal
+                                           , "terminal"
+                                           , "fold-other-root"
+                                           )
+                                       ]
+                                )
+                        reader key
+                            | key == foldKeyA =
+                                pure (Right Active, Right (ref, foldHolding foldKeyA foldHashA))
+                            | key == foldKeyB =
+                                pure (Right Terminal, Left "no holding of it is live")
+                            | otherwise = pure (Right Unknown, Left "unknown key")
+                    verdicts <- observeVerdicts "inspect" prepared out0 (Just reader)
+                    observe "inspect" dir (Just reader) [foldRecovery prepared out0]
+                        `shouldReturn` []
+                    let lefts = Either.lefts verdicts
+                    length lefts `shouldBe` 1
+                    any (T.isInfixOf "fold-other-root") lefts `shouldBe` True
+            it "reads a key moved twice against its last transition only" $
+                withSystemTempDirectory "singular-fold-twice" $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        out0 = foldStateOutput addr foldTestRoot
+                        prepared =
+                            foldPrepared
+                                "fold-tx-twice"
+                                "fold-rb0"
+                                ( ( "fold-req-1"
+                                  , hexT foldKeyD
+                                  , edgeInsertActive
+                                  , "active:" <> hexT foldHashA
+                                  , "fold-rmid"
+                                  )
+                                    :| [
+                                           ( "fold-req-2"
+                                           , hexT foldKeyD
+                                           , edgeUpdateTerminal
+                                           , "terminal"
+                                           , hexT foldTestRoot
+                                           )
+                                       ]
+                                )
+                        reader _ = pure (Right Terminal, Left "no holding of it is live")
+                    verdicts <- observeVerdicts "inspect" prepared out0 (Just reader)
+                    length verdicts `shouldBe` 2
+                    (Either.lefts verdicts :: [Text]) `shouldBe` []
+                    observed <-
+                        observe "inspect" dir (Just reader) [foldRecovery prepared out0]
+                    observed `shouldBe` ["fold-tx-twice"]
+            it "observes a line written before the list as a batch of one" $
+                withSystemTempDirectory "singular-fold-early" $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        out0 = foldStateOutput addr foldTestRoot
+                        prepared =
+                            (recoveryBase "fold-tx-early")
+                                { journalEvent = "prepared"
+                                , journalDetail = Just "a line written before the transition list"
+                                , journalKey = Just (hexT foldKeyA)
+                                , journalExpect = Just ("active:" <> hexT foldHashA)
+                                , journalEdge = Just edgeInsertActive
+                                , journalRootBefore = Just "fold-rb0"
+                                , journalRootAfter = Just (hexT foldTestRoot)
+                                }
+                        reader _ =
+                            pure
+                                ( Right Active
+                                , Right ((foldSeedRef, out0), foldHolding foldKeyA foldHashA)
+                                )
+                    verdicts <- observeVerdicts "inspect" prepared out0 (Just reader)
+                    length verdicts `shouldBe` 2
+                    observed <-
+                        observe "inspect" dir (Just reader) [foldRecovery prepared out0]
+                    observed `shouldBe` ["fold-tx-early"]
+            it "leaves a fold unobserved when its scalars disagree with its list" $
+                withSystemTempDirectory "singular-fold-disagree" $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        out0 = foldStateOutput addr foldTestRoot
+                        ref = (foldSeedRef, out0)
+                        healthy =
+                            foldPrepared
+                                "fold-tx-disagree"
+                                "fold-rb0"
+                                ( ( "fold-req-1"
+                                  , hexT foldKeyA
+                                  , edgeInsertActive
+                                  , "active:" <> hexT foldHashA
+                                  , "fold-rmid"
+                                  )
+                                    :| [
+                                           ( "fold-req-2"
+                                           , hexT foldKeyB
+                                           , edgeUpdateTerminal
+                                           , "terminal"
+                                           , hexT foldTestRoot
+                                           )
+                                       ]
+                                )
+                        reader key
+                            | key == foldKeyA =
+                                pure (Right Active, Right (ref, foldHolding foldKeyA foldHashA))
+                            | key == foldKeyB =
+                                pure (Right Terminal, Left "no holding of it is live")
+                            | otherwise = pure (Right Unknown, Left "unknown key")
+                        alterations =
+                            [ healthy{journalKey = Just (hexT foldKeyC)}
+                            , healthy{journalExpect = Just "terminal"}
+                            , healthy{journalEdge = Just edgeUpdateTerminal}
+                            , healthy{journalRootBefore = Just "fold-other"}
+                            , healthy{journalRootAfter = Just "fold-other"}
+                            ]
+                    forM_ alterations $ \bad -> do
+                        verdicts <- observeVerdicts "inspect" bad out0 (Just reader)
+                        length verdicts `shouldBe` 1
+                        case verdicts of
+                            [Left d] -> T.isInfixOf "disagree" d `shouldBe` True
+                            _ ->
+                                expectationFailure
+                                    "a disagreeing line gave no single disagreeing verdict"
+                        observe "inspect" dir (Just reader) [foldRecovery bad out0]
+                            `shouldReturn` []
+            it
+                "rolls a two-request fold back to both requests, its first root before and no list"
+                $ withSystemTempDirectory "singular-fold-rollback"
+                $ \dir -> do
+                    wallet <- storyWallet dir
+                    let addr = walletAddr wallet
+                        seedIn =
+                            either
+                                (error "fold test: bad seed 0")
+                                id
+                                (parseOutRef (T.pack (replicate 64 '7' <> "#0")))
+                        seedIn2 =
+                            either
+                                (error "fold test: bad seed 1")
+                                id
+                                (parseOutRef (T.pack (replicate 64 '7' <> "#1")))
+                        body =
+                            mkBasicTx
+                                ( mkBasicTxBody
+                                    & inputsTxBodyL .~ Set.fromList [seedIn, seedIn2]
+                                    & outputsTxBodyL
+                                        .~ StrictSeq.fromList
+                                            [ mkBasicTxOut addr (MaryValue (Coin 3_000_000) mempty)
+                                            , mkBasicTxOut addr (MaryValue (Coin 2_000_000) mempty)
+                                            ]
+                                )
+                        raw = serialize' (eraProtVerHigh @ConwayEra) body
+                        txid = txIdHex body
+                        bodyPath = bodiesDir dir </> T.unpack txid <> ".cbor.hex"
+                        ts =
+                            chainTransitions
+                                "g-rb0"
+                                ( ( "g-req-1"
+                                  , hexT "g-key-one"
+                                  , edgeInsertActive
+                                  , "active:" <> hexT foldHashA
+                                  , "g-rmid"
+                                  )
+                                    :| [ ("g-req-2", hexT "g-key-two", edgeUpdateTerminal, "terminal", "g-ra")
+                                       ]
+                                )
+                        (sk, se, sedge, srb, sra) = foldExpectationScalars ts
+                    createDirectoryIfMissing True (bodiesDir dir)
+                    durableWrite bodyPath (B16.encode raw)
+                    appendJournal
+                        dir
+                        (recoveryBase txid)
+                            { journalEvent = "prepared"
+                            , journalDetail =
+                                Just "a fold of two requests, interrupted after confirmation"
+                            , journalInputs = Just (map txInText [seedIn, seedIn2])
+                            , journalBody = Just bodyPath
+                            , journalBodyHash =
+                                Just (hexT (hashToBytes (hashWith @Blake2b_256 id raw)))
+                            , journalNetwork = Just 1
+                            , journalEra = Just "Conway"
+                            , journalKey = Just sk
+                            , journalExpect = Just se
+                            , journalEdge = Just sedge
+                            , journalRootBefore = Just srb
+                            , journalRootAfter = Just sra
+                            , journalTransitions = Just (toList ts)
+                            }
+                    let view =
+                            withTip
+                                (Cage.TipObservation (SlotNo 7) (BS.replicate 32 3) 7 0)
+                                stubSession
+                        out0In = TxIn (txIdTx body) (TxIx 0)
+                    included <-
+                        recoverInclusion
+                            "inspect"
+                            dir
+                            view
+                            (\_ -> pure (Set.fromList [out0In]))
+                    case [r | r <- included, recTx r == txid] of
+                        [r] -> recIncluded r `shouldBe` True
+                        _ ->
+                            expectationFailure
+                                "the interrupted fold was not recovered exactly once"
+                    eventsOf txid dir `shouldReturn` ["prepared", "confirmed"]
+                    entries <- readJournal dir
+                    case [e | e <- entries, journalEvent e == "confirmed"] of
+                        [confirmed] -> journalTransitions confirmed `shouldBe` Nothing
+                        _ -> expectationFailure "the journal holds no single confirmed line"
+                    rolled <-
+                        rollBack
+                            "inspect"
+                            dir
+                            view
+                            (\_ -> pure (Set.fromList [seedIn, seedIn2]))
+                    rolled `shouldBe` [txid]
+                    eventsOf txid dir
+                        `shouldReturn` ["prepared", "confirmed", "rolled-back"]
+                    entriesAfter <- readJournal dir
+                    case [e | e <- entriesAfter, journalEvent e == "rolled-back"] of
+                        [line] -> do
+                            journalRootBefore line `shouldBe` Just "g-rb0"
+                            journalTransitions line `shouldBe` Nothing
+                            case journalDetail line of
+                                Just detail -> T.isInfixOf "2 request(s)" detail `shouldBe` True
+                                Nothing -> expectationFailure "the rolled-back line carries no detail"
+                            journalInputs line
+                                `shouldBe` Just (map txInText (Set.toAscList (Set.fromList [seedIn, seedIn2])))
+                        _ -> expectationFailure "the journal holds no single rolled-back line"
   where
     fieldsOf (CommandFailure _ _ fields) key = lookup key fields
+
+-- ---------------------------------------------------------
+-- Folds of several transitions, journalled for observation
+-- ---------------------------------------------------------
+--
+-- These fixtures are synthetic: keys, envelope hashes and roots are fixed
+-- bytes, while the state output carries a real state datum built and read
+-- through the production constructors, so the root comparison is genuine.
+-- Nothing here touches the recorded preprod fixture set.
+
+-- | The root the fixture state outputs carry.
+foldTestRoot :: ByteString
+foldTestRoot = BS.replicate 32 33
+
+foldKeyA, foldKeyB, foldKeyC, foldKeyD :: ByteString
+foldKeyA = "fold-key-a"
+foldKeyB = "fold-key-b"
+foldKeyC = "fold-key-c"
+foldKeyD = "fold-key-twice"
+
+foldHashA, foldHashB :: ByteString
+foldHashA = BS.replicate 32 11
+foldHashB = BS.replicate 32 22
+
+{- | One spent reference the key-reader fixtures point at; only the leaf
+and the holding beside it are ever read.
+-}
+foldSeedRef :: TxIn
+foldSeedRef =
+    either
+        (error "fold test: bad seed reference")
+        id
+        (parseOutRef (T.pack (replicate 64 '7' <> "#0")))
+
+{- | A registry state output carrying the given root, through the
+production datum constructors.
+-}
+foldStateOutput :: Addr -> ByteString -> TxOut ConwayEra
+foldStateOutput addr root =
+    mkBasicTxOut addr (MaryValue (Coin 2_000_000) mempty)
+        & datumTxOutL
+            .~ mkInlineDatum
+                ( toPlcData
+                    (StateDatum (bootStateFromCfg Booking.cfg (OnChainRoot root)))
+                )
+
+{- | A holding fixture carrying the given envelope hash for the given key.
+Only the hash is ever compared; the datum shape is fixed.
+-}
+foldHolding :: ByteString -> ByteString -> DecodedHolding
+foldHolding key hash =
+    DecodedHolding
+        { dhDatumData = PLC.Constr 0 []
+        , dhDatumCbor = BS.empty
+        , dhDatumHash = hash
+        , dhKey = key
+        , dhDeposit = 0
+        , dhController = BS.empty
+        , dhPayload = PLC.Constr 0 []
+        , dhDatumJson = Aeson.Null
+        , dhPayloadJson = Aeson.Null
+        }
+
+{- | A fold's @prepared@ line over the given transitions, with the scalars
+the writer derives from them.
+-}
+foldPrepared
+    :: Text
+    -> Text
+    -> NonEmpty (Text, Text, Integer, Text, Text)
+    -> JournalEntry
+foldPrepared txid rootBefore tuples =
+    let ts = chainTransitions rootBefore tuples
+        (key, expect, edge, rb, ra) = foldExpectationScalars ts
+    in  (recoveryBase txid)
+            { journalEvent = "prepared"
+            , journalDetail =
+                Just "a fold of several requests, journalled for observation"
+            , journalKey = Just key
+            , journalExpect = Just expect
+            , journalEdge = Just edge
+            , journalRootBefore = Just rb
+            , journalRootAfter = Just ra
+            , journalTransitions = Just (toList ts)
+            }
+
+{- | An included recovery over a crafted prepared line and first output,
+as `recoverInclusion` reports one: the next command would observe it.
+-}
+foldRecovery :: JournalEntry -> TxOut ConwayEra -> Recovery
+foldRecovery prepared out0 =
+    Recovery
+        { recTx = journalTxId prepared
+        , recStep = journalStep prepared
+        , recIncluded = True
+        , recExcluded = False
+        , recNote = ""
+        , recPrepared = Just prepared
+        , recFirstOutput = Just out0
+        , recBody = Nothing
+        , recLast = prepared
+        }

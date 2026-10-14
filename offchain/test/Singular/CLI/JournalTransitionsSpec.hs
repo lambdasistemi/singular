@@ -22,6 +22,8 @@ import Singular.CLI.Receipt
     ( FoldTransition (..)
     , JournalEntry (..)
     , chainTransitions
+    , foldScalarsAgree
+    , foldTransitions
     )
 import Singular.CLI.Session
     ( Expectation (..)
@@ -101,3 +103,113 @@ spec = describe "the fold's journal line lists its transitions" $ do
             case Aeson.eitherDecode' reEncoded of
                 Right entry2 -> entry2 `shouldBe` entry
                 Left err -> expectationFailure ("re-encoded line does not decode: " <> err)
+    it "reads the entry's list when it has one" $ do
+        let ts =
+                toList
+                    ( chainTransitions
+                        "rb0"
+                        ( ("req1", "key1", 3, "active:aa", "ra1")
+                            :| [("req2", "key2", 4, "terminal", "ra2")]
+                        )
+                    )
+        foldTransitions baseEntry{journalTransitions = Just ts} `shouldBe` ts
+        foldTransitions baseEntry{journalTransitions = Just []} `shouldBe` []
+    it
+        "reads a scalar-only line as its one transition with an empty request"
+        $ do
+            foldTransitions
+                baseEntry
+                    { journalKey = Just "key1"
+                    , journalExpect = Just "active:aa"
+                    , journalEdge = Just 3
+                    , journalRootBefore = Just "rb0"
+                    , journalRootAfter = Just "ra1"
+                    }
+                `shouldBe` [FoldTransition "" "key1" 3 "active:aa" "rb0" "ra1"]
+    it "reads a line carrying neither as empty" $ do
+        foldTransitions baseEntry `shouldBe` []
+        foldTransitions
+            baseEntry
+                { journalKey = Just "key1"
+                , journalExpect = Just "active:aa"
+                , journalRootBefore = Just "rb0"
+                , journalRootAfter = Just "ra1"
+                }
+            `shouldBe` []
+    it "is true for a line without a list" $ do
+        foldScalarsAgree baseEntry `shouldBe` True
+        foldScalarsAgree baseEntry{journalKey = Just "key1"} `shouldBe` True
+    it "agrees with the scalars the writer derives from the list" $ do
+        let ts =
+                chainTransitions
+                    "rb0"
+                    ( ("req1", "key1", 3, "active:aa", "ra1")
+                        :| [ ("req2", "key2", 4, "terminal", "ra2")
+                           , ("req3", "key3", 3, "active:bb", "ra3")
+                           ]
+                    )
+            (key, expect, edge, rootBefore, rootAfter) =
+                foldExpectationScalars ts
+            entry =
+                baseEntry
+                    { journalKey = Just key
+                    , journalExpect = Just expect
+                    , journalEdge = Just edge
+                    , journalRootBefore = Just rootBefore
+                    , journalRootAfter = Just rootAfter
+                    , journalTransitions = Just (toList ts)
+                    }
+        foldScalarsAgree entry `shouldBe` True
+    it "disagrees when any scalar is altered against its list" $ do
+        let ts =
+                chainTransitions
+                    "rb0"
+                    ( ("req1", "key1", 3, "active:aa", "ra1")
+                        :| [("req2", "key2", 4, "terminal", "ra2")]
+                    )
+            (key, expect, edge, rootBefore, rootAfter) =
+                foldExpectationScalars ts
+            healthy =
+                baseEntry
+                    { journalKey = Just key
+                    , journalExpect = Just expect
+                    , journalEdge = Just edge
+                    , journalRootBefore = Just rootBefore
+                    , journalRootAfter = Just rootAfter
+                    , journalTransitions = Just (toList ts)
+                    }
+        foldScalarsAgree healthy{journalKey = Just "other"} `shouldBe` False
+        foldScalarsAgree healthy{journalExpect = Just "terminal"}
+            `shouldBe` False
+        foldScalarsAgree healthy{journalEdge = Just 9} `shouldBe` False
+        foldScalarsAgree healthy{journalRootBefore = Just "other"}
+            `shouldBe` False
+        foldScalarsAgree healthy{journalRootAfter = Just "other"}
+            `shouldBe` False
+        foldScalarsAgree healthy{journalTransitions = Just []}
+            `shouldBe` False
+
+baseEntry :: JournalEntry
+baseEntry =
+    JournalEntry
+        { journalCommand = "insert"
+        , journalStep = "fold"
+        , journalTxId = "tx"
+        , journalEvent = "prepared"
+        , journalDetail = Nothing
+        , journalInputs = Nothing
+        , journalBody = Nothing
+        , journalBodyHash = Nothing
+        , journalNetwork = Nothing
+        , journalEra = Nothing
+        , journalChainPoint = Nothing
+        , journalSession = Nothing
+        , journalObservedTip = Nothing
+        , journalKey = Nothing
+        , journalExpect = Nothing
+        , journalEdge = Nothing
+        , journalRootBefore = Nothing
+        , journalRootAfter = Nothing
+        , journalTransitions = Nothing
+        , journalTime = Nothing
+        }

@@ -88,35 +88,42 @@ The bound stays 1. Re-derived on 2026-10-13 against `main` at `e7b55ac9` and reb
 - [x] provenance-of-bound-one-states-the-recovery-reason
 - [x] node-guide-sentence-matches-it-narration-regenerated-speech-restamped
 
-## Pull request 3b: recovery of many, bound 9, executed evidence
+## Pull request 3b: bound 9, the sweep of readers, the two-actor devnet item
 
 ### reconcile-reads-every-transition
 
-- [ ] an-earlier-line-reads-as-a-batch-of-one
-- [ ] observe-each-key-against-its-last-transition
-- [ ] the-state-output-carries-the-last-root-after
-- [ ] rollback-names-every-request-and-restores-the-first-root-before
-- [ ] scalar-and-list-disagreement-is-not-observed
+- [x] an-earlier-line-reads-as-a-batch-of-one
+- [x] observe-each-key-against-its-last-transition
+- [x] the-state-output-carries-the-last-root-after
+- [x] rollback-names-every-request-and-restores-the-first-root-before
+- [x] scalar-and-list-disagreement-is-not-observed
 
 ### capacity-nine
 
-- [ ] bound-of-nine-with-its-provenance
-- [ ] journey-assertions-of-the-bound-move-to-nine
-- [ ] a-termination-that-is-not-first-settles-and-pays-its-holding
-- [ ] a-regression-passing-only-the-first-holding-fails-a-row
-- [ ] every-reader-of-the-settled-list-finds-its-request-or-has-one-pending-by-construction
+- [x] bound-of-nine-with-its-provenance
+- [x] journey-assertions-of-the-bound-move-to-nine
+- [x] a-termination-that-is-not-first-settles-and-pays-its-holding
+- [x] a-regression-passing-only-the-first-holding-fails-a-row
+- [x] every-reader-of-the-settled-list-finds-its-request-or-has-one-pending-by-construction
 
 ### devnet-two-actors-one-fold
 
-- [ ] two-actors-book-concurrently-and-one-fold-settles-both-each-payout-to-its-owner
-- [ ] tampered-receipts-of-the-two-request-fold-are-refused
+- [x] two-actors-book-concurrently-and-one-fold-settles-both-each-payout-to-its-owner
+- [x] tampered-receipts-of-the-two-request-fold-are-refused
+
+### docs-of-the-node-guide
+
+- [x] the-node-guide-states-the-bound-the-whole-behaviour-and-its-limits
+- [x] speech-restamped-and-narration-regenerated-for-the-node-guide
+
+## Pull request 3c: the interrupted fold, executed on a devnet, and the other pages
 
 ### devnet-interrupted-two-request-fold
 
 - [ ] an-interrupted-two-request-fold-reconciles-both-keys-once
 - [ ] the-part-is-hosted-by-the-partition-list
 
-### docs-of-many-per-fold
+### docs-of-recovery-and-the-other-pages
 
-- [ ] pages-state-the-bound-the-whole-behaviour-and-its-limits
+- [ ] the-recovery-page-the-preprod-page-the-fold-responsibilities-page-and-the-rehearsal-document-state-the-bound-and-the-whole-behaviour
 - [ ] speech-restamped-and-narration-regenerated

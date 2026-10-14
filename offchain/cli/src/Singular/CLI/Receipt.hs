@@ -47,6 +47,8 @@ module Singular.CLI.Receipt
       JournalEntry (..)
     , FoldTransition (..)
     , chainTransitions
+    , foldTransitions
+    , foldScalarsAgree
     , journalPath
     , appendJournal
     , readJournal
@@ -186,6 +188,56 @@ chainTransitions = go
         let headT = FoldTransition req key edge expect before after
             tailT = go after (next :| rest)
         in  headT NonEmpty.<| tailT
+
+{- | The transitions a fold's journal line binds to its transaction: the
+entry's list when it has one; otherwise, when @journalKey@,
+@journalExpect@, @journalEdge@, @journalRootBefore@ and @journalRootAfter@
+are all present, the one transition they describe; otherwise empty. A line
+written before the list names no request, so the fallback transition
+carries the empty text as its request.
+-}
+foldTransitions :: JournalEntry -> [FoldTransition]
+foldTransitions e = case journalTransitions e of
+    Just ts -> ts
+    Nothing -> case ( journalKey e
+                    , journalExpect e
+                    , journalEdge e
+                    , journalRootBefore e
+                    , journalRootAfter e
+                    ) of
+        (Just key, Just expect, Just edge, Just before, Just after) ->
+            [FoldTransition "" key edge expect before after]
+        _ -> []
+
+{- | Whether a fold's scalar journal fields agree with its transition list:
+true for a line without a list, and for a line with one exactly when its
+scalars are the ones the writer derives from the list — the key,
+expectation and edge of the first transition, the root before of the first
+and the root after of the last. The derivation owner is the function of
+the writer's change that computes them
+('Singular.CLI.Session.foldExpectationScalars'); this predicate is its
+comparison dual, and a row of the journal spec pins the two together.
+-}
+foldScalarsAgree :: JournalEntry -> Bool
+foldScalarsAgree e = case journalTransitions e of
+    Nothing -> True
+    Just (first : rest) ->
+        let lastT = case rest of
+                [] -> first
+                _ -> last rest
+        in  ( journalKey e
+            , journalExpect e
+            , journalEdge e
+            , journalRootBefore e
+            , journalRootAfter e
+            )
+                == ( Just (transitionKey first)
+                   , Just (transitionExpect first)
+                   , Just (transitionEdge first)
+                   , Just (transitionRootBefore first)
+                   , Just (transitionRootAfter lastT)
+                   )
+    Just [] -> False
 
 journalPath :: FilePath -> FilePath
 journalPath dir = dir </> "journal.jsonl"

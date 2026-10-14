@@ -168,14 +168,17 @@ key's one active token.
 -}
 type LiveFacts = Map Int (Leaf, Bool)
 
--- | The capacity bound of pull request 1: one request per fold.
+{- | The capacity bound of a fold: nine requests per fold, an estimate
+under preprod's execution budget of 14 million memory units, bound by
+trie-proof verification. The number is not measured under preprod parameters.
+-}
 foldCapacity :: Int
-foldCapacity = 1
+foldCapacity = 9
 
--- | recovery reads one transition until the multi-request recovery ships
+-- | an estimate, not a measurement: about nine requests fit in a fold under preprod's execution budget of 14 million memory units, bound by trie-proof verification
 foldCapacityProvenance :: Text
 foldCapacityProvenance =
-    "recovery reads one transition until the multi-request recovery ships"
+    "an estimate, not a measurement: about nine requests fit in a fold under preprod's execution budget of 14 million memory units, bound by trie-proof verification"
 
 -- | The reason's name in the receipt's vocabulary.
 exclusionName :: Exclusion -> Text

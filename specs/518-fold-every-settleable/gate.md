@@ -208,11 +208,11 @@ Acceptance lines of pull request 3b:
 | acceptance line | PR | rows that prove it |
 |---|---|---|
 | recovery-covers-every-included-request | 3b | CI change in this ticket: open-datum-tests (observation of many, a pre-change line read as a list of one, a scalar tampered against its list refused, rollback); recovery-partitions |
-| interrupted-fold-reconciles-every-request | 3b | CI change in this ticket: recovery-partitions, in the partition that carries the new part (an interrupted two-request fold, answer lost and process killed, both keys reconciled once, never resent) |
+| interrupted-fold-reconciles-every-request | 3c | CI change in this ticket: recovery-partitions, in the partition that carries the new part (an interrupted two-request fold, answer lost and process killed, both keys reconciled once, never resent) |
 | capacity-bound-prefix-and-remainder at 9 | 3b | focused-offchain-suite (the bound and its provenance text in the selection and the receipt); demo1-journey-from-archive (the receipt of the two-request fold names bound 9 and its provenance) |
 | two-actors-one-fold | 3b | CI change in this ticket: demo1-journey-from-archive (two actors book concurrently, one fold settles both, each payout reaches its owner, tampered receipts refused); demo1-two-actor-control (still fails where designed) |
 | every-reader-of-the-settled-list-finds-its-request | 3b | demo1-journey-from-archive, demo1-refusal-controls, registry-two-actors, keri-stub-journey, conformance-unit-suite, open-datum-tests, focused-offchain-suite: the sweep by consumer of the plan, shown by the jobs |
-| docs-state-the-bound-and-the-whole-behaviour | 3b | rendered-docs; presentation-check; release-docs-check; cli-flags |
+| docs-state-the-bound-and-the-whole-behaviour | 3b (the node guide), 3c (the other pages) | rendered-docs; presentation-check; release-docs-check; cli-flags |
 | fences | 3b | application-separation; the owner path fence on `lean onchain naming-onchain simulator/formal` |
 
 Obligations: the new recovery part is a hosted obligation through the partition list in the root flake (the partition check job fails when a part is in no partition); the new journal spec is part of the focused suite; no new flake app or check is declared, so the census row needs no new entry. Missing jobs, recorded: no job asserts a path fence, the prose of the pages, or an executed fold race.

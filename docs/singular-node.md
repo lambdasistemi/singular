@@ -33,8 +33,8 @@ no coherent chain snapshot and carries no verification witness.
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
 | `--fund-input TXID#IX` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The wallet output that funds and collateralises the write. `create`, `inspect` and `describe` refuse it rather than ignore it. |
 | `--max-outlay LOVELACE` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | The most the write may put out of your wallet. A booking, an update, a fold, reclaim or reject past it is not signed; an insert or terminate given `--fold` whose fold, built after its booking confirms, costs more than the booking left of it stops partial, its request pending and the fold unsigned. `create`, `inspect` and `describe` refuse it. |
-| `--fold` | `insert`, `terminate` | Also fold the request this command just booked, in the same command and by the same routine `registry fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
-| `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional, and an expectation: without it the fold settles the first settleable pending request in ledger order and names every request it leaves out. With it the command is refused unless that request is among the settled ones, naming why it is not. A named request that is not pending is refused. |
+| `--fold` | `insert`, `terminate` | Also fold pending requests, including the one this command just booked, in the same command and by the same routine `registry fold` runs. Without it the command books and stops. A preview and `update` refuse it. |
+| `--request TXID#IX` | `fold`, `reclaim` | The pending request to act on. Required by reclaim, which takes back only that request. On fold it is optional, and an expectation: without it the fold settles every settleable pending request, up to the capacity bound, in ledger input order and names every request it leaves out. With it the command is refused unless that request is among the settled ones, naming why it is not. A named request that is not pending is refused. |
 | `--key KEY` | `insert`, `update`, `terminate`, `inspect` | The registry key the command acts on, as text: its UTF-8 bytes, between 1 and 32 of them. A string that looks like hex is still text. Give this or `--key-hex`, not both. |
 | `--key-hex HEX` | `insert`, `update`, `terminate`, `inspect` | The same key spelled as base16 bytes, for a key that is not printable text. The receipts print every key as hex, and as text when its bytes are valid UTF-8. |
 | `--outputs-at ADDR` | `inspect` | A public address, bech32, whose outputs the receipt also lists, each with its output reference and what it actually holds, read from the provider. It is a read apart from any write: nothing is signed, submitted or journalled. Every other command refuses it. |
@@ -137,7 +137,7 @@ preview and live. The fold still validates every booking it folds, so a
 booking made through the permissive builders can still reach the chain's
 own refusal at the fold.
 
-`registry fold` folds that request. It is an ordinary command: it signs and
+`registry fold` folds pending requests. It is an ordinary command: it signs and
 funds with the wallet it is given, journals its own transactions, and may be
 run by any wallet, not only the one that booked. An insertion's request carries
 the envelope its fold delivers, so the folder reads it from the pending request
@@ -169,7 +169,7 @@ sequenceDiagram
     Note over W: Journal and mirror
 ```
 
-`registry fold` judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles the first request that passes, in ledger input order. This pull request settles one request per fold: the receipt's `capacity` field states the bound, 1, and why — recovery reads one transition until the multi-request recovery ships. A fold is never refused because several requests are pending. The fold folds `insertActive` and `updateTerminal`; any other edge is refused `edge-inadmissible` in the model's words.
+`registry fold` judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles every request that passes, up to the capacity bound, in ledger input order, at most one per key. Two users who book at the same moment are settled by one fold. The receipt's `capacity` field states the bound, 9, with its provenance: an estimate, not a measurement, of how many requests fit in a fold. A request past the bound is named `capacity` and is for the next fold. A fold is never refused because several requests are pending. The fold folds `insertActive` and `updateTerminal`; any other edge is refused `edge-inadmissible` in the model's words.
 
 Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Eight reasons are the model's own refusal words, reported verbatim; six are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.
 
@@ -180,7 +180,7 @@ Every request the fold leaves out is named in the receipt with its reason and wh
 
 A request refused in the model's words failed the model's own check — its edge, its approval, or its leaf against the live state — and stays refused while the state still rules it out. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its processing window is not open beyond the fold margin; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named `capacity` is for the next fold. A request named `window-closed` stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with `registry reclaim` after its processing deadline, while its retract window remains open, and `registry reject` clears requests past both their windows.
 
-The receipt no longer carries the single-request fields it once printed at the top level: `request`, `key`, `edge`, `liveOutput`, `envelope`, `released` and `deposit`, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in `settled`: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. `settled` names each settled request in ledger order; `excluded` names each left-out request with its request, reason, source and detail, in ledger order; `capacity` states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 1 with its provenance.
+The receipt no longer carries the single-request fields it once printed at the top level: `request`, `key`, `edge`, `liveOutput`, `envelope`, `released` and `deposit`, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in `settled`: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. `settled` names each settled request in ledger order; `excluded` names each left-out request with its request, reason, source and detail, in ledger order; `capacity` states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 9 with its provenance.
 
 ```json
 {
@@ -203,15 +203,15 @@ The receipt no longer carries the single-request fields it once printed at the t
     }
   ],
   "capacity": {
-    "bound": 1,
-    "provenance": "recovery reads one transition until the multi-request recovery ships"
+    "bound": 9,
+    "provenance": "an estimate, not a measurement: about nine requests fit in a fold under preprod's execution budget of 14 million memory units, bound by trie-proof verification"
   }
 }
 ```
 
 `--request R` is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused `nothing-to-fold`, naming every exclusion with its reason and source. The window is the exception: when the request named by `--request` has run out of window, the refusal keeps the older deadline wording with its time fields instead of that request's reason and source, and, when nothing settles, lists the other exclusions after it; the same wording is kept when the only pending request has run out of window. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline, or within the thirty seconds a fold needs to be included.
 
-`insert --fold` and `terminate --fold`, which run through the `open-datum` executable since the command-line split, take the same selection and print the same lists as `registry fold`. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the first entry of `settled`. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.
+`insert --fold` and `terminate --fold`, which run through the `open-datum` executable since the command-line split, take the same selection and print the same lists as `registry fold`. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the entry for the request they just booked in `settled`. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.
 
 Before anything is signed the command still refuses the outlay past `--max-outlay` and a funding output that is not the wallet's.
 
@@ -225,10 +225,9 @@ before the deadline time; a bound pinned time cannot convert, or a clock that ha
 meanwhile come within the margin, is refused unsigned, with the bound, the
 clock and the deadline in the receipt.
 
-The deadline the fold is judged against is the one the booking's receipt
-states. A fold refused for it submitted nothing, and its request stays pending.
+The deadline the fold is judged against is the earliest among the settled requests, each as its booking's receipt states. A fold refused for it submitted nothing, and pending requests stay pending.
 
-What this pull request leaves out, stated plainly: one request per fold, because recovery reads one transition until the multi-request recovery ships. The capacity of a fold on a real network is not measured here: the operator's estimate of about nine requests per fold on preprod parameters is an estimate, not a claim, and this page claims no preprod number. Measuring it belongs to #530.
+What this page still does not claim, stated plainly: the capacity of 9 is an estimate, not measured on a real network, and this page claims no preprod number; measuring it belongs to #530. Recovery of a fold of several requests is proved by unit-level checks, and the interruption of such a fold on a development network is not executed yet.
 
 ## Reclaiming your pending request
 

@@ -2730,6 +2730,12 @@ settledControlPath =
     , field "fields"
     ]
 
+-- | Whether a receipt's settled list holds exactly the one pending request.
+settledIsSingleton :: Receipt -> Bool
+settledIsSingleton r = case at [field "settled"] r of
+    Just (Aeson.Array a) -> V.length a == 1
+    _ -> False
+
 -- | Fail unless a command receipt says @success@ and its submissions were admitted.
 succeeded :: String -> Receipt -> [String]
 succeeded what r =
@@ -3327,6 +3333,9 @@ check req rs = case (req, rs) of
         | rcOutcome booking /= "accepted"
         ]
             <> submitted booking
+            <> [ "the token-only fold's settled list is not exactly the one pending request"
+               | not (settledIsSingleton folded)
+               ]
             <> succeeded "the token-only fold" folded
             <> same
                 "the folded request"
@@ -3368,6 +3377,9 @@ check req rs = case (req, rs) of
     (SameRegistry, [c, i]) ->
         succeeded "the create" c
             <> succeeded "the insert" i
+            <> [ "the insert's settled list is not exactly the one pending request"
+               | not (settledIsSingleton i)
+               ]
             <> same
                 "the registry's state policy"
                 (at [field "pins", field "pinState"] c)
@@ -3392,6 +3404,9 @@ check req rs = case (req, rs) of
                 (at (settledControlPath <> [Right 2, field "bytes"]) i)
     (Delivered, [i, s]) ->
         succeeded "the insert" i
+            <> [ "the insert's settled list is not exactly the one pending request"
+               | not (settledIsSingleton i)
+               ]
             <> succeeded "the inspect" s
             <> is "the key's leaf" "active" (at [field "leaf"] s)
             <> same
@@ -3440,6 +3455,9 @@ check req rs = case (req, rs) of
             <> is "the key's leaf" "active" (at [field "leaf"] a)
     (Released, [b, t, a]) ->
         succeeded "the terminate" t
+            <> [ "the terminate's settled list is not exactly the one pending request"
+               | not (settledIsSingleton t)
+               ]
             <> succeeded "the inspect after" a
             <> is "the key's leaf" "terminal" (at [field "leaf"] a)
             <> is

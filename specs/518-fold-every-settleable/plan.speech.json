@@ -121,15 +121,15 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "bfecc424bab24267cc2f2cd58e3a3f20816226e437efdd5c43cc929e3a3d3a52"
+    "sha256": "6a493a1be8ac8406b66bdc32a44fe34a38a7bf2d777221fb2966b136d3fc5fcd"
   },
-  "pull-request-3-many-per-fold-cut-in-two": [
+  "pull-request-3-many-per-fold-cut-in-three": [
     {
-      "text": "Pull request 3: many per fold, cut in two.",
+      "text": "Pull request 3: many per fold, cut in three.",
       "pause": 500
     },
     {
-      "text": "Main already folds a chosen set of requests in the builder and the guards. What is still one request is the fold routine, the journal line and the observation in the reconciliation code. The estimate is about 350 minutes, more than the 240 allowed for each part, so the pull request is cut in two. Pull request 3a makes the fold, the builder and the journal carry a selection of any size while the bound stays 1, and changes nothing a user sees. Pull request 3b recovers a many-request fold, raises the bound to 9 and proves the whole behaviour on a development network. The bound rises only in the pull request that also recovers a many-request fold, so main never holds a fold it cannot recover. The branch stands on the bookkeeping lane's branch, and every push waits for that merge and a rebase onto main.",
+      "text": "Main already folds a chosen set of requests in the builder and the guards. What was still one request was the fold routine, the journal line and the observation in the reconciliation code. The estimate was about 350 minutes, more than the 240 allowed for each part, so the pull request is cut: 3a made the fold, the builder and the journal carry a selection of any size while the bound stays 1, and is merged. 3b recovers a many-request fold, raises the bound to 9, sweeps every reader of the settled list and runs the two-actor fold on a development network. 3c runs the interrupted fold on a development network and updates the other pages. The bound rises only in the pull request that also recovers a many-request fold, so main never holds a fold it cannot recover.",
       "pause": 400
     }
   ]
