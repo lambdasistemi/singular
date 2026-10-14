@@ -133,15 +133,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] archive-stages-version: onchain/version.txt beside the archive's onchain/plutus.json.",
+      "text": "[x] archive-stages-version: onchain/version.txt beside the archive's onchain/plutus.json.",
       "pause": 300
     },
     {
-      "text": "[ ] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.",
+      "text": "[x] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.",
       "pause": 300
     },
     {
-      "text": "[ ] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed version each refused by name on an archive that is otherwise valid.",
+      "text": "[x] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed version each refused by name on an archive that is otherwise valid.",
       "pause": 300
     }
   ],
@@ -151,15 +151,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] create-prints-describe-command-red: the create receipt carries no describe command on the base; the test runs the printed command as printed and expects the page.",
+      "text": "[x] create-prints-describe-command-red: the create receipt carries no describe command on the base; the test runs the printed command as printed and expects the page.",
       "pause": 300
     },
     {
-      "text": "[ ] create-receipt-carries-the-command: built from the arguments create ran with, with the new state token, never a wallet key; both the registry and the open-datum create.",
+      "text": "[x] create-receipt-carries-the-command: built from the arguments create ran with, with the new state token, never a wallet key; both the registry and the open-datum create.",
       "pause": 300
     },
     {
-      "text": "[ ] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or signing flag; a planted one fails the check.",
+      "text": "[x] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or signing flag; a planted one fails the check.",
       "pause": 300
     }
   ],
@@ -187,6 +187,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "437c2337df94332f7fdf62413b06333d079fa97a0c9be4a33b965fda82294707"
+    "sha256": "f5be0839e0f196706abc550986b75d43d1df08d998a7092785b029c64bd89aa6"
   }
 }

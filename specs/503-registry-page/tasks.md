@@ -59,18 +59,18 @@ before it is made to pass, and the failing run is kept.
 
 ### Slice 6: archive version (moved here by the cut rule)
 
-- [ ] archive-stages-version: `onchain/version.txt` beside the archive's `onchain/plutus.json`.
-- [ ] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.
-- [ ] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed
+- [x] archive-stages-version: `onchain/version.txt` beside the archive's `onchain/plutus.json`.
+- [x] release-check-refuses-disagreement: missing, other or unchecksummed version refused by name.
+- [x] release-control-refuses-each: the release surface control shows a missing, an other and an unchecksummed
   version each refused by name on an archive that is otherwise valid.
 
 ### Slice 7: create prints the command
 
-- [ ] create-prints-describe-command-red: the create receipt carries no `describe` command on the
+- [x] create-prints-describe-command-red: the create receipt carries no `describe` command on the
   base; the test runs the printed command as printed and expects the page.
-- [ ] create-receipt-carries-the-command: built from the arguments create ran with, with the new
+- [x] create-receipt-carries-the-command: built from the arguments create ran with, with the new
   state token, never a wallet key; both the registry and the open-datum create.
-- [ ] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or
+- [x] create-receipt-names-no-secret: the printed command carries no wallet key path, credential path or
   signing flag; a planted one fails the check.
 
 ### Slice 8: page from the archive
