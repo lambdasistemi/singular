@@ -1,6 +1,9 @@
 {
   "batches": [
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "observations": {
         "config": {
           "absentPolicy": 9,
@@ -145,6 +148,7 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         },
         {
@@ -171,12 +175,16 @@
           "owner": 42,
           "reference": 6,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         }
       ],
       "requirement": "Register two distinct keys in one atomic batch"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "observations": null,
       "outcome": "refused",
       "reason": "token-missing",
@@ -205,6 +213,7 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         },
         {
@@ -231,12 +240,16 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         }
       ],
       "requirement": "Register then terminate in one atomic batch"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "observations": null,
       "outcome": "refused",
       "reason": "edge-inadmissible",
@@ -265,6 +278,7 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         },
         {
@@ -291,6 +305,7 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         },
         {
@@ -312,12 +327,16 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         }
       ],
       "requirement": "Refuse a mixed batch's excluded final member"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "observations": null,
       "outcome": "refused",
       "reason": "edge-inadmissible",
@@ -341,6 +360,7 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         },
         {
@@ -367,12 +387,16 @@
           "owner": 42,
           "reference": 5,
           "refundAddress": 42,
+          "submittedAt": 0,
           "tip": 1
         }
       ],
       "requirement": "Refuse an excluded first member"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "observations": null,
       "outcome": "refused",
       "reason": "empty-fold",
@@ -398,9 +422,12 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "e0b927869fb0dba6383145ee0ee996721514608baf464f3c5649c608c3f6da63",
+  "payloadSha256": "bb357f49b3b90f7a6ea43b0d25041e3833dd2becc018a05bb4e0663cc4e68689",
   "scenarios": [
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Register an active key",
       "kind": "witness",
       "lovelace": 20,
@@ -619,6 +646,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": false,
@@ -651,6 +679,9 @@
       "theorem": "Singular.M1.Statements.allowed_step_unchanged"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Terminate the registered key permanently",
       "kind": "witness",
       "lovelace": 20,
@@ -865,6 +896,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": true,
@@ -896,6 +928,7 @@
             "owner": 42,
             "reference": 5,
             "refundAddress": 42,
+            "submittedAt": 0,
             "tip": 1
           },
           "state": {
@@ -964,6 +997,9 @@
       "theorem": "Singular.M1.Statements.allowed_step_unchanged"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Refuse an absent insertion",
       "kind": "witness",
       "lovelace": 20,
@@ -995,6 +1031,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": false,
@@ -1027,6 +1064,9 @@
       "theorem": "Singular.M1.Statements.excluded_fold"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Refuse activation of an absent key",
       "kind": "witness",
       "lovelace": 20,
@@ -1058,6 +1098,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": false,
@@ -1090,6 +1131,9 @@
       "theorem": "Singular.M1.Statements.excluded_fold"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Refuse deletion of an absent key",
       "kind": "witness",
       "lovelace": 20,
@@ -1121,6 +1165,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": false,
@@ -1153,6 +1198,9 @@
       "theorem": "Singular.M1.Statements.excluded_fold"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Refuse deletion of an active key",
       "kind": "witness",
       "lovelace": 20,
@@ -1184,6 +1232,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": true,
@@ -1215,6 +1264,7 @@
             "owner": 42,
             "reference": 5,
             "refundAddress": 42,
+            "submittedAt": 0,
             "tip": 1
           },
           "state": {
@@ -1283,6 +1333,9 @@
       "theorem": "Singular.M1.Statements.excluded_fold"
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "Refuse terminal witnessing without approval",
       "kind": "witness",
       "lovelace": 20,
@@ -1306,6 +1359,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": true,
@@ -1337,6 +1391,7 @@
             "owner": 42,
             "reference": 5,
             "refundAddress": 42,
+            "submittedAt": 0,
             "tip": 1
           },
           "state": {
@@ -1403,6 +1458,7 @@
             "owner": 42,
             "reference": 5,
             "refundAddress": 42,
+            "submittedAt": 0,
             "tip": 1
           },
           "state": {
@@ -1640,6 +1696,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": false,
@@ -1810,6 +1867,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": false,
@@ -1850,6 +1908,9 @@
       }
     },
     {
+      "foldWitness": {
+        "validTo": 1000
+      },
       "id": "An excluded setup is unsupported",
       "kind": "unsupported",
       "lovelace": 20,
@@ -1881,6 +1942,7 @@
         "owner": 42,
         "reference": 5,
         "refundAddress": 42,
+        "submittedAt": 0,
         "tip": 1
       },
       "requiresReachableState": true,
@@ -1907,6 +1969,7 @@
             "owner": 42,
             "reference": 5,
             "refundAddress": 42,
+            "submittedAt": 0,
             "tip": 1
           },
           "state": {
@@ -1964,19 +2027,19 @@
     }
   ],
   "sourceHashes": {
-    "lean/DriverMain.lean": "13717d081d52a6856f2296a2ecb9b239f7c8d9aa5e2ad538e03853b1d2d64d74",
+    "lean/DriverMain.lean": "10b7cc484c6965aba56677978c1e4058520fd28ee486f0e758fd2ba79e807e11",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/M1Main.lean": "edf2573182f6d1399bc90ba243a9008cfecfceabcdbba48566085ddac442e9e9",
-    "lean/Main.lean": "7603043805e38150af340d3a49bfb4879e75866ddab125efe8efdc8915855b93",
+    "lean/M1Main.lean": "07830e5f64472d2b5f5f0e4b2fd1de3926c7adc401f9444810a2025e0986da7d",
+    "lean/Main.lean": "50d22862aadc190778edc5024af5f628f3d176c88a26666c37c957408486b89d",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "010f542fb9973080885cd43824f2cd90a650349a4494854d2aebc5e253844e93",
     "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
-    "lean/Singular/Driver.lean": "ae43bdb14c640df3d1b6f0af491dc5cc5a8fdf4925d72d951294aa1698c1f7d6",
+    "lean/Singular/Driver.lean": "e22bbbfe9bc009789a021e2200b5ba4db47b9cead2480ab63e55cd37ddbaa7d6",
     "lean/Singular/Lemmas.lean": "34ce08292ed74b0833e766e5cca4d1cfbe6b0a9c7267c6145eb726fa492fecba",
-    "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
+    "lean/Singular/M1.lean": "d2e853de64f0730883f2c59d892e3bca0cfc2c526b0277bb5b79e93b237a4c4f",
     "lean/Singular/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
-    "lean/Singular/Model.lean": "ae7f460ebd355ded80ff2683ea78cc9a66057212adb63e3fd01c6cdeea00c23f",
+    "lean/Singular/Model.lean": "09283f0990dcef0d2f056b4d2d39f497466d6a71affcdbd1a959a82555e36bf1",
     "lean/Singular/Naming.lean": "7a3cf3d6914af5e0ca52fef453ed90a70c37af15f533c91dcaaed2fae36f1baf",
     "lean/Singular/NamingAudit.lean": "5b8a38cae91d2c62db7acdc1f99ddf272edce332cf1674224c5c12c7c9f8542f",
     "lean/Singular/NamingLemmas.lean": "a37ad312a823f0ead1a340b635a2cfc3123c50e7e3cc79a3dc15701bdbadbb3f",
@@ -1987,7 +2050,7 @@
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "5e194ea18743f726952b7c233ec45f504f20ca5cee214d6f03ce074fd81cc0e8"
+    "lean/Singular/Statements.lean": "77a0d2d899913eb9c403f85899f24bb2d5253a0408c921e870a28bfc86dd0d69"
   },
   "theoremManifestSha256": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
   "unobservable": [

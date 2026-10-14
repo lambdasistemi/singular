@@ -71,6 +71,7 @@ const requestSchema = {
   reference: N,
   output: N,
   datum: { $option: N },
+  submittedAt: N,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
@@ -289,6 +290,33 @@ export function foldBatch(s, batch) {
     return { accepted: false, reason: e.message };
   }
 }
+
+// Admission reads one finite excluded bound and each request's own datum time.
+export const inPhase1 = (c, submittedAt, validTo) =>
+  BigInt(validTo) <= BigInt(submittedAt) + BigInt(c.processTime);
+export const foldAdmission = (c, batch, w) =>
+  !batch.every((r) => allowed(r.edge))
+    ? 'edge-inadmissible'
+    : !batch.every((r) => inPhase1(c, r.submittedAt, w.validTo))
+      ? 'not-phase1'
+      : null;
+
+function admitFold(s, batch, w, run) {
+  try {
+    validate(s, stateSchema, 'state');
+    validate(batch, [requestSchema], 'batch');
+    if (w == null) return { accepted: false, unsupported: true, reason: 'fold-without-witness' };
+    validate(w, { validTo: N }, 'foldWitness');
+    const reason = foldAdmission(s.config, batch, w);
+    return reason === null ? run() : { accepted: false, reason };
+  } catch (e) {
+    return { accepted: false, unsupported: true, reason: e.message };
+  }
+}
+
+// The single fold exit and the batch share the same admission.
+export const admittedFold = (s, r, w) => admitFold(s, [r], w, () => step(s, r));
+export const admittedFoldBatch = (s, batch, w) => admitFold(s, batch, w, () => foldBatch(s, batch));
 
 // ---- the consumer's view (interface §7): tokens, never the root -------------
 export const witnesses = (s, key) => ({

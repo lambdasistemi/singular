@@ -29,36 +29,36 @@ One group per slice, grouped by pull request. A task is checked when its slice's
 
 ### admission-statements-first
 
-- [ ] admission-statements-red: the boundary, any expired request, each request by its own submission time, admission before the law, a reject reading no time; each committed failing
+- [x] admission-statements-red: the boundary, any expired request, each request by its own submission time, admission before the law, a reject reading no time; each committed failing
 
 ### fold-admission-in-the-model
 
-- [ ] request-carries-its-submission-time
-- [ ] fold-witness-and-window-predicate
-- [ ] fold-admission-and-the-fold-arm-of-exit-admission
-- [ ] batch-under-a-witness
-- [ ] permanent-contract-statements-follow-the-admission-order
+- [x] request-carries-its-submission-time
+- [x] fold-witness-and-window-predicate
+- [x] fold-admission-and-the-fold-arm-of-exit-admission
+- [x] batch-under-a-witness
+- [x] permanent-contract-statements-follow-the-admission-order
 
 ### driver-and-corpora-under-a-witness
 
-- [ ] every-fold-scenario-and-batch-carries-a-witness
-- [ ] a-fold-without-a-witness-is-unsupported
-- [ ] rows-for-the-boundary-an-expired-request-and-a-batch-in-and-past-its-window
-- [ ] corpora-regenerated-in-two-passes
+- [x] every-fold-scenario-and-batch-carries-a-witness
+- [x] a-fold-without-a-witness-is-unsupported
+- [x] rows-for-the-boundary-an-expired-request-and-a-batch-in-and-past-its-window
+- [x] corpora-regenerated-in-two-passes
 
 ### transport-live-driver-simulator
 
-- [ ] transport-reads-the-submission-time-and-the-fold-witness
-- [ ] live-driver-reads-the-bound-off-the-built-transaction-and-the-time-off-the-datum
-- [ ] simulator-schema-actions-rules-gate-and-playable-fold
-- [ ] simulator-mirror-regenerated
+- [x] transport-reads-the-submission-time-and-the-fold-witness
+- [x] live-driver-reads-the-bound-off-the-built-transaction-and-the-time-off-the-datum
+- [x] simulator-schema-actions-rules-gate-and-playable-fold
+- [x] simulator-mirror-regenerated
 
 ### register-book-constitution
 
-- [ ] coverage-record-and-fixed-counts
-- [ ] register-readme-counts-and-narration
-- [ ] conformance-book-no-longer-calls-the-window-a-discrepancy
-- [ ] constitution-amendment-for-the-fold-admission
+- [x] coverage-record-and-fixed-counts
+- [x] register-readme-counts-and-narration
+- [x] conformance-book-no-longer-calls-the-window-a-discrepancy
+- [x] constitution-amendment-for-the-fold-admission
 
 ## Pull request 3: the builder enforces it and the receipt names it
 

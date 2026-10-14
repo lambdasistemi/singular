@@ -244,7 +244,48 @@ def model_refusal_vocabulary(root):
         "EMPTY EXTENT: no refusal reasons discovered in Singular.exitStep"
     )
     vocabulary |= exit_vocabulary
+    vocabulary |= set(model_fold_admission(root)["reasons"].values())
     return vocabulary
+
+
+def model_fold_admission(root):
+    """Admission reasons and fixed edges read from the producer's definitions."""
+    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    body = source.split("\ndef foldAdmission ", 1)[1].split("\n/--", 1)[0]
+    reasons = {}
+    for guard in ("allowed", "inPhase1"):
+        found = [
+            r
+            for line in body.splitlines()
+            if guard in line
+            for r in REFUSAL_LITERAL.findall(line)
+        ]
+        assert len(found) == 1, f"foldAdmission must name one {guard} refusal"
+        reasons[guard] = found[0]
+    allowed = source.split("\ndef allowed ", 1)[1].split("\n/--", 1)[0]
+    edges = re.findall(r"e == \.(\w+)", allowed)
+    assert edges, "EMPTY EXTENT: no allowed fold edges"
+    return {"reasons": reasons, "edges": set(edges)}
+
+
+def fold_admission_reason(requests, config, witness, admission):
+    assert isinstance(witness, dict) and set(witness) == {"validTo"}, (
+        "fold witness shape"
+    )
+    assert type(witness["validTo"]) is int and witness["validTo"] >= 0, (
+        "finite fold bound"
+    )
+    for r in requests:
+        assert type(r.get("submittedAt")) is int and r["submittedAt"] >= 0, (
+            "request submission time"
+        )
+    if any(r["edge"] not in admission["edges"] for r in requests):
+        return admission["reasons"]["allowed"]
+    if any(
+        witness["validTo"] > r["submittedAt"] + config["processTime"] for r in requests
+    ):
+        return admission["reasons"]["inPhase1"]
+    return None
 
 
 def model_retraction(root):
@@ -398,7 +439,7 @@ def driver_surface(corpus):
 
 
 def check_driver_scenarios(
-    corpus, generic_names, statement_digests, vocabulary, exits, retraction
+    corpus, generic_names, statement_digests, vocabulary, exits, retraction, admission
 ):
     """R01-R03 over every scenario the driver executed.
 
@@ -503,7 +544,22 @@ def check_driver_scenarios(
             assert s["reason"], f"{sid}: unsupported rows must name what is unsupported"
             assert s["observations"] is None, f"{sid}: unsupported rows observe nothing"
 
-        # A retraction is admitted before it is paid; no other exit reads a witness.
+        # Retractions keep their own witness; folds read only the upper bound.
+        if s["operation"] in edges:
+            if "foldWitness" not in s:
+                assert (outcome, s["reason"]) == (
+                    "unsupported",
+                    "fold-without-witness",
+                ), sid
+            else:
+                before = s["setup"][-1]["state"] if s["setup"] else s["start"]
+                why = fold_admission_reason(
+                    [s["request"]], before["config"], s["foldWitness"], admission
+                )
+                if why is not None:
+                    assert (outcome, s["reason"]) == ("refused", why), sid
+        else:
+            assert "foldWitness" not in s, f"{sid}: non-fold carries a fold witness"
         if s["operation"] == "retract":
             check_retraction(s, retraction)
         else:
@@ -790,6 +846,7 @@ def model_batch_refusals(root):
     assert len(created) == 1, "created-holding scan must name its refusal"
     return {
         "empty": reason_on("isEmpty"),
+        "admission": model_fold_admission(root),
         "mismatch": reason_on("else throw"),
         "created": created[0],
         "step": vocabulary,
@@ -954,6 +1011,15 @@ def fold_batch_expectation(row, refusals, transitions, deltas):
     """What `Singular.foldBatch` must answer for this row, re-derived from the
     model's tables and the step trace the row carries: `(outcome, reason)`."""
     requests = row["requests"]
+    before = row["setup"][-1]["state"] if row["setup"] else row["start"]
+    why = fold_admission_reason(
+        requests, before["config"], row["foldWitness"], refusals["admission"]
+    )
+    if why is not None:
+        assert row["folded"] == [], (
+            f"{row['id']}: admission refusal must precede every step"
+        )
+        return "refused", why
     if not requests:
         assert row["folded"] == [], f"{row['id']}: an empty batch folds nothing"
         return "refused", refusals["empty"]
@@ -1083,6 +1149,11 @@ def check_batch_rows(
             assert all(isinstance(r, dict) and "edge" in r for r in row["requests"]), (
                 f"{rid}: a fold batch names requests, each folded on its own edge"
             )
+            if "foldWitness" not in row:
+                assert (outcome, row["reason"]) == (
+                    "unsupported",
+                    "fold-without-witness",
+                ), rid
             if outcome != "unsupported":
                 expected = fold_batch_expectation(row, refusals, transitions, deltas)
                 assert (outcome, row["reason"]) == expected, (
@@ -1283,6 +1354,7 @@ def check_batch_controls(corpus, refusals):
             if s["operation"] == operation
             and s["request"] == request
             and s["start"] == row["start"]
+            and s.get("foldWitness") == row.get("foldWitness")
             and [x["request"] for x in s["setup"]]
             == [x["request"] for x in row["setup"]]
         ]
@@ -1371,7 +1443,24 @@ def batch_controls(corpus, refusals, run, settlement):
             "batchQuestions"
         ][question] + ["tx"]
         must_refuse(f"{question} declaring a transaction observation", run, mutant)
-    return 3 + len(refusals["step"]) + len(judged)
+    admitted = next(
+        r for r in rows if r["question"] == "foldBatch" and r["outcome"] == "accepted"
+    )
+    for defect in ("missing-witness", "expired-request", "missing-submission"):
+        mutant = copy.deepcopy(corpus)
+        row = next(r for r in mutant["batches"] if r["id"] == admitted["id"])
+        if defect == "missing-witness":
+            del row["foldWitness"]
+        elif defect == "missing-submission":
+            del row["requests"][0]["submittedAt"]
+        else:
+            row["foldWitness"]["validTo"] = (
+                row["requests"][0]["submittedAt"]
+                + row["start"]["config"]["processTime"]
+                + 1
+            )
+        must_refuse(defect, run, mutant)
+    return 6 + len(refusals["step"]) + len(judged)
 
 
 TRANSLATION_HEADING = "## The model driver translation"
@@ -1649,6 +1738,7 @@ def main():
         model_refusal_vocabulary(root),
         model_exits(root),
         model_retraction(root),
+        model_fold_admission(root),
     )
     leaf_bytes, deltas = model_constants(root)
     transitions = model_transitions(root)

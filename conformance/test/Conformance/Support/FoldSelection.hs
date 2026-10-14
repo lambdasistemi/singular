@@ -215,6 +215,7 @@ requestJsonOf sel = case edgeSpellingOf (selEdge sel) of
             , "key" .= selKey sel
             , "owner" .= ownerNatOf sel
             , "refundAddress" .= (0 :: Int)
+            , "submittedAt" .= (0 :: Int)
             , "deposit" .= depositOf sel
             , "output" .= outputOf sel
             , "approval" .= ("canonical" :: Text)
@@ -227,19 +228,22 @@ requestJsonOf sel = case edgeSpellingOf (selEdge sel) of
 toModelBatch :: [SelectedRequest] -> [Value]
 toModelBatch = map requestJsonOf
 
--- | The batch question about the selected batch.
+{- | The batch question under an admitted bound: submission, processing and
+upper bound are all zero. This fixture does not test the selection clock.
+-}
 questionJsonOf :: LiveFacts -> [SelectedRequest] -> Value
 questionJsonOf facts settled =
     object
         [ "id" .= ("fold-selection-agreement" :: Text)
         , "theorem" .= ("Singular.Statements.fold_batch_cons" :: Text)
         , "statementSha256"
-            .= ( "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+            .= ( "a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f"
                     :: Text
                )
         , "question" .= ("foldBatch" :: Text)
         , "start" .= startJsonOf facts
         , "setup" .= ([] :: [Value])
+        , "foldWitness" .= object ["validTo" .= (0 :: Int)]
         , "requests" .= toModelBatch settled
         ]
 
@@ -451,12 +455,13 @@ spec = describe "What the selection settles is what the model accepts" $ do
                             [ "id" .= ("fold-selection-same-key-control" :: Text)
                             , "theorem" .= ("Singular.Statements.fold_batch_cons" :: Text)
                             , "statementSha256"
-                                .= ( "9e8c6a06d60361ae94b24f50f014c7830bfdd5d22aa8b7a62a8ca9230f689153"
+                                .= ( "a0992d97ae5b6f86503bdc5247b4b2602ec74a5516713e274c4919aa53d5d26f"
                                         :: Text
                                    )
                             , "question" .= ("foldBatch" :: Text)
                             , "start" .= startJsonOf facts
                             , "setup" .= ([] :: [Value])
+                            , "foldWitness" .= object ["validTo" .= (0 :: Int)]
                             , "requests" .= pair
                             ]
                 answer <-

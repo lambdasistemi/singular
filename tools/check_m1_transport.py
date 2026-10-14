@@ -56,6 +56,8 @@ def main():
             exit=row["operation"],
             setup=[step["request"] for step in row["setup"]],
         )
+        if "foldWitness" in row:
+            question["foldWitness"] = row["foldWitness"]
         if row["operation"] == "retract":
             question["witness"] = row["witness"]
         result = evaluate(question)
@@ -83,6 +85,7 @@ def main():
             "question": "foldBatch",
             "start": corpus["scenarios"][0]["start"],
             "requests": row["requests"],
+            "foldWitness": row["foldWitness"],
             "theorem": name,
             "statementSha256": bindings[name],
         }

@@ -70,6 +70,7 @@ scenarioQuestion row =
                     , "request"
                     , "lovelace"
                     , "witness"
+                    , "foldWitness"
                     ]
                     row
                 )
@@ -88,6 +89,7 @@ batchQuestion row =
                     , "statementSha256"
                     , "start"
                     , "requests"
+                    , "foldWitness"
                     , "outputs"
                     ]
                     row

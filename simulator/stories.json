@@ -25,9 +25,13 @@
             "assetName": 1604014105,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "accept"
+        "expect": "accept",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": [
@@ -55,9 +59,13 @@
                 "assetName": 1604014105,
                 "signatures": []
               },
-              "claimed": []
+              "claimed": [],
+              "submittedAt": 0
             },
-            "expect": "key-exists"
+            "expect": "key-exists",
+            "foldWitness": {
+              "validTo": 0
+            }
           }
         ]
       }
@@ -89,9 +97,13 @@
             "assetName": 1604014105,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "accept"
+        "expect": "accept",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "what": "Retire the active key",
@@ -114,9 +126,13 @@
             "assetName": 3377668370,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "accept"
+        "expect": "accept",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "what": "Refuse reuse of the terminal key",
@@ -139,9 +155,13 @@
             "assetName": 1604014105,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "key-exists"
+        "expect": "key-exists",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -172,9 +192,13 @@
             "assetName": 3021472884,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -205,9 +229,13 @@
             "assetName": 84686170,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -238,9 +266,13 @@
             "assetName": 1831697717,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -263,9 +295,13 @@
           "output": 700,
           "datum": null,
           "approval": null,
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -296,9 +332,13 @@
             "assetName": 589774483,
             "signatures": []
           },
-          "claimed": []
+          "claimed": [],
+          "submittedAt": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []

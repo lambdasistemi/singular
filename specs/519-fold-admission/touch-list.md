@@ -72,6 +72,7 @@ The statement audit (`lean/Singular/Audit.lean`, `M1Audit.lean`) discovers state
 | `conformance/coverage/m1-scope-retirement.md` | 1, 2 | edit | the record of baseline moves | none today |
 | `conformance/rows.json`, `conformance/BOOK.md` | 2, 4 | edit, one sentence each | the retraction-window row note and the book's "separate tracked discrepancy" sentence, stale once the model refuses; PR 4 adds the live row's entry if the suite's mechanism requires it | 494 |
 | `.github/workflows/conformance.yml` | 4 | edit | CI change in this ticket: the new row is appended to the existing batch job's `run` command, so no job and no required check is added | 494 |
+| `conformance/test/Conformance/Support/FoldSelection.hs` | 2 | edit | merged by #518: the model-question fixtures only carry `submittedAt` and `foldWitness` and a current statement digest, so the existing selection tests keep testing the batch law under admission; added by answer to the commit owner during the pull request, no live lane edits it (checked against #494, #503 and #491 on 2026-10-14) | none |
 | `conformance/test/Conformance/Support/FoldAdmission.hs` | 3 | create | the library check asked against the model's question at the boundary and one past, with the failing control | #518's sibling `FoldSelection.hs` is in the same directory (merged) |
 | `conformance/test/Main.hs`, `conformance/conformance.cabal` | 3 | edit | register the new module | none |
 

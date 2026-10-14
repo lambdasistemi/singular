@@ -93,7 +93,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] admission-statements-red: the boundary, any expired request, each request by its own submission time, admission before the law, a reject reading no time; each committed failing",
+      "text": "[x] admission-statements-red: the boundary, any expired request, each request by its own submission time, admission before the law, a reject reading no time; each committed failing",
       "pause": 300
     }
   ],
@@ -103,23 +103,23 @@
       "pause": 500
     },
     {
-      "text": "[ ] request-carries-its-submission-time",
+      "text": "[x] request-carries-its-submission-time",
       "pause": 300
     },
     {
-      "text": "[ ] fold-witness-and-window-predicate",
+      "text": "[x] fold-witness-and-window-predicate",
       "pause": 300
     },
     {
-      "text": "[ ] fold-admission-and-the-fold-arm-of-exit-admission",
+      "text": "[x] fold-admission-and-the-fold-arm-of-exit-admission",
       "pause": 300
     },
     {
-      "text": "[ ] batch-under-a-witness",
+      "text": "[x] batch-under-a-witness",
       "pause": 300
     },
     {
-      "text": "[ ] permanent-contract-statements-follow-the-admission-order",
+      "text": "[x] permanent-contract-statements-follow-the-admission-order",
       "pause": 300
     }
   ],
@@ -129,19 +129,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] every-fold-scenario-and-batch-carries-a-witness",
+      "text": "[x] every-fold-scenario-and-batch-carries-a-witness",
       "pause": 300
     },
     {
-      "text": "[ ] a-fold-without-a-witness-is-unsupported",
+      "text": "[x] a-fold-without-a-witness-is-unsupported",
       "pause": 300
     },
     {
-      "text": "[ ] rows-for-the-boundary-an-expired-request-and-a-batch-in-and-past-its-window",
+      "text": "[x] rows-for-the-boundary-an-expired-request-and-a-batch-in-and-past-its-window",
       "pause": 300
     },
     {
-      "text": "[ ] corpora-regenerated-in-two-passes",
+      "text": "[x] corpora-regenerated-in-two-passes",
       "pause": 300
     }
   ],
@@ -151,19 +151,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] transport-reads-the-submission-time-and-the-fold-witness",
+      "text": "[x] transport-reads-the-submission-time-and-the-fold-witness",
       "pause": 300
     },
     {
-      "text": "[ ] live-driver-reads-the-bound-off-the-built-transaction-and-the-time-off-the-datum",
+      "text": "[x] live-driver-reads-the-bound-off-the-built-transaction-and-the-time-off-the-datum",
       "pause": 300
     },
     {
-      "text": "[ ] simulator-schema-actions-rules-gate-and-playable-fold",
+      "text": "[x] simulator-schema-actions-rules-gate-and-playable-fold",
       "pause": 300
     },
     {
-      "text": "[ ] simulator-mirror-regenerated",
+      "text": "[x] simulator-mirror-regenerated",
       "pause": 300
     }
   ],
@@ -173,19 +173,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] coverage-record-and-fixed-counts",
+      "text": "[x] coverage-record-and-fixed-counts",
       "pause": 300
     },
     {
-      "text": "[ ] register-readme-counts-and-narration",
+      "text": "[x] register-readme-counts-and-narration",
       "pause": 300
     },
     {
-      "text": "[ ] conformance-book-no-longer-calls-the-window-a-discrepancy",
+      "text": "[x] conformance-book-no-longer-calls-the-window-a-discrepancy",
       "pause": 300
     },
     {
-      "text": "[ ] constitution-amendment-for-the-fold-admission",
+      "text": "[x] constitution-amendment-for-the-fold-admission",
       "pause": 300
     }
   ],
@@ -353,6 +353,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5085cce18a4cb891c9f591c6211a8a85646fcd6a42e98cdcf54e37fe727377d2"
+    "sha256": "ce52bea1ba9207aec82c49a41565cfbe242f321af8e00b32e4e0e57e9c5352f9"
   }
 }

@@ -430,13 +430,15 @@ structure Request where
   request's destination is an address and the datum itself, and the receiving
   output must carry exactly it: no datum when the request carries none. -/
   datum : Option Nat := none
+  /-- The request datum's submission time, in POSIX milliseconds. -/
+  submittedAt : Nat := 0
   deriving Repr, BEq, DecidableEq
 
 /-- A request that holds nothing beyond its deposit, given field by field in
 declaration order. It sits at reference 0. -/
 @[reducible] def Request.mk (edge : Edge) (key : Key) (owner refundAddress deposit output : Nat)
     (approval : Option Approval) (claimed : List (TokenKind × Int)) : Request :=
-  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none
+  Request.make edge key owner refundAddress deposit output approval claimed 0 0 none 0
 
 /-- A request serialises completely too, so a corpus row carries the exact input
 the fold was given. -/
@@ -448,6 +450,7 @@ instance : ToJson Request where
     , ("reference", toJson r.reference)
     , ("output", toJson r.output)
     , ("datum", datumJson r.datum)
+    , ("submittedAt", toJson r.submittedAt)
     , ("approval", match r.approval with | none => Json.null | some a => toJson a)
     , ("claimed", Json.arr ((r.claimed.map fun d =>
         Json.mkObj [("kind", toJson d.1), ("quantity", toJson d.2)]).toArray)) ]
@@ -1213,12 +1216,35 @@ def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option St
   else if !inPhase2 c w then some "not-phase2"
   else none
 
-/-- The admission an exit is subject to: a retract's is `retractAdmission`; a
-fold and a reject have none here, and ignore the witness. -/
+/-- The finite, excluded upper validity bound the ledger hands to a fold. -/
+structure FoldWitness where
+  validTo : Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- Whether the fold's upper bound is at or before this request's deadline. -/
+def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
+  decide (validTo ≤ submittedAt + c.processTime)
+
+/-- Fold admission, before the law: fixed edges, then every request's window. -/
+def foldAdmission (c : Config) (batch : List Request) (w : FoldWitness) : Option String :=
+  if !batch.all (fun r => allowed r.edge) then some "edge-inadmissible"
+  else if !batch.all (fun r => inPhase1 c r.submittedAt w.validTo) then some "not-phase1"
+  else none
+
+/-- A batch under its finite validity witness, admission before the batch law. -/
+def admittedFoldBatch (s : RegistryState) (batch : List Request) (w : FoldWitness) :
+    Except String Result :=
+  match foldAdmission s.config batch w with
+  | some why => .error why
+  | none => foldBatch s batch
+
+/-- A fold reads the upper bound against its request's own submission time.
+A retract keeps its separate witness and admission; a reject reads no time. -/
 def exitAdmission (c : Config) (exit : Exit) (r : Request) (w : RetractWitness) : Option String :=
   match exit with
   | .retract => retractAdmission c r w
-  | .fold _ | .reject => none
+  | .fold _ => foldAdmission c [r] { validTo := w.validTo }
+  | .reject => none
 
 /-- One exit as a model step, admission first: refused with the admission's
 reason, otherwise exactly `exitStep`. -/

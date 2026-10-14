@@ -299,11 +299,11 @@
       "pause": 500
     },
     {
-      "text": "The model builds no transaction for a batch, so a batch is compared with foldBatch's state, mint and payments, not a model transaction. Delivered here instead: the within-batch rule and the independent-batch statement. Owner of the transaction: a follow-up ticket the plan asks the epic owner to file.",
+      "text": "The model builds no transaction for a batch, so a batch is compared with foldBatch's state, mint and payments, not a model transaction. Delivered here instead: the within-batch rule and the independent-batch statement. Owner of the transaction: #632.",
       "pause": 300
     },
     {
-      "text": "The distinct-key independence statement covers the acceptance of a non-empty batch and nothing else. It does not compare the batch's leaves, holdings, mint or payments with those of folding each request alone, so a claim that the processor's batch equals its parts is a named residual with its own follow-up. It also does not claim that the two orders give equal root bytes: the model's root sorts its pairs with a library sort whose behaviour on permuted input the core library does not state, and the constitution already treats the root as the model's own abstract commitment.",
+      "text": "The distinct-key independence statement covers the acceptance of a non-empty batch and nothing else. It does not compare the batch's leaves, holdings, mint or payments with those of folding each request alone, so a claim that the processor's batch equals its parts is a named residual with its own follow-up. It also does not claim that the two orders give equal root bytes: the model's root sorts its pairs with a library sort whose behaviour on permuted input the core library does not state, and the constitution already treats the root as the model's own abstract commitment. Owner of the equal-roots and batch-equals-its-parts claims: #631.",
       "pause": 300
     },
     {
@@ -315,7 +315,7 @@
       "pause": 300
     },
     {
-      "text": "The retraction witness keeps its own submission time. Two fields now name one datum value, until the retraction admission is moved onto the request in a follow-up.",
+      "text": "The retraction witness keeps its own submission time. Two fields now name one datum value, until the retraction admission is moved onto the request's own submission time (#633).",
       "pause": 300
     },
     {
@@ -329,6 +329,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "db77777859945ba3a0bd3b1599ae19e6e4503894d8e905fc72c24add99912494"
+    "sha256": "c67a29004a8996ef4996530fd2f2d3b5ad953efc9806d0f7f6ea96d11ce585a0"
   }
 }

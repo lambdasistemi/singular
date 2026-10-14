@@ -15,6 +15,7 @@ export const request = (edge, key, opts = {}) => ({
   reference: opts.reference ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
+  submittedAt: opts.submittedAt ?? 0,
   approval: null,
   claimed: opts.claimed ?? [],
 });

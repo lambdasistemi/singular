@@ -17,6 +17,8 @@ import vm from 'node:vm';
 import {
   step,
   foldBatch,
+  admittedFold,
+  admittedFoldBatch,
   equal,
   initial,
   decodeState,
@@ -183,13 +185,53 @@ for (const row of foldQuestions) {
     assert.ok(equal(result.value.state, setup.state), 'fold setup state/' + row.id);
     state = result.value.state;
   }
-  const result = foldBatch(state, row.requests);
+  const result = admittedFoldBatch(state, row.requests, row.foldWitness);
+  assert.equal(
+    result.unsupported === true,
+    row.outcome === 'unsupported',
+    'fold classification/' + row.id,
+  );
   assert.equal(result.accepted, row.outcome === 'accepted', 'fold verdict/' + row.id);
   if (result.accepted)
     assert.ok(equal(result.value.state, row.observations.state), 'fold state/' + row.id);
   else assert.equal(result.reason, row.reason, 'fold refusal/' + row.id);
 }
 console.log('driver fold questions replayed: ' + foldQuestions.length);
+
+const singleFolds = json('../lean/driver-corpus.json').scenarios.filter((row) =>
+  EDGES.includes(row.operation),
+);
+assert.ok(singleFolds.length > 1, 'single fold corpus has multiple questions');
+for (const row of singleFolds) {
+  let state = row.start;
+  for (const setup of row.setup) {
+    const result = step(state, setup.request);
+    assert.ok(result.accepted, 'single setup/' + row.id);
+    state = result.value.state;
+  }
+  const result = admittedFold(state, row.request, row.foldWitness);
+  assert.equal(
+    result.unsupported === true,
+    row.outcome === 'unsupported',
+    'single classification/' + row.id,
+  );
+  assert.equal(result.accepted, row.outcome === 'accepted', 'single verdict/' + row.id);
+  if (result.accepted)
+    assert.ok(equal(result.value.state, row.observations.state), 'single state/' + row.id);
+  else assert.equal(result.reason, row.reason, 'single reason/' + row.id);
+}
+console.log('driver single folds replayed: ' + singleFolds.length);
+
+// Boundary decoding is strict: an omitted time is not a zero-time booking.
+{
+  const r = approved('insertActive', 7, { owner: 42, output: 555 });
+  delete r.submittedAt;
+  assert.equal(admittedFold(initial(), r, { validTo: 0 }).unsupported, true);
+  assert.equal(
+    admittedFold(initial(), { ...r, submittedAt: 0 }, { validTo: -1 }).unsupported,
+    true,
+  );
+}
 
 // ---- 4. the fold: atomicity, the empty batch, the mint check ---------------
 assert.equal(foldBatch(initial(), []).reason, 'empty-fold', 'empty batch');
@@ -254,7 +296,7 @@ for (const story of stories) {
   const prefix = [s];
   const run = (e) => {
     storyDiscovered++;
-    const r = step(s, e.request);
+    const r = admittedFold(s, e.request, e.foldWitness);
     assert.equal(r.accepted ? 'accept' : r.reason, e.expect, `story/${story.id}/${e.what}`);
     if (r.accepted) s = r.value.state;
     storyExecuted++;

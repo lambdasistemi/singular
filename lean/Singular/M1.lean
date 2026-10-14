@@ -8,6 +8,8 @@ abbrev allowed := Singular.allowed
 abbrev step := Singular.step
 abbrev foldActions := Singular.foldActions
 abbrev foldBatch := Singular.foldBatch
+abbrev foldAdmission := Singular.foldAdmission
+abbrev admittedFoldBatch := Singular.admittedFoldBatch
 abbrev admittedExitStep := Singular.admittedExitStep
 abbrev admittedTxOfExit := Singular.admittedTxOfExit
 abbrev buildFold := Singular.buildFold
@@ -63,7 +65,7 @@ theorem excluded_fold (state : RegistryState) (request : Request) (witness : Ret
     admittedExitStep state (.fold request.edge) request witness =
       .error "edge-inadmissible" := by
   simp [admittedExitStep, Singular.admittedExitStep, Singular.exitAdmission,
-    Singular.exitStep, Singular.step, Singular.refusal, excluded]
+    Singular.foldAdmission, Singular.exitStep, Singular.step, Singular.refusal, excluded]
 
 theorem reject_unchanged (state : RegistryState) (request : Request) (witness : RetractWitness) :
     admittedExitStep state .reject request witness =
