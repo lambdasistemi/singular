@@ -1,0 +1,56 @@
+{
+  "functions-model": [
+    {
+      "text": "Functions model.",
+      "pause": 500
+    },
+    {
+      "text": "New or changed signatures only: names, explicit arguments, argument and result types, constraints and effects. No bodies. Data are in the data model. Output ceiling: 6 KB.",
+      "pause": 400
+    }
+  ],
+  "the-model-lean-pull-requests-1-and-2": [
+    {
+      "text": "The model (Lean, pull requests 1 and 2).",
+      "pause": 500
+    },
+    {
+      "text": "Pull request 1 carries batchConsumesCreated, the changed foldBatch and the statements batch_cannot_consume_what_it_creates, batch_burns_only_live_holdings and independent_requests_fold_as_a_batch. Pull request 2 carries everything else in this table.",
+      "pause": 400
+    },
+    {
+      "text": "Statements, named by what they say: fold_admitted_up_to_the_deadline, fold_refused_past_any_deadline, fold_admission_judges_each_request_by_its_own_time, fixed_edge_set_precedes_the_window, fold_admission_precedes_the_law, reject_reads_no_time, batch_cannot_consume_what_it_creates, batch_burns_only_live_holdings, independent_requests_fold_as_a_batch. The existing statements about admittedExitStep, the batch of one and the excluded-edge fold gain the premise that the fold is admitted.",
+      "pause": 400
+    }
+  ],
+  "the-models-consumers-pull-requests-1-and-2": [
+    {
+      "text": "The model's consumers (pull requests 1 and 2).",
+      "pause": 500
+    },
+    {
+      "text": "Pull request 1 changes rows and anchors only; the witness and the transport question are pull request 2.",
+      "pause": 400
+    }
+  ],
+  "registry-library-pull-request-3": [
+    {
+      "text": "Registry library (pull request 3).",
+      "pause": 500
+    }
+  ],
+  "validator-evidence-pull-request-4": [
+    {
+      "text": "Validator evidence (pull request 4).",
+      "pause": 500
+    },
+    {
+      "text": "Removed: the sentence in the constitution and the conformance book that a fold of an update outside its window is accepted by the model and refused by the validator.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "93f1f8d467b5a2980f305c151d32fdafaa44157fdc3ecf88c41e080fc05017c0"
+  }
+}
