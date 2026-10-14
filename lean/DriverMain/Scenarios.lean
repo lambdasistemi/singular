@@ -150,7 +150,7 @@ def existingScenarios : List Scenario :=
 #guard (runSurface historicalScenario).2.outcome == .refused
 #guard (runSurface historicalScenario).2.reason == some "reject-evidence-missing"
 
-#guard scenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
+#guard existingScenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
   (runSurface sc).2.reason == some "not-phase2"
-#guard scenarios.any fun sc => sc.id == "PR-retract-ignores-witness-time" &&
+#guard existingScenarios.any fun sc => sc.id == "PR-retract-ignores-witness-time" &&
   (runSurface sc).2.outcome == .accepted

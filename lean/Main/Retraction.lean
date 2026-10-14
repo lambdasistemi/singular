@@ -85,9 +85,8 @@ def admissionFailures : List String :=
 phase 2. -/
 def failingWitness : RetractWitness := retractWitness [] 0 1000
 
-/-- Retraction admission does not change folds: under a failing retraction
-witness each fold steps and builds as before; and an
-admitted retraction steps and builds exactly as the retract exit. -/
+/-- Every admitted exit keeps its step and transaction. Refused admission wins
+for both, including a fold under a late upper bound. -/
 def admittedExitFailures : List String :=
   let others := (exitEdges.map Exit.fold).flatMap fun x =>
     exitEdges.flatMap fun e => paidKeys.flatMap fun k =>
