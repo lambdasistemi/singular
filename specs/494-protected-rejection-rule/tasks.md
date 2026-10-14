@@ -112,6 +112,7 @@ controls and ends with the list of its statements, each with its fully qualified
 - [x] `protocol-eight` — the driver protocol version moves where a declared question changed and the surface digest follows; no declared question changed, so the version stays.
 - [x] `regenerate-after-slice-five` — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)
 - [x] `names-and-receipts-five` — the slice's statements are listed with fully qualified name and axiom line at the final revision.
+- [x] `built-form-repair` — after the hosted conformance rows refused a built fold transaction that gained a field, the state token identity is written only when it differs from the registry default and is read back as the default when absent; the transaction rows of every scenario at the pre-slice-five baseline are byte-identical, kept by a committed baseline and a check that the model check runs. (consumers-state-the-rule)
 
 ### Slice five-b: review and improvement of the Lean base
 
