@@ -20,8 +20,9 @@ edge, whether the request's processing window still leaves time, the
 envelope an insertion delivers (carried by its request on the chain, so
 any wallet can fold it) or the live output a termination releases, the
 replayed root after the edge, the built transaction, and its outlay. The
-fold takes the pure selection over every pending request and settles its
-first included request; several pending requests never refuse on count,
+fold takes the pure selection over every pending request and settles every
+request that passes, up to the capacity bound; several pending requests never
+refuse on count,
 and a built fold that spends other than the selection is refused before
 it is signed.
 
