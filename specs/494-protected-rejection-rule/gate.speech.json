@@ -133,12 +133,16 @@
       "pause": 400
     },
     {
+      "text": "Slice five-b (inserted on 14 October 2026) uses the rows of version 4 marked five to ten: the \"always\" rows at every checkpoint after the written review, the \"final\" rows and just ci once on its final head. A move or a rename changes no behaviour, so the corpora of scenarios must be byte-identical at every checkpoint; the axiom gate must still fail on a planted unproved statement in every module of the set it walks, shown once at the checkpoint that teaches the tools the module set.",
+      "pause": 400
+    },
+    {
       "text": "Slice four is withdrawn (14 October 2026): its batch row and the two-batch scenarios of the falsification paragraph above no longer apply to any slice.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "gate.md",
-    "sha256": "cbfb59715cd08daae7d771f60a91cc0f43e5081f038b412f0eb5893e101cf5a5"
+    "sha256": "9f981b6cd4161f0b6fc2379c042c1de01f076939c06729c6f5cdbd6f1534c16f"
   }
 }

@@ -195,4 +195,6 @@ for another reason, or a statement proved over the wrong thing, is not the contr
 
 Budget per candidate: about 40 minutes for the rows marked always and conditional; about 60 once before a push for the rows marked final. A candidate over budget is cut again.
 
+Slice five-b (inserted on 14 October 2026) uses the rows of version 4 marked five to ten: the "always" rows at every checkpoint after the written review, the "final" rows and `just ci` once on its final head. A move or a rename changes no behaviour, so the corpora of scenarios must be byte-identical at every checkpoint; the axiom gate must still fail on a planted unproved statement in every module of the set it walks, shown once at the checkpoint that teaches the tools the module set.
+
 Slice four is withdrawn (14 October 2026): its batch row and the two-batch scenarios of the falsification paragraph above no longer apply to any slice.

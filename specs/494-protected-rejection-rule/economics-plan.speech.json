@@ -71,6 +71,10 @@
       "pause": 300
     },
     {
+      "text": "Five-b: review and improvement of the Lean base. *As the author of slices six to ten, and of the paper, I build on a base whose names say what they mean and whose modules are small and cohesive.* Inserted by the operator's direction before slice six. A bounded review of the whole lean/ tree (about 8,400 lines; five modules over 700 lines) in at most seven checkpoints: a written review ranked by what each finding costs slices six to ten; the tools that read the model by file learn to read a set of modules; the large modules are split into cohesive submodules, each split a move with no change of meaning; at most two batches of renames and structural improvements. No statement is weakened and no meaning changes; the qualified names of protected and paper-cited statements stay; renaming a declaration that main already has, and any finding that needs a ruling, is listed and not applied. Writer Codex gpt-6-astra at medium effort, auditor Grok. No new statement and no new control; the written forms and the corpora of scenarios stay byte-identical.",
+      "pause": 300
+    },
+    {
       "text": "Six: registrations. *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application tag, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the syntax tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The syntax tag and the application tag are minted at booking with the pending request. The mint validator stays with ticket 529; this slice models what the syntax tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged syntax tag, a backdated booking, a booking wider than the maximum.",
       "pause": 300
     },
@@ -151,6 +155,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "4ce67335eb9ed580788385a89bf88de37e6c8ae8b6743c5062784cb69a15af57"
+    "sha256": "f95af8f1419c3afae0e0965389172f258b5c570e94849e298225377b732aa6e1"
   }
 }

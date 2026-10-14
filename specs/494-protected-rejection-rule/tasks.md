@@ -113,6 +113,19 @@ controls and ends with the list of its statements, each with its fully qualified
 - [x] `regenerate-after-slice-five` — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)
 - [x] `names-and-receipts-five` — the slice's statements are listed with fully qualified name and axiom line at the final revision.
 
+### Slice five-b: review and improvement of the Lean base
+
+Inserted on 14 October 2026 by the operator's direction, before slice six; see the [slice brief](briefs/slice-five-b-lean-review.md).
+
+- [ ] `lean-review-written` — a written review of the whole `lean/` tree, with findings ranked by what they cost slices six to ten (names, module structure, duplicated definitions, statement shapes, proof hygiene), and no edit.
+- [ ] `tools-read-module-sets` — the model checker, the application model checker, the compiled axiom gate, the coverage inventory and the mutant harnesses read the model and the statements as a set of modules; a planted unproved statement in any module of the set fails the axiom gate and the statement manifest.
+- [ ] `big-modules-split` — the model, the lemmas, the statements, the driver and the corpus runner are split into cohesive submodules, each split its own checkpoint, each a move with no change of meaning; the qualified names of protected and paper-cited statements are unchanged.
+- [ ] `renames-and-improvements` — misleading names are renamed and unidiomatic structure is repaired in at most two batches, each with its record of old and new name or move and reason; every renamed statement keeps its coverage mapping.
+- [ ] `consumers-follow` — every consumer of a renamed or moved declaration is updated in the same checkpoint. (consumers-state-the-rule)
+- [ ] `rulings-listed-not-applied` — findings that change a meaning, or rename a declaration main already has, or touch merged work in a way that needs a ruling, are listed with the user story of each option and not applied.
+- [ ] `regenerate-after-slice-five-b` — register and digests, theorem page, simulator mirror and coverage record follow; the corpora of scenarios are byte-identical. (consumers-state-the-rule)
+- [ ] `record-five-b` — the final record lists the renames (old to new), the structural moves with a reason each, the listed findings and the gate receipts.
+
 ### Slice six: registrations
 
 - [ ] `failing-controls-six` — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
