@@ -113,6 +113,63 @@ class RealInventoryTest(unittest.TestCase):
 
 
 class FixtureInventoryTest(unittest.TestCase):
+    def test_generic_source_extent_keeps_profile_modules_separate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            import check_model
+
+            directory = root / "lean/Singular/Model"
+            directory.mkdir()
+            member = directory / "Values.lean"
+            member.write_text("namespace Singular\nend Singular\n")
+            sources = check_model.generic_sources(root)
+            self.assertIn("lean/Singular/Model/Values.lean", sources)
+            self.assertNotIn("lean/Singular/NamingStatements.lean", sources)
+            self.assertEqual(len(sources), len(set(sources)))
+            self.assertIn(
+                "Singular.Model.Values", check_model.unreachable_modules(root)
+            )
+
+    def test_statements_split_across_modules_keep_their_identities(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            before = build_inventory(root).by_name()
+            facade = root / "lean/Singular/Statements.lean"
+            sources = facade.with_suffix("")
+            sources.mkdir()
+            text = facade.read_text()
+            split = text.index("/-- A second public statement")
+            (sources / "First.lean").write_text(
+                text[:split] + "end Statements\nend Singular\n"
+            )
+            (sources / "Second.lean").write_text(
+                "namespace Singular\nnamespace Statements\n" + text[split:]
+            )
+            facade.write_text(
+                "import Singular.Statements.First\nimport Singular.Statements.Second\n"
+            )
+            after = build_inventory(root).by_name()
+            self.assertEqual(set(before), set(after))
+            for name, old in before.items():
+                self.assertEqual(old.identity, after[name].identity)
+                self.assertEqual(old.classification, after[name].classification)
+
+    def test_unregistered_statement_in_a_new_module_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_base_tree(root)
+            sources = root / "lean/Singular/Statements"
+            sources.mkdir()
+            (sources / "Unproved.lean").write_text(
+                "namespace Singular.Statements\n"
+                "theorem unproved : False := by sorry\n"
+                "end Singular.Statements\n"
+            )
+            with self.assertRaisesRegex(InventoryError, "drifts"):
+                build_inventory(root)
+
     def test_fixture_tree_populates_both_classes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

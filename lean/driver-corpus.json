@@ -3002,7 +3002,7 @@
   ],
   "corpusSourceSha256": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
   "modelSha256": "680c6c8e54edda393f11af3bdfbe0eb2ea4e11c885b723402fe0dfe2733916fb",
-  "payloadSha256": "05fc84632b8c0f51de43b40af3b1f9f46390bfdedcc73f24f3af5796c96c3eea",
+  "payloadSha256": "23e521b9a45e72e573fb4a68c3ce1344559d3a7e5aa097b395a7efd8358ec58c",
   "scenarios": [
     {
       "id": "DR02-register-active",
@@ -11588,7 +11588,7 @@
     "lean/DriverMain.lean": "248237f9d801098a5be76be42afb7e89e290590b86d54860db3580fb99d791b8",
     "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
     "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
-    "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
+    "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
     "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",

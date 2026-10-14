@@ -315,7 +315,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "c140e8f6c766fd931b3794d84ec90a1027f5edcda72e3e6782d5e370451e0413",
+  "payloadSha256": "7f697bca4647341788d1ada103ff8aae7de583cc062859f9e29f2f44d24be866",
   "scenarios": [
     {
       "id": "Register an active key",
@@ -1998,7 +1998,7 @@
     "lean/Main.lean": "6d43e1bbd2ca940c72b683875b54a7e921d99b233120e2595299e14d9f4460d1",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
-    "lean/Singular/Audit.lean": "2ef1e8f78746b0c91267729b20633b1deab774ded5c12538a1295f5aa1597e6b",
+    "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "365cf8bc87b40bd2d6a77250e354ca163316a72d43fbdea77938c1561b36b341",
     "lean/Singular/Economics.lean": "71372ed80fb910f4875153a4984655ab50fced468ac47a4f2edbb07ef1f12be2",
     "lean/Singular/Lemmas.lean": "8d52831eeb97f3c28221be574845e9004336194223374f82f1ec03f25235a3ce",

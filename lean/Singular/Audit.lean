@@ -13,9 +13,9 @@ def standard : List Name := [``propext, ``Classical.choice, ``Quot.sound]
 
 def audit (report : Bool) : CommandElabM Unit := do
   let env ← getEnv
-  let some idx := env.getModuleIdx? `Singular.Statements
+  let some _ := env.getModuleIdx? `Singular.Statements
     | throwError "Singular.Statements is not imported"
-  let names := (env.header.moduleData[idx]!.constNames.filter fun n =>
+  let names := (env.constants.toList.toArray.map Prod.fst |>.filter fun n =>
     n.getPrefix == `Singular.Statements && !n.isInternalDetail).qsort Name.lt
   if names.isEmpty then throwError "no statement to audit"
   for n in names do

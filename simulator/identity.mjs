@@ -8,12 +8,20 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const root = new URL('./', import.meta.url);
+export const filesBelow = (dir) =>
+  readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) =>
+      entry.isDirectory()
+        ? filesBelow(new URL(`${entry.name}/`, dir)).map((name) => `${entry.name}/${name}`)
+        : [entry.name],
+    )
+    .sort();
 const hash = (p) =>
   createHash('sha256')
     .update(readFileSync(new URL(p, root)))
     .digest('hex');
 export const bound = () => [
-  ...readdirSync(new URL('formal/', root))
+  ...filesBelow(new URL('formal/', root))
     .filter((f) => f !== 'README.md')
     .sort()
     .map((f) => `formal/${f}`),
