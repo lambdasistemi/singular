@@ -15,27 +15,27 @@ One group per slice, grouped by pull request (the cut of 2026-10-11: pull reques
 
 ### fold-the-first-selected
 
-- [ ] builder-over-one-chosen-request (run: builder)
-- [ ] a-chosen-request-that-is-not-pending-is-refused-at-every-pending-size (run: builder)
-- [ ] named-request-guard-and-nothing-to-fold (run: command-line rules)
-- [ ] spend-check-states-the-state-and-every-selected-request-and-no-other-pending-request (run: command-line rules)
-- [ ] mismatched-selection-and-pairing-is-refused-never-dropped (run: command-line rules)
-- [ ] registry-fold-takes-the-first-included-request (run: fold routine and entry)
-- [ ] a-built-fold-that-spends-another-pending-request-is-refused-before-signing (run: fold routine and entry)
-- [ ] a-termination-under-the-neutral-value-is-excluded-application-required (run: fold routine and entry)
-- [ ] combined-forms-take-the-same-selection (run: fold routine and entry)
-- [ ] receipt-lists-settled-and-excluded-beside-the-earlier-fields (run: fold routine and entry)
-- [ ] delete-the-one-pending-rule (run: fold routine and entry)
-- [ ] no-existing-reader-breaks-or-its-minimal-fix-is-named (run: fold routine and entry)
+- [x] builder-over-one-chosen-request (run: builder)
+- [x] a-chosen-request-that-is-not-pending-is-refused-at-every-pending-size (run: builder)
+- [x] named-request-guard-and-nothing-to-fold (run: command-line rules)
+- [x] spend-check-states-the-state-and-every-selected-request-and-no-other-pending-request (run: command-line rules)
+- [x] mismatched-selection-and-pairing-is-refused-never-dropped (run: command-line rules)
+- [x] registry-fold-takes-the-first-included-request (run: fold routine and entry)
+- [x] a-built-fold-that-spends-another-pending-request-is-refused-before-signing (run: fold routine and entry)
+- [x] a-termination-under-the-neutral-value-is-excluded-application-required (run: fold routine and entry)
+- [x] combined-forms-take-the-same-selection (run: fold routine and entry)
+- [x] receipt-lists-settled-and-excluded-beside-the-earlier-fields (run: fold routine and entry)
+- [x] delete-the-one-pending-rule (run: fold routine and entry)
+- [x] no-existing-reader-breaks-or-its-minimal-fix-is-named (run: fold routine and entry)
 
 ### devnet-unsettleable-left-and-named
 
-- [ ] an-unsettleable-request-is-left-and-named-while-an-eligible-one-settles
+- [x] an-unsettleable-request-is-left-and-named-while-an-eligible-one-settles
 
 ### docs-of-what-ships-first
 
-- [ ] the-registry-fold-page-states-this-pull-request-and-its-limits
-- [ ] that-page-narration-regenerated-and-speech-restamped
+- [x] the-registry-fold-page-states-this-pull-request-and-its-limits
+- [x] that-page-narration-regenerated-and-speech-restamped
 
 ## Pull request 2: the receipt readers and the other pages
 
@@ -56,7 +56,7 @@ One group per slice, grouped by pull request (the cut of 2026-10-11: pull reques
 The cut point of this pull request: if the forecast passes the allowance, the preprod page, the fold responsibilities page and the rehearsal document leave for a docs-only pull request; the node guide sentence stays.
 
 - [x] the-node-guide-states-the-list-receipt-and-the-removal
-- [ ] the-other-pages-state-the-list-receipt
+- [x] the-other-pages-state-the-list-receipt
 - [x] speech-restamped-and-narration-regenerated
 
 ## Pull request 3a: the fold over several requests, the journal listing every transition
@@ -120,10 +120,10 @@ The bound stays 1. Re-derived on 2026-10-13 against `main` at `e7b55ac9` and reb
 
 ### devnet-interrupted-two-request-fold
 
-- [ ] an-interrupted-two-request-fold-reconciles-both-keys-once
-- [ ] the-part-is-hosted-by-the-partition-list
+- [x] an-interrupted-two-request-fold-reconciles-both-keys-once
+- [x] the-part-is-hosted-by-the-partition-list
 
 ### docs-of-recovery-and-the-other-pages
 
-- [ ] the-recovery-page-the-preprod-page-the-fold-responsibilities-page-and-the-rehearsal-document-state-the-bound-and-the-whole-behaviour
-- [ ] speech-restamped-and-narration-regenerated
+- [x] the-recovery-page-the-preprod-page-the-fold-responsibilities-page-and-the-rehearsal-document-state-the-bound-and-the-whole-behaviour
+- [x] speech-restamped-and-narration-regenerated

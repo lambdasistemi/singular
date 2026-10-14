@@ -979,8 +979,8 @@
     "index": 2,
     "name": "docs-cli-recovery/recovering-a-registry-command-02",
     "pause_ms": 400,
-    "text": "This page describes what the ordinary commands do in each case and what you do next. Every write records each transaction it submits in the registry's journal, journal.jsonl, phase by phase, before taking the next step: prepared (the signed body saved beside the journal, before it is sent), the node's answer, the confirmation, and observed (what the transaction made, read back from the chain). The journal is only ever appended to; saved bodies are never rewritten.",
-    "v": "b5813404c333"
+    "text": "This page describes what the ordinary commands do in each case and what you do next. Every write records each transaction it submits in the registry's journal, journal.jsonl, phase by phase, before taking the next step: prepared (the signed body saved beside the journal, before it is sent), the node's answer, the confirmation, and observed (what the transaction made, read back from the chain). A fold's prepared line lists every request it folds, one transition per request, chained from the root before to the root after. The journal is only ever appended to; saved bodies are never rewritten.",
+    "v": "d64ff5c4be4c"
    }
   ],
   "the-case-each-submission-met": [
@@ -1018,15 +1018,15 @@
     "index": 1,
     "name": "docs-cli-recovery/the-next-command-reconciles-01",
     "pause_ms": 400,
-    "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
-    "v": "525817717198"
+    "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. For a fold of several requests, it reads back every key the fold touches and the registry's state output carrying the last transition's root after. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
+    "v": "fb655fe69af8"
    },
    {
     "index": 2,
     "name": "docs-cli-recovery/the-next-command-reconciles-02",
     "pause_ms": 400,
-    "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns the interrupted step's key, even when the current command targets another key.",
-    "v": "2767cb130619"
+    "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns every key the interrupted step touched, even when the current command targets another key: for a fold, every key its transitions name and the registry's state output.",
+    "v": "65c13f6438a9"
    },
    {
     "index": 3,
@@ -1117,8 +1117,8 @@
     "index": 1,
     "name": "docs-cli-recovery/when-the-chain-rolls-back-01",
     "pause_ms": 400,
-    "text": "A transaction journalled confirmed or observed can leave the chain again. The next command checks every such transaction against the chain it reads: when its first output is not live and an input it spends is live again, it is no longer on the chain, since a transaction on the chain has consumed every input it spends. The command appends a rolled-back line naming the chain point it read and the inputs it found live; the observed line it supersedes stays where it was.",
-    "v": "19a285147318"
+    "text": "A transaction journalled confirmed or observed can leave the chain again. The next command checks every such transaction against the chain it reads: when its first output is not live and an input it spends is live again, it is no longer on the chain, since a transaction on the chain has consumed every input it spends. The command appends a rolled-back line naming the chain point it read and the inputs it found live; for a fold, the line names that its requests are pending again and the public state returns to its root before. The observed line it supersedes stays where it was.",
+    "v": "0193eb20b12d"
    },
    {
     "index": 2,
@@ -2897,8 +2897,8 @@
     "index": 5,
     "name": "docs-demo1-preprod/what-you-run-05",
     "pause_ms": 300,
-    "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles the first that passes, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
-    "v": "b69c4a0a6550"
+    "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles every request that passes, up to nine, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. A take stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
+    "v": "7ac12ed4c346"
    },
    {
     "index": 6,
@@ -5888,8 +5888,8 @@
     "index": 1,
     "name": "docs-offchain-fold-responsibilities/one-owner-per-fold-concern-01",
     "pause_ms": 400,
-    "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound. The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
-    "v": "a9e7f5299da5"
+    "text": "The facade holds no algorithm. It runs the fold's sequence — query of the chosen requests, proofs, state preparation, context completion, duties, upper slot, program, build — and every decision in that sequence belongs to exactly one of the three owners below it. Which pending requests reach that sequence belongs to Singular.Registry.FoldSelection alone: it judges every pending request on its own, by seven checks in order, and returns each as settled or excluded with a reason, up to a capacity bound of nine requests per fold, an estimate under preprod's execution budget of 14 million memory units, bound by trie-proof verification, not measured on a real network (measuring it belongs to #530). The graph is acyclic and one-way between the fold owners: Context knows nothing of duties or assembly, Duties reads Context but no assembly, Build reads Duties but no facade. Below the fold owners, both Duties and Build also read the older Internal owners directly — the duty derivation shares its edge-to-mint table with the cage through Internal.Edges — and both the facade and the build owner read ConnectedFold for the attached action types.",
+    "v": "feeb1ea4882b"
    }
   ],
   "source": [
@@ -6003,8 +6003,8 @@
     "index": 2,
     "name": "docs-offchain-fold-responsibilities/where-common-changes-land-02",
     "pause_ms": 300,
-    "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound: Singular.Registry.FoldSelection, and only there.",
-    "v": "48dfe6c66796"
+    "text": "Which pending requests a fold takes — the seven checks, the reasons, the capacity bound of nine, an estimate not measured on a real network: Singular.Registry.FoldSelection, and only there.",
+    "v": "0f86668160f9"
    },
    {
     "index": 3,

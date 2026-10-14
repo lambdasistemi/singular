@@ -84,7 +84,7 @@ belongs to exactly one of the three owners below it. Which pending
 requests reach that sequence belongs to `Singular.Registry.FoldSelection`
 alone: it judges every pending request on its own, by seven checks in
 order, and returns each as settled or excluded with a reason, up to a
-capacity bound. The graph is acyclic and one-way
+capacity bound of nine requests per fold, an estimate under preprod's execution budget of 14 million memory units, bound by trie-proof verification, not measured on a real network (measuring it belongs to #530). The graph is acyclic and one-way
 between the fold owners: Context knows nothing of duties or assembly,
 Duties reads Context but no assembly, Build reads Duties but no
 facade. Below the fold owners, both Duties and Build also read the
@@ -95,7 +95,7 @@ action types.
 
 | Module | Responsible for |
 | --- | --- |
-| `Singular.Registry.FoldSelection` | Which pending requests a fold takes: judging every pending request alone, by seven checks in order, returning each as settled or excluded with a reason, up to a capacity bound. |
+| `Singular.Registry.FoldSelection` | Which pending requests a fold takes: judging every pending request alone, by seven checks in order, returning each as settled or excluded with a reason, up to nine requests per fold, an estimate not measured on a real network. |
 | `Singular.Registry.TxBuilder.Update` | The six public exports and the two fold entry points; the sequence of preparation, decision and assembly. Nothing else. |
 | `Singular.Registry.TxBuilder.Update.Context` | The `RegistryContext` a caller hands in and its empty value; finding the state, request and fee UTxOs; the ordered speculative proofs through the trie; the new state output and the cage script; the validity upper slot; completing a partly empty context from the provider. |
 | `Singular.Registry.TxBuilder.Update.Duties` | `RegistryDuties` and `registryDuties`: the one derivation of what a fold's requests owe — mints under the three token policies, destinations, custody spends, burn sources, deposit and approval returns, and the (empty) signer set. |
@@ -111,7 +111,7 @@ sequenceDiagram
     participant Ctx as Update.Context
     participant Dut as Update.Duties
     participant Bld as Update.Build
-    Caller->>Sel: selectFold — judges each pending request alone, seven checks, settled or excluded with reason, up to capacity
+    Caller->>Sel: selectFold — judges each pending request alone, seven checks, settled or excluded with reason, up to nine, an estimate not measured on a real network
     Sel-->>Caller: chosen requests
     Caller->>Facade: updateTokenSelected cfg prov tm tid addr ctx chosen
     Facade->>Ctx: queryContext — state, chosen requests (sorted by input), fee, params
@@ -165,7 +165,7 @@ extraction touches none of it.
   and decodes it (the datum shape itself lives in
   `Singular.Registry.Types`).
 - Which pending requests a fold takes — the seven checks, the reasons,
-  the capacity bound: `Singular.Registry.FoldSelection`, and only there.
+  the capacity bound of nine, an estimate not measured on a real network: `Singular.Registry.FoldSelection`, and only there.
 - An edge's obligations change — what it mints, where it delivers, what
   custody it spends or returns: `Update.Duties`, and only there.
 - The transaction's shape changes — a new input kind, reference

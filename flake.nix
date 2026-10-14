@@ -359,10 +359,12 @@
           cliRecoveryPartitions = {
             history = "accepting lost-answer killed never-sent whole-journal trie-capability";
             rollback = "rollback trie-capability";
+            two-requests = "two-requests trie-capability";
           };
           cliRecoveryPartitionNames = {
             history = "accepting, lost-answer, killed, never-sent and whole-journal with trie observations";
             rollback = "restored node rollback (rollback trie-capability)";
+            two-requests = "interrupted two-request fold with trie observations";
           };
           # #451 re-cut: the shared collector derivation, exposed as an
           # app; its buildable package form lives in packages.

@@ -176,10 +176,10 @@ insert receipt and the preview receipt print the envelope it built.
    for the fold and `foldDeadline`, the time (and, where pinned time converts it, the slot) by which the fold must
    happen. Nothing is folded, and the registry's root and your saved state do not
    move.
-3. **`open-datum fold`** folds that one pending request with the wallet that runs
-   it, which need not be the wallet that booked: the key's one active token lands in
-   an output at the application, carrying your envelope inline. Its receipt names the
-   request, the key, the edge and the output it delivered in the settled entry, beside
+3. **`open-datum fold`** folds the pending requests with the wallet that runs
+   it, which need not be the wallet that booked: it settles every request that passes, up to nine, each settled key's one active token landing in
+   an output at the application, carrying its envelope inline. Its receipt names each settled
+   request, its key, its edge and the output it delivered in the `settled` list, beside
    the fold's transaction, the new root, the host clock at which it was decided and how many milliseconds remained before the deadline, and lists the requests it left in `excluded`.
 4. **`open-datum inspect`** reads the key `active`, with the holding, its envelope and
    payload, the registry's root and its separately observed tip. Its Unbound facts do not prove a common
@@ -343,7 +343,7 @@ update, refuses a release outside any fold beside the terminate that
 releases the same holding inside one, and refuses a second insertion of the
 Active key and an insertion of the Terminal key, each booked and then refused
 at its fold. Every insertion refusal leaves its request pending, and a
-registry's fold judges each pending request on its own and settles the first that passes, so the refused one stays pending, named with its reason in the receipt's `excluded` list, and the take retracts each one as
+registry's fold judges each pending request on its own and settles every request that passes, up to nine, so the refused one stays pending, named with its reason in the receipt's `excluded` list, and the take retracts each one as
 its owner inside the request's retract window. The take reads both windows
 from the attached registry's state datum and waits for the booked request's
 actual deadline. New registries default to a processing window of 600 000

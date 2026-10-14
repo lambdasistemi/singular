@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "This page describes what the ordinary commands do in each case and what you do next. Every write records each transaction it submits in the registry's journal, journal.jsonl, phase by phase, before taking the next step: prepared (the signed body saved beside the journal, before it is sent), the node's answer, the confirmation, and observed (what the transaction made, read back from the chain). The journal is only ever appended to; saved bodies are never rewritten.",
+      "text": "This page describes what the ordinary commands do in each case and what you do next. Every write records each transaction it submits in the registry's journal, journal.jsonl, phase by phase, before taking the next step: prepared (the signed body saved beside the journal, before it is sent), the node's answer, the confirmation, and observed (what the transaction made, read back from the chain). A fold's prepared line lists every request it folds, one transition per request, chained from the root before to the root after. The journal is only ever appended to; saved bodies are never rewritten.",
       "pause": 400
     }
   ],
@@ -43,11 +43,11 @@
       "pause": 500
     },
     {
-      "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
+      "text": "After an inclusion, the command selects its proof state from public state-token history and reads back the step's after-state before appending observed. For a fold of several requests, it reads back every key the fold touches and the registry's state output carrying the last transition's root after. The next ordinary write or inspect reconciles unfinished observations from public chain evidence before proceeding, without submitting anything. Proof state is reconstructed afresh; no mirror or saved-root file is read or written.",
       "pause": 400
     },
     {
-      "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns the interrupted step's key, even when the current command targets another key.",
+      "text": "The journal tracks this actor's submissions. It never supplies a replay edge, proof or root. Missing history and a root that does not chain are named refusals; an empty trie cannot substitute for unavailable history. The observation concerns every key the interrupted step touched, even when the current command targets another key: for a fold, every key its transitions name and the registry's state output.",
       "pause": 400
     },
     {
@@ -61,7 +61,7 @@
       "pause": 500
     },
     {
-      "text": "A transaction journalled confirmed or observed can leave the chain again. The next command checks every such transaction against the chain it reads: when its first output is not live and an input it spends is live again, it is no longer on the chain, since a transaction on the chain has consumed every input it spends. The command appends a rolled-back line naming the chain point it read and the inputs it found live; the observed line it supersedes stays where it was.",
+      "text": "A transaction journalled confirmed or observed can leave the chain again. The next command checks every such transaction against the chain it reads: when its first output is not live and an input it spends is live again, it is no longer on the chain, since a transaction on the chain has consumed every input it spends. The command appends a rolled-back line naming the chain point it read and the inputs it found live; for a fold, the line names that its requests are pending again and the public state returns to its root before. The observed line it supersedes stays where it was.",
       "pause": 400
     },
     {
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "6f0b8a03fa404723ab7966ac7a0ee18da70f7ef441ee470438a692dc90ece732"
+    "sha256": "8638448ab1db3b2870b371e37b48a22caafa73e69cf553f5336815454a3d8f50"
   }
 }
