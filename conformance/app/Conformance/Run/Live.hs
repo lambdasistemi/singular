@@ -2446,10 +2446,9 @@ storyModelRequestBy booker ids cfg registryIdentity _exit request deposit tip re
             , "tip" .= tip
             , "datum" .= datum
             , "registryId" .= registryIdentity
+            , "submittedAt" .= submittedAt
             ]
                 <> ["reference" .= bound | Just bound <- [reference]]
-                <> [ "submittedAt" .= snd (requestDatumOf out) | Right out <- [requestOut]
-                   ]
 
 {- | Observation only looks up identities allocated while acting. The
 concrete trie root is checked before its leaves are translated.

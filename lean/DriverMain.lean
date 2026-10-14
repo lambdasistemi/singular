@@ -167,8 +167,7 @@ def windowScenarios : List (Scenario × Outcome × Option String) :=
   , (windowScenario "DR19-fold-past-deadline" windowFirst (some 61001), .refused, some "not-phase1")
   , (windowScenario "DR20-later-request-in-window" windowSecond (some 61001), .accepted, none)
   , (windowScenario "DR21-fold-without-witness" windowFirst none, .unsupported, some "fold-without-witness")
-  , ({ windowScenario "DR22-reject-past-deadline" windowFirst (some 80001) with exit := .reject, foldWitness := none
-      , rejection := some (rejectionFor windowState windowFirst .expired 80001 80002) }, .accepted, none)
+  , ({ windowScenario "DR22-reject-past-deadline" windowFirst (some 80001) with exit := .reject, foldWitness := none, rejection := some (rejectionFor windowState windowFirst .expired 80001 80002) }, .accepted, none)
   , (windowScenario "DR23-window-before-approval" { windowFirst with approval := none } (some 61001), .refused, some "not-phase1")
   , (windowScenario "DR24-edge-before-window" { claiming (request .updateActive 42 42 555 0 55) with submittedAt := 1000 } (some 80001), .refused, some "edge-inadmissible")
   , (windowScenario "DR25-second-at-deadline" windowSecond (some 80000), .accepted, none)
