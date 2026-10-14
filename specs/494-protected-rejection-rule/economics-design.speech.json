@@ -81,8 +81,54 @@
       "pause": 300
     },
     {
-      "text": "Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. The application tag policy must allow burning its application tag at any time with no further condition. Otherwise a booked termination, which has no other exit, could be stranded.",
+      "text": "Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. Both tag policies allow a burn at any time with no further condition, for both kinds of request. A rejection by anyone must be able to burn the application tag, and a booked termination, which has no other exit, must not be stranded.",
       "pause": 400
+    }
+  ],
+  "the-tags": [
+    {
+      "text": "The tags.",
+      "pause": 500
+    },
+    {
+      "text": "The syntax tag is minted when a request is booked and burned when that request is spent, by any exit: fold, retraction or rejection. There is no syntax tag without a pending request and no pending request without its syntax tag.",
+      "pause": 300
+    },
+    {
+      "text": "The application tag has the same life. It is minted at booking and burned by every exit. The syntax tag authorizes the request's shape and the application tag authorizes the operation. The application tag is never returned to anyone.",
+      "pause": 300
+    },
+    {
+      "text": "The singular tag is minted at the destination by a registration fold and burned by the termination fold.",
+      "pause": 300
+    },
+    {
+      "text": "Tag flow per exit:",
+      "pause": 300
+    },
+    {
+      "text": "registration fold: burns the syntax tag and the application tag, and mints the singular tag at the destination;",
+      "pause": 300
+    },
+    {
+      "text": "termination fold: burns the syntax tag, the singular tag and the application tag;",
+      "pause": 300
+    },
+    {
+      "text": "rejection and retraction: burn the syntax tag and the application tag.",
+      "pause": 300
+    },
+    {
+      "text": "The supply of each tag equals the count of pending requests.",
+      "pause": 300
+    },
+    {
+      "text": "Burning is free: the tag policies allow a burn with no condition. This is safe because a tag exists only in a request output at the Singular script hash, and that output can be spent only through the request validator, which enforces the exit and requires the request's tags to be burned in the same transaction, so that no exit carries a live tag out. The exit rules belong to the request validator's spend, not to the burn branch of a tag policy.",
+      "pause": 300
+    },
+    {
+      "text": "An output at the request address that lacks either tag is not a request, because a syntax tag is minted only together with an application tag. Anyone may spend it. A tagged output leaves only through one of its exits.",
+      "pause": 300
     }
   ],
   "every-exit": [
@@ -96,6 +142,10 @@
     },
     {
       "text": "Where the value goes:",
+      "pause": 400
+    },
+    {
+      "text": "Every exit burns the syntax tag and the application tag; the termination fold also burns the singular tag.",
       "pause": 400
     },
     {
@@ -113,7 +163,7 @@
       "pause": 300
     },
     {
-      "text": "It spends only the requests it rejects. It spends no state token, and this is checked.",
+      "text": "It spends only the requests it rejects, and burns each rejected request's syntax tag and application tag. It spends no state token, and this is checked.",
       "pause": 300
     },
     {
@@ -191,11 +241,11 @@
       "pause": 300
     },
     {
-      "text": "on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip), application tags included;",
+      "text": "on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip) in lovelace;",
       "pause": 300
     },
     {
-      "text": "on retraction, it receives everything the request held.",
+      "text": "on retraction, it receives everything the request held except the two tags, which are burned.",
       "pause": 300
     },
     {
@@ -231,7 +281,7 @@
       "pause": 300
     },
     {
-      "text": "t_min covers the measured cost of every supported exit processed alone, restitution output included, within the stated fee envelope. This is conditional on the measurements.",
+      "text": "t_min covers the measured cost of every supported exit processed alone, refund output included, within the stated fee envelope. This is conditional on the measurements.",
       "pause": 300
     }
   ],
@@ -437,11 +487,11 @@
       "pause": 500
     },
     {
-      "text": "Registration application tag on a successful fold: returned to the refund address, as today, or burned like the termination's. If returned, its output is a restitution cost that t_min must cover.",
-      "pause": 300
+      "text": "The fate of a registration's application tag on a successful fold is decided: it is burned, never returned, so no restitution output exists and t_min covers none.",
+      "pause": 400
     },
     {
-      "text": "Adapting open-datum (applications/open-datum). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its approval policy already allows pure burns.",
+      "text": "Adapting open-datum (applications/open-datum). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its application tag policy must allow a burn at any time, for both kinds of request.",
       "pause": 300
     },
     {
@@ -459,6 +509,6 @@
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "bb01e2580d1a7d4ebdae5bee069124097937f54a70aec3c226f99074507b6ca8"
+    "sha256": "e62f79fee9603582fc136c336ef137a178bb249dacaad1c80a878c322cc187fb"
   }
 }

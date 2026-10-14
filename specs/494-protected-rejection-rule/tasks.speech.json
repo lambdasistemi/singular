@@ -187,31 +187,31 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-five — a fold that changes a parameter, a reference to a spent output and an unbalanced transaction fail on the branch as it stands, for the intended reason.",
+      "text": "[x] failing-controls-five — a fold that changes a parameter, a reference to a spent output and an unbalanced transaction fail on the branch as it stands, for the intended reason.",
       "pause": 300
     },
     {
-      "text": "[ ] registry-parameters — the registration cost, minimum tip and maximum booking width exist in the configuration, default to zero in old input and are preserved by every fold; the width is below the processing window.",
+      "text": "[x] registry-parameters — the registration cost, minimum tip and maximum booking width exist in the configuration, default to zero in old input and are preserved by every fold; the width is below the processing window.",
       "pause": 300
     },
     {
-      "text": "[ ] transaction-vocabulary — output references and the unspent set, reference inputs, the validity interval, the fee and the donation (a zero donation omitted), the exact state token identity and the balance relation exist.",
+      "text": "[x] transaction-vocabulary — output references and the unspent set, reference inputs, the validity interval, the fee and the donation (a zero donation omitted), the exact state token identity and the balance relation exist.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-five — statement 1 and the supporting statements of the plan are proved from the standard axioms.",
+      "text": "[x] statements-five — statement 1 and the supporting statements of the plan are proved from the standard axioms.",
       "pause": 300
     },
     {
-      "text": "[ ] protocol-eight — the driver protocol version moves where a declared question changed and the surface digest follows.",
+      "text": "[x] protocol-eight — the driver protocol version moves where a declared question changed and the surface digest follows; no declared question changed, so the version stays.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-five — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-five — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] names-and-receipts-five — the slice's statements are listed with fully qualified name and axiom line at the final revision.",
+      "text": "[x] names-and-receipts-five — the slice's statements are listed with fully qualified name and axiom line at the final revision.",
       "pause": 300
     }
   ],
@@ -229,7 +229,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the syntax tag minted once.",
+      "text": "[ ] registration-booking — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end; the syntax tag and the application tag are minted once, with the pending request.",
       "pause": 300
     },
     {
@@ -281,7 +281,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-eight — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch and a repeated input fail or are refused wrongly on the branch as it stands.",
+      "text": "[ ] failing-controls-eight — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.",
       "pause": 300
     },
     {
@@ -289,7 +289,11 @@
       "pause": 300
     },
     {
-      "text": "[ ] statements-eight — statements 2, 3, 4, 5 and 8 and the supporting statement are proved.",
+      "text": "[ ] request-address-two-arms — an output lacking either tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the syntax tag and the application tag.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] statements-eight — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.",
       "pause": 300
     },
     {
@@ -307,7 +311,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-nine — a reused refund and a refund short of held minus tip fail on the branch as it stands.",
+      "text": "[ ] failing-controls-nine — a reused refund, a refund short of held minus tip and a retraction that carries a tag out alive fail on the branch as it stands.",
       "pause": 300
     },
     {
@@ -333,15 +337,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-ten — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag and an unbalanced fold fail on the branch as it stands.",
+      "text": "[ ] failing-controls-ten — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] fold-obligations — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the application tag and donates held minus tip.",
+      "text": "[ ] fold-obligations — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the singular tag, the syntax tag and the application tag and donates held minus tip; a registration fold burns the syntax tag and the application tag and mints the singular tag at the destination.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-ten — statements 7 (first half), 10, 11 and 12 and the supporting statement are proved.",
+      "text": "[ ] statements-ten — statements 7 (first half), 10, 11 and 12 and the two supporting statements (including that the supply of each tag equals the count of pending requests) are proved.",
       "pause": 300
     },
     {
@@ -373,6 +377,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "365b34683d02b65bb898904cabcf6b96e3fa850c64295dcd32c9aa1acc58eb6f"
+    "sha256": "3d4ea2f48ca93ae60b9a41e6db5c08d74fbc011c280e05af303de47c2c8896b1"
   }
 }

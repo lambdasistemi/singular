@@ -153,6 +153,10 @@
       "pause": 300
     },
     {
+      "text": "the syntax tag and the application tag are minted at booking and burned by every exit, never returned, and an output at the request address lacking either tag may be spent by anyone;",
+      "pause": 300
+    },
+    {
       "text": "the request policy refuses any request whose contents are not exactly those the design allows.",
       "pause": 300
     },
@@ -273,6 +277,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "542d53f2fcda1063d1431a10ca55b3176902ff5d8bfc61d42123e0f215ce5e50"
+    "sha256": "8be6e5e3b3649c7d4b324cb482924fb2566701fe9b0ab12ae98a9c0c322d032d"
   }
 }

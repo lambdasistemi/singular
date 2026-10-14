@@ -33,7 +33,7 @@ Terminology (operator): Singular has no controller concept. The application is t
 | Parameter | Meaning |
 |---|---|
 | R, registration cost | Lovelace donated to the treasury for each successfully registered key. Never refunded once the key is registered. |
-| t_min, minimum tip | Checked at booking. Sized from measured costs: fee per byte, script execution, the reference read of the state, and the restitution output. |
+| t_min, minimum tip | Checked at booking. Sized from measured costs: fee per byte, script execution, the reference read of the state, and the refund output. |
 | δ, maximum booking width | Upper bound on the width of a registration's booking validity interval; δ < W_p. |
 | W_p, processing window | A registration may be folded only in [s, s + W_p). |
 | W_r, reclaim window | The refund address may retract only in [s + W_p, s + W_p + W_r). |
@@ -57,7 +57,20 @@ How a termination is booked: the key's token lives at the destination its regist
 - cardano-keri releases it on a verified duplicity proof, which anyone may post;
 - open-datum releases it on its envelope's control signature.
 
-Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. The application tag policy must allow burning its application tag at any time with no further condition. Otherwise a booked termination, which has no other exit, could be stranded.
+Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. Both tag policies allow a burn at any time with no further condition, for both kinds of request. A rejection by anyone must be able to burn the application tag, and a booked termination, which has no other exit, must not be stranded.
+
+## The tags
+
+- The syntax tag is minted when a request is booked and burned when that request is spent, by any exit: fold, retraction or rejection. There is no syntax tag without a pending request and no pending request without its syntax tag.
+- The application tag has the same life. It is minted at booking and burned by every exit. The syntax tag authorizes the request's shape and the application tag authorizes the operation. The application tag is never returned to anyone.
+- The singular tag is minted at the destination by a registration fold and burned by the termination fold.
+- Tag flow per exit:
+  - registration fold: burns the syntax tag and the application tag, and mints the singular tag at the destination;
+  - termination fold: burns the syntax tag, the singular tag and the application tag;
+  - rejection and retraction: burn the syntax tag and the application tag.
+- The supply of each tag equals the count of pending requests.
+- Burning is free: the tag policies allow a burn with no condition. This is safe because a tag exists only in a request output at the Singular script hash, and that output can be spent only through the request validator, which enforces the exit and requires the request's tags to be burned in the same transaction, so that no exit carries a live tag out. The exit rules belong to the request validator's spend, not to the burn branch of a tag policy.
+- An output at the request address that lacks either tag is not a request, because a syntax tag is minted only together with an application tag. Anyone may spend it. A tagged output leaves only through one of its exits.
 
 ## Every exit
 
@@ -73,17 +86,19 @@ Where the value goes:
 
 | Exit | Treasury | Processor | Refund address | Destination |
 |---|---|---|---|---|
-| Registration folded | R | tip | application tag (open item: returned or burned) | the singular tag with its carrier ada |
-| Registration rejected | nothing | tip | R, carrier ada, application tag | nothing |
-| Registration retracted | nothing | nothing | everything, tip included | nothing |
-| Termination folded (singular tag and application tag burned) | everything except the tip | tip | none | none |
+| Registration folded | R | tip | none | the singular tag with its carrier ada |
+| Registration rejected | nothing | tip | R and carrier ada | nothing |
+| Registration retracted | nothing | nothing | everything the request held, tip included, except the two tags | nothing |
+| Termination folded | everything except the tip | tip | none | none |
+
+Every exit burns the syntax tag and the application tag; the termination fold also burns the singular tag.
 
 A fold of n registrations and m terminations donates at least n·R plus the sum, over the m terminations, of (held − tip).
 
 ## The rejection rule
 
 - A rejection reads the registry state output as a reference input. It checks that the referenced output carries this registry's exact state token (policy and name) and reads the root from that output's datum.
-- It spends only the requests it rejects. It spends no state token, and this is checked.
+- It spends only the requests it rejects, and burns each rejected request's syntax tag and application tag. It spends no state token, and this is checked.
 - Rejection is removed from the fold's action list entirely. Only folds spend the state output.
 - Rejections batch: one transaction may reject many requests against one referenced state output, with one shared validity interval.
   - Each request is consumed and refunded once.
@@ -106,8 +121,8 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 4. A registration that can still be folded is not rejected before expiry. This is today's `live_compatible_request_protected` (Statements.lean), lifted to the reference-read rejection. With the booked-time rule, expiry comes no earlier than W_p + W_r after the booking's actual inclusion.
 5. No rejection without current-state evidence: today's `rejection_without_evidence`.
 6. Refund floor:
-   - on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip), application tags included;
-   - on retraction, it receives everything the request held.
+   - on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip) in lovelace;
+   - on retraction, it receives everything the request held except the two tags, which are burned.
 7. Registration charge: every accepted fold that registers n keys donates at least n·R. R is returned on rejection and retraction, and never after a successful registration.
 8. Terminations are unrejectable: in every reachable state, no rejection of a termination request carrying its key's genuine token is admitted, on either ground.
    - The mismatch half follows from `biconditional_supply_sync` (Statements.lean) once the token held in a pending request is counted in supply.
@@ -116,7 +131,7 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 10. Only terminations carrying the application tag fold.
 11. A booked termination can be folded at any later time. This holds as long as some folder accepts its tip and ledger fees stay inside the envelope the tip was sized for.
 12. Across a batch, what the processors can take is at most the sum of the tips. This needs a balance relation with no outside funding.
-13. t_min covers the measured cost of every supported exit processed alone, restitution output included, within the stated fee envelope. This is conditional on the measurements.
+13. t_min covers the measured cost of every supported exit processed alone, refund output included, within the stated fee envelope. This is conditional on the measurements.
 
 ## What the paper must not claim
 
@@ -172,8 +187,9 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 
 ## Open items (not decided)
 
-1. Registration application tag on a successful fold: returned to the refund address, as today, or burned like the termination's. If returned, its output is a restitution cost that t_min must cover.
-2. Adapting open-datum (`applications/open-datum`). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its approval policy already allows pure burns.
-3. Adapting cardano-keri. Its model reaps the token, then refunds a go-request to the reaper and pays the convictor a reward. That differs from the decided termination, so a correspondence design is needed.
-4. Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.
-5. The relation between the existing fee pin (`maxFee`) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.
+The fate of a registration's application tag on a successful fold is decided: it is burned, never returned, so no restitution output exists and t_min covers none.
+
+1. Adapting open-datum (`applications/open-datum`). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its application tag policy must allow a burn at any time, for both kinds of request.
+2. Adapting cardano-keri. Its model reaps the token, then refunds a go-request to the reaper and pays the convictor a reward. That differs from the decided termination, so a correspondence design is needed.
+3. Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.
+4. The relation between the existing fee pin (`maxFee`) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.

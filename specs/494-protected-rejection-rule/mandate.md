@@ -93,6 +93,7 @@ at a booking root, a processor split and a termination fee) is withdrawn. The de
 - a minimum tip pinned by the registry is checked at booking;
 - the booked time is the upper end of a booking interval at most a pinned width wide;
 - every parameter is fixed at creation, with no authority to change it;
+- the syntax tag and the application tag are minted at booking and burned by every exit, never returned, and an output at the request address lacking either tag may be spent by anyone;
 - the request policy refuses any request whose contents are not exactly those the design allows.
 
 Operator, 14 October 2026: "the research on the economics is done, so it's time to produce the paper and wake up the lean worker"; then "Let's wait for the lean rework

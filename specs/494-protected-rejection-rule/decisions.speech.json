@@ -121,7 +121,7 @@
       "pause": 500
     },
     {
-      "text": "On 13 October 2026 the operator adopted a bond, a booking-root forfeit, a split between the proving processor and the treasury, the tip paying the processor on every rejection, the return of the bond on expiry and a termination fee, and ordered the model and a paper before anything else. After the review of the paper's first draft the operator ruled every point again, and that design was withdrawn: no bond, no split, no booking root and no termination fee; a registration cost donated to the treasury on a successful registration; rejection by reference read, batchable, never spending the state output; terminations that carry the token and the application tag and can be neither rejected, retracted nor expired; a pinned minimum tip; the booked time the upper end of a bounded booking interval; every parameter fixed at creation. The design is the decided text; the plan rebuilds the model on it, and the paper is written after the model, on 14 October 2026 by the operator's order.",
+      "text": "On 13 October 2026 the operator adopted a bond, a booking-root forfeit, a split between the proving processor and the treasury, the tip paying the processor on every rejection, the return of the bond on expiry and a termination fee, and ordered the model and a paper before anything else. After the review of the paper's first draft the operator ruled every point again, and that design was withdrawn: no bond, no split, no booking root and no termination fee; a registration cost donated to the treasury on a successful registration; rejection by reference read, batchable, never spending the state output; terminations that carry the token and the application tag and can be neither rejected, retracted nor expired; a pinned minimum tip; the booked time the upper end of a bounded booking interval; every parameter fixed at creation; the syntax tag and the application tag minted at booking and burned by every exit, so that a registration's application tag is burned and never returned. The design is the decided text; the plan rebuilds the model on it, and the paper is written after the model, on 14 October 2026 by the operator's order.",
       "pause": 400
     }
   ],
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "5c3b7df781f7f2e91ca952532301b1d564ae154ece4d881863ed85056244970f"
+    "sha256": "0b5e081bfe4d73f98828c8f3d2b9b2cb986e3605f2c3e901866f137abdea58d9"
   }
 }

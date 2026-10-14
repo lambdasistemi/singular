@@ -39,7 +39,7 @@
       "pause": 400
     },
     {
-      "text": "The syntax tag's minting checks only that the tags are present, never the application's rule: for a registration the application tag; for a termination the singular tag and the application tag.",
+      "text": "The syntax tag's minting checks only that the tags are present, never the application's rule: for a registration the application tag; for a termination the singular tag and the application tag. The syntax tag and the application tag share one life: both are minted at booking and burned by every exit, never returned, so there is no tag without a pending request and no pending request without its tags. The tag policies allow a burn with no condition; the exit rules are the request validator's spend.",
       "pause": 400
     }
   ],
@@ -53,7 +53,7 @@
       "pause": 400
     },
     {
-      "text": "Supporting statements, each in the slice that needs it: reference_inputs_not_consumed, spent_reference_refused, balanced_transaction_creates_no_value, zero_donation_omits_field (five); booked_request_has_exact_contents, booked_time_is_interval_end, booked_time_not_before_inclusion, booking_width_within_limit (six); world_supply_sync, termination_request_carries_genuine_token (seven); rejection_batch_members_distinct (eight); refunds_sum_per_address (nine); fold_routes_every_amount (ten). Statement 4 rests on booked_time_not_before_inclusion: the booked time is the upper end of the interval the booking transaction was valid in, so expiry comes no earlier than both windows after the booking was included.",
+      "text": "Supporting statements, each in the slice that needs it: reference_inputs_not_consumed (with the premise disjointInputs), spent_reference_refused, overlapping_reference_is_spent, balanced_transaction_creates_no_value, zero_donation_omits_field (five, proved); booked_request_has_exact_contents, booked_time_is_interval_end, booked_time_not_before_inclusion, booking_width_within_limit (six); world_supply_sync, termination_request_carries_genuine_token (seven); rejection_batch_members_distinct, sweep_leaves_pool_untouched (eight); refunds_sum_per_address (nine); fold_routes_every_amount, tag_supplies_equal_pending (ten). Statement 4 rests on booked_time_not_before_inclusion: the booked time is the upper end of the interval the booking transaction was valid in, so expiry comes no earlier than both windows after the booking was included.",
       "pause": 400
     }
   ],
@@ -67,11 +67,11 @@
       "pause": 400
     },
     {
-      "text": "Five: parameters and the transaction vocabulary. *As a registry creator, I fix the three parameters once and see every fold leave them as they were; as a reviewer, I read a transaction as the ledger shows it.* Adds the three parameters (default zero in old input, preserved by folds, the maximum booking width below the processing window); output references and the unspent set; reference inputs; the validity interval, fee and donation on a transaction (a zero donation omits the field); the exact state token identity (policy and name); the balance relation. Statement 1 and the five supporting statements. Controls: a fold that changes a parameter; a spent reference; an unbalanced transaction.",
+      "text": "Five: parameters and the transaction vocabulary. *As a registry creator, I fix the three parameters once and see every fold leave them as they were; as a reviewer, I read a transaction as the ledger shows it.* Adds the three parameters (default zero in old input, preserved by folds, the maximum booking width below the processing window); output references and the unspent set; reference inputs; the validity interval, fee and donation on a transaction (a zero donation omits the field); the exact state token identity (policy and name); the balance relation. Statement 1 and the five supporting statements. Controls: a fold that changes a parameter; a spent reference; an unbalanced transaction. The registry's expected state token is the pair (registry identity, name zero): an abstraction, stated as such, that keeps the check exact for every pair an output presents.",
       "pause": 300
     },
     {
-      "text": "Six: registrations. *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application tag, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the syntax tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The mint validator stays with ticket 529; this slice models what the syntax tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged syntax tag, a backdated booking, a booking wider than the maximum.",
+      "text": "Six: registrations. *As a requester, I book a registration holding exactly the registration cost, a tip of at least the minimum, the carrier ada and the application tag, and my booked time cannot be moved.* Adds the pending-request pool and the booking step into it, the registration request, the exact-contents rule (declared tip apart from held value), the syntax tag with its provenance (a request is pending only if a booking made it), and the booking rule: the interval is at most the maximum width wide and the booked time is its upper end. The syntax tag and the application tag are minted at booking with the pending request. The mint validator stays with ticket 529; this slice models what the syntax tag guarantees. The four supporting statements. Controls: a dirty request, hidden surplus, a forged syntax tag, a backdated booking, a booking wider than the maximum.",
       "pause": 300
     },
     {
@@ -79,15 +79,15 @@
       "pause": 300
     },
     {
-      "text": "Eight: rejection reads the state. *As a processor, I reject mismatching or expired registrations in one batch against the state output I read but do not spend.* Adds the accepted-rejection judgement over a transaction: the state output referenced with the exact token and read for its root, no state output spent, distinct request inputs, one interval, each member admitted on a current mismatch or on expiry, terminations never admitted; the rejection arm leaves the fold. Restates slices two and three. Statements 2, 3, 4, 5 and 8 and one supporting statement. Controls: the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member inside a batch, a repeated input.",
+      "text": "Eight: rejection reads the state. *As a processor, I reject mismatching or expired registrations in one batch against the state output I read but do not spend.* Adds the accepted-rejection judgement over a transaction: the state output referenced with the exact token and read for its root, no state output spent, distinct request inputs, one interval, each member admitted on a current mismatch or on expiry, terminations never admitted; each rejected request's syntax tag and application tag burned; the rejection arm leaves the fold. The request address has two spending arms: an output lacking either tag is not a request and anyone may spend it, a tagged output leaves only through an exit that burns its tags. Restates slices two and three. Statements 2, 3, 4, 5 and 8 and two supporting statements. Controls: the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member inside a batch, a repeated input, a tagged request spent through the sweep arm, a rejection that carries a tag out alive.",
       "pause": 300
     },
     {
-      "text": "Nine: refunds. *As a requester, I get back everything but the tip when my request is rejected and everything when I retract; as a refund address in a batch, I get exactly my sum.* Adds the refund obligations of rejection and retraction for the new contents, summed per refund address, and the return of the registration cost. Statement 6, the second half of statement 7 and one supporting statement. Controls: a reused refund, a refund short of held minus tip.",
+      "text": "Nine: refunds. *As a requester, I get back everything but the tip when my request is rejected and everything when I retract; as a refund address in a batch, I get exactly my sum.* Adds the refund obligations of rejection and retraction for the new contents, in lovelace and summed per refund address, the return of the registration cost, and the burn of both tags by retraction. Statement 6, the second half of statement 7 and one supporting statement. Controls: a reused refund, a refund short of held minus tip, a retraction that carries a tag out alive.",
       "pause": 300
     },
     {
-      "text": "Ten: folds. *As the treasury, I receive at least the registration cost for each key registered and everything but the tip of each terminated key; as a requester with a booked termination, I see it can always be folded.* Adds the fold of a registration (the processing window; routing of the cost, tip and carrier) and of a termination (no window; the token and the application tag burned; everything but the tip donated), the donation floor and the processors' take. Statements 7 (first half), 10, 11 and 12 and one supporting statement. Controls: a termination stranded by a check made at fold time, one donation counted for many keys, a forged application tag, an unbalanced fold.",
+      "text": "Ten: folds. *As the treasury, I receive at least the registration cost for each key registered and everything but the tip of each terminated key; as a requester with a booked termination, I see it can always be folded.* Adds the fold of a registration (the processing window; routing of the cost, tip and carrier) and of a termination (no window; the singular tag, the syntax tag and the application tag burned; everything but the tip donated), the tag flow of both folds (a registration fold burns the syntax tag and the application tag and mints the singular tag at the destination), the donation floor and the processors' take. Statements 7 (first half), 10, 11 and 12 and two supporting statements. Controls: a termination stranded by a check made at fold time, one donation counted for many keys, a forged application tag, an unbalanced fold, a fold that carries a tag out alive.",
       "pause": 300
     }
   ],
@@ -97,7 +97,7 @@
       "pause": 500
     },
     {
-      "text": "A control is a scenario the model must refuse, or a variant of the model for which a statement must fail. Each is kept as corpus rows that are refused for the intended reason (the wrong-reason control applies), and, where it is a variant, as a Lean example. The slice of each is above.",
+      "text": "A control is a scenario the model must refuse, or a variant of the model for which a statement must fail. Each is kept as corpus rows that are refused for the intended reason (the wrong-reason control applies), and, where it is a variant, as a Lean example. The slice of each is above. Two controls recur in every slice that has exits: a tagged request cannot be spent through the sweep arm, and an exit that spends a request without burning its tags (a tag carried out alive) is refused.",
       "pause": 400
     }
   ],
@@ -121,7 +121,7 @@
       "pause": 500
     },
     {
-      "text": "The four items of the design, and a fifth the plan found.",
+      "text": "The items of the design that remain open, and one the plan found. The fate of a registration's application tag on a successful fold is decided: it is burned, never returned, so no restitution output exists.",
       "pause": 400
     }
   ],
@@ -151,6 +151,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "f535039bd524834b2d585836135382264b42b06c9d8429b36f314cb85f0d0d18"
+    "sha256": "4ce67335eb9ed580788385a89bf88de37e6c8ae8b6743c5062784cb69a15af57"
   }
 }

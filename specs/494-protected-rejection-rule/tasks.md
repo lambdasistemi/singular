@@ -105,19 +105,19 @@ controls and ends with the list of its statements, each with its fully qualified
 
 ### Slice five: parameters and the transaction vocabulary
 
-- [ ] `failing-controls-five` — a fold that changes a parameter, a reference to a spent output and an unbalanced transaction fail on the branch as it stands, for the intended reason.
-- [ ] `registry-parameters` — the registration cost, minimum tip and maximum booking width exist in the configuration, default to zero in old input and are preserved by every fold; the width is below the processing window.
-- [ ] `transaction-vocabulary` — output references and the unspent set, reference inputs, the validity interval, the fee and the donation (a zero donation omitted), the exact state token identity and the balance relation exist.
-- [ ] `statements-five` — statement 1 and the supporting statements of the plan are proved from the standard axioms.
-- [ ] `protocol-eight` — the driver protocol version moves where a declared question changed and the surface digest follows.
-- [ ] `regenerate-after-slice-five` — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)
-- [ ] `names-and-receipts-five` — the slice's statements are listed with fully qualified name and axiom line at the final revision.
+- [x] `failing-controls-five` — a fold that changes a parameter, a reference to a spent output and an unbalanced transaction fail on the branch as it stands, for the intended reason.
+- [x] `registry-parameters` — the registration cost, minimum tip and maximum booking width exist in the configuration, default to zero in old input and are preserved by every fold; the width is below the processing window.
+- [x] `transaction-vocabulary` — output references and the unspent set, reference inputs, the validity interval, the fee and the donation (a zero donation omitted), the exact state token identity and the balance relation exist.
+- [x] `statements-five` — statement 1 and the supporting statements of the plan are proved from the standard axioms.
+- [x] `protocol-eight` — the driver protocol version moves where a declared question changed and the surface digest follows; no declared question changed, so the version stays.
+- [x] `regenerate-after-slice-five` — corpora, register and digests, theorem page, simulator mirror, application corpus, coverage record and restatement table follow. (consumers-state-the-rule)
+- [x] `names-and-receipts-five` — the slice's statements are listed with fully qualified name and axiom line at the final revision.
 
 ### Slice six: registrations
 
 - [ ] `failing-controls-six` — a dirty request, hidden surplus, a forged syntax tag, a backdated booking and a booking wider than the maximum fail on the branch as it stands.
 - [ ] `registration-request-and-pool` — the registration request, the exact-contents rule, the pending pool and the world exist.
-- [ ] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end and the syntax tag minted once.
+- [ ] `registration-booking` — a booking is admitted only inside an interval no wider than the maximum, with the booked time its upper end; the syntax tag and the application tag are minted once, with the pending request.
 - [ ] `statements-six` — the four supporting statements of slice six are proved.
 - [ ] `regenerate-after-slice-six` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-six` — as slice five.
@@ -133,15 +133,16 @@ controls and ends with the list of its statements, each with its fully qualified
 
 ### Slice eight: rejection reads the state
 
-- [ ] `failing-controls-eight` — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch and a repeated input fail or are refused wrongly on the branch as it stands.
+- [ ] `failing-controls-eight` — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.
 - [ ] `rejection-reads-the-state` — the accepted rejection judgement exists over a transaction, the rejection arm leaves the fold, and slices two and three are restated on it.
-- [ ] `statements-eight` — statements 2, 3, 4, 5 and 8 and the supporting statement are proved.
+- [ ] `request-address-two-arms` — an output lacking either tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the syntax tag and the application tag.
+- [ ] `statements-eight` — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.
 - [ ] `regenerate-after-slice-eight` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-eight` — as slice five.
 
 ### Slice nine: refunds
 
-- [ ] `failing-controls-nine` — a reused refund and a refund short of held minus tip fail on the branch as it stands.
+- [ ] `failing-controls-nine` — a reused refund, a refund short of held minus tip and a retraction that carries a tag out alive fail on the branch as it stands.
 - [ ] `refund-obligations` — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.
 - [ ] `statements-nine` — statement 6, the second half of statement 7 and the supporting statement are proved.
 - [ ] `regenerate-after-slice-nine` — as slice five. (consumers-state-the-rule)
@@ -149,9 +150,9 @@ controls and ends with the list of its statements, each with its fully qualified
 
 ### Slice ten: folds
 
-- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag and an unbalanced fold fail on the branch as it stands.
-- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the token and the application tag and donates held minus tip.
-- [ ] `statements-ten` — statements 7 (first half), 10, 11 and 12 and the supporting statement are proved.
+- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.
+- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the singular tag, the syntax tag and the application tag and donates held minus tip; a registration fold burns the syntax tag and the application tag and mints the singular tag at the destination.
+- [ ] `statements-ten` — statements 7 (first half), 10, 11 and 12 and the two supporting statements (including that the supply of each tag equals the count of pending requests) are proved.
 - [ ] `amendment-economics` — the 1.16.0 entry of the constitution states the economic rows in the translation (one release, one entry).
 - [ ] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-ten` — as slice five, and the full list of the thirteen statements with their status.

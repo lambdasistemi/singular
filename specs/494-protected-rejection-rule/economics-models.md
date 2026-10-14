@@ -61,8 +61,9 @@ produced it. The supply of a token kind counts the tokens held at the applicatio
 | `exactContents` | six, seven | A request holds exactly the amounts its kind allows; a tip of at least the minimum is declared apart from the held value |
 | `book` | six, seven | Registration: interval no wider than the maximum, booked time its upper end, exact contents, syntax tag minted once. Termination: the token moves from custody into the request, exact contents, application tag bound to terminate, key, destination |
 | `rejectionAccepted` | eight | Over a transaction and the unspent set: state output referenced with the exact token, no state output spent, request inputs distinct, one interval, every member admitted by a current mismatch or by expiry, no termination |
-| `refundObligations` | nine | Held minus tip to each refund address, summed per address, application tag included; a retraction returns everything held |
-| `foldObligations` | ten | The registration cost to the treasury, the tip to the processor, the carrier with the token; a termination burns the token and the application tag and donates held minus tip |
+| `refundObligations` | nine | Held minus tip in lovelace to each refund address, summed per address; a retraction returns everything held except the two tags, which are burned |
+| `foldObligations` | ten | The registration cost to the treasury, the tip to the processor, the carrier with the singular tag minted at the destination; both folds burn the syntax tag and the application tag; a termination also burns the singular tag and donates held minus tip |
+| `requestAddressSpend` | eight | Two arms: an output lacking either tag is spent freely; a tagged output leaves only through an exit that burns its tags in the same transaction; the exit rules are the validator's spend, not the burn branch of a tag policy |
 
 A statement is declared where the plan puts it, never beside its definition in `Economics`, so the axiom gate and the register cover it.
 
@@ -74,17 +75,18 @@ Names and shapes the writer keeps; anything not stated is the writer's to choose
 |---|---|---|
 | `Singular.Model` | `OutRef` | `tx : Nat`, `index : Nat`; serialized; equality decidable |
 | `Singular.Model` | `Interval` | `lower upper : Nat`, the half-open interval from `lower` included to `upper` excluded; `Interval.width`, `Interval.valid` (`lower < upper`) and `Interval.contains` |
-| `Singular.Model` | `TokenId` | `policy name : Nat`; `Config.stateToken` is the registry's state token identity, read off `registryId` |
+| `Singular.Model` | `TokenId` | `policy name : Nat`; `Config.stateToken` is the pair (`registryId`, 0): each registry is modelled by one abstract state policy and the fixed name zero, an abstraction whose limit is stated in its docstring; the pair an output presents is a full pair, so the check stays exact for what a transaction shows |
 | `Singular.Model` | `Config.registrationCost`, `Config.minimumTip`, `Config.bookingWidth` | `Nat`, default 0; omitted from the written form when 0, read as 0 when absent, so no existing row changes; `Config.bookingWidthSized` is `bookingWidth < processTime` and is a predicate, not a decoding rule |
 | `Singular.Model` | `onlyRootChanged` | Extended with the three parameters |
 | `Singular.Model` | `TxInput.ref`, `TxInput.stateToken` | The output the input spends, and the state token identity it presents; defaults none |
 | `Singular.Model` | `TxOutput.stateToken` | The state token identity the output presents; the state output of every built fold names `Config.stateToken` |
 | `Singular.Model` | `Tx.referenceInputs`, `Tx.validity`, `Tx.fee`, `Tx.donation` | Outputs read and not spent (default empty), the validity interval (default none), the ledger fee (default 0), the treasury donation (default 0); each omitted from the written form at its default, so a zero donation is never written |
 | `Singular.Economics` | `Utxo` | A list of output references with the outputs they name |
+| `Singular.Economics` | `disjointInputs` | `Tx → Bool`; no output reference is both spent and referenced |
 | `Singular.Economics` | `inputsPresent` | `Utxo → Tx → Option String`; `none` when every spent input and every reference input names an output of the set; otherwise a reason that tells a missing spent input from a missing reference input |
-| `Singular.Economics` | `applyTx` | `Utxo → Nat → Tx → Utxo`; the number is the new transaction's identity; removes the spent inputs, adds the outputs at that identity and their positions, leaves every reference input in place |
+| `Singular.Economics` | `applyTx` | `Utxo → Nat → Tx → Utxo`; the number is the new transaction's identity; removes the spent inputs, adds the outputs at that identity and their positions, leaves every reference input in place; it is the raw update, spending wins for an output both spent and referenced, so the refusal of an overlap belongs to the rejection judgement of slice eight |
 | `Singular.Economics` | `balanced` | `Utxo → Tx → Bool`; the values of the spent inputs are read from the set, never from the input's own claim; lovelace in equals lovelace out plus donation plus fee; assets in plus mint equal assets out; state tokens in equal state tokens out |
 | `Singular.Statements` | `parameters_preserved_by_fold` | Statement 1, for a step and for a batch |
-| `Singular.Statements` | `reference_inputs_not_consumed`, `spent_reference_refused`, `balanced_transaction_creates_no_value`, `zero_donation_omits_field` | The supporting statements of slice five, worded in the plan |
+| `Singular.Statements` | `reference_inputs_not_consumed`, `spent_reference_refused`, `overlapping_reference_is_spent`, `balanced_transaction_creates_no_value`, `zero_donation_omits_field` | The supporting statements of slice five, worded in the plan; the first takes `disjointInputs` as an explicit premise and the third keeps the raw-update limit as a checked statement |
 
 The driver protocol version moves only if a declared question's written form changes; with every new field omitted at its default none does, and the writer says so in the first checkpoint.
