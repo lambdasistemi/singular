@@ -25,8 +25,8 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 71 modules in
-three kinds: 54 explicitly exposed modules and 4 re-exported modules
+re-exports under its own name. That complete extent is 72 modules in
+three kinds: 55 explicitly exposed modules and 4 re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
@@ -112,6 +112,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Edges</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Edges.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Identity</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Identity.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="module">Singular.Registry.TxBuilder.Prepare</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Register.hs" data-api="module">Singular.Registry.TxBuilder.Register</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Register.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="module">Singular.Registry.TxBuilder.Reject</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="module">Singular.Registry.TxBuilder.Request</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="source">source</a>
