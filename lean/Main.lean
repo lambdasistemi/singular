@@ -340,8 +340,66 @@ def trieReadyBookingControls : Except String Unit := do
       [s!"a termination tag from another key and destination: expected forged-trie-ready-tag, actual {repr terminationActual}"])
   unless failures.isEmpty do throw (String.intercalate "\n" failures)
 
+/-- Exercise the historical wire field through the real decoder, bookings and
+fold. These amounts are illustrative and say nothing about ledger minimum ada. -/
+def oneTipControls : Except String (List (String × Bool)) := do
+  let fields ← (toJson registrationConfig).getObj?
+  let encoded := Json.mkObj <|
+    (fields.toList.filter fun p => p.1 != "maxFee" && p.1 != "minimumTip") ++
+    [("maxFee", toJson (5 : Nat))]
+  let decoded ← (fromJson? encoded : Except String Config)
+  let initial : RegistryState := { s0 with config := decoded }
+  let active ← step initial (req .insertActive 5 42 555)
+  let world : World := { registry := active.state }
+  let termination ← terminationBookingFor world 5 ⟨91, 0⟩
+  let mut checks := [("the historical maxFee key decodes as minimum tip five", decoded.minimumTip == 5)]
+  for tip in [4, 5] do
+    let expected := if tip < 5 then some "dirty-request" else none
+    let original := lawfulRegistrationBooking
+    let registrationRequest := { original.request with
+      declaredTip := tip, contents := { original.request.contents with lovelace := 17 + tip + 2 } }
+    let registration := bindRegistrationTags decoded { original with request := registrationRequest }
+    let terminationRequest := { termination.request with
+      declaredTip := tip, contents := { termination.request.contents with lovelace := tip + 2 } }
+    let terminal := { termination with request := terminationRequest }
+    let registrationResult := book { registry := initial } registration
+    let terminationResult := bookTermination world terminal
+    let reason (result : Except String World) := match result with
+      | .ok _ => none | .error why => some why
+    checks := checks ++
+      [(s!"registration declared tip {tip} follows the one pinned floor", reason registrationResult == expected),
+       (s!"termination declared tip {tip} follows the one pinned floor", reason terminationResult == expected)]
+  let configured := { decoded with minimumTip := 3 }
+  let written := toJson configured
+  checks := checks ++
+    [("minimum tip three is written as maxFee three",
+        (written.getObjValAs? Nat "maxFee").toOption == some 3),
+     ("the second minimumTip wire key is absent", (written.getObjVal? "minimumTip").toOption.isNone),
+     ("the single tip configuration round trips",
+        match (fromJson? written : Except String Config) with
+        | .ok back => back == configured | .error _ => false),
+     ("a lawful fold preserves the one minimum tip", onlyRootChanged decoded active.state.config),
+     ("a fold changing the minimum tip fails the pin check",
+        !onlyRootChanged decoded { active.state.config with minimumTip := decoded.minimumTip + 1 }),
+     ("a fold transaction is built with request lovelace below the historical pin",
+        match txOf initial (req .insertActive 5 42 555) 4 with
+        | .ok tx => tx.inputs.any (fun input => input.role == .request && input.lovelace == 4)
+        | .error _ => false)]
+  for row in [transactionRowJson, retirementRowJson] do
+    let profile ← row.getObjValAs? String "profile"
+    checks := checks ++ [(s!"{profile} retires both tip-cover fields",
+      (row.getObjVal? "tip").toOption.isNone && (row.getObjVal? "lovelaceCoversTip").toOption.isNone)]
+  return checks
+
 def main : IO Unit := do
   let stdout ← IO.getStdout
+  let checks ← match oneTipControls with
+    | .ok rows => pure rows
+    | .error reason => throw (IO.userError s!"one tip control setup: {reason}")
+  let stderr ← IO.getStderr
+  for (story, passed) in checks do
+    stderr.putStrLn s!"one tip: {if passed then "PASS" else "FAIL"}: {story}"
+  unless checks.all (·.2) do throw (IO.userError "one tip controls failed")
   match trieReadyBookingControls with
   | .ok () => pure ()
   | .error reason => throw (IO.userError reason)
