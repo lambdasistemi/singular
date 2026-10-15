@@ -433,7 +433,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "4b9c5d7a09a4035fd2c29affdaa07ca223c7c167ca744da10553e70e5310933f",
+  "payloadSha256": "cedbff9395be379aca36501ee290aafe2f071e3fa76cb46aabf963263ac69fa9",
   "scenarios": [
     {
       "foldWitness": {
@@ -2174,7 +2174,7 @@
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
     "lean/Singular/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
-    "lean/Singular/Lemmas/Refunds.lean": "f9391671fc97b8096264cd5c68c354ba6be55be5e8f658dd2c46e06f5ebcbe26",
+    "lean/Singular/Lemmas/Refunds.lean": "8d86e3c31b93fb582ffa2ae484df73caa94a8b3329f5682de61470dcb14157d6",
     "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",

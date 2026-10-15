@@ -39,7 +39,7 @@
     "formal/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
     "formal/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "formal/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
-    "formal/Lemmas/Refunds.lean": "f9391671fc97b8096264cd5c68c354ba6be55be5e8f658dd2c46e06f5ebcbe26",
+    "formal/Lemmas/Refunds.lean": "8d86e3c31b93fb582ffa2ae484df73caa94a8b3329f5682de61470dcb14157d6",
     "formal/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "formal/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "formal/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
@@ -109,7 +109,7 @@
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
     "formal/theorem-debt.json": "68afe311b38896b5ded1ece392a1ef3b4db921d0740171362e7557482a291224",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "41294c5bd537626e852b7d068e996dcbc70a9969bb3c8570a5c09323cf225bc2"
+    "corpus.json": "72d2665d85f9268f74e7ef30b468965a9d6a252c4163110a5ba83db48fe3f34f"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,

@@ -182,4 +182,3 @@ theorem costs_le_owed {world : World} (reachable : WorldReachable world)
   exact sumBound _ (fun r hr => bound r (List.mem_filter.mp hr).1)
 
 end Singular.RefundProof
-
