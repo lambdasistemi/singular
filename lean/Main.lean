@@ -4,7 +4,7 @@ import Main.Payments
 import Main.Exits
 import Main.Retraction
 import Main.Economics
-import Main.RejectionTransactions
+import Main.RejectionPreservation
 import Singular.Driver
 import Singular.Economics
 open Singular
@@ -397,6 +397,7 @@ def oneTipControls : Except String (List (String × Bool)) := do
 def main : IO Unit := do
   let rejectionReadRows ← RejectionReadControls.run
   let rejectionTransactionRows ← RejectionReadControls.runTransactionControls
+  let rejectionPreservationRows ← RejectionReadControls.runPreservationControls
   let stdout ← IO.getStdout
   let checks ← match oneTipControls with
     | .ok rows => pure rows
@@ -499,7 +500,7 @@ def main : IO Unit := do
       ("bytes", toJson p.2.2.2)]
   let json := Json.mkObj
     [ ("schema", toJson "singular-logical-corpus-v2")
-    , ("rejectionReadsState", toJson (rejectionReadRows ++ rejectionTransactionRows))
+    , ("rejectionReadsState", toJson (rejectionReadRows ++ rejectionTransactionRows ++ rejectionPreservationRows))
     , ("terminationBookings", toJson terminationRows)
     , ("registrationBookings", toJson registrationBookingRows)
     , ("cases", toJson (cases.map caseJson))

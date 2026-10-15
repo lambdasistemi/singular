@@ -372,6 +372,48 @@
     "statementSha256": "f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952"
   },
   {
+    "name": "Singular.Statements.live_request_not_rejected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1529635d1e8c9cd27cae709b38c7843b8118cf64988e7b25a07c30f2deb7235d"
+  },
+  {
+    "name": "Singular.Statements.termination_unrejectable",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1a80126b456ce1f2f32cae58401d9f3fcce6a15bffeeb67d9b3102ba7dbe7096"
+  },
+  {
+    "name": "Singular.Statements.rejection_leaves_registry_untouched",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b5d255df884ced7075f14be0f55e1af9d430071b5e316910287172a8548d649d"
+  },
+  {
+    "name": "Singular.Statements.rejection_requires_referenced_state",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fbb3aa5eedd31136dd1b85d6cb07eddab84788f51d8f9fcbea7bb4e6b9ee9b48"
+  },
+  {
+    "name": "Singular.Statements.rejection_cannot_invalidate_fold",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "cffe076d8bff5f852e836c65718f61890f72ec3343d641426f9892aa5178fd30"
+  },
+  {
+    "name": "Singular.Statements.rejection_batch_members_distinct",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "35e715d8a167ea2e3858a92b6cfabad2cca93b8fb5b29291daab622f6486c161"
+  },
+  {
+    "name": "Singular.Statements.sweep_leaves_pool_untouched",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ddd73703885e3b3a52bf612184af6ba1cde863c0f1936dc4288c0517c3d05496"
+  },
+  {
     "name": "Singular.Statements.termination_booking_has_exact_contents",
     "status": "PROVED",
     "debt": "none",

@@ -87,9 +87,9 @@ class RealInventoryTest(unittest.TestCase):
         # Protected rejection adds five statements for bound evidence, protection,
         # effects and expiry: 126 = 72 manifest-bound + 54 unclassified.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 99)
-        self.assertEqual(inv.unclassified, 72)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 171)
+        self.assertEqual(inv.manifest_bound, 106)
+        self.assertEqual(inv.unclassified, 80)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 186)
         self.assertEqual(
             len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
             10,

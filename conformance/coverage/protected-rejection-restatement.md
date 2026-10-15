@@ -146,3 +146,25 @@ The named legacy adapters equal their original functions by reflexivity. They na
 | `Singular.LegacyRejection.step_original` | none (new declaration) | `7e8888836cb05a690c7e564eb8b6c8e81448b18ba8a9906146d925fd69b978f8` | uncovered |
 | `Singular.LegacyRejection.transaction_original` | none (new declaration) | `91745d371b7b5aaa2f5bf5a3ca63570cec7ca2394cdbc2ddb2402aef286cc755` | uncovered |
 | `Singular.rejectionAccepted_effect` | none (new declaration) | `757461a103f73e7a765a1b7d5e3e2cc0ea7cdeff9eb8b5969b9c174e3b1643a3` | uncovered |
+
+## Rejection reads the state in reachable worlds
+
+Seven new public statements prove the reference-read rule over reachable worlds and observed transactions using only the standard axioms. Their helper identities remain in the discovered denominator. All new identities start uncovered; no existing identity or historical row changes, and no validator, builder or ledger coverage is inferred from the model proofs.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.Statements.live_request_not_rejected` | none (new declaration) | `1529635d1e8c9cd27cae709b38c7843b8118cf64988e7b25a07c30f2deb7235d` | uncovered |
+| `Singular.Statements.rejection_batch_members_distinct` | none (new declaration) | `35e715d8a167ea2e3858a92b6cfabad2cca93b8fb5b29291daab622f6486c161` | uncovered |
+| `Singular.Statements.rejection_cannot_invalidate_fold` | none (new declaration) | `cffe076d8bff5f852e836c65718f61890f72ec3343d641426f9892aa5178fd30` | uncovered |
+| `Singular.Statements.rejection_leaves_registry_untouched` | none (new declaration) | `b5d255df884ced7075f14be0f55e1af9d430071b5e316910287172a8548d649d` | uncovered |
+| `Singular.Statements.rejection_requires_referenced_state` | none (new declaration) | `fbb3aa5eedd31136dd1b85d6cb07eddab84788f51d8f9fcbea7bb4e6b9ee9b48` | uncovered |
+| `Singular.Statements.sweep_leaves_pool_untouched` | none (new declaration) | `ddd73703885e3b3a52bf612184af6ba1cde863c0f1936dc4288c0517c3d05496` | uncovered |
+| `Singular.Statements.termination_unrejectable` | none (new declaration) | `1a80126b456ce1f2f32cae58401d9f3fcce6a15bffeeb67d9b3102ba7dbe7096` | uncovered |
+| `Singular.economicLookup_mem` | none (new declaration) | `ad21f1dfbeffa2112e403af6f328c75124f0ac1660e3d6349d3ba0f43d2fdcc5` | uncovered |
+| `Singular.observed_registration_unique` | none (new declaration) | `cab5f12c269ff73b22fdf19fc1fbac3cfd7cbca17a47de7f69cff489f3e4a1b9` | uncovered |
+| `Singular.observed_request_kinds_disjoint` | none (new declaration) | `5ee4cbad403fbaa111fcecda84f3286b346d5105afe04ae6b27e09041b7a938a` | uncovered |
+| `Singular.rejectionAccepted_checks` | none (new declaration) | `60c4b7ac4b73d887342480830383e017ccc8c182b60dcb32cef272abf6f343c4` | uncovered |
+| `Singular.rejectionInputs_facts` | none (new declaration) | `0e42fbbb4d5ade7aa390fd3af60e7daddbed624fce92558b16084a901aaa86d2` | uncovered |
+| `Singular.rejectionObservation_world` | none (new declaration) | `da338e56003fd95929a5f7e0679ae218422a81ccb30fcbdcd6ce395366d4f458` | uncovered |
+| `Singular.rejectionState_facts` | none (new declaration) | `1262983030f402228eaa91eb076d0eee375f422104b65730e803f4c71ed05901` | uncovered |
+| `Singular.rejection_state_not_spent` | none (new declaration) | `1f1ff8e7cb2e49e580ceb8640b9563f41639df20dc5397c33df6168c738e51ee` | uncovered |

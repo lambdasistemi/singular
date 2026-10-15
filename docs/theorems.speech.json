@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "All 68 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 89 in total, each with its own manifest and its own compiled gate.",
+      "text": "All 75 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 96 in total, each with its own manifest and its own compiled gate.",
       "pause": 400
     },
     {
@@ -35,6 +35,10 @@
     {
       "text": "Exact declaration inventory.",
       "pause": 500
+    },
+    {
+      "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Refund settlement and economic fold admission remain separate work.",
+      "pause": 400
     },
     {
       "text": "The naming, lifecycle and wire declarations are listed in their own manifests: naming-theorem-debt.json, lifecycle-theorem-debt.json and wire-theorem-debt.json.",
@@ -75,6 +79,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "c054827b3205cf4a7fd3d2babb60b4a4dfe2d70bad58494fd3cb4f71a5d3c46f"
+    "sha256": "ace9d35341fc91409b495a30228131b33eecfddc0dabae9d2a48b01a4458cd3a"
   }
 }

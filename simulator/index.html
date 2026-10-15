@@ -3758,7 +3758,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
+  "corpusSourceSha256": "6bf1d47ce723f693a6d41bb2c338113fe5b6725b8b8291fa4a67ebf8930ef6c6",
   "economicControls": [
     {
       "result": true,
@@ -3967,7 +3967,7 @@ const STORIES=[
     "terminalPolicy": 10
   },
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
-  "payloadSha256": "ca04d362ac394a2114aac45d764aa7f506337306bd3b13f1058acf8f68550ba6",
+  "payloadSha256": "6ab44ab968854eb92caa4674f6211d714b54e17c8be48194845b51a21fd88377",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -8423,15 +8423,28 @@ const STORIES=[
       "expectedReason": "reject-tag-not-burned",
       "matched": true,
       "story": "one burn cannot discharge two equal tag names"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "a rejection preserves a valid fold and every needed output, and booking can follow"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "a stray output with an application tag and no trie-ready tag can be swept"
     }
   ],
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
+    "lean/Main.lean": "6bf1d47ce723f693a6d41bb2c338113fe5b6725b8b8291fa4a67ebf8930ef6c6",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "lean/Main/RejectionPreservation.lean": "c3b6f2f7a0bc0bc1ae06901674092fa8b6b0e67d0d40a3db226ae8b02b6e9091",
     "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
@@ -8454,7 +8467,9 @@ const STORIES=[
     "lean/Singular/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
+    "lean/Singular/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
     "lean/Singular/Lemmas/Step.lean": "0b973a4917fb2eb081bbf57fa012480d2dd87a33080d5f3092c7e0034c062316",
@@ -8473,7 +8488,7 @@ const STORIES=[
     "lean/Singular/Model/Routing.lean": "1207f5c5ca49b574806b88f7ebdc9f2f56d900486b99286ecb89c65f03eb8ab0",
     "lean/Singular/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
+    "lean/Singular/Statements.lean": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
@@ -8485,10 +8500,12 @@ const STORIES=[
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
+    "lean/Singular/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
+    "lean/Singular/Statements/RejectionState.lean": "4d8f5a76ed80c2918347d2b2cdddbffccaaa92384e47778a55aa8bde5e0b3749",
     "lean/Singular/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
-  "statementsSha256": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
+  "statementsSha256": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
   "terminationBookings": [
     {
       "actualReason": null,
@@ -11842,7 +11859,7 @@ const STORIES=[
       "story": "the state token cannot stand for a termination trie-ready tag is refused"
     }
   ],
-  "theoremManifestSha256": "66a49521a1a4e545c193453e218f5f1ddff71c2c700fba5b031aa2306143fc91",
+  "theoremManifestSha256": "ce7544af5b140c9a1ba324d440bf9abd63191274715c5d63779bcdd68cbe77cd",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -12512,6 +12529,48 @@ const STORIES=[
     "statementSha256": "f6c06a2ce273ed86fb655a9f25ff1c8b7cc756cba76aff6f866d223db67bd952"
   },
   {
+    "name": "Singular.Statements.live_request_not_rejected",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1529635d1e8c9cd27cae709b38c7843b8118cf64988e7b25a07c30f2deb7235d"
+  },
+  {
+    "name": "Singular.Statements.termination_unrejectable",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "1a80126b456ce1f2f32cae58401d9f3fcce6a15bffeeb67d9b3102ba7dbe7096"
+  },
+  {
+    "name": "Singular.Statements.rejection_leaves_registry_untouched",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b5d255df884ced7075f14be0f55e1af9d430071b5e316910287172a8548d649d"
+  },
+  {
+    "name": "Singular.Statements.rejection_requires_referenced_state",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "fbb3aa5eedd31136dd1b85d6cb07eddab84788f51d8f9fcbea7bb4e6b9ee9b48"
+  },
+  {
+    "name": "Singular.Statements.rejection_cannot_invalidate_fold",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "cffe076d8bff5f852e836c65718f61890f72ec3343d641426f9892aa5178fd30"
+  },
+  {
+    "name": "Singular.Statements.rejection_batch_members_distinct",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "35e715d8a167ea2e3858a92b6cfabad2cca93b8fb5b29291daab622f6486c161"
+  },
+  {
+    "name": "Singular.Statements.sweep_leaves_pool_untouched",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ddd73703885e3b3a52bf612184af6ba1cde863c0f1936dc4288c0517c3d05496"
+  },
+  {
     "name": "Singular.Statements.termination_booking_has_exact_contents",
     "status": "PROVED",
     "debt": "none",
@@ -12585,7 +12644,9 @@ const STORIES=[
     "formal/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "formal/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "formal/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
+    "formal/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "formal/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "formal/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "formal/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "formal/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
     "formal/Lemmas/Step.lean": "0b973a4917fb2eb081bbf57fa012480d2dd87a33080d5f3092c7e0034c062316",
@@ -12595,11 +12656,12 @@ const STORIES=[
     "formal/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "formal/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
     "formal/M1Main.lean": "713b7b47eda0e738dd4b05afa322dedc282d0c7928205abd835f75a3fa6eda18",
-    "formal/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
+    "formal/Main.lean": "6bf1d47ce723f693a6d41bb2c338113fe5b6725b8b8291fa4a67ebf8930ef6c6",
     "formal/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "formal/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "formal/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "formal/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "formal/Main/RejectionPreservation.lean": "c3b6f2f7a0bc0bc1ae06901674092fa8b6b0e67d0d40a3db226ae8b02b6e9091",
     "formal/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
     "formal/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "formal/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
@@ -12630,7 +12692,7 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
     "formal/Singular.lean": "e0084c68a0d2a041d5363c248f22c30cc6876fef589ae56fee1b9ab2fc6abeb6",
-    "formal/Statements.lean": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
+    "formal/Statements.lean": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
     "formal/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "formal/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "formal/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
@@ -12642,21 +12704,23 @@ const STORIES=[
     "formal/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "formal/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "formal/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
+    "formal/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
+    "formal/Statements/RejectionState.lean": "4d8f5a76ed80c2918347d2b2cdddbffccaaa92384e47778a55aa8bde5e0b3749",
     "formal/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "formal/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/m1-theorem-debt.json": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
-    "formal/theorem-debt.json": "66a49521a1a4e545c193453e218f5f1ddff71c2c700fba5b031aa2306143fc91",
+    "formal/theorem-debt.json": "ce7544af5b140c9a1ba324d440bf9abd63191274715c5d63779bcdd68cbe77cd",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "cdf795fdc6d9260727eb5c26ed2e6b2376a900c7d6d6628c743b85490848588b"
+    "corpus.json": "d3090ff92e7d5d9ce3eed772b3115c0da8289002568473cb41d2fbb3ce99c478"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 68,
+  "theorems": 75,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -12680,7 +12744,7 @@ const STORIES=[
   ],
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
   "namingStatementsSha256": "3a68713f92c0450ba9f2760ce03d0e5e8a51685ea9669ada3e59ebbfe6b2db55",
-  "payloadSha256": "7ec5304e2222305b55ffd2dac18d8c37cdf52daaca6969e6553ce105598c16e3",
+  "payloadSha256": "da5e276017ccd021916e38110ff4bbb36502e491c773750a1b1489a1486a5c1a",
   "queues": [
     {
       "actual": true,
@@ -12739,11 +12803,12 @@ const STORIES=[
     "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "lean/M1Main.lean": "713b7b47eda0e738dd4b05afa322dedc282d0c7928205abd835f75a3fa6eda18",
-    "lean/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
+    "lean/Main.lean": "6bf1d47ce723f693a6d41bb2c338113fe5b6725b8b8291fa4a67ebf8930ef6c6",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "lean/Main/RejectionPreservation.lean": "c3b6f2f7a0bc0bc1ae06901674092fa8b6b0e67d0d40a3db226ae8b02b6e9091",
     "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
@@ -12767,7 +12832,9 @@ const STORIES=[
     "lean/Singular/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
+    "lean/Singular/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
     "lean/Singular/Lemmas/Step.lean": "0b973a4917fb2eb081bbf57fa012480d2dd87a33080d5f3092c7e0034c062316",
@@ -12799,7 +12866,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
+    "lean/Singular/Statements.lean": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
@@ -12811,6 +12878,8 @@ const STORIES=[
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
+    "lean/Singular/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
+    "lean/Singular/Statements/RejectionState.lean": "4d8f5a76ed80c2918347d2b2cdddbffccaaa92384e47778a55aa8bde5e0b3749",
     "lean/Singular/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
@@ -12930,7 +12999,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "af5dddda52ad4850c2e59abd21623cd066c767f3cf50641c7536352aeb8fb13d",
+  "payloadSha256": "e3bcac8ff1fb34dab4c290f236425f592341650f5b1d9496dea8e717278c5131",
   "recovery": [
     {
       "detail": true,
@@ -13007,11 +13076,12 @@ const STORIES=[
     "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "lean/M1Main.lean": "713b7b47eda0e738dd4b05afa322dedc282d0c7928205abd835f75a3fa6eda18",
-    "lean/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
+    "lean/Main.lean": "6bf1d47ce723f693a6d41bb2c338113fe5b6725b8b8291fa4a67ebf8930ef6c6",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "lean/Main/RejectionPreservation.lean": "c3b6f2f7a0bc0bc1ae06901674092fa8b6b0e67d0d40a3db226ae8b02b6e9091",
     "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
@@ -13035,7 +13105,9 @@ const STORIES=[
     "lean/Singular/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
+    "lean/Singular/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
     "lean/Singular/Lemmas/Step.lean": "0b973a4917fb2eb081bbf57fa012480d2dd87a33080d5f3092c7e0034c062316",
@@ -13067,7 +13139,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
+    "lean/Singular/Statements.lean": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
@@ -13079,6 +13151,8 @@ const STORIES=[
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
+    "lean/Singular/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
+    "lean/Singular/Statements/RejectionState.lean": "4d8f5a76ed80c2918347d2b2cdddbffccaaa92384e47778a55aa8bde5e0b3749",
     "lean/Singular/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
