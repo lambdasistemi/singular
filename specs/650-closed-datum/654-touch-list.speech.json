@@ -1,0 +1,56 @@
+{
+  "closed-mode-touch-list": [
+    {
+      "text": "Closed mode: touch list.",
+      "pause": 500
+    },
+    {
+      "text": "The only files the writer may change. A file outside this list needs a ruling before it is touched. Base: main cfe78df1. The open branches of the wallet-preparation work (feat/491-prepare-application at 0d1d184e and feat/491-wallet-output-preparation) were read on 15 October 2026 for collisions: their diff against the base names nine files, none of them below.",
+      "pause": 400
+    }
+  ],
+  "production": [
+    {
+      "text": "Production.",
+      "pause": 500
+    }
+  ],
+  "tests": [
+    {
+      "text": "Tests.",
+      "pause": 500
+    }
+  ],
+  "documentation": [
+    {
+      "text": "Documentation.",
+      "pause": 500
+    }
+  ],
+  "read-and-found-to-need-no-edit": [
+    {
+      "text": "Read, and found to need no edit.",
+      "pause": 500
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "The registry library under offchain/lib, the singular commands and the registry command line under offchain/cli, the on-chain code and its identity records (issue 651), and all Lean. The files the wallet-preparation work changes: the open-datum Entry.hs, Plan.hs, Preview.hs and WalletShortfallSpec.hs, and the registry command line's Prepare.hs, Plan.hs and CommandRunSpec.hs. The files the signing work changes: the wallet, vault, passphrase and local-services files.",
+      "pause": 400
+    }
+  ],
+  "rulings-taken": [
+    {
+      "text": "Rulings taken.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "654-touch-list.md",
+    "sha256": "8a49989a9859d10a6e15679868f26c1506bca2def475c3772b5b0a49aab14245"
+  }
+}
