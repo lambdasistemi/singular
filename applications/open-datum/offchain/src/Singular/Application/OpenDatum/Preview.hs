@@ -105,6 +105,7 @@ import Singular.CLI.Registry
 import Singular.CLI.Session
     ( Env (..)
     , failWith
+    , failWithFields
     , readsIn
     , txIdHex
     )
@@ -118,8 +119,13 @@ import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
+import Singular.Registry.TxBuilder.Edges
+    ( bookEdgeMeasured
+    , selectFunding
+    )
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
+import Singular.Registry.TxBuilder.Prepare (spendableOuts)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | Which entry command is being prepared.
 data Kind = KInsert | KUpdate | KTerminate
@@ -263,6 +269,21 @@ previewBooking a v live addr key b = do
         cfg = savedCfg s
     pp <- Cage.parameters v
     walletUtxos <- Cage.outputsAt v addr
+    -- Empty wallet names the retained faucet sentence (no self-payment), before
+    -- the fold-reserve floor; token-only previews still refuse via `resolveFunding`
+    -- until line (c) wires the booking preview to `previewFunding`.
+    case (selectFunding (entryFund a) walletUtxos, spendableOuts walletUtxos) of
+        (Left msg, []) ->
+            failWithFields
+                ClientRefusal
+                ( msg
+                    <> " for wallet "
+                    <> bech32Address addr
+                    <> " (client policy). "
+                    <> retainedFaucetStep
+                )
+                (emptyFields addr walletUtxos)
+        _ -> pure ()
     _ <- resolveFunding addr walletUtxos (entryFund a)
     let Coin reserve = protocolFeeReserve pp (liveRefs live)
     refuseUnderfunded addr walletUtxos reserve "fold reserve"

@@ -79,10 +79,15 @@ import Lens.Micro ((^.))
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
+    , coinTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
     )
@@ -213,9 +218,29 @@ prepareFunding wc step addr mFund mAllowance measure build v = do
                                                         let (text, fields) = allowanceRefusal a o f Nothing
                                                         in  pure (Left (AllowanceExceeded text fields))
                                                     Nothing -> do
-                                                        confirmed <-
-                                                            submitPrep wc step addr requirement prep
-                                                        buildReal prep confirmed
+                                                        let outlayFee = outlayTotal (measure overTx) + prepFee prep
+                                                            held = spendableHeld wallet
+                                                        if held < outlayFee
+                                                            then do
+                                                                let largest =
+                                                                        maximum
+                                                                            (0 : [c | (_, o) <- spendableOuts wallet, let Coin c = o ^. coinTxOutL])
+                                                                let (text, fields) =
+                                                                        shortfallRefusal
+                                                                            addr
+                                                                            wallet
+                                                                            ( PrepareShortfall
+                                                                                (outlayTotal (measure overTx))
+                                                                                (Just (prepFee prep))
+                                                                                0
+                                                                                held
+                                                                                largest
+                                                                            )
+                                                                pure (Left (PreparationShortfall text fields))
+                                                            else do
+                                                                confirmed <-
+                                                                    submitPrep wc step addr requirement prep
+                                                                buildReal prep confirmed
   where
     mapLeft f = either (Left . f) Right
     buildReal prep _confirmed = do
@@ -309,8 +334,27 @@ previewFunding _step addr mFund mAllowance measure build v = do
                                                     Just (a, o, f) ->
                                                         let (text, fields) = allowanceRefusal a o f Nothing
                                                         in  pure (Left (AllowanceExceeded text fields))
-                                                    Nothing ->
-                                                        pure (Right ([prepFunding prep], Just prep, overTx))
+                                                    Nothing -> do
+                                                        let outlayFee = outlayTotal (measure overTx) + prepFee prep
+                                                            held = spendableHeld wallet
+                                                        if held < outlayFee
+                                                            then do
+                                                                let largest =
+                                                                        maximum
+                                                                            (0 : [c | (_, o) <- spendableOuts wallet, let Coin c = o ^. coinTxOutL])
+                                                                let (text, fields) =
+                                                                        shortfallRefusal
+                                                                            addr
+                                                                            wallet
+                                                                            ( PrepareShortfall
+                                                                                (outlayTotal (measure overTx))
+                                                                                (Just (prepFee prep))
+                                                                                0
+                                                                                held
+                                                                                largest
+                                                                            )
+                                                                pure (Left (PreparationShortfall text fields))
+                                                            else pure (Right ([prepFunding prep], Just prep, overTx))
   where
     mapLeft f = either (Left . f) Right
 
@@ -328,15 +372,27 @@ tryBuild build s = do
             Nothing -> pure (Left e)
 
 {- | What the command needs, measured from a built transaction: its fee,
-its collateral, the ledger minimum for its change. The change floor is the
-largest minimum over the payer's outputs, or over every output when the
-build pays the payer nothing.
+its collateral, the ledger minimum for its change, and — when the transaction
+spends a lone funding input (a funding-only command like a booking, whose
+single input is the funding output) — every lovelace the transaction pays OUT
+to another address (the request bond a booking locks, an insert deposit above
+the minimum). The change floor is the largest minimum over the payer's outputs,
+or over every output when the build pays the payer nothing.
+
+A funding-only command takes its bond out of the funding output, so the
+preparation's funding output must cover fee, collateral, floor and outflow;
+a command spending several inputs alongside funding (a fold, a reject, a reclaim,
+an update, a preparation itself with several spends) pays its outputs from
+those other inputs, so its requirement is fee, collateral and floor alone —
+unchanged for pull request 1 (asserted by its `measureRequirement`, boundary
+and command rows, which stay green).
 -}
 measureRequirement :: PParams ConwayEra -> Addr -> ConwayTx -> Integer
-measureRequirement pp payer tx = fee + collateralOf pp tx + changeFloor
+measureRequirement pp payer tx = fee + collateralOf pp tx + changeFloor + outflow
   where
     Coin fee = tx ^. (bodyTxL . feeTxBodyL)
     outs = toList (tx ^. (bodyTxL . outputsTxBodyL))
+    ins = toList (tx ^. (bodyTxL . inputsTxBodyL))
     minsAt =
         [ c
         | o <- outs
@@ -346,6 +402,15 @@ measureRequirement pp payer tx = fee + collateralOf pp tx + changeFloor
     changeFloor = case minsAt of
         [] -> maximum (0 : [c | o <- outs, let Coin c = getMinCoinTxOut pp o])
         _ -> maximum minsAt
+    outflow = case ins of
+        [_] ->
+            sum
+                [ c
+                | o <- outs
+                , o ^. addrTxOutL /= payer
+                , let Coin c = o ^. coinTxOutL
+                ]
+        _ -> 0
 
 {- | Whether the command plus its preparation passes what is still
 approved: the allowance with the outlay it leaves and the preparation

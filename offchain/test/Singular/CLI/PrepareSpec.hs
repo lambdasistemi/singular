@@ -19,20 +19,29 @@ module Singular.CLI.PrepareSpec (spec) where
 import Data.Aeson (toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.ByteString qualified as BS
 import Data.Foldable (toList)
+import Data.Sequence.Strict qualified as StrictSeq
+import Data.Set qualified as Set
 import Data.Text qualified as T
-import Lens.Micro ((^.))
+import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.Tx (bodyTxL)
-import Cardano.Ledger.Api.Tx.Body (feeTxBodyL, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx)
+import Cardano.Ledger.Api.Tx.Body
+    ( feeTxBodyL
+    , inputsTxBodyL
+    , mkBasicTxBody
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
     )
+import Cardano.Ledger.BaseTypes (Network (Testnet))
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn (..))
@@ -53,6 +62,7 @@ import Singular.Registry.TxBuilder.BookingFixture
     ( payer
     , preprodParams
     )
+import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 import Singular.Registry.TxBuilder.Prepare
     ( Preparation (..)
     , PrepareError (..)
@@ -209,6 +219,63 @@ requirementMeasure = describe "the measured requirement" $ do
                             [c | o <- atPayer, let Coin c = getMinCoinTxOut preprodParams o]
                     expected = fee + collateralOfFee preprodParams fee + changeFloor
                 measureRequirement preprodParams testPayer tx `shouldBe` expected
+    it "adds every lovelace paid out of a lone funding input" $ do
+        -- A booking-like transaction spending one funding input (singleton) to pay
+        -- a request bond out (non-payer) plus change back (payer). Fixed amounts pin
+        -- the formula; the builders they pin are exercised by the command rows
+        -- (token-only larger-deposit leg in (e) devnet with real approvals).
+        let otherAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0xbb)
+            bond = 2_000_000
+            change = 3_000_000
+            fee = 200_000
+            fundingIn = outRef 'a'
+            tx2 =
+                mkBasicTx $
+                    mkBasicTxBody
+                        & inputsTxBodyL .~ Set.singleton fundingIn
+                        & outputsTxBodyL
+                            .~ StrictSeq.fromList
+                                [ mkBasicTxOut otherAddr (MaryValue (Coin bond) mempty)
+                                , mkBasicTxOut testPayer (MaryValue (Coin change) mempty)
+                                ]
+                        & feeTxBodyL .~ Coin fee
+            outs2 = toList (tx2 ^. (bodyTxL . outputsTxBodyL))
+            floor2 =
+                maximum
+                    [ c
+                    | o <- outs2
+                    , o ^. addrTxOutL == testPayer
+                    , let Coin c = getMinCoinTxOut preprodParams o
+                    ]
+            expected2 = fee + collateralOfFee preprodParams fee + floor2 + bond
+        measureRequirement preprodParams testPayer tx2 `shouldBe` expected2
+    it "keeps fee, collateral and floor for several inputs" $ do
+        -- Same outputs as above but spending two inputs (multi-input command like
+        -- a fold): the requirement omits outflow, as pull request 1 rows pin.
+        let otherAddr = addrFromKeyHashBytes Testnet (BS.replicate 28 0xbb)
+            bond = 2_000_000
+            change = 3_000_000
+            fee = 200_000
+            tx3 =
+                mkBasicTx $
+                    mkBasicTxBody
+                        & inputsTxBodyL .~ Set.fromList [outRef 'a', outRef 'b']
+                        & outputsTxBodyL
+                            .~ StrictSeq.fromList
+                                [ mkBasicTxOut otherAddr (MaryValue (Coin bond) mempty)
+                                , mkBasicTxOut testPayer (MaryValue (Coin change) mempty)
+                                ]
+                        & feeTxBodyL .~ Coin fee
+            outs3 = toList (tx3 ^. (bodyTxL . outputsTxBodyL))
+            floor3 =
+                maximum
+                    [ c
+                    | o <- outs3
+                    , o ^. addrTxOutL == testPayer
+                    , let Coin c = getMinCoinTxOut preprodParams o
+                    ]
+            expected3 = fee + collateralOfFee preprodParams fee + floor3
+        measureRequirement preprodParams testPayer tx3 `shouldBe` expected3
 
 explicitText :: Spec
 explicitText = describe "an explicit funding choice" $ do
