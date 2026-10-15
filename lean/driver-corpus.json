@@ -5968,7 +5968,7 @@
   ],
   "corpusSourceSha256": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
   "modelSha256": "e17d98d54eb90c645db50bf9e1afe3cf24c3fee8a81a694e1e19750362718cec",
-  "payloadSha256": "96b5b67c807654b6a64f78540d6b795847bdbfc6f23a8fc5593ef106a8a01522",
+  "payloadSha256": "3c2949d3248d77fe7a93fe7418351fa5de3b7b3d0a01d5a4d5d69931294abf5e",
   "scenarios": [
     {
       "foldWitness": {
@@ -16349,14 +16349,22 @@
     "lean/Singular/Model/Routing.lean": "53486c3944c5b0b660ccce8e8aeada6e1180b86f92c586d64c215f164ed5fe18",
     "lean/Singular/Model/Termination.lean": "8195f3734f306be89e62c5a983263884be4cc0a6e6045453b84a5a50fe49c236",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
+    "lean/Singular/Statements.lean": "60e908d4b2b73f1b293296af60375c22cf08735d9abc2d4d7670622a9c4fd78b",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
+    "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
+    "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
     "lean/Singular/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
+    "lean/Singular/Statements/Delivery.lean": "d5a97b6b7c25e2ecc010a0bd4d8acb02c66f1dbd18c9abb76a420b93f0ec3714",
+    "lean/Singular/Statements/ExitPayments.lean": "6fb5c32bc3185c1c37c05679e26b9271de42bb03d384f53c4246c8c8cb040f8b",
+    "lean/Singular/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
-    "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb",
-    "lean/Singular/Statements/Termination.lean": "bf6565d2281591ea3ba0c92ec3f59576175a7d182f004d2d86f3df98baf1fe9a"
+    "lean/Singular/Statements/Preservation.lean": "5cca779854e426c71c1288d2cd538ecd331511df0cef140330df2f774425f7ed",
+    "lean/Singular/Statements/RegistrationTransaction.lean": "530b17c14a2408a294c2bd85379784b41fda2acdce7a349df4486f0a0d31fda5",
+    "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
+    "lean/Singular/Statements/Termination.lean": "bf6565d2281591ea3ba0c92ec3f59576175a7d182f004d2d86f3df98baf1fe9a",
+    "lean/Singular/Statements/TerminationTransaction.lean": "182d69967b18d9509a7a8a2e08d8f27358aa88ec5d87d3ce9623d88ae1032286"
   },
-  "statementsSha256": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
+  "statementsSha256": "60e908d4b2b73f1b293296af60375c22cf08735d9abc2d4d7670622a9c4fd78b",
   "surface": {
     "batchQuestions": {
       "foldBatch": [
@@ -16418,5 +16426,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "9beaf644b5ef9a119b4f41c003a990d3aaaf9d816fbcaa1b14617c821226127f"
+  "theoremManifestSha256": "141a87f26a7b24f9f5d5733d6ab96e24237c997743fc4f2a1da20ff34bb45574"
 }
