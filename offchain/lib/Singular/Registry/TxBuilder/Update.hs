@@ -83,6 +83,7 @@ import Singular.Registry.TxBuilder.Update.Context
     , emptyRegistryContext
     , guardBuiltFold
     , guardSupportedEdges
+    , guardSupportedEncodableEdges
     , prepareState
     , queryContext
     )
@@ -224,10 +225,11 @@ updateTokenUsing cfg view tid addr ctx0 selected makeProofs = do
                     ( "updateToken: selected requests not pending: "
                         <> show missing
                     )
-    guardSupportedEdges "updateToken" reqUtxos
+    guardSupportedEncodableEdges "updateToken" reqUtxos
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
         makeProofs stateUtxo reqUtxos
+    guardSupportedEdges "updateToken" reqUtxos
     let (oldState, newStateOut, script) =
             prepareState
                 cfg

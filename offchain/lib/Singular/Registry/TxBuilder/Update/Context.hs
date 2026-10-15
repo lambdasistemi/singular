@@ -26,6 +26,7 @@ module Singular.Registry.TxBuilder.Update.Context
     , prepareState
     , computeUpperSlot
     , guardSupportedEdges
+    , guardSupportedEncodableEdges
     , guardBatchPair
     , guardMintMatch
     , guardBuiltWindow
@@ -406,10 +407,15 @@ admissionInputs reqUtxos =
         | e == edgeUpdateTerminal = BatchTerminate
         | otherwise = BatchOther
 
-{- | Refuse before any other check a batch naming an edge outside the
-permanent contract (#519): the model's fixed edge set comes first, so an
-excluded edge is refused here, in the duties' words, before the window,
-the steps, the keyed mint or the within-batch scan.
+{- | Refuse after the proofs a batch naming an edge outside the
+permanent contract (#519): the model's fixed edge set comes first among
+model checks, so an excluded edge is refused here, in the duties' words,
+before the window, the steps, the keyed mint or the within-batch scan.
+The caller runs 'guardSupportedEncodableEdges' before the proofs and this
+full guard after, so the snapshot's speculative refusal for an
+undecodable edge (for example `EdgeOutOfRange`) keeps its printed name
+while an excluded encodable edge still reports here, never as a missing
+proof or as the pair.
 -}
 guardSupportedEdges :: String -> [(TxIn, TxOut ConwayEra)] -> IO ()
 guardSupportedEdges who reqUtxos =
@@ -418,6 +424,37 @@ guardSupportedEdges who reqUtxos =
          , Just (RequestDatum req) <- [extractCageDatum out]
          , let key = requestKey req
          , let edge = requestEdge req
+         , edge /= edgeInsertActive && edge /= edgeUpdateTerminal
+         ] of
+        [] -> pure ()
+        ((ref, key, edge) : _) ->
+            error
+                ( who
+                    <> ": edge "
+                    <> show edge
+                    <> " on key "
+                    <> show key
+                    <> " is not supported by M1 (expected insertActive or updateTerminal): request "
+                    <> show ref
+                )
+
+{- | Refuse before the proofs a batch naming an encodable edge outside the
+permanent contract (#519): an excluded edge in `0..6` except `1` and `3`
+is refused here, before the proofs run, so it reports here rather than as
+a missing proof or as the pair. An undecodable edge (outside `0..6`)
+passes through so the snapshot's speculative refusal keeps its printed
+name; the full 'guardSupportedEdges' after the proofs catches it on paths
+whose proofs cannot fail it.
+-}
+guardSupportedEncodableEdges
+    :: String -> [(TxIn, TxOut ConwayEra)] -> IO ()
+guardSupportedEncodableEdges who reqUtxos =
+    case [ (ref, key, edge)
+         | (ref, out) <- reqUtxos
+         , Just (RequestDatum req) <- [extractCageDatum out]
+         , let key = requestKey req
+         , let edge = requestEdge req
+         , edge >= 0 && edge <= 6
          , edge /= edgeInsertActive && edge /= edgeUpdateTerminal
          ] of
         [] -> pure ()
