@@ -1,8 +1,12 @@
 <!--
 Sync impact report
-Version: 1.16.0 -> 1.17.0 (one booked clock for retraction)
+Version: 1.17.0 -> 1.18.0 (one booked clock for retraction)
 Amended: 2026-10-13
 Authority: ticket 494 slice one under epic 498; operator rulings quoted in specs/494-protected-rejection-rule/mandate.md (expiry follows both windows; lifecycle mismatch permits immediate rejection).
+This amendment supersedes the row "Reject reads no time" of main's 1.17.0 entry:
+`Singular.Statements.reject_reads_no_time` is retired and replaced by
+`Singular.Statements.rejection_uses_its_own_admission`. The fold's deadline
+admission does not apply to a rejection; its own evidence admission governs.
 Changed obligations: a request carries its booked submission time (`Singular.Request.submittedAt`, serialized, zero when absent); the retraction window (`Singular.inPhase2`), its admission (`Singular.retractAdmission`) and the restated window statements (`Singular.Statements.retract_admitted_iff`, `retract_refusal_first_failing`, `inPhase2_iff` in `Singular.Lemmas`) read the booked time and ignore the witness legacy field, which stays on the wire; a retraction question carries the booked time read from the request datum while a fold question is unchanged; the driver protocol version moves to 7 with its digest re-pinned. Corpora, theorem register and digests, theorem page, simulator mirror, application corpus and coverage record are regenerated with a published restatement table in `conformance/coverage/protected-rejection-restatement.md`; no obligation is dropped and a restated identity starts uncovered.
 Named limits: validators (495), builders (496), live acceptance (497) and the tag and bond (529) are untouched; the chain comparison of a retraction outside the window is unchanged; no mixed transaction is built.
 Consumers: Lean model, driver and transport, corpora, theorem bindings, simulator mirror, open-datum application corpus, coverage record and this translation. No live caller can claim the rule from the model change alone.
@@ -825,4 +829,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.17.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-14
+**Version**: 1.18.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-15
