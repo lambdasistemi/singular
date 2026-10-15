@@ -1,800 +1,231 @@
-% Economics of protected rejection in the Singular registry.
-% Draft for scientific review. Every statement not yet proved in Lean is
-% marked with \notyetmechanized and never stated as a result. Lean names are
-% cited through \lean so they can be checked as the model lands.
 \documentclass[runningheads]{llncs}
-\usepackage{xcolor}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{booktabs}
-\usepackage{url}
-
-% Honesty macros. \notyetmechanized renders its argument with a clearly
-% visible inline label: the enclosed claim is planned, not proved.
-% \lean cites a planned Lean declaration by name for checking.
-\newcommand{\notyetmechanized}[1]{#1%
-  \nobreakspace{\small\colorbox{red!12}{\textcolor{red!70!black}{not yet mechanized}}}}
-\newcommand{\lean}[1]{\texttt{#1}}
-
-% Mathematical notation, each defined where it is introduced in Section 4:
-% D deposit, B bond, \sigma processor share, F termination fee,
-% Wp processing window, Wr reclaim window, \tau tip, c ledger fees,
-% \rho booking and rejection roots, V value of a key.
-
+\usepackage{xcolor,amsmath,amssymb,booktabs,longtable,array,url}
+\usepackage[T1]{fontenc}
+\usepackage[breaklinks,hidelinks]{hyperref}
+\urlstyle{tt}
+\setlength{\emergencystretch}{2em}
+\newcommand{\modelpin}{303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d}
+\newcommand{\checked}{\par\noindent\textcolor{green!35!black}{\textbf{Existing checked declaration.}}\ }
+\newcommand{\hand}{\par\noindent\textcolor{blue!65!black}{\textbf{Hand proof supplied.}}\ }
+\newcommand{\proposed}{\par\noindent\textcolor{violet}{\textbf{Proposed statement.}}\ }
+\newcommand{\missing}{\par\noindent\textcolor{red!65!black}{\textbf{Missing mechanization.}}\ }
+\newcommand{\decl}[1]{\textnormal{\small\nolinkurl{#1}}}
+\newcommand{\evidence}[1]{\par\noindent\textit{Checked reference:} \decl{Singular.Statements.#1}; exact pin and verbatim axiom result in Appendix~\ref{sec:artifact}.\par}
 \begin{document}
-
-\title{The Economics of Protected Rejection:\\
-Bonds, Forfeits and Termination Fees\\ in a Permissionless Registry}
-\titlerunning{Economics of Protected Rejection}
+\title{Singular: A Permanent Registry with\\Protected Rejection and Explicit Accounting}
+\titlerunning{Singular: Protected Rejection and Explicit Accounting}
 \author{}
 \institute{}
 \maketitle
-
 \begin{abstract}
-A permissionless registry lets anyone fold a queued request into shared
-state, so a request that waits in the queue can be cancelled by a stranger
-who collects the fee for the slot.  This paper gives the economic rules of
-one such registry.  Every request carries a bond beside its deposit.  A
-processor that rejects a request forfeits the bond only when it proves,
-against the state root the request recorded at booking, that the request
-was already faulty then; any other rejection refunds the bond.  The
-forfeited bond is split between the proving processor and the treasury.
-A fold that terminates a key donates a termination fee to the treasury.
-We state each property as a definition with a theorem, give the transfer
-function as one table, derive every parameter constraint as an inequality
-with a worked example in lovelace, and list exactly what the mechanism
-does not price, with counterexamples.  \notyetmechanized{The Lean model
-behind these statements is being built while this draft is reviewed; every
-statement below is marked until its proof lands, and nothing is claimed
-that the model does not prove.}
+An application needs a unique representative of a registered key, while a
+requester needs predictable spending and protection from arbitrary cancellation.
+Singular separates a permanent key lifecycle from application state and places
+pending requests in independent outputs. This paper describes the ruled design:
+registration and termination, booking and token provenance, reference-read
+rejection, timed retraction, and the allocation of request value. It separates
+properties checked in Lean from conditional arithmetic and unresolved ledger
+correspondence. Rejection requires a current lifecycle mismatch or expiry after
+both registration windows. Termination has only a fold exit. The accounting
+analysis distinguishes gross tip allocation from profit and identifies the limits
+of refund-only judgements. Neither inclusion, resistance to flooding, nor a
+positive processor wage follows. Validators and builders are not yet conformant
+to the ruled economics; model proofs do not change that standing.
 \end{abstract}
+\keywords{registry \and extended UTxO \and formal specification \and
+protected rejection \and transaction accounting}
 
-\keywords{permissionless registry \and transaction fee mechanism \and
-bond \and griefing \and front-running \and mechanized proof}
+\section{The reader's problem and the evidence boundary}
+A requester wants to know which funds a failed registration returns. An
+application wants its key's representative to remain unique while its own state
+changes. A processor wants to know what it may consume, what it must pay and
+which evidence authorizes each exit. A scientific reviewer needs these promises
+separated from their implementation and economic assumptions.
 
-\section{Introduction}
-\label{sec:intro}
+The registry records a lifecycle, not key ownership or application payload.
+Only registration of an unknown key and permanent termination of an active key
+change it. Applications authorize entry and govern the resulting token in their
+own custody. Processing is permissionless within the admission rules: a stranger
+cannot simply cancel a compatible registration before expiry. A current
+lifecycle mismatch is independently sufficient for rejection, including during
+the reclaim window. This distinction matters when two requests race for one key.
 
-A registry on a public ledger maps keys to owners.  Requests to change
-the map wait in a queue, and any party may fold a queued request into
-the state.  The folder pays the ledger fee for the slot and is
-compensated from the request.  The danger is immediate: a processor
-can cancel a request it dislikes and still collect for the slot, so a
-requester who booked correctly can lose money to a stranger.
+The behavioral authority considered here is the Lean source at the exact revision
+\begin{center}\small\texttt{\modelpin}\end{center}
+using Lean 4.27.0. This is the last ancestor revision changing the model source.
+The appendix binds checked claims to fully qualified declarations and their
+fresh axiom-check output. A reference to a declaration is a claim only about its
+written hypotheses and conclusion, not about its name, a deployed script or a
+ledger execution.
 
-The design studied here answers with money, not with permission.
-Folding stays open to everyone.  What changes is what each outcome
-pays.  Every request carries two amounts: a deposit, which the request
-always gets back, and a bond, which it loses only when a processor
-proves a fault.  The proof is checked against the state the request
-itself recorded when it was booked, so a fault that arose later ---
-because someone else folded first --- costs the requester nothing.
-A processor that proves a fault keeps a share of the bond; the rest
-goes to the treasury.  A fold that ends the life of a key pays the
-treasury a termination fee.
+Four labels distinguish evidence throughout. \textbf{Existing checked declaration}
+means the appendix contains a declaration and its compiled axiom result at the
+pin. \textbf{Hand proof supplied} means the argument appears here with its
+premises. \textbf{Proposed statement} identifies a conditional design or sizing
+criterion without measurements establishing it. \textbf{Missing mechanization}
+identifies a promised boundary for which no checked result is supplied. These
+labels are independent of implementation conformance.
 
-This paper is written for a reader who reviews the registry from the
-outside.  It states the whole mechanism on a few pages, proves what
-holds, exhibits what does not hold with counterexamples, and derives
-the parameter values from the attacks they must deter.  Its claims
-are checked against a mechanized model written in Lean.  The model is
-being built while this draft is reviewed, so every statement carries
-either a Lean name that resolves to a proved theorem or a visible
-label saying the proof has not landed yet.  The appendix maps each
-statement to its declaration, file, line, commit and axioms.
+\section{System context and trust boundaries}
+The extended UTxO model attaches validation to outputs consumed by a
+transaction~\cite{ExtendedUTXO20}. Singular separates three responsibilities.
+The application certifies a registration payload and controls release of the
+singular tag. Singular checks the registry lifecycle and the request's admitted
+exit. An authenticated map implementation supplies concrete membership and
+nonmembership evidence. The ledger supplies input availability, validity bounds,
+fees, output minima and atomic transaction acceptance.
 
-Section~2 describes the ledger surface the mechanism runs on.
-Section~3 fixes who the attacker may be and what each action costs.
-Section~4 defines the mechanism and its transfer function.
-Section~5 states the properties as definitions with theorems.
-Section~6 gives the proofs, mechanized by name or argued by hand and
-labelled as such.  Section~7 derives the parameter constraints with
-worked numbers.  Section~8 places the work among verified prior
-results.  Section~9 lists the limitations.  The appendix carries the
-artifact table.
+\begin{figure}[ht]
+\centering
+\begin{tabular}{c}
+\fbox{\parbox{.85\linewidth}{\centering Application boundary: authorize entry;
+maintain application datum; release the singular tag}}\\[4pt]
+$\downarrow$\quad certified registration or custody release\\[4pt]
+\fbox{\parbox{.85\linewidth}{\centering Singular boundary: book requests;
+judge their exits; update the lifecycle and token supply}}\\[4pt]
+$\downarrow$\quad spending, references, outputs, mint and donation\\[4pt]
+\fbox{\parbox{.85\linewidth}{\centering Ledger boundary: authenticate inputs,
+run scripts, enforce balance, fees, time and output minima}}
+\end{tabular}
+\caption{Responsibilities. An application policy's semantic correctness and
+the translation of logical observations to ledger data are external obligations.}
+\end{figure}
 
-\section{System model}
-\label{sec:system}
+A state output identifies one registry by its exact state token and carries
+its configuration and current root. The logical model retains the map itself;
+a concrete validator works with authenticated proofs. A fold consumes and
+continues the state output. A rejection reads it by reference. Pending requests
+occupy separate outputs; their existence alone reserves no turn on the state
+output. Application-local updates can preserve the singular tag without
+performing a registry transition.
 
-The ledger follows the extended unspent transaction output model: state
-is held in unspent outputs, and a transaction spends some outputs and
-creates others under the checks of the scripts that guard them.  The
-registry keeps one state output holding the map from keys to leaves,
-and commits to that map with a trie root stored beside it.  We write
-$R$ for a state and $\mathrm{root}(R)$ for its root.  A reader who
-holds the root can verify any leaf presented with its path; tags on
-commitments are assumed collision free, which the appendix records as
-an explicit assumption about the hash function in use.
+The intended lifecycle is
+\[
+ \text{Unknown}\ \xrightarrow{\text{registration fold}}\
+ \text{Active}\ \xrightarrow{\text{termination fold}}\ \text{Terminal}.
+\]
+Terminal is permanent. Stored Absent is a distinct historical encoding, not a
+synonym for Unknown; five historical operation encodings are refused by the
+active two-operation law. No migration or parameter-update authority is part of
+this registry. A newly created registry is a different registry, not a migration
+of its pending requests.
 
-A request names an edge of the registry law --- the registry admits two,
-registering a free key and terminating a live key; every other edge
-of the full law is excluded and its request is refused at once ---
-together with the key, the owner, the destination that should receive
-the token, a deposit $D$, a bond $B$, a tip $\tau$ and the root the
-requester read at booking, written $\rho_{b}$.  The request lives in
-its own output until it leaves the queue.  Booking is not a state
-transition of the model: a request is an argument the law is asked
-about, and the booking rule is a defined admission check.  The check
-requires that the bond carried is at least the registry bond, that a
-request to terminate carries at least the registry fee, and that the
-recorded root equal the root of the state read at booking.  The
-request-tag mint must enforce exactly this admission, and every
-honesty statement quantifies only over requests that passed it.
-
-Time is measured in milliseconds of ledger time.  Each request carries its booked submission
-time.  Two windows govern its life.  The processing window of length
-$W_{p}$ is the time during which a processor should fold it.  The
-reclaim window of length $W_{r}$ follows, during which the owner may
-take the request back.  A request is expired when the slot reaches the
-booked time plus $W_{p}$ plus $W_{r}$.  Folds are serialized: the law
-judges each action against the state left by the preceding actions in
-the same ordered batch, and rejection evidence binds that intermediate
-state and its root.  Each fold carries at most a bounded number of
-requests, written $k$ for the capacity of one fold.  A batch of one
-behaves exactly as the single action does, so the batch form adds
-no new outcome, only the state threading between consecutive
-actions.
-
-A transaction that settles an outcome moves lovelace between outputs.
-The model states floors, not exact payments: what the owner must
-receive at least, what the treasury must receive at least, and what
-the processor can keep at most.  Conservation is stated for a
-balanced transaction, one whose inputs equal its outputs plus the
-donation plus the ledger fee; the balance is a named premise of the
-theorem, not a rule of the model, because the model has no ledger
-fee.  Amounts are integers in lovelace.  The processor share of a
-forfeited bond is the floor of the split times the bond, and the
-treasury receives the remainder, so the two shares add up to the bond
-exactly.  A donation the ledger owes is written in the donation field
-of the transaction.  That field accepts only positive amounts, so
-when the owed amount is zero the field is omitted and no donation is
-owed; the obligation applies only to positive amounts.
+The software contains Aiken state, request and witness validators, Haskell
+transaction builders and ledger/provider interfaces, the Lean authority, and
+conformance consumers. Their presence is not correspondence evidence. The
+existing request validator still uses a state-spending rejection path; the ruled
+economic judgement is separate. The public suite retains historical receipts
+and publishes affected requirements as unmet. The old driver's transactions and
+its proofs must not be substituted for the economic transactions described here.
 
 \section{Adversary and cost model}
-\label{sec:adversary}
+The actors are request funders, refund recipients, application custodians,
+processors, block producers and the treasury. One party may occupy several
+roles. A destination need not belong to the requester. Treasury receipts are
+not the wealth of an individual treasury voter.
 
-Four roles appear: the requester who books, the processor who folds
-or rejects, the block producer who orders transactions, and the
-treasury, which receives donations under the rules of the ledger and
-spends them under the rules of governance.  Any roles may coincide:
-a processor may book its own requests, a block producer may run a
-processor, and treasury voters may produce blocks.  Each coincidence
-is bounded separately or declared out of scope in
-Section~\ref{sec:limitations}.
+An adversary may create many well-formed requests, select or withhold processing,
+observe public pending transactions and, in blocks it produces, order competing
+transactions. We assume no particular stake fraction, fair inclusion rule,
+minimum service rate or rational participation. Cryptographic correspondence
+requires authentic signatures and assets and sound authenticated-map proofs.
+Those are boundary assumptions, not consequences of the abstract token counts.
 
-The attacker controls block production for the slots it wins, sees
-the mempool of pending transactions, and orders transactions within
-its blocks, including inserting its own before or around the
-transactions of others.  It cannot forge signatures, cannot rewrite
-the booked submission time of a request it did not create, and cannot
-present a leaf path that does not verify against a committed root,
-by the collision-freedom assumption.
+All monetary quantities below are integer lovelace. Ledger fees are nonnegative.
+For an action $x$, let $c_x$ be its actual ledger fee; a separate $e_x$ may cover
+computation and operational expense not paid to the ledger. The latter is not a
+transaction output. Let $V(k)$ be a party's valuation of key $k$; it is outside
+Singular's monetary accounting. Preferences or side payments involving $V(k)$
+can dominate the declared tip.
 
-Requesters in the honesty statements are not strategic: an honest
-requester books a well formed request against a state in which its
-edge is admissible and then waits.  Processors and producers are
-rational in the narrow sense used throughout: each prefers more
-lovelace to less and will take any action the law admits that
-increases its balance.  The analysis does not assume that attackers
-are few, coordinated, or computationally bounded beyond the signature
-and hash assumptions.
+A request holding $H$ for $\Delta$ time units has simple opportunity cost
+$rH\Delta$ under the explicitly assumed constant rate $r$ per time unit.
+This is a costing convention, not a measured interest model. It includes the
+tip and all carried lovelace. A registration's carrier remains locked in the
+delivered application output after a successful fold; it is not necessarily
+returned to its original funder. A termination can wait without a time bound,
+so its capital cost has no finite universal bound here.
 
-Each action costs real money.  Booking locks the deposit and the
-bond as capital for the life of the request and pays a ledger fee
-$c_{\mathrm{book}}$.  Folding pays $c_{\mathrm{fold}}$.  Rejecting
-pays $c_{\mathrm{rej}}$.  Retracting pays $c_{\mathrm{ret}}$.
-Table~\ref{tab:costs} collects who pays what.  Capital locked for a
-duration carries an opportunity cost at the
-prevailing rate $r$, so a request that lives through both windows
-costs its holder $r(D + B)(W_{p} + W_{r})$ in forgone return besides
-any amount it finally loses.
-
-\begin{table}[t]
-\caption{Who pays for each action.  Capital lockup is borne by the
-party whose funds wait; ledger fees are paid by the party that
-submits.}
-\label{tab:costs}
-\begin{center}
-\begin{tabular}{@{}lll@{}}
-\toprule
-Action & Submitted by & Cost \\
-\midrule
-Booking & requester & $c_{\mathrm{book}}$ plus locked $D + B$ \\
-Folding & processor & $c_{\mathrm{fold}}$, covered from $\tau$ \\
-Rejecting & processor & $c_{\mathrm{rej}}$, covered from $\tau$ and the share \\
-Retracting & owner & $c_{\mathrm{ret}}$ \\
-Waiting out both windows & holder & $r(D + B)(W_{p} + W_{r})$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}  The value of a key itself, written
-$V(K)$ for a key $K$, lives outside the model: it is what the key
-is worth to its holder or its thief, in fiat or in use, and no
-statement of the model quantifies over it.  Claims that involve the
-key value, the opportunity cost, or fee volatility are derived by
-hand from proved transfer lemmas and labelled as hand arguments in
-Section~\ref{sec:proofs}.
-
-\section{Mechanism}
-\label{sec:mechanism}
-
-The registry creator sets three parameters at creation, and no fold
-ever changes them: the bond $B$ every request carries beside its
-deposit, the processor split $\sigma = n/d$, a numerator over a
-denominator and strictly below one, giving the processor share of a
-forfeited bond, and the termination fee $F$ a terminating fold
-donates per terminated key.  The requester sets the tip $\tau$ per
-request, which pays the processor for the slot.
-
-\begin{table}[t]
-\caption{What the creator sets at creation and what the requester
-sets per request.  No fold ever changes the creator parameters.}
-\label{tab:params}
-\begin{center}
-\begin{tabular}{@{}lll@{}}
-\toprule
-Parameter & Set by & Meaning \\
-\midrule
-Bond $B$ & creator & amount every request carries beside its deposit \\
-Processor split $\sigma = n/d$ & creator & processor fraction of a forfeited bond, below one \\
-Termination fee $F$ & creator & amount a termination donates per terminated key \\
-Tip $\tau$ & requester & pays the processor slot per request \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-A request leaves the queue in one of five ways.  It is folded; the
-owner takes it back inside the reclaim window, called a retraction;
-or a processor rejects it on one of two grounds with a chosen proof.
-The two grounds are a lifecycle mismatch --- the request edge has no
-successor from the leaf its key holds --- and expiry.  A rejection
-that claims the forfeit must carry the whole logical map whose
-commitment is the recorded booking root $\rho_{b}$; the model checks
-that the commitment of the supplied map equals $\rho_{b}$ and that
-the edge has no successor from the leaf the supplied map holds at
-the key.  This is the authenticated logical read the rejection
-evidence already uses, one state earlier.  The processor chooses the
-ground: a rejection on the expiry ground never forfeits, and a
-rejection on the mismatch ground forfeits exactly when its fault
-proof holds.  A mismatch that arose after booking has no fault
-proof, so the requester keeps the bond.
-
-Table~\ref{tab:transfer} is the transfer function.  Each row gives
-the net effect per party, excluding the key value, with ledger fees
-shown where they fall.  The owner's deposit and approval are refunded
-on every rejection; the tip is returned on a retraction and paid to
-the processor on everything else, so an honest requester whose
-request is rejected without proof or on expiry loses the tip.  The
-fee of a termination is owed per terminated key, so a batch of
-terminations owes the fee times their number.
-
-\begin{table}[t]
-\caption{Net transfer per outcome, excluding the key value.
-$D$ deposit, $B$ bond, $\tau$ tip, $F$ termination fee per key,
-$\sigma$ processor split, $c$ ledger fees of each action.
-The deposit returns to the owner except where the edge rule routes
-it; the bond returns except on a proved fault.}
-\label{tab:transfer}
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Outcome & Requester & Processor & Treasury \\
-\midrule
-Fold & $-\tau - c_{\mathrm{book}}$ &
-$\tau - c_{\mathrm{fold}}$ & $F$ if the edge terminates \\
-& ($D$ per edge rule, $B$ returned) & & \\
-Retraction & $-c_{\mathrm{book}} - c_{\mathrm{ret}}$ &
-$0$ & $0$ \\
-& ($D$, $\tau$ and $B$ returned) & & \\
-Rejection, fault proved &
-$-B - \tau - c_{\mathrm{book}}$ &
-$\tau + \lfloor\sigma B\rfloor - c_{\mathrm{rej}}$ &
-$B - \lfloor\sigma B\rfloor$ \\
-& ($D$ returned) & & \\
-Rejection, no proof &
-$-\tau - c_{\mathrm{book}}$ &
-$\tau - c_{\mathrm{rej}}$ & $0$ \\
-& ($D$, $B$ returned) & & \\
-Rejection, expired &
-$-\tau - c_{\mathrm{book}}$ &
-$\tau - c_{\mathrm{rej}}$ & $0$ \\
-& ($D$, $B$ returned) & & \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{table}
-
-Three readings of the table matter.  First, the honest requester
-loses no deposit and no bond in any outcome; the worst case before
-fees is minus the tip.  Second, the attacker that books a faulty
-request and rejects it through its own processor still loses the
-treasury share $B - \lfloor\sigma B\rfloor$ plus both fees, because
-the tip and the processor share round-trip to itself.  Third, the
-tip buys the slot and nothing else: on a retraction the processor
-receives nothing, since no processor spent a slot.
-
-\section{Properties}
-\label{sec:properties}
-
-Each property is a definition with a theorem.  The Lean name follows
-in monospace through the \lean{} macro so it can be checked; while
-the model is being built every claim is wrapped in the visible
-label.  Statements quantify over states reachable from genesis by
-folds, and say so; over an arbitrary state value the supply and
-honesty claims are simply false.
-
-\begin{definition}[Booking admission]
-A request is admitted when its bond is at least the registry bond, a
-terminate request carries at least the registry fee, and its recorded
-root equals the root of the state read at booking.  Registry
-parameters are preserved by every fold.
-\notyetmechanized{Mechanized as \lean{parameters\_preserved\_by\_fold}.}
-\end{definition}
-
-\begin{theorem}[Parameters never move]
-\notyetmechanized{The bond, the split and the termination fee are
-equal before and after every fold: \lean{parameters\_preserved\_by\_fold}.}
-\end{theorem}
-
-\begin{definition}[Transfer conservation]
-In every outcome the owner floor, the treasury floor and the
-processor ceiling add up to what the request held, for a balanced
-transaction.  The processor share plus the treasury share equals the
-bond exactly, and with the split below one and a positive bond the
-treasury share is positive.  A zero owed amount imposes no donation,
-so the field can be omitted.
-\notyetmechanized{Mechanized as \lean{transfer\_conserves},
-\lean{forfeit\_shares\_add\_up}, \lean{treasury\_share\_positive} and
-\lean{zero\_owed\_means\_no\_donation}.}
-\end{definition}
-
-\begin{theorem}[Every outcome conserves]
-\notyetmechanized{In every outcome the three amounts of
-Table~\ref{tab:transfer} sum to the request holdings:
-\lean{transfer\_conserves}.  The two forfeit shares sum to the bond:
-\lean{forfeit\_shares\_add\_up}.  The treasury share of a positive
-bond is positive when the split is below one:
-\lean{treasury\_share\_positive}.  Zero owed means no donation field:
-\lean{zero\_owed\_means\_no\_donation}.}
-\end{theorem}
-
-\begin{definition}[Fault at booking]
-A fault is a lifecycle mismatch at booking: the request edge has no
-successor from the leaf its key held in the state with the recorded
-root, including a request that names an excluded edge.  A key that is
-known never becomes unknown, so a fault at booking of a registration
-persists as a mismatch.
-\notyetmechanized{Mechanized as \lean{forfeit\_requires\_fault\_at\_booking}
-with \lean{known\_stays\_known}.}
-\end{definition}
-
-\begin{theorem}[Forfeit needs a proved fault]
-\notyetmechanized{A rejection that forfeits carries a map whose
-commitment is the recorded booking root and in which the edge has no
-successor at the key: \lean{forfeit\_requires\_fault\_at\_booking}.
-A rejection without a valid booking proof owes the owner deposit and
-bond: \lean{no\_proof\_no\_forfeit}.  A rejection on the expiry
-ground owes the owner deposit and bond:
-\lean{expiry\_never\_forfeits}.}
-\end{theorem}
-
-\begin{definition}[Honest request]
-A request is honest when it passed the booking admission against a
-reachable state in which its edge was admissible, under
-collision-free commitments.  No live request is rejected before
-expiry: a request that can be folded now cannot be rejected until
-its expiry.
-\notyetmechanized{Mechanized as \lean{honest\_requester\_keeps\_bond}
-with \lean{live\_compatible\_request\_protected}.}
-\end{definition}
-
-\begin{theorem}[The honest requester keeps deposit and bond]
-\notyetmechanized{If the request passed the booking admission against
-a reachable state in which its edge was admissible, and commitments
-are collision free, then no reachable state and no admitted rejection
-takes its deposit or its bond: \lean{honest\_requester\_keeps\_bond}.
-Its lovelace outcome is at least minus the tip before fees:
-\lean{honest\_payoff\_floor}.  This is safety, not liveness: the tip
-is lost on expiry and on a lost race, and delay is not bounded.}
-\end{theorem}
-
-\begin{theorem}[Unproved rejections pay the processor at most the tip]
-\notyetmechanized{On a rejection without proof the processor keeps at
-most the tip: \lean{rejection\_without\_proof\_processor\_cap}.  A
-fold and a retraction owe the owner the bond, and a retraction owes
-deposit, tip and bond: \lean{fold\_returns\_bond} and
-\lean{retraction\_returns\_everything}.}
-\end{theorem}
-
-\begin{definition}[Self-rejection and termination]
-A self-rejection is a faulty request whose requester is also the
-rejecting processor.  Termination ends a key as terminal and owes
-the treasury at least the fee per terminated key, also in a batch.
-\notyetmechanized{Mechanized as \lean{self\_rejection\_cost} and
-\lean{termination\_cost\_floor} with \lean{termination\_donates\_fee}.}
-\end{definition}
-
-\begin{theorem}[Attack floors]
-\notyetmechanized{A requester that is also the processor of its own
-faulty request loses at least the treasury share, when the split is
-below one: \lean{self\_rejection\_cost}.  Ending a key as terminal
-costs at least the fee; the deposit comes back, so the deposit is
-capital and the fee is the cost: \lean{termination\_cost\_floor}.  A
-fold that terminates a key owes the treasury at least the fee per
-terminated key: \lean{termination\_donates\_fee}.}
-\end{theorem}
-
-\begin{theorem}[Anyone may reject; the owner may leave late]
-\notyetmechanized{A rejection requires no signer, so anyone may
-submit it, the owner of an expired request included:
-\lean{rejection\_requires\_no\_signer}.  After the reclaim window
-the owner of a request exits by rejecting it itself on the expiry
-ground: deposit and bond come back to it, and it pays only fees:
-\lean{owner\_exit\_after\_expiry}.  Capital stays locked until
-someone does.}
-\end{theorem}
-
-The following are hand-derived from the mechanized transfer lemmas.
-They involve the key value, opportunity cost or fee volatility, which
-the model does not contain, and are labelled as hand arguments in
-Section~\ref{sec:proofs}.
-
-\begin{theorem}[Flood cost, griefing bound, incentives, collusion; hand]
-A self-rejecting attacker and processor pair pays at least
-$(B - \lfloor\sigma B\rfloor) + c_{\mathrm{book}} + c_{\mathrm{rej}}$
-per doomed request, since the tip and the processor share
-round-trip.  Forcing honest requests to expire needs about
-$(W_{p}$ over the slot interval$)$ times $k$ doomed requests.
-With victim loss from forced expiries and delay, the griefing
-factor, victim loss over attacker cost, stays below one exactly
-when the parameters satisfy the inequality of
-Section~\ref{sec:sizing}.  Processors clear faults rather than let
-them rot when the tip floor plus the processor share covers a
-rejection and the tip floor covers a fold share.  Requester and
-processor in collusion recover the processor share, so only
-$(1 - \sigma)B$ per request is real cost; producer and processor in
-collusion is the front-running bound below.
-\end{theorem}
-
-\begin{theorem}[Front-running bound; hand]
-A front-runner that registers the key first gains at most the
-victim tip when it also processes, and pays deposit, tip and fees
-of its own.  The mechanism bounds the victim monetary loss by the
-honesty theorem; it does not stop the capture of the key.  The
-defence against theft is the approval: admission binds the edge,
-the key, the owner and the destination under the pinned application
-policy.  Whether the application approves a key only for that key
-controller, as with a self-certifying prefix, is an assumption
-stated in Section~\ref{sec:limitations}, and nothing about the
-bond implies it.
-\end{theorem}
-
-Four statements do not hold as defences, and the model keeps each
-counterexample.  Concurrent bookings of one untaken key are all
-admissible at the booking root; the losers cost their tip, not the
-bond (\lean{duplicate\_bookings\_cost\_only\_tip}).  With the split
-equal to one a self-rejecting requester pays nothing, which is why
-the split must stay below one
-(\lean{full\_processor\_split\_costs\_nothing}).  A requester that
-lost a race loses its tip, fixing the exact scope of the honesty
-theorem (\lean{honest\_loses\_tip\_on\_race}).  A front-runner that
-registers the key first is not charged for the capture
-(\lean{key\_capture\_not\_priced}).
-
-\section{Proofs}
-\label{sec:proofs}
-
-\notyetmechanized{No proof below is mechanized yet.  Each item names
-the Lean declaration that will carry it, so a reader can check every
-name once the model lands.  ``Mechanized'' means a Lean theorem
-with only the standard axioms; ``hand'' means derived by hand from
-proved lemmas and labelled so, because it speaks of the key value,
-fees or opportunity cost, which the model does not contain.}
-
-Mechanized, by name.  Conservation and the share arithmetic
-(\lean{transfer\_conserves}, \lean{forfeit\_shares\_add\_up},
-\lean{treasury\_share\_positive}, \lean{zero\_owed\_means\_no\_donation})
-follow from the transfer definition by integer arithmetic on the
-floors.  Preservation (\lean{parameters\_preserved\_by\_fold}) is an
-induction over folds.  The fault statements
-(\lean{forfeit\_requires\_fault\_at\_booking},
-\lean{no\_proof\_no\_forfeit}, \lean{known\_stays\_known},
-\lean{expiry\_never\_forfeits}) unfold the rejection evidence and
-the two grounds.  Honesty (\lean{honest\_requester\_keeps\_bond},
-\lean{honest\_payoff\_floor},
-\lean{live\_compatible\_request\_protected},
-\lean{rejection\_without\_proof\_processor\_cap},
-\lean{fold\_returns\_bond},
-\lean{retraction\_returns\_everything}) combines admission,
-reachability and the transfer floors.  Attack floors
-(\lean{self\_rejection\_cost}, \lean{termination\_cost\_floor},
-\lean{termination\_donates\_fee}) read the forfeit and donation
-obligations.  Exit (\lean{rejection\_requires\_no\_signer},
-\lean{owner\_exit\_after\_expiry}) follows from the empty signer
-list with the expiry ground.  The kept counterexamples
-(\lean{duplicate\_bookings\_cost\_only\_tip},
-\lean{full\_processor\_split\_costs\_nothing},
-\lean{honest\_loses\_tip\_on\_race},
-\lean{key\_capture\_not\_priced}) are named theorems stating that
-the exhibited scenarios exist with the stated costs.
-
-Hand arguments, labelled.  The per-request flood cost instantiates
-the transfer row for a proved fault with requester and processor
-the same party: the tip and the processor share cancel, leaving the
-treasury share plus the two fees.  The griefing bound divides the
-victim loss, forced expiries times tip plus delay cost, by that
-per-request cost.  Processor incentive compares the tip floor plus
-the processor share against the rejection fee, and the tip floor
-against a fold share.  Collusion bounds re-read the same rows with
-coinciding roles.  The front-running bound compares the front-run
-gain, key value plus victim tip, against the honesty floor for the
-victim monetary loss, and stops there: the key itself is outside
-the priced surface.
-
-\section{Parameter sizing}
-\label{sec:sizing}
-
-Every number below is derived from a named definition, with a worked
-example in lovelace.  The running example uses a deposit of
-2,000,000, a bond of 5,000,000, a split of one half so the processor
-share is 2,500,000 and the treasury share is 2,500,000, a tip of
-200,000, a termination fee of 10,000,000, and ledger fees of
-170,000 per action.  Capital figures use the prevailing rate $r$
-without fixing it.
-
-The split stays below one.  With the split equal to one the
-treasury share is zero and a self-rejecting requester pays nothing
-but fees, by \lean{full\_processor\_split\_costs\_nothing}.  Hence
-$\sigma < 1$, equivalently $n < d$.  In the example one half leaves
-2,500,000 of every forfeited bond to the treasury.
-
-The treasury share must exceed the per-request loss a flood is meant
-to cost its author.  Write $C$ for that target.  The constraint reads
-$B - \lfloor\sigma B\rfloor \geq C$, read from the forfeit row.
-With the example numbers the treasury share is 2,500,000, so any
-flood author pays at least 2,500,000 plus 340,000 in fees per doomed
-request.  A flood that fills every fold of the processing window
-needs about $(W_{p}$ over the slot interval$)$ times $k$ such
-requests, each priced the same.  Concretely, with a window covering
-one hundred folds of ten requests, the flood needs about one
-thousand doomed requests, about 2.5 billion lovelace in forfeits
-plus fees, to force the honest requests of that window to expire.
-The price scales linearly in the window length and the fold
-capacity, so lengthening the processing window or widening folds
-raises the attacker bill without moving any other parameter.
-
-The processor share plus the tip must cover a rejection, or faults
-wait for expiry.  The constraint reads
-$\tau_{\min} + \lfloor\sigma B\rfloor \geq c_{\mathrm{rej}}$, read
-from the proved-fault row.  In the example 200,000 plus 2,500,000
-covers 170,000 with room to spare.  The tip alone must cover a
-processor share of a fold: $\tau_{\min} \geq c_{\mathrm{fold}}/k$,
-so with ten requests per fold the example tip covers a 17,000 share
-ten times over.  The ordering this creates is stated openly:
-because a proved fault pays a bounty on top of the tip, processors
-clear faults before honest requests.  The bounty is the point ---
-faults should clear fast --- and its side effect is that honest
-requests wait behind fault clearing when folds are full.
-
-The griefing factor stays below one when the victim loss per forced
-expiry, tip plus delay cost, does not exceed the attacker cost per
-doomed request, treasury share plus fees.  With the example numbers
-a victim loses 200,000 plus delay per expiry while the attacker
-pays 2,840,000 per doomed request, so the factor is well below one
-before delay is even counted.  Raise the tip or lower the bond and
-the inequality tells exactly when the bound breaks.
-
-The termination fee is deliberately expensive, and its lower bound
-is derived from what it must deter.  Squat and terminate --- book a
-key to deny it to others, then end it --- must cost more than the
-value of holding the key terminal.  Write $V_{\mathrm{hold}}$ for
-that value.  The constraint reads $F \geq V_{\mathrm{hold}}$, read
-from \lean{termination\_cost\_floor}, with the deposit excluded on
-purpose: the deposit comes back at termination, so it is capital,
-not cost, and only the fee deters.  In the example the fee of
-10,000,000 prices out any squat worth less than that to hold.  An
-honest owner pays the fee once, at the end of a key life, when the
-key is genuinely retired; that is the intended incidence, and the
-paper says so plainly.  The contract enforces no floor on the fee:
-the booking admission checks that a terminate request carries at
-least the registry fee, and the donation obligation settles the
-rest.  A zero fee would mean the field is omitted and nothing is
-owed, which is why a registry that wants the deterrent sets a
-positive fee at creation and can never raise it later.
-
-Capital lockup enters every honest and attacker cost alike:
-$r(D + B)(W_{p} + W_{r})$ for a request that lives through both
-windows.  In the example 7,000,000 locked through both windows at
-any positive rate is the price of patience and the price of delay
-alike.  Parameters are fixed at creation in lovelace while key
-values move in fiat, so each inequality above carries a safe price
-range: the range of native asset prices over which the lovelace
-numbers still satisfy the bound.  With immutable parameters the
-range is published with the values, not assumed.
+\InputIfFileExists{mechanism.tex}{}{}
+\InputIfFileExists{properties.tex}{}{}
+\InputIfFileExists{sizing.tex}{}{}
 
 \section{Related work}
-\label{sec:related}
+The extended UTxO work supplies the state-machine and invariant setting in which
+this construction lives~\cite{ExtendedUTXO20}. Singular specializes it to one
+permanent lifecycle, authenticated request admission and explicit token custody.
+It does not propose a new ledger model or prove the ledger implementation.
 
-Fee mechanism design asks what miners and users will do, not only
-what the rules say.  Roughgarden studies transaction fee design as
-mechanism design~\cite{Roughgarden21}.  Chung and Shi give
-foundations including side-contract proofness, the collusion notion
-this paper uses for coinciding roles~\cite{ChungShi23}.  Daian and
-coauthors exhibit front-running, extractable value and consensus
-instability in decentralized exchanges~\cite{FlashBoys20}.
-Eskandari and coauthors systematize front-running attacks on
-blockchains~\cite{Eskandari19}.  Qin and coauthors quantify how
-much extractable value is taken in practice~\cite{Qin22}.  Babel
-and coauthors automate the analysis of economic security in smart
-contracts~\cite{Clockwork23}.  Buterin defines discouragement
-attacks and the griefing factor, victim loss over attacker
-cost~\cite{Buterin18}, which Section~\ref{sec:sizing} bounds.
+Roughgarden studies transaction-fee mechanisms, including the incentives of
+users and block producers~\cite{Roughgarden21}. Singular's minimum tip is instead
+an immutable application-level floor. Its accounting equation is neither an
+incentive-compatibility theorem nor a block-allocation mechanism. A processor
+may prefer another transaction even when this one covers its immediate fee.
 
-Capital lockup as a deterrent is studied by Harz and coauthors, who
-adjust cryptocurrency deposits dynamically~\cite{Balance19}; the
-registry here fixes its amounts at creation instead.  Bonded
-challenges appear in Arbitrum~\cite{Arbitrum18}.  Squatting is as
-old as decentralized names: Kalodner and coauthors draw lessons
-from Namecoin~\cite{Namecoin15}, Johnson specifies the Ethereum
-name service~\cite{EIP137}.  Treasury withdrawals
-on this ledger follow the Conway governance design~\cite{CIP1694},
-which does not mention donations; the donation field the forfeit
-and the termination fee use is a separate transaction field that
-accepts only positive amounts.
+The transaction-ordering attacks documented in Flash Boys 2.0 concern value
+obtained by ordering and front-running~\cite{FlashBoys19}. Singular protects a
+specific refund floor after a lost race; it neither hides the request nor
+bounds the value of capturing its key. An application's authorization policy
+must provide any ownership restriction.
 
-The ledger surface is the extended unspent transaction output
-model of Chakravarty and coauthors~\cite{ExtendedUTXO20}.  The
-mechanized statements are written in Lean~\cite{Lean4}, and the
-closest mechanized ledger precedent is the Agda specification of
-the Cardano ledger~\cite{FMBC24}.  Contract specification and
-verification at large are surveyed by Tolmach and
-coauthors~\cite{Survey21}.  What this paper adds to that record is
-the combination the registry needs: a bond whose forfeit is
-conditioned on a proved fault against the booking root, a split of
-the forfeit between prover and treasury, and a priced termination,
-all stated as definitions with theorems and checked against one
-mechanized model rather than argued in prose alone.  Two candidates were excluded from this
-section on purpose: a Handshake whitepaper that could not be
-located is not cited, and a griefing-factors survey whose author
-name is unconfirmed is not cited until its author is confirmed.
+Namecoin's empirical namespace study exposes the difficulty of useful allocation
+and squatting~\cite{Namecoin15}. ENS separates a registry, resolvers and
+registrars, leaving allocation policy to registrars~\cite{EIP137}. Singular
+likewise leaves application authorization external, but its registry leaf is a
+permanent lifecycle marker and its representative is an asset held in application
+custody. The registration charge is not a rent, auction or proof of a right to a
+human-readable name. It establishes no optimal namespace allocation.
 
-\section{Limitations}
-\label{sec:limitations}
+Lean provides the language and proof kernel used to check the statements
+below~\cite{Lean4}. The contribution is a reviewable separation of lifecycle,
+request custody, reference-read rejection and conditional accounting, together
+with revision-bound proofs and explicit missing correspondence. A proof of this
+model is not a proof of its adequacy for every application.
 
-Every property that does not hold is listed here with its
-counterexample, followed by the design facts the mechanism leaves
-unpriced and the hazards around the model.
+\section{Limitations and implementation standing}
+The validators and builders are \emph{not yet conformant} to the ruled economics.
+A model result is not a hosted conformance result, an accepted transaction,
+a deployed validator identity or an application's integration acceptance.
+The retained implementation's agreement with its older driver does not close
+these requirements. Coverage must come from observed receipts, with unmet
+requirements kept visible.
 
-Concurrent duplicate bookings of one untaken key are all admissible
-at the booking root, because each copy is valid against the state
-its requester read.  The copies that lose the race are rejected
-without proof and cost their tip plus fees, not the bond, by
-\lean{duplicate\_bookings\_cost\_only\_tip}.  No bond prices this
-race; proving that bookings exclude pending keys is open work.
+The application's release rule, custody integration, and adaptations of
+open-datum and cardano-keri remain open. Open-datum's earlier control-signature
+and deposit-return behavior needs reconciliation with release at booking and
+termination donation. Cardano-keri's reaping, refund and convictor reward need
+their own correspondence design. Singular supplies none of those application
+promises merely by recognizing an asset policy.
 
-Holding a squatted key without terminating it is not priced by the
-termination fee.  The fee fires on termination, and a squatter who
-never terminates pays no fee.  The real defence against key theft
-is the application approval policy: whether the application
-approves a key only for that key controller is an assumption the
-honesty statements rest on, and a registry whose application
-approves carelessly is not protected by any amount in this paper.
+Measured registration cost, minimum tip, booking-width bound and their target
+ledger envelope remain open. No carrier amount is a registry parameter:
+the requester declares it under ledger minimum rules. Parameter sufficiency
+need not survive changes in fees, output sizes, minimums or exchange rates.
+No selected number is claimed optimal.
 
-A zero donation cannot be expressed: the donation field accepts
-only positive amounts, so a zero treasury share or a zero
-termination fee omits the field, by
-\lean{zero\_owed\_means\_no\_donation}.  This is an encoding fact,
-not a policy choice, and the model owes nothing when nothing is
-owed.
-
-The tip fate on a retraction is fixed: the tip returns to the
-owner with the deposit and the bond, and the processor receives
-nothing, by \lean{retraction\_returns\_everything}.  On every
-other outcome the tip pays the processor for the slot.  An honest
-requester therefore loses the tip on expiry and on a lost race,
-which is the exact scope of the honesty theorem and is not called
-``no honest loss'' anywhere in this paper.
-
-Key capture is not priced: a front-runner that registers the key
-first is not charged for the capture, by
-\lean{key\_capture\_not\_priced}.  The mechanism bounds the victim
-monetary loss and not the theft of the key.  Collusion bounds are
-per request: requester and processor together recover the
-processor share, so only $(1 - \sigma)B$ is real cost per faulty
-request.  Producer and treasury-voter coincidences are declared
-out of scope.
-
-Liveness is not proved.  State-output contention can delay any
-fold; the treasury donation field is checked against the live
-treasury when present, which is a liveness hazard at epoch
-boundaries; zero-donation cases omit the field and must be handled
-as absent, not as zero.  Delay by refusing to process or reject
-costs the attacker nothing in this model besides the capital it
-chose not to lock; what it costs the honest requester is locked
-capital and time.  Fee and price volatility are outside the model:
-parameters are fixed in lovelace at creation, key values move
-elsewhere, and the safe price range of Section~\ref{sec:sizing} is
-a hand computation, not a theorem.
+\InputIfFileExists{counterexamples.tex}{}{}
 
 \appendix
-\section{Artifact appendix}
-\label{sec:appendix}
+\section{Reproducible model evidence and trusted base}
+\label{sec:artifact}
+\InputIfFileExists{citations.tex}{}{The declaration appendix is being assembled.
+No appendix entry is asserted by this intermediate document.}
 
-\notyetmechanized{Every row below is planned, not proved.  The Lean
-model is being built while this draft is reviewed: names resolve to
-their planned declarations, files are fixed, and lines, commits and
-axiom outputs will be filled as the model lands.  The table is
-generated from the audit report once the model exists; for this
-draft it is written from the reviewed plan with every row marked.}
+The trusted base includes the Lean kernel and the printed standard axioms,
+the adequacy of the mathematical specification, and the correspondence of
+observed values, identities and validity intervals to actual ledger data.
+The executable map and commitment functions are stand-ins, not cryptographic
+implementations. In particular, economic tag accounting counts repeated names
+and collisions and does not assume injective tag hashes; this does not establish
+cryptographic binding of a real policy. The logical current-state read is not
+a proof of concrete Merkle-path verification. The legacy model's descriptive
+collision-free profile must not be mistaken for a proof of its executable hash.
 
-Table~\ref{tab:artifact} maps each theorem to its Lean declaration.
-Theorems and kept counterexamples are declared in
-\verb|lean/Singular/Statements.lean|, in the namespace the axioms
-guard and the register cover; \verb|lean/Singular/Economics.lean|
-holds definitions only, including the transfer table.  The pinned
-base of this draft precedes the model; the commit column names the
-model commit once it lands.  Axioms printed are the
-\verb|#print axioms| output per declaration; only the standard
-axioms are acceptable, and any \verb|sorryAx| or
-\verb|Lean.ofReduceBool| from native decision procedures is called
-out.  Statements quantify over reachable states, states reachable
-from genesis by folds, and say so.
-
-\begin{table}[t]
-\caption{Theorem to Lean mapping.  Status is not yet mechanized for
-every row in this draft.  Lines and commits are filled as the model
-lands; the generator derives this table from the audit report.}
-\label{tab:artifact}
-\begin{center}
-{\small
-\begin{tabular}{@{}lll@{}}
-\toprule
-Lean name & File & Status \\
-\midrule
-\lean{transfer\_conserves} & Statements & not yet mechanized \\
-\lean{forfeit\_shares\_add\_up} & Statements & not yet mechanized \\
-\lean{treasury\_share\_positive} & Statements & not yet mechanized \\
-\lean{parameters\_preserved\_by\_fold} & Statements & not yet mechanized \\
-\lean{fold\_returns\_bond} & Statements & not yet mechanized \\
-\lean{retraction\_returns\_everything} & Statements & not yet mechanized \\
-\lean{expiry\_never\_forfeits} & Statements & not yet mechanized \\
-\lean{termination\_donates\_fee} & Statements & not yet mechanized \\
-\lean{zero\_owed\_means\_no\_donation} & Statements & not yet mechanized \\
-\lean{forfeit\_requires\_fault\_at\_booking} & Statements & not yet mechanized \\
-\lean{no\_proof\_no\_forfeit} & Statements & not yet mechanized \\
-\lean{known\_stays\_known} & Statements & not yet mechanized \\
-\lean{honest\_requester\_keeps\_bond} & Statements & not yet mechanized \\
-\lean{honest\_payoff\_floor} & Statements & not yet mechanized \\
-\lean{live\_compatible\_request\_protected} & Statements & not yet mechanized \\
-\lean{rejection\_without\_proof\_processor\_cap} & Statements & not yet mechanized \\
-\lean{self\_rejection\_cost} & Statements & not yet mechanized \\
-\lean{termination\_cost\_floor} & Statements & not yet mechanized \\
-\lean{duplicate\_bookings\_cost\_only\_tip} & Statements & not yet mechanized \\
-\lean{rejection\_requires\_no\_signer} & Statements & not yet mechanized \\
-\lean{owner\_exit\_after\_expiry} & Statements & not yet mechanized \\
-\lean{full\_processor\_split\_costs\_nothing} & Statements & not yet mechanized \\
-\lean{honest\_loses\_tip\_on\_race} & Statements & not yet mechanized \\
-\lean{key\_capture\_not\_priced} & Statements & not yet mechanized \\
-\bottomrule
-\end{tabular}}
-\end{center}
-\end{table}
-
-Trusted base.  The model header assumptions are tagged commitments
-as collision free, namely collision resistance of the hash in use;
-the trie as an authenticated map; contract evidence as supplied,
-not as verified application code; and the atomic selected batch as
-a profile.  Beside them stand the Lean kernel, the ledger semantics
-for donations, reference inputs and validity intervals, and the
-model-to-validator correspondence.  The correspondence is evidenced
-by the conformance suite, not proved, and is named as an
-assumption.  Each validator check has its Lean counterpart and its
-conformance row in a gap subsection of the full report; checks
-without a counterpart are listed as gaps, among them the
-booking-root reference-input check and the donation field.
+Application authorization and custody release are supplied evidence boundaries.
+The Lean-to-validator correspondence is an assumption requiring conformance
+work, not a result of these proofs. Ledger minimums, fee measurement, inclusion
+and application integration remain outside the checked economic statements.
 
 \bibliographystyle{splncs04}
 \bibliography{refs}
-
 \end{document}
