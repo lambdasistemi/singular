@@ -1,0 +1,212 @@
+\section{Mechanism and accounting definitions}
+\label{sec:mechanism}
+\begin{definition}[World and observations]
+A world consists of a registry, pending registrations, pending terminations and
+a cumulative treasury counter. Its reachability starts from any registry
+satisfying the original registry reachability relation, with both pending pools
+empty and the counter zero. It then closes under accepted bookings, rejections,
+retractions and economic folds. It does not assert that every initial registry
+was produced by the economic transactions of this paper.
+\end{definition}
+An observed economic transaction pairs ledger-shaped inputs, references,
+outputs, fee and donation with request contents and typed token movements.
+The observation checks bind these fields to an unspent set and the world.
+This is a logical observation relation, not a decoder for a Cardano transaction.
+The definition is \decl{Singular.WorldReachable}; the accepted judgements are
+\decl{Singular.book}, \decl{Singular.bookTermination},
+\decl{Singular.rejectionAccepted}, \decl{Singular.retractionAccepted} and
+\decl{Singular.foldAccepted}, at the pin above. These are definitions, not
+axiom-checked theorem claims; their consequences are cited below.
+
+\begin{definition}[Amounts and clocks]
+Let $R$ be the registration charge, $t_{\min}$ the minimum tip, $\delta$ the
+maximum booking width, and $W_p,W_r$ the processing and reclaim windows.
+These and the registry identity and policy bindings are fixed at creation.
+The minimum tip occupies the existing wire key \texttt{maxFee}; it is no
+longer an upper fee pin. A request declares tip $t\ge t_{\min}$ and carrier
+amount $a$. Its held lovelace is $H$. A registration is booked in a nonempty
+interval $[L,U)$ with $U-L\le\delta$, and records $s=U$.
+\end{definition}
+The carrier amount is declared under the ledger's output-minimum rules; it
+is not an additional registry parameter. The model checks exact declared
+amounts, not the actual minimum or the fee needed by a concrete transaction.
+The original application token's carrier and a later termination request's
+carrier need not have equal lovelace amounts: their output shapes differ.
+
+\begin{table}[ht]
+\caption{Registration request. Extra assets or hidden lovelace surplus are refused.}
+\centering\small
+\begin{tabular}{p{.25\linewidth}p{.65\linewidth}}\toprule
+Field & Required contents\\\midrule
+Lovelace & Exactly $H=R+t+a$; $t\ge t_{\min}$.\\
+Payload & Register, key, refund address and destination.\\
+Datum & Separately booked destination datum; copied by the fold, not included in these tag-name commitments.\\
+Application tag & Exactly one, bound to the payload and nonce; minted in this booking.\\
+Trie-ready tag & Exactly one, bound to the operation and the same nonce; minted in this booking.\\
+Clock & $s=U$, $L<U$, $U-L\le\delta$.\\
+Exits & Fold; signed retraction; reference-read rejection.\\\bottomrule
+\end{tabular}
+\end{table}
+\begin{table}[ht]
+\caption{Termination request. Application consent is release from custody.}
+\centering\small
+\begin{tabular}{p{.25\linewidth}p{.65\linewidth}}\toprule
+Field & Required contents\\\midrule
+Lovelace & Exactly $H=t+a$; $t\ge t_{\min}$.\\
+Singular tag & Exactly the genuine tag of this active key, moved from application custody.\\
+Trie-ready tag & Exactly one, bound to its operation and nonce; minted in this booking.\\
+Application tag & None.\\
+Refund and clock & Neither a refund address nor a booked time.\\
+Exit & Fold only, without a registration window.\\\bottomrule
+\end{tabular}
+\end{table}
+
+\checked The request shapes, same-booking tag minting and bounded booking clock
+are consequences of accepted booking and reachable pending membership.
+\evidence{booked_request_has_exact_contents}
+\evidence{booked_request_tags_commit_to_own_fields}
+\evidence{booked_time_is_interval_end}
+\evidence{booking_width_within_limit}
+\evidence{termination_booking_has_exact_contents}
+\evidence{booked_termination_tag_commits_to_own_operation}
+Tag names equal the computed commitments; this is not a proof of collision
+resistance. Application tags minted outside a booking are outside Singular's
+supply guarantees and cannot replace the simultaneous mint required by booking.
+The singular tag is a different asset: registration mints it at the destination,
+termination booking moves it into a request, and termination folding burns it.
+The state token identifies the registry output. The abstract identity spaces
+exclude its equality with a trie-ready tag even if a commitment is zero.
+\evidence{trie_ready_tag_is_not_state_token}
+
+\subsection{Admitting an exit}
+A registration fold's entire nonempty validity interval must lie in
+$[s,s+W_p)$. A retraction's must lie in $[s+W_p,s+W_p+W_r)$ and its refund
+address must sign. A rejection needs a current lifecycle mismatch, or a
+nonempty interval beginning at or after $s+W_p+W_r$. Thus mismatch remains
+available during either window, while a compatible request is protected
+through both. These are interval-containment rules, not tests of a wall clock
+supplied by the processor. Equality of an interval's upper bound with the
+window endpoint is allowed because the interval is half-open.
+
+\begin{center}\small
+\begin{tabular}{llll}\toprule
+Registration time & Fold & Retract & Reject\\\midrule
+$[s,s+W_p)$ & Yes & No & Mismatch\\
+$[s+W_p,s+W_p+W_r)$ & No & Signed & Mismatch\\
+$[s+W_p+W_r,\infty)$ & No & No & Expiry or mismatch\\\bottomrule
+\end{tabular}
+\end{center}
+The table describes admission windows, subject to all other checks. In
+particular, its retraction entry is not a fee-paying ledger-availability result.
+
+A rejection references the actual unspent state output: one state token with
+the exact policy and name, state role, inline datum, complete matching
+configuration and current root. It never spends that output. Its distinct
+request inputs are exactly its members; every member is checked against that
+same state and interval. One invalid member refuses the entire batch. A fold
+that consumes the referenced output first invalidates this proposed rejection;
+rebuilding can starve indefinitely. A rejected proposal that never enters the
+ledger has no ledger transaction fee, though preparation has an external cost.
+The state and protection results are stated in Section~\ref{sec:properties}.
+
+The request validator governs spending; a tag policy's permissive burn branch
+does not confer a spending right. Registration exits burn both request tags;
+a termination fold burns its trie-ready and singular tags. An untagged output
+at the request address is not a pending request and can be swept. The checked
+sweep judgement preserves the world; a concrete script implementing that
+distinction remains a correspondence obligation.
+\evidence{sweep_leaves_pool_untouched}
+
+\subsection{Allocation is not net payoff}
+\begin{definition}[Fold allocations]
+For a fold, let $I,O$ be the sums of ordinary input and output lovelace,
+respectively, $f$ its ledger fee, $T=\sum t$ its tips, $n$ its registrations,
+and $D$ its donation. State input and continuation values are equal.
+Carrier outputs hold exactly their declared amount, booked datum and newly
+minted singular tag. Ordinary change is a separate output even if its address
+equals a carrier's address.
+\end{definition}
+\checked
+\begin{theorem}[Economic fold allocation]
+Every accepted economic fold in a reachable world satisfies
+\begin{align}
+D &= nR+\sum_{q\text{ termination}}(H_q-t_q),\label{eq:donation}\\
+O+f &= I+T,\qquad f\le I.\label{eq:gross}
+\end{align}
+It is balanced; all request tags are burned and the treasury counter increases
+by $D$.
+\end{theorem}
+The mechanized proof is the following checked declaration. The table separates
+request allocation from fees.
+\evidence{fold_routes_every_amount}
+
+\begin{table}[ht]
+\caption{Request allocation. Refund rows are floors, not full balance proofs.}
+\centering\small
+\begin{tabular}{p{.24\linewidth}p{.64\linewidth}}\toprule
+Exit & Allocation of held lovelace and token fate\\\midrule
+Registration fold & $R$ donation; $a$ carrier at destination; $t$ gross ordinary allocation. Burn both request tags; mint singular tag.\\
+Registration rejection & Refund address receives at least $R+a$. The judgement proves no exact processor reward. Burn both request tags.\\
+Registration retraction & Refund address receives at least $H$, including $t$; burn both request tags. \textbf{Missing mechanization: retraction paying a ledger fee.}\\
+Termination fold & $H-t=a$ donation; $t$ gross ordinary allocation. Burn trie-ready and singular tags; no refund or destination output.\\\bottomrule
+\end{tabular}
+\end{table}
+Rejection and retraction refund evidence is given under Property~6 below.
+The rejection promise is a refund floor, not an exact split. Its judgement
+checks a lower bound and does not require full monetary
+balance; neither an exact wage nor a rejection analogue of~\eqref{eq:gross}
+is supplied. A processor may leave part of its tip to the requester;
+over-refunding is compatible with that lower bound.
+
+\hand For a rejection whose inputs are exactly its members, additionally
+assume \decl{Singular.balanced} and zero donation. Partition its outputs into
+those paid to the set of refund addresses, totaling $F$, and all other outputs,
+totaling $P$. Distinct members and summed floors give $F\ge\sum H-T$.
+Balance gives $F+P+f=\sum H$, hence $P+f\le T$, and therefore $P\le T$.
+This bounds value outside refund addresses, not the wealth of a party that
+also controls a refund address. Balance is an additional ledger fact here,
+not a checked conclusion of rejection admission.
+
+\hand With signed differences,~\eqref{eq:gross} gives $O-I=T-f$.
+This follows by subtracting $I+f$ in the integers, not by truncated natural
+subtraction. It is the net change of the ordinary funding pool. If a processor
+owns that pool, pays the fee and has no other role, its monetary net is $T-f$;
+including external cost gives $T-f-e$. An address shared with a carrier does
+not make the carrier's value a processor reward.
+
+For one request, assume separate funder, destination, processor and treasury;
+write $b$ for the booking fee. Measure transfers from before booking, treat
+assets and application services separately, and count carrier value as an
+asset of the destination. The following illustrative accounting sums to
+minus the ledger fees, before external costs. No retraction row is presented
+as a balanced model transaction.
+\begin{center}\small
+\begin{tabular}{lrrrr}\toprule
+Outcome & Funder & Destination & Processor & Treasury\\\midrule
+Registration fold & $-R-t-a-b$ & $a$ & $t-f$ & $R$\\
+Termination fold & $-t-a-b$ & $0$ & $t-f$ & $a$\\
+Rejection, exact refund\! & $-t-b$ & $0$ & $t-f$ & $0$\\\bottomrule
+\end{tabular}
+\end{center}
+\hand The first two rows sum to $-b-f$ by cancellation. The third does too
+\emph{if} an additionally balanced rejection pays exactly $H-t$ to the
+funder's refund address, donates zero and returns the residue to its processor.
+These added hypotheses are not proved by the rejection judgement. Native
+asset values and a preexisting singular tag's valuation are excluded.
+
+For example, with $R=2{,}000{,}000$, $t=400{,}000$, $a=1{,}500{,}000$,
+$b=200{,}000$ and $f=170{,}000$, a registration holds $3{,}900{,}000$.
+Its four net entries are $-4{,}100{,}000$, $1{,}500{,}000$, $230{,}000$
+and $2{,}000{,}000$, summing to $-370{,}000$. These are arithmetic examples,
+not measured output minima, costs or recommended parameters.
+
+\subsection{Donation encoding}
+The model represents $D$ by a natural number; a zero donation is encoded by
+omitting the optional donation field, not by serializing a zero value.
+\evidence{zero_donation_omits_field}
+Conway transaction-body field 22 is a positive coin donation; optional field
+21 is the separate current-treasury-value assertion~\cite{ConwayCDDL}.
+When the latter is present, the ledger checks it against current treasury
+state~\cite{ConwayLedger}. Donation alone does not make that assertion or
+introduce its stale-value hazard. This describes the cited ledger revision;
+translation to a concrete transaction still needs correspondence evidence.

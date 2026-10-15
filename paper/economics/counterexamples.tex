@@ -1,0 +1,33 @@
+\subsection{Counterexamples to stronger readings}
+\hand \textbf{No universal flood price.} Book many registrations without
+folding them. No $R$ donation occurs. Even eventual balanced self-rejection
+can make the tip internal, leaving only fees and opportunity cost. Successful
+junk registrations do pay $R$ but still consume state-output turns.
+
+\hand \textbf{Protection is not priority.} Two authorized registrations for
+the same unknown key can be pending. The first fold makes it active; the
+second is now mismatching and may be rejected before its time expiry. Its
+refund floor survives, not a right to the key or the full tip.
+
+\hand \textbf{Noninterference needs disjoint inputs.} If a proposed fold and
+a rejection spend the same pending registration, rejection removes that
+input. Preserving the state output alone cannot preserve the whole fold.
+Conversely repeated folds can invalidate a rejection's state reference before
+it lands, without violating the rejection theorem.
+
+\hand \textbf{No positive wage.} Choose fold tip $t=100{,}000$, fee
+$f=170{,}000$ and ordinary funding $I\ge170{,}000$. The allocation equation
+gives net ordinary change $-70{,}000$. Fold acceptance requires funding but
+does not impose the availability theorem's extra $f\le t$ hypothesis.
+
+\hand \textbf{No ownership or squatting defence.} An application that
+authorizes every request also authorizes a stranger's registration of a
+desirable key. Paying $R$ does not prove a right to its name. A tag's unique
+custody is an asset invariant, not an ownership adjudication.
+
+\missing \textbf{Full refund is not fee-paying retractability.} A single
+$3{,}000{,}000$ input cannot return that full amount and also pay $170{,}000$.
+The current accepted-retraction theorem and this conservation counterexample
+coexist because its judgement omits balance and excludes a funding input.
+Changing the model or claiming real-ledger retraction requires a separate
+ruling and new evidence; the floor is not silently weakened here.

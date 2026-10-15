@@ -1,0 +1,80 @@
+\section{Parameter constraints and attack costs}
+\label{sec:sizing}
+\begin{definition}[Sizing envelope]
+An envelope $E$ fixes target ledger fee parameters, transaction and script sizes,
+execution budgets, output-minimum rules, supported datum sizes, and assumed
+inclusion and response delays. Let $c_x(E)$ bound the measured ledger fee of
+a supported singleton exit $x$, and let $e_x(E)$ be a chosen bound on external
+processor cost. Neither function is currently measured by this paper.
+\end{definition}
+
+\proposed If a processor requires nonnegative net income within $E$, an exit
+with gross tip $t$ needs $t-c_x(E)-e_x(E)\ge0$. Consequently a sufficient
+conditional floor is
+\[
+ t_{\min}\ \ge\ \max_{x\in X}\{c_x(E)+e_x(E)\},
+\]
+where $X$ contains only exits with an implemented, balanced allocation paying
+that gross tip. The measured fee-only requirement is the special case $e_x=0$.
+The current fold equation supports this arithmetic. Rejection permits a
+processor to leave some tip to the requester, so a cost-cover construction
+needs to choose its refund and fee allocation explicitly. Positive-fee
+retraction remains missing. Thus the formula is not a completed all-exit
+implementation result. Retraction returns the tip and must
+have an explicitly supplied fee budget; increasing its refundable tip alone
+does not pay a processor.
+
+\hand If measured fold fee were at most $170{,}000$ and external cost at most
+$30{,}000$ lovelace, a $200{,}000$ floor would break even in that hypothetical
+envelope. A later fee of $260{,}000$ would give $-90{,}000$ net with the same
+external cost. No measurement or recommendation is attached to these numbers.
+
+\proposed The design criterion is $0<\delta<W_p$. For desired booking
+inclusion slack $d_b$, processing slack $d_p$ after booked time, and reclaim
+response slack $d_r$, require $d_b\le\delta$, $d_p<W_p$ and $d_r<W_r$.
+These are conditional feasibility requirements; no consensus inclusion bound
+establishes $d_b,d_p,d_r$. The checked booking theorem enforces width at most
+$\delta$; it does not establish this entire cross-parameter sizing criterion
+for every decoded configuration.
+
+\hand Given $\tau\in[L,U)$ and $s=U$, then $0<s-\tau\le\delta$.
+Hence a compatible registration's expiry threshold is between
+$\tau+W_p+W_r$ and $\tau+\delta+W_p+W_r$. Adding nonnegative windows to the
+checked booking inequalities proves this bound. It is a threshold bound only:
+a current mismatch is available earlier, and retraction needs an executable
+fee-paying transaction as well as time.
+
+\proposed To make an adversary pay at least a selected treasury charge $C$
+for $n>0$ successful junk registrations, require $nR\ge C$, equivalently
+$R\ge\lceil C/n\rceil$. This controls only donations of successful folds.
+Selecting $C$ is a policy choice, not an optimal price or a universal flood
+deterrent. A party assigning value $V(k)>R+t+b+a$ to a key can still choose
+to buy it under these simple monetary assumptions.
+
+\hand The following costs follow only under the expressly stated allocation
+and ownership assumptions; none is a game-theoretic equilibrium claim.
+Successful junk folding pays $R$ per key to the treasury, plus ledger fees;
+if the funder and processor coincide, the tip is an internal transfer.
+If that same party also controls the destination, its carrier remains an
+asset, with an opportunity cost rather than an immediate wealth loss.
+For a balanced exact-refund self-rejection, the tip is likewise internal;
+the combined party loses the booking and rejection fees, plus external and
+capital costs. There is no positive treasury floor for this attack.
+For a losing race processed by someone else under the same exact-refund
+assumption, the funder loses $t+b$ while receiving $R+a$ back. A larger tip
+does not buy priority. A termination fold irrevocably donates its declared
+carrier $a$; with no guaranteed delay bound, $rH\Delta$ remains unbounded.
+
+No bound relates the number of harmed requesters to the number of charged
+attacker folds. A griefing ratio would divide total victim losses, including
+delay costs, by total attacker expenditure under an explicit schedule. Neither
+that schedule nor a finite delay bound is supplied; no finite universal ratio
+is derived from a maximum batch size.
+
+Policy identities and the registry identity are separation parameters, not
+economic prices. They must identify the intended application and asset policies;
+choosing them incorrectly cannot be repaired by a larger tip or window.
+Carrier values must satisfy actual output minima when outputs are created.
+They are not sized by a fixed registry constant. Changes outside $E$ require
+new measurements and may motivate a new registry; no automatic migration or
+rescue of old pending requests is implied.

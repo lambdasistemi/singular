@@ -1,0 +1,158 @@
+\section{Properties at the checked revision}
+\label{sec:properties}
+Each reference below uses the full pin in Appendix~\ref{sec:artifact} and its
+verbatim axiom line. Unless stated otherwise, economic results quantify over
+an arbitrary reachable world and an arbitrary transaction accepted by the
+relevant judgement, not just a builder's output. The distinction between the
+original registry fold and the economic observation is explicit.
+
+\paragraph{1. Fixed parameters.}
+\checked An accepted original registry step or batch satisfies
+\decl{Singular.onlyRootChanged}: the root may change but all other configuration
+fields, including $R,t_{\min},\delta,W_p,W_r$ and policy bindings, are preserved.
+\evidence{parameters_preserved_by_fold}
+\evidence{parameters_preserved_by_batch}
+\hand The economic fold reuses that transition through
+\decl{Singular.foldProjectedRegistry} and \decl{Singular.foldBatch}. Inspection of
+\decl{Singular.foldAccepted} shows that its resulting registry comes from this
+batch. The projection restores carried termination holdings for the original
+registry interface and supplies synthetic approval evidence to that interface;
+it is not an actual termination application tag or a second mint.
+There is no registry update or migration operation in the defined transition
+set. This is a statement about that set, not an assertion that an arbitrary
+deployed policy cannot spend the state.
+
+\paragraph{2. Rejection preserves the registry.}
+\checked Accepted rejection leaves the registry, pending terminations and
+singular supply equal. Its observed spending and outputs carry no state or
+singular tokens; no such mint is present. Request-tag burns are separate.
+The genuine referenced state remains unspent after applying the transaction.
+\evidence{rejection_leaves_registry_untouched}
+\evidence{rejection_requires_referenced_state}
+
+\paragraph{3. State noninterference, with its actual scope.}
+\checked If the \emph{original admitted registry fold} was valid before a
+rejection, it remains valid afterward. A supplied list of needed unspent
+outputs also remains present if all its other inputs are disjoint from the
+rejection's spends. The referenced state is protected by the rejection checks.
+\evidence{rejection_cannot_invalidate_fold}
+\missing This declaration preserves \decl{Singular.admittedFoldBatch} and
+needed outputs. It is not a theorem preserving the whole later
+\decl{Singular.foldAccepted} judgement, fees, wallet state or ledger acceptance.
+The shared-input counterexample below prevents dropping disjointness.
+
+\paragraph{4. Live protection and a non-backdated clock.}
+\checked A pending registration whose key still admits registration cannot
+be a member of an accepted rejection whose interval begins before $s+W_p+W_r$.
+This includes the reclaim window, not just the processing window. Given an
+actual inclusion time $\tau\in[L,U)$, the checked booking rule gives
+$\tau\le s$ and $\tau+W_p+W_r\le s+W_p+W_r$.
+\evidence{live_request_not_rejected}
+\evidence{booked_time_not_before_inclusion}
+A current mismatch is outside the compatibility hypothesis: a losing race
+can be rejected immediately. The inequality states an expiry threshold, not
+an inclusion guarantee or the existence of a retraction transaction.
+
+\paragraph{5. Current evidence is mandatory.}
+\checked An accepted rejection has an unspent reference with the exact state
+identity, inline configuration and current root; that reference is not spent.
+\evidence{rejection_requires_referenced_state}
+The per-member mismatch test reads this current state. An alleged booking-root
+fault is neither required nor substituted. This rules out evidence-free
+acceptance in the economic judgement; it does not verify concrete Merkle code.
+
+\paragraph{6. Refunds are additive per address.}
+\checked Rejected members and their input references are distinct. For every
+refund address $A$, outputs paid to it total at least
+\[
+ F_A=\sum_{q:\,\mathrm{refund}(q)=A}(H_q-t_q).
+\]
+The obligations have one entry per address. The output cannot be counted as a
+refund at a different address, and duplicated members cannot reuse it.
+\evidence{rejection_batch_members_distinct}
+\evidence{rejection_refund_floor}
+\evidence{refunds_sum_per_address}
+\checked Accepted retraction identifies one pending registration, its signed
+refund address and a contained reclaim interval, burns both tags, returns at
+least its entire $H$, reads and spends no state output, and removes that
+request from the pool.
+\evidence{retraction_refund_floor}
+\missing Retraction paying a ledger fee. The current judgement permits exactly
+the request input and proves a full refund, but does not assert balance. With
+$H=3{,}000{,}000$ and fee $170{,}000$, nonnegative donation and full refund
+would require $3{,}000{,}000\ge3{,}170{,}000$. An ordinary funding input is
+refused. Thus the floor theorem supplies no positive-fee ledger retraction;
+affected real-ledger acceptance remains open. No weaker refund is inferred.
+
+\paragraph{7. Charge and return.}
+\checked An economic fold registering $n$ keys donates at least $nR$;
+Equation~\eqref{eq:donation} gives its exact amount. The charge is included in
+the rejected address's refund floor and in the retracted request's floor.
+\evidence{fold_donates_registration_cost}
+\evidence{registration_cost_returned_on_exit}
+\hand A successful fold removes its registration request, and the lifecycle
+has no operation returning its treasury charge. This concerns the mechanism's
+own transfers, not a prohibition on a later treasury payment to the same party.
+
+\paragraph{8. Terminations are unrejectable.}
+\checked Every genuine pending termination keeps its key active. Mismatch
+therefore fails and there is no expiry ground. It cannot occur as a member of
+any accepted rejection, whichever ground is offered.
+\evidence{termination_unrejectable}
+
+\paragraph{9. At most one pending termination per key.}
+\checked Singular supply counts application custody \emph{plus} actual tags
+in pending terminations. It is one exactly for an active key and zero otherwise,
+never greater than one. Carried count equals pending termination count, so at
+most one is pending for each key.
+\evidence{world_supply_sync}
+\evidence{at_most_one_pending_termination}
+Counting only application custody after release would give the wrong invariant.
+
+\paragraph{10. Termination provenance.}
+\checked Every termination selected by an accepted economic fold was pending,
+is observed in the unspent set, carries its key's genuine singular tag, and
+has an earlier accepted termination booking from a reachable world. That
+booking consumed the unique matching custody holding. The application's
+release rule itself is an external premise, not rechecked by Singular.
+\evidence{only_booked_terminations_fold}
+\evidence{termination_request_carries_genuine_token}
+
+\paragraph{11. Conditional model availability.}
+\checked For any pending termination in a reachable world, any natural-number
+time $u$, funding $I$ and fee $f$ with $f\le I$ and $f\le t$, and a predicate
+saying a folder accepts its tip, there exist a coherent unspent set and an
+accepted singleton fold with interval $[u,u+1)$. It ends the key as Terminal,
+removes the request and produces a reachable world.
+\evidence{booked_termination_foldable}
+\missing The theorem constructs its own unspent set; it does not find funding
+or prove an accepted transaction over an arbitrary live ledger snapshot.
+Its witness includes a zero-lovelace state output, illustrating the absent
+ledger-minimum premise. It proves no willingness, inclusion or bounded delay.
+
+\paragraph{12. Processor cap is a fold allocation bound.}
+\checked For an accepted economic fold, $O\le I+T$, with
+$O+f=I+T$ and $f\le I$ as above.
+\evidence{processors_take_at_most_the_tips}
+\hand Thus net ordinary increase is at most $T$. The formal theorem is about
+ordinary outputs and inputs, not ownership, every address receiving funds or
+every exit kind. With zero ordinary funding the fee condition forces $f=0$.
+No exact rejection reward, positive wage or service incentive follows.
+
+\paragraph{13. A measured minimum tip.}
+\proposed Choose $t_{\min}$ to cover the maximum measured single-request exit
+cost in a declared envelope, including the reference read and required refund
+output. The derivation and assumptions follow in Section~\ref{sec:sizing}.
+\missing No checked declaration or completed measurement establishes this
+cost cover. The positive-fee retraction gap must be resolved before that exit
+can be included in an implementable fee envelope.
+
+\paragraph{Supporting supply statement.}
+\checked In every reachable world, the number of trie-ready tags actually
+held in the two pending pools equals the total number of pending requests.
+Application tags held in pending registrations equal their number, with
+exactly one in each. This is not a total application-token supply theorem.
+\evidence{tag_supplies_equal_pending}
+The world has no separate external trie-ready circulation; lifting its counted
+supply to all ledger assets requires mint/spend correspondence. Arbitrary
+application minting elsewhere is explicitly outside the counted domain.

@@ -3,6 +3,9 @@
 \usepackage[T1]{fontenc}
 \usepackage[breaklinks,hidelinks]{hyperref}
 \urlstyle{tt}
+\makeatletter
+\g@addto@macro\UrlBreaks{\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D\do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N\do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X\do\Y\do\Z}
+\makeatother
 \setlength{\emergencystretch}{2em}
 \newcommand{\modelpin}{303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d}
 \newcommand{\checked}{\par\noindent\textcolor{green!35!black}{\textbf{Existing checked declaration.}}\ }
@@ -12,7 +15,7 @@
 \newcommand{\decl}[1]{\textnormal{\small\nolinkurl{#1}}}
 \newcommand{\evidence}[1]{\par\noindent\textit{Checked reference:} \decl{Singular.Statements.#1}; exact pin and verbatim axiom result in Appendix~\ref{sec:artifact}.\par}
 \begin{document}
-\title{Singular: A Permanent Registry with\\Protected Rejection and Explicit Accounting}
+\title{Singular: A Permanent Registry with Protected Rejection and Explicit Accounting}
 \titlerunning{Singular: Protected Rejection and Explicit Accounting}
 \author{}
 \institute{}
@@ -109,6 +112,9 @@ synonym for Unknown; five historical operation encodings are refused by the
 active two-operation law. No migration or parameter-update authority is part of
 this registry. A newly created registry is a different registry, not a migration
 of its pending requests.
+\checked For a Terminal key in a reachable original registry, every request
+at that key is refused and every accepted later batch keeps its leaf Terminal.
+\evidence{termination}
 
 The software contains Aiken state, request and witness validators, Haskell
 transaction builders and ledger/provider interfaces, the Lean authority, and
@@ -131,7 +137,8 @@ minimum service rate or rational participation. Cryptographic correspondence
 requires authentic signatures and assets and sound authenticated-map proofs.
 Those are boundary assumptions, not consequences of the abstract token counts.
 
-All monetary quantities below are integer lovelace. Ledger fees are nonnegative.
+Amounts, times and window lengths are natural numbers; signed net changes use
+integers. Monetary units are lovelace. Ledger fees are nonnegative.
 For an action $x$, let $c_x$ be its actual ledger fee; a separate $e_x$ may cover
 computation and operational expense not paid to the ledger. The latter is not a
 transaction output. Let $V(k)$ be a party's valuation of key $k$; it is outside
@@ -177,7 +184,7 @@ custody. The registration charge is not a rent, auction or proof of a right to a
 human-readable name. It establishes no optimal namespace allocation.
 
 Lean provides the language and proof kernel used to check the statements
-below~\cite{Lean4}. The contribution is a reviewable separation of lifecycle,
+in this paper~\cite{Lean4}. The contribution is a reviewable separation of lifecycle,
 request custody, reference-read rejection and conditional accounting, together
 with revision-bound proofs and explicit missing correspondence. A proof of this
 model is not a proof of its adequacy for every application.
