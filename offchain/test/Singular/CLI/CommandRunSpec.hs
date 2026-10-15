@@ -127,11 +127,14 @@ import Test.Hspec
 
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
+    , feeTxBodyL
     , inputsTxBodyL
+    , mkBasicTxBody
     , outputsTxBodyL
+    , reqSignerHashesTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -160,7 +163,9 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 import Cardano.Tx.Ledger (ConwayTx)
+import Data.Sequence.Strict qualified as StrictSeq
 import Data.Word (Word64)
 
 import PlutusCore.Data qualified as PLC
@@ -174,6 +179,14 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFoldBounded)
+import Singular.CLI.Outlay (outlayTotal, updateOutlay)
+import Singular.CLI.Prepare
+    ( PrepareRefusal (..)
+    , measureRequirement
+    , preparationFields
+    , prepareFunding
+    , previewFunding
+    )
 import Singular.CLI.Receipt (FoldTransition (..), JournalEntry (..))
 import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry
@@ -183,7 +196,7 @@ import Singular.CLI.Registry
     , registryConfigFor
     )
 import Singular.CLI.Root (runPackagedVia)
-import Singular.CLI.Session (Env (..), txIdHex)
+import Singular.CLI.Session (Env (..), WriteContext (..), txIdHex)
 import Singular.CLI.Trace
 import Singular.Registry.Application
     ( Application (..)
@@ -205,7 +218,12 @@ import Singular.Registry.Evidence
     , unverifiedVerifier
     )
 import Singular.Registry.FoldSelection (foldCapacity)
-import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId (..)
+    )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -226,7 +244,7 @@ import Singular.Registry.SyntheticLedger
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.Trace (ReadEvent (Evaluated))
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
-import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
+import Singular.Registry.TxBuilder.Edges (adaOnlyOut, selectFunding)
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , approvalDestination
@@ -245,7 +263,15 @@ import Singular.Registry.TxBuilder.Internal
     , scriptHashBytes
     , toPlcData
     )
-import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
+import Singular.Registry.TxBuilder.Internal.Identity
+    ( addrWitnessKeyHash
+    , txInToRef
+    )
+import Singular.Registry.TxBuilder.Prepare
+    ( Preparation (..)
+    , planPreparation
+    , spendableOuts
+    )
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
 import Singular.Registry.TxBuilder.Update (RegistryContext (..))
 import Singular.Registry.Types
@@ -272,6 +298,7 @@ spec =
         >> settledListSingletonRow
         >> createDescribeCommandRows
         >> prepareFundingRows
+        >> previewFundingRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -1869,6 +1896,384 @@ prepareFundingRows = describe
                 runExit refused `shouldSatisfy` (/= ExitSuccess)
                 expectNoPreparation "fold" refused
                 expectNoSubmissions "fold" refused
+
+previewFundingRows :: Spec
+previewFundingRows = describe
+    "previewFunding plans without submitting (#491 PR2)"
+    $ do
+        it "a funded wallet previews with no preparation and submits nothing" $ withRig $ \rig -> do
+            _ <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            walletBefore <- readWallet rig
+            let payer = walletAddr (rigWallet rig)
+            dummy <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+                pp <- SessionIO.parameters v
+                dummyTxFromWallet pp payer walletBefore
+            chainBefore <- readWallet rig
+            result <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    Nothing
+                    updateOutlay
+                    (\_ -> pure dummy)
+                    v
+            case result of
+                Right (shown, Nothing, tx) -> do
+                    tx `shouldBe` dummy
+                    shown `shouldSatisfy` (not . null)
+                other ->
+                    expectationFailure
+                        ("funded preview planned unexpectedly: " <> show (voidPrep other))
+            chainAfter <- readWallet rig
+            chainAfter `shouldBe` chainBefore
+        it "a token-only wallet previews one preparation and submits nothing" $ withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            t1 <- tokenOf create
+            let keyA = TE.encodeUtf8 "carol-a"
+                keyB = TE.encodeUtf8 "carol-b"
+            (reqA, _) <- plantRequest rig t1 seed economics keyA
+            (reqB, _) <- plantRequest rig t1 seed economics keyB
+            assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+            _ <- reshapeRehearsalWallet rig assets
+            wallet <- readWallet rig
+            [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+            let payer = walletAddr (rigWallet rig)
+            dummy <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+                pp <- SessionIO.parameters v
+                dummyTxFromWallet pp payer wallet
+            chainBefore <- readWallet rig
+            result <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    Nothing
+                    updateOutlay
+                    (buildFundingAware dummy payer)
+                    v
+            case result of
+                Right (shown, Just prep, tx) -> do
+                    tx `shouldBe` dummy
+                    shown `shouldBe` [prepFunding prep]
+                    prepFundingCoin prep `shouldSatisfy` (> 0)
+                    prepFee prep `shouldSatisfy` (> 0)
+                    case preparationFields (Just prep) of
+                        [(_, Aeson.Object o)] -> do
+                            KeyMap.member "transaction" o `shouldBe` True
+                            KeyMap.member "output" o `shouldBe` True
+                            KeyMap.member "lovelace" o `shouldBe` True
+                            KeyMap.member "fee" o `shouldBe` True
+                        _ -> expectationFailure "preview preparation has another shape"
+                other ->
+                    expectationFailure
+                        ("token-only preview planned unexpectedly: " <> show (voidPrep other))
+            chainAfter <- readWallet rig
+            chainAfter `shouldBe` chainBefore
+        it "preview figures equal the actual preparation on the same wallet" $ withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            t1 <- tokenOf create
+            let keyA = TE.encodeUtf8 "carol-a"
+                keyB = TE.encodeUtf8 "carol-b"
+            (reqA, _) <- plantRequest rig t1 seed economics keyA
+            (reqB, _) <- plantRequest rig t1 seed economics keyB
+            assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+            _ <- reshapeRehearsalWallet rig assets
+            wallet <- readWallet rig
+            [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+            let payer = walletAddr (rigWallet rig)
+            eventsBefore <- readIORef (rigEvents rig)
+            chainBefore <- readWallet rig
+            previewed <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    Nothing
+                    updateOutlay
+                    (buildFromView payer)
+                    v
+            (prepPreview, overTxPreview) <- case previewed of
+                Right (_, Just prep, tx) -> pure (prep, tx)
+                other -> fail ("preview did not plan: " <> show (voidPrep other))
+            eventsAfterPreview <- readIORef (rigEvents rig)
+            length eventsAfterPreview `shouldBe` length eventsBefore
+            chainAfterPreview <- readWallet rig
+            chainAfterPreview `shouldBe` chainBefore
+            ppPreview <-
+                SessionIO.withLatest
+                    (rawChainProvider (rigChain rig))
+                    SessionIO.parameters
+            let requirement = measureRequirement ppPreview payer overTxPreview
+            prepFundingCoin prepPreview `shouldSatisfy` (>= requirement)
+            prepFee prepPreview `shouldSatisfy` (> 0)
+            (prepFee prepPreview < prepFundingCoin prepPreview) `shouldBe` True
+            let wc =
+                    WriteContext
+                        { wcDir = rigDir rig
+                        , wcCommand = "preview-test"
+                        , wcWallet = rigWallet rig
+                        , wcCapabilities = capabilities rig
+                        , wcTimeout = Nothing
+                        , wcTracer = rigTracer rig
+                        , wcSource = "fixture"
+                        }
+            actual <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                prepareFunding
+                    wc
+                    "fold"
+                    payer
+                    Nothing
+                    Nothing
+                    updateOutlay
+                    (buildFromView payer)
+                    v
+            (prepReal, _) <- case actual of
+                Right (_, Just prep, tx) -> pure (prep, tx)
+                other -> fail ("real did not prepare: " <> show (voidPrep other))
+            txIdTx (prepTx prepPreview) `shouldBe` txIdTx (prepTx prepReal)
+            prepFundingCoin prepPreview `shouldBe` prepFundingCoin prepReal
+            prepFee prepPreview `shouldBe` prepFee prepReal
+            eventsAfterReal <- readIORef (rigEvents rig)
+            length eventsAfterReal `shouldSatisfy` (> length eventsBefore)
+            chainAfterReal <- readWallet rig
+            chainAfterReal `shouldNotBe` chainBefore
+        it "an explicit smaller ada-only choice is used with no preparation" $ withRig $ \rig -> do
+            _ <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            walletBefore <- readWallet rig
+            let payer = walletAddr (rigWallet rig)
+            (bigIn, bigCoin) <- case sortOn
+                (Down . snd)
+                [ (i, c)
+                | (i, o) <- walletBefore
+                , adaOnlyOut o
+                , let Coin c = o ^. coinTxOutL
+                ] of
+                (i, c) : _ -> pure (i, c)
+                [] -> fail "explicit preview leg: no ada-only output to split"
+            bigOut <- case [o | (i, o) <- walletBefore, i == bigIn] of
+                [o] -> pure o
+                _ -> fail "explicit preview leg: split output vanished"
+            let smallCoin = bigCoin `div` 3
+                largeCoin = bigCoin - smallCoin
+            when (smallCoin <= 0 || largeCoin <= smallCoin) $
+                fail "explicit preview leg: cannot split an eligible pair"
+            smallIn <-
+                either fail pure (parseOutRef (T.pack (replicate 64 'd' <> "#1")))
+            largeIn <-
+                either fail pure (parseOutRef (T.pack (replicate 64 'd' <> "#2")))
+            let mkSmall = bigOut & valueTxOutL .~ MaryValue (Coin smallCoin) mempty
+                mkLarge = bigOut & valueTxOutL .~ MaryValue (Coin largeCoin) mempty
+            advanceChain (rigChain rig) $ \facts ->
+                facts
+                    { csUTxO =
+                        Map.insert
+                            smallIn
+                            mkSmall
+                            (Map.insert largeIn mkLarge (Map.delete bigIn (csUTxO facts)))
+                    }
+            eventsBefore <- readIORef (rigEvents rig)
+            chainBefore <- readWallet rig
+            result <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    (Just smallIn)
+                    Nothing
+                    updateOutlay
+                    (buildFromView payer)
+                    v
+            case result of
+                Right (shown, Nothing, tx) -> do
+                    shown `shouldBe` [smallIn]
+                    shown `shouldNotContain` [largeIn]
+                    let spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+                    spent `shouldContain` [smallIn]
+                    spent `shouldNotContain` [largeIn]
+                other ->
+                    expectationFailure
+                        ("named preview planned unexpectedly: " <> show (voidPrep other))
+            chainAfter <- readWallet rig
+            chainAfter `shouldBe` chainBefore
+            eventsAfter <- readIORef (rigEvents rig)
+            eventsAfter `shouldBe` eventsBefore
+        it
+            "a short wallet is refused before signing with nothing submitted"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyR = TE.encodeUtf8 "carol-r"
+                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                assets <- certifyPlanted rig t1 seed economics [reqR]
+                _ <- reshapeRehearsalWallet rig assets
+                let payer = walletAddr (rigWallet rig)
+                dummy <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+                    pp <- SessionIO.parameters v
+                    full <- SessionIO.outputsAt v payer
+                    dummyTxFromWallet pp payer full
+                shortenWallet rig 500_000
+                wallet <- readWallet rig
+                [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                chainBefore <- readWallet rig
+                result <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    previewFunding
+                        "fold"
+                        payer
+                        Nothing
+                        Nothing
+                        updateOutlay
+                        (buildFundingAware dummy payer)
+                        v
+                case result of
+                    Left (PreparationShortfall text _) -> do
+                        text `shouldSatisfy` isInfixOf "preparation-unfunded:"
+                        text
+                            `shouldSatisfy` isInfixOf "(client policy); nothing was submitted"
+                    other ->
+                        expectationFailure
+                            ("short preview planned unexpectedly: " <> show (voidPrep other))
+                chainAfter <- readWallet rig
+                chainAfter `shouldBe` chainBefore
+        it "an allowance below command plus preparation refuses naming both" $ withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" (["registry", "create"] <> policyArgs)
+            runExit create `shouldBe` ExitSuccess
+            t1 <- tokenOf create
+            let keyA = TE.encodeUtf8 "carol-a"
+                keyB = TE.encodeUtf8 "carol-b"
+            (reqA, _) <- plantRequest rig t1 seed economics keyA
+            (reqB, _) <- plantRequest rig t1 seed economics keyB
+            assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+            _ <- reshapeRehearsalWallet rig assets
+            wallet <- readWallet rig
+            let payer = walletAddr (rigWallet rig)
+            (dummy, outlay, fee) <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+                pp <- SessionIO.parameters v
+                tx <- dummyTxFromWallet pp payer wallet
+                let outlay = updateOutlay tx
+                    requirement = measureRequirement pp payer tx
+                prepFee <- case planPreparation pp payer requirement wallet of
+                    Left err ->
+                        fail ("allowance leg: cannot plan covering preparation: " <> show err)
+                    Right prep -> pure (prepFee prep)
+                pure (tx, outlay, prepFee)
+            let limit = outlayTotal outlay + fee
+            tiny <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    (Just 1)
+                    updateOutlay
+                    (buildFundingAware dummy payer)
+                    v
+            case tiny of
+                Left (AllowanceExceeded text _) ->
+                    text `shouldSatisfy` isInfixOf "passes the approved allowance"
+                other ->
+                    expectationFailure
+                        ("tiny allowance planned unexpectedly: " <> show (voidPrep other))
+            exact <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    (Just limit)
+                    updateOutlay
+                    (buildFundingAware dummy payer)
+                    v
+            case exact of
+                Right (_, Just _, _) -> pure ()
+                other ->
+                    expectationFailure
+                        ("exact allowance refused unexpectedly: " <> show (voidPrep other))
+            below <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    (Just (limit - 1))
+                    updateOutlay
+                    (buildFundingAware dummy payer)
+                    v
+            case below of
+                Left (AllowanceExceeded _ _) -> pure ()
+                other ->
+                    expectationFailure
+                        ("one-below allowance passed unexpectedly: " <> show (voidPrep other))
+            alone <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                previewFunding
+                    "fold"
+                    payer
+                    Nothing
+                    (Just (outlayTotal outlay))
+                    updateOutlay
+                    (buildFundingAware dummy payer)
+                    v
+            case alone of
+                Left (AllowanceExceeded _ _) -> pure ()
+                other ->
+                    expectationFailure
+                        ( "command-alone allowance passed unexpectedly: "
+                            <> show (voidPrep other)
+                        )
+            chainAfter <- readWallet rig
+            chainAfter `shouldBe` wallet
+
+dummyTxFromWallet
+    :: PParams ConwayEra -> Addr -> [(TxIn, TxOut ConwayEra)] -> IO ConwayTx
+dummyTxFromWallet pp payer wallet = case sortOn (Down . coinOf . snd) (spendableOuts wallet) of
+    [] -> fail "dummyTxFromWallet: no spendable output to build from"
+    (spentIn, spentOut) : _ -> do
+        let Coin c = spentOut ^. coinTxOutL
+            half = c `div` 2
+            unsigned =
+                mkBasicTx $
+                    mkBasicTxBody
+                        & inputsTxBodyL .~ Set.singleton spentIn
+                        & outputsTxBodyL
+                            .~ StrictSeq.singleton
+                                (mkBasicTxOut payer (MaryValue (Coin half) mempty))
+                        & feeTxBodyL .~ Coin 0
+                        & reqSignerHashesTxBodyL
+                            .~ Set.singleton (addrWitnessKeyHash (addrKeyHashBytes payer))
+        case balanceTx pp [(spentIn, spentOut)] [] payer unsigned of
+            Left err -> fail ("dummyTxFromWallet: balancing failed: " <> show err)
+            Right (BalanceResult tx _) -> pure tx
+  where
+    coinOf out = let Coin c = out ^. coinTxOutL in c
+
+buildFromView :: Addr -> Cage.Session NoWitness IO -> IO ConwayTx
+buildFromView payer v = do
+    pp <- SessionIO.parameters v
+    viewWallet <- SessionIO.outputsAt v payer
+    dummyTxFromWallet pp payer viewWallet
+
+buildFundingAware
+    :: ConwayTx -> Addr -> Cage.Session NoWitness IO -> IO ConwayTx
+buildFundingAware dummy payer v = do
+    wallet <- SessionIO.outputsAt v payer
+    case selectFunding Nothing wallet of
+        Left why -> throwIO (ErrorCall why)
+        Right _ -> pure dummy
+
+voidPrep
+    :: Either PrepareRefusal ([TxIn], Maybe Preparation, ConwayTx) -> String
+voidPrep =
+    either
+        (const "refusal")
+        (\(shown, prep, _) -> show (shown, isJust prep))
 
 lifecycle :: Rig -> IO [Run]
 lifecycle rig = do

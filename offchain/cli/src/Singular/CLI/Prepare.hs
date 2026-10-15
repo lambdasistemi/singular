@@ -52,6 +52,7 @@ transaction's first output.
 module Singular.CLI.Prepare
     ( PrepareRefusal (..)
     , prepareFunding
+    , previewFunding
     , measureRequirement
     , overAllowance
     , shortfallRefusal
@@ -235,6 +236,83 @@ prepareFunding wc step addr mFund mAllowance measure build v = do
                         let (text, fields) = allowanceRefusal a o f (Just (prepFunding prep))
                         in  pure (Left (AllowanceExceeded text fields))
                     Nothing -> pure (Right ([prepFunding prep], Just prep, realTx))
+
+{- | What a preview shows: the preparation the command would make, planned
+without submitting it. The same natural build, the same oversized probe,
+the same measurement and judgement as 'prepareFunding', but nothing is
+signed, submitted or journalled. Returns the shown inputs, the planned
+preparation (with its transaction identifier, funding lovelace and fee) and
+the built command: the natural build when the wallet suffices, else the
+oversized build as the command preview. A preview never submits anything
+and writes nothing to the journal.
+-}
+previewFunding
+    :: Text
+    -- ^ The command step name: @book@, @update@, @insert@, @terminate@.
+    -> Addr
+    -- ^ The payer wallet.
+    -> Maybe TxIn
+    -- ^ An explicit @--fund-input@ choice, final when given.
+    -> Maybe Integer
+    -- ^ The effective allowance: what the command may still put out.
+    -> (ConwayTx -> Outlay)
+    -- ^ The command's outlay measured from a built transaction.
+    -> (Cage.Session Cage.NoWitness IO -> IO ConwayTx)
+    -- ^ The command's own build as a function of the session.
+    -> Cage.Session Cage.NoWitness IO
+    -- ^ The held preview view (read-only; never submitted through).
+    -> IO (Either PrepareRefusal ([TxIn], Maybe Preparation, ConwayTx))
+previewFunding _step addr mFund mAllowance measure build v = do
+    wallet <- Cage.outputsAt v addr
+    pp <- Cage.parameters v
+    case mFund of
+        Just x -> do
+            r <- fundedView (Just x) addr v
+            case mapLeft ExplicitFundingRefusal (fmap ([x],) r) of
+                Left refusal -> pure (Left refusal)
+                Right (shown, n) -> do
+                    tried <- tryBuild build n
+                    case tried of
+                        Right tx -> pure (Right (shown, Nothing, tx))
+                        Left e -> pure (Left (OriginalFailure e))
+        Nothing -> do
+            let spendable = spendableOuts wallet
+            natural <- case (selectFunding Nothing wallet, spendable) of
+                (_, []) -> pure (Right ([], emptiedView addr v))
+                (Right (largestIn, _), _) -> do
+                    r <- fundedView (Just largestIn) addr v
+                    pure
+                        (mapLeft ExplicitFundingRefusal (fmap ([largestIn],) r))
+                (Left _, _) -> pure (Right ([], emptiedView addr v))
+            case natural of
+                Left refusal -> pure (Left refusal)
+                Right (shown, n) -> do
+                    tried <- tryBuild build n
+                    case tried of
+                        Right tx -> pure (Right (shown, Nothing, tx))
+                        Left naturalE -> case spendable of
+                            [] -> pure (Left (OriginalFailure naturalE))
+                            (largestIn, _) : _ -> do
+                                probed <-
+                                    tryBuild build (overwrittenView addr largestIn (probeOut addr) v)
+                                case probed of
+                                    Left _ -> pure (Left (OriginalFailure naturalE))
+                                    Right overTx -> do
+                                        let requirement = measureRequirement pp addr overTx
+                                        case planPreparation pp addr requirement wallet of
+                                            Left shortfall ->
+                                                let (text, fields) =
+                                                        shortfallRefusal addr wallet shortfall
+                                                in  pure (Left (PreparationShortfall text fields))
+                                            Right prep -> do
+                                                case overAllowance mAllowance (measure overTx) (prepFee prep) of
+                                                    Just (a, o, f) ->
+                                                        let (text, fields) = allowanceRefusal a o f Nothing
+                                                        in  pure (Left (AllowanceExceeded text fields))
+                                                    Nothing ->
+                                                        pure (Right ([prepFunding prep], Just prep, overTx))
+  where
+    mapLeft f = either (Left . f) Right
 
 -- | A build that rethrows asynchronous exceptions and reports the rest.
 tryBuild
