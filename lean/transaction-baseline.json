@@ -1,5 +1,5 @@
 {
-  "description": "Transaction rows from the accepted model before the transaction vocabulary extension. Only the two explicitly restated statement digests may differ.",
+  "description": "Transaction rows from this branch's accepted model before its transaction vocabulary extension, at sourceCommit. The six fold witness inputs alone come from main at foldWitnessSourceCommit. Every other historical field is retained; only the two explicitly restated statement digests may differ.",
   "rows": {
     "lean/corpus.json": [
       {
@@ -544,7 +544,10 @@
           "trie": []
         },
         "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
-        "theorem": "Singular.Statements.insert_active_transaction_row"
+        "theorem": "Singular.Statements.insert_active_transaction_row",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "id": "DR03-retire-registered",
@@ -856,7 +859,10 @@
           "trie": []
         },
         "statementSha256": "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf",
-        "theorem": "Singular.Statements.update_terminal_transaction_row"
+        "theorem": "Singular.Statements.update_terminal_transaction_row",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "id": "DR07-reject-registered-twice",
@@ -2164,7 +2170,10 @@
           "trie": []
         },
         "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
-        "theorem": "Singular.Statements.insert_active_transaction_row"
+        "theorem": "Singular.Statements.insert_active_transaction_row",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "id": "DR15-register-active-carrying-datum",
@@ -2415,7 +2424,10 @@
           "trie": []
         },
         "statementSha256": "76247fab5884aefffb7639b05675206c16b48c191fb0bd8c63ce87afba58c4a5",
-        "theorem": "Singular.Statements.delivered_datum_is_request_datum"
+        "theorem": "Singular.Statements.delivered_datum_is_request_datum",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "id": "DR16-deliver-foreign-datum-without-deposit",
@@ -2677,7 +2689,10 @@
           "trie": []
         },
         "statementSha256": "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba",
-        "theorem": "Singular.Statements.fold_refuses_foreign_datum"
+        "theorem": "Singular.Statements.fold_refuses_foreign_datum",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "id": "DR17-deliver-without-carrier-or-deposit",
@@ -2930,7 +2945,10 @@
           "trie": []
         },
         "statementSha256": "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba",
-        "theorem": "Singular.Statements.fold_refuses_foreign_datum"
+        "theorem": "Singular.Statements.fold_refuses_foreign_datum",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "id": "PR-table-insertActive-absent",
@@ -6792,5 +6810,6 @@
       }
     ]
   },
-  "sourceCommit": "63edf08d7c2e4e1b33c7daf823f1dd62e35e7b43"
+  "sourceCommit": "63edf08d7c2e4e1b33c7daf823f1dd62e35e7b43",
+  "foldWitnessSourceCommit": "7dbe35688b8dbf085c718e6df2e2fbe55783f464"
 }
