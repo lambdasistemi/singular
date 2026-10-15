@@ -34,6 +34,7 @@ import Control.Monad (forM, forM_, unless)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.Either (lefts)
 import Data.List.NonEmpty (toList)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as Text
@@ -163,8 +164,8 @@ witnessPlan bytes key = do
     first SignBundle (checkBundle bundle)
     let address = vaultAddress (bundleNetworkMagic bundle) key
     unless
-        (address `elem` map Text.unpack (toList (bundleSigners bundle))) $
-        Left (SignVaultNotAmongSigners address)
+        (address `elem` map Text.unpack (toList (bundleSigners bundle)))
+        $ Left (SignVaultNotAmongSigners address)
     forM (toList (bundleTransactions bundle)) $ \tx ->
         case decodeTransactionEnvelope (bundleTxEnvelope tx) of
             Left _ ->
@@ -211,7 +212,7 @@ summaryOf bundle tx =
             (\token -> ", registry " <> Text.unpack token)
             (bundleStateToken bundle)
     )
-        : map ("  effect: " <>) (map Text.unpack (bundleTxEffects tx))
+        : map (("  effect: " <>) . Text.unpack) (bundleTxEffects tx)
 
 {- | @wallet sign@: read the bundle, ask the passphrase once, open the
 vault, plan the witnesses and write them exclusively into the output
@@ -272,7 +273,7 @@ writePlan bundlePath outputDirectory plan = do
                         putStrLn path
                         forM_ (plannedSummary planned) (hPutStrLn stderr)
                         pure (Right ())
-            case [refusal | Left refusal <- outcomes] of
+            case lefts outcomes of
                 (refusal : _) -> refused refusal
                 [] -> pure ExitSuccess
 

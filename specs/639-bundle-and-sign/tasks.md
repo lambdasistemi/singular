@@ -9,7 +9,7 @@
 
 ## Slice: sign verb
 
-- [ ] wallet-sign-verb: `singular wallet sign` with the vault, the bundle, the passphrase descriptor and the output directory; refuses provider and registry options; documented flags equal `--help`.
-- [ ] witness-files: one witness per transaction named by its identity, created exclusively, paths on standard output and the summary on standard error.
-- [ ] sign-documentation: the command reference and its narration clips.
-- [ ] packaged-sign-controls: the real binary through a descriptor: sign, tampered body refused, vault not among the signers refused, existing witness refused, offline by the namespace or the canary; each control red against a planted defect.
+- [x] wallet-sign-verb: `singular wallet sign` with the vault, the bundle, the passphrase descriptor and the output directory; refuses provider and registry options; documented flags equal `--help`.
+- [x] witness-files: one witness per transaction named by its identity, created exclusively, paths on standard output and the summary on standard error.
+- [x] sign-documentation: the command reference and its narration clips.
+- [x] packaged-sign-controls: the real binary through a descriptor: sign, tampered body refused, vault not among the signers refused, existing witness refused, offline by the namespace or the canary; each control red against a planted defect.

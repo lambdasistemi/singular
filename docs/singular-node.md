@@ -42,12 +42,13 @@ no coherent chain snapshot and carries no verification witness.
 | `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the provider; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
 | `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
-| `--vault FILE` | `singular wallet create`, `singular wallet address` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` opens it. |
-| `--passphrase-fd FD` | `singular wallet create`, `singular wallet address` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening — and a differing confirmation is refused. The passphrase itself is never taken as an argument, and no output, refusal or trace names it. |
+| `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. |
+| `--passphrase-fd FD` | `singular wallet create`, `singular wallet address`, `singular wallet sign` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. The passphrase itself is never taken as an argument, and no output, refusal or trace names it. |
+| `--out DIR` | `singular wallet sign` | Where the witness files go: one file per transaction of the bundle, each named by its transaction's identity with `.witness` appended and created exclusively — an existing file is refused with its bytes untouched. The directory is made when absent; the bundle's own directory when not given. |
 | `--json` | `singular describe` | Print the registry page as JSON for a program to read; without it the page prints as text for a person. A success prints the page alone and writes no file. |
-| `--trace LEVEL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
-| `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
-| `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
+| `--trace LEVEL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
+| `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
+| `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
 
 The URL, network magic and signing key travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
@@ -116,6 +117,57 @@ envelope: `age --decrypt alice.vault` asks for the passphrase on the
 terminal and prints the plaintext, and the decrypted bytes are the
 `cardano-cli` key format itself, accepted wherever a signing-key file
 is read.
+
+## Signing a bundle of unsigned transactions offline
+
+As Bob, I receive a bundle of unsigned transactions from a writer —
+one JSON file — and I run `singular wallet sign` on an offline
+machine, naming my vault and the bundle. I type my passphrase once
+and get one witness file per transaction, with the paths on standard
+output and a short summary of what I signed on standard error:
+
+```sh
+singular wallet sign --vault bob.vault bundle.json
+singular wallet sign --vault bob.vault --passphrase-fd 9 --out witnesses bundle.json
+```
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant B as Bob
+    participant V as bob.vault
+    participant F as bundle.json
+    B->>F: Read the bundle
+    B->>B: Check version, identities, deadlines, signers
+    B->>V: Open with the passphrase
+    V-->>B: The signing key (in memory only)
+ B->>B: Derive the address for the bundle's network
+    B->>B: Require it among the bundle's signers
+    B->>B: Sign each body's hash
+    B-->>B: One .witness file per transaction, paths on stdout, summary on stderr
+```
+
+The bundle names the network it is built for, so no network setting is
+taken: every provider and registry option is refused by name, and the
+command opens no connection — it reads nothing but the bundle file,
+the vault file and the passphrase. A bundle is refused by name, and
+nothing is written, when a recorded identity is not the hash of its
+transaction's body, a recorded deadline is not the body's validity
+upper bound, an identity names two transactions, a key hash a body
+requires is covered by no signer address, or the vault's own address
+is not among the signers. A witness file that already exists is
+refused with its bytes untouched.
+
+Each witness is the standard `TxWitness ConwayEra` text envelope of
+one verification-key witness — my public key and my signature over
+that transaction's own hash — so the submitting command (or any
+Cardano tool) can check and assemble them. The effects lines a bundle
+carries are the writer's claims: the summary shows them, and nothing
+trusts them. Whether the signers list is complete cannot be checked
+offline — inputs cannot be resolved — and expiry is not judged without
+a clock that knows the slot; both are the submitting command's
+judgement. No output, refusal or file names the passphrase or any key
+byte.
 
 ## Naming the registry by its state token
 

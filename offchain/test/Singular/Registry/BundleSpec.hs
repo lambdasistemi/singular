@@ -343,64 +343,67 @@ theTransactionEnvelope = describe "the transaction envelope" $ do
 theOracle :: Spec
 theOracle = describe "the cardano-cli oracle" $ do
     it
-        "decodes the official unsigned envelope and re-encodes it byte for byte" $ do
-        envelope <-
-            oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
-        decoded <- case decodeTransactionEnvelope envelope of
-            Right tx -> pure tx
-            Left why -> fail ("official envelope refused: " <> why)
-        envelopeCborHex (transactionEnvelope decoded)
-            `shouldBe` envelopeCborHex envelope
-        BS.length (bodyIdentity decoded) `shouldBe` 32
+        "decodes the official unsigned envelope and re-encodes it byte for byte"
+        $ do
+            envelope <-
+                oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
+            decoded <- case decodeTransactionEnvelope envelope of
+                Right tx -> pure tx
+                Left why -> fail ("official envelope refused: " <> why)
+            envelopeCborHex (transactionEnvelope decoded)
+                `shouldBe` envelopeCborHex envelope
+            BS.length (bodyIdentity decoded) `shouldBe` 32
     it "accepts the official envelope's type label" $
         oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
             >>= \envelope ->
                 envelopeType envelope
                     `shouldSatisfy` (`elem` acceptedTransactionEnvelopeTypes)
     it
-        "accepts a bundle built around the official envelope, identity and deadline from the producer" $ do
-        envelope <-
-            oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
-        decoded <- case decodeTransactionEnvelope envelope of
-            Right tx -> pure tx
-            Left why -> fail ("official envelope refused: " <> why)
-        let oracleBundle =
-                sampleBundle
-                    { bundleTransactions =
-                        BundleTransaction
-                            { bundleTxIdentity = bodyIdentity decoded
-                            , bundleTxEnvelope = envelope
-                            , bundleTxDeadline = bodyDeadline decoded
-                            , bundleTxEffects = ["the oracle writer's claim"]
-                            }
-                            :| []
-                    }
-        checkBundle oracleBundle `shouldBe` Right ()
+        "accepts a bundle built around the official envelope, identity and deadline from the producer"
+        $ do
+            envelope <-
+                oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
+            decoded <- case decodeTransactionEnvelope envelope of
+                Right tx -> pure tx
+                Left why -> fail ("official envelope refused: " <> why)
+            let oracleBundle =
+                    sampleBundle
+                        { bundleTransactions =
+                            BundleTransaction
+                                { bundleTxIdentity = bodyIdentity decoded
+                                , bundleTxEnvelope = envelope
+                                , bundleTxDeadline = bodyDeadline decoded
+                                , bundleTxEffects = ["the oracle writer's claim"]
+                                }
+                                :| []
+                        }
+            checkBundle oracleBundle `shouldBe` Right ()
     it
-        "refuses a bundle around the official envelope with a flipped identity" $ do
-        envelope <-
-            oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
-        decoded <- case decodeTransactionEnvelope envelope of
-            Right tx -> pure tx
-            Left why -> fail ("official envelope refused: " <> why)
-        let flipped =
-                sampleBundle
-                    { bundleTransactions =
-                        BundleTransaction
-                            { bundleTxIdentity =
-                                flippedIdentity (bodyIdentity decoded)
-                            , bundleTxEnvelope = envelope
-                            , bundleTxDeadline = bodyDeadline decoded
-                            , bundleTxEffects = []
-                            }
-                            :| []
-                    }
-        checkBundle flipped
-            `shouldBe` Left
-                ( BundleIdentityMismatch
-                    (flippedIdentity (bodyIdentity decoded))
-                    (bodyIdentity decoded)
-                )
+        "refuses a bundle around the official envelope with a flipped identity"
+        $ do
+            envelope <-
+                oracleEnvelope "test/fixtures/bundle/cardano-cli-tx-body.json"
+            decoded <- case decodeTransactionEnvelope envelope of
+                Right tx -> pure tx
+                Left why -> fail ("official envelope refused: " <> why)
+            let flipped =
+                    sampleBundle
+                        { bundleTransactions =
+                            BundleTransaction
+                                { bundleTxIdentity =
+                                    flippedIdentity (bodyIdentity decoded)
+                                , bundleTxEnvelope = envelope
+                                , bundleTxDeadline = bodyDeadline decoded
+                                , bundleTxEffects = []
+                                }
+                                :| []
+                        }
+            checkBundle flipped
+                `shouldBe` Left
+                    ( BundleIdentityMismatch
+                        (flippedIdentity (bodyIdentity decoded))
+                        (bodyIdentity decoded)
+                    )
     it "decodes the official witness and re-encodes it byte for byte" $ do
         bytes <-
             BS.readFile "test/fixtures/bundle/cardano-cli-tx-witness.json"

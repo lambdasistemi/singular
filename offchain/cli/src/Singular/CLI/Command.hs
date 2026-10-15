@@ -109,6 +109,7 @@ import Singular.CLI.Passphrase
     , renderPassphraseRefusal
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Vault
     ( createVaultFile
@@ -866,7 +867,20 @@ parseWithGroup group environment args = do
                 , walletNetworkMagic = magic
                 , walletPassphraseFd = fd
                 }
-    signArgs _ _ = error "RED: not implemented: signArgs"
+    signArgs bundle flags = do
+        vault <- required "--vault" flags
+        fd <- case optional "--passphrase-fd" flags of
+            Nothing -> Right Nothing
+            Just spelling -> case readMaybe spelling of
+                Just n | n >= 0 -> Right (Just n)
+                _ -> Left (BadValue "--passphrase-fd" "not a descriptor number")
+        pure
+            SignArgs
+                { signVaultPath = vault
+                , signBundlePath = bundle
+                , signPassphraseFd = fd
+                , signOutputDir = optional "--out" flags
+                }
     required name flags = case lookup name flags of
         Just (Just v) -> Right v
         _ -> Left (MissingFlag name)
@@ -1012,10 +1026,11 @@ usage =
         , "wallet sign witnesses a bundle of unsigned transactions offline: the"
         , "bundle file is its one argument, the network comes from the bundle, and"
         , "one witness file per transaction is written next to the bundle — or under"
-        , "--out — named by the transaction's identity and created exclusively; a"
-        , "bundle whose recorded identities, deadlines or signers disagree with its"
-        , "transactions, or whose signers do not include this vault's address, is"
-        , "refused by name and nothing is written. No provider setting is read."
+        , "the output directory the command names — each file named by its"
+        , "transaction's identity and created exclusively; a bundle whose recorded"
+        , "identities, deadlines or signers disagree with its transactions, or whose"
+        , "signers do not include this vault's address, is refused by name and"
+        , "nothing is written. No provider setting is read."
         , "Every registry command also takes --koios-token-file FILE for a bearer credential;"
         , "the shared HTTP client reads it without exposing a command-line token."
         , "Every registry command also takes --network-time DIR for pinned time-manifest.json,"
@@ -1140,7 +1155,12 @@ vault, offline — one witness file per transaction, named by its
 identity and created exclusively. See "Singular.CLI.Sign".
 -}
 walletSignCommand :: SignArgs -> IO ExitCode
-walletSignCommand _ = error "RED: not implemented: walletSignCommand"
+walletSignCommand SignArgs{..} =
+    signBundle
+        signBundlePath
+        signVaultPath
+        (passphraseSource signPassphraseFd)
+        signOutputDir
 
 {- | One line on standard error naming the cause, nothing on standard
 output, exit 1. No refusal names the passphrase or the key.

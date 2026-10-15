@@ -33,7 +33,7 @@ import Control.Monad (forM_)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Char8 qualified as BC
-import Data.Char (toLower)
+import Data.Char (toLower, toUpper)
 import Data.List (isInfixOf, sort)
 import Data.List.NonEmpty (NonEmpty ((:|)), toList)
 import Data.Text qualified as Text
@@ -246,15 +246,19 @@ thePureCore = describe "the pure core" $ do
                 forM_ (bundleTxEffects tx) $ \effect ->
                     unwords (plannedSummary planned)
                         `shouldSatisfy` (Text.unpack effect `isInfixOf`)
-    it "carries no key byte and no passphrase in what it plans" $ do
-        key <- freshSignKey
-        let bundle = bundleWithSigners [Text.pack (vaultAddressOf key)]
-            plan = thePlan bundle key
-            secret = rawSerialiseSignKeyDSIGN key
-        forM_ plan $ \planned -> do
-            plannedBytes planned `shouldNotSatisfy` (secret `BS.isInfixOf`)
-            concat (plannedSummary planned)
-                `shouldNotSatisfy` (passphraseSpelling `isInfixOf`)
+    it
+        "carries no key byte and no passphrase, in any spelling it can leave"
+        $ do
+            key <- freshSignKey
+            let bundle = bundleWithSigners [Text.pack (vaultAddressOf key)]
+                plan = thePlan bundle key
+            forM_ plan $ \planned -> do
+                forM_ (secretSpellings key) $ \secret -> do
+                    plannedBytes planned `shouldNotSatisfy` (secret `BS.isInfixOf`)
+                    forM_ (plannedSummary planned) $ \line ->
+                        line `shouldNotSatisfy` (BC.unpack secret `isInfixOf`)
+                concat (plannedSummary planned)
+                    `shouldNotSatisfy` (passphraseSpelling `isInfixOf`)
     it "refuses a bundle whose signers do not include the vault" $ do
         key <- freshSignKey
         let bundle = bundleWithSigners [fixedSigner]
@@ -296,6 +300,12 @@ theFileEffects = describe "the file effects" $ do
                         key
                         (bodyIdentity (envelopeBody tx))
                         `shouldBe` True
+            forM_ (secretSpellings key) $ \secret -> do
+                err `shouldNotSatisfy` (BC.unpack secret `isInfixOf`)
+                out `shouldNotSatisfy` (BC.unpack secret `isInfixOf`)
+                forM_ expectedPaths $ \path -> do
+                    bytes <- BS.readFile path
+                    bytes `shouldNotSatisfy` (secret `BS.isInfixOf`)
     it "writes next to the bundle when no directory is named" $
         withSystemTempDirectory "sign-beside" $ \dir -> do
             key <- freshSignKey
@@ -571,3 +581,15 @@ spliceFirstString field replacement bytes =
 -- | Path join kept out of the rows.
 (</>) :: FilePath -> FilePath -> FilePath
 (</>) a b = a ++ "/" ++ b
+
+{- | The secret spellings a signing key can leave behind: its raw bytes
+and its hex, in both cases, obtained from the producer at run time.
+-}
+secretSpellings :: SignKeyDSIGN Ed25519DSIGN -> [ByteString]
+secretSpellings key =
+    [ raw
+    , BC.pack (hexText raw)
+    , BC.pack (map toUpper (hexText raw))
+    ]
+  where
+    raw = rawSerialiseSignKeyDSIGN key

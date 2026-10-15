@@ -311715,6 +311715,1646 @@
     }
    ]
   },
+  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-00": {
+   "audio_sha256": "b824d1fe6b15ffa9fb2deecdf583d428b13f834dbe4cf055919960e4f40bb800",
+   "characters": 50,
+   "cost": 4.95e-05,
+   "duration": 3.525,
+   "index": 0,
+   "key": "4b8ca92b8a13a97a4daa59552f53d1aea021ec5b46d1f6d687c6fcbb9bed7d4b",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "signing-a-bundle-of-unsigned-transactions-offline",
+   "sent_text": "Signing a bundle of unsigned transactions offline.",
+   "text": "Signing a bundle of unsigned transactions offline.",
+   "words": [
+    {
+     "end": 0.463,
+     "start": 0.2,
+     "text": "Signing"
+    },
+    {
+     "end": 0.525,
+     "start": 0.463,
+     "text": "a"
+    },
+    {
+     "end": 0.925,
+     "start": 0.525,
+     "text": "bundle"
+    },
+    {
+     "end": 1.05,
+     "start": 0.925,
+     "text": "of"
+    },
+    {
+     "end": 1.575,
+     "start": 1.05,
+     "text": "unsigned"
+    },
+    {
+     "end": 2.3,
+     "start": 1.575,
+     "text": "transactions"
+    },
+    {
+     "end": 3.325,
+     "start": 2.3,
+     "text": "offline"
+    },
+    {
+     "end": 3.525,
+     "start": 3.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-01": {
+   "audio_sha256": "f7d444cdae79193c23e272d120cbd6961d743ddd1f975a63b9b7cd4a29196885",
+   "characters": 327,
+   "cost": 0.00032373,
+   "duration": 22.575,
+   "index": 1,
+   "key": "95e9752314b75cb4b92cd909847d7ae8ee5b499ebd2bfd8ecda200beb82b6419",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "signing-a-bundle-of-unsigned-transactions-offline",
+   "sent_text": "As Bob, I receive a bundle of unsigned transactions from a writer — one JSON file — and I run singular wallet sign on an offline machine, naming my vault and the bundle. I type my passphrase once and get one witness file per transaction, with the paths on standard output and a short summary of what I signed on standard error:",
+   "text": "As Bob, I receive a bundle of unsigned transactions from a writer — one JSON file — and I run singular wallet sign on an offline machine, naming my vault and the bundle. I type my passphrase once and get one witness file per transaction, with the paths on standard output and a short summary of what I signed on standard error:",
+   "words": [
+    {
+     "end": 0.438,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.8,
+     "start": 0.438,
+     "text": "Bob"
+    },
+    {
+     "end": 0.85,
+     "start": 0.8,
+     "text": ","
+    },
+    {
+     "end": 1.0,
+     "start": 0.85,
+     "text": "I"
+    },
+    {
+     "end": 1.337,
+     "start": 1.0,
+     "text": "receive"
+    },
+    {
+     "end": 1.438,
+     "start": 1.337,
+     "text": "a"
+    },
+    {
+     "end": 1.85,
+     "start": 1.438,
+     "text": "bundle"
+    },
+    {
+     "end": 2.013,
+     "start": 1.85,
+     "text": "of"
+    },
+    {
+     "end": 2.725,
+     "start": 2.013,
+     "text": "unsigned"
+    },
+    {
+     "end": 3.625,
+     "start": 2.725,
+     "text": "transactions"
+    },
+    {
+     "end": 3.8,
+     "start": 3.625,
+     "text": "from"
+    },
+    {
+     "end": 3.912,
+     "start": 3.8,
+     "text": "a"
+    },
+    {
+     "end": 4.4,
+     "start": 3.912,
+     "text": "writer"
+    },
+    {
+     "end": 4.488,
+     "start": 4.4,
+     "text": "—"
+    },
+    {
+     "end": 4.838,
+     "start": 4.488,
+     "text": "one"
+    },
+    {
+     "end": 5.7,
+     "start": 4.838,
+     "text": "JSON"
+    },
+    {
+     "end": 6.325,
+     "start": 5.7,
+     "text": "file"
+    },
+    {
+     "end": 6.4,
+     "start": 6.325,
+     "text": "—"
+    },
+    {
+     "end": 6.512,
+     "start": 6.4,
+     "text": "and"
+    },
+    {
+     "end": 6.65,
+     "start": 6.512,
+     "text": "I"
+    },
+    {
+     "end": 6.925,
+     "start": 6.65,
+     "text": "run"
+    },
+    {
+     "end": 7.45,
+     "start": 6.925,
+     "text": "singular"
+    },
+    {
+     "end": 7.863,
+     "start": 7.45,
+     "text": "wallet"
+    },
+    {
+     "end": 8.25,
+     "start": 7.863,
+     "text": "sign"
+    },
+    {
+     "end": 8.387,
+     "start": 8.25,
+     "text": "on"
+    },
+    {
+     "end": 8.512,
+     "start": 8.387,
+     "text": "an"
+    },
+    {
+     "end": 9.05,
+     "start": 8.512,
+     "text": "offline"
+    },
+    {
+     "end": 9.75,
+     "start": 9.05,
+     "text": "machine"
+    },
+    {
+     "end": 9.85,
+     "start": 9.75,
+     "text": ","
+    },
+    {
+     "end": 10.175,
+     "start": 9.85,
+     "text": "naming"
+    },
+    {
+     "end": 10.387,
+     "start": 10.175,
+     "text": "my"
+    },
+    {
+     "end": 10.8,
+     "start": 10.387,
+     "text": "vault"
+    },
+    {
+     "end": 10.913,
+     "start": 10.8,
+     "text": "and"
+    },
+    {
+     "end": 11.0,
+     "start": 10.913,
+     "text": "the"
+    },
+    {
+     "end": 12.15,
+     "start": 11.0,
+     "text": "bundle"
+    },
+    {
+     "end": 12.4,
+     "start": 12.15,
+     "text": "."
+    },
+    {
+     "end": 12.7,
+     "start": 12.575,
+     "text": "I"
+    },
+    {
+     "end": 12.913,
+     "start": 12.7,
+     "text": "type"
+    },
+    {
+     "end": 13.05,
+     "start": 12.913,
+     "text": "my"
+    },
+    {
+     "end": 13.663,
+     "start": 13.05,
+     "text": "passphrase"
+    },
+    {
+     "end": 14.075,
+     "start": 13.663,
+     "text": "once"
+    },
+    {
+     "end": 14.188,
+     "start": 14.075,
+     "text": "and"
+    },
+    {
+     "end": 14.375,
+     "start": 14.188,
+     "text": "get"
+    },
+    {
+     "end": 14.625,
+     "start": 14.375,
+     "text": "one"
+    },
+    {
+     "end": 14.975,
+     "start": 14.625,
+     "text": "witness"
+    },
+    {
+     "end": 15.275,
+     "start": 14.975,
+     "text": "file"
+    },
+    {
+     "end": 15.4,
+     "start": 15.275,
+     "text": "per"
+    },
+    {
+     "end": 16.625,
+     "start": 15.4,
+     "text": "transaction"
+    },
+    {
+     "end": 16.825,
+     "start": 16.625,
+     "text": ","
+    },
+    {
+     "end": 17.163,
+     "start": 17.025,
+     "text": "with"
+    },
+    {
+     "end": 17.263,
+     "start": 17.163,
+     "text": "the"
+    },
+    {
+     "end": 17.737,
+     "start": 17.263,
+     "text": "paths"
+    },
+    {
+     "end": 17.925,
+     "start": 17.737,
+     "text": "on"
+    },
+    {
+     "end": 18.35,
+     "start": 17.925,
+     "text": "standard"
+    },
+    {
+     "end": 18.938,
+     "start": 18.35,
+     "text": "output"
+    },
+    {
+     "end": 19.062,
+     "start": 18.938,
+     "text": "and"
+    },
+    {
+     "end": 19.175,
+     "start": 19.062,
+     "text": "a"
+    },
+    {
+     "end": 19.513,
+     "start": 19.175,
+     "text": "short"
+    },
+    {
+     "end": 19.975,
+     "start": 19.513,
+     "text": "summary"
+    },
+    {
+     "end": 20.125,
+     "start": 19.975,
+     "text": "of"
+    },
+    {
+     "end": 20.263,
+     "start": 20.125,
+     "text": "what"
+    },
+    {
+     "end": 20.413,
+     "start": 20.263,
+     "text": "I"
+    },
+    {
+     "end": 20.812,
+     "start": 20.413,
+     "text": "signed"
+    },
+    {
+     "end": 21.0,
+     "start": 20.812,
+     "text": "on"
+    },
+    {
+     "end": 21.45,
+     "start": 21.0,
+     "text": "standard"
+    },
+    {
+     "end": 22.375,
+     "start": 21.45,
+     "text": "error"
+    },
+    {
+     "end": 22.575,
+     "start": 22.375,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-02": {
+   "audio_sha256": "8a633cfb1d19b5e87f9d1514881e980aab9097628f3908d2a24460a80019c445",
+   "characters": 645,
+   "cost": 0.00063855,
+   "duration": 43.25,
+   "index": 2,
+   "key": "87163828f09760f39f502c7f27d99a99d821d34f024a06ac0a0266047e0aa682",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "signing-a-bundle-of-unsigned-transactions-offline",
+   "sent_text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
+   "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.275,
+     "text": "bundle"
+    },
+    {
+     "end": 1.05,
+     "start": 0.7,
+     "text": "names"
+    },
+    {
+     "end": 1.175,
+     "start": 1.05,
+     "text": "the"
+    },
+    {
+     "end": 1.562,
+     "start": 1.175,
+     "text": "network"
+    },
+    {
+     "end": 1.65,
+     "start": 1.562,
+     "text": "it"
+    },
+    {
+     "end": 1.812,
+     "start": 1.65,
+     "text": "is"
+    },
+    {
+     "end": 2.1,
+     "start": 1.812,
+     "text": "built"
+    },
+    {
+     "end": 2.45,
+     "start": 2.1,
+     "text": "for"
+    },
+    {
+     "end": 2.55,
+     "start": 2.45,
+     "text": ","
+    },
+    {
+     "end": 2.737,
+     "start": 2.55,
+     "text": "so"
+    },
+    {
+     "end": 2.975,
+     "start": 2.737,
+     "text": "no"
+    },
+    {
+     "end": 3.375,
+     "start": 2.975,
+     "text": "network"
+    },
+    {
+     "end": 3.7,
+     "start": 3.375,
+     "text": "setting"
+    },
+    {
+     "end": 3.85,
+     "start": 3.7,
+     "text": "is"
+    },
+    {
+     "end": 4.825,
+     "start": 3.85,
+     "text": "taken"
+    },
+    {
+     "end": 5.025,
+     "start": 4.825,
+     "text": ":"
+    },
+    {
+     "end": 5.5,
+     "start": 5.225,
+     "text": "every"
+    },
+    {
+     "end": 6.0,
+     "start": 5.5,
+     "text": "provider"
+    },
+    {
+     "end": 6.125,
+     "start": 6.0,
+     "text": "and"
+    },
+    {
+     "end": 6.6,
+     "start": 6.125,
+     "text": "registry"
+    },
+    {
+     "end": 7.037,
+     "start": 6.6,
+     "text": "option"
+    },
+    {
+     "end": 7.2,
+     "start": 7.037,
+     "text": "is"
+    },
+    {
+     "end": 7.75,
+     "start": 7.2,
+     "text": "refused"
+    },
+    {
+     "end": 7.925,
+     "start": 7.75,
+     "text": "by"
+    },
+    {
+     "end": 8.75,
+     "start": 7.925,
+     "text": "name"
+    },
+    {
+     "end": 8.95,
+     "start": 8.75,
+     "text": ","
+    },
+    {
+     "end": 9.238,
+     "start": 9.15,
+     "text": "and"
+    },
+    {
+     "end": 9.325,
+     "start": 9.238,
+     "text": "the"
+    },
+    {
+     "end": 9.85,
+     "start": 9.325,
+     "text": "command"
+    },
+    {
+     "end": 10.262,
+     "start": 9.85,
+     "text": "opens"
+    },
+    {
+     "end": 10.5,
+     "start": 10.262,
+     "text": "no"
+    },
+    {
+     "end": 11.2,
+     "start": 10.5,
+     "text": "connection"
+    },
+    {
+     "end": 11.275,
+     "start": 11.2,
+     "text": "—"
+    },
+    {
+     "end": 11.4,
+     "start": 11.275,
+     "text": "it"
+    },
+    {
+     "end": 11.738,
+     "start": 11.4,
+     "text": "reads"
+    },
+    {
+     "end": 12.15,
+     "start": 11.738,
+     "text": "nothing"
+    },
+    {
+     "end": 12.288,
+     "start": 12.15,
+     "text": "but"
+    },
+    {
+     "end": 12.375,
+     "start": 12.288,
+     "text": "the"
+    },
+    {
+     "end": 12.788,
+     "start": 12.375,
+     "text": "bundle"
+    },
+    {
+     "end": 13.725,
+     "start": 12.788,
+     "text": "file"
+    },
+    {
+     "end": 13.925,
+     "start": 13.725,
+     "text": ","
+    },
+    {
+     "end": 14.175,
+     "start": 14.1,
+     "text": "the"
+    },
+    {
+     "end": 14.475,
+     "start": 14.175,
+     "text": "vault"
+    },
+    {
+     "end": 14.712,
+     "start": 14.475,
+     "text": "file"
+    },
+    {
+     "end": 14.812,
+     "start": 14.712,
+     "text": "and"
+    },
+    {
+     "end": 14.9,
+     "start": 14.812,
+     "text": "the"
+    },
+    {
+     "end": 15.95,
+     "start": 14.9,
+     "text": "passphrase"
+    },
+    {
+     "end": 16.15,
+     "start": 15.95,
+     "text": "."
+    },
+    {
+     "end": 16.425,
+     "start": 16.35,
+     "text": "A"
+    },
+    {
+     "end": 16.825,
+     "start": 16.425,
+     "text": "bundle"
+    },
+    {
+     "end": 16.975,
+     "start": 16.825,
+     "text": "is"
+    },
+    {
+     "end": 17.4,
+     "start": 16.975,
+     "text": "refused"
+    },
+    {
+     "end": 17.575,
+     "start": 17.4,
+     "text": "by"
+    },
+    {
+     "end": 17.95,
+     "start": 17.575,
+     "text": "name"
+    },
+    {
+     "end": 18.025,
+     "start": 17.95,
+     "text": ","
+    },
+    {
+     "end": 18.15,
+     "start": 18.025,
+     "text": "and"
+    },
+    {
+     "end": 18.475,
+     "start": 18.15,
+     "text": "nothing"
+    },
+    {
+     "end": 18.638,
+     "start": 18.475,
+     "text": "is"
+    },
+    {
+     "end": 19.475,
+     "start": 18.638,
+     "text": "written"
+    },
+    {
+     "end": 19.7,
+     "start": 19.475,
+     "text": ","
+    },
+    {
+     "end": 19.987,
+     "start": 19.875,
+     "text": "when"
+    },
+    {
+     "end": 20.05,
+     "start": 19.987,
+     "text": "a"
+    },
+    {
+     "end": 20.587,
+     "start": 20.05,
+     "text": "recorded"
+    },
+    {
+     "end": 21.325,
+     "start": 20.587,
+     "text": "identity"
+    },
+    {
+     "end": 21.5,
+     "start": 21.325,
+     "text": "is"
+    },
+    {
+     "end": 21.737,
+     "start": 21.5,
+     "text": "not"
+    },
+    {
+     "end": 21.862,
+     "start": 21.737,
+     "text": "the"
+    },
+    {
+     "end": 22.212,
+     "start": 21.862,
+     "text": "hash"
+    },
+    {
+     "end": 22.288,
+     "start": 22.212,
+     "text": "of"
+    },
+    {
+     "end": 22.4,
+     "start": 22.288,
+     "text": "its"
+    },
+    {
+     "end": 23.125,
+     "start": 22.4,
+     "text": "transaction's"
+    },
+    {
+     "end": 24.0,
+     "start": 23.125,
+     "text": "body"
+    },
+    {
+     "end": 24.225,
+     "start": 24.0,
+     "text": ","
+    },
+    {
+     "end": 24.5,
+     "start": 24.425,
+     "text": "a"
+    },
+    {
+     "end": 25.05,
+     "start": 24.5,
+     "text": "recorded"
+    },
+    {
+     "end": 25.638,
+     "start": 25.05,
+     "text": "deadline"
+    },
+    {
+     "end": 25.8,
+     "start": 25.638,
+     "text": "is"
+    },
+    {
+     "end": 26.038,
+     "start": 25.8,
+     "text": "not"
+    },
+    {
+     "end": 26.125,
+     "start": 26.038,
+     "text": "the"
+    },
+    {
+     "end": 26.55,
+     "start": 26.125,
+     "text": "body's"
+    },
+    {
+     "end": 26.975,
+     "start": 26.55,
+     "text": "validity"
+    },
+    {
+     "end": 27.225,
+     "start": 26.975,
+     "text": "upper"
+    },
+    {
+     "end": 28.1,
+     "start": 27.225,
+     "text": "bound"
+    },
+    {
+     "end": 28.3,
+     "start": 28.1,
+     "text": ","
+    },
+    {
+     "end": 28.55,
+     "start": 28.475,
+     "text": "an"
+    },
+    {
+     "end": 29.038,
+     "start": 28.55,
+     "text": "identity"
+    },
+    {
+     "end": 29.3,
+     "start": 29.038,
+     "text": "names"
+    },
+    {
+     "end": 29.5,
+     "start": 29.3,
+     "text": "two"
+    },
+    {
+     "end": 30.725,
+     "start": 29.5,
+     "text": "transactions"
+    },
+    {
+     "end": 30.925,
+     "start": 30.725,
+     "text": ","
+    },
+    {
+     "end": 31.2,
+     "start": 31.125,
+     "text": "a"
+    },
+    {
+     "end": 31.4,
+     "start": 31.2,
+     "text": "key"
+    },
+    {
+     "end": 31.688,
+     "start": 31.4,
+     "text": "hash"
+    },
+    {
+     "end": 31.75,
+     "start": 31.688,
+     "text": "a"
+    },
+    {
+     "end": 32.075,
+     "start": 31.75,
+     "text": "body"
+    },
+    {
+     "end": 32.688,
+     "start": 32.075,
+     "text": "requires"
+    },
+    {
+     "end": 32.85,
+     "start": 32.688,
+     "text": "is"
+    },
+    {
+     "end": 33.225,
+     "start": 32.85,
+     "text": "covered"
+    },
+    {
+     "end": 33.4,
+     "start": 33.225,
+     "text": "by"
+    },
+    {
+     "end": 33.638,
+     "start": 33.4,
+     "text": "no"
+    },
+    {
+     "end": 34.0,
+     "start": 33.638,
+     "text": "signer"
+    },
+    {
+     "end": 34.95,
+     "start": 34.0,
+     "text": "address"
+    },
+    {
+     "end": 35.15,
+     "start": 34.95,
+     "text": ","
+    },
+    {
+     "end": 35.45,
+     "start": 35.35,
+     "text": "or"
+    },
+    {
+     "end": 35.55,
+     "start": 35.45,
+     "text": "the"
+    },
+    {
+     "end": 35.875,
+     "start": 35.55,
+     "text": "vault's"
+    },
+    {
+     "end": 36.037,
+     "start": 35.875,
+     "text": "own"
+    },
+    {
+     "end": 36.513,
+     "start": 36.037,
+     "text": "address"
+    },
+    {
+     "end": 36.675,
+     "start": 36.513,
+     "text": "is"
+    },
+    {
+     "end": 36.888,
+     "start": 36.675,
+     "text": "not"
+    },
+    {
+     "end": 37.112,
+     "start": 36.888,
+     "text": "among"
+    },
+    {
+     "end": 37.2,
+     "start": 37.112,
+     "text": "the"
+    },
+    {
+     "end": 38.15,
+     "start": 37.2,
+     "text": "signers"
+    },
+    {
+     "end": 38.35,
+     "start": 38.15,
+     "text": "."
+    },
+    {
+     "end": 38.625,
+     "start": 38.55,
+     "text": "A"
+    },
+    {
+     "end": 38.975,
+     "start": 38.625,
+     "text": "witness"
+    },
+    {
+     "end": 39.325,
+     "start": 38.975,
+     "text": "file"
+    },
+    {
+     "end": 39.5,
+     "start": 39.325,
+     "text": "that"
+    },
+    {
+     "end": 39.9,
+     "start": 39.5,
+     "text": "already"
+    },
+    {
+     "end": 40.463,
+     "start": 39.9,
+     "text": "exists"
+    },
+    {
+     "end": 40.625,
+     "start": 40.463,
+     "text": "is"
+    },
+    {
+     "end": 41.225,
+     "start": 40.625,
+     "text": "refused"
+    },
+    {
+     "end": 41.362,
+     "start": 41.225,
+     "text": "with"
+    },
+    {
+     "end": 41.55,
+     "start": 41.362,
+     "text": "its"
+    },
+    {
+     "end": 41.9,
+     "start": 41.55,
+     "text": "bytes"
+    },
+    {
+     "end": 43.05,
+     "start": 41.9,
+     "text": "untouched"
+    },
+    {
+     "end": 43.25,
+     "start": 43.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-03": {
+   "audio_sha256": "2f3f03b73a03bebfbb720958546a1912a10bb6a59a2321841c23149babcb9ea2",
+   "characters": 613,
+   "cost": 0.00060687,
+   "duration": 40.475,
+   "index": 3,
+   "key": "33f344e1b19bd470ebe510be3b69e7279e9391e1d5f2cf14b26e259297b5c41c",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "signing-a-bundle-of-unsigned-transactions-offline",
+   "sent_text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
+   "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.275,
+     "text": "Each"
+    },
+    {
+     "end": 1.038,
+     "start": 0.562,
+     "text": "witness"
+    },
+    {
+     "end": 1.2,
+     "start": 1.038,
+     "text": "is"
+    },
+    {
+     "end": 1.337,
+     "start": 1.2,
+     "text": "the"
+    },
+    {
+     "end": 1.913,
+     "start": 1.337,
+     "text": "standard"
+    },
+    {
+     "end": 2.8,
+     "start": 1.913,
+     "text": "TxWitness"
+    },
+    {
+     "end": 3.463,
+     "start": 2.8,
+     "text": "ConwayEra"
+    },
+    {
+     "end": 3.85,
+     "start": 3.463,
+     "text": "text"
+    },
+    {
+     "end": 4.438,
+     "start": 3.85,
+     "text": "envelope"
+    },
+    {
+     "end": 4.613,
+     "start": 4.438,
+     "text": "of"
+    },
+    {
+     "end": 4.963,
+     "start": 4.613,
+     "text": "one"
+    },
+    {
+     "end": 5.95,
+     "start": 4.963,
+     "text": "verification-key"
+    },
+    {
+     "end": 6.637,
+     "start": 5.95,
+     "text": "witness"
+    },
+    {
+     "end": 6.725,
+     "start": 6.637,
+     "text": "—"
+    },
+    {
+     "end": 6.938,
+     "start": 6.725,
+     "text": "my"
+    },
+    {
+     "end": 7.363,
+     "start": 6.938,
+     "text": "public"
+    },
+    {
+     "end": 7.762,
+     "start": 7.363,
+     "text": "key"
+    },
+    {
+     "end": 7.9,
+     "start": 7.762,
+     "text": "and"
+    },
+    {
+     "end": 8.125,
+     "start": 7.9,
+     "text": "my"
+    },
+    {
+     "end": 8.675,
+     "start": 8.125,
+     "text": "signature"
+    },
+    {
+     "end": 8.925,
+     "start": 8.675,
+     "text": "over"
+    },
+    {
+     "end": 9.125,
+     "start": 8.925,
+     "text": "that"
+    },
+    {
+     "end": 9.9,
+     "start": 9.125,
+     "text": "transaction's"
+    },
+    {
+     "end": 10.137,
+     "start": 9.9,
+     "text": "own"
+    },
+    {
+     "end": 10.762,
+     "start": 10.137,
+     "text": "hash"
+    },
+    {
+     "end": 10.85,
+     "start": 10.762,
+     "text": "—"
+    },
+    {
+     "end": 11.025,
+     "start": 10.85,
+     "text": "so"
+    },
+    {
+     "end": 11.125,
+     "start": 11.025,
+     "text": "the"
+    },
+    {
+     "end": 11.625,
+     "start": 11.125,
+     "text": "submitting"
+    },
+    {
+     "end": 12.2,
+     "start": 11.625,
+     "text": "command"
+    },
+    {
+     "end": 12.275,
+     "start": 12.2,
+     "text": "("
+    },
+    {
+     "end": 12.425,
+     "start": 12.275,
+     "text": "or"
+    },
+    {
+     "end": 12.65,
+     "start": 12.425,
+     "text": "any"
+    },
+    {
+     "end": 13.188,
+     "start": 12.65,
+     "text": "Cardano"
+    },
+    {
+     "end": 13.575,
+     "start": 13.188,
+     "text": "tool"
+    },
+    {
+     "end": 13.65,
+     "start": 13.575,
+     "text": ")"
+    },
+    {
+     "end": 13.875,
+     "start": 13.65,
+     "text": "can"
+    },
+    {
+     "end": 14.288,
+     "start": 13.875,
+     "text": "check"
+    },
+    {
+     "end": 14.413,
+     "start": 14.288,
+     "text": "and"
+    },
+    {
+     "end": 14.9,
+     "start": 14.413,
+     "text": "assemble"
+    },
+    {
+     "end": 15.875,
+     "start": 14.9,
+     "text": "them"
+    },
+    {
+     "end": 16.15,
+     "start": 15.875,
+     "text": "."
+    },
+    {
+     "end": 16.425,
+     "start": 16.325,
+     "text": "The"
+    },
+    {
+     "end": 16.775,
+     "start": 16.425,
+     "text": "effects"
+    },
+    {
+     "end": 17.062,
+     "start": 16.775,
+     "text": "lines"
+    },
+    {
+     "end": 17.125,
+     "start": 17.062,
+     "text": "a"
+    },
+    {
+     "end": 17.5,
+     "start": 17.125,
+     "text": "bundle"
+    },
+    {
+     "end": 17.925,
+     "start": 17.5,
+     "text": "carries"
+    },
+    {
+     "end": 18.013,
+     "start": 17.925,
+     "text": "are"
+    },
+    {
+     "end": 18.1,
+     "start": 18.013,
+     "text": "the"
+    },
+    {
+     "end": 18.525,
+     "start": 18.1,
+     "text": "writer's"
+    },
+    {
+     "end": 19.475,
+     "start": 18.525,
+     "text": "claims"
+    },
+    {
+     "end": 19.675,
+     "start": 19.475,
+     "text": ":"
+    },
+    {
+     "end": 19.95,
+     "start": 19.85,
+     "text": "the"
+    },
+    {
+     "end": 20.362,
+     "start": 19.95,
+     "text": "summary"
+    },
+    {
+     "end": 20.675,
+     "start": 20.362,
+     "text": "shows"
+    },
+    {
+     "end": 20.9,
+     "start": 20.675,
+     "text": "them"
+    },
+    {
+     "end": 20.975,
+     "start": 20.9,
+     "text": ","
+    },
+    {
+     "end": 21.1,
+     "start": 20.975,
+     "text": "and"
+    },
+    {
+     "end": 21.45,
+     "start": 21.1,
+     "text": "nothing"
+    },
+    {
+     "end": 21.85,
+     "start": 21.45,
+     "text": "trusts"
+    },
+    {
+     "end": 22.55,
+     "start": 21.85,
+     "text": "them"
+    },
+    {
+     "end": 22.725,
+     "start": 22.55,
+     "text": "."
+    },
+    {
+     "end": 23.225,
+     "start": 22.975,
+     "text": "Whether"
+    },
+    {
+     "end": 23.337,
+     "start": 23.225,
+     "text": "the"
+    },
+    {
+     "end": 23.775,
+     "start": 23.337,
+     "text": "signers"
+    },
+    {
+     "end": 24.1,
+     "start": 23.775,
+     "text": "list"
+    },
+    {
+     "end": 24.25,
+     "start": 24.1,
+     "text": "is"
+    },
+    {
+     "end": 24.788,
+     "start": 24.25,
+     "text": "complete"
+    },
+    {
+     "end": 25.175,
+     "start": 24.788,
+     "text": "cannot"
+    },
+    {
+     "end": 25.375,
+     "start": 25.175,
+     "text": "be"
+    },
+    {
+     "end": 25.7,
+     "start": 25.375,
+     "text": "checked"
+    },
+    {
+     "end": 26.487,
+     "start": 25.7,
+     "text": "offline"
+    },
+    {
+     "end": 26.575,
+     "start": 26.487,
+     "text": "—"
+    },
+    {
+     "end": 27.075,
+     "start": 26.575,
+     "text": "inputs"
+    },
+    {
+     "end": 27.45,
+     "start": 27.075,
+     "text": "cannot"
+    },
+    {
+     "end": 27.6,
+     "start": 27.45,
+     "text": "be"
+    },
+    {
+     "end": 28.3,
+     "start": 27.6,
+     "text": "resolved"
+    },
+    {
+     "end": 28.388,
+     "start": 28.3,
+     "text": "—"
+    },
+    {
+     "end": 28.525,
+     "start": 28.388,
+     "text": "and"
+    },
+    {
+     "end": 29.075,
+     "start": 28.525,
+     "text": "expiry"
+    },
+    {
+     "end": 29.237,
+     "start": 29.075,
+     "text": "is"
+    },
+    {
+     "end": 29.525,
+     "start": 29.237,
+     "text": "not"
+    },
+    {
+     "end": 29.975,
+     "start": 29.525,
+     "text": "judged"
+    },
+    {
+     "end": 30.288,
+     "start": 29.975,
+     "text": "without"
+    },
+    {
+     "end": 30.388,
+     "start": 30.288,
+     "text": "a"
+    },
+    {
+     "end": 30.8,
+     "start": 30.388,
+     "text": "clock"
+    },
+    {
+     "end": 31.0,
+     "start": 30.8,
+     "text": "that"
+    },
+    {
+     "end": 31.35,
+     "start": 31.0,
+     "text": "knows"
+    },
+    {
+     "end": 31.462,
+     "start": 31.35,
+     "text": "the"
+    },
+    {
+     "end": 32.575,
+     "start": 31.462,
+     "text": "slot"
+    },
+    {
+     "end": 32.8,
+     "start": 32.575,
+     "text": ";"
+    },
+    {
+     "end": 33.35,
+     "start": 33.0,
+     "text": "both"
+    },
+    {
+     "end": 33.475,
+     "start": 33.35,
+     "text": "are"
+    },
+    {
+     "end": 33.612,
+     "start": 33.475,
+     "text": "the"
+    },
+    {
+     "end": 34.2,
+     "start": 33.612,
+     "text": "submitting"
+    },
+    {
+     "end": 34.763,
+     "start": 34.2,
+     "text": "command's"
+    },
+    {
+     "end": 35.425,
+     "start": 34.763,
+     "text": "judgement"
+    },
+    {
+     "end": 35.537,
+     "start": 35.425,
+     "text": "."
+    },
+    {
+     "end": 35.812,
+     "start": 35.537,
+     "text": "No"
+    },
+    {
+     "end": 36.35,
+     "start": 35.812,
+     "text": "output"
+    },
+    {
+     "end": 36.425,
+     "start": 36.35,
+     "text": ","
+    },
+    {
+     "end": 37.1,
+     "start": 36.425,
+     "text": "refusal"
+    },
+    {
+     "end": 37.275,
+     "start": 37.1,
+     "text": "or"
+    },
+    {
+     "end": 37.65,
+     "start": 37.275,
+     "text": "file"
+    },
+    {
+     "end": 37.938,
+     "start": 37.65,
+     "text": "names"
+    },
+    {
+     "end": 38.025,
+     "start": 37.938,
+     "text": "the"
+    },
+    {
+     "end": 38.775,
+     "start": 38.025,
+     "text": "passphrase"
+    },
+    {
+     "end": 38.925,
+     "start": 38.775,
+     "text": "or"
+    },
+    {
+     "end": 39.125,
+     "start": 38.925,
+     "text": "any"
+    },
+    {
+     "end": 39.325,
+     "start": 39.125,
+     "text": "key"
+    },
+    {
+     "end": 40.25,
+     "start": 39.325,
+     "text": "byte"
+    },
+    {
+     "end": 40.475,
+     "start": 40.25,
+     "text": "."
+    }
+   ]
+  },
   "docs-singular-node/the-settings-you-give-00": {
    "audio_sha256": "d91089a9829842a0539134a9754239f266d5686782d7c3330b7a3d1dff86266a",
    "characters": 22,
