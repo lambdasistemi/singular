@@ -601,13 +601,18 @@ position and two ada more in another output at the owner's key, which the
 chain refuses and the model accepts (lambdasistemi/singular#361). Last the
 reject itself, accepted by both, while the consuming project requires it
 refused: its requirement is kept unmet by ruling.
+
+The three rejects run one after another inside the registry's processing
+window, each placed to end before the window does, so the window must outlast
+all three: on a loaded runner each takes ten seconds or more, which a window of
+thirty seconds does not hold. It is two minutes, as the early rejection's is.
 -}
 processingRejection :: Program
 processingRejection =
     Program
         { programRow = "reject-before-deadline-consumer-requirement"
         , programRegistries =
-            [Registry "cg09" "processing-window rejection" 30_000 5_000]
+            [Registry "cg09" "processing-window rejection" 120_000 5_000]
         , programWallets = [Wallet (OwnerWallet 10_000_000) "owner wallet"]
         , programCohort = noCohort
         , programStory = single $ \(Context registry owner) -> do

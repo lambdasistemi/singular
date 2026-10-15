@@ -304,12 +304,11 @@ runFoldAgainstSupersededRoot env = do
             )
                 { fsCollateral = Just pot
                 }
-    handFresh <- assembleFoldWithFee env freshSpec
+    (handFresh, (mem, cpu)) <- assembleMeasuredFold env freshSpec
     calibrateFold (fst state) handFresh libFold
     emit
         "calibration"
         "fold-against-superseded-root control: hand model matches the library fold"
-    (mem, cpu) <- measureUnits env handFresh
     signed <-
         submitExpectAccepted env (signTx (genesisSignKey env) handFresh)
     let size = txSizeBytes signed
@@ -463,8 +462,7 @@ runSurplusFoldActions env = do
                   -- the fold to the end, minting and locking custody.
                   fsUnits = ExUnits 2_000_000 800_000_000
                 }
-    exactTx <- assembleFoldWithFee env exactSpec
-    (memD, cpuD) <- measureUnits env exactTx
+    (exactTx, (memD, cpuD)) <- assembleMeasuredFold env exactSpec
     signedD <-
         submitExpectAccepted env (signTx (genesisSignKey env) exactTx)
     let sizeD = txSizeBytes signedD
