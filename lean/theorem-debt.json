@@ -216,6 +216,36 @@
     "statementSha256": "a9ec205a3afaf4c62ff1e25f396d035fafbd25b34597e858c5468f6f77403390"
   },
   {
+    "name": "Singular.Statements.fold_donates_registration_cost",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "73acdb292ac4e0c3e60f20c815b78f9fde51710353ecc22978f3945b1e517e1a"
+  },
+  {
+    "name": "Singular.Statements.fold_routes_every_amount",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "4c377fad0618583e7667f9d111a7e83280caa0698669ba8e6c35d237df98ce23"
+  },
+  {
+    "name": "Singular.Statements.processors_take_at_most_the_tips",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5b27c934a9e7d8d597709bf6f2e44a331ac2994413d5d45b6d5698b79e1ba1ac"
+  },
+  {
+    "name": "Singular.Statements.only_booked_terminations_fold",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "51218f6e6e8d072ae07b854064b0f8e23e2097cc398a0fad68c15cca9f46414c"
+  },
+  {
+    "name": "Singular.Statements.booked_termination_foldable",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bfd1f032ef8ac47f9dee010a5838f3d1f1b6a71ef6dd3cad05a5e37dc61dfe28"
+  },
+  {
     "name": "Singular.Statements.insert_active_inversion",
     "status": "PROVED",
     "debt": "none",
@@ -436,6 +466,12 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "ddd73703885e3b3a52bf612184af6ba1cde863c0f1936dc4288c0517c3d05496"
+  },
+  {
+    "name": "Singular.Statements.tag_supplies_equal_pending",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "0700e6a117d38944ee1896f4276cc5e0147d76162f59ccc6613f8c6393a68ec0"
   },
   {
     "name": "Singular.Statements.termination_booking_has_exact_contents",

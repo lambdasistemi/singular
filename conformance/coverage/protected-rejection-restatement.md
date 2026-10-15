@@ -222,3 +222,69 @@ These new economic declarations have no implementation coverage. Every earlier i
 | `Singular.remaining_active_after_fold` | none (new declaration) | `e81b2e1d92230db7d898f861779151e2bd26cdf892b0a943c808b962333b91f5` | uncovered |
 | `Singular.step_active_supply` | none (new declaration) | `90f6412a39a67a307ce9b9ff42845cd7578ff94a9211fdc538da9326390d203d` | uncovered |
 | `Singular.terminationBooking_custody_shape` | none (new declaration) | `03ed77c97341fa09b2712b8730fe248d130ba4e061198e0ba42883f4683e3540` | uncovered |
+
+## Economic fold statements
+
+These new economic declarations have no implementation coverage. Every earlier identity remains unchanged; no legacy conformance claim is evidence for these economic folds.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.Statements.booked_termination_foldable` | none (new declaration) | `bfd1f032ef8ac47f9dee010a5838f3d1f1b6a71ef6dd3cad05a5e37dc61dfe28` | uncovered |
+| `Singular.Statements.fold_donates_registration_cost` | none (new declaration) | `73acdb292ac4e0c3e60f20c815b78f9fde51710353ecc22978f3945b1e517e1a` | uncovered |
+| `Singular.Statements.fold_routes_every_amount` | none (new declaration) | `4c377fad0618583e7667f9d111a7e83280caa0698669ba8e6c35d237df98ce23` | uncovered |
+| `Singular.Statements.only_booked_terminations_fold` | none (new declaration) | `51218f6e6e8d072ae07b854064b0f8e23e2097cc398a0fad68c15cca9f46414c` | uncovered |
+| `Singular.Statements.processors_take_at_most_the_tips` | none (new declaration) | `5b27c934a9e7d8d597709bf6f2e44a331ac2994413d5d45b6d5698b79e1ba1ac` | uncovered |
+| `Singular.Statements.tag_supplies_equal_pending` | none (new declaration) | `0700e6a117d38944ee1896f4276cc5e0147d76162f59ccc6613f8c6393a68ec0` | uncovered |
+| `Singular.distinct_key_filter` | none (new declaration) | `5cfe3e59f853cebb2356829abe878bd6c67b4e918bb171d876663eb50a208a23` | uncovered |
+| `Singular.distinct_subset_filter_perm` | none (new declaration) | `29f6ef737de72bbe012a4463954a9ccd2986e3b1fe570204b11544e8189aef70` | uncovered |
+| `Singular.economicLookup_of_member` | none (new declaration) | `b1a08ec44c78b0a80787e42be6856cf4ef1273476b9087c6f3e9a9d29154bd91` | uncovered |
+| `Singular.flatMap_length_one` | none (new declaration) | `84f553b40b587c5344fc5eca92d47ddf87807336fba7715700150c9840fafda3` | uncovered |
+| `Singular.foldActions_root` | none (new declaration) | `794ef384bae3dcf252bd712d190b2be731155169a6769fd39084d311e18a3565` | uncovered |
+| `Singular.foldCarrier_checked` | none (new declaration) | `9868693203f197930fe5eab927d8ea59fa11c0c001cc836ada8e81d945fba3f5` | uncovered |
+| `Singular.foldMemberAt_absent` | none (new declaration) | `7614ad38a257e76a7ea2efccc3aa80d07b51bd4a421e5f42ee38678378bb5a98` | uncovered |
+| `Singular.foldMemberAt_pending_termination` | none (new declaration) | `3ade7c1f280368ff63f9c2359b8c5d627a8af2efb1956241fc48c7534f5d9f58` | uncovered |
+| `Singular.foldMembers_registration` | none (new declaration) | `a821c6a837b8f85e88404fdc27e73f7a26a8b3626f92f88ad317fd793b427cec` | uncovered |
+| `Singular.foldOrdinary_state` | none (new declaration) | `dec35d1a191ed9c3ff0aa64d4629465160c7c9c68c586ee93f7672360b5f80e2` | uncovered |
+| `Singular.foldPrerequisite_input_categories` | none (new declaration) | `a5572202e9ebb0c0f62ea00e16f3e1a68a9a26f5b87520aa4aac6e18f8bdc043` | uncovered |
+| `Singular.foldPrerequisite_observations` | none (new declaration) | `2be86d827ab3e55a33edbe5f938511f9027cc04d9cf848dac6ab01bb570b5e78` | uncovered |
+| `Singular.foldRouting_accounting` | none (new declaration) | `62f580b100770ee3550eca10e6f6e5a34ecf71c84b051756291dafc8d04cb07f` | uncovered |
+| `Singular.foldRouting_partitions` | none (new declaration) | `2d9a12ff3c4c5a4780c3d4154d7eb092735f93d72c04842764a25262541e2347` | uncovered |
+| `Singular.fold_carrier_declared_sum` | none (new declaration) | `03358262397b4478c0f7f5ff36eced3e70ee548d24d4fe1864ad9e6afcc1ebbc` | uncovered |
+| `Singular.fold_carrier_measure` | none (new declaration) | `8ef6772d51af49618d47d238970116f38dc24d9e4a206858d96f5caa74dd3281` | uncovered |
+| `Singular.fold_carrier_observed_sum` | none (new declaration) | `1e74f6cdaa71ce7ea14132997a68b500d5eedfc4325b4d2a03756f02dc4c41b6` | uncovered |
+| `Singular.fold_declared_allocation` | none (new declaration) | `ee232176f4d9300b43a7be2ce5e1e47d8045780053bb7825ac9bd048eef6814d` | uncovered |
+| `Singular.fold_donation_floor` | none (new declaration) | `43022cb0ba82d3cfe4d8085d102adfcdba5f2f9e70ebccb3339e013bbdcdc53d` | uncovered |
+| `Singular.fold_gross_reward` | none (new declaration) | `e460136fd67cd0fa25f4a97889fd9cd911bac80e5eceeb7fbbd7954dc102007b` | uncovered |
+| `Singular.fold_input_lovelace` | none (new declaration) | `c07c0a49886640125c02decda8e380bccb4f006a3d506a3e282843e19e5f0694` | uncovered |
+| `Singular.fold_input_partition` | none (new declaration) | `d7270a3720bea15f9cf6a7246e231d60bd8dedc237d640ab28b0bbffc15cf710` | uncovered |
+| `Singular.fold_input_references` | none (new declaration) | `35fda12ac249610e8fd1da961e271df7c34f2e53ef0a46f60f4d1061c28cb57e` | uncovered |
+| `Singular.fold_member_weight_sum` | none (new declaration) | `dbda7b172ffd57554e68099e74f4cc7dbf6b7d93dcc92aca31e2c6fc95588eff` | uncovered |
+| `Singular.fold_members_allocate` | none (new declaration) | `352f40e1ab77305e80ac4b446e569bf3c9b3cdaea07dafe25e470723661689ab` | uncovered |
+| `Singular.fold_observed_request_value` | none (new declaration) | `1e42103ca1e989642461c52dabbc7a61fe0ba4f55cab35540223759a179c93f4` | uncovered |
+| `Singular.fold_output_carrier_shape` | none (new declaration) | `6c9bff30facb6d4961e9decb5393777bc07f2471442f7831c95a75c7c9d10ae2` | uncovered |
+| `Singular.fold_output_lovelace` | none (new declaration) | `9d467e5e25e84185f761e4ee4b93579e8ae722e1a8586e3421c4c1beb39f950e` | uncovered |
+| `Singular.fold_output_observations` | none (new declaration) | `c3d2d63313ce01c3b8af75afdc8e0f061f1d937faf8f208de7397c9e8c230222` | uncovered |
+| `Singular.fold_output_partition` | none (new declaration) | `5a705d98182115272c3be2851044635dd49efc0581dcf5d8c561bd4c74f1f970` | uncovered |
+| `Singular.member_le_nat_sum` | none (new declaration) | `f36622292eb7e75128ea051bd5ea6a47aa58a4ac659571707eb3832ab77a18c7` | uncovered |
+| `Singular.reachable_request_references` | none (new declaration) | `4c67fbe22ec304d49eab2e0277249e41c2160464b035753737282194bcfde2f9` | uncovered |
+| `Singular.reachable_world_root` | none (new declaration) | `26d37ccc3ba942252c053ac8db6996d5a7c961db7fc5e51963dd515464a63c65` | uncovered |
+| `Singular.spentOutputs_economic` | none (new declaration) | `1de534a620718a3cab46d73449864cdcb608490fdda1fa3d8ab68a8fb56a7e00` | uncovered |
+| `Singular.sum_filterMap_nat` | none (new declaration) | `b2ad72ac7bbff9d65659f0573439e1ea63e0cf9034791399bac3ba62c4735a65` | uncovered |
+| `Singular.sum_filter_nat` | none (new declaration) | `9371f200dc5d2e6569ec2b9a5d734ab04caff0536c46dea145465b9a6452c82b` | uncovered |
+| `Singular.sum_flatMap_nat` | none (new declaration) | `5a5f7c8c9693bc7fa38c9aa8ac416a603ad354b17e152b3d00a13433a2f620a4` | uncovered |
+| `Singular.sum_three_parts` | none (new declaration) | `13d4a941736e45cb674481f50ea23f22d18170ea1d4e6f8909f2272e2fccf3fa` | uncovered |
+| `Singular.terminationWitnessFresh_absent` | none (new declaration) | `cb405b74a7042a0ec47a582dca668aa28a48f6d1f9b31ec62a0120dfe9d857d4` | uncovered |
+| `Singular.terminationWitnessFresh_bound` | none (new declaration) | `cfe2f92ff1c7993d6deac05e5b7e1077bd328d5595ec0ef8233ea7de4d80c5e2` | uncovered |
+| `Singular.terminationWitnessInputs_contains` | none (new declaration) | `65358c2d67d83e2fc529c8e394aad500399a190f109a120a1a6abe7bd7062feb` | uncovered |
+| `Singular.terminationWitnessInputs_pending` | none (new declaration) | `18b698b6fd113a92b603b4813d0268edb0e25665a763257e6de73ea154db7d6d` | uncovered |
+| `Singular.terminationWitnessUnspent_bound` | none (new declaration) | `7b2d5d3d3e8e5a1c86d7731e724eb24f1cd83688036af4831f831d2b19afa6be` | uncovered |
+| `Singular.terminationWitnessUnspent_observes` | none (new declaration) | `096fe277f15f6ddf37aab20367b2435aa5ee42c7a2140f244b31f8e248805da7` | uncovered |
+| `Singular.terminationWitnessUnspent_unique` | none (new declaration) | `3720a5d97711bf9360a4f6a22b6f2d520ab81fae510256f855a0021efa83a63c` | uncovered |
+| `Singular.terminationWitness_balance` | none (new declaration) | `67616cbf90e5be5d3ff21cd39e9b8ecd201c7f15116eb430e8c234f4a843b57d` | uncovered |
+| `Singular.terminationWitness_members` | none (new declaration) | `55dda8ddad1a043d09b9ecd099a09d17b1549fd68d03cab34c83b88f84776622` | uncovered |
+| `Singular.terminationWitness_observation` | none (new declaration) | `037da20afff7f8a703d9b8baba52d4b7176be60ba4171303879c6000f3350fab` | uncovered |
+| `Singular.terminationWitness_prerequisite` | none (new declaration) | `20a290a933774a02192a73b559f54d43476f825210b9ea2c8a7e57f593db59af` | uncovered |
+| `Singular.terminationWitness_registry` | none (new declaration) | `573fcce66b427448da8985d06987275307b7440cc39c2e79b722919a10c9e5be` | uncovered |
+| `Singular.terminationWitness_routing` | none (new declaration) | `b8da90de0c673e0cfaad8e2add00b524c3f9f189e30c8215d61b8c7f904135bc` | uncovered |
+| `Singular.terminationWitness_spent` | none (new declaration) | `54a3adb927d2ae91b5e921c9516df648a51bedc6895bc6301a6e1edea41e196c` | uncovered |
+| `Singular.terminationWitness_spent_entries` | none (new declaration) | `19b34e63f6cc3a46844b1597eacb86a839ac3ff1348569bbf05ceeb6be15b84d` | uncovered |
