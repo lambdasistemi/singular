@@ -467,15 +467,15 @@
       "pause": 400
     },
     {
-      "text": "[ ] live-rows-unmet-by-ruling — the live rows that exercise the old fold-with-rejection path (early rejection inside the windows, reject and retract refund controls, the running book, the generic rows) are published as unmet: \"implementation follows the superseded rule; the ruled rule is not implemented\".",
+      "text": "[x] live-rows-unmet-by-ruling — the live rows that exercise the old fold-with-rejection path (early rejection inside the windows, reject and retract refund controls, the running book, the generic rows) are published as unmet: \"implementation follows the superseded rule; the ruled rule is not implemented\".",
       "pause": 300
     },
     {
-      "text": "[ ] ruled-rule-tripwire — a check turns red when the deployed validators implement the ruled rule, so the unmet state cannot outlive its cause; it is proved able to fail.",
+      "text": "[x] ruled-rule-tripwire — a check turns red when the deployed validators implement the ruled rule, so the unmet state cannot outlive its cause; it is proved able to fail.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-eight-c — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-eight-c — as slice five. (consumers-state-the-rule)",
       "pause": 300
     }
   ],
@@ -551,6 +551,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "3317e7da3832cb9097b11cea28cc6b011a5610a11f0db0f43ec6b769b0b9ed5c"
+    "sha256": "cb23cfaf1c4a913348c1e13ecd362a27ed3ef08b664bcb75498a71f8977b919d"
   }
 }

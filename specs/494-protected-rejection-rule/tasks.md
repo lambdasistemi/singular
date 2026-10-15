@@ -192,9 +192,9 @@ Inserted on 15 October 2026 by the operator's ruling that retires the fee pin.
 
 Conformance and CI code, after slice eight; Codex at medium effort.
 
-- [ ] `live-rows-unmet-by-ruling` — the live rows that exercise the old fold-with-rejection path (early rejection inside the windows, reject and retract refund controls, the running book, the generic rows) are published as unmet: "implementation follows the superseded rule; the ruled rule is not implemented".
-- [ ] `ruled-rule-tripwire` — a check turns red when the deployed validators implement the ruled rule, so the unmet state cannot outlive its cause; it is proved able to fail.
-- [ ] `regenerate-after-slice-eight-c` — as slice five. (consumers-state-the-rule)
+- [x] `live-rows-unmet-by-ruling` — the live rows that exercise the old fold-with-rejection path (early rejection inside the windows, reject and retract refund controls, the running book, the generic rows) are published as unmet: "implementation follows the superseded rule; the ruled rule is not implemented".
+- [x] `ruled-rule-tripwire` — a check turns red when the deployed validators implement the ruled rule, so the unmet state cannot outlive its cause; it is proved able to fail.
+- [x] `regenerate-after-slice-eight-c` — as slice five. (consumers-state-the-rule)
 
 ### Slice nine: refunds
 

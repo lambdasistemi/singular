@@ -103,6 +103,16 @@
       "pause": 400
     }
   ],
+  "slice-eight-c-as-built": [
+    {
+      "text": "Slice eight-c: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The five live rows that follow the superseded rejection (the deployed validators and builders still spend the registry state output inside the fold) are published as unmet by ruling with the reason \"implementation follows the superseded rule; the ruled rule is not implemented\": reject-after-window, reject-before-deadline-consumer-requirement, request-value-and-refund-routing, reject-and-retract-refund-controls and reject-inside-processing-and-retraction-windows. Their names, programs, expected comparisons, history and bindings are kept; the earlier consumer requirements of the processing-window and refund-routing rows stand beside the new ruling; each place a row's standing is stated carries a dated note. The tripwire is the slice three mechanism applied again: the dedicated early-rejection row expects the chain to accept the two untampered rejections that spend the state output, the hosted jobs assert the exact debt sets and verdicts, and on the day the deployed validators refuse such a rejection the expectation stops matching and the session goes red naming the row, the step, the expected and observed outcome and saying that the real outcome changed and the ruled rule may be deployed, never that it is; a seeded control proves the red, and a setup, node or crash failure is a different failure that the diagnostic does not use. The running book renders the unmet chapters as unmet and keeps its debt exit. The reader-facing pages carry dated qualifications; no validator, builder, command, Lean declaration, driver or transport changed. New Lean proofs alone cannot remove these standings: the validators and builders must meet the ruled behavior with complete live evidence first, and the changed outcome then triggers the tripwire and a reviewed replacement of the legacy expectations.",
+      "pause": 400
+    }
+  ],
   "slice-seven-c-as-built": [
     {
       "text": "Slice seven-c: as built.",
@@ -139,6 +149,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "bb2c4a0db05163c3ba4472b3221ccccb618fa54fa7c5906b89a99a03a98b52b8"
+    "sha256": "9cefe69cb60c39556fb70856008bde59ceb84c6c13ac8026a422314b10098aad"
   }
 }
