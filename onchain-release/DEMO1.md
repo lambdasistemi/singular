@@ -246,6 +246,8 @@ insert receipt and the preview receipt print the envelope it built.
 15. **`open-datum insert`** books a new request after reclaim.
 16. **`open-datum fold`** folds it, and an independent inspection reads `active`.
 
+A closed registry is booted with `open-datum create --closed ...`, which pins the closed-datum application whose payload is written once. Every later command follows the registry's mode with no further flag, and `open-datum update` on a closed registry stops before anything is built or signed, saying the registry is closed.
+
 A command that stops prints why, in one outcome class with its own exit
 status: `client-refusal` (nothing submitted), `ledger-refusal`,
 `node-unavailable`, `timeout`, `stale-state`, `partial`,
