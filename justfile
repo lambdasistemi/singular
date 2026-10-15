@@ -251,17 +251,21 @@ node-confinement:
 node-confinement-controls:
     bash tools/node_confinement_controls.sh
 
-# The ledger client core declares no Singular component, file, process, POSIX
-# or network package, HTTP client or server, and no transaction-building
-# package.
+# The ledger client core's resolved direct dependencies (its own and those of
+# the common stanzas it imports) are all listed in
+# tools/ledger-client-dependencies.allow, and none is a Singular component, a
+# file, process, POSIX or network package, an HTTP client or server, or a
+# transaction-building package.
 
 # Check the ledger client core library's direct dependencies.
 ledger-client-dependencies:
     bash tools/ledger_client_dependencies_check.sh
 
-# Its controls, on scratch copies of the Cabal file: a planted Singular
-# component and each forbidden package fail with the offender named; a
-# missing stanza or Cabal file is a setup failure.
+# Its controls, on scratch copies of the Cabal file and the allowlist: a
+# planted Singular component, each forbidden package and an unlisted package
+# (literal field, imported common stanza, conditional) fail with the offender
+# named; a missing stanza, common stanza, allowlist or Cabal file is a setup
+# failure.
 # The working tree is never touched.
 
 # Run the ledger client dependency check's negative and positive controls.

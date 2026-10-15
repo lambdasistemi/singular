@@ -787,6 +787,13 @@ NONCODE_CLASSES: list[dict] = [
         "each; read by tools/node_confinement_check.sh (issue #323)",
     },
     {
+        "id": "ledger-client-dependencies-allowlist",
+        "pattern": "tools/ledger-client-dependencies.allow",
+        "note": "the direct dependencies the ledger client core library may "
+        "declare, one reason each; read by "
+        "tools/ledger_client_dependencies_check.sh (issue #643)",
+    },
+    {
         "id": "signed-tx-exports-allowlist",
         "pattern": "tools/signing-exports.allow",
         "note": "the names the defining Signing module may export; read by "
