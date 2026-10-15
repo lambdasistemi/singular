@@ -1,6 +1,7 @@
 import Singular.Model
 import Singular.Economics
 import Singular.Driver
+import Singular.Driver.LegacyRejection
 import Singular.Lemmas
 import Singular.Statements
 import Singular.Audit

@@ -61,6 +61,10 @@ theorem booked_request_has_exact_contents (world : World) (reachable : WorldReac
       split at accepted
       next duplicate => exact nomatch accepted
       next fresh => cases accepted; exact ih pending
+  | @rejection before after reach unspent transaction accepted ih =>
+    have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih (List.mem_filter.mp pending).1
 
 /-- The pool keeps the booking transaction's interval, and the pending
 registration's booked time is exactly its upper end. -/
@@ -93,6 +97,10 @@ theorem booked_time_is_interval_end (world : World) (reachable : WorldReachable 
       split at accepted
       next duplicate => exact nomatch accepted
       next fresh => cases accepted; exact ih pending
+  | @rejection before after reach unspent transaction accepted ih =>
+    have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih (List.mem_filter.mp pending).1
 
 /-- For every actual inclusion time within the original half-open interval,
 the booked time is no earlier. Hence the expiry threshold is no earlier than
@@ -139,6 +147,10 @@ theorem booking_width_within_limit (world : World) (reachable : WorldReachable w
       split at accepted
       next duplicate => exact nomatch accepted
       next fresh => cases accepted; exact ih pending
+  | @rejection before after reach unspent transaction accepted ih =>
+    have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih (List.mem_filter.mp pending).1
 
 /-- Even a commitment of zero cannot identify the registry's state token.
 This separates the identity spaces without assuming anything about hashes. -/

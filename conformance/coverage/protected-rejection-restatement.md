@@ -131,3 +131,18 @@ Retired definitions and controls are named separately from theorem identities:
 | The corpus runner's “Transaction correspondence tip not covered” assertion | Retired; below-pin transaction construction is exercised without this obsolete assertion. |
 | “the old fee pin does not constrain booking” | Replaced by registration floor acceptance and below-floor refusal under the one pin. |
 | “the old fee pin is independent of the minimum tip” | Replaced by termination floor acceptance and below-floor refusal under the one pin. |
+
+## Reference-read rejection helpers and retained legacy adapters
+
+The named legacy adapters equal their original functions by reflexivity. They name the superseded state-spending path; they do not satisfy the reference-read design. The economic helper describes the admitted world effect. Every new helper remains unclassified and uncovered; existing statement identities are unchanged.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.LegacyRejection.judgeSurface_original` | none (new declaration) | `50ed6e5af8dd704b408c86427cfe8a3228cf9b35377e9a280fc3ce336b54b7ae` | uncovered |
+| `Singular.LegacyRejection.observedRefusal_original` | none (new declaration) | `96ea0a6bacc20c3ea70d70bf6e7aa27c0642fca46cc504d7c427c058aa8e2f6b` | uncovered |
+| `Singular.LegacyRejection.rejectBatchStep_original` | none (new declaration) | `1210355809b77d5a473ac3e79667c942eaf6673ed47ca9bef5a732f2d16e9719` | uncovered |
+| `Singular.LegacyRejection.runRejectBatch_original` | none (new declaration) | `aa5729a34331030a0a3927ec8873892be81fb44fe65de10235e6dbd5a1d714cf` | uncovered |
+| `Singular.LegacyRejection.runSurface_original` | none (new declaration) | `446b128c6d28362bc1b7fba3443c93a1d9ac35f1e452b705739d94f657ab7361` | uncovered |
+| `Singular.LegacyRejection.step_original` | none (new declaration) | `7e8888836cb05a690c7e564eb8b6c8e81448b18ba8a9906146d925fd69b978f8` | uncovered |
+| `Singular.LegacyRejection.transaction_original` | none (new declaration) | `91745d371b7b5aaa2f5bf5a3ca63570cec7ca2394cdbc2ddb2402aef286cc755` | uncovered |
+| `Singular.rejectionAccepted_effect` | none (new declaration) | `757461a103f73e7a765a1b7d5e3e2cc0ea7cdeff9eb8b5969b9c174e3b1643a3` | uncovered |

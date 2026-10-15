@@ -3758,7 +3758,7 @@ const STORIES=[
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "5ba291e64d08535dfcff066666559c1c493a948cafd39e2758b9abec2878cca6",
+  "corpusSourceSha256": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
   "economicControls": [
     {
       "result": true,
@@ -3967,7 +3967,7 @@ const STORIES=[
     "terminalPolicy": 10
   },
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
-  "payloadSha256": "7ac3ea07d5158529e981c3619c024d9bbec5ec742226bb160e859ce56438ff55",
+  "payloadSha256": "ca04d362ac394a2114aac45d764aa7f506337306bd3b13f1058acf8f68550ba6",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -8189,25 +8189,268 @@ const STORIES=[
       "story": "an application name from another full nonce is refused"
     }
   ],
+  "rejectionReadsState": [
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "a mismatching registration is rejected"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "an expired registration is rejected at the threshold"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "one transaction rejects a mismatch and an expiry"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "a batch of one uses the same judgement"
+    },
+    {
+      "actualReason": "reject-state-spent",
+      "expectedReason": "reject-state-spent",
+      "matched": true,
+      "story": "the old state-spending rejection is refused"
+    },
+    {
+      "actualReason": "reject-state-token-name",
+      "expectedReason": "reject-state-token-name",
+      "matched": true,
+      "story": "a fake state token name is refused"
+    },
+    {
+      "actualReason": "reject-foreign-state",
+      "expectedReason": "reject-foreign-state",
+      "matched": true,
+      "story": "another registry's state token is refused"
+    },
+    {
+      "actualReason": "reject-stale-state",
+      "expectedReason": "reject-stale-state",
+      "matched": true,
+      "story": "a referenced stale root is refused"
+    },
+    {
+      "actualReason": "reference-input-missing",
+      "expectedReason": "reference-input-missing",
+      "matched": true,
+      "story": "a state reference already spent is refused"
+    },
+    {
+      "actualReason": "reject-state-overlap",
+      "expectedReason": "reject-state-overlap",
+      "matched": true,
+      "story": "an overlapping state spend is refused"
+    },
+    {
+      "actualReason": "reject-compatible",
+      "expectedReason": "reject-compatible",
+      "matched": true,
+      "story": "a live member refuses the whole batch"
+    },
+    {
+      "actualReason": "reject-duplicate-input",
+      "expectedReason": "reject-duplicate-input",
+      "matched": true,
+      "story": "a repeated input refuses the whole batch"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "an untagged output is swept freely"
+    },
+    {
+      "actualReason": "request-tagged-sweep",
+      "expectedReason": "request-tagged-sweep",
+      "matched": true,
+      "story": "a tagged registration cannot use the sweep arm"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "a trie-ready tag carried out alive is refused"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "an application tag carried out alive is refused"
+    },
+    {
+      "actualReason": "reject-compatible",
+      "expectedReason": "reject-compatible",
+      "matched": true,
+      "story": "a genuine termination cannot be rejected for mismatch"
+    },
+    {
+      "actualReason": "reject-termination-no-expiry",
+      "expectedReason": "reject-termination-no-expiry",
+      "matched": true,
+      "story": "a genuine termination has no expiry"
+    },
+    {
+      "actualReason": "reject-not-expired",
+      "expectedReason": "reject-not-expired",
+      "matched": true,
+      "story": "one instant before expiry is too early"
+    },
+    {
+      "actualReason": "reject-evidence-mismatch",
+      "expectedReason": "reject-evidence-mismatch",
+      "matched": true,
+      "story": "a forged lifecycle leaf cannot justify mismatch"
+    },
+    {
+      "actualReason": "reject-interval-missing",
+      "expectedReason": "reject-interval-missing",
+      "matched": true,
+      "story": "an absent validity interval is refused"
+    },
+    {
+      "actualReason": "reject-interval-empty",
+      "expectedReason": "reject-interval-empty",
+      "matched": true,
+      "story": "an empty validity interval is refused"
+    },
+    {
+      "actualReason": "reject-empty-batch",
+      "expectedReason": "reject-empty-batch",
+      "matched": true,
+      "story": "an empty batch is refused"
+    },
+    {
+      "actualReason": "reject-input-members",
+      "expectedReason": "reject-input-members",
+      "matched": true,
+      "story": "an unrelated spending input cannot join a rejection"
+    },
+    {
+      "actualReason": "reject-state-spent",
+      "expectedReason": "reject-state-spent",
+      "matched": true,
+      "story": "a state claimed as an ordinary request is still a state spend"
+    },
+    {
+      "actualReason": "transaction-identity-not-fresh",
+      "expectedReason": "transaction-identity-not-fresh",
+      "matched": true,
+      "story": "a transaction cannot reuse an unspent creating identity"
+    },
+    {
+      "actualReason": "unspent-reference-duplicate",
+      "expectedReason": "unspent-reference-duplicate",
+      "matched": true,
+      "story": "duplicate unspent references are refused"
+    },
+    {
+      "actualReason": "request-observation-mismatch",
+      "expectedReason": "request-observation-mismatch",
+      "matched": true,
+      "story": "a claimed request value cannot replace the observed value"
+    },
+    {
+      "actualReason": "request-observation-mismatch",
+      "expectedReason": "request-observation-mismatch",
+      "matched": true,
+      "story": "a request datum changed after booking is refused"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "missing trie-ready burns are refused"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "a positive tag mint cannot pretend to be a burn"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "a burn of another token cannot discharge the member"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "an extra tag burn without a consumed source is refused"
+    },
+    {
+      "actualReason": "reject-registry-supply",
+      "expectedReason": "reject-registry-supply",
+      "matched": true,
+      "story": "a state token cannot be minted alongside a rejection"
+    },
+    {
+      "actualReason": "reject-registry-supply",
+      "expectedReason": "reject-registry-supply",
+      "matched": true,
+      "story": "a singular token cannot be minted alongside a rejection"
+    },
+    {
+      "actualReason": "reject-registry-supply",
+      "expectedReason": "reject-registry-supply",
+      "matched": true,
+      "story": "the legacy keyed mint cannot hide singular creation"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "two equal tag names require both quantities to burn"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "one quantity-two burn discharges equal assets with different authorization evidence"
+    },
+    {
+      "actualReason": "reject-tag-not-burned",
+      "expectedReason": "reject-tag-not-burned",
+      "matched": true,
+      "story": "one burn cannot discharge two equal tag names"
+    }
+  ],
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "5ba291e64d08535dfcff066666559c1c493a948cafd39e2758b9abec2878cca6",
+    "lean/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/RejectionReadsState.lean": "d83eba6daaccad9ebf1c842227442c62f9eefc4b3e93ec55fb0800b95dd63fe1",
+    "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
+    "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
-    "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
+    "lean/Singular.lean": "e5cd108b30203008a9d1f57f30d8a7270fbcf3bce3c03ccefe3ac057bbd8c7da",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
+    "lean/Singular/Driver/LegacyRejection.lean": "4bb2b0d1117af59284b2bb68c0d7bff2ff6598ef2070e82d8174cafb3ecbb45a",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
-    "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
+    "lean/Singular/Economics.lean": "b882e67551ffb24ddce3cdf89d4f7d1e2e9843d381229b3025d4501cb96ce188",
     "lean/Singular/Economics/Booking.lean": "ac1761460a9f719d931fb92ca9133183c076f5583f9e5e2027a074920df4ca55",
+    "lean/Singular/Economics/Observation.lean": "f80cfe6a6b2edee02f742475fa0c388c4801dff88bc977029eeba386b74b4a43",
+    "lean/Singular/Economics/Rejection.lean": "f0ee12f39b00d7341550661f52144338ddd3fb8e487898df58e208c2ab30822e",
+    "lean/Singular/Economics/RequestSpend.lean": "9badb0439bae655fcf63103a0551100d59071d2ee7de5bc0681101bbd03856e3",
     "lean/Singular/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
-    "lean/Singular/Economics/World.lean": "8bfb55d322468fa82ac75f37cfa6373d0ed4468ffa86e420ec272a7677d38f81",
+    "lean/Singular/Economics/Transaction.lean": "7ddf97653a69775151bab72d46965134b4588deb28553f80ce18e35d41232343",
+    "lean/Singular/Economics/World.lean": "eb5eedbc1907fdcfafff10719f9dd2f1b1542b8cfe75d1d7bcc0f9bbbfe06050",
+    "lean/Singular/Economics/WorldState.lean": "80a2c92c7812bf3b2179c5b1859f5764305617e7aea2b7c12573f92613bbb977",
     "lean/Singular/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
@@ -8222,6 +8465,7 @@ const STORIES=[
     "lean/Singular/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
     "lean/Singular/Model/Exits.lean": "768034c0a1d91ed139850fae41a23b8dc4c0ff04936234520bd8baa5ce78d04f",
     "lean/Singular/Model/Fold.lean": "0d15087bbf92ca6f1742cedf5291562f50cb4e2471a813f599db972320a156d0",
+    "lean/Singular/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "lean/Singular/Model/Payments.lean": "c5d2c09ffddf205a02325a7a95c8b2960cb00dc377732181869269954eb7703b",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "88abab50744690efea3554dcd4f3d440f8a38f3bb60ad521fb5a538e9ad6b6a3",
@@ -8233,7 +8477,7 @@ const STORIES=[
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
-    "lean/Singular/Statements/Booking.lean": "7363601a164101e0fdc7b49ed97d9c852c69d05463bca8f46d84303ab05ff4f3",
+    "lean/Singular/Statements/Booking.lean": "db308a9b12ecdb935215cbee2678b74d9e4c493c897dc36329690c8df9c7401c",
     "lean/Singular/Statements/Delivery.lean": "d5a97b6b7c25e2ecc010a0bd4d8acb02c66f1dbd18c9abb76a420b93f0ec3714",
     "lean/Singular/Statements/ExitPayments.lean": "6fb5c32bc3185c1c37c05679e26b9271de42bb03d384f53c4246c8c8cb040f8b",
     "lean/Singular/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
@@ -8241,7 +8485,7 @@ const STORIES=[
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
-    "lean/Singular/Statements/Termination.lean": "ddddaa133dd4a95defc7d7efac48c5ac5f26b510b8e017fe061133ed5cad9d39",
+    "lean/Singular/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
   "statementsSha256": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
@@ -12323,15 +12567,21 @@ const STORIES=[
     "formal/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "formal/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "formal/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
+    "formal/Driver/LegacyRejection.lean": "4bb2b0d1117af59284b2bb68c0d7bff2ff6598ef2070e82d8174cafb3ecbb45a",
     "formal/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
     "formal/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
     "formal/DriverMain/Fixtures.lean": "a40dff27b73eb71d465f34d8e675e868ab582cdb50e8e9ff7c8bffdd2f791df2",
     "formal/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
     "formal/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
-    "formal/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
+    "formal/Economics.lean": "b882e67551ffb24ddce3cdf89d4f7d1e2e9843d381229b3025d4501cb96ce188",
     "formal/Economics/Booking.lean": "ac1761460a9f719d931fb92ca9133183c076f5583f9e5e2027a074920df4ca55",
+    "formal/Economics/Observation.lean": "f80cfe6a6b2edee02f742475fa0c388c4801dff88bc977029eeba386b74b4a43",
+    "formal/Economics/Rejection.lean": "f0ee12f39b00d7341550661f52144338ddd3fb8e487898df58e208c2ab30822e",
+    "formal/Economics/RequestSpend.lean": "9badb0439bae655fcf63103a0551100d59071d2ee7de5bc0681101bbd03856e3",
     "formal/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
-    "formal/Economics/World.lean": "8bfb55d322468fa82ac75f37cfa6373d0ed4468ffa86e420ec272a7677d38f81",
+    "formal/Economics/Transaction.lean": "7ddf97653a69775151bab72d46965134b4588deb28553f80ce18e35d41232343",
+    "formal/Economics/World.lean": "eb5eedbc1907fdcfafff10719f9dd2f1b1542b8cfe75d1d7bcc0f9bbbfe06050",
+    "formal/Economics/WorldState.lean": "80a2c92c7812bf3b2179c5b1859f5764305617e7aea2b7c12573f92613bbb977",
     "formal/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "formal/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "formal/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
@@ -12345,12 +12595,13 @@ const STORIES=[
     "formal/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "formal/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
     "formal/M1Main.lean": "713b7b47eda0e738dd4b05afa322dedc282d0c7928205abd835f75a3fa6eda18",
-    "formal/Main.lean": "5ba291e64d08535dfcff066666559c1c493a948cafd39e2758b9abec2878cca6",
+    "formal/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
     "formal/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "formal/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "formal/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "formal/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "formal/Main/RejectionReadsState.lean": "d83eba6daaccad9ebf1c842227442c62f9eefc4b3e93ec55fb0800b95dd63fe1",
+    "formal/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
+    "formal/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "formal/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "formal/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "formal/Model.lean": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
@@ -12359,6 +12610,7 @@ const STORIES=[
     "formal/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
     "formal/Model/Exits.lean": "768034c0a1d91ed139850fae41a23b8dc4c0ff04936234520bd8baa5ce78d04f",
     "formal/Model/Fold.lean": "0d15087bbf92ca6f1742cedf5291562f50cb4e2471a813f599db972320a156d0",
+    "formal/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "formal/Model/Payments.lean": "c5d2c09ffddf205a02325a7a95c8b2960cb00dc377732181869269954eb7703b",
     "formal/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "formal/Model/Registry.lean": "88abab50744690efea3554dcd4f3d440f8a38f3bb60ad521fb5a538e9ad6b6a3",
@@ -12377,12 +12629,12 @@ const STORIES=[
     "formal/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "formal/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
+    "formal/Singular.lean": "e0084c68a0d2a041d5363c248f22c30cc6876fef589ae56fee1b9ab2fc6abeb6",
     "formal/Statements.lean": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
     "formal/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "formal/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "formal/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
-    "formal/Statements/Booking.lean": "7363601a164101e0fdc7b49ed97d9c852c69d05463bca8f46d84303ab05ff4f3",
+    "formal/Statements/Booking.lean": "db308a9b12ecdb935215cbee2678b74d9e4c493c897dc36329690c8df9c7401c",
     "formal/Statements/Delivery.lean": "d5a97b6b7c25e2ecc010a0bd4d8acb02c66f1dbd18c9abb76a420b93f0ec3714",
     "formal/Statements/ExitPayments.lean": "6fb5c32bc3185c1c37c05679e26b9271de42bb03d384f53c4246c8c8cb040f8b",
     "formal/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
@@ -12390,14 +12642,14 @@ const STORIES=[
     "formal/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "formal/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "formal/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
-    "formal/Statements/Termination.lean": "ddddaa133dd4a95defc7d7efac48c5ac5f26b510b8e017fe061133ed5cad9d39",
+    "formal/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "formal/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9",
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/m1-theorem-debt.json": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
     "formal/theorem-debt.json": "66a49521a1a4e545c193453e218f5f1ddff71c2c700fba5b031aa2306143fc91",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "bf9d0e7d3f16a9aa9588bec781bba97daa119577a6fa90439fed4bccd8ac941c"
+    "corpus.json": "cdf795fdc6d9260727eb5c26ed2e6b2376a900c7d6d6628c743b85490848588b"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,
@@ -12428,7 +12680,7 @@ const STORIES=[
   ],
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
   "namingStatementsSha256": "3a68713f92c0450ba9f2760ce03d0e5e8a51685ea9669ada3e59ebbfe6b2db55",
-  "payloadSha256": "feae83e7b21db08b5bb90cc9150bdbf60a09258d55df0965e034c46491606668",
+  "payloadSha256": "7ec5304e2222305b55ffd2dac18d8c37cdf52daaca6969e6553ce105598c16e3",
   "queues": [
     {
       "actual": true,
@@ -12487,24 +12739,31 @@ const STORIES=[
     "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "lean/M1Main.lean": "713b7b47eda0e738dd4b05afa322dedc282d0c7928205abd835f75a3fa6eda18",
-    "lean/Main.lean": "5ba291e64d08535dfcff066666559c1c493a948cafd39e2758b9abec2878cca6",
+    "lean/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/RejectionReadsState.lean": "d83eba6daaccad9ebf1c842227442c62f9eefc4b3e93ec55fb0800b95dd63fe1",
+    "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
+    "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
-    "lean/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
+    "lean/Singular.lean": "e0084c68a0d2a041d5363c248f22c30cc6876fef589ae56fee1b9ab2fc6abeb6",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
+    "lean/Singular/Driver/LegacyRejection.lean": "4bb2b0d1117af59284b2bb68c0d7bff2ff6598ef2070e82d8174cafb3ecbb45a",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
-    "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
+    "lean/Singular/Economics.lean": "b882e67551ffb24ddce3cdf89d4f7d1e2e9843d381229b3025d4501cb96ce188",
     "lean/Singular/Economics/Booking.lean": "ac1761460a9f719d931fb92ca9133183c076f5583f9e5e2027a074920df4ca55",
+    "lean/Singular/Economics/Observation.lean": "f80cfe6a6b2edee02f742475fa0c388c4801dff88bc977029eeba386b74b4a43",
+    "lean/Singular/Economics/Rejection.lean": "f0ee12f39b00d7341550661f52144338ddd3fb8e487898df58e208c2ab30822e",
+    "lean/Singular/Economics/RequestSpend.lean": "9badb0439bae655fcf63103a0551100d59071d2ee7de5bc0681101bbd03856e3",
     "lean/Singular/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
-    "lean/Singular/Economics/World.lean": "8bfb55d322468fa82ac75f37cfa6373d0ed4468ffa86e420ec272a7677d38f81",
+    "lean/Singular/Economics/Transaction.lean": "7ddf97653a69775151bab72d46965134b4588deb28553f80ce18e35d41232343",
+    "lean/Singular/Economics/World.lean": "eb5eedbc1907fdcfafff10719f9dd2f1b1542b8cfe75d1d7bcc0f9bbbfe06050",
+    "lean/Singular/Economics/WorldState.lean": "80a2c92c7812bf3b2179c5b1859f5764305617e7aea2b7c12573f92613bbb977",
     "lean/Singular/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
@@ -12522,6 +12781,7 @@ const STORIES=[
     "lean/Singular/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
     "lean/Singular/Model/Exits.lean": "768034c0a1d91ed139850fae41a23b8dc4c0ff04936234520bd8baa5ce78d04f",
     "lean/Singular/Model/Fold.lean": "0d15087bbf92ca6f1742cedf5291562f50cb4e2471a813f599db972320a156d0",
+    "lean/Singular/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "lean/Singular/Model/Payments.lean": "c5d2c09ffddf205a02325a7a95c8b2960cb00dc377732181869269954eb7703b",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "88abab50744690efea3554dcd4f3d440f8a38f3bb60ad521fb5a538e9ad6b6a3",
@@ -12543,7 +12803,7 @@ const STORIES=[
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
-    "lean/Singular/Statements/Booking.lean": "7363601a164101e0fdc7b49ed97d9c852c69d05463bca8f46d84303ab05ff4f3",
+    "lean/Singular/Statements/Booking.lean": "db308a9b12ecdb935215cbee2678b74d9e4c493c897dc36329690c8df9c7401c",
     "lean/Singular/Statements/Delivery.lean": "d5a97b6b7c25e2ecc010a0bd4d8acb02c66f1dbd18c9abb76a420b93f0ec3714",
     "lean/Singular/Statements/ExitPayments.lean": "6fb5c32bc3185c1c37c05679e26b9271de42bb03d384f53c4246c8c8cb040f8b",
     "lean/Singular/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
@@ -12551,7 +12811,7 @@ const STORIES=[
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
-    "lean/Singular/Statements/Termination.lean": "ddddaa133dd4a95defc7d7efac48c5ac5f26b510b8e017fe061133ed5cad9d39",
+    "lean/Singular/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
   "spellings": [
@@ -12670,7 +12930,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "6759fad496ddcb1c698ac44db1676054f35fb22ddb5841214279dba11ef844fb",
+  "payloadSha256": "af5dddda52ad4850c2e59abd21623cd066c767f3cf50641c7536352aeb8fb13d",
   "recovery": [
     {
       "detail": true,
@@ -12747,24 +13007,31 @@ const STORIES=[
     "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
     "lean/M1Main.lean": "713b7b47eda0e738dd4b05afa322dedc282d0c7928205abd835f75a3fa6eda18",
-    "lean/Main.lean": "5ba291e64d08535dfcff066666559c1c493a948cafd39e2758b9abec2878cca6",
+    "lean/Main.lean": "e2e97df628caded186e6067daab2730a7eaa9e810e75fbca053f6c28e45cdc31",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/RejectionReadsState.lean": "d83eba6daaccad9ebf1c842227442c62f9eefc4b3e93ec55fb0800b95dd63fe1",
+    "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
+    "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
-    "lean/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
+    "lean/Singular.lean": "e0084c68a0d2a041d5363c248f22c30cc6876fef589ae56fee1b9ab2fc6abeb6",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
     "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
+    "lean/Singular/Driver/LegacyRejection.lean": "4bb2b0d1117af59284b2bb68c0d7bff2ff6598ef2070e82d8174cafb3ecbb45a",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
-    "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
+    "lean/Singular/Economics.lean": "b882e67551ffb24ddce3cdf89d4f7d1e2e9843d381229b3025d4501cb96ce188",
     "lean/Singular/Economics/Booking.lean": "ac1761460a9f719d931fb92ca9133183c076f5583f9e5e2027a074920df4ca55",
+    "lean/Singular/Economics/Observation.lean": "f80cfe6a6b2edee02f742475fa0c388c4801dff88bc977029eeba386b74b4a43",
+    "lean/Singular/Economics/Rejection.lean": "f0ee12f39b00d7341550661f52144338ddd3fb8e487898df58e208c2ab30822e",
+    "lean/Singular/Economics/RequestSpend.lean": "9badb0439bae655fcf63103a0551100d59071d2ee7de5bc0681101bbd03856e3",
     "lean/Singular/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
-    "lean/Singular/Economics/World.lean": "8bfb55d322468fa82ac75f37cfa6373d0ed4468ffa86e420ec272a7677d38f81",
+    "lean/Singular/Economics/Transaction.lean": "7ddf97653a69775151bab72d46965134b4588deb28553f80ce18e35d41232343",
+    "lean/Singular/Economics/World.lean": "eb5eedbc1907fdcfafff10719f9dd2f1b1542b8cfe75d1d7bcc0f9bbbfe06050",
+    "lean/Singular/Economics/WorldState.lean": "80a2c92c7812bf3b2179c5b1859f5764305617e7aea2b7c12573f92613bbb977",
     "lean/Singular/Lemmas.lean": "f583451fb9626de02ab2f706a725771c5353e29b8fd97fd64ff0497ed8d6220b",
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
@@ -12782,6 +13049,7 @@ const STORIES=[
     "lean/Singular/Model/Booking.lean": "ae67700447beaab2169241eb1d88325d74efed312393eb510cdd5da0e2979a65",
     "lean/Singular/Model/Exits.lean": "768034c0a1d91ed139850fae41a23b8dc4c0ff04936234520bd8baa5ce78d04f",
     "lean/Singular/Model/Fold.lean": "0d15087bbf92ca6f1742cedf5291562f50cb4e2471a813f599db972320a156d0",
+    "lean/Singular/Model/LegacyRejection.lean": "177ceea0fe4f9c9adb716ce606a07d8d6bd410ad34168f434da694fcaab8e234",
     "lean/Singular/Model/Payments.lean": "c5d2c09ffddf205a02325a7a95c8b2960cb00dc377732181869269954eb7703b",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
     "lean/Singular/Model/Registry.lean": "88abab50744690efea3554dcd4f3d440f8a38f3bb60ad521fb5a538e9ad6b6a3",
@@ -12803,7 +13071,7 @@ const STORIES=[
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
-    "lean/Singular/Statements/Booking.lean": "7363601a164101e0fdc7b49ed97d9c852c69d05463bca8f46d84303ab05ff4f3",
+    "lean/Singular/Statements/Booking.lean": "db308a9b12ecdb935215cbee2678b74d9e4c493c897dc36329690c8df9c7401c",
     "lean/Singular/Statements/Delivery.lean": "d5a97b6b7c25e2ecc010a0bd4d8acb02c66f1dbd18c9abb76a420b93f0ec3714",
     "lean/Singular/Statements/ExitPayments.lean": "6fb5c32bc3185c1c37c05679e26b9271de42bb03d384f53c4246c8c8cb040f8b",
     "lean/Singular/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
@@ -12811,7 +13079,7 @@ const STORIES=[
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
-    "lean/Singular/Statements/Termination.lean": "ddddaa133dd4a95defc7d7efac48c5ac5f26b510b8e017fe061133ed5cad9d39",
+    "lean/Singular/Statements/Termination.lean": "5881d4a83498eb375ff1a0e9c6f64cbf443d1f4f3c5c13ca0285f64fe7bf1478",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
   "steps": [

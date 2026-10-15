@@ -1,6 +1,13 @@
 {
   "checks": [],
   "discoveredPopulation": [
+    "Singular.LegacyRejection.judgeSurface_original@50ed6e5af8dd704b408c86427cfe8a3228cf9b35377e9a280fc3ce336b54b7ae",
+    "Singular.LegacyRejection.observedRefusal_original@96ea0a6bacc20c3ea70d70bf6e7aa27c0642fca46cc504d7c427c058aa8e2f6b",
+    "Singular.LegacyRejection.rejectBatchStep_original@1210355809b77d5a473ac3e79667c942eaf6673ed47ca9bef5a732f2d16e9719",
+    "Singular.LegacyRejection.runRejectBatch_original@aa5729a34331030a0a3927ec8873892be81fb44fe65de10235e6dbd5a1d714cf",
+    "Singular.LegacyRejection.runSurface_original@446b128c6d28362bc1b7fba3443c93a1d9ac35f1e452b705739d94f657ab7361",
+    "Singular.LegacyRejection.step_original@7e8888836cb05a690c7e564eb8b6c8e81448b18ba8a9906146d925fd69b978f8",
+    "Singular.LegacyRejection.transaction_original@91745d371b7b5aaa2f5bf5a3ca63570cec7ca2394cdbc2ddb2402aef286cc755",
     "Singular.M1.Statements.admission_exactly_two@70873286ddf908daf18c234a7484700b464053ec7b786fd9a2e2dc283646e82b",
     "Singular.M1.Statements.allowed_step_unchanged@411b213095416242a6dc98430e949b88cd73a13c40f86588fa7b4820afe771ca",
     "Singular.M1.Statements.excluded_batch_head@19fb4d4b8331bb16b1ba163c8e0e2826ef5d4adc19823a92716672d3d5664911",
@@ -151,6 +158,7 @@
     "Singular.reachable_no_stored_unknown@811637e30cb0d1800b8b36a4d8d7aff8c6dede4f176e008c021bd8220bfdd938",
     "Singular.refusal_after_distinct@b552231955f903905d12de1c7d29264fa3d6faf908a175107db2285c1bed38d8",
     "Singular.refusal_none_iff@8a9f01a60a43bdc131ca3c541439b35540ac2d0f6485147e07dde2263dcfd299",
+    "Singular.rejectionAccepted_effect@757461a103f73e7a765a1b7d5e3e2cc0ea7cdeff9eb8b5969b9c174e3b1643a3",
     "Singular.retractableEdge_iff@668ab0bbe52c437391356fcc96fc601da8823fc2252850dc78d1289fb564cad1",
     "Singular.settle_one@864b6bb6ad8aa37b69fe395230a1875c83bc225c0ee52a41bcd5f33c9c66d5bf",
     "Singular.step_config_root@dfa6943275884be44fa845fa11235e938a49965a7eaee4b64584438044ea1bc7",

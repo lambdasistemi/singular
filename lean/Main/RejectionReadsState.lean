@@ -1,9 +1,8 @@
 import Main.Economics
 
-/-! Rejection transaction controls, recorded before the reference-read judgement
-exists. The legacy witness executes the current admission and observed-spend
-judgement. Every other row retains its submitted transaction and intended reason;
-it is explicitly unevaluated until the new judgement can consume it.
+/-! Rejection transaction controls, first recorded before the reference-read
+judgement existed. The earlier test commit retains the RED instrument;
+the corpus runner judges the recorded transactions with the economic model.
 These controls establish model behavior only, never ledger acceptance. -/
 
 open Singular
@@ -72,9 +71,9 @@ def input (ref : OutRef) : TxInput :=
 def unspent (w : World) : Utxo :=
   [(stateReference, stateOutput w)] ++
   w.pending.map (fun b => (b.request.reference,
-    { economicOutput b.request.contents.lovelace with role := .request, assets := [] })) ++
+    { economicOutput b.request.contents.lovelace with role := .request, datum := .inline, assets := [] })) ++
   w.terminations.map (fun b => (b.request.reference,
-    { economicOutput b.request.contents.lovelace with role := .request, assets := [] })) ++
+    { economicOutput b.request.contents.lovelace with role := .request, datum := .inline, assets := [] })) ++
   [(⟨73, 0⟩, { economicOutput 2 with role := .request, assets := [] })]
 
 def transaction (members : List RegistrationBooking) (interval : Interval) : Tx :=
@@ -180,19 +179,61 @@ def legacyStateSpendingWitness : Except String (Option String × Bool) := do
   pure (exitRefusal state.state .reject r reclaim tx.inputs tx.outputs (some witness),
     tx.inputs.any (fun i => i.stateTokens > 0))
 
-def runRed : IO Unit := do
+/-- Attach output observations from the admitted booking trace. The submitted
+ledger projection is kept, including any adversarial state-output change. -/
+def observedUnspent (w : World) (u : Utxo) : EconomicUtxo :=
+  u.map fun (ref, output) =>
+    let empty : BookingContents :=
+      { lovelace := output.lovelace, applicationTags := [], trieReadyTags := [] }
+    let observation : EconomicOutput := { output, contents := empty }
+    match w.pending.find? (fun b => b.request.reference == ref) with
+    | some b => (ref, { observation with
+        contents := b.request.contents, request := some (.registration b.request) })
+    | none => match w.terminations.find? (fun b => b.request.reference == ref) with
+      | some b => (ref, { observation with
+          contents := b.request.contents, singularTags := b.request.singularTags,
+          request := some (.termination b.request) })
+      | none => (ref, observation)
+
+def observedTransaction (row : Control) : EconomicTransaction :=
+  let outputs := row.carriedTags.map fun contents =>
+    { output := { economicOutput contents.lovelace with assets := [] }, contents : EconomicOutput }
+  { transaction := { row.transaction with outputs := outputs.map (·.output) },
+    identity := 90, outputs,
+    trieReadyMint := row.trieReadyBurns.map (·, -1),
+    applicationMint := row.applicationBurns.map (fun tag => (applicationTagIdentity tag, -1)) }
+
+def actual (w : World) (row : Control) : Except String World :=
+  let u := observedUnspent w row.unspent
+  let tx := observedTransaction row
+  if row.sweep then sweepAccepted w u tx
+  else rejectionAccepted w u ⟨tx, stateReference, row.members⟩
+
+def run : IO (List Lean.Json) := do
   let w ← match world with
-    | .error reason => throw (IO.userError s!"SETUP-FAIL booking trace: {reason}")
+    | .error reason => throw (IO.userError s!"rejection booking trace failed: {reason}")
     | .ok w => pure w
+  let mut rows := []
   for row in controls w do
-    IO.println s!"COULD-NOT-EVALUATE {row.story}; expected={row.expected.getD "accepted"}; reference-read judgement absent"
-  match legacyStateSpendingWitness with
-  | .error reason => throw (IO.userError s!"SETUP-FAIL legacy witness: {reason}")
-  | .ok (reason, spendsState) =>
-    IO.println s!"LEGACY actual={reason.getD "accepted"} spendsState={spendsState} expected=reject-state-spent"
-    if reason != some "reject-state-spent" && spendsState then
-      throw (IO.userError "BEHAVIOR-RED: the legacy rejection accepts a transaction spending the state")
-    else
-      throw (IO.userError "CONTROL-INVALID: the intended legacy behavior was not reproduced")
+    let result := actual w row
+    let reason := match result with | .error why => some why | .ok _ => none
+    unless reason == row.expected do
+      throw (IO.userError s!"{row.story}: expected {repr row.expected}, actual {repr reason}")
+    if let .ok after := result then
+      unless after.registry == w.registry && after.terminations == w.terminations do
+        throw (IO.userError s!"{row.story}: accepted exit changed the registry or terminations")
+      if row.sweep then
+        unless after == w do throw (IO.userError "sweep changed the world")
+      else
+        unless after.pending.length + row.members.length == w.pending.length do
+          throw (IO.userError s!"{row.story}: not every member consumed once")
+        let u := observedUnspent w row.unspent
+        let updated := applyEconomicTransaction u (observedTransaction row)
+        unless economicLookup updated stateReference == economicLookup u stateReference do
+          throw (IO.userError s!"{row.story}: the referenced state did not survive")
+    rows := rows ++ [Lean.Json.mkObj [
+      ("story", Lean.toJson row.story), ("expectedReason", Lean.toJson row.expected),
+      ("actualReason", Lean.toJson reason), ("matched", Lean.toJson (reason == row.expected))]]
+  pure rows
 
 end RejectionReadControls

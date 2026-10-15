@@ -121,6 +121,10 @@ theorem world_supply_sync (world : World) (reachable : WorldReachable world) (ke
                 same] using count
             · simpa [carriedSingularCount, pendingTerminationCount, tags, Config.singularTag,
                 same, Ne.symm same] using count
+    | @rejection before after reach unspent transaction accepted ih =>
+      have effect := rejectionAccepted_effect accepted
+      subst after
+      exact ih
   have law := invariant.1 key
   have count := invariant.2 key
   by_cases active : trieGet world.registry.trie key = .known .active <;> simp_all
@@ -175,6 +179,10 @@ theorem termination_request_carries_genuine_token (world : World)
             termination_booking_has_exact_contents before.registry transaction admitted
           exact ⟨registry, tags, active, exact, before, _, reach, booked, inputs, one⟩
         · exact ih old
+  | @rejection before after reach unspent transaction accepted ih =>
+    have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih pending
 
 /-- A pending termination carries its own operation and nonce commitment,
 and no application tag. Genuine singular-tag custody is proved above. -/
