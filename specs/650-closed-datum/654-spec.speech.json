@@ -75,7 +75,7 @@
       "pause": 300
     },
     {
-      "text": "unreadable-or-unrecognised-mode-is-not-guessed: a recorded policy that is neither mode's derivation, and a missing or unreadable state, are named refusals of the mode read. The command then runs exactly as it does today, so the registry's own refusal (registry-pin-mismatch application, state-output-missing, and the others) is what the person sees, before anything is built or signed.",
+      "text": "unreadable-or-unrecognised-mode-is-not-guessed: a recorded policy that is neither mode's derivation, and a missing or unreadable state, are named refusals of the mode read. The command then runs exactly as it does today, so the registry's own refusal (registry-pin-mismatch application, state-output-missing, and the others) is what the person sees. For each of the two cases the command ends in that named refusal, nothing is built or signed before it, and the command does not ask for the closed-datum code after the mode read.",
       "pause": 300
     },
     {
@@ -179,6 +179,6 @@
   ],
   "_source": {
     "file": "654-spec.md",
-    "sha256": "5a1c20e8ac14e2dc034e67ce730629d304be79697e863f7bdc10f0b495248342"
+    "sha256": "b34f62562db97d568c7176db5bf331f06607f01bf0f2da1fae9a08235c28e067"
   }
 }

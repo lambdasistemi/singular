@@ -92,8 +92,10 @@ against the source before the plan relied on it.
   neither mode's derivation, and a missing or unreadable state, are named
   refusals of the mode read. The command then runs exactly as it does today, so
   the registry's own refusal (`registry-pin-mismatch application`,
-  `state-output-missing`, and the others) is what the person sees, before
-  anything is built or signed.
+  `state-output-missing`, and the others) is what the person sees. For each of
+  the two cases the command ends in that named refusal, nothing is built or
+  signed before it, and the command does not ask for the closed-datum code
+  after the mode read.
 - `later-commands-follow-the-registry`: for `insert`, `terminate`, `fold` and
   `inspect`, the release the command loads carries the code of the registry's
   mode: the closed-datum code for a closed registry, the open-datum code for an

@@ -18,8 +18,10 @@ are in the touch list.
   closed and one recording the open derivation reads as open, each datum built from
   the boot-side functions.
 - [ ] unreadable-or-unrecognised-mode-is-not-guessed: a recorded policy that is
-  neither derivation and a missing state are refused by the mode read, and the
-  command's own refusal text is unchanged.
+  neither derivation and a missing state are refused by the mode read; run
+  through the dispatch, each ends in the command's own named refusal with its
+  text unchanged, builds and signs nothing first, and never asks the loader for
+  the closed code after the mode read.
 - [ ] later-commands-follow-the-registry: insert, terminate, fold and inspect load
   the code of the registry's mode, shown by a loader that records its requests.
 - [ ] loader-decides-the-code: a closed registry resolves through the open-titled

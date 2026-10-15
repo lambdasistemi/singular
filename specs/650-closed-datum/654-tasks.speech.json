@@ -31,7 +31,7 @@
       "pause": 300
     },
     {
-      "text": "[ ] unreadable-or-unrecognised-mode-is-not-guessed: a recorded policy that is neither derivation and a missing state are refused by the mode read, and the command's own refusal text is unchanged.",
+      "text": "[ ] unreadable-or-unrecognised-mode-is-not-guessed: a recorded policy that is neither derivation and a missing state are refused by the mode read; run through the dispatch, each ends in the command's own named refusal with its text unchanged, builds and signs nothing first, and never asks the loader for the closed code after the mode read.",
       "pause": 300
     },
     {
@@ -69,6 +69,6 @@
   ],
   "_source": {
     "file": "654-tasks.md",
-    "sha256": "7876018ff051d405ac9218f346cfeebaad39912ad1f8365339b385e38e72a0e8"
+    "sha256": "24973b7e62deef0d2e79d1cae5a876a55ff121313875f40e6428dc0404980748"
   }
 }

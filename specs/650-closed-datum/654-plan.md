@@ -130,7 +130,7 @@ Each name is stable and appears in the tasks.
 | `closed-switch-at-create-only` | a command other than create parses `--closed`, create refuses it, a key named `--closed` flips the mode, or the usage text names the switch outside the create lines | Open-datum tests |
 | `closed-create-pins-closed-datum` | create with the switch asks the loader for any title but the closed one, or create without it asks for any but the open one | Open-datum tests |
 | `mode-read-from-the-chain` | a state recording the closed derivation reads as open, or one recording the open derivation reads as closed | Open-datum tests, with both datums built from the boot-side functions and never typed |
-| `unreadable-or-unrecognised-mode-is-not-guessed` | a recorded policy that is neither derivation, or a missing state, reads as a mode; or the command's own refusal text changes | Open-datum tests |
+| `unreadable-or-unrecognised-mode-is-not-guessed` | a recorded policy that is neither derivation, or a missing state, reads as a mode; or the command's own refusal text changes; or, for either case run through the dispatch, the command does not end in its own named refusal, builds or signs first, or asks the loader for the closed code after the mode read | Open-datum tests, with a loader that records each request and a signing key path that does not exist |
 | `later-commands-follow-the-registry` | insert, terminate, fold or inspect on a closed registry ask the loader for the open title after the mode read, or on an open registry for the closed one | Open-datum tests, with a loader that records each request |
 | `loader-decides-the-code` | resolving a closed registry through the open-titled value refuses, or the value's title reaches the derivation | Open-datum tests |
 | `update-on-a-closed-registry-stops-before-building` | update or its preview on a closed registry reads the signing key, builds, signs or submits, or does not name the closed registry, or exits other than 10 | Open-datum tests, run with a signing key path that does not exist: an update that reached the key would fail with another message |
@@ -154,7 +154,7 @@ cited red runs, is kept in the ticket's runtime record; the frozen result is bel
 | the run page still numbers the journey; the archive journey is unchanged | Demo 1 journey from the release archive | `nix run --quiet .#demo1-cli-check`, then `nix run --quiet .#demo1-cli-test-harness` | hosted only |
 | the changed pages render and carry current speech and clips | Rendered documentation; Documentation release checks; Development shell checks | `nix run --quiet .#docs-check`; `nix run --quiet .#release-check`; `nix develop --quiet -c just check-presentation` | the extraction tool, then `python3 tools/check_presentation_repo.py` |
 | new Haskell is inventoried and tagged from the closed vocabulary | Code inventory | `nix run --quiet .#inventory-check`, then `nix run --quiet .#inventory-controls` | `python3 tools/code_inventory.py` |
-| no new reference cell, variable, queue or thread in the touched Haskell | Development shell checks | `nix develop --quiet -c just io-ownership-check`, then `just io-ownership-controls` | `bash tools/io_ownership_check.sh .` |
+| every reference cell, variable, queue or thread in the touched Haskell is named in the effect-site records | Development shell checks | `nix develop --quiet -c just io-ownership-check`, then `just io-ownership-controls` | `bash tools/io_ownership_check.sh .` |
 | the archive stages the changed run page and verifies | On-chain release assembly and artifact checks | `nix run --quiet .#release-build-control`; `nix run --quiet .#release-artifacts -- "$RUNNER_TEMP/release"`; `nix run --quiet .#verify-release-controls -- "$RUNNER_TEMP/release"` | hosted only |
 | the packages that build `open-datum` elsewhere still build | Conformance Haskell format and lint check; Conformance checks without a devnet; Negative host sources: format and lint; Negative host parser, dispatch and handler controls; Demo 1 one-output create from a fresh wallet | each job's own command, unchanged | hosted only |
 
@@ -164,8 +164,7 @@ conformance devnet jobs and the devnet end-to-end parts) is listed in the runtim
 record's census and must be green on the exact head. The checks the author of the
 change runs before the push, outside the repository, are: the diff names only
 files of the touch list; no fenced file changed; no attribution in the pushed
-range; the new test module adds no reference cell, variable, queue, thread or
-unsafe escape; and the final tree equals the last approved checkpoint tree.
+range; the effect-site records name the new test module's recording cell and nothing else; and the final tree equals the last approved checkpoint tree.
 
 ## Risks the plan settles
 

@@ -135,7 +135,7 @@
       "pause": 400
     },
     {
-      "text": "Every other required context that reads the open-datum commands, the archive or the registry (the recovery lanes, the Demo 1 refusal and two-actor jobs, the conformance devnet jobs and the devnet end-to-end parts) is listed in the runtime record's census and must be green on the exact head. The checks the author of the change runs before the push, outside the repository, are: the diff names only files of the touch list; no fenced file changed; no attribution in the pushed range; the new test module adds no reference cell, variable, queue, thread or unsafe escape; and the final tree equals the last approved checkpoint tree.",
+      "text": "Every other required context that reads the open-datum commands, the archive or the registry (the recovery lanes, the Demo 1 refusal and two-actor jobs, the conformance devnet jobs and the devnet end-to-end parts) is listed in the runtime record's census and must be green on the exact head. The checks the author of the change runs before the push, outside the repository, are: the diff names only files of the touch list; no fenced file changed; no attribution in the pushed range; the effect-site records name the new test module's recording cell and nothing else; and the final tree equals the last approved checkpoint tree.",
       "pause": 400
     }
   ],
@@ -189,6 +189,6 @@
   ],
   "_source": {
     "file": "654-plan.md",
-    "sha256": "2112a29546fd891631fbffdd53be6c61d167c770be0cba5ab154ac214dc1fc19"
+    "sha256": "749e341e673fc06529c6cccbc328ec237126219401edf7274198bb9678162c04"
   }
 }

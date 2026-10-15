@@ -23,6 +23,7 @@ collisions: their diff against the base names nine files, none of them below.
 | `applications/open-datum/offchain/open-datum.cabal` | edit | The new test module under `other-modules`. The library's module list does not change. | None. |
 | `applications/open-datum/offchain/test/Singular/Application/OpenDatum/CLISpec.hs` | edit | The four places that match `OpenCreate` take its new first field; usage assertions follow the help text if they name it. | None open. |
 | `applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs` | edit, one token | Line 560 matches `OpenCreate _`; it takes the new field. This is the open-datum file, not the registry command line's file of the same name that the wallet-preparation work edits; it is absent from that work's diff. | None open. |
+| `tools/io-ownership.allow`, `tools/io-ownership.sites` | edit | The effect-site records: the new test module keeps one recording cell (a loader that notes each request, which is the only way to show that the closed code is not asked for after a failed mode read). One allow entry with its owner, lifetime and reason, and the sites file regenerated with the repository's own command; no other line changes. | None open. |
 | `applications/open-datum/offchain/test/Singular/Application/OpenDatum/FlagGroupExtentSpec.hs`, `ManagedStateSpec.hs` | edit only if red | They compare parser extent and the usage text. The writer touches them only where the new switch or help line turns them red, and says so. | None open. |
 
 ## Documentation
@@ -44,7 +45,7 @@ collisions: their diff against the base names nine files, none of them below.
 | `offchain/lib/Singular/Registry/StateToken.hs`, `Application.hs` | The resolution derives the policy from the loaded code and refuses on a mismatch; `findStateOutput` and `applyPin` are used as they are. |
 | `applications/open-datum/offchain/src/Singular/Application/OpenDatum/Root.hs`, `app/Main.hs` | The packaged runner ignores the application argument and calls the dispatch. |
 | `applications/open-datum/negative/`, `conformance/` | They name the open constant, which keeps its name and value. |
-| `.github/workflows/*`, `nix/*.nix`, `flake.nix`, `tools/*` | No new job and no new check name, so no ruleset change. The documented-flags and journey checks read the help, the table and `DEMO1.md`; they need no edit. |
+| `.github/workflows/*`, `nix/*.nix`, `flake.nix`, `tools/*` other than the two effect-site records above | No new job and no new check name, so no ruleset change. The documented-flags and journey checks read the help, the table and `DEMO1.md`; they need no edit. |
 
 ## Not touched, by name
 
