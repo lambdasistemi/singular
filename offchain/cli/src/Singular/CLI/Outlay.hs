@@ -28,6 +28,7 @@ module Singular.CLI.Outlay
     , collateralOfFee
     , walletHeld
     , walletShortfall
+    , spendableHeld
     ) where
 
 import Data.Foldable (toList)
@@ -49,6 +50,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.Lifecycle (protocolFeeReserve)
+import Singular.Registry.TxBuilder.Prepare qualified as Prepare
 
 -- | What one command puts out, in lovelace.
 data Outlay = Outlay
@@ -133,6 +135,14 @@ withinAllowance allowance o = maybe True (outlayTotal o <=) allowance
 -- | What the wallet holds in total lovelace, over its outputs.
 walletHeld :: [(TxIn, TxOut ConwayEra)] -> Integer
 walletHeld utxos = sum [c | (_, o) <- utxos, let Coin c = o ^. coinTxOutL]
+
+{- | What the wallet may spend, in total lovelace: every output carrying
+no reference script, token-carrying or not. The preparation seam counts
+this for its shortfall refusal; 'walletHeld' stays what the existing
+texts quote.
+-}
+spendableHeld :: [(TxIn, TxOut ConwayEra)] -> Integer
+spendableHeld = Prepare.spendableHeld
 
 {- | What the wallet lacks against a required amount: nothing
 when its total lovelace holds at least that, else what it

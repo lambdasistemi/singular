@@ -112,9 +112,15 @@ import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay
     ( foldOutlay
     , foldPastAllowance
+    , leftForFold
     , outlayTotal
     )
 import Singular.CLI.Plan (outlayReport, refuseOver)
+import Singular.CLI.Prepare
+    ( PrepareRefusal (..)
+    , preparationFields
+    , prepareFunding
+    )
 import Singular.CLI.Receipt (OutcomeClass (..), chainTransitions)
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
@@ -160,6 +166,7 @@ import Singular.Registry.TxBuilder.Internal
     , extractCageDatum
     , requestAddrFromCfg
     )
+import Singular.Registry.TxBuilder.Prepare (Preparation (..))
 import Singular.Registry.TxBuilder.Update (updateTokenSelected)
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -359,6 +366,8 @@ data Folded = Folded
     -- ^ The capacity bound the selection used
     , fdCapacityProvenance :: Text
     -- ^ Why the bound is what it is
+    , fdPreparation :: Maybe Preparation
+    -- ^ The preparation transaction that funded the fold, if one was made
     }
 
 -- | What the fold's view decided before anything was signed.
@@ -484,6 +493,7 @@ foldedFields f =
             (fdExcluded f)
             (fdCapacityBound f)
             (fdCapacityProvenance f)
+        <> preparationFields (fdPreparation f)
   where
     settledList = case fdSettled f of
         e :| es -> e : es
@@ -541,12 +551,12 @@ foldPendingBounded bound app at FoldSpec{..} = do
             Combined booking -> Just (TxIn (txIdTx booking) (TxIx 0))
             Standalone -> fsRequest
     rootBefore <- selectedTrieRoot (atTrie at)
-    (fold, plan) <-
+    (fold, (plan, preparation)) <-
         submitBuiltIn
             wc
             "fold"
             ["state", "requests"]
-            ( \p -> case plEntries p of
+            ( \(p, _) -> case plEntries p of
                 e :| es ->
                     let toTuple entry =
                             let expectAfter = case peKind entry of
@@ -887,29 +897,40 @@ foldPendingBounded bound app at FoldSpec{..} = do
                                 ctx0
                             )
                     Nothing -> pure ctx0
-                funded <-
-                    fundedView fsFund addr v
-                        >>= either
-                            ( \why ->
-                                stop' ClientRefusal ("the wallet cannot fund the fold: " <> why) []
+                (_fundIns, preparation, unsigned) <- do
+                    prepared <-
+                        prepareFunding
+                            wc
+                            "fold"
+                            addr
+                            fsFund
+                            ( case fsOrigin of
+                                Combined booking -> leftForFold fsAllowance booking
+                                Standalone -> fsAllowance
                             )
-                            pure
-                built <-
-                    try
-                        ( withTrie viewTrie $ \snap ->
-                            updateTokenSelected cfg funded snap (savedToken s) addr ctx settledNE
-                        )
-                unsigned <- case built of
-                    Right tx -> pure tx
-                    Left (e :: SomeException)
-                        | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
-                        | otherwise ->
-                            stop'
-                                ClientRefusal
-                                ( "its fold could not be built, so nothing is folded: "
-                                    <> briefly (show e)
-                                )
-                                []
+                            foldOutlay
+                            ( \funded ->
+                                withTrie viewTrie $ \snap ->
+                                    updateTokenSelected cfg funded snap (savedToken s) addr ctx settledNE
+                            )
+                            v
+                    case prepared of
+                        Left (ExplicitFundingRefusal why) ->
+                            stop' ClientRefusal ("the wallet cannot fund the fold: " <> why) []
+                        Left (OriginalFailure e) -> case fromException e of
+                            Just (_ :: SomeAsyncException) -> throwIO e
+                            _ ->
+                                stop'
+                                    ClientRefusal
+                                    ( "its fold could not be built, so nothing is folded: "
+                                        <> briefly (show e)
+                                    )
+                                    []
+                        Left (PreparationShortfall text fields) ->
+                            stop' ClientRefusal text fields
+                        Left (AllowanceExceeded text fields) ->
+                            stop' ClientRefusal text fields
+                        Right triple -> pure triple
                 let spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
                     stateTx = fst (liveState live)
                 case spendsSelection stateTx selectedTxs pendingIns spent of
@@ -965,24 +986,27 @@ foldPendingBounded bound app at FoldSpec{..} = do
                             (postBuildFields <> [("postBuild", toJSON (postBuildName verdict))])
                 pure
                     ( unsigned
-                    , Plan
-                        { plEntries = case zipWith toPlanEntry perReq rootsAfter of
-                            [] -> error "foldPendingBounded: no settled request"
-                            (x : xs) -> x :| xs
-                        , plUpper = upper
-                        , plPostBuild =
-                            object
-                                [ "check" .= postBuildName verdict
-                                , "hostClockMs" .= postNow
-                                , "validUntilSlot" .= upperI
-                                , "validUntilMs" .= boundTime
-                                ]
-                        , plDecidedAt = now
-                        , plRemaining = remaining
-                        , plExcluded = excludedTxs
-                        , plCapacityBound = boundUsed
-                        , plCapacityProvenance = provUsed
-                        }
+                    ,
+                        ( Plan
+                            { plEntries = case zipWith toPlanEntry perReq rootsAfter of
+                                [] -> error "foldPendingBounded: no settled request"
+                                (x : xs) -> x :| xs
+                            , plUpper = upper
+                            , plPostBuild =
+                                object
+                                    [ "check" .= postBuildName verdict
+                                    , "hostClockMs" .= postNow
+                                    , "validUntilSlot" .= upperI
+                                    , "validUntilMs" .= boundTime
+                                    ]
+                            , plDecidedAt = now
+                            , plRemaining = remaining
+                            , plExcluded = excludedTxs
+                            , plCapacityBound = boundUsed
+                            , plCapacityProvenance = provUsed
+                            }
+                        , preparation
+                        )
                     )
             )
     let entries = case plEntries plan of
@@ -1029,6 +1053,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
             , fdExcluded = plExcluded plan
             , fdCapacityBound = plCapacityBound plan
             , fdCapacityProvenance = plCapacityProvenance plan
+            , fdPreparation = preparation
             }
 
 -- | The verdict's short name, as a receipt states it.

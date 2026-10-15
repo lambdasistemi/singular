@@ -53,10 +53,11 @@ import Control.Exception
     , try
     , uninterruptibleMask_
     )
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -71,9 +72,10 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (isInfixOf, nub, partition, sort)
+import Data.List (isInfixOf, nub, partition, sort, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust, isNothing, listToMaybe)
+import Data.Ord (Down (..))
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -126,14 +128,25 @@ import Test.Hspec
 import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
-    ( addrTxOutL
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
     , datumTxOutL
     , mkBasicTxOut
+    , referenceScriptTxOutL
     , valueTxOutL
     )
-import Cardano.Ledger.BaseTypes (Network (Testnet), TxIx (..))
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , StrictMaybe (..)
+    , TxIx (..)
+    )
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
@@ -143,6 +156,7 @@ import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
+    , PolicyID
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
@@ -161,6 +175,7 @@ import Singular.CLI.Command
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFoldBounded)
 import Singular.CLI.Receipt (FoldTransition (..), JournalEntry (..))
+import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry
     ( economics
     , loadRelease
@@ -190,7 +205,7 @@ import Singular.Registry.Evidence
     , unverifiedVerifier
     )
 import Singular.Registry.FoldSelection (foldCapacity)
-import Singular.Registry.Ledger (Coin (..), TokenId (..))
+import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -211,6 +226,7 @@ import Singular.Registry.SyntheticLedger
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.Trace (ReadEvent (Evaluated))
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
+import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
     , approvalDestination
@@ -220,12 +236,14 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , currentPosixMs
     , extractCageDatum
+    , extractOwnerBytes
     , findStateUtxo
     , mkInlineDatum
     , mkRequestDatumWith
     , policyIdFromPin
     , requestAddrFromCfg
     , scriptHashBytes
+    , toPlcData
     )
 import Singular.Registry.TxBuilder.Internal.Identity (txInToRef)
 import Singular.Registry.TxBuilder.Request (requestEdgeImpl)
@@ -253,6 +271,7 @@ spec =
         >> foldOverSeveralRequestsRow
         >> settledListSingletonRow
         >> createDescribeCommandRows
+        >> prepareFundingRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -1227,6 +1246,615 @@ tokenOf r = case textAt "stateToken" (runReceipt r) of
 -- | A command line naming the registry by its state token.
 tokenArgs :: String -> [String]
 tokenArgs t = ["--state-token", t]
+
+-- ---------------------------------------------------------
+-- A wallet whose ada sits beside approvals (#491 remainder, PR 1)
+-- ---------------------------------------------------------
+
+{- | The rehearsal wallet, reached in process: create from a funded wallet,
+then planted bookings, then a reshape that mirrors the shape the devnet
+legs reach by real commands and assert at run time there (no ada-only
+output, one token-carrying output holding approvals beside the ada,
+published reference scripts untouched). The token output rewrites the
+largest remaining ada-only wallet output with the same lovelace plus the
+approvals the production certification derives for the planted keys, the
+lovelace read at run time, never typed; every other ada-only wallet output is deleted. Outputs at other
+addresses (requests, state, refunds) are untouched. Returns the count of
+distinct approval names the token output holds.
+-}
+reshapeRehearsalWallet
+    :: Rig -> Map.Map PolicyID (Map.Map AssetName Integer) -> IO Int
+reshapeRehearsalWallet rig approvals = do
+    when (Map.null approvals) $
+        fail "reshapeRehearsalWallet: no certified approvals to hold"
+    wallet <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            SessionIO.outputsAt v (walletAddr (rigWallet rig))
+    case sortOn (Down . adaOf . snd) [u | u@(_, o) <- wallet, adaOnlyOut o] of
+        [] ->
+            fail
+                "reshapeRehearsalWallet: the wallet holds no ada-only output to reshape"
+        ((heldIn, heldOut) : rest) -> do
+            let Coin lovelace = heldOut ^. coinTxOutL
+                made =
+                    heldOut
+                        & valueTxOutL .~ MaryValue (Coin lovelace) (MultiAsset approvals)
+            advanceChain (rigChain rig) $ \facts ->
+                facts
+                    { csUTxO =
+                        Map.insert
+                            heldIn
+                            made
+                            (foldr (Map.delete . fst) (csUTxO facts) rest)
+                    }
+            pure (length [n | (_, ns) <- Map.toList approvals, n <- Map.keys ns])
+  where
+    adaOf out = let Coin c = out ^. coinTxOutL in c
+
+{- | Certify the planted requests as real bookings do, then report the
+certified assets: for each planted request output, read its datum and bytes
+at run time and derive the expected commitment exactly as the fold's own
+selection does — @approvalName@ over the request's edge, key and owner with
+@approvalDestination@ over the request's destination — under the registry's
+application pin read at run time. Planted requests carry no destination
+datum, which the neutral fold refuses as unreadable, so each datum is
+rewritten first with the wallet address and a stand-in carried datum
+(lovelace, edge, key, owner, deposit and submission time untouched); the
+commitment is derived from the rewritten datum, exactly what the fold
+reads. The rewritten request outputs carry what a certified booking locks,
+so the fold's selection passes them for the production reason; the union is
+what the rehearsal wallet holds beside its ada, as the devnet legs show a
+reject's change doing. Nothing is typed except the key labels the plants
+already use.
+-}
+certifyPlanted
+    :: Rig
+    -> String
+    -> String
+    -> RegistryEconomics
+    -> [TxIn]
+    -> IO (Map.Map PolicyID (Map.Map AssetName Integer))
+certifyPlanted rig tokenStr seedStr econ reqIns = do
+    seedIn <-
+        either
+            (fail . ("certifyPlanted seed: " <>))
+            pure
+            (parseOutRef (T.pack seedStr))
+    tid <- parseTokenId tokenStr
+    let dummy = hashPinnedApplication (SBS.toShort (BS.replicate 28 7))
+    rel <- loadReleaseCodes dummy (rigBlueprint rig) >>= either fail pure
+    let (cfg, _) = registryConfigFor dummy rel econ (txInToRef seedIn)
+        pinned = policyIdFromPin (cfgApplicationPolicy cfg)
+        walletAt = walletAddr (rigWallet rig)
+        walletBytes = serialiseAddr walletAt
+        reqAddr = requestAddrFromCfg cfg tid Testnet
+    atReq <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            SessionIO.outputsAt v reqAddr
+    let found = [(i, o) | (i, o) <- atReq, i `elem` reqIns]
+    when (length found /= length reqIns) $
+        fail "certifyPlanted: a planted request output is missing"
+    certRows <- mapM (certifyOne pinned walletBytes) found
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                foldr (\(i, _, o) m -> Map.insert i o m) (csUTxO facts) certRows
+            }
+    pure
+        ( Map.unionsWith
+            (Map.unionWith (+))
+            [a | (_, a, _) <- certRows]
+        )
+  where
+    certifyOne pinned walletBytes (i, o) = case extractCageDatum o of
+        Just (RequestDatum req) -> do
+            let req' = req{requestDestination = (walletBytes, Just (PLC.Constr 0 []))}
+                expected =
+                    approvalName
+                        (requestEdge req')
+                        (requestKey req')
+                        (extractOwnerBytes o)
+                        (approvalDestination (requestDestination req'))
+                asset =
+                    Map.singleton
+                        pinned
+                        (Map.singleton (AssetName (SBS.toShort expected)) 1)
+                Coin lovelace = o ^. coinTxOutL
+                made =
+                    o
+                        & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req'))
+                        & valueTxOutL .~ MaryValue (Coin lovelace) (MultiAsset asset)
+            pure (i, asset, made)
+        _ ->
+            fail
+                "certifyPlanted: a planted request output carries no request datum"
+
+-- | Every output of the rig wallet, read at run time.
+readWallet :: Rig -> IO [(TxIn, TxOut ConwayEra)]
+readWallet rig =
+    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+        SessionIO.outputsAt v (walletAddr (rigWallet rig))
+
+-- | How many wallet outputs carry a reference script.
+countRefs :: [(TxIn, TxOut ConwayEra)] -> Int
+countRefs outs =
+    length [() | (_, o) <- outs, o ^. referenceScriptTxOutL /= SNothing]
+
+{- | The command completes. Split from the receipt field so the seam's
+wiring shows green before the receipt carries the preparation.
+-}
+expectCompleted :: String -> Run -> Expectation
+expectCompleted command r = case runExit r of
+    ExitSuccess -> pure ()
+    _ ->
+        expectationFailure
+            ( command
+                <> " from the rehearsal wallet: expected completion; exit="
+                <> show (runExit r)
+                <> " reason="
+                <> show (receiptReason r)
+            )
+
+{- | The receipt carries a @preparation@ field naming a transaction, its
+made output, what the output holds and the fee, the output bound to the
+transaction. Lands with the receipt change.
+-}
+expectPreparationField :: String -> Run -> Expectation
+expectPreparationField command r = case preparationObject (runReceipt r) of
+    Nothing ->
+        expectationFailure
+            ( command
+                <> " receipt carries no preparation field; exit="
+                <> show (runExit r)
+            )
+    Just o -> do
+        case (KeyMap.lookup "transaction" o, KeyMap.lookup "output" o) of
+            (Just (Aeson.String t), Just (Aeson.String u))
+                | T.length t == 64
+                , t `T.isPrefixOf` u ->
+                    pure ()
+            _ ->
+                expectationFailure
+                    (command <> " preparation output is not bound to its transaction")
+        case (KeyMap.lookup "lovelace" o, KeyMap.lookup "fee" o) of
+            (Just (Aeson.Number _), Just (Aeson.Number _)) -> pure ()
+            _ ->
+                expectationFailure
+                    (command <> " preparation names no lovelace and fee")
+
+preparationObject :: Aeson.Value -> Maybe (KeyMap.KeyMap Aeson.Value)
+preparationObject = \case
+    Aeson.Object top -> case KeyMap.lookup "preparation" top of
+        Just (Aeson.Object o) -> Just o
+        _ -> Nothing
+    _ -> Nothing
+
+hasPreparation :: Aeson.Value -> Bool
+hasPreparation = \case
+    Aeson.Object o -> KeyMap.member "preparation" o
+    _ -> False
+
+{- | The receipt carries no @preparation@ field: refused before anything
+was submitted, or completed with no preparation made.
+-}
+expectNoPreparation :: String -> Run -> Expectation
+expectNoPreparation command r =
+    when
+        (hasPreparation (runReceipt r))
+        ( expectationFailure
+            ( command
+                <> " receipt carries a preparation field; exit="
+                <> show (runExit r)
+            )
+        )
+
+-- | The receipt submits no transaction: a refusal journalled nothing.
+expectNoSubmissions :: String -> Run -> Expectation
+expectNoSubmissions command r = case elementsAt "submissions" (runReceipt r) of
+    Nothing -> pure ()
+    Just [] -> pure ()
+    Just _ ->
+        expectationFailure
+            (command <> " submitted a transaction; exit=" <> show (runExit r))
+
+{- | Shrink the rehearsal wallet's token-carrying output to the given
+lovelace, keeping its assets: shapes a short wallet whose spendable ada
+cannot cover preparation plus command.
+-}
+shortenWallet :: Rig -> Integer -> IO ()
+shortenWallet rig lovelace = do
+    wallet <- readWallet rig
+    case [ u
+         | u@(_, o) <- wallet
+         , not (adaOnlyOut o)
+         , o ^. referenceScriptTxOutL == SNothing
+         ] of
+        [] -> fail "shortenWallet: no token-carrying output to shrink"
+        ((i, o) : _) ->
+            let MaryValue _ m = o ^. valueTxOutL
+            in  advanceChain (rigChain rig) $ \facts ->
+                    facts
+                        { csUTxO =
+                            Map.insert
+                                i
+                                (o & valueTxOutL .~ MaryValue (Coin lovelace) m)
+                                (csUTxO facts)
+                        }
+
+prepareFundingRows :: Spec
+prepareFundingRows = describe
+    "a fold, a reject and a reclaim prepare a funding output (#491)"
+    $ do
+        it
+            "a fold from a wallet with no ada-only output completes with prepared funding"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyA = TE.encodeUtf8 "carol-a"
+                    keyB = TE.encodeUtf8 "carol-b"
+                (reqA, _) <- plantRequest rig t1 seed economics keyA
+                (reqB, _) <- plantRequest rig t1 seed economics keyB
+                refsBefore <- countRefs <$> readWallet rig
+                assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+                names <- reshapeRehearsalWallet rig assets
+                wallet <- readWallet rig
+                [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                names `shouldBe` 2
+                countRefs wallet `shouldBe` refsBefore
+                folded <-
+                    run
+                        rig
+                        "fold from the rehearsal wallet"
+                        (["registry", "fold"] <> tokenArgs t1)
+                expectCompleted "fold" folded
+                expectPreparationField "fold" folded
+        it
+            "a reject from a wallet with no ada-only output completes with prepared funding"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <-
+                    run
+                        rig
+                        "create"
+                        ( ["registry", "create", "--process-time", "1", "--retract-time", "1"]
+                            <> policyArgs
+                        )
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let shortEcon =
+                        RegistryEconomics
+                            { reProcessTime = 1
+                            , reRetractTime = 1
+                            , reTip = Coin 1_000_000
+                            }
+                    keyA = TE.encodeUtf8 "carol-a"
+                    keyB = TE.encodeUtf8 "carol-b"
+                (reqA, subA) <- plantRequest rig t1 seed shortEcon keyA
+                (reqB, subB) <- plantRequest rig t1 seed shortEcon keyB
+                refsBefore <- countRefs <$> readWallet rig
+                assets <- certifyPlanted rig t1 seed shortEcon [reqA, reqB]
+                names <- reshapeRehearsalWallet rig assets
+                wallet <- readWallet rig
+                [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                names `shouldBe` 2
+                countRefs wallet `shouldBe` refsBefore
+                jumpToAfter
+                    rig
+                    (max subA subB + reProcessTime shortEcon + reRetractTime shortEcon)
+                    2
+                rejected <-
+                    run
+                        rig
+                        "reject from the rehearsal wallet"
+                        (["registry", "reject"] <> tokenArgs t1)
+                expectCompleted "reject" rejected
+                expectPreparationField "reject" rejected
+        it
+            "a reclaim from a wallet with no ada-only output completes with prepared funding"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyR = TE.encodeUtf8 "carol-r"
+                (reqR, subR) <- plantRequest rig t1 seed economics keyR
+                refsBefore <- countRefs <$> readWallet rig
+                assets <- certifyPlanted rig t1 seed economics [reqR]
+                names <- reshapeRehearsalWallet rig assets
+                wallet <- readWallet rig
+                [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                names `shouldBe` 1
+                countRefs wallet `shouldBe` refsBefore
+                jumpToAfter rig (subR + reProcessTime economics) 0
+                reclaimed <-
+                    run
+                        rig
+                        "reclaim from the rehearsal wallet"
+                        ( ["registry", "reclaim", "--request", T.unpack (renderOutRef reqR)]
+                            <> tokenArgs t1
+                        )
+                expectCompleted "reclaim" reclaimed
+                expectPreparationField "reclaim" reclaimed
+        it
+            "a short wallet is refused before signing, naming the shortfall"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyR = TE.encodeUtf8 "carol-r"
+                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                assets <- certifyPlanted rig t1 seed economics [reqR]
+                _ <- reshapeRehearsalWallet rig assets
+                shortenWallet rig 500_000
+                wallet <- readWallet rig
+                [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                refused <-
+                    run
+                        rig
+                        "fold from a short wallet"
+                        (["registry", "fold"] <> tokenArgs t1)
+                runExit refused `shouldBe` ExitFailure 10
+                case T.isInfixOf "preparation-unfunded" <$> receiptReason refused of
+                    Just True -> pure ()
+                    _ ->
+                        expectationFailure
+                            ("no preparation-unfunded refusal: " <> show (receiptReason refused))
+                case T.isInfixOf "nothing was submitted" <$> receiptReason refused of
+                    Just True -> pure ()
+                    _ ->
+                        expectationFailure
+                            ( "refusal does not end nothing submitted: "
+                                <> show (receiptReason refused)
+                            )
+                expectNoPreparation "fold" refused
+                expectNoSubmissions "fold" refused
+        it
+            "a short wallet is refused for a reject before signing"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <-
+                    run
+                        rig
+                        "create"
+                        ( ["registry", "create", "--process-time", "1", "--retract-time", "1"]
+                            <> policyArgs
+                        )
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let shortEcon =
+                        RegistryEconomics
+                            { reProcessTime = 1
+                            , reRetractTime = 1
+                            , reTip = Coin 1_000_000
+                            }
+                    keyA = TE.encodeUtf8 "carol-a"
+                (reqA, subA) <- plantRequest rig t1 seed shortEcon keyA
+                assets <- certifyPlanted rig t1 seed shortEcon [reqA]
+                _ <- reshapeRehearsalWallet rig assets
+                shortenWallet rig 500_000
+                jumpToAfter
+                    rig
+                    (subA + reProcessTime shortEcon + reRetractTime shortEcon)
+                    2
+                refused <-
+                    run
+                        rig
+                        "reject from a short wallet"
+                        (["registry", "reject"] <> tokenArgs t1)
+                runExit refused `shouldBe` ExitFailure 10
+                case T.isInfixOf "preparation-unfunded" <$> receiptReason refused of
+                    Just True -> pure ()
+                    _ ->
+                        expectationFailure
+                            ("no preparation-unfunded refusal: " <> show (receiptReason refused))
+                expectNoPreparation "reject" refused
+                expectNoSubmissions "reject" refused
+        it
+            "an allowance below command plus preparation refuses before signing"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyR = TE.encodeUtf8 "carol-r"
+                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                assets <- certifyPlanted rig t1 seed economics [reqR]
+                _ <- reshapeRehearsalWallet rig assets
+                refused <-
+                    run
+                        rig
+                        "fold past a tiny allowance"
+                        (["registry", "fold", "--max-outlay", "1"] <> tokenArgs t1)
+                runExit refused `shouldBe` ExitFailure 10
+                case T.isInfixOf "passes the approved allowance" <$> receiptReason refused of
+                    Just True -> pure ()
+                    _ ->
+                        expectationFailure
+                            ("no allowance refusal: " <> show (receiptReason refused))
+                case T.isInfixOf "nothing was submitted" <$> receiptReason refused of
+                    Just True -> pure ()
+                    _ ->
+                        expectationFailure
+                            ( "refusal does not end nothing submitted: "
+                                <> show (receiptReason refused)
+                            )
+                expectNoPreparation "fold" refused
+                expectNoSubmissions "fold" refused
+        it
+            "a funded wallet folds with no preparation from its largest output"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyN = TE.encodeUtf8 "carol-n"
+                (reqN, _) <- plantRequest rig t1 seed economics keyN
+                _ <- certifyPlanted rig t1 seed economics [reqN]
+                walletBefore <- readWallet rig
+                largest <- case sortOn
+                    (Down . snd)
+                    [ (i, c)
+                    | (i, o) <- walletBefore
+                    , adaOnlyOut o
+                    , let Coin c = o ^. coinTxOutL
+                    ] of
+                    (i, _) : _ -> pure i
+                    [] -> fail "no-needless leg: no ada-only output to fund from"
+                completed <-
+                    run
+                        rig
+                        "fold from a funded wallet"
+                        (["registry", "fold"] <> tokenArgs t1)
+                expectCompleted "fold" completed
+                (foldTxId, submitted, submittedTx) <-
+                    commandSubmission rig "registry" completed "fold" "fold"
+                submitted `shouldBe` [foldTxId]
+                let spent = Set.toList (submittedTx ^. bodyTxL . inputsTxBodyL)
+                    coll = Set.toList (submittedTx ^. bodyTxL . collateralInputsTxBodyL)
+                spent `shouldContain` [largest]
+                coll `shouldBe` [largest]
+                expectNoPreparation "fold" completed
+        it
+            "an explicit token-carrying choice is refused with today's text"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyR = TE.encodeUtf8 "carol-r"
+                (reqR, _) <- plantRequest rig t1 seed economics keyR
+                assets <- certifyPlanted rig t1 seed economics [reqR]
+                _ <- reshapeRehearsalWallet rig assets
+                wallet <- readWallet rig
+                tokenIn <- case [ i
+                                | (i, o) <- wallet
+                                , not (adaOnlyOut o)
+                                , o ^. referenceScriptTxOutL == SNothing
+                                ] of
+                    [i] -> pure i
+                    _ -> fail "explicit leg: no single token output to name"
+                refused <-
+                    run
+                        rig
+                        "fold with a token funding choice"
+                        ( ["registry", "fold", "--fund-input", T.unpack (renderOutRef tokenIn)]
+                            <> tokenArgs t1
+                        )
+                runExit refused `shouldBe` ExitFailure 10
+                case T.isInfixOf "cannot fund the fold" <$> receiptReason refused of
+                    Just True -> pure ()
+                    _ ->
+                        expectationFailure
+                            ("no cannot-fund refusal: " <> show (receiptReason refused))
+                expectNoPreparation "fold" refused
+                expectNoSubmissions "fold" refused
+        it
+            "a named ada-only output is used with no preparation"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyN = TE.encodeUtf8 "carol-n"
+                (reqN, _) <- plantRequest rig t1 seed economics keyN
+                _ <- certifyPlanted rig t1 seed economics [reqN]
+                walletBefore <- readWallet rig
+                -- Two eligible ada-only outputs of different sizes, both
+                -- shaped from the rig: split the largest ada-only output
+                -- into a smaller and a larger part (a third and two
+                -- thirds of what the rig holds, never typed). The smaller
+                -- names the explicit choice; a seam that ignores the flag
+                -- spends the natural largest instead and fails every
+                -- assertion below.
+                (bigIn, bigCoin) <- case sortOn
+                    (Down . snd)
+                    [ (i, c)
+                    | (i, o) <- walletBefore
+                    , adaOnlyOut o
+                    , let Coin c = o ^. coinTxOutL
+                    ] of
+                    (i, c) : _ -> pure (i, c)
+                    [] -> fail "explicit leg: no ada-only output to split"
+                bigOut <- case [o | (i, o) <- walletBefore, i == bigIn] of
+                    [o] -> pure o
+                    _ -> fail "explicit leg: split output vanished"
+                let smallCoin = bigCoin `div` 3
+                    largeCoin = bigCoin - smallCoin
+                when (smallCoin <= 0 || largeCoin <= smallCoin) $
+                    fail "explicit leg: cannot split an eligible pair"
+                smallIn <-
+                    either fail pure (parseOutRef (T.pack (replicate 64 'd' <> "#1")))
+                largeIn <-
+                    either fail pure (parseOutRef (T.pack (replicate 64 'd' <> "#2")))
+                when
+                    ( smallIn `elem` map fst walletBefore
+                        || largeIn `elem` map fst walletBefore
+                    )
+                    $ fail "explicit leg: fresh refs collide"
+                let mkSmall = bigOut & valueTxOutL .~ MaryValue (Coin smallCoin) mempty
+                    mkLarge = bigOut & valueTxOutL .~ MaryValue (Coin largeCoin) mempty
+                advanceChain (rigChain rig) $ \facts ->
+                    facts
+                        { csUTxO =
+                            Map.insert
+                                smallIn
+                                mkSmall
+                                (Map.insert largeIn mkLarge (Map.delete bigIn (csUTxO facts)))
+                        }
+                completed <-
+                    run
+                        rig
+                        "fold with a named funding output"
+                        ( ["registry", "fold", "--fund-input", T.unpack (renderOutRef smallIn)]
+                            <> tokenArgs t1
+                        )
+                expectCompleted "fold" completed
+                (foldTxId, submitted, submittedTx) <-
+                    commandSubmission rig "registry" completed "fold" "fold"
+                submitted `shouldBe` [foldTxId]
+                let spent = Set.toList (submittedTx ^. bodyTxL . inputsTxBodyL)
+                    coll = Set.toList (submittedTx ^. bodyTxL . collateralInputsTxBodyL)
+                spent `shouldContain` [smallIn]
+                coll `shouldBe` [smallIn]
+                spent `shouldNotContain` [largeIn]
+                coll `shouldNotContain` [largeIn]
+                expectNoPreparation "fold" completed
+        it
+            "a failure that is not about funding prepares nothing"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyA = TE.encodeUtf8 "carol-a"
+                    keyB = TE.encodeUtf8 "carol-b"
+                (reqA, _) <- plantRequest rig t1 seed economics keyA
+                (reqB, _) <- plantRequest rig t1 seed economics keyB
+                assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+                _ <- reshapeRehearsalWallet rig assets
+                advanceChain (rigChain rig) $ \facts ->
+                    facts{csUTxO = foldr Map.delete (csUTxO facts) [reqA, reqB]}
+                refused <-
+                    run
+                        rig
+                        "fold with nothing pending"
+                        (["registry", "fold"] <> tokenArgs t1)
+                runExit refused `shouldSatisfy` (/= ExitSuccess)
+                expectNoPreparation "fold" refused
+                expectNoSubmissions "fold" refused
 
 lifecycle :: Rig -> IO [Run]
 lifecycle rig = do
@@ -2433,9 +3061,9 @@ plantFoldableRequest rig tokenStr seedStr = do
     advanceChain (rigChain rig) $ \facts -> facts{csUTxO = Map.insert reqIn reqOut (csUTxO facts)}
     pure reqIn
 
--- | Every prepared fold line in a registry's journal.
-foldPreparedEntries :: Rig -> FilePath -> IO [JournalEntry]
-foldPreparedEntries rig registry = do
+-- | Every journal entry under a registry directory.
+journalEntries :: Rig -> FilePath -> IO [JournalEntry]
+journalEntries rig registry = do
     names <- listDirectoryRecursive (rigDir rig </> registry)
     let journals = [p | p <- names, takeFileName p == "journal.jsonl"]
     journalRel <- case journals of
@@ -2448,16 +3076,40 @@ foldPreparedEntries rig registry = do
                     <> show (length journals)
                 )
     raw <- BS.readFile (rigDir rig </> registry </> journalRel)
-    entries <-
-        mapM
-            (maybe (fail "a journal line is not JSON") pure . Aeson.decodeStrict)
-            (BC.lines raw)
-    pure
-        [ e
-        | e <- entries
-        , journalStep e == "fold"
-        , journalEvent e == "prepared"
-        ]
+    mapM
+        (maybe (fail "a journal line is not JSON") pure . Aeson.decodeStrict)
+        (BC.lines raw)
+
+-- | Every prepared fold line in a registry's journal.
+foldPreparedEntries :: Rig -> FilePath -> IO [JournalEntry]
+foldPreparedEntries rig registry =
+    filter (\e -> journalStep e == "fold" && journalEvent e == "prepared")
+        <$> journalEntries rig registry
+
+{- | One command run's sole submission: its receipt transaction id, every
+submitted id in its journal step, and the submitted transaction read
+from its saved, hash-bound body. A needless preparation shows here as
+a second submission with another funding input.
+-}
+commandSubmission
+    :: Rig -> FilePath -> Run -> Text -> Text -> IO (Text, [Text], ConwayTx)
+commandSubmission rig registry r step key = do
+    journal <- journalEntries rig registry
+    txid <-
+        maybe
+            (fail ("no " <> T.unpack key <> " in receipt"))
+            pure
+            (textAt (Key.fromText key) (runReceipt r))
+    let submitted =
+            nub
+                [ journalTxId e
+                | e <- journal
+                , journalStep e == step
+                , journalEvent e == "submitted"
+                ]
+    (_, body) <- boundBody journal txid
+    tx <- either (fail . T.unpack) pure body
+    pure (txid, submitted, tx)
 
 -- ---------------------------------------------------------
 -- The fold over several requests (bound seam, #518 pull request 3a)

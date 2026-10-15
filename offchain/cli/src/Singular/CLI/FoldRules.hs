@@ -66,6 +66,8 @@ module Singular.CLI.FoldRules
 
       -- * Which funding
     , fundedView
+    , emptiedView
+    , overwrittenView
     ) where
 
 import Data.Aeson (Value, object, toJSON, (.=))
@@ -336,6 +338,54 @@ fundedView chosen addr v = do
         | address == addr =
             fact{Cage.value = filter ((== fst one) . fst) (Cage.value fact)}
     select _ _ fact = fact
+
+{- | A view in which the wallet's own address holds nothing: the seam
+narrows to this when the wallet holds no ada-only output, so a command
+builds against an empty funding rather than a token-carrying output it
+must never fund or collateralise from.
+-}
+emptiedView
+    :: Addr
+    -> Cage.Session Cage.NoWitness IO
+    -> Cage.Session Cage.NoWitness IO
+emptiedView addr v =
+    v
+        { Cage.outputs = \query ->
+            fmap (fmap (select query)) (Cage.outputs v query)
+        }
+  where
+    select (Cage.AtAddress address) fact
+        | address == addr = fact{Cage.value = []}
+    select _ fact = fact
+
+{- | A view in which one wallet output shows an oversized ada-only value
+at its own reference: the seam's probe, telling a funding failure (the
+build succeeds with room) from any other failure (it fails too). The
+reference stays real, so evaluation resolves it on any provider; only
+the value the builders price is overstated, which overestimates the
+measured requirement in the safe direction.
+-}
+overwrittenView
+    :: Addr
+    -> TxIn
+    -> TxOut ConwayEra
+    -> Cage.Session Cage.NoWitness IO
+    -> Cage.Session Cage.NoWitness IO
+overwrittenView addr ref huge v =
+    v
+        { Cage.outputs = \query ->
+            fmap (fmap (select query)) (Cage.outputs v query)
+        }
+  where
+    select (Cage.AtAddress address) fact
+        | address == addr =
+            fact
+                { Cage.value =
+                    map
+                        (\(i, o) -> if i == ref then (i, huge) else (i, o))
+                        (Cage.value fact)
+                }
+    select _ fact = fact
 
 {- | The time at which a built fold's upper-bound slot begins, as the view
 that built it converts times; nothing when it cannot place the bound.

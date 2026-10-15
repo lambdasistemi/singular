@@ -208,6 +208,7 @@ library registry-cli
     Singular.CLI.Outlay
     Singular.CLI.Permanent
     Singular.CLI.Plan
+    Singular.CLI.Prepare
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
@@ -966,6 +967,7 @@ test-suite cage-tests
     Singular.CLI.CreateFundingSpec
     Singular.CLI.DescribeSpec
     Singular.CLI.OneOutputCreateSpec
+    Singular.CLI.PrepareSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec

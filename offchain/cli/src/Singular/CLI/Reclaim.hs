@@ -39,6 +39,7 @@ import Cardano.Ledger.BaseTypes
 import Cardano.Ledger.TxIn (TxIn (..))
 
 import Cardano.Slotting.Slot qualified as Cage
+import Control.Exception (throwIO)
 import Singular.CLI.Attached
 import Singular.CLI.Command
     ( Command (..)
@@ -49,11 +50,16 @@ import Singular.CLI.Command
     , neededRoles
     )
 import Singular.CLI.Fold (slotAt)
-import Singular.CLI.FoldRules (boundStartMs, fundedView, placedEdge)
+import Singular.CLI.FoldRules (boundStartMs, placedEdge)
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
+import Singular.CLI.Prepare
+    ( PrepareRefusal (..)
+    , preparationFields
+    , prepareFunding
+    )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.ReclaimRules
 import Singular.CLI.Registry (hexT)
@@ -124,7 +130,9 @@ runReclaim env a = do
                 placed r =
                     [InRequest (txInText named), InEdge (Reclaiming (edgeText r))]
             root <- selectedTrieRoot (atTrie at)
-            (tx, (locked, req, bounds, tipSlot, opens, closes, returned)) <-
+            ( tx
+                , (locked, req, bounds, tipSlot, opens, closes, returned, preparation)
+                ) <-
                 submitBuiltIn
                     wc
                     "reclaim"
@@ -182,11 +190,27 @@ runReclaim env a = do
                         ceilStart <-
                             toInteger . Cage.unSlotNo
                                 <$> Services.ceilingSlot v (processingEnds bounds)
-                        funded <-
-                            fundedView (reclaimFund a) wallet v
-                                >>= either (stop . ("the wallet cannot fund the reclaim: " <>)) pure
-                        unsigned <-
-                            retractRequestAtTipImpl tip cfg funded (savedToken s) named wallet
+                        (fundIns, preparation, unsigned) <- do
+                            prepared <-
+                                prepareFunding
+                                    wc
+                                    "reclaim"
+                                    wallet
+                                    (reclaimFund a)
+                                    (reclaimMaxOutlay a)
+                                    updateOutlay
+                                    ( \funded ->
+                                        retractRequestAtTipImpl tip cfg funded (savedToken s) named wallet
+                                    )
+                                    v
+                            case prepared of
+                                Left (ExplicitFundingRefusal why) -> stop ("the wallet cannot fund the reclaim: " <> why)
+                                Left (OriginalFailure e) -> throwIO e
+                                Left (PreparationShortfall text fields) ->
+                                    failWithFields ClientRefusal text (requestField <> fields)
+                                Left (AllowanceExceeded text fields) ->
+                                    failWithFields ClientRefusal text (requestField <> fields)
+                                Right triple -> pure triple
                         let body = unsigned ^. bodyTxL
                             interval = body ^. vldtTxBodyL
                             slot = \case
@@ -213,9 +237,8 @@ runReclaim env a = do
                             $ stop
                                 "not-phase2: the built reclaim has no nonempty validity interval inside the retract window; it is not signed"
                         -- Fees come from this wallet. No state or another request may be spent.
-                        walletOuts <- Cage.outputsAt funded wallet
                         let spent = Set.fromList (toList (body ^. inputsTxBodyL))
-                            allowed = Set.fromList (named : map fst walletOuts)
+                            allowed = Set.fromList (named : fundIns)
                         unless
                             ( named `Set.member` spent
                                 && spent `Set.isSubsetOf` allowed
@@ -240,7 +263,9 @@ runReclaim env a = do
                                     "deposit-returned: the built reclaim has no whole owner return bound to the named request in output 0; it is not signed"
                         refuseOver (reclaimMaxOutlay a) (updateOutlay unsigned)
                         pure
-                            (unsigned, (locked, req, bounds, tipSlot, opens, closes, returned))
+                            ( unsigned
+                            , (locked, req, bounds, tipSlot, opens, closes, returned, preparation)
+                            )
             (pendingAfter, liveAfter, ownerOuts) <- readingBack at "reclaim" tx ["requests", "state", "owner outputs"] $ \v -> do
                 requests <- Cage.outputsAt v requestAddr
                 live <- attachLive v s
@@ -272,28 +297,30 @@ runReclaim env a = do
                 receipt
                     "reclaim"
                     Success
-                    [ ("request", toJSON (txInText named))
-                    , ("retract", toJSON (txIdHex (confirmedTx tx)))
-                    , ("owner", toJSON (hexT caller))
-                    , ("key", toJSON (hexT (requestKey req)))
-                    , ("edge", toJSON (edgeName (requestEdge req)))
-                    , ("locked", valueJson locked)
-                    ,
-                        ( "returned"
-                        , object
-                            [ "recipient" .= T.pack (bech32Address recipient)
-                            , "output" .= txInText output
-                            , "index" .= (0 :: Int)
-                            , "lovelace" .= coinOf returned
-                            , "value" .= valueJson returned
-                            , "request" .= txInText named
-                            ]
-                        )
-                    , ("topUp", toJSON (coinOf returned - coinOf locked))
-                    , ("processingEnds", toJSON (processingEnds bounds))
-                    , ("retractEnds", toJSON (retractEnds bounds))
-                    , ("processingEndsSlot", toJSON opens)
-                    , ("retractEndsSlot", toJSON closes)
-                    , ("tipSlot", toJSON tipSlot)
-                    , ("root", toJSON (hexT rootAfter))
-                    ]
+                    ( [ ("request", toJSON (txInText named))
+                      , ("retract", toJSON (txIdHex (confirmedTx tx)))
+                      , ("owner", toJSON (hexT caller))
+                      , ("key", toJSON (hexT (requestKey req)))
+                      , ("edge", toJSON (edgeName (requestEdge req)))
+                      , ("locked", valueJson locked)
+                      ,
+                          ( "returned"
+                          , object
+                                [ "recipient" .= T.pack (bech32Address recipient)
+                                , "output" .= txInText output
+                                , "index" .= (0 :: Int)
+                                , "lovelace" .= coinOf returned
+                                , "value" .= valueJson returned
+                                , "request" .= txInText named
+                                ]
+                          )
+                      , ("topUp", toJSON (coinOf returned - coinOf locked))
+                      , ("processingEnds", toJSON (processingEnds bounds))
+                      , ("retractEnds", toJSON (retractEnds bounds))
+                      , ("processingEndsSlot", toJSON opens)
+                      , ("retractEndsSlot", toJSON closes)
+                      , ("tipSlot", toJSON tipSlot)
+                      , ("root", toJSON (hexT rootAfter))
+                      ]
+                        <> preparationFields preparation
+                    )

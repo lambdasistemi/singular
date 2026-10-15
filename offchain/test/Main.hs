@@ -12,6 +12,7 @@ import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.OneOutputCreateSpec qualified
+import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -196,6 +197,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.OneOutputCreate" [Cli, Builders])
         Singular.CLI.OneOutputCreateSpec.spec
+    describe
+        (tagged "Singular.CLI.Prepare" [Cli, Builders])
+        Singular.CLI.PrepareSpec.spec
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec
