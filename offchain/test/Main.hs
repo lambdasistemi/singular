@@ -42,6 +42,7 @@ import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
+import Singular.Registry.TxBuilder.PrepareSpec qualified
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
@@ -75,6 +76,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.Prepare" [Builders])
+        Singular.Registry.TxBuilder.PrepareSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.PublicationFunding" [Builders])
         Singular.Registry.TxBuilder.PublicationFundingSpec.spec
