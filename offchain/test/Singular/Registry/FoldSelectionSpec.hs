@@ -63,6 +63,12 @@ nearDeadline = nowMs + 10000
 -- Request builders
 -- ---------------------------------------------------------
 
+{- | The registry's processing time, POSIX milliseconds: deadlines are
+submission times plus this, never the clock.
+-}
+processMs :: Integer
+processMs = 60000
+
 {- | A clean insertion: decodes, names an admitted edge, is open, approved,
 and carries a readable datum.
 -}
@@ -74,6 +80,7 @@ mkInsert ref key owner deadline =
         , prOwner = owner
         , prEdge = EdgeInsertActive
         , prDeadline = deadline
+        , prSubmittedAt = deadline - processMs
         , prDecodeOk = True
         , prApproval = ApprovalOk
         , prApp = AppReady
@@ -90,6 +97,7 @@ mkTerminate ref key owner deadline =
         , prOwner = owner
         , prEdge = EdgeUpdateTerminal
         , prDeadline = deadline
+        , prSubmittedAt = deadline - processMs
         , prDecodeOk = True
         , prApproval = ApprovalOk
         , prApp = AppReady
@@ -181,9 +189,18 @@ spec = do
                             (k, (LeafUnknown, False))
                                 : [(j, (LeafUnknown, False)) | j <- nub others]
                     bound = 100
-                    o1 = outcomeOf (selectFold bound nowMs marginMs facts alone_) target
-                    o2 = outcomeOf (selectFold bound nowMs marginMs facts withOthers) target
-                    o3 = outcomeOf (selectFold bound nowMs marginMs facts reordered) target
+                    o1 =
+                        outcomeOf
+                            (selectFold bound nowMs marginMs processMs facts alone_)
+                            target
+                    o2 =
+                        outcomeOf
+                            (selectFold bound nowMs marginMs processMs facts withOthers)
+                            target
+                    o3 =
+                        outcomeOf
+                            (selectFold bound nowMs marginMs processMs facts reordered)
+                            target
                 in  o1 == o2 && o2 == o3
         it
             "fails the same property for a variant that refuses when several are pending"
@@ -191,11 +208,11 @@ spec = do
                 let target = mkInsert 1001 7 "Alice" farDeadline
                     other = mkInsert 2001 8 "Bob" farDeadline
                     severalRefuse reqs _
-                        | length reqs > 1 = OutcomeExcluded "window-closed"
+                        | length reqs > 1 = OutcomeExcluded "not-phase1"
                         | otherwise = OutcomeSettled
                 severalRefuse [target] target `shouldBe` OutcomeSettled
                 severalRefuse [target, other] target
-                    `shouldBe` OutcomeExcluded "window-closed"
+                    `shouldBe` OutcomeExcluded "not-phase1"
                 (severalRefuse [target] target == severalRefuse [target, other] target)
                     `shouldBe` False
 
@@ -207,9 +224,13 @@ spec = do
                 baseFacts
                 "edge-inadmissible"
             checkAlone
-                (cleanBase{prDeadline = nearDeadline})
+                ( cleanBase
+                    { prDeadline = nearDeadline
+                    , prSubmittedAt = nearDeadline - processMs
+                    }
+                )
                 baseFacts
-                "window-closed"
+                "not-phase1"
             checkAlone
                 (cleanBase{prApproval = ApprovalMissing})
                 baseFacts
@@ -277,14 +298,18 @@ spec = do
                 "undecodable"
             both
                 (\p -> p{prEdge = EdgeOther "deleteActive"})
-                (\p -> p{prDeadline = nearDeadline})
+                ( \p ->
+                    p{prDeadline = nearDeadline, prSubmittedAt = nearDeadline - processMs}
+                )
                 baseFacts
                 "edge-inadmissible"
             both
-                (\p -> p{prDeadline = nearDeadline})
+                ( \p ->
+                    p{prDeadline = nearDeadline, prSubmittedAt = nearDeadline - processMs}
+                )
                 (\p -> p{prApproval = ApprovalMissing})
                 baseFacts
-                "window-closed"
+                "not-phase1"
             both
                 (\p -> p{prApproval = ApprovalTupleMismatch})
                 (\p -> p{prApp = AppDatumUnreadable})
@@ -318,11 +343,11 @@ spec = do
                 appFirst _ = OutcomeExcluded "application-datum-unreadable"
                 trueApproval =
                     outcomeOf
-                        (selectFold 9 nowMs marginMs activeNineFacts [badApproval])
+                        (selectFold 9 nowMs marginMs processMs activeNineFacts [badApproval])
                         badApproval
                 trueApp =
                     outcomeOf
-                        (selectFold 9 nowMs marginMs activeNineFacts [badApp])
+                        (selectFold 9 nowMs marginMs processMs activeNineFacts [badApp])
                         badApp
             trueApproval `shouldBe` OutcomeExcluded "no-approval"
             trueApp `shouldBe` OutcomeExcluded "key-exists"
@@ -332,7 +357,7 @@ spec = do
             let earlier = mkInsert 108 70 "Eve" farDeadline
                 laterBad = (mkInsert 109 70 "Leo" farDeadline){prApproval = ApprovalMissing}
                 facts = Map.fromList [(70, (LeafUnknown, False))]
-                sel = selectFold 9 nowMs marginMs facts [earlier, laterBad]
+                sel = selectFold 9 nowMs marginMs processMs facts [earlier, laterBad]
             map selRef (selectionSettled sel) `shouldBe` [prRef earlier]
             map (exclusionName . snd) (selectionExcluded sel)
                 `shouldBe` ["no-approval"]
@@ -340,14 +365,21 @@ spec = do
             let earlierApp = mkInsert 116 72 "Eli" farDeadline
                 laterAppBad = (mkInsert 117 72 "Lia" farDeadline){prApp = AppDatumUnreadable}
                 factsApp = Map.fromList [(72, (LeafUnknown, False))]
-                selApp = selectFold 9 nowMs marginMs factsApp [earlierApp, laterAppBad]
+                selApp =
+                    selectFold
+                        9
+                        nowMs
+                        marginMs
+                        processMs
+                        factsApp
+                        [earlierApp, laterAppBad]
             map selRef (selectionSettled selApp) `shouldBe` [prRef earlierApp]
             map (exclusionName . snd) (selectionExcluded selApp)
                 `shouldBe` ["application-datum-unreadable"]
         it "agrees between judgeAlone and a single-request selection" $ do
             let single p facts =
-                    ( judgeAlone nowMs marginMs facts p
-                    , selectFold 9 nowMs marginMs facts [p]
+                    ( judgeAlone nowMs marginMs processMs facts p
+                    , selectFold 9 nowMs marginMs processMs facts [p]
                     )
                 (judged, selected) = single cleanBase baseFacts
             judged
@@ -357,27 +389,27 @@ spec = do
 
     describe "one-request-per-key" $ do
         it "names a later request on an included key key-in-batch" $ do
-            let sel = selectFold 9 nowMs marginMs exampleFacts examplePending
+            let sel = selectFold 9 nowMs marginMs processMs exampleFacts examplePending
             map selRef (selectionSettled sel) `shouldBe` [prRef r1, prRef r2]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["key-in-batch", "window-closed"]
+                `shouldBe` ["key-in-batch", "not-phase1"]
         it "lets the earlier request in ledger order win" $ do
-            let sel = selectFold 9 nowMs marginMs exampleFacts [r3, r1, r2, r4]
+            let sel = selectFold 9 nowMs marginMs processMs exampleFacts [r3, r1, r2, r4]
             map selRef (selectionSettled sel) `shouldBe` [prRef r3, prRef r2]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["key-in-batch", "window-closed"]
+                `shouldBe` ["key-in-batch", "not-phase1"]
         it "does not block a key whose earlier request was excluded" $ do
             let bad = (mkInsert 110 71 "Beth" farDeadline){prApproval = ApprovalMissing}
                 good = mkInsert 111 71 "Gus" farDeadline
                 facts = Map.fromList [(71, (LeafUnknown, False))]
-                sel = selectFold 9 nowMs marginMs facts [bad, good]
+                sel = selectFold 9 nowMs marginMs processMs facts [bad, good]
             map selRef (selectionSettled sel) `shouldBe` [prRef good]
             map (exclusionName . snd) (selectionExcluded sel)
                 `shouldBe` ["no-approval"]
         it "keeps the selected keys pairwise distinct" $ do
             property $
                 forAll genPartitionInput $ \(reqs, facts, bound) ->
-                    let sel = selectFold bound nowMs marginMs facts reqs
+                    let sel = selectFold bound nowMs marginMs processMs facts reqs
                         keys = map selKey (selectionSettled sel)
                     in  nub keys == keys
 
@@ -385,7 +417,7 @@ spec = do
         it "partitions any pending list, keeping ledger input order" $ do
             property $
                 forAll genPartitionInput $ \(reqs, facts, bound) ->
-                    let sel = selectFold bound nowMs marginMs facts reqs
+                    let sel = selectFold bound nowMs marginMs processMs facts reqs
                         settledRefs = map selRef (selectionSettled sel)
                         excludedRefs = map (prRef . fst) (selectionExcluded sel)
                         pendingRefs = map prRef reqs
@@ -394,7 +426,7 @@ spec = do
                             && settledRefs == [r | r <- pendingRefs, r `elem` settledRefs]
                             && excludedRefs == [r | r <- pendingRefs, r `elem` excludedRefs]
         it "partitions the empty pending list" $ do
-            let sel = selectFold 9 nowMs marginMs exampleFacts []
+            let sel = selectFold 9 nowMs marginMs processMs exampleFacts []
             selectionSettled sel `shouldBe` []
             selectionExcluded sel `shouldBe` []
 
@@ -417,7 +449,7 @@ spec = do
                     ]
                 facts =
                     Map.fromList [(21 + i, (LeafUnknown, False)) | i <- [0 :: Int .. 3]]
-                sel = selectFold 100 nowMs marginMs facts pents
+                sel = selectFold 100 nowMs marginMs processMs facts pents
             map selRef (selectionSettled sel) `shouldBe` map prRef pents
             selectionExcluded sel `shouldBe` []
         it
@@ -432,14 +464,14 @@ spec = do
         it "fails the cut for a variant that settles eight at a bound of nine" $ do
             let (pents, facts) = tenEligible
                 refs = map prRef pents
-                sel = selectFold 9 nowMs marginMs facts pents
+                sel = selectFold 9 nowMs marginMs processMs facts pents
                 cutAtEight = take 8 refs
             map selRef (selectionSettled sel) `shouldBe` take 9 refs
             cutAtEight `shouldBe` take 8 refs
             (cutAtEight == map selRef (selectionSettled sel)) `shouldBe` False
         it "keeps each request's own verdict at every bound" $ do
             let at bound =
-                    selectFold bound nowMs marginMs exampleFacts examplePending
+                    selectFold bound nowMs marginMs processMs exampleFacts examplePending
                 verdict bound ref =
                     [ exclusionName exc
                     | (q, exc) <- selectionExcluded (at bound)
@@ -448,41 +480,38 @@ spec = do
             verdict 1 (prRef r3) `shouldBe` ["key-in-batch"]
             verdict 2 (prRef r3) `shouldBe` ["key-in-batch"]
             verdict 9 (prRef r3) `shouldBe` ["key-in-batch"]
-            verdict 1 (prRef r4) `shouldBe` ["window-closed"]
-            verdict 2 (prRef r4) `shouldBe` ["window-closed"]
-            verdict 9 (prRef r4) `shouldBe` ["window-closed"]
+            verdict 1 (prRef r4) `shouldBe` ["not-phase1"]
+            verdict 2 (prRef r4) `shouldBe` ["not-phase1"]
+            verdict 9 (prRef r4) `shouldBe` ["not-phase1"]
         it "binds nine requests per fold" $ do
             foldCapacity `shouldBe` 9
             foldCapacityProvenance
                 `shouldBe` "an estimate, not a measurement: about nine requests fit in a fold under preprod's execution budget of 14 million memory units, bound by trie-proof verification"
 
-    describe "window-rule-agrees-with-fold-window" $ do
-        it "excludes window-closed exactly when foldWindow reports closed" $ do
-            property $
-                forAll genWindowCase $ \(deadline, now, margin) ->
-                    let req = mkInsert 401 80 "Wendy" deadline
-                        facts = Map.fromList [(80, (LeafUnknown, False))]
-                        sel = selectFold 9 now margin facts [req]
-                        got = map (exclusionName . snd) (selectionExcluded sel)
-                        want = case foldWindow margin now deadline of
-                            FoldClosed _ -> ["window-closed"]
-                            FoldOpen _ -> []
-                    in  got == want
+    describe "window-rule-admits-at-the-probe-bound" $ do
         it
-            "fails the agreement for a variant whose margin comparison is off by one"
+            "excludes not-phase1 exactly when the probe bound passes the deadline"
+            $ do
+                property $
+                    forAll genWindowCase $ \(deadline, now, margin) ->
+                        let req = mkInsert 401 80 "Wendy" deadline
+                            facts = Map.fromList [(80, (LeafUnknown, False))]
+                            sel = selectFold 9 now margin processMs facts [req]
+                            got = map (exclusionName . snd) (selectionExcluded sel)
+                            want = ["not-phase1" | now + margin > deadline]
+                        in  got == want
+        it
+            "admits at equality where the old margin comparison refused"
             $ do
                 let now = 1000000
                     margin = 30000
                     deadline = now + margin
-                    offByOne left' margin' = left' >= margin'
                 foldWindow margin now deadline `shouldBe` FoldClosed margin
-                offByOne (deadline - now) margin `shouldBe` True
                 let req = mkInsert 402 81 "Blake" deadline
                     facts = Map.fromList [(81, (LeafUnknown, False))]
-                map
-                    (exclusionName . snd)
-                    (selectionExcluded (selectFold 9 now margin facts [req]))
-                    `shouldBe` ["window-closed"]
+                    sel = selectFold 9 now margin processMs facts [req]
+                map selRef (selectionSettled sel) `shouldBe` [402]
+                selectionExcluded sel `shouldBe` []
 
     describe "two-vocabularies-never-mixed" $ do
         it "names each of the fourteen reasons in exactly one vocabulary" $ do
@@ -498,7 +527,7 @@ spec = do
                            , "not-booked"
                            , "terminal-immutable"
                            , "undecodable"
-                           , "window-closed"
+                           , "not-phase1"
                            , "application-datum-unreadable"
                            , "application-required"
                            , "key-in-batch"
@@ -514,7 +543,7 @@ spec = do
                            , "model-refusal"
                            , "model-refusal"
                            , "selection-policy"
-                           , "selection-policy"
+                           , "model-refusal"
                            , "selection-policy"
                            , "selection-policy"
                            , "selection-policy"
@@ -523,7 +552,6 @@ spec = do
         it "never labels a selection-policy reason as a model refusal" $ do
             let policy =
                     [ ReasonUndecodable
-                    , ReasonWindowClosed
                     , ReasonAppDatumUnreadable
                     , ReasonAppRequired
                     , ReasonKeyInBatch
@@ -531,7 +559,6 @@ spec = do
                     ]
             [exclusionSource (Exclusion r "") | r <- policy]
                 `shouldBe` [ "selection-policy"
-                           , "selection-policy"
                            , "selection-policy"
                            , "selection-policy"
                            , "selection-policy"
@@ -546,6 +573,7 @@ spec = do
                             9
                             nowMs
                             marginMs
+                            processMs
                             activeNineAppFacts
                             [ (mkTerminate 107 9 "Ruth" farDeadline)
                                 { prApp = AppRequired exe
@@ -559,44 +587,72 @@ spec = do
 
     describe "example-four-requests" $ do
         it "settles r1 and r2 at a capacity of 9" $ do
-            let sel = selectFold 9 nowMs marginMs exampleFacts examplePending
+            let sel = selectFold 9 nowMs marginMs processMs exampleFacts examplePending
             map selRef (selectionSettled sel) `shouldBe` [prRef r1, prRef r2]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["key-in-batch", "window-closed"]
+                `shouldBe` ["key-in-batch", "not-phase1"]
             map (exclusionSource . snd) (selectionExcluded sel)
-                `shouldBe` ["selection-policy", "selection-policy"]
+                `shouldBe` ["selection-policy", "model-refusal"]
             selectionBound sel `shouldBe` 9
         it "settles only r1 at a capacity of 1" $ do
-            let sel = selectFold 1 nowMs marginMs exampleFacts examplePending
+            let sel = selectFold 1 nowMs marginMs processMs exampleFacts examplePending
             map selRef (selectionSettled sel) `shouldBe` [prRef r1]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["capacity", "key-in-batch", "window-closed"]
+                `shouldBe` ["capacity", "key-in-batch", "not-phase1"]
             map (exclusionSource . snd) (selectionExcluded sel)
-                `shouldBe` ["selection-policy", "selection-policy", "selection-policy"]
+                `shouldBe` ["selection-policy", "selection-policy", "model-refusal"]
         it "settles r1 and r2 at a capacity of 2" $ do
-            let sel = selectFold 2 nowMs marginMs exampleFacts examplePending
+            let sel = selectFold 2 nowMs marginMs processMs exampleFacts examplePending
             map selRef (selectionSettled sel) `shouldBe` [prRef r1, prRef r2]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["key-in-batch", "window-closed"]
+                `shouldBe` ["key-in-batch", "not-phase1"]
         it "matches the capacity-9 receipt above the pending count" $ do
-            let sel = selectFold 100 nowMs marginMs exampleFacts examplePending
+            let sel = selectFold 100 nowMs marginMs processMs exampleFacts examplePending
             map selRef (selectionSettled sel) `shouldBe` [prRef r1, prRef r2]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["key-in-batch", "window-closed"]
+                `shouldBe` ["key-in-batch", "not-phase1"]
         it
             "names r3 key-exists on the next fold from the state after this one"
             $ do
-                let sel = selectFold 9 nowMs marginMs afterFirstFoldFacts [r3, r4]
+                let sel = selectFold 9 nowMs marginMs processMs afterFirstFoldFacts [r3, r4]
                 selectionSettled sel `shouldBe` []
                 map (exclusionName . snd) (selectionExcluded sel)
-                    `shouldBe` ["key-exists", "window-closed"]
+                    `shouldBe` ["key-exists", "not-phase1"]
                 map (exclusionSource . snd) (selectionExcluded sel)
-                    `shouldBe` ["model-refusal", "selection-policy"]
+                    `shouldBe` ["model-refusal", "model-refusal"]
         it "settles r2 on the next fold at a capacity of 1" $ do
-            let sel = selectFold 1 nowMs marginMs afterFirstFoldFacts [r2, r3, r4]
+            let sel =
+                    selectFold 1 nowMs marginMs processMs afterFirstFoldFacts [r2, r3, r4]
             map selRef (selectionSettled sel) `shouldBe` [prRef r2]
             map (exclusionName . snd) (selectionExcluded sel)
-                `shouldBe` ["key-exists", "window-closed"]
+                `shouldBe` ["key-exists", "not-phase1"]
+
+    describe "window-refused-in-the-models-words" $ do
+        it "names a closed window not-phase1 as a model refusal" $ do
+            let sel = selectFold 9 nowMs marginMs processMs exampleFacts [r4]
+            selectionSettled sel `shouldBe` []
+            map (exclusionName . snd) (selectionExcluded sel)
+                `shouldBe` ["not-phase1"]
+            map (exclusionSource . snd) (selectionExcluded sel)
+                `shouldBe` ["model-refusal"]
+        it "admits a deadline equal to the probe bound" $ do
+            let deadline = nowMs + marginMs
+                req = mkInsert 403 82 "Eve" deadline
+                facts = Map.fromList [(82, (LeafUnknown, False))]
+                sel = selectFold 9 nowMs marginMs processMs facts [req]
+            map selRef (selectionSettled sel) `shouldBe` [403]
+            selectionExcluded sel `shouldBe` []
+        it "carries the deadline and the probe bound in the detail" $ do
+            let sel = selectFold 9 nowMs marginMs processMs exampleFacts [r4]
+            case map snd (selectionExcluded sel) of
+                [exc] -> do
+                    excDetail exc
+                        `shouldSatisfy` T.isInfixOf (T.pack (show nearDeadline))
+                    excDetail exc
+                        `shouldSatisfy` T.isInfixOf (T.pack (show (nowMs + marginMs)))
+                other ->
+                    expectationFailure
+                        ("expected one exclusion, got " ++ show (length other))
 
 -- ---------------------------------------------------------
 -- Single-check fixtures
@@ -641,11 +697,11 @@ the selection and through the per-request judgement.
 -}
 checkAlone :: PendingRequest -> LiveFacts -> Text -> Expectation
 checkAlone p facts expected = do
-    let sel = selectFold 9 nowMs marginMs facts [p]
+    let sel = selectFold 9 nowMs marginMs processMs facts [p]
     selectionSettled sel `shouldBe` []
     map (exclusionName . snd) (selectionExcluded sel)
         `shouldBe` [expected]
-    case judgeAlone nowMs marginMs facts p of
+    case judgeAlone nowMs marginMs processMs facts p of
         Left exc -> exclusionName exc `shouldBe` expected
         Right selReq -> expectationFailure ("judged alone as selected: " ++ show selReq)
 
@@ -653,7 +709,7 @@ checkAlone p facts expected = do
 checkBound
     :: [Int] -> [PendingRequest] -> LiveFacts -> Int -> Expectation
 checkBound refs pents facts bound = do
-    let sel = selectFold bound nowMs marginMs facts pents
+    let sel = selectFold bound nowMs marginMs processMs facts pents
         (wantSettled, wantCapacity) = splitAt bound refs
     map selRef (selectionSettled sel) `shouldBe` wantSettled
     map (prRef . fst) (selectionExcluded sel) `shouldBe` wantCapacity
@@ -691,7 +747,11 @@ genPartitionInput = do
             3 -> base
             4 -> mkTerminate ref key (ownerOf key) farDeadline
             5 -> base{prApproval = ApprovalMissing}
-            6 -> base{prDeadline = nearDeadline}
+            6 ->
+                base
+                    { prDeadline = nearDeadline
+                    , prSubmittedAt = nearDeadline - processMs
+                    }
             7 -> base{prDecodeOk = False}
             8 -> mkTerminate ref key (ownerOf key) farDeadline
             _ -> base{prApp = AppDatumUnreadable}

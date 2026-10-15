@@ -307,7 +307,11 @@
       "pause": 300
     },
     {
-      "text": "For a batch with two different defects at two requests the model reports the fixed edge set first, then the window, then the law in order; the chain interleaves the window and the law request by request. Both refuse; the reasons can differ, and the ledger's own reason is not observed live. No live row compares such a batch.",
+      "text": "For a batch with two different defects at two requests the model reports the fixed edge set first, then the window, then the law in order; the chain interleaves the window and the law request by request. Both refuse; the reasons can differ, and the ledger's own reason is not observed live. No live row compares such a batch. Owner of this model-and-chain difference: #636. The fold builders show the same family on one side: they run the steps the duties and the proofs report before judging the window from the built body, so a batch with a failing step and a closed window names the step where the model names the window; the step message is the builder's own wording, never labelled as a model refusal.",
+      "pause": 300
+    },
+    {
+      "text": "The connected fold builder has a mode that skips script evaluation (conformance only, with caller-supplied mints; not reachable from singular registry fold). It judges the fixed edge set, the window, the keyed mint and same-key pairs, in that order, and skips the approval checks (no-approval, approval-mismatch), the leaf checks (key-exists, key-unknown, not-booked, terminal-immutable and a step's token-missing) and the empty-fold refusal entirely: its callers supply valid approvals and a non-empty batch, and no builder code judges them there.",
       "pause": 300
     },
     {
@@ -329,6 +333,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "c67a29004a8996ef4996530fd2f2d3b5ad953efc9806d0f7f6ea96d11ce585a0"
+    "sha256": "c0fba782f32f52cb839b835fb30d7305e0fe9ebf7b9a87f01f4b060939210f02"
   }
 }

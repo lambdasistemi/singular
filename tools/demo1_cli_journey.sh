@@ -1999,13 +1999,24 @@ if [ "$wait_ms" -gt 0 ]; then
 fi
 refused fold-near client-refusal -- fold --request "$(field late-insert .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
-jq -e --slurpfile l "$receipts/late-insert.json" --argjson m "$margin_ms" '
-    (.reason | contains("within the") and contains("no fold is built") and (contains("could not be built") | not))
-    and .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request
-    and (.remainingMs > 0 and .remainingMs <= $m) and (.hostClockMs + $m >= .foldDeadline.posixMs)
-    and (.submissions | length == 0)' \
-  "$receipts/fold-near.json" >/dev/null \
+fold_near_refused() {
+  jq -e --slurpfile l "$receipts/late-insert.json" --argjson m "$margin_ms" '
+    (.reason | capture("deadline, (?<dl>[0-9]+) ms, is before the probe bound (?<pb>[0-9]+) ms") // null) as $c
+    | ($c != null)
+    and ((($c.pb | tonumber) - $m < ($c.dl | tonumber)) and (($c.dl | tonumber) < ($c.pb | tonumber)))
+    and (.reason | contains("is excluded: not-phase1 (model-refusal)") and contains($l[0].foldDeadline.posixMs | tostring))
+    and .pendingRequest == $l[0].request
+    and (.submissions | length == 0)' "$1" >/dev/null
+}
+fold_near_refused "$receipts/fold-near.json" \
   || fail "the fold near the deadline was not refused up front, by name, with nothing submitted: $(field fold-near .reason)"
+fold_near_tamper() {
+  jq "$2" "$receipts/fold-near.json" >"$receipts/fold-near-tampered-$1.json"
+  if fold_near_refused "$receipts/fold-near-tampered-$1.json"; then
+    fail "the near-fold receipt edited in $1 still passed its assertion"
+  fi
+}
+fold_near_tamper expired-beyond-probe '.reason |= sub("processing deadline, [0-9]+ ms"; "processing deadline, 99999999999999 ms")'
 say "a fold near the deadline: refused up front by the guard, naming it, nothing signed or submitted"
 
 # ------------------------------------------------------------------
@@ -2013,8 +2024,8 @@ say "a fold near the deadline: refused up front by the guard, naming it, nothing
 # ------------------------------------------------------------------
 # The request booked above is folded by no one until its processing deadline
 # has passed. A fold of it is then refused by the client, quickly and by
-# name, before anything is signed: the reason names the deadline and the
-# receipt states it as the booking did.
+# name, before anything is signed: the reason names the deadline the booking
+# stated.
 deadline_ms="$(field late-insert .foldDeadline.posixMs)"
 wait_ms=$((deadline_ms + 3000 - $(date +%s%3N)))
 if [ "$wait_ms" -gt 0 ]; then
@@ -2025,11 +2036,23 @@ started="$(date +%s)"
 refused fold-late client-refusal -- fold --request "$(field late-insert .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 took=$(($(date +%s) - started))
-jq -e --slurpfile l "$receipts/late-insert.json" '
-    (.reason | contains("processing deadline") and contains("has passed"))
-    and .foldDeadline.posixMs == $l[0].foldDeadline.posixMs and .pendingRequest == $l[0].request' \
-  "$receipts/fold-late.json" >/dev/null \
+fold_late_refused() {
+  jq -e --slurpfile l "$receipts/late-insert.json" --argjson m "$margin_ms" '
+    (.reason | capture("deadline, (?<dl>[0-9]+) ms, is before the probe bound (?<pb>[0-9]+) ms") // null) as $c
+    | ($c != null)
+    and ((($c.pb | tonumber) - $m >= ($c.dl | tonumber)))
+    and (.reason | contains("is excluded: not-phase1 (model-refusal)") and contains("processing deadline") and contains($l[0].foldDeadline.posixMs | tostring))
+    and .pendingRequest == $l[0].request' "$1" >/dev/null
+}
+fold_late_refused "$receipts/fold-late.json" \
   || fail "the late fold does not name the deadline and the request it left pending: $(field fold-late .reason)"
+fold_late_tamper() {
+  jq "$2" "$receipts/fold-late.json" >"$receipts/fold-late-tampered-$1.json"
+  if fold_late_refused "$receipts/fold-late-tampered-$1.json"; then
+    fail "the late-fold receipt edited in $1 still passed its assertion"
+  fi
+}
+fold_late_tamper open-at-judgment '.reason |= sub("probe bound [0-9]+ ms"; "probe bound 1 ms")'
 [ "$took" -le 30 ] || fail "the late fold took ${took}s to be refused; a client refusal reads one view and stops"
 
 # The fold takes the selection (#518): the late request above is past its
@@ -2061,8 +2084,8 @@ fold_selection_excluded() {
   jq -e --slurpfile l "$receipts/late-insert.json" '
       (.excluded | length == 1)
       and .excluded[0].request == $l[0].request
-      and .excluded[0].reason == "window-closed"
-      and .excluded[0].source == "selection-policy"
+      and .excluded[0].reason == "not-phase1"
+      and .excluded[0].source == "model-refusal"
       and (.excluded[0].detail | type == "string" and length > 0)' "$1" >/dev/null
 }
 fold_selection_earlier() {
@@ -2335,7 +2358,9 @@ if [ "$wait_ms" -gt 0 ]; then
 fi
 refused fold-before-reclaim client-refusal -- fold --request "$(field insert-to-reclaim .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
-jq -e '.reason | contains("processing deadline") and contains("has passed")' \
+jq -e --slurpfile l "$receipts/insert-to-reclaim.json" '
+    (.reason | contains("is excluded: not-phase1 (model-refusal)") and contains("processing deadline") and contains($l[0].foldDeadline.posixMs | tostring))
+    and .pendingRequest == $l[0].request' \
   "$receipts/fold-before-reclaim.json" >/dev/null || fail "the fold before reclaim was not refused for its deadline"
 # A build failure, an unconverted window or a ledger refusal fails this success
 # assertion. None can stand in for a reclaim or for a named refusal control.

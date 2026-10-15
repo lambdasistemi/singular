@@ -81,6 +81,9 @@ import Singular.Registry.TxBuilder.Update.Context
     , computeProofs
     , computeUpperSlot
     , emptyRegistryContext
+    , guardBuiltFold
+    , guardSupportedEdges
+    , guardSupportedEncodableEdges
     , prepareState
     , queryContext
     )
@@ -222,9 +225,11 @@ updateTokenUsing cfg view tid addr ctx0 selected makeProofs = do
                     ( "updateToken: selected requests not pending: "
                         <> show missing
                     )
+    guardSupportedEncodableEdges "updateToken" reqUtxos
     let (stateIn, stateOut) = stateUtxo
     (proofs, newRoot) <-
         makeProofs stateUtxo reqUtxos
+    guardSupportedEdges "updateToken" reqUtxos
     let (oldState, newStateOut, script) =
             prepareState
                 cfg
@@ -276,7 +281,13 @@ updateTokenUsing cfg view tid addr ctx0 selected makeProofs = do
             addr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
-        Right tx -> pure tx
+        Right tx ->
+            guardBuiltFold
+                "updateToken"
+                view
+                (stateProcessTime oldState)
+                reqUtxos
+                tx
         Left err ->
             error $
                 "updateToken: build failed: "

@@ -64,32 +64,32 @@ One group per slice, grouped by pull request. A task is checked when its slice's
 
 ### admission-in-the-library
 
-- [ ] admission-red-tests: the boundary, many requests, the first offender named, the within-batch pair, the agreement with the model at the boundary and one past with its failing control
-- [ ] pure-fold-admission
-- [ ] pure-batch-consumes-created
-- [ ] library-agrees-with-the-model-question
+- [x] admission-red-tests: the boundary, many requests, the first offender named, the within-batch pair, the agreement with the model at the boundary and one past with its failing control
+- [x] pure-fold-admission
+- [x] pure-batch-consumes-created
+- [x] library-agrees-with-the-model-question
 
 ### builder-refuses-before-signing
 
-- [ ] builder-refuses-a-bound-past-a-deadline-reading-the-built-body
-- [ ] builder-refuses-a-termination-of-a-key-an-earlier-insertion-creates
-- [ ] connected-fold-refuses-the-same-way
+- [x] builder-refuses-a-bound-past-a-deadline-reading-the-built-body
+- [x] builder-refuses-a-termination-of-a-key-an-earlier-insertion-creates
+- [x] connected-fold-refuses-the-same-way
 
 ### selection-and-receipt-in-the-models-words
 
-- [ ] selection-window-rule-is-the-model-admission-at-the-probe-bound
-- [ ] delete-window-closed-from-code-readers-scripts-and-pages
-- [ ] post-build-decision-calls-the-library
-- [ ] receipt-names-the-request-reason-source-deadline-and-probe-bound
+- [x] selection-window-rule-is-the-model-admission-at-the-probe-bound
+- [x] delete-window-closed-from-code-readers-scripts-and-pages
+- [x] post-build-decision-calls-the-library
+- [x] receipt-names-the-request-reason-source-deadline-and-probe-bound
 
 ### devnet-expired-request-named-by-the-model
 
-- [ ] the-expired-request-is-named-not-phase1-by-the-model-beside-a-settled-in-window-request-on-a-devnet
+- [x] the-expired-request-is-named-not-phase1-by-the-model-beside-a-settled-in-window-request-on-a-devnet
 
 ### docs-of-what-ships
 
-- [ ] pages-state-the-window-rule-the-vocabularies-and-the-residuals
-- [ ] speech-restamped-and-narration-regenerated
+- [x] pages-state-the-window-rule-the-vocabularies-and-the-residuals
+- [x] speech-restamped-and-narration-regenerated
 
 ## Pull request 4: the compiled validator is shown to refuse the mutated transaction
 

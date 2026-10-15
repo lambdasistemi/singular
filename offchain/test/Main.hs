@@ -26,6 +26,7 @@ import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
+import Singular.Registry.FoldAdmissionSpec qualified
 import Singular.Registry.FoldSelectionSpec qualified
 import Singular.Registry.LifecycleSpec qualified
 import Singular.Registry.LineageSpec qualified
@@ -107,6 +108,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.FailureMatch" [Provider])
         Singular.Registry.FailureMatchSpec.spec
+    describe
+        (tagged "Singular.Registry.FoldAdmission" [Builders])
+        Singular.Registry.FoldAdmissionSpec.spec
     describe
         (tagged "Singular.Registry.FoldSelection" [Builders])
         Singular.Registry.FoldSelectionSpec.spec

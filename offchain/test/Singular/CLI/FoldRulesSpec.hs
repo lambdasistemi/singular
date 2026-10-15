@@ -13,6 +13,8 @@ values the selection produced, never typed.
 -}
 module Singular.CLI.FoldRulesSpec (spec) where
 
+import Control.Monad (forM_)
+
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Short qualified as SBS
@@ -55,9 +57,12 @@ import Singular.CLI.Fold
     , settledEntryFor
     )
 import Singular.CLI.FoldRules
-    ( FoldKind (..)
+    ( BoundBasis (..)
+    , FoldKind (..)
     , FoldRequestsRefusal (..)
     , KeptReceipt (..)
+    , PostBuild (..)
+    , PostBuildRefusal (..)
     , SettledForReceipt (..)
     , SpendsRefusal (..)
     , appVerdictOf
@@ -66,13 +71,13 @@ import Singular.CLI.FoldRules
     , assignRefPairing
     , buildLiveFacts
     , buildPendingRequests
-    , combineWindowClosedMessage
     , foldReceiptLists
     , foldRequests
     , keptReceiptFields
     , neutralAppExecutable
     , pendingDeadlineOf
     , pendingRequestOf
+    , postBuildCheck
     , refuseNamedEdgeEarly
     , renderFoldRequestsRefusal
     , renderSpendsRefusal
@@ -87,6 +92,7 @@ import Singular.Registry.Application
     )
 import Singular.Registry.Config (CageConfig (..), defaultProcessTime)
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
+import Singular.Registry.FoldAdmission (foldAdmission)
 import Singular.Registry.FoldSelection
     ( AppVerdict (..)
     , ApprovalCheck (..)
@@ -94,7 +100,6 @@ import Singular.Registry.FoldSelection
     , Exclusion (..)
     , Leaf (..)
     , PendingRequest (..)
-    , Reason (..)
     , SelectedRequest (..)
     , Selection (..)
     , exclusionName
@@ -132,6 +137,12 @@ nowMs = 1000000
 marginMs :: Integer
 marginMs = 30000
 
+{- | The registry's processing time, POSIX milliseconds: deadlines are
+submission times plus this, never the clock.
+-}
+processMs :: Integer
+processMs = 60000
+
 farDeadline :: Integer
 farDeadline = nowMs + 1000000
 
@@ -155,6 +166,7 @@ mkInsert ref key owner deadline =
         , prOwner = owner
         , prEdge = EdgeInsertActive
         , prDeadline = deadline
+        , prSubmittedAt = deadline - processMs
         , prDecodeOk = True
         , prApproval = ApprovalOk
         , prApp = AppReady
@@ -227,7 +239,7 @@ threePairing :: [(TxIn, Int)]
 threePairing = [(t1, 1), (t2, 2), (t3, 3)]
 
 threeSelection :: Selection
-threeSelection = selectFold 1 nowMs marginMs threeFacts threePending
+threeSelection = selectFold 1 nowMs marginMs processMs threeFacts threePending
 
 -- ---------------------------------------------------------
 -- Fixtures: three pending, none settleable, three reasons
@@ -266,7 +278,7 @@ nonePairing :: [(TxIn, Int)]
 nonePairing = [(u1, 11), (u2, 12), (u3, 13)]
 
 noneSelection :: Selection
-noneSelection = selectFold 1 nowMs marginMs noneFacts nonePending
+noneSelection = selectFold 1 nowMs marginMs processMs noneFacts nonePending
 
 -- ---------------------------------------------------------
 -- Fixtures: two settle under a wide bound
@@ -305,7 +317,7 @@ widePairing :: [(TxIn, Int)]
 widePairing = [(v1, 21), (v2, 22), (v3, 23)]
 
 wideSelection :: Selection
-wideSelection = selectFold 9 nowMs marginMs wideFacts widePending
+wideSelection = selectFold 9 nowMs marginMs processMs wideFacts widePending
 
 -- ---------------------------------------------------------
 -- Fixtures: the spend check, three pending
@@ -348,7 +360,7 @@ spec = describe "registry fold takes the selection" $ do
     oldRuleUntouched
     receiptListsSettledAndExcluded
     foldReceiptOmitsEarlierFields
-    windowClosedKeepsOthers
+    postBuildTimeAgreesWithLibrary
     oldRuleContrastReference
     foldResultListsItsSettledRequests
     settledEntryLookup
@@ -378,10 +390,11 @@ namedRequestMustBeSettled = describe "a named request is among the settled" $ do
             T.unpack (exclusionSource exc) `isInfixOf` said `shouldBe` True
             T.unpack (excDetail exc) `isInfixOf` said `shouldBe` True
     it
-        "refuses a named request the policy left out, naming reason and source"
+        "refuses a named request whose window is closed, naming the model's not-phase1"
         $ do
             let exc = exclusionFor 3 threeSelection
-            exclusionSource exc `shouldBe` "selection-policy"
+            exclusionName exc `shouldBe` "not-phase1"
+            exclusionSource exc `shouldBe` "model-refusal"
             foldRequests (Just t3) threePairing threeSelection
                 `shouldBe` Left (FoldNamedExcluded t3 exc)
             let said = renderFoldRequestsRefusal (FoldNamedExcluded t3 exc)
@@ -431,7 +444,7 @@ nothingToFoldNamesEveryExclusion = describe "nothing settleable names every excl
         renderFoldRequestsRefusal (FoldNothingToFold expected)
             `shouldNotBe` renderFoldRequestsRefusal (FoldNothingToFold firstOnly)
     it "says nothing is pending when nothing is pending" $ do
-        let emptySel = selectFold 1 nowMs marginMs Map.empty []
+        let emptySel = selectFold 1 nowMs marginMs processMs Map.empty []
             said = renderFoldRequestsRefusal FoldNothingPending
         foldRequests Nothing [] emptySel `shouldBe` Left FoldNothingPending
         "nothing is pending" `isInfixOf` said `shouldBe` True
@@ -446,7 +459,7 @@ severalPendingNeverRefusesOnCount = describe "several pending never refuses on c
         let pending2 = [p1, p2]
             pairing2 = [(t1, 1), (t2, 2)]
             facts2 = Map.delete 52 threeFacts
-            sel2 = selectFold 1 nowMs marginMs facts2 pending2
+            sel2 = selectFold 1 nowMs marginMs processMs facts2 pending2
         foldRequests Nothing pairing2 sel2 `shouldBe` Right (t1 :| [])
         refuseWhenSeveralArePending Nothing [t1, t2]
             `shouldBe` Left "several pending"
@@ -657,7 +670,7 @@ mismatchedInputsRefuseAsInconsistent =
         it
             "refuses when the pairing is non-empty while both lists are empty, never as nothing pending"
             $ do
-                let emptySel = selectFold 1 nowMs marginMs Map.empty []
+                let emptySel = selectFold 1 nowMs marginMs processMs Map.empty []
                     pairingNonEmpty = [(t1, 1)]
                     got = foldRequests Nothing pairingNonEmpty emptySel
                 got `shouldBe` Left (FoldInconsistentInput [] [t1])
@@ -779,7 +792,7 @@ namedWithNothingSettledStatesCause =
             "states both not-pending and nothing pending when nothing is pending"
             $ do
                 let fresh = txRef 9
-                    emptySel = selectFold 1 nowMs marginMs Map.empty []
+                    emptySel = selectFold 1 nowMs marginMs processMs Map.empty []
                     got = foldRequests (Just fresh) [] emptySel
                     expected = FoldNamedNothingSettled fresh Nothing []
                 got `shouldBe` Left expected
@@ -930,6 +943,33 @@ receiptListsSettledAndExcluded = describe
                             ]
                         )
                 map fst expected `shouldBe` [u1, u2, u3]
+        it
+            "names a closed window not-phase1 with its deadline and probe bound"
+            $ do
+                let exc = exclusionFor 3 threeSelection
+                    got = foldReceiptLists [] [(t3, exc)] 1 ("prov" :: T.Text)
+                lookup "excluded" got
+                    `shouldBe` Just
+                        ( toJSON
+                            [ object
+                                [ "request" .= renderOutRef t3
+                                , "reason" .= ("not-phase1" :: T.Text)
+                                , "source" .= ("model-refusal" :: T.Text)
+                                , "detail" .= excDetail exc
+                                ]
+                            ]
+                        )
+                show nearDeadline
+                    `isInfixOf` T.unpack (excDetail exc)
+                    `shouldBe` True
+                excDetail exc
+                    `shouldBe` T.pack
+                        ( "the request's processing deadline, "
+                            <> show nearDeadline
+                            <> " ms, is before the probe bound "
+                            <> show (nowMs + marginMs)
+                            <> " ms the fold would build under: no fold is built"
+                        )
         it
             "carries the bound with its provenance text, and a second bound differs"
             $ do
@@ -1150,25 +1190,30 @@ refuseWhenSeveralArePending _ [one] = Right one
 refuseWhenSeveralArePending _ _ = Left "several pending"
 
 -- ---------------------------------------------------------
--- A window-closed named cause keeps every other exclusion
+-- The post-build time check agrees with the library
 -- ---------------------------------------------------------
 
-windowClosedKeepsOthers :: Spec
-windowClosedKeepsOthers = describe "a window-closed named cause keeps every other exclusion" $ do
-    it "leaves a sole window-closed message unchanged" $ do
-        let legacy = "the request's processing deadline, 123 ms: no fold is built"
-        combineWindowClosedMessage legacy [] `shouldBe` legacy
-    it "lists an undecodable other exclusion after the legacy wording" $ do
-        let legacy = "the request's processing deadline, 123 ms: no fold is built"
-            undecodableExc =
-                Exclusion ReasonUndecodable "the output does not decode as a request"
-            others = [(u1, undecodableExc)]
-            got = combineWindowClosedMessage legacy others
-        legacy `isInfixOf` got `shouldBe` True
-        T.unpack (renderOutRef u1) `isInfixOf` got `shouldBe` True
-        "undecodable" `isInfixOf` got `shouldBe` True
-        "selection-policy" `isInfixOf` got `shouldBe` True
-        got `shouldNotBe` legacy
+{- | The post-build decision's deadline comparison is the library's
+'foldAdmission' with the deadline as its own submission time and no
+processing time: it admits exactly when the placed bound time is at or
+before the deadline, at the boundary and one past it.
+-}
+postBuildTimeAgreesWithLibrary :: Spec
+postBuildTimeAgreesWithLibrary =
+    describe "the post-build time check agrees with the library" $ do
+        it "admits exactly when the library admits at the placed bound time" $ do
+            let now = 1000000
+                deadline = 2000000
+            forM_ [deadline - 1, deadline, deadline + 1] $ \t -> do
+                let verdict = postBuildCheck now deadline Nothing (Just 99) (Just t)
+                    library = foldAdmission 0 t [(1 :: Int, deadline)]
+                case (verdict, library) of
+                    (PostBuildAdmitted BoundByTime, Nothing) -> pure ()
+                    (PostBuildRefused (BoundAfterDeadline t'), Just _) ->
+                        t' `shouldBe` t
+                    other ->
+                        expectationFailure
+                            ("post-build and library disagree: " ++ show other)
 
 oldRuleContrastReference :: Spec
 oldRuleContrastReference = describe "the old-rule contrast refuses the same inputs" $ do
@@ -1230,7 +1275,7 @@ earlyRefusalFixtures =
                 neutralApplication
                 gProcess
         facts = Map.fromList [(prKey p, (LeafUnknown, False)) | p <- pendings]
-        sel = selectFold 1 nowMs marginMs facts pendings
+        sel = selectFold 1 nowMs marginMs processMs facts pendings
     in  ([(rTx, decR), (uTx, decU)], pairing, pendings, sel)
 
 earlyNamedEdgeRefusal :: Spec
@@ -1492,7 +1537,7 @@ sameKeySameInteger = describe "same key shares one integer" $ do
                 (p0 : _) -> do
                     prKey p0 `shouldBe` prKey (pendings !! 1)
                     let facts = Map.fromList [(prKey p0, (LeafUnknown, False))]
-                        sel = selectFold 9 0 0 facts pendings
+                        sel = selectFold 9 0 0 processMs facts pendings
                     map selRef (selectionSettled sel) `shouldBe` [prRef p0]
                     map (exclusionName . snd) (selectionExcluded sel)
                         `shouldBe` ["key-in-batch"]
@@ -1526,6 +1571,7 @@ sameKeySameInteger = describe "same key shares one integer" $ do
                                     ownerT
                                     EdgeInsertActive
                                     (requestSubmittedAt r + 10000000)
+                                    (requestSubmittedAt r)
                                     True
                                     ApprovalOk
                                     AppReady
@@ -1533,7 +1579,7 @@ sameKeySameInteger = describe "same key shares one integer" $ do
             pA = mkP addrA 1000 1 1
             pB = mkP addrB 2000 2 2
             facts = Map.fromList [(1, (LeafUnknown, False)), (2, (LeafUnknown, False))]
-            sel = selectFold 9 0 0 facts [pA, pB]
+            sel = selectFold 9 0 0 processMs facts [pA, pB]
         length (selectionSettled sel) `shouldBe` 2
         selectionExcluded sel `shouldBe` []
 
@@ -1932,7 +1978,7 @@ assembledApplicationVerdictReachesTheSelection = describe "assembled application
                             , (prKey pS, (LeafActive, True))
                             , (prKey pT, (LeafUnknown, False))
                             ]
-                    sel = selectFold 9 0 0 facts pendings
+                    sel = selectFold 9 0 0 processMs facts pendings
                 map selRef (selectionSettled sel) `shouldBe` [prRef pR]
                 map (T.unpack . exclusionName . snd) (selectionExcluded sel)
                     `shouldBe` ["application-required", "application-datum-unreadable"]
@@ -2098,7 +2144,7 @@ assembledApprovalCheckReachesTheSelection = describe "assembled approval check r
         length pendings `shouldBe` 6
         map prApproval pendings `shouldBe` expected
         let facts = Map.fromList [(prKey p, (LeafUnknown, False)) | p <- pendings]
-            sel = selectFold 9 0 0 facts pendings
+            sel = selectFold 9 0 0 processMs facts pendings
         case pendings of
             (pC : _) ->
                 map selRef (selectionSettled sel) `shouldBe` [prRef pC]

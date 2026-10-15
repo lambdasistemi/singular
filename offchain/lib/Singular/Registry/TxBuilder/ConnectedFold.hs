@@ -82,6 +82,13 @@ import Singular.Registry.Trie
 import Singular.Registry.TxBuilder.Internal.Edges
 import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
+import Singular.Registry.TxBuilder.Update.Context
+    ( guardBatchPair
+    , guardBuiltFold
+    , guardBuiltWindow
+    , guardMintMatch
+    , guardSupportedEdges
+    )
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest (..)
@@ -153,6 +160,7 @@ connectedFoldTx args = do
         (stateIn, stateOut) = cfaStateUtxo args
         reqUtxos = cfaReqUtxos args
         feeUtxo = cfaFeeUtxo args
+    guardSupportedEdges "connectedFold" reqUtxos
     pp <- parameters view
     (proofs, newRoot) <- computeProofs tm tid reqUtxos
     let adjustedRoot = cfaAdjustRoot args newRoot
@@ -207,8 +215,40 @@ connectedFoldTx args = do
             feeAddr
             (prog :: Tx.TxBuild NoCtx Void ())
     case result of
-        Right tx -> pure (tx, newRoot)
+        Right tx -> do
+            if cfaSkipEval args
+                then do
+                    windowed <-
+                        guardBuiltWindow
+                            "connectedFold"
+                            view
+                            (stateProcessTime oldState)
+                            reqUtxos
+                            tx
+                    guardMintMatch
+                        "connectedFold"
+                        cfg
+                        reqUtxos
+                        (concatMap mintTriples (cfaMints args))
+                    guardBatchPair "connectedFold" reqUtxos
+                    pure (windowed, newRoot)
+                else do
+                    checked <-
+                        guardBuiltFold
+                            "connectedFold"
+                            view
+                            (stateProcessTime oldState)
+                            reqUtxos
+                            tx
+                    pure (checked, newRoot)
         Left err -> error ("connectedFold: build failed: " <> show err)
+
+{- | One caller-supplied mint as keyed triples, for the skip-evaluation
+mode's comparison of claimed against edgedelta (#519).
+-}
+mintTriples :: ConnectedMint -> [(PolicyID, AssetName, Integer)]
+mintTriples m =
+    [(cmPolicy m, asset, qty) | (asset, qty) <- Map.toList (cmAssets m)]
 
 {- | Generous per-purpose budget stated when local evaluation is
 skipped (adversarial path only); the ledger re-executes for real.
