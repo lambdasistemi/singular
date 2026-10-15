@@ -1,0 +1,24 @@
+{
+  "tasks-for-the-wallet-vault": [
+    {
+      "text": "Tasks for the wallet vault.",
+      "pause": 500
+    }
+  ],
+  "slice-vault-core": [
+    {
+      "text": "Key helpers, seal and open, exclusive creation, fresh key and address, and passphrase intake.",
+      "pause": 500
+    }
+  ],
+  "slice-wallet-command": [
+    {
+      "text": "The wallet verbs, documentation, packaged controls and the hosted step.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "ea75611d4df4fecd1b11c5cd7d2371b8d433e6792a9e6a2f68543f1fe532b018"
+  }
+}

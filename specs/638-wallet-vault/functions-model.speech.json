@@ -1,0 +1,36 @@
+{
+  "functions-for-the-wallet-vault": [
+    {
+      "text": "Functions for the wallet vault: names, arguments and result types only.",
+      "pause": 500
+    }
+  ],
+  "wallet-module": [
+    {
+      "text": "Parse a signing key from file bytes, and build a wallet from a network magic and a key.",
+      "pause": 500
+    }
+  ],
+  "vault-module": [
+    {
+      "text": "Build the key envelope, seal a vault, open a vault, generate a fresh key, and create the vault file exclusively.",
+      "pause": 500
+    }
+  ],
+  "passphrase-module": [
+    {
+      "text": "Read a passphrase from a terminal with confirmation, or one line from a descriptor.",
+      "pause": 500
+    }
+  ],
+  "command-module": [
+    {
+      "text": "The wallet create and wallet address commands, composed at the command boundary.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "d1a02d1c8b37033e11d6aa2d86e22e973e4cd14d4b6db40b5cdf82b5ea3c1268"
+  }
+}

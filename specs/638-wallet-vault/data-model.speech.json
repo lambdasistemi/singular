@@ -1,0 +1,36 @@
+{
+  "data-for-the-wallet-vault": [
+    {
+      "text": "Data for the wallet vault.",
+      "pause": 500
+    }
+  ],
+  "vault-file": [
+    {
+      "text": "A binary age file with one passphrase stanza at work factor eighteen, containing the key's text envelope. One key per vault, owner-only mode.",
+      "pause": 500
+    }
+  ],
+  "passphrase": [
+    {
+      "text": "A non-empty byte string kept in memory for one command, with no rendering that shows its content.",
+      "pause": 500
+    }
+  ],
+  "refusal": [
+    {
+      "text": "Seven named refusals, each carrying the path or descriptor it concerns and nothing secret.",
+      "pause": 500
+    }
+  ],
+  "command-inputs": [
+    {
+      "text": "The vault path, the network magic, and a passphrase source that is the terminal or a descriptor number.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "4646ffae5d497854f634a5358342e90c00675ed678f9651ce07544d9d3fcf940"
+  }
+}

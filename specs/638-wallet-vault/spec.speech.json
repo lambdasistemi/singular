@@ -1,0 +1,36 @@
+{
+  "create-a-wallet-into-an-encrypted-vault": [
+    {
+      "text": "Create a wallet into an encrypted vault. Issue 638, the first of five tickets under issue 490.",
+      "pause": 500
+    }
+  ],
+  "story": [
+    {
+      "text": "Alice creates her wallet with singular into a passphrase-encrypted vault and sees her address. Her key never exists as a plain file, and she never installs cardano-cli. She can print the address again by typing the passphrase.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "The vault is an age file with a passphrase recipient. Every creation draws a fresh key. An existing path is never overwritten. The printed address is the enterprise address of the key. A wrong or empty passphrase is refused without leaking anything. The passphrase is never an argument. Loading a plain key file is unchanged, and no cardano-cli or node component is linked.",
+      "pause": 500
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Every refusal exits non-zero, prints nothing on standard output and names its cause on standard error.",
+      "pause": 500
+    }
+  ],
+  "observable-success": [
+    {
+      "text": "Unit specs run in the job that runs the focused off-chain suite. The packaged binary controls run in the job for documented flags and refusal controls. The Lean model is silent on key custody.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "8afa575e9a07f431fbbb78b45801f5f10b3bad07f48a9af2ea0e7a97711a1d04"
+  }
+}
