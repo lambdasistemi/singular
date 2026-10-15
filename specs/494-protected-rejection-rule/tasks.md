@@ -171,12 +171,12 @@ Inserted on 15 October 2026 by the operator's rulings on the trie-ready tag.
 
 Inserted on 15 October 2026 by the operator's ruling that retires the fee pin.
 
-- [ ] `failing-controls-seven-c` — a configuration that still pins two tip numbers and a fold row that still requires the old tip cover fail on the branch as it stands.
-- [ ] `one-tip-field` — the configuration carries one tip number, the minimum tip, written under the existing wire key `maxFee`; the preservation statements keep one pin; the chain datum and the off-chain readers are unchanged.
-- [ ] `tip-cover-retired` — the old tip-cover predicate, its use in the two transaction-row statements, the tip-cover lemma and the two scenario rows about the old fee pin are retired by append-only restatement rows that name each.
-- [ ] `tip-rows-listed` — the general control `wrong-fee` and the tip fields of the transaction baseline are listed at the first checkpoint; a live row whose expectation changes is published unmet by ruling, never as a pass; a row that keeps passing is untouched.
-- [ ] `lean-consumers-run` — the consumers of a `lean/` change run before the push: model check, transaction baseline, simulator, application corpus, coverage and the conformance commands without a devnet.
-- [ ] `regenerate-after-slice-seven-c` — as slice five. (consumers-state-the-rule)
+- [x] `failing-controls-seven-c` — a configuration that still pins two tip numbers and a fold row that still requires the old tip cover fail on the branch as it stands.
+- [x] `one-tip-field` — the configuration carries one tip number, the minimum tip, written under the existing wire key `maxFee`; the preservation statements keep one pin; the chain datum and the off-chain readers are unchanged.
+- [x] `tip-cover-retired` — the old tip-cover predicate, its use in the two transaction-row statements, the tip-cover lemma and the two scenario rows about the old fee pin are retired by append-only restatement rows that name each.
+- [x] `tip-rows-listed` — the general control `wrong-fee` and the tip fields of the transaction baseline are listed at the first checkpoint; a live row whose expectation changes is published unmet by ruling, never as a pass; a row that keeps passing is untouched.
+- [x] `lean-consumers-run` — the consumers of a `lean/` change run before the push: model check, transaction baseline, simulator, application corpus, coverage and the conformance commands without a devnet.
+- [x] `regenerate-after-slice-seven-c` — as slice five. (consumers-state-the-rule)
 
 ### Slice eight: rejection reads the state
 

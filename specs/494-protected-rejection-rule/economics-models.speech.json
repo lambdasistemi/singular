@@ -93,6 +93,16 @@
       "pause": 400
     }
   ],
+  "slice-seven-c-as-built": [
+    {
+      "text": "Slice seven-c: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The configuration carries one tip number, minimumTip, always written and read under the existing key maxFee; the key minimumTip of slice five is gone from the written form, and the registration cost and booking width keep their omit-at-zero rule. The booking judgements of slices six and seven read the one field. The tip-cover predicate (lovelaceCoversTip), its hypothesis and conjunct in insert_active_transaction_row and update_terminal_transaction_row (the hypothesis was an echo of the conjunct, so both statements now hold for every request input lovelace), the four transaction-row annotation fields of the corpora, the exporter's guard and the two scenario rows about the old fee pin are retired; parameters_preserved_by_fold and parameters_preserved_by_batch conclude equality of the one tip number, and every restated or replaced identity is appended, uncovered, to the restatement table. The transaction baseline lost exactly eight top-level annotation lines and no other byte, and its compatibility check names the two retired fields as an explicit, scoped exception (4347 planted scalar mutations were refused by the real comparator). The protected coverage base record moved by exactly two identity strings, as it did for the first restatement of these two statements; two conformance modules that bind a restated theorem digest directly (Registration.hs, Retirement.hs) changed only their digest strings, and the marked appendix binding lost the retired conjunct. A repository search by the four old digests found twelve hits, all dispositioned. The classified consumers are 996 matching lines in 65 tracked files; no live conformance row or published row changes its expected result from this slice alone, and none is newly marked unmet, because the emitted configuration keeps the historical wire key, the general control wrong-fee still perturbs the compared maxFee observation, and the chain datum, off-chain readers, validators, builders and command line are untouched. The driver protocol version stays 7. Slice ten states that the processor takes exactly the declared tip; slice eight-c owns the tripwire and the publication of implementation gaps as unmet by ruling.",
+      "pause": 400
+    }
+  ],
   "slice-eight-a-as-built": [
     {
       "text": "Slice eight-a: as built.",
@@ -119,6 +129,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "8063efba9d416fc1231b5b7862b015fd13f7b463499faa0262125ad56e610d88"
+    "sha256": "e20d4eef51cd610f4c7ab9421d6c8314c97f306d439f775a051adb28fd1865d0"
   }
 }

@@ -399,27 +399,27 @@
       "pause": 400
     },
     {
-      "text": "[ ] failing-controls-seven-c — a configuration that still pins two tip numbers and a fold row that still requires the old tip cover fail on the branch as it stands.",
+      "text": "[x] failing-controls-seven-c — a configuration that still pins two tip numbers and a fold row that still requires the old tip cover fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] one-tip-field — the configuration carries one tip number, the minimum tip, written under the existing wire key maxFee; the preservation statements keep one pin; the chain datum and the off-chain readers are unchanged.",
+      "text": "[x] one-tip-field — the configuration carries one tip number, the minimum tip, written under the existing wire key maxFee; the preservation statements keep one pin; the chain datum and the off-chain readers are unchanged.",
       "pause": 300
     },
     {
-      "text": "[ ] tip-cover-retired — the old tip-cover predicate, its use in the two transaction-row statements, the tip-cover lemma and the two scenario rows about the old fee pin are retired by append-only restatement rows that name each.",
+      "text": "[x] tip-cover-retired — the old tip-cover predicate, its use in the two transaction-row statements, the tip-cover lemma and the two scenario rows about the old fee pin are retired by append-only restatement rows that name each.",
       "pause": 300
     },
     {
-      "text": "[ ] tip-rows-listed — the general control wrong-fee and the tip fields of the transaction baseline are listed at the first checkpoint; a live row whose expectation changes is published unmet by ruling, never as a pass; a row that keeps passing is untouched.",
+      "text": "[x] tip-rows-listed — the general control wrong-fee and the tip fields of the transaction baseline are listed at the first checkpoint; a live row whose expectation changes is published unmet by ruling, never as a pass; a row that keeps passing is untouched.",
       "pause": 300
     },
     {
-      "text": "[ ] lean-consumers-run — the consumers of a lean/ change run before the push: model check, transaction baseline, simulator, application corpus, coverage and the conformance commands without a devnet.",
+      "text": "[x] lean-consumers-run — the consumers of a lean/ change run before the push: model check, transaction baseline, simulator, application corpus, coverage and the conformance commands without a devnet.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-seven-c — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-seven-c — as slice five. (consumers-state-the-rule)",
       "pause": 300
     }
   ],
@@ -551,6 +551,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ea11712a92b281ef041717dfdd90223686289a887e08a264acac0876f341c1f4"
+    "sha256": "4e5cbcfb18e4ef465c78c7be9d2c027affe41b7ab07aa684667c9145060910a6"
   }
 }

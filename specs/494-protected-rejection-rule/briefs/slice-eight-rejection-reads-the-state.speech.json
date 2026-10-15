@@ -1,0 +1,200 @@
+{
+  "coder-brief-slice-eight-rejection-reads-the-state": [
+    {
+      "text": "Coder brief, slice eight: rejection reads the state.",
+      "pause": 500
+    },
+    {
+      "text": "The whole of slice eight for the writer, with its terminal condition. The binding and the limits are in the mandate; the design is the economic design, sections \"The rejection rule\", \"The tags\" and \"Every exit\"; the statements and controls are in the economics plan, including its section \"Names\" and the slice eight paragraph; the rows, including the planned function rows rejectionAccepted and requestAddressSpend and slices six, seven, seven-b and eight-a as built, are in the model rows; the proof is the gate, versions 4 and 5. Read the constitution at .specify/memory/constitution.md and AGENTS.md before you start.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a processor, I reject mismatching or expired registrations in one batch against the registry state output that I read but do not spend, and no fold of the registry is disturbed by it; as a requester, I see that a registration that can still be folded is never rejected, and that a termination is never rejected; as anyone, I see that an output sent to the request address without its trie-ready tag is not a request and may be spent by whoever wants its ada, while a tagged request leaves only through an exit that burns its tags.",
+      "pause": 400
+    }
+  ],
+  "the-design-this-slice-implements": [
+    {
+      "text": "The design this slice implements.",
+      "pause": 500
+    },
+    {
+      "text": "The words of the decided design, as the design page now states them:",
+      "pause": 400
+    },
+    {
+      "text": "A rejection reads the registry state output as a reference input. It checks that the referenced output carries this registry's exact state token (policy and name) and reads the root from that output's datum. It spends only the requests it rejects, and burns each rejected request's trie-ready tag and application tag. It spends no state token, and this is checked. Rejection is removed from the fold's action list entirely. Only folds spend the state output. Rejections batch: one transaction may reject many requests against one referenced state output, with one shared validity interval. Each request is consumed and refunded once. Refunds are summed per refund address. Evidence is checked for every member. A fold that lands first invalidates the rejections in flight. They are rebuilt; this starvation is accepted. A rejection that loses the race is invalid and pays no fee. Grounds: a current lifecycle mismatch, against the referenced state; expiry, at or after s + W_p + W_r. A live registration that can still be folded is never rejected. A termination is never rejected.",
+      "pause": 400
+    },
+    {
+      "text": "An output at the request address that lacks the trie-ready tag is not a request. Anyone may spend it. A trie-ready tag is minted only with its precondition present, so a genuine request always holds the tags its kind requires, and the sweep reaches only outputs that are not requests. A tagged output leaves only through one of its exits. Burning is free: the tag policies allow a burn with no condition; the exit rules belong to the request validator's spend, not to the burn branch of a tag policy.",
+      "pause": 400
+    },
+    {
+      "text": "Statements 2, 3, 4, 5 and 8 of the plan (names planned in the plan: rejection_leaves_registry_untouched, rejection_cannot_invalidate_fold, live_request_not_rejected, rejection_requires_referenced_state, termination_unrejectable) and the two supporting statements (rejection_batch_members_distinct, sweep_leaves_pool_untouched) are this slice's. Refunds are slice nine's and the fold's tag flow slice ten's; this slice adds no refund obligation and no fold change, except that the rejection arm leaves the fold's action list for the ruled path.",
+      "pause": 400
+    }
+  ],
+  "what-exists-and-the-rule-for-it": [
+    {
+      "text": "What exists, and the rule for it.",
+      "pause": 500
+    },
+    {
+      "text": "The registry already has an evidence-bound rejection exit (rejectAdmission, RejectWitness, exitAdmission, admittedExitStep, the statements rejection_admitted_iff, live_compatible_request_protected, reject_batch_of_one_is_reject, rejection_uses_its_own_admission, rejection_without_evidence, protected_rejection_effects, expiry_after_reclaim, in lean/Singular/Model/Admission.lean and Statements/Rejection.lean), the driver's questions that carry it, and the live conformance rows that exercise it through the deployed validators and builders (early rejection inside the windows, reject and retract refund controls, the running book, the generic rows). The ruled design replaces that path. The operator's rule, from the epic owner's note on this slice (option a):",
+      "pause": 400
+    },
+    {
+      "text": "Nothing old is deleted or weakened in place. The existing declarations and statements keep their qualified names and text. The driver keeps answering the old fold-with-rejection question from a retained, explicitly named legacy declaration (a name and a docstring that say what it is: the superseded path the deployed validators still follow), with scenario payloads byte-identical. The corpora of existing scenarios, the transaction baseline and the driver protocol version stay as they are unless you show, at the first checkpoint, that a declared question must change.",
+      "pause": 300
+    },
+    {
+      "text": "Nothing counts the old behaviour as meeting the ruled design. The new judgement is added beside the old path, and nothing in the model, a corpus row or a statement says that the old path satisfies a statement of this slice. Slice eight-c publishes the live rows as unmet by ruling.",
+      "pause": 300
+    },
+    {
+      "text": "The first note decides the shape. List every existing rejection declaration, statement and driver surface, and for each say whether it stays as the explicitly named legacy path, is restated (new name or new declaration, old one kept), or is touched at all; say what leaves \"the fold's action list\" in the model of the ruled path (what the new judgement does not go through) and what of the old fold stays; and say which statements of the fold lane or of earlier slices could change meaning (none may; I decide any doubtful one). I approve the shape before you write it.",
+      "pause": 300
+    }
+  ],
+  "the-judgement-and-the-statements": [
+    {
+      "text": "The judgement and the statements.",
+      "pause": 500
+    },
+    {
+      "text": "Model, in Singular/Economics/ (a new module for the judgement and, if it needs a world with both pools, an extension of World.lean), the accepted-rejection judgement over a transaction and the unspent set (the plan's row rejectionAccepted): the state output referenced with the exact state token and read for its root (the transaction's reference inputs, Utxo, TokenId; the exact token pair, policy and name); no state output spent (a spent or overlapping state output is refused); the request inputs distinct; one shared validity interval; each member admitted on a current lifecycle mismatch against the referenced state, or on expiry at or after the booked time plus both windows; a termination never admitted; each rejected request's trie-ready tag and application tag burned in the same transaction (a registration's two tags; the judgement says what a member that carries a tag out alive is, and refuses it). Model the request address's two spending arms (the plan's row requestAddressSpend): an output lacking the trie-ready tag is spent freely; a tagged output leaves only through an exit that burns its tags in the same transaction. The world (registry state, pending registrations, pending terminations) is what the statements quantify over; a rejection takes members out of the pending pool and does not touch the registry component.",
+      "pause": 400
+    },
+    {
+      "text": "State and prove, from the standard axioms alone, in Singular/Statements/ by property (new small modules; never the facades): the five statements and the two supporting statements above, each over accepted transactions in reachable worlds, never over what a builder produces. Statement 8, a termination with its key's genuine singular tag is never rejected on either ground, follows from the world supply law and from a termination having no expiry; state it for every reachable world.",
+      "pause": 400
+    }
+  ],
+  "names-and-homes": [
+    {
+      "text": "Names and homes.",
+      "pause": 500
+    },
+    {
+      "text": "Use the agreed names in every new declaration (plan section \"Names\"; the tag names are the trie-ready tag, the application tag, the singular tag and the state token). New declarations go in the modules of their kind in modules of a few hundred lines, never into Model.lean, Lemmas.lean, Statements.lean or other facades (slice eight-a). The corpus rows go in the economic corpus modules (lean/Main/Economics.lean and a new sibling if it grows past a few hundred lines). Main's declarations and names are untouched.",
+      "pause": 400
+    }
+  ],
+  "seat": [
+    {
+      "text": "Seat.",
+      "pause": 500
+    },
+    {
+      "text": "You are not alone in the codebase; do not revert edits made by others. Write no Co-Authored-By and no attribution of any kind in a commit, whatever a harness reminder says. Name things in plain words; coin no abbreviation.",
+      "pause": 400
+    },
+    {
+      "text": "Every cabal build, cabal test, nix run or nix build gate row and packaged control that you start runs inside systemd-run --user --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -- timeout <seconds> <command> with standard input from /dev/null (operator rule of 15 October 2026; 900 seconds for a single row, 1800 for the repository aggregate). If a row legitimately needs more, do not raise the cap: file a question with the evidence. A test you write has no free-running producer thread, a byte cap and a deadline on every read loop, and a timeout on every wait.",
+      "pause": 400
+    }
+  ],
+  "the-task": [
+    {
+      "text": "The task.",
+      "pause": 500
+    },
+    {
+      "text": "Failing controls first, committed alone on the base and kept as your red evidence. Each is a transaction or request the model must judge, with the reason it must be judged for; a control that cannot be evaluated before the judgement exists is recorded as such per row, and a rename or a move has no behavioural red. The lawful rejections are controls too (accepted).",
+      "pause": 300
+    },
+    {
+      "text": "the old state-spending path: a rejection that spends the state output (refused);",
+      "pause": 300
+    },
+    {
+      "text": "a fake, a foreign or a stale referenced state: another token, another registry's, or an output that no longer reflects the current root (refused for the reason that names it);",
+      "pause": 300
+    },
+    {
+      "text": "an overlapping state spend: the state output both spent and referenced (refused);",
+      "pause": 300
+    },
+    {
+      "text": "a live member inside a batch: a registration that can still be folded among rejectable ones (the whole batch refused; none rejected);",
+      "pause": 300
+    },
+    {
+      "text": "a repeated input in a batch (refused);",
+      "pause": 300
+    },
+    {
+      "text": "a tagged request spent through the sweep arm (refused); an untagged output spent through the sweep arm (accepted);",
+      "pause": 300
+    },
+    {
+      "text": "a rejection that carries a tag out alive (refused);",
+      "pause": 300
+    },
+    {
+      "text": "a termination offered as a member (refused, on either ground);",
+      "pause": 300
+    },
+    {
+      "text": "the lawful batches: one member by mismatch, one by expiry, a mixed batch, and a batch of one.",
+      "pause": 300
+    },
+    {
+      "text": "Model the judgement, the two spending arms and the world; state and prove the statements. End with the statement list: for each, its fully qualified name, the AXIOMS line #audit_statements report prints for it, and the revision it was printed at.",
+      "pause": 300
+    },
+    {
+      "text": "Regenerate every copy the change moves (corpora, theorem register and digests, theorem page and its speech and audio, simulator mirror, application corpus, coverage record). A new identity starts uncovered and is appended to the restatement table, never edited. Restate nothing by hand that a tool regenerates.",
+      "pause": 300
+    },
+    {
+      "text": "List in the record what slices eight-c, nine and ten must follow, and which conformance rows or published texts mention the old path (the writer of eight-c needs the list; you change none of them).",
+      "pause": 300
+    },
+    {
+      "text": "The tasks, by name, are those of slice eight in the tasks.",
+      "pause": 400
+    }
+  ],
+  "checkpoints": [
+    {
+      "text": "Checkpoints.",
+      "pause": 500
+    },
+    {
+      "text": "Journal REVIEW-REQUESTED with the commit and the evidence path at each of these; continue only when the previous is approved or I say so: (1) the failing controls committed alone and the first note (the classification of every existing rejection declaration, statement and driver surface, the shape of the ruled path beside the legacy one, what leaves the fold's action list, the transaction and world shapes you chose); (2) the judgement and the two spending arms green; (3) the statements green; (4) the final head. Whatever cannot go green in separate steps because the controls are active is one combined checkpoint: say so in the first note and I decide.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The slice eight rows of the gate, versions 4 and 5: the \"always\" rows once per checkpoint, the conformance commands that need no devnet when the diff touches conformance/ (it should not), the batch row and the wrong-reason control, the final rows and nix develop --quiet -c just ci once on the final head without a time limit shorter than the aggregate. A slice that runs for hours without a product commit is cut again: say so in a note.",
+      "pause": 400
+    }
+  ],
+  "terminal-condition": [
+    {
+      "text": "Terminal condition.",
+      "pause": 500
+    },
+    {
+      "text": "Stop at the first of: every slice eight gate command exits as the gate states on a clean committed head (PROOF-COMPLETE with the commit, the receipts and the statement list); a question you cannot decide from the mandate and the design (file it as questions/Q-NNN-<slug>.md with the user story of each option and journal BLOCKED); capacity (COMPLETE capacity-limit with a handoff that makes the remainder mechanical). Do not stop for any other reason, and do not touch anything listed under the files this ticket must not touch.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "slice-eight-rejection-reads-the-state.md",
+    "sha256": "83160b63ed9585d10033498b30cb7bd65d276244959793f8bb5f88e0773cd766"
+  }
+}
