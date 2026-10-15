@@ -10,7 +10,7 @@
 
 ## Slice: wallet command
 
-- [ ] wallet-verbs: `singular wallet create` and `singular wallet address` with `--vault`, `--network-magic`, `--passphrase-fd`; documented flags equal `--help`.
-- [ ] vault-documentation: command reference and a paragraph on the vault format so a user can open the file with an age tool alone.
-- [ ] packaged-vault-controls: the real binary through a descriptor: create, address equal, second create refused with the file unchanged, wrong passphrase refused with empty standard output, no `cardano-cli` on the path; each control shown to fail against a planted defect.
-- [ ] hosted-vault-controls: one step of the existing flags-and-refusals job runs the controls.
+- [x] wallet-verbs: `singular wallet create` and `singular wallet address` with `--vault`, `--network-magic`, `--passphrase-fd`; documented flags equal `--help`.
+- [x] vault-documentation: command reference and a paragraph on the vault format so a user can open the file with an age tool alone.
+- [x] packaged-vault-controls: the real binary through a descriptor: create, address equal, second create refused with the file unchanged, wrong passphrase refused with empty standard output, no `cardano-cli` on the path; each control shown to fail against a planted defect.
+- [x] hosted-vault-controls: one step of the existing flags-and-refusals job runs the controls.

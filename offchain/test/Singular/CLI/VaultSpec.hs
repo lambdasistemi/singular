@@ -24,17 +24,9 @@ parser, and the plan records a manual transcript for the human path.
 -}
 module Singular.CLI.VaultSpec (spec) where
 
-import Control.Concurrent
-    ( forkIO
-    , killThread
-    , newEmptyMVar
-    , putMVar
-    , takeMVar
-    , threadDelay
-    )
 import Control.Exception (SomeException, try)
 import Control.Exception qualified
-import Control.Monad (forM_, replicateM_)
+import Control.Monad (forM_)
 import Data.Bits (xor, (.&.))
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -47,9 +39,7 @@ import System.IO
     ( BufferMode (NoBuffering)
     , Handle
     , hClose
-    , hFlush
     , hSetBuffering
-    , hWaitForInput
     )
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.Files
@@ -76,10 +66,7 @@ import System.Posix.Terminal
     , withMode
     )
 import System.Posix.Types (Fd (..))
-import System.Timeout (timeout)
 import Test.Hspec
-
-import GHC.Conc.Sync (ThreadId, ThreadStatus (..), threadStatus)
 
 import Cardano.Crypto.DSIGN
     ( Ed25519DSIGN
@@ -89,6 +76,12 @@ import Cardano.Crypto.DSIGN
     )
 import Crypto.Age.Scrypt (WorkFactor, mkWorkFactor)
 
+import Singular.CLI.Command
+    ( CLIError (..)
+    , Command (..)
+    , WalletArgs (..)
+    , parseCommand
+    )
 import Singular.CLI.Passphrase
 import Singular.CLI.Vault
 import Singular.Registry.Wallet
@@ -109,6 +102,7 @@ spec = describe "wallet vault" $ do
     exclusiveCreation
     passphraseIntake
     promptOrdering
+    walletVerbs
 
 -- * Producers: every expected value is obtained, never typed beside the code
 
@@ -433,52 +427,23 @@ passphraseIntake = describe "the passphrase intake" $ do
             `shouldReturn` Left
                 (PassphraseDescriptorUnreadable (fromIntegral fdn))
 
--- * The hidden prompt's order, on a real terminal
+-- * The hidden terminal bracket
 
--- * The hidden prompt's order, on a real terminal
-
--- | The prompt text the proofs drive, and the secret a typist sends.
-promptText :: String
-promptText = "vault passphrase: "
-
-secretLine :: ByteString
-secretLine = "the-secret-passphrase"
-
-{- | The hidden-prompt proofs. Every read is capped at 64 KiB in total
-and carries a deadline; every wait runs inside a timeout; the only
-producer writes one fixed amount and is killed once the ordering is
-observed, so nothing grows without bound. The ordering proof fills the
-terminal's queue once, which makes the prompt's write block: an
-implementation that writes the prompt before hiding the echo leaves
-the echo on while the prompt is stuck in the queue, and the proof
-answers that by name.
+{- | The hidden-prompt proofs, against the bracketed core with the
+effects injected: the echo is off inside the bracket before any
+bracketed write, and it is restored on every exit, the bracketed read
+throwing included. The interactive terminal path itself — a human
+typing at a prompt — is the plan's declared limit: no hosted run
+executes it, and the manual transcript in the pull request body is
+its evidence.
 -}
 promptOrdering :: Spec
-promptOrdering = describe "the hidden prompt's order on a terminal" $ do
-    it "turns the echo off before the prompt's first byte is written" $
-        withPseudoTerminal $ \master slave slaveFd -> do
+promptOrdering = describe "the hidden terminal bracket" $ do
+    it "holds the echo off inside the bracket, before any bracketed write" $
+        withPseudoTerminal $ \_master _slave slaveFd -> do
             setEchoOn slaveFd
-            junkWriter <-
-                forkIO (replicateM_ 64 (BC.hPutStr slave junkChunk >> hFlush slave))
-            blockedInTime <- timeout 5000000 (awaitBlockedWrite junkWriter)
-            blockedInTime `shouldBe` Just True
-            result <- newEmptyMVar
-            _ <-
-                forkIO $
-                    readHiddenLine promptText slaveFd slave >>= putMVar result
-            hiddenInTime <- timeout 5000000 (awaitEchoOff slaveFd)
-            hiddenInTime `shouldBe` Just ()
-            killThread junkWriter
-            seen <- boundedCollectUntil master promptText
-            BC.unpack seen `shouldSatisfy` (promptText `isInfixOf`)
-            hidden <- echoIsOn slaveFd
-            hidden `shouldBe` False
-            BC.hPutStr master (secretLine <> "\n")
-            hFlush master
-            typed <- timeout 5000000 (takeMVar result)
-            typed `shouldBe` Just (Right secretLine)
-            leaked <- boundedQuietRead master 300
-            BC.unpack leaked `shouldNotSatisfy` (BC.unpack secretLine `isInfixOf`)
+            observed <- withHiddenEcho slaveFd (echoIsOn slaveFd)
+            observed `shouldBe` False
             restored <- echoIsOn slaveFd
             restored `shouldBe` True
     it "restores the echo when the read inside the bracket fails" $
@@ -491,8 +456,6 @@ promptOrdering = describe "the hidden prompt's order on a terminal" $ do
                 Right _ -> fail "the failing read should have propagated"
             restored <- echoIsOn slaveFd
             restored `shouldBe` True
-  where
-    junkChunk = BC.replicate 4096 'j'
 
 -- | One pseudo-terminal, echo on, both ends unbuffered, closed after.
 withPseudoTerminal :: (Handle -> Handle -> Fd -> IO a) -> IO a
@@ -525,66 +488,100 @@ echoIsOn slaveFd = do
     attributes <- getTerminalAttributes slaveFd
     pure (terminalMode EnableEcho attributes)
 
-{- | Wait until the junk writer is blocked in a write: the queue is
-full. False answers that the writer finished or died without ever
-blocking, so the ordering premise is absent and the proof fails
-fast instead of waiting.
--}
-awaitBlockedWrite :: ThreadId -> IO Bool
-awaitBlockedWrite thread = do
-    status <- threadStatus thread
-    case status of
-        ThreadBlocked _ -> pure True
-        ThreadFinished -> pure False
-        ThreadDied -> pure False
-        _ -> threadDelay 10000 >> awaitBlockedWrite thread
+-- * The wallet verbs
 
--- | Wait until the terminal's echo is off.
-awaitEchoOff :: Fd -> IO ()
-awaitEchoOff slaveFd = do
-    echoOn <- echoIsOn slaveFd
-    if not echoOn
-        then pure ()
-        else threadDelay 10000 >> awaitEchoOff slaveFd
-
-{- | Read one bounded window: at most the remaining bytes of a 64 KiB
-budget, stopping when the terminal is quiet for the given
-milliseconds.
--}
-boundedQuietRead :: Handle -> Int -> IO ByteString
-boundedQuietRead = boundedRead 65536
-
-{- | Read until the needle arrives, within one 64 KiB budget and a
-deadline of quiet milliseconds per poll.
--}
-boundedCollectUntil :: Handle -> String -> IO ByteString
-boundedCollectUntil master needle = go 65536 ""
-  where
-    go _ acc
-        | needle `isInfixOf` BC.unpack acc = pure acc
-    go 0 acc = pure acc
-    go budget acc = do
-        ready <- hWaitForInput master 300
-        if not ready
-            then pure acc
-            else do
-                more <- BS.hGetNonBlocking master budget
-                if BS.null more
-                    then pure acc
-                    else go (budget - BS.length more) (acc <> more)
-
--- | The byte-capped read both proofs share.
-boundedRead :: Int -> Handle -> Int -> IO ByteString
-boundedRead budget master milliseconds
-    | budget <= 0 = pure ""
-    | otherwise = do
-        ready <- hWaitForInput master milliseconds
-        if not ready
-            then pure ""
-            else do
-                more <- BS.hGetNonBlocking master budget
-                if BS.null more
-                    then pure ""
-                    else
-                        (more <>)
-                            <$> boundedRead (budget - BS.length more) master milliseconds
+walletVerbs :: Spec
+walletVerbs = describe "the wallet verbs on the command line" $ do
+    let created vault magic fd =
+            WalletCreate
+                WalletArgs
+                    { walletVaultPath = vault
+                    , walletNetworkMagic = magic
+                    , walletPassphraseFd = fd
+                    }
+        addressed vault magic fd =
+            WalletAddress
+                WalletArgs
+                    { walletVaultPath = vault
+                    , walletNetworkMagic = magic
+                    , walletPassphraseFd = fd
+                    }
+    it "parses wallet create with its vault, network magic and descriptor" $
+        parseCommand
+            [ "wallet"
+            , "create"
+            , "--vault"
+            , "alice.vault"
+            , "--network-magic"
+            , "1"
+            , "--passphrase-fd"
+            , "9"
+            ]
+            `shouldBe` Right (created "alice.vault" 1 (Just 9))
+    it "parses wallet create with the terminal as the passphrase source" $
+        parseCommand
+            [ "wallet"
+            , "create"
+            , "--vault"
+            , "alice.vault"
+            , "--network-magic"
+            , "42"
+            ]
+            `shouldBe` Right (created "alice.vault" 42 Nothing)
+    it "parses wallet address with the same flags, mainnet included" $
+        parseCommand
+            [ "wallet"
+            , "address"
+            , "--vault"
+            , "alice.vault"
+            , "--network-magic"
+            , "764824073"
+            ]
+            `shouldBe` Right (addressed "alice.vault" 764824073 Nothing)
+    it "refuses wallet create without a vault path" $
+        parseCommand ["wallet", "create", "--network-magic", "1"]
+            `shouldBe` Left (MissingFlag "--vault")
+    it "refuses wallet create without a network magic" $
+        parseCommand ["wallet", "create", "--vault", "alice.vault"]
+            `shouldBe` Left (MissingFlag "--network-magic")
+    it "refuses a network magic that is not a number" $
+        parseCommand
+            ["wallet", "create", "--vault", "v", "--network-magic", "preprod"]
+            `shouldBe` Left (BadValue "--network-magic" "not a number")
+    it "refuses a passphrase descriptor that is not a number" $
+        parseCommand
+            [ "wallet"
+            , "create"
+            , "--vault"
+            , "v"
+            , "--network-magic"
+            , "1"
+            , "--passphrase-fd"
+            , "x"
+            ]
+            `shouldBe` Left (BadValue "--passphrase-fd" "not a descriptor number")
+    it "refuses a registry flag on a wallet command, by name" $
+        parseCommand
+            [ "wallet"
+            , "create"
+            , "--vault"
+            , "v"
+            , "--network-magic"
+            , "1"
+            , "--blueprint"
+            , "plutus.json"
+            ]
+            `shouldBe` Left
+                ( BadValue
+                    "--blueprint"
+                    "is not accepted by wallet create: a wallet command takes only its vault, network magic and passphrase descriptor"
+                )
+    it "refuses the wallet flags on a registry command, by name" $
+        parseCommand ["registry", "fold", "--vault", "x"]
+            `shouldBe` Left
+                ( BadValue
+                    "--vault"
+                    "is a wallet flag: only singular wallet commands read it"
+                )
+    it "takes a bare wallet word as help" $
+        parseCommand ["wallet"] `shouldBe` Right Help

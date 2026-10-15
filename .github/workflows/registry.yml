@@ -1134,6 +1134,14 @@ jobs:
         run: nix run --quiet .#cli-flags-check
       - name: The flags check refuses each disagreement by name
         run: nix run --quiet .#cli-flags-controls
+      # #638: the wallet vault promises of the packaged binary, through a
+      # passphrase descriptor with no `cardano-cli` on the path — each
+      # control planted-defect falsified, then green on the real binary.
+      # Every run command the control starts is bounded in wall clock and
+      # memory-capped where the runner provides a user manager.
+      - name: The packaged wallet vault keeps its promises
+        timeout-minutes: 20
+        run: nix run --quiet .#wallet-vault-controls
   keri-stub-component-build:
     name: Keri-stub component build
     runs-on: nixos

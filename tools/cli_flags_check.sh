@@ -79,10 +79,13 @@ if [ -z "$open_datum" ]; then
 fi
 
 # command flag lines ("CMD FLAG"), one per pair, from one singular help text.
+# Wallet verbs are commands of their own group, named "wallet VERB", so
+# the table can name them and refuse them apart from the registry group.
 singular_pairs() {
   awk '
     /^  singular registry [a-z]+/ { cmd = $3; usage = 1 }
-    usage && /^  singular registry [a-z]+/ || usage && /^      / {
+    /^  singular wallet [a-z]+/ { cmd = "wallet " $3; usage = 1 }
+    usage && /^  singular (registry|wallet) [a-z]+/ || usage && /^      / {
       line = $0
       while (match(line, /--[a-z][a-z-]*/)) {
         flags[cmd] = flags[cmd] " " substr(line, RSTART, RLENGTH)
@@ -97,6 +100,7 @@ singular_pairs() {
       line = $0
       scope = ""
       if (line ~ /Every command also takes/) scope = "every"
+      else if (line ~ /Every registry command also takes/) scope = "registry"
       else if (line ~ /Write commands also take/) scope = "writes"
       while (match(line, /--[a-z][a-z-]*/)) {
         f = substr(line, RSTART, RLENGTH)
@@ -107,7 +111,7 @@ singular_pairs() {
     }
     END {
       for (c in cmds) {
-        n = split(flags[c] " " notes["every"] (writes[c] ? " " notes["writes"] : ""), fs, " ")
+        n = split(flags[c] " " notes["every"] (writes[c] ? " " notes["writes"] : "") (c !~ /^wallet / ? " " notes["registry"] : ""), fs, " ")
         for (i = 1; i <= n; i++) if (fs[i] != "") print c, fs[i]
       }
     }
@@ -161,7 +165,7 @@ if grep '^UNATTRIBUTED ' "$scratch/singular.pairs" | sed 's/^UNATTRIBUTED /--hel
   status=1
 fi
 sed -i '/^UNATTRIBUTED /d' "$scratch/singular.pairs"
-mapfile -t singular_commands < <(cut -d' ' -f1 "$scratch/singular.pairs" | sort -u)
+mapfile -t singular_commands < <(awk '{ if ($1 == "wallet") print $1 " " $2; else print $1 }' "$scratch/singular.pairs" | sort -u)
 if [ ${#singular_commands[@]} -eq 0 ]; then
   echo "EMPTY EXTENT: singular --help names no registry command" >&2
   exit 2
@@ -186,17 +190,24 @@ mapfile -t od_writes < <(grep ' --wallet-skey$' "$scratch/opendatum.pairs" | cut
 
 # Namespaced triples "BIN CMD FLAG" for the comparison.
 : >"$scratch/help.pairs"
-while read -r c f; do echo "singular $c $f"; done <"$scratch/singular.pairs" >>"$scratch/help.pairs"
+sed 's/^/singular /' "$scratch/singular.pairs" >>"$scratch/help.pairs"
 while read -r c f; do echo "open-datum $c $f"; done <"$scratch/opendatum.pairs" >>"$scratch/help.pairs"
 sort -u -o "$scratch/help.pairs" "$scratch/help.pairs"
 
 # Each command's own --help agrees with the top-level help about it.
 for c in "${singular_commands[@]}"; do
-  "$singular" registry "$c" --help >"$scratch/help.singular.$c" 2>&1 || {
-    echo "singular registry $c --help exited non-zero" >&2
-    status=1
-    continue
-  }
+  case $c in
+    "wallet "*) "$singular" $c --help >"$scratch/help.singular.$c" 2>&1 || {
+      echo "singular $c --help exited non-zero" >&2
+      status=1
+      continue
+    } ;;
+    *) "$singular" registry "$c" --help >"$scratch/help.singular.$c" 2>&1 || {
+      echo "singular registry $c --help exited non-zero" >&2
+      status=1
+      continue
+    } ;;
+  esac
   if ! diff <(grep "^$c " "$scratch/singular.pairs") \
     <(singular_pairs <"$scratch/help.singular.$c" | grep "^$c ") >"$scratch/diff.singular.$c"; then
     echo "singular registry $c --help disagrees with singular --help about $c:" >&2
@@ -336,10 +347,12 @@ while IFS= read -r row; do
       [ -n "$ticked" ] || continue
       inner=${ticked#\`}
       inner=${inner%\`}
-      # qualified `singular create` or `open-datum insert`, else plain `create`
+      # qualified `singular create` or `open-datum insert`, else plain `create`;
+      # every word after the binary is the command's name, so the wallet
+      # verbs `singular wallet create` keep their group word
       if [[ "$inner" == *" "* ]]; then
         bin=${inner%% *}
-        cmd=${inner##* }
+        cmd=${inner#* }
         bin=${bin//[_-]/-}
         if [ "$bin" != singular ] && [ "$bin" != open-datum ]; then
           echo "settings table: row names unknown binary '$bin': $row" >&2
@@ -376,18 +389,30 @@ while IFS= read -r row; do
 done <"$scratch/rows"
 sort -u -o "$scratch/doc.pairs" "$scratch/doc.pairs"
 
-comm -23 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c f; do
+comm -23 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; do
+  cmd=$c1
+  f=$rest
+  case $c1 in wallet) read -r verb f <<<"$rest"; cmd="wallet $verb" ;; esac
   if [ "$b" = singular ]; then
-    echo "undocumented: singular registry $c takes $f (--help) but the settings table does not say so" >&2
+    case $cmd in
+      wallet*) echo "undocumented: singular $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
+      *) echo "undocumented: singular registry $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
+    esac
   else
-    echo "undocumented: open-datum $c takes $f (--help) but the settings table does not say so" >&2
+    echo "undocumented: open-datum $cmd takes $f (--help) but the settings table does not say so" >&2
   fi
 done
-comm -13 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c f; do
+comm -13 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; do
+  cmd=$c1
+  f=$rest
+  case $c1 in wallet) read -r verb f <<<"$rest"; cmd="wallet $verb" ;; esac
   if [ "$b" = singular ]; then
-    echo "documented, not in --help: the settings table gives $f to singular registry $c" >&2
+    case $cmd in
+      wallet*) echo "documented, not in --help: the settings table gives $f to singular $cmd" >&2 ;;
+      *) echo "documented, not in --help: the settings table gives $f to singular registry $cmd" >&2 ;;
+    esac
   else
-    echo "documented, not in --help: the settings table gives $f to open-datum $c" >&2
+    echo "documented, not in --help: the settings table gives $f to open-datum $cmd" >&2
   fi
 done
 if ! cmp -s "$scratch/help.pairs" "$scratch/doc.pairs"; then status=1; fi
@@ -455,10 +480,11 @@ for page in "${pages[@]}"; do
       }
       {
         if (cmd != "") { acc = acc " " $0; if ($0 !~ /\\[[:space:]]*$/) flush(); next }
-        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+registry[ \t]+[a-z][a-z-]*/)) {
+        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+(registry|wallet)[ \t]+[a-z][a-z-]*/)) {
           m = substr($0, RSTART, RLENGTH)
           n = split(m, w, /[ \t]+/)
           verb = w[n]
+          if (w[n-1] == "wallet") verb = "wallet " verb
           vstart = RSTART + RLENGTH - length(verb)
           pre = substr($0, 1, vstart-1)
           tmp = pre

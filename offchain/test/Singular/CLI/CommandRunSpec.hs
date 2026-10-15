@@ -731,10 +731,22 @@ instance (ConNames f, ConNames g) => ConNames (f :+: g) where
 instance (Constructor c) => ConNames (C1 c f) where
     conNames _ = [conName (undefined :: C1 c f p)]
 
--- | Every command the command line can name, by constructor; help runs nothing.
+{- | The constructors that print no receipt: help runs nothing, and
+the wallet verbs print one address line and keep no state (the
+vault spec: standard output is the address alone), so the receipt
+harness below names none of them.
+-}
+commandsWithoutReceipt :: [String]
+commandsWithoutReceipt = ["Help", "WalletCreate", "WalletAddress"]
+
+-- | Every receipted command the command line can name, by constructor.
 commandNames :: [String]
 commandNames =
-    sort [n | n <- conNames (Proxy :: Proxy (Rep Command)), n /= "Help"]
+    sort
+        [ n
+        | n <- conNames (Proxy :: Proxy (Rep Command))
+        , n `notElem` commandsWithoutReceipt
+        ]
 
 -- | The constructor a parsed command is.
 constructorOf :: Command -> String
@@ -746,6 +758,8 @@ constructorOf = \case
     Reject _ -> "Reject"
     Reclaim _ -> "Reclaim"
     Inspect _ -> "Inspect"
+    WalletCreate _ -> "WalletCreate"
+    WalletAddress _ -> "WalletAddress"
 
 -- ---------------------------------------------------------
 -- Tracing setup re-cut: a trace file that cannot be written

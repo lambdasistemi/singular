@@ -939,6 +939,20 @@
               }
             );
           };
+          # #638: the packaged wallet vault controls — the real `singular`
+          # through a passphrase descriptor with no `cardano-cli` on the
+          # path, each control planted-defect falsified:
+          # `nix run --quiet .#wallet-vault-controls`.
+          wallet-vault-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "wallet-vault-controls";
+                runtimeInputs = flagsTools ++ [ pkgs.systemd ];
+                text = ''bash ${./tools/wallet_vault_controls.sh} "$PWD"'';
+              }
+            );
+          };
           # The private facade's joined lifecycle and fatal failure controls,
           # run as `open-datum` and `singular` processes — judged from
           # receipts and journals:
