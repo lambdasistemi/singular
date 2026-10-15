@@ -631,6 +631,9 @@
           # The root reference takes only Ledger/Provider page pairs from
           # their public local-services owner; private Node pages stay out.
           local-services-haddock = components.sublibs.local-services.haddock;
+          # The re-exported Evidence page pair comes from its owner, the
+          # ledger client core.
+          ledger-client-haddock = components.sublibs.ledger-client.haddock;
           inherit test-vectors test-vectors-json;
           # Issue #56: the wrapped LM/LC row runner exposed as a package
           # too, so `nix build .#naming-rows` and `nix run .#naming-rows`

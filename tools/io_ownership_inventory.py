@@ -76,6 +76,7 @@ CATEGORIES: list[tuple[str, str, tuple[str, ...]]] = [
             "offchain/lib/",
             "offchain/naming/src/",
             "offchain/local-services/",
+            "offchain/ledger-client/",
             "offchain/koios-http/src/",
             "offchain/cli/src/",
             "applications/open-datum/offchain/src/",
