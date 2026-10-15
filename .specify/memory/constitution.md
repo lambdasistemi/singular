@@ -45,6 +45,22 @@ old fee pin and minimum tip is assumed. Folds, exits, driver questions, protocol
 and transaction baseline are unchanged. No validator, builder, application
 release-rule or ledger acceptance follows. The decided economic design
 authorizes this extension; Principles I-VII and contributor guidance are unchanged.
+Slice seven-c, 2026-10-15: the operator retires the separate fee pin. The
+configuration carries one minimum tip under the existing maxFee wire key;
+booking reads that floor, and fold and batch preservation explicitly keep it.
+The two transaction-row statements drop the old tip-cover premise and its
+echoed conjunct, proving the remaining conclusions for every input lovelace
+amount. The predicate, corpus assertion and two top-level annotations retire;
+the historical transaction baseline loses only those annotations. The old
+independence controls become one-pin floor acceptance and refusal controls.
+The append-only restatement record names every retired or restated identity;
+new statement identities remain uncovered. The declared driver questions keep
+their written form and protocol version 7. Model corpora, theorem register,
+theorem page, simulator mirror, application corpus and coverage record follow.
+No validator, builder, command, chain datum shape or off-chain wire reader
+changes; exact processor take remains subsequent fold work. No ledger or
+implementation acceptance follows. Principles I-VII and contributor guidance
+are unchanged; the pull request template still records these evidence limits.
 -->
 
 <!--

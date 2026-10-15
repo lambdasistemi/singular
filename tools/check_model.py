@@ -213,11 +213,18 @@ def check_transaction_compatibility(root, corpus, driver_corpus):
 
     The baseline was extracted from its recorded commit, never from the encoder
     under test. These two statements were deliberately restated when the model
-    gained the state token identity; only their top-level digest may differ.
+    gained the state token identity. Their top-level digests may differ.
+    The one-tip ruling also retires exactly two top-level annotations from
+    these corpus transaction rows, never request tips or transaction fields.
     """
     restated = {
         "Singular.Statements.insert_active_transaction_row",
         "Singular.Statements.update_terminal_transaction_row",
+    }
+    retired_fields = {"tip", "lovelaceCoversTip"}
+    retired_profiles = {
+        "insertActive": "Singular.Statements.insert_active_transaction_row",
+        "updateTerminal": "Singular.Statements.update_terminal_transaction_row",
     }
     baseline = json.loads((root / "lean/transaction-baseline.json").read_text())
     current = {
@@ -239,6 +246,15 @@ def check_transaction_compatibility(root, corpus, driver_corpus):
             name = expected[key]
             assert name in observed, f"missing historical transaction: {path}/{name}"
             actual = copy.deepcopy(observed[name])
+            expected = copy.deepcopy(expected)
+            if path in {"lean/corpus.json", "simulator/corpus.json"} and (
+                retired_profiles.get(name) == expected["theorem"]
+            ):
+                assert not retired_fields & actual.keys(), (
+                    f"retired transaction fields: {path}/{name}"
+                )
+                for field in retired_fields:
+                    expected.pop(field, None)
             if expected["theorem"] in restated:
                 actual["statementSha256"] = expected["statementSha256"]
             before = json.dumps(expected, indent=2, sort_keys=True)
@@ -260,7 +276,8 @@ def check_transaction_compatibility(root, corpus, driver_corpus):
             checked += 1
     print(
         f"transaction compatibility: {checked} historical rows byte-identical "
-        "apart from the two declared statement digests"
+        "apart from the two declared statement digests and the listed retired "
+        "top-level tip and lovelaceCoversTip annotations"
     )
 
 

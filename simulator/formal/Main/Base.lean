@@ -13,7 +13,7 @@ separation to promise. -/
 def openPolicyHash : Nat := 7
 
 def cfg : Config :=
-  { root := rootOf [], maxFee := 1, processTime := 2, retractTime := 3
+  { root := rootOf [], minimumTip := 1, processTime := 2, retractTime := 3
   , applicationPolicy := openPolicyHash, activePolicy := 8, absentPolicy := 9
   , terminalPolicy := 10 }
 

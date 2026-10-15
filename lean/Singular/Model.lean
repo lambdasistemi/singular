@@ -60,7 +60,7 @@ inductive RefundTarget where
 `application` case is an approval minted under this configuration's pinned
 application policy. -/
 def referenceConfig : Config :=
-  { root := rootOf [], maxFee := 0, processTime := 0, retractTime := 0
+  { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
   , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
 
 /-- A well-formed approval under the reference policy, scoped exactly to the

@@ -110,7 +110,6 @@ insertActiveConjuncts =
     , "lovelace := r.deposit"
     , "refunds := [(r.output, r.deposit)]"
     , "signers := []"
-    , "lovelaceCoversTip s.config lovelace = true"
     , "destinationDatumBinds r = true"
     , "onlyRootChanged s.config t.state.config = true"
     , "txOf t.state r₂ lovelace = .error \"key-exists\""

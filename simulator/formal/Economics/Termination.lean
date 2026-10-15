@@ -26,8 +26,8 @@ def terminationCustody (registry : RegistryState) (key : Key) : List Holding :=
 
 /-- Refuse malformed contents, forged tags and absent custody separately.
 The supplied custody input must be exactly the one held singular tag. A tag
-already carried by a pending request is no longer in these holdings. Neither
-the old fee pin nor any clock participates in the judgement. -/
+already carried by a pending request is no longer in these holdings. The one
+minimum tip is checked through the contents; no clock participates. -/
 def terminationBookingRefusal (registry : RegistryState) (b : TerminationBooking) : Option String :=
   let c := registry.config
   let r := b.request

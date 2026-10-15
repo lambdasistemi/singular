@@ -12,8 +12,8 @@ illustrative, not a choice of network parameters. -/
 def parameterPreservationControl : Except String Unit := do
   let fields ← (toJson cfg).getObj?
   let parameters := [("registrationCost", toJson (17 : Nat)),
-    ("minimumTip", toJson (3 : Nat)), ("bookingWidth", toJson (1 : Nat))]
-  let input := Json.mkObj (fields.toList ++ parameters)
+    ("maxFee", toJson (3 : Nat)), ("bookingWidth", toJson (1 : Nat))]
+  let input := Json.mkObj ((fields.toList.filter fun p => p.1 != "maxFee") ++ parameters)
   let decoded ← (fromJson? input : Except String Config)
   let folded ← step { s0 with config := decoded } (req .insertActive 42 42 555)
   let written := toJson folded.state.config
@@ -23,15 +23,15 @@ def parameterPreservationControl : Except String Unit := do
       | .error _ => false) do
       throw s!"parameter preservation failed: {name}; supplied {expected.compress}; folded configuration {written.compress}"
 
-/-- Absent fields retain their historical zero defaults. Each parameter is
+/-- Optional fields retain their historical zero defaults; the one tip is always written. Each parameter is
 independently pinned, and sizing is not imposed by the decoder. -/
 def parameterCodecControl : Bool :=
-  let fields := ["registrationCost", "minimumTip", "bookingWidth"]
+  let fields := ["registrationCost", "bookingWidth"]
   fields.all (fun name => match (toJson cfg).getObjVal? name with
     | .error _ => true | .ok _ => false) &&
   (match (fromJson? (toJson cfg) : Except String Config) with
     | .error _ => false
-    | .ok old => old.registrationCost == 0 && old.minimumTip == 0 && old.bookingWidth == 0) &&
+    | .ok old => old.registrationCost == 0 && old.minimumTip == cfg.minimumTip && old.bookingWidth == 0) &&
   [ { cfg with registrationCost := 17 }, { cfg with minimumTip := 3 },
     { cfg with bookingWidth := 100 } ].all (fun c =>
       !onlyRootChanged cfg c &&

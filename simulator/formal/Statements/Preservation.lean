@@ -6,18 +6,19 @@ import Singular.Economics
 
 namespace Singular.Statements
 
-/-- Every successful fold step preserves the registration cost, minimum tip,
-maximum booking width, registry identity, windows, fee ceiling and policy pins.
-No relation between the fee ceiling and minimum tip is assumed. -/
+/-- Every successful fold step preserves the one minimum tip, registration
+cost, maximum booking width, registry identity, windows and policy pins. -/
 theorem parameters_preserved_by_fold (s : RegistryState) (r : Request) (t : Result)
-    (h : step s r = .ok t) : onlyRootChanged s.config t.state.config = true := by
+    (h : step s r = .ok t) : onlyRootChanged s.config t.state.config = true ∧
+    t.state.config.minimumTip = s.config.minimumTip := by
   rw [step_config_root s r t h]
   simp [onlyRootChanged]
 
 /-- Every successful atomic batch preserves every parameter, including when a
 later request reads a state produced by an earlier request in that batch. -/
 theorem parameters_preserved_by_batch (s : RegistryState) (batch : List Action) (t : Result)
-    (h : foldBatch s batch = .ok t) : onlyRootChanged s.config t.state.config = true := by
+    (h : foldBatch s batch = .ok t) : onlyRootChanged s.config t.state.config = true ∧
+    t.state.config.minimumTip = s.config.minimumTip := by
   have hf := (foldBatch_inv s batch t h).2
   rw [foldActions_config_root s batch t hf]
   simp [onlyRootChanged]

@@ -34,7 +34,7 @@ structure TokenId where
 /-- The state configuration. Every field except the root is fixed at creation. -/
 structure Config where
   root : ByteArray
-  maxFee : Nat
+  minimumTip : Nat
   processTime : Nat
   retractTime : Nat
   applicationPolicy : Nat
@@ -44,26 +44,24 @@ structure Config where
   /-- Abstract identity of the registry state token, allocated by the consumer. -/
   registryId : Nat := 0
   registrationCost : Nat := 0
-  minimumTip : Nat := 0
   bookingWidth : Nat := 0
   deriving BEq, DecidableEq
 
 instance : ToJson Config where
   toJson c := Json.mkObj <|
-    [ ("registryId", toJson c.registryId), ("root", toJson c.root), ("maxFee", toJson c.maxFee)
+    [ ("registryId", toJson c.registryId), ("root", toJson c.root), ("maxFee", toJson c.minimumTip)
     , ("processTime", toJson c.processTime), ("retractTime", toJson c.retractTime)
     , ("applicationPolicy", toJson c.applicationPolicy)
     , ("activePolicy", toJson c.activePolicy)
     , ("absentPolicy", toJson c.absentPolicy)
     , ("terminalPolicy", toJson c.terminalPolicy) ] ++
     (if c.registrationCost == 0 then [] else [("registrationCost", toJson c.registrationCost)]) ++
-    (if c.minimumTip == 0 then [] else [("minimumTip", toJson c.minimumTip)]) ++
     (if c.bookingWidth == 0 then [] else [("bookingWidth", toJson c.bookingWidth)])
 
 instance : FromJson Config where
   fromJson? j := do
     let root ← j.getObjVal? "root" >>= fromJson?
-    let maxFee ← j.getObjVal? "maxFee" >>= fromJson?
+    let minimumTip ← j.getObjVal? "maxFee" >>= fromJson?
     let processTime ← j.getObjVal? "processTime" >>= fromJson?
     let retractTime ← j.getObjVal? "retractTime" >>= fromJson?
     let applicationPolicy ← j.getObjVal? "applicationPolicy" >>= fromJson?
@@ -76,15 +74,12 @@ instance : FromJson Config where
     let registrationCost ← match j.getObjVal? "registrationCost" with
       | .error _ => pure 0
       | .ok x => fromJson? x
-    let minimumTip ← match j.getObjVal? "minimumTip" with
-      | .error _ => pure 0
-      | .ok x => fromJson? x
     let bookingWidth ← match j.getObjVal? "bookingWidth" with
       | .error _ => pure 0
       | .ok x => fromJson? x
-    pure { root, maxFee, processTime, retractTime, applicationPolicy
+    pure { root, minimumTip, processTime, retractTime, applicationPolicy
          , activePolicy, absentPolicy, terminalPolicy, registryId
-         , registrationCost, minimumTip, bookingWidth }
+         , registrationCost, bookingWidth }
 
 /-- The booking interval is sized below the processing window. This is a
 predicate for booking rules, not a restriction on decoding old configurations. -/

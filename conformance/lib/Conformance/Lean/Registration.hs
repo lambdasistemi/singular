@@ -29,5 +29,5 @@ insertActiveRow =
     bindTheorem $
         mkBoundObligation
             "Singular.Statements.insert_active_transaction_row"
-            "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868"
+            "d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6"
             "265c595edd72eab10f3b08a36cb010ad407cf48b"

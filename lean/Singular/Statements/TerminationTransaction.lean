@@ -4,7 +4,7 @@ import Singular.Economics
 import Singular.Statements.Preservation
 import Singular.Statements.Inversions
 
-/-! The complete termination transaction proposition and unchanged proof. -/
+/-! The complete termination transaction proposition without a tip-cover premise. -/
 
 namespace Singular.Statements
 
@@ -14,7 +14,7 @@ Retirement is the first edge whose mint is negative, so it is the first whose
 tokens have to come from somewhere. The conclusion is one equation on the value
 `txOf` constructs from the executed step. It spends three inputs — the
 registry's single state UTxO under an inline datum; a request UTxO carrying
-exactly one approval and the lovelace that covers the tip; and the witness UTxO
+exactly one approval and the declared input lovelace; and the witness UTxO
 holding this key's one active token, spent so the burn has a source — and
 produces two outputs: the state UTxO moved, still carrying one state token under
 an inline datum, whose eight-field configuration differs from the input's in the
@@ -42,8 +42,7 @@ state rather than a story: under `Reachable`, `biconditional_supply_sync` makes
 a `Known Active` leaf and exactly one outstanding active token the same fact. -/
 theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : Result)
     (ap : Approval) (lovelace : Nat) (h : Reachable s) (he : r.edge = .updateTerminal)
-    (hap : r.approval = some ap) (hok : step s r = .ok t)
-    (hfee : s.config.maxFee ≤ lovelace) :
+    (hap : r.approval = some ap) (hok : step s r = .ok t) :
     txOf s r lovelace =
       .ok { inputs :=
               [ { role := .state, datum := .inline, stateTokens := 1
@@ -67,7 +66,6 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     kindCount s .active r.key = 1 ∧
     (∃ w ∈ s.held, w.key = r.key ∧ w.kind = .active) ∧
     kindCount t.state .active r.key = 0 ∧
-    lovelaceCoversTip s.config lovelace = true ∧
     destinationDatumBinds r = true ∧
     onlyRootChanged s.config t.state.config = true ∧
     t.state.config.root = rootOf t.state.trie ∧
@@ -251,7 +249,7 @@ theorem update_terminal_transaction_row (s : RegistryState) (r : Request) (t : R
     refine hrefuseTx _ _ _ ?_
     rw [hrefusalOf s' r' he' hadm', hl]
     simp [hno]
-  exact ⟨htx, hone, hwitness, hgone, by simpa [lovelaceCoversTip] using hfee,
+  exact ⟨htx, hone, hwitness, hgone,
     by simp [destinationDatumBinds, hap, hbind],
     by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hterminal, hcust, rfl, rfl,
     hsigtx, himmutable, hunknown, hnotbooked, hmissing,

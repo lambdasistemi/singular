@@ -76,7 +76,8 @@ def registrationBookingControls : List (String × Config × RegistrationBooking 
   [ ("a lawful registration is booked", c, b, none)
   , ("a larger declared tip is booked", c,
       (bindRegistrationTags c { b with request := { r with declaredTip := 8, contents := { contents with lovelace := 27 } } }), none)
-  , ("the old fee pin does not constrain booking", { c with maxFee := 100 }, b, none)
+  , ("the one pinned minimum accepts a registration at the floor", c, b, none)
+  , ("the one pinned minimum refuses a registration below the floor", { c with minimumTip := 4 }, b, some "dirty-request")
   , dirty "an extra asset is refused"
       { r with contents := { contents with otherAssets := [(⟨99, 2⟩, 1)] } }
   , dirty "a wrong registration cost is refused"
@@ -201,8 +202,9 @@ def terminationBookingControls : Except String
     ("a lawful termination takes its singular tag from custody", world, b, none),
     ("a larger declared tip is accepted", world,
       { b with request := { r with declaredTip := 8, contents := { value with lovelace := 10 } } }, none),
-    ("the old fee pin is independent of the minimum tip",
-      { world with registry := { world.registry with config := { c with maxFee := 100 } } }, b, none),
+    ("the one pinned minimum accepts a termination at the floor", world, b, none),
+    ("the one pinned minimum refuses a termination below the floor",
+      { world with registry := { world.registry with config := { c with minimumTip := 4 } } }, b, some "dirty-request"),
     row "another key's singular tag is refused"
       { r with singularTags := [c.singularTag 6] } "forged-singular-tag",
     row "another registry's singular tag is refused"
@@ -446,7 +448,6 @@ def main : IO Unit := do
   unless txSecondReason == "key-exists" do
     throw (IO.userError s!"Transaction correspondence second insertActive: {txSecondReason}")
   unless approvalsIn txRequest == 1 do throw (IO.userError "Transaction correspondence approval count")
-  unless lovelaceCoversTip cfg txLovelace do throw (IO.userError "Transaction correspondence tip not covered")
   unless destinationDatumBinds txRequest do throw (IO.userError "Transaction correspondence destination datum")
   unless openAdmitsEveryTuple cfg do throw (IO.userError "Transaction correspondence open policy admission")
   unless !crossRegistrySeparation cfg otherRegistry txRequest do

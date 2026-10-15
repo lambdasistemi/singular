@@ -4,7 +4,7 @@ import Singular.Economics
 import Singular.Statements.Preservation
 import Singular.Statements.Inversions
 
-/-! The complete registration transaction proposition and unchanged proof. -/
+/-! The complete registration transaction proposition without a tip-cover premise. -/
 
 namespace Singular.Statements
 
@@ -14,7 +14,7 @@ The conclusion is one equation on the transaction `txOf` constructs from the
 executed step, so every clause quantifies over a built value rather than over a
 nullary constant. It spends two inputs — the registry's single state UTxO under
 an inline datum, and a request UTxO carrying exactly one approval and the
-lovelace that covers the tip — and produces exactly two outputs: the state UTxO
+declared input lovelace — and produces exactly two outputs: the state UTxO
 moved, still carrying one state token under an inline datum, whose eight-field
 configuration differs from the input's in the root alone and whose root commits
 the map the fold produced; and a destination output routed to the address the
@@ -33,8 +33,7 @@ non-goal — registries pinning the same open policy reach the same verdict on t
 same approval. -/
 theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Result)
     (ap : Approval) (lovelace : Nat) (h : Reachable s) (he : r.edge = .insertActive)
-    (hap : r.approval = some ap) (hok : step s r = .ok t)
-    (hfee : s.config.maxFee ≤ lovelace) :
+    (hap : r.approval = some ap) (hok : step s r = .ok t) :
     txOf s r lovelace =
       .ok { inputs :=
               [ { role := .state, datum := .inline, stateTokens := 1
@@ -52,7 +51,6 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
           , mint := [((.active, r.key), 1)]
           , signers := []
           , refunds := [(r.output, r.deposit)] } ∧
-    lovelaceCoversTip s.config lovelace = true ∧
     destinationDatumBinds r = true ∧
     onlyRootChanged s.config t.state.config = true ∧
     t.state.config.root = rootOf t.state.trie ∧
@@ -194,7 +192,7 @@ theorem insert_active_transaction_row (s : RegistryState) (r : Request) (t : Res
       txOf t.state r₂ lovelace = .error "key-exists" := by
     intro r₂ he₂ hk₂ hadm₂
     exact txOf_of_step_error _ _ _ _ (hsecond r₂ he₂ hk₂ hadm₂)
-  exact ⟨htx, by simpa [lovelaceCoversTip] using hfee,
+  exact ⟨htx,
     by simp [destinationDatumBinds, hap, hbind],
     by simp [onlyRootChanged, hcfg], by rw [hcfg, htrie], hcust, hcount,
     by rw [hheld]; exact List.mem_cons_self,

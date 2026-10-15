@@ -249,13 +249,13 @@
     "name": "Singular.Statements.parameters_preserved_by_fold",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "c73c54081ec6ae72ee73d9bc4d7d178e2af1e5f4f43db5937a1fb8e9f2598f16"
+    "statementSha256": "6da6cfc86b1fe02a09fa5534189674a4a9db43e21db1cd8d779dcaeda12e5854"
   },
   {
     "name": "Singular.Statements.parameters_preserved_by_batch",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "f3c594ddec6a8d649e94d442da0ddaafcdf3557989fdaf630b15b0f111e4f76a"
+    "statementSha256": "c510d2694f9b450b6e357f4991c59980130d000854e0cc3e5a7d80cd05e2d46d"
   },
   {
     "name": "Singular.Statements.no_tree_change_without_approval",
@@ -327,7 +327,7 @@
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868"
+    "statementSha256": "d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6"
   },
   {
     "name": "Singular.Statements.rejection_admitted_iff",
@@ -405,6 +405,6 @@
     "name": "Singular.Statements.update_terminal_transaction_row",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560"
+    "statementSha256": "f21126bbaa702ea79d379d7ea755ca49f322c9006105f56dc52af4319e1cfe74"
   }
 ]

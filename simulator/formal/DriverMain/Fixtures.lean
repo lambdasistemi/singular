@@ -11,7 +11,7 @@ under. -/
 def policy : Nat := 7
 
 def cfg0 : Config :=
-  { root := rootOf [], maxFee := 0, processTime := 0, retractTime := 0
+  { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
   , applicationPolicy := policy, activePolicy := 8, absentPolicy := 9
   , terminalPolicy := 10 }
 
@@ -42,10 +42,10 @@ def lovelace : Nat := 5
 
 def insertActiveTheorem : String := "Singular.Statements.insert_active_transaction_row"
 def insertActiveDigest : String :=
-  "6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868"
+  "d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6"
 def updateTerminalTheorem : String := "Singular.Statements.update_terminal_transaction_row"
 def updateTerminalDigest : String :=
-  "d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560"
+  "f21126bbaa702ea79d379d7ea755ca49f322c9006105f56dc52af4319e1cfe74"
 def insertActiveInversion : String := "Singular.Statements.insert_active_inversion"
 def insertActiveInversionDigest : String :=
   "df737501c3c51c4968eb5adcc658f74473984613c591b4886fa092c15e35dc9d"

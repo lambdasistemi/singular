@@ -105,3 +105,29 @@ The previous syntax-tag statements are restated below. Unchanged statement heade
 | `Singular.Statements.booked_request_tags_commit_to_own_fields` | `none (new declaration)` | `853adf4e311c11d60e1669151869a39a7b2e0c8bdf93ca23afc288e9c804b09c` | request tag commitments | uncovered |
 | `Singular.Statements.termination_booking_has_exact_contents` | `15dff9f8e1426baeb35591b5b8fde46c363c6a1d828ef1fbfc39b4175b47861a` | `4140eb588853fe8b1a019d906b5d83a36bf07987c97d5c5c90e4574340d9c448` | request tag commitments | uncovered |
 | `Singular.Statements.booked_termination_tag_commits_to_own_operation` | `none (new declaration)` | `c688ac7857bc9d8cf5cd72fc46cf9cc5e9aad1af27ac912239865e2e9d4951e8` | request tag commitments | uncovered |
+
+## One minimum tip in the existing state field
+
+The registry pins one minimum tip, encoded under the existing `maxFee` key. Booking checks that floor; a fold preserves it. The two transaction statements now prove their remaining conclusions for every input lovelace amount, without the old premise that merely repeated their tip-cover conjunct. The proofs use only the standard axioms. These model statements do not establish validator, builder or ledger implementation; exact processor take is subsequent fold work.
+
+Every changed identity below starts uncovered. No previous row is edited.
+
+| Statement | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.Statements.parameters_preserved_by_fold` | `c73c54081ec6ae72ee73d9bc4d7d178e2af1e5f4f43db5937a1fb8e9f2598f16` | `6da6cfc86b1fe02a09fa5534189674a4a9db43e21db1cd8d779dcaeda12e5854` | uncovered |
+| `Singular.Statements.parameters_preserved_by_batch` | `f3c594ddec6a8d649e94d442da0ddaafcdf3557989fdaf630b15b0f111e4f76a` | `c510d2694f9b450b6e357f4991c59980130d000854e0cc3e5a7d80cd05e2d46d` | uncovered |
+| `Singular.Statements.insert_active_transaction_row` | `6073c296c90657ef193368669ef07ce6d97eddaa9d2059771e23fe156b61b868` | `d1c937f62f959c54a332841fe20c817a930e08aaab678dcbb749eb28a3645fb6` | uncovered |
+| `Singular.Statements.update_terminal_transaction_row` | `d2402d0c08b3df1258ddf354ef7e4855ceec1dae5f1fe763e0f0189aacb0b560` | `f21126bbaa702ea79d379d7ea755ca49f322c9006105f56dc52af4319e1cfe74` | uncovered |
+
+Retired definitions and controls are named separately from theorem identities:
+
+| Retired identity | Disposition |
+|---|---|
+| `Singular.Config.maxFee` | The Lean field is replaced by `Singular.Config.minimumTip`; the wire key `maxFee` remains. The separate serialized `minimumTip` field is retired. |
+| `Singular.lovelaceCoversTip` | Retired; the fold transaction model never enforced this echo as admission. |
+| `insert_active_transaction_row.hfee` and its `by simpa [lovelaceCoversTip] using hfee` proof | Premise, echoed conjunct and its proof retired together. No separately named tip-cover lemma exists at the bound base. |
+| `update_terminal_transaction_row.hfee` and its `by simpa [lovelaceCoversTip] using hfee` proof | Premise, echoed conjunct and its proof retired together. |
+| `transactionRowJson.tip`, `transactionRowJson.lovelaceCoversTip`, `retirementRowJson.tip`, `retirementRowJson.lovelaceCoversTip` | Retired top-level annotations only; request tips and all transaction fields remain. |
+| The corpus runner's “Transaction correspondence tip not covered” assertion | Retired; below-pin transaction construction is exercised without this obsolete assertion. |
+| “the old fee pin does not constrain booking” | Replaced by registration floor acceptance and below-floor refusal under the one pin. |
+| “the old fee pin is independent of the minimum tip” | Replaced by termination floor acceptance and below-floor refusal under the one pin. |

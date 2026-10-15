@@ -29,14 +29,10 @@ def registryDatumForm : DatumForm := .inline
 a request with none is refused `no-approval` before it can spend anything. -/
 def approvalsIn (r : Request) : Nat := r.approval.toList.length
 
-/-- The request input covers the fold's tip when its lovelace reaches the
-registry's pinned fee ceiling. -/
-def lovelaceCoversTip (c : Config) (lovelace : Nat) : Bool := c.maxFee ≤ lovelace
-
 /-- Every pin of the configuration except the root is unchanged: the state
 output carries the same datum with one field moved. -/
 def onlyRootChanged (before after : Config) : Bool :=
-  after.registryId == before.registryId && after.maxFee == before.maxFee && after.processTime == before.processTime &&
+  after.registryId == before.registryId && after.processTime == before.processTime &&
   after.retractTime == before.retractTime &&
   after.applicationPolicy == before.applicationPolicy &&
   after.activePolicy == before.activePolicy &&

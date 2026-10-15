@@ -31,8 +31,8 @@ def registrationContentsShape (c : Config) (r : RegistrationRequest) : Bool :=
 
 /-- Exactly the declared cost, tip and carrier allocation, and one of each
 bound tag. The carrier is the requester's declaration: this rule does not
-establish that it equals or covers the ledger's minimum ada. No relation
-between maxFee and minimumTip is used. -/
+establish that it equals or covers the ledger's minimum ada. The configuration
+pins only the minimum tip, checked against the request's declaration. -/
 def exactContents (c : Config) (r : RegistrationRequest) : Bool :=
   registrationContentsShape c r &&
   decide (r.contents.lovelace = registrationDeclaredLovelace r) &&

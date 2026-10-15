@@ -16,7 +16,6 @@
           }
         ],
         "destinationDatumBinds": true,
-        "lovelaceCoversTip": true,
         "onlyRootChanges": true,
         "openPolicy": {
           "admitsAnyTuple": true,
@@ -31,7 +30,6 @@
         },
         "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
         "theorem": "Singular.Statements.insert_active_transaction_row",
-        "tip": 1,
         "transaction": {
           "inputs": [
             {
@@ -152,7 +150,6 @@
         ],
         "destinationDatumBinds": true,
         "leafAfter": "terminal",
-        "lovelaceCoversTip": true,
         "onlyRootChanges": true,
         "outputsHoldOnlyPositiveQuantities": true,
         "profile": "updateTerminal",
@@ -189,7 +186,6 @@
         ],
         "statementSha256": "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf",
         "theorem": "Singular.Statements.update_terminal_transaction_row",
-        "tip": 1,
         "transaction": {
           "inputs": [
             {
@@ -6531,7 +6527,6 @@
           }
         ],
         "destinationDatumBinds": true,
-        "lovelaceCoversTip": true,
         "onlyRootChanges": true,
         "openPolicy": {
           "admitsAnyTuple": true,
@@ -6546,7 +6541,6 @@
         },
         "statementSha256": "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070",
         "theorem": "Singular.Statements.insert_active_transaction_row",
-        "tip": 1,
         "transaction": {
           "inputs": [
             {
@@ -6667,7 +6661,6 @@
         ],
         "destinationDatumBinds": true,
         "leafAfter": "terminal",
-        "lovelaceCoversTip": true,
         "onlyRootChanges": true,
         "outputsHoldOnlyPositiveQuantities": true,
         "profile": "updateTerminal",
@@ -6704,7 +6697,6 @@
         ],
         "statementSha256": "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf",
         "theorem": "Singular.Statements.update_terminal_transaction_row",
-        "tip": 1,
         "transaction": {
           "inputs": [
             {

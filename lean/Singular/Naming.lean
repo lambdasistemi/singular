@@ -337,7 +337,7 @@ def namingCertifies (hasher : RecoveryHasher) (edge : Edge)
 /-- The naming pinned configuration (the eight-field datum of R7). -/
 def namingConfig : Config :=
   { root := rootOf []
-  , maxFee := 1
+  , minimumTip := 1
   , processTime := 2
   , retractTime := 3
   , applicationPolicy := namingApplicationPolicyFor canonicalNamingParameters.requestValidatorHash
