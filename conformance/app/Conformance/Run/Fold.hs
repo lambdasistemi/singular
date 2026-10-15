@@ -7,6 +7,7 @@ module Conformance.Run.Fold
     ( FoldSpec (..)
     , assembleFoldSpec
     , assembleFoldWithFee
+    , assembleMeasuredFold
     , rowSpec
     , declaredSpec
     , rowRequestAndFold
@@ -596,6 +597,25 @@ assembleFoldWithFee env0 fs =
         if fee >= needed || n >= (5 :: Int)
             then pure tx
             else go env (n + 1) needed
+
+{- | A fold ready to submit, with the units the node measured for it.
+
+Evaluating a transaction can outlast the validity interval an assembly stamps:
+the bound is a second or two ahead, because a slot further out falls past the
+ledger's translation horizon, and a busy node takes longer than that to
+evaluate. The fold is therefore assembled once to be measured and again, with a
+fresh bound, to be submitted, so that only signing stands between the second
+assembly and the submission. The two assemblies differ in their upper bound
+alone; the units are the first one's. The live runner's @declareUnits@ does the
+same for the stories' transactions.
+-}
+assembleMeasuredFold
+    :: Env -> FoldSpec -> IO (ConwayTx, (Integer, Integer))
+assembleMeasuredFold env spec = do
+    measured <- assembleFoldWithFee env spec
+    units <- measureUnits env measured
+    submitted <- assembleFoldWithFee env spec
+    pure (submitted, units)
 
 {- | The spec's chain inputs as the held view has them. A row reads its
 state, requests, funder and holders before it assembles, and computes

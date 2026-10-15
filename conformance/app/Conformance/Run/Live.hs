@@ -2011,7 +2011,8 @@ slotStartMs
 slotStartMs prov slot = Cage.withLatest prov (`Services.slotStart` slot)
 
 {- | Refuse to submit a placed reject whose validity interval does not lie in the
-window its placement names: a setup failure of the run, never a step outcome.
+window its placement names, or has already closed: a setup failure of the run,
+never a step outcome.
 Otherwise log the placement under its row with the interval, in POSIX
 milliseconds, the window, and the transaction.
 -}
@@ -2049,6 +2050,20 @@ checkPlacement env row placed requestOut before transaction = do
                 <> interval
                 <> " "
                 <> window
+            )
+    -- Lying inside the window is not enough: an interval that has already
+    -- closed is refused by the node before any script runs, and a refusal the
+    -- chain gives for that reason would be compared with the model as if it
+    -- were the step's own outcome.
+    now <- currentPosixMs
+    when (validTo <= now) $
+        failWith
+            ( "setup: a reject "
+                <> Live.placementName placed
+                <> " reached submission after its validity interval closed: "
+                <> interval
+                <> " now="
+                <> show now
             )
     emit
         "placement"
