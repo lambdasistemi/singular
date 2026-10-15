@@ -15,6 +15,7 @@ import Singular.CLI.OneOutputCreateSpec qualified
 import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
+import Singular.CLI.SignSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.VaultSpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
@@ -24,6 +25,7 @@ import Singular.Provider.Koios.RecordedSpec qualified
 import Singular.Provider.Koios.RecorderSpec qualified
 import Singular.Provider.Koios.ReferenceScriptsSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
+import Singular.Registry.BundleSpec qualified
 import Singular.Registry.CandidateSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
@@ -61,6 +63,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.BlueprintParameters" [Builders])
         Singular.Registry.BlueprintParametersSpec.spec
+    describe
+        (tagged "Singular.Registry.Bundle" [Wallet])
+        Singular.Registry.BundleSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
         Singular.Registry.TxBuilder.BookEdgeSpec.spec
@@ -208,6 +213,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec
+    describe
+        (tagged "Singular.CLI.Sign" [Cli, Wallet])
+        Singular.CLI.SignSpec.spec
     describe
         (tagged "Singular.CLI.Vault" [Cli, Wallet])
         Singular.CLI.VaultSpec.spec

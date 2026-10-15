@@ -2,10 +2,10 @@
 
 ## Slice: codec and witness
 
-- [ ] bundle-codec: the bundle types, the JSON codec with its version field, the transaction and witness envelopes; round trip on several transactions in order; unknown version, missing field and malformed envelope refused.
-- [ ] bundle-consistency-check: identity equals the body hash, deadline equals the body's bound, required signers covered, duplicate identities refused, each naming both sides.
-- [ ] detached-witness: the witness helper; the signature verifies against the body hash and the key hash is the signer's.
-- [ ] bundle-fixture: the synthetic unsigned body committed as data and rebuilt by a spec that fails on any difference.
+- [x] bundle-codec: the bundle types, the JSON codec with its version field, the transaction and witness envelopes; round trip on several transactions in order; unknown version, missing field and malformed envelope refused.
+- [x] bundle-consistency-check: identity equals the body hash, deadline equals the body's bound, required signers covered, duplicate identities refused, each naming both sides.
+- [x] detached-witness: the witness helper; the signature verifies against the body hash and the key hash is the signer's.
+- [x] bundle-fixture: the synthetic unsigned body committed as data and rebuilt by a spec that fails on any difference.
 
 ## Slice: sign verb
 

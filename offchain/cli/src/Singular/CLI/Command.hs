@@ -60,6 +60,8 @@ module Singular.CLI.Command
       -- * The wallet verbs
     , walletCreateCommand
     , walletAddressCommand
+    , SignArgs (..)
+    , walletSignCommand
     ) where
 
 import Control.Monad (forM_, unless, when)
@@ -335,6 +337,25 @@ data WalletArgs = WalletArgs
     }
     deriving stock (Eq, Show)
 
+{- | @wallet sign@: the vault, the bundle file, the passphrase source
+and the output directory the witness files go to. The network is not
+named here: a bundle carries its own network magic, and the vault's
+address is derived for it.
+-}
+data SignArgs = SignArgs
+    { signVaultPath :: FilePath
+    -- ^ The encrypted vault file the key is opened from
+    , signBundlePath :: FilePath
+    -- ^ The bundle of unsigned transactions, the command's one argument
+    , signPassphraseFd :: Maybe Int
+    -- ^ @--passphrase-fd N@: the inherited descriptor read for the passphrase
+    , signOutputDir :: Maybe FilePath
+    {- ^ @--out DIR@: where the witness files go; the bundle's directory
+    when not named
+    -}
+    }
+    deriving stock (Eq, Show)
+
 -- | One parsed command line.
 data Command
     = Help
@@ -346,6 +367,7 @@ data Command
     | Inspect InspectArgs
     | WalletCreate WalletArgs
     | WalletAddress WalletArgs
+    | WalletSign SignArgs
     deriving stock (Eq, Show, Generic)
 
 -- | Why a command line was refused before anything ran.
@@ -406,6 +428,11 @@ parseWithGroup group environment args = do
                     ["wallet", "address"] ->
                         refuseWalletCommandSettings "wallet address" flags
                             >> (WalletAddress <$> walletArgs flags)
+                    ["wallet", "sign", bundle] ->
+                        refuseWalletCommandSettings "wallet sign" flags
+                            >> (WalletSign <$> signArgs bundle flags)
+                    ["wallet", "sign"] ->
+                        Left (MissingFlag "BUNDLE")
                     ["registry", "create"] ->
                         refuseSpendingFlags "create" flags
                             >> refuseRequest flags
@@ -484,31 +511,42 @@ parseWithGroup group environment args = do
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
     -- The wallet flags belong to the wallet verbs alone; a registry
-    -- command refuses either by name rather than ignore it.
+    -- command refuses each by name rather than ignore it.
     refuseWalletSettings words' flags =
         unless (take 1 words' == ["wallet"]) $
-            forM_ ["--vault", "--passphrase-fd"] $ \flag ->
+            forM_ ["--vault", "--passphrase-fd", "--out"] $ \flag ->
                 when (isJust (lookup flag flags)) $
                     Left
                         ( BadValue
                             flag
                             "is a wallet flag: only singular wallet commands read it"
                         )
-    -- A wallet command takes its own three flags and nothing else from
+    -- A wallet command takes its own flags and nothing else from
     -- the shared group: every other setting is refused by name rather
     -- than ignored.
     refuseWalletCommandSettings command flags =
         forM_ (commonFlagGroup <> extraValuedFlags) $ \flag ->
-            unless (flag `elem` ["--network-magic", "--vault", "--passphrase-fd"]) $
+            unless (flag `elem` allowed) $
                 when (isJust (lookup flag flags)) $
                     Left
                         ( BadValue
                             flag
                             ( "is not accepted by "
                                 <> command
-                                <> ": a wallet command takes only its vault, network magic and passphrase descriptor"
+                                <> ": "
+                                <> taken
                             )
                         )
+      where
+        (allowed, taken)
+            | command == "wallet sign" =
+                ( ["--vault", "--passphrase-fd", "--out"]
+                , "the network comes from the bundle; it takes the vault, the passphrase descriptor, the output directory and the bundle file"
+                )
+            | otherwise =
+                ( ["--network-magic", "--vault", "--passphrase-fd"]
+                , "a wallet command takes only its vault, network magic and passphrase descriptor"
+                )
     -- @--application-policy@ pins what @registry create@ boots; any other
     -- command refuses it by name rather than ignore it.
     refuseApplicationPolicy flags =
@@ -828,6 +866,7 @@ parseWithGroup group environment args = do
                 , walletNetworkMagic = magic
                 , walletPassphraseFd = fd
                 }
+    signArgs _ _ = error "RED: not implemented: signArgs"
     required name flags = case lookup name flags of
         Just (Just v) -> Right v
         _ -> Left (MissingFlag name)
@@ -863,7 +902,7 @@ The one valued flag this binary owns beyond the common group: create
 pins an application policy, and no other command reads it.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = ["--application-policy", "--vault", "--passphrase-fd"]
+extraValuedFlags = ["--application-policy", "--vault", "--passphrase-fd", "--out"]
 
 {- | Split the @--json@ switch off a command line: describe reads it, no
 other command takes it. Only the exact switch is taken; anything else
@@ -940,6 +979,7 @@ usage =
         , "      --koios-url URL --network-magic N [--json]"
         , "  singular wallet create --vault FILE --network-magic N [--passphrase-fd FD]"
         , "  singular wallet address --vault FILE --network-magic N [--passphrase-fd FD]"
+        , "  singular wallet sign --vault FILE [--passphrase-fd FD] [--out DIR] BUNDLE"
         , ""
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
@@ -969,6 +1009,13 @@ usage =
         , "the same address. The passphrase is read from the terminal with the echo"
         , "off, twice on a creation, or as one line from an inherited descriptor. It"
         , "is never taken as an argument, and no output, refusal or trace names it."
+        , "wallet sign witnesses a bundle of unsigned transactions offline: the"
+        , "bundle file is its one argument, the network comes from the bundle, and"
+        , "one witness file per transaction is written next to the bundle — or under"
+        , "--out — named by the transaction's identity and created exclusively; a"
+        , "bundle whose recorded identities, deadlines or signers disagree with its"
+        , "transactions, or whose signers do not include this vault's address, is"
+        , "refused by name and nothing is written. No provider setting is read."
         , "Every registry command also takes --koios-token-file FILE for a bearer credential;"
         , "the shared HTTP client reads it without exposing a command-line token."
         , "Every registry command also takes --network-time DIR for pinned time-manifest.json,"
@@ -1029,6 +1076,7 @@ neededRoles = \case
     Inspect _ -> Set.empty
     WalletCreate _ -> Set.empty
     WalletAddress _ -> Set.empty
+    WalletSign _ -> Set.empty
     Help -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]
@@ -1086,6 +1134,13 @@ walletAddressCommand WalletArgs{..} =
                 Right key -> do
                     putStrLn (addressOf walletNetworkMagic key)
                     pure ExitSuccess
+
+{- | @wallet sign@: witness a bundle of unsigned transactions from the
+vault, offline — one witness file per transaction, named by its
+identity and created exclusively. See "Singular.CLI.Sign".
+-}
+walletSignCommand :: SignArgs -> IO ExitCode
+walletSignCommand _ = error "RED: not implemented: walletSignCommand"
 
 {- | One line on standard error naming the cause, nothing on standard
 output, exit 1. No refusal names the passphrase or the key.
