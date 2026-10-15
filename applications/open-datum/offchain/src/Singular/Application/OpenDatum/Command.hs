@@ -41,6 +41,7 @@ module Singular.Application.OpenDatum.Command
 
       -- * Parsing
     , CLIError (..)
+    , closedSwitch
     , parseOpenDatumCommand
     , parseOpenDatumCommandWithEnvironment
     , parseOpenDatumInvocation
@@ -70,6 +71,7 @@ import Singular.Application.OpenDatum.Build
     , minimumDeposit
     , readDeposit
     )
+import Singular.Application.OpenDatum.Value (Mode (..))
 import Singular.CLI.Command
     ( CreateArgs (..)
     , EntryArgs (..)
@@ -107,7 +109,7 @@ import Singular.Registry.StateToken
 -- | One parsed open-datum command line.
 data OpenDatumCommand
     = OpenHelp
-    | OpenCreate CreateArgs
+    | OpenCreate Mode CreateArgs
     | OpenInsert EntryArgs
     | OpenUpdate EntryArgs
     | OpenTerminate EntryArgs
@@ -143,6 +145,29 @@ parseOpenDatumWith
     :: [(String, String)] -> [String] -> Either CLIError OpenDatumCommand
 parseOpenDatumWith = parseOpenDatumWithGroup (commonFlagGroup <> extraValuedFlags)
 
+-- | The closed switch: chosen at create, read from the chain after.
+closedSwitch :: String
+closedSwitch = "--closed"
+
+{- | Split the closed switch out before the shared tokenizer, skipping the
+value of a valued flag so a key whose text is the switch stays a key.
+-}
+splitClosed :: [String] -> [String] -> ([String], Bool)
+splitClosed valued = go [] False
+  where
+    go kept closed [] = (reverse kept, closed)
+    go kept closed (a : rest)
+        | isValuedNoEquals a = case rest of
+            (v : rest') -> go (v : a : kept) closed rest'
+            [] -> go (a : kept) closed []
+        | name == "--closed" = go kept True rest
+        | otherwise = go (a : kept) closed rest
+      where
+        (name, _) = break (== '=') a
+        isValuedNoEquals tok =
+            let (n, i) = break (== '=') tok
+            in  null i && n `elem` valued
+
 {- | Parse a command line with its environment over an explicit flag group:
 the tokenizer reads exactly these valued flags. The exported parser applies
 this to the common group (this binary owns no valued flag beyond it).
@@ -153,7 +178,9 @@ parseOpenDatumWithGroup
     -> [String]
     -> Either CLIError OpenDatumCommand
 parseOpenDatumWithGroup group environment args = do
-    (words', flags) <- tokenizeWith RemovedSetting BadValue group args
+    let (argsNoClosed, hasClosed) = splitClosed group args
+    (words', flags) <-
+        tokenizeWith RemovedSetting BadValue group argsNoClosed
     -- #528 slice 4: the packaged `open-datum` binary is invoked as
     -- `open-datum create|insert|...` (program plus a bare verb, as its
     -- usage, DEMO1.md and the journey all spell it). Accept that bare
@@ -172,31 +199,47 @@ parseOpenDatumWithGroup group environment args = do
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
         then Right OpenHelp
         else
-            refuseWindows words'' flags >> refuseOutputsAt words'' flags >> case words'' of
-                [] -> Right OpenHelp
-                ["open-datum"] -> Right OpenHelp
-                ["open-datum", "create"] ->
-                    refuseSpendingFlags "create" flags
-                        >> refuseRequest flags
-                        >> refuseFold flags
-                        >> (OpenCreate <$> createArgs flags)
-                ["open-datum", "insert"] ->
-                    refuseRequest flags >> (OpenInsert <$> insertArgs environment flags)
-                ["open-datum", "update"] ->
-                    refuseRequest flags
-                        >> refuseDeposit flags
-                        >> (OpenUpdate <$> entryArgs False (Just "--payload") environment flags)
-                ["open-datum", "terminate"] ->
-                    refuseRequest flags
-                        >> refuseDeposit flags
-                        >> (OpenTerminate <$> entryArgs True Nothing environment flags)
-                ["open-datum", "fold"] -> OpenFold <$> foldArgs environment flags
-                ["open-datum", "inspect"] ->
-                    refuseSpendingFlags "inspect" flags
-                        >> refuseRequest flags
-                        >> refuseFold flags
-                        >> (OpenInspect <$> inspectArgs environment flags)
-                _ -> Left (UnknownCommand words')
+            if hasClosed
+                then case words'' of
+                    ["open-datum", "create"] ->
+                        refuseWindows words'' flags
+                            >> refuseOutputsAt words'' flags
+                            >> refuseSpendingFlags "create" flags
+                            >> refuseRequest flags
+                            >> refuseFold flags
+                            >> (OpenCreate Closed <$> createArgs flags)
+                    _ ->
+                        Left
+                            ( BadValue
+                                "--closed"
+                                "is an open-datum create flag: a registry's mode is chosen at create and read from the chain by every later command"
+                            )
+                else
+                    refuseWindows words'' flags >> refuseOutputsAt words'' flags >> case words'' of
+                        [] -> Right OpenHelp
+                        ["open-datum"] -> Right OpenHelp
+                        ["open-datum", "create"] ->
+                            refuseSpendingFlags "create" flags
+                                >> refuseRequest flags
+                                >> refuseFold flags
+                                >> (OpenCreate Open <$> createArgs flags)
+                        ["open-datum", "insert"] ->
+                            refuseRequest flags >> (OpenInsert <$> insertArgs environment flags)
+                        ["open-datum", "update"] ->
+                            refuseRequest flags
+                                >> refuseDeposit flags
+                                >> (OpenUpdate <$> entryArgs False (Just "--payload") environment flags)
+                        ["open-datum", "terminate"] ->
+                            refuseRequest flags
+                                >> refuseDeposit flags
+                                >> (OpenTerminate <$> entryArgs True Nothing environment flags)
+                        ["open-datum", "fold"] -> OpenFold <$> foldArgs environment flags
+                        ["open-datum", "inspect"] ->
+                            refuseSpendingFlags "inspect" flags
+                                >> refuseRequest flags
+                                >> refuseFold flags
+                                >> (OpenInspect <$> inspectArgs environment flags)
+                        _ -> Left (UnknownCommand words')
   where
     refuseWindows words' flags =
         unless (words' == ["open-datum", "create"]) $
@@ -551,10 +594,10 @@ openDatumUsage :: String
 openDatumUsage =
     unlines
         [ "usage:"
-        , "  open-datum create [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--preview] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "  open-datum create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "  open-datum create --preview [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
@@ -612,6 +655,10 @@ openDatumUsage =
         , "create takes positive integer windows in milliseconds. Its processing window"
         , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
         , "for the life of the registry; create and inspect report them from the state datum."
+        , "Create takes the closed switch to boot a closed-datum registry whose payload"
+        , "is written once; every later command follows the registry's mode with no"
+        , "further flag, and an update on a closed registry stops before anything is"
+        , "built or signed."
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
         , "the command stops with its submission journalled and never resubmits."
         , "Every command uses Koios; former backend selectors and socket settings are refused."
@@ -653,7 +700,7 @@ references it looks up.
 -}
 neededRoles :: OpenDatumCommand -> Set ReferenceRole
 neededRoles = \case
-    OpenCreate _ -> Set.singleton RoleState
+    OpenCreate _ _ -> Set.singleton RoleState
     OpenInsert a
         | entryFold a -> everything
         | otherwise -> Set.singleton RoleApplication

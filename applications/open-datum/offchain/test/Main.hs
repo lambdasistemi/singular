@@ -5,6 +5,7 @@ import Singular.Application.OpenDatum.BuildSpec qualified
 import Singular.Application.OpenDatum.BuildersSpec qualified
 import Singular.Application.OpenDatum.BurnSourceSpec qualified
 import Singular.Application.OpenDatum.CLISpec qualified
+import Singular.Application.OpenDatum.ClosedModeSpec qualified
 import Singular.Application.OpenDatum.CommandRunSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.Application.OpenDatum.FlagGroupExtentSpec qualified
@@ -89,6 +90,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.CommandRun" [Cli])
         Singular.Application.OpenDatum.CommandRunSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.ClosedMode" [Cli])
+        Singular.Application.OpenDatum.ClosedModeSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Trace" [Cli])
         Singular.Application.OpenDatum.TraceSpec.spec

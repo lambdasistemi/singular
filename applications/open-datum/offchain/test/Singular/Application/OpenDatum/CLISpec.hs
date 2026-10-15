@@ -72,6 +72,8 @@ import Singular.Application.OpenDatum.Build
     )
 import Singular.Application.OpenDatum.Command
 
+import Singular.Application.OpenDatum.Value (Mode (..))
+
 import Singular.Application.OpenDatum.StateTokenFixture (token)
 import Singular.CLI.Proof
 import Singular.CLI.Receipt
@@ -188,6 +190,7 @@ commandLine = describe "the command line" $ do
             )
             `shouldBe` Right
                 ( OpenCreate
+                    Open
                     CreateArgs
                         { createStateDir = Just "/srv/reg"
                         , createBlueprint = "/srv/plutus.json"
@@ -215,7 +218,7 @@ commandLine = describe "the command line" $ do
             let windows extra =
                     fmap
                         ( \case
-                            OpenCreate a -> Just (createProcessTime a, createRetractTime a)
+                            OpenCreate _ a -> Just (createProcessTime a, createRetractTime a)
                             _ -> Nothing
                         )
                         ( parseOpenDatumCommand
@@ -629,7 +632,7 @@ commandLine = describe "the command line" $ do
         ]
     forM5 xs f = mapM_ f xs
     settingsOf = \case
-        OpenCreate CreateArgs{createMode = Submit settings} -> writeProvider settings
+        OpenCreate _ CreateArgs{createMode = Submit settings} -> writeProvider settings
         OpenInsert args -> entrySettings args
         OpenUpdate args -> entrySettings args
         OpenTerminate args -> entrySettings args
@@ -1365,7 +1368,7 @@ previewRows = describe "--preview" $ do
                     )
         fmap
             ( \case
-                OpenCreate a -> Just (createMode a, createPreview a, createSeed a)
+                OpenCreate _ a -> Just (createMode a, createPreview a, createSeed a)
                 _ -> Nothing
             )
             (create ["--wallet-address", textOf Testnet payerHash])

@@ -135,6 +135,10 @@
       "pause": 300
     },
     {
+      "text": "A closed registry is booted with open-datum create --closed ..., which pins the closed-datum application whose payload is written once. Every later command follows the registry's mode with no further flag, and open-datum update on a closed registry stops before anything is built or signed, saying the registry is closed.",
+      "pause": 400
+    },
+    {
       "text": "A command that stops prints why, in one outcome class with its own exit status: client-refusal (nothing submitted), ledger-refusal, node-unavailable, timeout, stale-state, partial, concurrent-writer, proof-missing or proof-inconsistent.",
       "pause": 400
     }
@@ -235,6 +239,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "e724d377452b8ea415001df809dc042517b647dbe209d63ed4ae5cf6f0870c03"
+    "sha256": "11bc00acfd1e8f5be48f7e6aa2c4478fefa9d908d6fde3b2f259291d3cd6ed9a"
   }
 }
