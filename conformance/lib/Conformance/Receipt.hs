@@ -1524,6 +1524,10 @@ data UnmetRuling
       requires (ruling 2026-10-01); the alignment issue
       -}
       ConsumerRequirementUnmet Text
+    | -- | the deployed implementation still follows the superseded rejection
+      SupersededRejection (Maybe UnmetRuling)
+    | -- | the earlier refund-routing consumer requirement remains unresolved
+      RefundRoutingUnresolved
     | {- | the chain refuses and Lean has no counterpart to compare with
       (ruling 2026-10-02, "Narrow #287"); the model follow-up
       -}
@@ -1536,7 +1540,15 @@ surface refuses to render it.
 -}
 unmetRuling :: Text -> Maybe UnmetRuling
 unmetRuling = \case
-    "reject-before-deadline-consumer-requirement" -> Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468")
+    "reject-before-deadline-consumer-requirement" ->
+        Just
+            ( SupersededRejection
+                (Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468"))
+            )
+    "request-value-and-refund-routing" -> Just (SupersededRejection (Just RefundRoutingUnresolved))
+    "reject-after-window" -> Just (SupersededRejection Nothing)
+    "reject-and-retract-refund-controls" -> Just (SupersededRejection Nothing)
+    "reject-inside-processing-and-retraction-windows" -> Just (SupersededRejection Nothing)
     "fold-against-superseded-root" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
     "surplus-fold-actions" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
     "wrong-redeemer-constructor-index" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
@@ -1545,6 +1557,11 @@ unmetRuling = \case
 -- | An unmet ruling in plain words, naming the issue that would close it.
 unmetReading :: UnmetRuling -> Text
 unmetReading = \case
+    SupersededRejection earlier ->
+        "unmet by ruling 2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented (lambdasistemi/singular#495 and #496)"
+            <> maybe "" (("; " <>) . unmetReading) earlier
+    RefundRoutingUnresolved ->
+        "the earlier consumer requirement remains unresolved: processed value follows its destination and rejected requests receive the per-owner refund floor (cardano-mpfs-onchain#101)"
     ConsumerRequirementUnmet issue ->
         "unmet by a ruling: the registry deliberately does not do what the \
         \consumer requirement states (operator ruling 2026-10-01; "

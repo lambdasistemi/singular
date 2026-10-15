@@ -1,5 +1,7 @@
 # Who owns the conformance suite
 
+Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.
+
 A contributor changing the conformance suite — adding a row's story,
 re-binding a theorem, adjusting a comparison, tightening the receipt
 record, re-rendering the published evidence — wants to open the one

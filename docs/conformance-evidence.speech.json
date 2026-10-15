@@ -17,6 +17,12 @@
       "text": "5 requirements are evidenced by another suite, named in each row."
     }
   ],
+  "current-rejection-requirements-unmet-by-ruling": [
+    {
+      "pause": 400,
+      "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance."
+    }
+  ],
   "in-memory-adapter": [
     {
       "pause": 400,
@@ -105,6 +111,6 @@
   ],
   "_source": {
     "file": "conformance-evidence.md",
-    "sha256": "4e8918637a56da35c37924f6f5e83642a127ea74fd9f85cd3573c56617901816"
+    "sha256": "24123706493cc8471de533e604f18a990e07ffbbd2699f447ce8ff3867fcd70f"
   }
 }

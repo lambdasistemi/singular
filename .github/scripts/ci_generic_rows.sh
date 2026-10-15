@@ -61,9 +61,9 @@ fi
 #    bound to this candidate on a clean tree (dirty:false)
 expect_verdict() {
   case "$1" in
-    insert-key | permanent-retire-active-key | insert-occupied-key | retract-inside-window | reject-after-window | register-active-key | execution-units-and-transaction-size) printf 'agrees-with-model' ;;
-    reject-before-deadline-consumer-requirement | fold-against-superseded-root | surplus-fold-actions) printf 'unmet-by-ruling' ;;
-    empty-fold | request-value-and-refund-routing) printf 'held-q002' ;;
+    insert-key | permanent-retire-active-key | insert-occupied-key | retract-inside-window | register-active-key | execution-units-and-transaction-size) printf 'agrees-with-model' ;;
+    reject-after-window | reject-before-deadline-consumer-requirement | fold-against-superseded-root | surplus-fold-actions | request-value-and-refund-routing) printf 'unmet-by-ruling' ;;
+    empty-fold) printf 'held-q002' ;;
     *) printf 'UNKNOWN-ROW' ;;
   esac
 }
@@ -111,15 +111,15 @@ nix run --quiet nixpkgs#jq -- -e \
 # 6. the run's own accounting must name exactly the expected
 #    held and unmet sets, with nothing failing against this candidate
 held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
-[ "$held" = "empty-fold request-value-and-refund-routing" ] || {
-  echo "FAIL: held set moved: got '$held', expected 'empty-fold request-value-and-refund-routing'"
+[ "$held" = "empty-fold" ] || {
+  echo "FAIL: held set moved: got '$held', expected 'empty-fold'"
   exit 1
 }
 unmet="$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/generic-rows.log)"
 # fold-against-superseded-root and surplus-fold-actions have no model counterpart: unmet by operator ruling
 # 2026-10-02, each naming its follow-up (#346, #345).
-[ "$unmet" = "reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions" ] || {
-  echo "FAIL: unmet set moved: got '$unmet', expected 'reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions'"
+[ "$unmet" = "reject-after-window reject-before-deadline-consumer-requirement request-value-and-refund-routing fold-against-superseded-root surplus-fold-actions" ] || {
+  echo "FAIL: unmet set moved: got '$unmet', expected 'reject-after-window reject-before-deadline-consumer-requirement request-value-and-refund-routing fold-against-superseded-root surplus-fold-actions'"
   exit 1
 }
 grep -q '^unmet: fold-against-superseded-root UNMET BY RULING: .*lambdasistemi/singular#346' /tmp/generic-rows.log || {
@@ -516,5 +516,7 @@ for row in fold-against-superseded-root surplus-fold-actions; do
     exit 1
   }
 done
-echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except fold-against-superseded-root and surplus-fold-actions, which the model cannot express; held debt exactly empty-fold request-value-and-refund-routing and reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions unmet by ruling; reject-before-deadline-consumer-requirement records three protected divergences for ticket 495 (two refused/refused with deposit-returned in replay, one accepted/refused with reject-not-expired). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits, except the unmet row whose divergences turn on admission.'
+# CI change in this ticket (slice eight-c): exact debt, never legacy acceptance.
+echo '2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented. The earlier processing-window and refund-routing consumer requirements remain unmet.'
+echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except fold-against-superseded-root and surplus-fold-actions, which the model cannot express; held debt exactly empty-fold and reject-after-window reject-before-deadline-consumer-requirement request-value-and-refund-routing fold-against-superseded-root surplus-fold-actions unmet by ruling; reject-before-deadline-consumer-requirement records three protected divergences for ticket 495 (two refused/refused with deposit-returned in replay, one accepted/refused with reject-not-expired). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits, except the unmet row whose divergences turn on admission.'
 echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'

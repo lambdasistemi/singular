@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+      "pause": 400
+    },
+    {
       "text": "A contributor changing the conformance suite — adding a row's story, re-binding a theorem, adjusting a comparison, tightening the receipt record, re-rendering the published evidence — wants to open the one module that owns that concern and know which way the dependencies run, before touching a two-thousand-line live interpreter. This page is that map for the suite's library: what each concern's owner is, where the live runner's boundary sits, what may never change while the code moves, where to make a common change, and what the evidence does and does not show. The library's generated interface is the Conformance API reference; this page explains the responsibilities behind it.",
       "pause": 400
     }
@@ -107,6 +111,6 @@
   ],
   "_source": {
     "file": "conformance-architecture.md",
-    "sha256": "5be8691f3f13e4d61ecb86f94dd53d9f7e2fb54063a2c4065eb6a20ececf4ca8"
+    "sha256": "8dc748f0582383aac24012f27feac7846177b5495b9c882c1642fe4ffe46cae3"
   }
 }

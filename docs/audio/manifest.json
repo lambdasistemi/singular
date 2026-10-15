@@ -51866,11 +51866,656 @@
    ]
   },
   "docs-conformance-architecture/who-owns-the-conformance-suite-01": {
-   "audio_sha256": "6a1bcbee58ad96037b3f3546daffe7751fa999e60e78bf5d01ae30cfab1389bf",
-   "characters": 686,
-   "cost": 0.00042532000000000003,
-   "duration": 41.9,
+   "audio_sha256": "b033bceb0ffbd32a839afb679d8b8f3d8eba206abb6abe12651721be4ebc7dca",
+   "characters": 798,
+   "cost": 0.0007900199999999999,
+   "duration": 55.5,
    "index": 1,
+   "key": "74671c8769af7027816db5724b9f3bb20d79238d39998f2865f4f24945401a20",
+   "page": "docs/conformance-architecture.md",
+   "pause_ms": 400,
+   "section": "who-owns-the-conformance-suite",
+   "sent_text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+   "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.175,
+     "text": "Dated"
+    },
+    {
+     "end": 1.375,
+     "start": 0.5,
+     "text": "qualification"
+    },
+    {
+     "end": 1.45,
+     "start": 1.375,
+     "text": ","
+    },
+    {
+     "end": 3.55,
+     "start": 1.45,
+     "text": "2026-10-15"
+    },
+    {
+     "end": 3.75,
+     "start": 3.55,
+     "text": ":"
+    },
+    {
+     "end": 4.475,
+     "start": 3.95,
+     "text": "rejection"
+    },
+    {
+     "end": 4.738,
+     "start": 4.475,
+     "text": "after"
+    },
+    {
+     "end": 4.825,
+     "start": 4.738,
+     "text": "the"
+    },
+    {
+     "end": 5.325,
+     "start": 4.825,
+     "text": "window"
+    },
+    {
+     "end": 5.425,
+     "start": 5.325,
+     "text": ","
+    },
+    {
+     "end": 5.975,
+     "start": 5.425,
+     "text": "rejection"
+    },
+    {
+     "end": 6.312,
+     "start": 5.975,
+     "text": "before"
+    },
+    {
+     "end": 6.4,
+     "start": 6.312,
+     "text": "the"
+    },
+    {
+     "end": 7.425,
+     "start": 6.4,
+     "text": "deadline"
+    },
+    {
+     "end": 7.625,
+     "start": 7.425,
+     "text": ","
+    },
+    {
+     "end": 8.225,
+     "start": 7.825,
+     "text": "request"
+    },
+    {
+     "end": 8.688,
+     "start": 8.225,
+     "text": "value"
+    },
+    {
+     "end": 8.825,
+     "start": 8.688,
+     "text": "and"
+    },
+    {
+     "end": 9.312,
+     "start": 8.825,
+     "text": "refund"
+    },
+    {
+     "end": 9.85,
+     "start": 9.312,
+     "text": "routing"
+    },
+    {
+     "end": 9.95,
+     "start": 9.85,
+     "text": ","
+    },
+    {
+     "end": 10.55,
+     "start": 9.95,
+     "text": "rejection"
+    },
+    {
+     "end": 10.663,
+     "start": 10.55,
+     "text": "and"
+    },
+    {
+     "end": 11.288,
+     "start": 10.663,
+     "text": "retraction"
+    },
+    {
+     "end": 11.725,
+     "start": 11.288,
+     "text": "refund"
+    },
+    {
+     "end": 12.925,
+     "start": 11.725,
+     "text": "controls"
+    },
+    {
+     "end": 13.125,
+     "start": 12.925,
+     "text": ","
+    },
+    {
+     "end": 13.425,
+     "start": 13.325,
+     "text": "and"
+    },
+    {
+     "end": 14.038,
+     "start": 13.425,
+     "text": "rejection"
+    },
+    {
+     "end": 14.512,
+     "start": 14.038,
+     "text": "inside"
+    },
+    {
+     "end": 14.6,
+     "start": 14.512,
+     "text": "the"
+    },
+    {
+     "end": 15.212,
+     "start": 14.6,
+     "text": "processing"
+    },
+    {
+     "end": 15.312,
+     "start": 15.212,
+     "text": "and"
+    },
+    {
+     "end": 15.85,
+     "start": 15.312,
+     "text": "retraction"
+    },
+    {
+     "end": 16.525,
+     "start": 15.85,
+     "text": "windows"
+    },
+    {
+     "end": 16.712,
+     "start": 16.525,
+     "text": "are"
+    },
+    {
+     "end": 17.038,
+     "start": 16.712,
+     "text": "all"
+    },
+    {
+     "end": 17.475,
+     "start": 17.038,
+     "text": "unmet"
+    },
+    {
+     "end": 17.688,
+     "start": 17.475,
+     "text": "by"
+    },
+    {
+     "end": 18.7,
+     "start": 17.688,
+     "text": "ruling"
+    },
+    {
+     "end": 18.9,
+     "start": 18.7,
+     "text": ":"
+    },
+    {
+     "end": 19.913,
+     "start": 19.075,
+     "text": "implementation"
+    },
+    {
+     "end": 20.325,
+     "start": 19.913,
+     "text": "follows"
+    },
+    {
+     "end": 20.462,
+     "start": 20.325,
+     "text": "the"
+    },
+    {
+     "end": 21.125,
+     "start": 20.462,
+     "text": "superseded"
+    },
+    {
+     "end": 21.575,
+     "start": 21.125,
+     "text": "rule"
+    },
+    {
+     "end": 21.675,
+     "start": 21.575,
+     "text": ";"
+    },
+    {
+     "end": 21.812,
+     "start": 21.675,
+     "text": "the"
+    },
+    {
+     "end": 22.15,
+     "start": 21.812,
+     "text": "ruled"
+    },
+    {
+     "end": 22.525,
+     "start": 22.15,
+     "text": "rule"
+    },
+    {
+     "end": 22.675,
+     "start": 22.525,
+     "text": "is"
+    },
+    {
+     "end": 22.95,
+     "start": 22.675,
+     "text": "not"
+    },
+    {
+     "end": 24.1,
+     "start": 22.95,
+     "text": "implemented"
+    },
+    {
+     "end": 24.325,
+     "start": 24.1,
+     "text": "."
+    },
+    {
+     "end": 24.625,
+     "start": 24.525,
+     "text": "The"
+    },
+    {
+     "end": 24.95,
+     "start": 24.625,
+     "text": "live"
+    },
+    {
+     "end": 25.712,
+     "start": 24.95,
+     "text": "comparisons"
+    },
+    {
+     "end": 26.013,
+     "start": 25.712,
+     "text": "still"
+    },
+    {
+     "end": 26.725,
+     "start": 26.013,
+     "text": "exercise"
+    },
+    {
+     "end": 26.85,
+     "start": 26.725,
+     "text": "the"
+    },
+    {
+     "end": 27.275,
+     "start": 26.85,
+     "text": "legacy"
+    },
+    {
+     "end": 27.925,
+     "start": 27.275,
+     "text": "rejection"
+    },
+    {
+     "end": 28.112,
+     "start": 27.925,
+     "text": "that"
+    },
+    {
+     "end": 28.575,
+     "start": 28.112,
+     "text": "spends"
+    },
+    {
+     "end": 28.7,
+     "start": 28.575,
+     "text": "the"
+    },
+    {
+     "end": 29.237,
+     "start": 28.7,
+     "text": "registry"
+    },
+    {
+     "end": 29.575,
+     "start": 29.237,
+     "text": "state"
+    },
+    {
+     "end": 30.65,
+     "start": 29.575,
+     "text": "output"
+    },
+    {
+     "end": 30.875,
+     "start": 30.65,
+     "text": "."
+    },
+    {
+     "end": 31.15,
+     "start": 31.05,
+     "text": "The"
+    },
+    {
+     "end": 31.438,
+     "start": 31.15,
+     "text": "ruled"
+    },
+    {
+     "end": 32.013,
+     "start": 31.438,
+     "text": "rejection"
+    },
+    {
+     "end": 32.4,
+     "start": 32.013,
+     "text": "reads"
+    },
+    {
+     "end": 32.612,
+     "start": 32.4,
+     "text": "that"
+    },
+    {
+     "end": 33.1,
+     "start": 32.612,
+     "text": "output"
+    },
+    {
+     "end": 33.275,
+     "start": 33.1,
+     "text": "by"
+    },
+    {
+     "end": 33.838,
+     "start": 33.275,
+     "text": "reference"
+    },
+    {
+     "end": 33.975,
+     "start": 33.838,
+     "text": "and"
+    },
+    {
+     "end": 34.275,
+     "start": 33.975,
+     "text": "never"
+    },
+    {
+     "end": 34.662,
+     "start": 34.275,
+     "text": "spends"
+    },
+    {
+     "end": 35.35,
+     "start": 34.662,
+     "text": "it"
+    },
+    {
+     "end": 35.55,
+     "start": 35.35,
+     "text": "."
+    },
+    {
+     "end": 36.213,
+     "start": 35.75,
+     "text": "Agreement"
+    },
+    {
+     "end": 36.338,
+     "start": 36.213,
+     "text": "with"
+    },
+    {
+     "end": 36.425,
+     "start": 36.338,
+     "text": "the"
+    },
+    {
+     "end": 36.838,
+     "start": 36.425,
+     "text": "legacy"
+    },
+    {
+     "end": 37.35,
+     "start": 36.838,
+     "text": "path"
+    },
+    {
+     "end": 37.525,
+     "start": 37.35,
+     "text": "is"
+    },
+    {
+     "end": 37.737,
+     "start": 37.525,
+     "text": "not"
+    },
+    {
+     "end": 38.35,
+     "start": 37.737,
+     "text": "acceptance"
+    },
+    {
+     "end": 38.438,
+     "start": 38.35,
+     "text": "of"
+    },
+    {
+     "end": 38.562,
+     "start": 38.438,
+     "text": "the"
+    },
+    {
+     "end": 38.875,
+     "start": 38.562,
+     "text": "ruled"
+    },
+    {
+     "end": 39.925,
+     "start": 38.875,
+     "text": "design"
+    },
+    {
+     "end": 40.125,
+     "start": 39.925,
+     "text": "."
+    },
+    {
+     "end": 40.463,
+     "start": 40.325,
+     "text": "The"
+    },
+    {
+     "end": 40.963,
+     "start": 40.463,
+     "text": "earlier"
+    },
+    {
+     "end": 41.938,
+     "start": 40.963,
+     "text": "processing-window"
+    },
+    {
+     "end": 42.5,
+     "start": 41.938,
+     "text": "consumer"
+    },
+    {
+     "end": 43.287,
+     "start": 42.5,
+     "text": "requirement"
+    },
+    {
+     "end": 43.412,
+     "start": 43.287,
+     "text": "and"
+    },
+    {
+     "end": 43.537,
+     "start": 43.412,
+     "text": "the"
+    },
+    {
+     "end": 44.338,
+     "start": 43.537,
+     "text": "unresolved"
+    },
+    {
+     "end": 45.1,
+     "start": 44.338,
+     "text": "refund-routing"
+    },
+    {
+     "end": 45.838,
+     "start": 45.1,
+     "text": "requirement"
+    },
+    {
+     "end": 46.25,
+     "start": 45.838,
+     "text": "remain"
+    },
+    {
+     "end": 47.275,
+     "start": 46.25,
+     "text": "open"
+    },
+    {
+     "end": 47.5,
+     "start": 47.275,
+     "text": "."
+    },
+    {
+     "end": 48.325,
+     "start": 47.7,
+     "text": "Historical"
+    },
+    {
+     "end": 48.8,
+     "start": 48.325,
+     "text": "results"
+    },
+    {
+     "end": 49.2,
+     "start": 48.8,
+     "text": "below"
+    },
+    {
+     "end": 49.725,
+     "start": 49.2,
+     "text": "retain"
+    },
+    {
+     "end": 49.925,
+     "start": 49.725,
+     "text": "their"
+    },
+    {
+     "end": 50.45,
+     "start": 49.925,
+     "text": "original"
+    },
+    {
+     "end": 51.062,
+     "start": 50.45,
+     "text": "revision"
+    },
+    {
+     "end": 51.2,
+     "start": 51.062,
+     "text": "and"
+    },
+    {
+     "end": 51.65,
+     "start": 51.2,
+     "text": "evidence"
+    },
+    {
+     "end": 52.7,
+     "start": 51.65,
+     "text": "binding"
+    },
+    {
+     "end": 52.9,
+     "start": 52.7,
+     "text": ";"
+    },
+    {
+     "end": 53.2,
+     "start": 53.075,
+     "text": "they"
+    },
+    {
+     "end": 53.312,
+     "start": 53.2,
+     "text": "do"
+    },
+    {
+     "end": 53.463,
+     "start": 53.312,
+     "text": "not"
+    },
+    {
+     "end": 53.975,
+     "start": 53.463,
+     "text": "establish"
+    },
+    {
+     "end": 54.237,
+     "start": 53.975,
+     "text": "current"
+    },
+    {
+     "end": 55.3,
+     "start": 54.237,
+     "text": "acceptance"
+    },
+    {
+     "end": 55.5,
+     "start": 55.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-conformance-architecture/who-owns-the-conformance-suite-02": {
+   "audio_sha256": "a11c43aeb8a04367b2b194da579c131add9801b4a84a8df6e090884c3c8b2216",
+   "characters": 686,
+   "cost": 0.0006791400000000001,
+   "duration": 41.9,
+   "index": 2,
    "key": "5357bb02baade97a3161bbd5334f8fe49181bd7e549a3932db43df449a215ec4",
    "page": "docs/conformance-architecture.md",
    "pause_ms": 400,
@@ -52526,11 +53171,656 @@
    ]
   },
   "docs-consumer-conformance/consumer-conformance-record-01": {
-   "audio_sha256": "2a164b799cbd454e08c2c9c4029cbb120d2e6803c007bc60e8494976ef2bf2a5",
-   "characters": 293,
-   "cost": 0.00018166000000000002,
-   "duration": 18.425,
+   "audio_sha256": "014420be1371f577d1e86be0ea6ec17274dc83a1c514f339e8b0a4f8f3ce9efb",
+   "characters": 798,
+   "cost": 0.0007900199999999999,
+   "duration": 55.5,
    "index": 1,
+   "key": "74671c8769af7027816db5724b9f3bb20d79238d39998f2865f4f24945401a20",
+   "page": "docs/consumer-conformance.md",
+   "pause_ms": 400,
+   "section": "consumer-conformance-record",
+   "sent_text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+   "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.175,
+     "text": "Dated"
+    },
+    {
+     "end": 1.375,
+     "start": 0.5,
+     "text": "qualification"
+    },
+    {
+     "end": 1.45,
+     "start": 1.375,
+     "text": ","
+    },
+    {
+     "end": 3.55,
+     "start": 1.45,
+     "text": "2026-10-15"
+    },
+    {
+     "end": 3.75,
+     "start": 3.55,
+     "text": ":"
+    },
+    {
+     "end": 4.475,
+     "start": 3.95,
+     "text": "rejection"
+    },
+    {
+     "end": 4.738,
+     "start": 4.475,
+     "text": "after"
+    },
+    {
+     "end": 4.825,
+     "start": 4.738,
+     "text": "the"
+    },
+    {
+     "end": 5.325,
+     "start": 4.825,
+     "text": "window"
+    },
+    {
+     "end": 5.425,
+     "start": 5.325,
+     "text": ","
+    },
+    {
+     "end": 5.975,
+     "start": 5.425,
+     "text": "rejection"
+    },
+    {
+     "end": 6.312,
+     "start": 5.975,
+     "text": "before"
+    },
+    {
+     "end": 6.4,
+     "start": 6.312,
+     "text": "the"
+    },
+    {
+     "end": 7.425,
+     "start": 6.4,
+     "text": "deadline"
+    },
+    {
+     "end": 7.625,
+     "start": 7.425,
+     "text": ","
+    },
+    {
+     "end": 8.225,
+     "start": 7.825,
+     "text": "request"
+    },
+    {
+     "end": 8.688,
+     "start": 8.225,
+     "text": "value"
+    },
+    {
+     "end": 8.825,
+     "start": 8.688,
+     "text": "and"
+    },
+    {
+     "end": 9.312,
+     "start": 8.825,
+     "text": "refund"
+    },
+    {
+     "end": 9.85,
+     "start": 9.312,
+     "text": "routing"
+    },
+    {
+     "end": 9.95,
+     "start": 9.85,
+     "text": ","
+    },
+    {
+     "end": 10.55,
+     "start": 9.95,
+     "text": "rejection"
+    },
+    {
+     "end": 10.663,
+     "start": 10.55,
+     "text": "and"
+    },
+    {
+     "end": 11.288,
+     "start": 10.663,
+     "text": "retraction"
+    },
+    {
+     "end": 11.725,
+     "start": 11.288,
+     "text": "refund"
+    },
+    {
+     "end": 12.925,
+     "start": 11.725,
+     "text": "controls"
+    },
+    {
+     "end": 13.125,
+     "start": 12.925,
+     "text": ","
+    },
+    {
+     "end": 13.425,
+     "start": 13.325,
+     "text": "and"
+    },
+    {
+     "end": 14.038,
+     "start": 13.425,
+     "text": "rejection"
+    },
+    {
+     "end": 14.512,
+     "start": 14.038,
+     "text": "inside"
+    },
+    {
+     "end": 14.6,
+     "start": 14.512,
+     "text": "the"
+    },
+    {
+     "end": 15.212,
+     "start": 14.6,
+     "text": "processing"
+    },
+    {
+     "end": 15.312,
+     "start": 15.212,
+     "text": "and"
+    },
+    {
+     "end": 15.85,
+     "start": 15.312,
+     "text": "retraction"
+    },
+    {
+     "end": 16.525,
+     "start": 15.85,
+     "text": "windows"
+    },
+    {
+     "end": 16.712,
+     "start": 16.525,
+     "text": "are"
+    },
+    {
+     "end": 17.038,
+     "start": 16.712,
+     "text": "all"
+    },
+    {
+     "end": 17.475,
+     "start": 17.038,
+     "text": "unmet"
+    },
+    {
+     "end": 17.688,
+     "start": 17.475,
+     "text": "by"
+    },
+    {
+     "end": 18.7,
+     "start": 17.688,
+     "text": "ruling"
+    },
+    {
+     "end": 18.9,
+     "start": 18.7,
+     "text": ":"
+    },
+    {
+     "end": 19.913,
+     "start": 19.075,
+     "text": "implementation"
+    },
+    {
+     "end": 20.325,
+     "start": 19.913,
+     "text": "follows"
+    },
+    {
+     "end": 20.462,
+     "start": 20.325,
+     "text": "the"
+    },
+    {
+     "end": 21.125,
+     "start": 20.462,
+     "text": "superseded"
+    },
+    {
+     "end": 21.575,
+     "start": 21.125,
+     "text": "rule"
+    },
+    {
+     "end": 21.675,
+     "start": 21.575,
+     "text": ";"
+    },
+    {
+     "end": 21.812,
+     "start": 21.675,
+     "text": "the"
+    },
+    {
+     "end": 22.15,
+     "start": 21.812,
+     "text": "ruled"
+    },
+    {
+     "end": 22.525,
+     "start": 22.15,
+     "text": "rule"
+    },
+    {
+     "end": 22.675,
+     "start": 22.525,
+     "text": "is"
+    },
+    {
+     "end": 22.95,
+     "start": 22.675,
+     "text": "not"
+    },
+    {
+     "end": 24.1,
+     "start": 22.95,
+     "text": "implemented"
+    },
+    {
+     "end": 24.325,
+     "start": 24.1,
+     "text": "."
+    },
+    {
+     "end": 24.625,
+     "start": 24.525,
+     "text": "The"
+    },
+    {
+     "end": 24.95,
+     "start": 24.625,
+     "text": "live"
+    },
+    {
+     "end": 25.712,
+     "start": 24.95,
+     "text": "comparisons"
+    },
+    {
+     "end": 26.013,
+     "start": 25.712,
+     "text": "still"
+    },
+    {
+     "end": 26.725,
+     "start": 26.013,
+     "text": "exercise"
+    },
+    {
+     "end": 26.85,
+     "start": 26.725,
+     "text": "the"
+    },
+    {
+     "end": 27.275,
+     "start": 26.85,
+     "text": "legacy"
+    },
+    {
+     "end": 27.925,
+     "start": 27.275,
+     "text": "rejection"
+    },
+    {
+     "end": 28.112,
+     "start": 27.925,
+     "text": "that"
+    },
+    {
+     "end": 28.575,
+     "start": 28.112,
+     "text": "spends"
+    },
+    {
+     "end": 28.7,
+     "start": 28.575,
+     "text": "the"
+    },
+    {
+     "end": 29.237,
+     "start": 28.7,
+     "text": "registry"
+    },
+    {
+     "end": 29.575,
+     "start": 29.237,
+     "text": "state"
+    },
+    {
+     "end": 30.65,
+     "start": 29.575,
+     "text": "output"
+    },
+    {
+     "end": 30.875,
+     "start": 30.65,
+     "text": "."
+    },
+    {
+     "end": 31.15,
+     "start": 31.05,
+     "text": "The"
+    },
+    {
+     "end": 31.438,
+     "start": 31.15,
+     "text": "ruled"
+    },
+    {
+     "end": 32.013,
+     "start": 31.438,
+     "text": "rejection"
+    },
+    {
+     "end": 32.4,
+     "start": 32.013,
+     "text": "reads"
+    },
+    {
+     "end": 32.612,
+     "start": 32.4,
+     "text": "that"
+    },
+    {
+     "end": 33.1,
+     "start": 32.612,
+     "text": "output"
+    },
+    {
+     "end": 33.275,
+     "start": 33.1,
+     "text": "by"
+    },
+    {
+     "end": 33.838,
+     "start": 33.275,
+     "text": "reference"
+    },
+    {
+     "end": 33.975,
+     "start": 33.838,
+     "text": "and"
+    },
+    {
+     "end": 34.275,
+     "start": 33.975,
+     "text": "never"
+    },
+    {
+     "end": 34.662,
+     "start": 34.275,
+     "text": "spends"
+    },
+    {
+     "end": 35.35,
+     "start": 34.662,
+     "text": "it"
+    },
+    {
+     "end": 35.55,
+     "start": 35.35,
+     "text": "."
+    },
+    {
+     "end": 36.213,
+     "start": 35.75,
+     "text": "Agreement"
+    },
+    {
+     "end": 36.338,
+     "start": 36.213,
+     "text": "with"
+    },
+    {
+     "end": 36.425,
+     "start": 36.338,
+     "text": "the"
+    },
+    {
+     "end": 36.838,
+     "start": 36.425,
+     "text": "legacy"
+    },
+    {
+     "end": 37.35,
+     "start": 36.838,
+     "text": "path"
+    },
+    {
+     "end": 37.525,
+     "start": 37.35,
+     "text": "is"
+    },
+    {
+     "end": 37.737,
+     "start": 37.525,
+     "text": "not"
+    },
+    {
+     "end": 38.35,
+     "start": 37.737,
+     "text": "acceptance"
+    },
+    {
+     "end": 38.438,
+     "start": 38.35,
+     "text": "of"
+    },
+    {
+     "end": 38.562,
+     "start": 38.438,
+     "text": "the"
+    },
+    {
+     "end": 38.875,
+     "start": 38.562,
+     "text": "ruled"
+    },
+    {
+     "end": 39.925,
+     "start": 38.875,
+     "text": "design"
+    },
+    {
+     "end": 40.125,
+     "start": 39.925,
+     "text": "."
+    },
+    {
+     "end": 40.463,
+     "start": 40.325,
+     "text": "The"
+    },
+    {
+     "end": 40.963,
+     "start": 40.463,
+     "text": "earlier"
+    },
+    {
+     "end": 41.938,
+     "start": 40.963,
+     "text": "processing-window"
+    },
+    {
+     "end": 42.5,
+     "start": 41.938,
+     "text": "consumer"
+    },
+    {
+     "end": 43.287,
+     "start": 42.5,
+     "text": "requirement"
+    },
+    {
+     "end": 43.412,
+     "start": 43.287,
+     "text": "and"
+    },
+    {
+     "end": 43.537,
+     "start": 43.412,
+     "text": "the"
+    },
+    {
+     "end": 44.338,
+     "start": 43.537,
+     "text": "unresolved"
+    },
+    {
+     "end": 45.1,
+     "start": 44.338,
+     "text": "refund-routing"
+    },
+    {
+     "end": 45.838,
+     "start": 45.1,
+     "text": "requirement"
+    },
+    {
+     "end": 46.25,
+     "start": 45.838,
+     "text": "remain"
+    },
+    {
+     "end": 47.275,
+     "start": 46.25,
+     "text": "open"
+    },
+    {
+     "end": 47.5,
+     "start": 47.275,
+     "text": "."
+    },
+    {
+     "end": 48.325,
+     "start": 47.7,
+     "text": "Historical"
+    },
+    {
+     "end": 48.8,
+     "start": 48.325,
+     "text": "results"
+    },
+    {
+     "end": 49.2,
+     "start": 48.8,
+     "text": "below"
+    },
+    {
+     "end": 49.725,
+     "start": 49.2,
+     "text": "retain"
+    },
+    {
+     "end": 49.925,
+     "start": 49.725,
+     "text": "their"
+    },
+    {
+     "end": 50.45,
+     "start": 49.925,
+     "text": "original"
+    },
+    {
+     "end": 51.062,
+     "start": 50.45,
+     "text": "revision"
+    },
+    {
+     "end": 51.2,
+     "start": 51.062,
+     "text": "and"
+    },
+    {
+     "end": 51.65,
+     "start": 51.2,
+     "text": "evidence"
+    },
+    {
+     "end": 52.7,
+     "start": 51.65,
+     "text": "binding"
+    },
+    {
+     "end": 52.9,
+     "start": 52.7,
+     "text": ";"
+    },
+    {
+     "end": 53.2,
+     "start": 53.075,
+     "text": "they"
+    },
+    {
+     "end": 53.312,
+     "start": 53.2,
+     "text": "do"
+    },
+    {
+     "end": 53.463,
+     "start": 53.312,
+     "text": "not"
+    },
+    {
+     "end": 53.975,
+     "start": 53.463,
+     "text": "establish"
+    },
+    {
+     "end": 54.237,
+     "start": 53.975,
+     "text": "current"
+    },
+    {
+     "end": 55.3,
+     "start": 54.237,
+     "text": "acceptance"
+    },
+    {
+     "end": 55.5,
+     "start": 55.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-conformance/consumer-conformance-record-02": {
+   "audio_sha256": "74a21053eb02fc96e75b7c0df3b3919468b334e58d58e10a5b06d58dbdb11367",
+   "characters": 293,
+   "cost": 0.00029006999999999997,
+   "duration": 18.425,
+   "index": 2,
    "key": "4d28ae1487e7f4878aeeb52a9b890c99b721252926e02da29042dea6b0b866ce",
    "page": "docs/consumer-conformance.md",
    "pause_ms": 400,
@@ -305791,11 +307081,656 @@
    ]
   },
   "docs-singular-node/connecting-singular-to-a-ledger-provider-01": {
-   "audio_sha256": "a046fa1876582da4a5fc9341da87386745c23b20480cef364a2eb96e995e6ca2",
+   "audio_sha256": "403876252f622bb98c3372c94030996214bac09cc16f4c552158f5a32342def7",
+   "characters": 798,
+   "cost": 0.0007900199999999999,
+   "duration": 55.5,
+   "index": 1,
+   "key": "74671c8769af7027816db5724b9f3bb20d79238d39998f2865f4f24945401a20",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "connecting-singular-to-a-ledger-provider",
+   "sent_text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+   "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.175,
+     "text": "Dated"
+    },
+    {
+     "end": 1.375,
+     "start": 0.5,
+     "text": "qualification"
+    },
+    {
+     "end": 1.45,
+     "start": 1.375,
+     "text": ","
+    },
+    {
+     "end": 3.55,
+     "start": 1.45,
+     "text": "2026-10-15"
+    },
+    {
+     "end": 3.75,
+     "start": 3.55,
+     "text": ":"
+    },
+    {
+     "end": 4.475,
+     "start": 3.95,
+     "text": "rejection"
+    },
+    {
+     "end": 4.738,
+     "start": 4.475,
+     "text": "after"
+    },
+    {
+     "end": 4.825,
+     "start": 4.738,
+     "text": "the"
+    },
+    {
+     "end": 5.325,
+     "start": 4.825,
+     "text": "window"
+    },
+    {
+     "end": 5.425,
+     "start": 5.325,
+     "text": ","
+    },
+    {
+     "end": 5.975,
+     "start": 5.425,
+     "text": "rejection"
+    },
+    {
+     "end": 6.312,
+     "start": 5.975,
+     "text": "before"
+    },
+    {
+     "end": 6.4,
+     "start": 6.312,
+     "text": "the"
+    },
+    {
+     "end": 7.425,
+     "start": 6.4,
+     "text": "deadline"
+    },
+    {
+     "end": 7.625,
+     "start": 7.425,
+     "text": ","
+    },
+    {
+     "end": 8.225,
+     "start": 7.825,
+     "text": "request"
+    },
+    {
+     "end": 8.688,
+     "start": 8.225,
+     "text": "value"
+    },
+    {
+     "end": 8.825,
+     "start": 8.688,
+     "text": "and"
+    },
+    {
+     "end": 9.312,
+     "start": 8.825,
+     "text": "refund"
+    },
+    {
+     "end": 9.85,
+     "start": 9.312,
+     "text": "routing"
+    },
+    {
+     "end": 9.95,
+     "start": 9.85,
+     "text": ","
+    },
+    {
+     "end": 10.55,
+     "start": 9.95,
+     "text": "rejection"
+    },
+    {
+     "end": 10.663,
+     "start": 10.55,
+     "text": "and"
+    },
+    {
+     "end": 11.288,
+     "start": 10.663,
+     "text": "retraction"
+    },
+    {
+     "end": 11.725,
+     "start": 11.288,
+     "text": "refund"
+    },
+    {
+     "end": 12.925,
+     "start": 11.725,
+     "text": "controls"
+    },
+    {
+     "end": 13.125,
+     "start": 12.925,
+     "text": ","
+    },
+    {
+     "end": 13.425,
+     "start": 13.325,
+     "text": "and"
+    },
+    {
+     "end": 14.038,
+     "start": 13.425,
+     "text": "rejection"
+    },
+    {
+     "end": 14.512,
+     "start": 14.038,
+     "text": "inside"
+    },
+    {
+     "end": 14.6,
+     "start": 14.512,
+     "text": "the"
+    },
+    {
+     "end": 15.212,
+     "start": 14.6,
+     "text": "processing"
+    },
+    {
+     "end": 15.312,
+     "start": 15.212,
+     "text": "and"
+    },
+    {
+     "end": 15.85,
+     "start": 15.312,
+     "text": "retraction"
+    },
+    {
+     "end": 16.525,
+     "start": 15.85,
+     "text": "windows"
+    },
+    {
+     "end": 16.712,
+     "start": 16.525,
+     "text": "are"
+    },
+    {
+     "end": 17.038,
+     "start": 16.712,
+     "text": "all"
+    },
+    {
+     "end": 17.475,
+     "start": 17.038,
+     "text": "unmet"
+    },
+    {
+     "end": 17.688,
+     "start": 17.475,
+     "text": "by"
+    },
+    {
+     "end": 18.7,
+     "start": 17.688,
+     "text": "ruling"
+    },
+    {
+     "end": 18.9,
+     "start": 18.7,
+     "text": ":"
+    },
+    {
+     "end": 19.913,
+     "start": 19.075,
+     "text": "implementation"
+    },
+    {
+     "end": 20.325,
+     "start": 19.913,
+     "text": "follows"
+    },
+    {
+     "end": 20.462,
+     "start": 20.325,
+     "text": "the"
+    },
+    {
+     "end": 21.125,
+     "start": 20.462,
+     "text": "superseded"
+    },
+    {
+     "end": 21.575,
+     "start": 21.125,
+     "text": "rule"
+    },
+    {
+     "end": 21.675,
+     "start": 21.575,
+     "text": ";"
+    },
+    {
+     "end": 21.812,
+     "start": 21.675,
+     "text": "the"
+    },
+    {
+     "end": 22.15,
+     "start": 21.812,
+     "text": "ruled"
+    },
+    {
+     "end": 22.525,
+     "start": 22.15,
+     "text": "rule"
+    },
+    {
+     "end": 22.675,
+     "start": 22.525,
+     "text": "is"
+    },
+    {
+     "end": 22.95,
+     "start": 22.675,
+     "text": "not"
+    },
+    {
+     "end": 24.1,
+     "start": 22.95,
+     "text": "implemented"
+    },
+    {
+     "end": 24.325,
+     "start": 24.1,
+     "text": "."
+    },
+    {
+     "end": 24.625,
+     "start": 24.525,
+     "text": "The"
+    },
+    {
+     "end": 24.95,
+     "start": 24.625,
+     "text": "live"
+    },
+    {
+     "end": 25.712,
+     "start": 24.95,
+     "text": "comparisons"
+    },
+    {
+     "end": 26.013,
+     "start": 25.712,
+     "text": "still"
+    },
+    {
+     "end": 26.725,
+     "start": 26.013,
+     "text": "exercise"
+    },
+    {
+     "end": 26.85,
+     "start": 26.725,
+     "text": "the"
+    },
+    {
+     "end": 27.275,
+     "start": 26.85,
+     "text": "legacy"
+    },
+    {
+     "end": 27.925,
+     "start": 27.275,
+     "text": "rejection"
+    },
+    {
+     "end": 28.112,
+     "start": 27.925,
+     "text": "that"
+    },
+    {
+     "end": 28.575,
+     "start": 28.112,
+     "text": "spends"
+    },
+    {
+     "end": 28.7,
+     "start": 28.575,
+     "text": "the"
+    },
+    {
+     "end": 29.237,
+     "start": 28.7,
+     "text": "registry"
+    },
+    {
+     "end": 29.575,
+     "start": 29.237,
+     "text": "state"
+    },
+    {
+     "end": 30.65,
+     "start": 29.575,
+     "text": "output"
+    },
+    {
+     "end": 30.875,
+     "start": 30.65,
+     "text": "."
+    },
+    {
+     "end": 31.15,
+     "start": 31.05,
+     "text": "The"
+    },
+    {
+     "end": 31.438,
+     "start": 31.15,
+     "text": "ruled"
+    },
+    {
+     "end": 32.013,
+     "start": 31.438,
+     "text": "rejection"
+    },
+    {
+     "end": 32.4,
+     "start": 32.013,
+     "text": "reads"
+    },
+    {
+     "end": 32.612,
+     "start": 32.4,
+     "text": "that"
+    },
+    {
+     "end": 33.1,
+     "start": 32.612,
+     "text": "output"
+    },
+    {
+     "end": 33.275,
+     "start": 33.1,
+     "text": "by"
+    },
+    {
+     "end": 33.838,
+     "start": 33.275,
+     "text": "reference"
+    },
+    {
+     "end": 33.975,
+     "start": 33.838,
+     "text": "and"
+    },
+    {
+     "end": 34.275,
+     "start": 33.975,
+     "text": "never"
+    },
+    {
+     "end": 34.662,
+     "start": 34.275,
+     "text": "spends"
+    },
+    {
+     "end": 35.35,
+     "start": 34.662,
+     "text": "it"
+    },
+    {
+     "end": 35.55,
+     "start": 35.35,
+     "text": "."
+    },
+    {
+     "end": 36.213,
+     "start": 35.75,
+     "text": "Agreement"
+    },
+    {
+     "end": 36.338,
+     "start": 36.213,
+     "text": "with"
+    },
+    {
+     "end": 36.425,
+     "start": 36.338,
+     "text": "the"
+    },
+    {
+     "end": 36.838,
+     "start": 36.425,
+     "text": "legacy"
+    },
+    {
+     "end": 37.35,
+     "start": 36.838,
+     "text": "path"
+    },
+    {
+     "end": 37.525,
+     "start": 37.35,
+     "text": "is"
+    },
+    {
+     "end": 37.737,
+     "start": 37.525,
+     "text": "not"
+    },
+    {
+     "end": 38.35,
+     "start": 37.737,
+     "text": "acceptance"
+    },
+    {
+     "end": 38.438,
+     "start": 38.35,
+     "text": "of"
+    },
+    {
+     "end": 38.562,
+     "start": 38.438,
+     "text": "the"
+    },
+    {
+     "end": 38.875,
+     "start": 38.562,
+     "text": "ruled"
+    },
+    {
+     "end": 39.925,
+     "start": 38.875,
+     "text": "design"
+    },
+    {
+     "end": 40.125,
+     "start": 39.925,
+     "text": "."
+    },
+    {
+     "end": 40.463,
+     "start": 40.325,
+     "text": "The"
+    },
+    {
+     "end": 40.963,
+     "start": 40.463,
+     "text": "earlier"
+    },
+    {
+     "end": 41.938,
+     "start": 40.963,
+     "text": "processing-window"
+    },
+    {
+     "end": 42.5,
+     "start": 41.938,
+     "text": "consumer"
+    },
+    {
+     "end": 43.287,
+     "start": 42.5,
+     "text": "requirement"
+    },
+    {
+     "end": 43.412,
+     "start": 43.287,
+     "text": "and"
+    },
+    {
+     "end": 43.537,
+     "start": 43.412,
+     "text": "the"
+    },
+    {
+     "end": 44.338,
+     "start": 43.537,
+     "text": "unresolved"
+    },
+    {
+     "end": 45.1,
+     "start": 44.338,
+     "text": "refund-routing"
+    },
+    {
+     "end": 45.838,
+     "start": 45.1,
+     "text": "requirement"
+    },
+    {
+     "end": 46.25,
+     "start": 45.838,
+     "text": "remain"
+    },
+    {
+     "end": 47.275,
+     "start": 46.25,
+     "text": "open"
+    },
+    {
+     "end": 47.5,
+     "start": 47.275,
+     "text": "."
+    },
+    {
+     "end": 48.325,
+     "start": 47.7,
+     "text": "Historical"
+    },
+    {
+     "end": 48.8,
+     "start": 48.325,
+     "text": "results"
+    },
+    {
+     "end": 49.2,
+     "start": 48.8,
+     "text": "below"
+    },
+    {
+     "end": 49.725,
+     "start": 49.2,
+     "text": "retain"
+    },
+    {
+     "end": 49.925,
+     "start": 49.725,
+     "text": "their"
+    },
+    {
+     "end": 50.45,
+     "start": 49.925,
+     "text": "original"
+    },
+    {
+     "end": 51.062,
+     "start": 50.45,
+     "text": "revision"
+    },
+    {
+     "end": 51.2,
+     "start": 51.062,
+     "text": "and"
+    },
+    {
+     "end": 51.65,
+     "start": 51.2,
+     "text": "evidence"
+    },
+    {
+     "end": 52.7,
+     "start": 51.65,
+     "text": "binding"
+    },
+    {
+     "end": 52.9,
+     "start": 52.7,
+     "text": ";"
+    },
+    {
+     "end": 53.2,
+     "start": 53.075,
+     "text": "they"
+    },
+    {
+     "end": 53.312,
+     "start": 53.2,
+     "text": "do"
+    },
+    {
+     "end": 53.463,
+     "start": 53.312,
+     "text": "not"
+    },
+    {
+     "end": 53.975,
+     "start": 53.463,
+     "text": "establish"
+    },
+    {
+     "end": 54.237,
+     "start": 53.975,
+     "text": "current"
+    },
+    {
+     "end": 55.3,
+     "start": 54.237,
+     "text": "acceptance"
+    },
+    {
+     "end": 55.5,
+     "start": 55.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/connecting-singular-to-a-ledger-provider-02": {
+   "audio_sha256": "79fd8046f30b4f3065c1ee9d57a7b6fd150c01aafff1c0751b75733ad9c3bd58",
    "characters": 502,
    "cost": 0.00049698,
    "duration": 33.175,
-   "index": 1,
+   "index": 2,
    "key": "0da15635d18bfdbac23c868b4b1045d0a642de2683527d92544a99564bcc1933",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -306275,12 +308210,12 @@
     }
    ]
   },
-  "docs-singular-node/connecting-singular-to-a-ledger-provider-02": {
-   "audio_sha256": "aaff8e789c25ccedb3267f9955713ca8427af7b8f7d9de447cfdad995bc983fa",
+  "docs-singular-node/connecting-singular-to-a-ledger-provider-03": {
+   "audio_sha256": "f086ea8cafeae0fcc711f29b978a482efc877de15b8b9afdebd31a1af8f6013c",
    "characters": 217,
-   "cost": 0.00013454,
+   "cost": 0.00021482999999999997,
    "duration": 15.2,
-   "index": 2,
+   "index": 3,
    "key": "485577f96ee0bfcb8906b01c8b38616e5e6f8757fc4c8374e3f079b118620e72",
    "page": "docs/singular-node.md",
    "pause_ms": 400,

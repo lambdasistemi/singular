@@ -1690,8 +1690,15 @@
     "index": 1,
     "name": "docs-conformance-architecture/who-owns-the-conformance-suite-01",
     "pause_ms": 400,
+    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+    "v": "b033bceb0ffb"
+   },
+   {
+    "index": 2,
+    "name": "docs-conformance-architecture/who-owns-the-conformance-suite-02",
+    "pause_ms": 400,
     "text": "A contributor changing the conformance suite — adding a row's story, re-binding a theorem, adjusting a comparison, tightening the receipt record, re-rendering the published evidence — wants to open the one module that owns that concern and know which way the dependencies run, before touching a two-thousand-line live interpreter. This page is that map for the suite's library: what each concern's owner is, where the live runner's boundary sits, what may never change while the code moves, where to make a common change, and what the evidence does and does not show. The library's generated interface is the Conformance API reference; this page explains the responsibilities behind it.",
-    "v": "6a1bcbee58ad"
+    "v": "a11c43aeb8a0"
    }
   ]
  },
@@ -1708,8 +1715,15 @@
     "index": 1,
     "name": "docs-consumer-conformance/consumer-conformance-record-01",
     "pause_ms": 400,
+    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+    "v": "014420be1371"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-conformance/consumer-conformance-record-02",
+    "pause_ms": 400,
     "text": "As a Singular integrator, I can replay the current conformance interface, distinguish partial evidence from completed coverage, and trace older observations to the candidate that produced them. The connected naming release journey is documented separately in recovery and permanent retirement.",
-    "v": "2a164b799cbd"
+    "v": "74a21053eb02"
    }
   ],
   "current-registry-mode-integration": [
@@ -8755,15 +8769,22 @@
     "index": 1,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-01",
     "pause_ms": 400,
-    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
-    "v": "a046fa187658"
+    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+    "v": "403876252f62"
    },
    {
     "index": 2,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-02",
     "pause_ms": 400,
+    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "79fd8046f30b"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-03",
+    "pause_ms": 400,
     "text": "The ordinary provider is Koios. Old backend and socket settings are refused before acquisition or registry effects. The current provider session promises no coherent chain snapshot and carries no verification witness.",
-    "v": "aaff8e789c25"
+    "v": "f086ea8cafea"
    }
   ],
   "following-what-a-command-does": [

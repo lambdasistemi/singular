@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+      "pause": 400
+    },
+    {
       "text": "As a Singular integrator, I can replay the current conformance interface, distinguish partial evidence from completed coverage, and trace older observations to the candidate that produced them. The connected naming release journey is documented separately in recovery and permanent retirement.",
       "pause": 400
     }
@@ -429,6 +433,6 @@
   ],
   "_source": {
     "file": "consumer-conformance.md",
-    "sha256": "ab0250fc6992ee3663b7bf4c30c028a2291be0118394a53a2ccdf41ad1705a66"
+    "sha256": "375995d89f437f2ada824c5d65cd01b08d0a73c1551b1c8d26cc0205ff7d4379"
   }
 }

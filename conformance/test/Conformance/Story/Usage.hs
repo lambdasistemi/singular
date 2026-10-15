@@ -210,7 +210,9 @@ spec = do
                 , "that requirement stays unmet by ruling"
                 , "that split shape no longer diverges as `361` in-window while protected holds"
                 , "so their agreement holds for that shape only; the unmet row's divergences hold for the same shape"
-                , "Whether empty-fold and request-value-and-refund-routing meet the consuming project's requirements remains unresolved; the two rows stay held."
+                , "Whether empty-fold and request-value-and-refund-routing meet the consuming project's requirements remains unresolved."
+                , "empty-fold stays held; request-value-and-refund-routing is unmet by ruling"
+                , "implementation follows the superseded rule; the ruled rule is not implemented"
                 ]
                 $ \phrase -> book `shouldSatisfy` isInfixOf phrase
             book

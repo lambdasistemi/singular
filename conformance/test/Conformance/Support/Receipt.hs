@@ -39,7 +39,12 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Conformance.Book (bookReceipts, bookStories, renderBook)
+import Conformance.Book
+    ( bookReceipts
+    , bookStories
+    , bookUnmet
+    , renderBook
+    )
 import Conformance.Extent (extentProblems)
 import Conformance.Fixture.NodeRejection (scriptRejection)
 import Conformance.NodeRejection (boundedNodeReason)
@@ -1579,7 +1584,14 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
     it
         "requires a receipt for every story the book runs, the occupied-key story among them"
         $ do
-            let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
+            let receiptsFor rows =
+                    [ acceptedLive
+                        { receiptRow = T.pack row
+                        , receiptVerdict =
+                            if row `elem` bookUnmet then UnmetByRuling else AgreesWithModel
+                        }
+                    | row <- rows
+                    ]
                 others =
                     [ "register-active-key"
                     , "permanent-retire-active-key"
@@ -1603,6 +1615,21 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                        ]
                 )
                 `shouldSatisfy` either ("insert-occupied-key" `isInfixOf`) (const False)
+    it "refuses a book whose unmet chapters are presented as passing" $
+        bookReceipts
+            [acceptedLive{receiptRow = T.pack row} | row <- bookStories]
+            `shouldSatisfy` either (isInfixOf "receipt has the wrong standing") (const False)
+    it
+        "publishes the rejection ruling beside an unmet chapter's observations"
+        $ renderBook
+            []
+            [ acceptedLive
+                { receiptRow = "reject-and-retract-refund-controls"
+                , receiptVerdict = UnmetByRuling
+                }
+            ]
+            `shouldSatisfy` isInfixOf
+                "implementation follows the superseded rule; the ruled rule is not implemented"
     it
         "renders the occupied-key story and the refusal its receipt records"
         $ do
