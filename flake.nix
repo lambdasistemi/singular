@@ -298,6 +298,7 @@
             cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
             cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
             cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
+            cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
             cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
           '';
           # #449: the recovery controls as one app per part, each on its own
@@ -826,6 +827,56 @@
                     exit 3
                   }
                   bash ${managedScripts}/demo1_cli_one_output_create.sh "$singular" "$open_datum" "$devnet" "$deployment_bp" "$work"
+                '';
+              }
+            );
+          };
+          # #491 remainder pull request 1: Carol prepares a funding output when
+          # none suits, on its own fresh devnet from a one-output wallet:
+          # `nix run --quiet .#demo1-cli-prepare-funding`.
+          demo1-cli-prepare-funding = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-cli-prepare-funding";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  curl
+                  diffutils
+                  findutils
+                  gawk
+                  git
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                  procps
+                  util-linux
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${TMPDIR:-/tmp}/singular-prepare-funding}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/run.XXXXXX")/prepare-funding"
+                  echo "prepare funding: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  root="$PWD"
+                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                    echo "demo1-cli-prepare-funding: run from the repository root" >&2
+                    exit 3
+                  }
+                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                  open_datum="$open_datum_out/bin/open-datum"
+                  singular_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#singular")" || exit 3
+                  singular="$singular_out/bin/singular"
+                  devnet_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")" || exit 3
+                  devnet="$devnet_out/bin/devnet"
+                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                  [ -f "$deployment_bp" ] || {
+                    echo "demo1-cli-prepare-funding: no deployment blueprint" >&2
+                    exit 3
+                  }
+                  bash ${managedScripts}/demo1_cli_prepare_funding.sh "$singular" "$open_datum" "$devnet" "$deployment_bp" "$work"
                 '';
               }
             );

@@ -2129,6 +2129,7 @@ twoEntryFolded =
         , fdExcluded = []
         , fdCapacityBound = 1
         , fdCapacityProvenance = "prov-1"
+        , fdPreparation = Nothing
         }
   where
     entry1 =

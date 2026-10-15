@@ -12,6 +12,7 @@ import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.OneOutputCreateSpec qualified
+import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
@@ -42,6 +43,7 @@ import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
+import Singular.Registry.TxBuilder.PrepareSpec qualified
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
@@ -75,6 +77,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.Prepare" [Builders])
+        Singular.Registry.TxBuilder.PrepareSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.PublicationFunding" [Builders])
         Singular.Registry.TxBuilder.PublicationFundingSpec.spec
@@ -192,6 +197,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.OneOutputCreate" [Cli, Builders])
         Singular.CLI.OneOutputCreateSpec.spec
+    describe
+        (tagged "Singular.CLI.Prepare" [Cli, Builders])
+        Singular.CLI.PrepareSpec.spec
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec

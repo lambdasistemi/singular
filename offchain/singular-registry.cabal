@@ -132,6 +132,7 @@ library
     Singular.Registry.TxBuilder.Internal.Edges
     Singular.Registry.TxBuilder.Internal.Identity
     Singular.Registry.TxBuilder.Internal.Lookup
+    Singular.Registry.TxBuilder.Prepare
     Singular.Registry.TxBuilder.Register
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
@@ -207,6 +208,7 @@ library registry-cli
     Singular.CLI.Outlay
     Singular.CLI.Permanent
     Singular.CLI.Plan
+    Singular.CLI.Prepare
     Singular.CLI.Proof
     Singular.CLI.Receipt
     Singular.CLI.ReceiptBody
@@ -999,6 +1001,7 @@ test-suite cage-tests
     Singular.CLI.CreateFundingSpec
     Singular.CLI.DescribeSpec
     Singular.CLI.OneOutputCreateSpec
+    Singular.CLI.PrepareSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
@@ -1046,6 +1049,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
+    Singular.Registry.TxBuilder.PrepareSpec
     Singular.Registry.TxBuilder.RetractFundingSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec
     Singular.Registry.TxBuilder.UpperSlotSpec

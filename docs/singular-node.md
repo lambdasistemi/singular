@@ -161,6 +161,21 @@ The requester books with its wallet. The folder reads that pending request,
 then builds, signs and funds the fold with the folder's wallet; the saved
 registry journal, mirror and state follow the observed fold:
 
+As Carol, I fold with whatever wallet I have. `fold`, `reject` and `reclaim`
+fund and collateralise from an ada-only output of my wallet that carries no
+reference script. When my wallet holds none it can use — my ada sits beside
+my tokens, or beside published scripts — the command first spends one
+transaction of its own to prepare a funding output: ada only, made as the
+transaction's first output, with everything else the spent outputs held
+returned to me in a remainder, tokens included, and no reference script ever
+spent. The preparation is journalled under the command's name like any other
+transaction, and the receipt names it; a wallet that already holds a usable
+output gets no preparation at all. When my wallet cannot pay for both the
+preparation and the command, the command refuses before signing anything,
+naming what is needed and what I hold, and submits nothing. Naming an output
+with `--fund-input` is final: it is used as it is when it suits, and refused
+with today's text when it does not.
+
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
 sequenceDiagram

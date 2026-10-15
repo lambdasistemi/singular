@@ -31,10 +31,8 @@ module Singular.CLI.Reject
 
 import Control.Exception
     ( SomeAsyncException
-    , SomeException
     , fromException
     , throwIO
-    , try
     )
 import Control.Monad (forM, forM_, unless)
 import Data.Aeson (Value, object, toJSON, (.=))
@@ -66,11 +64,15 @@ import Singular.CLI.Command
     , neededRoles
     )
 import Singular.CLI.Fold (slotAt)
-import Singular.CLI.FoldRules (fundedView)
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveWalletDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
+import Singular.CLI.Prepare
+    ( PrepareRefusal (..)
+    , preparationFields
+    , prepareFunding
+    )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.RejectRules
@@ -94,6 +96,7 @@ import Singular.Registry.TxBuilder.Internal
     , findRequestUtxos
     , requestAddrFromCfg
     )
+import Singular.Registry.TxBuilder.Prepare (Preparation (..))
 import Singular.Registry.TxBuilder.Reject (rejectRequestsWithRefs)
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -133,6 +136,7 @@ data Rejected = Rejected
     { rjTx :: ConwayTx
     , rjPlan :: Plan
     , rjRejector :: ByteString
+    , rjPreparation :: Maybe Preparation
     }
 
 {- | @singular registry reject@: reject the registry's pending requests, signed
@@ -168,7 +172,7 @@ rejectPending at a = do
         addr = walletAddr (wcWallet wc)
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
     rootBefore <- selectedTrieRoot (atTrie at)
-    (tx, plan) <-
+    (tx, (plan, preparation)) <-
         submitBuiltIn
             wc
             "reject"
@@ -228,33 +232,41 @@ rejectPending at a = do
                             Nothing
                         )
                 place building [InEdge Rejecting] (EdgeStarted Rejecting)
-                funded <-
-                    fundedView (rejectFund a) addr v
-                        >>= either
-                            ( \why ->
-                                stop ClientRefusal ("the wallet cannot fund the reject: " <> why) []
-                            )
-                            pure
-                built <-
-                    try
-                        ( rejectRequestsWithRefs
-                            cfg
-                            funded
-                            (savedToken s)
+                (_fundIns, preparation, unsigned) <- do
+                    prepared <-
+                        prepareFunding
+                            wc
+                            "reject"
                             addr
-                            (liveRefs live)
-                        )
-                unsigned <- case built of
-                    Right t -> pure t
-                    Left (e :: SomeException)
-                        | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
-                        | otherwise ->
-                            stop
-                                ClientRefusal
-                                ( "its reject could not be built, so nothing is rejected: "
-                                    <> briefly (show e)
-                                )
-                                []
+                            (rejectFund a)
+                            (rejectMaxOutlay a)
+                            updateOutlay
+                            ( \funded ->
+                                rejectRequestsWithRefs
+                                    cfg
+                                    funded
+                                    (savedToken s)
+                                    addr
+                                    (liveRefs live)
+                            )
+                            v
+                    case prepared of
+                        Left (ExplicitFundingRefusal why) ->
+                            stop ClientRefusal ("the wallet cannot fund the reject: " <> why) []
+                        Left (OriginalFailure e) -> case fromException e of
+                            Just (_ :: SomeAsyncException) -> throwIO e
+                            _ ->
+                                stop
+                                    ClientRefusal
+                                    ( "its reject could not be built, so nothing is rejected: "
+                                        <> briefly (show e)
+                                    )
+                                    []
+                        Left (PreparationShortfall text fields) ->
+                            stop ClientRefusal text fields
+                        Left (AllowanceExceeded text fields) ->
+                            stop ClientRefusal text fields
+                        Right triple -> pure triple
                 -- It takes every pending request and no other request output.
                 let spent = Set.fromList (toList (unsigned ^. bodyTxL . inputsTxBodyL))
                     atRequestAddr = map fst allAtRequestAddr
@@ -300,13 +312,16 @@ rejectPending at a = do
                 refuseOver (rejectMaxOutlay a) (updateOutlay unsigned)
                 pure
                     ( unsigned
-                    , Plan
-                        { plRows = rows
-                        , plTip = tip
-                        , plTipSlot = tipSlot
-                        , plRootBefore = rootBefore
-                        , plReturned = returned
-                        }
+                    ,
+                        ( Plan
+                            { plRows = rows
+                            , plTip = tip
+                            , plTipSlot = tipSlot
+                            , plRootBefore = rootBefore
+                            , plReturned = returned
+                            }
+                        , preparation
+                        )
                     )
             )
     -- Observed: every rejected request output is gone, the root is where it was,
@@ -369,6 +384,7 @@ rejectPending at a = do
             { rjTx = confirmedTx tx
             , rjPlan = plan
             , rjRejector = callerKey at
+            , rjPreparation = preparation
             }
   where
     refuse tip = \case
@@ -399,7 +415,7 @@ rejectPending at a = do
 
 -- | The reject's receipt: every request rejected and what went to whom.
 rejectedFields :: Rejected -> [(Text, Value)]
-rejectedFields Rejected{rjTx = tx, rjPlan = plan, rjRejector = rejector} =
+rejectedFields r =
     [ ("reject", toJSON (txIdHex tx))
     , ("rejector", toJSON (hexT rejector))
     ,
@@ -410,25 +426,30 @@ rejectedFields Rejected{rjTx = tx, rjPlan = plan, rjRejector = rejector} =
     , ("root", toJSON (hexT (plRootBefore plan)))
     , ("tipSlot", toJSON (plTipSlot plan))
     ]
+        <> preparationFields preparation
   where
-    row ix (r, paid) =
+    tx = rjTx r
+    plan = rjPlan r
+    rejector = rjRejector r
+    preparation = rjPreparation r
+    row ix (rr, paid) =
         object
-            [ "request" .= txInText (rowRequest r)
-            , "owner" .= hexT (rowOwner r)
-            , "key" .= hexT (rowKey r)
-            , "edge" .= edgeName (rowEdge r)
-            , "locked" .= valueJson (rowLocked r)
+            [ "request" .= txInText (rowRequest rr)
+            , "owner" .= hexT (rowOwner rr)
+            , "key" .= hexT (rowKey rr)
+            , "edge" .= edgeName (rowEdge rr)
+            , "locked" .= valueJson (rowLocked rr)
             , "tip" .= plTip plan
             , "returned"
                 .= object
-                    [ "recipient" .= T.pack (bech32Address (rowRecipient r))
+                    [ "recipient" .= T.pack (bech32Address (rowRecipient rr))
                     , "output" .= (txIdHex tx <> "#" <> T.pack (show ix))
                     , "index" .= ix
                     , "lovelace" .= paid
                     ]
-            , "topUp" .= max 0 (paid - (coinOf (rowLocked r) - plTip plan))
-            , "processingEnds" .= processingEnds (rowBounds r)
-            , "retractEnds" .= retractEnds (rowBounds r)
+            , "topUp" .= max 0 (paid - (coinOf (rowLocked rr) - plTip plan))
+            , "processingEnds" .= processingEnds (rowBounds rr)
+            , "retractEnds" .= retractEnds (rowBounds rr)
             ]
 
 -- | Stop before anything is signed: nothing was submitted.

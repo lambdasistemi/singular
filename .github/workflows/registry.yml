@@ -720,6 +720,31 @@ jobs:
       # boots the registry.
       - name: Run the one-output create on its own fresh devnet
         run: nix run --quiet .#demo1-cli-one-output-create
+  demo1-prepare-funding:
+    name: Demo 1 prepare a funding output when none suits
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #491 remainder pull request 1: from a one-output wallet, by the real
+      # commands, reach the rehearsal wallet (create, a booking by another
+      # actor, reject) and fold the termination. Fails on base with the
+      # exit-10 "no ada-only UTxO" refusal; passes with one preparation
+      # transaction, tokens exact after, references live, journalled.
+      - name: Run the prepare-funding rehearsal on its own fresh devnet
+        run: nix run --quiet .#demo1-cli-prepare-funding
   demo1-two-actor-control:
     name: Demo 1 two actors — Bob opening Alice's file fails the journey
     needs: blueprint

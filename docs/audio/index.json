@@ -5220,7 +5220,7 @@
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
     "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public ledger-client component also exposes LocalEvaluation, NetworkTime and Trace, with sources under offchain/ledger-client/Singular/Registry/, and the public local-services component ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, TraceRender, WaitTypes and Wallet, with sources under offchain/local-services/Singular/Registry/; local-services re-exports the four ledger-client modules under the same names. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "eb2f7b9815b3"
+    "v": "c9c5aefde6ee"
    },
    {
     "index": 2,
@@ -5249,15 +5249,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 71 modules in three kinds: 54 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: the implementations of the first, second and fourth are owned by the public local-services component (offchain/local-services/) and that of Evidence by the public ledger-client component (offchain/ledger-client/); the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "41ca6fa1c22e"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 72 modules in three kinds: 55 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: the implementations of the first, second and fourth are owned by the public local-services component (offchain/local-services/) and that of Evidence by the public ledger-client component (offchain/ledger-client/); the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "d26e62334de3"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-    "v": "65ee6ccfdb14"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+    "v": "5112fefbb157"
    },
    {
     "index": 4,
@@ -6319,14 +6319,14 @@
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-01",
     "pause_ms": 400,
     "text": "The runtime's owners are four public components. ledger-client owns the provider-independent core of the ledger client — evidence, network time, typed read traces and local script evaluation — and links no signing, wallet, file, process or network code; local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
-    "v": "91d04e301b97"
+    "v": "94615ced60c2"
    },
    {
     "index": 2,
     "name": "docs-offchain-node-ownership/one-owner-per-runtime-concern-02",
     "pause_ms": 400,
     "text": "The first twelve rows live in local-services, except that Evidence, LocalEvaluation, NetworkTime and Trace live in ledger-client, which local-services depends on and re-exports under the same module names; the next four rows live in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from the Haddock tree of the library that owns each: Evidence from ledger-client, the other three from local-services.",
-    "v": "8378b72feecd"
+    "v": "008317e2e656"
    }
   ],
   "runtime-service-ownership": [
@@ -6395,14 +6395,14 @@
     "name": "docs-offchain-node-ownership/where-common-changes-land-02",
     "pause_ms": 300,
     "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services, Evidence in ledger-client. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
-    "v": "18e04f6eb9b7"
+    "v": "0efdbd99fe2c"
    },
    {
     "index": 3,
     "name": "docs-offchain-node-ownership/where-common-changes-land-03",
     "pause_ms": 300,
     "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation and NetworkTime (in ledger-client), or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
-    "v": "1899cf3fd79f"
+    "v": "5b80fd1afc6b"
    },
    {
     "index": 4,
@@ -6437,7 +6437,7 @@
     "name": "docs-offchain-node-ownership/where-common-changes-land-08",
     "pause_ms": 300,
     "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace (in ledger-client) and TraceRender.",
-    "v": "ba7adf65226d"
+    "v": "b1615d9e905e"
    },
    {
     "index": 9,
@@ -8437,78 +8437,85 @@
     "index": 5,
     "name": "docs-singular-node/booking-and-folding-05",
     "pause_ms": 400,
-    "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles every request that passes, up to the capacity bound, in ledger input order, at most one per key. Two users who book at the same moment are settled by one fold. The receipt's capacity field states the bound, 9, with its provenance: an estimate, not a measurement, of how many requests fit in a fold. A request past the bound is named capacity and is for the next fold. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
-    "v": "60ced6c814ca"
+    "text": "As Carol, I fold with whatever wallet I have. fold, reject and reclaim fund and collateralise from an ada-only output of my wallet that carries no reference script. When my wallet holds none it can use — my ada sits beside my tokens, or beside published scripts — the command first spends one transaction of its own to prepare a funding output: ada only, made as the transaction's first output, with everything else the spent outputs held returned to me in a remainder, tokens included, and no reference script ever spent. The preparation is journalled under the command's name like any other transaction, and the receipt names it; a wallet that already holds a usable output gets no preparation at all. When my wallet cannot pay for both the preparation and the command, the command refuses before signing anything, naming what is needed and what I hold, and submits nothing. Naming an output with --fund-input is final: it is used as it is when it suits, and refused with today's text when it does not.",
+    "v": "01acdf9626e2"
    },
    {
     "index": 6,
     "name": "docs-singular-node/booking-and-folding-06",
     "pause_ms": 400,
-    "text": "Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Eight reasons are the model's own refusal words, reported verbatim; six are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.",
-    "v": "88eac45e9bc5"
+    "text": "registry fold judges each pending request on its own — against the registry's live state, the host clock and the application's rules — and settles every request that passes, up to the capacity bound, in ledger input order, at most one per key. Two users who book at the same moment are settled by one fold. The receipt's capacity field states the bound, 9, with its provenance: an estimate, not a measurement, of how many requests fit in a fold. A request past the bound is named capacity and is for the next fold. A fold is never refused because several requests are pending. The fold folds insertActive and updateTerminal; any other edge is refused edge-inadmissible in the model's words.",
+    "v": "d0cd25d77faf"
    },
    {
     "index": 7,
     "name": "docs-singular-node/booking-and-folding-07",
     "pause_ms": 400,
-    "text": "A request refused in the model's words failed the model's own check — its edge, its approval, or its leaf against the live state — and stays refused while the state still rules it out. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its processing window is not open beyond the fold margin; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named capacity is for the next fold. A request named window-closed stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with registry reclaim after its processing deadline, while its retract window remains open, and registry reject clears requests past both their windows.",
-    "v": "3cb45805e390"
+    "text": "Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Eight reasons are the model's own refusal words, reported verbatim; six are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.",
+    "v": "76bb132befdb"
    },
    {
     "index": 8,
     "name": "docs-singular-node/booking-and-folding-08",
     "pause_ms": 400,
-    "text": "The receipt no longer carries the single-request fields it once printed at the top level: request, key, edge, liveOutput, envelope, released and deposit, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in settled: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. settled names each settled request in ledger order; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 9 with its provenance.",
-    "v": "996f14d33b93"
+    "text": "A request refused in the model's words failed the model's own check — its edge, its approval, or its leaf against the live state — and stays refused while the state still rules it out. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its processing window is not open beyond the fold margin; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named capacity is for the next fold. A request named window-closed stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with registry reclaim after its processing deadline, while its retract window remains open, and registry reject clears requests past both their windows.",
+    "v": "d08a4332061c"
    },
    {
     "index": 9,
     "name": "docs-singular-node/booking-and-folding-09",
     "pause_ms": 400,
-    "text": "--request R is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused nothing-to-fold, naming every exclusion with its reason and source. The window is the exception: when the request named by --request has run out of window, the refusal keeps the older deadline wording with its time fields instead of that request's reason and source, and, when nothing settles, lists the other exclusions after it; the same wording is kept when the only pending request has run out of window. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline, or within the thirty seconds a fold needs to be included.",
-    "v": "a9d1cd8005bf"
+    "text": "The receipt no longer carries the single-request fields it once printed at the top level: request, key, edge, liveOutput, envelope, released and deposit, and the datum hash and datum bytes of a datum delivery, are gone. Each fact about a settled request is read from its entry in settled: its request, key, edge, owner, settlement and deadline, where the settlement carries the live output and the envelope, or the datum hash and bytes, or the released output and the deposit. What stays at the top level are the facts of the transaction: the folder, the fold transaction, the root, the fold deadline, the validity bound slot, the post-build verdict, the host clock and the time remaining, then the three lists. settled names each settled request in ledger order; excluded names each left-out request with its request, reason, source and detail, in ledger order; capacity states the bound with its provenance. The example shows the lists with two pending requests of which one is left out: the first settles, the second is named with its reason and source, and the capacity states the bound of 9 with its provenance.",
+    "v": "acbeb77286ca"
    },
    {
     "index": 10,
     "name": "docs-singular-node/booking-and-folding-10",
     "pause_ms": 400,
-    "text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same lists as registry fold. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the entry for the request they just booked in settled. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
-    "v": "b9cc94126519"
+    "text": "--request R is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused nothing-to-fold, naming every exclusion with its reason and source. The window is the exception: when the request named by --request has run out of window, the refusal keeps the older deadline wording with its time fields instead of that request's reason and source, and, when nothing settles, lists the other exclusions after it; the same wording is kept when the only pending request has run out of window. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline, or within the thirty seconds a fold needs to be included.",
+    "v": "45be2441862c"
    },
    {
     "index": 11,
     "name": "docs-singular-node/booking-and-folding-11",
     "pause_ms": 400,
-    "text": "Before anything is signed the command still refuses the outlay past --max-outlay and a funding output that is not the wallet's.",
-    "v": "2280ca506982"
+    "text": "insert --fold and terminate --fold, which run through the open-datum executable since the command-line split, take the same selection and print the same lists as registry fold. The fold-derived facts are no longer printed beside them: the live output, the envelope, the released output and the deposit are read from the entry for the request they just booked in settled. What the combined forms keep of their own is the booking's key fields, the booking transaction, the fold transaction and the root. If the request the command just booked is left out, the command stops partial: the booking is confirmed and its request stays pending, named with the reason.",
+    "v": "bbd368df2c0e"
    },
    {
     "index": 12,
     "name": "docs-singular-node/booking-and-folding-12",
     "pause_ms": 400,
-    "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. It pays a single output; send one self-payment afterwards so the wallet also holds an ada-only output to spend as collateral — while the foreign funding choice does not. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
-    "v": "f8f1181e8c63"
+    "text": "Before anything is signed the command still refuses the outlay past --max-outlay and a funding output that is not the wallet's.",
+    "v": "dc221d331406"
    },
    {
     "index": 13,
     "name": "docs-singular-node/booking-and-folding-13",
     "pause_ms": 400,
-    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
-    "v": "93ebc86737cd"
+    "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. It pays a single output; send one self-payment afterwards so the wallet also holds an ada-only output to spend as collateral — while the foreign funding choice does not. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
+    "v": "afc744fce573"
    },
    {
     "index": 14,
     "name": "docs-singular-node/booking-and-folding-14",
     "pause_ms": 400,
-    "text": "The deadline the fold is judged against is the earliest among the settled requests, each as its booking's receipt states. A fold refused for it submitted nothing, and pending requests stay pending.",
-    "v": "b26d3465aa52"
+    "text": "That check is the fast refusal, not the proof. After the fold is built and before it is signed, its validity upper bound is judged again from the built body and the host clock: the bound must be at or before the slot of the deadline when pinned time converts it, or, when it does not, must begin at or before the deadline time; a bound pinned time cannot convert, or a clock that has meanwhile come within the margin, is refused unsigned, with the bound, the clock and the deadline in the receipt.",
+    "v": "32787523edc7"
    },
    {
     "index": 15,
     "name": "docs-singular-node/booking-and-folding-15",
     "pause_ms": 400,
+    "text": "The deadline the fold is judged against is the earliest among the settled requests, each as its booking's receipt states. A fold refused for it submitted nothing, and pending requests stay pending.",
+    "v": "a51f19d5703d"
+   },
+   {
+    "index": 16,
+    "name": "docs-singular-node/booking-and-folding-16",
+    "pause_ms": 400,
     "text": "What this page still does not claim, stated plainly: the capacity of 9 is an estimate, not measured on a real network, and this page claims no preprod number; measuring it belongs to #530. Recovery of a fold of several requests is proved by unit-level checks, and the interruption of such a fold on a development network is not executed yet.",
-    "v": "a6d33a06de8a"
+    "v": "52988bec04f1"
    }
   ],
   "choosing-a-registrys-windows": [
