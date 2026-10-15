@@ -695,6 +695,40 @@ jobs:
         run: nix run --quiet .#demo1-cli-check
       - name: Retain recovery, race and independent trie assertions on the explicit test build
         run: nix run --quiet .#demo1-cli-test-harness
+  demo1-closed-archive:
+    name: Closed-datum journey from the release archive
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 60
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #660: the release archive is built and, #326, verified by
+      # verify-release exactly as a published release is, the assembled
+      # assets presented as its download input: sums, the stated model
+      # revision, members, then the archive extracted OUTSIDE the checkout
+      # and its closed-datum journey run as separate `singular` and
+      # `open-datum` processes against ONE development node: create with
+      # the closed switch, the page reading, insert, fold, inspect, the
+      # refused update with its no-transaction reads, terminate, fold,
+      # inspect and the deposit read, with the archive's own blueprint.
+      #
+      # Falsification: on any ancestor without the closed mode this step
+      # fails at the first `create --closed`, and the journey's own
+      # controls (the reads must differ across a submitting step) go red
+      # if the reads cannot see a submission.
+      - name: Run the closed-datum journey from the extracted release archive
+        run: nix run --quiet .#demo1-closed-check
   demo1-one-output-create:
     name: Demo 1 one-output create from a fresh wallet
     needs: blueprint
