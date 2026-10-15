@@ -39,10 +39,10 @@ STANZA_HEADERS = ("library", "common")
 class ReferenceLibrary(NamedTuple):
     """One Cabal library whose generated Haddock reference this site ships.
 
-    ``sublibrary`` names the sublibrary that owns the
-    implementations behind the public facade's re-exports, when there is
-    one; the re-export provenance machinery runs only for libraries that
-    declare it.
+    ``sublibraries`` names the sublibraries that own the
+    implementations behind the public facade's re-exports, when there are
+    any; the re-export provenance machinery runs only for libraries that
+    declare them. Each re-exported module is owned by exactly one of them.
     """
 
     name: str
@@ -50,7 +50,7 @@ class ReferenceLibrary(NamedTuple):
     cabal_file: str
     api_dir: tuple[str, ...]
     index_page: str
-    sublibrary: str | None = None
+    sublibraries: tuple[str, ...] = ()
     autolinks: tuple[str, ...] = ()
 
 
@@ -60,7 +60,7 @@ OFFCHAIN = ReferenceLibrary(
     cabal_file="singular-registry.cabal",
     api_dir=("api", "offchain"),
     index_page="docs/offchain-api-reference",
-    sublibrary="local-services",
+    sublibraries=("local-services", "ledger-client"),
     # Prose autolinks Haddock emitted into the generated pages whose target
     # pages do not exist: the "one" multiplicity word, the blueprint
     # "schema" reference and the HEX encoding name.
@@ -247,7 +247,8 @@ def parse_package_db(config_files: Path) -> list[dict]:
     """Positive, typed module ownership from this build's package db.
 
     Every ``*.conf`` under the Haddock build's package.conf.d declares a
-    package's exposed and hidden modules, and — for sublibrary records —
+    package's exposed and hidden modules (a re-exported module, listed as
+    ``Name from unit:Name``, belongs to the unit it comes from), and — for sublibrary records —
     the owning package and library through the typed fields
     ``package-name`` and ``lib-name``. Each record is returned with its
     typed identity and its module set; membership in a record is the
@@ -269,6 +270,7 @@ def parse_package_db(config_files: Path) -> list[dict]:
             "conf": conf.name,
         }
         field = None
+        module_text: list[str] = []
         for raw in conf.read_text(errors="replace").splitlines():
             if not raw.strip():
                 field = None
@@ -288,7 +290,17 @@ def parse_package_db(config_files: Path) -> list[dict]:
             elif field == "lib-name" and value:
                 record["lib"] = value
             elif field in ("exposed-modules", "hidden-modules") and value:
-                record["modules"].update(value.replace(",", " ").split())
+                module_text.append(value)
+        # A module another library owns and this one re-exports is listed
+        # as ``Name from unit:Name``: it is not this record's module.
+        words = " ".join(module_text).replace(",", " ").split()
+        index = 0
+        while index < len(words):
+            if words[index + 1 : index + 2] == ["from"]:
+                index += 3
+                continue
+            record["modules"].add(words[index])
+            index += 1
         if record["modules"]:
             records.append(record)
     if not records:
@@ -586,15 +598,16 @@ def copy_reference(
     haddock_out: Path,
     library_root: Path,
     config_files: Path,
-    reexport_haddock_out: Path | None = None,
+    reexport_haddock_outs: tuple[Path, ...] = (),
 ) -> dict:
     """Copy one library's generated tree into the site and build the manifest.
 
     When the public library re-exports modules whose implementations live
     in a sublibrary, those re-exports' generated pages come
-    from the sublibrary's own Haddock tree: ``reexport_haddock_out``. Only
-    the re-exported modules' page pairs are taken from it — nothing else —
-    and each must exist there; a missing page fails the build rather than
+    from the owning sublibrary's own Haddock tree, one of
+    ``reexport_haddock_outs``. Only the re-exported modules' page pairs are
+    taken from them — nothing else — and each must exist in exactly one of
+    them; a missing or ambiguous page fails the build rather than
     publishing a silent gap. The re-export machinery runs only for a
     library that declares a sublibrary; the Conformance library has none,
     so its manifest is the plain extent-and-digest binding.
@@ -619,15 +632,27 @@ def copy_reference(
     for path in (api_root, *api_root.rglob("*")):
         os.chmod(path, path.stat().st_mode | stat.S_IWUSR)
     if reexported:
-        if reexport_haddock_out is None:
+        if not reexport_haddock_outs:
             raise SystemExit(
                 f"api_reference: the public library re-exports {reexported} "
                 "but no re-export Haddock tree was given"
             )
-        sub_html_root = find_haddock_root(reexport_haddock_out, [reexported[0]])
         for module in reexported:
+            roots = sorted(
+                {
+                    p.parent
+                    for tree in reexport_haddock_outs
+                    for p in tree.rglob(module_page_name(module))
+                    if p.is_file()
+                }
+            )
+            if len(roots) != 1:
+                raise SystemExit(
+                    f"api_reference: expected exactly one sublibrary Haddock html "
+                    f"root carrying the re-export {module}, found {roots}"
+                )
             for page in (module_page_name(module), "src/" + source_page_name(module)):
-                origin = sub_html_root / page
+                origin = roots[0] / page
                 if not origin.is_file():
                     raise SystemExit(
                         f"api_reference: re-export page missing from the sublibrary "
@@ -661,13 +686,10 @@ def copy_reference(
         )
     db_records = parse_package_db(config_files)
     candidate_lib = library.name
-    candidate_sublib = library.sublibrary
 
     def is_candidate_sublib(record: dict) -> bool:
         return (
-            library.sublibrary is not None
-            and record["package"] == candidate_lib
-            and record["lib"] == candidate_sublib
+            record["package"] == candidate_lib and record["lib"] in library.sublibraries
         )
 
     # Each re-exported module is a same-package public re-export only when
@@ -682,7 +704,8 @@ def copy_reference(
         if len(same) != 1 or others:
             raise SystemExit(
                 f"api_reference: re-exported module {module} requires exactly one "
-                f"candidate-owned {candidate_lib}/{candidate_sublib} record and no "
+                f"candidate-owned {candidate_lib} sublibrary record "
+                f"{list(library.sublibraries)} and no "
                 f"other owner; owners: "
                 f"{[(r['package'], r['lib'], r['conf']) for r in owners]}"
             )
@@ -821,9 +844,8 @@ def main(argv: list[str]) -> None:
     manifest.add_argument("config_files")
     manifest.add_argument(
         "reexport_haddock_out",
-        nargs="?",
-        default=None,
-        help="Haddock tree of the sublibrary owning the re-exported implementations",
+        nargs="*",
+        help="Haddock trees of the sublibraries owning the re-exported implementations",
     )
     archive = sub.add_parser(
         "archive-check", help="compare the staged archive's API pages with the site"
@@ -838,7 +860,7 @@ def main(argv: list[str]) -> None:
             Path(args.haddock_out),
             Path(args.library_root),
             Path(args.config_files),
-            Path(args.reexport_haddock_out) if args.reexport_haddock_out else None,
+            tuple(Path(tree) for tree in args.reexport_haddock_out),
         )
         neutral = built["neutralization"]
         print(

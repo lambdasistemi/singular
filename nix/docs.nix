@@ -41,10 +41,12 @@ let
   # can prove the reference describes this candidate (a ref label alone is
   # not a freshness witness).
   apiHaddock = offchain.packages.${pkgs.system}.library-haddock;
-  # The public local-services owner's own Haddock tree: the only source
-  # of the re-exported Ledger/Provider generated page pairs. The manifest
-  # step takes exactly those two pairs from it and nothing else.
+  # The public local-services owner's own Haddock tree, and the ledger
+  # client core's: the only sources of the re-exported Ledger, Provider,
+  # Evidence and Signing generated page pairs. The manifest step takes
+  # exactly those pairs from them and nothing else.
   apiReexportHaddock = offchain.packages.${pkgs.system}.local-services-haddock;
+  apiLedgerClientHaddock = offchain.packages.${pkgs.system}.ledger-client-haddock;
   # The build's own package database: positive evidence for which modules a
   # dependency owns, used to neutralize (never merely unlink) the generated
   # references to dependency documentation this site does not bundle.
@@ -72,7 +74,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
-      python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc}
+      python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc} ${apiLedgerClientHaddock.doc}
       python3 tools/api_reference.py manifest --library conformance site ${apiConformanceHaddock.doc} ${conformance.outPath} ${apiConformancePackageDb}
       python3 tools/aiken_reference.py publish site ${aikenReference} onchain ${
         pkgs.lib.escapeShellArg (src.rev or "")

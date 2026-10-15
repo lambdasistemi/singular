@@ -1,0 +1,25 @@
+# Direct dependencies of `library ledger-client` (tools/ledger_client_dependencies_check.sh).
+# One per line: <package>[:<component>]: <why the ledger client core needs it>.
+# Every direct dependency must be listed here with a reason, so a new
+# dependency is a reviewed edit. A Singular component, directory, filepath,
+# unix, process, network, http-client, http-client-tls, wai, warp and
+# cardano-tx-tools are refused even when listed.
+aeson: JSON encodings of network time and trace events
+base: the language
+base16-bytestring: hex rendering of hashes in network time and traces
+bytestring: raw bytes of facts, hashes and snapshots
+cardano-ledger-alonzo: script purposes and execution-unit evaluation
+cardano-ledger-api: transaction body and output lenses
+cardano-ledger-conway: the Conway era
+cardano-ledger-core: protocol parameters, UTxO and the transaction lens
+cardano-slotting: slot, epoch and system-start types
+containers: maps and sets of resolved inputs and trace events
+contra-tracer: the tracer typed read events are emitted to
+crypton: SHA-256 of the pinned network material
+memory: byte-array conversion of digests
+microlens: lenses over ledger transactions
+ouroboros-consensus: era history for slot-to-time conversion
+serialise: CBOR decoding of the era history
+text: textual identities and trace fields
+time: clocks and durations
+transformers: the pure Except used to validate network time

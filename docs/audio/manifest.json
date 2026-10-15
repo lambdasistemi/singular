@@ -166226,17 +166226,17 @@
    ]
   },
   "docs-offchain-api-reference/what-the-reference-does-not-claim-01": {
-   "audio_sha256": "3415c424e996e7cf54010f59451cf7c93f5339df20cc45c4382bf84532daa73b",
-   "characters": 3280,
-   "cost": 0.0032471999999999996,
-   "duration": 247.425,
+   "audio_sha256": "c9c5aefde6ee90927a6401eff2caa8cf97910fbe2d0246cc2ad157d73911d7e2",
+   "characters": 3457,
+   "cost": 0.0034224299999999997,
+   "duration": 260.725,
    "index": 1,
-   "key": "b83d60152eb558299e73a0feb83055f301c1652730486f611bedc67c5b6094e1",
+   "key": "0c632a41acbc4a2a83cf370c506cc3dd447a8892dfbfd12cfa2d0b2b247caee1",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-the-reference-does-not-claim",
-   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "sent_text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public ledger-client component also exposes LocalEvaluation, NetworkTime and Trace, with sources under offchain/ledger-client/Singular/Registry/, and the public local-services component ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, TraceRender, WaitTypes and Wallet, with sources under offchain/local-services/Singular/Registry/; local-services re-exports the four ledger-client modules under the same names. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+   "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public ledger-client component also exposes LocalEvaluation, NetworkTime and Trace, with sources under offchain/ledger-client/Singular/Registry/, and the public local-services component ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, TraceRender, WaitTypes and Wallet, with sources under offchain/local-services/Singular/Registry/; local-services re-exports the four ledger-client modules under the same names. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
    "words": [
     {
      "end": 0.375,
@@ -166994,1948 +166994,2053 @@
      "text": "public"
     },
     {
-     "end": 63.025,
+     "end": 62.775,
      "start": 62.15,
-     "text": "local-services"
+     "text": "ledger-client"
     },
     {
-     "end": 63.638,
-     "start": 63.025,
+     "end": 63.4,
+     "start": 62.775,
      "text": "component"
     },
     {
-     "end": 64.05,
-     "start": 63.638,
+     "end": 63.775,
+     "start": 63.4,
      "text": "also"
     },
     {
-     "end": 64.738,
-     "start": 64.05,
+     "end": 64.45,
+     "start": 63.775,
      "text": "exposes"
     },
     {
-     "end": 65.9,
-     "start": 64.738,
+     "end": 66.025,
+     "start": 64.45,
      "text": "LocalEvaluation"
     },
     {
-     "end": 66.0,
-     "start": 65.9,
+     "end": 66.225,
+     "start": 66.025,
      "text": ","
     },
     {
-     "end": 67.35,
-     "start": 66.0,
+     "end": 67.225,
+     "start": 66.45,
      "text": "NetworkTime"
     },
     {
-     "end": 67.575,
-     "start": 67.35,
-     "text": ","
+     "end": 67.363,
+     "start": 67.225,
+     "text": "and"
     },
     {
-     "end": 68.575,
-     "start": 67.75,
-     "text": "ProviderSettings"
-    },
-    {
-     "end": 68.625,
-     "start": 68.575,
-     "text": ","
-    },
-    {
-     "end": 69.475,
-     "start": 68.625,
-     "text": "ProviderTrace"
-    },
-    {
-     "end": 69.55,
-     "start": 69.475,
-     "text": ","
-    },
-    {
-     "end": 70.4,
-     "start": 69.55,
-     "text": "SessionEvidence"
-    },
-    {
-     "end": 70.45,
-     "start": 70.4,
-     "text": ","
-    },
-    {
-     "end": 71.2,
-     "start": 70.45,
-     "text": "SessionIO"
-    },
-    {
-     "end": 71.25,
-     "start": 71.2,
-     "text": ","
-    },
-    {
-     "end": 72.8,
-     "start": 71.25,
-     "text": "SessionServices"
-    },
-    {
-     "end": 73.0,
-     "start": 72.8,
-     "text": ","
-    },
-    {
-     "end": 73.85,
-     "start": 73.175,
-     "text": "TimeMaterial"
-    },
-    {
-     "end": 73.9,
-     "start": 73.85,
-     "text": ","
-    },
-    {
-     "end": 74.5,
-     "start": 73.9,
-     "text": "TimeSource"
-    },
-    {
-     "end": 74.55,
-     "start": 74.5,
-     "text": ","
-    },
-    {
-     "end": 74.975,
-     "start": 74.55,
+     "end": 67.875,
+     "start": 67.363,
      "text": "Trace"
     },
     {
-     "end": 75.025,
-     "start": 74.975,
+     "end": 67.95,
+     "start": 67.875,
      "text": ","
     },
     {
-     "end": 75.65,
-     "start": 75.025,
+     "end": 68.125,
+     "start": 67.95,
+     "text": "with"
+    },
+    {
+     "end": 68.6,
+     "start": 68.125,
+     "text": "sources"
+    },
+    {
+     "end": 68.863,
+     "start": 68.6,
+     "text": "under"
+    },
+    {
+     "end": 73.55,
+     "start": 68.863,
+     "text": "offchain/ledger-client/Singular/Registry/"
+    },
+    {
+     "end": 73.8,
+     "start": 73.55,
+     "text": ","
+    },
+    {
+     "end": 74.088,
+     "start": 74.0,
+     "text": "and"
+    },
+    {
+     "end": 74.175,
+     "start": 74.088,
+     "text": "the"
+    },
+    {
+     "end": 74.575,
+     "start": 74.175,
+     "text": "public"
+    },
+    {
+     "end": 75.475,
+     "start": 74.575,
+     "text": "local-services"
+    },
+    {
+     "end": 76.05,
+     "start": 75.475,
+     "text": "component"
+    },
+    {
+     "end": 76.975,
+     "start": 76.05,
+     "text": "ProviderSettings"
+    },
+    {
+     "end": 77.05,
+     "start": 76.975,
+     "text": ","
+    },
+    {
+     "end": 78.45,
+     "start": 77.05,
+     "text": "ProviderTrace"
+    },
+    {
+     "end": 78.675,
+     "start": 78.45,
+     "text": ","
+    },
+    {
+     "end": 79.6,
+     "start": 78.875,
+     "text": "SessionEvidence"
+    },
+    {
+     "end": 79.65,
+     "start": 79.6,
+     "text": ","
+    },
+    {
+     "end": 80.425,
+     "start": 79.65,
+     "text": "SessionIO"
+    },
+    {
+     "end": 80.5,
+     "start": 80.425,
+     "text": ","
+    },
+    {
+     "end": 81.45,
+     "start": 80.5,
+     "text": "SessionServices"
+    },
+    {
+     "end": 81.5,
+     "start": 81.45,
+     "text": ","
+    },
+    {
+     "end": 82.3,
+     "start": 81.5,
+     "text": "TimeMaterial"
+    },
+    {
+     "end": 82.35,
+     "start": 82.3,
+     "text": ","
+    },
+    {
+     "end": 83.0,
+     "start": 82.35,
+     "text": "TimeSource"
+    },
+    {
+     "end": 83.05,
+     "start": 83.0,
+     "text": ","
+    },
+    {
+     "end": 84.275,
+     "start": 83.05,
      "text": "TraceRender"
     },
     {
-     "end": 75.7,
-     "start": 75.65,
+     "end": 84.5,
+     "start": 84.275,
      "text": ","
     },
     {
-     "end": 76.213,
-     "start": 75.7,
+     "end": 85.375,
+     "start": 84.725,
      "text": "WaitTypes"
     },
     {
-     "end": 76.325,
-     "start": 76.213,
+     "end": 85.512,
+     "start": 85.375,
      "text": "and"
     },
     {
-     "end": 77.225,
-     "start": 76.325,
+     "end": 85.975,
+     "start": 85.512,
      "text": "Wallet"
     },
     {
-     "end": 77.425,
-     "start": 77.225,
-     "text": ";"
+     "end": 86.05,
+     "start": 85.975,
+     "text": ","
     },
     {
-     "end": 77.812,
-     "start": 77.625,
-     "text": "their"
+     "end": 86.225,
+     "start": 86.05,
+     "text": "with"
     },
     {
-     "end": 78.312,
-     "start": 77.812,
+     "end": 86.7,
+     "start": 86.225,
      "text": "sources"
     },
     {
-     "end": 78.55,
-     "start": 78.312,
-     "text": "live"
-    },
-    {
-     "end": 78.838,
-     "start": 78.55,
+     "end": 86.988,
+     "start": 86.7,
      "text": "under"
     },
     {
-     "end": 83.9,
-     "start": 78.838,
-     "text": "offchain/local-services/Singular/Registry/."
+     "end": 91.85,
+     "start": 86.988,
+     "text": "offchain/local-services/Singular/Registry/"
     },
     {
-     "end": 84.238,
-     "start": 84.075,
+     "end": 92.075,
+     "start": 91.85,
+     "text": ";"
+    },
+    {
+     "end": 93.162,
+     "start": 92.275,
+     "text": "local-services"
+    },
+    {
+     "end": 93.875,
+     "start": 93.162,
+     "text": "re-exports"
+    },
+    {
+     "end": 94.025,
+     "start": 93.875,
+     "text": "the"
+    },
+    {
+     "end": 94.325,
+     "start": 94.025,
+     "text": "four"
+    },
+    {
+     "end": 94.95,
+     "start": 94.325,
+     "text": "ledger-client"
+    },
+    {
+     "end": 95.425,
+     "start": 94.95,
+     "text": "modules"
+    },
+    {
+     "end": 95.613,
+     "start": 95.425,
+     "text": "under"
+    },
+    {
+     "end": 95.7,
+     "start": 95.613,
+     "text": "the"
+    },
+    {
+     "end": 96.0,
+     "start": 95.7,
+     "text": "same"
+    },
+    {
+     "end": 97.0,
+     "start": 96.0,
+     "text": "names"
+    },
+    {
+     "end": 97.2,
+     "start": 97.0,
+     "text": "."
+    },
+    {
+     "end": 97.537,
+     "start": 97.375,
      "text": "Their"
     },
     {
-     "end": 84.8,
-     "start": 84.238,
+     "end": 98.1,
+     "start": 97.537,
      "text": "generated"
     },
     {
-     "end": 85.338,
-     "start": 84.8,
+     "end": 98.637,
+     "start": 98.1,
      "text": "pages"
     },
     {
-     "end": 85.5,
-     "start": 85.338,
+     "end": 98.8,
+     "start": 98.637,
      "text": "are"
     },
     {
-     "end": 85.8,
-     "start": 85.5,
+     "end": 99.1,
+     "start": 98.8,
      "text": "not"
     },
     {
-     "end": 85.887,
-     "start": 85.8,
+     "end": 99.188,
+     "start": 99.1,
      "text": "in"
     },
     {
-     "end": 86.075,
-     "start": 85.887,
+     "end": 99.375,
+     "start": 99.188,
      "text": "this"
     },
     {
-     "end": 86.75,
-     "start": 86.075,
+     "end": 100.05,
+     "start": 99.375,
      "text": "main-library"
     },
     {
-     "end": 87.825,
-     "start": 86.75,
+     "end": 101.125,
+     "start": 100.05,
      "text": "reference"
     },
     {
-     "end": 88.025,
-     "start": 87.825,
+     "end": 101.325,
+     "start": 101.125,
      "text": "."
     },
     {
-     "end": 88.363,
-     "start": 88.25,
+     "end": 101.662,
+     "start": 101.55,
      "text": "The"
     },
     {
-     "end": 88.775,
-     "start": 88.363,
+     "end": 102.075,
+     "start": 101.662,
      "text": "public"
     },
     {
-     "end": 90.225,
-     "start": 88.775,
+     "end": 103.525,
+     "start": 102.075,
      "text": "open-datum-application"
     },
     {
-     "end": 90.825,
-     "start": 90.225,
+     "end": 104.125,
+     "start": 103.525,
      "text": "component"
     },
     {
-     "end": 90.875,
-     "start": 90.825,
+     "end": 104.175,
+     "start": 104.125,
      "text": "("
     },
     {
-     "end": 94.7,
-     "start": 90.875,
+     "end": 108.0,
+     "start": 104.175,
      "text": "applications/open-datum/offchain/"
     },
     {
-     "end": 94.887,
-     "start": 94.7,
+     "end": 108.188,
+     "start": 108.0,
      "text": ")"
-    },
-    {
-     "end": 95.3,
-     "start": 94.887,
-     "text": "carries"
-    },
-    {
-     "end": 95.45,
-     "start": 95.3,
-     "text": "the"
-    },
-    {
-     "end": 96.175,
-     "start": 95.45,
-     "text": "open-datum"
-    },
-    {
-     "end": 96.925,
-     "start": 96.175,
-     "text": "application"
-    },
-    {
-     "end": 97.025,
-     "start": 96.925,
-     "text": "the"
-    },
-    {
-     "end": 97.45,
-     "start": 97.025,
-     "text": "command"
-    },
-    {
-     "end": 97.775,
-     "start": 97.45,
-     "text": "line"
-    },
-    {
-     "end": 98.575,
-     "start": 97.775,
-     "text": "composes"
-    },
-    {
-     "end": 98.65,
-     "start": 98.575,
-     "text": "—"
-    },
-    {
-     "end": 99.0,
-     "start": 98.65,
-     "text": "entry"
-    },
-    {
-     "end": 100.325,
-     "start": 99.0,
-     "text": "commands"
-    },
-    {
-     "end": 100.55,
-     "start": 100.325,
-     "text": ","
-    },
-    {
-     "end": 101.225,
-     "start": 100.75,
-     "text": "envelope"
-    },
-    {
-     "end": 101.275,
-     "start": 101.225,
-     "text": ","
-    },
-    {
-     "end": 101.575,
-     "start": 101.275,
-     "text": "booking"
-    },
-    {
-     "end": 102.025,
-     "start": 101.575,
-     "text": "approval"
-    },
-    {
-     "end": 102.15,
-     "start": 102.025,
-     "text": "and"
-    },
-    {
-     "end": 102.925,
-     "start": 102.15,
-     "text": "destination"
-    },
-    {
-     "end": 103.012,
-     "start": 102.925,
-     "text": ","
-    },
-    {
-     "end": 103.45,
-     "start": 103.012,
-     "text": "payload"
-    },
-    {
-     "end": 103.9,
-     "start": 103.45,
-     "text": "update"
-    },
-    {
-     "end": 103.975,
-     "start": 103.9,
-     "text": ","
-    },
-    {
-     "end": 104.412,
-     "start": 103.975,
-     "text": "release"
-    },
-    {
-     "end": 104.8,
-     "start": 104.412,
-     "text": "rules"
-    },
-    {
-     "end": 104.863,
-     "start": 104.8,
-     "text": ","
-    },
-    {
-     "end": 105.8,
-     "start": 104.863,
-     "text": "script"
-    },
-    {
-     "end": 106.0,
-     "start": 105.8,
-     "text": ","
-    },
-    {
-     "end": 106.262,
-     "start": 106.175,
-     "text": "and"
-    },
-    {
-     "end": 106.338,
-     "start": 106.262,
-     "text": "the"
-    },
-    {
-     "end": 106.9,
-     "start": 106.338,
-     "text": "application"
-    },
-    {
-     "end": 107.675,
-     "start": 106.9,
-     "text": "value"
-    },
-    {
-     "end": 107.9,
-     "start": 107.675,
-     "text": ":"
-    },
-    {
-     "end": 108.55,
-     "start": 108.125,
-     "text": "Singular"
     },
     {
      "end": 108.6,
-     "start": 108.55,
-     "text": "."
-    },
-    {
-     "end": 109.275,
-     "start": 108.6,
-     "text": "Application"
-    },
-    {
-     "end": 109.325,
-     "start": 109.275,
-     "text": "."
-    },
-    {
-     "end": 109.95,
-     "start": 109.325,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 110.05,
-     "start": 109.95,
-     "text": "."
-    },
-    {
-     "end": 110.325,
-     "start": 110.05,
-     "text": "Book"
-    },
-    {
-     "end": 110.412,
-     "start": 110.325,
-     "text": ","
-    },
-    {
-     "end": 110.9,
-     "start": 110.412,
-     "text": "Singular"
-    },
-    {
-     "end": 110.95,
-     "start": 110.9,
-     "text": "."
-    },
-    {
-     "end": 111.675,
-     "start": 110.95,
-     "text": "Application"
-    },
-    {
-     "end": 111.75,
-     "start": 111.675,
-     "text": "."
-    },
-    {
-     "end": 112.375,
-     "start": 111.75,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 112.45,
-     "start": 112.375,
-     "text": "."
-    },
-    {
-     "end": 113.325,
-     "start": 112.45,
-     "text": "Build"
-    },
-    {
-     "end": 113.55,
-     "start": 113.325,
-     "text": ","
-    },
-    {
-     "end": 114.225,
-     "start": 113.775,
-     "text": "Singular"
-    },
-    {
-     "end": 114.275,
-     "start": 114.225,
-     "text": "."
-    },
-    {
-     "end": 114.975,
-     "start": 114.275,
-     "text": "Application"
-    },
-    {
-     "end": 115.05,
-     "start": 114.975,
-     "text": "."
-    },
-    {
-     "end": 115.825,
-     "start": 115.05,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 115.9,
-     "start": 115.825,
-     "text": "."
-    },
-    {
-     "end": 116.4,
-     "start": 115.9,
-     "text": "Command"
-    },
-    {
-     "end": 116.488,
-     "start": 116.4,
-     "text": ","
-    },
-    {
-     "end": 116.975,
-     "start": 116.488,
-     "text": "Singular"
-    },
-    {
-     "end": 117.025,
-     "start": 116.975,
-     "text": "."
-    },
-    {
-     "end": 117.75,
-     "start": 117.025,
-     "text": "Application"
-    },
-    {
-     "end": 117.825,
-     "start": 117.75,
-     "text": "."
-    },
-    {
-     "end": 118.425,
-     "start": 117.825,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 118.5,
-     "start": 118.425,
-     "text": "."
-    },
-    {
-     "end": 119.475,
-     "start": 118.5,
-     "text": "Entry"
-    },
-    {
-     "end": 119.775,
-     "start": 119.475,
-     "text": ","
-    },
-    {
-     "end": 120.3,
-     "start": 119.975,
-     "text": "Singular"
-    },
-    {
-     "end": 120.35,
-     "start": 120.3,
-     "text": "."
-    },
-    {
-     "end": 121.0,
-     "start": 120.35,
-     "text": "Application"
-    },
-    {
-     "end": 121.075,
-     "start": 121.0,
-     "text": "."
-    },
-    {
-     "end": 121.65,
-     "start": 121.075,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 121.725,
-     "start": 121.65,
-     "text": "."
-    },
-    {
-     "end": 122.625,
-     "start": 121.725,
-     "text": "Envelope"
-    },
-    {
-     "end": 122.85,
-     "start": 122.625,
-     "text": ","
-    },
-    {
-     "end": 123.375,
-     "start": 123.05,
-     "text": "Singular"
-    },
-    {
-     "end": 123.425,
-     "start": 123.375,
-     "text": "."
-    },
-    {
-     "end": 124.05,
-     "start": 123.425,
-     "text": "Application"
-    },
-    {
-     "end": 124.125,
-     "start": 124.05,
-     "text": "."
-    },
-    {
-     "end": 124.7,
-     "start": 124.125,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 124.75,
-     "start": 124.7,
-     "text": "."
-    },
-    {
-     "end": 126.075,
-     "start": 124.75,
-     "text": "InsertEnvelope"
-    },
-    {
-     "end": 126.3,
-     "start": 126.075,
-     "text": ","
-    },
-    {
-     "end": 126.975,
-     "start": 126.525,
-     "text": "Singular"
-    },
-    {
-     "end": 127.025,
-     "start": 126.975,
-     "text": "."
-    },
-    {
-     "end": 127.725,
-     "start": 127.025,
-     "text": "Application"
-    },
-    {
-     "end": 127.8,
-     "start": 127.725,
-     "text": "."
-    },
-    {
-     "end": 128.575,
-     "start": 127.8,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 128.65,
-     "start": 128.575,
-     "text": "."
-    },
-    {
-     "end": 129.15,
-     "start": 128.65,
-     "text": "Permanent"
-    },
-    {
-     "end": 129.238,
-     "start": 129.15,
-     "text": ","
-    },
-    {
-     "end": 129.725,
-     "start": 129.238,
-     "text": "Singular"
-    },
-    {
-     "end": 129.775,
-     "start": 129.725,
-     "text": "."
-    },
-    {
-     "end": 130.525,
-     "start": 129.775,
-     "text": "Application"
-    },
-    {
-     "end": 130.6,
-     "start": 130.525,
-     "text": "."
-    },
-    {
-     "end": 131.275,
-     "start": 130.6,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 131.35,
-     "start": 131.275,
-     "text": "."
-    },
-    {
-     "end": 132.275,
-     "start": 131.35,
-     "text": "Plan"
-    },
-    {
-     "end": 132.5,
-     "start": 132.275,
-     "text": ","
-    },
-    {
-     "end": 133.175,
-     "start": 132.725,
-     "text": "Singular"
-    },
-    {
-     "end": 133.225,
-     "start": 133.175,
-     "text": "."
-    },
-    {
-     "end": 133.9,
-     "start": 133.225,
-     "text": "Application"
-    },
-    {
-     "end": 133.95,
-     "start": 133.9,
-     "text": "."
-    },
-    {
-     "end": 134.575,
-     "start": 133.95,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 134.65,
-     "start": 134.575,
-     "text": "."
-    },
-    {
-     "end": 135.075,
-     "start": 134.65,
-     "text": "Preview"
-    },
-    {
-     "end": 135.163,
-     "start": 135.075,
-     "text": ","
-    },
-    {
-     "end": 135.65,
-     "start": 135.163,
-     "text": "Singular"
-    },
-    {
-     "end": 135.7,
-     "start": 135.65,
-     "text": "."
-    },
-    {
-     "end": 136.45,
-     "start": 135.7,
-     "text": "Application"
-    },
-    {
-     "end": 136.525,
-     "start": 136.45,
-     "text": "."
-    },
-    {
-     "end": 137.1,
-     "start": 136.525,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 137.15,
-     "start": 137.1,
-     "text": "."
-    },
-    {
-     "end": 138.225,
-     "start": 137.15,
-     "text": "Release"
-    },
-    {
-     "end": 138.45,
-     "start": 138.225,
-     "text": ","
-    },
-    {
-     "end": 139.125,
-     "start": 138.675,
-     "text": "Singular"
-    },
-    {
-     "end": 139.175,
-     "start": 139.125,
-     "text": "."
-    },
-    {
-     "end": 139.85,
-     "start": 139.175,
-     "text": "Application"
-    },
-    {
-     "end": 139.9,
-     "start": 139.85,
-     "text": "."
-    },
-    {
-     "end": 140.55,
-     "start": 139.9,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 140.65,
-     "start": 140.55,
-     "text": "."
-    },
-    {
-     "end": 140.95,
-     "start": 140.65,
-     "text": "Root"
-    },
-    {
-     "end": 141.038,
-     "start": 140.95,
-     "text": ","
-    },
-    {
-     "end": 141.525,
-     "start": 141.038,
-     "text": "Singular"
-    },
-    {
-     "end": 141.575,
-     "start": 141.525,
-     "text": "."
-    },
-    {
-     "end": 142.3,
-     "start": 141.575,
-     "text": "Application"
-    },
-    {
-     "end": 142.375,
-     "start": 142.3,
-     "text": "."
-    },
-    {
-     "end": 142.975,
-     "start": 142.375,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 143.05,
-     "start": 142.975,
-     "text": "."
-    },
-    {
-     "end": 143.9,
-     "start": 143.05,
-     "text": "Run"
-    },
-    {
-     "end": 144.125,
-     "start": 143.9,
-     "text": ","
-    },
-    {
-     "end": 144.65,
-     "start": 144.325,
-     "text": "Singular"
-    },
-    {
-     "end": 144.7,
-     "start": 144.65,
-     "text": "."
-    },
-    {
-     "end": 145.325,
-     "start": 144.7,
-     "text": "Application"
-    },
-    {
-     "end": 145.375,
-     "start": 145.325,
-     "text": "."
-    },
-    {
-     "end": 145.95,
-     "start": 145.375,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 146.025,
-     "start": 145.95,
-     "text": "."
-    },
-    {
-     "end": 146.875,
-     "start": 146.025,
-     "text": "Script"
-    },
-    {
-     "end": 147.075,
-     "start": 146.875,
-     "text": ","
-    },
-    {
-     "end": 147.75,
-     "start": 147.3,
-     "text": "Singular"
-    },
-    {
-     "end": 147.8,
-     "start": 147.75,
-     "text": "."
-    },
-    {
-     "end": 148.5,
-     "start": 147.8,
-     "text": "Application"
-    },
-    {
-     "end": 148.575,
-     "start": 148.5,
-     "text": "."
-    },
-    {
-     "end": 149.375,
-     "start": 148.575,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 149.45,
-     "start": 149.375,
-     "text": "."
-    },
-    {
-     "end": 149.875,
-     "start": 149.45,
-     "text": "Update"
-    },
-    {
-     "end": 150.012,
-     "start": 149.875,
-     "text": "and"
-    },
-    {
-     "end": 150.55,
-     "start": 150.012,
-     "text": "Singular"
-    },
-    {
-     "end": 150.625,
-     "start": 150.55,
-     "text": "."
-    },
-    {
-     "end": 151.35,
-     "start": 150.625,
-     "text": "Application"
-    },
-    {
-     "end": 151.425,
-     "start": 151.35,
-     "text": "."
-    },
-    {
-     "end": 152.075,
-     "start": 151.425,
-     "text": "OpenDatum"
-    },
-    {
-     "end": 152.15,
-     "start": 152.075,
-     "text": "."
-    },
-    {
-     "end": 153.0,
-     "start": 152.15,
-     "text": "Value"
-    },
-    {
-     "end": 153.35,
-     "start": 153.0,
-     "text": ";"
-    },
-    {
-     "end": 153.75,
-     "start": 153.575,
-     "text": "their"
-    },
-    {
-     "end": 154.238,
-     "start": 153.75,
-     "text": "sources"
-    },
-    {
-     "end": 154.462,
-     "start": 154.238,
-     "text": "live"
-    },
-    {
-     "end": 154.675,
-     "start": 154.462,
-     "text": "under"
-    },
-    {
-     "end": 163.575,
-     "start": 154.675,
-     "text": "applications/open-datum/offchain/src/Singular/Application/OpenDatum/"
-    },
-    {
-     "end": 163.85,
-     "start": 163.575,
-     "text": ","
-    },
-    {
-     "end": 164.137,
-     "start": 164.05,
-     "text": "and"
-    },
-    {
-     "end": 164.25,
-     "start": 164.137,
-     "text": "the"
-    },
-    {
-     "end": 164.988,
-     "start": 164.25,
-     "text": "executable's"
-    },
-    {
-     "end": 165.325,
-     "start": 164.988,
-     "text": "entry"
-    },
-    {
-     "end": 165.7,
-     "start": 165.325,
-     "text": "point"
-    },
-    {
-     "end": 166.075,
-     "start": 165.7,
-     "text": "lives"
-    },
-    {
-     "end": 166.175,
-     "start": 166.075,
-     "text": "in"
-    },
-    {
-     "end": 169.075,
-     "start": 166.175,
-     "text": "applications/open-datum/offchain"
-    },
-    {
-     "end": 169.85,
-     "start": 169.075,
-     "text": "app/."
-    },
-    {
-     "end": 170.125,
-     "start": 170.05,
-     "text": "The"
-    },
-    {
-     "end": 170.525,
-     "start": 170.125,
-     "text": "public"
-    },
-    {
-     "end": 171.3,
-     "start": 170.525,
-     "text": "registry-cli"
-    },
-    {
-     "end": 171.962,
-     "start": 171.3,
-     "text": "component"
-    },
-    {
-     "end": 172.05,
-     "start": 171.962,
-     "text": "("
-    },
-    {
-     "end": 174.0,
-     "start": 172.05,
-     "text": "offchain/cli/"
-    },
-    {
-     "end": 174.137,
-     "start": 174.0,
-     "text": ")"
-    },
-    {
-     "end": 174.55,
-     "start": 174.137,
+     "start": 108.188,
      "text": "carries"
     },
     {
-     "end": 174.675,
-     "start": 174.55,
+     "end": 108.75,
+     "start": 108.6,
      "text": "the"
     },
     {
-     "end": 175.175,
-     "start": 174.675,
-     "text": "registry"
+     "end": 109.475,
+     "start": 108.75,
+     "text": "open-datum"
     },
     {
-     "end": 175.675,
-     "start": 175.175,
+     "end": 110.225,
+     "start": 109.475,
+     "text": "application"
+    },
+    {
+     "end": 110.325,
+     "start": 110.225,
+     "text": "the"
+    },
+    {
+     "end": 110.75,
+     "start": 110.325,
      "text": "command"
     },
     {
-     "end": 175.962,
-     "start": 175.675,
+     "end": 111.075,
+     "start": 110.75,
      "text": "line"
     },
     {
-     "end": 176.062,
-     "start": 175.962,
-     "text": "the"
+     "end": 111.875,
+     "start": 111.075,
+     "text": "composes"
     },
     {
-     "end": 176.275,
-     "start": 176.062,
-     "text": "two"
-    },
-    {
-     "end": 176.812,
-     "start": 176.275,
-     "text": "binaries"
-    },
-    {
-     "end": 177.163,
-     "start": 176.812,
-     "text": "link"
-    },
-    {
-     "end": 177.25,
-     "start": 177.163,
+     "end": 111.95,
+     "start": 111.875,
      "text": "—"
     },
     {
-     "end": 178.325,
-     "start": 177.25,
-     "text": "session"
+     "end": 112.3,
+     "start": 111.95,
+     "text": "entry"
     },
     {
-     "end": 178.55,
-     "start": 178.325,
+     "end": 113.625,
+     "start": 112.3,
+     "text": "commands"
+    },
+    {
+     "end": 113.85,
+     "start": 113.625,
      "text": ","
     },
     {
-     "end": 179.1,
-     "start": 178.75,
-     "text": "journal"
+     "end": 114.525,
+     "start": 114.05,
+     "text": "envelope"
     },
     {
-     "end": 179.212,
-     "start": 179.1,
-     "text": "and"
-    },
-    {
-     "end": 179.675,
-     "start": 179.212,
-     "text": "receipts"
-    },
-    {
-     "end": 179.712,
-     "start": 179.675,
+     "end": 114.575,
+     "start": 114.525,
      "text": ","
     },
     {
-     "end": 179.8,
-     "start": 179.712,
-     "text": "the"
-    },
-    {
-     "end": 180.15,
-     "start": 179.8,
-     "text": "flag"
-    },
-    {
-     "end": 180.425,
-     "start": 180.15,
-     "text": "group"
-    },
-    {
-     "end": 180.488,
-     "start": 180.425,
-     "text": ","
-    },
-    {
-     "end": 180.925,
-     "start": 180.488,
-     "text": "create"
-    },
-    {
-     "end": 181.012,
-     "start": 180.925,
-     "text": ","
-    },
-    {
-     "end": 181.475,
-     "start": 181.012,
-     "text": "fold"
-    },
-    {
-     "end": 181.525,
-     "start": 181.475,
-     "text": ","
-    },
-    {
-     "end": 182.0,
-     "start": 181.525,
-     "text": "reject"
-    },
-    {
-     "end": 182.05,
-     "start": 182.0,
-     "text": ","
-    },
-    {
-     "end": 182.6,
-     "start": 182.05,
-     "text": "reclaim"
-    },
-    {
-     "end": 182.65,
-     "start": 182.6,
-     "text": ","
-    },
-    {
-     "end": 183.175,
-     "start": 182.65,
-     "text": "inspect"
-    },
-    {
-     "end": 183.225,
-     "start": 183.175,
-     "text": ","
-    },
-    {
-     "end": 184.475,
-     "start": 183.225,
-     "text": "reconcile"
-    },
-    {
-     "end": 184.7,
-     "start": 184.475,
-     "text": ","
-    },
-    {
-     "end": 185.35,
-     "start": 184.875,
-     "text": "recovery"
-    },
-    {
-     "end": 185.462,
-     "start": 185.35,
-     "text": "and"
-    },
-    {
-     "end": 185.55,
-     "start": 185.462,
-     "text": "the"
-    },
-    {
-     "end": 185.875,
-     "start": 185.55,
+     "end": 114.875,
+     "start": 114.575,
      "text": "booking"
     },
     {
-     "end": 186.575,
-     "start": 185.875,
-     "text": "call"
+     "end": 115.325,
+     "start": 114.875,
+     "text": "approval"
     },
     {
-     "end": 186.775,
-     "start": 186.575,
+     "end": 115.45,
+     "start": 115.325,
+     "text": "and"
+    },
+    {
+     "end": 116.225,
+     "start": 115.45,
+     "text": "destination"
+    },
+    {
+     "end": 116.312,
+     "start": 116.225,
+     "text": ","
+    },
+    {
+     "end": 116.75,
+     "start": 116.312,
+     "text": "payload"
+    },
+    {
+     "end": 117.2,
+     "start": 116.75,
+     "text": "update"
+    },
+    {
+     "end": 117.275,
+     "start": 117.2,
+     "text": ","
+    },
+    {
+     "end": 117.713,
+     "start": 117.275,
+     "text": "release"
+    },
+    {
+     "end": 118.1,
+     "start": 117.713,
+     "text": "rules"
+    },
+    {
+     "end": 118.162,
+     "start": 118.1,
+     "text": ","
+    },
+    {
+     "end": 119.1,
+     "start": 118.162,
+     "text": "script"
+    },
+    {
+     "end": 119.3,
+     "start": 119.1,
+     "text": ","
+    },
+    {
+     "end": 119.562,
+     "start": 119.475,
+     "text": "and"
+    },
+    {
+     "end": 119.637,
+     "start": 119.562,
+     "text": "the"
+    },
+    {
+     "end": 120.2,
+     "start": 119.637,
+     "text": "application"
+    },
+    {
+     "end": 120.975,
+     "start": 120.2,
+     "text": "value"
+    },
+    {
+     "end": 121.2,
+     "start": 120.975,
      "text": ":"
     },
     {
-     "end": 187.45,
-     "start": 187.0,
+     "end": 121.85,
+     "start": 121.425,
      "text": "Singular"
     },
     {
-     "end": 187.525,
-     "start": 187.45,
+     "end": 121.9,
+     "start": 121.85,
      "text": "."
     },
     {
-     "end": 188.05,
-     "start": 187.525,
+     "end": 122.575,
+     "start": 121.9,
+     "text": "Application"
+    },
+    {
+     "end": 122.625,
+     "start": 122.575,
+     "text": "."
+    },
+    {
+     "end": 123.25,
+     "start": 122.625,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 123.35,
+     "start": 123.25,
+     "text": "."
+    },
+    {
+     "end": 123.625,
+     "start": 123.35,
+     "text": "Book"
+    },
+    {
+     "end": 123.713,
+     "start": 123.625,
+     "text": ","
+    },
+    {
+     "end": 124.2,
+     "start": 123.713,
+     "text": "Singular"
+    },
+    {
+     "end": 124.25,
+     "start": 124.2,
+     "text": "."
+    },
+    {
+     "end": 124.975,
+     "start": 124.25,
+     "text": "Application"
+    },
+    {
+     "end": 125.05,
+     "start": 124.975,
+     "text": "."
+    },
+    {
+     "end": 125.675,
+     "start": 125.05,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 125.75,
+     "start": 125.675,
+     "text": "."
+    },
+    {
+     "end": 126.625,
+     "start": 125.75,
+     "text": "Build"
+    },
+    {
+     "end": 126.85,
+     "start": 126.625,
+     "text": ","
+    },
+    {
+     "end": 127.525,
+     "start": 127.075,
+     "text": "Singular"
+    },
+    {
+     "end": 127.575,
+     "start": 127.525,
+     "text": "."
+    },
+    {
+     "end": 128.275,
+     "start": 127.575,
+     "text": "Application"
+    },
+    {
+     "end": 128.35,
+     "start": 128.275,
+     "text": "."
+    },
+    {
+     "end": 129.125,
+     "start": 128.35,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 129.2,
+     "start": 129.125,
+     "text": "."
+    },
+    {
+     "end": 129.7,
+     "start": 129.2,
+     "text": "Command"
+    },
+    {
+     "end": 129.788,
+     "start": 129.7,
+     "text": ","
+    },
+    {
+     "end": 130.275,
+     "start": 129.788,
+     "text": "Singular"
+    },
+    {
+     "end": 130.325,
+     "start": 130.275,
+     "text": "."
+    },
+    {
+     "end": 131.05,
+     "start": 130.325,
+     "text": "Application"
+    },
+    {
+     "end": 131.125,
+     "start": 131.05,
+     "text": "."
+    },
+    {
+     "end": 131.725,
+     "start": 131.125,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 131.8,
+     "start": 131.725,
+     "text": "."
+    },
+    {
+     "end": 132.775,
+     "start": 131.8,
+     "text": "Entry"
+    },
+    {
+     "end": 133.075,
+     "start": 132.775,
+     "text": ","
+    },
+    {
+     "end": 133.6,
+     "start": 133.275,
+     "text": "Singular"
+    },
+    {
+     "end": 133.65,
+     "start": 133.6,
+     "text": "."
+    },
+    {
+     "end": 134.3,
+     "start": 133.65,
+     "text": "Application"
+    },
+    {
+     "end": 134.375,
+     "start": 134.3,
+     "text": "."
+    },
+    {
+     "end": 134.95,
+     "start": 134.375,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 135.025,
+     "start": 134.95,
+     "text": "."
+    },
+    {
+     "end": 135.925,
+     "start": 135.025,
+     "text": "Envelope"
+    },
+    {
+     "end": 136.15,
+     "start": 135.925,
+     "text": ","
+    },
+    {
+     "end": 136.675,
+     "start": 136.35,
+     "text": "Singular"
+    },
+    {
+     "end": 136.725,
+     "start": 136.675,
+     "text": "."
+    },
+    {
+     "end": 137.35,
+     "start": 136.725,
+     "text": "Application"
+    },
+    {
+     "end": 137.425,
+     "start": 137.35,
+     "text": "."
+    },
+    {
+     "end": 138.0,
+     "start": 137.425,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 138.05,
+     "start": 138.0,
+     "text": "."
+    },
+    {
+     "end": 139.375,
+     "start": 138.05,
+     "text": "InsertEnvelope"
+    },
+    {
+     "end": 139.6,
+     "start": 139.375,
+     "text": ","
+    },
+    {
+     "end": 140.275,
+     "start": 139.825,
+     "text": "Singular"
+    },
+    {
+     "end": 140.325,
+     "start": 140.275,
+     "text": "."
+    },
+    {
+     "end": 141.025,
+     "start": 140.325,
+     "text": "Application"
+    },
+    {
+     "end": 141.1,
+     "start": 141.025,
+     "text": "."
+    },
+    {
+     "end": 141.875,
+     "start": 141.1,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 141.95,
+     "start": 141.875,
+     "text": "."
+    },
+    {
+     "end": 142.45,
+     "start": 141.95,
+     "text": "Permanent"
+    },
+    {
+     "end": 142.538,
+     "start": 142.45,
+     "text": ","
+    },
+    {
+     "end": 143.025,
+     "start": 142.538,
+     "text": "Singular"
+    },
+    {
+     "end": 143.075,
+     "start": 143.025,
+     "text": "."
+    },
+    {
+     "end": 143.825,
+     "start": 143.075,
+     "text": "Application"
+    },
+    {
+     "end": 143.9,
+     "start": 143.825,
+     "text": "."
+    },
+    {
+     "end": 144.575,
+     "start": 143.9,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 144.65,
+     "start": 144.575,
+     "text": "."
+    },
+    {
+     "end": 145.575,
+     "start": 144.65,
+     "text": "Plan"
+    },
+    {
+     "end": 145.8,
+     "start": 145.575,
+     "text": ","
+    },
+    {
+     "end": 146.475,
+     "start": 146.025,
+     "text": "Singular"
+    },
+    {
+     "end": 146.525,
+     "start": 146.475,
+     "text": "."
+    },
+    {
+     "end": 147.2,
+     "start": 146.525,
+     "text": "Application"
+    },
+    {
+     "end": 147.25,
+     "start": 147.2,
+     "text": "."
+    },
+    {
+     "end": 147.875,
+     "start": 147.25,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 147.95,
+     "start": 147.875,
+     "text": "."
+    },
+    {
+     "end": 148.375,
+     "start": 147.95,
+     "text": "Preview"
+    },
+    {
+     "end": 148.462,
+     "start": 148.375,
+     "text": ","
+    },
+    {
+     "end": 148.95,
+     "start": 148.462,
+     "text": "Singular"
+    },
+    {
+     "end": 149.0,
+     "start": 148.95,
+     "text": "."
+    },
+    {
+     "end": 149.75,
+     "start": 149.0,
+     "text": "Application"
+    },
+    {
+     "end": 149.825,
+     "start": 149.75,
+     "text": "."
+    },
+    {
+     "end": 150.4,
+     "start": 149.825,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 150.45,
+     "start": 150.4,
+     "text": "."
+    },
+    {
+     "end": 151.525,
+     "start": 150.45,
+     "text": "Release"
+    },
+    {
+     "end": 151.75,
+     "start": 151.525,
+     "text": ","
+    },
+    {
+     "end": 152.425,
+     "start": 151.975,
+     "text": "Singular"
+    },
+    {
+     "end": 152.475,
+     "start": 152.425,
+     "text": "."
+    },
+    {
+     "end": 153.15,
+     "start": 152.475,
+     "text": "Application"
+    },
+    {
+     "end": 153.2,
+     "start": 153.15,
+     "text": "."
+    },
+    {
+     "end": 153.85,
+     "start": 153.2,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 153.95,
+     "start": 153.85,
+     "text": "."
+    },
+    {
+     "end": 154.25,
+     "start": 153.95,
+     "text": "Root"
+    },
+    {
+     "end": 154.337,
+     "start": 154.25,
+     "text": ","
+    },
+    {
+     "end": 154.825,
+     "start": 154.337,
+     "text": "Singular"
+    },
+    {
+     "end": 154.875,
+     "start": 154.825,
+     "text": "."
+    },
+    {
+     "end": 155.6,
+     "start": 154.875,
+     "text": "Application"
+    },
+    {
+     "end": 155.675,
+     "start": 155.6,
+     "text": "."
+    },
+    {
+     "end": 156.275,
+     "start": 155.675,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 156.35,
+     "start": 156.275,
+     "text": "."
+    },
+    {
+     "end": 157.2,
+     "start": 156.35,
+     "text": "Run"
+    },
+    {
+     "end": 157.425,
+     "start": 157.2,
+     "text": ","
+    },
+    {
+     "end": 157.95,
+     "start": 157.625,
+     "text": "Singular"
+    },
+    {
+     "end": 158.0,
+     "start": 157.95,
+     "text": "."
+    },
+    {
+     "end": 158.625,
+     "start": 158.0,
+     "text": "Application"
+    },
+    {
+     "end": 158.675,
+     "start": 158.625,
+     "text": "."
+    },
+    {
+     "end": 159.25,
+     "start": 158.675,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 159.325,
+     "start": 159.25,
+     "text": "."
+    },
+    {
+     "end": 160.175,
+     "start": 159.325,
+     "text": "Script"
+    },
+    {
+     "end": 160.375,
+     "start": 160.175,
+     "text": ","
+    },
+    {
+     "end": 161.05,
+     "start": 160.6,
+     "text": "Singular"
+    },
+    {
+     "end": 161.1,
+     "start": 161.05,
+     "text": "."
+    },
+    {
+     "end": 161.8,
+     "start": 161.1,
+     "text": "Application"
+    },
+    {
+     "end": 161.875,
+     "start": 161.8,
+     "text": "."
+    },
+    {
+     "end": 162.675,
+     "start": 161.875,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 162.75,
+     "start": 162.675,
+     "text": "."
+    },
+    {
+     "end": 163.175,
+     "start": 162.75,
+     "text": "Update"
+    },
+    {
+     "end": 163.312,
+     "start": 163.175,
+     "text": "and"
+    },
+    {
+     "end": 163.85,
+     "start": 163.312,
+     "text": "Singular"
+    },
+    {
+     "end": 163.925,
+     "start": 163.85,
+     "text": "."
+    },
+    {
+     "end": 164.65,
+     "start": 163.925,
+     "text": "Application"
+    },
+    {
+     "end": 164.725,
+     "start": 164.65,
+     "text": "."
+    },
+    {
+     "end": 165.375,
+     "start": 164.725,
+     "text": "OpenDatum"
+    },
+    {
+     "end": 165.45,
+     "start": 165.375,
+     "text": "."
+    },
+    {
+     "end": 166.3,
+     "start": 165.45,
+     "text": "Value"
+    },
+    {
+     "end": 166.65,
+     "start": 166.3,
+     "text": ";"
+    },
+    {
+     "end": 167.05,
+     "start": 166.875,
+     "text": "their"
+    },
+    {
+     "end": 167.538,
+     "start": 167.05,
+     "text": "sources"
+    },
+    {
+     "end": 167.762,
+     "start": 167.538,
+     "text": "live"
+    },
+    {
+     "end": 167.975,
+     "start": 167.762,
+     "text": "under"
+    },
+    {
+     "end": 176.875,
+     "start": 167.975,
+     "text": "applications/open-datum/offchain/src/Singular/Application/OpenDatum/"
+    },
+    {
+     "end": 177.15,
+     "start": 176.875,
+     "text": ","
+    },
+    {
+     "end": 177.438,
+     "start": 177.35,
+     "text": "and"
+    },
+    {
+     "end": 177.55,
+     "start": 177.438,
+     "text": "the"
+    },
+    {
+     "end": 178.288,
+     "start": 177.55,
+     "text": "executable's"
+    },
+    {
+     "end": 178.625,
+     "start": 178.288,
+     "text": "entry"
+    },
+    {
+     "end": 179.0,
+     "start": 178.625,
+     "text": "point"
+    },
+    {
+     "end": 179.375,
+     "start": 179.0,
+     "text": "lives"
+    },
+    {
+     "end": 179.475,
+     "start": 179.375,
+     "text": "in"
+    },
+    {
+     "end": 182.375,
+     "start": 179.475,
+     "text": "applications/open-datum/offchain"
+    },
+    {
+     "end": 183.15,
+     "start": 182.375,
+     "text": "app/."
+    },
+    {
+     "end": 183.425,
+     "start": 183.35,
+     "text": "The"
+    },
+    {
+     "end": 183.825,
+     "start": 183.425,
+     "text": "public"
+    },
+    {
+     "end": 184.6,
+     "start": 183.825,
+     "text": "registry-cli"
+    },
+    {
+     "end": 185.262,
+     "start": 184.6,
+     "text": "component"
+    },
+    {
+     "end": 185.35,
+     "start": 185.262,
+     "text": "("
+    },
+    {
+     "end": 187.3,
+     "start": 185.35,
+     "text": "offchain/cli/"
+    },
+    {
+     "end": 187.438,
+     "start": 187.3,
+     "text": ")"
+    },
+    {
+     "end": 187.85,
+     "start": 187.438,
+     "text": "carries"
+    },
+    {
+     "end": 187.975,
+     "start": 187.85,
+     "text": "the"
+    },
+    {
+     "end": 188.475,
+     "start": 187.975,
+     "text": "registry"
+    },
+    {
+     "end": 188.975,
+     "start": 188.475,
+     "text": "command"
+    },
+    {
+     "end": 189.262,
+     "start": 188.975,
+     "text": "line"
+    },
+    {
+     "end": 189.363,
+     "start": 189.262,
+     "text": "the"
+    },
+    {
+     "end": 189.575,
+     "start": 189.363,
+     "text": "two"
+    },
+    {
+     "end": 190.113,
+     "start": 189.575,
+     "text": "binaries"
+    },
+    {
+     "end": 190.462,
+     "start": 190.113,
+     "text": "link"
+    },
+    {
+     "end": 190.55,
+     "start": 190.462,
+     "text": "—"
+    },
+    {
+     "end": 191.625,
+     "start": 190.55,
+     "text": "session"
+    },
+    {
+     "end": 191.85,
+     "start": 191.625,
+     "text": ","
+    },
+    {
+     "end": 192.4,
+     "start": 192.05,
+     "text": "journal"
+    },
+    {
+     "end": 192.512,
+     "start": 192.4,
+     "text": "and"
+    },
+    {
+     "end": 192.975,
+     "start": 192.512,
+     "text": "receipts"
+    },
+    {
+     "end": 193.012,
+     "start": 192.975,
+     "text": ","
+    },
+    {
+     "end": 193.1,
+     "start": 193.012,
+     "text": "the"
+    },
+    {
+     "end": 193.45,
+     "start": 193.1,
+     "text": "flag"
+    },
+    {
+     "end": 193.725,
+     "start": 193.45,
+     "text": "group"
+    },
+    {
+     "end": 193.788,
+     "start": 193.725,
+     "text": ","
+    },
+    {
+     "end": 194.225,
+     "start": 193.788,
+     "text": "create"
+    },
+    {
+     "end": 194.312,
+     "start": 194.225,
+     "text": ","
+    },
+    {
+     "end": 194.775,
+     "start": 194.312,
+     "text": "fold"
+    },
+    {
+     "end": 194.825,
+     "start": 194.775,
+     "text": ","
+    },
+    {
+     "end": 195.3,
+     "start": 194.825,
+     "text": "reject"
+    },
+    {
+     "end": 195.35,
+     "start": 195.3,
+     "text": ","
+    },
+    {
+     "end": 195.9,
+     "start": 195.35,
+     "text": "reclaim"
+    },
+    {
+     "end": 195.95,
+     "start": 195.9,
+     "text": ","
+    },
+    {
+     "end": 196.475,
+     "start": 195.95,
+     "text": "inspect"
+    },
+    {
+     "end": 196.525,
+     "start": 196.475,
+     "text": ","
+    },
+    {
+     "end": 197.775,
+     "start": 196.525,
+     "text": "reconcile"
+    },
+    {
+     "end": 198.0,
+     "start": 197.775,
+     "text": ","
+    },
+    {
+     "end": 198.65,
+     "start": 198.175,
+     "text": "recovery"
+    },
+    {
+     "end": 198.762,
+     "start": 198.65,
+     "text": "and"
+    },
+    {
+     "end": 198.85,
+     "start": 198.762,
+     "text": "the"
+    },
+    {
+     "end": 199.175,
+     "start": 198.85,
+     "text": "booking"
+    },
+    {
+     "end": 199.875,
+     "start": 199.175,
+     "text": "call"
+    },
+    {
+     "end": 200.075,
+     "start": 199.875,
+     "text": ":"
+    },
+    {
+     "end": 200.75,
+     "start": 200.3,
+     "text": "Singular"
+    },
+    {
+     "end": 200.825,
+     "start": 200.75,
+     "text": "."
+    },
+    {
+     "end": 201.35,
+     "start": 200.825,
      "text": "CLI"
     },
     {
-     "end": 188.137,
-     "start": 188.05,
+     "end": 201.438,
+     "start": 201.35,
      "text": ","
     },
     {
-     "end": 188.625,
-     "start": 188.137,
+     "end": 201.925,
+     "start": 201.438,
      "text": "Singular"
     },
     {
-     "end": 188.7,
-     "start": 188.625,
+     "end": 202.0,
+     "start": 201.925,
      "text": "."
     },
     {
-     "end": 189.55,
-     "start": 188.7,
+     "end": 202.85,
+     "start": 202.0,
      "text": "CLI.Attached"
     },
     {
-     "end": 189.637,
-     "start": 189.55,
+     "end": 202.938,
+     "start": 202.85,
      "text": ","
     },
     {
-     "end": 190.125,
-     "start": 189.637,
+     "end": 203.425,
+     "start": 202.938,
      "text": "Singular"
     },
     {
-     "end": 190.2,
-     "start": 190.125,
+     "end": 203.5,
+     "start": 203.425,
      "text": "."
     },
     {
-     "end": 190.975,
-     "start": 190.2,
+     "end": 204.275,
+     "start": 203.5,
      "text": "CLI.Command"
     },
     {
-     "end": 191.062,
-     "start": 190.975,
+     "end": 204.363,
+     "start": 204.275,
      "text": ","
     },
     {
-     "end": 191.525,
-     "start": 191.062,
+     "end": 204.825,
+     "start": 204.363,
      "text": "Singular"
     },
     {
-     "end": 191.575,
-     "start": 191.525,
+     "end": 204.875,
+     "start": 204.825,
      "text": "."
     },
     {
-     "end": 192.925,
-     "start": 191.575,
+     "end": 206.225,
+     "start": 204.875,
      "text": "CLI.Create"
     },
     {
-     "end": 193.175,
-     "start": 192.925,
+     "end": 206.475,
+     "start": 206.225,
      "text": ","
     },
     {
-     "end": 193.875,
-     "start": 193.425,
+     "end": 207.175,
+     "start": 206.725,
      "text": "Singular"
     },
     {
-     "end": 193.95,
-     "start": 193.875,
+     "end": 207.25,
+     "start": 207.175,
      "text": "."
     },
     {
-     "end": 194.725,
-     "start": 193.95,
+     "end": 208.025,
+     "start": 207.25,
      "text": "CLI.Finish"
     },
     {
-     "end": 194.812,
-     "start": 194.725,
+     "end": 208.113,
+     "start": 208.025,
      "text": ","
     },
     {
-     "end": 195.325,
-     "start": 194.812,
+     "end": 208.625,
+     "start": 208.113,
      "text": "Singular"
     },
     {
-     "end": 195.425,
-     "start": 195.325,
+     "end": 208.725,
+     "start": 208.625,
      "text": "."
     },
     {
-     "end": 196.275,
-     "start": 195.425,
+     "end": 209.575,
+     "start": 208.725,
      "text": "CLI.Fold"
     },
     {
-     "end": 196.363,
-     "start": 196.275,
+     "end": 209.663,
+     "start": 209.575,
      "text": ","
     },
     {
-     "end": 196.9,
-     "start": 196.363,
+     "end": 210.2,
+     "start": 209.663,
      "text": "Singular"
     },
     {
-     "end": 197.0,
-     "start": 196.9,
+     "end": 210.3,
+     "start": 210.2,
      "text": "."
     },
     {
-     "end": 198.05,
-     "start": 197.0,
+     "end": 211.35,
+     "start": 210.3,
      "text": "CLI.FoldRules"
     },
     {
-     "end": 198.113,
-     "start": 198.05,
+     "end": 211.413,
+     "start": 211.35,
      "text": ","
     },
     {
-     "end": 198.6,
-     "start": 198.113,
+     "end": 211.9,
+     "start": 211.413,
      "text": "Singular"
     },
     {
-     "end": 198.675,
-     "start": 198.6,
+     "end": 211.975,
+     "start": 211.9,
      "text": "."
     },
     {
-     "end": 200.2,
-     "start": 198.675,
+     "end": 213.5,
+     "start": 211.975,
      "text": "CLI.Inspect"
     },
     {
-     "end": 200.425,
-     "start": 200.2,
+     "end": 213.725,
+     "start": 213.5,
      "text": ","
     },
     {
-     "end": 201.125,
-     "start": 200.675,
+     "end": 214.425,
+     "start": 213.975,
      "text": "Singular"
     },
     {
-     "end": 201.2,
-     "start": 201.125,
+     "end": 214.5,
+     "start": 214.425,
      "text": "."
     },
     {
-     "end": 201.825,
-     "start": 201.2,
+     "end": 215.125,
+     "start": 214.5,
      "text": "CLI.Key"
     },
     {
-     "end": 201.913,
-     "start": 201.825,
+     "end": 215.212,
+     "start": 215.125,
      "text": ","
     },
     {
-     "end": 202.425,
-     "start": 201.913,
+     "end": 215.725,
+     "start": 215.212,
      "text": "Singular"
     },
     {
-     "end": 202.525,
-     "start": 202.425,
+     "end": 215.825,
+     "start": 215.725,
      "text": "."
     },
     {
-     "end": 203.325,
-     "start": 202.525,
+     "end": 216.625,
+     "start": 215.825,
      "text": "CLI.Live"
     },
     {
-     "end": 203.413,
-     "start": 203.325,
+     "end": 216.712,
+     "start": 216.625,
      "text": ","
     },
     {
-     "end": 203.9,
-     "start": 203.413,
+     "end": 217.2,
+     "start": 216.712,
      "text": "Singular"
     },
     {
-     "end": 203.975,
-     "start": 203.9,
+     "end": 217.275,
+     "start": 217.2,
      "text": "."
     },
     {
-     "end": 205.075,
-     "start": 203.975,
+     "end": 218.375,
+     "start": 217.275,
      "text": "CLI.ManagedState"
     },
     {
-     "end": 205.163,
-     "start": 205.075,
+     "end": 218.462,
+     "start": 218.375,
      "text": ","
     },
     {
-     "end": 205.65,
-     "start": 205.163,
+     "end": 218.95,
+     "start": 218.462,
      "text": "Singular"
     },
     {
-     "end": 205.7,
-     "start": 205.65,
+     "end": 219.0,
+     "start": 218.95,
      "text": "."
     },
     {
-     "end": 207.05,
-     "start": 205.7,
+     "end": 220.35,
+     "start": 219.0,
      "text": "CLI.Outlay"
     },
     {
-     "end": 207.375,
-     "start": 207.05,
+     "end": 220.675,
+     "start": 220.35,
      "text": ","
     },
     {
-     "end": 208.075,
-     "start": 207.625,
+     "end": 221.375,
+     "start": 220.925,
      "text": "Singular"
     },
     {
-     "end": 208.15,
-     "start": 208.075,
+     "end": 221.45,
+     "start": 221.375,
      "text": "."
     },
     {
-     "end": 209.05,
-     "start": 208.15,
+     "end": 222.35,
+     "start": 221.45,
      "text": "CLI.Permanent"
     },
     {
-     "end": 209.137,
-     "start": 209.05,
+     "end": 222.438,
+     "start": 222.35,
      "text": ","
     },
     {
-     "end": 209.65,
-     "start": 209.137,
+     "end": 222.95,
+     "start": 222.438,
      "text": "Singular"
     },
     {
-     "end": 209.75,
-     "start": 209.65,
+     "end": 223.05,
+     "start": 222.95,
      "text": "."
     },
     {
-     "end": 210.525,
-     "start": 209.75,
+     "end": 223.825,
+     "start": 223.05,
      "text": "CLI.Plan"
     },
     {
-     "end": 210.613,
-     "start": 210.525,
+     "end": 223.913,
+     "start": 223.825,
      "text": ","
     },
     {
-     "end": 211.125,
-     "start": 210.613,
+     "end": 224.425,
+     "start": 223.913,
      "text": "Singular"
     },
     {
-     "end": 211.225,
-     "start": 211.125,
+     "end": 224.525,
+     "start": 224.425,
      "text": "."
     },
     {
-     "end": 212.0,
-     "start": 211.225,
+     "end": 225.3,
+     "start": 224.525,
      "text": "CLI.Proof"
     },
     {
-     "end": 212.087,
-     "start": 212.0,
+     "end": 225.387,
+     "start": 225.3,
      "text": ","
-    },
-    {
-     "end": 212.575,
-     "start": 212.087,
-     "text": "Singular"
-    },
-    {
-     "end": 212.65,
-     "start": 212.575,
-     "text": "."
-    },
-    {
-     "end": 213.975,
-     "start": 212.65,
-     "text": "CLI.Receipt"
-    },
-    {
-     "end": 214.2,
-     "start": 213.975,
-     "text": ","
-    },
-    {
-     "end": 214.875,
-     "start": 214.425,
-     "text": "Singular"
-    },
-    {
-     "end": 214.95,
-     "start": 214.875,
-     "text": "."
-    },
-    {
-     "end": 215.9,
-     "start": 214.95,
-     "text": "CLI.ReceiptBody"
-    },
-    {
-     "end": 215.988,
-     "start": 215.9,
-     "text": ","
-    },
-    {
-     "end": 216.575,
-     "start": 215.988,
-     "text": "Singular"
-    },
-    {
-     "end": 216.7,
-     "start": 216.575,
-     "text": "."
-    },
-    {
-     "end": 217.575,
-     "start": 216.7,
-     "text": "CLI.Reclaim"
-    },
-    {
-     "end": 217.663,
-     "start": 217.575,
-     "text": ","
-    },
-    {
-     "end": 218.15,
-     "start": 217.663,
-     "text": "Singular"
-    },
-    {
-     "end": 218.25,
-     "start": 218.15,
-     "text": "."
-    },
-    {
-     "end": 219.975,
-     "start": 218.25,
-     "text": "CLI.ReclaimRules"
-    },
-    {
-     "end": 220.175,
-     "start": 219.975,
-     "text": ","
-    },
-    {
-     "end": 220.85,
-     "start": 220.4,
-     "text": "Singular"
-    },
-    {
-     "end": 220.925,
-     "start": 220.85,
-     "text": "."
-    },
-    {
-     "end": 221.95,
-     "start": 220.925,
-     "text": "CLI.Reconcile"
-    },
-    {
-     "end": 222.038,
-     "start": 221.95,
-     "text": ","
-    },
-    {
-     "end": 222.55,
-     "start": 222.038,
-     "text": "Singular"
-    },
-    {
-     "end": 222.625,
-     "start": 222.55,
-     "text": "."
-    },
-    {
-     "end": 223.525,
-     "start": 222.625,
-     "text": "CLI.Recovery"
-    },
-    {
-     "end": 223.613,
-     "start": 223.525,
-     "text": ","
-    },
-    {
-     "end": 224.1,
-     "start": 223.613,
-     "text": "Singular"
-    },
-    {
-     "end": 224.175,
-     "start": 224.1,
-     "text": "."
-    },
-    {
-     "end": 225.625,
-     "start": 224.175,
-     "text": "CLI.Registry"
     },
     {
      "end": 225.875,
-     "start": 225.625,
-     "text": ","
-    },
-    {
-     "end": 226.55,
-     "start": 226.1,
+     "start": 225.387,
      "text": "Singular"
     },
     {
-     "end": 226.625,
-     "start": 226.55,
+     "end": 225.95,
+     "start": 225.875,
      "text": "."
     },
     {
-     "end": 227.45,
-     "start": 226.625,
-     "text": "CLI.Reject"
+     "end": 227.275,
+     "start": 225.95,
+     "text": "CLI.Receipt"
     },
     {
-     "end": 227.538,
-     "start": 227.45,
+     "end": 227.5,
+     "start": 227.275,
      "text": ","
     },
     {
-     "end": 228.05,
-     "start": 227.538,
+     "end": 228.175,
+     "start": 227.725,
      "text": "Singular"
     },
     {
-     "end": 228.15,
-     "start": 228.05,
+     "end": 228.25,
+     "start": 228.175,
      "text": "."
     },
     {
-     "end": 229.225,
-     "start": 228.15,
-     "text": "CLI.RejectRules"
+     "end": 229.2,
+     "start": 228.25,
+     "text": "CLI.ReceiptBody"
     },
     {
      "end": 229.288,
-     "start": 229.225,
+     "start": 229.2,
      "text": ","
     },
     {
-     "end": 229.8,
+     "end": 229.875,
      "start": 229.288,
      "text": "Singular"
     },
     {
-     "end": 229.9,
-     "start": 229.8,
+     "end": 230.0,
+     "start": 229.875,
      "text": "."
     },
     {
-     "end": 231.625,
-     "start": 229.9,
-     "text": "CLI.RequestWindow"
+     "end": 230.875,
+     "start": 230.0,
+     "text": "CLI.Reclaim"
     },
     {
-     "end": 231.85,
-     "start": 231.625,
+     "end": 230.962,
+     "start": 230.875,
      "text": ","
     },
     {
-     "end": 232.525,
-     "start": 232.075,
+     "end": 231.45,
+     "start": 230.962,
      "text": "Singular"
     },
     {
-     "end": 232.6,
-     "start": 232.525,
+     "end": 231.55,
+     "start": 231.45,
      "text": "."
     },
     {
-     "end": 233.225,
-     "start": 232.6,
-     "text": "CLI.Root"
+     "end": 233.275,
+     "start": 231.55,
+     "text": "CLI.ReclaimRules"
     },
     {
-     "end": 233.312,
-     "start": 233.225,
+     "end": 233.475,
+     "start": 233.275,
      "text": ","
     },
     {
-     "end": 233.8,
-     "start": 233.312,
+     "end": 234.15,
+     "start": 233.7,
      "text": "Singular"
     },
     {
-     "end": 233.9,
-     "start": 233.8,
+     "end": 234.225,
+     "start": 234.15,
      "text": "."
-    },
-    {
-     "end": 234.675,
-     "start": 233.9,
-     "text": "CLI.Session"
-    },
-    {
-     "end": 234.762,
-     "start": 234.675,
-     "text": ","
     },
     {
      "end": 235.25,
-     "start": 234.762,
-     "text": "Singular"
+     "start": 234.225,
+     "text": "CLI.Reconcile"
     },
     {
-     "end": 235.3,
+     "end": 235.337,
      "start": 235.25,
-     "text": "."
-    },
-    {
-     "end": 236.575,
-     "start": 235.3,
-     "text": "CLI.Trace"
-    },
-    {
-     "end": 236.775,
-     "start": 236.575,
      "text": ","
     },
     {
-     "end": 237.35,
-     "start": 236.975,
+     "end": 235.85,
+     "start": 235.337,
      "text": "Singular"
+    },
+    {
+     "end": 235.925,
+     "start": 235.85,
+     "text": "."
+    },
+    {
+     "end": 236.825,
+     "start": 235.925,
+     "text": "CLI.Recovery"
+    },
+    {
+     "end": 236.913,
+     "start": 236.825,
+     "text": ","
     },
     {
      "end": 237.4,
-     "start": 237.35,
-     "text": "."
-    },
-    {
-     "end": 238.375,
-     "start": 237.4,
-     "text": "CLI.TrieHistory"
-    },
-    {
-     "end": 238.512,
-     "start": 238.375,
-     "text": "and"
-    },
-    {
-     "end": 238.95,
-     "start": 238.512,
+     "start": 236.913,
      "text": "Singular"
     },
     {
-     "end": 239.0,
-     "start": 238.95,
+     "end": 237.475,
+     "start": 237.4,
      "text": "."
     },
     {
-     "end": 240.425,
-     "start": 239.0,
-     "text": "CLI.TrieTrace"
+     "end": 238.925,
+     "start": 237.475,
+     "text": "CLI.Registry"
     },
     {
-     "end": 240.625,
-     "start": 240.425,
-     "text": ";"
+     "end": 239.175,
+     "start": 238.925,
+     "text": ","
     },
     {
-     "end": 241.0,
-     "start": 240.825,
-     "text": "their"
+     "end": 239.85,
+     "start": 239.4,
+     "text": "Singular"
+    },
+    {
+     "end": 239.925,
+     "start": 239.85,
+     "text": "."
+    },
+    {
+     "end": 240.75,
+     "start": 239.925,
+     "text": "CLI.Reject"
+    },
+    {
+     "end": 240.837,
+     "start": 240.75,
+     "text": ","
+    },
+    {
+     "end": 241.35,
+     "start": 240.837,
+     "text": "Singular"
     },
     {
      "end": 241.45,
-     "start": 241.0,
+     "start": 241.35,
+     "text": "."
+    },
+    {
+     "end": 242.525,
+     "start": 241.45,
+     "text": "CLI.RejectRules"
+    },
+    {
+     "end": 242.587,
+     "start": 242.525,
+     "text": ","
+    },
+    {
+     "end": 243.1,
+     "start": 242.587,
+     "text": "Singular"
+    },
+    {
+     "end": 243.2,
+     "start": 243.1,
+     "text": "."
+    },
+    {
+     "end": 244.925,
+     "start": 243.2,
+     "text": "CLI.RequestWindow"
+    },
+    {
+     "end": 245.15,
+     "start": 244.925,
+     "text": ","
+    },
+    {
+     "end": 245.825,
+     "start": 245.375,
+     "text": "Singular"
+    },
+    {
+     "end": 245.9,
+     "start": 245.825,
+     "text": "."
+    },
+    {
+     "end": 246.525,
+     "start": 245.9,
+     "text": "CLI.Root"
+    },
+    {
+     "end": 246.613,
+     "start": 246.525,
+     "text": ","
+    },
+    {
+     "end": 247.1,
+     "start": 246.613,
+     "text": "Singular"
+    },
+    {
+     "end": 247.2,
+     "start": 247.1,
+     "text": "."
+    },
+    {
+     "end": 247.975,
+     "start": 247.2,
+     "text": "CLI.Session"
+    },
+    {
+     "end": 248.062,
+     "start": 247.975,
+     "text": ","
+    },
+    {
+     "end": 248.55,
+     "start": 248.062,
+     "text": "Singular"
+    },
+    {
+     "end": 248.6,
+     "start": 248.55,
+     "text": "."
+    },
+    {
+     "end": 249.875,
+     "start": 248.6,
+     "text": "CLI.Trace"
+    },
+    {
+     "end": 250.075,
+     "start": 249.875,
+     "text": ","
+    },
+    {
+     "end": 250.65,
+     "start": 250.275,
+     "text": "Singular"
+    },
+    {
+     "end": 250.7,
+     "start": 250.65,
+     "text": "."
+    },
+    {
+     "end": 251.675,
+     "start": 250.7,
+     "text": "CLI.TrieHistory"
+    },
+    {
+     "end": 251.812,
+     "start": 251.675,
+     "text": "and"
+    },
+    {
+     "end": 252.25,
+     "start": 251.812,
+     "text": "Singular"
+    },
+    {
+     "end": 252.3,
+     "start": 252.25,
+     "text": "."
+    },
+    {
+     "end": 253.725,
+     "start": 252.3,
+     "text": "CLI.TrieTrace"
+    },
+    {
+     "end": 253.925,
+     "start": 253.725,
+     "text": ";"
+    },
+    {
+     "end": 254.3,
+     "start": 254.125,
+     "text": "their"
+    },
+    {
+     "end": 254.75,
+     "start": 254.3,
      "text": "sources"
     },
     {
-     "end": 241.637,
-     "start": 241.45,
+     "end": 254.938,
+     "start": 254.75,
      "text": "live"
     },
     {
-     "end": 241.887,
-     "start": 241.637,
+     "end": 255.188,
+     "start": 254.938,
      "text": "under"
     },
     {
-     "end": 247.425,
-     "start": 241.887,
+     "end": 260.725,
+     "start": 255.188,
      "text": "offchain/cli/src/Singular/CLI/."
     }
    ]
@@ -170611,17 +170716,17 @@
    ]
   },
   "docs-offchain-api-reference/what-this-reference-contains-02": {
-   "audio_sha256": "906110d3d98abfa2932198ab2c279a5a956f55cab67857d38274de6f6dbb83b9",
-   "characters": 1875,
-   "cost": 0.0018562499999999998,
-   "duration": 131.6,
+   "audio_sha256": "d26e62334de38349effbb14fe09a5fddcf5ccb1691d8f56802ab93799890124d",
+   "characters": 1987,
+   "cost": 0.00196713,
+   "duration": 139.55,
    "index": 2,
-   "key": "ad42bfa16d7d1761e03169673ac9c36cde87b83d934322c00108369fe914591a",
+   "key": "4bf17306d74169697830be6567f1af1473b954c21993cfab0d3c83f20327f678",
    "page": "docs/offchain-api-reference.md",
    "pause_ms": 400,
    "section": "what-this-reference-contains",
-   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 72 modules in three kinds: 55 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 72 modules in three kinds: 55 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "sent_text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 72 modules in three kinds: 55 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: the implementations of the first, second and fourth are owned by the public local-services component (offchain/local-services/) and that of Evidence by the public ledger-client component (offchain/ledger-client/); the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+   "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 72 modules in three kinds: 55 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: the implementations of the first, second and fourth are owned by the public local-services component (offchain/local-services/) and that of Evidence by the public ledger-client component (offchain/ledger-client/); the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
    "words": [
     {
      "end": 0.325,
@@ -171669,583 +171774,678 @@
      "text": ":"
     },
     {
-     "end": 80.188,
-     "start": 80.05,
-     "text": "their"
+     "end": 80.088,
+     "start": 80.0,
+     "text": "the"
     },
     {
-     "end": 81.125,
-     "start": 80.188,
+     "end": 80.887,
+     "start": 80.088,
      "text": "implementations"
     },
     {
-     "end": 81.287,
-     "start": 81.125,
-     "text": "are"
-    },
-    {
-     "end": 81.675,
-     "start": 81.287,
-     "text": "owned"
-    },
-    {
-     "end": 81.85,
-     "start": 81.675,
-     "text": "by"
-    },
-    {
-     "end": 81.963,
-     "start": 81.85,
-     "text": "the"
-    },
-    {
-     "end": 82.375,
-     "start": 81.963,
-     "text": "public"
-    },
-    {
-     "end": 83.25,
-     "start": 82.375,
-     "text": "local-services"
-    },
-    {
-     "end": 83.938,
-     "start": 83.25,
-     "text": "component"
-    },
-    {
-     "end": 84.025,
-     "start": 83.938,
-     "text": "("
-    },
-    {
-     "end": 86.575,
-     "start": 84.025,
-     "text": "offchain/local-services/"
-    },
-    {
-     "end": 86.675,
-     "start": 86.575,
-     "text": ")"
-    },
-    {
-     "end": 86.787,
-     "start": 86.675,
-     "text": "and"
-    },
-    {
-     "end": 86.875,
-     "start": 86.787,
-     "text": "the"
-    },
-    {
-     "end": 87.175,
-     "start": 86.875,
-     "text": "main"
-    },
-    {
-     "end": 87.75,
-     "start": 87.175,
-     "text": "library"
-    },
-    {
-     "end": 88.4,
-     "start": 87.75,
-     "text": "exposes"
-    },
-    {
-     "end": 88.613,
-     "start": 88.4,
-     "text": "their"
-    },
-    {
-     "end": 89.1,
-     "start": 88.613,
-     "text": "stable"
-    },
-    {
-     "end": 89.575,
-     "start": 89.1,
-     "text": "import"
-    },
-    {
-     "end": 90.8,
-     "start": 89.575,
-     "text": "paths"
-    },
-    {
-     "end": 91.05,
-     "start": 90.8,
-     "text": "."
-    },
-    {
-     "end": 91.35,
-     "start": 91.25,
-     "text": "The"
-    },
-    {
-     "end": 91.85,
-     "start": 91.35,
-     "text": "generic"
-    },
-    {
-     "end": 92.375,
-     "start": 91.85,
-     "text": "provider"
-    },
-    {
-     "end": 93.025,
-     "start": 92.375,
-     "text": "interface"
-    },
-    {
-     "end": 93.162,
-     "start": 93.025,
-     "text": "and"
-    },
-    {
-     "end": 93.713,
-     "start": 93.162,
-     "text": "evidence"
-    },
-    {
-     "end": 94.137,
-     "start": 93.713,
-     "text": "types"
-    },
-    {
-     "end": 94.312,
-     "start": 94.137,
-     "text": "let"
-    },
-    {
-     "end": 94.412,
-     "start": 94.312,
-     "text": "a"
-    },
-    {
-     "end": 94.8,
-     "start": 94.412,
-     "text": "caller"
-    },
-    {
-     "end": 95.175,
-     "start": 94.8,
-     "text": "supply"
-    },
-    {
-     "end": 96.0,
-     "start": 95.175,
-     "text": "capabilities"
-    },
-    {
-     "end": 96.35,
-     "start": 96.0,
-     "text": "without"
-    },
-    {
-     "end": 96.9,
-     "start": 96.35,
-     "text": "selecting"
-    },
-    {
-     "end": 97.012,
-     "start": 96.9,
-     "text": "a"
-    },
-    {
-     "end": 97.375,
-     "start": 97.012,
-     "text": "node"
-    },
-    {
-     "end": 98.575,
-     "start": 97.375,
-     "text": "runtime"
-    },
-    {
-     "end": 98.8,
-     "start": 98.575,
-     "text": ";"
-    },
-    {
-     "end": 99.05,
-     "start": 98.975,
-     "text": "the"
-    },
-    {
-     "end": 99.45,
-     "start": 99.05,
-     "text": "Koios"
-    },
-    {
-     "end": 100.075,
-     "start": 99.45,
-     "text": "constructor"
-    },
-    {
-     "end": 100.613,
-     "start": 100.075,
-     "text": "supplies"
-    },
-    {
-     "end": 101.375,
-     "start": 100.613,
-     "text": "unbound"
-    },
-    {
-     "end": 101.475,
-     "start": 101.375,
-     "text": ","
-    },
-    {
-     "end": 102.262,
-     "start": 101.475,
-     "text": "unverified"
-    },
-    {
-     "end": 103.137,
-     "start": 102.262,
-     "text": "HTTP"
-    },
-    {
-     "end": 103.6,
-     "start": 103.137,
-     "text": "facts"
-    },
-    {
-     "end": 103.8,
-     "start": 103.6,
-     "text": "through"
-    },
-    {
-     "end": 104.037,
-     "start": 103.8,
-     "text": "that"
-    },
-    {
-     "end": 105.175,
-     "start": 104.037,
-     "text": "interface"
-    },
-    {
-     "end": 105.375,
-     "start": 105.175,
-     "text": "."
-    },
-    {
-     "end": 105.675,
-     "start": 105.575,
-     "text": "The"
-    },
-    {
-     "end": 106.188,
-     "start": 105.675,
-     "text": "runtime"
-    },
-    {
-     "end": 106.588,
-     "start": 106.188,
-     "text": "service"
-    },
-    {
-     "end": 107.113,
-     "start": 106.588,
-     "text": "modules"
-    },
-    {
-     "end": 107.725,
-     "start": 107.113,
-     "text": "outside"
-    },
-    {
-     "end": 107.925,
-     "start": 107.725,
-     "text": "this"
-    },
-    {
-     "end": 108.55,
-     "start": 107.925,
-     "text": "extent"
-    },
-    {
-     "end": 108.613,
-     "start": 108.55,
-     "text": "—"
-    },
-    {
-     "end": 108.713,
-     "start": 108.613,
-     "text": "the"
-    },
-    {
-     "end": 109.2,
-     "start": 108.713,
-     "text": "terminal"
-    },
-    {
-     "end": 109.95,
-     "start": 109.2,
-     "text": "composition"
-    },
-    {
-     "end": 110.062,
-     "start": 109.95,
-     "text": "and"
-    },
-    {
-     "end": 110.225,
-     "start": 110.062,
-     "text": "its"
-    },
-    {
-     "end": 110.85,
-     "start": 110.225,
-     "text": "transport"
-    },
-    {
-     "end": 111.037,
-     "start": 110.85,
-     "text": "in"
-    },
-    {
-     "end": 113.0,
-     "start": 111.037,
-     "text": "koios-http"
-    },
-    {
-     "end": 113.275,
-     "start": 113.0,
-     "text": ","
-    },
-    {
-     "end": 113.613,
-     "start": 113.5,
-     "text": "and"
-    },
-    {
-     "end": 113.7,
-     "start": 113.613,
-     "text": "the"
-    },
-    {
-     "end": 114.213,
-     "start": 113.7,
-     "text": "remaining"
-    },
-    {
-     "end": 114.625,
-     "start": 114.213,
-     "text": "service"
-    },
-    {
-     "end": 115.15,
-     "start": 114.625,
-     "text": "modules"
-    },
-    {
-     "end": 115.3,
-     "start": 115.15,
+     "end": 80.963,
+     "start": 80.887,
      "text": "of"
     },
     {
-     "end": 116.35,
-     "start": 115.3,
-     "text": "local-services"
-    },
-    {
-     "end": 116.425,
-     "start": 116.35,
-     "text": "—"
-    },
-    {
-     "end": 116.588,
-     "start": 116.425,
-     "text": "are"
-    },
-    {
-     "end": 117.275,
-     "start": 116.588,
-     "text": "documented"
-    },
-    {
-     "end": 117.463,
-     "start": 117.275,
-     "text": "with"
-    },
-    {
-     "end": 117.85,
-     "start": 117.463,
-     "text": "source"
-    },
-    {
-     "end": 118.238,
-     "start": 117.85,
-     "text": "links"
-    },
-    {
-     "end": 118.412,
-     "start": 118.238,
-     "text": "in"
-    },
-    {
-     "end": 119.012,
-     "start": 118.412,
-     "text": "Runtime"
-    },
-    {
-     "end": 119.425,
-     "start": 119.012,
-     "text": "service"
-    },
-    {
-     "end": 120.625,
-     "start": 119.425,
-     "text": "ownership"
-    },
-    {
-     "end": 120.85,
-     "start": 120.625,
-     "text": "."
-    },
-    {
-     "end": 121.175,
-     "start": 121.05,
-     "text": "The"
-    },
-    {
-     "end": 121.575,
-     "start": 121.175,
-     "text": "extent"
-    },
-    {
-     "end": 122.037,
-     "start": 121.575,
-     "text": "below"
-    },
-    {
-     "end": 122.2,
-     "start": 122.037,
-     "text": "is"
-    },
-    {
-     "end": 122.3,
-     "start": 122.2,
+     "end": 81.062,
+     "start": 80.963,
      "text": "the"
     },
     {
-     "end": 122.863,
-     "start": 122.3,
-     "text": "complete"
+     "end": 81.825,
+     "start": 81.062,
+     "text": "first"
     },
     {
-     "end": 123.525,
-     "start": 122.863,
-     "text": "documented"
-    },
-    {
-     "end": 123.912,
-     "start": 123.525,
-     "text": "module"
-    },
-    {
-     "end": 124.575,
-     "start": 123.912,
-     "text": "surface"
-    },
-    {
-     "end": 124.65,
-     "start": 124.575,
-     "text": "—"
-    },
-    {
-     "end": 125.4,
-     "start": 124.65,
-     "text": "exposed"
-    },
-    {
-     "end": 125.488,
-     "start": 125.4,
+     "end": 82.05,
+     "start": 81.825,
      "text": ","
     },
     {
-     "end": 126.225,
-     "start": 125.488,
-     "text": "re-exported"
+     "end": 82.662,
+     "start": 82.35,
+     "text": "second"
     },
     {
-     "end": 126.35,
-     "start": 126.225,
+     "end": 82.787,
+     "start": 82.662,
      "text": "and"
     },
     {
-     "end": 127.2,
-     "start": 126.35,
-     "text": "package-internal"
+     "end": 83.2,
+     "start": 82.787,
+     "text": "fourth"
     },
     {
-     "end": 128.225,
-     "start": 127.2,
-     "text": "alike"
+     "end": 83.363,
+     "start": 83.2,
+     "text": "are"
     },
     {
-     "end": 128.45,
-     "start": 128.225,
-     "text": ";"
+     "end": 83.725,
+     "start": 83.363,
+     "text": "owned"
     },
     {
-     "end": 128.7,
-     "start": 128.625,
+     "end": 83.9,
+     "start": 83.725,
+     "text": "by"
+    },
+    {
+     "end": 84.037,
+     "start": 83.9,
      "text": "the"
     },
     {
-     "end": 128.925,
-     "start": 128.7,
-     "text": "site"
+     "end": 84.45,
+     "start": 84.037,
+     "text": "public"
     },
     {
-     "end": 129.175,
-     "start": 128.925,
-     "text": "check"
+     "end": 85.35,
+     "start": 84.45,
+     "text": "local-services"
     },
     {
-     "end": 129.488,
-     "start": 129.175,
-     "text": "fails"
+     "end": 86.0,
+     "start": 85.35,
+     "text": "component"
     },
     {
-     "end": 129.85,
-     "start": 129.488,
-     "text": "until"
+     "end": 86.1,
+     "start": 86.0,
+     "text": "("
     },
     {
-     "end": 130.0,
-     "start": 129.85,
-     "text": "it"
+     "end": 88.675,
+     "start": 86.1,
+     "text": "offchain/local-services/"
     },
     {
-     "end": 130.113,
-     "start": 130.0,
+     "end": 88.787,
+     "start": 88.675,
+     "text": ")"
+    },
+    {
+     "end": 88.925,
+     "start": 88.787,
      "text": "and"
     },
     {
-     "end": 130.3,
-     "start": 130.113,
+     "end": 89.113,
+     "start": 88.925,
+     "text": "that"
+    },
+    {
+     "end": 89.238,
+     "start": 89.113,
+     "text": "of"
+    },
+    {
+     "end": 89.725,
+     "start": 89.238,
+     "text": "Evidence"
+    },
+    {
+     "end": 89.875,
+     "start": 89.725,
+     "text": "by"
+    },
+    {
+     "end": 90.012,
+     "start": 89.875,
+     "text": "the"
+    },
+    {
+     "end": 90.425,
+     "start": 90.012,
+     "text": "public"
+    },
+    {
+     "end": 91.1,
+     "start": 90.425,
+     "text": "ledger-client"
+    },
+    {
+     "end": 91.738,
+     "start": 91.1,
+     "text": "component"
+    },
+    {
+     "end": 91.825,
+     "start": 91.738,
+     "text": "("
+    },
+    {
+     "end": 94.825,
+     "start": 91.825,
+     "text": "offchain/ledger-client/"
+    },
+    {
+     "end": 95.25,
+     "start": 94.825,
+     "text": ")"
+    },
+    {
+     "end": 95.3,
+     "start": 95.25,
+     "text": ";"
+    },
+    {
+     "end": 95.55,
+     "start": 95.475,
+     "text": "the"
+    },
+    {
+     "end": 95.8,
+     "start": 95.55,
+     "text": "main"
+    },
+    {
+     "end": 96.25,
+     "start": 95.8,
+     "text": "library"
+    },
+    {
+     "end": 96.875,
+     "start": 96.25,
+     "text": "exposes"
+    },
+    {
+     "end": 97.075,
+     "start": 96.875,
+     "text": "their"
+    },
+    {
+     "end": 97.475,
+     "start": 97.075,
+     "text": "stable"
+    },
+    {
+     "end": 97.875,
+     "start": 97.475,
+     "text": "import"
+    },
+    {
+     "end": 98.8,
+     "start": 97.875,
+     "text": "paths"
+    },
+    {
+     "end": 99.0,
+     "start": 98.8,
+     "text": "."
+    },
+    {
+     "end": 99.3,
+     "start": 99.2,
+     "text": "The"
+    },
+    {
+     "end": 99.8,
+     "start": 99.3,
+     "text": "generic"
+    },
+    {
+     "end": 100.325,
+     "start": 99.8,
+     "text": "provider"
+    },
+    {
+     "end": 100.975,
+     "start": 100.325,
+     "text": "interface"
+    },
+    {
+     "end": 101.113,
+     "start": 100.975,
+     "text": "and"
+    },
+    {
+     "end": 101.662,
+     "start": 101.113,
+     "text": "evidence"
+    },
+    {
+     "end": 102.088,
+     "start": 101.662,
+     "text": "types"
+    },
+    {
+     "end": 102.262,
+     "start": 102.088,
+     "text": "let"
+    },
+    {
+     "end": 102.363,
+     "start": 102.262,
+     "text": "a"
+    },
+    {
+     "end": 102.75,
+     "start": 102.363,
+     "text": "caller"
+    },
+    {
+     "end": 103.125,
+     "start": 102.75,
+     "text": "supply"
+    },
+    {
+     "end": 103.95,
+     "start": 103.125,
+     "text": "capabilities"
+    },
+    {
+     "end": 104.3,
+     "start": 103.95,
+     "text": "without"
+    },
+    {
+     "end": 104.85,
+     "start": 104.3,
+     "text": "selecting"
+    },
+    {
+     "end": 104.963,
+     "start": 104.85,
+     "text": "a"
+    },
+    {
+     "end": 105.325,
+     "start": 104.963,
+     "text": "node"
+    },
+    {
+     "end": 106.525,
+     "start": 105.325,
+     "text": "runtime"
+    },
+    {
+     "end": 106.75,
+     "start": 106.525,
+     "text": ";"
+    },
+    {
+     "end": 107.0,
+     "start": 106.925,
+     "text": "the"
+    },
+    {
+     "end": 107.4,
+     "start": 107.0,
+     "text": "Koios"
+    },
+    {
+     "end": 108.025,
+     "start": 107.4,
+     "text": "constructor"
+    },
+    {
+     "end": 108.562,
+     "start": 108.025,
+     "text": "supplies"
+    },
+    {
+     "end": 109.325,
+     "start": 108.562,
+     "text": "unbound"
+    },
+    {
+     "end": 109.425,
+     "start": 109.325,
+     "text": ","
+    },
+    {
+     "end": 110.213,
+     "start": 109.425,
+     "text": "unverified"
+    },
+    {
+     "end": 111.088,
+     "start": 110.213,
+     "text": "HTTP"
+    },
+    {
+     "end": 111.55,
+     "start": 111.088,
+     "text": "facts"
+    },
+    {
+     "end": 111.75,
+     "start": 111.55,
+     "text": "through"
+    },
+    {
+     "end": 111.988,
+     "start": 111.75,
+     "text": "that"
+    },
+    {
+     "end": 113.125,
+     "start": 111.988,
+     "text": "interface"
+    },
+    {
+     "end": 113.325,
+     "start": 113.125,
+     "text": "."
+    },
+    {
+     "end": 113.625,
+     "start": 113.525,
+     "text": "The"
+    },
+    {
+     "end": 114.137,
+     "start": 113.625,
+     "text": "runtime"
+    },
+    {
+     "end": 114.537,
+     "start": 114.137,
+     "text": "service"
+    },
+    {
+     "end": 115.062,
+     "start": 114.537,
+     "text": "modules"
+    },
+    {
+     "end": 115.675,
+     "start": 115.062,
+     "text": "outside"
+    },
+    {
+     "end": 115.875,
+     "start": 115.675,
      "text": "this"
     },
     {
-     "end": 130.525,
-     "start": 130.3,
+     "end": 116.5,
+     "start": 115.875,
+     "text": "extent"
+    },
+    {
+     "end": 116.562,
+     "start": 116.5,
+     "text": "—"
+    },
+    {
+     "end": 116.662,
+     "start": 116.562,
+     "text": "the"
+    },
+    {
+     "end": 117.15,
+     "start": 116.662,
+     "text": "terminal"
+    },
+    {
+     "end": 117.9,
+     "start": 117.15,
+     "text": "composition"
+    },
+    {
+     "end": 118.012,
+     "start": 117.9,
+     "text": "and"
+    },
+    {
+     "end": 118.175,
+     "start": 118.012,
+     "text": "its"
+    },
+    {
+     "end": 118.8,
+     "start": 118.175,
+     "text": "transport"
+    },
+    {
+     "end": 118.988,
+     "start": 118.8,
+     "text": "in"
+    },
+    {
+     "end": 120.95,
+     "start": 118.988,
+     "text": "koios-http"
+    },
+    {
+     "end": 121.225,
+     "start": 120.95,
+     "text": ","
+    },
+    {
+     "end": 121.562,
+     "start": 121.45,
+     "text": "and"
+    },
+    {
+     "end": 121.65,
+     "start": 121.562,
+     "text": "the"
+    },
+    {
+     "end": 122.162,
+     "start": 121.65,
+     "text": "remaining"
+    },
+    {
+     "end": 122.575,
+     "start": 122.162,
+     "text": "service"
+    },
+    {
+     "end": 123.1,
+     "start": 122.575,
+     "text": "modules"
+    },
+    {
+     "end": 123.25,
+     "start": 123.1,
+     "text": "of"
+    },
+    {
+     "end": 124.3,
+     "start": 123.25,
+     "text": "local-services"
+    },
+    {
+     "end": 124.375,
+     "start": 124.3,
+     "text": "—"
+    },
+    {
+     "end": 124.537,
+     "start": 124.375,
+     "text": "are"
+    },
+    {
+     "end": 125.225,
+     "start": 124.537,
+     "text": "documented"
+    },
+    {
+     "end": 125.412,
+     "start": 125.225,
+     "text": "with"
+    },
+    {
+     "end": 125.8,
+     "start": 125.412,
+     "text": "source"
+    },
+    {
+     "end": 126.188,
+     "start": 125.8,
+     "text": "links"
+    },
+    {
+     "end": 126.363,
+     "start": 126.188,
+     "text": "in"
+    },
+    {
+     "end": 126.963,
+     "start": 126.363,
+     "text": "Runtime"
+    },
+    {
+     "end": 127.375,
+     "start": 126.963,
+     "text": "service"
+    },
+    {
+     "end": 128.575,
+     "start": 127.375,
+     "text": "ownership"
+    },
+    {
+     "end": 128.8,
+     "start": 128.575,
+     "text": "."
+    },
+    {
+     "end": 129.125,
+     "start": 129.0,
+     "text": "The"
+    },
+    {
+     "end": 129.525,
+     "start": 129.125,
+     "text": "extent"
+    },
+    {
+     "end": 129.988,
+     "start": 129.525,
+     "text": "below"
+    },
+    {
+     "end": 130.15,
+     "start": 129.988,
+     "text": "is"
+    },
+    {
+     "end": 130.25,
+     "start": 130.15,
+     "text": "the"
+    },
+    {
+     "end": 130.812,
+     "start": 130.25,
+     "text": "complete"
+    },
+    {
+     "end": 131.475,
+     "start": 130.812,
+     "text": "documented"
+    },
+    {
+     "end": 131.863,
+     "start": 131.475,
+     "text": "module"
+    },
+    {
+     "end": 132.525,
+     "start": 131.863,
+     "text": "surface"
+    },
+    {
+     "end": 132.6,
+     "start": 132.525,
+     "text": "—"
+    },
+    {
+     "end": 133.35,
+     "start": 132.6,
+     "text": "exposed"
+    },
+    {
+     "end": 133.438,
+     "start": 133.35,
+     "text": ","
+    },
+    {
+     "end": 134.175,
+     "start": 133.438,
+     "text": "re-exported"
+    },
+    {
+     "end": 134.3,
+     "start": 134.175,
+     "text": "and"
+    },
+    {
+     "end": 135.15,
+     "start": 134.3,
+     "text": "package-internal"
+    },
+    {
+     "end": 136.175,
+     "start": 135.15,
+     "text": "alike"
+    },
+    {
+     "end": 136.4,
+     "start": 136.175,
+     "text": ";"
+    },
+    {
+     "end": 136.65,
+     "start": 136.575,
+     "text": "the"
+    },
+    {
+     "end": 136.875,
+     "start": 136.65,
+     "text": "site"
+    },
+    {
+     "end": 137.125,
+     "start": 136.875,
+     "text": "check"
+    },
+    {
+     "end": 137.438,
+     "start": 137.125,
+     "text": "fails"
+    },
+    {
+     "end": 137.8,
+     "start": 137.438,
+     "text": "until"
+    },
+    {
+     "end": 137.95,
+     "start": 137.8,
+     "text": "it"
+    },
+    {
+     "end": 138.062,
+     "start": 137.95,
+     "text": "and"
+    },
+    {
+     "end": 138.25,
+     "start": 138.062,
+     "text": "this"
+    },
+    {
+     "end": 138.475,
+     "start": 138.25,
      "text": "list"
     },
     {
-     "end": 131.375,
-     "start": 130.525,
+     "end": 139.325,
+     "start": 138.475,
      "text": "agree"
     },
     {
-     "end": 131.6,
-     "start": 131.375,
+     "end": 139.55,
+     "start": 139.325,
      "text": "."
     }
    ]
@@ -217101,17 +217301,17 @@
    ]
   },
   "docs-offchain-node-ownership/one-owner-per-runtime-concern-01": {
-   "audio_sha256": "e13a8d4be372323f9d4ea74f5a185807e09b7fbee792bab660e54563ce7eb7f4",
-   "characters": 480,
-   "cost": 0.0002976,
-   "duration": 32.525,
+   "audio_sha256": "94615ced60c2f3356003b9a5da9c41d78f63bd48a94aa13d7a91a1feddf57eb1",
+   "characters": 684,
+   "cost": 0.00067716,
+   "duration": 46.575,
    "index": 1,
-   "key": "7fe6c6d5627e466ea2c167960dcae723170bcf32d65f344960efc2bf05585b2f",
+   "key": "8182a6e628d879f692c180c1b61ab23a6a18e9f147e5e09c1875ca8f705d9eb7",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 400,
    "section": "one-owner-per-runtime-concern",
-   "sent_text": "The runtime's owners are three public components. local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
-   "text": "The runtime's owners are three public components. local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
+   "sent_text": "The runtime's owners are four public components. ledger-client owns the provider-independent core of the ledger client — evidence, network time, typed read traces and local script evaluation — and links no signing, wallet, file, process or network code; local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
+   "text": "The runtime's owners are four public components. ledger-client owns the provider-independent core of the ledger client — evidence, network time, typed read traces and local script evaluation — and links no signing, wallet, file, process or network code; local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
    "words": [
     {
      "end": 0.25,
@@ -217129,419 +217329,604 @@
      "text": "owners"
     },
     {
-     "end": 1.25,
+     "end": 1.237,
      "start": 1.075,
      "text": "are"
     },
     {
-     "end": 1.55,
-     "start": 1.25,
-     "text": "three"
+     "end": 1.5,
+     "start": 1.237,
+     "text": "four"
     },
     {
-     "end": 1.9,
-     "start": 1.55,
+     "end": 1.85,
+     "start": 1.5,
      "text": "public"
     },
     {
-     "end": 2.95,
-     "start": 1.9,
+     "end": 2.9,
+     "start": 1.85,
      "text": "components"
     },
     {
-     "end": 3.15,
-     "start": 2.95,
+     "end": 3.1,
+     "start": 2.9,
      "text": "."
     },
     {
-     "end": 4.287,
-     "start": 3.35,
-     "text": "local-services"
+     "end": 4.037,
+     "start": 3.325,
+     "text": "ledger-client"
     },
     {
-     "end": 4.65,
-     "start": 4.287,
+     "end": 4.475,
+     "start": 4.037,
      "text": "owns"
     },
     {
-     "end": 4.75,
-     "start": 4.65,
+     "end": 4.575,
+     "start": 4.475,
      "text": "the"
     },
     {
-     "end": 5.213,
-     "start": 4.75,
-     "text": "generic"
+     "end": 5.688,
+     "start": 4.575,
+     "text": "provider-independent"
     },
     {
-     "end": 5.85,
-     "start": 5.213,
-     "text": "session"
+     "end": 6.075,
+     "start": 5.688,
+     "text": "core"
     },
     {
-     "end": 5.988,
-     "start": 5.85,
-     "text": "and"
-    },
-    {
-     "end": 6.088,
-     "start": 5.988,
-     "text": "the"
-    },
-    {
-     "end": 6.4,
-     "start": 6.088,
-     "text": "fixed"
-    },
-    {
-     "end": 6.95,
-     "start": 6.4,
-     "text": "services"
-    },
-    {
-     "end": 7.475,
-     "start": 6.95,
-     "text": "computed"
-    },
-    {
-     "end": 7.675,
-     "start": 7.475,
-     "text": "from"
-    },
-    {
-     "end": 8.35,
-     "start": 7.675,
-     "text": "it"
-    },
-    {
-     "end": 8.55,
-     "start": 8.35,
-     "text": ";"
-    },
-    {
-     "end": 8.85,
-     "start": 8.75,
-     "text": "the"
-    },
-    {
-     "end": 9.15,
-     "start": 8.85,
-     "text": "main"
-    },
-    {
-     "end": 9.762,
-     "start": 9.15,
-     "text": "library"
-    },
-    {
-     "end": 10.1,
-     "start": 9.762,
-     "text": "owns"
-    },
-    {
-     "end": 10.225,
-     "start": 10.1,
-     "text": "the"
-    },
-    {
-     "end": 10.8,
-     "start": 10.225,
-     "text": "registry's"
-    },
-    {
-     "end": 11.475,
-     "start": 10.8,
-     "text": "application"
-    },
-    {
-     "end": 12.238,
-     "start": 11.475,
-     "text": "services"
-    },
-    {
-     "end": 12.363,
-     "start": 12.238,
-     "text": "and"
-    },
-    {
-     "end": 12.45,
-     "start": 12.363,
-     "text": "the"
-    },
-    {
-     "end": 12.863,
-     "start": 12.45,
-     "text": "bounds"
-    },
-    {
-     "end": 12.925,
-     "start": 12.863,
-     "text": "a"
-    },
-    {
-     "end": 13.488,
-     "start": 12.925,
-     "text": "command"
-    },
-    {
-     "end": 13.85,
-     "start": 13.488,
-     "text": "runs"
-    },
-    {
-     "end": 14.8,
-     "start": 13.85,
-     "text": "under"
-    },
-    {
-     "end": 15.025,
-     "start": 14.8,
-     "text": ";"
-    },
-    {
-     "end": 15.337,
-     "start": 15.225,
-     "text": "and"
-    },
-    {
-     "end": 16.763,
-     "start": 15.337,
-     "text": "koios-http"
-    },
-    {
-     "end": 17.1,
-     "start": 16.763,
-     "text": "owns"
-    },
-    {
-     "end": 17.237,
-     "start": 17.1,
-     "text": "the"
-    },
-    {
-     "end": 17.5,
-     "start": 17.237,
-     "text": "one"
-    },
-    {
-     "end": 17.825,
-     "start": 17.5,
-     "text": "live"
-    },
-    {
-     "end": 18.275,
-     "start": 17.825,
-     "text": "terminal"
-    },
-    {
-     "end": 19.087,
-     "start": 18.275,
-     "text": "composition"
-    },
-    {
-     "end": 19.212,
-     "start": 19.087,
-     "text": "and"
-    },
-    {
-     "end": 19.35,
-     "start": 19.212,
-     "text": "its"
-    },
-    {
-     "end": 20.575,
-     "start": 19.35,
-     "text": "transport"
-    },
-    {
-     "end": 20.775,
-     "start": 20.575,
-     "text": "."
-    },
-    {
-     "end": 21.025,
-     "start": 20.95,
-     "text": "The"
-    },
-    {
-     "end": 21.475,
-     "start": 21.025,
-     "text": "generic"
-    },
-    {
-     "end": 21.8,
-     "start": 21.475,
-     "text": "ledger"
-    },
-    {
-     "end": 22.65,
-     "start": 21.8,
-     "text": "capabilities"
-    },
-    {
-     "end": 22.712,
-     "start": 22.65,
-     "text": "—"
-    },
-    {
-     "end": 22.837,
-     "start": 22.712,
-     "text": "the"
-    },
-    {
-     "end": 23.225,
-     "start": 22.837,
-     "text": "session"
-    },
-    {
-     "end": 23.275,
-     "start": 23.225,
-     "text": ","
-    },
-    {
-     "end": 23.45,
-     "start": 23.275,
-     "text": "its"
-    },
-    {
-     "end": 24.45,
-     "start": 23.45,
-     "text": "evidence"
-    },
-    {
-     "end": 24.65,
-     "start": 24.45,
-     "text": ","
-    },
-    {
-     "end": 24.938,
-     "start": 24.85,
-     "text": "and"
-    },
-    {
-     "end": 25.038,
-     "start": 24.938,
-     "text": "the"
-    },
-    {
-     "end": 25.625,
-     "start": 25.038,
-     "text": "services"
-    },
-    {
-     "end": 26.175,
-     "start": 25.625,
-     "text": "computed"
-    },
-    {
-     "end": 26.375,
-     "start": 26.175,
-     "text": "from"
-    },
-    {
-     "end": 26.638,
-     "start": 26.375,
-     "text": "raw"
-    },
-    {
-     "end": 27.2,
-     "start": 26.638,
-     "text": "facts"
-    },
-    {
-     "end": 27.288,
-     "start": 27.2,
-     "text": "—"
-    },
-    {
-     "end": 27.562,
-     "start": 27.288,
-     "text": "know"
-    },
-    {
-     "end": 27.975,
-     "start": 27.562,
-     "text": "nothing"
-    },
-    {
-     "end": 28.062,
-     "start": 27.975,
+     "end": 6.162,
+     "start": 6.075,
      "text": "of"
     },
     {
-     "end": 28.15,
-     "start": 28.062,
-     "text": "a"
+     "end": 6.275,
+     "start": 6.162,
+     "text": "the"
     },
     {
-     "end": 28.725,
-     "start": 28.15,
-     "text": "registry's"
+     "end": 6.6,
+     "start": 6.275,
+     "text": "ledger"
     },
     {
-     "end": 30.05,
-     "start": 28.725,
-     "text": "application"
+     "end": 7.137,
+     "start": 6.6,
+     "text": "client"
     },
     {
-     "end": 30.25,
-     "start": 30.05,
+     "end": 7.225,
+     "start": 7.137,
+     "text": "—"
+    },
+    {
+     "end": 8.325,
+     "start": 7.225,
+     "text": "evidence"
+    },
+    {
+     "end": 8.55,
+     "start": 8.325,
      "text": ","
     },
     {
-     "end": 30.513,
-     "start": 30.425,
+     "end": 9.15,
+     "start": 8.775,
+     "text": "network"
+    },
+    {
+     "end": 9.5,
+     "start": 9.15,
+     "text": "time"
+    },
+    {
+     "end": 9.575,
+     "start": 9.5,
+     "text": ","
+    },
+    {
+     "end": 9.875,
+     "start": 9.575,
+     "text": "typed"
+    },
+    {
+     "end": 10.125,
+     "start": 9.875,
+     "text": "read"
+    },
+    {
+     "end": 10.725,
+     "start": 10.125,
+     "text": "traces"
+    },
+    {
+     "end": 10.85,
+     "start": 10.725,
      "text": "and"
     },
     {
-     "end": 30.688,
-     "start": 30.513,
+     "end": 11.188,
+     "start": 10.85,
+     "text": "local"
+    },
+    {
+     "end": 11.538,
+     "start": 11.188,
+     "text": "script"
+    },
+    {
+     "end": 12.45,
+     "start": 11.538,
+     "text": "evaluation"
+    },
+    {
+     "end": 12.525,
+     "start": 12.45,
+     "text": "—"
+    },
+    {
+     "end": 12.65,
+     "start": 12.525,
+     "text": "and"
+    },
+    {
+     "end": 12.95,
+     "start": 12.65,
+     "text": "links"
+    },
+    {
+     "end": 13.188,
+     "start": 12.95,
      "text": "no"
     },
     {
-     "end": 30.95,
-     "start": 30.688,
-     "text": "shipped"
+     "end": 14.225,
+     "start": 13.188,
+     "text": "signing"
     },
     {
-     "end": 31.288,
-     "start": 30.95,
-     "text": "module"
+     "end": 14.425,
+     "start": 14.225,
+     "text": ","
     },
     {
-     "end": 31.513,
-     "start": 31.288,
-     "text": "names"
+     "end": 14.9,
+     "start": 14.625,
+     "text": "wallet"
     },
     {
-     "end": 31.575,
-     "start": 31.513,
+     "end": 14.95,
+     "start": 14.9,
+     "text": ","
+    },
+    {
+     "end": 15.175,
+     "start": 14.95,
+     "text": "file"
+    },
+    {
+     "end": 15.225,
+     "start": 15.175,
+     "text": ","
+    },
+    {
+     "end": 15.75,
+     "start": 15.225,
+     "text": "process"
+    },
+    {
+     "end": 15.875,
+     "start": 15.75,
+     "text": "or"
+    },
+    {
+     "end": 16.225,
+     "start": 15.875,
+     "text": "network"
+    },
+    {
+     "end": 17.0,
+     "start": 16.225,
+     "text": "code"
+    },
+    {
+     "end": 17.2,
+     "start": 17.0,
+     "text": ";"
+    },
+    {
+     "end": 18.337,
+     "start": 17.4,
+     "text": "local-services"
+    },
+    {
+     "end": 18.7,
+     "start": 18.337,
+     "text": "owns"
+    },
+    {
+     "end": 18.8,
+     "start": 18.7,
+     "text": "the"
+    },
+    {
+     "end": 19.263,
+     "start": 18.8,
+     "text": "generic"
+    },
+    {
+     "end": 19.9,
+     "start": 19.263,
+     "text": "session"
+    },
+    {
+     "end": 20.038,
+     "start": 19.9,
+     "text": "and"
+    },
+    {
+     "end": 20.138,
+     "start": 20.038,
+     "text": "the"
+    },
+    {
+     "end": 20.45,
+     "start": 20.138,
+     "text": "fixed"
+    },
+    {
+     "end": 21.0,
+     "start": 20.45,
+     "text": "services"
+    },
+    {
+     "end": 21.525,
+     "start": 21.0,
+     "text": "computed"
+    },
+    {
+     "end": 21.725,
+     "start": 21.525,
+     "text": "from"
+    },
+    {
+     "end": 22.4,
+     "start": 21.725,
+     "text": "it"
+    },
+    {
+     "end": 22.6,
+     "start": 22.4,
+     "text": ";"
+    },
+    {
+     "end": 22.9,
+     "start": 22.8,
+     "text": "the"
+    },
+    {
+     "end": 23.2,
+     "start": 22.9,
+     "text": "main"
+    },
+    {
+     "end": 23.812,
+     "start": 23.2,
+     "text": "library"
+    },
+    {
+     "end": 24.15,
+     "start": 23.812,
+     "text": "owns"
+    },
+    {
+     "end": 24.275,
+     "start": 24.15,
+     "text": "the"
+    },
+    {
+     "end": 24.85,
+     "start": 24.275,
+     "text": "registry's"
+    },
+    {
+     "end": 25.525,
+     "start": 24.85,
+     "text": "application"
+    },
+    {
+     "end": 26.288,
+     "start": 25.525,
+     "text": "services"
+    },
+    {
+     "end": 26.413,
+     "start": 26.288,
+     "text": "and"
+    },
+    {
+     "end": 26.5,
+     "start": 26.413,
+     "text": "the"
+    },
+    {
+     "end": 26.913,
+     "start": 26.5,
+     "text": "bounds"
+    },
+    {
+     "end": 26.975,
+     "start": 26.913,
      "text": "a"
     },
     {
+     "end": 27.538,
+     "start": 26.975,
+     "text": "command"
+    },
+    {
+     "end": 27.9,
+     "start": 27.538,
+     "text": "runs"
+    },
+    {
+     "end": 28.85,
+     "start": 27.9,
+     "text": "under"
+    },
+    {
+     "end": 29.075,
+     "start": 28.85,
+     "text": ";"
+    },
+    {
+     "end": 29.388,
+     "start": 29.275,
+     "text": "and"
+    },
+    {
+     "end": 30.812,
+     "start": 29.388,
+     "text": "koios-http"
+    },
+    {
+     "end": 31.15,
+     "start": 30.812,
+     "text": "owns"
+    },
+    {
+     "end": 31.288,
+     "start": 31.15,
+     "text": "the"
+    },
+    {
+     "end": 31.55,
+     "start": 31.288,
+     "text": "one"
+    },
+    {
+     "end": 31.875,
+     "start": 31.55,
+     "text": "live"
+    },
+    {
      "end": 32.325,
-     "start": 31.575,
+     "start": 31.875,
+     "text": "terminal"
+    },
+    {
+     "end": 33.138,
+     "start": 32.325,
+     "text": "composition"
+    },
+    {
+     "end": 33.263,
+     "start": 33.138,
+     "text": "and"
+    },
+    {
+     "end": 33.4,
+     "start": 33.263,
+     "text": "its"
+    },
+    {
+     "end": 34.625,
+     "start": 33.4,
+     "text": "transport"
+    },
+    {
+     "end": 34.825,
+     "start": 34.625,
+     "text": "."
+    },
+    {
+     "end": 35.075,
+     "start": 35.0,
+     "text": "The"
+    },
+    {
+     "end": 35.525,
+     "start": 35.075,
+     "text": "generic"
+    },
+    {
+     "end": 35.85,
+     "start": 35.525,
+     "text": "ledger"
+    },
+    {
+     "end": 36.7,
+     "start": 35.85,
+     "text": "capabilities"
+    },
+    {
+     "end": 36.763,
+     "start": 36.7,
+     "text": "—"
+    },
+    {
+     "end": 36.888,
+     "start": 36.763,
+     "text": "the"
+    },
+    {
+     "end": 37.275,
+     "start": 36.888,
+     "text": "session"
+    },
+    {
+     "end": 37.325,
+     "start": 37.275,
+     "text": ","
+    },
+    {
+     "end": 37.5,
+     "start": 37.325,
+     "text": "its"
+    },
+    {
+     "end": 38.5,
+     "start": 37.5,
+     "text": "evidence"
+    },
+    {
+     "end": 38.7,
+     "start": 38.5,
+     "text": ","
+    },
+    {
+     "end": 38.987,
+     "start": 38.9,
+     "text": "and"
+    },
+    {
+     "end": 39.088,
+     "start": 38.987,
+     "text": "the"
+    },
+    {
+     "end": 39.675,
+     "start": 39.088,
+     "text": "services"
+    },
+    {
+     "end": 40.225,
+     "start": 39.675,
+     "text": "computed"
+    },
+    {
+     "end": 40.425,
+     "start": 40.225,
+     "text": "from"
+    },
+    {
+     "end": 40.688,
+     "start": 40.425,
+     "text": "raw"
+    },
+    {
+     "end": 41.25,
+     "start": 40.688,
+     "text": "facts"
+    },
+    {
+     "end": 41.338,
+     "start": 41.25,
+     "text": "—"
+    },
+    {
+     "end": 41.612,
+     "start": 41.338,
+     "text": "know"
+    },
+    {
+     "end": 42.025,
+     "start": 41.612,
+     "text": "nothing"
+    },
+    {
+     "end": 42.112,
+     "start": 42.025,
+     "text": "of"
+    },
+    {
+     "end": 42.2,
+     "start": 42.112,
+     "text": "a"
+    },
+    {
+     "end": 42.775,
+     "start": 42.2,
+     "text": "registry's"
+    },
+    {
+     "end": 44.1,
+     "start": 42.775,
+     "text": "application"
+    },
+    {
+     "end": 44.3,
+     "start": 44.1,
+     "text": ","
+    },
+    {
+     "end": 44.562,
+     "start": 44.475,
+     "text": "and"
+    },
+    {
+     "end": 44.737,
+     "start": 44.562,
+     "text": "no"
+    },
+    {
+     "end": 45.0,
+     "start": 44.737,
+     "text": "shipped"
+    },
+    {
+     "end": 45.338,
+     "start": 45.0,
+     "text": "module"
+    },
+    {
+     "end": 45.562,
+     "start": 45.338,
+     "text": "names"
+    },
+    {
+     "end": 45.625,
+     "start": 45.562,
+     "text": "a"
+    },
+    {
+     "end": 46.375,
+     "start": 45.625,
      "text": "node"
     },
     {
-     "end": 32.525,
-     "start": 32.325,
+     "end": 46.575,
+     "start": 46.375,
      "text": "."
     }
    ]
   },
   "docs-offchain-node-ownership/one-owner-per-runtime-concern-02": {
-   "audio_sha256": "607edc6e2151382e203ce9e3bf590e8df2219e3d3bfb5a6e73b9c84a3fc9ec04",
-   "characters": 479,
-   "cost": 0.00029698,
-   "duration": 32.5,
+   "audio_sha256": "008317e2e656930f25b861caff6c29460db76918416b38611850c1ad86a3e790",
+   "characters": 729,
+   "cost": 0.00072171,
+   "duration": 48.1,
    "index": 2,
-   "key": "487cfa877cba85f783259dba280f8aa0b851248890310c666e4af2b6d20acea8",
+   "key": "9d878359971662f6a4f3a2f3dff37173e2a9832cd39681d1ab67dbb59f244a28",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 400,
    "section": "one-owner-per-runtime-concern",
-   "sent_text": "The first twelve rows live in local-services, the next four in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
-   "text": "The first twelve rows live in local-services, the next four in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
+   "sent_text": "The first twelve rows live in local-services, except that Evidence, LocalEvaluation, NetworkTime and Trace live in ledger-client, which local-services depends on and re-exports under the same module names; the next four rows live in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from the Haddock tree of the library that owns each: Evidence from ledger-client, the other three from local-services.",
+   "text": "The first twelve rows live in local-services, except that Evidence, LocalEvaluation, NetworkTime and Trace live in ledger-client, which local-services depends on and re-exports under the same module names; the next four rows live in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from the Haddock tree of the library that owns each: Evidence from ledger-client, the other three from local-services.",
    "words": [
     {
      "end": 0.338,
@@ -217554,413 +217939,623 @@
      "text": "first"
     },
     {
-     "end": 0.95,
+     "end": 0.988,
      "start": 0.625,
      "text": "twelve"
     },
     {
-     "end": 1.337,
-     "start": 0.95,
+     "end": 1.413,
+     "start": 0.988,
      "text": "rows"
     },
     {
-     "end": 1.625,
-     "start": 1.337,
+     "end": 1.7,
+     "start": 1.413,
      "text": "live"
     },
     {
-     "end": 1.775,
-     "start": 1.625,
+     "end": 1.85,
+     "start": 1.7,
      "text": "in"
     },
     {
-     "end": 2.675,
-     "start": 1.775,
+     "end": 2.775,
+     "start": 1.85,
      "text": "local-services"
     },
     {
-     "end": 2.725,
-     "start": 2.675,
+     "end": 2.85,
+     "start": 2.775,
      "text": ","
     },
     {
-     "end": 2.825,
-     "start": 2.725,
-     "text": "the"
+     "end": 3.25,
+     "start": 2.85,
+     "text": "except"
     },
     {
-     "end": 3.162,
-     "start": 2.825,
-     "text": "next"
+     "end": 3.463,
+     "start": 3.25,
+     "text": "that"
     },
     {
-     "end": 3.5,
-     "start": 3.162,
-     "text": "four"
-    },
-    {
-     "end": 3.588,
-     "start": 3.5,
-     "text": "in"
-    },
-    {
-     "end": 3.675,
-     "start": 3.588,
-     "text": "the"
-    },
-    {
-     "end": 4.0,
-     "start": 3.675,
-     "text": "main"
-    },
-    {
-     "end": 4.6,
-     "start": 4.0,
-     "text": "library"
-    },
-    {
-     "end": 4.675,
-     "start": 4.6,
-     "text": ","
-    },
-    {
-     "end": 4.812,
-     "start": 4.675,
-     "text": "the"
-    },
-    {
-     "end": 5.312,
-     "start": 4.812,
-     "text": "following"
-    },
-    {
-     "end": 5.675,
-     "start": 5.312,
-     "text": "three"
-    },
-    {
-     "end": 5.863,
-     "start": 5.675,
-     "text": "in"
-    },
-    {
-     "end": 7.4,
-     "start": 5.863,
-     "text": "koios-http"
-    },
-    {
-     "end": 7.537,
-     "start": 7.4,
-     "text": ","
-    },
-    {
-     "end": 7.662,
-     "start": 7.537,
-     "text": "and"
-    },
-    {
-     "end": 7.787,
-     "start": 7.662,
-     "text": "the"
-    },
-    {
-     "end": 8.275,
-     "start": 7.787,
-     "text": "last"
-    },
-    {
-     "end": 8.387,
-     "start": 8.275,
-     "text": "in"
-    },
-    {
-     "end": 8.475,
-     "start": 8.387,
-     "text": "the"
-    },
-    {
-     "end": 8.9,
-     "start": 8.475,
-     "text": "command"
-    },
-    {
-     "end": 9.975,
-     "start": 8.9,
-     "text": "line"
-    },
-    {
-     "end": 10.2,
-     "start": 9.975,
-     "text": "."
-    },
-    {
-     "end": 10.538,
-     "start": 10.425,
-     "text": "The"
-    },
-    {
-     "end": 11.0,
-     "start": 10.538,
-     "text": "trie's"
-    },
-    {
-     "end": 11.262,
-     "start": 11.0,
-     "text": "own"
-    },
-    {
-     "end": 11.8,
-     "start": 11.262,
-     "text": "owners"
-    },
-    {
-     "end": 11.875,
-     "start": 11.8,
-     "text": "—"
-    },
-    {
-     "end": 12.663,
-     "start": 11.875,
-     "text": "TrieState"
-    },
-    {
-     "end": 12.788,
-     "start": 12.663,
-     "text": "and"
-    },
-    {
-     "end": 12.95,
-     "start": 12.788,
-     "text": "its"
-    },
-    {
-     "end": 13.775,
-     "start": 12.95,
-     "text": "instances"
-    },
-    {
-     "end": 13.863,
-     "start": 13.775,
-     "text": "—"
-    },
-    {
-     "end": 14.025,
-     "start": 13.863,
-     "text": "are"
-    },
-    {
-     "end": 14.137,
-     "start": 14.025,
-     "text": "a"
-    },
-    {
-     "end": 14.575,
-     "start": 14.137,
-     "text": "separate"
-    },
-    {
-     "end": 15.312,
-     "start": 14.575,
-     "text": "capability"
-    },
-    {
-     "end": 16.05,
-     "start": 15.312,
-     "text": "documented"
-    },
-    {
-     "end": 16.2,
-     "start": 16.05,
-     "text": "with"
-    },
-    {
-     "end": 16.337,
-     "start": 16.2,
-     "text": "the"
-    },
-    {
-     "end": 16.987,
-     "start": 16.337,
-     "text": "library's"
-    },
-    {
-     "end": 17.575,
-     "start": 16.987,
-     "text": "modules"
-    },
-    {
-     "end": 17.663,
-     "start": 17.575,
-     "text": "in"
-    },
-    {
-     "end": 17.812,
-     "start": 17.663,
-     "text": "the"
-    },
-    {
-     "end": 18.513,
-     "start": 17.812,
-     "text": "off-chain"
-    },
-    {
-     "end": 19.175,
-     "start": 18.513,
-     "text": "API"
-    },
-    {
-     "end": 20.45,
-     "start": 19.175,
-     "text": "reference"
-    },
-    {
-     "end": 20.675,
-     "start": 20.45,
-     "text": ";"
-    },
-    {
-     "end": 20.925,
-     "start": 20.85,
-     "text": "the"
-    },
-    {
-     "end": 21.25,
-     "start": 20.925,
-     "text": "main"
-    },
-    {
-     "end": 21.763,
-     "start": 21.25,
-     "text": "library's"
-    },
-    {
-     "end": 22.388,
-     "start": 21.763,
-     "text": "re-exports"
-    },
-    {
-     "end": 22.5,
-     "start": 22.388,
-     "text": "of"
-    },
-    {
-     "end": 22.925,
-     "start": 22.5,
-     "text": "Ledger"
-    },
-    {
-     "end": 23.025,
-     "start": 22.925,
-     "text": ","
-    },
-    {
-     "end": 24.275,
-     "start": 23.025,
-     "text": "LedgerProvider"
-    },
-    {
-     "end": 24.5,
-     "start": 24.275,
-     "text": ","
-    },
-    {
-     "end": 25.1,
-     "start": 24.675,
+     "end": 4.05,
+     "start": 3.463,
      "text": "Evidence"
     },
     {
-     "end": 25.225,
-     "start": 25.1,
-     "text": "and"
-    },
-    {
-     "end": 25.638,
-     "start": 25.225,
-     "text": "Signing"
-    },
-    {
-     "end": 25.888,
-     "start": 25.638,
-     "text": "keep"
-    },
-    {
-     "end": 26.05,
-     "start": 25.888,
-     "text": "their"
-    },
-    {
-     "end": 26.45,
-     "start": 26.05,
-     "text": "stable"
-    },
-    {
-     "end": 26.85,
-     "start": 26.45,
-     "text": "import"
-    },
-    {
-     "end": 27.775,
-     "start": 26.85,
-     "text": "paths"
-    },
-    {
-     "end": 27.975,
-     "start": 27.775,
+     "end": 4.137,
+     "start": 4.05,
      "text": ","
     },
     {
-     "end": 28.263,
-     "start": 28.175,
+     "end": 5.275,
+     "start": 4.137,
+     "text": "LocalEvaluation"
+    },
+    {
+     "end": 5.363,
+     "start": 5.275,
+     "text": ","
+    },
+    {
+     "end": 6.175,
+     "start": 5.363,
+     "text": "NetworkTime"
+    },
+    {
+     "end": 6.312,
+     "start": 6.175,
      "text": "and"
     },
     {
-     "end": 28.438,
-     "start": 28.263,
-     "text": "their"
+     "end": 6.762,
+     "start": 6.312,
+     "text": "Trace"
     },
     {
-     "end": 29.025,
-     "start": 28.438,
-     "text": "generated"
+     "end": 7.05,
+     "start": 6.762,
+     "text": "live"
     },
     {
-     "end": 29.538,
-     "start": 29.025,
-     "text": "pages"
+     "end": 7.2,
+     "start": 7.05,
+     "text": "in"
     },
     {
-     "end": 29.8,
-     "start": 29.538,
-     "text": "come"
+     "end": 8.0,
+     "start": 7.2,
+     "text": "ledger-client"
     },
     {
-     "end": 29.95,
-     "start": 29.8,
-     "text": "from"
+     "end": 8.075,
+     "start": 8.0,
+     "text": ","
     },
     {
-     "end": 30.85,
-     "start": 29.95,
-     "text": "local-services'"
+     "end": 8.275,
+     "start": 8.075,
+     "text": "which"
     },
     {
-     "end": 31.05,
-     "start": 30.85,
+     "end": 9.15,
+     "start": 8.275,
+     "text": "local-services"
+    },
+    {
+     "end": 9.625,
+     "start": 9.15,
+     "text": "depends"
+    },
+    {
+     "end": 9.875,
+     "start": 9.625,
+     "text": "on"
+    },
+    {
+     "end": 10.0,
+     "start": 9.875,
+     "text": "and"
+    },
+    {
+     "end": 10.7,
+     "start": 10.0,
+     "text": "re-exports"
+    },
+    {
+     "end": 10.913,
+     "start": 10.7,
+     "text": "under"
+    },
+    {
+     "end": 11.038,
+     "start": 10.913,
+     "text": "the"
+    },
+    {
+     "end": 11.375,
+     "start": 11.038,
+     "text": "same"
+    },
+    {
+     "end": 11.75,
+     "start": 11.375,
+     "text": "module"
+    },
+    {
+     "end": 12.925,
+     "start": 11.75,
+     "text": "names"
+    },
+    {
+     "end": 13.15,
+     "start": 12.925,
+     "text": ";"
+    },
+    {
+     "end": 13.425,
+     "start": 13.35,
+     "text": "the"
+    },
+    {
+     "end": 13.725,
+     "start": 13.425,
+     "text": "next"
+    },
+    {
+     "end": 13.988,
+     "start": 13.725,
+     "text": "four"
+    },
+    {
+     "end": 14.387,
+     "start": 13.988,
+     "text": "rows"
+    },
+    {
+     "end": 14.637,
+     "start": 14.387,
+     "text": "live"
+    },
+    {
+     "end": 14.712,
+     "start": 14.637,
+     "text": "in"
+    },
+    {
+     "end": 14.8,
+     "start": 14.712,
+     "text": "the"
+    },
+    {
+     "end": 15.125,
+     "start": 14.8,
+     "text": "main"
+    },
+    {
+     "end": 15.725,
+     "start": 15.125,
+     "text": "library"
+    },
+    {
+     "end": 15.8,
+     "start": 15.725,
+     "text": ","
+    },
+    {
+     "end": 15.938,
+     "start": 15.8,
+     "text": "the"
+    },
+    {
+     "end": 16.438,
+     "start": 15.938,
+     "text": "following"
+    },
+    {
+     "end": 16.825,
+     "start": 16.438,
+     "text": "three"
+    },
+    {
+     "end": 17.013,
+     "start": 16.825,
+     "text": "in"
+    },
+    {
+     "end": 18.5,
+     "start": 17.013,
+     "text": "koios-http"
+    },
+    {
+     "end": 18.625,
+     "start": 18.5,
+     "text": ","
+    },
+    {
+     "end": 18.737,
+     "start": 18.625,
+     "text": "and"
+    },
+    {
+     "end": 18.85,
+     "start": 18.737,
+     "text": "the"
+    },
+    {
+     "end": 19.3,
+     "start": 18.85,
+     "text": "last"
+    },
+    {
+     "end": 19.388,
+     "start": 19.3,
+     "text": "in"
+    },
+    {
+     "end": 19.475,
+     "start": 19.388,
+     "text": "the"
+    },
+    {
+     "end": 19.875,
+     "start": 19.475,
+     "text": "command"
+    },
+    {
+     "end": 20.875,
+     "start": 19.875,
+     "text": "line"
+    },
+    {
+     "end": 21.075,
+     "start": 20.875,
+     "text": "."
+    },
+    {
+     "end": 21.413,
+     "start": 21.3,
+     "text": "The"
+    },
+    {
+     "end": 21.875,
+     "start": 21.413,
+     "text": "trie's"
+    },
+    {
+     "end": 22.138,
+     "start": 21.875,
      "text": "own"
     },
     {
-     "end": 31.438,
-     "start": 31.05,
+     "end": 22.675,
+     "start": 22.138,
+     "text": "owners"
+    },
+    {
+     "end": 22.75,
+     "start": 22.675,
+     "text": "—"
+    },
+    {
+     "end": 23.538,
+     "start": 22.75,
+     "text": "TrieState"
+    },
+    {
+     "end": 23.663,
+     "start": 23.538,
+     "text": "and"
+    },
+    {
+     "end": 23.825,
+     "start": 23.663,
+     "text": "its"
+    },
+    {
+     "end": 24.65,
+     "start": 23.825,
+     "text": "instances"
+    },
+    {
+     "end": 24.737,
+     "start": 24.65,
+     "text": "—"
+    },
+    {
+     "end": 24.9,
+     "start": 24.737,
+     "text": "are"
+    },
+    {
+     "end": 25.013,
+     "start": 24.9,
+     "text": "a"
+    },
+    {
+     "end": 25.45,
+     "start": 25.013,
+     "text": "separate"
+    },
+    {
+     "end": 26.188,
+     "start": 25.45,
+     "text": "capability"
+    },
+    {
+     "end": 26.925,
+     "start": 26.188,
+     "text": "documented"
+    },
+    {
+     "end": 27.075,
+     "start": 26.925,
+     "text": "with"
+    },
+    {
+     "end": 27.212,
+     "start": 27.075,
+     "text": "the"
+    },
+    {
+     "end": 27.862,
+     "start": 27.212,
+     "text": "library's"
+    },
+    {
+     "end": 28.45,
+     "start": 27.862,
+     "text": "modules"
+    },
+    {
+     "end": 28.538,
+     "start": 28.45,
+     "text": "in"
+    },
+    {
+     "end": 28.688,
+     "start": 28.538,
+     "text": "the"
+    },
+    {
+     "end": 29.388,
+     "start": 28.688,
+     "text": "off-chain"
+    },
+    {
+     "end": 30.05,
+     "start": 29.388,
+     "text": "API"
+    },
+    {
+     "end": 31.325,
+     "start": 30.05,
+     "text": "reference"
+    },
+    {
+     "end": 31.55,
+     "start": 31.325,
+     "text": ";"
+    },
+    {
+     "end": 31.8,
+     "start": 31.725,
+     "text": "the"
+    },
+    {
+     "end": 32.125,
+     "start": 31.8,
+     "text": "main"
+    },
+    {
+     "end": 32.638,
+     "start": 32.125,
+     "text": "library's"
+    },
+    {
+     "end": 33.263,
+     "start": 32.638,
+     "text": "re-exports"
+    },
+    {
+     "end": 33.375,
+     "start": 33.263,
+     "text": "of"
+    },
+    {
+     "end": 33.8,
+     "start": 33.375,
+     "text": "Ledger"
+    },
+    {
+     "end": 33.9,
+     "start": 33.8,
+     "text": ","
+    },
+    {
+     "end": 35.15,
+     "start": 33.9,
+     "text": "LedgerProvider"
+    },
+    {
+     "end": 35.375,
+     "start": 35.15,
+     "text": ","
+    },
+    {
+     "end": 35.975,
+     "start": 35.55,
+     "text": "Evidence"
+    },
+    {
+     "end": 36.1,
+     "start": 35.975,
+     "text": "and"
+    },
+    {
+     "end": 36.513,
+     "start": 36.1,
+     "text": "Signing"
+    },
+    {
+     "end": 36.763,
+     "start": 36.513,
+     "text": "keep"
+    },
+    {
+     "end": 36.925,
+     "start": 36.763,
+     "text": "their"
+    },
+    {
+     "end": 37.325,
+     "start": 36.925,
+     "text": "stable"
+    },
+    {
+     "end": 37.725,
+     "start": 37.325,
+     "text": "import"
+    },
+    {
+     "end": 38.65,
+     "start": 37.725,
+     "text": "paths"
+    },
+    {
+     "end": 38.85,
+     "start": 38.65,
+     "text": ","
+    },
+    {
+     "end": 39.138,
+     "start": 39.05,
+     "text": "and"
+    },
+    {
+     "end": 39.312,
+     "start": 39.138,
+     "text": "their"
+    },
+    {
+     "end": 39.9,
+     "start": 39.312,
+     "text": "generated"
+    },
+    {
+     "end": 40.412,
+     "start": 39.9,
+     "text": "pages"
+    },
+    {
+     "end": 40.675,
+     "start": 40.412,
+     "text": "come"
+    },
+    {
+     "end": 40.812,
+     "start": 40.675,
+     "text": "from"
+    },
+    {
+     "end": 40.912,
+     "start": 40.812,
+     "text": "the"
+    },
+    {
+     "end": 41.312,
+     "start": 40.912,
      "text": "Haddock"
     },
     {
-     "end": 32.3,
-     "start": 31.438,
+     "end": 41.625,
+     "start": 41.312,
      "text": "tree"
     },
     {
-     "end": 32.5,
-     "start": 32.3,
+     "end": 41.713,
+     "start": 41.625,
+     "text": "of"
+    },
+    {
+     "end": 41.8,
+     "start": 41.713,
+     "text": "the"
+    },
+    {
+     "end": 42.35,
+     "start": 41.8,
+     "text": "library"
+    },
+    {
+     "end": 42.5,
+     "start": 42.35,
+     "text": "that"
+    },
+    {
+     "end": 42.825,
+     "start": 42.5,
+     "text": "owns"
+    },
+    {
+     "end": 43.725,
+     "start": 42.825,
+     "text": "each"
+    },
+    {
+     "end": 43.95,
+     "start": 43.725,
+     "text": ":"
+    },
+    {
+     "end": 44.575,
+     "start": 44.15,
+     "text": "Evidence"
+    },
+    {
+     "end": 44.75,
+     "start": 44.575,
+     "text": "from"
+    },
+    {
+     "end": 45.5,
+     "start": 44.75,
+     "text": "ledger-client"
+    },
+    {
+     "end": 45.575,
+     "start": 45.5,
+     "text": ","
+    },
+    {
+     "end": 45.725,
+     "start": 45.575,
+     "text": "the"
+    },
+    {
+     "end": 46.013,
+     "start": 45.725,
+     "text": "other"
+    },
+    {
+     "end": 46.3,
+     "start": 46.013,
+     "text": "three"
+    },
+    {
+     "end": 46.45,
+     "start": 46.3,
+     "text": "from"
+    },
+    {
+     "end": 47.9,
+     "start": 46.45,
+     "text": "local-services"
+    },
+    {
+     "end": 48.1,
+     "start": 47.9,
      "text": "."
     }
    ]
@@ -220011,17 +220606,17 @@
    ]
   },
   "docs-offchain-node-ownership/where-common-changes-land-02": {
-   "audio_sha256": "486a3239e9a6132e86d1a522572a817dae07693b52511a862fc1cc8095c1dd50",
-   "characters": 197,
-   "cost": 0.00012214000000000002,
-   "duration": 13.975,
+   "audio_sha256": "0efdbd99fe2cbcfc167e1ae45eb25bf7396ea2af303fa6792e2058e4f2876b45",
+   "characters": 224,
+   "cost": 0.00022176,
+   "duration": 15.775,
    "index": 2,
-   "key": "d148bf76ef072ee5a68a8c0bfb86fcd6aacf7358f543322d08e049be89658cb1",
+   "key": "d848cc9022e087bafb9c00b2c1a0398ef9d3f5dc7dbbec73ef418a22d2c1cf3e",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,
    "section": "where-common-changes-land",
-   "sent_text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
-   "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
+   "sent_text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services, Evidence in ledger-client. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
+   "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services, Evidence in ledger-client. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
    "words": [
     {
      "end": 0.275,
@@ -220069,149 +220664,169 @@
      "text": ":"
     },
     {
-     "end": 3.45,
-     "start": 2.7,
+     "end": 3.575,
+     "start": 2.725,
      "text": "LedgerProvider"
     },
     {
-     "end": 3.55,
-     "start": 3.45,
+     "end": 3.65,
+     "start": 3.575,
      "text": ","
     },
     {
-     "end": 4.113,
-     "start": 3.55,
+     "end": 4.213,
+     "start": 3.65,
      "text": "Evidence"
     },
     {
-     "end": 4.287,
-     "start": 4.113,
+     "end": 4.412,
+     "start": 4.213,
      "text": "or"
     },
     {
-     "end": 5.125,
-     "start": 4.287,
+     "end": 5.25,
+     "start": 4.412,
      "text": "SessionEvidence"
     },
     {
-     "end": 5.25,
-     "start": 5.125,
+     "end": 5.4,
+     "start": 5.25,
      "text": "in"
     },
     {
-     "end": 6.7,
-     "start": 5.25,
+     "end": 6.45,
+     "start": 5.4,
      "text": "local-services"
     },
     {
-     "end": 6.9,
-     "start": 6.7,
+     "end": 6.55,
+     "start": 6.45,
+     "text": ","
+    },
+    {
+     "end": 7.05,
+     "start": 6.55,
+     "text": "Evidence"
+    },
+    {
+     "end": 7.175,
+     "start": 7.05,
+     "text": "in"
+    },
+    {
+     "end": 8.5,
+     "start": 7.175,
+     "text": "ledger-client"
+    },
+    {
+     "end": 8.7,
+     "start": 8.5,
      "text": "."
     },
     {
-     "end": 7.2,
-     "start": 7.1,
+     "end": 9.0,
+     "start": 8.9,
      "text": "The"
     },
     {
-     "end": 7.575,
-     "start": 7.2,
+     "end": 9.375,
+     "start": 9.0,
      "text": "witness"
     },
     {
-     "end": 7.875,
-     "start": 7.575,
+     "end": 9.675,
+     "start": 9.375,
      "text": "type"
     },
     {
-     "end": 8.212,
-     "start": 7.875,
+     "end": 10.012,
+     "start": 9.675,
      "text": "stays"
     },
     {
-     "end": 8.275,
-     "start": 8.212,
+     "end": 10.075,
+     "start": 10.012,
      "text": "a"
     },
     {
-     "end": 9.0,
-     "start": 8.275,
+     "end": 10.8,
+     "start": 10.075,
      "text": "parameter"
     },
     {
-     "end": 9.113,
-     "start": 9.0,
+     "end": 10.913,
+     "start": 10.8,
      "text": ";"
     },
     {
-     "end": 9.512,
-     "start": 9.113,
+     "end": 11.312,
+     "start": 10.913,
      "text": "Demo"
     },
     {
-     "end": 9.887,
-     "start": 9.512,
+     "end": 11.688,
+     "start": 11.312,
      "text": "1"
     },
     {
-     "end": 10.225,
-     "start": 9.887,
+     "end": 12.025,
+     "start": 11.688,
      "text": "ships"
     },
     {
-     "end": 10.375,
-     "start": 10.225,
+     "end": 12.175,
+     "start": 12.025,
      "text": "the"
     },
     {
-     "end": 11.125,
-     "start": 10.375,
+     "end": 12.925,
+     "start": 12.175,
      "text": "uninhabited"
     },
     {
-     "end": 11.488,
-     "start": 11.125,
+     "end": 13.288,
+     "start": 12.925,
      "text": "one"
     },
     {
-     "end": 11.613,
-     "start": 11.488,
+     "end": 13.413,
+     "start": 13.288,
      "text": "and"
     },
     {
-     "end": 11.725,
-     "start": 11.613,
+     "end": 13.525,
+     "start": 13.413,
      "text": "the"
     },
     {
-     "end": 12.475,
-     "start": 11.725,
+     "end": 14.275,
+     "start": 13.525,
      "text": "unverified"
     },
     {
-     "end": 13.75,
-     "start": 12.475,
+     "end": 15.55,
+     "start": 14.275,
      "text": "verifier"
     },
     {
-     "end": 13.975,
-     "start": 13.75,
+     "end": 15.775,
+     "start": 15.55,
      "text": "."
     }
    ]
   },
   "docs-offchain-node-ownership/where-common-changes-land-03": {
-   "audio_sha256": "b7b443539c878ef39e801417d267c27c1296f8d90ddc95c2efe071b883308e37",
-   "characters": 177,
-   "cost": 0.00010974000000000002,
-   "duration": 12.975,
+   "audio_sha256": "5b80fd1afc6b052db6bd882c6b250f01f5e18de884b7dfcbaadbdfee261da571",
+   "characters": 200,
+   "cost": 0.000198,
+   "duration": 14.375,
    "index": 3,
-   "key": "5b0ca8ac6df0a853c7a21f4cdfad9e50c511a09547e1facd3da852a63d84a99a",
+   "key": "dcdd66e2cbdebdf9448e5d1b1d2b8fd22bb30ce722df115ff09b215125365501",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,
    "section": "where-common-changes-land",
-   "sent_text": "Local evaluation or time conversion: SessionServices, LocalEvaluation, NetworkTime or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
-   "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation, NetworkTime or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
+   "sent_text": "Local evaluation or time conversion: SessionServices, LocalEvaluation and NetworkTime (in ledger-client), or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
+   "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation and NetworkTime (in ledger-client), or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
    "words": [
     {
      "end": 0.488,
@@ -220244,113 +220859,138 @@
      "text": ":"
     },
     {
-     "end": 3.925,
-     "start": 3.0,
+     "end": 3.975,
+     "start": 3.025,
      "text": "SessionServices"
     },
     {
-     "end": 4.0,
-     "start": 3.925,
+     "end": 4.062,
+     "start": 3.975,
      "text": ","
     },
     {
-     "end": 5.075,
-     "start": 4.0,
+     "end": 5.1,
+     "start": 4.062,
      "text": "LocalEvaluation"
     },
     {
-     "end": 5.15,
-     "start": 5.075,
-     "text": ","
-    },
-    {
-     "end": 5.9,
-     "start": 5.15,
-     "text": "NetworkTime"
-    },
-    {
-     "end": 6.025,
-     "start": 5.9,
-     "text": "or"
-    },
-    {
-     "end": 7.325,
-     "start": 6.025,
-     "text": "TimeMaterial"
-    },
-    {
-     "end": 7.525,
-     "start": 7.325,
-     "text": "."
-    },
-    {
-     "end": 7.825,
-     "start": 7.725,
-     "text": "An"
-    },
-    {
-     "end": 8.325,
-     "start": 7.825,
-     "text": "adapter"
-    },
-    {
-     "end": 8.863,
-     "start": 8.325,
-     "text": "supplies"
-    },
-    {
-     "end": 9.363,
-     "start": 8.863,
-     "text": "facts"
-    },
-    {
-     "end": 9.5,
-     "start": 9.363,
+     "end": 5.225,
+     "start": 5.1,
      "text": "and"
     },
     {
-     "end": 9.875,
-     "start": 9.5,
-     "text": "cannot"
+     "end": 6.05,
+     "start": 5.225,
+     "text": "NetworkTime"
     },
     {
-     "end": 10.262,
-     "start": 9.875,
-     "text": "select"
+     "end": 6.125,
+     "start": 6.05,
+     "text": "("
     },
     {
-     "end": 10.35,
-     "start": 10.262,
-     "text": "an"
+     "end": 6.25,
+     "start": 6.125,
+     "text": "in"
     },
     {
-     "end": 11.125,
-     "start": 10.35,
-     "text": "evaluator"
+     "end": 7.05,
+     "start": 6.25,
+     "text": "ledger-client"
     },
     {
-     "end": 11.262,
-     "start": 11.125,
+     "end": 7.1,
+     "start": 7.05,
+     "text": ")"
+    },
+    {
+     "end": 7.15,
+     "start": 7.1,
+     "text": ","
+    },
+    {
+     "end": 7.312,
+     "start": 7.15,
      "text": "or"
     },
     {
-     "end": 11.325,
-     "start": 11.262,
-     "text": "a"
+     "end": 8.725,
+     "start": 7.312,
+     "text": "TimeMaterial"
     },
     {
-     "end": 11.625,
-     "start": 11.325,
-     "text": "time"
+     "end": 8.925,
+     "start": 8.725,
+     "text": "."
+    },
+    {
+     "end": 9.225,
+     "start": 9.125,
+     "text": "An"
+    },
+    {
+     "end": 9.725,
+     "start": 9.225,
+     "text": "adapter"
+    },
+    {
+     "end": 10.262,
+     "start": 9.725,
+     "text": "supplies"
+    },
+    {
+     "end": 10.762,
+     "start": 10.262,
+     "text": "facts"
+    },
+    {
+     "end": 10.9,
+     "start": 10.762,
+     "text": "and"
+    },
+    {
+     "end": 11.275,
+     "start": 10.9,
+     "text": "cannot"
+    },
+    {
+     "end": 11.663,
+     "start": 11.275,
+     "text": "select"
+    },
+    {
+     "end": 11.75,
+     "start": 11.663,
+     "text": "an"
+    },
+    {
+     "end": 12.525,
+     "start": 11.75,
+     "text": "evaluator"
+    },
+    {
+     "end": 12.663,
+     "start": 12.525,
+     "text": "or"
     },
     {
      "end": 12.725,
-     "start": 11.625,
+     "start": 12.663,
+     "text": "a"
+    },
+    {
+     "end": 13.025,
+     "start": 12.725,
+     "text": "time"
+    },
+    {
+     "end": 14.125,
+     "start": 13.025,
      "text": "converter"
     },
     {
-     "end": 12.975,
-     "start": 12.725,
+     "end": 14.375,
+     "start": 14.125,
      "text": "."
     }
    ]
@@ -220871,17 +221511,17 @@
    ]
   },
   "docs-offchain-node-ownership/where-common-changes-land-08": {
-   "audio_sha256": "9927f7cb5acf1ed5790fcd9cfa60949cd3c123043145fe9e7cb3d67e8dbea73e",
-   "characters": 124,
-   "cost": 7.688000000000001e-05,
-   "duration": 8.15,
+   "audio_sha256": "b1615d9e905e6afa6b3fe1c50f32dbd4fa1d2bdd753ff60520e181c0d24b4e75",
+   "characters": 143,
+   "cost": 0.00014157,
+   "duration": 9.425,
    "index": 8,
-   "key": "df9c1583d160b4dc21ee7747ee1a306fb178133c58ac0fbf017d0f32fa5b0b3e",
+   "key": "9392ed1f74558d7c7093f45405aed378a45cd43a8b7db131059d4e18af2ede87",
    "page": "docs/offchain-node-ownership.md",
    "pause_ms": 300,
    "section": "where-common-changes-land",
-   "sent_text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace and TraceRender.",
-   "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace and TraceRender.",
+   "sent_text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace (in ledger-client) and TraceRender.",
+   "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace (in ledger-client) and TraceRender.",
    "words": [
     {
      "end": 0.287,
@@ -220914,83 +221554,103 @@
      "text": ":"
     },
     {
-     "end": 2.875,
+     "end": 2.9,
      "start": 2.6,
      "text": "typed"
     },
     {
-     "end": 3.213,
-     "start": 2.875,
+     "end": 3.263,
+     "start": 2.9,
      "text": "events"
     },
     {
-     "end": 3.388,
-     "start": 3.213,
+     "end": 3.438,
+     "start": 3.263,
      "text": "into"
     },
     {
-     "end": 3.475,
-     "start": 3.388,
+     "end": 3.537,
+     "start": 3.438,
      "text": "the"
     },
     {
-     "end": 3.95,
-     "start": 3.475,
+     "end": 4.05,
+     "start": 3.537,
      "text": "tracer"
     },
     {
-     "end": 4.075,
-     "start": 3.95,
+     "end": 4.175,
+     "start": 4.05,
      "text": "the"
     },
     {
-     "end": 4.45,
-     "start": 4.075,
+     "end": 4.55,
+     "start": 4.175,
      "text": "caller"
     },
     {
-     "end": 4.775,
-     "start": 4.45,
+     "end": 4.925,
+     "start": 4.55,
      "text": "hands"
     },
     {
-     "end": 4.975,
-     "start": 4.775,
+     "end": 5.125,
+     "start": 4.925,
      "text": "it"
     },
     {
-     "end": 5.05,
-     "start": 4.975,
+     "end": 5.2,
+     "start": 5.125,
      "text": "—"
     },
     {
-     "end": 5.95,
-     "start": 5.05,
+     "end": 6.125,
+     "start": 5.2,
      "text": "ProviderTrace"
     },
     {
-     "end": 6.062,
-     "start": 5.95,
+     "end": 6.238,
+     "start": 6.125,
      "text": ","
     },
     {
-     "end": 6.525,
-     "start": 6.062,
+     "end": 6.725,
+     "start": 6.238,
      "text": "Trace"
     },
     {
-     "end": 6.65,
-     "start": 6.525,
+     "end": 6.8,
+     "start": 6.725,
+     "text": "("
+    },
+    {
+     "end": 6.925,
+     "start": 6.8,
+     "text": "in"
+    },
+    {
+     "end": 7.7,
+     "start": 6.925,
+     "text": "ledger-client"
+    },
+    {
+     "end": 7.75,
+     "start": 7.7,
+     "text": ")"
+    },
+    {
+     "end": 7.875,
+     "start": 7.75,
      "text": "and"
     },
     {
-     "end": 7.925,
-     "start": 6.65,
+     "end": 9.2,
+     "start": 7.875,
      "text": "TraceRender"
     },
     {
-     "end": 8.15,
-     "start": 7.925,
+     "end": 9.425,
+     "start": 9.2,
      "text": "."
     }
    ]

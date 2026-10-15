@@ -80,6 +80,8 @@ ci:
     bash tools/no-global-fixture-state.sh
     just node-confinement
     just node-confinement-controls
+    just ledger-client-dependencies
+    just ledger-client-dependencies-controls
     just inventory
     just inventory-controls
     just io-ownership-check
@@ -92,7 +94,8 @@ ci:
 # Local bundle for fast local runs (`just ci` stays the local aggregate).
 # Hosted: the Development shell checks job runs application-model,
 # check-presentation, rename-registry-test, no-global-fixture-state,
-# node-confinement, node-confinement-controls, io-ownership-check,
+# node-confinement, node-confinement-controls, ledger-client-dependencies,
+# ledger-client-dependencies-controls, io-ownership-check,
 # io-ownership-controls and lint-controls;
 # whole-repository `just lint` runs in the Development shell build job; `just
 # inventory` runs hosted as the baseline of the Code inventory job's Refuse
@@ -111,6 +114,8 @@ ci-shell:
     bash tools/no-global-fixture-state.sh
     just node-confinement
     just node-confinement-controls
+    just ledger-client-dependencies
+    just ledger-client-dependencies-controls
     just inventory
     just inventory-controls
     just io-ownership-check
@@ -245,3 +250,24 @@ node-confinement:
 # Run the node confinement check's negative and positive controls.
 node-confinement-controls:
     bash tools/node_confinement_controls.sh
+
+# The ledger client core's resolved direct dependencies (its own and those of
+# the common stanzas it imports) are all listed in
+# tools/ledger-client-dependencies.allow, and none is a Singular component, a
+# file, process, POSIX or network package, an HTTP client or server, or a
+# transaction-building package.
+
+# Check the ledger client core library's direct dependencies.
+ledger-client-dependencies:
+    nix run --quiet ./offchain#ledger-client-dependencies-check
+
+# Its controls, on scratch copies of the Cabal file and the allowlist: a
+# planted Singular component, each forbidden package and an unlisted package
+# (literal field, imported common stanza, conditional) fail with the offender
+# named; a missing stanza, common stanza, allowlist or Cabal file is a setup
+# failure.
+# The working tree is never touched.
+
+# Run the ledger client dependency check's negative and positive controls.
+ledger-client-dependencies-controls:
+    nix run --quiet ./offchain#ledger-client-dependencies-controls

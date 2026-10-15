@@ -19,11 +19,11 @@
       "pause": 500
     },
     {
-      "text": "The runtime's owners are three public components. local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
+      "text": "The runtime's owners are four public components. ledger-client owns the provider-independent core of the ledger client — evidence, network time, typed read traces and local script evaluation — and links no signing, wallet, file, process or network code; local-services owns the generic session and the fixed services computed from it; the main library owns the registry's application services and the bounds a command runs under; and koios-http owns the one live terminal composition and its transport. The generic ledger capabilities — the session, its evidence, and the services computed from raw facts — know nothing of a registry's application, and no shipped module names a node.",
       "pause": 400
     },
     {
-      "text": "The first twelve rows live in local-services, the next four in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from local-services' own Haddock tree.",
+      "text": "The first twelve rows live in local-services, except that Evidence, LocalEvaluation, NetworkTime and Trace live in ledger-client, which local-services depends on and re-exports under the same module names; the next four rows live in the main library, the following three in koios-http, and the last in the command line. The trie's own owners — TrieState and its instances — are a separate capability documented with the library's modules in the off-chain API reference; the main library's re-exports of Ledger, LedgerProvider, Evidence and Signing keep their stable import paths, and their generated pages come from the Haddock tree of the library that owns each: Evidence from ledger-client, the other three from local-services.",
       "pause": 400
     }
   ],
@@ -37,11 +37,11 @@
       "pause": 300
     },
     {
-      "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
+      "text": "A read, its evidence or its verdict: LedgerProvider, Evidence or SessionEvidence in local-services, Evidence in ledger-client. The witness type stays a parameter; Demo 1 ships the uninhabited one and the unverified verifier.",
       "pause": 300
     },
     {
-      "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation, NetworkTime or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
+      "text": "Local evaluation or time conversion: SessionServices, LocalEvaluation and NetworkTime (in ledger-client), or TimeMaterial. An adapter supplies facts and cannot select an evaluator or a time converter.",
       "pause": 300
     },
     {
@@ -61,7 +61,7 @@
       "pause": 300
     },
     {
-      "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace and TraceRender.",
+      "text": "What the provider boundary reports: typed events into the tracer the caller hands it — ProviderTrace, Trace (in ledger-client) and TraceRender.",
       "pause": 300
     },
     {
@@ -91,6 +91,6 @@
   ],
   "_source": {
     "file": "offchain-node-ownership.md",
-    "sha256": "ec48f1543771490c3e788ee1764e652af39843045050baabd41d4b04a005e16c"
+    "sha256": "274d2dbadf87688898cbb8cf19382486e944aed2fc5b4624b616db6d61dedbc4"
   }
 }
