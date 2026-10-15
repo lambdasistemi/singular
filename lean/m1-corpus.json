@@ -433,7 +433,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "9ddc8dbaff6da314e25e0f1f9eda0b435c3da111db81f13d2e3585e0be235a96",
+  "payloadSha256": "fe829aa22caee9d117fda5e90b4245533d56acce44f3c1ba960b9945697da4c9",
   "scenarios": [
     {
       "foldWitness": {
@@ -2145,6 +2145,7 @@
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "lean/Main/RejectionReadsState.lean": "d83eba6daaccad9ebf1c842227442c62f9eefc4b3e93ec55fb0800b95dd63fe1",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",

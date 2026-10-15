@@ -33,7 +33,7 @@
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "23d09db8505d035acc43d67e315e721f61215a1c8e22aadd6e38d3834d1ad9b5",
+  "payloadSha256": "6759fad496ddcb1c698ac44db1676054f35fb22ddb5841214279dba11ef844fb",
   "recovery": [
     {
       "detail": true,
@@ -115,6 +115,7 @@
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "lean/Main/RejectionReadsState.lean": "d83eba6daaccad9ebf1c842227442c62f9eefc4b3e93ec55fb0800b95dd63fe1",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
