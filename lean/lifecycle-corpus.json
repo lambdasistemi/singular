@@ -33,7 +33,7 @@
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "22827635a3737d7f7b273dfcab207a8cfd6979af32dfec3a974ecff41e13fdb7",
+  "payloadSha256": "697ff1e9e286b75f27fc253a44dc6daf045c9618fac1e962acc20bb9b6d60f64",
   "recovery": [
     {
       "detail": true,
@@ -114,6 +114,8 @@
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
+    "lean/Main/FoldControls.lean": "527f73c36db54f3bcb713940e57b3132f5a8caadd2bf7393b8d1be9a94d6c7f4",
+    "lean/Main/FoldFixtures.lean": "c100b8cb2778bd343289d861a4ba60bf2f149bc38ec522c22a667741a8a3f886",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
     "lean/Main/Refunds.lean": "7f9a3f16035bb55c89fbcd1b4aad2a3c82567e092e0aa2d3b2a5cbcc7e1bd463",
     "lean/Main/RejectionPreservation.lean": "c3b6f2f7a0bc0bc1ae06901674092fa8b6b0e67d0d40a3db226ae8b02b6e9091",
