@@ -392,7 +392,11 @@ sort -u -o "$scratch/doc.pairs" "$scratch/doc.pairs"
 comm -23 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; do
   cmd=$c1
   f=$rest
-  case $c1 in wallet) read -r verb f <<<"$rest"; cmd="wallet $verb" ;; esac
+  case $c1 in wallet)
+    read -r verb f <<<"$rest"
+    cmd="wallet $verb"
+    ;;
+  esac
   if [ "$b" = singular ]; then
     case $cmd in
       wallet*) echo "undocumented: singular $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
@@ -405,7 +409,11 @@ done
 comm -13 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; do
   cmd=$c1
   f=$rest
-  case $c1 in wallet) read -r verb f <<<"$rest"; cmd="wallet $verb" ;; esac
+  case $c1 in wallet)
+    read -r verb f <<<"$rest"
+    cmd="wallet $verb"
+    ;;
+  esac
   if [ "$b" = singular ]; then
     case $cmd in
       wallet*) echo "documented, not in --help: the settings table gives $f to singular $cmd" >&2 ;;

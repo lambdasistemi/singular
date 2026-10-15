@@ -79,7 +79,10 @@ wrong="a deliberately wrong passphrase"
 vault_flagged() { # vault_flagged --vault PATH --network-magic 1 ...
   local prev=""
   for a in "$@"; do
-    if [ "$prev" = "--vault" ]; then printf '%s' "$a"; return 0; fi
+    if [ "$prev" = "--vault" ]; then
+      printf '%s' "$a"
+      return 0
+    fi
     prev=$a
   done
   return 1
@@ -105,10 +108,19 @@ address_of() { # address_of BINARY DIR PASSPHRASE_FILE -> the address line
   return $rc
 }
 
-fail() { echo "FAIL wallet-vault control '$1': $2" >&2; exit 1; }
-setup_fail() { echo "SETUP-FAIL wallet-vault control '$1': $2" >&2; exit 2; }
+fail() {
+  echo "FAIL wallet-vault control '$1': $2" >&2
+  exit 1
+}
+setup_fail() {
+  echo "SETUP-FAIL wallet-vault control '$1': $2" >&2
+  exit 2
+}
 
-fresh() { rm -rf "$scratch/run"; mkdir -p "$scratch/run"; }
+fresh() {
+  rm -rf "$scratch/run"
+  mkdir -p "$scratch/run"
+}
 
 # An overwriting variant: a create refused because the vault exists has
 # its obstacle removed and the create retried — the defect the
