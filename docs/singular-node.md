@@ -16,10 +16,10 @@ no coherent chain snapshot and carries no verification witness.
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--koios-url URL` | all six singular commands and all six open-datum commands | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. |
-| `--koios-token-file FILE` | all six singular commands and all six open-datum commands | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
-| `--network-time DIR` | all six singular commands and all six open-datum commands | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
-| `--network-magic N` | all six singular commands and all six open-datum commands | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. |
+| `--koios-url URL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. |
+| `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
+| `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
+| `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. |
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. |
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
@@ -27,7 +27,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--confirm-timeout SECONDS` | the four singular writes and the five open-datum writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
 | `--state-dir ROOT` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. |
 | `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect`, `describe` | The registry, by its state token: the policy and the name in hex, as `create` prints it. Read from `SINGULAR_STATE_TOKEN` when the flag is absent; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
-| `--blueprint PLUTUS_JSON` | all six singular commands and all six open-datum commands | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--blueprint PLUTUS_JSON` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate`, `inspect` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. On `inspect` it locates the managed journal that address's wallet reconciles, with the same lock-or-skip semantics as a write; without it `inspect` is a stateless chain read that checks no wallet journal and creates no state. |
 | `--seed TXID#IX` or `--preview` | `create` | The output the new registry is booted from, which fixes its identity: your wallet's largest ada-only output when a live state carrier exists, or the first publication's change when the state script must be published (preview names it before anything is submitted). An explicit `--seed` names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused — omit `--seed` and the first publication's change becomes the seed. |
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
@@ -41,10 +41,12 @@ no coherent chain snapshot and carries no verification witness.
 | `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the provider; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
 | `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
+| `--vault FILE` | `singular wallet create`, `singular wallet address` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` opens it. |
+| `--passphrase-fd FD` | `singular wallet create`, `singular wallet address` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening — and a differing confirmation is refused. The passphrase itself is never taken as an argument, and no output, refusal or trace names it. |
 | `--json` | `singular describe` | Print the registry page as JSON for a program to read; without it the page prints as text for a person. A success prints the page alone and writes no file. |
-| `--trace LEVEL` | all six singular commands and all six open-datum commands | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
-| `--trace-to SINK` | all six singular commands and all six open-datum commands | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
-| `--trace-format FORMAT` | all six singular commands and all six open-datum commands | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
+| `--trace LEVEL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
+| `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
+| `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
 
 The URL, network magic and signing key travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
@@ -60,6 +62,59 @@ open-datum insert --state-dir ./work --blueprint plutus.json \
   --koios-url "$koios_url" --network-magic 1 \
   --wallet-skey ~/keys/payment.skey
 ```
+
+## Keeping your signing key in an encrypted vault
+
+As Alice, I keep my payment signing key in one encrypted file instead of
+a plaintext key on disk. I run `singular wallet create` naming a new vault
+and a network, type a passphrase twice, and see my address on one line:
+
+```sh
+singular wallet create --vault alice.vault --network-magic 1
+```
+
+My key exists only inside that file: nothing else is written, no public
+part is kept beside it, and reading my address later means opening the
+vault — the same address prints, from the same passphrase:
+
+```sh
+singular wallet address --vault alice.vault --network-magic 1
+```
+
+A script supplies the passphrase on an inherited file descriptor, one
+line, and is never asked for a confirmation:
+
+```sh
+singular wallet create --vault alice.vault --network-magic 1 --passphrase-fd 9
+```
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant A as Alice
+    participant V as alice.vault
+    A->>A: Draw a fresh signing key from entropy
+    A->>V: Seal the key with the passphrase (scrypt 18)
+    V-->>A: Print the enterprise address
+    A->>V: Open with the same passphrase
+    V-->>A: The same address
+```
+
+Creating over an existing path — a symbolic link included — is refused
+with that path's bytes untouched; the vault file is made readable by its
+owner only, and a write that fails removes the file it made. A wrong
+passphrase, a corrupt file and a file that is not a vault all answer one
+refusal naming no secret, nothing prints on standard output, and the
+empty passphrase is refused at birth. Every creation draws a fresh key
+from the operating system's entropy: fresh entropy for every vault.
+
+The vault is an ordinary age file, one passphrase recipient with scrypt
+work factor 18, holding the key's standard text envelope as its
+plaintext. Any age tool opens it with the passphrase and yields the
+envelope: `age --decrypt alice.vault` asks for the passphrase on the
+terminal and prints the plaintext, and the decrypted bytes are the
+`cardano-cli` key format itself, accepted wherever a signing-key file
+is read.
 
 ## Naming the registry by its state token
 

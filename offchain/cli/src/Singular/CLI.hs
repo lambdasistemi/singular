@@ -28,6 +28,8 @@ import Singular.CLI.Command
     , ReclaimArgs (..)
     , RejectArgs (..)
     , usage
+    , walletAddressCommand
+    , walletCreateCommand
     )
 import Singular.CLI.Create (createApplication, runCreate)
 import Singular.CLI.Describe (runDescribeCommand)
@@ -66,3 +68,5 @@ runRegistryCommand app env = \case
             (inspectReceipt a)
             (runInspect app env a)
     Describe a -> runDescribeCommand app env a
+    WalletCreate a -> walletCreateCommand a
+    WalletAddress a -> walletAddressCommand a

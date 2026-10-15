@@ -449,6 +449,7 @@ offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv newIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
+offchain/test/Singular/CLI/VaultSpec.hs exclusiveCreation link 5
 offchain/test/Singular/Provider/Koios/FakeServer.hs app IORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs app atomicModifyIORef' 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs withFakeKoios newIORef 1

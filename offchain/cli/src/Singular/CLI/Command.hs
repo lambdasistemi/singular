@@ -39,6 +39,7 @@ module Singular.CLI.Command
     , ProviderSettings (..)
     , RejectArgs (..)
     , ReclaimArgs (..)
+    , WalletArgs (..)
     , WriteSettings (..)
     , RegistryAccess (..)
     , Key (..)
@@ -55,6 +56,10 @@ module Singular.CLI.Command
     , usage
     , maxKeyBytes
     , keyFlags
+
+      -- * The wallet verbs
+    , walletCreateCommand
+    , walletAddressCommand
     ) where
 
 import Control.Monad (forM_, unless, when)
@@ -73,9 +78,13 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Word (Word32)
 import GHC.Generics (Generic)
+import System.Exit (ExitCode (..))
+import System.IO (hPutStrLn, stderr)
 import Text.Read (readMaybe)
 
+import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Ledger.TxIn (TxIn)
 import Singular.CLI.FlagGroup
     ( commonFlagGroup
@@ -91,8 +100,22 @@ import Singular.CLI.Key
     , maxKeyBytes
     , readKey
     )
+import Singular.CLI.Passphrase
+    ( Confirmation (..)
+    , PassphraseSource (..)
+    , readPassphrase
+    , renderPassphraseRefusal
+    )
 import Singular.CLI.Registry (economics)
 import Singular.CLI.Trace (TraceRequest (..))
+import Singular.CLI.Vault
+    ( createVaultFile
+    , freshSignKey
+    , openVault
+    , renderVaultRefusal
+    , sealVault
+    , vaultWorkFactor
+    )
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
@@ -100,6 +123,11 @@ import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
     , parseStateToken
+    )
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , walletFromSignKey
     )
 
 -- | A registry key: the bytes the leaf and the active token are named by.
@@ -292,6 +320,21 @@ data InspectArgs = InspectArgs
     }
     deriving stock (Eq, Show)
 
+{- | @wallet create@ and @wallet address@: the vault path, the network
+the address is built for, and the passphrase source — the terminal,
+absent, or the inherited descriptor named. No flag takes the
+passphrase itself.
+-}
+data WalletArgs = WalletArgs
+    { walletVaultPath :: FilePath
+    -- ^ The encrypted vault file, created by @wallet create@ alone
+    , walletNetworkMagic :: Word32
+    -- ^ The network the address is built for
+    , walletPassphraseFd :: Maybe Int
+    -- ^ @--passphrase-fd N@: the inherited descriptor read for the passphrase
+    }
+    deriving stock (Eq, Show)
+
 -- | One parsed command line.
 data Command
     = Help
@@ -301,6 +344,8 @@ data Command
     | Reject RejectArgs
     | Reclaim ReclaimArgs
     | Inspect InspectArgs
+    | WalletCreate WalletArgs
+    | WalletAddress WalletArgs
     deriving stock (Eq, Show, Generic)
 
 -- | Why a command line was refused before anything ran.
@@ -350,9 +395,17 @@ parseWithGroup group environment args = do
             refuseWindows words' flags
                 >> refuseOutputsAt words' flags
                 >> refuseJson words' jsonSwitch
+                >> refuseWalletSettings words' flags
                 >> case words' of
                     [] -> Right Help
                     ["registry"] -> Right Help
+                    ["wallet"] -> Right Help
+                    ["wallet", "create"] ->
+                        refuseWalletCommandSettings "wallet create" flags
+                            >> (WalletCreate <$> walletArgs flags)
+                    ["wallet", "address"] ->
+                        refuseWalletCommandSettings "wallet address" flags
+                            >> (WalletAddress <$> walletArgs flags)
                     ["registry", "create"] ->
                         refuseSpendingFlags "create" flags
                             >> refuseRequest flags
@@ -430,6 +483,32 @@ parseWithGroup group environment args = do
                     "--fold"
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
+    -- The wallet flags belong to the wallet verbs alone; a registry
+    -- command refuses either by name rather than ignore it.
+    refuseWalletSettings words' flags =
+        unless (take 1 words' == ["wallet"]) $
+            forM_ ["--vault", "--passphrase-fd"] $ \flag ->
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            "is a wallet flag: only singular wallet commands read it"
+                        )
+    -- A wallet command takes its own three flags and nothing else from
+    -- the shared group: every other setting is refused by name rather
+    -- than ignored.
+    refuseWalletCommandSettings command flags =
+        forM_ (commonFlagGroup <> extraValuedFlags) $ \flag ->
+            unless (flag `elem` ["--network-magic", "--vault", "--passphrase-fd"]) $
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            ( "is not accepted by "
+                                <> command
+                                <> ": a wallet command takes only its vault, network magic and passphrase descriptor"
+                            )
+                        )
     -- @--application-policy@ pins what @registry create@ boots; any other
     -- command refuses it by name rather than ignore it.
     refuseApplicationPolicy flags =
@@ -732,6 +811,23 @@ parseWithGroup group environment args = do
     readKeyAs encoding argument =
         Key <$> first KeyRefused (readKey encoding (T.pack argument))
     isSurrogate c = generalCategory c == Surrogate
+    walletArgs flags = do
+        vault <- required "--vault" flags
+        magicText <- required "--network-magic" flags
+        magic <-
+            maybe (Left (BadValue "--network-magic" "not a number")) Right $
+                readMaybe magicText
+        fd <- case optional "--passphrase-fd" flags of
+            Nothing -> Right Nothing
+            Just spelling -> case readMaybe spelling of
+                Just n | n >= 0 -> Right (Just n)
+                _ -> Left (BadValue "--passphrase-fd" "not a descriptor number")
+        pure
+            WalletArgs
+                { walletVaultPath = vault
+                , walletNetworkMagic = magic
+                , walletPassphraseFd = fd
+                }
     required name flags = case lookup name flags of
         Just (Just v) -> Right v
         _ -> Left (MissingFlag name)
@@ -767,7 +863,7 @@ The one valued flag this binary owns beyond the common group: create
 pins an application policy, and no other command reads it.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = ["--application-policy"]
+extraValuedFlags = ["--application-policy", "--vault", "--passphrase-fd"]
 
 {- | Split the @--json@ switch off a command line: describe reads it, no
 other command takes it. Only the exact switch is taken; anything else
@@ -842,6 +938,8 @@ usage =
         , "      [--wallet-address ADDR]"
         , "  singular registry describe --blueprint PLUTUS_JSON --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N [--json]"
+        , "  singular wallet create --vault FILE --network-magic N [--passphrase-fd FD]"
+        , "  singular wallet address --vault FILE --network-magic N [--passphrase-fd FD]"
         , ""
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
@@ -863,9 +961,17 @@ usage =
         , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
         , "the command stops with its submission journalled and never resubmits."
         , "Every command uses Koios; former backend selectors and socket settings are refused."
-        , "Every command also takes --koios-token-file FILE for a bearer credential;"
+        , "The wallet commands are local: they take no provider, blueprint or registry"
+        , "setting, and refuse each by name. A wallet command draws a fresh payment"
+        , "signing key from the operating system's entropy, seals it into the vault"
+        , "path with the passphrase, and prints the enterprise address of the key for"
+        , "the network named; opening the same vault with the same passphrase prints"
+        , "the same address. The passphrase is read from the terminal with the echo"
+        , "off, twice on a creation, or as one line from an inherited descriptor. It"
+        , "is never taken as an argument, and no output, refusal or trace names it."
+        , "Every registry command also takes --koios-token-file FILE for a bearer credential;"
         , "the shared HTTP client reads it without exposing a command-line token."
-        , "Every command also takes --network-time DIR for pinned time-manifest.json,"
+        , "Every registry command also takes --network-time DIR for pinned time-manifest.json,"
         , "shelley-genesis.json and era-history.cbor; preprod uses the package when omitted."
         , "Every command also takes --trace off|what|how, --trace-to stderr|file:PATH and --trace-format text|json:"
         , "it narrates its protocol steps, and at how their mechanics, to each sink named, the"
@@ -921,6 +1027,70 @@ neededRoles = \case
     Reject _ -> Set.fromList [RoleState, RoleRequest]
     Reclaim _ -> Set.empty
     Inspect _ -> Set.empty
+    WalletCreate _ -> Set.empty
+    WalletAddress _ -> Set.empty
     Help -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]
+
+-- * The wallet verbs
+
+-- | Where a wallet command's passphrase comes from.
+passphraseSource :: Maybe Int -> PassphraseSource
+passphraseSource = maybe PassphraseTerminal PassphraseDescriptor
+
+-- | The enterprise address of a key on a network, as one printed line.
+addressOf :: Word32 -> SignKeyDSIGN Ed25519DSIGN -> String
+addressOf magic key =
+    bech32Address (walletAddr (walletFromSignKey magic key))
+
+{- | @wallet create@: draw a fresh signing key, seal it into a new
+vault with the passphrase asked twice (echo off on a terminal, one
+line from a descriptor), and print the key's enterprise address on one
+standard output line. Every refusal names its cause on standard error,
+prints nothing on standard output, and removes any file this run made.
+-}
+walletCreateCommand :: WalletArgs -> IO ExitCode
+walletCreateCommand WalletArgs{..} =
+    readPassphrase AskTwice (passphraseSource walletPassphraseFd) >>= \case
+        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+        Right passphrase -> do
+            key <- freshSignKey
+            sealed <- sealVault vaultWorkFactor passphrase key
+            case sealed of
+                Left refusal -> walletRefused (renderVaultRefusal refusal)
+                Right bytes ->
+                    createVaultFile walletVaultPath bytes >>= \case
+                        Left refusal -> walletRefused (renderVaultRefusal refusal)
+                        Right () -> do
+                            putStrLn (addressOf walletNetworkMagic key)
+                            pure ExitSuccess
+
+{- | @wallet address@: open the vault with the passphrase asked once,
+and print exactly the address @wallet create@ printed for the same
+network.
+-}
+walletAddressCommand :: WalletArgs -> IO ExitCode
+walletAddressCommand WalletArgs{..} =
+    readPassphrase AskOnce (passphraseSource walletPassphraseFd) >>= \case
+        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+        Right passphrase -> do
+            bytes <- BS.readFile walletVaultPath
+            case openVault passphrase bytes of
+                Left _ ->
+                    walletRefused
+                        ( "cannot open vault "
+                            <> walletVaultPath
+                            <> ": wrong passphrase, corrupt file, or not a singular vault"
+                        )
+                Right key -> do
+                    putStrLn (addressOf walletNetworkMagic key)
+                    pure ExitSuccess
+
+{- | One line on standard error naming the cause, nothing on standard
+output, exit 1. No refusal names the passphrase or the key.
+-}
+walletRefused :: String -> IO ExitCode
+walletRefused line = do
+    hPutStrLn stderr ("singular: " <> line)
+    pure (ExitFailure 1)

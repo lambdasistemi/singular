@@ -210,9 +210,10 @@ fresh
 stand_in_od 's/^Each command prints one JSON receipt/Each command (--stray) prints one JSON receipt/'
 expect unattributed-flag-od 1 '^open-datum --help prints a flag no command takes: --stray'
 
-# An empty side is a setup failure, never a pass.
+# An empty side is a setup failure, never a pass. Both verb groups go:
+# the wallet lines are commands too (#638).
 fresh
-stand_in_singular 's/^  singular registry /  other /'
+stand_in_singular 's/^  singular registry /  other /; s/^  singular wallet /  other wallet /'
 expect empty-help 2 '^EMPTY EXTENT: singular --help names no registry command'
 
 fresh
@@ -285,4 +286,19 @@ for verb in insert update terminate; do
   echo "control removed-$verb: exit $got, refused as unknown"
 done
 
-echo "PASS cli-flags-controls: 32 controls over ${#pages[@]} pages"
+# The wallet verbs, both directions (#638): a flag the wallet usage lines
+# print that the settings table never mentions, and a table row giving a
+# flag the wallet commands' --help does not print.
+fresh
+stand_in_singular 's/^  singular wallet create --vault FILE/  singular wallet create --vault FILE --planted-wallet X/'
+expect undocumented-wallet-flag 1 '^undocumented: singular wallet create takes --planted-wallet'
+
+fresh
+sed -i '/^| `--vault FILE`/i | `--ghost-wallet-flag X` | `singular wallet create`, `singular wallet address` | A flag the binary does not take. |' "$table"
+grep -q 'ghost-wallet-flag' "$table" || {
+  echo "SETUP-FAIL: the ghost wallet row did not apply" >&2
+  exit 2
+}
+expect documented-missing-wallet 1 '^documented, not in --help: the settings table gives --ghost-wallet-flag to singular wallet create'
+
+echo "PASS cli-flags-controls: 34 controls over ${#pages[@]} pages"

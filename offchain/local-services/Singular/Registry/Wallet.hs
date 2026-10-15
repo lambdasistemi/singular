@@ -4,6 +4,8 @@ No process mode, generated wallet or node connection belongs to this module.
 module Singular.Registry.Wallet
     ( Wallet (..)
     , loadWallet
+    , parseSignKey
+    , walletFromSignKey
     , bech32Address
     ) where
 
@@ -43,36 +45,38 @@ data Wallet = Wallet
     }
 
 {- | Load a payment signing key from a file and derive its enterprise
-address for the given magic.
-
-Accepts the @cardano-cli@ text envelope (a JSON object with a
-@cborHex@ field holding the CBOR byte string @5820\<32 bytes\>@), the
-same value as bare hex, and the 32 raw key bytes. The key is never
-logged.
+address for the given magic: the file's bytes through 'parseSignKey',
+the key through 'walletFromSignKey'. Accepts the @cardano-cli@ text
+envelope (a JSON object with a @cborHex@ field holding the CBOR byte
+string @5820\<32 bytes\>@), the same value as bare hex, and the 32 raw
+key bytes. The key is never logged.
 -}
 loadWallet :: Word32 -> FilePath -> IO Wallet
 loadWallet magic path = do
     raw <- BS.readFile path
-    keyBytes <-
-        either (throwIO . ErrorCall . prefix) pure (signKeyBytes raw)
-    sk <- case rawDeserialiseSignKeyDSIGN keyBytes of
-        Just sk -> pure sk
-        Nothing ->
-            throwIO
-                (ErrorCall (prefix "the 32 bytes are not a valid Ed25519 signing key"))
-    let net = if magic == 764824073 then Mainnet else Testnet
-    pure
-        Wallet
-            { walletAddr =
-                Addr
-                    net
-                    (KeyHashObj (hashKey (VKey (deriveVerKeyDSIGN sk))))
-                    StakeRefNull
-            , walletSignKey = sk
-            , walletNetwork = net
-            }
+    key <-
+        either (throwIO . ErrorCall . prefix) pure (parseSignKey raw)
+    pure (walletFromSignKey magic key)
   where
     prefix msg = "wallet signing key " <> path <> ": " <> msg
+
+{- | The wallet of a signing key on the network the magic names: its
+enterprise address. The magic selects mainnet at 764824073 and a test
+network otherwise. Pure.
+-}
+walletFromSignKey :: Word32 -> SignKeyDSIGN Ed25519DSIGN -> Wallet
+walletFromSignKey magic key =
+    Wallet
+        { walletAddr =
+            Addr
+                net
+                (KeyHashObj (hashKey (VKey (deriveVerKeyDSIGN key))))
+                StakeRefNull
+        , walletSignKey = key
+        , walletNetwork = net
+        }
+  where
+    net = if magic == 764824073 then Mainnet else Testnet
 
 -- | The 32 raw key bytes carried by a signing-key file.
 signKeyBytes :: ByteString -> Either String ByteString
@@ -103,6 +107,21 @@ signKeyBytes raw
         | BS.length bytes == 32 = Right bytes
         | otherwise =
             Left ("expected 32 key bytes, found " <> show (BS.length bytes))
+
+{- | The 32 raw key bytes of a signing-key file, as a parsed signing
+key: the same three spellings 'loadWallet' accepts today — the
+@cardano-cli@ text envelope (a JSON object with a @cborHex@ field
+holding the CBOR byte string @5820\<32 bytes\>@), the same value as
+bare hex, and the 32 raw key bytes — and the same error texts, without
+the file's own name. Pure.
+-}
+parseSignKey
+    :: ByteString -> Either String (SignKeyDSIGN Ed25519DSIGN)
+parseSignKey raw = do
+    keyBytes <- signKeyBytes raw
+    case rawDeserialiseSignKeyDSIGN keyBytes of
+        Just key -> Right key
+        Nothing -> Left "the 32 bytes are not a valid Ed25519 signing key"
 
 {- | Bech32 rendering of an address, the form a faucet and an explorer
 accept (CIP-5: @addr_test@ on a test network, @addr@ on mainnet).

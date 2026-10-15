@@ -1,0 +1,30 @@
+{
+  "modules-for-the-wallet-vault": [
+    {
+      "text": "Modules for the wallet vault.",
+      "pause": 500
+    }
+  ],
+  "changed-responsibilities": [
+    {
+      "text": "The wallet module gains two pure helpers. A new vault module owns the encrypted file and is the only module that links the age library. A new passphrase module reads a passphrase. The command module gains the wallet verbs.",
+      "pause": 500
+    }
+  ],
+  "ownership": [
+    {
+      "text": "The vault file belongs to the command that creates it. Entropy and file creation are effects at the command boundary. No state is kept after exit.",
+      "pause": 500
+    }
+  ],
+  "not-changed": [
+    {
+      "text": "Write commands, the session, the lifecycle, the wallet key flag, and the fold and preparation modules are unchanged.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "b43afa40dda09a0ed1314d1bb4b02bfa2683de5d70b8df8e74739c1a6e0e7877"
+  }
+}

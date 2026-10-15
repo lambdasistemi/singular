@@ -1,0 +1,36 @@
+{
+  "plan-for-the-wallet-vault": [
+    {
+      "text": "Plan for the wallet vault, issue 638.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "The vault is an age file with a scrypt passphrase recipient, holding the key's standard text envelope. No public part is stored. The passphrase comes from a terminal prompt or a file descriptor. Lean is silent.",
+      "pause": 500
+    }
+  ],
+  "slices": [
+    {
+      "text": "Two slices: the vault core with its unit specs, then the wallet command with documentation and packaged controls.",
+      "pause": 500
+    }
+  ],
+  "hosted-evidence": [
+    {
+      "text": "Unit specs run in the existing required off-chain suite job. The packaged controls are a new step of the existing flags and refusal controls job. The interactive prompt is not executed in hosted checks.",
+      "pause": 500
+    }
+  ],
+  "gate": [
+    {
+      "text": "The gate is made of existing hosted commands, each as its workflow step runs it, plus the new vault controls step.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "b50ae51f420a111fbd36cd2b344906d40d984f72f62011cbf01e04bca23fb22b"
+  }
+}

@@ -16,6 +16,7 @@ import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
+import Singular.CLI.VaultSpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
 import Singular.Provider.Koios.HttpSpec qualified
 import Singular.Provider.Koios.ProviderSpec qualified
@@ -207,6 +208,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec
+    describe
+        (tagged "Singular.CLI.Vault" [Cli, Wallet])
+        Singular.CLI.VaultSpec.spec
     describe
         (tagged "Singular.Provider.Koios.Client" [Provider])
         Singular.Provider.Koios.ClientSpec.spec
