@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.Application.OpenDatum.Value
 Description : The open-datum application value the command line composes
@@ -11,8 +13,14 @@ envelope way. The command line composes this value and hands it to the
 library; no registry code names this module.
 -}
 module Singular.Application.OpenDatum.Value
-    ( -- * The value
-      openDatumApplication
+    ( -- * The mode
+      Mode (..)
+    , modeTitle
+    , applicationIn
+    , closedDatumApplication
+
+      -- * The value
+    , openDatumApplication
     ) where
 
 import Data.Bifunctor (first)
@@ -59,13 +67,35 @@ import Singular.Registry.Ledger
 import Singular.Registry.TxBuilder.Internal (scriptHashBytes)
 import Singular.Registry.Types (OnChainRequest (..))
 
--- | The open-datum application value.
+-- | Which of the two entry points of the application a registry runs.
+data Mode = Open | Closed
+    deriving stock (Eq, Show, Ord, Bounded, Enum)
+
+-- | The blueprint title a mode pins: injective, one per mode.
+modeTitle :: Mode -> T.Text
+modeTitle = \case
+    Open -> "open_datum.open_datum"
+    Closed -> "open_datum.closed_datum"
+
+-- | The application value for a mode: the open value with the mode's pin title.
+applicationIn :: Mode -> Application
+applicationIn mode = mkApplication (modeTitle mode)
+
+-- | The closed-datum application value: the open one with a different pin title.
+closedDatumApplication :: Application
+closedDatumApplication = applicationIn Closed
+
+-- | The open-datum application value: the constant every other module names.
 openDatumApplication :: Application
-openDatumApplication =
+openDatumApplication = mkApplication "open_datum.open_datum"
+
+-- | One application value, a mode that picks its pin.
+mkApplication :: T.Text -> Application
+mkApplication title =
     Application
         { appName = Just "open-datum"
         , appExecutable = Just "open-datum"
-        , appPin = PinByScript "open_datum.open_datum"
+        , appPin = PinByScript title
         , appDecoder = Just (Decoder (first T.pack . decodeHolding))
         , appHolding =
             Just

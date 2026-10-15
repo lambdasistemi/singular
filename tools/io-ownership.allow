@@ -62,6 +62,7 @@ offchain/journey/retirement/Main.hs: ioref — owner=one journey command; lifeti
 
 # ---- tests and harness: owned by the test run, joined before the example ends ----
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/ApplicationSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/ClosedModeSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; loader-request refs accumulated for assertions, the only way to show the closed code is not asked for after a failed mode read
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/BuildersSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/BurnSourceSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; fixture refs accumulated for assertions

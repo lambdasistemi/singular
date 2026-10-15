@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {- |
 Module      : Singular.Application.OpenDatum.Run
@@ -9,14 +10,29 @@ License     : Apache-2.0
 'runOpenDatum' dispatches the open-datum commands and help. Each
 command prints one receipt as JSON on standard output (and to
 @--receipt FILE@ when given) and ends with the exit status of its
-outcome class ("Singular.CLI.Finish"). Create, fold and inspect are thin
-calls to the library with the open-datum value; insert, update and
-terminate are the entry commands this package owns.
+outcome class ("Singular.CLI.Finish"). Create uses the mode's value;
+every later command reads the mode from the chain and follows it, refusing
+an update on a closed registry before anything is built or signed.
 -}
 module Singular.Application.OpenDatum.Run
     ( runOpenDatum
+    , ModeRefusal (..)
+    , modeOfRecordedPolicy
+    , registryMode
+    , followingMode
+    , closedUpdateRefusal
     ) where
 
+import Control.Exception
+    ( SomeAsyncException
+    , SomeException
+    , fromException
+    , throwIO
+    , try
+    )
+import Data.ByteString (ByteString)
+import Data.ByteString.Short qualified as SBS
+import Data.Text qualified as T
 import System.Exit (ExitCode (..))
 
 import Singular.Application.OpenDatum.Command
@@ -28,56 +44,246 @@ import Singular.Application.OpenDatum.Entry
     , runTerminate
     , runUpdate
     )
-import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Application.OpenDatum.Value
+    ( Mode (..)
+    , applicationIn
+    , closedDatumApplication
+    , modeTitle
+    )
 import Singular.CLI.Command
     ( CreateArgs (..)
     , EntryArgs (..)
+    , EntryMode (..)
     , FoldArgs (..)
     , InspectArgs (..)
+    , RegistryAccess (..)
+    , WriteSettings (..)
     )
 import Singular.CLI.Create (runCreate)
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFold)
 import Singular.CLI.Inspect (runInspect)
-import Singular.CLI.Session (Env (..))
+import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Session
+    ( Env (..)
+    , failWith
+    , readOnce
+    )
+import Singular.Registry.Application (ApplicationPin (..), applyPin)
+import Singular.Registry.Config.Application ()
+import Singular.Registry.Ledger (AssetName (..))
+import Singular.Registry.LedgerProvider (Asset)
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.StateToken
+    ( Release (..)
+    , findStateOutput
+    , renderIdentityRefusal
+    , renderStateToken
+    )
+import Singular.Registry.TxBuilder.Internal
+    ( computeScriptHash
+    , scriptHashBytes
+    )
+import Singular.Registry.Types (stateAppPolicyBytes)
+import Singular.Registry.WaitTypes (WaitFailure)
+
+-- | Why a mode was not read.
+data ModeRefusal
+    = ReleaseUnreadable String
+    | StateUnreadable String
+    | UnrecognisedPolicy ByteString
+    deriving stock (Eq, Show)
+
+-- | The mode for a recorded policy: total, never choosing an absent or unequal derivation.
+modeOfRecordedPolicy
+    :: ByteString
+    -> ByteString
+    -> Maybe ByteString
+    -> Either ModeRefusal Mode
+modeOfRecordedPolicy recorded openDerived closedDerived
+    | recorded == openDerived = Right Open
+    | Just closed <- closedDerived
+    , recorded == closed =
+        Right Closed
+    | otherwise = Left (UnrecognisedPolicy recorded)
+
+-- | Read the registry's mode from the chain through the state token.
+registryMode
+    :: Env
+    -> ProviderSettings
+    -> FilePath
+    -> Asset
+    -> IO (Either ModeRefusal Mode)
+registryMode env settings blueprint token = do
+    openTried <-
+        try (envLoadRelease env (applicationIn Open) blueprint)
+            :: IO (Either SomeException (Either String Release))
+    openRelease <- case openTried of
+        Left (e :: SomeException)
+            | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+            | Just (_ :: WaitFailure) <- fromException e -> throwIO e
+            | otherwise -> pure (Left (ReleaseUnreadable (show e)))
+        Right (Left err) -> pure (Left (ReleaseUnreadable err))
+        Right (Right rel) -> pure (Right rel)
+    case openRelease of
+        Left refusal -> pure (Left refusal)
+        Right openRel -> do
+            closedTried <-
+                try (envLoadRelease env (applicationIn Closed) blueprint)
+                    :: IO (Either SomeException (Either String Release))
+            closedRel <- case closedTried of
+                Left (e :: SomeException)
+                    | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                    | Just (_ :: WaitFailure) <- fromException e -> throwIO e
+                    | otherwise -> pure Nothing
+                Right (Left _) -> pure Nothing
+                Right (Right rel) -> pure (Just rel)
+            found <-
+                try
+                    (readOnce env settings ["state"] (\_ v -> findStateOutput token v))
+            case found of
+                Left (e :: SomeException)
+                    | Just (_ :: SomeAsyncException) <- fromException e -> throwIO e
+                    | Just (_ :: WaitFailure) <- fromException e -> throwIO e
+                    | otherwise -> pure (Left (StateUnreadable (show e)))
+                Right stated -> case stated of
+                    Left refusal ->
+                        pure
+                            (Left (StateUnreadable (T.unpack (renderIdentityRefusal refusal))))
+                    Right (_, _, datum) -> do
+                        let recorded = stateAppPolicyBytes datum
+                            (_, AssetName name) = token
+                            tokenName = SBS.fromShort name
+                            openId =
+                                scriptHashBytes (computeScriptHash (releaseState openRel))
+                                    <> tokenName
+                            (openPolicy, _) =
+                                applyPin
+                                    (PinByScript (modeTitle Open))
+                                    openId
+                                    (releaseCodes openRel)
+                            closedPolicy = case closedRel of
+                                Nothing -> Nothing
+                                Just closedR ->
+                                    let closedId =
+                                            scriptHashBytes (computeScriptHash (releaseState closedR))
+                                                <> tokenName
+                                        (pol, _) =
+                                            applyPin
+                                                (PinByScript (modeTitle Closed))
+                                                closedId
+                                                (releaseCodes closedR)
+                                    in  Just (SBS.fromShort pol)
+                            openBytes = SBS.fromShort openPolicy
+                        pure (modeOfRecordedPolicy recorded openBytes closedPolicy)
+
+-- | The environment that follows a mode: open returns what it was given.
+followingMode :: Mode -> Env -> Env
+followingMode Open env = env
+followingMode Closed env =
+    env
+        { envLoadRelease = \_app blueprint ->
+            envLoadRelease env closedDatumApplication blueprint
+        }
+
+-- | The plain message an update on a closed registry stops with.
+closedUpdateRefusal :: Asset -> String
+closedUpdateRefusal token =
+    "the registry "
+        <> T.unpack (renderStateToken token)
+        <> " is closed: a payload is written once, and an update is refused"
 
 -- | Run one open-datum command in the environment the entry point composed.
 runOpenDatum :: Env -> OpenDatumCommand -> IO ExitCode
 runOpenDatum env = \case
     OpenHelp -> putStr openDatumUsage >> pure ExitSuccess
-    OpenCreate a ->
+    OpenCreate mode a ->
         finish
             (envTracer env)
             "create"
             (createReceipt a)
-            (runCreate openDatumApplication env a)
-    OpenInsert a ->
+            (runCreate (applicationIn mode) env a)
+    OpenInsert a -> do
+        (_, modeEnv) <- readModeFor env a
         finish
-            (envTracer env)
+            (envTracer modeEnv)
             "insert"
             (entryReceipt a)
-            (runInsert env a)
-    OpenUpdate a ->
+            (runInsert modeEnv a)
+    OpenUpdate a -> do
+        (mode, modeEnv) <- readModeFor env a
+        case mode of
+            Closed ->
+                finish
+                    (envTracer env)
+                    "update"
+                    (entryReceipt a)
+                    (failWithUpdateClosed a)
+            Open ->
+                finish
+                    (envTracer modeEnv)
+                    "update"
+                    (entryReceipt a)
+                    (runUpdate modeEnv a)
+    OpenTerminate a -> do
+        (_, modeEnv) <- readModeFor env a
         finish
-            (envTracer env)
-            "update"
-            (entryReceipt a)
-            (runUpdate env a)
-    OpenTerminate a ->
-        finish
-            (envTracer env)
+            (envTracer modeEnv)
             "terminate"
             (entryReceipt a)
-            (runTerminate env a)
-    OpenFold a ->
+            (runTerminate modeEnv a)
+    OpenFold a -> do
+        (mode, modeEnv) <- readModeForFold env a
         finish
-            (envTracer env)
+            (envTracer modeEnv)
             "fold"
             (foldReceipt a)
-            (runFold openDatumApplication env a)
-    OpenInspect a ->
+            (runFold (applicationIn mode) modeEnv a)
+    OpenInspect a -> do
+        (mode, modeEnv) <- readModeForInspect env a
         finish
-            (envTracer env)
+            (envTracer modeEnv)
             "inspect"
             (inspectReceipt a)
-            (runInspect openDatumApplication env a)
+            (runInspect (applicationIn mode) modeEnv a)
+  where
+    failWithUpdateClosed :: EntryArgs -> IO a
+    failWithUpdateClosed args =
+        failWith
+            ClientRefusal
+            (closedUpdateRefusal (accessToken (entryAccess args)))
+
+-- | Read the mode for an entry command (insert, update, terminate).
+readModeFor :: Env -> EntryArgs -> IO (Mode, Env)
+readModeFor env a = do
+    let settings = case entryMode a of
+            Submit ws -> writeProvider ws
+            Preview prov _ -> prov
+        blueprint = entryBlueprint a
+        token = accessToken (entryAccess a)
+    modeOrRefusal <- registryMode env settings blueprint token
+    case modeOrRefusal of
+        Right mode -> pure (mode, followingMode mode env)
+        Left _ -> pure (Open, env)
+
+-- | Read the mode for a fold.
+readModeForFold :: Env -> FoldArgs -> IO (Mode, Env)
+readModeForFold env a = do
+    let settings = writeProvider (foldWrite a)
+        blueprint = foldBlueprint a
+        token = accessToken (foldAccess a)
+    modeOrRefusal <- registryMode env settings blueprint token
+    case modeOrRefusal of
+        Right mode -> pure (mode, followingMode mode env)
+        Left _ -> pure (Open, env)
+
+-- | Read the mode for an inspect.
+readModeForInspect :: Env -> InspectArgs -> IO (Mode, Env)
+readModeForInspect env a = do
+    let settings = inspectProvider a
+        blueprint = inspectBlueprint a
+        token = accessToken (inspectAccess a)
+    modeOrRefusal <- registryMode env settings blueprint token
+    case modeOrRefusal of
+        Right mode -> pure (mode, followingMode mode env)
+        Left _ -> pure (Open, env)

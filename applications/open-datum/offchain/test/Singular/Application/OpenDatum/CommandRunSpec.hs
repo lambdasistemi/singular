@@ -557,7 +557,7 @@ commandNames =
 constructorOf :: OpenDatumCommand -> String
 constructorOf = \case
     OpenHelp -> "OpenHelp"
-    OpenCreate _ -> "OpenCreate"
+    OpenCreate _ _ -> "OpenCreate"
     OpenInsert _ -> "OpenInsert"
     OpenUpdate _ -> "OpenUpdate"
     OpenTerminate _ -> "OpenTerminate"
