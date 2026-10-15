@@ -135,6 +135,20 @@
       "pause": 400
     }
   ],
+  "ruling-the-trie-ready-tag-one-tip-number-and-the-carrier-amount": [
+    {
+      "text": "Ruling: the trie-ready tag, one tip number and the carrier amount.",
+      "pause": 500
+    },
+    {
+      "text": "Rulings of the operator on 14 and 15 October 2026, relayed by the epic owner, and the epic owner's answer of 15 October 2026 on how the plan takes them (all five recommendations accepted).",
+      "pause": 400
+    },
+    {
+      "text": "Order after the rebase push: slice eight-a (the fold model moves, nothing else), seven-b, seven-c, then eight, eight-c, nine and ten. Slice eight is cut into eight-a (the move), eight (the rejection judgement) and eight-c (the live rows published as unmet, with a tripwire); no statement or control is dropped.",
+      "pause": 400
+    }
+  ],
   "constitution-number": [
     {
       "text": "Constitution number.",
@@ -147,6 +161,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "a72206efe7f8baa6c149fa5de720a3c248276afcdd361dc55c655a878bf0306e"
+    "sha256": "aa71870f2b9724fa006c4cae0f494bc24b87953c4bb803c64e66616f4f564f8a"
   }
 }

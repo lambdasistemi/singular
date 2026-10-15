@@ -89,11 +89,11 @@ at a booking root, a processor split and a termination fee) is withdrawn. The de
 - no bond, no split, no booking root and no termination fee;
 - a successful registration donates a registration cost to the treasury;
 - a rejection reads the registry state output by reference, is batchable and never spends it;
-- a termination carries the singular tag and the application tag, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;
-- a minimum tip pinned by the registry is checked at booking;
+- a termination carries the singular tag and no application tag (amended on 15 October 2026), cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;
+- a minimum tip pinned by the registry is checked at booking; it replaces the old fee pin in the same state field, and the processor takes exactly the declared tip (amended on 15 October 2026);
 - the booked time is the upper end of a booking interval at most a pinned width wide;
 - every parameter is fixed at creation, with no authority to change it;
-- the syntax tag and the application tag are minted at booking and burned by every exit, never returned, and an output at the request address lacking either tag may be spent by anyone;
+- the trie-ready tag (the syntax tag until 15 October 2026) is minted at booking only with its precondition present (the application tag for a registration, the singular tag for a termination) and burned by every exit; a registration's application tag is burned by every exit too, never returned; an output at the request address lacking the trie-ready tag may be spent by anyone;
 - the request policy refuses any request whose contents are not exactly those the design allows.
 
 Operator, 14 October 2026: "the research on the economics is done, so it's time to produce the paper and wake up the lean worker"; then "Let's wait for the lean rework
@@ -129,6 +129,8 @@ rejection and nothing earlier.
 
 Amended on 14 October 2026 by the decided design: the economic slices model the syntax tag as far as the design needs it, that is, what a booking guarantees about
 a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.
+
+Amended on 15 October 2026 by the operator's rulings: the syntax tag is renamed the trie-ready tag and is minted only with its precondition present; a termination carries no application tag; the fee pin is retired and the minimum tip replaces it in the same state field; the carrier amount is set by the ledger and declared by the requester. The plan takes them in slices seven-b and seven-c, after the move of slice eight-a (see the [decisions](decisions.md)). No validator, builder or command is touched.
 
 > Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.
 

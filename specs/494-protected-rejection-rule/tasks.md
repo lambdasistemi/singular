@@ -120,9 +120,9 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 
 - [x] `lean-review-written` — a written review of the whole `lean/` tree, with findings ranked by what they cost slices six to ten (names, module structure, duplicated definitions, statement shapes, proof hygiene), and no edit.
 - [x] `tools-read-module-sets` — the model checker, the application model checker, the compiled axiom gate, the coverage inventory and the mutant harnesses read the model and the statements as a set of modules; a planted unproved statement in any module of the set fails the axiom gate and the statement manifest.
-- [x] `big-modules-split` — the model, the lemmas, the statements, the driver and the corpus runner are split into cohesive submodules, each split its own checkpoint, each a move with no change of meaning; the qualified names of protected and paper-cited statements are unchanged. The fold model's declarations are held until the other lane's change lands and move in slice eight.
+- [x] `big-modules-split` — the model, the lemmas, the statements, the driver and the corpus runner are split into cohesive submodules, each split its own checkpoint, each a move with no change of meaning; the qualified names of protected and paper-cited statements are unchanged. The fold model's declarations are held until the other lane's change lands and move in slice eight-a.
 - [x] `renames-and-improvements` — misleading names are renamed and unidiomatic structure is repaired in at most two batches, each with its record of old and new name or move and reason; every renamed statement keeps its coverage mapping.
-- [x] `fold-model-untouched-until-it-lands` — the declarations that define or admit a fold are neither moved nor renamed before the fold admission change of another lane is on main; if the slice would otherwise idle it closes without them and they move in slice eight.
+- [x] `fold-model-untouched-until-it-lands` — the declarations that define or admit a fold are neither moved nor renamed before the fold admission change of another lane is on main; if the slice would otherwise idle it closes without them and they move in slice eight-a.
 - [x] `consumers-follow` — every consumer of a renamed or moved declaration is updated in the same checkpoint. (consumers-state-the-rule)
 - [x] `rulings-listed-not-applied` — findings that change a meaning, or rename a declaration main already has, or touch merged work in a way that needs a ruling, are listed with the user story of each option and not applied.
 - [x] `regenerate-after-slice-five-b` — register and digests, theorem page, simulator mirror and coverage record follow; the corpora of scenarios are byte-identical. (consumers-state-the-rule)
@@ -146,14 +146,55 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 - [x] `regenerate-after-slice-seven` — as slice five. (consumers-state-the-rule)
 - [x] `names-and-receipts-seven` — as slice five.
 
+### Slice eight-a: the fold model in small modules
+
+Inserted on 15 October 2026 by the split of slice eight; see the [slice brief](briefs/slice-eight-a-fold-model-split.md). A move with no change of meaning.
+
+- [ ] `fold-model-move-list` — a written move list names every declaration or group to move, from where to which module, the facade each file keeps and the reason, before any edit.
+- [ ] `fold-model-moved` — the declarations that define or admit a fold, with the lemmas and statements that unfold them, live in cohesive modules of a few hundred lines, with the text they have on main byte for byte.
+- [ ] `fold-model-meaning-unchanged` — no statement or control is added, changed or dropped; every statement keeps its fully qualified name, axiom line and digest, or the theorem page records its move; the corpora of scenarios, the transaction baseline and the driver protocol version are byte-identical.
+- [ ] `consumers-follow-eight-a` — every consumer of a moved declaration follows in the same checkpoint. (consumers-state-the-rule)
+- [ ] `regenerate-after-slice-eight-a` — as slice five. (consumers-state-the-rule)
+
+### Slice seven-b: the trie-ready tag
+
+Inserted on 15 October 2026 by the operator's rulings on the trie-ready tag.
+
+- [ ] `failing-controls-seven-b` — a termination that holds an application tag and a tag minted for another operation or nonce fail on the branch as it stands, for the intended reason.
+- [ ] `trie-ready-names` — this branch's declarations built under the name syntax tag take the trie-ready names; main's names are untouched; the booking statements restate with the new vocabulary under their qualified names.
+- [ ] `termination-without-application-tag` — a termination holds, mints and checks no application tag; one held is refused as dirty; the singular tag in custody stays the precondition of its trie-ready tag.
+- [ ] `tag-names-are-commitments` — the application tag's name commits to the payload and a nonce and the trie-ready tag's to the operation and a nonce; one nonce per request; no injectivity is assumed.
+- [ ] `statements-seven-b` — the restated booking statements are proved from the standard axioms; the list of statements carries their qualified names and axiom lines.
+- [ ] `regenerate-after-slice-seven-b` — as slice five. (consumers-state-the-rule)
+
+### Slice seven-c: one tip number
+
+Inserted on 15 October 2026 by the operator's ruling that retires the fee pin.
+
+- [ ] `failing-controls-seven-c` — a configuration that still pins two tip numbers and a fold row that still requires the old tip cover fail on the branch as it stands.
+- [ ] `one-tip-field` — the configuration carries one tip number, the minimum tip, written under the existing wire key `maxFee`; the preservation statements keep one pin; the chain datum and the off-chain readers are unchanged.
+- [ ] `tip-cover-retired` — the old tip-cover predicate, its use in the two transaction-row statements, the tip-cover lemma and the two scenario rows about the old fee pin are retired by append-only restatement rows that name each.
+- [ ] `tip-rows-listed` — the general control `wrong-fee` and the tip fields of the transaction baseline are listed at the first checkpoint; a live row whose expectation changes is published unmet by ruling, never as a pass; a row that keeps passing is untouched.
+- [ ] `lean-consumers-run` — the consumers of a `lean/` change run before the push: model check, transaction baseline, simulator, application corpus, coverage and the conformance commands without a devnet.
+- [ ] `regenerate-after-slice-seven-c` — as slice five. (consumers-state-the-rule)
+
 ### Slice eight: rejection reads the state
 
 - [ ] `failing-controls-eight` — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.
 - [ ] `rejection-reads-the-state` — the accepted rejection judgement exists over a transaction, the rejection arm leaves the fold, and slices two and three are restated on it.
-- [ ] `request-address-two-arms` — an output lacking either tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the syntax tag and the application tag.
+- [ ] `request-address-two-arms` — an output lacking the trie-ready tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the trie-ready tag and the application tag.
+- [ ] `legacy-fold-question-retained` — the driver keeps answering the old fold-with-rejection question from a retained, explicitly named legacy declaration, with scenario payloads byte-identical; nothing counts the old behaviour as meeting the ruled design.
 - [ ] `statements-eight` — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.
 - [ ] `regenerate-after-slice-eight` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-eight` — as slice five.
+
+### Slice eight-c: the live rows published unmet
+
+Conformance and CI code, after slice eight; Codex at medium effort.
+
+- [ ] `live-rows-unmet-by-ruling` — the live rows that exercise the old fold-with-rejection path (early rejection inside the windows, reject and retract refund controls, the running book, the generic rows) are published as unmet: "implementation follows the superseded rule; the ruled rule is not implemented".
+- [ ] `ruled-rule-tripwire` — a check turns red when the deployed validators implement the ruled rule, so the unmet state cannot outlive its cause; it is proved able to fail.
+- [ ] `regenerate-after-slice-eight-c` — as slice five. (consumers-state-the-rule)
 
 ### Slice nine: refunds
 
@@ -165,9 +206,9 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 
 ### Slice ten: folds
 
-- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.
-- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the singular tag, the syntax tag and the application tag and donates held minus tip; a registration fold burns the syntax tag and the application tag and mints the singular tag at the destination.
-- [ ] `statements-ten` — statements 7 (first half), 10, 11 and 12 and the two supporting statements (including that the supply of each tag equals the count of pending requests) are proved.
+- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag on a registration, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.
+- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the trie-ready tag and the singular tag and donates held minus tip, and the processor takes exactly the declared tip; a registration fold burns the trie-ready tag and the application tag and mints the singular tag at the destination.
+- [ ] `statements-ten` — statements 7 (first half), 10 (restated: only a booked termination folds, and it carries its key's genuine singular tag), 11 and 12 and the two supporting statements (including that the supply of each tag equals the count of its pending requests) are proved.
 - [ ] `amendment-economics` — the 1.18.0 entry of the constitution states the economic rows in the translation (one release, one entry).
 - [ ] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)
 - [ ] `names-and-receipts-ten` — as slice five, and the full list of the thirteen statements with their status.

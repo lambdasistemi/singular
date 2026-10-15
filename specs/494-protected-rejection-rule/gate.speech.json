@@ -141,8 +141,22 @@
       "pause": 400
     }
   ],
+  "gate-version-5-the-slices-inserted-on-15-october-2026": [
+    {
+      "text": "Gate version 5: the slices inserted on 15 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "Added before the first writer of the inserted slices (eight-a, seven-b, seven-c, eight-c), after the operator's rulings on the trie-ready tag and the tip and the split of slice eight (see the decisions and the economics plan). Every row of versions 1 to 4 above is unchanged: same text, same commands, same minutes and exits; only the slices they apply to are named. The hash of the file before this section (version 4) is 9f981b6cd4161f0b6fc2379c042c1de01f076939c06729c6f5cdbd6f1534c16f; the hash of the file with this section is recorded in the ticket owner's journal when the section is committed.",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: as version 4.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "9f981b6cd4161f0b6fc2379c042c1de01f076939c06729c6f5cdbd6f1534c16f"
+    "sha256": "f518e2a773882599b70145fa637f48456b3d95478d6b54b55f10d6cee4f48ca8"
   }
 }

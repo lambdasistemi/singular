@@ -95,12 +95,16 @@
       "pause": 400
     },
     {
+      "text": "Slices inserted on 15 October 2026 (the split of slice eight and the amendments after the rulings on the trie-ready tag and the tip). The files below are the ones each slice may touch beyond the table above; a writer who needs another stops and asks.",
+      "pause": 400
+    },
+    {
       "text": "Not touched: the paper (paper/, docs/economics-paper.md, nix/docs.nix, tools/check_site.py, tools/code_inventory.py) until it is planned on its own; the root flake.nix and .github/workflows/ci.yml; everything under onchain/, offchain/, the builders and the command line.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "28a991b92fc7772a6a463316b6148735cd35ede2e587a759fbfdfd58fad56d33"
+    "sha256": "8c1d604b3b375c659922541b43063f77de7f1103c7eaf878e57fe4958578b2b7"
   }
 }

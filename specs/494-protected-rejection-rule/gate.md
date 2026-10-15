@@ -198,3 +198,19 @@ Budget per candidate: about 40 minutes for the rows marked always and conditiona
 Slice five-b (inserted on 14 October 2026) uses the rows of version 4 marked five to ten: the "always" rows at every checkpoint after the written review, the "final" rows and `just ci` once on its final head. A move or a rename changes no behaviour, so the corpora of scenarios must be byte-identical at every checkpoint; the axiom gate must still fail on a planted unproved statement in every module of the set it walks, shown once at the checkpoint that teaches the tools the module set.
 
 Slice four is withdrawn (14 October 2026): its batch row and the two-batch scenarios of the falsification paragraph above no longer apply to any slice.
+
+## Gate version 5: the slices inserted on 15 October 2026
+
+Added before the first writer of the inserted slices (eight-a, seven-b, seven-c, eight-c), after the operator's rulings on the trie-ready tag and the tip and the split of slice eight (see the
+[decisions](decisions.md) and the [economics plan](economics-plan.md)). Every row of versions 1 to 4 above is unchanged: same text, same commands, same minutes and exits; only the slices they
+apply to are named. The hash of the file before this section (version 4) is `9f981b6cd4161f0b6fc2379c042c1de01f076939c06729c6f5cdbd6f1534c16f`; the hash of the file with this section is
+recorded in the ticket owner's journal when the section is committed.
+
+| Slice | Rows of version 4 that apply | Condition |
+|---|---|---|
+| Eight-a, the fold model in small modules | The "always" rows at every checkpoint after the written move list; the "final" rows and `nix develop --quiet -c just ci` once on the final head | As the slice five-b paragraph: a move changes no behaviour, so the corpora of scenarios, the transaction baseline and the driver protocol version are byte-identical at every checkpoint, and the axiom gate must still fail on a planted unproved statement in every module of the set it walks |
+| Seven-b, the trie-ready tag | The "always" rows at every checkpoint; the "final" rows and `just ci` once | The wrong-reason control and the conformance commands apply only if the diff touches `conformance/`; the slice's statements are listed with qualified name and axiom line at the final revision |
+| Seven-c, one tip number | The "always" rows at every checkpoint; the conformance commands that need no devnet; the wrong-reason control (the general control `wrong-fee` must still fail loudly for a refusal of another reason); the "final" rows and `just ci` once | Because the slice touches main's declarations, before its push the consumers of a `lean/` change run once: model check, transaction baseline, simulator, application corpus, coverage and the conformance commands without a devnet |
+| Eight-c, the live rows published unmet | The "always" rows; conformance without a devnet, transport tests, format and lint of the Haskell the slice touches; the wrong-reason control; documents including narration and speech; strict coverage report; the "final" rows and `just ci` once | The tripwire is a check this slice adds to the hosted conformance workflow, marked "CI change in this ticket (slice eight-c)" and proved by the pushed head's CI; it is shown red once on a state that implements the ruled rule or on its planted input, and green on the deployed validators |
+
+Budget per candidate: as version 4.

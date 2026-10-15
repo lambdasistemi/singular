@@ -69,7 +69,17 @@
       "pause": 400
     },
     {
-      "text": "What slice ten must follow: the termination fold consumes the pending request and its carried singular tag, burns the singular tag, the syntax tag and the application tag, makes the leaf terminal, leaves no pending termination for it, extends WorldReachable with the real transition and reproves the world law and provenance for the remaining requests; the donation is the held lovelace minus the declared tip; a termination has neither booked time nor refund address, so its fold adds no window; rejection and retraction never consume a termination; reference uniqueness is shared across both pools; the supply of the syntax and application tags across both pools is the planned tag_supplies_equal_pending.",
+      "text": "What slice ten must follow: the termination fold consumes the pending request and its carried singular tag, burns the singular tag and the trie-ready tag (a termination holds no application tag from slice seven-b on), makes the leaf terminal, leaves no pending termination for it, extends WorldReachable with the real transition and reproves the world law and provenance for the remaining requests; the donation is the held lovelace minus the declared tip; a termination has neither booked time nor refund address, so its fold adds no window; rejection and retraction never consume a termination; reference uniqueness is shared across both pools; the supply of the trie-ready tag across both pools, and of the application tag across the registration pool, is the planned tag_supplies_equal_pending. Slice seven-b restates this slice's termination declarations: the application tag is removed and the syntax tag is renamed the trie-ready tag.",
+      "pause": 400
+    }
+  ],
+  "slices-eight-a-seven-b-and-seven-c-planned-rows-15-october-2026": [
+    {
+      "text": "Slices eight-a, seven-b and seven-c: planned rows (15 October 2026).",
+      "pause": 500
+    },
+    {
+      "text": "Rows only; the exact signatures of each slice are added to this page by the ticket owner before that slice is dispatched.",
       "pause": 400
     }
   ],
@@ -89,6 +99,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "92f462ccc3bc77eb03e19af8ece0aa22e9b19cf0b302aba0adfb6099c154d605"
+    "sha256": "ae8a10cf7e44dc8c11388689a2901e6b8b0d1e84095087940235c46cca511e43"
   }
 }

@@ -21,19 +21,19 @@ As a reviewer, I can check every claim against a Lean theorem. Where the paper m
 | Bond carried by every request, forfeited on a fault proved at the booking root, split between the prover and the treasury | No bond, no split, no booking root |
 | Termination fee donated to the treasury | No termination fee. A successful registration pays a registration cost R to the treasury instead |
 | Rejection spends the registry state output | Rejection reads the state output by reference and never spends it. Rejections are batchable. Only folds spend the state output |
-| A termination can be rejected, can expire, and has an owner | A termination carries the singular tag and the application tag. It has no refund address, cannot expire, cannot be retracted, and cannot be rejected |
+| A termination can be rejected, can expire, and has an owner | A termination carries the singular tag, and no application tag. It has no refund address, cannot expire, cannot be retracted, and cannot be rejected |
 | Booked time written by the booker, unchecked | Booked time is the upper end of the booking transaction's validity interval, which may be at most δ wide |
 | Parameters "never changed by a fold" | Every parameter is fixed at creation. A Singular registry has no authority that could change one |
 | Tip chosen per request, with no floor | A registry-pinned minimum tip is checked at booking, and the requester may offer more |
 
-Terminology (operator): Singular has no controller concept. The application is the controller. It authorizes every operation through its application tag and governs the singular tag at the destination it names. A registration request carries a **refund address**, its owner field.
+Terminology (operator): Singular has no controller concept. The application is the controller. It authorizes a registration through its application tag, governs the singular tag at the destination it names, and consents to a termination by releasing that tag from its custody. A registration request carries a **refund address**, its owner field.
 
 ## Registry parameters (all fixed at creation; no authority can change them)
 
 | Parameter | Meaning |
 |---|---|
 | R, registration cost | Lovelace donated to the treasury for each successfully registered key. Never refunded once the key is registered. |
-| t_min, minimum tip | Checked at booking. Sized from measured costs: fee per byte, script execution, the reference read of the state, and the refund output. |
+| t_min, minimum tip | The one pinned number: the floor on the tip a requester declares, checked at booking. The processor takes exactly the declared tip. It lives in the state's existing fee-pin field, which it replaces: the old fee pin is retired and the state keeps its shape (ruled on 15 October 2026). Sized from measured costs: fee per byte, script execution, the reference read of the state, and the refund output. |
 | δ, maximum booking width | Upper bound on the width of a registration's booking validity interval; δ < W_p. |
 | W_p, processing window | A registration may be folded only in [s, s + W_p). |
 | W_r, reclaim window | The refund address may retract only in [s + W_p, s + W_p + W_r). |
@@ -43,12 +43,13 @@ The paper states the envelope each parameter was sized for: ledger fee parameter
 
 ## The two requests
 
-The request policy, the minting policy that mints a booked request's syntax tag, refuses any request whose contents are not exactly the following ("dirty requests").
+The request policy, the minting policy that mints a booked request's trie-ready tag, refuses any request whose contents are not exactly the following ("dirty requests"). The carrier ada is set by the ledger (the minimum for the output holding the token) and declared by the requester; the registry pins no carrier amount (ruled on 14 October 2026).
 
 | | Registration | Termination |
 |---|---|---|
-| Holds exactly | R, tip ≥ t_min, the ada its token output needs (carrier ada), the application tag | the singular tag, the application tag, tip ≥ t_min, the ada its output needs |
-| Application tag bound to | (register, key, refund address, destination) | (terminate, key, destination) |
+| Holds exactly | R, tip ≥ t_min, the ada its token output needs (carrier ada), the application tag | the singular tag, tip ≥ t_min, the ada its output needs |
+| Application tag | bound to (register, key, refund address, destination); its asset name is the hash of the payload plus a nonce | none: the application's consent to a termination is the release of the singular tag from its custody |
+| Trie-ready tag | minted only with the application tag present; its asset name is the hash of the operation plus a nonce | minted only with the singular tag present; same asset name rule |
 | Refund address | yes | none |
 | Booked time | s = U, the upper end of the booking interval [L, U), U − L ≤ δ | none |
 | Exits | fold, retraction, rejection | fold only |
@@ -57,20 +58,21 @@ How a termination is booked: the key's token lives at the destination its regist
 - cardano-keri releases it on a verified duplicity proof, which anyone may post;
 - open-datum releases it on its envelope's control signature.
 
-Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. Both tag policies allow a burn at any time with no further condition, for both kinds of request. A rejection by anyone must be able to burn the application tag, and a booked termination, which has no other exit, must not be stranded.
+Singular checks that the application tag is present for a registration, never the application's rule. Singular does not police where else the application tag is minted. Everything the fold checks for a termination is fixed at booking. The tag policies allow a burn at any time with no further condition, for both kinds of request. A rejection by anyone must be able to burn a registration's tags, and a booked termination, which has no other exit, must not be stranded.
 
 ## The tags
 
-- The syntax tag is minted when a request is booked and burned when that request is spent, by any exit: fold, retraction or rejection. There is no syntax tag without a pending request and no pending request without its syntax tag.
-- The application tag has the same life. It is minted at booking and burned by every exit. The syntax tag authorizes the request's shape and the application tag authorizes the operation. The application tag is never returned to anyone.
+- The trie-ready tag proves that a request can be judged against the Merkle trie, positively (a fold) or negatively (a rejection). It is minted when a request is booked, only with its precondition present (the application tag for a registration, the singular tag for a termination), and burned when that request is spent, by any exit: fold, retraction or rejection. There is no trie-ready tag without a pending request and no pending request without its trie-ready tag.
+- The application tag proves that the payload is authorized to enter. It exists for registrations only. It has the same life as the trie-ready tag of its registration: minted at booking and burned by every exit, never returned to anyone. A termination carries none.
+- Asset names: the application tag's is the hash of the payload plus a nonce; the trie-ready tag's is the hash of the operation plus a nonce; the operation contains the payload.
 - The singular tag is minted at the destination by a registration fold and burned by the termination fold.
 - Tag flow per exit:
-  - registration fold: burns the syntax tag and the application tag, and mints the singular tag at the destination;
-  - termination fold: burns the syntax tag, the singular tag and the application tag;
-  - rejection and retraction: burn the syntax tag and the application tag.
-- The supply of each tag equals the count of pending requests.
+  - registration fold: burns the trie-ready tag and the application tag, and mints the singular tag at the destination;
+  - registration rejection and retraction: burn the trie-ready tag and the application tag;
+  - termination fold: burns the trie-ready tag and the singular tag.
+- The supply of the trie-ready tag equals the count of pending requests; the supply of the application tag equals the count of pending registrations.
 - Burning is free: the tag policies allow a burn with no condition. This is safe because a tag exists only in a request output at the Singular script hash, and that output can be spent only through the request validator, which enforces the exit and requires the request's tags to be burned in the same transaction, so that no exit carries a live tag out. The exit rules belong to the request validator's spend, not to the burn branch of a tag policy.
-- An output at the request address that lacks either tag is not a request, because a syntax tag is minted only together with an application tag. Anyone may spend it. A tagged output leaves only through one of its exits.
+- An output at the request address that lacks the trie-ready tag is not a request. Anyone may spend it. A trie-ready tag is minted only with its precondition present, so a genuine request always holds the tags its kind requires, and the sweep reaches only outputs that are not requests. A tagged output leaves only through one of its exits.
 
 ## Every exit
 
@@ -91,14 +93,14 @@ Where the value goes:
 | Registration retracted | nothing | nothing | everything the request held, tip included, except the two tags | nothing |
 | Termination folded | everything except the tip | tip | none | none |
 
-Every exit burns the syntax tag and the application tag; the termination fold also burns the singular tag.
+Every exit burns the trie-ready tag; the exits of a registration also burn the application tag; the termination fold also burns the singular tag.
 
 A fold of n registrations and m terminations donates at least n·R plus the sum, over the m terminations, of (held − tip).
 
 ## The rejection rule
 
 - A rejection reads the registry state output as a reference input. It checks that the referenced output carries this registry's exact state token (policy and name) and reads the root from that output's datum.
-- It spends only the requests it rejects, and burns each rejected request's syntax tag and application tag. It spends no state token, and this is checked.
+- It spends only the requests it rejects, and burns each rejected request's trie-ready tag and application tag. It spends no state token, and this is checked.
 - Rejection is removed from the fold's action list entirely. Only folds spend the state output.
 - Rejections batch: one transaction may reject many requests against one referenced state output, with one shared validity interval.
   - Each request is consumed and refunded once.
@@ -128,7 +130,7 @@ Each statement becomes a result only once its definitions and proofs exist in Le
    - The mismatch half follows from `biconditional_supply_sync` (Statements.lean) once the token held in a pending request is counted in supply.
    - The expiry half holds by definition, since a termination has no expiry.
 9. At most one termination per key is pending. This follows from token uniqueness across custody and pending requests (`active_witness_unique`, Statements.lean, extended).
-10. Only terminations carrying the application tag fold.
+10. Only a booked termination folds, and a booked termination carries its key's genuine singular tag. (Restated on 15 October 2026: a termination carries no application tag. The application's consent is the release of the singular tag from its custody, which lies outside Singular's scripts.)
 11. A booked termination can be folded at any later time. This holds as long as some folder accepts its tip and ledger fees stay inside the envelope the tip was sized for.
 12. Across a batch, what the processors can take is at most the sum of the tips. This needs a balance relation with no outside funding.
 13. t_min covers the measured cost of every supported exit processed alone, refund output included, within the stated fee envelope. This is conditional on the measurements.
@@ -154,7 +156,8 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 3. **Request types.**
    - A registration carries the refund address, the destination, s, R, the tip and the carrier ada.
    - A termination carries the singular tag, the tip and the carrier ada, with no refund address and no time.
-   - Both carry the application tag and the syntax tag, with its provenance.
+   - Both carry the trie-ready tag, with its provenance; a registration also carries the application tag, and a termination carries none.
+   - Asset names: the application tag's is the hash of the payload plus a nonce, the trie-ready tag's the hash of the operation plus a nonce.
    - The exact-contents predicate, with the declared tip separated from the held value.
 4. **Booking transitions.**
    - Registration booking: the validity interval no wider than δ, and s = U.
@@ -168,7 +171,7 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 6. **Fold.**
    - The processing window for registrations and no window for terminations; today's on-chain gate applies to both, and the termination must lose it.
    - Routing of R, the tip and the carrier.
-   - Termination burns the singular tag and the application tag and donates held − tip.
+   - Termination burns the trie-ready tag and the singular tag and donates held − tip.
    - The donation is at least n·R plus the terminations' donations.
 7. **Theorems 1–13, with negative controls:**
    - the old state-spending rejection path;
@@ -177,7 +180,7 @@ Each statement becomes a result only once its definitions and proofs exist in Le
    - a live member inside a rejection batch;
    - a repeated input or a reused refund;
    - a dirty request, or hidden surplus;
-   - a forged syntax tag, singular tag or application tag;
+   - a forged trie-ready tag, singular tag or application tag, a trie-ready tag minted for another operation or nonce, and a termination that holds an application tag;
    - a backdated booking or one wider than δ;
    - a termination stranded by a check made at fold time;
    - one donation counted for many keys.
@@ -189,8 +192,8 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 
 The fate of a registration's application tag on a successful fold is decided: it is burned, never returned, so no restitution output exists and t_min covers none.
 
-1. Adapting open-datum (`applications/open-datum`). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its application tag policy must allow a burn at any time, for both kinds of request.
+1. Adapting open-datum (`applications/open-datum`). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its application tag policy must allow a burn at any time (an application tag exists for registrations only).
 2. Adapting cardano-keri. Its model reaps the token, then refunds a go-request to the reaper and pays the convictor a reward. That differs from the decided termination, so a correspondence design is needed.
-3. Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.
-4. The relation between the existing fee pin (`maxFee`) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.
-5. The source of the carrier amount: slice six of the Lean model checks the held value against a carrier allocation the requester declares and makes no claim that it equals the ledger's minimum; whether the amount stays declared or is pinned by the registry is not decided.
+3. Values: R, t_min and δ, measured on the target network and chosen per registry. The carrier minimum is a ledger figure, not a registry parameter.
+
+Closed by ruling. The relation between the old fee pin and the minimum tip (15 October 2026): the fee pin is retired and the minimum tip replaces it, in the same state field. The source of the carrier amount (14 October 2026): the ledger sets it and the requester declares it; the model makes no claim about the ledger minimum, which the ledger enforces when the output is created.

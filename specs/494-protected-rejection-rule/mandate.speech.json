@@ -137,11 +137,11 @@
       "pause": 300
     },
     {
-      "text": "a termination carries the singular tag and the application tag, cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;",
+      "text": "a termination carries the singular tag and no application tag (amended on 15 October 2026), cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;",
       "pause": 300
     },
     {
-      "text": "a minimum tip pinned by the registry is checked at booking;",
+      "text": "a minimum tip pinned by the registry is checked at booking; it replaces the old fee pin in the same state field, and the processor takes exactly the declared tip (amended on 15 October 2026);",
       "pause": 300
     },
     {
@@ -153,7 +153,7 @@
       "pause": 300
     },
     {
-      "text": "the syntax tag and the application tag are minted at booking and burned by every exit, never returned, and an output at the request address lacking either tag may be spent by anyone;",
+      "text": "the trie-ready tag (the syntax tag until 15 October 2026) is minted at booking only with its precondition present (the application tag for a registration, the singular tag for a termination) and burned by every exit; a registration's application tag is burned by every exit too, never returned; an output at the request address lacking the trie-ready tag may be spent by anyone;",
       "pause": 300
     },
     {
@@ -202,6 +202,10 @@
     },
     {
       "text": "Amended on 14 October 2026 by the decided design: the economic slices model the syntax tag as far as the design needs it, that is, what a booking guarantees about a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.",
+      "pause": 400
+    },
+    {
+      "text": "Amended on 15 October 2026 by the operator's rulings: the syntax tag is renamed the trie-ready tag and is minted only with its precondition present; a termination carries no application tag; the fee pin is retired and the minimum tip replaces it in the same state field; the carrier amount is set by the ledger and declared by the requester. The plan takes them in slices seven-b and seven-c, after the move of slice eight-a (see the decisions). No validator, builder or command is touched.",
       "pause": 400
     },
     {
@@ -277,6 +281,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "8be6e5e3b3649c7d4b324cb482924fb2566701fe9b0ab12ae98a9c0c322d032d"
+    "sha256": "0853e6a9835a2af3529b951adc64b51b91939a1090fe4fec6a8b0d0532f26de7"
   }
 }

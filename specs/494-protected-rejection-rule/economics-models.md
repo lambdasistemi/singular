@@ -38,13 +38,13 @@ beyond the naming layer's, which is why the vocabulary types sit in the model fi
 
 | Entity | Field or shape | Meaning | Slice | Default and encoding |
 |---|---|---|---|---|
-| Registry configuration | `registrationCost`, `minimumTip`, `bookingWidth` | The three parameters, fixed at creation | five | Zero; written only when positive. The width is below the processing window |
+| Registry configuration | `registrationCost`, `minimumTip`, `bookingWidth` | The three parameters, fixed at creation. From slice seven-c the minimum tip is the only pinned tip number: it replaces the old fee pin, in the same field of the state | five, seven-c | Zero; written only when positive, until slice seven-c, which writes the one number under the existing wire key `maxFee` (not omitted at zero, as that field always was). The width is below the processing window |
 | Output reference (`OutRef`) | The identity of the transaction that made the output and the output's position in it | What a transaction spends or reads | five | Required on a spent or read input |
 | Transaction | `referenceInputs`, `validity`, `fee`, `donation` | Outputs read and not spent; the finite interval, lower end included and upper end excluded; the ledger fee; the treasury donation | five | Empty, none, zero, zero; a zero donation is not written |
 | Registry state token | Policy and asset name | The exact identity a rejection checks on the output it reads | five | The existing registry identity names it |
-| Registration request | Refund address, destination, booked time, registration cost, declared tip, carrier ada, application tag, syntax tag | What a registration holds and promises | six | The booked time is the upper end of the booking interval |
+| Registration request | Refund address, destination, booked time, registration cost, declared tip, carrier ada, application tag, trie-ready tag (built under the name syntax tag in slice six; renamed in seven-b), and from seven-b a nonce | What a registration holds and promises | six, seven-b | The booked time is the upper end of the booking interval |
 | Request pool | The pending requests of a world | Requests booked and neither folded, rejected nor retracted | six | Empty at genesis |
-| Termination request | Singular tag, declared tip, carrier ada, application tag, syntax tag | What a termination holds; no refund address, no time | seven | |
+| Termination request | Singular tag, declared tip, carrier ada, trie-ready tag, and from seven-b a nonce | What a termination holds; no refund address, no time, and from seven-b no application tag | seven, seven-b | |
 | World | The registry state with the pool | What the statements quantify over | six | The registry state alone for every existing row |
 | Treasury recipient | A recipient in the payment vocabulary | Owed the donation | ten | |
 
@@ -59,7 +59,7 @@ produced it. The supply of a token kind counts the tokens held at the applicatio
 | `applyTx` | five | Removes spent inputs from the unspent set, adds the outputs, leaves reference inputs in place; refuses a reference to an output not in the set |
 | `balanced` | five | Inputs plus mint equal outputs plus donation plus fee, for native assets and lovelace |
 | `exactContents` | six, seven | A request holds exactly the amounts its kind allows; a tip of at least the minimum is declared apart from the held value |
-| `book` | six, seven | Registration: interval no wider than the maximum, booked time its upper end, exact contents, syntax tag minted once. Termination: the token moves from custody into the request, exact contents, application tag bound to terminate, key, destination |
+| `book` | six, seven | Registration: interval no wider than the maximum, booked time its upper end, exact contents, syntax tag minted once. Termination: the token moves from custody into the request, exact contents; from seven-b the request holds no application tag |
 | `rejectionAccepted` | eight | Over a transaction and the unspent set: state output referenced with the exact token, no state output spent, request inputs distinct, one interval, every member admitted by a current mismatch or by expiry, no termination |
 | `refundObligations` | nine | Held minus tip in lovelace to each refund address, summed per address; a retraction returns everything held except the two tags, which are burned |
 | `foldObligations` | ten | The registration cost to the treasury, the tip to the processor, the carrier with the singular tag minted at the destination; both folds burn the syntax tag and the application tag; a termination also burns the singular tag and donates held minus tip |
@@ -75,7 +75,22 @@ The registration booking is modelled by `RegistrationRequest` (with `carrierAda`
 
 The termination booking is modelled in `Singular/Model/Termination.lean` and `Singular/Economics/Termination.lean` (`terminationBookingRefusal`, `terminationExactContents`, `terminationCustody`) and extends the world in `Singular/Economics/World.lean` (`bookTermination`, `bookTerminations`, `worldSingularSupply`, `WorldReachable`). The singular tag leaves the application's custody into the pending request; the key's leaf stays active; the supply law counts custody plus pending terminations, so the registry component of a world with a pending termination is not consistent in the registry-level sense and the world-level law replaces it for worlds. A transaction is accepted or refused as a whole. Statements, in `Singular/Statements/`: `at_most_one_pending_termination`, `world_supply_sync`, `termination_request_carries_genuine_token`, and the supporting `termination_booking_has_exact_contents`.
 
-What slice ten must follow: the termination fold consumes the pending request and its carried singular tag, burns the singular tag, the syntax tag and the application tag, makes the leaf terminal, leaves no pending termination for it, extends `WorldReachable` with the real transition and reproves the world law and provenance for the remaining requests; the donation is the held lovelace minus the declared tip; a termination has neither booked time nor refund address, so its fold adds no window; rejection and retraction never consume a termination; reference uniqueness is shared across both pools; the supply of the syntax and application tags across both pools is the planned `tag_supplies_equal_pending`.
+What slice ten must follow: the termination fold consumes the pending request and its carried singular tag, burns the singular tag and the trie-ready tag (a termination holds no application tag from slice seven-b on), makes the leaf terminal, leaves no pending termination for it, extends `WorldReachable` with the real transition and reproves the world law and provenance for the remaining requests; the donation is the held lovelace minus the declared tip; a termination has neither booked time nor refund address, so its fold adds no window; rejection and retraction never consume a termination; reference uniqueness is shared across both pools; the supply of the trie-ready tag across both pools, and of the application tag across the registration pool, is the planned `tag_supplies_equal_pending`. Slice seven-b restates this slice's termination declarations: the application tag is removed and the syntax tag is renamed the trie-ready tag.
+
+## Slices eight-a, seven-b and seven-c: planned rows (15 October 2026)
+
+Rows only; the exact signatures of each slice are added to this page by the ticket owner before that slice is dispatched.
+
+| Slice | Module or declaration | Row |
+|---|---|---|
+| eight-a | The fold model's declarations in `Model.lean`, `Lemmas.lean` and `Statements.lean` | Move to cohesive child modules; facades keep every import path; qualified names kept or the move recorded on the theorem page; no statement or control changes |
+| seven-b | Declarations built under the name syntax tag (`Config.syntaxTag`, the booking contents and mint fields, the refusal reason, the booking statements and their controls) | Renamed to the trie-ready names; main's `Approval`, `approvalAssetName` and exit names are untouched |
+| seven-b | Application tag and trie-ready tag names | Two commitments beside the existing approval commitment: the application tag's name commits to the payload and a nonce, the trie-ready tag's to the operation and a nonce; one nonce per request; no injectivity assumed |
+| seven-b | Termination request and booking | No application tag: its validity predicates, the tags it holds and mints and the refusal "forged-application-tag" go; a termination that holds an application tag is refused as dirty; the singular tag present in custody stays the trie-ready tag's precondition |
+| seven-b | Controls | A tag minted for another operation or nonce is refused (new); the two controls on a termination's application tag become the one above |
+| seven-c | `Config` | One tip field, the minimum tip, written under the wire key `maxFee`; `onlyRootChanged` keeps the one pin |
+| seven-c | The old tip-cover predicate and its uses | Retired with the two transaction-row statements' hypothesis and conjunct, the tip-cover lemma and the two scenario rows about the old fee pin; append-only restatement rows name each |
+| seven-c | Corpora and baseline | The transaction baseline's tip fields and the general control `wrong-fee` are listed at the first checkpoint; a row whose expectation changes is published unmet by ruling |
 
 ## Slice five: signed rows
 

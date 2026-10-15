@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "Terminology (operator): Singular has no controller concept. The application is the controller. It authorizes every operation through its application tag and governs the singular tag at the destination it names. A registration request carries a refund address, its owner field.",
+      "text": "Terminology (operator): Singular has no controller concept. The application is the controller. It authorizes a registration through its application tag, governs the singular tag at the destination it names, and consents to a termination by releasing that tag from its custody. A registration request carries a refund address, its owner field.",
       "pause": 400
     }
   ],
@@ -65,7 +65,7 @@
       "pause": 500
     },
     {
-      "text": "The request policy, the minting policy that mints a booked request's syntax tag, refuses any request whose contents are not exactly the following (\"dirty requests\").",
+      "text": "The request policy, the minting policy that mints a booked request's trie-ready tag, refuses any request whose contents are not exactly the following (\"dirty requests\"). The carrier ada is set by the ledger (the minimum for the output holding the token) and declared by the requester; the registry pins no carrier amount (ruled on 14 October 2026).",
       "pause": 400
     },
     {
@@ -81,7 +81,7 @@
       "pause": 300
     },
     {
-      "text": "Singular checks the application tag, not the application's rule. Everything the fold checks for a termination is fixed at booking. Both tag policies allow a burn at any time with no further condition, for both kinds of request. A rejection by anyone must be able to burn the application tag, and a booked termination, which has no other exit, must not be stranded.",
+      "text": "Singular checks that the application tag is present for a registration, never the application's rule. Singular does not police where else the application tag is minted. Everything the fold checks for a termination is fixed at booking. The tag policies allow a burn at any time with no further condition, for both kinds of request. A rejection by anyone must be able to burn a registration's tags, and a booked termination, which has no other exit, must not be stranded.",
       "pause": 400
     }
   ],
@@ -91,11 +91,15 @@
       "pause": 500
     },
     {
-      "text": "The syntax tag is minted when a request is booked and burned when that request is spent, by any exit: fold, retraction or rejection. There is no syntax tag without a pending request and no pending request without its syntax tag.",
+      "text": "The trie-ready tag proves that a request can be judged against the Merkle trie, positively (a fold) or negatively (a rejection). It is minted when a request is booked, only with its precondition present (the application tag for a registration, the singular tag for a termination), and burned when that request is spent, by any exit: fold, retraction or rejection. There is no trie-ready tag without a pending request and no pending request without its trie-ready tag.",
       "pause": 300
     },
     {
-      "text": "The application tag has the same life. It is minted at booking and burned by every exit. The syntax tag authorizes the request's shape and the application tag authorizes the operation. The application tag is never returned to anyone.",
+      "text": "The application tag proves that the payload is authorized to enter. It exists for registrations only. It has the same life as the trie-ready tag of its registration: minted at booking and burned by every exit, never returned to anyone. A termination carries none.",
+      "pause": 300
+    },
+    {
+      "text": "Asset names: the application tag's is the hash of the payload plus a nonce; the trie-ready tag's is the hash of the operation plus a nonce; the operation contains the payload.",
       "pause": 300
     },
     {
@@ -107,19 +111,19 @@
       "pause": 300
     },
     {
-      "text": "registration fold: burns the syntax tag and the application tag, and mints the singular tag at the destination;",
+      "text": "registration fold: burns the trie-ready tag and the application tag, and mints the singular tag at the destination;",
       "pause": 300
     },
     {
-      "text": "termination fold: burns the syntax tag, the singular tag and the application tag;",
+      "text": "registration rejection and retraction: burn the trie-ready tag and the application tag;",
       "pause": 300
     },
     {
-      "text": "rejection and retraction: burn the syntax tag and the application tag.",
+      "text": "termination fold: burns the trie-ready tag and the singular tag.",
       "pause": 300
     },
     {
-      "text": "The supply of each tag equals the count of pending requests.",
+      "text": "The supply of the trie-ready tag equals the count of pending requests; the supply of the application tag equals the count of pending registrations.",
       "pause": 300
     },
     {
@@ -127,7 +131,7 @@
       "pause": 300
     },
     {
-      "text": "An output at the request address that lacks either tag is not a request, because a syntax tag is minted only together with an application tag. Anyone may spend it. A tagged output leaves only through one of its exits.",
+      "text": "An output at the request address that lacks the trie-ready tag is not a request. Anyone may spend it. A trie-ready tag is minted only with its precondition present, so a genuine request always holds the tags its kind requires, and the sweep reaches only outputs that are not requests. A tagged output leaves only through one of its exits.",
       "pause": 300
     }
   ],
@@ -145,7 +149,7 @@
       "pause": 400
     },
     {
-      "text": "Every exit burns the syntax tag and the application tag; the termination fold also burns the singular tag.",
+      "text": "Every exit burns the trie-ready tag; the exits of a registration also burn the application tag; the termination fold also burns the singular tag.",
       "pause": 400
     },
     {
@@ -163,7 +167,7 @@
       "pause": 300
     },
     {
-      "text": "It spends only the requests it rejects, and burns each rejected request's syntax tag and application tag. It spends no state token, and this is checked.",
+      "text": "It spends only the requests it rejects, and burns each rejected request's trie-ready tag and application tag. It spends no state token, and this is checked.",
       "pause": 300
     },
     {
@@ -269,7 +273,7 @@
       "pause": 300
     },
     {
-      "text": "Only terminations carrying the application tag fold.",
+      "text": "Only a booked termination folds, and a booked termination carries its key's genuine singular tag. (Restated on 15 October 2026: a termination carries no application tag. The application's consent is the release of the singular tag from its custody, which lies outside Singular's scripts.)",
       "pause": 300
     },
     {
@@ -361,7 +365,11 @@
       "pause": 300
     },
     {
-      "text": "Both carry the application tag and the syntax tag, with its provenance.",
+      "text": "Both carry the trie-ready tag, with its provenance; a registration also carries the application tag, and a termination carries none.",
+      "pause": 300
+    },
+    {
+      "text": "Asset names: the application tag's is the hash of the payload plus a nonce, the trie-ready tag's the hash of the operation plus a nonce.",
       "pause": 300
     },
     {
@@ -417,7 +425,7 @@
       "pause": 300
     },
     {
-      "text": "Termination burns the singular tag and the application tag and donates held − tip.",
+      "text": "Termination burns the trie-ready tag and the singular tag and donates held − tip.",
       "pause": 300
     },
     {
@@ -453,7 +461,7 @@
       "pause": 300
     },
     {
-      "text": "a forged syntax tag, singular tag or application tag;",
+      "text": "a forged trie-ready tag, singular tag or application tag, a trie-ready tag minted for another operation or nonce, and a termination that holds an application tag;",
       "pause": 300
     },
     {
@@ -491,7 +499,7 @@
       "pause": 400
     },
     {
-      "text": "Adapting open-datum (applications/open-datum). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its application tag policy must allow a burn at any time, for both kinds of request.",
+      "text": "Adapting open-datum (applications/open-datum). Today it releases the token inside the terminating fold and pays the deposit to its control signer. The decision moves the release to booking, and the deposit payment must be reconciled with the treasury donation. Its application tag policy must allow a burn at any time (an application tag exists for registrations only).",
       "pause": 300
     },
     {
@@ -499,20 +507,16 @@
       "pause": 300
     },
     {
-      "text": "Values: R, t_min, δ and the carrier minimum, measured on the target network and chosen per registry.",
+      "text": "Values: R, t_min and δ, measured on the target network and chosen per registry. The carrier minimum is a ledger figure, not a registry parameter.",
       "pause": 300
     },
     {
-      "text": "The relation between the existing fee pin (maxFee) and the minimum tip t_min: both are pinned and checked, and no statement assumes how they relate. It is settled when the validators are made to agree with the model.",
-      "pause": 300
-    },
-    {
-      "text": "The source of the carrier amount: slice six of the Lean model checks the held value against a carrier allocation the requester declares and makes no claim that it equals the ledger's minimum; whether the amount stays declared or is pinned by the registry is not decided.",
-      "pause": 300
+      "text": "Closed by ruling. The relation between the old fee pin and the minimum tip (15 October 2026): the fee pin is retired and the minimum tip replaces it, in the same state field. The source of the carrier amount (14 October 2026): the ledger sets it and the requester declares it; the model makes no claim about the ledger minimum, which the ledger enforces when the output is created.",
+      "pause": 400
     }
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "d0d387a161fc44067b690b303a7d850bbc16ef981a7a9fcbeff90a4f1853ee44"
+    "sha256": "70f0024321e6d675b011f73dbcf0726aca2ded22042ba3ede0bfdca843028f10"
   }
 }
