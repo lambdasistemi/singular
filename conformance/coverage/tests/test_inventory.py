@@ -88,8 +88,8 @@ class RealInventoryTest(unittest.TestCase):
         # effects and expiry: 126 = 72 manifest-bound + 54 unclassified.
         inv = build_inventory(REPO_ROOT)
         self.assertEqual(inv.manifest_bound, 106)
-        self.assertEqual(inv.unclassified, 80)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 186)
+        self.assertEqual(inv.unclassified, 81)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 187)
         self.assertEqual(
             len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
             10,

@@ -1,4 +1,4 @@
-import Singular.Economics.Observation
+import Singular.Economics.Refunds
 
 /-! A rejection reads one authenticated state output and consumes its members
 atomically. This judgement never calls the historical fold/rejection exit. -/
@@ -102,6 +102,9 @@ def rejectionRefusal (world : World) (u : EconomicUtxo) (r : Rejection) : Option
   if let some why := r.members.findSome? (rejectionMemberRefusal world interval) then return why
   if !requestTagsBurned u r.transaction then return "reject-tag-not-burned"
   if !rejectionSupplyUnchanged u r.transaction then return "reject-registry-supply"
+  if let some why := refundRefusal r.transaction
+      (refundObligations (rejectedRequests world r.members) false) "reject-refund-short" then
+    return why
   none
 
 def rejectionEffect (world : World) (r : Rejection) : World :=
@@ -110,7 +113,7 @@ def rejectionEffect (world : World) (r : Rejection) : World :=
 
 /-- A refused batch yields no intermediate world. Accepted batches remove
 their pending registrations once; the ledger update is applyEconomicTransaction.
-Refund floors, fees and ledger balance are deliberately separate obligations. -/
+Refund floors are checked above; fees and full ledger balance remain separate. -/
 def rejectionAccepted (world : World) (u : EconomicUtxo) (r : Rejection) : Except String World :=
   match rejectionRefusal world u r with
   | some why => .error why

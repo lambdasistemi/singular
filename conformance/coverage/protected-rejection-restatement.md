@@ -168,3 +168,11 @@ Seven new public statements prove the reference-read rule over reachable worlds 
 | `Singular.rejectionObservation_world` | none (new declaration) | `da338e56003fd95929a5f7e0679ae218422a81ccb30fcbdcd6ce395366d4f458` | uncovered |
 | `Singular.rejectionState_facts` | none (new declaration) | `1262983030f402228eaa91eb076d0eee375f422104b65730e803f4c71ed05901` | uncovered |
 | `Singular.rejection_state_not_spent` | none (new declaration) | `1f1ff8e7cb2e49e580ceb8640b9563f41639df20dc5397c33df6168c738e51ee` | uncovered |
+
+## Economic retraction effect
+
+These new economic declarations have no implementation coverage. Every earlier identity remains unchanged; no legacy conformance claim is evidence for these refunds.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.retractionAccepted_effect` | none (new declaration) | `1a18084b164f142d843cae9035033d525e197902b7aa4e2cccd707c6779ec6a3` | uncovered |

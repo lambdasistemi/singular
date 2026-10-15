@@ -175,6 +175,7 @@
     "Singular.rejectionState_facts@1262983030f402228eaa91eb076d0eee375f422104b65730e803f4c71ed05901",
     "Singular.rejection_state_not_spent@1f1ff8e7cb2e49e580ceb8640b9563f41639df20dc5397c33df6168c738e51ee",
     "Singular.retractableEdge_iff@668ab0bbe52c437391356fcc96fc601da8823fc2252850dc78d1289fb564cad1",
+    "Singular.retractionAccepted_effect@1a18084b164f142d843cae9035033d525e197902b7aa4e2cccd707c6779ec6a3",
     "Singular.settle_one@864b6bb6ad8aa37b69fe395230a1875c83bc225c0ee52a41bcd5f33c9c66d5bf",
     "Singular.step_config_root@dfa6943275884be44fa845fa11235e938a49965a7eaee4b64584438044ea1bc7",
     "Singular.step_eq_ok@8a665eb3e37f64d7467790d5446ab4c33b63f81dddc08aea8bbf48885421eecf",

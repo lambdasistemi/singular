@@ -2,8 +2,8 @@ import Main.RejectionReadsState
 
 /-! Transactions for the economic refund contract. Each world is produced by
 the real booking functions. Amounts are illustrative, not ledger measurements.
-The initial control runner records missing retraction admission separately;
-the historical test commit preserves that pre-implementation evidence. -/
+The historical test commit records missing retraction admission separately
+and preserves the pre-implementation rejection failures. -/
 
 open Singular
 
@@ -162,29 +162,54 @@ def controls (w : World) : List Control :=
      story := "a retraction cannot read the state",
      transaction.transaction.referenceInputs := [stateInput], expected := some "retract-state-read" }]
 
-/-- Run every evaluable row rather than stopping after the first mismatch.
-No legacy retraction substitutes for the missing economic judgement. -/
-def runRed : IO Unit := do
+/-- Judge every recorded transaction through the economic exit. A payment's
+purpose is not observable: all lovelace at an address contributes to its floor. -/
+def run : IO (List Lean.Json) := do
   let w ← match world with
     | .error why => throw (IO.userError s!"refund booking trace failed: {why}")
     | .ok w => pure w
-  let mut failed := 0
-  let mut unavailable := 0
-  for row in controls w do
-    if row.retract then
-      unavailable := unavailable + 1
-      IO.println s!"COULD-NOT-EVALUATE: {row.story}; expected={repr row.expected}; economic retraction judgement absent"
-    else
-      let actual := match rejectionAccepted row.world row.unspent
-          ⟨row.transaction, RejectionReadControls.stateReference, row.members⟩ with
-        | .error why => some why | .ok _ => none
-      let matched := actual == row.expected
-      unless matched do failed := failed + 1
-      IO.println s!"{if matched then "PASS" else "FAIL"}: {row.story}; expected={repr row.expected}; actual={repr actual}"
-  IO.println "COULD-NOT-EVALUATE: a second retraction of the same request is refused; requires the first accepted economic retraction and its unspent update"
-  unavailable := unavailable + 1
-  IO.println s!"refund controls: mismatches={failed}; could-not-evaluate={unavailable}"
-  unless failed == 0 && unavailable == 0 do
-    throw (IO.userError "economic refund contract is not implemented")
+  let a := registration 6 1 42
+  let c := registration 10 4 42
+  let amount := a.request.contents.lovelace - a.request.declaredTip
+  let otherPurpose := { payment a.request.refundAddress 1 with output.role := .destination }
+  let extra := [
+    rejection w "separate outputs at one address contribute once each" [a, c]
+      [payment a.request.refundAddress amount, payment a.request.refundAddress amount] none,
+    rejection w "a payment for another purpose at the refund address counts as received" [a]
+      [payment a.request.refundAddress (amount - 1), otherPurpose] none,
+    rejection w "another address's payment cannot repair a short refund" [a]
+      [payment a.request.refundAddress (amount - 1), payment 99 100] (some "reject-refund-short") ]
+  let mut rows := []
+  for row in controls w ++ extra do
+    let result := if row.retract then retractionAccepted row.world row.unspent row.transaction
+      else rejectionAccepted row.world row.unspent
+        ⟨row.transaction, RejectionReadControls.stateReference, row.members⟩
+    let actual := match result with | .error why => some why | .ok _ => none
+    unless actual == row.expected do
+      throw (IO.userError s!"{row.story}: expected {repr row.expected}, actual {repr actual}")
+    if let .ok after := result then
+      unless after.registry == row.world.registry && after.terminations == row.world.terminations do
+        throw (IO.userError s!"{row.story}: registry or terminations changed")
+      let consumed := if row.retract then 1 else row.members.length
+      unless after.pending.length + consumed == row.world.pending.length do
+        throw (IO.userError s!"{row.story}: request not removed exactly once")
+    rows := rows ++ [Lean.Json.mkObj [
+      ("story", Lean.toJson row.story), ("expectedReason", Lean.toJson row.expected),
+      ("actualReason", Lean.toJson actual), ("matched", Lean.toJson (actual == row.expected))]]
+  let first := retraction w
+  let after ← match retractionAccepted w first.unspent first.transaction with
+    | .error why => throw (IO.userError s!"retraction replay setup failed: {why}")
+    | .ok after => pure after
+  let updated := applyEconomicTransaction first.unspent first.transaction
+  let again := { first.transaction with identity := first.transaction.identity + 1 }
+  let actual := match retractionAccepted after updated again with
+    | .error why => some why | .ok _ => none
+  unless actual == some "spent-input-missing" do
+    throw (IO.userError s!"second retraction: expected spent-input-missing, actual {repr actual}")
+  rows := rows ++ [Lean.Json.mkObj [
+    ("story", Lean.toJson "a second retraction of the same request is refused"),
+    ("expectedReason", Lean.toJson (some "spent-input-missing")),
+    ("actualReason", Lean.toJson actual), ("matched", Lean.toJson true)]]
+  pure rows
 
 end RefundControls

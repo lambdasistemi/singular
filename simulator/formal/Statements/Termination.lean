@@ -125,6 +125,10 @@ theorem world_supply_sync (world : World) (reachable : WorldReachable world) (ke
       have effect := rejectionAccepted_effect accepted
       subst after
       exact ih
+    | @retraction before after reach unspent transaction accepted ih =>
+      have effect := retractionAccepted_effect accepted
+      subst after
+      exact ih
   have law := invariant.1 key
   have count := invariant.2 key
   by_cases active : trieGet world.registry.trie key = .known .active <;> simp_all
@@ -181,6 +185,10 @@ theorem termination_request_carries_genuine_token (world : World)
         · exact ih old
   | @rejection before after reach unspent transaction accepted ih =>
     have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih pending
+  | @retraction before after reach unspent transaction accepted ih =>
+    have effect := retractionAccepted_effect accepted
     subst after
     exact ih pending
 

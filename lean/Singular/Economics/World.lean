@@ -1,10 +1,10 @@
-import Singular.Economics.Rejection
+import Singular.Economics.Retraction
 
 namespace Singular
 
 /-- Start with an actually reachable registry and no pending requests. The
 existing registry reachability is a premise, not extended or restated here.
-Every subsequent world is the result of an admitted booking or rejection. -/
+Every subsequent world results from an admitted booking, rejection or retraction. -/
 inductive WorldReachable : World → Prop where
   | initial (registry : RegistryState) (reachable : Reachable registry) :
       WorldReachable ⟨registry, [], []⟩
@@ -17,6 +17,10 @@ inductive WorldReachable : World → Prop where
   | rejection {before after : World} (reachable : WorldReachable before)
       (unspent : EconomicUtxo) (transaction : Rejection)
       (accepted : rejectionAccepted before unspent transaction = .ok after) :
+      WorldReachable after
+  | retraction {before after : World} (reachable : WorldReachable before)
+      (unspent : EconomicUtxo) (transaction : EconomicTransaction)
+      (accepted : retractionAccepted before unspent transaction = .ok after) :
       WorldReachable after
 
 /-- Count actual singular tags in pending outputs, by their full identity.

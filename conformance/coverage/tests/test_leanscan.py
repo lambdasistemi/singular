@@ -141,7 +141,7 @@ class RealTreeDiscoveryTest(unittest.TestCase):
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            186,
+            187,
             "base population drifted; the denominator must be re-examined",
         )
         statement_namespaces = (

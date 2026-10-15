@@ -65,6 +65,10 @@ theorem booked_request_has_exact_contents (world : World) (reachable : WorldReac
     have effect := rejectionAccepted_effect accepted
     subst after
     exact ih (List.mem_filter.mp pending).1
+  | @retraction before after reach unspent transaction accepted ih =>
+    have effect := retractionAccepted_effect accepted
+    subst after
+    exact ih (List.mem_filter.mp pending).1
 
 /-- The pool keeps the booking transaction's interval, and the pending
 registration's booked time is exactly its upper end. -/
@@ -99,6 +103,10 @@ theorem booked_time_is_interval_end (world : World) (reachable : WorldReachable 
       next fresh => cases accepted; exact ih pending
   | @rejection before after reach unspent transaction accepted ih =>
     have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih (List.mem_filter.mp pending).1
+  | @retraction before after reach unspent transaction accepted ih =>
+    have effect := retractionAccepted_effect accepted
     subst after
     exact ih (List.mem_filter.mp pending).1
 
@@ -149,6 +157,10 @@ theorem booking_width_within_limit (world : World) (reachable : WorldReachable w
       next fresh => cases accepted; exact ih pending
   | @rejection before after reach unspent transaction accepted ih =>
     have effect := rejectionAccepted_effect accepted
+    subst after
+    exact ih (List.mem_filter.mp pending).1
+  | @retraction before after reach unspent transaction accepted ih =>
+    have effect := retractionAccepted_effect accepted
     subst after
     exact ih (List.mem_filter.mp pending).1
 

@@ -79,7 +79,10 @@ def unspent (w : World) : Utxo :=
 def transaction (members : List RegistrationBooking) (interval : Interval) : Tx :=
   { inputs := members.map (fun b => input b.request.reference),
     referenceInputs := [{ input stateReference with role := .state }],
-    outputs := [], mint := [], signers := [], refunds := [], validity := some interval }
+    outputs := members.map (fun b =>
+      { economicOutput (b.request.contents.lovelace - b.request.declaredTip) with
+        role := .owner, address := some b.request.refundAddress, assets := [] }),
+    mint := [], signers := [], refunds := [], validity := some interval }
 
 def lawful (w : World) (story : String) (members : List RegistrationBooking)
     (grounds : List RejectReason) (interval : Interval) : Control :=
@@ -196,7 +199,10 @@ def observedUnspent (w : World) (u : Utxo) : EconomicUtxo :=
       | none => (ref, observation)
 
 def observedTransaction (row : Control) : EconomicTransaction :=
-  let outputs := row.carriedTags.map fun contents =>
+  let refunds := row.transaction.outputs.map fun output =>
+    { output, contents := {
+        lovelace := output.lovelace, applicationTags := [], trieReadyTags := [] } : EconomicOutput }
+  let outputs := refunds ++ row.carriedTags.map fun contents =>
     { output := { economicOutput contents.lovelace with assets := [] }, contents : EconomicOutput }
   { transaction := { row.transaction with outputs := outputs.map (·.output) },
     identity := 90, outputs,
