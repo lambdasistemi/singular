@@ -41,9 +41,11 @@ caller import path: a caller compiles against the facades' exports, not
 against these modules. `Singular.Registry.Ledger`,
 `Singular.Registry.LedgerProvider`, `Singular.Registry.Evidence` and
 `Singular.Registry.Signing` are the
-re-exports: their implementations are owned by the public `local-services`
-component (`offchain/local-services/`) and the main library exposes their
-stable import paths. The generic provider interface and evidence types let a
+re-exports: the implementations of the first, second and fourth are owned
+by the public `local-services` component (`offchain/local-services/`) and
+that of `Evidence` by the public `ledger-client` component
+(`offchain/ledger-client/`); the main library exposes their stable import
+paths. The generic provider interface and evidence types let a
 caller supply capabilities without selecting a node runtime; the Koios
 constructor supplies unbound, unverified HTTP facts through that interface.
 The runtime service modules outside this extent — the terminal composition
@@ -86,7 +88,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="module">Singular.Registry.Deployment.Manifest</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Manifest.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="module">Singular.Registry.Deployment.Mirror</a> — <a href="../offchain/lib/Singular/Registry/Deployment/Mirror.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="module">Singular.Registry.Driver</a> — <a href="../offchain/lib/Singular/Registry/Driver.hs" data-api="source">source</a>
-- <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/local-services/Singular/Registry/Evidence.hs" data-api="source">source</a>
+- <a href="../offchain/ledger-client/Singular/Registry/Evidence.hs" data-api="module">Singular.Registry.Evidence</a> — <a href="../offchain/ledger-client/Singular/Registry/Evidence.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="module">Singular.Registry.FoldSelection</a> — <a href="../offchain/lib/Singular/Registry/FoldSelection.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="module">Singular.Registry.Funding</a> — <a href="../offchain/lib/Singular/Registry/Funding.hs" data-api="source">source</a>
 - <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="module">Singular.Registry.Ledger</a> — <a href="../offchain/local-services/Singular/Registry/Ledger.hs" data-api="source">source</a>
@@ -314,12 +316,15 @@ main library's, with the runtime service modules staying outside it in
 [Runtime service ownership](offchain-node-ownership.md), and
 the conformance reference's extent is the conformance library's. The
 executables and the on-chain Aiken validators remain outside the
-generated references. The public `local-services` component also exposes
-`LocalEvaluation`, `NetworkTime`, `ProviderSettings`, `ProviderTrace`,
-`SessionEvidence`, `SessionIO`, `SessionServices`, `TimeMaterial`,
-`TimeSource`, `Trace`, `TraceRender`, `WaitTypes` and `Wallet`; their sources live under
-`offchain/local-services/Singular/Registry/`. Their generated pages are not
-in this main-library reference. The public `open-datum-application`
+generated references. The public `ledger-client` component also exposes `LocalEvaluation`,
+`NetworkTime` and `Trace`, with sources under
+`offchain/ledger-client/Singular/Registry/`, and the public `local-services`
+component `ProviderSettings`, `ProviderTrace`, `SessionEvidence`,
+`SessionIO`, `SessionServices`, `TimeMaterial`, `TimeSource`, `TraceRender`,
+`WaitTypes` and `Wallet`, with sources under
+`offchain/local-services/Singular/Registry/`; `local-services` re-exports the
+four `ledger-client` modules under the same names. Their generated pages are
+not in this main-library reference. The public `open-datum-application`
 component (`applications/open-datum/offchain/`) carries the open-datum
 application the command line composes — entry commands, envelope, booking
 approval and destination, payload update, release rules, script, and the

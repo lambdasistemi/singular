@@ -20,7 +20,10 @@ describes what replaced it.
 
 ## One owner per runtime concern
 
-The runtime's owners are three public components. `local-services` owns
+The runtime's owners are four public components. `ledger-client` owns
+the provider-independent core of the ledger client — evidence, network
+time, typed read traces and local script evaluation — and links no
+signing, wallet, file, process or network code; `local-services` owns
 the generic session and the fixed services computed from it; the main
 library owns the registry's application services and the bounds a
 command runs under; and `koios-http` owns the one live terminal
@@ -45,14 +48,14 @@ flowchart TD
 | Owner | Responsible for |
 | --- | --- |
 | `Singular.Registry.LedgerProvider` | The generic capabilities every provider implements: acquiring a session for a network or refusing by name, composed address, asset and txin reads, protocol parameters, and submission — polymorphic in the witness and effect types, knowing nothing of a registry. |
-| `Singular.Registry.Evidence` and `Singular.Registry.SessionEvidence` | The fact type with its optional ledger witness and its verdict; and observing the facts a consumer actually reads, refusals and history continuations included, in the caller's monad. |
+| `Singular.Registry.Evidence` (in `ledger-client`) and `Singular.Registry.SessionEvidence` | The fact type with its optional ledger witness and its verdict; and observing the facts a consumer actually reads, refusals and history continuations included, in the caller's monad. |
 | `Singular.Registry.SessionServices` | The fixed local computations over one acquired session's raw facts. It acquires no session, performs no transport operation, and selects no evaluation or time policy. |
-| `Singular.Registry.LocalEvaluation` | Ledger execution from complete resolved input facts: script results from exact raw inputs, refusing missing or conflicting ones. |
-| `Singular.Registry.NetworkTime`, `TimeSource` and `TimeMaterial` | Pure conversions over validated, pinned network data; which immutable source a network reads (the reviewed preprod package or the generated network's own bytes); and the horizon beyond which no conversion may authorize a fold or retraction. |
+| `Singular.Registry.LocalEvaluation` (in `ledger-client`) | Ledger execution from complete resolved input facts: script results from exact raw inputs, refusing missing or conflicting ones. |
+| `Singular.Registry.NetworkTime` (in `ledger-client`), `TimeSource` and `TimeMaterial` | Pure conversions over validated, pinned network data; which immutable source a network reads (the reviewed preprod package or the generated network's own bytes); and the horizon beyond which no conversion may authorize a fold or retraction. |
 | `Singular.Registry.SessionIO` | The IO consumers of the generic raw session, including the bounded pre-signing horizon wait. It acquires no extra session and chooses no provider or evaluator. |
 | `Singular.Registry.Wallet` | Explicit payment wallet loading and public address rendering. No process mode, generated wallet or connection belongs to it. |
 | `Singular.Registry.Signing` | Payment-key witnesses and the signed-transaction capability: the one way a built transaction becomes sealed bytes. |
-| `Singular.Registry.ProviderTrace`, `Trace` and `TraceRender` | Typed events at the provider boundary — every call a command makes, timed and typed — and their rendering. No module reads an environment variable to decide whether to log. |
+| `Singular.Registry.ProviderTrace`, `Trace` (in `ledger-client`) and `TraceRender` | Typed events at the provider boundary — every call a command makes, timed and typed — and their rendering. No module reads an environment variable to decide whether to log. |
 | `Singular.Registry.ProviderSettings` | Explicit configuration of the sole shipping ledger provider: the parser carries paths; token and time files are read by terminal composition. |
 | `Singular.Registry.WaitTypes` | The stable bounded-wait failure identity shared by the wait owner and the journals that name it. |
 | `Singular.Registry.Ledger` | Cardano ledger type re-exports, owned here and re-exported by the main library under the original import path. |
@@ -65,14 +68,17 @@ flowchart TD
 | `Singular.Provider.Koios.Http` and `Singular.Provider.Koios.Recorder` | The HTTP transport, and the read-only fixture recorder over it. |
 | `Singular.CLI.Session` | The environment a write command runs with and its journalled submissions: every transaction prepared, answered, confirmed and observed in synchronized phases, so a process killed anywhere leaves the journal saying how far it got. |
 
-The first twelve rows live in `local-services`, the next four in the main
-library, the following three in `koios-http`, and the last in the command
+The first twelve rows live in `local-services`, except that `Evidence`,
+`LocalEvaluation`, `NetworkTime` and `Trace` live in `ledger-client`, which
+`local-services` depends on and re-exports under the same module names; the
+next four rows live in the main library, the following three in `koios-http`, and the last in the command
 line. The trie's own owners — `TrieState` and its instances — are a
 separate capability documented with the library's modules in the
 [off-chain API reference](offchain-api-reference.md); the main library's
 re-exports of `Ledger`, `LedgerProvider`, `Evidence` and `Signing` keep
-their stable import paths, and their generated pages come from
-`local-services`' own Haddock tree.
+their stable import paths, and their generated pages come from the Haddock
+tree of the library that owns each: `Evidence` from `ledger-client`, the
+other three from `local-services`.
 
 ## Where common changes land
 
@@ -80,10 +86,10 @@ their stable import paths, and their generated pages come from
   `koios-http` — `Terminal`, `Provider.Koios.Http` — with
   `ProviderSettings` parsing what the operator supplies.
 - A read, its evidence or its verdict: `LedgerProvider`, `Evidence` or
-  `SessionEvidence` in `local-services`. The witness type stays a
+  `SessionEvidence` in `local-services`, `Evidence` in `ledger-client`. The witness type stays a
   parameter; Demo 1 ships the uninhabited one and the unverified verifier.
 - Local evaluation or time conversion: `SessionServices`,
-  `LocalEvaluation`, `NetworkTime` or `TimeMaterial`. An adapter supplies
+  `LocalEvaluation` and `NetworkTime` (in `ledger-client`), or `TimeMaterial`. An adapter supplies
   facts and cannot select an evaluator or a time converter.
 - A bounded wait, its failure or the submission bound: `Wait`, whose
   failure identity `WaitTypes` fixes. The common submission and
@@ -95,7 +101,8 @@ their stable import paths, and their generated pages come from
 - Wallet loading, key handling or signing: `Wallet` and `Signing`. Key
   bytes are never logged.
 - What the provider boundary reports: typed events into the tracer the
-  caller hands it — `ProviderTrace`, `Trace` and `TraceRender`.
+  caller hands it — `ProviderTrace`, `Trace` (in `ledger-client`) and
+  `TraceRender`.
 - How a command reaches its capabilities, or what its journal records:
   `Singular.CLI.Session` beside the terminal composition.
 

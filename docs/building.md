@@ -72,7 +72,7 @@ has one, and what stands in for it where there is none:
 
 | Code | Reference on this site |
 | --- | --- |
-| The off-chain registry library's public modules | Haddock: the [off-chain API reference](offchain-api-reference.md), including the four modules it re-exports from the public `local-services` library |
+| The off-chain registry library's public modules | Haddock: the [off-chain API reference](offchain-api-reference.md), including the four modules it re-exports from the public `local-services` and `ledger-client` libraries |
 | The Conformance library | Haddock: the [Conformance API reference](conformance-api-reference.md) |
 | The registry validators under `onchain/` | `aiken docs` from the onchain flake's pinned compiler: the [validator API reference](onchain-api-reference.md) |
 | The runtime service modules outside the library's extent | None generated; the [Runtime service ownership](offchain-node-ownership.md) page records which module owns which concern |
