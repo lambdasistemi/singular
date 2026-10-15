@@ -17,7 +17,6 @@ export const request = (edge, key, opts = {}) => ({
   registryId: opts.registryId ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
-  submittedAt: opts.submittedAt ?? 0,
   approval: null,
   claimed: opts.claimed ?? [],
 });

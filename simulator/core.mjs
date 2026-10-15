@@ -74,7 +74,6 @@ const requestSchema = {
   registryId: N,
   output: N,
   datum: { $option: N },
-  submittedAt: N,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };

@@ -753,7 +753,6 @@ const requestSchema = {
   registryId: N,
   output: N,
   datum: { $option: N },
-  submittedAt: N,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
@@ -1069,7 +1068,6 @@ const request = (edge, key, opts = {}) => ({
   registryId: opts.registryId ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
-  submittedAt: opts.submittedAt ?? 0,
   approval: null,
   claimed: opts.claimed ?? [],
 });
