@@ -705,3 +705,25 @@ fn isBurn(quantity: Option<Int>) -> Bool {
     None -> False
   }
 }
+
+validator closed_datum(registry: ByteArray) {
+  mint(redeemer: OpenDatumMint, policy_id: PolicyId, tx: Transaction) {
+    open_datum.mint(registry, redeemer, policy_id, tx)
+  }
+
+  spend(
+    datum: Option<Data>,
+    redeemer: OpenDatumSpend,
+    own: OutputReference,
+    tx: Transaction,
+  ) {
+    when redeemer is {
+      Update -> traceFalse(@"closed-datum-update")
+      Release -> open_datum.spend(registry, datum, Release, own, tx)
+    }
+  }
+
+  else(_) {
+    fail
+  }
+}

@@ -1196,13 +1196,19 @@
               # blueprint holds the whole contract: this app rebuilds the
               # registry blueprint and the application blueprint, unions
               # their validator sets, and requires the union to equal the
-              # base set recorded in base-hashes.json exactly — every hash
-              # byte-identical. Titles are compared modulo the module path
+              # base set recorded in base-hashes.json plus exactly the
+              # declared closed titles — every base hash byte-identical,
+              # each declared hash read from the application identity
+              # manifest (one place, tied to the build by the identity job).
+              # Titles are compared modulo the module path
               # (the first segment), so a move that renames only the module
               # path is tolerated while a changed hash, a missing validator
-              # and an extra validator all fail. The two plants below run on
-              # every invocation: a changed hash and a missing validator
-              # must each be refused, naming the validator — a comparison
+              # and an extra validator all fail. A declared title equal to a
+              # base title must not hide it. The plants below run on
+              # every invocation: a changed base hash, a missing base
+              # validator (both selected by title), a collision, an
+              # undeclared extra validator, and a moved declared hash must
+              # each be refused, naming the validator — a comparison
               # that cannot fail guards nothing. Takes the repository root
               # (default: the working tree) and builds both blueprints
               # itself, so CI runs it with no other setup.
@@ -1242,6 +1248,36 @@
                   work=$(mktemp -d)
                   trap 'rm -rf "$work"' EXIT
                   jq -s '{validators: (.[0].validators + .[1].validators)}' "$registry_bp" "$app_bp" >"$work/union.json"
+                  declared="$root/specs/650-closed-datum/evidence/declared-additions.json"
+                  manifest="$root/applications/open-datum/onchain/script-identity.json"
+                  [ -f "$declared" ] || {
+                    echo "script-hash-comparison: no declared-additions.json under $root" >&2
+                    exit 2
+                  }
+                  [ -f "$manifest" ] || {
+                    echo "script-hash-comparison: no application script-identity.json under $root" >&2
+                    exit 2
+                  }
+                  jq -e '.titles | length == 3' "$declared" >/dev/null || {
+                    echo "script-hash-comparison: declared additions must name exactly three titles" >&2
+                    exit 1
+                  }
+                  jq -e '[.titles[] | select(startswith("open_datum."))] | length == 3' "$declared" >/dev/null || {
+                    echo "script-hash-comparison: declared titles must start with open_datum." >&2
+                    exit 1
+                  }
+                  if jq -r -n --slurpfile b "$base" --slurpfile d "$declared" '($b[0].validators | map(.title)) as $bt | ($d[0].titles[]) as $t | select($bt | index($t)) | $t' | grep -q .; then
+                    echo "script-hash-comparison: a declared title equals a base title and must not hide it" >&2
+                    exit 1
+                  fi
+                  jq -n --slurpfile b "$base" --slurpfile d "$declared" --slurpfile m "$manifest" '($b[0]) as $bb | ($d[0].titles) as $dt | ($m[0].validators | map({key: .title, value: .hash}) | from_entries) as $mh | {validators: ($bb.validators + [$dt[] | {title: ., hash: $mh[.] | select(. != null)}])} | select(.validators | length == ($bb.validators | length) + 3) | .' >"$work/expected.json" || {
+                    echo "script-hash-comparison: could not build the expected set (a declared title has no hash in the identity manifest)" >&2
+                    exit 1
+                  }
+                  [ -f "$work/expected.json" ] || {
+                    echo "script-hash-comparison: expected set missing (a declared hash is absent from the manifest)" >&2
+                    exit 1
+                  }
                   # S5-1d-r2: one-to-one title correspondence with pre-map
                   # rejection. Raw checks (duplicate full titles, ambiguous
                   # normalised keys, empty sets, raw-count equality) run in
@@ -1310,19 +1346,19 @@
                     fi
                     return 0
                   }
-                  if ! compare "$base" "$work/union.json" >"$work/live.log" 2>&1; then
-                    echo "script-hash-comparison: union differs from the base set:" >&2
+                  if ! compare "$work/expected.json" "$work/union.json" >"$work/live.log" 2>&1; then
+                    echo "script-hash-comparison: union differs from the expected set:" >&2
                     cat "$work/live.log" >&2
                     exit 1
                   fi
-                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the base set ($(jq '.validators | length' "$base") recorded, compiler $base_compiler)"
+                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set (base $(jq '.validators | length' "$base") + 3 declared = $(jq '.validators | length' "$work/expected.json"), compiler $base_compiler)"
                   jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$work/union.json"
-                  jq '.validators[0].hash = "00000000000000000000000000000000000000000000000000000000"' "$work/union.json" >"$work/plant-changed.json"
-                  grep -q '00000000000000000000000000000000000000000000000000000000' "$work/plant-changed.json" || {
-                    echo "script-hash-comparison: changed-hash plant did not apply" >&2
+                  jq '(.validators |= map(if .title == "state.state.spend" then .hash = "00000000000000000000000000000000000000000000000000000000" else . end))' "$work/union.json" >"$work/plant-changed.json"
+                  jq -e '[.validators[] | select(.title == "state.state.spend" and .hash == "00000000000000000000000000000000000000000000000000000000")] | length == 1' "$work/plant-changed.json" >/dev/null || {
+                    echo "script-hash-comparison: changed-hash plant did not apply to state.state.spend" >&2
                     exit 2
                   }
-                  if compare "$base" "$work/plant-changed.json" >"$work/plant-changed.log" 2>&1; then
+                  if compare "$work/expected.json" "$work/plant-changed.json" >"$work/plant-changed.log" 2>&1; then
                     echo "script-hash-comparison: MISSED the changed-hash plant" >&2
                     exit 1
                   fi
@@ -1331,18 +1367,27 @@
                     cat "$work/plant-changed.log" >&2
                     exit 1
                   }
+                  grep -q 'state\.state\.spend\|state\.spend' "$work/plant-changed.log" || {
+                    echo "script-hash-comparison: changed-hash plant refused without naming state.state.spend:" >&2
+                    cat "$work/plant-changed.log" >&2
+                    exit 1
+                  }
                   echo "script-hash-comparison: changed-hash plant refused" >&2
-                  jq 'del(.validators[0])' "$work/union.json" >"$work/plant-missing.json"
+                  jq '.validators |= map(select(.title != "state.state.spend"))' "$work/union.json" >"$work/plant-missing.json"
+                  jq -e '[.validators[] | select(.title == "state.state.spend")] | length == 0' "$work/plant-missing.json" >/dev/null || {
+                    echo "script-hash-comparison: missing-validator plant did not apply to state.state.spend" >&2
+                    exit 2
+                  }
                   [ "$(jq '.validators | length' "$work/plant-missing.json")" = "$(($(jq '.validators | length' "$work/union.json") - 1))" ] || {
                     echo "script-hash-comparison: missing-validator plant did not apply" >&2
                     exit 2
                   }
-                  if compare "$base" "$work/plant-missing.json" >"$work/plant-missing.log" 2>&1; then
+                  if compare "$work/expected.json" "$work/plant-missing.json" >"$work/plant-missing.log" 2>&1; then
                     echo "script-hash-comparison: MISSED the missing-validator plant" >&2
                     exit 1
                   fi
                   # S5-1d-r2: the missing row fails pre-map on raw-count
-                  # equality (13 vs 14) before any map exists; that count
+                  # equality (16 vs 17) before any map exists; that count
                   # mismatch is its reason.
                   grep -q 'count mismatch' "$work/plant-missing.log" || {
                     echo "script-hash-comparison: missing-validator plant refused without its count reason:" >&2
@@ -1354,7 +1399,7 @@
                   # that normalises onto an existing title but carries another
                   # hash must fail (ambiguous normalised key and count
                   # mismatch) — the class the changed/missing plants do not
-                  # exercise on the current 14-row subject.
+                  # exercise on the current 17-row subject.
                   jq '.validators += [{"title": "alternate.open_datum.mint", "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "compiledCode": "00"}]' "$work/union.json" >"$work/plant-collision.json"
                   [ "$(jq '.validators | length' "$work/plant-collision.json")" = "$(($(jq '.validators | length' "$work/union.json") + 1))" ] || {
                     echo "script-hash-comparison: collision plant did not apply" >&2
@@ -1364,7 +1409,7 @@
                     echo "script-hash-comparison: collision plant title missing" >&2
                     exit 2
                   }
-                  if compare "$base" "$work/plant-collision.json" >"$work/plant-collision.log" 2>&1; then
+                  if compare "$work/expected.json" "$work/plant-collision.json" >"$work/plant-collision.log" 2>&1; then
                     echo "script-hash-comparison: MISSED the collision plant" >&2
                     exit 1
                   fi
@@ -1374,11 +1419,50 @@
                     exit 1
                   }
                   echo "script-hash-comparison: collision plant refused" >&2
+                  jq '(.validators |= map(select(.title != "state.state.spend")) + [{"title": "open_datum.undeclared.mint", "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "compiledCode": "00"}])' "$work/union.json" >"$work/plant-undeclared.json"
+                  [ "$(jq '.validators | length' "$work/plant-undeclared.json")" = "$(jq '.validators | length' "$work/union.json")" ] || {
+                    echo "script-hash-comparison: undeclared-extra plant did not apply" >&2
+                    exit 2
+                  }
+                  grep -q 'open_datum.undeclared.mint' "$work/plant-undeclared.json" || {
+                    echo "script-hash-comparison: undeclared-extra plant title missing" >&2
+                    exit 2
+                  }
+                  if compare "$work/expected.json" "$work/plant-undeclared.json" >"$work/plant-undeclared.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the undeclared-extra plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'open_datum.undeclared.mint\|undeclared.mint' "$work/plant-undeclared.log" || {
+                    echo "script-hash-comparison: undeclared-extra plant refused without naming it:" >&2
+                    cat "$work/plant-undeclared.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: undeclared-extra plant refused" >&2
+                  jq '(.validators |= map(if .title == "open_datum.closed_datum.mint" then .hash = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" else . end))' "$work/union.json" >"$work/plant-declared-moved.json"
+                  jq -e '[.validators[] | select(.title == "open_datum.closed_datum.mint" and .hash == "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")] | length == 1' "$work/plant-declared-moved.json" >/dev/null || {
+                    echo "script-hash-comparison: declared-moved plant did not apply to open_datum.closed_datum.mint" >&2
+                    exit 2
+                  }
+                  if compare "$work/expected.json" "$work/plant-declared-moved.json" >"$work/plant-declared-moved.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the declared-moved plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'moved' "$work/plant-declared-moved.log" || {
+                    echo "script-hash-comparison: declared-moved plant refused without naming the moved validator:" >&2
+                    cat "$work/plant-declared-moved.log" >&2
+                    exit 1
+                  }
+                  grep -q 'closed_datum.mint' "$work/plant-declared-moved.log" || {
+                    echo "script-hash-comparison: declared-moved plant refused without naming open_datum.closed_datum.mint:" >&2
+                    cat "$work/plant-declared-moved.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: declared-moved plant refused" >&2
                   # S5.2: the deployment blueprint itself. Built in the
                   # application's onchain flake from the same two trees
                   # (jq merge, preamble from the registry's), it must equal
-                  # the base set exactly and carry byte-identical
-                  # compiledCode for all 14 validators — the pairing
+                  # the expected set exactly and carry byte-identical
+                  # compiledCode for all 17 validators — the pairing
                   # guarantee every executable's --blueprint relies on.
                   merged_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")"
                   [ -f "$merged_bp" ] || {
@@ -1390,12 +1474,12 @@
                     echo "script-hash-comparison: compiler moved: base records $base_compiler, merged reports $merged_compiler" >&2
                     exit 1
                   }
-                  if ! compare "$base" "$merged_bp" >"$work/merged.log" 2>&1; then
-                    echo "script-hash-comparison: merged blueprint differs from the base set:" >&2
+                  if ! compare "$work/expected.json" "$merged_bp" >"$work/merged.log" 2>&1; then
+                    echo "script-hash-comparison: merged blueprint differs from the expected set:" >&2
                     cat "$work/merged.log" >&2
                     exit 1
                   fi
-                  echo "script-hash-comparison: OK — merged deployment blueprint equals the base set ($(jq '.validators | length' "$merged_bp") validators, compiler $base_compiler)"
+                  echo "script-hash-comparison: OK — merged deployment blueprint equals the expected set ($(jq '.validators | length' "$merged_bp") validators, compiler $base_compiler)"
                   jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$merged_bp"
                   # Byte-identical compiledCode: every merged validator must
                   # match the union's title, hash and compiledCode exactly.
@@ -1416,8 +1500,12 @@
                     exit 1
                   }
                   echo "script-hash-comparison: merged compiledCode byte-identical to the union" >&2
-                  jq '.validators[0].hash = "00000000000000000000000000000000000000000000000000000000"' "$merged_bp" >"$work/plant-merged-changed.json"
-                  if compare "$base" "$work/plant-merged-changed.json" >"$work/plant-merged-changed.log" 2>&1; then
+                  jq '(.validators |= map(if .title == "state.state.spend" then .hash = "00000000000000000000000000000000000000000000000000000000" else . end))' "$merged_bp" >"$work/plant-merged-changed.json"
+                  jq -e '[.validators[] | select(.title == "state.state.spend" and .hash == "00000000000000000000000000000000000000000000000000000000")] | length == 1' "$work/plant-merged-changed.json" >/dev/null || {
+                    echo "script-hash-comparison: merged changed-hash plant did not apply to state.state.spend" >&2
+                    exit 2
+                  }
+                  if compare "$work/expected.json" "$work/plant-merged-changed.json" >"$work/plant-merged-changed.log" 2>&1; then
                     echo "script-hash-comparison: MISSED the merged changed-hash plant" >&2
                     exit 1
                   fi
@@ -1426,7 +1514,51 @@
                     cat "$work/plant-merged-changed.log" >&2
                     exit 1
                   }
+                  grep -q 'state\.state\.spend\|state\.spend' "$work/plant-merged-changed.log" || {
+                    echo "script-hash-comparison: merged changed-hash plant refused without naming state.state.spend:" >&2
+                    cat "$work/plant-merged-changed.log" >&2
+                    exit 1
+                  }
                   echo "script-hash-comparison: merged changed-hash plant refused" >&2
+                  jq '(.validators |= map(select(.title != "state.state.spend")) + [{"title": "open_datum.undeclared.mint", "hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "compiledCode": "00"}])' "$merged_bp" >"$work/plant-merged-undeclared.json"
+                  [ "$(jq '.validators | length' "$work/plant-merged-undeclared.json")" = "$(jq '.validators | length' "$merged_bp")" ] || {
+                    echo "script-hash-comparison: merged undeclared-extra plant did not apply" >&2
+                    exit 2
+                  }
+                  grep -q 'open_datum.undeclared.mint' "$work/plant-merged-undeclared.json" || {
+                    echo "script-hash-comparison: merged undeclared-extra plant did not apply" >&2
+                    exit 2
+                  }
+                  if compare "$work/expected.json" "$work/plant-merged-undeclared.json" >"$work/plant-merged-undeclared.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the merged undeclared-extra plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'open_datum.undeclared.mint\|undeclared.mint' "$work/plant-merged-undeclared.log" || {
+                    echo "script-hash-comparison: merged undeclared-extra plant refused without naming it:" >&2
+                    cat "$work/plant-merged-undeclared.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: merged undeclared-extra plant refused" >&2
+                  jq '(.validators |= map(if .title == "open_datum.closed_datum.mint" then .hash = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff" else . end))' "$merged_bp" >"$work/plant-merged-declared-moved.json"
+                  jq -e '[.validators[] | select(.title == "open_datum.closed_datum.mint" and .hash == "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")] | length == 1' "$work/plant-merged-declared-moved.json" >/dev/null || {
+                    echo "script-hash-comparison: merged declared-moved plant did not apply" >&2
+                    exit 2
+                  }
+                  if compare "$work/expected.json" "$work/plant-merged-declared-moved.json" >"$work/plant-merged-declared-moved.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the merged declared-moved plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'moved' "$work/plant-merged-declared-moved.log" || {
+                    echo "script-hash-comparison: merged declared-moved plant refused without naming the moved validator:" >&2
+                    cat "$work/plant-merged-declared-moved.log" >&2
+                    exit 1
+                  }
+                  grep -q 'closed_datum.mint' "$work/plant-merged-declared-moved.log" || {
+                    echo "script-hash-comparison: merged declared-moved plant refused without naming open_datum.closed_datum.mint:" >&2
+                    cat "$work/plant-merged-declared-moved.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: merged declared-moved plant refused" >&2
                 '';
               };
             in
