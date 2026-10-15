@@ -93,6 +93,16 @@
       "pause": 400
     }
   ],
+  "slice-eight-as-built": [
+    {
+      "text": "Slice eight: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The ruled rejection is a separate economic judgement in Singular/Economics/ (the observed economic transaction beside Tx, the observation of unspent outputs with their pending contents, rejectionAccepted, the request address's spending arms and the world constructor for an admitted rejection), with its statements in Singular/Statements/RejectionState.lean and RejectionProtection.lean. It reads the registry state output by reference (the exact state token, the inline configuration and the current root are read from the actual unspent output, never from an input's claim), spends no state output, takes distinct pending registrations out of the pending pool together or not at all, and burns each member's trie-ready and application tags with the quantities summed by asset identity, collisions included. A live registration, an early expiry, a repeated input, a termination or a tag carried out alive refuses the whole batch. The seven statements, all from the standard axioms: rejection_leaves_registry_untouched, rejection_requires_referenced_state, rejection_cannot_invalidate_fold, rejection_batch_members_distinct, sweep_leaves_pool_untouched, live_request_not_rejected and termination_unrejectable (statements 2, 5, 3, the two supporting ones, 4 and 8). The earlier statements of slices six and seven keep their text and gained proof cases for the new world constructor. The evidence-bound rejection of slices two and three, its statements and the driver's old fold-with-rejection question are untouched and answer exactly as before; seven named adapters in a legacy module identify the superseded path (the state-spending rejection the deployed validators still follow) by definitional equality, and no statement of this slice is proved about it. The driver is named, not rewired, because rewiring edits main's declarations and the shared transport. The corpus holds 41 controls. Refunds are slice nine's and the economic folds slice ten's; the live rows that still follow the superseded path are slice eight-c's.",
+      "pause": 400
+    }
+  ],
   "slice-seven-c-as-built": [
     {
       "text": "Slice seven-c: as built.",
@@ -129,6 +139,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "e20d4eef51cd610f4c7ab9421d6c8314c97f306d439f775a051adb28fd1865d0"
+    "sha256": "bb2c4a0db05163c3ba4472b3221ccccb618fa54fa7c5906b89a99a03a98b52b8"
   }
 }

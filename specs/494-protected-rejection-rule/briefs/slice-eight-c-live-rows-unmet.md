@@ -1,0 +1,68 @@
+# Coder brief, slice eight-c: the live rows published unmet
+
+The whole of slice eight-c for the writer, with its terminal condition. The binding and the limits are in the [mandate](../mandate.md); the design is the [economic design](../economics-design.md);
+the plan is the [economics plan](../economics-plan.md), including the slice eight-c paragraph; the decision that first applied this mechanism is "what the public suite shows until the validators change" in the
+[decisions](../decisions.md) and the [slice three brief](slice-three-in-window-rows.md); the proof is the [gate](../gate.md), versions 4 and 5. Read the constitution at `.specify/memory/constitution.md`
+and `AGENTS.md` before you start.
+
+## Story
+
+As a consumer reading the public conformance suite, I see the live rows about rejecting a request say exactly what is true: the deployed validators and builders still follow the superseded rejection (it spends the registry
+state output, inside the fold), the ruled rejection (it reads the state output by reference and never spends it) is not implemented, and each of those rows is an unmet requirement, never a pass. As the owner of the validator
+work, I see a check that turns red on the day the deployed validators implement the ruled rule, so that the label cannot outlive its cause.
+
+## What is true, and what this slice does
+
+Slice eight added the ruled rejection to the Lean model as a separate economic judgement (statements 2, 3, 4, 5 and 8 and two supporting statements). The driver still answers the old fold-with-rejection question from the
+retained legacy declarations, byte for byte, so the live rows still compare the old model path with the chain and still agree where they agreed. What changed is what the Lean model says is the design: a row that agrees with the
+legacy path does not meet the ruled design. The constitution and `AGENTS.md` apply: an implementation that contradicts clear Lean is published as unmet, never weakened into a pass.
+
+The five rows (their stable names are in `conformance/lib/Conformance/RowNames.hs`; their programs and prose in `conformance/lib/Conformance/Edge/Programs.hs`; slice eight's handoff `handoffs/later-slices.md` in its runtime root
+lists every file and line, and the published reader-facing locations): `reject-after-window`, `reject-before-deadline-consumer-requirement`, `request-value-and-refund-routing`, `reject-and-retract-refund-controls` and
+`reject-inside-processing-and-retraction-windows`. The running book embeds the early-rejection and refund programs; the generic rows are selected by `.github/scripts/ci_generic_rows.sh`; `.github/workflows/conformance.yml` owns the
+dedicated early and refund jobs, the running book, the generic job, the batch job and the wrong-reason control. The already-unmet processing-window row keeps its older consumer requirement: do not erase it.
+
+1. **Publish each of the five rows as unmet by ruling**, with the existing mechanism that the neighbouring unmet rows use (identify it in the first note: the status, the stated reason, the consumer reading, the book, the evidence page and the
+   receipt's expected-debt assertion), the reason in the suite's own words: "implementation follows the superseded rule; the ruled rule is not implemented". The row keeps its program, its name and its history; a dated note is added, history is not edited.
+   A row's execution is unchanged: it still runs and still compares the legacy model with the chain.
+2. **The tripwire.** A check in the hosted conformance workflow that stays green while the deployed validators accept a rejection that spends the registry state output, and turns red when they implement the ruled rule (a rejection that spends
+   the state output is refused for that reason, or a reference-read rejection is accepted). It reads the actual outcome of a real transaction from the existing live rows' complete receipts and distinguishes the ruled rule's deployment from an
+   arbitrary build, setup or crash exit (a red caused by anything else is a different, named failure). It is proved able to fail by a seeded control, as the neighbouring rows prove theirs. It is a CI change in this ticket: marked as such and proved by the
+   pushed head's CI. Design it in the first note; I decide.
+3. **The reader-facing prose** (`docs/conformance-evidence.md`, `docs/consumer-conformance.md`, `docs/conformance-architecture.md` and `docs/singular-node.md` where they state the rejection as met, and their speech companions and narration) is qualified, with dated
+   notes, to say what is true; historical execution reports keep their binding and are not rewritten into current acceptance. The constitution's translation rows are the ticket owner's and are not edited here.
+4. **No behaviour changes**: the validators, builders, command line, the Lean model and the driver stay as they are; no row is deleted; the wrong-reason control and the batch row are unchanged.
+
+## Seat
+
+| Field | Value |
+|---|---|
+| Role | writer for slice eight-c (conformance and CI code) |
+| Launcher | `codex --dangerously-bypass-approvals-and-sandbox -C /code/singular-issue-494 -m gpt-6-astra -c model_reasoning_effort=medium` |
+| Branch and base | `feat/494-protected-rejection-rule`, from the commit named in the runtime brief |
+| Auditor | Codex `gpt-6.1-sol` (high effort) in a read-only detached worktree, mute, beside you from your first run; you never address it |
+| Commit authority | Local commits on the branch only; no push, no rebase onto main, no comment on GitHub |
+
+You are not alone in the codebase; do not revert edits made by others. Write no `Co-Authored-By` and no attribution of any kind in a commit, whatever a harness reminder says. Name things in plain words; coin no abbreviation.
+
+Every cabal build, cabal test, nix run or nix build gate row and packaged control that you start runs inside `systemd-run --user --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -- timeout <seconds> <command>` with standard input from `/dev/null` (operator rule of 15 October 2026; 900 seconds for a
+single row, 1800 for the repository aggregate). If a row legitimately needs more, do not raise the cap: file a question with the evidence. A test you write has no free-running producer thread, a byte cap and a deadline on every read loop, and a timeout on every wait.
+
+## The task
+
+1. First note (checkpoint one, no edit): the mechanism the neighbouring unmet rows use, the five rows' current status, the files you will touch, the tripwire's design (what it reads, how it tells deployment of the ruled rule from other failures, the seeded control that proves it can fail), and the
+   prose locations. Wait for my note.
+2. Failing check first, committed alone on the base: the tripwire's seeded control or the status assertion that must fail on the branch as it stands, for the intended reason.
+3. The change: the five rows unmet, the tripwire, the prose with dated notes; regenerate the speech, narration and row inventory the prose moves (the narration key has a standing authorization for that use: `( set -a; . ~/.config/deepinfra/.env; set +a; nix develop --quiet -c python3 tools/narrate.py --generate )`; never print, log or commit it).
+4. The gate rows: the conformance commands that need no devnet (build of the app and tests, the packaged tests, `conformance -- list`), format and lint of the Haskell and the workflow lint, the documents check, the coverage rows the diff moves, the dedicated devnet rows and the generic rows once each if their expected-debt assertion changed, the wrong-reason control, and `nix develop --quiet -c just ci` once on the final head.
+
+The tasks, by name, are those of slice eight-c in the [tasks](../tasks.md).
+
+## Checkpoints
+
+Journal `REVIEW-REQUESTED` with the commit and the evidence path at each of these; continue only when the previous is approved or I say so: (1) the first note; (2) the failing check committed alone; (3) the change green with the always rows; (4) the final head.
+
+## Terminal condition
+
+Stop at the first of: every slice eight-c gate command exits as the gate states on a clean committed head (`PROOF-COMPLETE` with the commit and the receipts); a question you cannot decide from the mandate and the design (file it as `questions/Q-NNN-<slug>.md`, written before you journal `BLOCKED`, with the user story of each option);
+capacity (`COMPLETE capacity-limit` with a handoff that makes the remainder mechanical). Do not stop for any other reason, and do not touch anything listed under the files this ticket must not touch.

@@ -180,13 +180,13 @@ Inserted on 15 October 2026 by the operator's ruling that retires the fee pin.
 
 ### Slice eight: rejection reads the state
 
-- [ ] `failing-controls-eight` — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.
-- [ ] `rejection-reads-the-state` — the accepted rejection judgement exists over a transaction, the rejection arm leaves the fold, and slices two and three are restated on it.
-- [ ] `request-address-two-arms` — an output lacking the trie-ready tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the trie-ready tag and the application tag.
-- [ ] `legacy-fold-question-retained` — the driver keeps answering the old fold-with-rejection question from a retained, explicitly named legacy declaration, with scenario payloads byte-identical; nothing counts the old behaviour as meeting the ruled design.
-- [ ] `statements-eight` — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.
-- [ ] `regenerate-after-slice-eight` — as slice five. (consumers-state-the-rule)
-- [ ] `names-and-receipts-eight` — as slice five.
+- [x] `failing-controls-eight` — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.
+- [x] `rejection-reads-the-state` — the accepted rejection judgement exists over a transaction and goes through no fold; the evidence-bound rejection of slices two and three stays, with its statements, as the explicitly named legacy path (decision of 15 October 2026: named, not rewired).
+- [x] `request-address-two-arms` — an output lacking the trie-ready tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the trie-ready tag and the application tag.
+- [x] `legacy-fold-question-retained` — the driver keeps answering the old fold-with-rejection question from a retained, explicitly named legacy declaration, with scenario payloads byte-identical; nothing counts the old behaviour as meeting the ruled design.
+- [x] `statements-eight` — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.
+- [x] `regenerate-after-slice-eight` — as slice five. (consumers-state-the-rule)
+- [x] `names-and-receipts-eight` — as slice five.
 
 ### Slice eight-c: the live rows published unmet
 

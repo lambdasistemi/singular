@@ -429,31 +429,31 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-eight — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.",
+      "text": "[x] failing-controls-eight — the old state-spending path, a fake, foreign or stale state, an overlapping state spend, a live member in a batch, a repeated input, a tagged request spent through the sweep arm and a rejection that carries a tag out alive fail or are refused wrongly on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] rejection-reads-the-state — the accepted rejection judgement exists over a transaction, the rejection arm leaves the fold, and slices two and three are restated on it.",
+      "text": "[x] rejection-reads-the-state — the accepted rejection judgement exists over a transaction and goes through no fold; the evidence-bound rejection of slices two and three stays, with its statements, as the explicitly named legacy path (decision of 15 October 2026: named, not rewired).",
       "pause": 300
     },
     {
-      "text": "[ ] request-address-two-arms — an output lacking the trie-ready tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the trie-ready tag and the application tag.",
+      "text": "[x] request-address-two-arms — an output lacking the trie-ready tag is spent freely, a tagged output leaves only through an exit that burns its tags in the same transaction; a rejection burns the trie-ready tag and the application tag.",
       "pause": 300
     },
     {
-      "text": "[ ] legacy-fold-question-retained — the driver keeps answering the old fold-with-rejection question from a retained, explicitly named legacy declaration, with scenario payloads byte-identical; nothing counts the old behaviour as meeting the ruled design.",
+      "text": "[x] legacy-fold-question-retained — the driver keeps answering the old fold-with-rejection question from a retained, explicitly named legacy declaration, with scenario payloads byte-identical; nothing counts the old behaviour as meeting the ruled design.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-eight — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.",
+      "text": "[x] statements-eight — statements 2, 3, 4, 5 and 8 and the two supporting statements (including that a sweep leaves the pending pool and the tag supplies unchanged) are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-eight — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-eight — as slice five. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] names-and-receipts-eight — as slice five.",
+      "text": "[x] names-and-receipts-eight — as slice five.",
       "pause": 300
     }
   ],
@@ -551,6 +551,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "4e5cbcfb18e4ef465c78c7be9d2c027affe41b7ab07aa684667c9145060910a6"
+    "sha256": "3317e7da3832cb9097b11cea28cc6b011a5610a11f0db0f43ec6b769b0b9ed5c"
   }
 }
