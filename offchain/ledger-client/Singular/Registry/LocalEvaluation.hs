@@ -24,11 +24,11 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Lens.Micro ((^.))
 
+import Cardano.Ledger.Alonzo.Core (TopTx, Tx)
 import Cardano.Ledger.Alonzo.Plutus.Evaluate
     ( TransactionScriptFailure
     , evalTxExUnits
     )
-import Cardano.Ledger.Alonzo.Core (TopTx, Tx)
 import Cardano.Ledger.Alonzo.Scripts (AsIx, PlutusPurpose)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
