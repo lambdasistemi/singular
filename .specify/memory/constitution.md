@@ -61,6 +61,42 @@ No validator, builder, command, chain datum shape or off-chain wire reader
 changes; exact processor take remains subsequent fold work. No ledger or
 implementation acceptance follows. Principles I-VII and contributor guidance
 are unchanged; the pull request template still records these evidence limits.
+Slices seven-b, eight, nine and ten, 2026-10-15: the ruled economic model
+uses trie-ready tags for both request kinds and application tags for
+registrations only, with one nonce per request and no hash-injectivity
+assumption. Registration booking authenticates the exact cost, declared tip,
+carrier and both tags, and fixes the booked time at the upper end of a bounded
+booking interval. Termination booking takes the genuine singular tag from
+application custody into a request with no application tag, refund address or
+clock. Rejection reads the current state by reference and spends no state
+output; rejection and retraction burn both registration tags and return their
+per-address refund floors. The economic fold spends and continues the state,
+uses the registry's own batch transition through an explicit custody/request
+projection, routes the registration cost and each termination's held value
+minus tip to the treasury, and pays the exact gross declared-tip allocation.
+Registration folds observe their processing window; termination folds have no
+window. The fee is funded by ordinary inputs. Carriers hold exactly their
+declared value and booked datum; ordinary change is a separate output, even
+when addresses coincide. Balance yields the gross-reward equation and the
+net-reward bound. The world counts actual trie-ready tags over pending
+requests and application tags held by pending registrations only. No total
+supply law for application tags outside Singular is asserted.
+
+These economic rows supersede the legacy rejection, retraction, payment and
+transaction rules described below under reject, rejectBatch, paid and tx.
+Those rows remain an exact translation of the retained driver and deployed
+implementation, not the ruled economic authority. The live rows that still
+follow the superseded rules remain unmet until the validators and builders
+meet the ruled model with the required live evidence. Model proofs do not
+change those standings. The driver declarations and protocol, legacy fold,
+transaction baseline and existing scenario payloads remain unchanged. New
+statement identities begin uncovered and are appended to the restatement
+record; preserved statement text gains the cases for the enlarged world.
+The theorem register, corpora, theorem page and narration, simulator mirror,
+application corpus and coverage record follow the model. There is no claim
+about ledger minimums, fee-market stability, inclusion time, a flood price,
+application release rules, or validator and builder acceptance. Principles
+I-VII, contributor instructions and the pull request template remain in force.
 -->
 
 <!--
@@ -714,6 +750,29 @@ it declares two batch questions, each with its own observation extent: `foldBatc
 several requests folded at once, and `rejectBatch`, several requests rejected at
 once. A batch is answered from the state its setup trace reaches, its premise
 checked first, and observes no transaction, since the model builds none for it.
+
+### Ruled economic translation
+
+The economic judgements below are separate from the declared legacy driver
+surface. They govern the ruled model; they are not new driver questions and
+are not reached by the retained live translation. In particular, the legacy
+reject, rejectBatch, paid and tx descriptions retain the superseded behavior
+for accurate comparison with the current implementation. Their agreement
+cannot establish the economic rules, and their affected live rows remain
+unmet until those rules are implemented and verified.
+
+| Economic behavior | Model realization and observation | Evidence limit |
+|---|---|---|
+| Registration booking | Singular.book admits the observed booking through registrationBookingRefusal. The held lovelace is exactly registration cost plus declared tip plus declared carrier; the bound application tag and trie-ready tag are minted with the booking; the booked time is the nonempty interval's upper end and its width is within the pinned bound. The admitted request enters the pending pool once by reference. | Carrier ada is declared, not a computation of the ledger minimum. Application authorization is not executed by this judgement. |
+| Termination booking | Singular.bookTermination admits terminationBookingRefusal and moves the genuine singular tag from application custody to the pending request. Its exact contents include the declared tip, carrier and trie-ready tag, with no application tag, refund address or booked time. | The application's release condition is outside Singular. Supply counts both custody and pending requests. |
+| Rejection | Singular.rejectionAccepted authenticates the current state output's exact token and complete configuration from an unspent reference, spends no state output, and checks every distinct pending registration against that current state and one shared interval. A lifecycle mismatch or expiry after both windows admits; every request's trie-ready and application tags burn. Each refund address receives at least its sum of held minus declared tip, read from actual output lovelace. | Refusal is atomic. Terminations cannot be rejected. Payments at one address are summed without a purpose oracle. This judgement does not establish full fee balance or exact processor reward. |
+| Retraction | Singular.retractionAccepted consumes one observed pending registration with the refund address's signature and a nonempty interval inside its booked reclaim window. It reads and spends no state output, burns both tags, and returns at least the whole held lovelace to the refund address. | The legacy designated-output refund rule is superseded; actual lovelace received at the address supplies this floor. The judgement does not establish full fee balance or exact processor reward. |
+| Economic fold | Singular.foldAccepted consumes pending requests once by their observed references and contents, spends the actual registry state output, and continues it with the unchanged value and the registry batch transition's result. Registration admission checks its booked processing window; termination admission has no clock or expiry. Each registration burns both request tags and delivers a newly minted singular tag, booked datum and exact carrier to its destination. Each termination burns its trie-ready and singular tags and makes its leaf terminal. The donation equals the registration costs plus the terminations' held-minus-tip amounts. Ordinary inputs fund the fee. Conservation and exact routing imply ordinary output lovelace plus fee equals ordinary input lovelace plus all declared tips. | This is a judgement over observed economic transactions, not the legacy builder. Token holdings classify outputs; addresses may coincide, but carrier and ordinary change are separate. The reward equation states gross allocation, not total wealth at an address. Legacy correspondence is over the explicit request and custody projection, not equality of admissions. |
+| Pending tags and availability | WorldReachable includes bookings and accepted economic exits. Actual trie-ready tags in the world equal pending requests; the application tags held by pending registrations equal that pool's length and each holds one. A genuine pending termination has an accepted model fold at any later time under the explicit ordinary-funding and fee-envelope hypotheses. | No total application-tag supply outside Singular, real funding availability, builder success or ledger inclusion is claimed. Applications, measurements and live conformance remain separate obligations. |
+
+The existing driver table's declaration names, kinds and meanings remain intact
+below this qualification, so its mechanical two-way reconciliation still tests
+the surface that the driver actually declares.
 
 | declaration | kind | meaning |
 |---|---|---|
