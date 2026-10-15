@@ -207,6 +207,7 @@ library registry-cli
     Singular.CLI.Live
     Singular.CLI.ManagedState
     Singular.CLI.Outlay
+    Singular.CLI.Passphrase
     Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Prepare
@@ -226,12 +227,14 @@ library registry-cli
     Singular.CLI.Trace
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
+    Singular.CLI.Vault
 
   other-modules: Singular.CLI.Harness
 
   build-depends:
     , aeson
     , aeson-pretty
+    , age
     , base                              >=4.14 && <5
     , base16-bytestring
     , bech32
@@ -246,8 +249,10 @@ library registry-cli
     , containers
     , contra-tracer
     , contra-tracer-contrib
+    , crypton
     , directory
     , filepath
+    , memory
     , microlens
     , mts:mpf-write
     , plutus-core
@@ -255,6 +260,7 @@ library registry-cli
     , singular-registry:koios-http
     , singular-registry:local-services
     , text
+    , transformers
     , time
     , unix
 
@@ -975,6 +981,7 @@ test-suite cage-tests
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
     Singular.CLI.TrieRefusalSpec
+    Singular.CLI.VaultSpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
     Singular.Provider.Koios.FakeServer
@@ -1028,6 +1035,7 @@ test-suite cage-tests
   build-depends:
     , aeson
     , aeson-pretty
+    , age
     , async
     , base                              >=4.14 && <5
     , base16-bytestring

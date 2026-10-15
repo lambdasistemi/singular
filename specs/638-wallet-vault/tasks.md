@@ -2,11 +2,11 @@
 
 ## Slice: vault core
 
-- [ ] wallet-key-helpers: `parseSignKey` and `walletFromSignKey` in the wallet module; `loadWallet` rebuilt from them, existing specs unchanged.
-- [ ] vault-seal-and-open: seal and open with the age passphrase recipient; wrong passphrase, empty passphrase, corrupt file and work factor above 18 refused.
-- [ ] vault-created-exclusively: private mode, existing path and symbolic link refused unchanged, partial file removed on failure.
-- [ ] fresh-key-and-address: a new key per creation; the address equals the address `loadWallet` derives and the constant of a fixed test key.
-- [ ] passphrase-intake: terminal prompt with confirmation, descriptor line, empty refused.
+- [x] wallet-key-helpers: `parseSignKey` and `walletFromSignKey` in the wallet module; `loadWallet` rebuilt from them, existing specs unchanged.
+- [x] vault-seal-and-open: seal and open with the age passphrase recipient; wrong passphrase, empty passphrase, corrupt file and work factor above 18 refused.
+- [x] vault-created-exclusively: private mode, existing path and symbolic link refused unchanged, partial file removed on failure.
+- [x] fresh-key-and-address: a new key per creation; the address equals the address `loadWallet` derives and the constant of a fixed test key.
+- [x] passphrase-intake: terminal prompt with confirmation, descriptor line, empty refused.
 
 ## Slice: wallet command
 
