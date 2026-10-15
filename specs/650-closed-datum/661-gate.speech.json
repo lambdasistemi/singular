@@ -1,0 +1,94 @@
+{
+  "closed-update-refused-by-the-node-the-frozen-gate": [
+    {
+      "text": "Closed update refused by the node: the frozen gate.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the continuous integration itself. Each row names the acceptance line, the hosted job as the workflow names it, the verbatim command with its location at the base, the exit status CI asserts, and one real failed run that shows the command can fail. A row with no hosted command is a missing job and is said so; it is never replaced by a local check. Version 1, frozen on 16 October 2026 against main 38c2e436. The settled rows are not edited during the slice.",
+      "pause": 400
+    }
+  ],
+  "how-the-gate-was-made": [
+    {
+      "text": "How the gate was made.",
+      "pause": 500
+    },
+    {
+      "text": "One independent gate author, working read-only at the base before any code, wrote a table of every acceptance line, every one of the ninety-six required checks of the repository ruleset, and every hosted command that the touched files can reach, with a failed run for each command where the history has one (input hash 01741cd0b2c505275aafd38df4b2cb9f9e57aece3bc90f8a7974db1c56618203, 183 rows, kept in the ticket's runtime record). The owner of this ticket combined it once with the plan's own list of what the change can break, and cut it to the rows this slice can reach. Every other required check is accepted by the one rule at the end of the table.",
+      "pause": 400
+    }
+  ],
+  "the-table": [
+    {
+      "text": "The table.",
+      "pause": 500
+    },
+    {
+      "text": "Location is file:line at the base. Exit is the status the step asserts.",
+      "pause": 400
+    },
+    {
+      "text": "The ruleset lists the aggregators and not the matrix legs, so the two new legs create no new required name and no ruleset change is prepared.",
+      "pause": 400
+    }
+  ],
+  "rows-with-no-hosted-command": [
+    {
+      "text": "Rows with no hosted command.",
+      "pause": 500
+    }
+  ],
+  "local-legs-and-budgets": [
+    {
+      "text": "Local legs and budgets.",
+      "pause": 500
+    },
+    {
+      "text": "The candidate gate, run on every committed candidate, is the narrowest subset that the change can break. Budget: twenty-five minutes in total, each command inside a memory-capped scope with a timeout, for example systemd-run --user --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -- timeout 900 <command>, with standard input from /dev/null.",
+      "pause": 400
+    },
+    {
+      "text": "the host compiles: the incremental build of the host in the application's dev shell, once per edit; no repeated Nix compile;",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#negative-host-lint;",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#negative-host-node-free-controls, once after the Haskell and the list edits;",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#negative-host-parts and nix run --quiet .#negative-host-mutants -- --list, which must print fourteen and nine names;",
+      "pause": 300
+    },
+    {
+      "text": "nix develop --quiet -c just lint;",
+      "pause": 300
+    },
+    {
+      "text": "the extraction tool over the changed pages, then nix develop --quiet -c just check-presentation, once, and nix run --quiet .#docs-check once on the committed pages before the first push;",
+      "pause": 300
+    },
+    {
+      "text": "nix run --quiet .#cli-flags-check and nix run --quiet .#inventory-check, once.",
+      "pause": 300
+    },
+    {
+      "text": "The new part runs locally at most once, on the final candidate, with timeout 3600 in the same kind of scope. The mutant, the self-check and every other hosted job are read from CI, never repeated locally.",
+      "pause": 400
+    }
+  ],
+  "per-class-falsification": [
+    {
+      "text": "Per-class falsification.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "661-gate.md",
+    "sha256": "6c39a2ea882722a2b8e40a71c6d31f3653fae73e2c4adb6a4e6059d01fec476d"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "closed-update-refused-by-the-node-touch-list": [
+    {
+      "text": "Closed update refused by the node: touch list.",
+      "pause": 500
+    },
+    {
+      "text": "The only files the writer may change. A file outside this list needs a ruling before it is touched. Base: main 38c2e436. The open pull requests were read on 15 October 2026 for collisions: draft 597 edits .github/workflows/negative-host.yml (in four places, one of them next to the self-check job this change extends) and flake.nix; draft 662 (the journey of issue 660) names the negative host, its workflow and negative_host_* tools as not touched, and touches onchain-release/DEMO1.md, which this change does not.",
+      "pause": 400
+    }
+  ],
+  "production": [
+    {
+      "text": "Production.",
+      "pause": 500
+    }
+  ],
+  "documentation": [
+    {
+      "text": "Documentation.",
+      "pause": 500
+    }
+  ],
+  "read-and-found-to-need-no-edit": [
+    {
+      "text": "Read, and found to need no edit.",
+      "pause": 500
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "The registry library under offchain/lib, the singular commands and the registry command line, the validator source and its identity records, and all Lean. The files the wallet-preparation work changes: the open-datum Entry.hs, Plan.hs, Preview.hs and WalletShortfallSpec.hs, and the registry command line's Prepare.hs, Plan.hs and CommandRunSpec.hs. The files the signing work changes: the wallet, vault, passphrase and local-services files. The journey's files (tools/demo1_closed_*, registry.yml, onchain-release/DEMO1.md).",
+      "pause": 400
+    }
+  ],
+  "rulings-taken": [
+    {
+      "text": "Rulings taken.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "661-touch-list.md",
+    "sha256": "965cd220e2e4642a48341c08648be7ab785b82216fb5e47562da631e02a8b7fd"
+  }
+}

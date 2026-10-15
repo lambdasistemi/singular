@@ -1,0 +1,192 @@
+{
+  "closed-update-refused-by-the-node-plan": [
+    {
+      "text": "Closed update refused by the node: plan.",
+      "pause": 500
+    },
+    {
+      "text": "The story, the requirements and the rulings are in the specification. This page records the class of the change, the shape of the code, the order of work, the invariants and the hosted checks that accept it. Issue 661, one pull request, one slice, about four hours of writing. Base: main 38c2e436. It should merge on Saturday 17 October.",
+      "pause": 400
+    }
+  ],
+  "class-and-team": [
+    {
+      "text": "Class and team.",
+      "pause": 500
+    },
+    {
+      "text": "The change adds no product behaviour and no on-chain code. It adds to the instrument that judges on-chain behaviour: the negative host follows a registry's mode, one part and one mutant are added, and the pages are updated. Because the part and the mutant are the evidence for a claim about the validator, the work takes the full process of the approved team: one commit owner writes the slice; a persistent auditor, silent toward the writer, answers the checkpoints; one independent gate author wrote a table of hosted checks before any coding, and the owner of this ticket combined it with a table of their own, once. Draft tool: none.",
+      "pause": 400
+    }
+  ],
+  "how-the-host-finds-its-code": [
+    {
+      "text": "How the host finds its code.",
+      "pause": 500
+    },
+    {
+      "text": "When the mode cannot be read, the host runs as it does today: the registry's own resolution then refuses by name before anything is built or signed.",
+      "pause": 400
+    }
+  ],
+  "how-the-part-runs": [
+    {
+      "text": "How the part runs.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    },
+    {
+      "text": "One mode read. The two small functions that apply the mode read to a command's arguments are exported from the executable's dispatch module, and the host calls them. The host does not copy the fallback.",
+      "pause": 300
+    },
+    {
+      "text": "Five calls change. Each of the host's five handlers reads the mode and passes the mode's application value and following environment to the one call that resolves a registry. The reads in Negative/Craft.hs and Negative/Read.hs keep the open value because they use only what both values share.",
+      "pause": 300
+    },
+    {
+      "text": "The part is one new branch of the runner, parameterised the way the runner says its parts are: a flag on the two creates, a setup block, a forbidden command, a control, and an expectation of the judge. The judge's body is not changed.",
+      "pause": 300
+    },
+    {
+      "text": "The pin is compared, not trusted. The part creates the registry with the previewed seed, reads the pin an open creation of the same seed would have, and requires them to differ and the recorded one to equal the closed one. If previewing an open creation with a given seed is not possible, the writer files a question before choosing another way.",
+      "pause": 300
+    },
+    {
+      "text": "The mutant is a one-line replacement of the closed spend's update arm with a call to open-datum's spend for the update redeemer. Its control pair is the update pair on an open registry (stranger-updates-the-key), which the mutated build still refuses.",
+      "pause": 300
+    },
+    {
+      "text": "The self-check gains one step. The self-check job names its mutant on the command line, so it does not follow the mutant table. A second step runs the same control for closed-update-accepted: with no patch, the part's forbidden command is refused and nothing flips. The job keeps its name and its timeout of 45 minutes (18.7 measured for the registry mutant; one more pair).",
+      "pause": 300
+    },
+    {
+      "text": "Numbers leave comments. The comments that say \"13-name\" in the workflow, the nix file and the control script are reworded without a number, so the next part does not make them false.",
+      "pause": 300
+    }
+  ],
+  "modules-data-and-functions": [
+    {
+      "text": "Modules, data and functions.",
+      "pause": 500
+    },
+    {
+      "text": "No new module. The negative host's cabal file does not change.",
+      "pause": 400
+    },
+    {
+      "text": "Data. None new. The mode type is Singular.Application.OpenDatum.Value.Mode.",
+      "pause": 400
+    },
+    {
+      "text": "Both exist today. Only their export changes. The new host code calls them and passes applicationIn mode and the returned environment to the call that resolves the registry.",
+      "pause": 400
+    }
+  ],
+  "order-of-work": [
+    {
+      "text": "Order of work.",
+      "pause": 500
+    },
+    {
+      "text": "One slice, in this order. Each step leaves the tree green for the jobs it can reach.",
+      "pause": 400
+    },
+    {
+      "text": "Export the two mode readers from the dispatch module. The host follows the mode at its five calls. Run the host's node-free controls once and the host's format and lint.",
+      "pause": 300
+    },
+    {
+      "text": "Add closed-update to the discovery table, to the runner's part list and judge expectations, and to the node-free membership control (fourteen names); reword the comments that carry the count.",
+      "pause": 300
+    },
+    {
+      "text": "Add the part's setup, forbidden command and control to the runner.",
+      "pause": 300
+    },
+    {
+      "text": "Add the mutant: its patch, its row in the mutant table and the self-check step.",
+      "pause": 300
+    },
+    {
+      "text": "Update docs/negative-host.md; regenerate its speech and, with the narration authorization, the clips of changed segments.",
+      "pause": 300
+    },
+    {
+      "text": "Run the cheap local legs below, fold fixes into the one code patch, and hand the candidate over for review. Run the new part once on the final candidate.",
+      "pause": 300
+    },
+    {
+      "text": "The pull request is a stacked patch series: one patch for these pages, one for the code and runner, one for the mutant, one for the documentation. No journey commits are pushed.",
+      "pause": 400
+    }
+  ],
+  "invariants-and-what-makes-them-fail": [
+    {
+      "text": "Invariants and what makes them fail.",
+      "pause": 500
+    },
+    {
+      "text": "Each name is stable and appears in the tasks.",
+      "pause": 400
+    }
+  ],
+  "hosted-checks-that-accept-the-work": [
+    {
+      "text": "Hosted checks that accept the work.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the continuous integration itself. The frozen table, with the failed runs that show each command can fail, is on the gate page. The local leg is the cheap command run before the push; the hosted jobs run once on the pushed head and no hosted job is repeated locally.",
+      "pause": 400
+    },
+    {
+      "text": "The remaining required checks that read the open-datum commands or the archive must be green on the exact head. The checks run before the push, outside the repository, are: the diff names only files of the touch list; no fenced file changed; no attribution in the pushed range; and the final tree equals the last approved checkpoint tree.",
+      "pause": 400
+    }
+  ],
+  "risks-the-plan-settles": [
+    {
+      "text": "Risks the plan settles.",
+      "pause": 500
+    },
+    {
+      "text": "A new read in every host command. Each handler reads the state output before it resolves the registry. An unreadable blueprint or provider must fall back to the open mode and end in the command's own classified refusal. The node-free controls run the insert and terminate handlers against an unreachable provider and expect exit status 10.",
+      "pause": 300
+    },
+    {
+      "text": "Collateral collapse in the mutant run. When the update is accepted, the part's control may fail afterwards. The runner already treats that as a flip when the forbidden receipt reports success.",
+      "pause": 300
+    },
+    {
+      "text": "A known red. A release archive build of the open-datum executable can lose its store path in the middle of a run (issue 659). If it recurs on the head, the job numbers are reported and nothing is rerun locally.",
+      "pause": 300
+    }
+  ],
+  "residuals-this-change-leaves-written-before-the-work": [
+    {
+      "text": "Residuals this change leaves, written before the work.",
+      "pause": 500
+    },
+    {
+      "text": "The write-once rule has no Lean statement, by ruling.",
+      "pause": 300
+    },
+    {
+      "text": "The node's reason text for the refusal is not observed; the failing script is named by hash and role.",
+      "pause": 300
+    },
+    {
+      "text": "That a tampered update on a closed registry is refused is not shown separately.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "661-plan.md",
+    "sha256": "8f86131611fcdd1fda25ebf786c854fa3bb14fb1d7836291e3f87f4fb2212d74"
+  }
+}
