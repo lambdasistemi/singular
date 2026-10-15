@@ -224,7 +224,7 @@
         # witnesses come from one build. Chosen by test over composing both
         # validators directories into one project and running `aiken build`
         # once: the merge copies both blueprints' `compiledCode` bytes
-        # verbatim, so the 14 hashes are byte-identical by construction
+        # verbatim, so the 17 hashes are byte-identical by construction
         # (manual jq merge tested 14/14 equal base-hashes.json, 26
         # definitions, preamble from the registry's); a single rebuild
         # would recompile, reintroduce the single-project layout the split
@@ -280,11 +280,11 @@
                 }
               ' "$registryBlueprint" "$appBlueprint" > "$out"
               count="$(jq '.validators | length' "$out")"
-              [ "$count" = "14" ] || {
-                echo "open-datum-blueprint: expected 14 validators, built $count" >&2
+              [ "$count" = "17" ] || {
+                echo "open-datum-blueprint: expected 17 validators, built $count" >&2
                 exit 1
               }
-              echo "open-datum-blueprint: OK — 14 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
+              echo "open-datum-blueprint: OK — 17 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
             '';
 
         # #278: every hand-written and generated Aiken source is in the
@@ -416,9 +416,12 @@
 
         # The check runs the runner and requires its log to name the
         # application's suite (a run that never executed the moved tests
-        # is a failure, not a pass); then a control run over a scratch
-        # copy with one expected digest mutated must fail — a checker
-        # that cannot fail does not guard anything.
+        # is a failure, not a pass) and to name a closed refusal row (a run
+        # that never executed the closed rows is a failure, not a pass);
+        # then a control run over a scratch copy with one expected digest
+        # mutated must fail, and a second control run with the closed Update
+        # arm planted to accept must fail naming a closed refusal row — a
+        # checker that cannot fail does not guard anything.
         open-datum-aiken-tests =
           pkgs.runCommand "open-datum-aiken-tests"
             {
@@ -434,6 +437,10 @@
               ${pkgs.lib.getExe open-datum-aiken-tests-runner} >"$out" 2>&1 || { cat "$out"; exit 1; }
               grep -q 'envelope_a_hashes_to_the_shared_digest' "$out" || {
                 echo "FAIL: the test assembly never executed the moved open-datum suite" >&2
+                exit 1
+              }
+              grep -q 'closed_update_refuses_every_payload' "$out" || {
+                echo "FAIL: the test assembly never executed the closed refusal rows" >&2
                 exit 1
               }
               work="$(mktemp -d)"
@@ -468,6 +475,36 @@
                 exit 1
               }
               echo "open-datum-aiken-tests: control refused the mutant" >&2
+              mkdir -p "$work/closed-mutant/validators/application" "$work/closed-mutant/lib"
+              cp -r ${registrySrc}/validators/. "$work/closed-mutant/validators/"
+              cp -r ${registrySrc}/lib/. "$work/closed-mutant/lib/"
+              cp ${registrySrc}/aiken.toml "$work/closed-mutant/aiken.toml"
+              cp ${registrySrc}/aiken.lock "$work/closed-mutant/aiken.lock"
+              cp ${appSrc}/validators/open_datum.ak "$work/closed-mutant/validators/open_datum.ak"
+              cp ${appSrc}/validators/open_datum.tests.ak "$work/closed-mutant/validators/open_datum.tests.ak"
+              cp ${appSrc}/validators/application/envelope.ak "$work/closed-mutant/validators/application/envelope.ak"
+              chmod -R u+w "$work/closed-mutant"
+              sed -i 's|traceFalse(@"closed-datum-update")|open_datum.spend(registry, datum, Update, own, tx)|' "$work/closed-mutant/validators/open_datum.ak"
+              grep -q 'open_datum.spend(registry, datum, Update, own, tx)' "$work/closed-mutant/validators/open_datum.ak" || {
+                echo "FAIL: the closed mutant plant did not apply" >&2
+                exit 2
+              }
+              mkdir -p "$work/closed-mutant/build/packages"
+              cp ${assemblyPackagesToml} "$work/closed-mutant/build/packages/packages.toml"
+              cp -r ${stdlib} "$work/closed-mutant/build/packages/aiken-lang-stdlib"
+              cp -r ${fuzz} "$work/closed-mutant/build/packages/aiken-lang-fuzz"
+              cp -r ${merkle-patricia-forestry} "$work/closed-mutant/build/packages/aiken-lang-merkle-patricia-forestry"
+              chmod -R u+w "$work/closed-mutant/build/packages"
+              if (cd "$work/closed-mutant" && aiken check >closed-mutant.log 2>&1); then
+                echo "FAIL: the test assembly accepted a mutant whose closed Update arm accepts" >&2
+                exit 1
+              fi
+              grep -q 'closed_update_refuses_every_payload' "$work/closed-mutant/closed-mutant.log" || {
+                echo "FAIL: the closed mutant run failed without naming a closed refusal test" >&2
+                cat "$work/closed-mutant/closed-mutant.log" >&2
+                exit 1
+              }
+              echo "open-datum-aiken-tests: control refused the closed mutant" >&2
             '';
 
         # -------------------------------------------------------

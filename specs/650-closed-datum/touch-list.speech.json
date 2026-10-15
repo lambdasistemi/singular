@@ -1,0 +1,50 @@
+{
+  "closed-datum-touch-list": [
+    {
+      "text": "Closed datum: touch list.",
+      "pause": 500
+    },
+    {
+      "text": "The only files the writer may change. A file outside this list needs a ruling before it is touched. Base: main cfe78df1. Open pull requests were read on 15 October 2026 for collisions.",
+      "pause": 400
+    }
+  ],
+  "production": [
+    {
+      "text": "Production.",
+      "pause": 500
+    }
+  ],
+  "documentation": [
+    {
+      "text": "Documentation.",
+      "pause": 500
+    }
+  ],
+  "read-and-found-to-need-no-edit": [
+    {
+      "text": "Read, and found to need no edit.",
+      "pause": 500
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "The registry contract under onchain/, the registry library under offchain/lib, the singular commands under offchain/cli, the open-datum executable and its tests including Entry.hs, Plan.hs, Preview.hs, WalletShortfallSpec.hs, Prepare.hs, CommandRunSpec.hs (wallet preparation), the wallet, vault, passphrase and local-services files (signing), the negative-host sources under applications/open-datum/negative, every workflow, and lean/.",
+      "pause": 400
+    }
+  ],
+  "rulings-taken": [
+    {
+      "text": "Rulings taken.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "3983a8cbd85a0717f61ab2c49505faf2b7b939f586d1188cc6cf14949dc5a338"
+  }
+}

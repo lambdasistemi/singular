@@ -1,0 +1,78 @@
+{
+  "closed-datum-tasks": [
+    {
+      "text": "Closed datum: tasks.",
+      "pause": 500
+    },
+    {
+      "text": "The story, requirements and rulings are in the specification and the ruling page; decisions and hosted checks are in the plan; the files this work may change are in the touch list.",
+      "pause": 400
+    }
+  ],
+  "slice-the-closed-datum-entry-point": [
+    {
+      "text": "Slice: the closed-datum entry point.",
+      "pause": 500
+    },
+    {
+      "text": "[x] closed-validator-appended: the closed-datum validator follows the last line of open_datum.ak, with no other change to the file.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-spend-refuses-every-update: the suite shows the closed spend refusing an update of every payload in its list, in contexts open-datum accepts.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-refusal-is-the-closed-rule: each such refusal is paired, in the same test file, with open-datum's acceptance of the same context.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-release-follows-open-release: a release in the registry's terminating fold is accepted, together with the registry's own validator, and a release outside it is refused.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-booking-follows-open-booking: insertion and termination bookings are accepted, and a refused booking is refused with the same verdict as open-datum's.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-else-refuses: another script purpose is refused.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-refusal-test-can-fail: the composed-suite check names a closed refusal test in its log and refuses a planted copy whose closed Update arm accepts.",
+      "pause": 300
+    },
+    {
+      "text": "[x] closed-identity-pinned-from-the-build: the manifest gains the three closed rows from the real blueprint, and the three open-datum rows are unedited.",
+      "pause": 300
+    },
+    {
+      "text": "[x] seventeen-validators-in-the-release: the merged blueprint check and the release assembler count seventeen.",
+      "pause": 300
+    },
+    {
+      "text": "[x] declared-additions-recorded: the record names exactly the three closed titles.",
+      "pause": 300
+    },
+    {
+      "text": "[x] comparison-admits-only-what-is-declared: the comparison admits the declared titles, refuses an undeclared extra validator and a moved declared hash, and keeps every base hash byte-identical; both plants run on every invocation.",
+      "pause": 300
+    },
+    {
+      "text": "[x] boundary-contexts-unchanged: the permanent boundary still receives four application contexts.",
+      "pause": 300
+    },
+    {
+      "text": "[x] pages-and-speech-stamped: the pages of this folder carry current speech.",
+      "pause": 300
+    },
+    {
+      "text": "[x] local-legs-green: the cheap local commands in the plan pass on the final head.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "67650692aa598071521ddc3930281bd620c5feebb616fc5ab4a1e22acfc6e7e5"
+  }
+}

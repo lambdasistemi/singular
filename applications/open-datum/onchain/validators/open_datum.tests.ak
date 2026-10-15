@@ -1487,3 +1487,122 @@ test export_application_contexts() {
     ),
   }
 }
+
+// ---------------------------------------------------------------------
+// Closed datum (issue 651): the same code with every update refused.
+// ---------------------------------------------------------------------
+
+fn closedUpdate(tx: Transaction) -> Bool {
+  open_datum.closed_datum.spend(
+    registry(),
+    Some(envelopeA() |> as_data_envelope),
+    Update,
+    holdingRef,
+    tx,
+  )
+}
+
+fn closedRelease(tx: Transaction) -> Bool {
+  open_datum.closed_datum.spend(
+    registry(),
+    Some(envelopeA() |> as_data_envelope),
+    Release,
+    holdingRef,
+    tx,
+  )
+}
+
+fn closedBookInsertWith(
+  e: Envelope,
+  redeemerKey: ByteArray,
+  owner: ByteArray,
+  address: ByteArray,
+  tx: Transaction,
+) -> Bool {
+  open_datum.closed_datum.mint(
+    registry(),
+    BookInsert { key: redeemerKey, owner, address, envelope: e },
+    app,
+    tx,
+  )
+}
+
+fn closedBookInsert(e: Envelope, tx: Transaction) -> Bool {
+  closedBookInsertWith(e, e.control.key, controller, appAddress(), tx)
+}
+
+fn closedBookTerminateAs(owner: ByteArray, tx: Transaction) -> Bool {
+  open_datum.closed_datum.mint(
+    registry(),
+    BookTerminate { key: fx.keyA, owner, holding: holdingRef },
+    app,
+    tx,
+  )
+}
+
+test closed_update_refuses_every_payload() {
+  list_all(
+    payloads(),
+    fn(p) { closedUpdate(updateTx([next(p)], [controller])) == False },
+  )
+}
+
+test closed_update_refusal_is_the_closed_rule() {
+  list_all(
+    payloads(),
+    fn(p) {
+      let tx = updateTx([next(p)], [controller])
+      closedUpdate(tx) == False && update(tx)
+    },
+  )
+}
+
+test closed_booking_accepts_insertion() {
+  closedBookInsert(envelopeA(), honestInsertTx(envelopeA()))
+}
+
+test closed_booking_accepts_termination() {
+  closedBookTerminateAs(
+    controller,
+    terminateTx(
+      [stateInput(), holding()],
+      [controller],
+      terminateName(controller),
+    ),
+  )
+}
+
+test closed_booking_refuses_wrong_version_where_open_refuses() {
+  let e = envelopeOf(Control { ..control(), version: 2 }, payloadA())
+  let tx = honestInsertTx(e)
+  bookInsert(e, tx) == False && closedBookInsert(e, tx) == False
+}
+
+test closed_booking_refuses_termination_without_live_output_where_open_refuses() {
+  let tx = terminateTx([stateInput()], [controller], terminateName(controller))
+  bookTerminateAs(controller, tx) == False && closedBookTerminateAs(
+    controller,
+    tx,
+  ) == False
+}
+
+test closed_release_accepts_with_the_registry() {
+  let tx = honestRelease()
+  registryFolds(tx) && closedRelease(tx)
+}
+
+test closed_release_without_fold_refuses_where_open_refuses() {
+  let tx =
+    Transaction {
+      ..transaction.placeholder,
+      inputs: [holding()],
+      outputs: [payController(appDeposit)],
+      extra_signatories: [controller],
+      redeemers: [Pair(Spend(holdingRef), Release |> as_data_spend)],
+    }
+  release(tx) == False && closedRelease(tx) == False
+}
+
+test closed_else_refuses() fail {
+  open_datum.closed_datum.else(#"", #"")
+}
