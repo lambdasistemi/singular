@@ -46,6 +46,34 @@ enforce_receipt_cap() {
     return 1
   fi
 }
+# Blocks the node forged and adopted after line MARK of its log FILE, "F/A": F
+# the blocks forged in that range, A those of them whose adoption the range
+# records. The node keeps forging while this reads its log, and a block's
+# adoption line follows its forge line a few milliseconds later (#404). The
+# range is therefore closed at both ends, so that no block is split by an edge
+# of it: it is cut after its last adoption line, a block forged after that
+# being still in flight, not missing from the record; and a block forged just
+# before MARK, whose adoption line alone falls in the range, is forged outside
+# it and counts for neither side (#637). Each forge is paired with the adoption
+# of its own slot, so an adoption never covers another block's forge.
+forged_adopted_in() {
+  local window adopted
+  window="$(
+    tail -n +"$(($2 + 1))" "$1" | awk '
+      { line[NR] = $0 }
+      /Adopted block forged in slot / || index($0, "\"ns\":\"Forge.Loop.AdoptedBlock\"") { last = NR }
+      END { for (i = 1; i <= last; i++) print line[i] }'
+  )"
+  adopted="$(
+    { grep -o 'Adopted block forged in slot [0-9]*' <<<"$window" || true; } | awk '{ print $6 }'
+    { grep -F '"ns":"Forge.Loop.AdoptedBlock"' <<<"$window" || true; } | jq -r .data.slot
+  )"
+  { grep -o 'Forged block in slot [0-9]*' <<<"$window" || true; } \
+    | awk -v adopted="$adopted" '
+      BEGIN { n = split(adopted, slots, "\n"); for (i = 1; i <= n; i++) seen[slots[i]] = 1 }
+      { forged++; if ($5 in seen) covered++ }
+      END { print forged + 0 "/" covered + 0 }'
+}
 # Fields the cross-wallet predicates and their alterations actually read.
 cross_evidence_filter='
 def line:
@@ -1381,23 +1409,9 @@ if part rollback; then
     }
     tail -n +"$(($1 + 1))" "$nlog" | sed -nE 's/.*(Chain extended|Switched to a fork), new tip: ([0-9a-f]{64}).*/\2/p'
   }
-  # Blocks the node forged and adopted after LINE: both counts, "F/A".
-  # The node keeps forging while this reads its log, and each forge line is
-  # followed a few milliseconds later by its adoption line (#404). So the log
-  # is read once and cut after its last adoption record: a block forged after
-  # that line is still being adopted, not missing from the record.
-  forged_adopted_after() {
-    local window forged adopted
-    window="$(
-      tail -n +"$(($1 + 1))" "$nlog" | awk '
-      { line[NR] = $0 }
-      /Adopted block forged in slot / || index($0, "\"ns\":\"Forge.Loop.AdoptedBlock\"") { last = NR }
-      END { for (i = 1; i <= last; i++) print line[i] }'
-    )"
-    forged="$(grep -c 'Forged block in slot' <<<"$window" || true)"
-    adopted="$(grep -c -e '"ns":"Forge.Loop.AdoptedBlock"' -e 'Adopted block forged in slot ' <<<"$window" || true)"
-    echo "$forged/$adopted"
-  }
+  # Blocks the node forged and adopted after LINE: "F/A", as forged_adopted_in
+  # counts them in the node's log.
+  forged_adopted_after() { forged_adopted_in "$nlog" "$1"; }
   # HASH is the restored tip or a block the node chained since the restore;
   # an empty or null hash never is.
   on_restored_chain() {
@@ -1627,6 +1641,36 @@ ENDPOINT
   clause "the restored node opened its database at the snapshot's tip" \
     jq -n -e --argjson s "$snap_tip" --argjson r "$restored_tip" '$s == $r'
   forged_pair() { [[ "$1" =~ ^([0-9]+)/([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" = "${BASH_REMATCH[2]}" ]; }
+  # The count both adoption clauses stand on can fail, and neither edge of its
+  # range splits a block. Shown on two logs written here in the node's own
+  # lines: the original node's human adoption lines, a restart's machine ones.
+  straddling_log="$work/adoption-count-straddling.log"
+  uncovered_log="$work/adoption-count-uncovered.log"
+  forge_line() { printf '[2026-01-01 00:00:00.0000Z][epyc:Forge.Loop.ForgedBlock](Info,41) Forged block in slot %s\n' "$1"; }
+  human_adoption() { printf '[2026-01-01 00:00:00.0050Z][epyc:Forge.Loop.AdoptedBlock](Info,41) Adopted block forged in slot %s: %064d\n' "$1" "$1"; }
+  machine_adoption() { printf '{"at":"2026-01-01T00:00:00.0050Z","ns":"Forge.Loop.AdoptedBlock","data":{"blockHash":"%064d","kind":"TraceAdoptedBlock","slot":%s,"txIds":[]}}\n' "$1" "$1"; }
+  {
+    forge_line 10
+    human_adoption 10
+    forge_line 11
+    human_adoption 11
+    forge_line 12
+    machine_adoption 12
+    forge_line 13
+  } >"$straddling_log"
+  {
+    forge_line 11
+    human_adoption 11
+    forge_line 12
+    forge_line 13
+    machine_adoption 13
+  } >"$uncovered_log"
+  clause "a block forged just before the range starts and adopted in it counts for neither side" \
+    is_equal "$(forged_adopted_in "$straddling_log" 1)" 2/2
+  clause "a block forged and in flight at the end of the range counts for neither side" \
+    is_equal "$(forged_adopted_in "$straddling_log" 0)" 3/3
+  clause "a forged block with no adoption line is counted as forged and not covered" \
+    is_equal "$(forged_adopted_in "$uncovered_log" 0)" 3/2
   clause "the node's adoption record covers every block it forged since the snapshot restart" \
     forged_pair "$(forged_adopted_after "$snap_mark")"
   clause "neither block that carried the booking or the fold is one the restored node chained since" \
