@@ -83,6 +83,16 @@
       "pause": 400
     }
   ],
+  "slice-seven-b-as-built": [
+    {
+      "text": "Slice seven-b: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The booking declarations built under the name syntax tag take the trie-ready names (Config.trieReadyTag, the booking contents' trieReadyTags, the two bookings' trieReadyTagsMinted, the refusal forged-trie-ready-tag); main's names are untouched. A termination holds, mints and checks no application tag, and one that holds an application tag is refused dirty-request. Each request carries one nonce (default zero, omitted from the written form at zero). The application tag's name commits to the registration payload and the nonce, the trie-ready tag's name to the operation and the nonce, in a canonical encoding of complete natural numbers with a stand-in hash; no injectivity is assumed. Trie-ready names are encoded as the commitment plus one, so that the name zero stays the state token's under the registry's policy, and the separation is proved for every commitment value. The statements in Singular/Statements/Booking.lean and Termination.lean, all from the standard axioms: booked_request_has_exact_contents, termination_booking_has_exact_contents (restated), booked_request_tags_commit_to_own_fields, booked_termination_tag_commits_to_own_operation and trie_ready_tag_is_not_state_token (new), beside the six statements of slices six and seven that keep their text. The booking corpus holds 48 registration rows and 36 termination rows, with exact-reason controls for foreign fields, operation kind, nonce, values that differ by 256, state-token collisions, preconditions, multiplicity and custody. Slice ten must burn one trie-ready tag per request and one application tag per registration only, and the planned tag_supplies_equal_pending counts application tags over registrations only. The hash is a stand-in: the correspondence of the commitments to the real policies and asset names is left to the correspondence work.",
+      "pause": 400
+    }
+  ],
   "slice-eight-a-as-built": [
     {
       "text": "Slice eight-a: as built.",
@@ -109,6 +119,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "d45e78e12188d75fc583d2813ab641943cddc16d75743529da6ae5edf9adc269"
+    "sha256": "8063efba9d416fc1231b5b7862b015fd13f7b463499faa0262125ad56e610d88"
   }
 }

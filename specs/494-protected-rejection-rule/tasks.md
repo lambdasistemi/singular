@@ -160,12 +160,12 @@ Inserted on 15 October 2026 by the split of slice eight; see the [slice brief](b
 
 Inserted on 15 October 2026 by the operator's rulings on the trie-ready tag.
 
-- [ ] `failing-controls-seven-b` — a termination that holds an application tag and a tag minted for another operation or nonce fail on the branch as it stands, for the intended reason.
-- [ ] `trie-ready-names` — this branch's declarations built under the name syntax tag take the trie-ready names; main's names are untouched; the booking statements restate with the new vocabulary under their qualified names.
-- [ ] `termination-without-application-tag` — a termination holds, mints and checks no application tag; one held is refused as dirty; the singular tag in custody stays the precondition of its trie-ready tag.
-- [ ] `tag-names-are-commitments` — the application tag's name commits to the payload and a nonce and the trie-ready tag's to the operation and a nonce; one nonce per request; no injectivity is assumed.
-- [ ] `statements-seven-b` — the restated booking statements are proved from the standard axioms; the list of statements carries their qualified names and axiom lines.
-- [ ] `regenerate-after-slice-seven-b` — as slice five. (consumers-state-the-rule)
+- [x] `failing-controls-seven-b` — a termination that holds an application tag and a tag minted for another operation or nonce fail on the branch as it stands, for the intended reason.
+- [x] `trie-ready-names` — this branch's declarations built under the name syntax tag take the trie-ready names; main's names are untouched; the booking statements restate with the new vocabulary under their qualified names.
+- [x] `termination-without-application-tag` — a termination holds, mints and checks no application tag; one held is refused as dirty; the singular tag in custody stays the precondition of its trie-ready tag.
+- [x] `tag-names-are-commitments` — the application tag's name commits to the payload and a nonce and the trie-ready tag's to the operation and a nonce; one nonce per request; no injectivity is assumed.
+- [x] `statements-seven-b` — the restated booking statements are proved from the standard axioms; the list of statements carries their qualified names and axiom lines.
+- [x] `regenerate-after-slice-seven-b` — as slice five. (consumers-state-the-rule)
 
 ### Slice seven-c: one tip number
 

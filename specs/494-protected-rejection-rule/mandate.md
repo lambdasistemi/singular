@@ -167,7 +167,7 @@ are the net for every item.
 ## Out of scope, by number
 
 Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487
-(rejection as a separate command), 529 (the syntax tag and its mint; the bond is modelled here), 361 (the refund policy),
+(rejection as a separate command), 529 (the trie-ready tag and its mint; the bond is modelled here), 361 (the refund policy),
 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge
 contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum
 application, except regenerating its committed corpus). A coder

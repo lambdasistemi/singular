@@ -241,7 +241,7 @@
       "pause": 500
     },
     {
-      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the syntax tag and its mint; the bond is modelled here), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
+      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the trie-ready tag and its mint; the bond is modelled here), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
       "pause": 400
     }
   ],
@@ -281,6 +281,6 @@
   ],
   "_source": {
     "file": "mandate.md",
-    "sha256": "0853e6a9835a2af3529b951adc64b51b91939a1090fe4fec6a8b0d0532f26de7"
+    "sha256": "ead5e2c3a20d94846b784d75ca752a66722490ac05cd52838013aa148574d76a"
   }
 }

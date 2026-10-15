@@ -365,27 +365,27 @@
       "pause": 400
     },
     {
-      "text": "[ ] failing-controls-seven-b — a termination that holds an application tag and a tag minted for another operation or nonce fail on the branch as it stands, for the intended reason.",
+      "text": "[x] failing-controls-seven-b — a termination that holds an application tag and a tag minted for another operation or nonce fail on the branch as it stands, for the intended reason.",
       "pause": 300
     },
     {
-      "text": "[ ] trie-ready-names — this branch's declarations built under the name syntax tag take the trie-ready names; main's names are untouched; the booking statements restate with the new vocabulary under their qualified names.",
+      "text": "[x] trie-ready-names — this branch's declarations built under the name syntax tag take the trie-ready names; main's names are untouched; the booking statements restate with the new vocabulary under their qualified names.",
       "pause": 300
     },
     {
-      "text": "[ ] termination-without-application-tag — a termination holds, mints and checks no application tag; one held is refused as dirty; the singular tag in custody stays the precondition of its trie-ready tag.",
+      "text": "[x] termination-without-application-tag — a termination holds, mints and checks no application tag; one held is refused as dirty; the singular tag in custody stays the precondition of its trie-ready tag.",
       "pause": 300
     },
     {
-      "text": "[ ] tag-names-are-commitments — the application tag's name commits to the payload and a nonce and the trie-ready tag's to the operation and a nonce; one nonce per request; no injectivity is assumed.",
+      "text": "[x] tag-names-are-commitments — the application tag's name commits to the payload and a nonce and the trie-ready tag's to the operation and a nonce; one nonce per request; no injectivity is assumed.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-seven-b — the restated booking statements are proved from the standard axioms; the list of statements carries their qualified names and axiom lines.",
+      "text": "[x] statements-seven-b — the restated booking statements are proved from the standard axioms; the list of statements carries their qualified names and axiom lines.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-seven-b — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-seven-b — as slice five. (consumers-state-the-rule)",
       "pause": 300
     }
   ],
@@ -551,6 +551,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "4d99ec63315243fa58a3153579780a96850545f06445e6ae400d5f965c9fb5e9"
+    "sha256": "ea11712a92b281ef041717dfdd90223686289a887e08a264acac0876f341c1f4"
   }
 }
