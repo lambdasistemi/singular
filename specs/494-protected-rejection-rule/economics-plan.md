@@ -79,7 +79,7 @@ standard axioms exists. Every statement quantifies over accepted transactions in
 Supporting statements, each in the slice that needs it: `reference_inputs_not_consumed` (with the premise `disjointInputs`), `spent_reference_refused`, `overlapping_reference_is_spent`,
 `balanced_transaction_conserves_value`, `zero_donation_omits_field` (five, proved); `booked_request_has_exact_contents`, `booked_time_is_interval_end`, `booked_time_not_before_inclusion`,
 `booking_width_within_limit` (six); `world_supply_sync`, `termination_request_carries_genuine_token` (seven); `rejection_batch_members_distinct`, `sweep_leaves_pool_untouched` (eight);
-`refunds_sum_per_address` (nine); `fold_routes_every_amount`, `tag_supplies_equal_pending` (ten). Statement 4 rests on `booked_time_not_before_inclusion`: the booked time is the upper end of
+`refunds_sum_per_address` (nine); `fold_routes_every_amount`, `tag_supplies_equal_pending` (ten: the trie-ready tags in the world equal the pending requests, and the application tags held by pending registrations equal their number with exactly one each; no total supply of the application tag is claimed). Statement 4 rests on `booked_time_not_before_inclusion`: the booked time is the upper end of
 the interval the booking transaction was valid in, so expiry comes no earlier than both windows after the booking was included.
 
 ## The slices

@@ -123,7 +123,7 @@
       "pause": 300
     },
     {
-      "text": "The supply of the trie-ready tag equals the count of pending requests; the supply of the application tag equals the count of pending registrations.",
+      "text": "The supply of the trie-ready tag equals the count of pending requests. For the application tag Singular states only what sits in its own requests: the application tags held by pending requests equal the count of pending registrations, and every pending registration holds exactly one. Minting the application tag is the application's own judgement, and an application tag minted outside a booking exists outside Singular's guarantees and cannot be booked, because the trie-ready tag is minted only with its application tag in the same booking.",
       "pause": 300
     },
     {
@@ -517,6 +517,6 @@
   ],
   "_source": {
     "file": "economics-design.md",
-    "sha256": "70f0024321e6d675b011f73dbcf0726aca2ded22042ba3ede0bfdca843028f10"
+    "sha256": "f7329c434d190f254c0ab4c47fc22ec2c2d5bdd76af4fdb066c68d3b8e321d84"
   }
 }

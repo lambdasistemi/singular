@@ -206,12 +206,12 @@ Conformance and CI code, after slice eight; Codex at medium effort.
 
 ### Slice ten: folds
 
-- [ ] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag on a registration, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.
-- [ ] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the trie-ready tag and the singular tag and donates held minus tip, and the processor takes exactly the declared tip; a registration fold burns the trie-ready tag and the application tag and mints the singular tag at the destination.
-- [ ] `statements-ten` — statements 7 (first half), 10 (restated: only a booked termination folds, and it carries its key's genuine singular tag), 11 and 12 and the two supporting statements (including that the supply of each tag equals the count of its pending requests) are proved.
-- [ ] `amendment-economics` — the 1.18.0 entry of the constitution states the economic rows in the translation (one release, one entry).
-- [ ] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)
-- [ ] `names-and-receipts-ten` — as slice five, and the full list of the thirteen statements with their status.
+- [x] `failing-controls-ten` — a termination stranded by a fold-time check, one donation counted for many keys, a forged application tag on a registration, an unbalanced fold and a fold that carries a tag out alive fail on the branch as it stands.
+- [x] `fold-obligations` — a registration folds inside its window and routes the cost, tip and carrier; a termination folds at any later time, burns the trie-ready tag and the singular tag and donates held minus tip, and the processor takes exactly the declared tip; a registration fold burns the trie-ready tag and the application tag and mints the singular tag at the destination.
+- [x] `statements-ten` — statements 7 (first half), 10 (restated: only a booked termination folds, and it carries its key's genuine singular tag), 11 and 12 and the two supporting statements (including that the trie-ready tags equal the pending requests and that the application tags held by pending registrations equal their number, each holding exactly one; no total application-tag supply is claimed) are proved.
+- [x] `amendment-economics` — the 1.18.0 entry of the constitution states the economic rows in the translation (one release, one entry).
+- [x] `regenerate-after-slice-ten` — as slice five. (consumers-state-the-rule)
+- [x] `names-and-receipts-ten` — as slice five, and the full list of the thirteen statements with their status.
 
 ## Closing the ticket
 
