@@ -47,6 +47,7 @@ module Singular.Application.OpenDatum.Entry
     , runTerminate
     ) where
 
+import Control.Exception (throwIO)
 import Control.Monad (unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
@@ -115,6 +116,11 @@ import Singular.CLI.Outlay
     , outlayTotal
     , updateOutlay
     )
+import Singular.CLI.Prepare
+    ( PrepareRefusal (..)
+    , preparationFields
+    , prepareFunding
+    )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
@@ -130,10 +136,17 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
+import Singular.Registry.TxBuilder.Edges
+    ( bookEdgeMeasured
+    , selectFunding
+    )
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , requestAddrFromCfg
+    )
+import Singular.Registry.TxBuilder.Prepare
+    ( Preparation (..)
+    , spendableOuts
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -141,7 +154,7 @@ import Singular.Registry.Types
     , OnChainTokenState
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
+import Singular.Registry.Wallet (Wallet (..), bech32Address)
 
 -- | The state a request's deadline is read under, and the request it names.
 requestAndState
@@ -182,12 +195,12 @@ book
     -}
     -> (Cage.Session Cage.NoWitness IO -> Live -> IO (Booked, r))
     -- ^ What is booked, decided from the booking's own view
-    -> IO (ConfirmedSubmission, r, Deadline)
+    -> IO (ConfirmedSubmission, r, Deadline, Maybe Preparation)
 book at a key verb plan = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-    (booking, decided) <-
+    (booking, (decided, mPrep)) <-
         submitBuiltIn
             wc
             "book"
@@ -200,7 +213,22 @@ book at a key verb plan = do
                 let edge = T.pack (edgeName (bookedEdge b))
                     payerAddr = walletAddr (wcWallet wc)
                 walletUtxos <- Cage.outputsAt v payerAddr
-                _ <- resolveFunding payerAddr walletUtxos (entryFund a)
+                -- Empty wallet (nothing spendable at all) keeps the friendly refusal
+                -- with the retained faucet sentence (no self-payment); a token-only
+                -- wallet with spendable outputs goes to the seam to prepare.
+                -- Before the fold-reserve floor, so an empty wallet names the faucet.
+                case (selectFunding (entryFund a) walletUtxos, spendableOuts walletUtxos) of
+                    (Left msg, []) ->
+                        failWithFields
+                            ClientRefusal
+                            ( msg
+                                <> " for wallet "
+                                <> bech32Address payerAddr
+                                <> " (client policy). "
+                                <> retainedFaucetStep
+                            )
+                            (emptyFields payerAddr walletUtxos)
+                    _ -> pure ()
                 pp <- Cage.parameters v
                 let Coin reserve =
                         protocolFeeReserve pp (liveRefs live)
@@ -213,27 +241,55 @@ book at a key verb plan = do
                     building
                     [InKey key, InEdge (Booking edge)]
                     (EdgeStarted (Booking edge))
-                tx <-
-                    bookEdgeMeasured
-                        cfg
-                        v
+                let refs = liveRefs live
+                    measure = bookingOutlay pp refs
+                    build funded =
+                        bookEdgeMeasured
+                            cfg
+                            funded
+                            payerAddr
+                            (savedToken s)
+                            key
+                            (bookedEdge b)
+                            (bookedDestination b)
+                            (bookedDeposit b)
+                            (bookedApproval b)
+                            refs
+                            (entryFund a)
+                prepared <-
+                    prepareFunding
+                        wc
+                        "book"
                         payerAddr
-                        (savedToken s)
-                        key
-                        (bookedEdge b)
-                        (bookedDestination b)
-                        (bookedDeposit b)
-                        (bookedApproval b)
-                        (liveRefs live)
                         (entryFund a)
-                let outlay = bookingOutlay pp (liveRefs live) tx
-                refuseOver (entryMaxOutlay a) outlay
-                refuseUnderfunded
-                    payerAddr
-                    walletUtxos
-                    (outlayTotal outlay)
-                    "measured outlay"
-                pure (tx, decided)
+                        (entryMaxOutlay a)
+                        measure
+                        build
+                        v
+                case prepared of
+                    Left (ExplicitFundingRefusal why) ->
+                        failWithFields
+                            ClientRefusal
+                            ( why
+                                <> " for wallet "
+                                <> bech32Address payerAddr
+                                <> " (client policy)"
+                            )
+                            (emptyFields payerAddr walletUtxos)
+                    Left (OriginalFailure e) -> throwIO e
+                    Left (PreparationShortfall text fields) ->
+                        failWithFields ClientRefusal text fields
+                    Left (AllowanceExceeded text fields) ->
+                        failWithFields ClientRefusal text fields
+                    Right (_, mPrep, realTx) -> do
+                        let outlay = bookingOutlay pp refs realTx
+                        refuseOver (entryMaxOutlay a) outlay
+                        refuseUnderfunded
+                            payerAddr
+                            walletUtxos
+                            (outlayTotal outlay)
+                            "measured outlay"
+                        pure (realTx, (decided, mPrep))
             )
     let request = TxIn (txIdTx (confirmedTx booking)) (TxIx 0)
     deadline <-
@@ -259,7 +315,7 @@ book at a key verb plan = do
         (wcTracer wc)
         [InRequest (txInText request)]
         (Trace.Booked (txInText request) (Just (deadlineMs deadline)))
-    pure (booking, decided, deadline)
+    pure (booking, decided, deadline, mPrep)
 
 -- | What a booking-only command's receipt names of its pending request.
 pendingFields
@@ -273,6 +329,27 @@ pendingFields requester booking deadline =
         )
     , ("foldDeadline", deadlineJson deadline)
     ]
+
+{- | The fold preparation of a combined command, under a distinct key so a
+booking preparation (`preparationFields`) and a fold preparation never share
+one member: present only when the fold made one, same shape otherwise.
+-}
+foldPrepFields :: Maybe Preparation -> [(Text, Value)]
+foldPrepFields =
+    maybe
+        []
+        ( \p ->
+            [
+                ( "foldPreparation"
+                , object
+                    [ "transaction" .= txIdHex (prepTx p)
+                    , "output" .= txInText (prepFunding p)
+                    , "lovelace" .= prepFundingCoin p
+                    , "fee" .= prepFee p
+                    ]
+                )
+            ]
+        )
 
 -- | A holding view as the envelope the entry commands still print (B shim).
 toEnvelopeHolding
@@ -341,7 +418,7 @@ runInsert env a = case entryMode a of
                     envelope = insertionOf s a (callerKey at) payload
                 -- The approval is decided in the booking's own view, from the
                 -- state it holds.
-                (booking, (), deadline) <-
+                (booking, (), deadline, mPrepBook) <-
                     book at a key BookInsert $ \_ live -> do
                         b <- planInsert live envelope
                         pure (b, ())
@@ -371,6 +448,8 @@ runInsert env a = case entryMode a of
                                                , ("fold", toJSON (txIdHex (fdTx folded)))
                                                , ("root", toJSON (hexT (fdRoot folded)))
                                                ]
+                                            <> preparationFields mPrepBook
+                                            <> foldPrepFields (fdPreparation folded)
                                             <> foldReceiptLists
                                                 [ SettledForReceipt
                                                     (seRequest entry)
@@ -389,8 +468,16 @@ runInsert env a = case entryMode a of
                                                 (fdCapacityProvenance folded)
                                         )
                                 Left why -> error ("Entry: folded holding is not an envelope: " <> why)
-                            DeliveredDatum{} -> receipt "insert" Success []
-                            Released{} -> receipt "insert" Success []
+                            DeliveredDatum{} ->
+                                receipt
+                                    "insert"
+                                    Success
+                                    (preparationFields mPrepBook <> foldPrepFields (fdPreparation folded))
+                            Released{} ->
+                                receipt
+                                    "insert"
+                                    Success
+                                    (preparationFields mPrepBook <> foldPrepFields (fdPreparation folded))
                     else
                         pure $
                             receipt
@@ -398,6 +485,7 @@ runInsert env a = case entryMode a of
                                 Success
                                 ( keyFields key
                                     <> pendingFields (callerKey at) booking deadline
+                                    <> preparationFields mPrepBook
                                     <> [ ("envelope", envelopeToJson envelope)
                                        , ("envelopeHash", toJSON (hexT (envelopeHash envelope)))
                                        ]
@@ -553,7 +641,7 @@ runTerminate env a = case entryMode a of
                 let s = savedOf at
                 -- The live output the booking releases is resolved in the
                 -- booking's own view, with the state the approval binds.
-                (booking, ((liveIn, _), envelope), deadline) <-
+                (booking, ((liveIn, _), envelope), deadline, mPrepBook) <-
                     book at a key BookTerminate $ \v live -> do
                         outs <- liveOutputs openDatumApplication v s
                         (b, holding, dh) <- planTerminate live (callerKey at) key outs
@@ -589,6 +677,8 @@ runTerminate env a = case entryMode a of
                                            , ("fold", toJSON (txIdHex (fdTx folded)))
                                            , ("root", toJSON (hexT (fdRoot folded)))
                                            ]
+                                        <> preparationFields mPrepBook
+                                        <> foldPrepFields (fdPreparation folded)
                                         <> foldReceiptLists
                                             [ SettledForReceipt
                                                 (seRequest entry)
@@ -606,8 +696,16 @@ runTerminate env a = case entryMode a of
                                             (fdCapacityBound folded)
                                             (fdCapacityProvenance folded)
                                     )
-                            Delivered{} -> receipt "terminate" Success []
-                            DeliveredDatum{} -> receipt "terminate" Success []
+                            Delivered{} ->
+                                receipt
+                                    "terminate"
+                                    Success
+                                    (preparationFields mPrepBook <> foldPrepFields (fdPreparation folded))
+                            DeliveredDatum{} ->
+                                receipt
+                                    "terminate"
+                                    Success
+                                    (preparationFields mPrepBook <> foldPrepFields (fdPreparation folded))
                     else
                         pure $
                             receipt
@@ -615,6 +713,7 @@ runTerminate env a = case entryMode a of
                                 Success
                                 ( keyFields key
                                     <> pendingFields (callerKey at) booking deadline
+                                    <> preparationFields mPrepBook
                                     <> [ ("released", toJSON (txInText liveIn))
                                        , ("deposit", toJSON (ctlDeposit c))
                                        ]

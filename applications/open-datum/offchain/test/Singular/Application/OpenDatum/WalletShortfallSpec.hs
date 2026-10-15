@@ -50,6 +50,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
+import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
 import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
@@ -81,6 +82,7 @@ import Singular.CLI.Outlay (walletShortfall)
 import Singular.CLI.Plan
     ( faucetStep
     , refuseUnderfunded
+    , retainedFaucetStep
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (loadReleaseCodes)
@@ -298,7 +300,7 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         reasonOf emptyPreview
             `shouldSatisfy` isInfixOf "(client policy)"
         reasonOf emptyPreview
-            `shouldSatisfy` isInfixOf faucetStep
+            `shouldSatisfy` isInfixOf retainedFaucetStep
         emptyInsert <-
             runWithKey
                 emptyKey
@@ -318,7 +320,7 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         reasonOf emptyInsert
             `shouldSatisfy` isInfixOf "(client policy)"
         reasonOf emptyInsert
-            `shouldSatisfy` isInfixOf faucetStep
+            `shouldSatisfy` isInfixOf retainedFaucetStep
         policyOfRun emptyInsert `shouldBe` Just "client"
         walletOfRun emptyInsert `shouldSatisfy` isJust
         countOfRun emptyInsert `shouldSatisfy` isJust
@@ -350,6 +352,9 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         selectFunding (Just (fundOutput 99)) []
             `shouldSatisfy` isLeftWithEmpty
     it "refuses a foreign funding output before building" $ with20AdaRig $ \rig -> do
+        -- Pinned exact old wording (base `Plan.hs` resolveFunding foreign branch, no prefix,
+        -- no faucet): msg frozen literal + wallet address (producer) + policy suffix.
+        let foreignMsg = "the chosen funding output is not an ada-only output of the payer"
         seed <- fundSeed rig
         create <- run rig "create" ["open-datum", "create", "--seed", seed]
         t <- tokenOf create
@@ -371,13 +376,132 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                 )
         outcomeOf (runReceipt foreignInsert)
             `shouldBe` Just "client-refusal"
+        runCode foreignInsert `shouldBe` ExitFailure 10
         reasonOf foreignInsert
-            `shouldSatisfy` ("(client policy)" `isSuffixOf`)
+            `shouldBe` (foreignMsg <> " for wallet " <> previewAddr rig <> " (client policy)")
         reasonOf foreignInsert
             `shouldSatisfy` (not . isInfixOf faucetStep)
+        reasonOf foreignInsert
+            `shouldSatisfy` (not . isInfixOf retainedFaucetStep)
         policyOfRun foreignInsert `shouldBe` Just "client"
         walletOfRun foreignInsert `shouldBe` Just (T.pack (previewAddr rig))
         countOfRun foreignInsert `shouldSatisfy` isJust
+        submittedOf foreignInsert `shouldBe` False
+    it "refuses a foreign funding output for terminate with today's text" $ with20AdaRig $ \rig -> do
+        let foreignMsg = "the chosen funding output is not an ada-only output of the payer"
+        seed <- fundSeed rig
+        create <- run rig "create" ["open-datum", "create", "--seed", seed]
+        t <- tokenOf create
+        inserted <-
+            runWithKey
+                (rigTestKey rig)
+                rig
+                "insert alice-1"
+                ( [ "open-datum"
+                  , "insert"
+                  , "--key"
+                  , "alice-1"
+                  , "--payload"
+                  , rigDir rig </> "payload.json"
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+        folded <-
+            run
+                rig
+                "fold alice-1"
+                (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+        outcomeOf (runReceipt folded) `shouldBe` Just "success"
+        foreignTerminate <-
+            runWithKey
+                (rigTestKey rig)
+                rig
+                "terminate with a foreign fund input"
+                ( [ "open-datum"
+                  , "terminate"
+                  , "--key"
+                  , "alice-1"
+                  , "--fund-input"
+                  , T.unpack (renderOutRef (fundOutput 99))
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt foreignTerminate)
+            `shouldBe` Just "client-refusal"
+        runCode foreignTerminate `shouldBe` ExitFailure 10
+        reasonOf foreignTerminate
+            `shouldBe` (foreignMsg <> " for wallet " <> previewAddr rig <> " (client policy)")
+        submittedOf foreignTerminate `shouldBe` False
+    it "refuses a funded insert past a tiny allowance before signing" $ with20AdaRig $ \rig -> do
+        seed <- fundSeed rig
+        create <- run rig "create" ["open-datum", "create", "--seed", seed]
+        t <- tokenOf create
+        refused <-
+            runWithKey
+                (rigTestKey rig)
+                rig
+                "insert past max-outlay 1"
+                ( [ "open-datum"
+                  , "insert"
+                  , "--key"
+                  , "alice-2"
+                  , "--payload"
+                  , rigDir rig </> "payload.json"
+                  , "--max-outlay"
+                  , "1"
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+        runCode refused `shouldBe` ExitFailure 10
+        reasonOf refused
+            `shouldSatisfy` isInfixOf "passes the approved allowance"
+        submittedOf refused `shouldBe` False
+    it "refuses a funded terminate past a tiny allowance before signing" $ with20AdaRig $ \rig -> do
+        seed <- fundSeed rig
+        create <- run rig "create" ["open-datum", "create", "--seed", seed]
+        t <- tokenOf create
+        inserted <-
+            runWithKey
+                (rigTestKey rig)
+                rig
+                "insert alice-1"
+                ( [ "open-datum"
+                  , "insert"
+                  , "--key"
+                  , "alice-1"
+                  , "--payload"
+                  , rigDir rig </> "payload.json"
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+        folded <-
+            run
+                rig
+                "fold alice-1"
+                (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+        outcomeOf (runReceipt folded) `shouldBe` Just "success"
+        refused <-
+            runWithKey
+                (rigTestKey rig)
+                rig
+                "terminate past max-outlay 1"
+                ( [ "open-datum"
+                  , "terminate"
+                  , "--key"
+                  , "alice-1"
+                  , "--max-outlay"
+                  , "1"
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+        runCode refused `shouldBe` ExitFailure 10
+        reasonOf refused
+            `shouldSatisfy` isInfixOf "passes the approved allowance"
+        submittedOf refused `shouldBe` False
     it
         "judges preview and write on the same wallet, with the same figures"
         $ withBetweenRig
@@ -421,6 +545,164 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             outcomeOf (runReceipt written) `shouldNotBe` Just "node-unavailable"
             figuresOf previewed `shouldBe` figuresOf written
             figuresOf previewed `shouldSatisfy` allPresent
+    it
+        "drops only the self-payment sentence from the faucet step (#491 PR2 RED)"
+        $ do
+            retainedFaucetStep `shouldBe` retainedFaucet
+            retainedFaucetStep
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
+    it
+        "insert preview from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
+        $ with20AdaRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            emptyKey <- emptyWalletKey rig
+            emptyWallet <- loadWallet (fromIntegral magic) emptyKey
+            let emptyAddr = bech32Address (walletAddr emptyWallet)
+            previewed <-
+                run
+                    rig
+                    "insert preview empty without hand step"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-2"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--preview"
+                      , "--wallet-address"
+                      , emptyAddr
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+            runCode previewed `shouldBe` ExitFailure 10
+            reasonOf previewed `shouldSatisfy` isInfixOf retainedFaucet
+            reasonOf previewed
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
+    it
+        "insert write from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
+        $ with20AdaRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            emptyKey <- emptyWalletKey rig
+            written <-
+                runWithKey
+                    emptyKey
+                    rig
+                    "insert empty without hand step"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-2"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt written) `shouldBe` Just "client-refusal"
+            runCode written `shouldBe` ExitFailure 10
+            reasonOf written `shouldSatisfy` isInfixOf retainedFaucet
+            reasonOf written
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
+    it
+        "terminate preview from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
+        $ with20AdaRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert alice-1"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            emptyTestWalletOutputs rig
+            previewed <-
+                run
+                    rig
+                    "terminate preview empty without hand step"
+                    ( [ "open-datum"
+                      , "terminate"
+                      , "--key"
+                      , "alice-1"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+            runCode previewed `shouldBe` ExitFailure 10
+            reasonOf previewed `shouldSatisfy` isInfixOf retainedFaucet
+            reasonOf previewed
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
+    it
+        "terminate write from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
+        $ with20AdaRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert alice-1"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            emptyTestWalletOutputs rig
+            written <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "terminate empty without hand step"
+                    ( [ "open-datum"
+                      , "terminate"
+                      , "--key"
+                      , "alice-1"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt written) `shouldBe` Just "client-refusal"
+            runCode written `shouldBe` ExitFailure 10
+            reasonOf written `shouldSatisfy` isInfixOf retainedFaucet
+            reasonOf written
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
     it "opens a write session for 20 ada in two outputs with no threshold" $ do
         withSystemTempDirectory "wallet-floor-open" $ \dir -> do
             let keyPath = dir </> "payment.skey"
@@ -445,6 +727,15 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
 -- ---------------------------------------------------------
 -- Helpers
 -- ---------------------------------------------------------
+
+-- The retained faucet sentence, pinned exactly as the base's `Plan.hs` text
+-- (A-007: keep the faucet sentence, drop only the self-payment sentence).
+-- Frozen literal of `"Fund this address, then rerun. On preprod the faucet
+-- is https://docs.cardano.org/cardano-testnets/tools/faucet."`.
+retainedFaucet :: String
+retainedFaucet =
+    "Fund this address, then rerun. On preprod the faucet is "
+        <> "https://docs.cardano.org/cardano-testnets/tools/faucet."
 
 isSuffixOf :: String -> String -> Bool
 isSuffixOf suffix whole = reverse suffix `isPrefixOf` reverse whole
@@ -481,6 +772,7 @@ data Run = Run
     { runLabel :: String
     , runReceipt :: Aeson.Value
     , runEvents :: [Trace]
+    , runCode :: ExitCode
     }
 
 magic :: Integer
@@ -672,14 +964,19 @@ runVia rig env registry label args = do
             pure
             (parseOpenDatumCommand (commandLine rig registry args))
     (code, out, _) <- captured (runOpenDatum env command)
-    code `shouldSatisfy` const True
     receipt <-
         maybe
             (fail ("no receipt for " <> label <> ": " <> show out))
             pure
             (Aeson.decodeStrict out)
     events <- readIORef (rigEvents rig)
-    pure Run{runLabel = label, runReceipt = receipt, runEvents = events}
+    pure
+        Run
+            { runLabel = label
+            , runReceipt = receipt
+            , runEvents = events
+            , runCode = code
+            }
 
 commandLine :: Rig -> FilePath -> [String] -> [String]
 commandLine rig registry args =

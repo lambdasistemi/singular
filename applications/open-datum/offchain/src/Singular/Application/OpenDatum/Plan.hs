@@ -35,7 +35,9 @@ module Singular.Application.OpenDatum.Plan
       -- * What it costs
     , refuseOver
     , refuseUnderfunded
+    , emptyFields
     , faucetStep
+    , retainedFaucetStep
     , resolveFunding
     , outlayReport
     ) where
@@ -79,12 +81,14 @@ import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Command (EntryArgs (..), Key (..))
 import Singular.CLI.Live
 import Singular.CLI.Plan
-    ( faucetStep
+    ( emptyFields
+    , faucetStep
     , outlayReport
     , readJson
     , refuseOver
     , refuseUnderfunded
     , resolveFunding
+    , retainedFaucetStep
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)

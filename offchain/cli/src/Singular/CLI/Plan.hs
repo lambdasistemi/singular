@@ -20,6 +20,7 @@ module Singular.CLI.Plan
     , refuseUnderfunded
     , emptyFields
     , faucetStep
+    , retainedFaucetStep
     , resolveFunding
     , outlayReport
     ) where
@@ -134,6 +135,8 @@ emptyFields addr utxos =
 
 {- | The faucet step an empty wallet refusal ends with: how
 to fund the wallet, in the floor's own words.
+Kept for `update` until pull request 3; the seam's paths use
+`retainedFaucetStep`.
 -}
 faucetStep :: String
 faucetStep =
@@ -142,6 +145,16 @@ faucetStep =
         <> ". It pays a single output; send one self-payment "
         <> "afterwards so the wallet also holds an ada-only "
         <> "output to spend as collateral."
+
+{- | The retained faucet sentence for the seam's empty-wallet refusal:
+the faucet address step without the self-payment hand step.
+Kept exactly (A-007); `update` keeps `faucetStep` until pull request 3.
+-}
+retainedFaucetStep :: String
+retainedFaucetStep =
+    "Fund this address, then rerun. On preprod the faucet is "
+        <> "https://docs.cardano.org/cardano-testnets/tools/faucet"
+        <> "."
 
 {- | The wallet output a write is funded from, or the refusal
 that stops it before anything is built: the caller's chosen
