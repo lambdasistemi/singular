@@ -108,6 +108,51 @@ address_of() { # address_of BINARY DIR PASSPHRASE_FILE -> the address line
   return $rc
 }
 
+# The create control's refusing assertions, run by the real-binary
+# control and by the planted-defect demonstration alike: create's
+# observation is exactly one line and that line a bech32 address, so no
+# vault bytes or key envelope can appear in the clear beside it.
+create_refusal() { # create_refusal OUT OBSERVATION -> the refusal, or none
+  local out=$1 observation=$2 lines
+  lines=$(wc -l <"$out")
+  if [ "$lines" -ne 1 ]; then
+    echo "printed $lines lines, not one"
+    return 1
+  fi
+  if ! grep -qE '^addr(_test)?1[a-z0-9]+$' <<<"$observation"; then
+    echo "printed no bech32 address: $observation"
+    return 1
+  fi
+  return 0
+}
+
+# The second-create control's refusing assertions, shared the same way:
+# a create over an existing vault must refuse by name and move nothing.
+second_create_refusal() { # second_create_refusal OUT ERR BEFORE AFTER RC -> the refusal, or none
+  local out=$1 err=$2 before=$3 after=$4 rc=$5
+  if [ "$rc" -eq 0 ]; then
+    echo "exit 0"
+    return 1
+  fi
+  if [ ! -s "$err" ]; then
+    echo "no refusal on standard error"
+    return 1
+  fi
+  if [ -s "$out" ]; then
+    echo "printed on standard output"
+    return 1
+  fi
+  if ! grep -q "vault already exists" "$err"; then
+    echo "refusal does not name the cause"
+    return 1
+  fi
+  if [ "$before" != "$after" ]; then
+    echo "the vault's bytes changed"
+    return 1
+  fi
+  return 0
+}
+
 fail() {
   echo "FAIL wallet-vault control '$1': $2" >&2
   exit 1
@@ -161,8 +206,9 @@ chmod +x "$scratch/singular-leaking"
 
 fresh
 address=$(create_vault "$real_singular" "$scratch/run")
-[ "$(wc -l <"$scratch/run/create.out")" -eq 1 ] || fail create "printed $(wc -l <"$scratch/run/create.out") lines, not one"
-grep -qE '^addr(_test)?1[a-z0-9]+$' <<<"$address" || fail create "printed no bech32 address: $address"
+if ! refusal=$(create_refusal "$scratch/run/create.out" "$address"); then
+  fail create "$refusal"
+fi
 mode=$(stat -c '%a' "$scratch/run/alice.vault")
 [ "$mode" = "600" ] || fail owner-only "mode $mode, not 600"
 echo "control create: one address line, vault mode 600"
@@ -187,11 +233,9 @@ second_rc=$?
 set -e
 exec 9<&-
 after=$(sha256sum "$scratch/run/alice.vault" | cut -d' ' -f1)
-[ "$second_rc" -ne 0 ] || fail second-create "exit 0"
-[ -s "$scratch/run/second.err" ] || fail second-create "no refusal on standard error"
-[ ! -s "$scratch/run/second.out" ] || fail second-create "printed on standard output"
-grep -q "vault already exists" "$scratch/run/second.err" || fail second-create "refusal does not name the cause"
-[ "$before" = "$after" ] || fail second-create "the vault's bytes changed"
+if ! refusal=$(second_create_refusal "$scratch/run/second.out" "$scratch/run/second.err" "$before" "$after" "$second_rc"); then
+  fail second-create "$refusal"
+fi
 echo "control second-create: refused by name, bytes unchanged"
 
 fresh
@@ -240,19 +284,19 @@ if [ -f "$scratch/run/alice.vault" ]; then
 else
   after=absent
 fi
-if [ "$ow_rc" -eq 0 ]; then
-  setup_fail planted-overwriting "the variant succeeded (rc 0) — unexpected for this defect"
+if refusal=$(second_create_refusal "$scratch/run/ow.out" "$scratch/run/ow.err" "$before" "$after" "$ow_rc"); then
+  setup_fail planted-overwriting "the second-create control's assertions accept the observation; the variant did not fire"
 fi
-[ "$before" != "$after" ] || setup_fail planted-overwriting "the vault's bytes did not move; the variant did not fire"
-echo "control planted-overwriting: the defect moved the vault's bytes and the second-create control refuses exactly that (rc $ow_rc)"
+echo "control planted-overwriting: the defect fired and the second-create control refuses it: $refusal (rc $ow_rc)"
 
 # Leaking: the defect must fire — create printing more than the address
-# is exactly what the one-line control refuses.
+# is exactly what the create control refuses.
 fresh
 leak=$(create_vault "$scratch/singular-leaking" "$scratch/run")
-lines=$(wc -l <"$scratch/run/create.out")
-[ "$lines" -gt 1 ] || setup_fail planted-leaking "the variant printed $lines line; it did not fire"
-echo "control planted-leaking: the defect fired and the one-line control refuses it ($lines lines)"
+if refusal=$(create_refusal "$scratch/run/create.out" "$leak"); then
+  setup_fail planted-leaking "the create control's assertions accept the observation; the variant did not fire"
+fi
+echo "control planted-leaking: the defect fired and the create control refuses it: $refusal"
 
 # Both bound branches execute, each shown once: the wall-clock
 # fallback alone runs a command, and the memory-capped scope runs one

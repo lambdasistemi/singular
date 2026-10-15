@@ -197,11 +197,16 @@ sort -u -o "$scratch/help.pairs" "$scratch/help.pairs"
 # Each command's own --help agrees with the top-level help about it.
 for c in "${singular_commands[@]}"; do
   case $c in
-    "wallet "*) "$singular" $c --help >"$scratch/help.singular.$c" 2>&1 || {
-      echo "singular $c --help exited non-zero" >&2
-      status=1
-      continue
-    } ;;
+    "wallet "*)
+      # "wallet VERB" is one command name of two words: split it so the
+      # expansion stays quoted.
+      read -r -a c_words <<<"$c"
+      "$singular" "${c_words[@]}" --help >"$scratch/help.singular.$c" 2>&1 || {
+        echo "singular $c --help exited non-zero" >&2
+        status=1
+        continue
+      }
+      ;;
     *) "$singular" registry "$c" --help >"$scratch/help.singular.$c" 2>&1 || {
       echo "singular registry $c --help exited non-zero" >&2
       status=1
