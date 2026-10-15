@@ -335,23 +335,23 @@
       "pause": 400
     },
     {
-      "text": "[ ] fold-model-move-list — a written move list names every declaration or group to move, from where to which module, the facade each file keeps and the reason, before any edit.",
+      "text": "[x] fold-model-move-list — a written move list names every declaration or group to move, from where to which module, the facade each file keeps and the reason, before any edit.",
       "pause": 300
     },
     {
-      "text": "[ ] fold-model-moved — the declarations that define or admit a fold, with the lemmas and statements that unfold them, live in cohesive modules of a few hundred lines, with the text they have on main byte for byte.",
+      "text": "[x] fold-model-moved — the declarations that define or admit a fold, with the lemmas and statements that unfold them, live in cohesive modules of a few hundred lines, with the text they have on main byte for byte.",
       "pause": 300
     },
     {
-      "text": "[ ] fold-model-meaning-unchanged — no statement or control is added, changed or dropped; every statement keeps its fully qualified name, axiom line and digest, or the theorem page records its move; the corpora of scenarios, the transaction baseline and the driver protocol version are byte-identical.",
+      "text": "[x] fold-model-meaning-unchanged — no statement or control is added, changed or dropped; every statement keeps its fully qualified name, axiom line and digest, or the theorem page records its move; the corpora of scenarios, the transaction baseline and the driver protocol version are byte-identical.",
       "pause": 300
     },
     {
-      "text": "[ ] consumers-follow-eight-a — every consumer of a moved declaration follows in the same checkpoint. (consumers-state-the-rule)",
+      "text": "[x] consumers-follow-eight-a — every consumer of a moved declaration follows in the same checkpoint. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-eight-a — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-eight-a — as slice five. (consumers-state-the-rule)",
       "pause": 300
     }
   ],
@@ -551,6 +551,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "fc19b6fe9b5a14361061f9bcfc75578b3d2a10d20401d608720b83e3c97f1e3f"
+    "sha256": "4d99ec63315243fa58a3153579780a96850545f06445e6ae400d5f965c9fb5e9"
   }
 }

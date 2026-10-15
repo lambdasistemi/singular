@@ -83,6 +83,16 @@
       "pause": 400
     }
   ],
+  "slice-eight-a-as-built": [
+    {
+      "text": "Slice eight-a: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The fold model moved without a change of meaning. Singular/Model.lean, Lemmas.lean and Statements.lean are facades that import their children, so every import path works. The model's fold declarations live in Singular/Model/ (Admission, Exits, Fold, Payments, Routing), the lemmas that unfold them in Singular/Lemmas/ (Batch, State, Step, Transactions, beside the existing Assets, Payments and Retraction), and the fold statements in Singular/Statements/ by the property each group proves (Admission, Batch, Delivery, ExitPayments, Inversions, Preservation, RegistrationTransaction, TerminationTransaction, and the rejection group added to the existing Rejection). Twenty-nine complete moved source spans in eighteen groups equal their text at the base, and the fold lane's declarations equal their text on main. The 2202 non-internal declaration names are the same before and after (Lean's own classification; four compiler-generated auxiliary names disappeared and eleven appeared, all published as the internal difference), every statement keeps its AXIOMS line and digest, and the corpora of scenarios, the transaction baseline and the protocol version are byte-identical. The two mutant checkers (issue 566) are unchanged; the new places of the declarations they mutate are listed for that issue's owner. Slices seven-c, eight and ten add to these modules and never back to the facades.",
+      "pause": 400
+    }
+  ],
   "slice-five-signed-rows": [
     {
       "text": "Slice five: signed rows.",
@@ -99,6 +109,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "ae8a10cf7e44dc8c11388689a2901e6b8b0d1e84095087940235c46cca511e43"
+    "sha256": "d45e78e12188d75fc583d2813ab641943cddc16d75743529da6ae5edf9adc269"
   }
 }

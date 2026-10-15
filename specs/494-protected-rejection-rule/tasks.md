@@ -150,11 +150,11 @@ Inserted on 14 October 2026 by the operator's direction, before slice six; see t
 
 Inserted on 15 October 2026 by the split of slice eight; see the [slice brief](briefs/slice-eight-a-fold-model-split.md). A move with no change of meaning.
 
-- [ ] `fold-model-move-list` — a written move list names every declaration or group to move, from where to which module, the facade each file keeps and the reason, before any edit.
-- [ ] `fold-model-moved` — the declarations that define or admit a fold, with the lemmas and statements that unfold them, live in cohesive modules of a few hundred lines, with the text they have on main byte for byte.
-- [ ] `fold-model-meaning-unchanged` — no statement or control is added, changed or dropped; every statement keeps its fully qualified name, axiom line and digest, or the theorem page records its move; the corpora of scenarios, the transaction baseline and the driver protocol version are byte-identical.
-- [ ] `consumers-follow-eight-a` — every consumer of a moved declaration follows in the same checkpoint. (consumers-state-the-rule)
-- [ ] `regenerate-after-slice-eight-a` — as slice five. (consumers-state-the-rule)
+- [x] `fold-model-move-list` — a written move list names every declaration or group to move, from where to which module, the facade each file keeps and the reason, before any edit.
+- [x] `fold-model-moved` — the declarations that define or admit a fold, with the lemmas and statements that unfold them, live in cohesive modules of a few hundred lines, with the text they have on main byte for byte.
+- [x] `fold-model-meaning-unchanged` — no statement or control is added, changed or dropped; every statement keeps its fully qualified name, axiom line and digest, or the theorem page records its move; the corpora of scenarios, the transaction baseline and the driver protocol version are byte-identical.
+- [x] `consumers-follow-eight-a` — every consumer of a moved declaration follows in the same checkpoint. (consumers-state-the-rule)
+- [x] `regenerate-after-slice-eight-a` — as slice five. (consumers-state-the-rule)
 
 ### Slice seven-b: the trie-ready tag
 
