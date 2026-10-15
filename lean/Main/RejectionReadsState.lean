@@ -45,7 +45,7 @@ registration and termination is then admitted by the production booking path. -/
 def world : Except String World := do
   let first ← step { s0 with config } (req .insertActive 5 42 555)
   let second ← step first.state (req .insertActive 8 42 555)
-  let mut w : World := ⟨second.state, [], []⟩
+  let mut w : World := ⟨second.state, [], [], 0⟩
   for b in [registration 5 0, registration 6 1, registration 7 2] do
     w ← book w b
   let t : TerminationRequest :=

@@ -1,4 +1,5 @@
 import Singular.Economics
+import Singular.Lemmas.EconomicFold
 
 /-! Every pending registration comes from an admitted booking transaction.
 Theorems quantify over reachable worlds and arbitrary pool members, never
@@ -69,6 +70,12 @@ theorem booked_request_has_exact_contents (world : World) (reachable : WorldReac
     have effect := retractionAccepted_effect accepted
     subst after
     exact ih (List.mem_filter.mp pending).1
+  | @fold before after reach unspent transaction accepted ih =>
+    rw [(foldAccepted_pending accepted).1] at pending
+    have old := ih (List.mem_filter.mp pending).1
+    rw [foldAccepted_config accepted]
+    simpa [exactContents, registrationContentsShape, registrationApplicationTagValid,
+      RegistrationRequest.trieReadyTag, Config.trieReadyTag] using old
 
 /-- The pool keeps the booking transaction's interval, and the pending
 registration's booked time is exactly its upper end. -/
@@ -109,6 +116,10 @@ theorem booked_time_is_interval_end (world : World) (reachable : WorldReachable 
     have effect := retractionAccepted_effect accepted
     subst after
     exact ih (List.mem_filter.mp pending).1
+  | @fold before after reach unspent transaction accepted ih =>
+    rw [(foldAccepted_pending accepted).1] at pending
+    have old := ih (List.mem_filter.mp pending).1
+    exact old
 
 /-- For every actual inclusion time within the original half-open interval,
 the booked time is no earlier. Hence the expiry threshold is no earlier than
@@ -163,6 +174,11 @@ theorem booking_width_within_limit (world : World) (reachable : WorldReachable w
     have effect := retractionAccepted_effect accepted
     subst after
     exact ih (List.mem_filter.mp pending).1
+  | @fold before after reach unspent transaction accepted ih =>
+    rw [(foldAccepted_pending accepted).1] at pending
+    have old := ih (List.mem_filter.mp pending).1
+    have config := congrArg Config.bookingWidth (foldAccepted_config accepted)
+    simpa only [config] using old
 
 /-- Even a commitment of zero cannot identify the registry's state token.
 This separates the identity spaces without assuming anything about hashes. -/

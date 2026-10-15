@@ -6,6 +6,7 @@ import Main.Retraction
 import Main.Economics
 import Main.RejectionPreservation
 import Main.Refunds
+import Main.FoldControls
 import Singular.Driver
 import Singular.Economics
 open Singular
@@ -396,6 +397,7 @@ def oneTipControls : Except String (List (String × Bool)) := do
   return checks
 
 def main : IO Unit := do
+  let foldEconomicRows ← FoldControls.run
   let refundRows ← RefundControls.run
   let rejectionReadRows ← RejectionReadControls.run
   let rejectionTransactionRows ← RejectionReadControls.runTransactionControls
@@ -502,6 +504,7 @@ def main : IO Unit := do
       ("bytes", toJson p.2.2.2)]
   let json := Json.mkObj
     [ ("schema", toJson "singular-logical-corpus-v2")
+    , ("economicFolds", toJson foldEconomicRows)
     , ("economicRefunds", toJson refundRows)
     , ("rejectionReadsState", toJson (rejectionReadRows ++ rejectionTransactionRows ++ rejectionPreservationRows))
     , ("terminationBookings", toJson terminationRows)

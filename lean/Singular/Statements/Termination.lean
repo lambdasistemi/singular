@@ -1,5 +1,6 @@
 import Singular.Economics
 import Singular.Lemmas
+import Singular.Lemmas.FoldSupply
 
 /-! Singular-tag supply counts both custody and pending termination outputs.
 These are world laws; the existing registry-level laws remain unchanged. -/
@@ -129,6 +130,8 @@ theorem world_supply_sync (world : World) (reachable : WorldReachable world) (ke
       have effect := retractionAccepted_effect accepted
       subst after
       exact ih
+    | @fold before after reach unspent transaction accepted ih =>
+      exact fold_preserves_world_supply reach ih.1 ih.2 accepted
   have law := invariant.1 key
   have count := invariant.2 key
   by_cases active : trieGet world.registry.trie key = .known .active <;> simp_all
@@ -191,6 +194,27 @@ theorem termination_request_carries_genuine_token (world : World)
     have effect := retractionAccepted_effect accepted
     subst after
     exact ih pending
+  | @fold before after reach unspent transaction accepted ih =>
+    have remaining : booking ∈ foldRemainingTerminations before transaction := by
+      simpa only [(foldAccepted_pending accepted).2] using pending
+    obtain ⟨registryId, tags, active, contents, provenance⟩ :=
+      ih (List.mem_filter.mp remaining).1
+    have supply : WorldSupplyConsistent before := by
+      intro key
+      by_cases leaf : trieGet before.registry.trie key = .known .active
+      · simp [leaf, (world_supply_sync before reach key).1.mpr leaf]
+      · simp [leaf, (world_supply_sync before reach key).2.1.mpr leaf]
+    have counts := fun key => (world_supply_sync before reach key).2.2.2
+    have bound := fun key => at_most_one_pending_termination before reach key
+    obtain ⟨_, result, fold, _, effect⟩ := foldAccepted_checks accepted
+    have activeAfter : trieGet after.registry.trie booking.request.key = .known .active := by
+      rw [effect]
+      exact remaining_active_after_fold supply counts bound fold remaining
+    rw [foldAccepted_config accepted]
+    refine ⟨registryId, ?_, activeAfter, ?_, provenance⟩
+    · simpa [Config.singularTag] using tags
+    · simpa [terminationExactContents, terminationContentsShape,
+        TerminationRequest.trieReadyTag, Config.trieReadyTag, Config.singularTag] using contents
 
 /-- A pending termination carries its own operation and nonce commitment,
 and no application tag. Genuine singular-tag custody is proved above. -/

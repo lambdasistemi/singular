@@ -198,3 +198,27 @@ These new economic declarations have no implementation coverage. Every earlier i
 | `Singular.Statements.registration_cost_returned_on_exit` | none (new declaration) | `b989571d70a36354c46600639d3aeefeee6cf0ea7fba55bfb2ca67c2ad24598d` | uncovered |
 | `Singular.Statements.rejection_refund_floor` | none (new declaration) | `0b04d3309b5b8ead87768ad939df7aed1eb7885eea53d43ea3140110092076d4` | uncovered |
 | `Singular.Statements.retraction_refund_floor` | none (new declaration) | `2eb1d47fa80f28d8629703cc318886288ded65b8379a42ccfef3156c5c4b4783` | uncovered |
+
+## Economic fold transition and preservation
+
+These new economic declarations have no implementation coverage. Every earlier identity remains unchanged; no legacy conformance claim is evidence for these economic folds.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.economic_fold_registry_correspondence` | none (new declaration) | `52e48e026390f2ec417ddf7c3dd77076ddd823dd8268302011805cc9dc3238b8` | uncovered |
+| `Singular.foldAccepted_checks` | none (new declaration) | `d2d2a6b45587a9a47062b3b1ce56c5e367e96c7dc81cd64b53170970064d0fb2` | uncovered |
+| `Singular.foldAccepted_config` | none (new declaration) | `dcbe514632b6f281758d82d89d3976a0bd79edf792b329a3a89ff7de781f7700` | uncovered |
+| `Singular.foldAccepted_pending` | none (new declaration) | `e4ffbb433401e1abe6a4ccd56f2ab741f4171571d2f394276c372f42e56e0e53` | uncovered |
+| `Singular.foldActions_active_supply` | none (new declaration) | `7c48115bca7133597ffd55993aca623ddf1df83f77a251a8ceee3715aad27065` | uncovered |
+| `Singular.foldActions_preserves_active` | none (new declaration) | `09982152c10ac709d0bb1157dd08cf925b033052db5332a1e6d0c56cabb33f1d` | uncovered |
+| `Singular.foldMembers_termination` | none (new declaration) | `1dcfe72e35561348c87a80fc27ec6e668b256f68c9264ea508501842532303a5` | uncovered |
+| `Singular.fold_effect_active_count` | none (new declaration) | `c81311c3351cf112e4d41a2d32a0ead2f999f792a3ad9208c3d87514a6addfb9` | uncovered |
+| `Singular.fold_preserves_world_supply` | none (new declaration) | `bf86e42aaa2dae199dcf1294b004abd6387cd3d7263c349cbb7e35d8f7569233` | uncovered |
+| `Singular.fold_remaining_not_selected` | none (new declaration) | `a96b086a361a099dbfa23a807cb0a143c20026d6a97e8b8f0284d3da6f5470d6` | uncovered |
+| `Singular.members_equal_of_length_le_one` | none (new declaration) | `9aee18bd2ad625f0be2177b242c44bd2ccc288f07d06485aca39527443caa3cf` | uncovered |
+| `Singular.pending_active_of_supply` | none (new declaration) | `47db9780047940cfa585c03682bc40c922bfa49887391e5cb0c879f48dbb9335` | uncovered |
+| `Singular.pending_custody_counts` | none (new declaration) | `62ee4dfd9989a4136061a79a15eb235ea9328bfec94fa54ae62075c6e8f23921` | uncovered |
+| `Singular.reachable_pending_custody_shape` | none (new declaration) | `d5dc3fe90bd7b1f7f10a8cad6227d43288599fd118c00427c14f128d901c669b` | uncovered |
+| `Singular.remaining_active_after_fold` | none (new declaration) | `e81b2e1d92230db7d898f861779151e2bd26cdf892b0a943c808b962333b91f5` | uncovered |
+| `Singular.step_active_supply` | none (new declaration) | `90f6412a39a67a307ce9b9ff42845cd7578ff94a9211fdc538da9326390d203d` | uncovered |
+| `Singular.terminationBooking_custody_shape` | none (new declaration) | `03ed77c97341fa09b2712b8730fe248d130ba4e061198e0ba42883f4683e3540` | uncovered |

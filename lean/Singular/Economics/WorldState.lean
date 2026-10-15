@@ -17,6 +17,8 @@ structure World where
   registry : RegistryState
   pending : RequestPool := []
   terminations : List TerminationBooking := []
+  /-- Cumulative observed treasury donations from accepted economic folds. -/
+  treasury : Nat := 0
   deriving BEq, DecidableEq
 
 /-- A booking admits the presented transaction before inserting it. Reusing a

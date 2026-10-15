@@ -1,8 +1,9 @@
 import Main.FoldFixtures
+import Singular.Economics.Fold
 
-/-! The economic fold contract, recorded before its judgement exists. Missing
-admission is reported separately for every transaction; the legacy fold and
-an absent symbol are never used as a substitute behavioral refusal. -/
+/-! Observed economic fold controls, first committed before implementation.
+The normal corpus runner now executes them against the economic judgement;
+the earlier test commit preserves the explicit missing-contract evidence. -/
 
 open Singular
 
@@ -127,30 +128,111 @@ def controls : Except String (List Control) := do
       story := "termination admission does not read an expiry clock",
       transaction.transaction.validity := some ⟨1000000000, 1000000001⟩ }]
 
-/-- Execute the existing sweep arm; explicitly report every missing economic
-fold judgement. Returning failure records an unevaluated contract, not a claim
-that its future economic refusal has executed. -/
-def runRed : IO Unit := do
-  let rows ← match controls with
+/-- Additional production controls cover the admitted interval lower bound,
+observation and identity boundaries, input classification and foreign mint. -/
+def additionalControls : Except String (List Control) := do
+  let w ← world
+  let one ← lawful w "fold observation controls" [⟨71, 1⟩] 102
+  let missingOutput := { one with unspent := one.unspent.filter (fun p => p.1 != fundingReference) }
+  let missingReference := { one with transaction.transaction.referenceInputs :=
+    [RejectionReadControls.input ⟨999, 0⟩] }
+  let overlap := { one with transaction.transaction.referenceInputs :=
+    [RejectionReadControls.input RejectionReadControls.stateReference] }
+  let duplicate := { one with unspent := one.unspent ++ [(fundingReference, ordinary 555 10)] }
+  let divergent := { one with transaction.outputs := one.transaction.outputs.map fun (o : EconomicOutput) =>
+    { o with output.lovelace := o.output.lovelace + 1 } }
+  let extraRef : OutRef := ⟨75, 0⟩
+  let extra : EconomicOutput := { ordinary 999 4 with
+    contents.trieReadyTags := [⟨99, 99⟩] }
+  let unrecognized := { one with
+    unspent := one.unspent ++ [(extraRef, extra)],
+    transaction.transaction.inputs := one.transaction.transaction.inputs ++
+      [RejectionReadControls.input extraRef] }
+  let badState := { one with unspent := one.unspent.map fun (entry : OutRef × EconomicOutput) =>
+    let (ref, output) := entry
+    (ref, if ref == RejectionReadControls.stateReference then
+      { output with output.stateToken := some ⟨w.registry.config.registryId + 1, 0⟩ }
+    else output) }
+  pure [
+    { one with
+      story := "a registration cannot fold before its booked time",
+      transaction.transaction.validity := some ⟨101, 102⟩, expected := some "not-phase1" },
+    { one with
+      story := "a fold requires a finite interval",
+      transaction.transaction.validity := none, expected := some "fold-interval-missing" },
+    { one with
+      story := "an empty fold interval is refused",
+      transaction.transaction.validity := some ⟨102, 102⟩, expected := some "fold-interval-empty" },
+    { one with
+      story := "a fold needs a pending member",
+      transaction.transaction.inputs := one.transaction.transaction.inputs.filter
+        (fun input => input.ref != some ({ tx := 71, index := 1 } : OutRef)),
+      expected := some "empty-fold" },
+    { missingOutput with
+      story := "missing ordinary funding cannot be claimed as present",
+      expected := some "spent-input-missing" },
+    { missingReference with
+      story := "a missing reference input is refused",
+      expected := some "reference-input-missing" },
+    { overlap with
+      story := "a fold cannot spend and reference the same output",
+      expected := some "fold-input-overlap" },
+    { duplicate with
+      story := "a duplicate unspent reference cannot multiply funding",
+      expected := some "unspent-reference-duplicate" },
+    { one with
+      story := "a fold transaction identity must be fresh",
+      transaction.identity := 70, expected := some "transaction-identity-not-fresh" },
+    { divergent with
+      story := "output observations must match the actual ledger outputs",
+      expected := some "output-observation-mismatch" },
+    { unrecognized with
+      story := "an unbooked tagged input cannot join a fold",
+      expected := some "fold-unrecognized-input" },
+    { badState with
+      story := "a foreign state token cannot authorize a fold",
+      expected := some "fold-state-mismatch" },
+    { one with
+      story := "a fold cannot mint another state token",
+      transaction.stateMint := [(w.registry.config.stateToken, 1)],
+      expected := some "fold-foreign-asset" },
+    { one with
+      story := "a fold cannot mint an unrelated singular tag",
+      transaction.singularMint := one.transaction.singularMint ++ [(w.registry.config.singularTag 999, 1)],
+      expected := some "fold-singular-mismatch" },
+    { one with
+      story := "the registry refuses a booked registration at an existing key",
+      transaction.transaction.inputs := one.transaction.transaction.inputs.map fun input =>
+        if input.ref == some ({ tx := 71, index := 1 } : OutRef)
+        then { input with ref := some ⟨71, 0⟩ } else input,
+      expected := some "key-exists" }]
+
+/-- Execute the observed economic transactions through production admission.
+The JSON rows are computed receipts. They establish model behavior only. -/
+def run : IO (List Lean.Json) := do
+  let controls ← match controls with
     | .error why => throw (IO.userError s!"fold booking trace failed: {why}")
     | .ok rows => pure rows
-  let stdout ← IO.getStdout
-  let mut missing := 0
-  let mut mismatches := 0
-  for row in rows do
-    if row.sweep then
-      let actual := match sweepAccepted row.world row.unspent row.transaction with
-        | .error why => some why | .ok _ => none
-      unless actual == row.expected do mismatches := mismatches + 1
-      stdout.putStrLn s!"EXECUTED {row.story}: expected={repr row.expected} actual={repr actual}"
-    else
-      missing := missing + 1
-      stdout.putStrLn s!"COULD-NOT-EVALUATE {row.story}: expected={repr row.expected}; economic fold judgement absent"
-    if row.expected.isNone then
-      unless balanced row.unspent.ledger row.transaction.transaction do
-        throw (IO.userError s!"lawful fixture does not conserve its ledger projection: {row.story}")
-  stdout.putStrLn s!"fold controls: {rows.length} transactions; {missing} unevaluated; {mismatches} executed mismatches"
-  if missing > 0 || mismatches > 0 then
-    throw (IO.userError "economic fold contract is not implemented")
+  let extra ← match additionalControls with
+    | .error why => throw (IO.userError s!"additional fold trace failed: {why}")
+    | .ok rows => pure rows
+  let mut rows := []
+  for row in controls ++ extra do
+    let result := if row.sweep then sweepAccepted row.world row.unspent row.transaction
+      else foldAccepted row.world row.unspent row.transaction
+    let actual := match result with | .error why => some why | .ok _ => none
+    unless actual == row.expected do
+      throw (IO.userError s!"{row.story}: expected {repr row.expected}, actual {repr actual}")
+    if let .ok after := result then
+      unless after.treasury == row.world.treasury + row.transaction.transaction.donation do
+        throw (IO.userError s!"{row.story}: treasury effect disagrees with observed donation")
+      unless after.pending == row.world.pending.filter (fun b =>
+          !inputsContainReference row.transaction.transaction.inputs b.request.reference) &&
+          after.terminations == foldRemainingTerminations row.world row.transaction do
+        throw (IO.userError s!"{row.story}: pending requests not removed exactly once")
+    rows := rows ++ [Lean.Json.mkObj [
+      ("story", Lean.toJson row.story), ("expectedReason", Lean.toJson row.expected),
+      ("actualReason", Lean.toJson actual), ("matched", Lean.toJson (actual == row.expected))]]
+  pure rows
 
 end FoldControls
