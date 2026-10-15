@@ -141,7 +141,7 @@ class RealTreeDiscoveryTest(unittest.TestCase):
         decls = scan_tree_strict(inv_root / "lean")
         self.assertEqual(
             len(decls),
-            160,
+            163,
             "base population drifted; the denominator must be re-examined",
         )
         statement_namespaces = (
@@ -151,7 +151,7 @@ class RealTreeDiscoveryTest(unittest.TestCase):
             "Singular.NamingWireStatements.",
         )
         statements = [d for d in decls if d.name.startswith(statement_namespaces)]
-        self.assertEqual(len(statements), 86)
+        self.assertEqual(len(statements), 89)
         self.assertEqual(
             len([d for d in decls if d.source == "lean/Singular/M1.lean"]), 10
         )

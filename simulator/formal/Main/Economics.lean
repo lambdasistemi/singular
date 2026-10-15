@@ -127,3 +127,94 @@ def economicControls : List (String × Bool) :=
   , ("all transaction extensions roundtrip", let full := { stateTx with validity := some ⟨2, 4⟩, fee := 1, donation := 2, referenceInputs := tx.referenceInputs }
       match txOfJson cfg (txJson cfg full) with | .ok back => back == full | .error _ => false)
   , ("the interval includes only its lower end", decide (({ lower := 2, upper := 4 } : Interval).contains 2) && !decide (({ lower := 2, upper := 4 } : Interval).contains 4)) ]
+
+/-- Hold and mint the same foreign name: agreement between those observations
+must not replace comparison with the request's own complete preimage. -/
+def registrationCommitmentControls (c : Config) (b : RegistrationBooking) :
+    List (String × Config × RegistrationBooking × Option String) :=
+  let r := b.request
+  let withNonce := { r with nonce := 257 }
+  let applicationTags := r.contents.applicationTags.map fun tag => { tag with
+    assetName := applicationTagAssetName r.key r.refundAddress r.destination withNonce.nonce }
+  let nonceBooking := { b with
+    request := { withNonce with contents := { r.contents with
+      applicationTags, trieReadyTags := [withNonce.trieReadyTag c] } },
+    applicationTagsMinted := applicationTags, trieReadyTagsMinted := [withNonce.trieReadyTag c] }
+  let foreignOperations : List (String × BookingOperation) := [
+    ("kind", .termination r.key r.destination),
+    ("key", { r with key := r.key + 1 }.operation),
+    ("full key", { r with key := r.key + 256 }.operation),
+    ("refund address", { r with refundAddress := r.refundAddress + 1 }.operation),
+    ("destination", { r with destination := r.destination + 1 }.operation),
+    ("registration cost", { r with registrationCost := r.registrationCost + 1 }.operation),
+    ("declared tip", { r with declaredTip := r.declaredTip + 1 }.operation),
+    ("declared carrier", { r with carrierAda := r.carrierAda + 1 }.operation) ]
+  let foreignTags := foreignOperations.map (fun (field, operation) =>
+    ("a registration trie-ready tag for another " ++ field,
+      c.trieReadyTag (trieReadyTagAssetName operation r.nonce))) ++ [
+    ("a registration trie-ready tag for another nonce",
+      c.trieReadyTag (trieReadyTagAssetName r.operation (r.nonce + 1))),
+    ("a registration trie-ready tag for another full nonce",
+      c.trieReadyTag (trieReadyTagAssetName r.operation (r.nonce + 256))),
+    ("the state token cannot stand for a registration trie-ready tag", c.stateToken) ]
+  let applicationNames := [
+    ("key", applicationTagAssetName (r.key + 1) r.refundAddress r.destination r.nonce),
+    ("full key", applicationTagAssetName (r.key + 256) r.refundAddress r.destination r.nonce),
+    ("refund address", applicationTagAssetName r.key (r.refundAddress + 1) r.destination r.nonce),
+    ("destination", applicationTagAssetName r.key r.refundAddress (r.destination + 1) r.nonce),
+    ("nonce", applicationTagAssetName r.key r.refundAddress r.destination (r.nonce + 1)),
+    ("full nonce", applicationTagAssetName r.key r.refundAddress r.destination (r.nonce + 256)) ]
+  [("a registration with its own nonzero nonce is booked", c, nonceBooking, none)] ++
+  foreignTags.map (fun (story, tag) =>
+    (story ++ " is refused", c, { b with
+      request := { r with contents := { r.contents with trieReadyTags := [tag] } },
+      trieReadyTagsMinted := [tag] }, some "forged-trie-ready-tag")) ++
+  applicationNames.map (fun (field, name) =>
+    let tags := r.contents.applicationTags.map fun tag => { tag with assetName := name }
+    ("an application name from another " ++ field ++ " is refused", c, { b with
+      request := { r with contents := { r.contents with applicationTags := tags } },
+      applicationTagsMinted := tags }, some "dirty-request"))
+
+def terminationCommitmentControls (world : World) (b : TerminationBooking) :
+    List (String × World × TerminationBooking × Option String) :=
+  let c := world.registry.config
+  let r := b.request
+  let withNonce := { r with nonce := 257 }
+  let nonceBooking := { b with
+    request := { withNonce with contents := { r.contents with
+      trieReadyTags := [withNonce.trieReadyTag c] } },
+    trieReadyTagsMinted := [withNonce.trieReadyTag c] }
+  let foreignOperations : List (String × BookingOperation) := [
+    ("kind", .registration r.key 0 r.destination 0 r.declaredTip r.carrierAda),
+    ("key", .termination (r.key + 1) r.destination),
+    ("full key", .termination (r.key + 256) r.destination),
+    ("destination", .termination r.key (r.destination + 1)) ]
+  let foreignTags := foreignOperations.map (fun (field, operation) =>
+    ("a termination trie-ready tag for another " ++ field,
+      c.trieReadyTag (trieReadyTagAssetName operation r.nonce))) ++ [
+    ("a termination trie-ready tag for another nonce",
+      c.trieReadyTag (trieReadyTagAssetName r.operation (r.nonce + 1))),
+    ("a termination trie-ready tag for another full nonce",
+      c.trieReadyTag (trieReadyTagAssetName r.operation (r.nonce + 256))),
+    ("the state token cannot stand for a termination trie-ready tag", c.stateToken) ]
+  [("a termination with its own nonzero nonce is booked", world, nonceBooking, none)] ++
+  foreignTags.map fun (story, tag) =>
+    (story ++ " is refused", world, { b with
+      request := { r with contents := { r.contents with trieReadyTags := [tag] } },
+      trieReadyTagsMinted := [tag] }, some "forged-trie-ready-tag")
+
+/-- Codec checks cover both request kinds, absent zero and explicit nonzero.
+The collision control above submits the exact state-token pair to admission. -/
+def bookingNonceCodecControls (registration : RegistrationRequest)
+    (termination : TerminationRequest) : Bool :=
+  [0, 1, 256].all fun nonce =>
+    let r := { registration with nonce }
+    let t := { termination with nonce }
+    let fieldCorrect := fun (written : Json) => match written.getObjVal? "nonce" with
+      | .error _ => nonce == 0
+      | .ok value => nonce != 0 && value == toJson nonce
+    fieldCorrect (toJson r) && fieldCorrect (toJson t) &&
+    (match (fromJson? (toJson r) : Except String RegistrationRequest) with
+      | .ok back => back == r | .error _ => false) &&
+    (match (fromJson? (toJson t) : Except String TerminationRequest) with
+      | .ok back => back == t | .error _ => false)

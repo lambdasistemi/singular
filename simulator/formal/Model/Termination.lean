@@ -33,17 +33,49 @@ structure TerminationRequest where
   contents : BookingContents
   refundAddress : Option Nat := none
   submittedAt : Option Nat := none
-  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+  nonce : Nat := 0
+  deriving Repr, BEq, DecidableEq
 
-/-- The booking observes the request output, both tag mints and the holdings
+instance : ToJson TerminationRequest where
+  toJson r := Json.mkObj (
+    [("reference", toJson r.reference), ("registryId", toJson r.registryId),
+     ("key", toJson r.key), ("destination", toJson r.destination),
+     ("declaredTip", toJson r.declaredTip), ("carrierAda", toJson r.carrierAda),
+     ("singularTags", toJson r.singularTags), ("contents", toJson r.contents),
+     ("refundAddress", toJson r.refundAddress), ("submittedAt", toJson r.submittedAt)] ++
+    if r.nonce = 0 then [] else [("nonce", toJson r.nonce)])
+
+instance : FromJson TerminationRequest where
+  fromJson? j := do
+    let reference ← j.getObjVal? "reference" >>= fromJson?
+    let registryId ← j.getObjVal? "registryId" >>= fromJson?
+    let key ← j.getObjVal? "key" >>= fromJson?
+    let destination ← j.getObjVal? "destination" >>= fromJson?
+    let declaredTip ← j.getObjVal? "declaredTip" >>= fromJson?
+    let carrierAda ← j.getObjVal? "carrierAda" >>= fromJson?
+    let singularTags ← j.getObjVal? "singularTags" >>= fromJson?
+    let contents ← j.getObjVal? "contents" >>= fromJson?
+    let refundAddress ← j.getObjVal? "refundAddress" >>= fromJson?
+    let submittedAt ← j.getObjVal? "submittedAt" >>= fromJson?
+    let nonce ← match j.getObjVal? "nonce" with
+      | .error _ => pure 0
+      | .ok value => fromJson? value
+    pure { reference, registryId, key, destination, declaredTip, carrierAda, singularTags, contents, refundAddress, submittedAt, nonce }
+
+def TerminationRequest.operation (r : TerminationRequest) : BookingOperation :=
+  .termination r.key r.destination
+
+def TerminationRequest.trieReadyTag (r : TerminationRequest) (c : Config) : TokenId :=
+  c.trieReadyTag (trieReadyTagAssetName r.operation r.nonce)
+
+/-- The booking observes the request output, the trie-ready tag mint and the holdings
 spent from application custody. The input list is checked against the world's
 actual holdings, never trusted as its own source. Funding and fee balance, and
 execution of the application's release rule, are outside this observation. -/
 structure TerminationBooking where
   request : TerminationRequest
   custodyInputs : List Holding
-  syntaxTagsMinted : List TokenId
-  applicationTagsMinted : List Approval
+  trieReadyTagsMinted : List TokenId
   deriving Repr, BEq, DecidableEq, ToJson, FromJson
 
 end Singular

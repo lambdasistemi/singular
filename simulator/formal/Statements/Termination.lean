@@ -7,7 +7,7 @@ These are world laws; the existing registry-level laws remain unchanged. -/
 namespace Singular.Statements
 
 /-- Every admitted termination booking has exact declared contents, mints
-both request tags with the request, and takes one genuine singular tag from
+its trie-ready tag with the request, and takes one genuine singular tag from
 its key's active custody holding. -/
 theorem termination_booking_has_exact_contents (registry : RegistryState) (b : TerminationBooking)
     (accepted : terminationBookingRefusal registry b = none) :
@@ -17,12 +17,12 @@ theorem termination_booking_has_exact_contents (registry : RegistryState) (b : T
     b.custodyInputs = terminationCustody registry b.request.key ∧
     b.custodyInputs.length = 1 ∧
     kindCount registry .active b.request.key = 1 ∧
-    b.syntaxTagsMinted = [registry.config.syntaxTag] ∧
-    b.applicationTagsMinted = b.request.contents.applicationTags ∧
+    b.trieReadyTagsMinted = [b.request.trieReadyTag registry.config] ∧
+    b.request.contents.applicationTags = [] ∧
     terminationExactContents registry.config b.request = true := by
   simp only [terminationBookingRefusal] at accepted
   repeat (split at accepted <;> try contradiction)
-  rename_i shape amount singular application syntaxGuard custody inputs
+  rename_i shape amount singular trieReadyGuard custody inputs
   have singular' : b.request.registryId = registry.config.registryId ∧
       b.request.singularTags = [registry.config.singularTag b.request.key] := by simpa using singular
   have inputs' : b.custodyInputs = terminationCustody registry b.request.key ∧
@@ -31,18 +31,20 @@ theorem termination_booking_has_exact_contents (registry : RegistryState) (b : T
       (terminationCustody registry b.request.key).isEmpty = false := by simpa using custody
   have shape' : terminationContentsShape registry.config b.request = true ∧
       terminationDeclaredLovelace b.request ≤ b.request.contents.lovelace := by simpa using shape
-  have application' : terminationApplicationTagsValid registry.config b.request = true ∧
-      b.applicationTagsMinted = b.request.contents.applicationTags := by simpa using application
-  have syntax' : b.request.contents.syntaxTags = [registry.config.syntaxTag] ∧
-      b.syntaxTagsMinted = [registry.config.syntaxTag] := by simpa using syntaxGuard
+  have application' : b.request.contents.applicationTags = [] := by
+    have h := shape'.1
+    simp only [terminationContentsShape, decide_eq_true_eq] at h
+    exact h.2.2.2.2
+  have trieReady' : b.request.contents.trieReadyTags = [b.request.trieReadyTag registry.config] ∧
+      b.trieReadyTagsMinted = [b.request.trieReadyTag registry.config] := by simpa using trieReadyGuard
   have value : b.request.contents.lovelace = terminationDeclaredLovelace b.request := by omega
   have count : kindCount registry .active b.request.key = 1 := by
     change (terminationCustody registry b.request.key).length = 1
     rw [← inputs'.1]
     exact inputs'.2
-  exact ⟨singular'.1, singular'.2, custody'.1, inputs'.1, inputs'.2, count, syntax'.2, application'.2,
-    by simp [terminationExactContents, shape'.1, application'.1, singular'.1, singular'.2,
-      value, syntax'.1]⟩
+  exact ⟨singular'.1, singular'.2, custody'.1, inputs'.1, inputs'.2, count, trieReady'.2, application',
+    by simp [terminationExactContents, shape'.1, singular'.1, singular'.2,
+      value, trieReady'.1]⟩
 
 /-- In every reachable world, the actual singular tags in custody and pending
 termination outputs total one exactly for an active key, zero otherwise, and
@@ -98,7 +100,7 @@ theorem world_supply_sync (world : World) (reachable : WorldReachable world) (ke
         next duplicate => exact nomatch accepted
         next fresh =>
           cases accepted
-          obtain ⟨registry, tags, active, inputs, one, held, syntaxMint, applicationMint, exact⟩ :=
+          obtain ⟨registry, tags, active, inputs, one, held, trieReadyMint, noApplication, exact⟩ :=
             termination_booking_has_exact_contents before.registry transaction admitted
           constructor
           · intro key
@@ -169,9 +171,24 @@ theorem termination_request_carries_genuine_token (world : World)
         simp only [List.mem_cons] at pending
         rcases pending with same | old
         · subst booking
-          obtain ⟨registry, tags, active, inputs, one, held, syntaxMint, applicationMint, exact⟩ :=
+          obtain ⟨registry, tags, active, inputs, one, held, trieReadyMint, noApplication, exact⟩ :=
             termination_booking_has_exact_contents before.registry transaction admitted
           exact ⟨registry, tags, active, exact, before, _, reach, booked, inputs, one⟩
         · exact ih old
+
+/-- A pending termination carries its own operation and nonce commitment,
+and no application tag. Genuine singular-tag custody is proved above. -/
+theorem booked_termination_tag_commits_to_own_operation (world : World)
+    (reachable : WorldReachable world) (booking : TerminationBooking)
+    (pending : booking ∈ world.terminations) :
+    booking.request.contents.trieReadyTags =
+      [world.registry.config.trieReadyTag
+        (trieReadyTagAssetName booking.request.operation booking.request.nonce)] ∧
+    booking.request.contents.applicationTags = [] := by
+  have contents := (termination_request_carries_genuine_token world reachable booking pending).2.2.2.1
+  simp only [terminationExactContents, Bool.and_eq_true, decide_eq_true_eq] at contents
+  have shape := contents.1
+  simp only [terminationContentsShape, decide_eq_true_eq] at shape
+  exact ⟨contents.2.2.2.2, shape.2.2.2.2⟩
 
 end Singular.Statements

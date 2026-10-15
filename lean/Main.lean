@@ -32,19 +32,30 @@ def registrationConfig : Config :=
 def registrationApplicationTag : Approval :=
   { policy := registrationConfig.applicationPolicy, edge := .insertActive,
     key := 5, owner := 42, destination := 555,
-    assetName := approvalAssetName .insertActive 5 42 555 }
+    assetName := applicationTagAssetName 5 42 555 0 }
+
+/-- Construct the tags from this control's declared fields, independently of
+admission. Tamper controls change the resulting observed tags afterwards. -/
+def bindRegistrationTags (c : Config) (b : RegistrationBooking) : RegistrationBooking :=
+  let r := b.request
+  let application : Approval :=
+    { policy := c.applicationPolicy, edge := .insertActive, key := r.key,
+      owner := r.refundAddress, destination := r.destination,
+      assetName := applicationTagAssetName r.key r.refundAddress r.destination r.nonce }
+  { b with
+    request := { r with contents := { r.contents with
+      applicationTags := [application], trieReadyTags := [r.trieReadyTag c] } },
+    trieReadyTagsMinted := [r.trieReadyTag c], applicationTagsMinted := [application] }
 
 def lawfulRegistrationBooking : RegistrationBooking :=
   let c := registrationConfig
-  { request :=
+  bindRegistrationTags c {
+    request :=
       { reference := ⟨71, 0⟩, registryId := c.registryId, key := 5,
         refundAddress := 42, destination := 555, submittedAt := 102,
         registrationCost := 17, declaredTip := 3, carrierAda := 2,
-        contents :=
-          { lovelace := 22, applicationTags := [registrationApplicationTag],
-            syntaxTags := [c.syntaxTag], otherAssets := [] } },
-    interval := ⟨100, 102⟩, syntaxTagsMinted := [c.syntaxTag],
-    applicationTagsMinted := [registrationApplicationTag] }
+        contents := { lovelace := 22, applicationTags := [], trieReadyTags := [] } },
+    interval := ⟨100, 102⟩, trieReadyTagsMinted := [], applicationTagsMinted := [] }
 
 /-- Each row changes the lawful booking at one enforcement boundary. Reasons
 are compared exactly; refusing the lawful row or refusing for another reason
@@ -56,14 +67,15 @@ def registrationBookingControls : List (String × Config × RegistrationBooking 
   let contents := r.contents
   let dirty (story : String) (request : RegistrationRequest) :=
     (story, c, { b with request }, some "dirty-request")
+  let tag := r.trieReadyTag c
   let tagVariants :=
-    [ ("no syntax tag is minted", []),
-      ("two syntax tags are minted", [c.syntaxTag, c.syntaxTag]),
-      ("another registry's syntax tag is minted", [{ c.syntaxTag with policy := c.registryId + 1 }]),
-      ("another syntax tag name is minted", [{ c.syntaxTag with name := c.syntaxTag.name + 1 }]) ]
+    [ ("no trie-ready tag is minted", []),
+      ("two trie-ready tags are minted", [tag, tag]),
+      ("another registry's trie-ready tag is minted", [{ tag with policy := c.registryId + 1 }]),
+      ("another trie-ready tag name is minted", [{ tag with name := tag.name + 1 }]) ]
   [ ("a lawful registration is booked", c, b, none)
   , ("a larger declared tip is booked", c,
-      { b with request := { r with declaredTip := 8, contents := { contents with lovelace := 27 } } }, none)
+      (bindRegistrationTags c { b with request := { r with declaredTip := 8, contents := { contents with lovelace := 27 } } }), none)
   , ("the old fee pin does not constrain booking", { c with maxFee := 100 }, b, none)
   , dirty "an extra asset is refused"
       { r with contents := { contents with otherAssets := [(⟨99, 2⟩, 1)] } }
@@ -102,16 +114,17 @@ def registrationBookingControls : List (String × Config × RegistrationBooking 
       { b with interval := ⟨102, 102⟩ }, some "invalid-booking-interval")
   , ("a reversed interval is refused", c,
       { b with interval := ⟨103, 102⟩ }, some "invalid-booking-interval")
-  , ("a syntax tag must be held by the pending request", c,
-      { b with request := { r with contents := { contents with syntaxTags := [] } } }, some "forged-syntax-tag")
-  , ("a second held syntax tag is refused", c,
-      { b with request := { r with contents := { contents with syntaxTags := [c.syntaxTag, c.syntaxTag] } } }, some "forged-syntax-tag")
+  , ("a trie-ready tag must be held by the pending request", c,
+      { b with request := { r with contents := { contents with trieReadyTags := [] } } }, some "forged-trie-ready-tag")
+  , ("a second held trie-ready tag is refused", c,
+      { b with request := { r with contents := { contents with trieReadyTags := [tag, tag] } } }, some "forged-trie-ready-tag")
   , ("an application tag must be minted with its request", c,
       { b with applicationTagsMinted := [] }, some "dirty-request")
   , ("a second application tag cannot be minted", c,
       { b with applicationTagsMinted := [registrationApplicationTag, registrationApplicationTag] }, some "dirty-request") ] ++
   tagVariants.map (fun (story, tags) =>
-    (story, c, { b with syntaxTagsMinted := tags }, some "forged-syntax-tag"))
+    (story, c, { b with trieReadyTagsMinted := tags }, some "forged-trie-ready-tag")) ++
+  registrationCommitmentControls c b
 
 def registrationBookingRows : List Json :=
   registrationBookingControls.map fun (story, config, booking, expected) =>
@@ -152,25 +165,20 @@ def terminationWorld : Except String World := do
 
 set_option autoImplicit false
 
-/-- Read the custody input from the producing state. The application tag uses
-zero in Approval's historical owner slot because a termination has no refund
-address; that slot confers no signing requirement. -/
+/-- Read the singular tag's custody input from the producing state. A
+termination needs no application tag: custody release supplies consent. -/
 def terminationBookingFor (world : World) (key : Key) (reference : OutRef) :
     Except String TerminationBooking := do
   let some holding := world.registry.held.find? (fun h => h.key == key && h.kind == .active)
     | throw "control setup did not produce the active holding"
   let c := world.registry.config
-  let tag : Approval :=
-    { policy := c.applicationPolicy, edge := .updateTerminal, key,
-      owner := 0, destination := holding.output,
-      assetName := approvalAssetName .updateTerminal key 0 holding.output }
+  let r : TerminationRequest := {
+    reference, registryId := c.registryId, key, destination := holding.output,
+    declaredTip := 3, carrierAda := 2, singularTags := [c.singularTag key],
+    contents := { lovelace := 5, applicationTags := [], trieReadyTags := [] } }
   return {
-    request := {
-      reference, registryId := c.registryId, key, destination := holding.output,
-      declaredTip := 3, carrierAda := 2, singularTags := [c.singularTag key],
-      contents := { lovelace := 5, applicationTags := [tag], syntaxTags := [c.syntaxTag] } },
-    custodyInputs := [holding], syntaxTagsMinted := [c.syntaxTag],
-    applicationTagsMinted := [tag] }
+    request := { r with contents := { r.contents with trieReadyTags := [r.trieReadyTag c] } },
+    custodyInputs := [holding], trieReadyTagsMinted := [r.trieReadyTag c] }
 
 /-- Each control has an exact oracle, including the lawful rows. Both the
 held tag and its mint are checked independently, with cardinality above one. -/
@@ -181,20 +189,14 @@ def terminationBookingControls : Except String
   let c := world.registry.config
   let r := b.request
   let value := r.contents
-  let some tag := value.applicationTags.head? | throw "control setup lost the application tag"
+  let tag := registrationApplicationTag
+  let trieReady := r.trieReadyTag c
   let some singular := r.singularTags.head? | throw "control setup lost the singular tag"
   let row story request reason := (story, world, { b with request }, some reason)
   let tagRows := [
-    ("no syntax tag", []), ("two syntax tags", [c.syntaxTag, c.syntaxTag]),
-    ("another registry's syntax tag", [{ c.syntaxTag with policy := c.registryId + 1 }]),
-    ("another syntax tag name", [{ c.syntaxTag with name := c.syntaxTag.name + 1 }]) ]
-  let applicationRows := [
-    ("another operation", { tag with edge := .insertActive }),
-    ("another key", { tag with key := 6 }),
-    ("another destination", { tag with destination := tag.destination + 1 }),
-    ("another application policy", { tag with policy := tag.policy + 1 }),
-    ("another application commitment", { tag with assetName := tag.assetName + 1 }),
-    ("a refund owner in the application tuple", { tag with owner := 42 }) ]
+    ("no trie-ready tag", []), ("two trie-ready tags", [trieReady, trieReady]),
+    ("another registry's trie-ready tag", [{ trieReady with policy := c.registryId + 1 }]),
+    ("another trie-ready tag name", [{ trieReady with name := trieReady.name + 1 }]) ]
   return [
     ("a lawful termination takes its singular tag from custody", world, b, none),
     ("a larger declared tip is accepted", world,
@@ -228,20 +230,15 @@ def terminationBookingControls : Except String
       { r with contents := { value with lovelace := 4 } } "dirty-request",
     row "surplus beyond the declarations is refused"
       { r with contents := { value with lovelace := 6 } } "hidden-surplus",
-    row "no application tag is refused"
-      { r with contents := { value with applicationTags := [] } } "forged-application-tag",
-    row "two application tags are refused"
-      { r with contents := { value with applicationTags := [tag, tag] } } "forged-application-tag",
-    ("the application tag must be minted with the request", world,
-      { b with applicationTagsMinted := [] }, some "forged-application-tag"),
-    ("a second application tag cannot be minted", world,
-      { b with applicationTagsMinted := [tag, tag] }, some "forged-application-tag") ] ++
-    applicationRows.map (fun (story, changed) => row (story ++ " is refused")
-      { r with contents := { value with applicationTags := [changed] } } "forged-application-tag") ++
+    row "an application tag on a termination is dirty"
+      { r with contents := { value with applicationTags := [tag] } } "dirty-request",
+    row "two application tags on a termination are dirty"
+      { r with contents := { value with applicationTags := [tag, tag] } } "dirty-request" ] ++
     tagRows.flatMap (fun (story, tags) => [
       row (story ++ " held is refused")
-        { r with contents := { value with syntaxTags := tags } } "forged-syntax-tag",
-      (story ++ " minted is refused", world, { b with syntaxTagsMinted := tags }, some "forged-syntax-tag") ])
+        { r with contents := { value with trieReadyTags := tags } } "forged-trie-ready-tag",
+      (story ++ " minted is refused", world, { b with trieReadyTagsMinted := tags }, some "forged-trie-ready-tag") ]) ++
+    terminationCommitmentControls world b
 
 def terminationControlRows : Except String (List Json) := do
   let controls ← terminationBookingControls
@@ -300,11 +297,14 @@ def terminationPoolControls : Except String Unit := do
 the submitted output directly, with exact refusal reasons. -/
 def trieReadyBookingControls : Except String Unit := do
   let world ← terminationWorld
-  let withApplication ← terminationBookingFor world 5 ⟨81, 0⟩
-  let withoutApplication := { withApplication with
-    request := { withApplication.request with
-      contents := { withApplication.request.contents with applicationTags := [] } },
-    applicationTagsMinted := [] }
+  let withoutApplication ← terminationBookingFor world 5 ⟨81, 0⟩
+  let withApplication := { withoutApplication with
+    request := { withoutApplication.request with contents := {
+      withoutApplication.request.contents with applicationTags := [registrationApplicationTag] } } }
+  unless bookingNonceCodecControls lawfulRegistrationBooking.request withoutApplication.request do
+    throw "request nonce omission, default or roundtrip failed"
+  unless registrationConfig.trieReadyTag 0 != registrationConfig.stateToken do
+    throw "a zero commitment collided with the state token"
   let controls := [
     ("a termination holding an application tag is dirty", withApplication, some "dirty-request"),
     ("a termination needs no application tag", withoutApplication, none) ]
@@ -321,23 +321,23 @@ def trieReadyBookingControls : Except String Unit := do
   let registrationFailures := otherPayloads.filterMap fun (field, changed) =>
     let application := { registrationApplicationTag with
       key := changed.key, owner := changed.refundAddress, destination := changed.destination,
-      assetName := approvalAssetName .insertActive changed.key changed.refundAddress changed.destination }
+      assetName := applicationTagAssetName changed.key changed.refundAddress changed.destination changed.nonce }
     let booking := { registration with
       request := { changed with contents := { changed.contents with applicationTags := [application] } },
       applicationTagsMinted := [application] }
     let actual := registrationBookingRefusal registrationConfig booking
-    let expected := some "forged-syntax-tag"
+    let expected := some "forged-trie-ready-tag"
     if actual == expected then none
     else some s!"a registration tag from another {field}: expected {repr expected}, actual {repr actual}"
   let otherTermination ← terminationBookingFor world 6 ⟨81, 1⟩
   let reusedTag := { otherTermination with
     request := { otherTermination.request with contents := {
-      otherTermination.request.contents with syntaxTags := withApplication.request.contents.syntaxTags } },
-    syntaxTagsMinted := withApplication.syntaxTagsMinted }
+      otherTermination.request.contents with trieReadyTags := withApplication.request.contents.trieReadyTags } },
+    trieReadyTagsMinted := withApplication.trieReadyTagsMinted }
   let terminationActual := terminationBookingRefusal world.registry reusedTag
   let failures := terminationFailures ++ registrationFailures ++
-    (if terminationActual == some "forged-syntax-tag" then [] else
-      [s!"a termination tag from another key and destination: expected forged-syntax-tag, actual {repr terminationActual}"])
+    (if terminationActual == some "forged-trie-ready-tag" then [] else
+      [s!"a termination tag from another key and destination: expected forged-trie-ready-tag, actual {repr terminationActual}"])
   unless failures.isEmpty do throw (String.intercalate "\n" failures)
 
 def main : IO Unit := do

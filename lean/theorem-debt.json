@@ -129,7 +129,7 @@
     "name": "Singular.Statements.booked_request_has_exact_contents",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "ec769c8c86bc37e980a9232ca4757735d50eeb6553c00544c2f3b37223802c1e"
+    "statementSha256": "acb9e2740ce102e35037d43f6e0a8fa9a151619e6e95cb9334d4545675dd19a2"
   },
   {
     "name": "Singular.Statements.booked_time_is_interval_end",
@@ -148,6 +148,18 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "5d12a9178a46bc78852ba4af63ee95a28713b278e2c9b7e37d1c8c5ac32e1c49"
+  },
+  {
+    "name": "Singular.Statements.trie_ready_tag_is_not_state_token",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "40491b5e7c054d21394ffce4536dabb8ecd82ca97e797126ff63a4848368b2e1"
+  },
+  {
+    "name": "Singular.Statements.booked_request_tags_commit_to_own_fields",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "853adf4e311c11d60e1669151869a39a7b2e0c8bdf93ca23afc288e9c804b09c"
   },
   {
     "name": "Singular.Statements.destination_output_iff_delivers",
@@ -363,7 +375,7 @@
     "name": "Singular.Statements.termination_booking_has_exact_contents",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "15dff9f8e1426baeb35591b5b8fde46c363c6a1d828ef1fbfc39b4175b47861a"
+    "statementSha256": "4140eb588853fe8b1a019d906b5d83a36bf07987c97d5c5c90e4574340d9c448"
   },
   {
     "name": "Singular.Statements.world_supply_sync",
@@ -382,6 +394,12 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "fb922d86fb9583f36711401337968e922d9da0a58a01c90e6ed7dfb8a36b5559"
+  },
+  {
+    "name": "Singular.Statements.booked_termination_tag_commits_to_own_operation",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c688ac7857bc9d8cf5cd72fc46cf9cc5e9aad1af27ac912239865e2e9d4951e8"
   },
   {
     "name": "Singular.Statements.update_terminal_transaction_row",

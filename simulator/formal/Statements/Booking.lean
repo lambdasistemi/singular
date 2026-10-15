@@ -12,7 +12,7 @@ The carrier is a declared allocation, not a measured ledger minimum. -/
 theorem booked_request_has_exact_contents (world : World) (reachable : WorldReachable world)
     (booking : RegistrationBooking) (pending : booking ∈ world.pending) :
     exactContents world.registry.config booking.request = true ∧
-    booking.syntaxTagsMinted = [world.registry.config.syntaxTag] ∧
+    booking.trieReadyTagsMinted = [booking.request.trieReadyTag world.registry.config] ∧
     booking.applicationTagsMinted = booking.request.contents.applicationTags := by
   induction reachable with
   | initial registry h => simp at pending
@@ -44,8 +44,8 @@ theorem booked_request_has_exact_contents (world : World) (reachable : WorldReac
                   have shape' : registrationContentsShape before.registry.config transaction.request = true ∧
                       registrationDeclaredLovelace transaction.request ≤ transaction.request.contents.lovelace := by
                     simpa using shape
-                  have tags' : transaction.request.contents.syntaxTags = [before.registry.config.syntaxTag] ∧
-                      transaction.syntaxTagsMinted = [before.registry.config.syntaxTag] := by
+                  have tags' : transaction.request.contents.trieReadyTags = [transaction.request.trieReadyTag before.registry.config] ∧
+                      transaction.trieReadyTagsMinted = [transaction.request.trieReadyTag before.registry.config] := by
                     simpa using tags
                   have application' : transaction.applicationTagsMinted = transaction.request.contents.applicationTags := by
                     simpa using application
@@ -139,5 +139,39 @@ theorem booking_width_within_limit (world : World) (reachable : WorldReachable w
       split at accepted
       next duplicate => exact nomatch accepted
       next fresh => cases accepted; exact ih pending
+
+/-- Even a commitment of zero cannot identify the registry's state token.
+This separates the identity spaces without assuming anything about hashes. -/
+theorem trie_ready_tag_is_not_state_token (c : Config) (commitment : Nat) :
+    c.trieReadyTag commitment ≠ c.stateToken := by
+  simp [Config.trieReadyTag, Config.stateToken]
+
+/-- Every reachable pending registration holds the tag of its own operation
+and nonce, and an application tag bound to its own payload and the same nonce.
+The equality is to the computed names, with no injectivity assumption. -/
+theorem booked_request_tags_commit_to_own_fields (world : World)
+    (reachable : WorldReachable world) (booking : RegistrationBooking)
+    (pending : booking ∈ world.pending) :
+    booking.request.contents.trieReadyTags =
+      [world.registry.config.trieReadyTag
+        (trieReadyTagAssetName booking.request.operation booking.request.nonce)] ∧
+    ∃ tag : Approval, booking.request.contents.applicationTags = [tag] ∧
+      tag.policy = world.registry.config.applicationPolicy ∧ tag.edge = .insertActive ∧
+      tag.key = booking.request.key ∧ tag.owner = booking.request.refundAddress ∧
+      tag.destination = booking.request.destination ∧
+      tag.assetName = applicationTagAssetName booking.request.key booking.request.refundAddress
+        booking.request.destination booking.request.nonce := by
+  have contents := (booked_request_has_exact_contents world reachable booking pending).1
+  simp only [exactContents, Bool.and_eq_true, decide_eq_true_eq] at contents
+  refine ⟨contents.2, ?_⟩
+  have shape := contents.1.1
+  cases tags : booking.request.contents.applicationTags with
+  | nil => simp [registrationContentsShape, tags] at shape
+  | cons tag rest =>
+    cases rest with
+    | nil =>
+      simp only [registrationContentsShape, tags, Bool.and_eq_true] at shape
+      exact ⟨tag, rfl, by simpa [registrationApplicationTagValid] using shape.2⟩
+    | cons other rest => simp [registrationContentsShape, tags] at shape
 
 end Singular.Statements

@@ -91,3 +91,17 @@ Constitution 1.18.0 supersedes the unconditional rejection statement in main's 1
 | `Singular.Statements.rejection_uses_its_own_admission` | none (new declaration) | `7f313cb7eafa046f11d12f5ab4c2f293f16db2718caee95df7bba57d7718f023` | rejection's own admission | uncovered |
 
 The regenerated inventory contains 65 generic statements and 86 statements across the four main families. Coverage discovers 160 obligations: 96 manifest-bound and 64 unclassified. These counts describe the discovered population, not fulfilled implementation promises.
+
+## Request tags bind their own commitments
+
+A registration holds its own trie-ready and application commitments, each computed with its one nonce. A termination holds its singular tag and its own trie-ready commitment, with no application tag. Every commitment value has a trie-ready identity distinct from the state token. These are model statements; application policy execution, concrete hashes, validators, builders and ledger acceptance remain outside this evidence.
+
+The previous syntax-tag statements are restated below. Unchanged statement headers retain their identities; their proofs still compile over the changed booking definitions. No historical row is edited and no implementation coverage is claimed.
+
+| Statement | Old identity | New identity | Slice | Coverage after |
+|---|---|---|---|---|
+| `Singular.Statements.booked_request_has_exact_contents` | `ec769c8c86bc37e980a9232ca4757735d50eeb6553c00544c2f3b37223802c1e` | `acb9e2740ce102e35037d43f6e0a8fa9a151619e6e95cb9334d4545675dd19a2` | request tag commitments | uncovered |
+| `Singular.Statements.trie_ready_tag_is_not_state_token` | `none (new declaration)` | `40491b5e7c054d21394ffce4536dabb8ecd82ca97e797126ff63a4848368b2e1` | request tag commitments | uncovered |
+| `Singular.Statements.booked_request_tags_commit_to_own_fields` | `none (new declaration)` | `853adf4e311c11d60e1669151869a39a7b2e0c8bdf93ca23afc288e9c804b09c` | request tag commitments | uncovered |
+| `Singular.Statements.termination_booking_has_exact_contents` | `15dff9f8e1426baeb35591b5b8fde46c363c6a1d828ef1fbfc39b4175b47861a` | `4140eb588853fe8b1a019d906b5d83a36bf07987c97d5c5c90e4574340d9c448` | request tag commitments | uncovered |
+| `Singular.Statements.booked_termination_tag_commits_to_own_operation` | `none (new declaration)` | `c688ac7857bc9d8cf5cd72fc46cf9cc5e9aad1af27ac912239865e2e9d4951e8` | request tag commitments | uncovered |
