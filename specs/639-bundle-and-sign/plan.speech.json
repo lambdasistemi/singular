@@ -1,0 +1,30 @@
+{
+  "plan-for-signing-a-bundle": [
+    {
+      "text": "Issue 639. One pull request, two slices of at most 90 minutes each.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "The bundle is JSON, version 1, signers by address (public), effects as untrusted plain lines. Approved by the desk.",
+      "pause": 500
+    }
+  ],
+  "slices": [
+    {
+      "text": "Codec and witness: the bundle module, the detached witness helper, the fixture and the unit specs.",
+      "pause": 500
+    }
+  ],
+  "gate": [
+    {
+      "text": "Existing hosted commands, each as its step runs it. In offchain/: nix run .#cage-tests -- --match Bundle, the same with Sign, nix run .#lint, nix build .#component-build. At the root: nix run .#cli-flags-check, nix run .#cli-flags-controls, nix run .#wallet-vault-controls, and inside nix develop just lint and just io-ownership-check; python3 tools/narrate.py --check when documentation changes; nix run ./offchain#registry-cli-build-graph-check. Every run goes through a memory-capped, time-bounded scope with stdin closed.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "75704a7bc9be5d670148470865a06fa1206142217a31df12c06292a8c1109b11"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "slice-codec-and-witness": [
+    {
+      "text": "bundle-codec: the bundle types, the JSON codec with its version field, the transaction and witness envelopes; round trip on several transactions in order; unknown version, missing field and malformed envelope refused.",
+      "pause": 500
+    }
+  ],
+  "slice-sign-verb": [
+    {
+      "text": "wallet-sign-verb: singular wallet sign with the vault, the bundle, the passphrase descriptor and the output directory; refuses provider and registry options; documented flags equal --help.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "d6f981745109a8f4954075dd49de3b17cd8cf618f687b473f4e4da1ffd722e19"
+  }
+}
