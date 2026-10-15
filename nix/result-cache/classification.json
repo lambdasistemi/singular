@@ -1,0 +1,644 @@
+{
+ "entries": [
+  {
+   "class": "input",
+   "families": [
+    "negative-host-mutant"
+   ],
+   "path": "applications/open-datum/negative/mutants",
+   "reason": "mutant patches and rules table; the pair test never reads them, the mutant test applies them"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-mutant"
+   ],
+   "path": "tools/negative_host_mutants.sh",
+   "reason": "wrapped mutant runner; the pair test runs the part script directly"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-mutant"
+   ],
+   "path": "tools/m1_identity.py",
+   "reason": "registry identity regen the mutant run performs for registry-source mutants"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-mutant"
+   ],
+   "path": "PROVENANCE.md",
+   "reason": "frozen upstream revision the mutant regen reads for the identity manifests"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "applications/open-datum/negative",
+   "reason": "host source, pair table, cabal; built into singular-negative, the binary under test"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "applications/open-datum/offchain",
+   "reason": "open-datum executable source and flake; built from the archive and driven by the test"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "applications/open-datum/onchain",
+   "reason": "application validators, blueprint and identities the registry deploys"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "applications/open-datum/ledgers.json",
+   "reason": "application ledger record shipped in the archive"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "offchain",
+   "reason": "registry executable, devnet, genesis and CLI source and flake; built from the archive and driven by the test"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "onchain",
+   "reason": "registry validators, blueprint, pin and identities"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "naming-onchain",
+   "reason": "second blueprint partition carried by the archive"
+  },
+  {
+   "path": "conformance",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Conformance library Haddock the docs build binds into the site; the flake it evaluates is read too"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "tools/negative_host_part.sh",
+   "reason": "wrapped pair script; the exact command the matrix legs run"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "tools/assemble_onchain_release.py",
+   "reason": "release assembler; the test builds its archive with it"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "tools/stage_release.py",
+   "reason": "staging imported by the assembler"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "tools/check_release.py",
+   "reason": "release checker the assembler runs over the assembled bytes"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "tools/release_surface_control.sh",
+   "reason": "surface control the assembler runs over the assembled bytes"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/release.nix",
+   "reason": "assembler and release-artifacts definitions"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/negative-host.nix",
+   "reason": "wrapped app definitions; the store paths they yield enter the identity"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/docs.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/model.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/coverage.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/inventory.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/simulator.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/browser.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "nix/ci-apps.nix",
+   "reason": "root flake evaluation input; conservative direction, never a false hit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "flake.nix",
+   "reason": "root flake; any change moves every identity by the accepted known limit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "flake.lock",
+   "reason": "root lock; any change moves every identity by the accepted known limit"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "version.txt",
+   "reason": "archive version read by the assembler and the part script"
+  },
+  {
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "path": "fourmolu.yaml",
+   "reason": "shipped in the archive partitions; conservative direction, never a false hit"
+  },
+  {
+   "class": "setup-only",
+   "job": "release-artifacts",
+   "path": "docs",
+   "reason": "documentation archive input; the test asserts nothing about docs, the release-artifacts job carries them"
+  },
+  {
+   "class": "setup-only",
+   "job": "release-artifacts",
+   "path": "specs/299-singular-cli/spec.md",
+   "reason": "shipped spec; carried by the release-artifacts job, asserted elsewhere"
+  },
+  {
+   "class": "input",
+   "path": "specs",
+   "reason": "mkdocs --strict resolves doc links into specs; removal breaks the docs build, so the setup reads them",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "README.md",
+   "reason": "Root readme prepare_docs stages as the site index; check_release phrases over the archived copy",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "outside",
+   "path": "applications/keri-stub",
+   "reason": "separate application family; the pair and mutant builds never read it"
+  },
+  {
+   "class": "outside",
+   "path": "applications/open-datum/lean",
+   "reason": "application Lean model; checked by application-model, never built or read here"
+  },
+  {
+   "class": "outside",
+   "path": "applications/open-datum/lakefile.lean",
+   "reason": "application Lean project file; not read by the Haskell and Aiken builds"
+  },
+  {
+   "class": "outside",
+   "path": "applications/open-datum/lake-manifest.json",
+   "reason": "application Lean manifest; not read by the Haskell and Aiken builds"
+  },
+  {
+   "class": "outside",
+   "path": "applications/open-datum/corpus.json",
+   "reason": "application model corpus; not read by the hosted pair or mutant runs"
+  },
+  {
+   "class": "input",
+   "path": "lean",
+   "reason": "Lean model the docs build ships as model/ and prepare_release copies to review/; removal breaks assembly",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "lakefile.toml",
+   "reason": "Root Lean project file copied into the archive partitions and the review workspace",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "lake-manifest.json",
+   "reason": "Root Lean manifest copied into the archive partitions",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "lean-toolchain",
+   "reason": "Lean compiler pin copied into the archive partitions and the review workspace",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "simulator",
+   "reason": "Simulator tree the docs build ships with the site; removal breaks the staging",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "path": "onchain-release",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Release pages and verify-identities.sh the assembler copies into the archive; check_release compares and executes them"
+  },
+  {
+   "class": "input",
+   "path": "release-review",
+   "reason": "Review workspace prepare_release copies into the docs archive",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "overrides",
+   "reason": "MkDocs theme directory the docs build reads (custom_dir)",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "outside",
+   "path": ".specify",
+   "reason": "process memory; not read by the test"
+  },
+  {
+   "path": ".github",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "check_release asserts every workflow (runs-on, dispatch trigger, release-please shape); the glob covers future files"
+  },
+  {
+   "class": "input",
+   "path": "nix/result-cache",
+   "reason": "flake evaluation reads the table (fromJSON); removal breaks every nix command",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "input",
+   "path": "nix/result-cache.nix",
+   "reason": "flake evaluation imports it for the wrapper, controls and identities; removal breaks every nix command",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "path": "mkdocs.yml",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "MkDocs configuration the docs build reads (nav, theme, hooks, plugins)"
+  },
+  {
+   "path": ".release-please-manifest.json",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Manifest check_release requires to equal version.txt"
+  },
+  {
+   "path": "release-please-config.json",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Config check_release requires (release-type simple, initial 0.1.0)"
+  },
+  {
+   "path": "tools/prepare_docs.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Docs staging the archive build executes"
+  },
+  {
+   "path": "tools/api_reference.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "API manifest step the archive build executes (imported by prepare_docs too)"
+  },
+  {
+   "path": "tools/aiken_reference.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Aiken reference step the archive build executes"
+  },
+  {
+   "path": "tools/prepare_release.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Review-workspace step the archive build executes"
+  },
+  {
+   "path": "tools/mkdocs_api_overlay.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "MkDocs hook the docs build loads"
+  },
+  {
+   "path": "tools/axioms.lean",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Lean axiom file prepare_release copies to the review workspace"
+  },
+  {
+   "path": "tools/check_model.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "Model checker prepare_release copies to the review workspace"
+  },
+  {
+   "path": "tools/m1_axioms.lean",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "M1 axiom file prepare_release copies to the review workspace"
+  },
+  {
+   "path": "tools/check_m1.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "M1 checker prepare_release copies to the review workspace"
+  },
+  {
+   "path": "tools/check_m1_transport.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "M1 transport checker prepare_release copies to the review workspace"
+  },
+  {
+   "path": "tools/result_cache_run.sh",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "wrapper implementation evaluated into the result-cache app derivation"
+  },
+  {
+   "path": "tools/result_cache_controls.sh",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "controls implementation evaluated into the result-cache-controls app derivation"
+  },
+  {
+   "path": "tools/demo1_cli_attach.sh",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "on-chain archive member check_release requires present"
+  },
+  {
+   "path": "tools/demo1_readback.sh",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "on-chain archive member check_release requires present"
+  },
+  {
+   "path": "tools/demo1_mock_indexer.py",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "on-chain archive member check_release requires present"
+  },
+  {
+   "path": "tools/demo1_readback_tamper.sh",
+   "class": "input",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ],
+   "reason": "on-chain archive member check_release requires present"
+  },
+  {
+   "class": "outside",
+   "path": "tools",
+   "reason": "all other tools; other journeys scripts never sourced by the wrapped commands"
+  },
+  {
+   "class": "outside",
+   "path": ".gitignore",
+   "reason": "ignored-name list; not read by the test"
+  },
+  {
+   "class": "outside",
+   "path": "AGENTS.md",
+   "reason": "contributor instructions; not read by the test"
+  },
+  {
+   "class": "outside",
+   "path": "CHANGELOG.md",
+   "reason": "changelog; not read by the test"
+  },
+  {
+   "class": "input",
+   "path": "README.speech.json",
+   "reason": "Narration companion prepare_docs stages beside the site index",
+   "families": [
+    "negative-host-pair",
+    "negative-host-mutant"
+   ]
+  },
+  {
+   "class": "outside",
+   "path": "biome.json",
+   "reason": "formatter configuration for other families; not read by the test"
+  },
+  {
+   "class": "outside",
+   "path": "justfile",
+   "reason": "local recipes; hosted jobs run Nix apps, never just"
+  }
+ ],
+ "families": [
+  "negative-host-pair",
+  "negative-host-mutant"
+ ],
+ "version": 1
+}

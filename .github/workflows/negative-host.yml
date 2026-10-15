@@ -9,6 +9,13 @@
 name: Negative host
 on:
   workflow_dispatch:
+    inputs:
+      force_full:
+        description: 'Ignore result-cache markers and run every test'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 4 * * *'
   push:
     branches: [main]
     paths:
@@ -80,7 +87,10 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Run the selected pair from the release archive
-        run: nix run --quiet .#negative-host-part -- '${{ matrix.part }}'
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          RESULT_CACHE_FORCE: ${{ inputs.force_full == true && '1' || github.event_name == 'schedule' && '1' || '' }}
+        run: nix run --quiet .#result-cache -- run --family negative-host-pair --leg '${{ matrix.part }}' -- nix run --quiet .#negative-host-part -- '${{ matrix.part }}'
   negative-host-mutant-list:
     name: Negative host mutant list
     runs-on: nixos
@@ -128,7 +138,10 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Run the pairs the mutant refuses
-        run: nix run --quiet .#negative-host-mutants -- '${{ matrix.mutant }}'
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          RESULT_CACHE_FORCE: ${{ inputs.force_full == true && '1' || github.event_name == 'schedule' && '1' || '' }}
+        run: nix run --quiet .#result-cache -- run --family negative-host-mutant --leg '${{ matrix.mutant }}' -- nix run --quiet .#negative-host-mutants -- '${{ matrix.mutant }}'
   negative-host-ordinary:
     name: Ordinary executables cannot reach the bypass
     runs-on: nixos
@@ -216,6 +229,28 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Run the mutant self-check over the registry mutant
         run: nix run --quiet .#negative-host-mutants -- --control-noop registry-accepts-a-taken-key
+  negative-host-result-cache-controls:
+    name: Negative host result cache controls
+    runs-on: nixos
+    timeout-minutes: 25
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Slice 1 (#592): the result-cache controls. The census keeps its
+      # obligations: `result-cache` runs in the two matrix legs above and
+      # `result-cache-controls` runs here, each as `nix run --quiet .#<name>`.
+      - name: Run the negative host result cache controls
+        run: nix run --quiet .#result-cache-controls
   negative-host-pairs:
     name: Negative host pairs
     needs: [negative-host-parts, negative-host-part]
