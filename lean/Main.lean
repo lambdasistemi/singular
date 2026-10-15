@@ -296,8 +296,55 @@ def terminationPoolControls : Except String Unit := do
       mixed.registry == once.registry do
     throw "registration booking must preserve a pending termination"
 
+/-- Booking controls for the registration-only application tag. These judge
+the submitted output directly, with exact refusal reasons. -/
+def trieReadyBookingControls : Except String Unit := do
+  let world ← terminationWorld
+  let withApplication ← terminationBookingFor world 5 ⟨81, 0⟩
+  let withoutApplication := { withApplication with
+    request := { withApplication.request with
+      contents := { withApplication.request.contents with applicationTags := [] } },
+    applicationTagsMinted := [] }
+  let controls := [
+    ("a termination holding an application tag is dirty", withApplication, some "dirty-request"),
+    ("a termination needs no application tag", withoutApplication, none) ]
+  let terminationFailures := controls.filterMap fun (story, booking, expected) =>
+    let actual := terminationBookingRefusal world.registry booking
+    if actual == expected then none
+    else some s!"{story}: expected {repr expected}, actual {repr actual}"
+  let registration := lawfulRegistrationBooking
+  let request := registration.request
+  let otherPayloads := [
+    ("key", { request with key := request.key + 1 }),
+    ("refund address", { request with refundAddress := request.refundAddress + 1 }),
+    ("destination", { request with destination := request.destination + 1 }) ]
+  let registrationFailures := otherPayloads.filterMap fun (field, changed) =>
+    let application := { registrationApplicationTag with
+      key := changed.key, owner := changed.refundAddress, destination := changed.destination,
+      assetName := approvalAssetName .insertActive changed.key changed.refundAddress changed.destination }
+    let booking := { registration with
+      request := { changed with contents := { changed.contents with applicationTags := [application] } },
+      applicationTagsMinted := [application] }
+    let actual := registrationBookingRefusal registrationConfig booking
+    let expected := some "forged-syntax-tag"
+    if actual == expected then none
+    else some s!"a registration tag from another {field}: expected {repr expected}, actual {repr actual}"
+  let otherTermination ← terminationBookingFor world 6 ⟨81, 1⟩
+  let reusedTag := { otherTermination with
+    request := { otherTermination.request with contents := {
+      otherTermination.request.contents with syntaxTags := withApplication.request.contents.syntaxTags } },
+    syntaxTagsMinted := withApplication.syntaxTagsMinted }
+  let terminationActual := terminationBookingRefusal world.registry reusedTag
+  let failures := terminationFailures ++ registrationFailures ++
+    (if terminationActual == some "forged-syntax-tag" then [] else
+      [s!"a termination tag from another key and destination: expected forged-syntax-tag, actual {repr terminationActual}"])
+  unless failures.isEmpty do throw (String.intercalate "\n" failures)
+
 def main : IO Unit := do
   let stdout ← IO.getStdout
+  match trieReadyBookingControls with
+  | .ok () => pure ()
+  | .error reason => throw (IO.userError reason)
   let terminationRows ← match terminationControlRows with
     | .ok rows => pure rows
     | .error reason => throw (IO.userError reason)
