@@ -302310,6 +302310,1546 @@
     }
    ]
   },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-00": {
+   "audio_sha256": "56e39c5e0297a4312090b68f2ee54df8c5444e8a643bcb722c1b3d499a2d5c61",
+   "characters": 47,
+   "cost": 4.6530000000000003e-05,
+   "duration": 2.975,
+   "index": 0,
+   "key": "642437f46c6caab3a3870f035284d35e519985f1d1dcb4acceafad95afd79310",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "Keeping your signing key in an encrypted vault.",
+   "text": "Keeping your signing key in an encrypted vault.",
+   "words": [
+    {
+     "end": 0.463,
+     "start": 0.175,
+     "text": "Keeping"
+    },
+    {
+     "end": 0.575,
+     "start": 0.463,
+     "text": "your"
+    },
+    {
+     "end": 0.95,
+     "start": 0.575,
+     "text": "signing"
+    },
+    {
+     "end": 1.288,
+     "start": 0.95,
+     "text": "key"
+    },
+    {
+     "end": 1.388,
+     "start": 1.288,
+     "text": "in"
+    },
+    {
+     "end": 1.462,
+     "start": 1.388,
+     "text": "an"
+    },
+    {
+     "end": 1.975,
+     "start": 1.462,
+     "text": "encrypted"
+    },
+    {
+     "end": 2.775,
+     "start": 1.975,
+     "text": "vault"
+    },
+    {
+     "end": 2.975,
+     "start": 2.775,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-01": {
+   "audio_sha256": "7966c6e6835eb987aa035de10344b9d461b3980803d3fbb22e6d1ee2777dc498",
+   "characters": 217,
+   "cost": 0.00021482999999999997,
+   "duration": 15.0,
+   "index": 1,
+   "key": "926e2f6b93095209a8747e0e5e64caaaec689542c3be268305a2568833c75f53",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "As Alice, I keep my payment signing key in one encrypted file instead of a plaintext key on disk. I run singular wallet create naming a new vault and a network, type a passphrase twice, and see my address on one line:",
+   "text": "As Alice, I keep my payment signing key in one encrypted file instead of a plaintext key on disk. I run singular wallet create naming a new vault and a network, type a passphrase twice, and see my address on one line:",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.725,
+     "start": 0.375,
+     "text": "Alice"
+    },
+    {
+     "end": 0.762,
+     "start": 0.725,
+     "text": ","
+    },
+    {
+     "end": 0.9,
+     "start": 0.762,
+     "text": "I"
+    },
+    {
+     "end": 1.138,
+     "start": 0.9,
+     "text": "keep"
+    },
+    {
+     "end": 1.312,
+     "start": 1.138,
+     "text": "my"
+    },
+    {
+     "end": 1.712,
+     "start": 1.312,
+     "text": "payment"
+    },
+    {
+     "end": 2.112,
+     "start": 1.712,
+     "text": "signing"
+    },
+    {
+     "end": 2.487,
+     "start": 2.112,
+     "text": "key"
+    },
+    {
+     "end": 2.662,
+     "start": 2.487,
+     "text": "in"
+    },
+    {
+     "end": 2.925,
+     "start": 2.662,
+     "text": "one"
+    },
+    {
+     "end": 3.463,
+     "start": 2.925,
+     "text": "encrypted"
+    },
+    {
+     "end": 3.963,
+     "start": 3.463,
+     "text": "file"
+    },
+    {
+     "end": 4.312,
+     "start": 3.963,
+     "text": "instead"
+    },
+    {
+     "end": 4.387,
+     "start": 4.312,
+     "text": "of"
+    },
+    {
+     "end": 4.45,
+     "start": 4.387,
+     "text": "a"
+    },
+    {
+     "end": 5.1,
+     "start": 4.45,
+     "text": "plaintext"
+    },
+    {
+     "end": 5.35,
+     "start": 5.1,
+     "text": "key"
+    },
+    {
+     "end": 5.55,
+     "start": 5.35,
+     "text": "on"
+    },
+    {
+     "end": 6.55,
+     "start": 5.55,
+     "text": "disk"
+    },
+    {
+     "end": 6.775,
+     "start": 6.55,
+     "text": "."
+    },
+    {
+     "end": 7.188,
+     "start": 7.0,
+     "text": "I"
+    },
+    {
+     "end": 7.55,
+     "start": 7.188,
+     "text": "run"
+    },
+    {
+     "end": 8.075,
+     "start": 7.55,
+     "text": "singular"
+    },
+    {
+     "end": 8.488,
+     "start": 8.075,
+     "text": "wallet"
+    },
+    {
+     "end": 8.9,
+     "start": 8.488,
+     "text": "create"
+    },
+    {
+     "end": 9.275,
+     "start": 8.9,
+     "text": "naming"
+    },
+    {
+     "end": 9.387,
+     "start": 9.275,
+     "text": "a"
+    },
+    {
+     "end": 9.613,
+     "start": 9.387,
+     "text": "new"
+    },
+    {
+     "end": 10.0,
+     "start": 9.613,
+     "text": "vault"
+    },
+    {
+     "end": 10.113,
+     "start": 10.0,
+     "text": "and"
+    },
+    {
+     "end": 10.175,
+     "start": 10.113,
+     "text": "a"
+    },
+    {
+     "end": 10.725,
+     "start": 10.175,
+     "text": "network"
+    },
+    {
+     "end": 10.8,
+     "start": 10.725,
+     "text": ","
+    },
+    {
+     "end": 11.012,
+     "start": 10.8,
+     "text": "type"
+    },
+    {
+     "end": 11.087,
+     "start": 11.012,
+     "text": "a"
+    },
+    {
+     "end": 11.762,
+     "start": 11.087,
+     "text": "passphrase"
+    },
+    {
+     "end": 12.3,
+     "start": 11.762,
+     "text": "twice"
+    },
+    {
+     "end": 12.375,
+     "start": 12.3,
+     "text": ","
+    },
+    {
+     "end": 12.512,
+     "start": 12.375,
+     "text": "and"
+    },
+    {
+     "end": 12.725,
+     "start": 12.512,
+     "text": "see"
+    },
+    {
+     "end": 12.9,
+     "start": 12.725,
+     "text": "my"
+    },
+    {
+     "end": 13.3,
+     "start": 12.9,
+     "text": "address"
+    },
+    {
+     "end": 13.5,
+     "start": 13.3,
+     "text": "on"
+    },
+    {
+     "end": 13.725,
+     "start": 13.5,
+     "text": "one"
+    },
+    {
+     "end": 14.775,
+     "start": 13.725,
+     "text": "line"
+    },
+    {
+     "end": 15.0,
+     "start": 14.775,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-02": {
+   "audio_sha256": "1199d97bc0ac62c984a167e61db6a7e1b4e37537a12d4c4d31eb9e383e06d90f",
+   "characters": 201,
+   "cost": 0.00019899,
+   "duration": 13.0,
+   "index": 2,
+   "key": "bcf04bf2aa1f9ecf467336e85b0ccb56919672cdf65256f73f55935924ba7e8e",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "My key exists only inside that file: nothing else is written, no public part is kept beside it, and reading my address later means opening the vault — the same address prints, from the same passphrase:",
+   "text": "My key exists only inside that file: nothing else is written, no public part is kept beside it, and reading my address later means opening the vault — the same address prints, from the same passphrase:",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.175,
+     "text": "My"
+    },
+    {
+     "end": 0.512,
+     "start": 0.325,
+     "text": "key"
+    },
+    {
+     "end": 0.875,
+     "start": 0.512,
+     "text": "exists"
+    },
+    {
+     "end": 1.175,
+     "start": 0.875,
+     "text": "only"
+    },
+    {
+     "end": 1.538,
+     "start": 1.175,
+     "text": "inside"
+    },
+    {
+     "end": 1.75,
+     "start": 1.538,
+     "text": "that"
+    },
+    {
+     "end": 2.55,
+     "start": 1.75,
+     "text": "file"
+    },
+    {
+     "end": 2.75,
+     "start": 2.55,
+     "text": ":"
+    },
+    {
+     "end": 3.237,
+     "start": 2.95,
+     "text": "nothing"
+    },
+    {
+     "end": 3.475,
+     "start": 3.237,
+     "text": "else"
+    },
+    {
+     "end": 3.638,
+     "start": 3.475,
+     "text": "is"
+    },
+    {
+     "end": 4.025,
+     "start": 3.638,
+     "text": "written"
+    },
+    {
+     "end": 4.1,
+     "start": 4.025,
+     "text": ","
+    },
+    {
+     "end": 4.325,
+     "start": 4.1,
+     "text": "no"
+    },
+    {
+     "end": 4.7,
+     "start": 4.325,
+     "text": "public"
+    },
+    {
+     "end": 4.963,
+     "start": 4.7,
+     "text": "part"
+    },
+    {
+     "end": 5.1,
+     "start": 4.963,
+     "text": "is"
+    },
+    {
+     "end": 5.375,
+     "start": 5.1,
+     "text": "kept"
+    },
+    {
+     "end": 5.775,
+     "start": 5.375,
+     "text": "beside"
+    },
+    {
+     "end": 6.375,
+     "start": 5.775,
+     "text": "it"
+    },
+    {
+     "end": 6.575,
+     "start": 6.375,
+     "text": ","
+    },
+    {
+     "end": 6.875,
+     "start": 6.775,
+     "text": "and"
+    },
+    {
+     "end": 7.225,
+     "start": 6.875,
+     "text": "reading"
+    },
+    {
+     "end": 7.4,
+     "start": 7.225,
+     "text": "my"
+    },
+    {
+     "end": 7.775,
+     "start": 7.4,
+     "text": "address"
+    },
+    {
+     "end": 8.1,
+     "start": 7.775,
+     "text": "later"
+    },
+    {
+     "end": 8.387,
+     "start": 8.1,
+     "text": "means"
+    },
+    {
+     "end": 8.788,
+     "start": 8.387,
+     "text": "opening"
+    },
+    {
+     "end": 8.875,
+     "start": 8.788,
+     "text": "the"
+    },
+    {
+     "end": 9.3,
+     "start": 8.875,
+     "text": "vault"
+    },
+    {
+     "end": 9.363,
+     "start": 9.3,
+     "text": "—"
+    },
+    {
+     "end": 9.488,
+     "start": 9.363,
+     "text": "the"
+    },
+    {
+     "end": 9.75,
+     "start": 9.488,
+     "text": "same"
+    },
+    {
+     "end": 10.087,
+     "start": 9.75,
+     "text": "address"
+    },
+    {
+     "end": 11.0,
+     "start": 10.087,
+     "text": "prints"
+    },
+    {
+     "end": 11.2,
+     "start": 11.0,
+     "text": ","
+    },
+    {
+     "end": 11.488,
+     "start": 11.375,
+     "text": "from"
+    },
+    {
+     "end": 11.575,
+     "start": 11.488,
+     "text": "the"
+    },
+    {
+     "end": 11.8,
+     "start": 11.575,
+     "text": "same"
+    },
+    {
+     "end": 12.8,
+     "start": 11.8,
+     "text": "passphrase"
+    },
+    {
+     "end": 13.0,
+     "start": 12.8,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-03": {
+   "audio_sha256": "79639e40f4922987d930f977b7d992b490e760220450531e18badc0bcc5b81ce",
+   "characters": 114,
+   "cost": 0.00011285999999999999,
+   "duration": 7.85,
+   "index": 3,
+   "key": "faae20e7587e475f517ba2728c12a1d6feb90bfd0461621b7590911c4038c501",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "A script supplies the passphrase on an inherited file descriptor, one line, and is never asked for a confirmation:",
+   "text": "A script supplies the passphrase on an inherited file descriptor, one line, and is never asked for a confirmation:",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 0.725,
+     "start": 0.312,
+     "text": "script"
+    },
+    {
+     "end": 1.225,
+     "start": 0.725,
+     "text": "supplies"
+    },
+    {
+     "end": 1.337,
+     "start": 1.225,
+     "text": "the"
+    },
+    {
+     "end": 2.125,
+     "start": 1.337,
+     "text": "passphrase"
+    },
+    {
+     "end": 2.263,
+     "start": 2.125,
+     "text": "on"
+    },
+    {
+     "end": 2.35,
+     "start": 2.263,
+     "text": "an"
+    },
+    {
+     "end": 2.963,
+     "start": 2.35,
+     "text": "inherited"
+    },
+    {
+     "end": 3.3,
+     "start": 2.963,
+     "text": "file"
+    },
+    {
+     "end": 4.125,
+     "start": 3.3,
+     "text": "descriptor"
+    },
+    {
+     "end": 4.262,
+     "start": 4.125,
+     "text": ","
+    },
+    {
+     "end": 4.525,
+     "start": 4.262,
+     "text": "one"
+    },
+    {
+     "end": 4.975,
+     "start": 4.525,
+     "text": "line"
+    },
+    {
+     "end": 5.05,
+     "start": 4.975,
+     "text": ","
+    },
+    {
+     "end": 5.162,
+     "start": 5.05,
+     "text": "and"
+    },
+    {
+     "end": 5.312,
+     "start": 5.162,
+     "text": "is"
+    },
+    {
+     "end": 5.662,
+     "start": 5.312,
+     "text": "never"
+    },
+    {
+     "end": 6.05,
+     "start": 5.662,
+     "text": "asked"
+    },
+    {
+     "end": 6.162,
+     "start": 6.05,
+     "text": "for"
+    },
+    {
+     "end": 6.225,
+     "start": 6.162,
+     "text": "a"
+    },
+    {
+     "end": 7.65,
+     "start": 6.225,
+     "text": "confirmation"
+    },
+    {
+     "end": 7.85,
+     "start": 7.65,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-04": {
+   "audio_sha256": "e04015af76ee8167698ac2e706e7766a7f275cea65c7bc234795ad8fa7d5b27d",
+   "characters": 493,
+   "cost": 0.00048806999999999995,
+   "duration": 34.125,
+   "index": 4,
+   "key": "f4c22b43343d0392fca0516c1b73f1104718338210be14f018f79014ade3892a",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "Creating over an existing path — a symbolic link included — is refused with that path's bytes untouched; the vault file is made readable by its owner only, and a write that fails removes the file it made. A wrong passphrase, a corrupt file and a file that is not a vault all answer one refusal naming no secret, nothing prints on standard output, and the empty passphrase is refused at birth. Every creation draws a fresh key from the operating system's entropy: fresh entropy for every vault.",
+   "text": "Creating over an existing path — a symbolic link included — is refused with that path's bytes untouched; the vault file is made readable by its owner only, and a write that fails removes the file it made. A wrong passphrase, a corrupt file and a file that is not a vault all answer one refusal naming no secret, nothing prints on standard output, and the empty passphrase is refused at birth. Every creation draws a fresh key from the operating system's entropy: fresh entropy for every vault.",
+   "words": [
+    {
+     "end": 0.65,
+     "start": 0.2,
+     "text": "Creating"
+    },
+    {
+     "end": 0.887,
+     "start": 0.65,
+     "text": "over"
+    },
+    {
+     "end": 0.975,
+     "start": 0.887,
+     "text": "an"
+    },
+    {
+     "end": 1.562,
+     "start": 0.975,
+     "text": "existing"
+    },
+    {
+     "end": 2.075,
+     "start": 1.562,
+     "text": "path"
+    },
+    {
+     "end": 2.15,
+     "start": 2.075,
+     "text": "—"
+    },
+    {
+     "end": 2.263,
+     "start": 2.15,
+     "text": "a"
+    },
+    {
+     "end": 2.875,
+     "start": 2.263,
+     "text": "symbolic"
+    },
+    {
+     "end": 3.15,
+     "start": 2.875,
+     "text": "link"
+    },
+    {
+     "end": 3.775,
+     "start": 3.15,
+     "text": "included"
+    },
+    {
+     "end": 3.85,
+     "start": 3.775,
+     "text": "—"
+    },
+    {
+     "end": 4.0,
+     "start": 3.85,
+     "text": "is"
+    },
+    {
+     "end": 4.637,
+     "start": 4.0,
+     "text": "refused"
+    },
+    {
+     "end": 4.8,
+     "start": 4.637,
+     "text": "with"
+    },
+    {
+     "end": 5.05,
+     "start": 4.8,
+     "text": "that"
+    },
+    {
+     "end": 5.412,
+     "start": 5.05,
+     "text": "path's"
+    },
+    {
+     "end": 5.775,
+     "start": 5.412,
+     "text": "bytes"
+    },
+    {
+     "end": 7.0,
+     "start": 5.775,
+     "text": "untouched"
+    },
+    {
+     "end": 7.2,
+     "start": 7.0,
+     "text": ";"
+    },
+    {
+     "end": 7.5,
+     "start": 7.4,
+     "text": "the"
+    },
+    {
+     "end": 7.812,
+     "start": 7.5,
+     "text": "vault"
+    },
+    {
+     "end": 8.2,
+     "start": 7.812,
+     "text": "file"
+    },
+    {
+     "end": 8.35,
+     "start": 8.2,
+     "text": "is"
+    },
+    {
+     "end": 8.613,
+     "start": 8.35,
+     "text": "made"
+    },
+    {
+     "end": 9.05,
+     "start": 8.613,
+     "text": "readable"
+    },
+    {
+     "end": 9.275,
+     "start": 9.05,
+     "text": "by"
+    },
+    {
+     "end": 9.475,
+     "start": 9.275,
+     "text": "its"
+    },
+    {
+     "end": 9.812,
+     "start": 9.475,
+     "text": "owner"
+    },
+    {
+     "end": 10.375,
+     "start": 9.812,
+     "text": "only"
+    },
+    {
+     "end": 10.475,
+     "start": 10.375,
+     "text": ","
+    },
+    {
+     "end": 10.587,
+     "start": 10.475,
+     "text": "and"
+    },
+    {
+     "end": 10.688,
+     "start": 10.587,
+     "text": "a"
+    },
+    {
+     "end": 11.0,
+     "start": 10.688,
+     "text": "write"
+    },
+    {
+     "end": 11.225,
+     "start": 11.0,
+     "text": "that"
+    },
+    {
+     "end": 11.7,
+     "start": 11.225,
+     "text": "fails"
+    },
+    {
+     "end": 12.175,
+     "start": 11.7,
+     "text": "removes"
+    },
+    {
+     "end": 12.312,
+     "start": 12.175,
+     "text": "the"
+    },
+    {
+     "end": 12.637,
+     "start": 12.312,
+     "text": "file"
+    },
+    {
+     "end": 12.75,
+     "start": 12.637,
+     "text": "it"
+    },
+    {
+     "end": 13.675,
+     "start": 12.75,
+     "text": "made"
+    },
+    {
+     "end": 13.9,
+     "start": 13.675,
+     "text": "."
+    },
+    {
+     "end": 14.15,
+     "start": 14.075,
+     "text": "A"
+    },
+    {
+     "end": 14.375,
+     "start": 14.15,
+     "text": "wrong"
+    },
+    {
+     "end": 15.35,
+     "start": 14.375,
+     "text": "passphrase"
+    },
+    {
+     "end": 15.55,
+     "start": 15.35,
+     "text": ","
+    },
+    {
+     "end": 15.825,
+     "start": 15.75,
+     "text": "a"
+    },
+    {
+     "end": 16.263,
+     "start": 15.825,
+     "text": "corrupt"
+    },
+    {
+     "end": 16.675,
+     "start": 16.263,
+     "text": "file"
+    },
+    {
+     "end": 16.788,
+     "start": 16.675,
+     "text": "and"
+    },
+    {
+     "end": 16.875,
+     "start": 16.788,
+     "text": "a"
+    },
+    {
+     "end": 17.325,
+     "start": 16.875,
+     "text": "file"
+    },
+    {
+     "end": 17.475,
+     "start": 17.325,
+     "text": "that"
+    },
+    {
+     "end": 17.625,
+     "start": 17.475,
+     "text": "is"
+    },
+    {
+     "end": 17.837,
+     "start": 17.625,
+     "text": "not"
+    },
+    {
+     "end": 17.938,
+     "start": 17.837,
+     "text": "a"
+    },
+    {
+     "end": 18.362,
+     "start": 17.938,
+     "text": "vault"
+    },
+    {
+     "end": 18.625,
+     "start": 18.362,
+     "text": "all"
+    },
+    {
+     "end": 19.062,
+     "start": 18.625,
+     "text": "answer"
+    },
+    {
+     "end": 19.325,
+     "start": 19.062,
+     "text": "one"
+    },
+    {
+     "end": 19.85,
+     "start": 19.325,
+     "text": "refusal"
+    },
+    {
+     "end": 20.275,
+     "start": 19.85,
+     "text": "naming"
+    },
+    {
+     "end": 20.538,
+     "start": 20.275,
+     "text": "no"
+    },
+    {
+     "end": 21.6,
+     "start": 20.538,
+     "text": "secret"
+    },
+    {
+     "end": 21.825,
+     "start": 21.6,
+     "text": ","
+    },
+    {
+     "end": 22.425,
+     "start": 22.05,
+     "text": "nothing"
+    },
+    {
+     "end": 22.737,
+     "start": 22.425,
+     "text": "prints"
+    },
+    {
+     "end": 22.925,
+     "start": 22.737,
+     "text": "on"
+    },
+    {
+     "end": 23.35,
+     "start": 22.925,
+     "text": "standard"
+    },
+    {
+     "end": 23.925,
+     "start": 23.35,
+     "text": "output"
+    },
+    {
+     "end": 24.0,
+     "start": 23.925,
+     "text": ","
+    },
+    {
+     "end": 24.112,
+     "start": 24.0,
+     "text": "and"
+    },
+    {
+     "end": 24.225,
+     "start": 24.112,
+     "text": "the"
+    },
+    {
+     "end": 24.55,
+     "start": 24.225,
+     "text": "empty"
+    },
+    {
+     "end": 25.2,
+     "start": 24.55,
+     "text": "passphrase"
+    },
+    {
+     "end": 25.35,
+     "start": 25.2,
+     "text": "is"
+    },
+    {
+     "end": 25.913,
+     "start": 25.35,
+     "text": "refused"
+    },
+    {
+     "end": 26.025,
+     "start": 25.913,
+     "text": "at"
+    },
+    {
+     "end": 26.925,
+     "start": 26.025,
+     "text": "birth"
+    },
+    {
+     "end": 27.15,
+     "start": 26.925,
+     "text": "."
+    },
+    {
+     "end": 27.625,
+     "start": 27.35,
+     "text": "Every"
+    },
+    {
+     "end": 28.175,
+     "start": 27.625,
+     "text": "creation"
+    },
+    {
+     "end": 28.462,
+     "start": 28.175,
+     "text": "draws"
+    },
+    {
+     "end": 28.575,
+     "start": 28.462,
+     "text": "a"
+    },
+    {
+     "end": 28.962,
+     "start": 28.575,
+     "text": "fresh"
+    },
+    {
+     "end": 29.375,
+     "start": 28.962,
+     "text": "key"
+    },
+    {
+     "end": 29.513,
+     "start": 29.375,
+     "text": "from"
+    },
+    {
+     "end": 29.638,
+     "start": 29.513,
+     "text": "the"
+    },
+    {
+     "end": 30.225,
+     "start": 29.638,
+     "text": "operating"
+    },
+    {
+     "end": 30.65,
+     "start": 30.225,
+     "text": "system's"
+    },
+    {
+     "end": 31.725,
+     "start": 30.65,
+     "text": "entropy"
+    },
+    {
+     "end": 31.925,
+     "start": 31.725,
+     "text": ":"
+    },
+    {
+     "end": 32.362,
+     "start": 32.125,
+     "text": "fresh"
+    },
+    {
+     "end": 32.75,
+     "start": 32.362,
+     "text": "entropy"
+    },
+    {
+     "end": 32.875,
+     "start": 32.75,
+     "text": "for"
+    },
+    {
+     "end": 33.175,
+     "start": 32.875,
+     "text": "every"
+    },
+    {
+     "end": 33.925,
+     "start": 33.175,
+     "text": "vault"
+    },
+    {
+     "end": 34.125,
+     "start": 33.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-05": {
+   "audio_sha256": "6570ae2bde370ccdf3142350d3f4ec0635e3c68df3e30934e60ee7aa430c996e",
+   "characters": 414,
+   "cost": 0.00040985999999999996,
+   "duration": 27.725,
+   "index": 5,
+   "key": "e598f5899f157902b21c98fde9552d620db9d8bc8d20e9f482eb9437ee6ec421",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "The vault is an ordinary age file, one passphrase recipient with scrypt work factor 18, holding the key's standard text envelope as its plaintext. Any age tool opens it with the passphrase and yields the envelope: age --decrypt alice.vault asks for the passphrase on the terminal and prints the plaintext, and the decrypted bytes are the cardano-cli key format itself, accepted wherever a signing-key file is read.",
+   "text": "The vault is an ordinary age file, one passphrase recipient with scrypt work factor 18, holding the key's standard text envelope as its plaintext. Any age tool opens it with the passphrase and yields the envelope: age --decrypt alice.vault asks for the passphrase on the terminal and prints the plaintext, and the decrypted bytes are the cardano-cli key format itself, accepted wherever a signing-key file is read.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.738,
+     "start": 0.338,
+     "text": "vault"
+    },
+    {
+     "end": 0.9,
+     "start": 0.738,
+     "text": "is"
+    },
+    {
+     "end": 1.062,
+     "start": 0.9,
+     "text": "an"
+    },
+    {
+     "end": 1.688,
+     "start": 1.062,
+     "text": "ordinary"
+    },
+    {
+     "end": 2.037,
+     "start": 1.688,
+     "text": "age"
+    },
+    {
+     "end": 2.55,
+     "start": 2.037,
+     "text": "file"
+    },
+    {
+     "end": 2.662,
+     "start": 2.55,
+     "text": ","
+    },
+    {
+     "end": 2.938,
+     "start": 2.662,
+     "text": "one"
+    },
+    {
+     "end": 3.65,
+     "start": 2.938,
+     "text": "passphrase"
+    },
+    {
+     "end": 4.3,
+     "start": 3.65,
+     "text": "recipient"
+    },
+    {
+     "end": 4.488,
+     "start": 4.3,
+     "text": "with"
+    },
+    {
+     "end": 4.9,
+     "start": 4.488,
+     "text": "scrypt"
+    },
+    {
+     "end": 5.175,
+     "start": 4.9,
+     "text": "work"
+    },
+    {
+     "end": 5.6,
+     "start": 5.175,
+     "text": "factor"
+    },
+    {
+     "end": 6.3,
+     "start": 5.6,
+     "text": "18"
+    },
+    {
+     "end": 6.4,
+     "start": 6.3,
+     "text": ","
+    },
+    {
+     "end": 6.738,
+     "start": 6.4,
+     "text": "holding"
+    },
+    {
+     "end": 6.863,
+     "start": 6.738,
+     "text": "the"
+    },
+    {
+     "end": 7.25,
+     "start": 6.863,
+     "text": "key's"
+    },
+    {
+     "end": 7.713,
+     "start": 7.25,
+     "text": "standard"
+    },
+    {
+     "end": 8.075,
+     "start": 7.713,
+     "text": "text"
+    },
+    {
+     "end": 8.637,
+     "start": 8.075,
+     "text": "envelope"
+    },
+    {
+     "end": 8.8,
+     "start": 8.637,
+     "text": "as"
+    },
+    {
+     "end": 9.0,
+     "start": 8.8,
+     "text": "its"
+    },
+    {
+     "end": 10.375,
+     "start": 9.0,
+     "text": "plaintext"
+    },
+    {
+     "end": 10.625,
+     "start": 10.375,
+     "text": "."
+    },
+    {
+     "end": 11.025,
+     "start": 10.825,
+     "text": "Any"
+    },
+    {
+     "end": 11.275,
+     "start": 11.025,
+     "text": "age"
+    },
+    {
+     "end": 11.55,
+     "start": 11.275,
+     "text": "tool"
+    },
+    {
+     "end": 11.925,
+     "start": 11.55,
+     "text": "opens"
+    },
+    {
+     "end": 12.038,
+     "start": 11.925,
+     "text": "it"
+    },
+    {
+     "end": 12.163,
+     "start": 12.038,
+     "text": "with"
+    },
+    {
+     "end": 12.25,
+     "start": 12.163,
+     "text": "the"
+    },
+    {
+     "end": 13.038,
+     "start": 12.25,
+     "text": "passphrase"
+    },
+    {
+     "end": 13.175,
+     "start": 13.038,
+     "text": "and"
+    },
+    {
+     "end": 13.488,
+     "start": 13.175,
+     "text": "yields"
+    },
+    {
+     "end": 13.575,
+     "start": 13.488,
+     "text": "the"
+    },
+    {
+     "end": 14.55,
+     "start": 13.575,
+     "text": "envelope"
+    },
+    {
+     "end": 14.775,
+     "start": 14.55,
+     "text": ":"
+    },
+    {
+     "end": 15.35,
+     "start": 15.0,
+     "text": "age"
+    },
+    {
+     "end": 15.837,
+     "start": 15.35,
+     "text": "decrypt"
+    },
+    {
+     "end": 16.438,
+     "start": 15.837,
+     "text": "alice.vault"
+    },
+    {
+     "end": 16.875,
+     "start": 16.438,
+     "text": "asks"
+    },
+    {
+     "end": 16.987,
+     "start": 16.875,
+     "text": "for"
+    },
+    {
+     "end": 17.075,
+     "start": 16.987,
+     "text": "the"
+    },
+    {
+     "end": 17.737,
+     "start": 17.075,
+     "text": "passphrase"
+    },
+    {
+     "end": 17.862,
+     "start": 17.737,
+     "text": "on"
+    },
+    {
+     "end": 17.95,
+     "start": 17.862,
+     "text": "the"
+    },
+    {
+     "end": 18.513,
+     "start": 17.95,
+     "text": "terminal"
+    },
+    {
+     "end": 18.65,
+     "start": 18.513,
+     "text": "and"
+    },
+    {
+     "end": 18.95,
+     "start": 18.65,
+     "text": "prints"
+    },
+    {
+     "end": 19.05,
+     "start": 18.95,
+     "text": "the"
+    },
+    {
+     "end": 20.3,
+     "start": 19.05,
+     "text": "plaintext"
+    },
+    {
+     "end": 20.525,
+     "start": 20.3,
+     "text": ","
+    },
+    {
+     "end": 20.812,
+     "start": 20.725,
+     "text": "and"
+    },
+    {
+     "end": 20.9,
+     "start": 20.812,
+     "text": "the"
+    },
+    {
+     "end": 21.425,
+     "start": 20.9,
+     "text": "decrypted"
+    },
+    {
+     "end": 21.812,
+     "start": 21.425,
+     "text": "bytes"
+    },
+    {
+     "end": 21.938,
+     "start": 21.812,
+     "text": "are"
+    },
+    {
+     "end": 22.025,
+     "start": 21.938,
+     "text": "the"
+    },
+    {
+     "end": 22.812,
+     "start": 22.025,
+     "text": "cardano-cli"
+    },
+    {
+     "end": 23.038,
+     "start": 22.812,
+     "text": "key"
+    },
+    {
+     "end": 23.425,
+     "start": 23.038,
+     "text": "format"
+    },
+    {
+     "end": 24.45,
+     "start": 23.425,
+     "text": "itself"
+    },
+    {
+     "end": 24.65,
+     "start": 24.45,
+     "text": ","
+    },
+    {
+     "end": 25.325,
+     "start": 24.85,
+     "text": "accepted"
+    },
+    {
+     "end": 25.663,
+     "start": 25.325,
+     "text": "wherever"
+    },
+    {
+     "end": 25.763,
+     "start": 25.663,
+     "text": "a"
+    },
+    {
+     "end": 26.312,
+     "start": 25.763,
+     "text": "signing-key"
+    },
+    {
+     "end": 26.625,
+     "start": 26.312,
+     "text": "file"
+    },
+    {
+     "end": 26.788,
+     "start": 26.625,
+     "text": "is"
+    },
+    {
+     "end": 27.525,
+     "start": 26.788,
+     "text": "read"
+    },
+    {
+     "end": 27.725,
+     "start": 27.525,
+     "text": "."
+    }
+   ]
+  },
   "docs-singular-node/naming-the-registry-by-its-state-token-00": {
    "audio_sha256": "e6dadc2676a4cf88b62a76d3bd7fea5f53970ebca27c4fef1574d6aff53d8a9c",
    "characters": 39,

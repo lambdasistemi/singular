@@ -8654,6 +8654,50 @@
     "v": "14a04afcf19d"
    }
   ],
+  "keeping-your-signing-key-in-an-encrypted-vault": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-00",
+    "pause_ms": 500,
+    "text": "Keeping your signing key in an encrypted vault.",
+    "v": "56e39c5e0297"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-01",
+    "pause_ms": 400,
+    "text": "As Alice, I keep my payment signing key in one encrypted file instead of a plaintext key on disk. I run singular wallet create naming a new vault and a network, type a passphrase twice, and see my address on one line:",
+    "v": "7966c6e6835e"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-02",
+    "pause_ms": 400,
+    "text": "My key exists only inside that file: nothing else is written, no public part is kept beside it, and reading my address later means opening the vault — the same address prints, from the same passphrase:",
+    "v": "1199d97bc0ac"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-03",
+    "pause_ms": 400,
+    "text": "A script supplies the passphrase on an inherited file descriptor, one line, and is never asked for a confirmation:",
+    "v": "79639e40f492"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-04",
+    "pause_ms": 400,
+    "text": "Creating over an existing path — a symbolic link included — is refused with that path's bytes untouched; the vault file is made readable by its owner only, and a write that fails removes the file it made. A wrong passphrase, a corrupt file and a file that is not a vault all answer one refusal naming no secret, nothing prints on standard output, and the empty passphrase is refused at birth. Every creation draws a fresh key from the operating system's entropy: fresh entropy for every vault.",
+    "v": "e04015af76ee"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-05",
+    "pause_ms": 400,
+    "text": "The vault is an ordinary age file, one passphrase recipient with scrypt work factor 18, holding the key's standard text envelope as its plaintext. Any age tool opens it with the passphrase and yields the envelope: age --decrypt alice.vault asks for the passphrase on the terminal and prints the plaintext, and the decrypted bytes are the cardano-cli key format itself, accepted wherever a signing-key file is read.",
+    "v": "6570ae2bde37"
+   }
+  ],
   "naming-the-registry-by-its-state-token": [
    {
     "index": 0,
