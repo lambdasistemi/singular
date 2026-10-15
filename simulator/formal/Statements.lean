@@ -17,8 +17,8 @@ import Singular.Economics
 
 /-! The public statement surface of the registry-mode model.
 
-The facade exports transaction accounting, payment and rejection statements.
-The fold properties and inversions remain here. Reachable-state premises guard
+The facade exports transaction accounting, payment, rejection, fold properties
+and inversions from the child modules. Reachable-state premises guard
 the supply laws; accounting and admission facts state their own premises over
 arbitrary transactions, requests and evidence. -/
 

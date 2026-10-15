@@ -33,7 +33,7 @@
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "c58c013bc703f054a217d7199ee87aec9fb4b5fe0a704d85cfc81dec597dc328",
+  "payloadSha256": "adef7cee29f6e0c849119dd41ef092aa9e07e8a3373783a02788c7df586b62b3",
   "recovery": [
     {
       "detail": true,
@@ -161,7 +161,7 @@
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "60e908d4b2b73f1b293296af60375c22cf08735d9abc2d4d7670622a9c4fd78b",
+    "lean/Singular/Statements.lean": "ad924a9ad3a18dbd234084b0511b47307f7988f2da7043cd972aa425606be182",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
