@@ -1,0 +1,160 @@
+{
+  "closed-datum-plan": [
+    {
+      "text": "Closed datum: plan.",
+      "pause": 500
+    },
+    {
+      "text": "The story, the requirements and the rulings are in the specification and the ruling page. This page records the decisions, the order of work, the invariants and the hosted checks that accept the work. Issue 651, one pull request, one slice, about three hours of writing. Base: main cfe78df1.",
+      "pause": 400
+    }
+  ],
+  "class-and-team": [
+    {
+      "text": "Class and team.",
+      "pause": 500
+    },
+    {
+      "text": "The change adds an on-chain validator to the release, so it changes behaviour: the full process applies. One commit owner writes the slice. A persistent auditor, which is silent toward the writer, answers the checkpoints. Two independent gate authors wrote the table of hosted checks below before any coding, and the author of this plan combined them once. No part of the change is Haskell, Lean or a workflow.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    },
+    {
+      "text": "The entry point is a second validator appended to open_datum.ak. The existing validator block, every helper and every import stay byte-identical; the diff is lines added after the last line of the file. Alternatives and the measurement are in the specification.",
+      "pause": 300
+    },
+    {
+      "text": "The spend refusal is the only difference. The closed-datum mint handler is open-datum's mint handler called with the same arguments. The spend handler matches the redeemer: Update is refused with the trace label closed-datum-update, Release goes to open-datum's spend handler. else fails.",
+      "pause": 300
+    },
+    {
+      "text": "The suite's own check proves the closed rows ran and can fail. The application flake already runs the composed suite, requires its log to name an open-datum test, and plants a wrong expected digest to show the suite can fail. The same check gains two lines of the same kind: the log must name a closed refusal test, and a planted copy whose closed Update arm accepts must make the suite fail naming that test. Rejected: relying on a green suite alone, which stays green if the closed rows are never collected.",
+      "pause": 300
+    },
+    {
+      "text": "The tests join open_datum.tests.ak. The closed rows sit beside the open rows they mirror, built from the same private fixtures. A closed refusal is always paired, in the same file, with open-datum's acceptance of the same context.",
+      "pause": 300
+    },
+    {
+      "text": "The declared additions are a separate record. The comparison's base file specs/528-registry-cli-split/evidence/base-hashes.json belongs to a merged ticket and stays byte-identical. A new file specs/650-closed-datum/evidence/declared-additions.json lists the titles of the three declared closed-datum validators. The comparison takes each declared title's expected hash from the application's identity manifest, so the hash is written in one place that the identity job already ties to the build. The expected set is the base set plus the declared titles; the base entries are compared exactly as before. Rejected: rewriting the base file (it is a merged ticket's evidence), and listing hashes in the new record (a second place to edit every time open-datum's code moves, because closed-datum's hash moves with it).",
+      "pause": 300
+    },
+    {
+      "text": "The plants name their validator. In the merged deployment blueprint the declared validators sort before every other title, so an existing plant that changes validators[0] would now change a declared validator. Every plant selects the validator it plants by title and checks that it applied to the intended one.",
+      "pause": 300
+    }
+  ],
+  "order-of-work": [
+    {
+      "text": "Order of work.",
+      "pause": 500
+    },
+    {
+      "text": "One slice, in this order. Each step leaves the tree green for the jobs it can reach.",
+      "pause": 400
+    },
+    {
+      "text": "Append the closed-datum validator to open_datum.ak.",
+      "pause": 300
+    },
+    {
+      "text": "Append the closed-datum tests to open_datum.tests.ak and run the suite.",
+      "pause": 300
+    },
+    {
+      "text": "Build the application blueprint and generate the three closed rows of script-identity.json with the repository's own recipe from that blueprint.",
+      "pause": 300
+    },
+    {
+      "text": "Change the count from 14 to 17 in the application flake's merged blueprint check and in the release assembler, and add the closed witness and the closed plant to the flake's composed-suite check.",
+      "pause": 300
+    },
+    {
+      "text": "Add the declared-additions record and extend the comparison in the root flake.nix, with its two new plants.",
+      "pause": 300
+    },
+    {
+      "text": "Run the cheap local legs listed below, fold fixes into the one patch, and hand the candidate over for review.",
+      "pause": 300
+    },
+    {
+      "text": "The pull request is a stacked patch series: one patch for these pages, one patch for the code. No journey commits are pushed.",
+      "pause": 400
+    }
+  ],
+  "invariants-and-what-makes-them-fail": [
+    {
+      "text": "Invariants and what makes them fail.",
+      "pause": 500
+    },
+    {
+      "text": "Each name is stable and appears in the tasks.",
+      "pause": 400
+    },
+    {
+      "text": "The permanent boundary collects application contexts from trace lines that the open-datum tests print; it requires exactly four. The new rows must not print such a line, and they must not call the helper that prints it.",
+      "pause": 400
+    }
+  ],
+  "hosted-checks-that-accept-the-work": [
+    {
+      "text": "Hosted checks that accept the work.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the continuous integration itself: each row names the job and the verbatim command. The local leg is the cheap command run before the push; the hosted jobs run once on the pushed head, and no hosted job is repeated locally.",
+      "pause": 400
+    },
+    {
+      "text": "The synthesis of the two independent gate tables, with the cited red runs, is kept in the ticket's runtime record. A line without a hosted command is a missing job and is raised as a question, never replaced by a local check.",
+      "pause": 400
+    }
+  ],
+  "two-checks-outside-the-repository": [
+    {
+      "text": "Two checks outside the repository.",
+      "pause": 500
+    },
+    {
+      "text": "Two checks belong to the author of the change, not to the repository, and are run before the push from the runtime record: the diff names only files in the touch list, and the diff of open_datum.ak against main has no deleted line and a single hunk after the old last line. The product proof of the second is the unmoved hash.",
+      "pause": 400
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "The registry contract under onchain/ and its script hashes, the registry library, the singular commands, the open-datum executable and its Haskell sources including the files other open work is changing (wallet preparation and signing), tools/check_release.py (it names no titles), tools/m1_identity.py and the generated permanent records (they select the three open-datum titles exactly), the negative-host sources, every workflow, and all Lean.",
+      "pause": 400
+    }
+  ],
+  "residuals-this-change-leaves-written-before-the-work": [
+    {
+      "text": "Residuals this change leaves, written before the work.",
+      "pause": 500
+    },
+    {
+      "text": "The compiled closed-datum code is not run over the permanent boundary's ledger-shaped contexts here; the node's refusal is the negative-host ticket.",
+      "pause": 300
+    },
+    {
+      "text": "The write-once rule has no Lean statement, by ruling.",
+      "pause": 300
+    },
+    {
+      "text": "The compiled closed-datum validator is pinned and carried but not selectable by a person until the executable ticket lands.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "3005f599f41e1f83f05145cab20734e24d6a46e936c3bd56b5affc9a7609c983"
+  }
+}
