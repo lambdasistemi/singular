@@ -5,8 +5,8 @@
 # Every control runs on a scratch copy of the Cabal file and the allowlist;
 # the tree itself is never touched. Each planted dependency reaches the
 # `library ledger-client` stanza by one Cabal syntax: the literal field, an
-# imported common stanza, a common stanza imported by a common stanza, a
-# conditional, a second field. A package absent from the allowlist
+# imported common stanza (also on a continuation line of `import:`), a common
+# stanza imported by a common stanza, a conditional, a second field. A package absent from the allowlist
 # (`http-conduit`, an HTTP client the old fixed list did not name) must fail
 # by each of them; the same package in a stanza the library does not import
 # must not.
@@ -53,6 +53,15 @@ plant_common() {
 "
   after_header "  import: planted-deps"
 }
+# A second import on a continuation line of the `import:` field.
+plant_continued_import() {
+  before_header "common planted-deps
+  build-depends:
+    , $1
+"
+  after_header "  import: warnings,
+          planted-deps"
+}
 plant_nested_common() {
   before_header "common planted-inner
   build-depends:
@@ -90,48 +99,54 @@ expect clean-tree 0 '^PASS ledger-client-dependencies'
 
 fresh
 plant_literal singular-registry:local-services
-expect planted-component 1 'depends on singular-registry:local-services .*may not be a dependency'
+expect planted-component 1 'depends on singular-registry:local-services: .*may not be a dependency'
 
 fresh
 plant_literal singular-registry
-expect planted-main-library 1 'depends on singular-registry .*may not be a dependency'
+expect planted-main-library 1 'depends on singular-registry: .*may not be a dependency'
 
 # The category the old fixed list could not enumerate.
 fresh
 plant_literal http-conduit
-expect unlisted-literal 1 'depends on http-conduit .*not in tools/ledger-client-dependencies.allow'
+expect unlisted-literal 1 'depends on http-conduit: .*not in tools/ledger-client-dependencies.allow'
 fresh
 plant_same_line http-conduit
-expect unlisted-same-line 1 'depends on http-conduit .*not in tools/ledger-client-dependencies.allow'
+expect unlisted-same-line 1 'depends on http-conduit: .*not in tools/ledger-client-dependencies.allow'
 fresh
 plant_conditional http-conduit
-expect unlisted-conditional 1 'depends on http-conduit .*not in tools/ledger-client-dependencies.allow'
+expect unlisted-conditional 1 'depends on http-conduit: .*not in tools/ledger-client-dependencies.allow'
 fresh
 plant_common http-conduit
-expect unlisted-imported-common 1 "depends on http-conduit \\(declared in common planted-deps\\).*not in tools/ledger-client-dependencies.allow"
+expect unlisted-imported-common 1 "depends on http-conduit: .*not in tools/ledger-client-dependencies.allow"
+fresh
+plant_continued_import http-conduit
+expect unlisted-continued-import 1 "depends on http-conduit: .*not in tools/ledger-client-dependencies.allow"
+fresh
+plant_continued_import directory
+expect forbidden-continued-import 1 "depends on directory: .*directory is forbidden"
 fresh
 plant_nested_common http-conduit
-expect unlisted-nested-common 1 "depends on http-conduit \\(declared in common planted-inner\\).*not in tools/ledger-client-dependencies.allow"
+expect unlisted-nested-common 1 "depends on http-conduit: .*not in tools/ledger-client-dependencies.allow"
 
 for package in directory filepath unix process network http-client \
   http-client-tls wai warp cardano-tx-tools cardano-tx-tools:tx-build; do
   fresh
   plant_literal "$package"
-  expect "planted-$package" 1 "depends on $package .*${package%%:*} is forbidden"
+  expect "planted-$package" 1 "depends on $package: .*${package%%:*} is forbidden"
   fresh
   plant_common "$package"
-  expect "planted-$package-in-common" 1 "depends on $package \\(declared in common planted-deps\\).*${package%%:*} is forbidden"
+  expect "planted-$package-in-common" 1 "depends on $package: .*${package%%:*} is forbidden"
 done
 
 # The allowlist cannot admit what is forbidden.
 fresh
 plant_literal directory
 printf 'directory: control\n' >>"$scratch/t/tools/ledger-client-dependencies.allow"
-expect allowlisted-forbidden 1 'depends on directory .*directory is forbidden'
+expect allowlisted-forbidden 1 'depends on directory: .*directory is forbidden'
 fresh
 plant_literal singular-registry:local-services
 printf 'singular-registry:local-services: control\n' >>"$scratch/t/tools/ledger-client-dependencies.allow"
-expect allowlisted-component 1 'depends on singular-registry:local-services .*may not be a dependency'
+expect allowlisted-component 1 'depends on singular-registry:local-services: .*may not be a dependency'
 
 # A reviewed addition passes; the same addition in a stanza the library
 # does not import is not a dependency of the library.
@@ -154,11 +169,11 @@ expect stale-entry 1 "allowlist: 'no-such-package' is no dependency of ledger-cl
 
 fresh
 sed -i 's/^library ledger-client$/library ledger-client-gone/' "$(cabal)"
-expect no-stanza 2 "^SETUP-FAIL: no 'library ledger-client' stanza"
+expect no-stanza 2 "^SETUP-FAIL: Cabal cannot resolve 'library ledger-client'.*no sublibrary ledger-client"
 
 fresh
 after_header "  import: no-such-common"
-expect missing-common 2 '^SETUP-FAIL: no stanza common no-such-common'
+expect missing-common 2 "^SETUP-FAIL: Cabal cannot resolve 'library ledger-client'.*does not parse"
 
 fresh
 rm "$scratch/t/tools/ledger-client-dependencies.allow"

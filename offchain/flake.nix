@@ -264,6 +264,30 @@
           '';
         };
 
+        # The ledger client core's dependency guard and its controls as flake
+        # apps. The guard reads the library's direct dependencies from Cabal's
+        # own parser (tools/ledger_client_dependencies_resolve.hs, run with the
+        # pinned compiler), so they run from the repository root under the
+        # pinned toolchain without entering a dev shell.
+        ledgerClientDependenciesRuntime = [
+          project.project.pkg-set.config.ghc.package
+          pkgs.bash
+          pkgs.coreutils
+          pkgs.gawk
+          pkgs.gnugrep
+          pkgs.gnused
+        ];
+        ledgerClientDependenciesApp =
+          name: script:
+          pkgs.writeShellApplication {
+            inherit name;
+            runtimeInputs = ledgerClientDependenciesRuntime;
+            text = ''
+              [ -f tools/${script} ] || { echo "${name}: run from the repository root (no tools/${script} here)" >&2; exit 2; }
+              bash tools/${script} "$PWD"
+            '';
+          };
+
         # The bounded journey runner (D-012). A Nix-built binary —
         # haskell.nix resolves every dependency, so a clean runner
         # needs no cabal, no package index and no warm state (D-011)
@@ -756,6 +780,19 @@
           registry-cli-build-graph-controls = {
             type = "app";
             program = pkgs.lib.getExe registryCliBuildGraphControlsApp;
+          };
+          # The ledger client core's dependency guard and its controls.
+          ledger-client-dependencies-check = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              ledgerClientDependenciesApp "ledger-client-dependencies-check" "ledger_client_dependencies_check.sh"
+            );
+          };
+          ledger-client-dependencies-controls = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              ledgerClientDependenciesApp "ledger-client-dependencies-controls" "ledger_client_dependencies_controls.sh"
+            );
           };
         };
 

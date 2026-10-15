@@ -9,12 +9,13 @@
 # free of signing, wallet, file, process and network code, and of the
 # transaction-building package, or it cannot move out unchanged.
 #
-# What is read is the stanza's resolved direct dependencies: its own
-# `build-depends` fields, in conditionals too, and those of every `common`
-# stanza it imports, followed through imports of imports. A dependency
-# declared by any of these counts the same.
+# What is judged is the set of direct dependencies Cabal itself resolves for
+# that stanza (a small program run with runghc, which uses Cabal's own
+# parser): imported common stanzas, continued fields and conditionals included.
+# This script reads no Cabal text of its own, so a spelling it does not model
+# cannot hide a dependency.
 #
-# Refuses (exit 1, naming the offender and where it is declared):
+# Refuses (exit 1, naming the offender):
 #   * a dependency that tools/ledger-client-dependencies.allow does not list:
 #     whether a package belongs to a forbidden category cannot be enumerated
 #     by name, so each addition is a reviewed edit of the allowlist;
@@ -22,14 +23,17 @@
 #     when the allowlist lists them: the allowlist cannot admit them;
 #   * an allowlist entry with no reason, or that names no dependency of the
 #     library: an exemption nothing needs is a hole waiting for a use.
-# Exit 2 on a setup failure: no Cabal file or allowlist, no such stanza, an
-# imported common stanza that does not exist, no dependencies.
+# Exit 2 on a setup failure: no Cabal file or allowlist, no runghc, Cabal
+# cannot resolve the stanza (not found, file does not parse), no dependencies.
 #
-# This names the dependencies the library declares; what a transitive
-# dependency links is the package solver's business, not read here.
+# This judges the dependencies the library declares directly; what a
+# transitive dependency links is the package solver's business, not read here.
 #
 # Usage: tools/ledger_client_dependencies_check.sh [repo-root]
 set -euo pipefail
+
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
 
 forbidden=(
   directory filepath unix process network
@@ -47,86 +51,111 @@ for f in "$cabal" "$allow"; do
   fi
 done
 
-if ! grep -qE '^library ledger-client[[:space:]]*$' "$cabal"; then
-  echo "SETUP-FAIL: no 'library ledger-client' stanza in $cabal" >&2
+if ! command -v runghc >/dev/null 2>&1; then
+  echo "SETUP-FAIL: runghc is not on PATH; run through nix run ./offchain#ledger-client-dependencies-check" >&2
   exit 2
 fi
 
-# One line per resolved dependency: "<dependency><TAB><stanza declaring it>",
-# or "SETUP<TAB><message>". Stanzas are keyed "library <name>" or
-# "common <name>"; a field's continuation lines run to the next field, the
-# next conditional keyword or the next stanza.
-resolved=$(awk '
-  function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
-  function add_deps(text,   n, i, parts) {
-    n = split(text, parts, ",")
-    for (i = 1; i <= n; i++) {
-      parts[i] = trim(parts[i])
-      if (parts[i] != "") deps[cur] = deps[cur] parts[i] "\n"
-    }
-  }
-  function add_imports(text,   n, i, parts) {
-    gsub(/,/, " ", text)
-    n = split(text, parts, " ")
-    for (i = 1; i <= n; i++) if (parts[i] != "") imports[cur] = imports[cur] parts[i] "\n"
-  }
-  function walk(key,   n, i, lines, name) {
-    if (key in seen) return
-    seen[key] = 1
-    if (!(key in exists)) { print "SETUP\t" "no stanza " key; return }
-    n = split(deps[key], lines, "\n")
-    for (i = 1; i <= n; i++) if (lines[i] != "") print lines[i] "\t" key
-    n = split(imports[key], lines, "\n")
-    for (i = 1; i <= n; i++) if (lines[i] != "") walk("common " lines[i])
-  }
-  /^[[:space:]]*(--.*)?$/ { next }
-  /^[^[:space:]]/ {
-    in_deps = 0
-    kind = $1; sub(/:$/, "", kind)
-    if (kind == "library" || kind == "common") {
-      cur = kind " " (NF > 1 ? $2 : "singular-registry")
-      exists[cur] = 1
-    } else {
-      cur = ""
-    }
-    next
-  }
-  cur == "" { next }
-  {
-    line = $0
-    if (line ~ /^[[:space:]]+(if|elif|else)([[:space:](]|$)/) { in_deps = 0; next }
-    if (line ~ /^[[:space:]]+[A-Za-z][A-Za-z0-9-]*:/) {
-      in_deps = 0
-      field = tolower(trim(substr(line, 1, index(line, ":") - 1)))
-      value = substr(line, index(line, ":") + 1)
-      if (field == "build-depends") { in_deps = 1; add_deps(value) }
-      else if (field == "import") add_imports(value)
-      next
-    }
-    if (in_deps) add_deps(line)
-  }
-  END { walk("library ledger-client") }
-' "$cabal")
+# Cabal's own parser expands imported common stanzas, continued fields and
+# every field spelling, and the description is flattened over both sides of
+# every conditional. The program below only prints what Cabal resolved, one
+# package (or package:component) per line; it decides nothing.
+resolver="$scratch/resolve.hs"
+cat >"$resolver" <<'HASKELL'
+{- |
+Module      : Main
+Description : The direct dependencies Cabal resolves for one sublibrary
+License     : Apache-2.0
+
+Prints, one per line, the packages (@package@ or @package:component@) that
+Cabal itself lists as direct dependencies of the named sublibrary of a Cabal
+file. The check script judges the result; this program decides nothing.
+
+Usage: runghc resolve.hs CABAL-FILE SUBLIBRARY
+Exit 2 when the file does not parse or the sublibrary does not exist.
+-}
+module Main (main) where
+
+import Data.ByteString qualified as BS
+import Data.Foldable (toList)
+import Data.List (nub, sort)
+import Distribution.Package (unPackageName)
+import Distribution.PackageDescription
+    ( BuildInfo (targetBuildDepends)
+    , Library (libBuildInfo, libName)
+    , PackageDescription (subLibraries)
+    )
+import Distribution.PackageDescription.Configuration
+    ( flattenPackageDescription
+    )
+import Distribution.PackageDescription.Parsec
+    ( parseGenericPackageDescriptionMaybe
+    )
+import Distribution.Types.Dependency (Dependency, depLibraries, depPkgName)
+import Distribution.Types.LibraryName (LibraryName (..))
+import Distribution.Types.UnqualComponentName
+    ( mkUnqualComponentName
+    , unUnqualComponentName
+    )
+import System.Environment (getArgs)
+import System.Exit (ExitCode (ExitFailure), exitWith)
+import System.IO (hPutStrLn, stderr)
+
+main :: IO ()
+main = do
+    args <- getArgs
+    case args of
+        [file, name] -> do
+            parsed <-
+                parseGenericPackageDescriptionMaybe <$> BS.readFile file
+            description <- case parsed of
+                Just generic -> pure (flattenPackageDescription generic)
+                Nothing -> do
+                    hPutStrLn stderr (file <> " does not parse as a Cabal file")
+                    exitWith (ExitFailure 2)
+            case [ lib
+                 | lib <- subLibraries description
+                 , libName lib == LSubLibName (mkName name)
+                 ] of
+                [lib] ->
+                    mapM_ putStrLn . sort . nub $
+                        concatMap
+                            render
+                            (targetBuildDepends (libBuildInfo lib))
+                _ -> do
+                    hPutStrLn stderr $
+                        "no sublibrary " <> name <> " in " <> file
+                    exitWith (ExitFailure 2)
+        _ -> do
+            hPutStrLn stderr "usage: CABAL-FILE SUBLIBRARY"
+            exitWith (ExitFailure 2)
+  where
+    mkName = mkUnqualComponentName
+
+render :: Dependency -> [String]
+render dependency =
+    [ package <> case component of
+        LMainLibName -> ""
+        LSubLibName sub -> ":" <> unUnqualComponentName sub
+    | component <- toList (depLibraries dependency)
+    ]
+  where
+    package = unPackageName (depPkgName dependency)
+
+HASKELL
+
+if ! resolved=$(runghc "$resolver" "$cabal" ledger-client 2>"$scratch/err"); then
+  echo "SETUP-FAIL: Cabal cannot resolve 'library ledger-client' in $cabal: $(cat "$scratch/err")" >&2
+  exit 2
+fi
 
 status=0
-declare -A used=() origin=()
+declare -A used=()
 count=0
-while IFS=$'\t' read -r dep where; do
+while IFS= read -r dep; do
   [ -n "$dep" ] || continue
-  if [ "$dep" = SETUP ]; then
-    echo "SETUP-FAIL: $where in $cabal" >&2
-    exit 2
-  fi
   count=$((count + 1))
-  case "$dep" in *[{}]*)
-    echo "ledger-client depends on '$dep' (declared in $where): a brace set of components cannot be checked; list each component" >&2
-    status=1
-    continue
-    ;;
-  esac
-  name=${dep%%[[:space:]<>=^]*}
-  used[$name]=1
-  origin[$name]=$where
+  used[$dep]=1
 done <<<"$resolved"
 
 if [ "$count" -eq 0 ]; then
@@ -165,22 +194,21 @@ for pkg in "${!allowed[@]}"; do
 done
 
 for name in "${!used[@]}"; do
-  where=${origin[$name]}
   case "$name" in
     singular-registry | singular-registry:*)
-      echo "ledger-client depends on $name (declared in $where): the Singular component $name may not be a dependency" >&2
+      echo "ledger-client depends on $name: the Singular component $name may not be a dependency" >&2
       status=1
       continue
       ;;
   esac
   for bad in "${forbidden[@]}"; do
     if [ "${name%%:*}" = "$bad" ]; then
-      echo "ledger-client depends on $name (declared in $where): $bad is forbidden in the ledger client core" >&2
+      echo "ledger-client depends on $name: $bad is forbidden in the ledger client core" >&2
       status=1
     fi
   done
   if [ -z "${allowed[$name]:-}" ]; then
-    echo "ledger-client depends on $name (declared in $where): $name is not in tools/ledger-client-dependencies.allow" >&2
+    echo "ledger-client depends on $name: $name is not in tools/ledger-client-dependencies.allow" >&2
     status=1
   fi
 done
@@ -190,4 +218,4 @@ if [ $status -ne 0 ]; then
   exit 1
 fi
 
-echo "PASS ledger-client-dependencies: $count resolved direct dependencies, all allowlisted, none a Singular component or a forbidden package"
+echo "PASS ledger-client-dependencies: $count direct dependencies resolved by Cabal, all allowlisted, none a Singular component or a forbidden package"

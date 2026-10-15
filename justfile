@@ -259,7 +259,7 @@ node-confinement-controls:
 
 # Check the ledger client core library's direct dependencies.
 ledger-client-dependencies:
-    bash tools/ledger_client_dependencies_check.sh
+    nix run --quiet ./offchain#ledger-client-dependencies-check
 
 # Its controls, on scratch copies of the Cabal file and the allowlist: a
 # planted Singular component, each forbidden package and an unlisted package
@@ -270,4 +270,4 @@ ledger-client-dependencies:
 
 # Run the ledger client dependency check's negative and positive controls.
 ledger-client-dependencies-controls:
-    bash tools/ledger_client_dependencies_controls.sh
+    nix run --quiet ./offchain#ledger-client-dependencies-controls

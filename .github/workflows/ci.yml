@@ -511,8 +511,8 @@ jobs:
       - run: nix develop --quiet -c bash tools/no-global-fixture-state.sh
       - run: nix develop --quiet -c just node-confinement
       - run: nix develop --quiet -c just node-confinement-controls
-      - run: nix develop --quiet -c just ledger-client-dependencies
-      - run: nix develop --quiet -c just ledger-client-dependencies-controls
+      - run: nix run --quiet ./offchain#ledger-client-dependencies-check
+      - run: nix run --quiet ./offchain#ledger-client-dependencies-controls
       - run: nix develop --quiet -c just io-ownership-check
       - run: nix develop --quiet -c just io-ownership-controls
       - run: nix develop --quiet -c just lint-controls

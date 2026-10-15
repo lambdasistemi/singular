@@ -1,9 +1,9 @@
 # Direct dependencies of `library ledger-client` (tools/ledger_client_dependencies_check.sh).
 # One per line: <package>[:<component>]: <why the ledger client core needs it>.
-# A dependency absent from this file fails the check, so a new dependency is a
-# reviewed edit here. A Singular component, a file, process, POSIX or network
-# package, an HTTP client or server and cardano-tx-tools are refused even when
-# listed.
+# Every direct dependency must be listed here with a reason, so a new
+# dependency is a reviewed edit. A Singular component, directory, filepath,
+# unix, process, network, http-client, http-client-tls, wai, warp and
+# cardano-tx-tools are refused even when listed.
 aeson: JSON encodings of network time and trace events
 base: the language
 base16-bytestring: hex rendering of hashes in network time and traces
