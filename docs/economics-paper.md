@@ -1,79 +1,124 @@
-# Economics of protected rejection
+# Singular: registry design and economics
 
-As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.
+As a reviewer, read this page to learn what a registration or termination commits, where its tokens and lovelace go, and which promises have checked evidence. The paper explains the complete mechanism, its assumptions and its counterexamples: <a href="../economics-paper.pdf">download the paper PDF</a>. The documentation build compiles the PDF from the committed LaTeX sources using the `llncs` class.
 
-The full draft lives beside this page as a PDF: <a href="https://lambdasistemi.github.io/singular/docs/economics-paper.pdf">economics-paper.pdf</a>. It is built from LaTeX sources under `paper/economics` by the documentation build, so the PDF on the site always matches the committed sources.
+**Implementation standing: not yet conformant.** The validators and builders still implement superseded economic rules. The [conformance evidence](conformance-evidence.md) keeps affected requirements unmet; a Lean proof is not a ledger receipt or deployment acceptance.
+
+## The mechanism at a glance
+
+The registry records a permanent lifecycle. Registration changes an unknown key to active; termination changes an active key to terminal. The application authorizes registration and controls the resulting singular tag. It consents to termination by releasing that genuine tag into a request. Singular does not judge the application's release rule. Checked lifecycle and custody evidence appears in the declaration register below.
 
 ```mermaid
 flowchart TD
-    B[Request booked against a recorded root<br/>holds deposit, bond, tip] --> Q{How does it leave the queue?}
-    Q -- folded --> F[Fold]
-    Q -- owner takes it back in the reclaim window --> T[Retraction]
-    Q -- processor rejects --> J{Which ground, which proof?}
-    J -- mismatch proved against the recorded root --> RF[Rejection with fault<br/>bond forfeited and split]
-    J -- mismatch without proof --> RN[Rejection without proof<br/>bond refunded]
-    J -- expired --> RE[Rejection on expiry<br/>bond refunded]
+    U[Unknown key] -->|Registration fold| A[Active key]
+    A -->|Termination fold| T[Terminal key]
 ```
 
-## Who this is for
+Pending requests occupy their own outputs. Folds spend and continue the registry state output. Rejection reads that output by reference and spends only the rejected registrations. It needs a current lifecycle mismatch or expiry after both registration windows. Compatible registrations are protected through the reclaim window; a lost race can create a mismatch earlier. A termination has no rejection, retraction or expiry exit.
 
-A reviewer who was not part of the design and wants the whole economic mechanism on one page before opening the paper: which amounts move in each outcome, which parameters the creator sets, and which statements are proved, argued by hand, or kept as counterexamples.
+## Requests, tokens and clocks
 
-## Abstract
+Let R be the registration cost, t the declared tip, and a the declared carrier lovelace. Booking enforces the fixed minimum tip. The carrier amount follows actual ledger minimum rules; the model proves exact declared amounts and does not compute those minima.
 
-A permissionless registry lets anyone fold a queued request into shared state, so a request that waits in the queue can be cancelled by a stranger who collects the fee for the slot. The paper gives the economic rules of one such registry. Every request carries a bond beside its deposit. A processor that rejects a request forfeits the bond only when it proves, against the state root the request recorded at booking, that the request was already faulty then; any other rejection refunds the bond. The forfeited bond is split between the proving processor and the treasury. A fold that terminates a key donates a termination fee to the treasury. The paper states each property as a definition with a theorem, gives the transfer function as one table, derives every parameter constraint as an inequality with a worked example in lovelace, and lists exactly what the mechanism does not price, with counterexamples.
-
-## Format and sources
-
-The paper is written in LaTeX and built into this site by a Nix derivation. The intended style is the LIPIcs class, which is not shipped in the pinned TeX Live set, so this draft uses the `llncs` class from TeX Live and says so here. The bibliography holds only verified entries: a located whitepaper that could not be found is not cited, and a griefing survey whose author name is unconfirmed is not cited until its author is confirmed.
-
-## What each outcome pays
-
-The transfer function, net per party and excluding the value of the key itself. The deposit returns to the owner except where the edge rule routes it; the bond returns except on a proved fault. The tip returns on a retraction and pays the processor on everything else.
-
-| Outcome | Requester | Processor | Treasury |
-|---|---|---|---|
-| Fold | tip and booking fee lost; bond returned | tip minus fold fee | termination fee per terminated key |
-| Retraction | booking and retraction fees lost; deposit, tip and bond returned | nothing | nothing |
-| Rejection with fault proved | bond, tip and booking fee lost; deposit returned | tip plus processor share minus rejection fee | bond minus processor share |
-| Rejection without proof | tip and booking fee lost; deposit and bond returned | tip minus rejection fee | nothing |
-| Rejection on expiry | tip and booking fee lost; deposit and bond returned | tip minus rejection fee | nothing |
-
-The processor share of a forfeited bond is the floor of the split times the bond; the treasury receives the remainder, so the two shares always add up to the bond exactly. A donation that is zero is omitted from the transaction, since the donation field accepts only positive amounts.
-
-## Theorem to Lean mapping
-
-For this draft the table is written from the reviewed plan, with every row marked not yet mechanized. The generator that derives the table from the audit report arrives with the model; until then the names below are the planned declarations, checked against the plan page, and the files are fixed: theorems and kept counterexamples live in the statements module the axioms guard, definitions in the economics module.
-
-| Lean name | What it states | Status |
+| Request | Exact holdings | Clock and exits |
 |---|---|---|
-| `transfer_conserves` | owner floor, treasury floor and processor ceiling add up to the request holdings in every outcome | not yet mechanized |
-| `forfeit_shares_add_up` | processor share plus treasury share equals the bond exactly | not yet mechanized |
-| `treasury_share_positive` | with the split below one and a positive bond the treasury share is positive | not yet mechanized |
-| `parameters_preserved_by_fold` | bond, split and termination fee are equal before and after every fold | not yet mechanized |
-| `fold_returns_bond` | a fold owes the owner the bond | not yet mechanized |
-| `retraction_returns_everything` | a retraction owes deposit, tip and bond | not yet mechanized |
-| `expiry_never_forfeits` | a rejection on the expiry ground owes the owner deposit and bond | not yet mechanized |
-| `termination_donates_fee` | a fold that terminates a key owes the treasury at least the fee per terminated key, also in a batch | not yet mechanized |
-| `zero_owed_means_no_donation` | a zero owed amount imposes no donation, so the field can be omitted | not yet mechanized |
-| `forfeit_requires_fault_at_booking` | a rejection that forfeits carries a map whose commitment is the recorded booking root and in which the edge has no successor at the key | not yet mechanized |
-| `no_proof_no_forfeit` | a rejection without a valid booking proof owes the owner deposit and bond | not yet mechanized |
-| `known_stays_known` | a known key never becomes unknown, so a fault at booking of a registration persists as a mismatch | not yet mechanized |
-| `honest_requester_keeps_bond` | a request that passed the booking admission against a reachable state where its edge was admissible loses no deposit and no bond to any admitted rejection | not yet mechanized |
-| `honest_payoff_floor` | the requester lovelace outcome is at least minus the tip, before fees | not yet mechanized |
-| `live_compatible_request_protected` | no request that can be folded now can be rejected before expiry | not yet mechanized |
-| `rejection_without_proof_processor_cap` | on a rejection without proof the processor keeps at most the tip | not yet mechanized |
-| `self_rejection_cost` | a requester that is also the processor of its own faulty request loses at least the treasury share | not yet mechanized |
-| `termination_cost_floor` | ending a key as terminal costs at least the fee; the deposit comes back | not yet mechanized |
-| `duplicate_bookings_cost_only_tip` | concurrent bookings of one untaken key are all admissible at the booking root; the losers cost their tip, not the bond; kept as a counterexample | not yet mechanized |
-| `rejection_requires_no_signer` | a rejection requires no signer, so anyone may submit it, the owner of an expired request included | not yet mechanized |
-| `owner_exit_after_expiry` | after the reclaim window the owner exits by rejecting its own request on the expiry ground and pays only fees | not yet mechanized |
-| `full_processor_split_costs_nothing` | with the split equal to one a self-rejecting requester pays nothing; kept to show the constraint | not yet mechanized |
-| `honest_loses_tip_on_race` | a requester that lost a race loses its tip; fixes the scope of the honesty theorem | not yet mechanized |
-| `key_capture_not_priced` | a front-runner that registers the key first is not charged for the capture; kept as a counterexample | not yet mechanized |
+| Registration | R + t + a lovelace, one application tag and one trie-ready tag | Booked time is the upper end of a nonempty interval of bounded width. Fold, signed retraction or rejection. |
+| Termination | t + a lovelace, the genuine singular tag and one trie-ready tag; no application tag | No booked time or refund address. Fold only. |
 
-Flood cost per faulty request, the griefing factor bound, the processor incentive to clear faults, and the collusion bounds are inequalities derived by hand from the transfer lemmas, since they speak of key value, opportunity cost and fee volatility, which the model does not contain. The paper labels each as a hand argument.
+A registration's application tag commits to its payload and nonce; its trie-ready tag commits to the operation and the same nonce. Both are minted in the same booking and burned on every exit. Application tags minted elsewhere are outside Singular's supply guarantee and cannot substitute for this booking. Termination booking moves the singular tag from custody; its fold burns that tag and the trie-ready tag. A registration fold mints the singular tag at the booked destination with the declared carrier and datum.
 
-## Limitations in one paragraph
+The fixed parameters are registration cost, minimum tip, maximum booking width, processing and reclaim windows, policy bindings and registry identity. The minimum tip retains the wire key `maxFee`. There is no parameter-update or migration authority. The paper treats the maximum booking width being smaller than the processing window as a sizing criterion, distinct from the checked booking-width bound.
 
-Four facts bound the design: duplicate concurrent bookings cost the tip plus fees, not the bond; squatting a key without terminating it is not priced by the termination fee, and the defence is the application approval policy, stated as an assumption; a zero donation cannot be expressed, so the field is omitted; the tip returns on a retraction and pays the processor on every other outcome. The paper lists every property that does not hold with its counterexample, and states the safe price ranges, the liveness hazards, and the model-to-validator correspondence as an assumption with its gaps.
+## Every exit and every amount
+
+**Existing checked declaration:** fold routing separates state continuation, exact carrier outputs, donation and ordinary funding. With ordinary inputs I, ordinary outputs O, total tips T and ledger fee f, it proves O + f = I + T and f ≤ I. Donation equals the registration costs plus held-minus-tip for every termination. Ordinary change remains a separate output even at a carrier's address.
+
+| Exit | Allocation and evidence limit |
+|---|---|
+| Registration folded | R to the treasury, a and the singular tag to the destination, t as gross ordinary allocation. |
+| Registration rejected | Each refund address gets at least the sum of R + a for its distinct rejected requests. The model makes no exact processor-reward claim. |
+| Registration retracted | The checked floor returns all held lovelace, tip included, and burns both tags. Retraction paying a ledger fee is missing mechanization. |
+| Termination folded | Held minus tip to the treasury, tip as gross ordinary allocation; no refund or destination output. |
+
+**Hand proof supplied:** subtracting in the integers gives O − I = T − f. If the processor owns the ordinary funding pool and no other role, that is its monetary net before external costs. It is not a wealth statement about every address receiving an output. The paper's separate net-payoff table includes the booking fee, destination carrier and treasury donation; its rows sum to minus ledger fees, not to request holdings.
+
+Rejection refunds are added per address, with distinct request inputs and one shared interval. A repeated input or one live compatible member refuses the entire batch. A fold that lands first spends the referenced state output, so an in-flight rejection must be rebuilt; no starvation bound is proved.
+
+A zero donation omits the field. Conway transaction-body field 22 accepts a positive donation; optional field 21 is the separate current-treasury assertion. Donation alone does not assert the current treasury balance. The paper cites the exact [Conway CDDL revision](https://github.com/IntersectMBO/cardano-ledger/blob/8909b60669705039603c5407afc18e8a860288b1/eras/conway/impl/cddl/data/conway.cddl) and its [treasury-value check](https://github.com/IntersectMBO/cardano-ledger/blob/8909b60669705039603c5407afc18e8a860288b1/eras/conway/impl/src/Cardano/Ledger/Conway/Rules/Ledger.hs).
+
+## What is checked, and at what strength
+
+**Existing checked declaration** means the register below quotes the declaration's fresh axiom result at the exact model pin. **Hand proof supplied** means the paper gives an argument and its premises. **Proposed statement** means a conditional design or sizing criterion. **Missing mechanization** marks an unproved boundary. These four labels do not imply implementation conformance.
+
+The exact model revision is `303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d`, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.
+
+| Property | Status and actual scope |
+|---|---|
+| Fixed parameters | Existing checked declaration for the original registry step and batch; the paper supplies the argument through the economic fold's explicit projection. |
+| Rejection preserves the registry | Existing checked declaration for arbitrary accepted economic rejection, including state, termination pool and singular supply. |
+| Rejection before a fold | Existing checked declaration preserves the original admitted registry fold and its needed outputs under disjointness. Whole economic-fold and ledger validity are missing mechanization. |
+| Live protection | Existing checked declaration protects compatible pending registrations until expiry; booking time is not before inclusion. A mismatch is outside that premise. |
+| Current-state evidence | Existing checked declaration requires the actual unspent reference, exact state token, inline configuration and current root. |
+| Refund floors | Existing checked declarations sum held-minus-tip per rejection address and return full held value on accepted retraction. They do not prove positive-fee retraction or exact rejection reward. |
+| Registration charge | Existing checked declarations bound donation by the number of registrations times R and include R in failed-registration refund floors. |
+| Unrejectable termination | Existing checked declaration rules out both rejection grounds for a genuine pending termination. |
+| One pending termination per key | Existing checked declaration counts supply across custody and pending requests. |
+| Booked termination provenance | Existing checked declaration traces a folded termination to genuine custody release at an accepted booking. The application's rule is external. |
+| Termination availability | Existing checked declaration constructs a coherent unspent set and transaction at any model time, assuming willing processing, fee within tip and sufficient ordinary funding. It does not establish live funds, ledger minima or inclusion. |
+| Processor cap | Existing checked declaration bounds fold ordinary outputs by ordinary inputs plus tips. It is neither a positive wage nor a theorem about all exits. |
+| Measured minimum tip | Proposed statement; missing mechanization and measurements. The fee envelope must include the reference read and required refund output. |
+
+## Limitations and counterexamples
+
+**Missing mechanization: retraction paying a ledger fee.** The current retraction judgement permits exactly one request input and requires its full refund. A request holding 3,000,000 lovelace cannot return that amount and pay a 170,000 fee in a balanced transaction. An ordinary funding input is refused. The checked floor remains true; real-ledger retractability is not established, and affected acceptance remains open.
+
+**Hand proof supplied: conditional rejection cap.** The refund promise is a floor, not an exact split; a processor may leave some tip to the requester. If the transaction additionally balances with zero donation, all outputs outside its refund addresses plus its fee total at most the tips. The paper derives this bound from the summed floors and names balance as an extra premise. Its exact-refund net-payoff illustration is also conditional, not a claim about every accepted rejection.
+
+**Hand proof supplied:** a self-rejecting funder can make the tip an internal transfer, so the design has no universal treasury flood price. Successful junk folds still pay R and occupy turns. Two registrations can race for one key; the loser retains its refund floor, not priority or ownership. A processor's fee can exceed the tip. A rejection sharing a request input with a proposed fold can invalidate that fold despite preserving the state output. Repeated folds can invalidate rejection references indefinitely.
+
+**Proposed statement:** the minimum tip should cover measured singleton costs within a declared ledger envelope. The paper derives conditional inequalities for costs and windows, without assuming a minimum service rate or full batches. No measurements establish the selected registration cost, minimum tip or booking-width bound. A later fee or output-minimum change can invalidate the envelope.
+
+The application's release rule and custody integration, the open-datum adaptation, the cardano-keri adaptation and validator/builder correspondence with live receipts remain open. The singular tag's fate is decided: mint and delivery on registration, movement at termination booking, burn at termination fold. No key-ownership, squatting, inclusion, priority or application-security guarantee follows from Singular's token counts.
+
+## Checked declaration register
+
+The entries below are generated from a fresh run of `lake env lean tools/axioms.lean` over the pinned source, with every cited name confirmed by `git show` at that revision. Each row uses the full revision above and quotes its axiom line verbatim. Standard axioms are printed as observed; none of these entries contains an additional axiom or `sorryAx`. Definitions and supplied hand arguments are distinguished from checked declarations in the paper.
+
+<!-- checked-declarations -->
+
+| Pinned source | Verbatim axiom result |
+|---|---|
+| [Termination.lean:141](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Termination.lean#L141) | `AXIOMS Singular.Statements.at_most_one_pending_termination [propext, Quot.sound, Classical.choice]` |
+| [Booking.lean:13](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Booking.lean#L13) | `AXIOMS Singular.Statements.booked_request_has_exact_contents [propext, Quot.sound, Classical.choice]` |
+| [Booking.lean:192](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Booking.lean#L192) | `AXIOMS Singular.Statements.booked_request_tags_commit_to_own_fields [propext, Quot.sound, Classical.choice]` |
+| [FoldTermination.lean:36](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/FoldTermination.lean#L36) | `AXIOMS Singular.Statements.booked_termination_foldable [propext, Quot.sound, Classical.choice]` |
+| [Termination.lean:221](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Termination.lean#L221) | `AXIOMS Singular.Statements.booked_termination_tag_commits_to_own_operation [propext, Quot.sound, Classical.choice]` |
+| [Booking.lean:82](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Booking.lean#L82) | `AXIOMS Singular.Statements.booked_time_is_interval_end [propext, Quot.sound, Classical.choice]` |
+| [Booking.lean:127](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Booking.lean#L127) | `AXIOMS Singular.Statements.booked_time_not_before_inclusion [propext, Quot.sound, Classical.choice]` |
+| [Booking.lean:140](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Booking.lean#L140) | `AXIOMS Singular.Statements.booking_width_within_limit [propext, Quot.sound, Classical.choice]` |
+| [FoldAccounting.lean:11](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/FoldAccounting.lean#L11) | `AXIOMS Singular.Statements.fold_donates_registration_cost [propext, Quot.sound, Classical.choice]` |
+| [FoldAccounting.lean:25](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/FoldAccounting.lean#L25) | `AXIOMS Singular.Statements.fold_routes_every_amount [propext, Quot.sound, Classical.choice]` |
+| [RejectionProtection.lean:13](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionProtection.lean#L13) | `AXIOMS Singular.Statements.live_request_not_rejected [propext, Quot.sound, Classical.choice]` |
+| [FoldTermination.lean:13](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/FoldTermination.lean#L13) | `AXIOMS Singular.Statements.only_booked_terminations_fold [propext, Quot.sound, Classical.choice]` |
+| [Preservation.lean:19](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Preservation.lean#L19) | `AXIOMS Singular.Statements.parameters_preserved_by_batch [propext, Quot.sound, Classical.choice]` |
+| [Preservation.lean:11](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Preservation.lean#L11) | `AXIOMS Singular.Statements.parameters_preserved_by_fold [propext, Quot.sound, Classical.choice]` |
+| [FoldAccounting.lean:50](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/FoldAccounting.lean#L50) | `AXIOMS Singular.Statements.processors_take_at_most_the_tips [propext, Quot.sound, Classical.choice]` |
+| [Refunds.lean:92](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Refunds.lean#L92) | `AXIOMS Singular.Statements.refunds_sum_per_address [propext, Quot.sound, Classical.choice]` |
+| [Refunds.lean:70](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Refunds.lean#L70) | `AXIOMS Singular.Statements.registration_cost_returned_on_exit [propext, Quot.sound, Classical.choice]` |
+| [RejectionState.lean:91](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionState.lean#L91) | `AXIOMS Singular.Statements.rejection_batch_members_distinct [propext, Quot.sound, Classical.choice]` |
+| [RejectionState.lean:67](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionState.lean#L67) | `AXIOMS Singular.Statements.rejection_cannot_invalidate_fold [propext, Quot.sound, Classical.choice]` |
+| [RejectionState.lean:12](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionState.lean#L12) | `AXIOMS Singular.Statements.rejection_leaves_registry_untouched [propext, Quot.sound, Classical.choice]` |
+| [Refunds.lean:12](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Refunds.lean#L12) | `AXIOMS Singular.Statements.rejection_refund_floor [propext, Quot.sound, Classical.choice]` |
+| [RejectionState.lean:43](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionState.lean#L43) | `AXIOMS Singular.Statements.rejection_requires_referenced_state [propext, Quot.sound, Classical.choice]` |
+| [Refunds.lean:30](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Refunds.lean#L30) | `AXIOMS Singular.Statements.retraction_refund_floor [propext, Quot.sound, Classical.choice]` |
+| [RejectionState.lean:105](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionState.lean#L105) | `AXIOMS Singular.Statements.sweep_leaves_pool_untouched [propext, Quot.sound, Classical.choice]` |
+| [TagSupply.lean:13](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/TagSupply.lean#L13) | `AXIOMS Singular.Statements.tag_supplies_equal_pending [propext, Quot.sound, Classical.choice]` |
+| [Preservation.lean:223](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Preservation.lean#L223) | `AXIOMS Singular.Statements.termination [propext, Quot.sound, Classical.choice]` |
+| [Termination.lean:13](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Termination.lean#L13) | `AXIOMS Singular.Statements.termination_booking_has_exact_contents [propext, Quot.sound, Classical.choice]` |
+| [Termination.lean:151](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Termination.lean#L151) | `AXIOMS Singular.Statements.termination_request_carries_genuine_token [propext, Quot.sound, Classical.choice]` |
+| [RejectionProtection.lean:52](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/RejectionProtection.lean#L52) | `AXIOMS Singular.Statements.termination_unrejectable [propext, Quot.sound, Classical.choice]` |
+| [Booking.lean:185](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Booking.lean#L185) | `AXIOMS Singular.Statements.trie_ready_tag_is_not_state_token [propext]` |
+| [Termination.lean:54](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Termination.lean#L54) | `AXIOMS Singular.Statements.world_supply_sync [propext, Quot.sound, Classical.choice]` |
+| [Accounting.lean:82](https://github.com/lambdasistemi/singular/blob/303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d/lean/Singular/Statements/Accounting.lean#L82) | `AXIOMS Singular.Statements.zero_donation_omits_field [propext, Quot.sound, Classical.choice]` |
+
+The axiom report digest is `1f8cf8a5c792a9419da90ef0ab465923248a74914790985c10943b71c1621a08`. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.

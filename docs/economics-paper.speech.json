@@ -1,88 +1,128 @@
 {
-  "economics-of-protected-rejection": [
+  "singular-registry-design-and-economics": [
     {
-      "text": "Economics of protected rejection.",
+      "text": "Singular: registry design and economics.",
       "pause": 500
     },
     {
-      "text": "As a scientist reviewing the registry economics from outside the project, read this page and learn what the paper claims, which Lean declaration each claim cites, and which proofs have landed. Every row below is marked not yet mechanized until the model behind it is built; nothing here is stated as a result.",
+      "text": "As a reviewer, read this page to learn what a registration or termination commits, where its tokens and lovelace go, and which promises have checked evidence. The paper explains the complete mechanism, its assumptions and its counterexamples: download the paper PDF. The documentation build compiles the PDF from the committed LaTeX sources using the llncs class.",
       "pause": 400
     },
     {
-      "text": "The full draft lives beside this page as a PDF: economics-paper.pdf. It is built from LaTeX sources under paper/economics by the documentation build, so the PDF on the site always matches the committed sources.",
+      "text": "Implementation standing: not yet conformant. The validators and builders still implement superseded economic rules. The conformance evidence keeps affected requirements unmet; a Lean proof is not a ledger receipt or deployment acceptance.",
       "pause": 400
     }
   ],
-  "who-this-is-for": [
+  "the-mechanism-at-a-glance": [
     {
-      "text": "Who this is for.",
+      "text": "The mechanism at a glance.",
       "pause": 500
     },
     {
-      "text": "A reviewer who was not part of the design and wants the whole economic mechanism on one page before opening the paper: which amounts move in each outcome, which parameters the creator sets, and which statements are proved, argued by hand, or kept as counterexamples.",
+      "text": "The registry records a permanent lifecycle. Registration changes an unknown key to active; termination changes an active key to terminal. The application authorizes registration and controls the resulting singular tag. It consents to termination by releasing that genuine tag into a request. Singular does not judge the application's release rule. Checked lifecycle and custody evidence appears in the declaration register below.",
+      "pause": 400
+    },
+    {
+      "text": "Pending requests occupy their own outputs. Folds spend and continue the registry state output. Rejection reads that output by reference and spends only the rejected registrations. It needs a current lifecycle mismatch or expiry after both registration windows. Compatible registrations are protected through the reclaim window; a lost race can create a mismatch earlier. A termination has no rejection, retraction or expiry exit.",
       "pause": 400
     }
   ],
-  "abstract": [
+  "requests-tokens-and-clocks": [
     {
-      "text": "Abstract.",
+      "text": "Requests, tokens and clocks.",
       "pause": 500
     },
     {
-      "text": "A permissionless registry lets anyone fold a queued request into shared state, so a request that waits in the queue can be cancelled by a stranger who collects the fee for the slot. The paper gives the economic rules of one such registry. Every request carries a bond beside its deposit. A processor that rejects a request forfeits the bond only when it proves, against the state root the request recorded at booking, that the request was already faulty then; any other rejection refunds the bond. The forfeited bond is split between the proving processor and the treasury. A fold that terminates a key donates a termination fee to the treasury. The paper states each property as a definition with a theorem, gives the transfer function as one table, derives every parameter constraint as an inequality with a worked example in lovelace, and lists exactly what the mechanism does not price, with counterexamples.",
+      "text": "Let R be the registration cost, t the declared tip, and a the declared carrier lovelace. Booking enforces the fixed minimum tip. The carrier amount follows actual ledger minimum rules; the model proves exact declared amounts and does not compute those minima.",
+      "pause": 400
+    },
+    {
+      "text": "A registration's application tag commits to its payload and nonce; its trie-ready tag commits to the operation and the same nonce. Both are minted in the same booking and burned on every exit. Application tags minted elsewhere are outside Singular's supply guarantee and cannot substitute for this booking. Termination booking moves the singular tag from custody; its fold burns that tag and the trie-ready tag. A registration fold mints the singular tag at the booked destination with the declared carrier and datum.",
+      "pause": 400
+    },
+    {
+      "text": "The fixed parameters are registration cost, minimum tip, maximum booking width, processing and reclaim windows, policy bindings and registry identity. The minimum tip retains the wire key maxFee. There is no parameter-update or migration authority. The paper treats the maximum booking width being smaller than the processing window as a sizing criterion, distinct from the checked booking-width bound.",
       "pause": 400
     }
   ],
-  "format-and-sources": [
+  "every-exit-and-every-amount": [
     {
-      "text": "Format and sources.",
+      "text": "Every exit and every amount.",
       "pause": 500
     },
     {
-      "text": "The paper is written in LaTeX and built into this site by a Nix derivation. The intended style is the LIPIcs class, which is not shipped in the pinned TeX Live set, so this draft uses the llncs class from TeX Live and says so here. The bibliography holds only verified entries: a located whitepaper that could not be found is not cited, and a griefing survey whose author name is unconfirmed is not cited until its author is confirmed.",
+      "text": "Existing checked declaration: fold routing separates state continuation, exact carrier outputs, donation and ordinary funding. With ordinary inputs I, ordinary outputs O, total tips T and ledger fee f, it proves O + f = I + T and f ≤ I. Donation equals the registration costs plus held-minus-tip for every termination. Ordinary change remains a separate output even at a carrier's address.",
+      "pause": 400
+    },
+    {
+      "text": "Hand proof supplied: subtracting in the integers gives O − I = T − f. If the processor owns the ordinary funding pool and no other role, that is its monetary net before external costs. It is not a wealth statement about every address receiving an output. The paper's separate net-payoff table includes the booking fee, destination carrier and treasury donation; its rows sum to minus ledger fees, not to request holdings.",
+      "pause": 400
+    },
+    {
+      "text": "Rejection refunds are added per address, with distinct request inputs and one shared interval. A repeated input or one live compatible member refuses the entire batch. A fold that lands first spends the referenced state output, so an in-flight rejection must be rebuilt; no starvation bound is proved.",
+      "pause": 400
+    },
+    {
+      "text": "A zero donation omits the field. Conway transaction-body field 22 accepts a positive donation; optional field 21 is the separate current-treasury assertion. Donation alone does not assert the current treasury balance. The paper cites the exact Conway CDDL revision and its treasury-value check.",
       "pause": 400
     }
   ],
-  "what-each-outcome-pays": [
+  "what-is-checked-and-at-what-strength": [
     {
-      "text": "What each outcome pays.",
+      "text": "What is checked, and at what strength.",
       "pause": 500
     },
     {
-      "text": "The transfer function, net per party and excluding the value of the key itself. The deposit returns to the owner except where the edge rule routes it; the bond returns except on a proved fault. The tip returns on a retraction and pays the processor on everything else.",
+      "text": "Existing checked declaration means the register below quotes the declaration's fresh axiom result at the exact model pin. Hand proof supplied means the paper gives an argument and its premises. Proposed statement means a conditional design or sizing criterion. Missing mechanization marks an unproved boundary. These four labels do not imply implementation conformance.",
       "pause": 400
     },
     {
-      "text": "The processor share of a forfeited bond is the floor of the split times the bond; the treasury receives the remainder, so the two shares always add up to the bond exactly. A donation that is zero is omitted from the transaction, since the donation field accepts only positive amounts.",
+      "text": "The exact model revision is 303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
       "pause": 400
     }
   ],
-  "theorem-to-lean-mapping": [
+  "limitations-and-counterexamples": [
     {
-      "text": "Theorem to Lean mapping.",
+      "text": "Limitations and counterexamples.",
       "pause": 500
     },
     {
-      "text": "For this draft the table is written from the reviewed plan, with every row marked not yet mechanized. The generator that derives the table from the audit report arrives with the model; until then the names below are the planned declarations, checked against the plan page, and the files are fixed: theorems and kept counterexamples live in the statements module the axioms guard, definitions in the economics module.",
+      "text": "Missing mechanization: retraction paying a ledger fee. The current retraction judgement permits exactly one request input and requires its full refund. A request holding 3,000,000 lovelace cannot return that amount and pay a 170,000 fee in a balanced transaction. An ordinary funding input is refused. The checked floor remains true; real-ledger retractability is not established, and affected acceptance remains open.",
       "pause": 400
     },
     {
-      "text": "Flood cost per faulty request, the griefing factor bound, the processor incentive to clear faults, and the collusion bounds are inequalities derived by hand from the transfer lemmas, since they speak of key value, opportunity cost and fee volatility, which the model does not contain. The paper labels each as a hand argument.",
+      "text": "Hand proof supplied: conditional rejection cap. The refund promise is a floor, not an exact split; a processor may leave some tip to the requester. If the transaction additionally balances with zero donation, all outputs outside its refund addresses plus its fee total at most the tips. The paper derives this bound from the summed floors and names balance as an extra premise. Its exact-refund net-payoff illustration is also conditional, not a claim about every accepted rejection.",
+      "pause": 400
+    },
+    {
+      "text": "Hand proof supplied: a self-rejecting funder can make the tip an internal transfer, so the design has no universal treasury flood price. Successful junk folds still pay R and occupy turns. Two registrations can race for one key; the loser retains its refund floor, not priority or ownership. A processor's fee can exceed the tip. A rejection sharing a request input with a proposed fold can invalidate that fold despite preserving the state output. Repeated folds can invalidate rejection references indefinitely.",
+      "pause": 400
+    },
+    {
+      "text": "Proposed statement: the minimum tip should cover measured singleton costs within a declared ledger envelope. The paper derives conditional inequalities for costs and windows, without assuming a minimum service rate or full batches. No measurements establish the selected registration cost, minimum tip or booking-width bound. A later fee or output-minimum change can invalidate the envelope.",
+      "pause": 400
+    },
+    {
+      "text": "The application's release rule and custody integration, the open-datum adaptation, the cardano-keri adaptation and validator/builder correspondence with live receipts remain open. The singular tag's fate is decided: mint and delivery on registration, movement at termination booking, burn at termination fold. No key-ownership, squatting, inclusion, priority or application-security guarantee follows from Singular's token counts.",
       "pause": 400
     }
   ],
-  "limitations-in-one-paragraph": [
+  "checked-declaration-register": [
     {
-      "text": "Limitations in one paragraph.",
+      "text": "Checked declaration register.",
       "pause": 500
     },
     {
-      "text": "Four facts bound the design: duplicate concurrent bookings cost the tip plus fees, not the bond; squatting a key without terminating it is not priced by the termination fee, and the defence is the application approval policy, stated as an assumption; a zero donation cannot be expressed, so the field is omitted; the tip returns on a retraction and pays the processor on every other outcome. The paper lists every property that does not hold with its counterexample, and states the safe price ranges, the liveness hazards, and the model-to-validator correspondence as an assumption with its gaps.",
+      "text": "The entries below are generated from a fresh run of lake env lean tools/axioms.lean over the pinned source, with every cited name confirmed by git show at that revision. Each row uses the full revision above and quotes its axiom line verbatim. Standard axioms are printed as observed; none of these entries contains an additional axiom or sorryAx. Definitions and supplied hand arguments are distinguished from checked declarations in the paper.",
+      "pause": 400
+    },
+    {
+      "text": "The axiom report digest is 1f8cf8a5c792a9419da90ef0ab465923248a74914790985c10943b71c1621a08. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "economics-paper.md",
-    "sha256": "184674671466f7d6b61b8af89865ba09906c76def44cf625de090b662f58f682"
+    "sha256": "e4d5d574bc674eee5072a3b41f8d6dc5e3803ba0e4b3a4e372671fa42fe86047"
   }
 }

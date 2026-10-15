@@ -62,9 +62,7 @@ let
   aikenReference = onchain.packages.${pkgs.system}.aiken-reference;
   # The shared toolchain pins a copy of Mermaid; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
-  # The economics paper: LaTeX built with the pinned texlive. The LIPIcs
-  # class is not in the pinned set, so the paper uses llncs from texlive
-  # and says so on its docs page.
+  # The registry paper uses llncs from the pinned TeX Live distribution.
   paperTex = pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-small llncs;
   };
@@ -76,10 +74,10 @@ let
     buildPhase = ''
       export TEXMFVAR=$(mktemp -d)
       export TEXMFCONFIG=$(mktemp -d)
-      pdflatex -interaction=nonstopmode main.tex
+      pdflatex -halt-on-error -interaction=nonstopmode main.tex
       bibtex main
-      pdflatex -interaction=nonstopmode main.tex
-      pdflatex -interaction=nonstopmode main.tex
+      pdflatex -halt-on-error -interaction=nonstopmode main.tex
+      pdflatex -halt-on-error -interaction=nonstopmode main.tex
     '';
     installPhase = ''
       mkdir -p "$out"

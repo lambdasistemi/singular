@@ -153,9 +153,9 @@ delivered application output after a successful fold; it is not necessarily
 returned to its original funder. A termination can wait without a time bound,
 so its capital cost has no finite universal bound here.
 
-\InputIfFileExists{mechanism.tex}{}{}
-\InputIfFileExists{properties.tex}{}{}
-\InputIfFileExists{sizing.tex}{}{}
+\input{mechanism.tex}
+\input{properties.tex}
+\input{sizing.tex}
 
 \section{Related work}
 The extended UTxO work supplies the state-machine and invariant setting in which
@@ -210,13 +210,13 @@ the requester declares it under ledger minimum rules. Parameter sufficiency
 need not survive changes in fees, output sizes, minimums or exchange rates.
 No selected number is claimed optimal.
 
-\InputIfFileExists{counterexamples.tex}{}{}
+\input{counterexamples.tex}
 
+\clearpage
 \appendix
 \section{Reproducible model evidence and trusted base}
 \label{sec:artifact}
-\InputIfFileExists{citations.tex}{}{The declaration appendix is being assembled.
-No appendix entry is asserted by this intermediate document.}
+\input{citations.tex}
 
 The trusted base includes the Lean kernel and the printed standard axioms,
 the adequacy of the mathematical specification, and the correspondence of
@@ -233,6 +233,7 @@ The Lean-to-validator correspondence is an assumption requiring conformance
 work, not a result of these proofs. Ledger minimums, fee measurement, inclusion
 and application integration remain outside the checked economic statements.
 
+\clearpage
 \bibliographystyle{splncs04}
 \bibliography{refs}
 \end{document}
