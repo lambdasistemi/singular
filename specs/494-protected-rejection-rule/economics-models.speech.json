@@ -103,6 +103,16 @@
       "pause": 400
     }
   ],
+  "slice-nine-as-built": [
+    {
+      "text": "Slice nine: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The refund obligations and the economic retraction are separate judgements in Singular/Economics/ beside the ruled rejection (Refunds.lean, Rejection.lean, Retraction.lean, World.lean), with the observed refund read from the economic output's address and lovelace and no second payment field. An accepted rejection owes each refund address the sum, over the distinct rejected requests it appears in, of the held lovelace minus the declared tip (the registration cost and the carrier ada are inside that sum; the tip is the processor's), and refuses the whole batch with reject-refund-short when the observed lovelace at an address falls short. An accepted retraction spends exactly one observed pending registration, signed by its refund address, with a non-empty validity interval wholly inside the booked reclaim window, reads and spends no state output, burns both request tags in the same transaction with none retained, leaves the state and singular supply unchanged, returns at least the whole held amount to the refund address and removes the request from the pending pool; its world constructor is added to WorldReachable and the five earlier induction proofs gained cases without a change of statement text. The four public statements, all from the standard axioms, are rejection_refund_floor, retraction_refund_floor, registration_cost_returned_on_exit and refunds_sum_per_address (Statements/Refunds.lean), supported by eleven helper lemmas in Lemmas/Refunds.lean, appended uncovered. The statements about an address are floors on all lovelace received at that address: a payment to the same address for another purpose counts, and the model cannot tell a refund output from another output by its purpose. Exact processor take, treasury routing, full balance, the ledger minimum and the economic fold are slice ten's. The corpus holds 31 controls in Main/Refunds.lean (six accepted, 25 refused).",
+      "pause": 400
+    }
+  ],
   "slice-eight-c-as-built": [
     {
       "text": "Slice eight-c: as built.",
@@ -149,6 +159,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "9cefe69cb60c39556fb70856008bde59ceb84c6c13ac8026a422314b10098aad"
+    "sha256": "20749ac9b002c596afeaa9d1afdea977500545e420403b4973845a381aa439ae"
   }
 }

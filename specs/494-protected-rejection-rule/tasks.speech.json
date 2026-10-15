@@ -485,23 +485,23 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-nine — a reused refund, a refund short of held minus tip and a retraction that carries a tag out alive fail on the branch as it stands.",
+      "text": "[x] failing-controls-nine — a reused refund, a refund short of held minus tip and a retraction that carries a tag out alive fail on the branch as it stands.",
       "pause": 300
     },
     {
-      "text": "[ ] refund-obligations — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.",
+      "text": "[x] refund-obligations — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-nine — statement 6, the second half of statement 7 and the supporting statement are proved.",
+      "text": "[x] statements-nine — statement 6, the second half of statement 7 and the supporting statement are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-nine — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-nine — as slice five. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] names-and-receipts-nine — as slice five.",
+      "text": "[x] names-and-receipts-nine — as slice five.",
       "pause": 300
     }
   ],
@@ -551,6 +551,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "cb23cfaf1c4a913348c1e13ecd362a27ed3ef08b664bcb75498a71f8977b919d"
+    "sha256": "834be62854745dbb1743f5401acd92d86463ffaf70ce6976b69dc6e52de7687d"
   }
 }

@@ -198,11 +198,11 @@ Conformance and CI code, after slice eight; Codex at medium effort.
 
 ### Slice nine: refunds
 
-- [ ] `failing-controls-nine` — a reused refund, a refund short of held minus tip and a retraction that carries a tag out alive fail on the branch as it stands.
-- [ ] `refund-obligations` — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.
-- [ ] `statements-nine` — statement 6, the second half of statement 7 and the supporting statement are proved.
-- [ ] `regenerate-after-slice-nine` — as slice five. (consumers-state-the-rule)
-- [ ] `names-and-receipts-nine` — as slice five.
+- [x] `failing-controls-nine` — a reused refund, a refund short of held minus tip and a retraction that carries a tag out alive fail on the branch as it stands.
+- [x] `refund-obligations` — rejection and retraction owe what the plan states, summed per refund address, and the registration cost comes back.
+- [x] `statements-nine` — statement 6, the second half of statement 7 and the supporting statement are proved.
+- [x] `regenerate-after-slice-nine` — as slice five. (consumers-state-the-rule)
+- [x] `names-and-receipts-nine` — as slice five.
 
 ### Slice ten: folds
 
