@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+      "pause": 400
+    },
+    {
       "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
@@ -46,24 +50,6 @@
     },
     {
       "text": "The vault is an ordinary age file, one passphrase recipient with scrypt work factor 18, holding the key's standard text envelope as its plaintext. Any age tool opens it with the passphrase and yields the envelope: age --decrypt alice.vault asks for the passphrase on the terminal and prints the plaintext, and the decrypted bytes are the cardano-cli key format itself, accepted wherever a signing-key file is read.",
-      "pause": 400
-    }
-  ],
-  "signing-a-bundle-of-unsigned-transactions-offline": [
-    {
-      "text": "Signing a bundle of unsigned transactions offline.",
-      "pause": 500
-    },
-    {
-      "text": "As Bob, I receive a bundle of unsigned transactions from a writer — one JSON file — and I run singular wallet sign on an offline machine, naming my vault and the bundle. I type my passphrase once and get one witness file per transaction, with the paths on standard output and a short summary of what I signed on standard error:",
-      "pause": 400
-    },
-    {
-      "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
-      "pause": 400
-    },
-    {
-      "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
       "pause": 400
     }
   ],
@@ -317,6 +303,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "79fc7ee843da15ea299e037a1c9f3e7aa07c4de200e73a0fd7bc0f51d4628cbb"
+    "sha256": "824d7d6b0dfaffc5d0f523d411c45bb122dc69b0a21671b8663b69f49685ca9b"
   }
 }
