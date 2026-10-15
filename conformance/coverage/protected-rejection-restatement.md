@@ -176,3 +176,25 @@ These new economic declarations have no implementation coverage. Every earlier i
 | Declaration | Old identity | New identity | Coverage after |
 |---|---|---|---|
 | `Singular.retractionAccepted_effect` | none (new declaration) | `1a18084b164f142d843cae9035033d525e197902b7aa4e2cccd707c6779ec6a3` | uncovered |
+
+## Economic refund statements
+
+These new economic declarations have no implementation coverage. Every earlier identity remains unchanged; no legacy conformance claim is evidence for these refunds.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.RefundProof.allocations` | none (new declaration) | `13eca6de769145c07f75ecc3178154bfa62b7436abe476b71498532c2a128d68` | uncovered |
+| `Singular.RefundProof.costs_le_owed` | none (new declaration) | `6edb35721782319baa12b27fad24c5a9073bb4cd0ebf080eb91d92f22954b1cc` | uncovered |
+| `Singular.RefundProof.mem_addresses` | none (new declaration) | `86f4e70a634fe4fe29237e01e8392175e27195a88dcb87548cf725386f8e4ade` | uncovered |
+| `Singular.RefundProof.refund_floor` | none (new declaration) | `570f333a83058db0c2a08f36643e72f3a16c62b08872def46333215430894338` | uncovered |
+| `Singular.RefundProof.rejection_refunds` | none (new declaration) | `bb7f27d30495d0e666a09a6f941fccb2d22d269d48dfd67c4981734620c94ff7` | uncovered |
+| `Singular.RefundProof.retraction_checks` | none (new declaration) | `0165c893a6482e47d3eefbc350c1612613998af3b2688b014233111bdeff520a` | uncovered |
+| `Singular.RefundProof.retraction_no_state` | none (new declaration) | `e26f016288207342a3f289d312eeb35e58f8b9583ae05805c356c9d16244d063` | uncovered |
+| `Singular.RefundProof.retraction_request` | none (new declaration) | `c6162a4c12b5c456956deeeba6de08d2f8e5c20638cd22c635fa76cfb4b72b30` | uncovered |
+| `Singular.RefundProof.selected_members` | none (new declaration) | `6d4b9a7def805c819252df80c92ff2d4c704489c2f8e0d30f7fac8be9a5a5e8b` | uncovered |
+| `Singular.RefundProof.selected_pending` | none (new declaration) | `2dda1d7d8ce5063e0bb1828ddae7123179317d87a9a7a49a657bc11bbf154ea1` | uncovered |
+| `Singular.RefundProof.unique_addresses` | none (new declaration) | `fd1339a51b94c34b98e48f74448ce6d8aa301e8915d8214fc7a5938f6b16aee6` | uncovered |
+| `Singular.Statements.refunds_sum_per_address` | none (new declaration) | `b8a00f6d2f28d71a36e3a8cac3bce94c845ce6c2bd3acda57be7e10e49072d18` | uncovered |
+| `Singular.Statements.registration_cost_returned_on_exit` | none (new declaration) | `b989571d70a36354c46600639d3aeefeee6cf0ea7fba55bfb2ca67c2ad24598d` | uncovered |
+| `Singular.Statements.rejection_refund_floor` | none (new declaration) | `0b04d3309b5b8ead87768ad939df7aed1eb7885eea53d43ea3140110092076d4` | uncovered |
+| `Singular.Statements.retraction_refund_floor` | none (new declaration) | `2eb1d47fa80f28d8629703cc318886288ded65b8379a42ccfef3156c5c4b4783` | uncovered |

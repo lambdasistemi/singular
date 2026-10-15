@@ -13,6 +13,7 @@ import Singular.Statements.Rejection
 import Singular.Statements.RejectionState
 import Singular.Statements.RejectionProtection
 import Singular.Statements.Termination
+import Singular.Statements.Refunds
 import Singular.Lemmas
 import Singular.Driver
 import Singular.Economics

@@ -5968,7 +5968,7 @@
   ],
   "corpusSourceSha256": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
-  "payloadSha256": "6bb3c1da1e5f169bda54bd1da7375535cb3592a811ad90a70635f34576c209c6",
+  "payloadSha256": "e90f182ca77172eaa114554c10f6df417b228de8525a058507c309a507f709aa",
   "scenarios": [
     {
       "foldWitness": {
@@ -16345,6 +16345,7 @@
     "lean/Singular/Lemmas/Batch.lean": "3cd929b4e13d1f0288ecf57861131b85e76b9a30db2e112ec9a805e14d33892d",
     "lean/Singular/Lemmas/EconomicRejection.lean": "89c04bd780d3bd9f9de2eb674e9dca321c2d9a5f2a3f9992803310e8bddf10c9",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
+    "lean/Singular/Lemmas/Refunds.lean": "f9391671fc97b8096264cd5c68c354ba6be55be5e8f658dd2c46e06f5ebcbe26",
     "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
@@ -16364,7 +16365,7 @@
     "lean/Singular/Model/Routing.lean": "1207f5c5ca49b574806b88f7ebdc9f2f56d900486b99286ecb89c65f03eb8ab0",
     "lean/Singular/Model/Termination.lean": "9111b875cdfb3632b52db48c65564e01ce7320e421244348665ca036fb84561b",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
+    "lean/Singular/Statements.lean": "ed3f26be5164944a1ca76d9be7386652c59276c6976af9c69e18ae3c6af52876",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
@@ -16374,6 +16375,7 @@
     "lean/Singular/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
+    "lean/Singular/Statements/Refunds.lean": "d399c6077568589ea3e66a3f5ce1a7d42a843c4bc09bde64c39f3ccf32a993ca",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
     "lean/Singular/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
@@ -16381,7 +16383,7 @@
     "lean/Singular/Statements/Termination.lean": "759d7ce077d7b6c10efdc2cc465c1f7c53c6f8c4550f5410073caeadeef004c9",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"
   },
-  "statementsSha256": "6424da76e429f53186ad1c8d926b371b133981918f92c2776f16686c41937862",
+  "statementsSha256": "ed3f26be5164944a1ca76d9be7386652c59276c6976af9c69e18ae3c6af52876",
   "surface": {
     "batchQuestions": {
       "foldBatch": [
@@ -16443,5 +16445,5 @@
       "utxoReference"
     ]
   },
-  "theoremManifestSha256": "ce7544af5b140c9a1ba324d440bf9abd63191274715c5d63779bcdd68cbe77cd"
+  "theoremManifestSha256": "68afe311b38896b5ded1ece392a1ef3b4db921d0740171362e7557482a291224"
 }

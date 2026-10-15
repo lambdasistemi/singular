@@ -324,6 +324,30 @@
     "statementSha256": "7013211d47dd903d511e417866114e9beac7d125ce81f40d3a08efbe996bfd1a"
   },
   {
+    "name": "Singular.Statements.rejection_refund_floor",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "0b04d3309b5b8ead87768ad939df7aed1eb7885eea53d43ea3140110092076d4"
+  },
+  {
+    "name": "Singular.Statements.retraction_refund_floor",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "2eb1d47fa80f28d8629703cc318886288ded65b8379a42ccfef3156c5c4b4783"
+  },
+  {
+    "name": "Singular.Statements.registration_cost_returned_on_exit",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b989571d70a36354c46600639d3aeefeee6cf0ea7fba55bfb2ca67c2ad24598d"
+  },
+  {
+    "name": "Singular.Statements.refunds_sum_per_address",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b8a00f6d2f28d71a36e3a8cac3bce94c845ce6c2bd3acda57be7e10e49072d18"
+  },
+  {
     "name": "Singular.Statements.insert_active_transaction_row",
     "status": "PROVED",
     "debt": "none",
