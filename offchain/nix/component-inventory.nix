@@ -75,7 +75,11 @@ let
     # Generic ledger evidence, signing, wallet, time and fixed local services
     # have stable public ownership. Shipping composition links koios-http;
     # the old process-global node/indexer runtime is deleted.
+    # The provider-independent ledger client core (evidence, network time,
+    # typed read traces, local script evaluation) is its own sublibrary;
+    # tools/ledger_client_dependencies_check.sh bounds its dependencies.
     sublibs = [
+      "ledger-client"
       "local-services"
       "koios-http"
       # #528 slice 4: the application lives in its own tree; the entry

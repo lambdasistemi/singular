@@ -255,6 +255,42 @@ library registry-cli
     , time
     , unix
 
+-- Provider-independent ledger client core: evidence, network time, typed
+-- read traces and local script evaluation. It links no signing, wallet,
+-- file, process or network code; tools/ledger_client_dependencies_check.sh
+-- holds that line.
+library ledger-client
+  import:           warnings
+  visibility:       public
+  default-language: GHC2021
+  hs-source-dirs:   ledger-client
+  exposed-modules:
+    Singular.Registry.Evidence
+    Singular.Registry.LocalEvaluation
+    Singular.Registry.NetworkTime
+    Singular.Registry.Trace
+
+  build-depends:
+    , aeson
+    , base                  >=4.14 && <5
+    , base16-bytestring
+    , bytestring
+    , cardano-ledger-alonzo
+    , cardano-ledger-api
+    , cardano-ledger-conway
+    , cardano-ledger-core
+    , cardano-slotting
+    , containers
+    , contra-tracer
+    , crypton
+    , memory
+    , microlens
+    , ouroboros-consensus
+    , serialise
+    , text
+    , time
+    , transformers
+
 -- Common derived services are public and independent of node transport.
 library local-services
   import:           warnings
@@ -263,12 +299,15 @@ library local-services
   hs-source-dirs:   local-services
   autogen-modules:  Paths_singular_registry
   other-modules:    Paths_singular_registry
+  reexported-modules:
+    , Singular.Registry.Evidence
+    , Singular.Registry.LocalEvaluation
+    , Singular.Registry.NetworkTime
+    , Singular.Registry.Trace
+
   exposed-modules:
-    Singular.Registry.Evidence
     Singular.Registry.Ledger
     Singular.Registry.LedgerProvider
-    Singular.Registry.LocalEvaluation
-    Singular.Registry.NetworkTime
     Singular.Registry.ProviderSettings
     Singular.Registry.ProviderTrace
     Singular.Registry.SessionEvidence
@@ -277,7 +316,6 @@ library local-services
     Singular.Registry.Signing
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
-    Singular.Registry.Trace
     Singular.Registry.TraceRender
     Singular.Registry.WaitTypes
     Singular.Registry.Wallet
@@ -299,15 +337,11 @@ library local-services
     , cardano-tx-tools:tx-build
     , containers
     , contra-tracer
-    , crypton
     , directory
     , filepath
-    , memory
     , microlens
-    , ouroboros-consensus
-    , serialise
+    , singular-registry:ledger-client
     , text
-    , time
     , transformers
     , unix
 

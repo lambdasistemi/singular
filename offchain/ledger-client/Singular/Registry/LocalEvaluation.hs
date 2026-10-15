@@ -28,6 +28,7 @@ import Cardano.Ledger.Alonzo.Plutus.Evaluate
     ( TransactionScriptFailure
     , evalTxExUnits
     )
+import Cardano.Ledger.Alonzo.Core (TopTx, Tx)
 import Cardano.Ledger.Alonzo.Scripts (AsIx, PlutusPurpose)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
@@ -40,7 +41,6 @@ import Cardano.Ledger.Core (PParams, bodyTxL)
 import Cardano.Ledger.Plutus (ExUnits)
 import Cardano.Ledger.State (UTxO (..))
 import Cardano.Ledger.TxIn (TxIn)
-import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.NetworkTime
     ( NetworkTime
     , networkEpochInfo
@@ -68,7 +68,7 @@ data EvaluationFailure
 instance Exception EvaluationFailure
 
 -- | The complete spent, collateral and reference-output extent of a body.
-evaluationInputs :: ConwayTx -> Set TxIn
+evaluationInputs :: Tx TopTx ConwayEra -> Set TxIn
 evaluationInputs tx =
     let body = tx ^. bodyTxL
     in  Set.unions
@@ -82,7 +82,7 @@ localEvaluation
     :: (Monad m)
     => EvaluationContext
     -> (Set TxIn -> m [(TxIn, TxOut ConwayEra)])
-    -> ConwayTx
+    -> Tx TopTx ConwayEra
     -> m (Either EvaluationFailure (EvaluateTxResult ConwayEra))
 localEvaluation context resolve tx =
     evaluateResolved context tx <$> resolve (evaluationInputs tx)
@@ -93,7 +93,7 @@ includes address, value, datum and reference script.
 -}
 evaluateResolved
     :: EvaluationContext
-    -> ConwayTx
+    -> Tx TopTx ConwayEra
     -> [(TxIn, TxOut ConwayEra)]
     -> Either EvaluationFailure (EvaluateTxResult ConwayEra)
 evaluateResolved context tx inputs = do
