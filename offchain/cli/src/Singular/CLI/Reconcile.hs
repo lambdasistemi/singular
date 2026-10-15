@@ -122,6 +122,7 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
+import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , mkInlineDatum
@@ -134,6 +135,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     )
+import Singular.Registry.Wallet (bech32Address)
 
 -- | What one reconciliation found and did.
 data Reconciliation = Reconciliation
@@ -636,6 +638,15 @@ observeVerdicts command p out0 readKey = case foldTransitions p of
             , txInText request `elem` inputs
             , out ^. datumTxOutL == mkInlineDatum (toPlcData (txInToRef request)) ->
                 pure (Just (command <> ": the request-bound return output is live"))
+        Just ("funding", h)
+            | T.pack (bech32Address (out ^. addrTxOutL)) == T.drop 1 h
+            , adaOnlyOut out ->
+                pure
+                    ( Just
+                        ( command
+                            <> ": the funding output is live, ada only, at the payer's address"
+                        )
+                    )
         Just _
             | Just expect <- journalExpect entry ->
                 withKey entry expect keyHolds
