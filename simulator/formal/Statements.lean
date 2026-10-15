@@ -1356,11 +1356,15 @@ theorem admission_refuses_first (s : RegistryState) (exit : Exit) (r : Request)
     simp [exitRefusal, admitted]
 
 /-- **#344, a batch of one folds as its step** — for one request whose claimed
-mint is the delta of its own edge, the batch fold is exactly the single step:
+mint is the delta of its own edge, under an admitted witness the batch fold
+is exactly the single step:
 refused for the same reason, or accepted with the same state, mint and payments. -/
-theorem fold_batch_of_one_is_step (s : RegistryState) (r : Request)
+theorem fold_batch_of_one_is_step (s : RegistryState) (r : Request) (w : FoldWitness)
+    (admitted : foldAdmission s.config [r] w = none)
     (hclaim : assetSame (requestClaim r) (assetDelta r) = true) :
-    foldBatch s [r] = step s r := by
+    admittedFoldBatch s [r] w = step s r := by
+  simp only [admittedFoldBatch, admitted]
+
   have hsame : assetSame (claimedMint [r]) (actualMint [r]) = true := by
     rw [assetSame_iff] at hclaim ⊢
     intro x
@@ -1496,6 +1500,78 @@ example :
        , config := none, commitment := none, assets := [], lovelace := 2 }]
       = some "destination" := by
   decide
+
+/-- At or before every included request's deadline, admission preserves the batch law. -/
+theorem fold_admitted_up_to_the_deadline (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (edges : ∀ r ∈ batch, allowed r.edge = true)
+    (window : ∀ r ∈ batch, w.validTo ≤ r.submittedAt + s.config.processTime) :
+    foldAdmission s.config batch w = none ∧ admittedFoldBatch s batch w = foldBatch s batch := by
+  have he : batch.all (fun r => allowed r.edge) = true := List.all_eq_true.mpr edges
+  have hw : batch.all (fun r => inPhase1 s.config r.submittedAt w.validTo) = true := by
+    apply List.all_eq_true.mpr
+    intro r hr
+    simp [inPhase1, window r hr]
+  simp [foldAdmission, admittedFoldBatch, he, hw]
+
+/-- One expired member refuses the whole batch, including a singleton, after
+the fixed edge set has been checked. -/
+theorem fold_refused_past_any_deadline (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (edges : ∀ r ∈ batch, allowed r.edge = true)
+    (r : Request) (member : r ∈ batch)
+    (past : r.submittedAt + s.config.processTime < w.validTo) :
+    foldAdmission s.config batch w = some "not-phase1" ∧
+      admittedFoldBatch s batch w = .error "not-phase1" := by
+  have he : batch.all (fun r => allowed r.edge) = true := List.all_eq_true.mpr edges
+  have hw : batch.all (fun r => inPhase1 s.config r.submittedAt w.validTo) = false := by
+    apply List.all_eq_false.mpr
+    exact ⟨r, member, by simp [inPhase1]; omega⟩
+  simp [foldAdmission, admittedFoldBatch, he, hw]
+
+/-- Admission reads each request's own submission time under one shared bound. -/
+theorem fold_admission_judges_each_request_by_its_own_time (c : Config)
+    (batch : List Request) (w : FoldWitness) :
+    foldAdmission c batch w = none ↔
+      (∀ r ∈ batch, allowed r.edge = true) ∧
+      (∀ r ∈ batch, w.validTo ≤ r.submittedAt + c.processTime) := by
+  have he : (∀ r ∈ batch, allowed r.edge = true) ↔ batch.all (fun r => allowed r.edge) = true :=
+    List.all_eq_true.symm
+  have hw : (∀ r ∈ batch, w.validTo ≤ r.submittedAt + c.processTime) ↔
+      batch.all (fun r => inPhase1 c r.submittedAt w.validTo) = true := by
+    simp [List.all_eq_true, inPhase1]
+  rw [he, hw]
+  cases h₁ : batch.all (fun r => allowed r.edge) <;>
+    cases h₂ : batch.all (fun r => inPhase1 c r.submittedAt w.validTo) <;>
+    simp [foldAdmission, h₁, h₂]
+
+/-- Any excluded edge wins over every window, even when another request expired. -/
+theorem fixed_edge_set_precedes_the_window (c : Config) (batch : List Request)
+    (w : FoldWitness) (r : Request) (member : r ∈ batch) (excluded : allowed r.edge = false) :
+    foldAdmission c batch w = some "edge-inadmissible" := by
+  have he : batch.all (fun r => allowed r.edge) = false :=
+    List.all_eq_false.mpr ⟨r, member, by simp [excluded]⟩
+  simp [foldAdmission, he]
+
+/-- Admission precedes approval, leaf, ordered steps, mint and burns; the
+singleton exit uses the same answer before it steps or builds. -/
+theorem fold_admission_precedes_the_law (s : RegistryState) (batch : List Request)
+    (w : FoldWitness) (why : String) (refused : foldAdmission s.config batch w = some why) :
+    admittedFoldBatch s batch w = .error why ∧
+      ∀ (r : Request) (rw : RetractWitness) (lovelace : Nat), batch = [r] → rw.validTo = w.validTo →
+        admittedExitStep s (.fold r.edge) r rw = .error why ∧
+        admittedTxOfExit s (.fold r.edge) r rw lovelace = .error why := by
+  refine ⟨by simp [admittedFoldBatch, refused], ?_⟩
+  intro r rw lovelace hb hw
+  subst batch
+  have single : foldAdmission s.config [r] { validTo := rw.validTo } = some why := by
+    simpa [hw] using refused
+  simp [admittedExitStep, admittedTxOfExit, exitAdmission, single]
+
+/-- A rejection uses its own evidence admission, independently of the fold deadline.
+Every retraction witness, including its upper bound, gives the same rejection admission. -/
+theorem rejection_uses_its_own_admission (s : RegistryState) (r : Request)
+    (w : RetractWitness) (rejection : Option RejectWitness) :
+    exitAdmission s .reject r w rejection = rejectAdmission s r rejection := by
+  rfl
 
 /-- A missing proof never authorizes rejection, even when refunds are paid. -/
 theorem rejection_without_evidence (s : RegistryState) (r : Request) (w : RetractWitness)

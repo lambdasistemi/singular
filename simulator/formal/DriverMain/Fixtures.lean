@@ -82,7 +82,7 @@ def emptyFoldErrorDigest : String :=
   "8bd6ec570fbda5220c7d841d4396605cf637e094bdeb275d7495f7169a4a1f06"
 def foldBatchOfOne : String := "Singular.Statements.fold_batch_of_one_is_step"
 def foldBatchOfOneDigest : String :=
-  "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+  "b6226a82c352b27b0fac2034592963f240da8696a44e088baeaca770d9e7c665"
 def rejectBatchOfOne : String := "Singular.Statements.reject_batch_of_one_is_reject"
 def rejectBatchOfOneDigest : String :=
   "9f0e815f13a2ce1e41ecd3d19792aa741ade3187fb951fbce6b3fa4b87b1f42c"

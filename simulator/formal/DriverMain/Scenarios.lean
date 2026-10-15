@@ -42,7 +42,7 @@ def carrierlessDelivery : Scenario :=
 #guard [foreignDatumDelivery, carrierlessDelivery].all fun sc =>
   judgeSurface sc [] (sc.outputs.getD []) == some "destination"
 
-def scenarios : List Scenario :=
+def existingScenarios : List Scenario :=
   [ { id := "DR02-register-active"
     , theoremName := insertActiveTheorem, statementSha256 := insertActiveDigest
     , kind := "witness", mutates := none, requiresReachableState := false
@@ -150,7 +150,7 @@ def scenarios : List Scenario :=
 #guard (runSurface historicalScenario).2.outcome == .refused
 #guard (runSurface historicalScenario).2.reason == some "reject-evidence-missing"
 
-#guard scenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
+#guard existingScenarios.any fun sc => sc.id == "PR-retract-forged-time" &&
   (runSurface sc).2.reason == some "not-phase2"
-#guard scenarios.any fun sc => sc.id == "PR-retract-ignores-witness-time" &&
+#guard existingScenarios.any fun sc => sc.id == "PR-retract-ignores-witness-time" &&
   (runSurface sc).2.outcome == .accepted

@@ -735,6 +735,28 @@ def retractAdmission (c : Config) (r : Request) (w : RetractWitness) : Option St
   else if !inPhase2 c r w then some "not-phase2"
   else none
 
+/-- The finite, excluded upper validity bound the ledger hands to a fold. -/
+structure FoldWitness where
+  validTo : Nat
+  deriving Repr, BEq, DecidableEq, ToJson, FromJson
+
+/-- Whether the fold's upper bound is at or before this request's deadline. -/
+def inPhase1 (c : Config) (submittedAt validTo : Nat) : Bool :=
+  decide (validTo ≤ submittedAt + c.processTime)
+
+/-- Fold admission, before the law: fixed edges, then every request's window. -/
+def foldAdmission (c : Config) (batch : List Request) (w : FoldWitness) : Option String :=
+  if !batch.all (fun r => allowed r.edge) then some "edge-inadmissible"
+  else if !batch.all (fun r => inPhase1 c r.submittedAt w.validTo) then some "not-phase1"
+  else none
+
+/-- A batch under its finite validity witness, admission before the batch law. -/
+def admittedFoldBatch (s : RegistryState) (batch : List Request) (w : FoldWitness) :
+    Except String Result :=
+  match foldAdmission s.config batch w with
+  | some why => .error why
+  | none => foldBatch s batch
+
 /-! ### Protected rejection
 
 Evidence is an authenticated logical read, not Merkle proof bytes. Its full
@@ -784,13 +806,13 @@ def rejectAdmission (s : RegistryState) (r : Request) (w : Option RejectWitness)
         else some "reject-not-expired"
 
 /-- The admission an exit is subject to: a retract's is `retractAdmission`; a rejection's is
-`rejectAdmission`; a fold has none here, and ignores both witnesses. -/
+`rejectAdmission`; a fold uses `foldAdmission` with the finite upper bound. -/
 def exitAdmission (s : RegistryState) (exit : Exit) (r : Request) (w : RetractWitness)
     (rejection : Option RejectWitness := none) : Option String :=
   match exit with
   | .retract => retractAdmission s.config r w
   | .reject => rejectAdmission s r rejection
-  | .fold _ => none
+  | .fold _ => foldAdmission s.config [r] { validTo := w.validTo }
 
 /-- One exit as a model step, admission first: refused with the admission's
 reason, otherwise exactly `exitStep`. -/

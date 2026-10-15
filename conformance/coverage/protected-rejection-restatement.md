@@ -80,3 +80,14 @@ The world supply, pending uniqueness, custody provenance and exact booking state
 | `Singular.Statements.world_supply_sync` | none (new declaration) | `677482a96629adb878cea08b3d4d76db1fccf65ee06e8622a3abd67a1deb4d14` | termination booking | uncovered |
 | `Singular.Statements.at_most_one_pending_termination` | none (new declaration) | `fc59d58c6b0f3723b28f48a68a51abca044a10b3a34554fa734d6c8b6e48d6c2` | termination booking | uncovered |
 | `Singular.Statements.termination_request_carries_genuine_token` | none (new declaration) | `fb922d86fb9583f36711401337968e922d9da0a58a01c90e6ed7dfb8a36b5559` | termination booking | uncovered |
+
+## Rejection keeps its own admission
+
+Constitution 1.18.0 supersedes the unconditional rejection statement in main's 1.17.0 amendment. A rejection uses its own evidence admission; the fold deadline does not govern it. The replacement starts uncovered. Model proofs do not establish validator or builder conformance. Earlier rows remain historical.
+
+| Statement | Old identity | New identity | Change | Coverage after |
+|---|---|---|---|---|
+| `Singular.Statements.reject_reads_no_time` | `363f4561b6c460a270bb0322b4fe66a959a3b7b69862107e5386c45f4c9f41fc` | none (retired) | replaced by rejection's own admission | retired; no coverage transferred |
+| `Singular.Statements.rejection_uses_its_own_admission` | none (new declaration) | `7f313cb7eafa046f11d12f5ab4c2f293f16db2718caee95df7bba57d7718f023` | rejection's own admission | uncovered |
+
+The regenerated inventory contains 65 generic statements and 86 statements across the four main families. Coverage discovers 160 obligations: 96 manifest-bound and 64 unclassified. These counts describe the discovered population, not fulfilled implementation promises.

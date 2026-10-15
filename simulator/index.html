@@ -606,6 +606,8 @@ dl dd {
         <label for="owner-input">owner</label><input id="owner-input" type="number" value="42">
         <label for="output-input">output</label><input id="output-input" type="number" value="555">
         <label for="deposit-input">deposit</label><input id="deposit-input" type="number" value="200">
+        <label for="submitted-at-input">submitted at (ms)</label><input id="submitted-at-input" type="number" min="0" value="0">
+        <label for="valid-to-input">validity upper bound (ms)</label><input id="valid-to-input" type="number" min="0" value="0">
       </div>
       <div class="row">
         <label for="approval-picker">approval</label>
@@ -751,6 +753,7 @@ const requestSchema = {
   registryId: N,
   output: N,
   datum: { $option: N },
+  submittedAt: N,
   approval: { $option: approval },
   claimed: [{ kind: { $enum: KINDS }, quantity: I }],
 };
@@ -970,6 +973,33 @@ function foldBatch(s, batch) {
   }
 }
 
+// Admission reads one finite excluded bound and each request's own datum time.
+const inPhase1 = (c, submittedAt, validTo) =>
+  BigInt(validTo) <= BigInt(submittedAt) + BigInt(c.processTime);
+const foldAdmission = (c, batch, w) =>
+  !batch.every((r) => allowed(r.edge))
+    ? 'edge-inadmissible'
+    : !batch.every((r) => inPhase1(c, r.submittedAt, w.validTo))
+      ? 'not-phase1'
+      : null;
+
+function admitFold(s, batch, w, run) {
+  try {
+    validate(s, stateSchema, 'state');
+    validate(batch, [requestSchema], 'batch');
+    if (w == null) return { accepted: false, unsupported: true, reason: 'fold-without-witness' };
+    validate(w, { validTo: N }, 'foldWitness');
+    const reason = foldAdmission(s.config, batch, w);
+    return reason === null ? run() : { accepted: false, reason };
+  } catch (e) {
+    return { accepted: false, unsupported: true, reason: e.message };
+  }
+}
+
+// The single fold exit and the batch share the same admission.
+const admittedFold = (s, r, w) => admitFold(s, [r], w, () => step(s, r));
+const admittedFoldBatch = (s, batch, w) => admitFold(s, batch, w, () => foldBatch(s, batch));
+
 // ---- the consumer's view (interface §7): tokens, never the root -------------
 const witnesses = (s, key) => ({
   active: s.held.filter((h) => h.key === key && h.kind === 'active').length,
@@ -1039,6 +1069,7 @@ const request = (edge, key, opts = {}) => ({
   registryId: opts.registryId ?? 0,
   output: opts.output ?? 0,
   datum: opts.datum ?? null,
+  submittedAt: opts.submittedAt ?? 0,
   approval: null,
   claimed: opts.claimed ?? [],
 });
@@ -1432,7 +1463,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "accept"
+        "expect": "accept",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": [
@@ -1464,7 +1498,10 @@ const STORIES=[
               "submittedAt": 0,
               "registryId": 0
             },
-            "expect": "key-exists"
+            "expect": "key-exists",
+            "foldWitness": {
+              "validTo": 0
+            }
           }
         ]
       }
@@ -1500,7 +1537,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "accept"
+        "expect": "accept",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "what": "Retire the active key",
@@ -1527,7 +1567,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "accept"
+        "expect": "accept",
+        "foldWitness": {
+          "validTo": 0
+        }
       },
       {
         "what": "Refuse reuse of the terminal key",
@@ -1554,7 +1597,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "key-exists"
+        "expect": "key-exists",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -1589,7 +1635,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -1624,7 +1673,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -1659,7 +1711,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -1686,7 +1741,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -1721,7 +1779,10 @@ const STORIES=[
           "submittedAt": 0,
           "registryId": 0
         },
-        "expect": "edge-inadmissible"
+        "expect": "edge-inadmissible",
+        "foldWitness": {
+          "validTo": 0
+        }
       }
     ],
     "forks": []
@@ -3907,8 +3968,8 @@ const STORIES=[
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
-  "payloadSha256": "70cdbc34fa776acff6e455f1fb9c0587ee0238a481c6b6bbeaf50355d478d15a",
+  "modelSha256": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
+  "payloadSha256": "7a7759282156a652d5f04c38e3d76106cc0e0373b43e6afb6e3cbe817beadccf",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -6532,11 +6593,11 @@ const STORIES=[
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/Retraction.lean": "dfb31a2140732cb8d3b6332fd61ec1f5e5fbd7111ccfce1f18179299eccd3cd1",
+    "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "c3b7b81e80ab957b8e7bf320048201ca0932965ec5c1c82e5756f85546d7a896",
     "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
-    "lean/Singular/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
+    "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
     "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
@@ -6547,7 +6608,7 @@ const STORIES=[
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
-    "lean/Singular/Model.lean": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
+    "lean/Singular/Model.lean": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
@@ -6555,14 +6616,14 @@ const STORIES=[
     "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
     "lean/Singular/Model/Termination.lean": "8195f3734f306be89e62c5a983263884be4cc0a6e6045453b84a5a50fe49c236",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+    "lean/Singular/Statements.lean": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
     "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb",
     "lean/Singular/Statements/Termination.lean": "bf6565d2281591ea3ba0c92ec3f59576175a7d182f004d2d86f3df98baf1fe9a"
   },
-  "statementsSha256": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+  "statementsSha256": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
   "terminationBookings": [
     {
       "actualReason": null,
@@ -10586,7 +10647,7 @@ const STORIES=[
       "story": "another syntax tag name minted is refused"
     }
   ],
-  "theoremManifestSha256": "bce3d38145b86127f0bc0032a57683e96a01f1a13577489ddf9ad06809e47b7f",
+  "theoremManifestSha256": "9beaf644b5ef9a119b4f41c003a990d3aaaf9d816fbcaa1b14617c821226127f",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
@@ -11089,7 +11150,7 @@ const STORIES=[
     "name": "Singular.Statements.fold_batch_of_one_is_step",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+    "statementSha256": "b6226a82c352b27b0fac2034592963f240da8696a44e088baeaca770d9e7c665"
   },
   {
     "name": "Singular.Statements.reject_batch_of_one_is_reject",
@@ -11114,6 +11175,42 @@ const STORIES=[
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba"
+  },
+  {
+    "name": "Singular.Statements.fold_admitted_up_to_the_deadline",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e1540c2791bdcd7319fbcd172dc75e1ec5fdea744b321d7635a0b598bb758710"
+  },
+  {
+    "name": "Singular.Statements.fold_refused_past_any_deadline",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d01c46aeea61a2a2c783328c3fa92ddb60e2514b5e80be453955aadb3dcd5d12"
+  },
+  {
+    "name": "Singular.Statements.fold_admission_judges_each_request_by_its_own_time",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ed9bd208afb40f17952dd07e3636b21be857d39418839a26eef57968a1e3d0e2"
+  },
+  {
+    "name": "Singular.Statements.fixed_edge_set_precedes_the_window",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "553193b93c2907805c54c6b1f513f1b9dd43ca3088b268db58083d9faeb51dd3"
+  },
+  {
+    "name": "Singular.Statements.fold_admission_precedes_the_law",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c62a8694e560a5f7b5c07777e95973448d49bbe554f81051de20d11f38362cd1"
+  },
+  {
+    "name": "Singular.Statements.rejection_uses_its_own_admission",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7f313cb7eafa046f11d12f5ab4c2f293f16db2718caee95df7bba57d7718f023"
   },
   {
     "name": "Singular.Statements.rejection_without_evidence",
@@ -11259,13 +11356,13 @@ const STORIES=[
   ],
   "files": {
     "formal/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
-    "formal/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
+    "formal/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "formal/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "formal/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
-    "formal/DriverMain.lean": "80d757e792b5b6a2263171e20c439c25b5d831c455373d4de2192a944b465ab9",
-    "formal/DriverMain/Fixtures.lean": "25c67cc7914d9ffeeca9bbfb6992174796544156666db59a60174327afa456b0",
+    "formal/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
+    "formal/DriverMain/Fixtures.lean": "cd6724c1f76ebba9499ebf224db9b115f3c0a4a778e84140d9711589caf1d6cf",
     "formal/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
-    "formal/DriverMain/Scenarios.lean": "cc6cc444edf752cc918b3fca6c1beb5e60ae6d2d70e4010d3db6a167e3b04ffa",
+    "formal/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "formal/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
     "formal/Economics/Booking.lean": "c164cbaf2088fe114134851ef3220b69861652e0508f3a092b94082e4d27ed99",
     "formal/Economics/Termination.lean": "aa9b6b98de14461d29c9bcf8c9a217f924762470064eae2eca53b3990448855a",
@@ -11275,18 +11372,18 @@ const STORIES=[
     "formal/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "formal/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "formal/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "formal/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
+    "formal/M1.lean": "d2e853de64f0730883f2c59d892e3bca0cfc2c526b0277bb5b79e93b237a4c4f",
     "formal/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "formal/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
-    "formal/M1Main.lean": "a5bda4b9f2bc5f5485da4242eed5282caa6b046fb5d0eb05c8bf687ecfb5e4e8",
+    "formal/M1Main.lean": "354cfb4c8698f37b2a1a90b4135ffe74325a1be86ebf4ca27e9ec8f43c3b56c5",
     "formal/Main.lean": "c7215d84506e60ae2775f883fcbba53461b2a69088becf61e59bdbeadc3147f0",
     "formal/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
     "formal/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "formal/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "formal/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "formal/Main/Retraction.lean": "dfb31a2140732cb8d3b6332fd61ec1f5e5fbd7111ccfce1f18179299eccd3cd1",
+    "formal/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "formal/Main/Transactions.lean": "c3b7b81e80ab957b8e7bf320048201ca0932965ec5c1c82e5756f85546d7a896",
-    "formal/Model.lean": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
+    "formal/Model.lean": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
     "formal/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "formal/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "formal/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
@@ -11306,7 +11403,7 @@ const STORIES=[
     "formal/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "formal/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
     "formal/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
-    "formal/Statements.lean": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+    "formal/Statements.lean": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
     "formal/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "formal/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
     "formal/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
@@ -11315,16 +11412,16 @@ const STORIES=[
     "formal/lifecycle-theorem-debt.json": "4146c8eba1aedae5f40384816b11d3d892ed9632dd4d1838fab51d62eeca8ea3",
     "formal/m1-theorem-debt.json": "5b879e091b29a1c17251ccef70b3dcf326fac54f12122fc4fedcbcca56da0bda",
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
-    "formal/theorem-debt.json": "bce3d38145b86127f0bc0032a57683e96a01f1a13577489ddf9ad06809e47b7f",
+    "formal/theorem-debt.json": "9beaf644b5ef9a119b4f41c003a990d3aaaf9d816fbcaa1b14617c821226127f",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "87778be12e11bd3b897674a9435cf565de2236ec0da53270a3bff61a3f661ed2"
+    "corpus.json": "d31b6c9e175b409369bd2b018a0be7313da4de1da4793b1f195af15ce7d1629b"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,
   "corpusFolds": 3,
   "corpusCodec": 7,
   "corpusAda": 2,
-  "theorems": 59,
+  "theorems": 65,
   "namingTheorems": 7
 }
 ;const NAMINGCORPUS={
@@ -11346,9 +11443,9 @@ const STORIES=[
       "id": "NF06-retirement-by-recovery-key"
     }
   ],
-  "modelSha256": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
+  "modelSha256": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
   "namingStatementsSha256": "3a68713f92c0450ba9f2760ce03d0e5e8a51685ea9669ada3e59ebbfe6b2db55",
-  "payloadSha256": "8dd7a75cf263bbcdf37a9f69572cfdfed7b82bd0f5225ab1559e709d6e3f3dc3",
+  "payloadSha256": "be80c21c9bcf39c3cfd8a93f424c6c167f3fdead6c0bc48a269f9f1195eb7a95",
   "queues": [
     {
       "actual": true,
@@ -11401,23 +11498,23 @@ const STORIES=[
   ],
   "schema": "singular-naming-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "80d757e792b5b6a2263171e20c439c25b5d831c455373d4de2192a944b465ab9",
-    "lean/DriverMain/Fixtures.lean": "25c67cc7914d9ffeeca9bbfb6992174796544156666db59a60174327afa456b0",
+    "lean/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
+    "lean/DriverMain/Fixtures.lean": "cd6724c1f76ebba9499ebf224db9b115f3c0a4a778e84140d9711589caf1d6cf",
     "lean/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
-    "lean/DriverMain/Scenarios.lean": "cc6cc444edf752cc918b3fca6c1beb5e60ae6d2d70e4010d3db6a167e3b04ffa",
+    "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/M1Main.lean": "a5bda4b9f2bc5f5485da4242eed5282caa6b046fb5d0eb05c8bf687ecfb5e4e8",
+    "lean/M1Main.lean": "354cfb4c8698f37b2a1a90b4135ffe74325a1be86ebf4ca27e9ec8f43c3b56c5",
     "lean/Main.lean": "c7215d84506e60ae2775f883fcbba53461b2a69088becf61e59bdbeadc3147f0",
     "lean/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/Retraction.lean": "dfb31a2140732cb8d3b6332fd61ec1f5e5fbd7111ccfce1f18179299eccd3cd1",
+    "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "c3b7b81e80ab957b8e7bf320048201ca0932965ec5c1c82e5756f85546d7a896",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
-    "lean/Singular/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
+    "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
     "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
@@ -11428,10 +11525,10 @@ const STORIES=[
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
-    "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
+    "lean/Singular/M1.lean": "d2e853de64f0730883f2c59d892e3bca0cfc2c526b0277bb5b79e93b237a4c4f",
     "lean/Singular/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
-    "lean/Singular/Model.lean": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
+    "lean/Singular/Model.lean": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
@@ -11449,7 +11546,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+    "lean/Singular/Statements.lean": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
@@ -11572,7 +11669,7 @@ const STORIES=[
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "ff5934850d053183d19bbd76d755510696289f43f7667fd4828cfcbf3de73ce1",
+  "payloadSha256": "aa9134c67470fb4de09b8583a4dbbdc5fad826eec7167052b6fb1a31528777e4",
   "recovery": [
     {
       "detail": true,
@@ -11643,23 +11740,23 @@ const STORIES=[
   ],
   "schema": "singular-naming-lifecycle-corpus-v2",
   "sourceHashes": {
-    "lean/DriverMain.lean": "80d757e792b5b6a2263171e20c439c25b5d831c455373d4de2192a944b465ab9",
-    "lean/DriverMain/Fixtures.lean": "25c67cc7914d9ffeeca9bbfb6992174796544156666db59a60174327afa456b0",
+    "lean/DriverMain.lean": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
+    "lean/DriverMain/Fixtures.lean": "cd6724c1f76ebba9499ebf224db9b115f3c0a4a778e84140d9711589caf1d6cf",
     "lean/DriverMain/Rejection.lean": "9d495b28e0fe8389a87260fe70deedcd2f37c8282a105c031a60db815e9f5d9c",
-    "lean/DriverMain/Scenarios.lean": "cc6cc444edf752cc918b3fca6c1beb5e60ae6d2d70e4010d3db6a167e3b04ffa",
+    "lean/DriverMain/Scenarios.lean": "3d062d7c8ec9b4e9e27a7bd730281f5ed9a53543e651293be04b9520f588e1af",
     "lean/LifecycleMain.lean": "985b2394ded883bce372b76666aae128f2947c6259e0fe5c25482b225c6a8778",
-    "lean/M1Main.lean": "a5bda4b9f2bc5f5485da4242eed5282caa6b046fb5d0eb05c8bf687ecfb5e4e8",
+    "lean/M1Main.lean": "354cfb4c8698f37b2a1a90b4135ffe74325a1be86ebf4ca27e9ec8f43c3b56c5",
     "lean/Main.lean": "c7215d84506e60ae2775f883fcbba53461b2a69088becf61e59bdbeadc3147f0",
     "lean/Main/Base.lean": "546eb30ad23c0fbdf447cdcbc31d929b856cb454ae8dd08118654241fac9fc92",
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/Retraction.lean": "dfb31a2140732cb8d3b6332fd61ec1f5e5fbd7111ccfce1f18179299eccd3cd1",
+    "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "c3b7b81e80ab957b8e7bf320048201ca0932965ec5c1c82e5756f85546d7a896",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "a9512a9aef8385f6d20ddbc55005c31bc55e27e3f1da2bd49ba6d4a2c9c2a671",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
-    "lean/Singular/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
+    "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
     "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
@@ -11670,10 +11767,10 @@ const STORIES=[
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
-    "lean/Singular/M1.lean": "212fe7d2737158508dd02e74802914dfc87d29296284fa2601bb98ee6339e597",
+    "lean/Singular/M1.lean": "d2e853de64f0730883f2c59d892e3bca0cfc2c526b0277bb5b79e93b237a4c4f",
     "lean/Singular/M1Audit.lean": "24c55408c7f6eaf2dab6e6f01226e9bbc071b0b688b8e62751fb9d0dc4032fe7",
     "lean/Singular/M1Driver.lean": "75a65fe58b5b8838c1df50ca67c0f555ca72d78b4dbd3640b4df97bf57835fcd",
-    "lean/Singular/Model.lean": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
+    "lean/Singular/Model.lean": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
@@ -11691,7 +11788,7 @@ const STORIES=[
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+    "lean/Singular/Statements.lean": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
@@ -12813,7 +12910,7 @@ function replayTo(n) {
   state = initial();
   prefix = [state];
   for (let i = 0; i < n && i < story.steps.length; i++) {
-    const r = step(state, story.steps[i].request);
+    const r = admittedFold(state, story.steps[i].request, story.steps[i].foldWitness);
     if (r.accepted) state = r.value.state;
     prefix.push(state);
   }
@@ -12840,7 +12937,7 @@ function renderBranches() {
         const f = forks[i];
         let s = state;
         for (const e of f.steps) {
-          const r = step(s, e.request);
+          const r = admittedFold(s, e.request, e.foldWitness);
           narrate(`${e.what} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`);
           if (r.accepted) s = r.value.state;
         }
@@ -12859,7 +12956,9 @@ function buildEdgeButtons() {
       const output = Number($('output-input').value || 555),
         deposit = Number($('deposit-input').value || 0);
       const kind = $('approval-picker').value;
-      const opts = { owner, output, deposit, refundAddress: owner };
+      const submittedAt = Number($('submitted-at-input').value);
+      const validTo = Number($('valid-to-input').value);
+      const opts = { owner, output, deposit, refundAddress: owner, submittedAt };
       const req =
         edge === 'witnessTerminal'
           ? read(key, output)
@@ -12870,7 +12969,7 @@ function buildEdgeButtons() {
               : kind === 'other'
                 ? otherPolicy(edge, key, opts)
                 : request(edge, key, opts);
-      const r = step(state, req);
+      const r = admittedFold(state, { ...req, submittedAt }, { validTo });
       $('edge-result').textContent =
         `${edge} → ${r.accepted ? 'admitted' : 'refused: ' + r.reason}`;
       if (r.accepted) state = r.value.state;

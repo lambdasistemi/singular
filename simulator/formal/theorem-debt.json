@@ -201,7 +201,7 @@
     "name": "Singular.Statements.fold_batch_of_one_is_step",
     "status": "PROVED",
     "debt": "none",
-    "statementSha256": "09dc61dcbe8e7a4a68b170944bb42cdcf6ece9af9fc006af96135cfab1185f87"
+    "statementSha256": "b6226a82c352b27b0fac2034592963f240da8696a44e088baeaca770d9e7c665"
   },
   {
     "name": "Singular.Statements.reject_batch_of_one_is_reject",
@@ -226,6 +226,42 @@
     "status": "PROVED",
     "debt": "none",
     "statementSha256": "fd23c815f71328cb0595763ea280845bfd28b4aa5b78022080afd43fb12f4aba"
+  },
+  {
+    "name": "Singular.Statements.fold_admitted_up_to_the_deadline",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "e1540c2791bdcd7319fbcd172dc75e1ec5fdea744b321d7635a0b598bb758710"
+  },
+  {
+    "name": "Singular.Statements.fold_refused_past_any_deadline",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d01c46aeea61a2a2c783328c3fa92ddb60e2514b5e80be453955aadb3dcd5d12"
+  },
+  {
+    "name": "Singular.Statements.fold_admission_judges_each_request_by_its_own_time",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ed9bd208afb40f17952dd07e3636b21be857d39418839a26eef57968a1e3d0e2"
+  },
+  {
+    "name": "Singular.Statements.fixed_edge_set_precedes_the_window",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "553193b93c2907805c54c6b1f513f1b9dd43ca3088b268db58083d9faeb51dd3"
+  },
+  {
+    "name": "Singular.Statements.fold_admission_precedes_the_law",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "c62a8694e560a5f7b5c07777e95973448d49bbe554f81051de20d11f38362cd1"
+  },
+  {
+    "name": "Singular.Statements.rejection_uses_its_own_admission",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "7f313cb7eafa046f11d12f5ab4c2f293f16db2718caee95df7bba57d7718f023"
   },
   {
     "name": "Singular.Statements.rejection_without_evidence",

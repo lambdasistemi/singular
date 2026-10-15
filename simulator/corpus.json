@@ -2178,8 +2178,8 @@
     ],
     "terminalPolicy": 10
   },
-  "modelSha256": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
-  "payloadSha256": "70cdbc34fa776acff6e455f1fb9c0587ee0238a481c6b6bbeaf50355d478d15a",
+  "modelSha256": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
+  "payloadSha256": "7a7759282156a652d5f04c38e3d76106cc0e0373b43e6afb6e3cbe817beadccf",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -4803,11 +4803,11 @@
     "lean/Main/Economics.lean": "8aa4b8bf70fffc855ee80a8d944e8f0f223c6e8214774bdae9b1caccd7481ced",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
-    "lean/Main/Retraction.lean": "dfb31a2140732cb8d3b6332fd61ec1f5e5fbd7111ccfce1f18179299eccd3cd1",
+    "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
     "lean/Main/Transactions.lean": "c3b7b81e80ab957b8e7bf320048201ca0932965ec5c1c82e5756f85546d7a896",
     "lean/Singular.lean": "e38a402a0c72aff6cf5b1ef6b7666a2571d395b68ff7e12454ad837efbe44f75",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
-    "lean/Singular/Driver.lean": "70cafa1ee597a4e725f558f3f6183bef7881172d449813b39bfe069181a829ea",
+    "lean/Singular/Driver.lean": "663aa60e5946f6707fce81e4833a98af120358b61cca88665797a12df738eef9",
     "lean/Singular/Driver/Codec.lean": "4a98a68baa33fbd159d689c5dd9cddb8ea97e9ee0f1d9d3d4c58a48a6d392d27",
     "lean/Singular/Driver/Surface.lean": "20cfc0997bce28136973cb4532c8e505239ad17700ba79f845ea24671511031d",
     "lean/Singular/Economics.lean": "2db91557b2a198373dbc48195f80c33a0bac379a0289afbf88d22f5d48fdea68",
@@ -4818,7 +4818,7 @@
     "lean/Singular/Lemmas/Assets.lean": "6580d1c1d4acb9576881a7f6a6c33814e52f5190240856e430340aaeca6bdf1b",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
-    "lean/Singular/Model.lean": "ab2fe9486bb1ae2fbfa41deee7f28dc1ace35d7cce549c244d661fe6d4f559ea",
+    "lean/Singular/Model.lean": "3d443d2535df8f026d44991506fc95c5ec46d262d5d790ace7bc0d6b28ee4da2",
     "lean/Singular/Model/Assets.lean": "ce37d142de6aac50806c440fa7136e337db2936890285ea5637c2ab50628f6b5",
     "lean/Singular/Model/Booking.lean": "af85ac01cb336b91582be354ede9c45b3aaff00104be1570fd0bac9180a7e74d",
     "lean/Singular/Model/Primitives.lean": "d4fec6a59ca0e0d740004ddf28a537180b92835a2b3270572dd8fb8a1e47ae67",
@@ -4826,14 +4826,14 @@
     "lean/Singular/Model/Request.lean": "022823e289fa8c945ae5fb12fb724ab35e14e9f860d05d283cff7b4aff0738cd",
     "lean/Singular/Model/Termination.lean": "8195f3734f306be89e62c5a983263884be4cc0a6e6045453b84a5a50fe49c236",
     "lean/Singular/Model/Transaction.lean": "686473339d4bff07c65b287ce3cf222b33af1b9b960b87b85df38fb9b656911a",
-    "lean/Singular/Statements.lean": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+    "lean/Singular/Statements.lean": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Booking.lean": "25788f94eda40e1d659a96e1f6885fb0d9d54167d2707e54b5ac9aa5e4f6aea3",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
     "lean/Singular/Statements/Rejection.lean": "be36fc28d272e4fe8f718bfd1e5708ff7cf0b187be0ac39899cc39ae1472a5fb",
     "lean/Singular/Statements/Termination.lean": "bf6565d2281591ea3ba0c92ec3f59576175a7d182f004d2d86f3df98baf1fe9a"
   },
-  "statementsSha256": "1fe284301aa11826a4fea860b06514f0d7d8e987aaf3337c5bc14a6db742a9c8",
+  "statementsSha256": "ba2c6c99f1037c5bd24ba037b409c63540da53fec7582c26d9b9228e7995eb6d",
   "terminationBookings": [
     {
       "actualReason": null,
@@ -8857,7 +8857,7 @@
       "story": "another syntax tag name minted is refused"
     }
   ],
-  "theoremManifestSha256": "bce3d38145b86127f0bc0032a57683e96a01f1a13577489ddf9ad06809e47b7f",
+  "theoremManifestSha256": "9beaf644b5ef9a119b4f41c003a990d3aaaf9d816fbcaa1b14617c821226127f",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,
