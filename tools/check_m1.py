@@ -20,6 +20,7 @@ from check_model import (
     check_records,
     check_or_compare,
     digest,
+    module_text,
     model_constants,
     model_fold_admission,
     fold_admission_reason,
@@ -30,7 +31,7 @@ from check_model import (
 
 
 def check(corpus, root):
-    source = (root / "lean/Singular/Model.lean").read_text()
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("def allowed ", 1)[1].split("\ndef delta ", 1)[0]
     allowed = set(re.findall(r"e == \.(\w+)", body))
     assert allowed == {"insertActive", "updateTerminal"}, "permanent admission moved"

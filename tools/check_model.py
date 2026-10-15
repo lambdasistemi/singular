@@ -333,7 +333,7 @@ def model_refusal_vocabulary(root):
 
 def model_fold_admission(root):
     """Admission reasons and fixed edges read from the producer's definitions."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef foldAdmission ", 1)[1].split("\n/--", 1)[0]
     reasons = {}
     for guard in ("allowed", "inPhase1"):
@@ -718,9 +718,15 @@ def leaf_name(spelling):
 DELTA_CELL = re.compile(r"\(\.(\w+), (-?\d+)\)")
 
 
+def model_law_text(root):
+    """Read the law without the Oracle adapters that reuse its short names."""
+    source = module_text(root / "lean/Singular/Model.lean")
+    return re.sub(r"(?ms)^namespace Oracle\n.*?^end Oracle\b", "", source)
+
+
 def model_constants(root):
     """The leaf byte table and the R2 delta table, read off the model."""
-    source = module_text(root / "lean/Singular/Model.lean")
+    source = model_law_text(root)
     state_body = source.split("\ndef stateByte ", 1)[1].split("\n/--", 1)[0]
     leaf_bytes = {
         name: int(value, 16) for name, value in STATE_BYTE_ARM.findall(state_body)
@@ -748,7 +754,7 @@ def model_transitions(root):
     An internally consistent row that simply echoes its starting state passes
     every other check here and fails this one.
     """
-    source = module_text(root / "lean/Singular/Model.lean")
+    source = model_law_text(root)
     body = source.split("\ndef transition (e : Edge) (before : Leaf)", 1)[1].split(
         "\n/--", 1
     )[0]
