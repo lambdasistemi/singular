@@ -433,7 +433,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "82470919f4578002fa9238c834ad5c92737e9c5d8bca096fb0138b35285db8fc",
+  "payloadSha256": "cd8493f09d82bcb99136e856357e5882cd298cba7363d72840239ab0b429d4a9",
   "scenarios": [
     {
       "foldWitness": {
@@ -2145,6 +2145,7 @@
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
     "lean/Main/Payments.lean": "58ed3d96f0e6e0cce34c187b94cbe4fcce6b59d6b9b98140fcc88ce802b61f93",
+    "lean/Main/Refunds.lean": "511dc328d53b4a82d3b5f3811375b4b4f4f6e6cd2eb5cc9120a4cb9fb2123daf",
     "lean/Main/RejectionPreservation.lean": "c3b6f2f7a0bc0bc1ae06901674092fa8b6b0e67d0d40a3db226ae8b02b6e9091",
     "lean/Main/RejectionReadsState.lean": "d383b61aa43add642747dd6ac06f3943966299ff9384037251fe46a86b07030d",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
