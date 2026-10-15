@@ -28,6 +28,7 @@ module Singular.Registry.TxBuilder.SelectedFoldSpec (spec) where
 import Control.Exception (SomeException, displayException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
 import Data.List (isInfixOf)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
@@ -44,7 +45,11 @@ import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    )
 import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
@@ -53,17 +58,26 @@ import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (FromData (..))
 
-import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
+import PlutusCore.Data qualified as PLC
+import Singular.Registry.Config
+    ( CageConfig (..)
+    , bootStateFromCfg
+    , defaultProcessTime
+    )
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.FoldAdmission (foldAdmission)
 import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId (..))
 import Singular.Registry.LedgerProvider (Session, TipObservation (..))
+import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
+import Singular.Registry.Trie (TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TrieState
     ( CreateRecord (..)
     , RegistryIdentity (..)
@@ -79,6 +93,12 @@ import Singular.Registry.TrieState.Fixture
     , fixtureStore
     )
 import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedFoldArgs (..)
+    , ConnectedMint (..)
+    , RawRedeemer (..)
+    , connectedFoldTx
+    )
 import Singular.Registry.TxBuilder.Internal.Identity
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
@@ -86,6 +106,7 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , emptyRoot
     , mkInlineDatum
     , mkRequestDatumWith
+    , policyIdFromPin
     , requestAddrFromCfg
     , scriptHashBytes
     , toPlcData
@@ -131,23 +152,67 @@ txIn c i =
 stateIn :: TxIn
 stateIn = txIn 'b' 0
 
-reqIn1, reqIn2, reqIn3, reqIn4 :: TxIn
+reqIn1
+    , reqIn2
+    , reqIn3
+    , reqIn4
+    , reqIn5
+    , reqIn6
+    , reqIn7
+    , reqIn8
+    , reqIn9
+    , reqIn10
+    , reqIn11
+    , reqIn12
+        :: TxIn
 reqIn1 = txIn 'a' 0
 reqIn2 = txIn 'a' 1
 reqIn3 = txIn 'a' 2
 reqIn4 = txIn 'a' 3
+reqIn5 = txIn 'a' 4
+reqIn6 = txIn 'a' 5
+reqIn7 = txIn 'a' 6
+reqIn8 = txIn 'a' 7
+reqIn9 = txIn 'a' 8
+reqIn10 = txIn 'a' 9
+reqIn11 = txIn 'a' 10
+reqIn12 = txIn 'a' 11
 
 feeIn :: TxIn
 feeIn = txIn 'e' 0
 
+holderIn :: TxIn
+holderIn = txIn 'e' 1
+
+{- | An output holding one active token for key5 at the payer: the burn
+source duties requires for a termination of key5, so a created pair
+reaches the post-build within-batch refusal instead of the holder check.
+-}
+holderOut :: TxOut ConwayEra
+holderOut =
+    mkBasicTxOut
+        payer
+        ( MaryValue
+            (Coin 5_000_000)
+            ( MultiAsset
+                ( Map.singleton
+                    (policyIdFromPin (cfgActivePolicy cfg))
+                    (Map.singleton (AssetName (SBS.toShort key5)) 1)
+                )
+            )
+        )
+
 missingIn :: TxIn
 missingIn = txIn 'f' 9
 
-key1, key2, key3, key4 :: ByteString
+key1, key2, key3, key4, key5, key6, key7 :: ByteString
 key1 = "test-key-1"
 key2 = "test-key-2"
 key3 = "test-key-3"
 key4 = "test-key-4"
+key5 = "test-key-5"
+key6 = "test-key-6"
+key7 = "test-key-7"
 
 submitted1, submitted2, submitted3, submitted4 :: Integer
 submitted1 = 1_000
@@ -156,7 +221,10 @@ submitted3 = 3_000
 submitted4 = 4_000
 
 requestOut :: ByteString -> Integer -> TxOut ConwayEra
-requestOut key submittedAt =
+requestOut key submittedAt = requestOutEdge key submittedAt 1
+
+requestOutEdge :: ByteString -> Integer -> Integer -> TxOut ConwayEra
+requestOutEdge key submittedAt edge =
     mkBasicTxOut
         (requestAddrFromCfg cfg tokenId Testnet)
         (MaryValue (Coin 10_000_000) mempty)
@@ -166,7 +234,7 @@ requestOut key submittedAt =
                     tokenId
                     payer
                     key
-                    1
+                    edge
                     2_000_000
                     submittedAt
                     (serialiseAddr payer, Nothing)
@@ -181,6 +249,135 @@ pendingReqs =
 
 pendingReqs4 :: [(TxIn, TxOut ConwayEra)]
 pendingReqs4 = pendingReqs <> [(reqIn4, requestOut key4 submitted4)]
+
+{- | An insertion of key5 then a termination of key5: the pair the model
+refuses, so the builder must refuse it before signing, naming the
+terminating request.
+-}
+pendingPair :: [(TxIn, TxOut ConwayEra)]
+pendingPair =
+    [ (reqIn5, requestOutEdge key5 submitted1 1)
+    , (reqIn6, requestOutEdge key5 submitted2 3)
+    ]
+
+{- | A request whose destination no builder can decode: duties must refuse
+it before any within-batch refusal fires.
+-}
+requestOutBadDest :: ByteString -> Integer -> TxOut ConwayEra
+requestOutBadDest key submittedAt =
+    mkBasicTxOut
+        (requestAddrFromCfg cfg tokenId Testnet)
+        (MaryValue (Coin 10_000_000) mempty)
+        & datumTxOutL
+            .~ mkInlineDatum
+                ( mkRequestDatumWith
+                    tokenId
+                    payer
+                    key
+                    1
+                    2_000_000
+                    submittedAt
+                    ("not-an-address", Nothing)
+                )
+
+{- | Excluded edge first, then the pair: the model refuses the edge before
+it inspects the pair, so the builder must refuse the edge, not the pair.
+-}
+pendingMixedEdge :: [(TxIn, TxOut ConwayEra)]
+pendingMixedEdge =
+    [ (reqIn7, requestOutEdge key6 submitted1 2)
+    , (reqIn5, requestOutEdge key5 submitted1 1)
+    , (reqIn6, requestOutEdge key5 submitted2 3)
+    ]
+
+{- | Failed step first, then the pair: duties must refuse the undecodable
+destination before the within-batch refusal fires.
+-}
+pendingMixedStep :: [(TxIn, TxOut ConwayEra)]
+pendingMixedStep =
+    [ (reqIn8, requestOutBadDest key6 submitted1)
+    , (reqIn5, requestOutEdge key5 submitted1 1)
+    , (reqIn6, requestOutEdge key5 submitted2 3)
+    ]
+
+chainViewMixedEdge :: Session NoWitness IO
+chainViewMixedEdge = chainViewWith (pendingMixedEdge <> pendingReqs)
+
+chainViewMixedStep :: Session NoWitness IO
+chainViewMixedStep = chainViewWith (pendingMixedStep <> pendingReqs)
+
+{- | A mint under a policy that is not the registry's: attached application
+business the keyed comparison must ignore, never a mint refusal.
+-}
+unrelatedMint :: ConnectedMint
+unrelatedMint =
+    ConnectedMint
+        { cmPolicy = Fixture.applicationPolicy
+        , cmAssets = Map.singleton (AssetName (SBS.toShort "approval")) 1
+        , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
+        , cmScript = Fixture.applicationScript
+        }
+
+-- | One insertion on its own, for the foreign-mint rows.
+pendingSkipSingle :: [(TxIn, TxOut ConwayEra)]
+pendingSkipSingle = [(reqIn12, requestOutEdge key7 submitted1 1)]
+
+{- | A created pair beside a further insertion, all edges admitted and all
+windows open: the model's keyed mint check fires before the pair scan,
+so with no mints supplied the builder must refuse @net-mint-mismatch@.
+-}
+pendingSkipMint :: [(TxIn, TxOut ConwayEra)]
+pendingSkipMint =
+    [ (reqIn9, requestOutEdge key5 submitted1 1)
+    , (reqIn10, requestOutEdge key5 submitted2 3)
+    , (reqIn11, requestOutEdge key6 submitted3 1)
+    ]
+
+{- | The connected fold in the mode that skips evaluation (conformance
+only): proofs and assembly run, script evaluation does not, and the
+post-build checks judge the window, the keyed mint and the pair.
+-}
+buildSkipFold
+    :: [(TxIn, TxOut ConwayEra)]
+    -> [TxIn]
+    -> [ConnectedMint]
+    -> IO (ConwayTx, Root)
+buildSkipFold reqs refs mints = do
+    let view = chainViewWith reqs
+    (manager, _) <- mkPureTrieManagerFrom Map.empty
+    createTrie manager tokenId
+    connectedFoldTx
+        ConnectedFoldArgs
+            { cfaCfg = cfg
+            , cfaSession = view
+            , cfaTrie = manager
+            , cfaToken = tokenId
+            , cfaFeeAddr = payer
+            , cfaStateUtxo = (stateIn, stateOut)
+            , cfaReqUtxos = [u | u@(r, _) <- reqs, r `elem` refs]
+            , cfaFeeUtxo = (feeIn, feeOut)
+            , cfaSpends = []
+            , cfaMints = mints
+            , cfaOutputs = []
+            , cfaSigners = []
+            , cfaRefUtxos = []
+            , cfaAttachScripts = []
+            , cfaSkipEval = True
+            , cfaAdjustRoot = id
+            }
+
+-- | Exactly one key's required mint, as a caller supplies it.
+mintFor :: ByteString -> Integer -> ConnectedMint
+mintFor key qty =
+    ConnectedMint
+        { cmPolicy = policyIdFromPin (cfgActivePolicy cfg)
+        , cmAssets = Map.singleton (AssetName (SBS.toShort key)) qty
+        , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
+        , cmScript = Fixture.applicationScript
+        }
+
+chainViewPair :: Session NoWitness IO
+chainViewPair = chainViewWith (pendingReqs <> pendingPair)
 
 deadlineOf :: Integer -> Integer
 deadlineOf submittedAt = submittedAt + defaultProcessTime cfg
@@ -218,7 +415,7 @@ chainViewWith reqs =
                         else
                             if addr == cageAddrFromCfg cfg Testnet
                                 then [(stateIn, stateOut)]
-                                else [(feeIn, feeOut)]
+                                else [(feeIn, feeOut), (holderIn, holderOut)]
             )
             ( withParameters (withSyntheticCosts Fixture.preprodParams) $
                 withTime (pure syntheticTime) $
@@ -227,7 +424,7 @@ chainViewWith reqs =
                             pure
                                 [ (reference, output)
                                 | (reference, output) <-
-                                    (stateIn, stateOut) : (feeIn, feeOut) : reqs
+                                    (stateIn, stateOut) : (feeIn, feeOut) : (holderIn, holderOut) : reqs
                                 , reference `Set.member` wanted
                                 ]
                         )
@@ -423,3 +620,139 @@ spec = describe "The fold builder over a chosen pending request" $ do
                 Right _ ->
                     expectationFailure
                         "chosen references with one not pending built a fold"
+    it
+        "reports a failed evaluation as-is on an insertion then a termination, never token-missing"
+        $ do
+            result <-
+                try (buildSelectedManyOn chainViewPair (reqIn5 :| [reqIn6]))
+                    :: IO (Either SomeException ConwayTx)
+            case result of
+                Left err -> do
+                    displayException err `shouldSatisfy` isInfixOf "build failed"
+                    displayException err `shouldNotSatisfy` isInfixOf "token-missing"
+                Right _ ->
+                    expectationFailure
+                        "an insertion then a termination of one key built a fold"
+    it
+        "refuses a keyed mint mismatch before the pair in skip-evaluation mode"
+        $ do
+            result <-
+                try
+                    ( buildSkipFold
+                        (pendingSkipMint <> pendingReqs)
+                        [reqIn9, reqIn10, reqIn11]
+                        []
+                    )
+                    :: IO (Either SomeException (ConwayTx, Root))
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf "net-mint-mismatch"
+                Right _ ->
+                    expectationFailure
+                        "an unbalanced batch beside a created pair built a fold"
+    it
+        "reaches the pair on a cancelling delta with no mints in skip-evaluation mode"
+        $ do
+            result <-
+                try (buildSkipFold pendingPair [reqIn5, reqIn6] [])
+                    :: IO (Either SomeException (ConwayTx, Root))
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf "token-missing"
+                Right _ ->
+                    expectationFailure
+                        "a cancelling delta with no mints built a fold"
+    it
+        "reaches the pair beside a funded insertion in skip-evaluation mode"
+        $ do
+            result <-
+                try
+                    ( buildSkipFold
+                        (pendingSkipMint <> pendingReqs)
+                        [reqIn9, reqIn10, reqIn11]
+                        [mintFor key6 1]
+                    )
+                    :: IO (Either SomeException (ConwayTx, Root))
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf "token-missing"
+                Right _ ->
+                    expectationFailure
+                        "a funded batch beside a created pair built a fold"
+    it
+        "ignores a foreign-policy mint beside a funded insertion in skip-evaluation mode"
+        $ do
+            result <-
+                try
+                    ( buildSkipFold
+                        pendingSkipSingle
+                        [reqIn12]
+                        [mintFor key7 1, unrelatedMint]
+                    )
+                    :: IO (Either SomeException (ConwayTx, Root))
+            case result of
+                Left err ->
+                    expectationFailure
+                        ( "a funded insertion with an attached mint was refused: "
+                            <> displayException err
+                        )
+                Right _ -> pure ()
+    it
+        "reaches the pair with an attached foreign mint in skip-evaluation mode"
+        $ do
+            result <-
+                try (buildSkipFold pendingPair [reqIn5, reqIn6] [unrelatedMint])
+                    :: IO (Either SomeException (ConwayTx, Root))
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf "token-missing"
+                Right _ ->
+                    expectationFailure
+                        "a created pair with an attached mint built a fold"
+    it
+        "refuses an excluded edge before a pair it precedes in the model order"
+        $ do
+            result <-
+                try
+                    ( buildSelectedManyOn
+                        chainViewMixedEdge
+                        (reqIn7 :| [reqIn5, reqIn6])
+                    )
+                    :: IO (Either SomeException ConwayTx)
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf "not supported by M1"
+                Right _ ->
+                    expectationFailure
+                        "an excluded edge beside a created pair built a fold"
+    it
+        "refuses a failed step before a pair it precedes in the model order"
+        $ do
+            result <-
+                try
+                    ( buildSelectedManyOn
+                        chainViewMixedStep
+                        (reqIn8 :| [reqIn5, reqIn6])
+                    )
+                    :: IO (Either SomeException ConwayTx)
+            case result of
+                Left err ->
+                    displayException err `shouldSatisfy` isInfixOf "cannot decode"
+                Right _ ->
+                    expectationFailure
+                        "a failed step beside a created pair built a fold"
+    it
+        "admits every built fold reading the bound from its body"
+        $ do
+            tx <- buildSelectedMany (reqIn1 :| [reqIn2])
+            case tx ^. bodyTxL . vldtTxBodyL of
+                ValidityInterval _ (SJust u) -> do
+                    boundMs <- Services.slotStart chainView u
+                    foldAdmission
+                        (defaultProcessTime cfg)
+                        boundMs
+                        [(reqIn1, submitted1), (reqIn2, submitted2)]
+                        `shouldBe` Nothing
+                _ ->
+                    expectationFailure
+                        "a built fold carries no validity upper bound"

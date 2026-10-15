@@ -201,19 +201,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] admission-red-tests: the boundary, many requests, the first offender named, the within-batch pair, the agreement with the model at the boundary and one past with its failing control",
+      "text": "[x] admission-red-tests: the boundary, many requests, the first offender named, the within-batch pair, the agreement with the model at the boundary and one past with its failing control",
       "pause": 300
     },
     {
-      "text": "[ ] pure-fold-admission",
+      "text": "[x] pure-fold-admission",
       "pause": 300
     },
     {
-      "text": "[ ] pure-batch-consumes-created",
+      "text": "[x] pure-batch-consumes-created",
       "pause": 300
     },
     {
-      "text": "[ ] library-agrees-with-the-model-question",
+      "text": "[x] library-agrees-with-the-model-question",
       "pause": 300
     }
   ],
@@ -223,15 +223,15 @@
       "pause": 500
     },
     {
-      "text": "[ ] builder-refuses-a-bound-past-a-deadline-reading-the-built-body",
+      "text": "[x] builder-refuses-a-bound-past-a-deadline-reading-the-built-body",
       "pause": 300
     },
     {
-      "text": "[ ] builder-refuses-a-termination-of-a-key-an-earlier-insertion-creates",
+      "text": "[x] builder-refuses-a-termination-of-a-key-an-earlier-insertion-creates",
       "pause": 300
     },
     {
-      "text": "[ ] connected-fold-refuses-the-same-way",
+      "text": "[x] connected-fold-refuses-the-same-way",
       "pause": 300
     }
   ],
@@ -241,19 +241,19 @@
       "pause": 500
     },
     {
-      "text": "[ ] selection-window-rule-is-the-model-admission-at-the-probe-bound",
+      "text": "[x] selection-window-rule-is-the-model-admission-at-the-probe-bound",
       "pause": 300
     },
     {
-      "text": "[ ] delete-window-closed-from-code-readers-scripts-and-pages",
+      "text": "[x] delete-window-closed-from-code-readers-scripts-and-pages",
       "pause": 300
     },
     {
-      "text": "[ ] post-build-decision-calls-the-library",
+      "text": "[x] post-build-decision-calls-the-library",
       "pause": 300
     },
     {
-      "text": "[ ] receipt-names-the-request-reason-source-deadline-and-probe-bound",
+      "text": "[x] receipt-names-the-request-reason-source-deadline-and-probe-bound",
       "pause": 300
     }
   ],
@@ -263,7 +263,7 @@
       "pause": 500
     },
     {
-      "text": "[ ] the-expired-request-is-named-not-phase1-by-the-model-beside-a-settled-in-window-request-on-a-devnet",
+      "text": "[x] the-expired-request-is-named-not-phase1-by-the-model-beside-a-settled-in-window-request-on-a-devnet",
       "pause": 300
     }
   ],
@@ -353,6 +353,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "ce52bea1ba9207aec82c49a41565cfbe242f321af8e00b32e4e0e57e9c5352f9"
+    "sha256": "3e40b406648055e4dff2b05814c81ffb881ea8eea1ba4a91fadb1a044441d54a"
   }
 }

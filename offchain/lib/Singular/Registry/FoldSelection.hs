@@ -16,8 +16,8 @@ names its reason:
 
 1. it decodes as a request, otherwise @undecodable@
 2. its edge is one the model admits, otherwise @edge-inadmissible@
-3. its processing window is open beyond the fold margin, otherwise
-   @window-closed@
+3. its processing window admits the probe bound under the registry's
+   processing time, otherwise @not-phase1@
 4. the model's approval check accepts it, otherwise @no-approval@ or
    @approval-mismatch@
 5. the model's leaf check accepts it from the live state, otherwise
@@ -29,10 +29,12 @@ names its reason:
 
 Requests that pass all seven keep ledger input order; the first ones up to
 the capacity bound are settled and each remaining one is named @capacity@.
-The window rule mirrors the command line's processing-window rule: open
-only while the time left is beyond the margin. The approval and leaf checks
-follow the model's refusal order: excluded edges first, then approval, then
-the leaf from the live state.
+The window rule is the model's admission at the probe bound the folder
+would build under, the clock plus the fold margin: a bound past the
+request's deadline is refused @not-phase1@ with the deadline and the
+probe bound, and a bound equal to the deadline admits. The approval and
+leaf checks follow the model's refusal order: excluded edges first, then
+admission, then approval, then the leaf from the live state.
 -}
 module Singular.Registry.FoldSelection
     ( EdgeKind (..)
@@ -57,6 +59,13 @@ import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text qualified as T
+
+import Singular.Registry.FoldAdmission
+    ( foldAdmission
+    , refusalBound
+    , refusalDeadline
+    )
 
 {- | The edge a pending request names. Only the two edges the model admits
 settle; any other edge is refused @edge-inadmissible@.
@@ -107,6 +116,7 @@ data PendingRequest = PendingRequest
     , prOwner :: Text
     , prEdge :: EdgeKind
     , prDeadline :: Integer
+    , prSubmittedAt :: Integer
     , prDecodeOk :: Bool
     , prApproval :: ApprovalCheck
     , prApp :: AppVerdict
@@ -123,8 +133,8 @@ data SelectedRequest = SelectedRequest
     }
     deriving stock (Eq, Show)
 
-{- | Every exclusion reason: eight model refusals in the model's own words,
-six selection-policy reasons of the processor.
+{- | Every exclusion reason: nine model refusals in the model's own words,
+five selection-policy reasons of the processor.
 -}
 data Reason
     = ReasonEdgeInadmissible
@@ -136,7 +146,7 @@ data Reason
     | ReasonNotBooked
     | ReasonTerminalImmutable
     | ReasonUndecodable
-    | ReasonWindowClosed
+    | ReasonNotPhase1
     | ReasonAppDatumUnreadable
     | ReasonAppRequired
     | ReasonKeyInBatch
@@ -192,7 +202,7 @@ exclusionName exc = case excReason exc of
     ReasonNotBooked -> "not-booked"
     ReasonTerminalImmutable -> "terminal-immutable"
     ReasonUndecodable -> "undecodable"
-    ReasonWindowClosed -> "window-closed"
+    ReasonNotPhase1 -> "not-phase1"
     ReasonAppDatumUnreadable -> "application-datum-unreadable"
     ReasonAppRequired -> "application-required"
     ReasonKeyInBatch -> "key-in-batch"
@@ -212,7 +222,7 @@ exclusionSource exc = case excReason exc of
     ReasonNotBooked -> "model-refusal"
     ReasonTerminalImmutable -> "model-refusal"
     ReasonUndecodable -> "selection-policy"
-    ReasonWindowClosed -> "selection-policy"
+    ReasonNotPhase1 -> "model-refusal"
     ReasonAppDatumUnreadable -> "selection-policy"
     ReasonAppRequired -> "selection-policy"
     ReasonKeyInBatch -> "selection-policy"
@@ -228,15 +238,20 @@ isAdmittedEdge (EdgeOther _) = False
 checks in the spec's order. No argument names any other pending request, so
 a request's verdict never depends on requests on other keys. The seventh
 check, 'ReasonKeyInBatch', needs the earlier verdicts and runs in
-'selectFold'.
+'selectFold'. The window check is the library's 'foldAdmission' at the
+probe bound the folder would build under (the clock plus the fold margin)
+with the registry's processing time: a bound past the request's deadline
+is refused 'not-phase1' with the deadline and the probe bound, and a bound
+equal to the deadline admits, as the model and the chain admit it.
 -}
 judgeAlone
     :: Integer
     -> Integer
+    -> Integer
     -> LiveFacts
     -> PendingRequest
     -> Either Exclusion SelectedRequest
-judgeAlone now margin facts req
+judgeAlone now margin process facts req
     | not (prDecodeOk req) =
         Left
             (Exclusion ReasonUndecodable "the output does not decode as a request")
@@ -246,28 +261,39 @@ judgeAlone now margin facts req
                 ReasonEdgeInadmissible
                 "the edge is not one the model admits"
             )
-    | prDeadline req - now <= margin =
-        Left
-            ( Exclusion
-                ReasonWindowClosed
-                "the processing window is not open beyond the fold margin"
-            )
-    | otherwise = case prApproval req of
-        ApprovalMissing ->
-            Left (Exclusion ReasonNoApproval "the request carries no approval")
-        ApprovalPolicyMismatch ->
-            Left
-                (Exclusion ReasonNoApproval "the approval is under another policy")
-        ApprovalTupleMismatch ->
+    | otherwise = case foldAdmission
+        process
+        (now + margin)
+        [(prRef req, prSubmittedAt req)] of
+        Just refusal ->
             Left
                 ( Exclusion
-                    ReasonApprovalMismatch
-                    "the approval does not match the request"
+                    ReasonNotPhase1
+                    ( T.pack
+                        ( "the request's processing deadline, "
+                            <> show (refusalDeadline refusal)
+                            <> " ms, is before the probe bound "
+                            <> show (refusalBound refusal)
+                            <> " ms the fold would build under: no fold is built"
+                        )
+                    )
                 )
-        ApprovalOk ->
-            judgeLeaf
-                (Map.findWithDefault (LeafUnknown, False) (prKey req) facts)
-                req
+        Nothing -> case prApproval req of
+            ApprovalMissing ->
+                Left (Exclusion ReasonNoApproval "the request carries no approval")
+            ApprovalPolicyMismatch ->
+                Left
+                    (Exclusion ReasonNoApproval "the approval is under another policy")
+            ApprovalTupleMismatch ->
+                Left
+                    ( Exclusion
+                        ReasonApprovalMismatch
+                        "the approval does not match the request"
+                    )
+            ApprovalOk ->
+                judgeLeaf
+                    (Map.findWithDefault (LeafUnknown, False) (prKey req) facts)
+                    req
 
 {- | The model's leaf check from the live facts. A key the facts never
 mention reads unknown, like a fresh key. The admitted edge is already
@@ -333,14 +359,15 @@ selectFold
     :: Int
     -> Integer
     -> Integer
+    -> Integer
     -> LiveFacts
     -> [PendingRequest]
     -> Selection
-selectFold bound now margin facts reqs =
+selectFold bound now margin process facts reqs =
     Selection settled excluded bound foldCapacityProvenance
   where
     judged :: [(PendingRequest, Either Exclusion SelectedRequest)]
-    judged = [(req, judgeAlone now margin facts req) | req <- reqs]
+    judged = [(req, judgeAlone now margin process facts req) | req <- reqs]
 
     deduped :: [(PendingRequest, Either Exclusion SelectedRequest)]
     deduped = go Set.empty judged

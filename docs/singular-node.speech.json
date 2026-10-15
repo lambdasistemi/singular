@@ -89,11 +89,11 @@
       "pause": 400
     },
     {
-      "text": "Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Eight reasons are the model's own refusal words, reported verbatim; six are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.",
+      "text": "Every request the fold leaves out is named in the receipt with its reason and where the reason comes from. Nine reasons are the model's own refusal words, reported verbatim; five are the processor's own selection policy, which the model has no counterpart for. The table lists all fourteen names by source.",
       "pause": 400
     },
     {
-      "text": "A request refused in the model's words failed the model's own check — its edge, its approval, or its leaf against the live state — and stays refused while the state still rules it out. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its processing window is not open beyond the fold margin; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named capacity is for the next fold. A request named window-closed stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with registry reclaim after its processing deadline, while its retract window remains open, and registry reject clears requests past both their windows.",
+      "text": "A request refused in the model's words failed the model's own check — its edge, its window, its approval, or its leaf against the live state — and stays refused while the state still rules it out. The window check asks the model's admission at the probe bound the folder would build under, the clock plus the thirty seconds a fold needs to be included: a bound past the request's deadline is refused not-phase1, and a bound equal to the deadline admits, as the chain admits it. A request left out by selection policy failed the processor's own rule: it does not decode as a request; its carried datum does not read, or, for a termination under the neutral value, the value carries no holding rules and the detail names the application's own executable; an earlier included request already names its key; or the fold is at its capacity bound. A request named capacity is for the next fold. A request refused not-phase1 stays pending — it cannot become settleable, because its deadline is fixed by its booking and the remaining time only shortens; its owner can take it back with registry reclaim after its processing deadline, while its retract window remains open, and registry reject clears requests past both their windows.",
       "pause": 400
     },
     {
@@ -101,7 +101,7 @@
       "pause": 400
     },
     {
-      "text": "--request R is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused nothing-to-fold, naming every exclusion with its reason and source. The window is the exception: when the request named by --request has run out of window, the refusal keeps the older deadline wording with its time fields instead of that request's reason and source, and, when nothing settles, lists the other exclusions after it; the same wording is kept when the only pending request has run out of window. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline, or within the thirty seconds a fold needs to be included.",
+      "text": "--request R is an expectation: the command is refused unless R is among the settled requests. The refusal names why R is not settled: R's own reason and source when R is pending but left out, or that R is not pending — folded, retracted or never booked. With pending requests but nothing settleable, the command is refused nothing-to-fold, naming every exclusion with its reason and source. With nothing pending it says so: nothing is pending and there is no request to fold. Past its window means past the processing deadline as the probe bound reads it: the bound the folder would build under, the clock plus the thirty seconds a fold needs to be included, past the request's deadline.",
       "pause": 400
     },
     {
@@ -125,7 +125,7 @@
       "pause": 400
     },
     {
-      "text": "What this page still does not claim, stated plainly: the capacity of 9 is an estimate, not measured on a real network, and this page claims no preprod number; measuring it belongs to #530. Recovery of a fold of several requests is proved by unit-level checks, and the interruption of such a fold on a development network is not executed yet.",
+      "text": "What this page still does not claim, stated plainly: the capacity of 9 is an estimate, not measured on a real network, and this page claims no preprod number; measuring it belongs to #530. Recovery of a fold of several requests is proved by unit-level checks, and the interruption of such a fold on a development network is not executed yet. One fold's batch is compared by the state, mint and payments it reaches, never by a model transaction it does not build; folding requests together is not shown equal to folding them apart, and two orders are not shown to give equal roots. For a batch with two different defects the model names the edge set, then the window, then the law, while the chain checks each request's window beside its law, so the first reason can differ and no live row compares such a batch. A retraction still carries its own submission time until its admission moves onto the request's.",
       "pause": 400
     }
   ],
@@ -273,6 +273,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "fa0b4965bdb432c08b5bda7d10f4a02b8e20ccfc4dfcdbad6f576dc7ca56d339"
+    "sha256": "aa22f77c7405259ce0c8c9c2961774c714069016c11f90459565e82a1bcda2dc"
   }
 }

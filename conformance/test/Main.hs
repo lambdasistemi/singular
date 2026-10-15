@@ -16,6 +16,7 @@ import Conformance.Support.FixtureChild
     ( childModeVariable
     , holdScopedDirectories
     )
+import Conformance.Support.FoldAdmission qualified as FoldAdmission
 import Conformance.Support.FoldHistory qualified as FoldHistory
 import Conformance.Support.FoldSelection qualified as FoldSelection
 import Conformance.Support.HeldView qualified as HeldView
@@ -99,6 +100,8 @@ suite = do
         describe "Appendix — how we check the evidence" Specification.spec
     describe (tagged "Conformance.Support.HeldView" [Conformance]) $
         describe "Appendix — how we check the evidence" HeldView.spec
+    describe (tagged "Conformance.Support.FoldAdmission" [Conformance]) $
+        describe "Appendix — how we check the evidence" FoldAdmission.spec
     describe (tagged "Conformance.Support.FoldSelection" [Conformance]) $
         describe "Appendix — how we check the evidence" FoldSelection.spec
     describe

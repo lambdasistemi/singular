@@ -25,10 +25,16 @@ module Singular.Registry.TxBuilder.Update.Context
     , computeProofs
     , prepareState
     , computeUpperSlot
+    , guardSupportedEdges
+    , guardBatchPair
+    , guardMintMatch
+    , guardBuiltWindow
+    , guardBuiltFold
     ) where
 
 import Control.Monad (when)
 import Data.ByteString (ByteString)
+import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
@@ -41,6 +47,13 @@ import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
 import Cardano.Ledger.Address (Addr)
+import Cardano.Ledger.Allegra.Scripts
+    ( ValidityInterval (..)
+    )
+import Cardano.Ledger.Api.Tx (bodyTxL)
+import Cardano.Ledger.Api.Tx.Body
+    ( vldtTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , coinTxOutL
@@ -51,13 +64,32 @@ import Cardano.Ledger.Api.Tx.Out
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Core (Script)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
-import Cardano.Slotting.Slot (SlotNo)
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
+import Cardano.Slotting.Slot (SlotNo (..))
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Config
     ( CageConfig (..)
     )
 import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.FoldAdmission
+    ( AdmissionRefusal (..)
+    , BatchConsumption (..)
+    , BatchEdge (..)
+    , admissionReason
+    , admissionSource
+    , batchConsumesCreated
+    , consumptionReason
+    , consumptionSource
+    , foldAdmission
+    , mintReason
+    , mintSource
+    )
 import Singular.Registry.Ledger
     ( ConwayEra
     , PParams
@@ -81,6 +113,8 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     , ProofStep
+    , edgeInsertActive
+    , edgeUpdateTerminal
     )
 
 {- | What a fold needs in hand to discharge the obligations: the three
@@ -347,6 +381,216 @@ computeUpperSlot view oldState reqUtxos = do
         (observedSlot observed)
         Nothing
         candidate
+
+{- | One included request as the model's admission checks read it: the
+output reference, the submission time from its datum, the key, and the
+edge mapped to what the within-batch check reads (an insertion creates
+the key's active holding, a termination burns one, any other edge is
+neither). Outputs carrying no request datum never reach the checks: the
+proofs refuse them first.
+-}
+admissionInputs
+    :: [(TxIn, TxOut ConwayEra)] -> [(TxIn, Integer, ByteString, BatchEdge)]
+admissionInputs reqUtxos =
+    [ ( ref
+      , requestSubmittedAt req
+      , requestKey req
+      , toBatchEdge (requestEdge req)
+      )
+    | (ref, out) <- reqUtxos
+    , Just (RequestDatum req) <- [extractCageDatum out]
+    ]
+  where
+    toBatchEdge e
+        | e == edgeInsertActive = BatchInsert
+        | e == edgeUpdateTerminal = BatchTerminate
+        | otherwise = BatchOther
+
+{- | Refuse before any other check a batch naming an edge outside the
+permanent contract (#519): the model's fixed edge set comes first, so an
+excluded edge is refused here, in the duties' words, before the window,
+the steps, the keyed mint or the within-batch scan.
+-}
+guardSupportedEdges :: String -> [(TxIn, TxOut ConwayEra)] -> IO ()
+guardSupportedEdges who reqUtxos =
+    case [ (ref, key, edge)
+         | (ref, out) <- reqUtxos
+         , Just (RequestDatum req) <- [extractCageDatum out]
+         , let key = requestKey req
+         , let edge = requestEdge req
+         , edge /= edgeInsertActive && edge /= edgeUpdateTerminal
+         ] of
+        [] -> pure ()
+        ((ref, key, edge) : _) ->
+            error
+                ( who
+                    <> ": edge "
+                    <> show edge
+                    <> " on key "
+                    <> show key
+                    <> " is not supported by M1 (expected insertActive or updateTerminal): request "
+                    <> show ref
+                )
+
+{- | Refuse before any proof or build work a batch that terminates a key
+an earlier insertion of the same batch created (#519): the library's
+'batchConsumesCreated' over the included requests in input order, naming
+the terminating request and the key in the model's words. An honest
+caller never assembles such a batch — the selection leaves a second
+request on an included key out — so this fires only on a directly
+chosen set, before anything is signed.
+-}
+guardBatchPair :: String -> [(TxIn, TxOut ConwayEra)] -> IO ()
+guardBatchPair who reqUtxos =
+    case batchConsumesCreated
+        [ (ref, key, edge)
+        | (ref, _, key, edge) <- admissionInputs reqUtxos
+        ] of
+        Nothing -> pure ()
+        Just consumption ->
+            error
+                ( who
+                    <> ": refusing to sign a batch that consumes what it creates: "
+                    <> consumptionReason
+                    <> " ("
+                    <> consumptionSource
+                    <> "): request "
+                    <> show (consumptionRef consumption)
+                    <> " terminates key "
+                    <> show (consumptionKey consumption)
+                )
+
+{- | Re-check a built fold against the model's admission reading the bound
+from the built body (#519): the body's validity upper slot converted to
+its start time through the view, judged with the registry's processing
+time by the library's 'foldAdmission' over the included requests in input
+order, then the within-batch check again, defensively. A missing or
+unconvertible bound fails closed with client-policy wording, never a
+model refusal. Returns the transaction it was given; the caller signs
+only after this passes.
+-}
+guardBuiltFold
+    :: String
+    -> Session NoWitness IO
+    -> Integer
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ConwayTx
+    -> IO ConwayTx
+guardBuiltFold who view processTime reqUtxos tx = do
+    windowed <- guardBuiltWindow who view processTime reqUtxos tx
+    guardBatchPair who reqUtxos
+    pure windowed
+
+{- | The window half of 'guardBuiltFold': judge the built body's bound
+through the view by the library's 'foldAdmission'. A caller that must
+judge further model checks between the window and the pair (the
+skip-evaluation mode's keyed mint check) calls this, then its checks,
+then 'guardBatchPair'.
+-}
+guardBuiltWindow
+    :: String
+    -> Session NoWitness IO
+    -> Integer
+    -> [(TxIn, TxOut ConwayEra)]
+    -> ConwayTx
+    -> IO ConwayTx
+guardBuiltWindow who view processTime reqUtxos tx = do
+    let inputs = admissionInputs reqUtxos
+    upperSlot <- case tx ^. bodyTxL . vldtTxBodyL of
+        ValidityInterval _ (SJust u) -> pure u
+        _ ->
+            error
+                ( who
+                    <> ": the built fold carries no validity upper bound, \
+                       \so nothing is signed"
+                )
+    boundStart <- trySync (Services.slotStart view upperSlot)
+    boundMs <- case boundStart of
+        Right ms -> pure ms
+        Left _ ->
+            error
+                ( who
+                    <> ": the built fold's upper bound, slot "
+                    <> show (unSlotNo upperSlot)
+                    <> ", converts to no time in this view, so nothing is signed"
+                )
+    case foldAdmission
+        processTime
+        boundMs
+        [(ref, submittedAt) | (ref, submittedAt, _, _) <- inputs] of
+        Nothing -> pure ()
+        Just refusal ->
+            error
+                ( who
+                    <> ": the built fold is not signed: "
+                    <> admissionReason
+                    <> " ("
+                    <> admissionSource
+                    <> "): request "
+                    <> show (refusalRef refusal)
+                    <> " has processing deadline "
+                    <> show (refusalDeadline refusal)
+                    <> " ms, which the built bound "
+                    <> show (refusalBound refusal)
+                    <> " ms passes"
+                )
+    pure tx
+
+{- | Refuse ahead of the pair scan a batch whose supplied mints differ from
+the keyed delta of its edges (#519, skip-evaluation mode only): every
+insertion owes one active token for its key, every termination burns one,
+any other edge owes nothing, the edge guard having run first. Compared per
+(policy, asset name) with a missing entry equal to zero, as the model's
+per-asset mint check, and ranged over the registry's own token policies
+only: a mint under any other policy is attached application business and
+neither counts toward nor causes a mint refusal, as the chain checks mint
+only under its own token policies. So auditor-6's
+scenario (a created pair beside a further insertion with no mints
+supplied) prints 'net-mint-mismatch' before any pair scan runs.
+-}
+guardMintMatch
+    :: String
+    -> CageConfig
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [(PolicyID, AssetName, Integer)]
+    -> IO ()
+guardMintMatch who cfg reqUtxos claimed =
+    if strip (summed [t | t@(p, _, _) <- claimed, p `elem` registryPids])
+        == strip actual
+        then pure ()
+        else
+            error
+                ( who
+                    <> ": the batch's claimed mint differs from its edges' keyed delta: "
+                    <> mintReason
+                    <> " ("
+                    <> mintSource
+                    <> ")"
+                )
+  where
+    pid = policyIdFromPin (cfgActivePolicy cfg)
+    registryPids =
+        [ policyIdFromPin pin
+        | pin <-
+            [cfgActivePolicy cfg, cfgAbsentPolicy cfg, cfgTerminalPolicy cfg]
+        ]
+    strip = Map.filter (/= 0)
+    summed triples =
+        Map.fromListWith
+            (+)
+            [((p, a), q) | (p, a, q) <- triples]
+    actual =
+        summed
+            [ (pid, AssetName (SBS.toShort key), delta)
+            | (_, out) <- reqUtxos
+            , Just (RequestDatum req) <- [extractCageDatum out]
+            , let delta = case requestEdge req of
+                    e | e == edgeInsertActive -> 1
+                    e | e == edgeUpdateTerminal -> -1
+                    _ -> 0
+            , delta /= 0
+            , let key = requestKey req
+            ]
 
 -- | Process a single request.
 processRequest

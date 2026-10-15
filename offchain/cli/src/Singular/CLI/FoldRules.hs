@@ -61,7 +61,6 @@ module Singular.CLI.FoldRules
     , foldReceiptLists
     , KeptReceipt (..)
     , keptReceiptFields
-    , combineWindowClosedMessage
     , holdsActiveToken
 
       -- * Which funding
@@ -99,6 +98,7 @@ import Singular.Registry.Application
 
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
+import Singular.Registry.FoldAdmission (foldAdmission)
 import Singular.Registry.FoldSelection
     ( AppVerdict (..)
     , ApprovalCheck (..)
@@ -251,9 +251,9 @@ postBuildCheck now deadline deadlineSlot upper boundTime = case upper of
                 else PostBuildRefused (BoundBeyondDeadlineSlot u s)
         | otherwise -> case boundTime of
             Nothing -> PostBuildRefused BoundUnconvertible
-            Just t
-                | t <= deadline -> PostBuildAdmitted BoundByTime
-                | otherwise -> PostBuildRefused (BoundAfterDeadline t)
+            Just t -> case foldAdmission 0 t [((), deadline)] of
+                Nothing -> PostBuildAdmitted BoundByTime
+                Just _ -> PostBuildRefused (BoundAfterDeadline t)
 
 {- | The time at which a slot begins, found by asking the view only what it
 can answer: the earliest time in @(lo, hi]@ the view places at or after the
@@ -774,7 +774,8 @@ outputAssets out =
 
 {- | One pending request's selection input: the decode verdict, the edge
 kind, the owner (hex of the output's owner bytes, which match the datum
-for a decodable output), the deadline, the model's approval check
+for a decodable output), the deadline with the submission time it is
+computed from, the model's approval check
 (expected commitment via the builders' 'approvalName' over the request's
 edge, key, owner and destination), and the given application verdict.
 For an undecodable output the datum-derived fields are placeholders that
@@ -797,6 +798,7 @@ pendingRequestOf ref key decoded out pinned appVerdict process = case decoded of
             T.empty
             (EdgeOther (T.pack "undecodable"))
             0
+            0
             False
             ApprovalMissing
             appVerdict
@@ -815,6 +817,7 @@ pendingRequestOf ref key decoded out pinned appVerdict process = case decoded of
                 (requestOwnerText ownerBytes)
                 (requestEdgeKind (requestEdge req))
                 (pendingDeadlineOf (requestSubmittedAt req) process)
+                (requestSubmittedAt req)
                 True
                 (approvalCheckOf assets pinned expected)
                 appVerdict
@@ -1011,14 +1014,3 @@ keptReceiptFields r =
     , ("hostClockMs", toJSON (keptHostClockMs r))
     , ("remainingMs", toJSON (keptRemainingMs r))
     ]
-
-{- | Combine a legacy window-closed message with every other exclusion.
-Sole cause returns the legacy message unchanged, so the Demo 1 readers of
-the closed-window wording and timing fields stay untouched; with others,
-the legacy wording stays first and every other exclusion is listed after
-it in the same refusal, so no exclusion is lost.
--}
-combineWindowClosedMessage :: String -> [(TxIn, Exclusion)] -> String
-combineWindowClosedMessage legacy [] = legacy
-combineWindowClosedMessage legacy others =
-    legacy ++ "\n" ++ renderFoldRequestsRefusal (FoldNothingToFold others)

@@ -290,6 +290,12 @@ farDeadline = nowMs + 1000000
 nearDeadline :: Integer
 nearDeadline = nowMs + 10000
 
+{- | The registry's processing time, POSIX milliseconds: deadlines are
+submission times plus this, never the clock.
+-}
+processMs :: Integer
+processMs = 60000
+
 mkInsert :: Int -> Int -> Text -> Integer -> PendingRequest
 mkInsert ref key owner deadline =
     PendingRequest
@@ -298,6 +304,7 @@ mkInsert ref key owner deadline =
         , prOwner = owner
         , prEdge = EdgeInsertActive
         , prDeadline = deadline
+        , prSubmittedAt = deadline - processMs
         , prDecodeOk = True
         , prApproval = ApprovalOk
         , prApp = AppReady
@@ -311,6 +318,7 @@ mkTerminate ref key owner deadline =
         , prOwner = owner
         , prEdge = EdgeUpdateTerminal
         , prDeadline = deadline
+        , prSubmittedAt = deadline - processMs
         , prDecodeOk = True
         , prApproval = ApprovalOk
         , prApp = AppReady
@@ -371,6 +379,7 @@ genPendingOn factList ref = do
             , prOwner = owner
             , prEdge = edge
             , prDeadline = farDeadline
+            , prSubmittedAt = farDeadline - processMs
             , prDecodeOk = True
             , prApproval = ApprovalOk
             , prApp = AppReady
@@ -385,7 +394,7 @@ spec = describe "What the selection settles is what the model accepts" $ do
                 ( \bound -> do
                     let settled =
                             selectionSettled
-                                (selectFold bound nowMs marginMs exampleFacts examplePending)
+                                (selectFold bound nowMs marginMs processMs exampleFacts examplePending)
                     answer <-
                         either error pure
                             =<< expectedObservation evaluator [] (questionJsonOf exampleFacts settled)
@@ -407,7 +416,7 @@ spec = describe "What the selection settles is what the model accepts" $ do
                                 pending <- mapM (generate . genPendingOn (Map.toList facts)) refs
                                 let settled =
                                         selectionSettled
-                                            (selectFold bound nowMs marginMs facts pending)
+                                            (selectFold bound nowMs marginMs processMs facts pending)
                                 answer <-
                                     either error pure
                                         =<< expectedObservation evaluator [] (questionJsonOf facts settled)
@@ -428,7 +437,7 @@ spec = describe "What the selection settles is what the model accepts" $ do
         it "asks more than one key and request, with both admitted edges" $ do
             let settled =
                     selectionSettled
-                        (selectFold 9 nowMs marginMs exampleFacts examplePending)
+                        (selectFold 9 nowMs marginMs processMs exampleFacts examplePending)
                 keys = nub (map selKey settled)
                 edges = nub (map selEdge settled)
             length settled `shouldSatisfy` (>= 2)
@@ -442,7 +451,7 @@ spec = describe "What the selection settles is what the model accepts" $ do
                 let first = mkInsert 201 7 "Alice" farDeadline
                     second = mkInsert 202 7 "Carol" farDeadline
                     facts = Map.fromList [(7, (LeafUnknown, False))]
-                    sel = selectFold 9 nowMs marginMs facts [first, second]
+                    sel = selectFold 9 nowMs marginMs processMs facts [first, second]
                 length (selectionSettled sel) `shouldBe` 1
                 let pair =
                         [ requestJsonOf

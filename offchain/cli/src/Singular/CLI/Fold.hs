@@ -142,12 +142,10 @@ import Singular.Registry.Application
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.FoldSelection
-    ( Exclusion (..)
+    ( Exclusion
     , Leaf (..)
     , PendingRequest (..)
-    , Reason (..)
     , Selection (..)
-    , exclusionName
     , foldCapacity
     , selectFold
     )
@@ -666,88 +664,17 @@ foldPendingBounded bound app at FoldSpec{..} = do
                 let leavesMap = Map.fromList leavesPairs
                     liveFacts = buildLiveFacts leavesMap presentMap keyMap
                 nowSel <- currentPosixMs
-                let selection = selectFold bound nowSel foldMarginMs liveFacts pendings
+                let selection = selectFold bound nowSel foldMarginMs process liveFacts pendings
                     intToTx = [(r, tx) | (tx, r) <- pairing]
                     excludedTxs =
                         [ (tx, exc)
                         | (q, exc) <- selectionExcluded selection
                         , Just tx <- [lookup (prRef q) intToTx]
                         ]
-                    isWindowClosed exc = exclusionName exc == "window-closed"
-                    refuseWindowClosed tx = refuseWindowClosedWith tx []
-                    refuseWindowClosedWith tx others = do
-                        reqOutW <- case lookup tx pending of
-                            Just o -> pure o
-                            Nothing -> stop' ClientRefusal "the pending request vanished" []
-                        reqW <- case extractCageDatum reqOutW of
-                            Just (RequestDatum r) -> pure r
-                            _ ->
-                                stop' ClientRefusal "the pending request carries no request datum" []
-                        deadlineW <- deadlineOf v reqW st
-                        nowW <- currentPosixMs
-                        case foldWindow foldMarginMs nowW (deadlineMs deadlineW) of
-                            FoldOpen _ ->
-                                stop'
-                                    ClientRefusal
-                                    ( renderFoldRequestsRefusal
-                                        ( FoldNamedExcluded
-                                            tx
-                                            ( Exclusion
-                                                ReasonWindowClosed
-                                                "the processing window is not open beyond the fold margin"
-                                            )
-                                        )
-                                    )
-                                    []
-                            FoldClosed left ->
-                                let legacyMsg =
-                                        "the request's processing deadline, "
-                                            <> show (deadlineMs deadlineW)
-                                            <> " ms"
-                                            <> maybe
-                                                ""
-                                                ((" (slot " <>) . (<> ")") . show . unSlotNo)
-                                                (deadlineSlot deadlineW)
-                                            <> ", "
-                                            <> ( if left <= 0
-                                                    then "has passed"
-                                                    else
-                                                        "is only "
-                                                            <> show (left `div` 1000)
-                                                            <> " s ahead, within the "
-                                                            <> show (foldMarginMs `div` 1000)
-                                                            <> " s a fold needs to be included"
-                                               )
-                                            <> ": no fold is built"
-                                in  stop'
-                                        ClientRefusal
-                                        (combineWindowClosedMessage legacyMsg others)
-                                        [ ("foldDeadline", deadlineJson deadlineW)
-                                        , ("hostClockMs", toJSON nowW)
-                                        , ("remainingMs", toJSON left)
-                                        ]
                 settledNE <- case foldRequests named pairing selection of
                     Right ne -> pure ne
-                    Left refusal -> case refusal of
-                        FoldNothingPending ->
-                            stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                        FoldNamedNotPending _ ->
-                            stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                        FoldNamedExcluded tx exc -> case isWindowClosed exc of
-                            True -> refuseWindowClosed tx
-                            False -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                        FoldNothingToFold pairs -> case pairs of
-                            [(tx, exc)] -> case isWindowClosed exc of
-                                True -> refuseWindowClosed tx
-                                False -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                            _ -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                        FoldInconsistentInput _ _ ->
-                            stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                        FoldNamedNothingSettled tx mExc others -> case mExc of
-                            Just exc -> case isWindowClosed exc of
-                                True -> refuseWindowClosedWith tx others
-                                False -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
-                            Nothing -> stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
+                    Left refusal ->
+                        stop' ClientRefusal (renderFoldRequestsRefusal refusal) []
                 let selectedTxs = case settledNE of
                         x :| xs -> x : xs
                     settledList = selectedTxs

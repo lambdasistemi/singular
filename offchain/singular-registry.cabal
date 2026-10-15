@@ -112,6 +112,7 @@ library
     Singular.Registry.Confirmation
     Singular.Registry.Deployment
     Singular.Registry.Driver
+    Singular.Registry.FoldAdmission
     Singular.Registry.FoldSelection
     Singular.Registry.Funding
     Singular.Registry.Lifecycle
@@ -989,6 +990,7 @@ test-suite cage-tests
     Singular.Registry.ContractSuite
     Singular.Registry.DeploymentSpec
     Singular.Registry.FailureMatchSpec
+    Singular.Registry.FoldAdmissionSpec
     Singular.Registry.FoldSelectionSpec
     Singular.Registry.LifecycleSpec
     Singular.Registry.LineageSpec
