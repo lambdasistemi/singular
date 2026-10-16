@@ -3690,8 +3690,8 @@
     "index": 2,
     "name": "docs-economics-paper/what-is-checked-and-at-what-strength-02",
     "pause_ms": 400,
-    "text": "The exact model revision is 8451749d3752129fb1ae8b5ea03710c5cc305561, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
-    "v": "f1ce716ba09c"
+    "text": "The exact model revision is 4254a3073fe0457946eba0a68d974c999c930ebf, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+    "v": "787a1fdfaa0c"
    }
   ]
  },

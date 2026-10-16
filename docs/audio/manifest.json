@@ -126576,17 +126576,17 @@
    ]
   },
   "docs-economics-paper/what-is-checked-and-at-what-strength-02": {
-   "audio_sha256": "f1ce716ba09c6dada83d3d0c0016b0fb246e142c432dceb7108051f20ce05dcd",
+   "audio_sha256": "787a1fdfaa0c86a954461dabf8531841c2f4b83a2f96d4ba95ab9eda22b27f13",
    "characters": 432,
    "cost": 0.00042768,
-   "duration": 36.725,
+   "duration": 36.45,
    "index": 2,
-   "key": "e603a05320f7a0ef4483aed8e46eee47b0f9c7866771ccff24d7a56377964274",
+   "key": "4c27c8b16cc796af8f22690c066fa3990d3ccfbf7b4e223b86b68241f5895147",
    "page": "docs/economics-paper.md",
    "pause_ms": 400,
    "section": "what-is-checked-and-at-what-strength",
-   "sent_text": "The exact model revision is 8 4 5 1 7 4 9 d 3 7 5 2 1 2 9 f b 1 a e 8 b 5 e a 0 3 7 1 0 c 5 c c 3 0 5 5 6 1, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
-   "text": "The exact model revision is 8451749d3752129fb1ae8b5ea03710c5cc305561, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+   "sent_text": "The exact model revision is 4 2 5 4 a 3 0 7 3 f e 0 4 5 7 9 4 6 e b a 0 a 6 8 d 9 7 4 c 9 9 9 c 9 3 0 e b f, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+   "text": "The exact model revision is 4254a3073fe0457946eba0a68d974c999c930ebf, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
    "words": [
     {
      "end": 0.325,
@@ -126599,29 +126599,29 @@
      "text": "exact"
     },
     {
-     "end": 1.15,
+     "end": 1.125,
      "start": 0.775,
      "text": "model"
     },
     {
-     "end": 1.675,
-     "start": 1.15,
+     "end": 1.65,
+     "start": 1.125,
      "text": "revision"
     },
     {
      "end": 1.837,
-     "start": 1.675,
+     "start": 1.65,
      "text": "is"
     },
     {
-     "end": 2.112,
+     "end": 2.138,
      "start": 1.837,
-     "text": "8"
+     "text": "4"
     },
     {
      "end": 2.412,
-     "start": 2.112,
-     "text": "4"
+     "start": 2.138,
+     "text": "2"
     },
     {
      "end": 2.775,
@@ -126629,463 +126629,463 @@
      "text": "5"
     },
     {
-     "end": 3.037,
+     "end": 2.975,
      "start": 2.775,
-     "text": "1"
-    },
-    {
-     "end": 3.412,
-     "start": 3.037,
-     "text": "7"
-    },
-    {
-     "end": 3.65,
-     "start": 3.412,
      "text": "4"
     },
     {
-     "end": 3.975,
-     "start": 3.65,
-     "text": "9"
+     "end": 3.088,
+     "start": 2.975,
+     "text": "a"
     },
     {
-     "end": 4.213,
-     "start": 3.975,
-     "text": "d"
-    },
-    {
-     "end": 4.537,
-     "start": 4.213,
+     "end": 3.362,
+     "start": 3.088,
      "text": "3"
     },
     {
-     "end": 4.9,
-     "start": 4.537,
-     "text": "7"
-    },
-    {
-     "end": 5.262,
-     "start": 4.9,
-     "text": "5"
-    },
-    {
-     "end": 5.525,
-     "start": 5.262,
-     "text": "2"
-    },
-    {
-     "end": 5.762,
-     "start": 5.525,
-     "text": "1"
-    },
-    {
-     "end": 5.975,
-     "start": 5.762,
-     "text": "2"
-    },
-    {
-     "end": 6.387,
-     "start": 5.975,
-     "text": "9"
-    },
-    {
-     "end": 6.613,
-     "start": 6.387,
-     "text": "f"
-    },
-    {
-     "end": 6.838,
-     "start": 6.613,
-     "text": "b"
-    },
-    {
-     "end": 7.325,
-     "start": 6.838,
-     "text": "1"
-    },
-    {
-     "end": 7.463,
-     "start": 7.325,
-     "text": "a"
-    },
-    {
-     "end": 7.688,
-     "start": 7.463,
-     "text": "e"
-    },
-    {
-     "end": 7.95,
-     "start": 7.688,
-     "text": "8"
-    },
-    {
-     "end": 8.175,
-     "start": 7.95,
-     "text": "b"
-    },
-    {
-     "end": 8.613,
-     "start": 8.175,
-     "text": "5"
-    },
-    {
-     "end": 8.825,
-     "start": 8.613,
-     "text": "e"
-    },
-    {
-     "end": 8.938,
-     "start": 8.825,
-     "text": "a"
-    },
-    {
-     "end": 9.337,
-     "start": 8.938,
+     "end": 3.763,
+     "start": 3.362,
      "text": "0"
     },
     {
-     "end": 9.587,
-     "start": 9.337,
+     "end": 4.137,
+     "start": 3.763,
+     "text": "7"
+    },
+    {
+     "end": 4.488,
+     "start": 4.137,
      "text": "3"
     },
     {
-     "end": 9.925,
+     "end": 4.7,
+     "start": 4.488,
+     "text": "f"
+    },
+    {
+     "end": 4.863,
+     "start": 4.7,
+     "text": "e"
+    },
+    {
+     "end": 5.3,
+     "start": 4.863,
+     "text": "0"
+    },
+    {
+     "end": 5.588,
+     "start": 5.3,
+     "text": "4"
+    },
+    {
+     "end": 5.963,
+     "start": 5.588,
+     "text": "5"
+    },
+    {
+     "end": 6.325,
+     "start": 5.963,
+     "text": "7"
+    },
+    {
+     "end": 6.662,
+     "start": 6.325,
+     "text": "9"
+    },
+    {
+     "end": 6.925,
+     "start": 6.662,
+     "text": "4"
+    },
+    {
+     "end": 7.25,
+     "start": 6.925,
+     "text": "6"
+    },
+    {
+     "end": 7.412,
+     "start": 7.25,
+     "text": "e"
+    },
+    {
+     "end": 7.738,
+     "start": 7.412,
+     "text": "b"
+    },
+    {
+     "end": 7.863,
+     "start": 7.738,
+     "text": "a"
+    },
+    {
+     "end": 8.45,
+     "start": 7.863,
+     "text": "0"
+    },
+    {
+     "end": 8.587,
+     "start": 8.45,
+     "text": "a"
+    },
+    {
+     "end": 8.85,
+     "start": 8.587,
+     "text": "6"
+    },
+    {
+     "end": 9.075,
+     "start": 8.85,
+     "text": "8"
+    },
+    {
+     "end": 9.25,
+     "start": 9.075,
+     "text": "d"
+    },
+    {
+     "end": 9.587,
+     "start": 9.25,
+     "text": "9"
+    },
+    {
+     "end": 9.962,
      "start": 9.587,
      "text": "7"
     },
     {
-     "end": 10.15,
-     "start": 9.925,
-     "text": "1"
+     "end": 10.212,
+     "start": 9.962,
+     "text": "4"
     },
     {
-     "end": 10.488,
-     "start": 10.15,
-     "text": "0"
-    },
-    {
-     "end": 10.738,
-     "start": 10.488,
+     "end": 10.425,
+     "start": 10.212,
      "text": "c"
     },
     {
-     "end": 11.113,
-     "start": 10.738,
-     "text": "5"
+     "end": 10.75,
+     "start": 10.425,
+     "text": "9"
     },
     {
-     "end": 11.363,
-     "start": 11.113,
+     "end": 11.075,
+     "start": 10.75,
+     "text": "9"
+    },
+    {
+     "end": 11.413,
+     "start": 11.075,
+     "text": "9"
+    },
+    {
+     "end": 11.65,
+     "start": 11.413,
      "text": "c"
     },
     {
-     "end": 11.613,
-     "start": 11.363,
-     "text": "c"
+     "end": 11.988,
+     "start": 11.65,
+     "text": "9"
     },
     {
-     "end": 11.863,
-     "start": 11.613,
+     "end": 12.262,
+     "start": 11.988,
      "text": "3"
     },
     {
-     "end": 12.288,
-     "start": 11.863,
+     "end": 12.675,
+     "start": 12.262,
      "text": "0"
     },
     {
-     "end": 12.625,
-     "start": 12.288,
-     "text": "5"
+     "end": 12.837,
+     "start": 12.675,
+     "text": "e"
     },
     {
-     "end": 12.95,
-     "start": 12.625,
-     "text": "5"
+     "end": 13.137,
+     "start": 12.837,
+     "text": "b"
     },
     {
-     "end": 13.262,
-     "start": 12.95,
-     "text": "6"
+     "end": 13.55,
+     "start": 13.137,
+     "text": "f"
     },
     {
-     "end": 13.8,
-     "start": 13.262,
-     "text": "1"
-    },
-    {
-     "end": 13.925,
-     "start": 13.8,
+     "end": 13.65,
+     "start": 13.55,
      "text": ","
     },
     {
-     "end": 14.05,
-     "start": 13.925,
+     "end": 13.775,
+     "start": 13.65,
      "text": "the"
     },
     {
-     "end": 14.425,
-     "start": 14.05,
+     "end": 14.15,
+     "start": 13.775,
      "text": "last"
     },
     {
-     "end": 15.025,
-     "start": 14.425,
+     "end": 14.75,
+     "start": 14.15,
      "text": "ancestor"
     },
     {
-     "end": 15.363,
-     "start": 15.025,
+     "end": 15.087,
+     "start": 14.75,
      "text": "commit"
     },
     {
-     "end": 15.762,
-     "start": 15.363,
+     "end": 15.488,
+     "start": 15.087,
      "text": "changing"
     },
     {
-     "end": 15.85,
-     "start": 15.762,
+     "end": 15.575,
+     "start": 15.488,
      "text": "the"
     },
     {
-     "end": 16.35,
-     "start": 15.85,
+     "end": 16.075,
+     "start": 15.575,
      "text": "model"
     },
     {
-     "end": 16.462,
-     "start": 16.35,
+     "end": 16.188,
+     "start": 16.075,
      "text": ","
     },
     {
-     "end": 16.8,
-     "start": 16.462,
+     "end": 16.5,
+     "start": 16.188,
      "text": "checked"
     },
     {
-     "end": 16.975,
-     "start": 16.8,
+     "end": 16.675,
+     "start": 16.5,
      "text": "with"
     },
     {
-     "end": 17.288,
-     "start": 16.975,
+     "end": 16.987,
+     "start": 16.675,
      "text": "Lean"
     },
     {
-     "end": 19.225,
-     "start": 17.288,
+     "end": 18.925,
+     "start": 16.987,
      "text": "4.27.0"
     },
     {
-     "end": 19.625,
-     "start": 19.225,
+     "end": 19.35,
+     "start": 18.925,
      "text": "."
     },
     {
-     "end": 20.375,
-     "start": 19.825,
+     "end": 20.1,
+     "start": 19.55,
      "text": "Economic"
     },
     {
-     "end": 21.112,
-     "start": 20.375,
+     "end": 20.837,
+     "start": 20.1,
      "text": "reachability"
     },
     {
-     "end": 21.475,
-     "start": 21.112,
+     "end": 21.2,
+     "start": 20.837,
      "text": "starts"
     },
     {
-     "end": 21.688,
-     "start": 21.475,
+     "end": 21.413,
+     "start": 21.2,
      "text": "from"
     },
     {
-     "end": 22.013,
-     "start": 21.688,
+     "end": 21.737,
+     "start": 21.413,
      "text": "any"
     },
     {
-     "end": 22.475,
-     "start": 22.013,
+     "end": 22.2,
+     "start": 21.737,
      "text": "reachable"
     },
     {
-     "end": 22.975,
-     "start": 22.475,
+     "end": 22.7,
+     "start": 22.2,
      "text": "original"
     },
     {
-     "end": 23.575,
-     "start": 22.975,
+     "end": 23.3,
+     "start": 22.7,
      "text": "registry"
     },
     {
-     "end": 23.788,
-     "start": 23.575,
+     "end": 23.513,
+     "start": 23.3,
      "text": "with"
     },
     {
-     "end": 24.188,
-     "start": 23.788,
+     "end": 23.913,
+     "start": 23.513,
      "text": "empty"
     },
     {
-     "end": 24.612,
-     "start": 24.188,
+     "end": 24.337,
+     "start": 23.913,
      "text": "pending"
     },
     {
-     "end": 25.25,
-     "start": 24.612,
+     "end": 24.975,
+     "start": 24.337,
      "text": "pools"
     },
     {
-     "end": 25.413,
-     "start": 25.25,
+     "end": 25.138,
+     "start": 24.975,
      "text": "and"
     },
     {
-     "end": 25.513,
-     "start": 25.413,
+     "end": 25.237,
+     "start": 25.138,
      "text": "a"
     },
     {
-     "end": 25.962,
-     "start": 25.513,
+     "end": 25.688,
+     "start": 25.237,
      "text": "zero"
     },
     {
-     "end": 26.4,
-     "start": 25.962,
+     "end": 26.125,
+     "start": 25.688,
      "text": "treasury"
     },
     {
-     "end": 27.475,
-     "start": 26.4,
+     "end": 27.2,
+     "start": 26.125,
      "text": "counter"
     },
     {
-     "end": 27.725,
-     "start": 27.475,
+     "end": 27.45,
+     "start": 27.2,
      "text": ","
     },
     {
-     "end": 28.025,
-     "start": 27.9,
+     "end": 27.75,
+     "start": 27.625,
      "text": "then"
     },
     {
-     "end": 28.4,
-     "start": 28.025,
+     "end": 28.125,
+     "start": 27.75,
      "text": "admits"
     },
     {
-     "end": 28.9,
-     "start": 28.4,
+     "end": 28.625,
+     "start": 28.125,
      "text": "bookings"
     },
     {
-     "end": 28.95,
-     "start": 28.9,
+     "end": 28.675,
+     "start": 28.625,
      "text": ","
     },
     {
-     "end": 29.625,
-     "start": 28.95,
+     "end": 29.35,
+     "start": 28.675,
      "text": "rejections"
     },
     {
-     "end": 29.675,
-     "start": 29.625,
+     "end": 29.4,
+     "start": 29.35,
      "text": ","
     },
     {
-     "end": 30.425,
-     "start": 29.675,
+     "end": 30.15,
+     "start": 29.4,
      "text": "retractions"
     },
     {
-     "end": 30.538,
-     "start": 30.425,
+     "end": 30.263,
+     "start": 30.15,
      "text": "and"
     },
     {
-     "end": 31.05,
-     "start": 30.538,
+     "end": 30.775,
+     "start": 30.263,
      "text": "economic"
     },
     {
-     "end": 32.05,
-     "start": 31.05,
+     "end": 31.775,
+     "start": 30.775,
      "text": "folds"
     },
     {
-     "end": 32.25,
-     "start": 32.05,
+     "end": 31.975,
+     "start": 31.775,
      "text": "."
     },
     {
-     "end": 32.513,
-     "start": 32.425,
+     "end": 32.237,
+     "start": 32.15,
      "text": "It"
     },
     {
-     "end": 32.7,
-     "start": 32.513,
+     "end": 32.425,
+     "start": 32.237,
      "text": "does"
     },
     {
-     "end": 32.95,
-     "start": 32.7,
+     "end": 32.675,
+     "start": 32.425,
      "text": "not"
     },
     {
-     "end": 33.263,
-     "start": 32.95,
+     "end": 32.987,
+     "start": 32.675,
      "text": "claim"
     },
     {
-     "end": 33.325,
-     "start": 33.263,
+     "end": 33.05,
+     "start": 32.987,
      "text": "a"
     },
     {
-     "end": 33.8,
-     "start": 33.325,
+     "end": 33.525,
+     "start": 33.05,
      "text": "complete"
     },
     {
-     "end": 34.325,
-     "start": 33.8,
+     "end": 34.05,
+     "start": 33.525,
      "text": "economic"
     },
     {
-     "end": 34.862,
-     "start": 34.325,
+     "end": 34.588,
+     "start": 34.05,
      "text": "history"
     },
     {
-     "end": 35.075,
-     "start": 34.862,
+     "end": 34.8,
+     "start": 34.588,
      "text": "from"
     },
     {
-     "end": 35.4,
-     "start": 35.075,
+     "end": 35.125,
+     "start": 34.8,
      "text": "ledger"
     },
     {
-     "end": 36.525,
-     "start": 35.4,
+     "end": 36.25,
+     "start": 35.125,
      "text": "genesis"
     },
     {
-     "end": 36.725,
-     "start": 36.525,
+     "end": 36.45,
+     "start": 36.25,
      "text": "."
     }
    ]
