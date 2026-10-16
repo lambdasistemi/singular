@@ -1,6 +1,7 @@
 /.docs-source/
 /.docs-api/
 /site/
+/demo1-rehearsal-out/
 /result*
 .lake/
 __pycache__/
