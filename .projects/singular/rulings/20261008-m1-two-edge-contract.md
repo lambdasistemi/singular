@@ -1,0 +1,15 @@
+# M1: the permanent two-edge KERI contract
+
+Authority: operator discussion on 2026-10-08, responding to Q-20261008-keri-bounded-permanent-contract. The operator clarified that KERI close/reopen belongs to the application level, reported KERI agreement that its Lean model does not consume a terminal witness, and identified the remaining edges as the existing Demo1 goal.
+
+M1's registry edge scope is insertActive and updateTerminal. KERI close/reopen does not require a Singular edge or a reversal of Singular Terminal. witnessTerminal is excluded from M1 together with insertAbsent, updateActive, deleteAbsent and deleteActive. Those five edges are the proposed M2/later scope; this does not found or staff a new milestone, or silently displace the historical common-code-factoring M2 candidate. Preserve their work and unmet outcomes.
+
+Demo1 already owns the same registration-to-permanent-termination journey. Reuse its existing owner, artifact and evidence. Do not commission duplicate edge implementation. Matching edge scope is not itself milestone acceptance.
+
+M1's original instance remains permanent. Excluded edges must be unreachable through its deployed contract, including independently constructed transactions and alternate admission paths. Future/shared source may remain. A later artifact cannot retroactively restrict an existing deployment. Check whether the existing pinned application policy and validator composition already enforce the selected boundary before proposing script changes or a fork. In particular, the model's witnessTerminal requires no application approval; an application-policy-only exclusion argument cannot assume it is gated like a tree-changing edge.
+
+Retain the applicable request rejection, retraction, refund and permissionless-fold obligations. Bind KERI approval/token requirements and the proposed restricted Lean contract to exact revisions before affected implementation acceptance. The operator's statement about KERI Lean is a consumer-scope premise, not fresh independent verification of that model or actual integration.
+
+Immediate M1 disposition: assess the existing Demo1 delivery against this bounded permanent contract and return only the missing obligations/evidence, existing accountable owners, exact artifact/model identities and concrete model conflicts if any. Include deployment recognition and compatibility, compiled admission enforcement, KERI consumer conformance, and the outstanding operator choice between consumer conformance and demonstrated integration as the closure bar. Do not invent a new edge project, weaken public conformance rows, resume paused lanes, launch new seats or declare M1 closed.
+
+References: escalation /home/paolino/.orch-runtime/singular/m1-project-escalations/Q-20261008-keri-bounded-permanent-contract.md; source/model inspected at 23964e667fa278b2027d0c05169c0f5e0e9233cb, lean/Singular/Model.lean; constitution v1.13.0. This is a scope ruling and assessment request, not compiled enforcement or integration evidence.

@@ -1,0 +1,5 @@
+# Accepted #110 integrated into cancellation lane
+
+Fresh remote query: PR112 MERGED, merge commit b4a36eaf72d8a355d9048a00081a8f999c195e27. This lane fetched accepted main and merged it after a local WIP checkpoint, preserving all accepted source and CI changes. The connected registration/fold now uses blake2b_256(spelling); representative script gets application hash and exact registry asset identity parameters; retirement uses spelling and the executing representative zero-withdrawal witness. The original application/representative/custody/native accepted pins remain unchanged; only new connected entry pins are added.
+
+Focused connected Aiken checks pass 11/11 after integration. Haskell/real devnet acceptance remains in progress. The earlier two connected attempts failed collateral accounting and minUTxO construction, honestly retained; neither established registration/cancellation success. Current API includes serialiseRegistration/deserialiseRegistration for canonical CBOR of the exact versioned Insert preimage, with full-consumption/version/roundtrip checks. These remain draft exports until complete acceptance and landing.
