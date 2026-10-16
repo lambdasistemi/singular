@@ -19,7 +19,7 @@
   ],
   "chained-view": [
     {
-      "text": "The chained view answers a read as the chain would after the staged transactions landed: their outputs present, the inputs they spend absent, for every query form, with the asset history and mint record they change. Each staged transaction carries the outputs its inputs resolve to. Staged history blocks are numbered after the held view's tip height, and a read's range applies to the whole answer. A compound query keeps the providers' refusal when two sub-answers disagree about one output. Tip, parameters and time are the chain's.",
+      "text": "The chained view answers a read as the chain would after the staged transactions landed: their outputs present, the inputs they spend absent, for every query form, with the asset history and mint record they change. Each staged transaction carries the outputs its inputs resolve to. Staged history blocks are numbered after the held view's tip height, and a read's range applies to the whole answer. A compound query keeps the providers' refusal when two sub-answers disagree about one output. Tip, parameters, time and the inclusion read are the chain's, so a staged transaction is not found by the inclusion read.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "949641fbd560f555288068e4afd781afa88c9c7123ca2273fb65ae0f2843d41d"
+    "sha256": "43a5f847331dced216d3b210aea28786945624d5cda6390daabe9dbe6d0edc07"
   }
 }

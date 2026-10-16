@@ -16,7 +16,7 @@ Issue 641. One pull request, six slices of at most about 90 minutes of writing e
 
 ## What this ticket takes from issue 640
 
-The provider's inclusion read (where the chain holds a transaction identity: found at a chain point with confirmations, or not on chain), the assembly export that replaces the whole key-witness set with the supplied one, and `singular submit`'s planner and core. Slice 1 starts from main before issue 640 merges; every later slice starts after it merges, and the ticket owner rebinds this list to the merged interface first.
+Rebound to the merged interface (main `45cd8a75`, 16 October 2026): the session's inclusion read, `inclusion(transactionIds)`, answering for each identity in asked order either found at a chain point with its confirmations or not on chain; `assembleSigned(tx, witnesses)`, which replaces the whole key-witness set with the supplied one; the pure planner `Singular.Registry.Submit` (witness matching, needed keys, the plan); and `submitBundle(env, settings, bundlePath, witnessPaths, receiptPath)`, the file-reading front of `singular submit`, whose core slice 5 separates. The chained view passes the inclusion read through to the chain: a staged transaction is not found by it, because it is not on chain, and no builder reads it while staging.
 
 ## Slices
 

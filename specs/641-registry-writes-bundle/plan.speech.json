@@ -13,7 +13,7 @@
   ],
   "what-this-ticket-takes-from-issue-640": [
     {
-      "text": "From issue 640: the inclusion read, the assembly export and the planner and core of singular submit. Slice one starts from main before issue 640 merges; every later slice starts after it merges, with this list rebound to the merged interface.",
+      "text": "Rebound to the merged interface of issue 640: the session's inclusion read, found at a chain point with confirmations or not on chain; the assembly export, which replaces the whole key-witness set; the planner; and the file-reading front of singular submit, whose core slice five separates. The chained view passes the inclusion read through to the chain, because a staged transaction is not on chain and no builder reads it while staging.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "7afcc9fb46d882cf67bdde7a6839aade859cdee30ceec92a9771a0d6093bf8d2"
+    "sha256": "645ebad9c2c5915d807c296752c6adfd5d3e893b99fa420520afde0a70b5d7d7"
   }
 }
