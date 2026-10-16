@@ -69,12 +69,16 @@
       "pause": 400
     },
     {
-      "text": "The plan is held for epic review before worker launch. Planning source ceiling is 60 KiB total and 12 KiB per page; each child packet is at most 20 KiB excluding its source pointers. An oversized slice is split. The accepted model remains frozen; model or bound-consumer conflicts stop affected acceptance.",
+      "text": "The epic approved the initial plan at 063b3fe5; its later A-006 assigns the consumer-model amendment to this ticket. Planning source ceiling is revised to 64 KiB for that added slice, with 12 KiB per page; each child packet remains at most 20 KiB excluding source pointers. An oversized slice is split. Singular's accepted model remains frozen; unresolved consumer conflicts hold affected acceptance.",
+      "pause": 400
+    },
+    {
+      "text": "The consumer-model writer is Codex gpt-6-astra high, launched with codex --dangerously-bypass-approvals-and-sandbox -C WORKTREE -m gpt-6-astra -c model_reasoning_effort=high, with the existing Sol auditor. Schedule it between Sonnet slices: one writer at a time. Its fence is applications/open-datum/lean/ and generated consumer corpus/oracle outputs. Part one is the nonce-bearing registration name already ruled by the operator; part two, termination custody and deposit destination, remains held under Q-003. No root Lean or simulator-law edit is authorized. The same capped execution and checkpoint requirements apply.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "6eedb53ff1fdbbd825e3b6372b3a8394bc3c92495e1a4565be49797a4c06d6a3"
+    "sha256": "a2f758bdbef27dd0c7f3e9ee4b9437f325ca221964646a36db3359c001cf8326"
   }
 }

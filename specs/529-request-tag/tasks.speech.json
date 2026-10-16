@@ -17,6 +17,10 @@
       "pause": 300
     },
     {
+      "text": "[ ] amend-application-registration-model: before application code changes, carry the booking nonce through the consumer model, use the ruled application tag name, restate affected statements and regenerate the corpus; root Singular Lean stays frozen.",
+      "pause": 300
+    },
+    {
       "text": "[ ] authenticate-booking: implement and check registration and termination booking under the ruled model, with negative mint controls.",
       "pause": 300
     },
@@ -63,6 +67,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8bf75fde7a71c1faf4e233d705fd0e956d854eee1e919977bcc2e0867538870d"
+    "sha256": "1e49915d710bae91168a3954cbcc791c4b3aba9f97c1a7b980f47a85accbbaed"
   }
 }

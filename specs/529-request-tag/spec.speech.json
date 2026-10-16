@@ -23,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "The accepted Singular model is commit 4254a3073fe0457946eba0a68d974c999c930ebf, Lean tree 5c704fd7efb5ce2f1ced67cdb22b559ca40cf772, released by PR 615. The integration base 45cd8a754dbb695ae55e91b1cede942ff627d69f contains that same Lean tree. The economic contract, release record and constitution 1.18.0 bind behavior. No Lean edit is authorized here.",
+      "text": "The accepted Singular model is commit 4254a3073fe0457946eba0a68d974c999c930ebf, Lean tree 5c704fd7efb5ce2f1ced67cdb22b559ca40cf772, released by PR 615. The integration base 45cd8a754dbb695ae55e91b1cede942ff627d69f contains that same Lean tree. The economic contract, release record and constitution 1.18.0 bind behavior. Singular's root Lean stays frozen. Epic answer A-006 authorizes the separate open-datum consumer-model registration amendment described in the plan; its checked revision must be bound before application acceptance.",
       "pause": 400
     },
     {
@@ -53,12 +53,16 @@
       "pause": 400
     },
     {
+      "text": "Its mintApproval also uses the historical name without a nonce. A-006 requires a model-first registration amendment to Singular's ruled applicationTagAssetName; application name changes wait for that amendment and its regenerated corpus. This is authorized work, not completed verification.",
+      "pause": 400
+    },
+    {
       "text": "The original unpayable-refund control must be realized through a documented concrete address representation and ledger output constraints. Do not silently turn it into an assumption about available wallet funds. Any missing semantic rule is escalated before acceptance.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "13773a58669aa989b400253a5ced899319272b2a6599a2095f0fec98d2a2eac5"
+    "sha256": "06a9ca15b6f6ae1ff8de5cfa3b26c70404265bd910fc67553ec047a35362dbb3"
   }
 }

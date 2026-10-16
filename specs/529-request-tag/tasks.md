@@ -6,6 +6,7 @@ As a reviewer, I want to distinguish a written plan from implemented and observe
 
 - [ ] confirm-shared-boundaries: resolve the bound consumer model and shared expiry/fold interfaces; obtain epic review of the touch list and plan.
 - [ ] freeze-booking-representation: bind concrete signatures, identities, canonical encodings and all callers before dispatch.
+- [ ] amend-application-registration-model: before application code changes, carry the booking nonce through the consumer model, use the ruled application tag name, restate affected statements and regenerate the corpus; root Singular Lean stays frozen.
 - [ ] authenticate-booking: implement and check registration and termination booking under the ruled model, with negative mint controls.
 - [ ] book-through-library: build real tagged requests through the library and packaged application commands.
 - [ ] route-economic-folds: preserve state pins and value, require exact request burns, carrier routing, donation and gross-tip allocation through actual fold execution.
