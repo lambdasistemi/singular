@@ -541,27 +541,27 @@
       "pause": 500
     },
     {
-      "text": "[ ] failing-controls-eleven — a funded retraction with a positive fee is refused on the branch as it stands (it is accepted after the slice); an extra input holding a token, at the request address, the state output or another request, and a donation or a tip left to anyone, are refused for the reasons that name them.",
+      "text": "[x] failing-controls-eleven — a funded retraction with a positive fee is refused on the branch as it stands (it is accepted after the slice); an extra input holding a token, at the request address, the state output or another request, and a donation or a tip left to anyone, are refused for the reasons that name them.",
       "pause": 300
     },
     {
-      "text": "[ ] retraction-ordinary-funding — a retraction may spend ordinary outputs of the requester, which pay the ledger fee; the refund floor, signer, window, burn and state rules are unchanged.",
+      "text": "[x] retraction-ordinary-funding — a retraction may spend ordinary outputs of the requester, which pay the ledger fee; the refund floor, signer, window, burn and state rules are unchanged.",
       "pause": 300
     },
     {
-      "text": "[ ] statements-eleven — the restated refund floor, what leaves a retraction (the refund and the fee, from ordinary funds) and the availability of a retraction are proved.",
+      "text": "[x] statements-eleven — the restated refund floor, what leaves a retraction (the refund and the fee, from ordinary funds) and the availability of a retraction are proved.",
       "pause": 300
     },
     {
-      "text": "[ ] amendment-retraction-wording — the economic rows of the constitution state the ordinary funding and the fee of a retraction (one release, one entry).",
+      "text": "[x] amendment-retraction-wording — the economic rows of the constitution state the ordinary funding and the fee of a retraction (one release, one entry).",
       "pause": 300
     },
     {
-      "text": "[ ] regenerate-after-slice-eleven — as slice five. (consumers-state-the-rule)",
+      "text": "[x] regenerate-after-slice-eleven — as slice five. (consumers-state-the-rule)",
       "pause": 300
     },
     {
-      "text": "[ ] names-and-receipts-eleven — as slice five, and the statement list.",
+      "text": "[x] names-and-receipts-eleven — as slice five, and the statement list.",
       "pause": 300
     }
   ],
@@ -581,6 +581,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "0a45a10e595ab17931fa526d0e23ca4ef6d31a46bfd4382f7e2112b3c9e074b6"
+    "sha256": "72943513ab50d00c49f5146f63cf2e6056f6b149228f3c9b81e75b92be58ddbf"
   }
 }

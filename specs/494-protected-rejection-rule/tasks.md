@@ -215,12 +215,12 @@ Conformance and CI code, after slice eight; Codex at medium effort.
 
 ### Slice eleven: a retraction pays its ledger fee
 
-- [ ] `failing-controls-eleven` — a funded retraction with a positive fee is refused on the branch as it stands (it is accepted after the slice); an extra input holding a token, at the request address, the state output or another request, and a donation or a tip left to anyone, are refused for the reasons that name them.
-- [ ] `retraction-ordinary-funding` — a retraction may spend ordinary outputs of the requester, which pay the ledger fee; the refund floor, signer, window, burn and state rules are unchanged.
-- [ ] `statements-eleven` — the restated refund floor, what leaves a retraction (the refund and the fee, from ordinary funds) and the availability of a retraction are proved.
-- [ ] `amendment-retraction-wording` — the economic rows of the constitution state the ordinary funding and the fee of a retraction (one release, one entry).
-- [ ] `regenerate-after-slice-eleven` — as slice five. (consumers-state-the-rule)
-- [ ] `names-and-receipts-eleven` — as slice five, and the statement list.
+- [x] `failing-controls-eleven` — a funded retraction with a positive fee is refused on the branch as it stands (it is accepted after the slice); an extra input holding a token, at the request address, the state output or another request, and a donation or a tip left to anyone, are refused for the reasons that name them.
+- [x] `retraction-ordinary-funding` — a retraction may spend ordinary outputs of the requester, which pay the ledger fee; the refund floor, signer, window, burn and state rules are unchanged.
+- [x] `statements-eleven` — the restated refund floor, what leaves a retraction (the refund and the fee, from ordinary funds) and the availability of a retraction are proved.
+- [x] `amendment-retraction-wording` — the economic rows of the constitution state the ordinary funding and the fee of a retraction (one release, one entry).
+- [x] `regenerate-after-slice-eleven` — as slice five. (consumers-state-the-rule)
+- [x] `names-and-receipts-eleven` — as slice five, and the statement list.
 
 ## Closing the ticket
 

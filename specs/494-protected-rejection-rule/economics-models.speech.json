@@ -163,6 +163,20 @@
       "pause": 400
     }
   ],
+  "slice-eleven-as-built": [
+    {
+      "text": "Slice eleven: as built.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted retraction (Singular/Economics/Retraction.lean, with its funding classification in Economics/RetractionFunding.lean) selects the one consumed pending registration by reference (a consumed pending termination is refused as retract-registration-only) and admits further inputs only as ordinary funding: no state token, no trie-ready, application or singular tag, neither the request role nor the state role, no request datum. Spending inputs are present, distinct and disjoint from the reference inputs. Ordinary funding and change are lovelace only: an unrelated native asset in a spent or produced value is refused as retract-foreign-asset, checked before the registry-supply guard, as the fold refuses it. The refund address signs, the whole interval lies inside the booked reclaim window, no state output is read or spent, both tags burn, the registry supply is unchanged and the request leaves the pending pool. The refund address receives at least everything the request held except the two tags, by actual output lovelace; the transaction balances, donates nothing, leaves the world treasury unchanged and pays its fee from ordinary funding. Change may go to any address: the model has no wallet-ownership or output-purpose observation, so another-address change cannot be told from a payment to a third party, and neither can take the request's cost or tip.",
+      "pause": 400
+    },
+    {
+      "text": "Two statements are new: Singular.Statements.retraction_pays_only_the_refund_and_the_fee (over accepted retractions in reachable worlds: zero donation, the refund floor, the fee at most the ordinary funding, full balance, and the value paid to any other address at most the ordinary funding left after the fee, derived from conservation and not guarded in admission) and Singular.Statements.pending_registration_can_be_retracted (a coherent unspent set and a balanced accepted retraction exist for a reachable pending registration, a nonempty interval inside its reclaim window, a signing refund address and ordinary funding that covers the fee; it claims no wallet funds, ledger minimum, inclusion or builder). Both print standard axioms only. Two earlier statements restate their singleton input clause as \"the pending registration is among the inputs\": retraction_refund_floor and registration_cost_returned_on_exit (same names, new text), with the helper RefundProof.retraction_request; the historical identities stay in the restatement record and the new ones start uncovered. Twenty new theorem identities (two public, eighteen helpers) are appended uncovered; the coverage inventory is 298 obligations, 118 manifest-bound and 180 unclassified, and its completion check exits one by design. The 43 controls (the funded retraction with a positive fee, the fee one lovelace beyond the funding, change and funding at other addresses, each non-ordinary input, the foreign-asset funding and change, a diverted tip, and the slice nine refusals) run against the actual judgement. The constitution's 1.18.0 entry and its retraction and availability rows state the ordinary funding and the fee. Rejection, the economic fold, the legacy retraction and the driver are unchanged; the live rows that follow the superseded retraction stay unmet.",
+      "pause": 400
+    }
+  ],
   "slice-five-signed-rows": [
     {
       "text": "Slice five: signed rows.",
@@ -179,6 +193,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "c22c85dbba012498fcd568ab139685ae241cf2dfdc3b3a7eeb40b7a83dc2c0a4"
+    "sha256": "474a673b60878ee463f64190d2e6c300a8b7a0445bf460b6cea2ca4d963908ed"
   }
 }
