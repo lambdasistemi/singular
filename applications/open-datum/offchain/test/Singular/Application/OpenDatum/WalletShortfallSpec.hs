@@ -26,6 +26,7 @@ module Singular.Application.OpenDatum.WalletShortfallSpec (spec) where
 
 import Control.Applicative ((<|>))
 import Control.Exception (SomeException, bracket, try)
+import Control.Monad (when)
 import Control.Tracer (Tracer (..), nullTracer)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -42,7 +43,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
@@ -50,8 +51,9 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Lens.Micro ((^.))
+import System.Directory (doesDirectoryExist, listDirectory)
 import System.Exit (ExitCode (..))
-import System.FilePath ((</>))
+import System.FilePath (makeRelative, (</>))
 import System.IO (hFlush, stderr, stdout)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.IO
@@ -70,9 +72,14 @@ import Test.Hspec
 
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (addrTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, mkBasicTxOut)
 import Cardano.Ledger.BaseTypes (TxIx (..))
-import Cardano.Ledger.Mary.Value (MaryValue (..))
+import Cardano.Ledger.Mary.Value
+    ( AssetName (..)
+    , MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 
 import Data.Aeson ((.=))
@@ -98,7 +105,7 @@ import Singular.Provider.Koios.Recorded (loadFixtureSet)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Deployment (parseOutRef, renderOutRef)
 import Singular.Registry.Evidence (NoWitness, unverifiedVerifier)
-import Singular.Registry.Ledger (Coin (..))
+import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -111,7 +118,9 @@ import Singular.Registry.RawChainFixture
     , recordTransaction
     )
 import Singular.Registry.SessionEvidence (observeProvider)
+import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (signedTx)
+import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
@@ -122,10 +131,15 @@ import Singular.Registry.TxBuilder.BookingFixture
     ( payer
     , preprodParams
     )
-import Singular.Registry.TxBuilder.Edges (selectFunding)
+import Singular.Registry.TxBuilder.Edges (adaOnlyOut, selectFunding)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , scriptHashBytes
+    )
+import Singular.Registry.TxBuilder.Prepare
+    ( planPreparation
+    , spendableHeld
+    , spendableOuts
     )
 import Singular.Registry.Wallet
     ( Wallet (..)
@@ -582,6 +596,9 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             reasonOf previewed `shouldSatisfy` isInfixOf retainedFaucet
             reasonOf previewed
                 `shouldSatisfy` (not . isInfixOf "send one self-payment")
+            walletOfRun previewed `shouldBe` Just (T.pack emptyAddr)
+            heldOfRun previewed `shouldBe` Just 0
+            countOfRun previewed `shouldBe` Just 0
     it
         "insert write from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
         $ with20AdaRig
@@ -590,6 +607,8 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             create <- run rig "create" ["open-datum", "create", "--seed", seed]
             t <- tokenOf create
             emptyKey <- emptyWalletKey rig
+            emptyWallet <- loadWallet (fromIntegral magic) emptyKey
+            let emptyAddr = bech32Address (walletAddr emptyWallet)
             written <-
                 runWithKey
                     emptyKey
@@ -609,6 +628,9 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             reasonOf written `shouldSatisfy` isInfixOf retainedFaucet
             reasonOf written
                 `shouldSatisfy` (not . isInfixOf "send one self-payment")
+            walletOfRun written `shouldBe` Just (T.pack emptyAddr)
+            heldOfRun written `shouldBe` Just 0
+            countOfRun written `shouldBe` Just 0
     it
         "terminate preview from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
         $ with20AdaRig
@@ -657,6 +679,9 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             reasonOf previewed `shouldSatisfy` isInfixOf retainedFaucet
             reasonOf previewed
                 `shouldSatisfy` (not . isInfixOf "send one self-payment")
+            walletOfRun previewed `shouldBe` Just (T.pack (previewAddr rig))
+            heldOfRun previewed `shouldBe` Just 0
+            countOfRun previewed `shouldBe` Just 0
     it
         "terminate write from an empty wallet names the faucet without the hand step (#491 PR2 RED)"
         $ with20AdaRig
@@ -703,6 +728,134 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
             reasonOf written `shouldSatisfy` isInfixOf retainedFaucet
             reasonOf written
                 `shouldSatisfy` (not . isInfixOf "send one self-payment")
+            walletOfRun written `shouldBe` Just (T.pack (previewAddr rig))
+            heldOfRun written `shouldBe` Just 0
+            countOfRun written `shouldBe` Just 0
+    it
+        "refuses a token-only insert below the whole outlay plus preparation fee before signing (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let testPayer = walletAddr (rigTestWallet rig)
+                deposit = 15_000_000
+                bundle = singleKindBundle policy kinds
+                insertAt k =
+                    runWithKey
+                        (rigTestKey rig)
+                        rig
+                        ("insert probe " <> show (k :: Int))
+                        ( [ "open-datum"
+                          , "insert"
+                          , "--key"
+                          , "probe-" <> show k
+                          , "--payload"
+                          , rigDir rig </> "payload.json"
+                          , "--deposit"
+                          , show deposit
+                          ]
+                            <> tokenArgs t
+                        )
+            -- A rich token-only wallet completes through one preparation:
+            -- the receipt's preparation members measure this rig's
+            -- requirement and preparation fee, never typed here.
+            plantTokenOutputs rig bundle 100_000_000 0
+            richWallet <- readTestWallet rig
+            [() | (_, o) <- richWallet, adaOnlyOut o] `shouldBe` []
+            completed <- insertAt 1
+            outcomeOf (runReceipt completed) `shouldBe` Just "success"
+            (nRich, pRich) <- preparationFiguresOf completed
+            nRich `shouldSatisfy` (> deposit)
+            pRich `shouldSatisfy` (> 0)
+            pp <-
+                SessionIO.withLatest
+                    (rawChainProvider (rigChain rig))
+                    SessionIO.parameters
+            -- A wallet between the preparation plan (its requirement, fee
+            -- and remainder floor) and the whole outlay plus the preparation
+            -- fee. The interval is found by bisecting run results, every
+            -- bound read from the producers: each probe replants the
+            -- token-only wallet at a total lovelace of h on a fresh output
+            -- and books a fresh key; a wallet whose run completes was too
+            -- rich, one whose run refuses at the preparation plan was too
+            -- poor, and a run that refuses on the whole outlay with a zero
+            -- remainder floor is the row's subject. The plan gate uses the
+            -- most recent completing run's measured requirement, so the
+            -- requirement's small drift as the registry grows never misses
+            -- the interval.
+            let wholeOutlayRefusal r =
+                    outcomeOf (runReceipt r) == Just "client-refusal"
+                        && numberOfRun "remainderMin" r == Just 0
+                        && isInfixOf "preparation-unfunded:" (reasonOf r)
+                planRefusal r =
+                    outcomeOf (runReceipt r) == Just "client-refusal"
+                        && maybe False (> 0) (numberOfRun "remainderMin" r)
+                search
+                    :: (Integer, Integer) -> Integer -> Integer -> Int -> IO Run
+                search _ _ _ 0 =
+                    fail
+                        ( "no token-only wallet between the preparation plan and the whole outlay refused"
+                        )
+                search measured lower upper attempts = do
+                    let k = 2 + (14 - attempts)
+                        h =
+                            if attempts == 14
+                                then 20_000_000
+                                else (lower + upper) `div` 2
+                    plantTokenOutputs rig bundle h k
+                    wallet <- readTestWallet rig
+                    [() | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                    length (spendableOuts wallet) `shouldBe` 1
+                    spendableHeld wallet `shouldBe` h
+                    case planPreparation pp testPayer (fst measured) wallet of
+                        Left _ -> search measured h upper (attempts - 1)
+                        Right _ -> do
+                            beforeState <- snapshotStateDir rig
+                            r <- insertAt k
+                            if wholeOutlayRefusal r
+                                then do
+                                    outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+                                    runCode r `shouldBe` ExitFailure 10
+                                    reasonOf r
+                                        `shouldSatisfy` isInfixOf "preparation-unfunded:"
+                                    reasonOf r
+                                        `shouldSatisfy` isSuffixOf "(client policy); nothing was submitted"
+                                    heldOfRun r `shouldBe` Just h
+                                    numberOfRun "fee" r `shouldSatisfy` (> Just 0)
+                                    numberOfRun "remainderMin" r `shouldBe` Just 0
+                                    numberOfRun "required" r `shouldSatisfy` (> Just h)
+                                    numberOfRun "shortfall" r
+                                        `shouldBe` ((-) <$> numberOfRun "required" r <*> Just h)
+                                    submittedOf r `shouldBe` False
+                                    submissionsOfRun r `shouldBe` Just []
+                                    afterWallet <- readTestWallet rig
+                                    afterWallet `shouldBe` wallet
+                                    afterState <- snapshotStateDir rig
+                                    afterState `shouldBe` beforeState
+                                    pure r
+                                else
+                                    if outcomeOf (runReceipt r) == Just "success"
+                                        then do
+                                            fresh <- preparationFiguresOf r
+                                            search fresh lower h (attempts - 1)
+                                        else
+                                            if planRefusal r
+                                                then search measured h upper (attempts - 1)
+                                                else
+                                                    fail
+                                                        ( "probe wallet refused for another reason: "
+                                                            <> reasonOf r
+                                                        )
+            _ <-
+                search
+                    (nRich, pRich)
+                    (nRich + pRich)
+                    100_000_000
+                    14
+            pure ()
     it "opens a write session for 20 ada in two outputs with no threshold" $ do
         withSystemTempDirectory "wallet-floor-open" $ \dir -> do
             let keyPath = dir </> "payment.skey"
@@ -1074,6 +1227,130 @@ countOfRun :: Run -> Maybe Integer
 countOfRun r = do
     o <- findObjectWith (runReceipt r)
     numberAt "utxoCount" o
+
+heldOfRun :: Run -> Maybe Integer
+heldOfRun r = do
+    o <- findObjectWith (runReceipt r)
+    numberAt "held" o
+
+numberOfRun :: Aeson.Key -> Run -> Maybe Integer
+numberOfRun k r = numberAt k =<< findObjectWith (runReceipt r)
+
+{- | The @submissions@ member of a receipt, present and typed: a refusal
+that submits nothing carries an empty list, never an absent member.
+-}
+submissionsOfRun :: Run -> Maybe [Aeson.Value]
+submissionsOfRun r = case runReceipt r of
+    Aeson.Object o -> case KeyMap.lookup "submissions" o of
+        Just (Aeson.Array a) -> Just (toList a)
+        _ -> Nothing
+    _ -> Nothing
+
+{- | The preparation a completing command made: its funding lovelace and
+fee, typed from the receipt, with the shape members present. The funding
+output holds exactly the requirement, so its lovelace is the measured
+requirement of this rig.
+-}
+preparationFiguresOf :: Run -> IO (Integer, Integer)
+preparationFiguresOf r = case runReceipt r of
+    Aeson.Object o -> case KeyMap.lookup "preparation" o of
+        Just (Aeson.Object p)
+            | KeyMap.member "transaction" p
+            , KeyMap.member "output" p ->
+                case (KeyMap.lookup "lovelace" p, KeyMap.lookup "fee" p) of
+                    (Just (Aeson.Number l), Just (Aeson.Number f)) ->
+                        pure (round l, round f)
+                    _ ->
+                        fail
+                            ( "preparation figures are not numbers in "
+                                <> runLabel r
+                            )
+        _ -> fail ("no preparation object in " <> runLabel r)
+    _ -> fail ("no preparation member in " <> runLabel r)
+
+{- | The registry's policy (parsed from the create receipt's state token)
+and two approval names under it, neither the state token's own name: a
+wallet must not hold the state token itself — a preparation that returned
+it would touch the registry's token outside its lineage and stale every
+later replay. The wallet holds both names on one output, each at
+quantity 1 (the rehearsal shape of pull request 1).
+-}
+rehearsalKindsOf :: Run -> IO (PolicyID, [AssetName])
+rehearsalKindsOf r = case textAt "stateToken" (runReceipt r) of
+    Just t ->
+        either
+            (fail . T.unpack)
+            ( \(policy, AssetName stateName) -> do
+                let names =
+                        [ AssetName (SBS.toShort (BC.pack "approval-one"))
+                        , AssetName (SBS.toShort (BC.pack "beside-ada"))
+                        ]
+                when (any (\(AssetName n) -> n == stateName) names) $
+                    fail "rehearsal names collide with the state token name"
+                pure (policy, names)
+            )
+            (parseStateToken t)
+    Nothing -> fail ("no state token in " <> runLabel r)
+
+{- | One output's bundle: the given names under the policy, each at
+quantity 1.
+-}
+singleKindBundle
+    :: PolicyID
+    -> [AssetName]
+    -> Map.Map PolicyID (Map.Map AssetName Integer)
+singleKindBundle policy names =
+    Map.singleton policy (Map.fromList [(name, 1) | name <- names])
+
+-- | Every output at the test wallet's address, read at run time.
+readTestWallet :: Rig -> IO [(TxIn, TxOut ConwayEra)]
+readTestWallet rig =
+    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+        SessionIO.outputsAt v (walletAddr (rigTestWallet rig))
+
+{- | Replant the test wallet as exactly one token-carrying output holding
+the bundle beside the given lovelace, on a fresh output reference for
+this planting round; every other output at the test wallet's address is
+deleted, so the wallet is token-only whose spendable lovelace is the
+total.
+-}
+plantTokenOutputs
+    :: Rig
+    -> Map.Map PolicyID (Map.Map AssetName Integer)
+    -> Integer
+    -> Int
+    -> IO ()
+plantTokenOutputs rig bundle lovelace round_ = do
+    let addr = walletAddr (rigTestWallet rig)
+        made = mkBasicTxOut addr (MaryValue (Coin lovelace) (MultiAsset bundle))
+        ref = fundOutput (21 + round_)
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.insert
+                    ref
+                    made
+                    (Map.filter ((/= addr) . (^. addrTxOutL)) (csUTxO facts))
+            }
+
+{- | Every file under the state directory with its bytes: a refusal that
+submits nothing must leave it byte-identical, journal and all.
+-}
+snapshotStateDir :: Rig -> IO [(FilePath, BS.ByteString)]
+snapshotStateDir rig = walk (rigDir rig </> "registry")
+  where
+    walk dir = do
+        names <- sort <$> listDirectory dir
+        fmap concat (mapM one names)
+      where
+        one n = do
+            let p = dir </> n
+            isDir <- doesDirectoryExist p
+            if isDir
+                then walk p
+                else do
+                    bytes <- BS.readFile p
+                    pure [(makeRelative (rigDir rig) p, bytes)]
 
 policyOfRun :: Run -> Maybe Text
 policyOfRun r = do
