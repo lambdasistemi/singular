@@ -139,6 +139,10 @@
       "pause": 400
     },
     {
+      "text": "The closed scene is rehearsed the way every other scene is: the hosted job \"Closed-datum journey from the release archive\" runs nix run --quiet .#demo1-closed-check, which verifies the release archive and runs the closed journey from it — create with the closed switch, the page reading, insert, fold, inspect, the refused update, terminate, fold, inspect and the deposit read — on a devnet on every change.",
+      "pause": 400
+    },
+    {
       "text": "A command that stops prints why, in one outcome class with its own exit status: client-refusal (nothing submitted), ledger-refusal, node-unavailable, timeout, stale-state, partial, concurrent-writer, proof-missing or proof-inconsistent.",
       "pause": 400
     }
@@ -239,6 +243,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "11bc00acfd1e8f5be48f7e6aa2c4478fefa9d908d6fde3b2f259291d3cd6ed9a"
+    "sha256": "c2cb528b9b325ae2fd3044a6143757f69a521f0d2bf66dac1abf0a9cc117cf86"
   }
 }

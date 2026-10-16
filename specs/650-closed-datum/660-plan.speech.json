@@ -1,0 +1,164 @@
+{
+  "closed-datum-journey-from-the-release-archive-plan": [
+    {
+      "text": "Closed-datum journey from the release archive: plan.",
+      "pause": 500
+    },
+    {
+      "text": "The story, requirements and rulings are in the specification. This page records the decisions, the order of work, the invariants and the hosted checks that accept the work. Issue 660, one pull request, one slice, about three hours of writing. Base: main f23370a7 (with issue 651). The executable half, issue 654 (pull request 657), merged as 38c2e436 before this pull request was pushed, and the branch was rebased once onto it.",
+      "pause": 400
+    }
+  ],
+  "class-and-team": [
+    {
+      "text": "Class and team.",
+      "pause": 500
+    },
+    {
+      "text": "The change keeps product behaviour: a journey script, a nix app, a workflow job and a documentation note. It is a new hosted obligation, because it asserts a property of the product that the presenter relies on, so the epic owner's roster applies: one independent gate author (who writes the table of hosted checks before any coding, combined once by the author of this plan), one writer, and a persistent auditor who answers the checkpoints and is silent toward the writer. The auditor is an alarm: a block names a concrete failure scenario. No part of the change is Haskell, Aiken or Lean.",
+      "pause": 400
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    },
+    {
+      "text": "The journey reuses the release verifier's seam and edits nothing in it. The verifier tools/verify_release.sh takes its journey from an environment variable and already does everything around it: the sums, the model revision, the members, building singular, open-datum and the development node from the extracted archive, the release-build exclusion check, the wrapped executables and the check that only ordinary invocations ran. The flake gives the wrapper that sets the variable one parameter, the journey file, and instantiates it twice: the open wrapper with the open journey, as today, and a closed wrapper with the closed journey. Rejected: copying the verifier (a second oracle for the same release checks), editing the script to take a second journey (the published-release verification shares it), and copying the 2681-line open journey (two scripts to keep equal).",
+      "pause": 300
+    },
+    {
+      "text": "Helpers are read out of the open journey by name; only top-level blocks are copied. The open journey is a script that runs when it is loaded, so it cannot be sourced, but its helper functions are self-contained. The closed journey reads these from the open journey file at run time, by function name, as demo1_cli_check.sh already does for the archive-layout function: exit_of, trace_disagreements, trace_agrees, run (one process, its receipt class and exit status, its narration agreeing with its receipt), journal_lines, refused, field, hexof and holds_envelope. The script then checks that every name is defined, so a rename in the open journey stops the closed journey before any node starts, with the missing name. Copied, because they are top-level code, in a shorter form: the devnet start with two funded wallets, the stop of the node at exit, and the page read that runs the command the create receipt prints. The plan states this so the writer does not copy functions that can be read.",
+      "pause": 300
+    },
+    {
+      "text": "The closed journey is a sibling file next to the open one, travelling through the same managedScripts directory, so it finds managed_state.sh and the open journey beside it.",
+      "pause": 300
+    },
+    {
+      "text": "The mode is proved by a comparison the chain decides. Before creating, two previews of the same wallet and seed, one with --closed and one without, derive two application hashes that differ. After creating, the page read from the create receipt's printed command names the recorded application hash. It must equal the closed hash and the create receipt's own, and differ from the open hash. Rejected: an inspect field (not in issue 654's contract; a Haskell change), and deriving the applied hash in the script from the blueprint (re-implements the executable).",
+      "pause": 300
+    },
+    {
+      "text": "The no-transaction proof is two chain reads taken twice. Through open-datum inspect: the outputs at the controller's wallet address (the outputs-at option) and the name's own output with its datum and value. They are taken before and after the refused update, and must be equal; the wallet read is taken again after the termination booking and must differ, which shows the reads can see a submission. A third read, of the outputs at the application address, was planned and is dropped: the executable's outputs-at option accepts only a payment key address and refuses a script address on every registry, and reading one would be a Haskell change. Rejected: the registry directory's journal (a local file the executable wrote) as the proof; it may be checked as an extra line, never as the evidence.",
+      "pause": 300
+    },
+    {
+      "text": "The deposit return is a chain read of the controller's wallet. After the fold settles the termination, the outputs at the controller's address list an output created by the fold transaction with at least the deposit. The fold receipt's released output and deposit are compared with the booking receipt's and the insert's. The on-chain release rule requires the controller to be paid at least the deposit in that fold, so the read is the observable consequence.",
+      "pause": 300
+    },
+    {
+      "text": "One new job beside its sibling. The job demo1-closed-archive is named \"Closed-datum journey from the release archive\". It waits for the blueprint job, runs on the nixos runner, reuses the runner's cache and checks out the pull request head exactly as the open job does. The concurrency group is the workflow's own and covers it. Its timeout is set from the first hosted run, no more than 60 minutes.",
+      "pause": 300
+    },
+    {
+      "text": "A documentation note, not a new page. One paragraph in the run page onchain-release/DEMO1.md, after the paragraph issue 654 adds, names the job and the app. The run page has no narration clips; its speech companion is regenerated by the extraction tool.",
+      "pause": 300
+    },
+    {
+      "text": "The new check-run name goes into the ruleset JSON, prepared and not applied. The writer produces nothing for this; the ticket owner fetches the ruleset read-only, appends the check and journals the file at merge-ready.",
+      "pause": 300
+    }
+  ],
+  "order-of-work": [
+    {
+      "text": "Order of work.",
+      "pause": 500
+    },
+    {
+      "text": "One slice, in this order. Each step leaves the tree green for the jobs it can reach.",
+      "pause": 400
+    },
+    {
+      "text": "The flake: give the verifier wrapper its journey parameter, copy the closed journey into managedScripts, and declare the closed app.",
+      "pause": 300
+    },
+    {
+      "text": "The closed check script: assemble the release with the existing release-artifacts app, verify it with the closed wrapper.",
+      "pause": 300
+    },
+    {
+      "text": "The closed journey script, step by step as the specification lists them, with the helper guard first.",
+      "pause": 300
+    },
+    {
+      "text": "The workflow job and the documentation note with its speech.",
+      "pause": 300
+    },
+    {
+      "text": "The cheap local legs below, one local run of the journey on the final candidate, then the hand-over for review.",
+      "pause": 300
+    },
+    {
+      "text": "The pull request is a stacked patch series: one patch for the pages, one patch for the change. No journey commits are pushed.",
+      "pause": 400
+    }
+  ],
+  "invariants-and-what-makes-them-fail": [
+    {
+      "text": "Invariants and what makes them fail.",
+      "pause": 500
+    }
+  ],
+  "hosted-checks-that-accept-the-work": [
+    {
+      "text": "Hosted checks that accept the work.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the continuous integration itself. The table of jobs, their verbatim commands and the red run cited for each is in the gate page, combined once from the independent gate author's table. The local leg is the cheap command run before the push: the shell syntax and lint of the new scripts, the flake evaluation, the documentation check for the touched pages. The journey itself runs locally at most once, on the final candidate, inside a memory-capped scope and a timeout, because the hosted job is the net; no other hosted job is repeated locally.",
+      "pause": 400
+    }
+  ],
+  "two-checks-outside-the-repository": [
+    {
+      "text": "Two checks outside the repository.",
+      "pause": 500
+    },
+    {
+      "text": "The diff names only files in the touch list, and the files the open job runs (tools/demo1_cli_check.sh, tools/demo1_cli_journey.sh, tools/verify_release.sh and the open app in flake.nix) are unchanged apart from the wrapper's journey parameter. These are run by the ticket owner from the runtime record before the push.",
+      "pause": 400
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "The registry contract, the registry library, the singular commands, the open-datum executable and every Haskell file (including wallet preparation: Entry.hs, Plan.hs, Preview.hs, Prepare.hs and their tests, and the signing files), the on-chain code and identity records, tools/verify_release.sh, tools/demo1_cli_check.sh, tools/demo1_cli_journey.sh, the negative-host sources and workflow, and all Lean. The refusal of a hand-built update by the node is the negative-host ticket.",
+      "pause": 400
+    }
+  ],
+  "residuals-this-change-leaves-written-before-the-work": [
+    {
+      "text": "Residuals this change leaves, written before the work.",
+      "pause": 500
+    },
+    {
+      "text": "The write-once rule has no Lean statement, by ruling.",
+      "pause": 300
+    },
+    {
+      "text": "inspect does not print the mode; the journey shows it through the page and the refusal.",
+      "pause": 300
+    },
+    {
+      "text": "The outputs at the application address are not read; the proof of a refused update is the controller's wallet and the name's own output, which any submitted update would change.",
+      "pause": 300
+    },
+    {
+      "text": "The journey does not prove the validator refuses a hand-built update; that is the negative-host ticket.",
+      "pause": 300
+    },
+    {
+      "text": "The first hosted run sets the job's real time; the timeout is a measurement, not a claim about the devnet's speed.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "660-plan.md",
+    "sha256": "aabcc5d3dc32279c24895fcd0e45de379a6122cd6a0454929cb8ab881161cabc"
+  }
+}

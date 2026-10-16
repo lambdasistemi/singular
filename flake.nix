@@ -296,6 +296,7 @@
             cp ${./tools/facade_lifecycle_controls.py} $out/facade_lifecycle_controls.py
             cp ${./tools/managed_state.sh} $out/managed_state.sh
             cp ${./tools/demo1_cli_journey.sh} $out/demo1_cli_journey.sh
+            cp ${./tools/demo1_closed_journey.sh} $out/demo1_closed_journey.sh
             cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
             cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
             cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
@@ -463,46 +464,48 @@
           # conformance evidence is compiled against, archive members, and
           # the Demo 1 journey built from the archive's own flakes:
           # `nix run .#verify-release -- vX.Y.Z`.
-          verifyRelease = pkgs.writeShellApplication {
-            name = "verify-release";
-            runtimeInputs = with pkgs; [
-              bash
-              python3
-              binutils
-              coreutils
-              curl
-              diffutils
-              findutils
-              gawk
-              git
-              gnugrep
-              gnused
-              gnutar
-              gzip
-              jq
-              nix
-              # the journey's concurrent-writer control holds the
-              # registry's lock with flock, and it finds and stops
-              # its own development node with pgrep and pkill
-              procps
-              util-linux
-              # the two-actor run traces every file access of the folding
-              # process, so one under the booker's directory fails it
-              strace
-            ];
-            text = ''
-              export VERIFY_RELEASE_JOURNEY=${managedScripts}/demo1_cli_journey.sh
-              export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
-              export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
-              export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
-              bash ${./tools/verify_release.sh} "$@"
-            '';
-          };
+          verifyRelease =
+            journey:
+            pkgs.writeShellApplication {
+              name = "verify-release";
+              runtimeInputs = with pkgs; [
+                bash
+                python3
+                binutils
+                coreutils
+                curl
+                diffutils
+                findutils
+                gawk
+                git
+                gnugrep
+                gnused
+                gnutar
+                gzip
+                jq
+                nix
+                # the journey's concurrent-writer control holds the
+                # registry's lock with flock, and it finds and stops
+                # its own development node with pgrep and pkill
+                procps
+                util-linux
+                # the two-actor run traces every file access of the folding
+                # process, so one under the booker's directory fails it
+                strace
+              ];
+              text = ''
+                export VERIFY_RELEASE_JOURNEY=${managedScripts}/${journey}
+                export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
+                export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
+                export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
+                bash ${./tools/verify_release.sh} "$@"
+              '';
+            };
         in
         {
           verify-release = {
             type = "app";
-            program = pkgs.lib.getExe verifyRelease;
+            program = pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh");
           };
           # #326: every refusal of verify-release by name — the published
           # v0.7.0 and mutated copies of an assembled release:
@@ -520,7 +523,7 @@
                   gnutar
                   gzip
                 ];
-                text = ''VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/verify_release_controls.sh} "$@"'';
+                text = ''VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/verify_release_controls.sh} "$@"'';
               }
             );
           };
@@ -598,7 +601,34 @@
                     ${./tools/demo1_cli_controls_check.sh} \
                     ${./tools/demo1_cli_check.sh} \
                     ${./tools/demo1_cli_attach_check.sh}
-                  DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} bash ${./tools/demo1_cli_check.sh} "$PWD"
+                  DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/demo1_cli_check.sh} "$PWD"
+                '';
+              }
+            );
+          };
+          # #660: the closed-datum journey from the extracted release archive,
+          # run as separate `singular` and `open-datum` processes on one
+          # development node. Run from the repository root:
+          # `nix run --quiet .#demo1-closed-check`.
+          demo1-closed-check = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-closed-check";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  jq
+                  nix
+                  # the check stops a node that outlives the journey
+                  procps
+                ];
+                text = ''
+                  DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_closed_journey.sh")} bash ${./tools/demo1_closed_check.sh} "$PWD"
                 '';
               }
             );
@@ -629,7 +659,7 @@
                     ${./tools/demo1_cli_attach_check.sh}
                   bash ${./tools/demo1_two_actor_control.test.sh} ${./tools/demo1_two_actor_control.sh}
                   DEMO1_CLI_CHECK=${./tools/demo1_cli_check.sh} \
-                    DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe verifyRelease} \
+                    DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} \
                     bash ${./tools/demo1_two_actor_control.sh} "$PWD"
                 '';
               }

@@ -1,0 +1,50 @@
+{
+  "closed-datum-journey-touch-list": [
+    {
+      "text": "Closed-datum journey: touch list.",
+      "pause": 500
+    },
+    {
+      "text": "The only files the writer may change. A file outside this list needs a ruling before it is touched. Base: main f23370a7 when written, rebased once onto 38c2e436 (issues 654 and 491 part two merged). Open pull requests 657, 658, 644, 615, 597, 516 and 384 were read on 15 October 2026 for collisions.",
+      "pause": 400
+    }
+  ],
+  "production": [
+    {
+      "text": "Production.",
+      "pause": 500
+    }
+  ],
+  "documentation": [
+    {
+      "text": "Documentation.",
+      "pause": 500
+    }
+  ],
+  "read-and-found-to-need-no-edit": [
+    {
+      "text": "Read, and found to need no edit.",
+      "pause": 500
+    }
+  ],
+  "not-touched-by-name": [
+    {
+      "text": "Not touched, by name.",
+      "pause": 500
+    },
+    {
+      "text": "Every Haskell and Aiken file. The wallet-preparation files: Entry.hs, Plan.hs, Preview.hs, WalletShortfallSpec.hs, the registry command line's Prepare.hs, Plan.hs and CommandRunSpec.hs. The wallet, vault, passphrase and local-services files. The registry library and the singular commands. The open-datum on-chain code and its identity records. negative-host.yml and the negative-host sources.",
+      "pause": 400
+    }
+  ],
+  "rulings-taken": [
+    {
+      "text": "Rulings taken.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "660-touch-list.md",
+    "sha256": "d918e805ca34df2360442800984e0f1130bd3bd6c16198f580489f59aa7b9347"
+  }
+}

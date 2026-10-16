@@ -1,0 +1,68 @@
+{
+  "closed-datum-journey-the-frozen-gate": [
+    {
+      "text": "Closed-datum journey: the frozen gate.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the continuous integration itself. Each row names the acceptance line, the hosted job as it is named in the workflow, the verbatim command of that job with its location at the base, the exit status CI asserts, and one real failed run that shows the command can fail. A row with no hosted command is a missing job and is said so; it is never replaced by a local check. Version 1, frozen on 15 October 2026 against main f23370a7. The settled rows are not edited during the slice.",
+      "pause": 400
+    }
+  ],
+  "how-the-gate-was-made": [
+    {
+      "text": "How the gate was made.",
+      "pause": 500
+    },
+    {
+      "text": "One independent gate author, working read-only at the base before any code, wrote a table of every acceptance line, every one of the ninety-six required checks of the repository ruleset, and every hosted command with its failed runs from the last two hundred failing workflow runs. That table has 280 rows and is kept in the ticket's runtime record (input hash 39eadc06dfdbd411b67dddf861206eb6c016a0cc01d4e96ad741f34ed5210fc3). The author of this plan combined it once and cut it to what this slice can reach, as the test-running economy of the gate rules asks. The rows below are the union of the author's acceptance rows that bind this change and the rows this plan adds, marked as such. Every other required check is accepted by the one rule at the end of the table.",
+      "pause": 400
+    }
+  ],
+  "the-table": [
+    {
+      "text": "The table.",
+      "pause": 500
+    },
+    {
+      "text": "Two facts the gate author found are carried as limits, not rows:",
+      "pause": 400
+    },
+    {
+      "text": "The presentation check scans the README, the documentation folder, the protocol specification and the preprod delivery specification. It does not scan onchain-release/, so the run page's speech companion is checked by neither hosted job. The writer regenerates it with the extraction tool and the ticket owner reads the output; nothing hosted proves the tool produced it.",
+      "pause": 300
+    },
+    {
+      "text": "No hosted job asserts that a documentation note names a given job.",
+      "pause": 300
+    }
+  ],
+  "local-legs-and-budgets": [
+    {
+      "text": "Local legs and budgets.",
+      "pause": 500
+    },
+    {
+      "text": "The candidate gate, run on every committed candidate, is the narrowest subset that the change can break: just lint and its controls, the three declared-checks commands, the workflow-commands command, the inventory check and the documented-flags check. Budget: twenty minutes in total. Each command runs inside a memory-capped scope with a timeout, for example systemd-run --user --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -- timeout 900 <command>, with standard input from /dev/null.",
+      "pause": 400
+    },
+    {
+      "text": "The documentation check runs once on the committed pages before the first push.",
+      "pause": 400
+    },
+    {
+      "text": "The journey itself runs locally at most once, on the final candidate, with timeout 3600 in the same kind of scope. Every other hosted job is read from CI, never repeated locally.",
+      "pause": 400
+    }
+  ],
+  "per-class-falsification": [
+    {
+      "text": "Per-class falsification.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "660-gate.md",
+    "sha256": "0170a666eeebd029fd1f3232f3ec5bf28411e27ac2ad9fd6ea543dec52ce7e16"
+  }
+}

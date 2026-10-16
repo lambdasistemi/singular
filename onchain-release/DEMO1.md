@@ -248,6 +248,8 @@ insert receipt and the preview receipt print the envelope it built.
 
 A closed registry is booted with `open-datum create --closed ...`, which pins the closed-datum application whose payload is written once. Every later command follows the registry's mode with no further flag, and `open-datum update` on a closed registry stops before anything is built or signed, saying the registry is closed.
 
+The closed scene is rehearsed the way every other scene is: the hosted job "Closed-datum journey from the release archive" runs `nix run --quiet .#demo1-closed-check`, which verifies the release archive and runs the closed journey from it — create with the closed switch, the page reading, insert, fold, inspect, the refused update, terminate, fold, inspect and the deposit read — on a devnet on every change.
+
 A command that stops prints why, in one outcome class with its own exit
 status: `client-refusal` (nothing submitted), `ledger-refusal`,
 `node-unavailable`, `timeout`, `stale-state`, `partial`,
