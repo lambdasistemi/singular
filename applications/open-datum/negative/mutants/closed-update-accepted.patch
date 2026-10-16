@@ -1,0 +1,12 @@
+diff --git a/applications/open-datum/onchain/validators/open_datum.ak b/applications/open-datum/onchain/validators/open_datum.ak
+--- a/applications/open-datum/onchain/validators/open_datum.ak
++++ b/applications/open-datum/onchain/validators/open_datum.ak
+@@ -718,7 +718,7 @@ validator closed_datum(registry: ByteArray) {
+     tx: Transaction,
+   ) {
+     when redeemer is {
+-      Update -> traceFalse(@"closed-datum-update")
++      Update -> open_datum.spend(registry, datum, Update, own, tx)
+       Release -> open_datum.spend(registry, datum, Release, own, tx)
+     }
+   }

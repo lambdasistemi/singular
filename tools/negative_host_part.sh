@@ -9,8 +9,9 @@
 # tamper family (controller-tamper-controller|deposit|token|address|datum),
 # the stranger's termination booking (stranger-terminates-the-key), the
 # controller-signed release outside any fold
-# (controller-withdraws-outside-a-fold), and the stranger's insertion of a
-# taken key (stranger-registers-a-taken-key).
+# (controller-withdraws-outside-a-fold), the stranger's insertion of a
+# taken key (stranger-registers-a-taken-key), and the closed registry's
+# refused update (closed-update).
 # usage: negative_host_part.sh REPO-ROOT PART
 #
 # For one discovered part: assemble the release archive, extract it outside
@@ -28,7 +29,7 @@ set -euo pipefail
 root="$1"
 part="$2"
 case "$part" in
-  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold | stranger-registers-a-taken-key | owner-registers-a-taken-key-again | owner-revives-a-terminated-key | stranger-revives-a-terminated-key | short-fold-of-a-booked-termination) ;;
+  stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum | stranger-terminates-the-key | controller-withdraws-outside-a-fold | stranger-registers-a-taken-key | owner-registers-a-taken-key-again | owner-revives-a-terminated-key | stranger-revives-a-terminated-key | short-fold-of-a-booked-termination | closed-update) ;;
   *)
     echo "negative-host-part: unknown part: $part" >&2
     exit 2
@@ -202,16 +203,42 @@ retract_time=30000
 if [ "$part" = stranger-registers-a-taken-key ]; then
   retract_time=600000
 fi
-run_ok preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview \
+# Closed registries boot with the switch on the preview and on the create,
+# for this part only: every other part boots open exactly as before.
+closed_flag=()
+if [ "$part" = closed-update ]; then
+  closed_flag=(--closed)
+fi
+run_ok preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview "${closed_flag[@]}" \
   --state-dir "$work/preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create preview failed"
 seed="$(jq -er .seed "$receipts/preview.json")" || setup_fail "preview names no seed"
-run_ok create "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" \
+if [ "$part" = closed-update ]; then
+  # The open pin of the same seed, previewed before anything is submitted:
+  # once the create consumes the seed no preview can name it again, so the
+  # comparison preview runs here, with the switch off.
+  run_ok open-preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview --seed "$seed" \
+    --state-dir "$work/preview-open" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
+    || setup_fail "open preview of the same seed failed"
+fi
+run_ok create "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${closed_flag[@]}" \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create failed"
 state_token="$(jq -er .stateToken "$receipts/create.json")" || setup_fail "create names no state token"
 pin_app="$(jq -er .pins.pinApplication "$receipts/create.json")" || setup_fail "create names no application pin"
 pin_state="$(jq -er .pins.pinState "$receipts/create.json")" || setup_fail "create names no state pin"
+if [ "$part" = closed-update ]; then
+  # The judged pin is closed-datum's: the create receipt names the closed
+  # application, its pin equals the closed preview's pin and differs from
+  # the open preview's pin of the same seed. Anything else is a setup
+  # failure, never counted.
+  [ "$(jq -er .application "$receipts/create.json")" = open_datum.closed_datum ] \
+    || setup_fail "create receipt names no closed-datum application"
+  [ "$pin_app" = "$(jq -er .pins.pinApplication "$receipts/preview.json")" ] \
+    || setup_fail "recorded pin differs from the closed preview's pin"
+  [ "$pin_app" != "$(jq -er .pins.pinApplication "$receipts/open-preview.json")" ] \
+    || setup_fail "closed pin equals the open pin of the same seed"
+fi
 common=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$state_token")
 run_ok insert "$open_datum" open-datum insert --key alice-1 --payload "$work/payload-insert.json" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
@@ -275,6 +302,27 @@ case "$part" in
   controller-withdraws-outside-a-fold)
     "$host" registry withdraw --key alice-1 \
       --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
+      "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
+      >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
+    run_ok control-book "$open_datum" open-datum terminate --key alice-1 \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "control booking failed"
+    run_ok control-fold "$open_datum" open-datum fold \
+      "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
+      || setup_fail "control fold failed"
+    run_ok control-inspect "$open_datum" open-datum inspect --key alice-1 \
+      "${common[@]}" "${node[@]}" \
+      || setup_fail "control inspect failed"
+    [ "$(jq -er .leaf "$receipts/control-inspect.json")" = terminal ] \
+      || setup_fail "key is not terminal after control fold"
+    ;;
+  closed-update)
+    # The closed registry's honest update through the host, signed by the
+    # controller with no tamper flag: the node refuses it. The control is
+    # the termination of the same key, booked and folded with the
+    # executable as the withdraw part's control is.
+    "$host" registry update --key alice-1 --payload "$work/payload-update.json" \
+      --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
     run_ok control-book "$open_datum" open-datum terminate --key alice-1 \
@@ -563,7 +611,7 @@ judge "$receipts/forbidden.json" refused-by-expected \
   || fail "forbidden $part not credited: outcome=$(jq -r .outcome "$receipts/forbidden.json"), failedScripts=$(jq -c .failedScripts "$receipts/forbidden.json"), $expect_hash_field=$(jq -r --arg f "$expect_hash_field" '.[$f]' "$receipts/forbidden.json"), registry pin $expect_pin role $expect_role"
 [ "$forbidden_status" -eq 11 ] \
   || fail "forbidden exit $forbidden_status, expected 11 (ledger-refusal)"
-if [ "$part" = controller-withdraws-outside-a-fold ]; then
+if [ "$part" = controller-withdraws-outside-a-fold ] || [ "$part" = closed-update ]; then
   judge "$receipts/control-book.json" accepted \
     || fail "control booking not accepted: outcome=$(jq -r .outcome "$receipts/control-book.json")"
   judge "$receipts/control-fold.json" accepted \

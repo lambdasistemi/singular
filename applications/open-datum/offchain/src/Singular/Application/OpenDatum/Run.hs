@@ -21,6 +21,8 @@ module Singular.Application.OpenDatum.Run
     , registryMode
     , followingMode
     , closedUpdateRefusal
+    , readModeFor
+    , readModeForFold
     ) where
 
 import Control.Exception

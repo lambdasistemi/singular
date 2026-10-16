@@ -125,15 +125,42 @@ exactly what the booking owes. The one difference between the two
 folds is the payment, and that difference alone moves the verdict from
 refusal to acceptance.
 
+## A closed registry refuses an update
+
+Some registries are closed: created with `open-datum create --closed`,
+their payloads are written once, and no update ever lands. The
+ordinary client says so before it builds anything — an update on a
+closed registry is refused on the machine, with nothing submitted.
+The host skips the client and asks the chain instead.
+
+Alice registers `alice-1` in a closed registry and folds it active,
+both with the ordinary commands. Through the host she then submits
+her own honest update of that key, signed by her, with no tamper
+flag and no local evaluation. The node refuses it, and the verdict
+names the registry's own closed application in the spending role: the
+refusal comes from the chain's script, not from the client's policy.
+A fresh read shows the registry exactly as it was. The create receipt
+names the closed application, and its pin is the closed pin — it
+matches the closed preview's pin and differs from the open pin of
+the same seed, so the refused script can only be closed-datum's.
+
+The control runs in the same registry, on the same key: Alice books
+its termination and folds it, with the ordinary commands. The node
+accepts both, and the key reads as terminal. The chain refuses the
+update and nothing else.
+
 ## Every forbidden move, and what refuses it
 
-The scenario set is thirteen pairs in nine stories: the rewrite of a
+The scenario set is fourteen pairs in ten stories: the rewrite of a
 protected field has five variants, one per protected field. Each pair
 is one forbidden command and its accepting control, run on a fresh
 development node from the extracted release archive. The pair list
 itself lives in `applications/open-datum/negative/pairs.json`; the
-model statements behind each refusal are on the ticket's
-[data model page](../specs/358-singular-negative/data-model.md).
+model statements behind the thirteen open-registry refusals are on the
+ticket's [data model page](../specs/358-singular-negative/data-model.md).
+The write-once rule behind `closed-update` has no Lean statement, by
+[operator ruling](../specs/650-closed-datum/ruling.md): the closed
+registry's refusal is shown by the run, not by a theorem.
 
 After the command-line split landed
 ([lambdasistemi/singular#528](https://github.com/lambdasistemi/singular/issues/528)),
@@ -160,6 +187,7 @@ post-split ordinary spellings.
 | `registry insert --key alice-1 --payload new.json --wallet-skey alice.skey`, the key terminal (`owner-revives-a-terminated-key`) | the registry's state validator | the same `open-datum insert` | refuses before submitting: the key is already retired, permanently | the same fresh-key insertion from the same terminal state |
 | the same revival signed by a stranger (`stranger-revives-a-terminated-key`) | the registry's state validator | the same `open-datum insert` | the same refusal: a terminated key stays terminal for everyone | the same fresh-key insertion from the same terminal state |
 | `registry fold --pay-short 1 --wallet-skey bob.skey` over the pending termination of `alice-2` (`short-fold-of-a-booked-termination`) | the application's spending contract, at the fold | `open-datum fold --wallet-skey bob.skey` | builds the fold from the public view and pays the controller exactly what the booking owes; no ordinary flag pays less | the honest fold of the same request |
+| `registry update --key alice-1 --payload new.json --wallet-skey alice.skey` on a registry created with `open-datum create --closed` (`closed-update`) | the closed application's spending contract | `open-datum update --key alice-1 --payload new.json --wallet-skey alice.skey` | refuses before submitting: the registry is closed, a payload is written once and an update is refused | the termination of the same key, booked and folded |
 
 Read the four insertion rows together, because their timing is the
 subtle part: an insertion is only a request. Under the host, the
@@ -226,7 +254,7 @@ One scenario run starts a fresh node, funds Alice and Bob, runs the
 forbidden command and its accepting control, judges every clause from
 the receipts alone, and scans every receipt and output for the key
 bytes the run generated (keys are given by path and never printed).
-The thirteen scenario names are the pairs of the table above.
+The fourteen scenario names are the pairs of the table above.
 
 The hosted workflow runs every pair on every push: it discovers the
 scenario list from the host's own table, runs each scenario as its own
@@ -284,7 +312,7 @@ What is deliberately not there yet:
   move. For every refusing rule a mutant validator removes exactly
   that rule, the release archive is rebuilt from the mutated source,
   and the pair must flip — the node must accept what the rule refuses.
-  Eight mutants cover all thirteen pairs.
+  Nine mutants cover all fourteen pairs.
 - **The crafting exists twice.** The conformance harness keeps its own
   copy of the crafted transactions; the host's copy is the one the
   release archive ships
@@ -305,6 +333,7 @@ What is deliberately not there yet:
 | `release-no-fold` | a holding is released only inside a fold | `controller-withdraws-outside-a-fold` |
 | `release-additive` | a fold pays the controller at least what is owed | `short-fold-of-a-booked-termination` |
 | `registry-accepts-a-taken-key` | the registry's defence of a taken key — the labelled `key-exists` refusal in the fold and the insert step's own precondition (the Merkle-Patricia-Forestry library's insert requires the key to be absent, the same check the label sits behind) — both parts, removed together | `stranger-registers-a-taken-key`, `owner-registers-a-taken-key-again`, `owner-revives-a-terminated-key`, `stranger-revives-a-terminated-key` |
+| `closed-update-accepted` | the closed application's refusal of an update — the labelled `closed-datum-update` refusal in the closed spend, delegated to the open spend instead | `closed-update` |
 
 The registry row removes two things at once because one alone could never flip: taking out only the labelled refusal leaves the node refusing, since the insert step makes the same check itself. The runner builds this mutant the same way as the others, inside its own scratch copy only: the pin of the registry's state script, the registry manifest, the permanent-contract file and the known-scripts module are regenerated, and so are the application's blueprint, manifest and record, so the executables built there accept the mutated hashes. The checkout, the shipped loader and the permanent contract are not changed, and the run checks that. The control pair for this mutant is `stranger-updates-the-key`.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Node-free controls for the negative host (#562). These are the legs of
 # the retired tools/negative_host_proof.sh that no hosted job ran: the
-# 13-name membership of the discovered parts, the empty-list refusal
+# membership of the discovered parts, the empty-list refusal
 # control on the discovery assertion, the four exit-2 parser refusals
 # (bogus tamper, pay-short 0 and abc, unknown subcommand), the
 # unknown-part refusal of the part dispatcher, and the terminate and
@@ -48,10 +48,10 @@ host_bin="$host_out/bin/singular-negative"
 cd "$root" || setup_fail "entering the repository root $root"
 
 # 1. Discovery lists every named part (the host table's complete row
-# set): the discovery app's output must carry all thirteen names, so a
+# set): the discovery app's output must carry every part name, so a
 # dropped part fails here and not only in a pair job that never ran.
 if parts_out="$(nix run --quiet .#negative-host-parts)"; then
-  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key owner-registers-a-taken-key-again owner-revives-a-terminated-key stranger-revives-a-terminated-key short-fold-of-a-booked-termination; do
+  for want in stranger-updates-the-key controller-tamper-controller controller-tamper-deposit controller-tamper-token controller-tamper-address controller-tamper-datum stranger-terminates-the-key controller-withdraws-outside-a-fold stranger-registers-a-taken-key owner-registers-a-taken-key-again owner-revives-a-terminated-key stranger-revives-a-terminated-key short-fold-of-a-booked-termination closed-update; do
     if grep -q "\"$want\"" <<<"$parts_out"; then
       say "parts list carries $want"
     else

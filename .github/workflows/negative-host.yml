@@ -186,7 +186,7 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       # #562: the node-free legs of the retired negative host proof
       # script. The app builds the host binary as setup (exit 2 on
-      # failure, never a verdict), then carries the 13-name membership of
+      # failure, never a verdict), then carries the membership of
       # the discovered parts, the empty-list refusal control on the
       # discovery assertion, the four exit-2 parser refusals, the
       # unknown-part refusal of the part dispatcher, and the terminate
@@ -216,6 +216,8 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Run the mutant self-check over the registry mutant
         run: nix run --quiet .#negative-host-mutants -- --control-noop registry-accepts-a-taken-key
+      - name: Run the mutant self-check over the closed-update mutant
+        run: nix run --quiet .#negative-host-mutants -- --control-noop closed-update-accepted
   negative-host-pairs:
     name: Negative host pairs
     needs: [negative-host-parts, negative-host-part]

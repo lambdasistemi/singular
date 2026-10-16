@@ -4729,6 +4729,36 @@
   ]
  },
  "docs/negative-host.md": {
+  "a-closed-registry-refuses-an-update": [
+   {
+    "index": 0,
+    "name": "docs-negative-host/a-closed-registry-refuses-an-update-00",
+    "pause_ms": 500,
+    "text": "A closed registry refuses an update.",
+    "v": "e51e64162ef0"
+   },
+   {
+    "index": 1,
+    "name": "docs-negative-host/a-closed-registry-refuses-an-update-01",
+    "pause_ms": 400,
+    "text": "Some registries are closed: created with open-datum create --closed, their payloads are written once, and no update ever lands. The ordinary client says so before it builds anything — an update on a closed registry is refused on the machine, with nothing submitted. The host skips the client and asks the chain instead.",
+    "v": "9046d2d35559"
+   },
+   {
+    "index": 2,
+    "name": "docs-negative-host/a-closed-registry-refuses-an-update-02",
+    "pause_ms": 400,
+    "text": "Alice registers alice-1 in a closed registry and folds it active, both with the ordinary commands. Through the host she then submits her own honest update of that key, signed by her, with no tamper flag and no local evaluation. The node refuses it, and the verdict names the registry's own closed application in the spending role: the refusal comes from the chain's script, not from the client's policy. A fresh read shows the registry exactly as it was. The create receipt names the closed application, and its pin is the closed pin — it matches the closed preview's pin and differs from the open pin of the same seed, so the refused script can only be closed-datum's.",
+    "v": "c11f9114019d"
+   },
+   {
+    "index": 3,
+    "name": "docs-negative-host/a-closed-registry-refuses-an-update-03",
+    "pause_ms": 400,
+    "text": "The control runs in the same registry, on the same key: Alice books its termination and folds it, with the ordinary commands. The node accepts both, and the key reads as terminal. The chain refuses the update and nothing else.",
+    "v": "6c118a393dd3"
+   }
+  ],
   "a-refused-insertion-strands-a-booking-and-its-owner-reclaims-it": [
    {
     "index": 0,
@@ -4764,8 +4794,8 @@
     "index": 1,
     "name": "docs-negative-host/every-forbidden-move-and-what-refuses-it-01",
     "pause_ms": 400,
-    "text": "The scenario set is thirteen pairs in nine stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind each refusal are on the ticket's data model page.",
-    "v": "241d1db43c4f"
+    "text": "The scenario set is fourteen pairs in ten stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind the thirteen open-registry refusals are on the ticket's data model page. The write-once rule behind closed-update has no Lean statement, by operator ruling: the closed registry's refusal is shown by the run, not by a theorem.",
+    "v": "71a9f0d09bab"
    },
    {
     "index": 2,
@@ -4836,8 +4866,8 @@
     "index": 2,
     "name": "docs-negative-host/how-to-run-it-02",
     "pause_ms": 400,
-    "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The thirteen scenario names are the pairs of the table above.",
-    "v": "e52ddd8cfe2b"
+    "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The fourteen scenario names are the pairs of the table above.",
+    "v": "27706190b693"
    },
    {
     "index": 3,
@@ -4910,8 +4940,8 @@
     "index": 5,
     "name": "docs-negative-host/what-a-run-does-not-show-05",
     "pause_ms": 300,
-    "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
-    "v": "c1bf078710fc"
+    "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Nine mutants cover all fourteen pairs.",
+    "v": "468452bf70cd"
    },
    {
     "index": 6,
