@@ -18,10 +18,10 @@ no coherent chain snapshot and carries no verification witness.
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--koios-url URL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. |
-| `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
-| `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
-| `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. |
+| `--koios-url URL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. |
+| `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
+| `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
+| `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. |
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. |
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
@@ -43,14 +43,15 @@ no coherent chain snapshot and carries no verification witness.
 | `--outputs-at ADDR` | `inspect` | A public address, bech32, whose outputs the receipt also lists, each with its output reference and what it actually holds, read from the provider. It is a read apart from any write: nothing is signed, submitted or journalled. Every other command refuses it. |
 | `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the provider; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
-| `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
+| `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `singular submit`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
 | `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. |
 | `--passphrase-fd FD` | `singular wallet create`, `singular wallet address`, `singular wallet sign` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. The passphrase itself is never taken as an argument, and no output, refusal or trace names it. |
 | `--out DIR` | `singular wallet sign` | Where the witness files go: one file per transaction of the bundle, each named by its transaction's identity with `.witness` appended and created exclusively — an existing file is refused with its bytes untouched. The directory is made when absent; the bundle's own directory when not given. |
+| `--witnesses FILE` | `singular submit` | A witness file `singular wallet sign` wrote, or a directory standing for the `.witness` files it holds; give it once per file or directory. Each witness is matched to its transaction by its signature, never by its file name. |
 | `--json` | `singular describe` | Print the registry page as JSON for a program to read; without it the page prints as text for a person. A success prints the page alone and writes no file. |
-| `--trace LEVEL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
-| `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
-| `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
+| `--trace LEVEL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | How much the command narrates as it runs: `off`, `what` (its protocol steps: the registry, key, request, edge and transaction it acts on, and each verdict) or `how` (also the mechanics under each step: reads, script evaluation, build, signing, submission, confirmation, with their times). When not given: `what` if standard error is a terminal, otherwise `off`. Any other value is refused before anything runs. |
+| `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
+| `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
 
 The URL, network magic and signing key travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
@@ -170,6 +171,83 @@ offline — inputs cannot be resolved — and expiry is not judged without
 a clock that knows the slot; both are the submitting command's
 judgement. No output, refusal or file names the passphrase or any key
 byte.
+
+## Submitting a signed bundle
+
+As Bob, I hand back the witnesses for a bundle and run `singular submit`
+with the node settings. The transactions are sent in the bundle's
+order, and the receipt says what the chain shows. If the run is cut
+short, I run the same command again: it sends only the transactions the
+chain does not hold yet. If a body has expired, it says to rebuild the
+bundle and sends nothing. It needs no wallet key and keeps no state.
+
+```sh
+singular submit --witnesses witnesses --koios-url "$koios_url" \
+  --network-magic 1 --receipt submitted.json bundle.json
+singular submit --witnesses alice.witness --witnesses bob.witness \
+  --koios-url "$koios_url" --network-magic 1 bundle.json
+```
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant B as Bob
+    participant F as Bundle and witness files
+    participant K as Koios
+    B->>F: Read and check the bundle, read the witnesses
+    B->>B: Pair each witness with the body its signature verifies
+    B->>K: Where each transaction sits, the tip, the inputs to resolve
+    B->>B: Plan: every key witnessed, nothing unneeded, nothing expired
+    loop each transaction the chain does not hold, in order
+        B->>K: Send it with exactly its witnesses
+        K-->>B: Accepted, then confirmed
+    end
+    B->>K: Read each transaction back
+    B-->>B: Receipt from what the chain shows
+```
+
+The witness files are the ones `singular wallet sign` writes; a
+directory stands for the `.witness` files it holds, and each witness is
+matched to a transaction by its signature, never by its file name. The
+command checks everything it can before it sends anything, in this
+order. Without touching the chain, it refuses a bundle the signing step
+would refuse, a witness file it cannot read, and a witness whose
+signature verifies against no transaction of the bundle. Then it reads
+the chain once: where each transaction sits, the tip, and the inputs of
+each transaction not on chain yet — an input an earlier transaction of
+the bundle produces is taken from that transaction, every other from
+the chain. Witnesses are required for the transactions this run will
+send, and for those alone. It refuses a witness for a key none of them
+needs, a transaction left without a witness for a key it needs (its
+required signers and the payment keys of what it spends), an input
+found nowhere, and a transaction not on chain whose validity upper
+bound the tip has reached, with the word rebuild. A refusal exits as a
+client refusal, naming its cause, with an empty list of submissions.
+
+A transaction the chain already holds, found by its identity, is
+skipped before those checks, and the witnesses supplied for it are
+ignored: the inputs it spent can no longer be read from the chain, and
+it is never sent again. A witness that cannot be read, or that verifies
+against no transaction of the bundle, is refused all the same, before
+the chain is read, even when every transaction is already on chain.
+
+Each transaction the chain does not hold is sent in turn, carrying
+exactly its own witnesses, and confirmed before the next. An answer
+that may or may not mean the node took the transaction stops the run as
+partial, and nothing is sent again within the run; the next run finds
+what landed. Once every transaction is on chain, the receipt is read back
+from the chain: for each transaction, whether this run sent it or found
+it, its chain point, its confirmations, and each of its outputs —
+unspent with what it holds, or spent since — plus the bundle's hash.
+
+The effect lines a bundle carries are its writer's claims: the receipt
+shows them under claims and never says they were confirmed. The
+completeness of the signatures is judged here, against the inputs the
+chain resolves, which the offline signing step cannot do. Expiry is
+judged against the tip read before the first send. A command that stops
+leaves nothing behind but its receipt, and it never resubmits on its
+own. A valid signature by an unneeded key over an already-landed body is
+not reported.
 
 ## Naming the registry by its state token
 

@@ -10,8 +10,9 @@ As Bob, I hand back the witnesses for a bundle and run `singular submit --witnes
 
 - witness-matches-its-body: each witness is matched to a transaction by verifying its signature over that body's identity, never by its file name.
 - different-body-witness-refused: a witness that verifies against no body of the bundle is refused by name.
-- needed-keys-all-witnessed: for each transaction, the key hashes that need a witness (its required signers and the payment key hashes of its inputs and collateral) each have exactly one verified witness; a missing one is refused as incomplete. Inputs produced by an earlier body of the bundle are read from that body; the others are resolved on the chain; a script-locked input needs no key witness.
-- unneeded-key-witness-refused: a witness for a key that no transaction needs is refused as a different key.
+- needed-keys-all-witnessed: for each transaction this run will send, the key hashes that need a witness (its required signers and the payment key hashes of its inputs and collateral) each have exactly one verified witness; a missing one is refused as incomplete. Inputs produced by an earlier body of the bundle are read from that body; the others are resolved on the chain; a script-locked input needs no key witness.
+- unneeded-key-witness-refused: a witness for a key that none of the transactions this run will send needs is refused as a different key.
+- found-transaction-witnesses-ignored: a transaction the provider reports found, with confirmations, is skipped before the needed-key and unneeded-key checks, and the witnesses supplied for it are ignored, because its spent inputs cannot be read from the chain and it is never sent again; a witness that cannot be read, or that verifies against no body of the bundle, is still refused before any chain read.
 - nothing-sent-before-all-checks: every refusal above and the expiry refusal happen before the first send.
 - expired-body-refused-with-rebuild: when the chain tip is at or beyond the exclusive validity upper bound of a transaction that is not yet on chain, the command refuses with the word rebuild and sends nothing.
 - transactions-sent-in-bundle-order: sends happen in the bundle's order.
@@ -32,5 +33,7 @@ Exit with a named refusal and nothing sent: bundle unreadable or inconsistent (a
 ## Limits recorded
 
 The effect lines are the writer's claims, shown and not confirmed; structured effects belong to a later bundle version.
+
+A valid signature by an unneeded key over an already-landed body is not reported: witnesses for a transaction found on chain are ignored.
 
 The journal phase "waiting for signatures", its reconciliation and the three ways a bundle dies (a rejected transaction, an excluded transaction, expiry) are not part of this ticket: the command reads no journal, and the phase belongs with the write commands that produce bundles (issue 641).

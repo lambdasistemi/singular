@@ -10,7 +10,7 @@ An ordered list of steps, one per bundle transaction: send, or found on chain. B
 
 ## Needed keys
 
-For each transaction, the set of payment key hashes needing a witness: its required signers, plus the payment key hashes of its input and collateral outputs. A script credential adds nothing.
+For each transaction still to send, the set of payment key hashes needing a witness: its required signers, plus the payment key hashes of its input and collateral outputs. A script credential adds nothing.
 
 ## Receipt
 

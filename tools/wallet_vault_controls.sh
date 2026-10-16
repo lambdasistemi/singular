@@ -26,6 +26,10 @@
 #     name, and opens no connection — under a network namespace where
 #     the runner allows one, else by provider refusals plus a counting
 #     connection canary.
+#   * submit takes no wallet key and no vault, each refused by name, and
+#     refuses a witness that verifies against no transaction of the
+#     bundle before any connection reaches the node it names; the
+#     verifying twin passes the offline checks and reaches it.
 #
 # The planted defects are wrapper binaries around the real one: an
 # overwriting variant that removes a refused create's obstacle and
@@ -33,6 +37,9 @@
 # after the address; for the sign family, an overwriting variant that
 # removes a refused witness and retries, and an any-bundle variant
 # that writes a witness file after the real binary refused the bundle.
+# For submit, a chain-first variant that connects to the node before
+# its checks, and a key-ignoring variant that drops the wallet key and
+# runs on.
 # The sign success check itself keeps no planted twin: its assertions
 # are the ones the overwrite control's twin shares.
 #
@@ -629,6 +636,108 @@ if [ -z "$offline_kind" ]; then
   echo "control sign-offline: carried by the refusals and the canary (no namespace on this runner)"
 fi
 
+# --- submit: the offline refusals -------------------------------------
+#
+# `singular submit` takes no wallet key and no vault, and refuses a
+# witness that verifies against no transaction of the bundle before it
+# touches the chain. The node setting points at a counting listener of
+# its own: every refusal must leave its count where it was, and the
+# accepted twin — the witness that does verify — must reach it, which
+# shows the listener counts the command's chain access.
+
+submit_dir="$scratch/submit"
+rm -rf "$submit_dir"
+mkdir -p "$submit_dir"
+fresh
+address=$(create_vault "$real_singular" "$scratch/run")
+jq --arg addr "$address" '.signers = [$addr]' "$fixture" >"$submit_dir/both.json" \
+  || setup_fail submit-jq "jq could not rewrite the signers"
+sign_run "$real_singular" "$scratch/run" "$submit_dir/both.json" "$submit_dir/sign.out" "$submit_dir/sign.err" \
+  || setup_fail submit-sign "the witnesses were not written: $(head -1 "$submit_dir/sign.err")"
+first_identity=$(jq -r '.transactions[0].identity' "$fixture")
+second_identity=$(jq -r '.transactions[1].identity' "$fixture")
+own_witness="$submit_dir/$first_identity.witness"
+foreign_witness="$submit_dir/$second_identity.witness"
+[ -f "$own_witness" ] && [ -f "$foreign_witness" ] \
+  || setup_fail submit-witnesses "the sign run wrote no witness per transaction"
+# The bundle holds the first transaction only: the second's witness
+# verifies against nothing in it.
+jq '.transactions = [.transactions[0]]' "$submit_dir/both.json" >"$submit_dir/bundle.json" \
+  || setup_fail submit-jq "jq could not cut the bundle"
+
+submit_state="$submit_dir/canary.state"
+timeout "$RUN_TIMEOUT" python3 "$canary_script" "$submit_state" &
+canary_pid=$!
+for _ in $(seq 1 50); do
+  [ -f "$submit_state" ] && break
+  sleep 0.1
+done
+[ -f "$submit_state" ] || setup_fail submit-canary "the counting listener never answered"
+export SUBMIT_PORT
+SUBMIT_PORT=$(cut -d' ' -f1 "$submit_state")
+submit_count() { cut -d' ' -f2 "$submit_state"; }
+
+# Submit one bundle against the counting listener: the run bounded.
+submit_run() { # submit_run BINARY WITNESS OUT ERR [EXTRA...] -> rc
+  local binary=$1 witness=$2 out=$3 err=$4 rc=0
+  shift 4
+  bounded env PATH="$SANITISED_PATH" "$binary" submit --witnesses "$witness" \
+    --koios-url "http://127.0.0.1:$SUBMIT_PORT" --network-magic 1 "$@" \
+    "$submit_dir/bundle.json" >"$out" 2>"$err" || rc=$?
+  return $rc
+}
+
+# The submit refusal's assertions, shared with the planted-defect
+# demonstrations: a non-zero exit, the cause named on standard output
+# or standard error, no connection reaching the listener, and no
+# submission in a printed receipt.
+submit_refusal() { # submit_refusal OUT ERR RC CAUSE BEFORE AFTER -> the refusal, or none
+  local out=$1 err=$2 rc=$3 cause=$4 before=$5 after=$6
+  if [ "$rc" -eq 0 ]; then
+    echo "exit 0"
+    return 1
+  fi
+  if ! grep -q -- "$cause" "$out" "$err"; then
+    echo "the refusal does not name $cause"
+    return 1
+  fi
+  if [ "$after" -ne "$before" ]; then
+    echo "$((after - before)) connections reached the listener"
+    return 1
+  fi
+  if [ -s "$out" ] && ! jq -e '.submissions == []' "$out" >/dev/null 2>&1; then
+    echo "the receipt names a submission"
+    return 1
+  fi
+  return 0
+}
+
+for flag in --wallet-skey --vault --passphrase-fd; do
+  before=$(submit_count)
+  flag_rc=0
+  submit_run "$real_singular" "$own_witness" "$submit_dir/flag.out" "$submit_dir/flag.err" "$flag" 9 || flag_rc=$?
+  if ! refusal=$(submit_refusal "$submit_dir/flag.out" "$submit_dir/flag.err" "$flag_rc" "$flag" "$before" "$(submit_count)"); then
+    fail submit-flags "$flag: $refusal"
+  fi
+done
+echo "control submit-flags: the wallet key, the vault and the passphrase descriptor refused by name, nothing reached the chain"
+
+before=$(submit_count)
+foreign_rc=0
+submit_run "$real_singular" "$foreign_witness" "$submit_dir/foreign.out" "$submit_dir/foreign.err" || foreign_rc=$?
+if ! refusal=$(submit_refusal "$submit_dir/foreign.out" "$submit_dir/foreign.err" "$foreign_rc" "witness-for-a-different-body" "$before" "$(submit_count)"); then
+  fail submit-foreign-witness "$refusal"
+fi
+echo "control submit-foreign-witness: refused by name before any connection"
+
+# The accepted twin: the witness that verifies passes every offline
+# check and goes on to read the chain — the listener counts it.
+before=$(submit_count)
+submit_run "$real_singular" "$own_witness" "$submit_dir/twin.out" "$submit_dir/twin.err" || true
+[ "$(submit_count)" -gt "$before" ] \
+  || fail submit-twin "the accepted witness never reached the chain: $(head -1 "$submit_dir/twin.err")"
+echo "control submit-twin: the verifying witness passed the offline checks and reached the listener"
+
 # --- the planted defects ---------------------------------------------
 
 # Overwriting: the defect must fire — the second create succeeding, or
@@ -766,6 +875,48 @@ if refusal=$(sign_refusal "$scratch/run/ab.out" "$scratch/run/ab.err" "$scratch/
   setup_fail planted-any-bundle "the tampered control's assertions accept the observation"
 fi
 echo "control planted-any-bundle: the defect fired and the tampered control refuses it: $refusal (rc $ab_rc)"
+
+# Chain-first: a submit that opens a connection to the node before it
+# runs its checks — the defect the foreign-witness control refuses.
+cat >"$scratch/singular-chain-first" <<'EOF'
+#!/usr/bin/env bash
+if [ "$1" = submit ]; then
+  exec 3<>"/dev/tcp/127.0.0.1/$SUBMIT_PORT" && exec 3>&-
+fi
+exec "$real" "$@"
+EOF
+chmod +x "$scratch/singular-chain-first"
+before=$(submit_count)
+cf_rc=0
+submit_run "$scratch/singular-chain-first" "$foreign_witness" "$submit_dir/cf.out" "$submit_dir/cf.err" || cf_rc=$?
+if refusal=$(submit_refusal "$submit_dir/cf.out" "$submit_dir/cf.err" "$cf_rc" "witness-for-a-different-body" "$before" "$(submit_count)"); then
+  setup_fail planted-submit-chain-first "the foreign-witness control's assertions accept the observation; the variant did not fire"
+fi
+echo "control planted-submit-chain-first: the defect fired and the foreign-witness control refuses it: $refusal"
+
+# Key-ignoring: a submit that drops the wallet key from its command line
+# and runs on — the defect the flags control refuses.
+cat >"$scratch/singular-key-ignoring" <<'EOF'
+#!/usr/bin/env bash
+kept=()
+while [ $# -gt 0 ]; do
+  if [ "$1" = --wallet-skey ]; then shift 2; continue; fi
+  kept+=("$1")
+  shift
+done
+exec "$real" "${kept[@]}"
+EOF
+chmod +x "$scratch/singular-key-ignoring"
+before=$(submit_count)
+ki_rc=0
+submit_run "$scratch/singular-key-ignoring" "$own_witness" "$submit_dir/ki.out" "$submit_dir/ki.err" --wallet-skey 9 || ki_rc=$?
+if refusal=$(submit_refusal "$submit_dir/ki.out" "$submit_dir/ki.err" "$ki_rc" "--wallet-skey" "$before" "$(submit_count)"); then
+  setup_fail planted-submit-key-ignoring "the flags control's assertions accept the observation; the variant did not fire"
+fi
+echo "control planted-submit-key-ignoring: the defect fired and the flags control refuses it: $refusal"
+kill "$canary_pid" 2>/dev/null || true
+wait "$canary_pid" 2>/dev/null || true
+canary_pid=""
 
 # Both bound branches execute, each shown once: the wall-clock
 # fallback alone runs a command, and the memory-capped scope runs one

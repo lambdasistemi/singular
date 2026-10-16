@@ -6,7 +6,8 @@
 # Two sides, from two sources:
 #
 #   * the binaries: `singular --help`, and `singular registry COMMAND --help`
-#     for every command the help names; `open-datum --help`, and
+#     (`singular submit --help` for the submit verb, `singular wallet VERB
+#     --help` for a wallet verb) for every command the help names; `open-datum --help`, and
 #     `open-datum COMMAND --help` for every command it names. A command's
 #     flags are those on its usage lines, plus those a note gives to
 #     "every command" or to the "write commands" (the commands whose usage
@@ -84,8 +85,9 @@ fi
 singular_pairs() {
   awk '
     /^  singular registry [a-z]+/ { cmd = $3; usage = 1 }
+    /^  singular submit( |$)/ { cmd = "submit"; usage = 1 }
     /^  singular wallet [a-z]+/ { cmd = "wallet " $3; usage = 1 }
-    usage && /^  singular (registry|wallet) [a-z]+/ || usage && /^      / {
+    usage && /^  singular ((registry|wallet) [a-z]+|submit( |$))/ || usage && /^      / {
       line = $0
       while (match(line, /--[a-z][a-z-]*/)) {
         flags[cmd] = flags[cmd] " " substr(line, RSTART, RLENGTH)
@@ -207,6 +209,11 @@ for c in "${singular_commands[@]}"; do
         continue
       }
       ;;
+    submit) "$singular" submit --help >"$scratch/help.singular.$c" 2>&1 || {
+      echo "singular submit --help exited non-zero" >&2
+      status=1
+      continue
+    } ;;
     *) "$singular" registry "$c" --help >"$scratch/help.singular.$c" 2>&1 || {
       echo "singular registry $c --help exited non-zero" >&2
       status=1
@@ -404,7 +411,7 @@ comm -23 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; d
   esac
   if [ "$b" = singular ]; then
     case $cmd in
-      wallet*) echo "undocumented: singular $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
+      wallet* | submit) echo "undocumented: singular $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
       *) echo "undocumented: singular registry $cmd takes $f (--help) but the settings table does not say so" >&2 ;;
     esac
   else
@@ -421,7 +428,7 @@ comm -13 "$scratch/help.pairs" "$scratch/doc.pairs" | while read -r b c1 rest; d
   esac
   if [ "$b" = singular ]; then
     case $cmd in
-      wallet*) echo "documented, not in --help: the settings table gives $f to singular $cmd" >&2 ;;
+      wallet* | submit) echo "documented, not in --help: the settings table gives $f to singular $cmd" >&2 ;;
       *) echo "documented, not in --help: the settings table gives $f to singular registry $cmd" >&2 ;;
     esac
   else
@@ -493,7 +500,7 @@ for page in "${pages[@]}"; do
       }
       {
         if (cmd != "") { acc = acc " " $0; if ($0 !~ /\\[[:space:]]*$/) flush(); next }
-        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+(registry|wallet)[ \t]+[a-z][a-z-]*/)) {
+        if (match($0, /(^|[^A-Za-z0-9_-])("?[$][{]?singular[}]?"?|[A-Za-z0-9_.~\/-]*singular)[ \t]+((registry|wallet)[ \t]+[a-z][a-z-]*|submit)/) && substr($0, RSTART + RLENGTH, 1) !~ /[a-z-]/) {
           m = substr($0, RSTART, RLENGTH)
           n = split(m, w, /[ \t]+/)
           verb = w[n]

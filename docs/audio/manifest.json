@@ -332380,6 +332380,3211 @@
     }
    ]
   },
+  "docs-singular-node/submitting-a-signed-bundle-00": {
+   "audio_sha256": "498f36fb700c1d18648a5790829ca1c4465922bebb35079eb0ec2d2dc37379b0",
+   "characters": 27,
+   "cost": 2.673e-05,
+   "duration": 1.925,
+   "index": 0,
+   "key": "02f6011d517a49ee0b2269b235e65300e20499671e7709cb95485cb4cdbdd80e",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "submitting-a-signed-bundle",
+   "sent_text": "Submitting a signed bundle.",
+   "text": "Submitting a signed bundle.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.2,
+     "text": "Submitting"
+    },
+    {
+     "end": 0.625,
+     "start": 0.562,
+     "text": "a"
+    },
+    {
+     "end": 0.9,
+     "start": 0.625,
+     "text": "signed"
+    },
+    {
+     "end": 1.725,
+     "start": 0.9,
+     "text": "bundle"
+    },
+    {
+     "end": 1.925,
+     "start": 1.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/submitting-a-signed-bundle-01": {
+   "audio_sha256": "db50aacf5d425a2ce78676edd425b0ec6bf8c27ab45b02891725115cadb10b0d",
+   "characters": 416,
+   "cost": 0.00041183999999999996,
+   "duration": 26.95,
+   "index": 1,
+   "key": "773b12a225dc2deb26b0e87b899a13370514bc7cd4f68848a552e6ac32cdc96d",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "submitting-a-signed-bundle",
+   "sent_text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
+   "text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.2,
+     "text": "As"
+    },
+    {
+     "end": 0.8,
+     "start": 0.412,
+     "text": "Bob"
+    },
+    {
+     "end": 0.875,
+     "start": 0.8,
+     "text": ","
+    },
+    {
+     "end": 1.025,
+     "start": 0.875,
+     "text": "I"
+    },
+    {
+     "end": 1.275,
+     "start": 1.025,
+     "text": "hand"
+    },
+    {
+     "end": 1.55,
+     "start": 1.275,
+     "text": "back"
+    },
+    {
+     "end": 1.65,
+     "start": 1.55,
+     "text": "the"
+    },
+    {
+     "end": 2.225,
+     "start": 1.65,
+     "text": "witnesses"
+    },
+    {
+     "end": 2.35,
+     "start": 2.225,
+     "text": "for"
+    },
+    {
+     "end": 2.463,
+     "start": 2.35,
+     "text": "a"
+    },
+    {
+     "end": 2.925,
+     "start": 2.463,
+     "text": "bundle"
+    },
+    {
+     "end": 3.062,
+     "start": 2.925,
+     "text": "and"
+    },
+    {
+     "end": 3.425,
+     "start": 3.062,
+     "text": "run"
+    },
+    {
+     "end": 3.975,
+     "start": 3.425,
+     "text": "singular"
+    },
+    {
+     "end": 4.4,
+     "start": 3.975,
+     "text": "submit"
+    },
+    {
+     "end": 4.537,
+     "start": 4.4,
+     "text": "with"
+    },
+    {
+     "end": 4.65,
+     "start": 4.537,
+     "text": "the"
+    },
+    {
+     "end": 4.975,
+     "start": 4.65,
+     "text": "node"
+    },
+    {
+     "end": 6.05,
+     "start": 4.975,
+     "text": "settings"
+    },
+    {
+     "end": 6.275,
+     "start": 6.05,
+     "text": "."
+    },
+    {
+     "end": 6.525,
+     "start": 6.45,
+     "text": "The"
+    },
+    {
+     "end": 7.375,
+     "start": 6.525,
+     "text": "transactions"
+    },
+    {
+     "end": 7.512,
+     "start": 7.375,
+     "text": "are"
+    },
+    {
+     "end": 7.825,
+     "start": 7.512,
+     "text": "sent"
+    },
+    {
+     "end": 7.912,
+     "start": 7.825,
+     "text": "in"
+    },
+    {
+     "end": 8.0,
+     "start": 7.912,
+     "text": "the"
+    },
+    {
+     "end": 8.45,
+     "start": 8.0,
+     "text": "bundle's"
+    },
+    {
+     "end": 8.925,
+     "start": 8.45,
+     "text": "order"
+    },
+    {
+     "end": 9.025,
+     "start": 8.925,
+     "text": ","
+    },
+    {
+     "end": 9.137,
+     "start": 9.025,
+     "text": "and"
+    },
+    {
+     "end": 9.225,
+     "start": 9.137,
+     "text": "the"
+    },
+    {
+     "end": 9.688,
+     "start": 9.225,
+     "text": "receipt"
+    },
+    {
+     "end": 10.0,
+     "start": 9.688,
+     "text": "says"
+    },
+    {
+     "end": 10.137,
+     "start": 10.0,
+     "text": "what"
+    },
+    {
+     "end": 10.238,
+     "start": 10.137,
+     "text": "the"
+    },
+    {
+     "end": 10.587,
+     "start": 10.238,
+     "text": "chain"
+    },
+    {
+     "end": 11.625,
+     "start": 10.587,
+     "text": "shows"
+    },
+    {
+     "end": 11.825,
+     "start": 11.625,
+     "text": "."
+    },
+    {
+     "end": 12.113,
+     "start": 12.0,
+     "text": "If"
+    },
+    {
+     "end": 12.2,
+     "start": 12.113,
+     "text": "the"
+    },
+    {
+     "end": 12.413,
+     "start": 12.2,
+     "text": "run"
+    },
+    {
+     "end": 12.55,
+     "start": 12.413,
+     "text": "is"
+    },
+    {
+     "end": 12.812,
+     "start": 12.55,
+     "text": "cut"
+    },
+    {
+     "end": 13.175,
+     "start": 12.812,
+     "text": "short"
+    },
+    {
+     "end": 13.25,
+     "start": 13.175,
+     "text": ","
+    },
+    {
+     "end": 13.4,
+     "start": 13.25,
+     "text": "I"
+    },
+    {
+     "end": 13.562,
+     "start": 13.4,
+     "text": "run"
+    },
+    {
+     "end": 13.65,
+     "start": 13.562,
+     "text": "the"
+    },
+    {
+     "end": 13.925,
+     "start": 13.65,
+     "text": "same"
+    },
+    {
+     "end": 14.288,
+     "start": 13.925,
+     "text": "command"
+    },
+    {
+     "end": 15.125,
+     "start": 14.288,
+     "text": "again"
+    },
+    {
+     "end": 15.325,
+     "start": 15.125,
+     "text": ":"
+    },
+    {
+     "end": 15.65,
+     "start": 15.525,
+     "text": "it"
+    },
+    {
+     "end": 15.988,
+     "start": 15.65,
+     "text": "sends"
+    },
+    {
+     "end": 16.288,
+     "start": 15.988,
+     "text": "only"
+    },
+    {
+     "end": 16.375,
+     "start": 16.288,
+     "text": "the"
+    },
+    {
+     "end": 17.125,
+     "start": 16.375,
+     "text": "transactions"
+    },
+    {
+     "end": 17.263,
+     "start": 17.125,
+     "text": "the"
+    },
+    {
+     "end": 17.65,
+     "start": 17.263,
+     "text": "chain"
+    },
+    {
+     "end": 17.8,
+     "start": 17.65,
+     "text": "does"
+    },
+    {
+     "end": 18.025,
+     "start": 17.8,
+     "text": "not"
+    },
+    {
+     "end": 18.3,
+     "start": 18.025,
+     "text": "hold"
+    },
+    {
+     "end": 19.075,
+     "start": 18.3,
+     "text": "yet"
+    },
+    {
+     "end": 19.275,
+     "start": 19.075,
+     "text": "."
+    },
+    {
+     "end": 19.587,
+     "start": 19.45,
+     "text": "If"
+    },
+    {
+     "end": 19.65,
+     "start": 19.587,
+     "text": "a"
+    },
+    {
+     "end": 19.975,
+     "start": 19.65,
+     "text": "body"
+    },
+    {
+     "end": 20.175,
+     "start": 19.975,
+     "text": "has"
+    },
+    {
+     "end": 20.875,
+     "start": 20.175,
+     "text": "expired"
+    },
+    {
+     "end": 20.95,
+     "start": 20.875,
+     "text": ","
+    },
+    {
+     "end": 21.1,
+     "start": 20.95,
+     "text": "it"
+    },
+    {
+     "end": 21.35,
+     "start": 21.1,
+     "text": "says"
+    },
+    {
+     "end": 21.45,
+     "start": 21.35,
+     "text": "to"
+    },
+    {
+     "end": 21.837,
+     "start": 21.45,
+     "text": "rebuild"
+    },
+    {
+     "end": 21.925,
+     "start": 21.837,
+     "text": "the"
+    },
+    {
+     "end": 22.413,
+     "start": 21.925,
+     "text": "bundle"
+    },
+    {
+     "end": 22.562,
+     "start": 22.413,
+     "text": "and"
+    },
+    {
+     "end": 22.875,
+     "start": 22.562,
+     "text": "sends"
+    },
+    {
+     "end": 23.85,
+     "start": 22.875,
+     "text": "nothing"
+    },
+    {
+     "end": 24.05,
+     "start": 23.85,
+     "text": "."
+    },
+    {
+     "end": 24.312,
+     "start": 24.225,
+     "text": "It"
+    },
+    {
+     "end": 24.55,
+     "start": 24.312,
+     "text": "needs"
+    },
+    {
+     "end": 24.725,
+     "start": 24.55,
+     "text": "no"
+    },
+    {
+     "end": 25.05,
+     "start": 24.725,
+     "text": "wallet"
+    },
+    {
+     "end": 25.35,
+     "start": 25.05,
+     "text": "key"
+    },
+    {
+     "end": 25.475,
+     "start": 25.35,
+     "text": "and"
+    },
+    {
+     "end": 25.775,
+     "start": 25.475,
+     "text": "keeps"
+    },
+    {
+     "end": 25.95,
+     "start": 25.775,
+     "text": "no"
+    },
+    {
+     "end": 26.75,
+     "start": 25.95,
+     "text": "state"
+    },
+    {
+     "end": 26.95,
+     "start": 26.75,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/submitting-a-signed-bundle-02": {
+   "audio_sha256": "65032db5d8b55db47087f07e004f2f5a4b575f14e92c94a1de11a06f5e7e42c3",
+   "characters": 1171,
+   "cost": 0.0011592899999999999,
+   "duration": 76.325,
+   "index": 2,
+   "key": "106885be34be1239d1d6455cd90bde692261b8e29234cd22ac61f7f42b5b4ebf",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "submitting-a-signed-bundle",
+   "sent_text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
+   "text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.575,
+     "start": 0.25,
+     "text": "witness"
+    },
+    {
+     "end": 1.0,
+     "start": 0.575,
+     "text": "files"
+    },
+    {
+     "end": 1.087,
+     "start": 1.0,
+     "text": "are"
+    },
+    {
+     "end": 1.175,
+     "start": 1.087,
+     "text": "the"
+    },
+    {
+     "end": 1.5,
+     "start": 1.175,
+     "text": "ones"
+    },
+    {
+     "end": 2.0,
+     "start": 1.5,
+     "text": "singular"
+    },
+    {
+     "end": 2.35,
+     "start": 2.0,
+     "text": "wallet"
+    },
+    {
+     "end": 2.65,
+     "start": 2.35,
+     "text": "sign"
+    },
+    {
+     "end": 3.475,
+     "start": 2.65,
+     "text": "writes"
+    },
+    {
+     "end": 3.675,
+     "start": 3.475,
+     "text": ";"
+    },
+    {
+     "end": 3.9,
+     "start": 3.85,
+     "text": "a"
+    },
+    {
+     "end": 4.475,
+     "start": 3.9,
+     "text": "directory"
+    },
+    {
+     "end": 4.825,
+     "start": 4.475,
+     "text": "stands"
+    },
+    {
+     "end": 4.938,
+     "start": 4.825,
+     "text": "for"
+    },
+    {
+     "end": 5.025,
+     "start": 4.938,
+     "text": "the"
+    },
+    {
+     "end": 5.375,
+     "start": 5.025,
+     "text": ".witness"
+    },
+    {
+     "end": 5.725,
+     "start": 5.375,
+     "text": "files"
+    },
+    {
+     "end": 5.825,
+     "start": 5.725,
+     "text": "it"
+    },
+    {
+     "end": 6.675,
+     "start": 5.825,
+     "text": "holds"
+    },
+    {
+     "end": 6.875,
+     "start": 6.675,
+     "text": ","
+    },
+    {
+     "end": 7.175,
+     "start": 7.075,
+     "text": "and"
+    },
+    {
+     "end": 7.4,
+     "start": 7.175,
+     "text": "each"
+    },
+    {
+     "end": 7.787,
+     "start": 7.4,
+     "text": "witness"
+    },
+    {
+     "end": 7.963,
+     "start": 7.787,
+     "text": "is"
+    },
+    {
+     "end": 8.325,
+     "start": 7.963,
+     "text": "matched"
+    },
+    {
+     "end": 8.413,
+     "start": 8.325,
+     "text": "to"
+    },
+    {
+     "end": 8.475,
+     "start": 8.413,
+     "text": "a"
+    },
+    {
+     "end": 9.175,
+     "start": 8.475,
+     "text": "transaction"
+    },
+    {
+     "end": 9.337,
+     "start": 9.175,
+     "text": "by"
+    },
+    {
+     "end": 9.475,
+     "start": 9.337,
+     "text": "its"
+    },
+    {
+     "end": 10.45,
+     "start": 9.475,
+     "text": "signature"
+    },
+    {
+     "end": 10.65,
+     "start": 10.45,
+     "text": ","
+    },
+    {
+     "end": 11.1,
+     "start": 10.85,
+     "text": "never"
+    },
+    {
+     "end": 11.238,
+     "start": 11.1,
+     "text": "by"
+    },
+    {
+     "end": 11.4,
+     "start": 11.238,
+     "text": "its"
+    },
+    {
+     "end": 11.65,
+     "start": 11.4,
+     "text": "file"
+    },
+    {
+     "end": 12.35,
+     "start": 11.65,
+     "text": "name"
+    },
+    {
+     "end": 12.55,
+     "start": 12.35,
+     "text": "."
+    },
+    {
+     "end": 12.8,
+     "start": 12.725,
+     "text": "The"
+    },
+    {
+     "end": 13.212,
+     "start": 12.8,
+     "text": "command"
+    },
+    {
+     "end": 13.587,
+     "start": 13.212,
+     "text": "checks"
+    },
+    {
+     "end": 14.075,
+     "start": 13.587,
+     "text": "everything"
+    },
+    {
+     "end": 14.212,
+     "start": 14.075,
+     "text": "it"
+    },
+    {
+     "end": 14.575,
+     "start": 14.212,
+     "text": "can"
+    },
+    {
+     "end": 14.938,
+     "start": 14.575,
+     "text": "before"
+    },
+    {
+     "end": 15.025,
+     "start": 14.938,
+     "text": "it"
+    },
+    {
+     "end": 15.325,
+     "start": 15.025,
+     "text": "sends"
+    },
+    {
+     "end": 15.85,
+     "start": 15.325,
+     "text": "anything"
+    },
+    {
+     "end": 15.925,
+     "start": 15.85,
+     "text": ","
+    },
+    {
+     "end": 16.038,
+     "start": 15.925,
+     "text": "in"
+    },
+    {
+     "end": 16.225,
+     "start": 16.038,
+     "text": "this"
+    },
+    {
+     "end": 17.1,
+     "start": 16.225,
+     "text": "order"
+    },
+    {
+     "end": 17.325,
+     "start": 17.1,
+     "text": "."
+    },
+    {
+     "end": 17.875,
+     "start": 17.525,
+     "text": "Without"
+    },
+    {
+     "end": 18.237,
+     "start": 17.875,
+     "text": "touching"
+    },
+    {
+     "end": 18.362,
+     "start": 18.237,
+     "text": "the"
+    },
+    {
+     "end": 18.875,
+     "start": 18.362,
+     "text": "chain"
+    },
+    {
+     "end": 18.987,
+     "start": 18.875,
+     "text": ","
+    },
+    {
+     "end": 19.125,
+     "start": 18.987,
+     "text": "it"
+    },
+    {
+     "end": 19.725,
+     "start": 19.125,
+     "text": "refuses"
+    },
+    {
+     "end": 19.825,
+     "start": 19.725,
+     "text": "a"
+    },
+    {
+     "end": 20.225,
+     "start": 19.825,
+     "text": "bundle"
+    },
+    {
+     "end": 20.362,
+     "start": 20.225,
+     "text": "the"
+    },
+    {
+     "end": 20.75,
+     "start": 20.362,
+     "text": "signing"
+    },
+    {
+     "end": 21.038,
+     "start": 20.75,
+     "text": "step"
+    },
+    {
+     "end": 21.138,
+     "start": 21.038,
+     "text": "would"
+    },
+    {
+     "end": 22.275,
+     "start": 21.138,
+     "text": "refuse"
+    },
+    {
+     "end": 22.475,
+     "start": 22.275,
+     "text": ","
+    },
+    {
+     "end": 22.725,
+     "start": 22.65,
+     "text": "a"
+    },
+    {
+     "end": 23.05,
+     "start": 22.725,
+     "text": "witness"
+    },
+    {
+     "end": 23.263,
+     "start": 23.05,
+     "text": "file"
+    },
+    {
+     "end": 23.35,
+     "start": 23.263,
+     "text": "it"
+    },
+    {
+     "end": 23.7,
+     "start": 23.35,
+     "text": "cannot"
+    },
+    {
+     "end": 24.425,
+     "start": 23.7,
+     "text": "read"
+    },
+    {
+     "end": 24.625,
+     "start": 24.425,
+     "text": ","
+    },
+    {
+     "end": 24.913,
+     "start": 24.825,
+     "text": "and"
+    },
+    {
+     "end": 25.013,
+     "start": 24.913,
+     "text": "a"
+    },
+    {
+     "end": 25.525,
+     "start": 25.013,
+     "text": "witness"
+    },
+    {
+     "end": 25.763,
+     "start": 25.525,
+     "text": "whose"
+    },
+    {
+     "end": 26.3,
+     "start": 25.763,
+     "text": "signature"
+    },
+    {
+     "end": 27.0,
+     "start": 26.3,
+     "text": "verifies"
+    },
+    {
+     "end": 27.413,
+     "start": 27.0,
+     "text": "against"
+    },
+    {
+     "end": 27.65,
+     "start": 27.413,
+     "text": "no"
+    },
+    {
+     "end": 28.337,
+     "start": 27.65,
+     "text": "transaction"
+    },
+    {
+     "end": 28.413,
+     "start": 28.337,
+     "text": "of"
+    },
+    {
+     "end": 28.5,
+     "start": 28.413,
+     "text": "the"
+    },
+    {
+     "end": 29.425,
+     "start": 28.5,
+     "text": "bundle"
+    },
+    {
+     "end": 29.625,
+     "start": 29.425,
+     "text": "."
+    },
+    {
+     "end": 29.913,
+     "start": 29.8,
+     "text": "Then"
+    },
+    {
+     "end": 30.0,
+     "start": 29.913,
+     "text": "it"
+    },
+    {
+     "end": 30.263,
+     "start": 30.0,
+     "text": "reads"
+    },
+    {
+     "end": 30.35,
+     "start": 30.263,
+     "text": "the"
+    },
+    {
+     "end": 30.625,
+     "start": 30.35,
+     "text": "chain"
+    },
+    {
+     "end": 31.375,
+     "start": 30.625,
+     "text": "once"
+    },
+    {
+     "end": 31.575,
+     "start": 31.375,
+     "text": ":"
+    },
+    {
+     "end": 31.875,
+     "start": 31.75,
+     "text": "where"
+    },
+    {
+     "end": 32.075,
+     "start": 31.875,
+     "text": "each"
+    },
+    {
+     "end": 32.7,
+     "start": 32.075,
+     "text": "transaction"
+    },
+    {
+     "end": 32.95,
+     "start": 32.7,
+     "text": "sits"
+    },
+    {
+     "end": 32.987,
+     "start": 32.95,
+     "text": ","
+    },
+    {
+     "end": 33.112,
+     "start": 32.987,
+     "text": "the"
+    },
+    {
+     "end": 33.8,
+     "start": 33.112,
+     "text": "tip"
+    },
+    {
+     "end": 34.025,
+     "start": 33.8,
+     "text": ","
+    },
+    {
+     "end": 34.388,
+     "start": 34.275,
+     "text": "and"
+    },
+    {
+     "end": 34.5,
+     "start": 34.388,
+     "text": "the"
+    },
+    {
+     "end": 34.975,
+     "start": 34.5,
+     "text": "inputs"
+    },
+    {
+     "end": 35.1,
+     "start": 34.975,
+     "text": "of"
+    },
+    {
+     "end": 35.375,
+     "start": 35.1,
+     "text": "each"
+    },
+    {
+     "end": 36.15,
+     "start": 35.375,
+     "text": "transaction"
+    },
+    {
+     "end": 36.362,
+     "start": 36.15,
+     "text": "not"
+    },
+    {
+     "end": 36.562,
+     "start": 36.362,
+     "text": "on"
+    },
+    {
+     "end": 36.9,
+     "start": 36.562,
+     "text": "chain"
+    },
+    {
+     "end": 37.338,
+     "start": 36.9,
+     "text": "yet"
+    },
+    {
+     "end": 37.45,
+     "start": 37.338,
+     "text": "—"
+    },
+    {
+     "end": 37.638,
+     "start": 37.45,
+     "text": "an"
+    },
+    {
+     "end": 38.15,
+     "start": 37.638,
+     "text": "input"
+    },
+    {
+     "end": 38.312,
+     "start": 38.15,
+     "text": "an"
+    },
+    {
+     "end": 38.775,
+     "start": 38.312,
+     "text": "earlier"
+    },
+    {
+     "end": 39.562,
+     "start": 38.775,
+     "text": "transaction"
+    },
+    {
+     "end": 39.638,
+     "start": 39.562,
+     "text": "of"
+    },
+    {
+     "end": 39.725,
+     "start": 39.638,
+     "text": "the"
+    },
+    {
+     "end": 40.075,
+     "start": 39.725,
+     "text": "bundle"
+    },
+    {
+     "end": 40.737,
+     "start": 40.075,
+     "text": "produces"
+    },
+    {
+     "end": 40.912,
+     "start": 40.737,
+     "text": "is"
+    },
+    {
+     "end": 41.325,
+     "start": 40.912,
+     "text": "taken"
+    },
+    {
+     "end": 41.5,
+     "start": 41.325,
+     "text": "from"
+    },
+    {
+     "end": 41.775,
+     "start": 41.5,
+     "text": "that"
+    },
+    {
+     "end": 43.2,
+     "start": 41.775,
+     "text": "transaction"
+    },
+    {
+     "end": 43.425,
+     "start": 43.2,
+     "text": ","
+    },
+    {
+     "end": 43.862,
+     "start": 43.625,
+     "text": "every"
+    },
+    {
+     "end": 44.1,
+     "start": 43.862,
+     "text": "other"
+    },
+    {
+     "end": 44.237,
+     "start": 44.1,
+     "text": "from"
+    },
+    {
+     "end": 44.325,
+     "start": 44.237,
+     "text": "the"
+    },
+    {
+     "end": 45.1,
+     "start": 44.325,
+     "text": "chain"
+    },
+    {
+     "end": 45.3,
+     "start": 45.1,
+     "text": "."
+    },
+    {
+     "end": 46.0,
+     "start": 45.5,
+     "text": "Witnesses"
+    },
+    {
+     "end": 46.125,
+     "start": 46.0,
+     "text": "are"
+    },
+    {
+     "end": 46.725,
+     "start": 46.125,
+     "text": "required"
+    },
+    {
+     "end": 46.838,
+     "start": 46.725,
+     "text": "for"
+    },
+    {
+     "end": 46.925,
+     "start": 46.838,
+     "text": "the"
+    },
+    {
+     "end": 47.7,
+     "start": 46.925,
+     "text": "transactions"
+    },
+    {
+     "end": 47.9,
+     "start": 47.7,
+     "text": "this"
+    },
+    {
+     "end": 48.15,
+     "start": 47.9,
+     "text": "run"
+    },
+    {
+     "end": 48.338,
+     "start": 48.15,
+     "text": "will"
+    },
+    {
+     "end": 48.85,
+     "start": 48.338,
+     "text": "send"
+    },
+    {
+     "end": 48.963,
+     "start": 48.85,
+     "text": ","
+    },
+    {
+     "end": 49.1,
+     "start": 48.963,
+     "text": "and"
+    },
+    {
+     "end": 49.275,
+     "start": 49.1,
+     "text": "for"
+    },
+    {
+     "end": 49.55,
+     "start": 49.275,
+     "text": "those"
+    },
+    {
+     "end": 50.575,
+     "start": 49.55,
+     "text": "alone"
+    },
+    {
+     "end": 50.775,
+     "start": 50.575,
+     "text": "."
+    },
+    {
+     "end": 51.062,
+     "start": 50.95,
+     "text": "It"
+    },
+    {
+     "end": 51.588,
+     "start": 51.062,
+     "text": "refuses"
+    },
+    {
+     "end": 51.675,
+     "start": 51.588,
+     "text": "a"
+    },
+    {
+     "end": 52.1,
+     "start": 51.675,
+     "text": "witness"
+    },
+    {
+     "end": 52.213,
+     "start": 52.1,
+     "text": "for"
+    },
+    {
+     "end": 52.287,
+     "start": 52.213,
+     "text": "a"
+    },
+    {
+     "end": 52.525,
+     "start": 52.287,
+     "text": "key"
+    },
+    {
+     "end": 52.688,
+     "start": 52.525,
+     "text": "none"
+    },
+    {
+     "end": 52.763,
+     "start": 52.688,
+     "text": "of"
+    },
+    {
+     "end": 52.9,
+     "start": 52.763,
+     "text": "them"
+    },
+    {
+     "end": 53.75,
+     "start": 52.9,
+     "text": "needs"
+    },
+    {
+     "end": 53.95,
+     "start": 53.75,
+     "text": ","
+    },
+    {
+     "end": 54.25,
+     "start": 54.175,
+     "text": "a"
+    },
+    {
+     "end": 55.013,
+     "start": 54.25,
+     "text": "transaction"
+    },
+    {
+     "end": 55.35,
+     "start": 55.013,
+     "text": "left"
+    },
+    {
+     "end": 55.662,
+     "start": 55.35,
+     "text": "without"
+    },
+    {
+     "end": 55.763,
+     "start": 55.662,
+     "text": "a"
+    },
+    {
+     "end": 56.225,
+     "start": 55.763,
+     "text": "witness"
+    },
+    {
+     "end": 56.375,
+     "start": 56.225,
+     "text": "for"
+    },
+    {
+     "end": 56.487,
+     "start": 56.375,
+     "text": "a"
+    },
+    {
+     "end": 56.888,
+     "start": 56.487,
+     "text": "key"
+    },
+    {
+     "end": 57.05,
+     "start": 56.888,
+     "text": "it"
+    },
+    {
+     "end": 57.5,
+     "start": 57.05,
+     "text": "needs"
+    },
+    {
+     "end": 57.575,
+     "start": 57.5,
+     "text": "("
+    },
+    {
+     "end": 57.75,
+     "start": 57.575,
+     "text": "its"
+    },
+    {
+     "end": 58.362,
+     "start": 57.75,
+     "text": "required"
+    },
+    {
+     "end": 58.9,
+     "start": 58.362,
+     "text": "signers"
+    },
+    {
+     "end": 59.013,
+     "start": 58.9,
+     "text": "and"
+    },
+    {
+     "end": 59.1,
+     "start": 59.013,
+     "text": "the"
+    },
+    {
+     "end": 59.463,
+     "start": 59.1,
+     "text": "payment"
+    },
+    {
+     "end": 59.8,
+     "start": 59.463,
+     "text": "keys"
+    },
+    {
+     "end": 59.9,
+     "start": 59.8,
+     "text": "of"
+    },
+    {
+     "end": 60.037,
+     "start": 59.9,
+     "text": "what"
+    },
+    {
+     "end": 60.125,
+     "start": 60.037,
+     "text": "it"
+    },
+    {
+     "end": 61.3,
+     "start": 60.125,
+     "text": "spends"
+    },
+    {
+     "end": 61.55,
+     "start": 61.3,
+     "text": ")"
+    },
+    {
+     "end": 61.6,
+     "start": 61.55,
+     "text": ","
+    },
+    {
+     "end": 61.85,
+     "start": 61.775,
+     "text": "an"
+    },
+    {
+     "end": 62.175,
+     "start": 61.85,
+     "text": "input"
+    },
+    {
+     "end": 62.388,
+     "start": 62.175,
+     "text": "found"
+    },
+    {
+     "end": 63.175,
+     "start": 62.388,
+     "text": "nowhere"
+    },
+    {
+     "end": 63.4,
+     "start": 63.175,
+     "text": ","
+    },
+    {
+     "end": 63.688,
+     "start": 63.6,
+     "text": "and"
+    },
+    {
+     "end": 63.75,
+     "start": 63.688,
+     "text": "a"
+    },
+    {
+     "end": 64.45,
+     "start": 63.75,
+     "text": "transaction"
+    },
+    {
+     "end": 64.637,
+     "start": 64.45,
+     "text": "not"
+    },
+    {
+     "end": 64.838,
+     "start": 64.637,
+     "text": "on"
+    },
+    {
+     "end": 65.275,
+     "start": 64.838,
+     "text": "chain"
+    },
+    {
+     "end": 65.5,
+     "start": 65.275,
+     "text": "whose"
+    },
+    {
+     "end": 66.012,
+     "start": 65.5,
+     "text": "validity"
+    },
+    {
+     "end": 66.325,
+     "start": 66.012,
+     "text": "upper"
+    },
+    {
+     "end": 66.588,
+     "start": 66.325,
+     "text": "bound"
+    },
+    {
+     "end": 66.675,
+     "start": 66.588,
+     "text": "the"
+    },
+    {
+     "end": 66.887,
+     "start": 66.675,
+     "text": "tip"
+    },
+    {
+     "end": 67.05,
+     "start": 66.887,
+     "text": "has"
+    },
+    {
+     "end": 67.975,
+     "start": 67.05,
+     "text": "reached"
+    },
+    {
+     "end": 68.175,
+     "start": 67.975,
+     "text": ","
+    },
+    {
+     "end": 68.488,
+     "start": 68.35,
+     "text": "with"
+    },
+    {
+     "end": 68.575,
+     "start": 68.488,
+     "text": "the"
+    },
+    {
+     "end": 68.8,
+     "start": 68.575,
+     "text": "word"
+    },
+    {
+     "end": 69.65,
+     "start": 68.8,
+     "text": "rebuild"
+    },
+    {
+     "end": 69.85,
+     "start": 69.65,
+     "text": "."
+    },
+    {
+     "end": 70.125,
+     "start": 70.05,
+     "text": "A"
+    },
+    {
+     "end": 70.787,
+     "start": 70.125,
+     "text": "refusal"
+    },
+    {
+     "end": 71.275,
+     "start": 70.787,
+     "text": "exits"
+    },
+    {
+     "end": 71.387,
+     "start": 71.275,
+     "text": "as"
+    },
+    {
+     "end": 71.488,
+     "start": 71.387,
+     "text": "a"
+    },
+    {
+     "end": 71.925,
+     "start": 71.488,
+     "text": "client"
+    },
+    {
+     "end": 72.7,
+     "start": 71.925,
+     "text": "refusal"
+    },
+    {
+     "end": 72.812,
+     "start": 72.7,
+     "text": ","
+    },
+    {
+     "end": 73.175,
+     "start": 72.812,
+     "text": "naming"
+    },
+    {
+     "end": 73.387,
+     "start": 73.175,
+     "text": "its"
+    },
+    {
+     "end": 73.85,
+     "start": 73.387,
+     "text": "cause"
+    },
+    {
+     "end": 73.9,
+     "start": 73.85,
+     "text": ","
+    },
+    {
+     "end": 74.037,
+     "start": 73.9,
+     "text": "with"
+    },
+    {
+     "end": 74.162,
+     "start": 74.037,
+     "text": "an"
+    },
+    {
+     "end": 74.5,
+     "start": 74.162,
+     "text": "empty"
+    },
+    {
+     "end": 74.762,
+     "start": 74.5,
+     "text": "list"
+    },
+    {
+     "end": 74.85,
+     "start": 74.762,
+     "text": "of"
+    },
+    {
+     "end": 76.125,
+     "start": 74.85,
+     "text": "submissions"
+    },
+    {
+     "end": 76.325,
+     "start": 76.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/submitting-a-signed-bundle-03": {
+   "audio_sha256": "97afcdecf54ad682d9a9a0ab9957373b474ada31e92e5a65aec6d830773f6a59",
+   "characters": 412,
+   "cost": 0.00040788,
+   "duration": 26.525,
+   "index": 3,
+   "key": "27688911274941ea6e4d9f8ea5253dc9951e4d156e62e5dae7ad2d9be05f226a",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "submitting-a-signed-bundle",
+   "sent_text": "A transaction the chain already holds, found by its identity, is skipped before those checks, and the witnesses supplied for it are ignored: the inputs it spent can no longer be read from the chain, and it is never sent again. A witness that cannot be read, or that verifies against no transaction of the bundle, is refused all the same, before the chain is read, even when every transaction is already on chain.",
+   "text": "A transaction the chain already holds, found by its identity, is skipped before those checks, and the witnesses supplied for it are ignored: the inputs it spent can no longer be read from the chain, and it is never sent again. A witness that cannot be read, or that verifies against no transaction of the bundle, is refused all the same, before the chain is read, even when every transaction is already on chain.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.225,
+     "text": "A"
+    },
+    {
+     "end": 1.05,
+     "start": 0.3,
+     "text": "transaction"
+    },
+    {
+     "end": 1.188,
+     "start": 1.05,
+     "text": "the"
+    },
+    {
+     "end": 1.575,
+     "start": 1.188,
+     "text": "chain"
+    },
+    {
+     "end": 1.975,
+     "start": 1.575,
+     "text": "already"
+    },
+    {
+     "end": 2.425,
+     "start": 1.975,
+     "text": "holds"
+    },
+    {
+     "end": 2.475,
+     "start": 2.425,
+     "text": ","
+    },
+    {
+     "end": 2.825,
+     "start": 2.475,
+     "text": "found"
+    },
+    {
+     "end": 3.05,
+     "start": 2.825,
+     "text": "by"
+    },
+    {
+     "end": 3.237,
+     "start": 3.05,
+     "text": "its"
+    },
+    {
+     "end": 3.925,
+     "start": 3.237,
+     "text": "identity"
+    },
+    {
+     "end": 4.012,
+     "start": 3.925,
+     "text": ","
+    },
+    {
+     "end": 4.188,
+     "start": 4.012,
+     "text": "is"
+    },
+    {
+     "end": 4.575,
+     "start": 4.188,
+     "text": "skipped"
+    },
+    {
+     "end": 4.95,
+     "start": 4.575,
+     "text": "before"
+    },
+    {
+     "end": 5.213,
+     "start": 4.95,
+     "text": "those"
+    },
+    {
+     "end": 5.65,
+     "start": 5.213,
+     "text": "checks"
+    },
+    {
+     "end": 5.725,
+     "start": 5.65,
+     "text": ","
+    },
+    {
+     "end": 5.838,
+     "start": 5.725,
+     "text": "and"
+    },
+    {
+     "end": 5.925,
+     "start": 5.838,
+     "text": "the"
+    },
+    {
+     "end": 6.475,
+     "start": 5.925,
+     "text": "witnesses"
+    },
+    {
+     "end": 7.0,
+     "start": 6.475,
+     "text": "supplied"
+    },
+    {
+     "end": 7.2,
+     "start": 7.0,
+     "text": "for"
+    },
+    {
+     "end": 7.363,
+     "start": 7.2,
+     "text": "it"
+    },
+    {
+     "end": 7.525,
+     "start": 7.363,
+     "text": "are"
+    },
+    {
+     "end": 8.725,
+     "start": 7.525,
+     "text": "ignored"
+    },
+    {
+     "end": 8.95,
+     "start": 8.725,
+     "text": ":"
+    },
+    {
+     "end": 9.262,
+     "start": 9.125,
+     "text": "the"
+    },
+    {
+     "end": 9.75,
+     "start": 9.262,
+     "text": "inputs"
+    },
+    {
+     "end": 9.9,
+     "start": 9.75,
+     "text": "it"
+    },
+    {
+     "end": 10.2,
+     "start": 9.9,
+     "text": "spent"
+    },
+    {
+     "end": 10.325,
+     "start": 10.2,
+     "text": "can"
+    },
+    {
+     "end": 10.5,
+     "start": 10.325,
+     "text": "no"
+    },
+    {
+     "end": 10.875,
+     "start": 10.5,
+     "text": "longer"
+    },
+    {
+     "end": 11.038,
+     "start": 10.875,
+     "text": "be"
+    },
+    {
+     "end": 11.325,
+     "start": 11.038,
+     "text": "read"
+    },
+    {
+     "end": 11.462,
+     "start": 11.325,
+     "text": "from"
+    },
+    {
+     "end": 11.562,
+     "start": 11.462,
+     "text": "the"
+    },
+    {
+     "end": 12.125,
+     "start": 11.562,
+     "text": "chain"
+    },
+    {
+     "end": 12.238,
+     "start": 12.125,
+     "text": ","
+    },
+    {
+     "end": 12.4,
+     "start": 12.238,
+     "text": "and"
+    },
+    {
+     "end": 12.525,
+     "start": 12.4,
+     "text": "it"
+    },
+    {
+     "end": 12.688,
+     "start": 12.525,
+     "text": "is"
+    },
+    {
+     "end": 13.038,
+     "start": 12.688,
+     "text": "never"
+    },
+    {
+     "end": 13.3,
+     "start": 13.038,
+     "text": "sent"
+    },
+    {
+     "end": 14.25,
+     "start": 13.3,
+     "text": "again"
+    },
+    {
+     "end": 14.45,
+     "start": 14.25,
+     "text": "."
+    },
+    {
+     "end": 14.738,
+     "start": 14.65,
+     "text": "A"
+    },
+    {
+     "end": 15.175,
+     "start": 14.738,
+     "text": "witness"
+    },
+    {
+     "end": 15.35,
+     "start": 15.175,
+     "text": "that"
+    },
+    {
+     "end": 15.7,
+     "start": 15.35,
+     "text": "cannot"
+    },
+    {
+     "end": 15.887,
+     "start": 15.7,
+     "text": "be"
+    },
+    {
+     "end": 16.325,
+     "start": 15.887,
+     "text": "read"
+    },
+    {
+     "end": 16.425,
+     "start": 16.325,
+     "text": ","
+    },
+    {
+     "end": 16.575,
+     "start": 16.425,
+     "text": "or"
+    },
+    {
+     "end": 16.775,
+     "start": 16.575,
+     "text": "that"
+    },
+    {
+     "end": 17.4,
+     "start": 16.775,
+     "text": "verifies"
+    },
+    {
+     "end": 17.788,
+     "start": 17.4,
+     "text": "against"
+    },
+    {
+     "end": 18.025,
+     "start": 17.788,
+     "text": "no"
+    },
+    {
+     "end": 18.663,
+     "start": 18.025,
+     "text": "transaction"
+    },
+    {
+     "end": 18.737,
+     "start": 18.663,
+     "text": "of"
+    },
+    {
+     "end": 18.825,
+     "start": 18.737,
+     "text": "the"
+    },
+    {
+     "end": 19.8,
+     "start": 18.825,
+     "text": "bundle"
+    },
+    {
+     "end": 20.025,
+     "start": 19.8,
+     "text": ","
+    },
+    {
+     "end": 20.35,
+     "start": 20.225,
+     "text": "is"
+    },
+    {
+     "end": 20.812,
+     "start": 20.35,
+     "text": "refused"
+    },
+    {
+     "end": 20.962,
+     "start": 20.812,
+     "text": "all"
+    },
+    {
+     "end": 21.062,
+     "start": 20.962,
+     "text": "the"
+    },
+    {
+     "end": 21.4,
+     "start": 21.062,
+     "text": "same"
+    },
+    {
+     "end": 21.438,
+     "start": 21.4,
+     "text": ","
+    },
+    {
+     "end": 21.737,
+     "start": 21.438,
+     "text": "before"
+    },
+    {
+     "end": 21.825,
+     "start": 21.737,
+     "text": "the"
+    },
+    {
+     "end": 22.075,
+     "start": 21.825,
+     "text": "chain"
+    },
+    {
+     "end": 22.237,
+     "start": 22.075,
+     "text": "is"
+    },
+    {
+     "end": 23.0,
+     "start": 22.237,
+     "text": "read"
+    },
+    {
+     "end": 23.2,
+     "start": 23.0,
+     "text": ","
+    },
+    {
+     "end": 23.612,
+     "start": 23.4,
+     "text": "even"
+    },
+    {
+     "end": 23.775,
+     "start": 23.612,
+     "text": "when"
+    },
+    {
+     "end": 24.075,
+     "start": 23.775,
+     "text": "every"
+    },
+    {
+     "end": 24.725,
+     "start": 24.075,
+     "text": "transaction"
+    },
+    {
+     "end": 24.875,
+     "start": 24.725,
+     "text": "is"
+    },
+    {
+     "end": 25.25,
+     "start": 24.875,
+     "text": "already"
+    },
+    {
+     "end": 25.462,
+     "start": 25.25,
+     "text": "on"
+    },
+    {
+     "end": 26.325,
+     "start": 25.462,
+     "text": "chain"
+    },
+    {
+     "end": 26.525,
+     "start": 26.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/submitting-a-signed-bundle-04": {
+   "audio_sha256": "a8c0418399147eb03cb737f6cb22d403080eb5da40c1c077a1c967241710bbf6",
+   "characters": 557,
+   "cost": 0.00055143,
+   "duration": 36.35,
+   "index": 4,
+   "key": "d8afdaa089a0f9b07bd592f23e0881ed8275dadba8ba8f97afac8b3ee796e56a",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "submitting-a-signed-bundle",
+   "sent_text": "Each transaction the chain does not hold is sent in turn, carrying exactly its own witnesses, and confirmed before the next. An answer that may or may not mean the node took the transaction stops the run as partial, and nothing is sent again within the run; the next run finds what landed. Once every transaction is on chain, the receipt is read back from the chain: for each transaction, whether this run sent it or found it, its chain point, its confirmations, and each of its outputs — unspent with what it holds, or spent since — plus the bundle's hash.",
+   "text": "Each transaction the chain does not hold is sent in turn, carrying exactly its own witnesses, and confirmed before the next. An answer that may or may not mean the node took the transaction stops the run as partial, and nothing is sent again within the run; the next run finds what landed. Once every transaction is on chain, the receipt is read back from the chain: for each transaction, whether this run sent it or found it, its chain point, its confirmations, and each of its outputs — unspent with what it holds, or spent since — plus the bundle's hash.",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.225,
+     "text": "Each"
+    },
+    {
+     "end": 1.225,
+     "start": 0.475,
+     "text": "transaction"
+    },
+    {
+     "end": 1.337,
+     "start": 1.225,
+     "text": "the"
+    },
+    {
+     "end": 1.7,
+     "start": 1.337,
+     "text": "chain"
+    },
+    {
+     "end": 1.9,
+     "start": 1.7,
+     "text": "does"
+    },
+    {
+     "end": 2.162,
+     "start": 1.9,
+     "text": "not"
+    },
+    {
+     "end": 2.638,
+     "start": 2.162,
+     "text": "hold"
+    },
+    {
+     "end": 2.812,
+     "start": 2.638,
+     "text": "is"
+    },
+    {
+     "end": 3.125,
+     "start": 2.812,
+     "text": "sent"
+    },
+    {
+     "end": 3.287,
+     "start": 3.125,
+     "text": "in"
+    },
+    {
+     "end": 3.8,
+     "start": 3.287,
+     "text": "turn"
+    },
+    {
+     "end": 3.912,
+     "start": 3.8,
+     "text": ","
+    },
+    {
+     "end": 4.375,
+     "start": 3.912,
+     "text": "carrying"
+    },
+    {
+     "end": 4.975,
+     "start": 4.375,
+     "text": "exactly"
+    },
+    {
+     "end": 5.175,
+     "start": 4.975,
+     "text": "its"
+    },
+    {
+     "end": 5.425,
+     "start": 5.175,
+     "text": "own"
+    },
+    {
+     "end": 6.025,
+     "start": 5.425,
+     "text": "witnesses"
+    },
+    {
+     "end": 6.075,
+     "start": 6.025,
+     "text": ","
+    },
+    {
+     "end": 6.2,
+     "start": 6.075,
+     "text": "and"
+    },
+    {
+     "end": 6.8,
+     "start": 6.2,
+     "text": "confirmed"
+    },
+    {
+     "end": 7.2,
+     "start": 6.8,
+     "text": "before"
+    },
+    {
+     "end": 7.3,
+     "start": 7.2,
+     "text": "the"
+    },
+    {
+     "end": 8.4,
+     "start": 7.3,
+     "text": "next"
+    },
+    {
+     "end": 8.625,
+     "start": 8.4,
+     "text": "."
+    },
+    {
+     "end": 8.962,
+     "start": 8.825,
+     "text": "An"
+    },
+    {
+     "end": 9.375,
+     "start": 8.962,
+     "text": "answer"
+    },
+    {
+     "end": 9.587,
+     "start": 9.375,
+     "text": "that"
+    },
+    {
+     "end": 9.9,
+     "start": 9.587,
+     "text": "may"
+    },
+    {
+     "end": 10.05,
+     "start": 9.9,
+     "text": "or"
+    },
+    {
+     "end": 10.375,
+     "start": 10.05,
+     "text": "may"
+    },
+    {
+     "end": 10.625,
+     "start": 10.375,
+     "text": "not"
+    },
+    {
+     "end": 10.812,
+     "start": 10.625,
+     "text": "mean"
+    },
+    {
+     "end": 10.925,
+     "start": 10.812,
+     "text": "the"
+    },
+    {
+     "end": 11.3,
+     "start": 10.925,
+     "text": "node"
+    },
+    {
+     "end": 11.5,
+     "start": 11.3,
+     "text": "took"
+    },
+    {
+     "end": 11.6,
+     "start": 11.5,
+     "text": "the"
+    },
+    {
+     "end": 12.325,
+     "start": 11.6,
+     "text": "transaction"
+    },
+    {
+     "end": 12.7,
+     "start": 12.325,
+     "text": "stops"
+    },
+    {
+     "end": 12.825,
+     "start": 12.7,
+     "text": "the"
+    },
+    {
+     "end": 13.075,
+     "start": 12.825,
+     "text": "run"
+    },
+    {
+     "end": 13.238,
+     "start": 13.075,
+     "text": "as"
+    },
+    {
+     "end": 14.3,
+     "start": 13.238,
+     "text": "partial"
+    },
+    {
+     "end": 14.5,
+     "start": 14.3,
+     "text": ","
+    },
+    {
+     "end": 14.8,
+     "start": 14.7,
+     "text": "and"
+    },
+    {
+     "end": 15.125,
+     "start": 14.8,
+     "text": "nothing"
+    },
+    {
+     "end": 15.225,
+     "start": 15.125,
+     "text": "is"
+    },
+    {
+     "end": 15.438,
+     "start": 15.225,
+     "text": "sent"
+    },
+    {
+     "end": 15.75,
+     "start": 15.438,
+     "text": "again"
+    },
+    {
+     "end": 15.988,
+     "start": 15.75,
+     "text": "within"
+    },
+    {
+     "end": 16.075,
+     "start": 15.988,
+     "text": "the"
+    },
+    {
+     "end": 16.85,
+     "start": 16.075,
+     "text": "run"
+    },
+    {
+     "end": 17.05,
+     "start": 16.85,
+     "text": ";"
+    },
+    {
+     "end": 17.325,
+     "start": 17.25,
+     "text": "the"
+    },
+    {
+     "end": 17.625,
+     "start": 17.325,
+     "text": "next"
+    },
+    {
+     "end": 17.938,
+     "start": 17.625,
+     "text": "run"
+    },
+    {
+     "end": 18.375,
+     "start": 17.938,
+     "text": "finds"
+    },
+    {
+     "end": 18.6,
+     "start": 18.375,
+     "text": "what"
+    },
+    {
+     "end": 19.25,
+     "start": 18.6,
+     "text": "landed"
+    },
+    {
+     "end": 19.362,
+     "start": 19.25,
+     "text": "."
+    },
+    {
+     "end": 19.65,
+     "start": 19.362,
+     "text": "Once"
+    },
+    {
+     "end": 19.95,
+     "start": 19.65,
+     "text": "every"
+    },
+    {
+     "end": 20.675,
+     "start": 19.95,
+     "text": "transaction"
+    },
+    {
+     "end": 20.825,
+     "start": 20.675,
+     "text": "is"
+    },
+    {
+     "end": 21.062,
+     "start": 20.825,
+     "text": "on"
+    },
+    {
+     "end": 21.5,
+     "start": 21.062,
+     "text": "chain"
+    },
+    {
+     "end": 21.575,
+     "start": 21.5,
+     "text": ","
+    },
+    {
+     "end": 21.675,
+     "start": 21.575,
+     "text": "the"
+    },
+    {
+     "end": 22.175,
+     "start": 21.675,
+     "text": "receipt"
+    },
+    {
+     "end": 22.337,
+     "start": 22.175,
+     "text": "is"
+    },
+    {
+     "end": 22.6,
+     "start": 22.337,
+     "text": "read"
+    },
+    {
+     "end": 22.875,
+     "start": 22.6,
+     "text": "back"
+    },
+    {
+     "end": 23.038,
+     "start": 22.875,
+     "text": "from"
+    },
+    {
+     "end": 23.138,
+     "start": 23.038,
+     "text": "the"
+    },
+    {
+     "end": 24.2,
+     "start": 23.138,
+     "text": "chain"
+    },
+    {
+     "end": 24.4,
+     "start": 24.2,
+     "text": ":"
+    },
+    {
+     "end": 24.675,
+     "start": 24.575,
+     "text": "for"
+    },
+    {
+     "end": 24.9,
+     "start": 24.675,
+     "text": "each"
+    },
+    {
+     "end": 25.6,
+     "start": 24.9,
+     "text": "transaction"
+    },
+    {
+     "end": 25.65,
+     "start": 25.6,
+     "text": ","
+    },
+    {
+     "end": 25.913,
+     "start": 25.65,
+     "text": "whether"
+    },
+    {
+     "end": 26.125,
+     "start": 25.913,
+     "text": "this"
+    },
+    {
+     "end": 26.388,
+     "start": 26.125,
+     "text": "run"
+    },
+    {
+     "end": 26.65,
+     "start": 26.388,
+     "text": "sent"
+    },
+    {
+     "end": 26.8,
+     "start": 26.65,
+     "text": "it"
+    },
+    {
+     "end": 26.962,
+     "start": 26.8,
+     "text": "or"
+    },
+    {
+     "end": 27.3,
+     "start": 26.962,
+     "text": "found"
+    },
+    {
+     "end": 27.425,
+     "start": 27.3,
+     "text": "it"
+    },
+    {
+     "end": 27.5,
+     "start": 27.425,
+     "text": ","
+    },
+    {
+     "end": 27.712,
+     "start": 27.5,
+     "text": "its"
+    },
+    {
+     "end": 28.025,
+     "start": 27.712,
+     "text": "chain"
+    },
+    {
+     "end": 28.9,
+     "start": 28.025,
+     "text": "point"
+    },
+    {
+     "end": 29.1,
+     "start": 28.9,
+     "text": ","
+    },
+    {
+     "end": 29.45,
+     "start": 29.3,
+     "text": "its"
+    },
+    {
+     "end": 30.325,
+     "start": 29.45,
+     "text": "confirmations"
+    },
+    {
+     "end": 30.375,
+     "start": 30.325,
+     "text": ","
+    },
+    {
+     "end": 30.5,
+     "start": 30.375,
+     "text": "and"
+    },
+    {
+     "end": 30.712,
+     "start": 30.5,
+     "text": "each"
+    },
+    {
+     "end": 30.788,
+     "start": 30.712,
+     "text": "of"
+    },
+    {
+     "end": 30.95,
+     "start": 30.788,
+     "text": "its"
+    },
+    {
+     "end": 31.6,
+     "start": 30.95,
+     "text": "outputs"
+    },
+    {
+     "end": 31.675,
+     "start": 31.6,
+     "text": "—"
+    },
+    {
+     "end": 32.213,
+     "start": 31.675,
+     "text": "unspent"
+    },
+    {
+     "end": 32.35,
+     "start": 32.213,
+     "text": "with"
+    },
+    {
+     "end": 32.487,
+     "start": 32.35,
+     "text": "what"
+    },
+    {
+     "end": 32.575,
+     "start": 32.487,
+     "text": "it"
+    },
+    {
+     "end": 33.5,
+     "start": 32.575,
+     "text": "holds"
+    },
+    {
+     "end": 33.7,
+     "start": 33.5,
+     "text": ","
+    },
+    {
+     "end": 34.025,
+     "start": 33.9,
+     "text": "or"
+    },
+    {
+     "end": 34.3,
+     "start": 34.025,
+     "text": "spent"
+    },
+    {
+     "end": 34.513,
+     "start": 34.3,
+     "text": "since"
+    },
+    {
+     "end": 34.575,
+     "start": 34.513,
+     "text": "—"
+    },
+    {
+     "end": 34.838,
+     "start": 34.575,
+     "text": "plus"
+    },
+    {
+     "end": 34.925,
+     "start": 34.838,
+     "text": "the"
+    },
+    {
+     "end": 35.35,
+     "start": 34.925,
+     "text": "bundle's"
+    },
+    {
+     "end": 36.15,
+     "start": 35.35,
+     "text": "hash"
+    },
+    {
+     "end": 36.35,
+     "start": 36.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/submitting-a-signed-bundle-05": {
+   "audio_sha256": "55829b8d57e2e88133c927a39d30deec56cf60e386d59ffb72bfce381347419b",
+   "characters": 500,
+   "cost": 0.000495,
+   "duration": 32.35,
+   "index": 5,
+   "key": "185b756f190151c043670d71d542f9263f8f20de5c91d6db19aa86c8c1b7ea03",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "submitting-a-signed-bundle",
+   "sent_text": "The effect lines a bundle carries are its writer's claims: the receipt shows them under claims and never says they were confirmed. The completeness of the signatures is judged here, against the inputs the chain resolves, which the offline signing step cannot do. Expiry is judged against the tip read before the first send. A command that stops leaves nothing behind but its receipt, and it never resubmits on its own. A valid signature by an unneeded key over an already-landed body is not reported.",
+   "text": "The effect lines a bundle carries are its writer's claims: the receipt shows them under claims and never says they were confirmed. The completeness of the signatures is judged here, against the inputs the chain resolves, which the offline signing step cannot do. Expiry is judged against the tip read before the first send. A command that stops leaves nothing behind but its receipt, and it never resubmits on its own. A valid signature by an unneeded key over an already-landed body is not reported.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.65,
+     "start": 0.3,
+     "text": "effect"
+    },
+    {
+     "end": 0.938,
+     "start": 0.65,
+     "text": "lines"
+    },
+    {
+     "end": 1.0,
+     "start": 0.938,
+     "text": "a"
+    },
+    {
+     "end": 1.375,
+     "start": 1.0,
+     "text": "bundle"
+    },
+    {
+     "end": 1.837,
+     "start": 1.375,
+     "text": "carries"
+    },
+    {
+     "end": 1.962,
+     "start": 1.837,
+     "text": "are"
+    },
+    {
+     "end": 2.1,
+     "start": 1.962,
+     "text": "its"
+    },
+    {
+     "end": 2.525,
+     "start": 2.1,
+     "text": "writer's"
+    },
+    {
+     "end": 3.45,
+     "start": 2.525,
+     "text": "claims"
+    },
+    {
+     "end": 3.65,
+     "start": 3.45,
+     "text": ":"
+    },
+    {
+     "end": 3.9,
+     "start": 3.825,
+     "text": "the"
+    },
+    {
+     "end": 4.287,
+     "start": 3.9,
+     "text": "receipt"
+    },
+    {
+     "end": 4.588,
+     "start": 4.287,
+     "text": "shows"
+    },
+    {
+     "end": 4.713,
+     "start": 4.588,
+     "text": "them"
+    },
+    {
+     "end": 4.925,
+     "start": 4.713,
+     "text": "under"
+    },
+    {
+     "end": 5.488,
+     "start": 4.925,
+     "text": "claims"
+    },
+    {
+     "end": 5.625,
+     "start": 5.488,
+     "text": "and"
+    },
+    {
+     "end": 5.988,
+     "start": 5.625,
+     "text": "never"
+    },
+    {
+     "end": 6.3,
+     "start": 5.988,
+     "text": "says"
+    },
+    {
+     "end": 6.438,
+     "start": 6.3,
+     "text": "they"
+    },
+    {
+     "end": 6.55,
+     "start": 6.438,
+     "text": "were"
+    },
+    {
+     "end": 7.65,
+     "start": 6.55,
+     "text": "confirmed"
+    },
+    {
+     "end": 7.85,
+     "start": 7.65,
+     "text": "."
+    },
+    {
+     "end": 8.1,
+     "start": 8.025,
+     "text": "The"
+    },
+    {
+     "end": 8.688,
+     "start": 8.1,
+     "text": "completeness"
+    },
+    {
+     "end": 8.762,
+     "start": 8.688,
+     "text": "of"
+    },
+    {
+     "end": 8.85,
+     "start": 8.762,
+     "text": "the"
+    },
+    {
+     "end": 9.488,
+     "start": 8.85,
+     "text": "signatures"
+    },
+    {
+     "end": 9.663,
+     "start": 9.488,
+     "text": "is"
+    },
+    {
+     "end": 10.025,
+     "start": 9.663,
+     "text": "judged"
+    },
+    {
+     "end": 10.7,
+     "start": 10.025,
+     "text": "here"
+    },
+    {
+     "end": 10.925,
+     "start": 10.7,
+     "text": ","
+    },
+    {
+     "end": 11.438,
+     "start": 11.125,
+     "text": "against"
+    },
+    {
+     "end": 11.55,
+     "start": 11.438,
+     "text": "the"
+    },
+    {
+     "end": 12.0,
+     "start": 11.55,
+     "text": "inputs"
+    },
+    {
+     "end": 12.113,
+     "start": 12.0,
+     "text": "the"
+    },
+    {
+     "end": 12.45,
+     "start": 12.113,
+     "text": "chain"
+    },
+    {
+     "end": 13.075,
+     "start": 12.45,
+     "text": "resolves"
+    },
+    {
+     "end": 13.137,
+     "start": 13.075,
+     "text": ","
+    },
+    {
+     "end": 13.325,
+     "start": 13.137,
+     "text": "which"
+    },
+    {
+     "end": 13.488,
+     "start": 13.325,
+     "text": "the"
+    },
+    {
+     "end": 14.038,
+     "start": 13.488,
+     "text": "offline"
+    },
+    {
+     "end": 14.425,
+     "start": 14.038,
+     "text": "signing"
+    },
+    {
+     "end": 14.725,
+     "start": 14.425,
+     "text": "step"
+    },
+    {
+     "end": 15.1,
+     "start": 14.725,
+     "text": "cannot"
+    },
+    {
+     "end": 15.875,
+     "start": 15.1,
+     "text": "do"
+    },
+    {
+     "end": 16.15,
+     "start": 15.875,
+     "text": "."
+    },
+    {
+     "end": 16.875,
+     "start": 16.35,
+     "text": "Expiry"
+    },
+    {
+     "end": 17.038,
+     "start": 16.875,
+     "text": "is"
+    },
+    {
+     "end": 17.45,
+     "start": 17.038,
+     "text": "judged"
+    },
+    {
+     "end": 17.763,
+     "start": 17.45,
+     "text": "against"
+    },
+    {
+     "end": 17.85,
+     "start": 17.763,
+     "text": "the"
+    },
+    {
+     "end": 18.1,
+     "start": 17.85,
+     "text": "tip"
+    },
+    {
+     "end": 18.375,
+     "start": 18.1,
+     "text": "read"
+    },
+    {
+     "end": 18.688,
+     "start": 18.375,
+     "text": "before"
+    },
+    {
+     "end": 18.775,
+     "start": 18.688,
+     "text": "the"
+    },
+    {
+     "end": 19.05,
+     "start": 18.775,
+     "text": "first"
+    },
+    {
+     "end": 19.875,
+     "start": 19.05,
+     "text": "send"
+    },
+    {
+     "end": 20.075,
+     "start": 19.875,
+     "text": "."
+    },
+    {
+     "end": 20.35,
+     "start": 20.275,
+     "text": "A"
+    },
+    {
+     "end": 20.812,
+     "start": 20.35,
+     "text": "command"
+    },
+    {
+     "end": 21.013,
+     "start": 20.812,
+     "text": "that"
+    },
+    {
+     "end": 21.45,
+     "start": 21.013,
+     "text": "stops"
+    },
+    {
+     "end": 21.763,
+     "start": 21.45,
+     "text": "leaves"
+    },
+    {
+     "end": 22.175,
+     "start": 21.763,
+     "text": "nothing"
+    },
+    {
+     "end": 22.725,
+     "start": 22.175,
+     "text": "behind"
+    },
+    {
+     "end": 22.862,
+     "start": 22.725,
+     "text": "but"
+    },
+    {
+     "end": 23.05,
+     "start": 22.862,
+     "text": "its"
+    },
+    {
+     "end": 23.7,
+     "start": 23.05,
+     "text": "receipt"
+    },
+    {
+     "end": 23.8,
+     "start": 23.7,
+     "text": ","
+    },
+    {
+     "end": 23.913,
+     "start": 23.8,
+     "text": "and"
+    },
+    {
+     "end": 24.038,
+     "start": 23.913,
+     "text": "it"
+    },
+    {
+     "end": 24.375,
+     "start": 24.038,
+     "text": "never"
+    },
+    {
+     "end": 24.962,
+     "start": 24.375,
+     "text": "resubmits"
+    },
+    {
+     "end": 25.087,
+     "start": 24.962,
+     "text": "on"
+    },
+    {
+     "end": 25.25,
+     "start": 25.087,
+     "text": "its"
+    },
+    {
+     "end": 26.175,
+     "start": 25.25,
+     "text": "own"
+    },
+    {
+     "end": 26.375,
+     "start": 26.175,
+     "text": "."
+    },
+    {
+     "end": 26.65,
+     "start": 26.575,
+     "text": "A"
+    },
+    {
+     "end": 27.038,
+     "start": 26.65,
+     "text": "valid"
+    },
+    {
+     "end": 27.625,
+     "start": 27.038,
+     "text": "signature"
+    },
+    {
+     "end": 27.825,
+     "start": 27.625,
+     "text": "by"
+    },
+    {
+     "end": 27.975,
+     "start": 27.825,
+     "text": "an"
+    },
+    {
+     "end": 28.538,
+     "start": 27.975,
+     "text": "unneeded"
+    },
+    {
+     "end": 29.025,
+     "start": 28.538,
+     "text": "key"
+    },
+    {
+     "end": 29.288,
+     "start": 29.025,
+     "text": "over"
+    },
+    {
+     "end": 29.413,
+     "start": 29.288,
+     "text": "an"
+    },
+    {
+     "end": 30.25,
+     "start": 29.413,
+     "text": "already-landed"
+    },
+    {
+     "end": 30.663,
+     "start": 30.25,
+     "text": "body"
+    },
+    {
+     "end": 30.825,
+     "start": 30.663,
+     "text": "is"
+    },
+    {
+     "end": 31.05,
+     "start": 30.825,
+     "text": "not"
+    },
+    {
+     "end": 32.125,
+     "start": 31.05,
+     "text": "reported"
+    },
+    {
+     "end": 32.35,
+     "start": 32.125,
+     "text": "."
+    }
+   ]
+  },
   "docs-singular-node/the-settings-you-give-00": {
    "audio_sha256": "d91089a9829842a0539134a9754239f266d5686782d7c3330b7a3d1dff86266a",
    "characters": 22,

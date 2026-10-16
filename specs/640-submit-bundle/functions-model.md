@@ -12,7 +12,7 @@ Names, argument names and result types only. No bodies.
 
 ## Submit planner module
 
-- `neededKeys(bundle, resolvedInputs)`: for each transaction, the key hashes needing a witness. Pure.
+- `neededKeys(bundle, resolvedInputs)`: for each transaction still to send, the key hashes needing a witness; transactions found on chain are skipped first and their witnesses ignored. Pure.
 - `matchWitnesses(bundle, witnesses)`: each witness paired with the body it verifies against, or a named refusal. Pure.
 - `planSubmission(bundle, witnesses, resolvedInputs, statuses, tipSlot)`: an ordered plan of sends and found transactions, or the first named refusal. Pure.
 

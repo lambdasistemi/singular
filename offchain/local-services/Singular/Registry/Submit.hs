@@ -51,7 +51,7 @@ import Cardano.Ledger.Credential (Credential (KeyHashObj))
 import Cardano.Ledger.Keys (VKey (..), hashKey, unKeyHash)
 import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Monad (foldM, forM, forM_)
+import Control.Monad (foldM_, forM, forM_)
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
@@ -208,7 +208,9 @@ matchWitnesses bundle witnesses = do
 {- | The ordered plan: which transactions to send, with exactly their
 verified witnesses, and which the chain already holds. Every check
 first: a foreign witness, an unneeded or missing one, an unresolved
-input, and an expired body are refused before the first send. Pure.
+input, and an expired body are refused before the first send. A
+transaction the chain holds is judged for none of these: it is not
+sent, and the inputs it spent are no longer there to resolve. Pure.
 -}
 planSubmission
     :: Bundle
@@ -219,27 +221,38 @@ planSubmission
     -> Either SubmitRefusal (NonEmpty PlanStep)
 planSubmission bundle witnesses resolved statuses tip = do
     let transactions = toList (bundleTransactions bundle)
+        onChain transaction =
+            case Map.lookup (bundleTxIdentity transaction) statuses of
+                Just IncludedAt{} -> True
+                _ -> False
     paired <- matchWitnesses bundle witnesses
-    needed <- neededKeys bundle resolved
+    -- only a transaction still to send needs its keys witnessed: one the
+    -- chain holds is skipped, and its inputs, spent by it, are no longer
+    -- on the chain to resolve; a witness paired with it is not used
+    needed <- case filter (not . onChain) transactions of
+        [] -> Right Map.empty
+        (sending : more) ->
+            neededKeys bundle{bundleTransactions = sending :| more} resolved
     -- every witness is for a key its transaction needs, and no key is
     -- witnessed twice: a second witness for a covered key is unneeded,
     -- whoever signed it — this fires before the missing check, so a lone
     -- stranger witness is refused as unneeded, not as an incomplete set
-    forM_ (Map.toList paired) $ \(identity, ws) -> do
+    let sendingWitnesses =
+            Map.toList
+                (Map.filterWithKey (\identity _ -> Map.member identity needed) paired)
+    forM_ sendingWitnesses $ \(identity, ws) -> do
         let keysOfTx = Map.findWithDefault Set.empty identity needed
-        _ <-
-            foldM
-                ( \covered witness ->
-                    if Set.member (witnessKeyHash witness) keysOfTx
-                        then
-                            if Set.member (witnessKeyHash witness) covered
-                                then Left (SubmitWitnessUnneededKey (witnessKeyHash witness))
-                                else Right (Set.insert (witnessKeyHash witness) covered)
-                        else Left (SubmitWitnessUnneededKey (witnessKeyHash witness))
-                )
-                Set.empty
-                ws
-        pure ()
+        foldM_
+            ( \covered witness ->
+                if Set.member (witnessKeyHash witness) keysOfTx
+                    then
+                        if Set.member (witnessKeyHash witness) covered
+                            then Left (SubmitWitnessUnneededKey (witnessKeyHash witness))
+                            else Right (Set.insert (witnessKeyHash witness) covered)
+                    else Left (SubmitWitnessUnneededKey (witnessKeyHash witness))
+            )
+            Set.empty
+            ws
     -- every key a transaction needs has a verified witness
     forM_ (Map.toList needed) $ \(identity, keys) ->
         forM_ (Set.toList keys) $ \keyHash ->

@@ -13,7 +13,7 @@
   ],
   "needed-keys": [
     {
-      "text": "For each transaction, the set of payment key hashes needing a witness: its required signers, plus the payment key hashes of its input and collateral outputs. A script credential adds nothing.",
+      "text": "For each transaction still to send, the set of payment key hashes needing a witness: its required signers, plus the payment key hashes of its input and collateral outputs. A script credential adds nothing.",
       "pause": 500
     }
   ],
@@ -31,6 +31,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "5f172b7175cecee9989ffa112704d7467376ef1e1ecb748255376befabadb1ae"
+    "sha256": "d28edccbbfabac7ef1b05c83725d58d1fffd2b1ee44bab25dba50f7bc5ed9104"
   }
 }

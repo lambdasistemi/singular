@@ -89,6 +89,12 @@ fresh
 stand_in_singular 's/^\(  singular registry create .*\)$/\1 --planted-flag X/'
 expect undocumented-flag 1 '^undocumented: singular registry create takes --planted-flag'
 
+# The submit verb takes a flag the documentation never mentions: the
+# check reads submit's own usage line, not only the registry group.
+fresh
+stand_in_singular 's/^\(  singular submit .*\)$/\1 --planted-flag X/'
+expect undocumented-flag-submit 1 '^undocumented: singular submit takes --planted-flag'
+
 # The open-datum binary takes a flag the documentation never mentions.
 fresh
 stand_in_od 's/^\(  open-datum insert .*\)$/\1 --planted-flag X/'
@@ -210,10 +216,10 @@ fresh
 stand_in_od 's/^Each command prints one JSON receipt/Each command (--stray) prints one JSON receipt/'
 expect unattributed-flag-od 1 '^open-datum --help prints a flag no command takes: --stray'
 
-# An empty side is a setup failure, never a pass. Both verb groups go:
-# the wallet lines are commands too (#638).
+# An empty side is a setup failure, never a pass. Every verb line goes:
+# the wallet lines are commands too (#638), and so is submit.
 fresh
-stand_in_singular 's/^  singular registry /  other /; s/^  singular wallet /  other wallet /'
+stand_in_singular 's/^  singular registry /  other /; s/^  singular wallet /  other wallet /; s/^  singular submit/  other submit/'
 expect empty-help 2 '^EMPTY EXTENT: singular --help names no registry command'
 
 fresh

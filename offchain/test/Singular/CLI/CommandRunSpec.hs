@@ -198,6 +198,7 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..), WriteContext (..), txIdHex)
+import Singular.CLI.SubmitSpec (selfPaymentFiles)
 import Singular.CLI.Trace
 import Singular.Registry.Application
     ( Application (..)
@@ -763,7 +764,8 @@ instance (Constructor c) => ConNames (C1 c f) where
 {- | The constructors that print no receipt: help runs nothing, and
 the wallet verbs print one address line and keep no state (the
 vault spec: standard output is the address alone), so the receipt
-harness below names none of them.
+harness below names none of them. Submit prints a receipt and runs
+in the lifecycle like every registry command.
 -}
 commandsWithoutReceipt :: [String]
 commandsWithoutReceipt = ["Help", "WalletCreate", "WalletAddress", "WalletSign"]
@@ -790,6 +792,7 @@ constructorOf = \case
     WalletCreate _ -> "WalletCreate"
     WalletAddress _ -> "WalletAddress"
     WalletSign _ -> "WalletSign"
+    SubmitBundle _ -> "SubmitBundle"
 
 -- ---------------------------------------------------------
 -- Tracing setup re-cut: a trace file that cannot be written
@@ -2365,8 +2368,31 @@ lifecycle rig = do
             "registry"
             "describe by state token"
             (["registry", "describe", "--json"] <> tokenArgs t1)
+    -- A signed bundle of one self-payment from the wallet, sent by submit:
+    -- no registry, no key file, the witness written by the signing planner.
+    held <- readWallet rig
+    (bundle, witness) <- case held of
+        output : _ ->
+            selfPaymentFiles
+                (rigDir rig </> "submit")
+                (walletSignKey (rigWallet rig))
+                output
+        [] -> fail "the lifecycle left the wallet nothing to submit from"
+    submitted <-
+        run
+            rig
+            "submit a signed bundle"
+            ["submit", "--witnesses", witness, bundle]
     pure
-        [create, reclaim, create2, reject, nothingPending, emptyDir, page]
+        [ create
+        , reclaim
+        , create2
+        , reject
+        , nothingPending
+        , emptyDir
+        , page
+        , submitted
+        ]
 
 -- | The state token's name as a 'TokenId'.
 parseTokenId :: String -> IO TokenId
@@ -2533,18 +2559,26 @@ runAtTxIn answer rig =
 
 -- | A command line over the rig, as the packaged command is given it.
 commandLine :: Rig -> FilePath -> [String] -> [String]
-commandLine rig registry args =
-    args
-        <> (if wantsDir then ["--state-dir", rigDir rig </> registry] else [])
-        <> [ "--blueprint"
-           , rigBlueprint rig
-           , "--koios-url"
-           , "http://fixture.invalid"
-           , "--network-magic"
-           , show magic
-           ]
-        <> ["--wallet-skey" | wantsKey]
-        <> [rigKey rig | wantsKey]
+commandLine rig registry args
+    | take 1 args == ["submit"] =
+        args
+            <> [ "--koios-url"
+               , "http://fixture.invalid"
+               , "--network-magic"
+               , show magic
+               ]
+    | otherwise =
+        args
+            <> (if wantsDir then ["--state-dir", rigDir rig </> registry] else [])
+            <> [ "--blueprint"
+               , rigBlueprint rig
+               , "--koios-url"
+               , "http://fixture.invalid"
+               , "--network-magic"
+               , show magic
+               ]
+            <> ["--wallet-skey" | wantsKey]
+            <> [rigKey rig | wantsKey]
   where
     -- Describe reads the page from the chain alone: no state directory
     -- and no signing key reach its parser.

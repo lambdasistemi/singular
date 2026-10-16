@@ -442,6 +442,86 @@ spec = do
                 other ->
                     expectationFailure
                         ("expected the duplicate to be refused: " <> show other)
+    describe "Witnesses of a transaction the chain already holds" $ do
+        -- Each pair is one bundle and one set of witnesses; only the
+        -- chain differs, and a landed first body takes its spent input
+        -- off the chain with it.
+        it
+            "sends the second body when the first has landed without its witness"
+            $ do
+                let bodies = chainedBodies 1000
+                    (resolved, statuses) = chainAfter True bodies
+                case planWith bodies [walletWitness (last bodies)] resolved statuses of
+                    Left refusal ->
+                        expectationFailure
+                            ("a found body asked for a witness: " <> show refusal)
+                    Right steps -> do
+                        [stepAction step | step <- steps] `shouldBe` [Found, Send]
+                        map stepIdentity steps `shouldBe` map bodyIdentityOf bodies
+                        map stepWitnessKeys steps
+                            `shouldBe` [[], [verKeyOf fixedKey]]
+        it
+            "refuses the same bundle as incomplete when the first has not landed"
+            $ do
+                let bodies = chainedBodies 1000
+                    (resolved, statuses) = chainAfter False bodies
+                case planWith bodies [walletWitness (last bodies)] resolved statuses of
+                    Left (SubmitWitnessMissing keyHash identity) -> do
+                        keyHash `shouldBe` signerHashK (walletOf fixedKey)
+                        identity `shouldBe` bodyIdentityOf (firstBody bodies)
+                    other ->
+                        expectationFailure ("expected a missing witness: " <> show other)
+        it
+            "ignores a stranger's valid witness over a landed body and sends the second"
+            $ do
+                let bodies = chainedBodies 1000
+                    (resolved, statuses) = chainAfter True bodies
+                    witnesses =
+                        [ detachedWitnessOf strangerKey (firstBody bodies)
+                        , walletWitness (last bodies)
+                        ]
+                case planWith bodies witnesses resolved statuses of
+                    Left refusal ->
+                        expectationFailure
+                            ("a witness over a found body was refused: " <> show refusal)
+                    Right steps -> do
+                        [stepAction step | step <- steps] `shouldBe` [Found, Send]
+                        -- the stranger's key reaches no send
+                        map stepWitnessKeys steps
+                            `shouldBe` [[], [verKeyOf fixedKey]]
+        it
+            "refuses the same stranger's witness as an unneeded key when the first has not landed"
+            $ do
+                let bodies = chainedBodies 1000
+                    (resolved, statuses) = chainAfter False bodies
+                    witnesses =
+                        [ detachedWitnessOf strangerKey (firstBody bodies)
+                        , walletWitness (last bodies)
+                        ]
+                case planWith bodies witnesses resolved statuses of
+                    Left (SubmitWitnessUnneededKey keyHash) ->
+                        keyHash `shouldBe` signerHashK (walletOf strangerKey)
+                    other ->
+                        expectationFailure ("expected an unneeded key: " <> show other)
+        it
+            "still refuses a witness verifying against no body when every body is found"
+            $ do
+                let bodies = chainedBodies 1000
+                    (resolved, statuses) = chainAfterAll bodies
+                    own = witnessesDataOf bodies
+                    foreignBody = unboundedBody (walletOf fixedKey) (funding 5)
+                    outsider = detachedWitnessOf fixedKey foreignBody
+                case planWith bodies (own <> [outsider]) resolved statuses of
+                    Left (SubmitWitnessForeignBody key) ->
+                        key `shouldBe` verKeyOf fixedKey
+                    other ->
+                        expectationFailure ("expected a foreign witness: " <> show other)
+                -- the accepted twin: the same chain and the valid witnesses only
+                case planWith bodies own resolved statuses of
+                    Left refusal ->
+                        expectationFailure ("valid witnesses were refused: " <> show refusal)
+                    Right steps ->
+                        [stepAction step | step <- steps] `shouldBe` [Found, Found]
     describe "Assembling the signed transaction" $ do
         it
             "carries every verified witness of a body needing two keys, and only those"
@@ -778,3 +858,63 @@ name it.
 firstBody :: [ConwayTx] -> ConwayTx
 firstBody (b : _) = b
 firstBody [] = error "the chained fixture did not build its bodies"
+
+-- ---------------------------------------------------------
+-- The chain with a body landed
+-- ---------------------------------------------------------
+
+{- | What the chain shows when the first body has landed or not: found at
+a point, and the input it spent no longer there; or not found, its
+input still held. The second body is never on the chain.
+-}
+chainAfter
+    :: Bool
+    -> [ConwayTx]
+    -> (Map TxIn (TxOut ConwayEra), Map ByteString InclusionStatus)
+chainAfter landed bodies =
+    ( if landed
+        then foldr Map.delete (resolvedOf bodies) (spentBy (firstBody bodies))
+        else resolvedOf bodies
+    , Map.fromList
+        [ (bodyIdentityOf (firstBody bodies), placed landed)
+        , (bodyIdentityOf (last bodies), NotOnChain)
+        ]
+    )
+
+-- | Every body landed: none of their inputs remain, all are found.
+chainAfterAll
+    :: [ConwayTx]
+    -> (Map TxIn (TxOut ConwayEra), Map ByteString InclusionStatus)
+chainAfterAll bodies =
+    ( foldr Map.delete (resolvedOf bodies) (concatMap spentBy bodies)
+    , Map.fromList [(bodyIdentityOf b, placed True) | b <- bodies]
+    )
+
+placed :: Bool -> InclusionStatus
+placed landed
+    | landed = IncludedAt (At (SlotNo 9) (BC.replicate 32 '\1')) 4
+    | otherwise = NotOnChain
+
+spentBy :: ConwayTx -> [TxIn]
+spentBy body = Set.toList (body ^. bodyTxL . inputsTxBodyL)
+
+planWith
+    :: [ConwayTx]
+    -> [DetachedWitness]
+    -> Map TxIn (TxOut ConwayEra)
+    -> Map ByteString InclusionStatus
+    -> Either SubmitRefusal [PlanStep]
+planWith bodies witnesses resolved statuses =
+    fmap
+        toList
+        (planSubmission (bundleOf bodies) witnesses resolved statuses 0)
+
+-- | The wallet's own witness over a body.
+walletWitness :: ConwayTx -> DetachedWitness
+walletWitness = detachedWitnessOf fixedKey
+
+-- | The keys of the witnesses a step carries: none for a found one.
+stepWitnessKeys :: PlanStep -> [ByteString]
+stepWitnessKeys = \case
+    PlanSend _ _ witnesses -> map detachedKeyBytes witnesses
+    PlanFound{} -> []

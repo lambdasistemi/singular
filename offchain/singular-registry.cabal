@@ -225,6 +225,7 @@ library registry-cli
     Singular.CLI.Root
     Singular.CLI.Session
     Singular.CLI.Sign
+    Singular.CLI.Submit
     Singular.CLI.Trace
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
@@ -984,6 +985,7 @@ test-suite cage-tests
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
     Singular.CLI.SignSpec
+    Singular.CLI.SubmitSpec
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.VaultSpec
     Singular.PhaseLogFixture
@@ -1190,6 +1192,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.OpenBootSpec
     Singular.Registry.E2E.ReplayHistory
     Singular.Registry.E2E.ReplaySpec
+    Singular.Registry.E2E.SubmitSpec
     Singular.Registry.E2E.UpdateTerminalSpec
     Singular.Registry.Private.Archive
     Singular.Registry.Private.EpochParameters

@@ -20,7 +20,9 @@ below happens before anything is read or submitted.
 * @registry inspect@ reads the registry and one key back, and accepts
   no signing key at all;
 * @registry describe@ reads the registry page from the chain alone, and
-  accepts no wallet, key, state directory or other actor file at all.
+  accepts no wallet, key, state directory or other actor file at all;
+* @submit@ sends a bundle its signers witnessed, taking the witness
+  files, the bundle and the node settings, and no wallet key or vault.
 
 Write commands name the Koios URL, network and wallet key. Partial settings
 and mainnet are refused before file reads or provider effects. Read commands
@@ -62,6 +64,9 @@ module Singular.CLI.Command
     , walletAddressCommand
     , SignArgs (..)
     , walletSignCommand
+
+      -- * Submitting a signed bundle
+    , SubmitArgs (..)
     ) where
 
 import Control.Monad (forM_, unless, when)
@@ -75,6 +80,7 @@ import Data.Char
     , generalCategory
     , isDigit
     )
+import Data.List (stripPrefix)
 import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -357,6 +363,23 @@ data SignArgs = SignArgs
     }
     deriving stock (Eq, Show)
 
+{- | @submit@: the witness files, the bundle, the node settings and the
+receipt file. A directory among the witness paths stands for the
+@.witness@ files it holds. No wallet key and no vault: the witnesses
+carry every signature the bundle needs.
+-}
+data SubmitArgs = SubmitArgs
+    { submitBundlePath :: FilePath
+    -- ^ The bundle of unsigned transactions, the command's one argument
+    , submitWitnessPaths :: [FilePath]
+    -- ^ @--witnesses@, repeated: witness files or directories, in order
+    , submitProvider :: ProviderSettings
+    -- ^ The node settings, read exactly as the registry commands read them
+    , submitReceipt :: Maybe FilePath
+    -- ^ @--receipt FILE@: also write the receipt here
+    }
+    deriving stock (Eq, Show)
+
 -- | One parsed command line.
 data Command
     = Help
@@ -369,6 +392,7 @@ data Command
     | WalletCreate WalletArgs
     | WalletAddress WalletArgs
     | WalletSign SignArgs
+    | SubmitBundle SubmitArgs
     deriving stock (Eq, Show, Generic)
 
 -- | Why a command line was refused before anything ran.
@@ -409,7 +433,8 @@ this to the common group plus this binary's extras.
 parseWithGroup
     :: [String] -> [(String, String)] -> [String] -> Either CLIError Command
 parseWithGroup group environment args = do
-    let (jsonSwitch, plainArgs) = splitJson args
+    let (jsonSwitch, unswitched) = splitJson args
+    (witnesses, plainArgs) <- splitWitnesses group unswitched
     (words', flags) <-
         tokenizeWith RemovedSetting BadValue group plainArgs
     if "--help" `elem` map fst flags || "-h" `elem` map fst flags
@@ -418,6 +443,7 @@ parseWithGroup group environment args = do
             refuseWindows words' flags
                 >> refuseOutputsAt words' flags
                 >> refuseJson words' jsonSwitch
+                >> refuseWitnesses words' witnesses
                 >> refuseWalletSettings words' flags
                 >> case words' of
                     [] -> Right Help
@@ -433,6 +459,10 @@ parseWithGroup group environment args = do
                         refuseWalletCommandSettings "wallet sign" flags
                             >> (WalletSign <$> signArgs bundle flags)
                     ["wallet", "sign"] ->
+                        Left (MissingFlag "BUNDLE")
+                    ["submit", bundle] ->
+                        SubmitBundle <$> submitArgs bundle witnesses flags
+                    ["submit"] ->
                         Left (MissingFlag "BUNDLE")
                     ["registry", "create"] ->
                         refuseSpendingFlags "create" flags
@@ -460,6 +490,15 @@ parseWithGroup group environment args = do
                             >> (Describe <$> describeArgs environment flags jsonSwitch)
                     _ -> Left (UnknownCommand words')
   where
+    -- @--witnesses@ names what @submit@ sends; any other command refuses
+    -- it by name rather than ignore it.
+    refuseWitnesses words' witnesses =
+        when (not (null witnesses) && take 1 words' /= ["submit"]) $
+            Left
+                ( BadValue
+                    "--witnesses"
+                    "is a submit flag: only submit reads witness files"
+                )
     refuseJson words' json =
         when (json && words' /= ["registry", "describe"]) $
             Left
@@ -881,6 +920,41 @@ parseWithGroup group environment args = do
                 , signPassphraseFd = fd
                 , signOutputDir = optional "--out" flags
                 }
+    -- @submit@ takes the node settings and a receipt file and nothing
+    -- else from the shared group: no wallet key, no registry setting,
+    -- each refused by name rather than ignored.
+    submitArgs bundle witnesses flags = do
+        forM_ (commonFlagGroup <> extraValuedFlags <> ["--preview", "--fold"]) $ \flag ->
+            unless (flag `elem` submitTakes) $
+                when (isJust (lookup flag flags)) $
+                    Left
+                        ( BadValue
+                            flag
+                            ( if flag == "--wallet-skey"
+                                then
+                                    "is not accepted by submit: it takes no wallet key and no vault, the witnesses carry every signature"
+                                else
+                                    "is not accepted by submit: it takes the witnesses, the bundle, the node settings and a receipt file"
+                            )
+                        )
+        when (null witnesses) $ Left (MissingFlag "--witnesses")
+        settings <- readProviderSettings MissingFlag BadValue flags
+        when (providerMagic settings == 764824073) $
+            Left (UnsafeSettings "mainnet is not supported")
+        pure
+            SubmitArgs
+                { submitBundlePath = bundle
+                , submitWitnessPaths = witnesses
+                , submitProvider = settings
+                , submitReceipt = optional "--receipt" flags
+                }
+    submitTakes =
+        [ "--koios-url"
+        , "--koios-token-file"
+        , "--network-time"
+        , "--network-magic"
+        , "--receipt"
+        ]
     required name flags = case lookup name flags of
         Just (Just v) -> Right v
         _ -> Left (MissingFlag name)
@@ -926,6 +1000,27 @@ exactly @--json@ is taken as the switch: spell those bytes with
 -}
 splitJson :: [String] -> (Bool, [String])
 splitJson args = ("--json" `elem` args, filter (/= "--json") args)
+
+{- | Split the repeated @--witnesses@ values off a command line, in the
+order given: submit reads them all, no other command takes one. A
+valued flag of the group keeps its next token, so a value spelled like
+the flag stays a value.
+-}
+splitWitnesses
+    :: [String] -> [String] -> Either CLIError ([FilePath], [String])
+splitWitnesses group = go [] []
+  where
+    go found kept = \case
+        [] -> Right (reverse found, reverse kept)
+        a : rest
+            | a == "--witnesses" -> case rest of
+                v : rest' -> go (v : found) kept rest'
+                [] -> Left (BadValue "--witnesses" "needs a value")
+            | Just v <- stripPrefix "--witnesses=" a -> go (v : found) kept rest
+            | a `elem` group
+            , v : rest' <- rest ->
+                go found (v : a : kept) rest'
+            | otherwise -> go found (a : kept) rest
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
@@ -994,6 +1089,9 @@ usage =
         , "  singular wallet create --vault FILE --network-magic N [--passphrase-fd FD]"
         , "  singular wallet address --vault FILE --network-magic N [--passphrase-fd FD]"
         , "  singular wallet sign --vault FILE [--passphrase-fd FD] [--out DIR] BUNDLE"
+        , "  singular submit --witnesses FILE [--witnesses FILE ...] BUNDLE"
+        , "      --koios-url URL --network-magic N [--koios-token-file FILE]"
+        , "      [--network-time DIR] [--receipt FILE]"
         , ""
         , "Every command but create names its registry by the state token POLICY.NAME,"
         , "the policy and the name in hex, which create prints; when the flag is absent"
@@ -1031,6 +1129,16 @@ usage =
         , "identities, deadlines or signers disagree with its transactions, or whose"
         , "signers do not include this vault's address, is refused by name and"
         , "nothing is written. No provider setting is read."
+        , "submit sends a bundle its signers witnessed. Each witness file, or each"
+        , ".witness file of a directory, is matched to a transaction by its signature,"
+        , "and every check runs before the first send: a witness for no transaction or"
+        , "for a key no transaction needs, a missing witness, an input found nowhere and"
+        , "a body the tip has expired (rebuild the bundle) are refused by name. The"
+        , "transactions the chain does not hold are sent in the bundle's order, each"
+        , "confirmed before the next; an uncertain answer stops the run as partial and"
+        , "nothing is sent again, so running it again sends only the rest. The receipt"
+        , "is read back from the chain. It takes no wallet key and no vault, and keeps"
+        , "no state."
         , "Every registry command also takes --koios-token-file FILE for a bearer credential;"
         , "the shared HTTP client reads it without exposing a command-line token."
         , "Every registry command also takes --network-time DIR for pinned time-manifest.json,"
@@ -1092,6 +1200,7 @@ neededRoles = \case
     WalletCreate _ -> Set.empty
     WalletAddress _ -> Set.empty
     WalletSign _ -> Set.empty
+    SubmitBundle _ -> Set.empty
     Help -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]
