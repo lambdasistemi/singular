@@ -18,11 +18,12 @@ where $X$ contains only exits with an implemented, balanced allocation paying
 that gross tip. The measured fee-only requirement is the special case $e_x=0$.
 The current fold equation supports this arithmetic. Rejection permits a
 processor to leave some tip to the requester, so a cost-cover construction
-needs to choose its refund and fee allocation explicitly. Positive-fee
-retraction remains missing. Thus the formula is not a completed all-exit
-implementation result. Retraction returns the tip and must
-have an explicitly supplied fee budget; increasing its refundable tip alone
-does not pay a processor.
+needs to choose its refund and fee allocation explicitly. Thus the formula is
+not a completed all-exit implementation result. Retraction returns the tip
+and is outside $X$: its checked model construction uses ordinary lovelace
+funding $I\ge f$, supplied by the requester in this cost model. Increasing
+its refundable tip alone does not pay the fee or a processor. Its ledger fee
+still needs measurement in $E$.
 
 \hand If measured fold fee were at most $170{,}000$ and external cost at most
 $30{,}000$ lovelace, a $200{,}000$ floor would break even in that hypothetical
@@ -64,6 +65,9 @@ For a losing race processed by someone else under the same exact-refund
 assumption, the funder loses $t+b$ while receiving $R+a$ back. A larger tip
 does not buy priority. A termination fold irrevocably donates its declared
 carrier $a$; with no guaranteed delay bound, $rH\Delta$ remains unbounded.
+For the funded retraction construction with all change returned to its
+funder, that party loses $b+f$ plus external and capital costs; it recovers
+the registration cost, carrier and tip. There is no treasury charge on that exit.
 
 No bound relates the number of harmed requesters to the number of charged
 attacker folds. A griefing ratio would divide total victim losses, including

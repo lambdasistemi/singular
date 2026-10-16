@@ -96,8 +96,18 @@ $[s+W_p,s+W_p+W_r)$ & No & Signed & Mismatch\\
 $[s+W_p+W_r,\infty)$ & No & No & Expiry or mismatch\\\bottomrule
 \end{tabular}
 \end{center}
-The table describes admission windows, subject to all other checks. In
-particular, its retraction entry is not a fee-paying ledger-availability result.
+The table describes admission windows, subject to all other checks. A funded
+retraction exists in the model under the explicit premises stated below;
+neither a window nor that existence proof guarantees ledger inclusion.
+
+A retraction spends one pending registration and may spend ordinary lovelace
+outputs to pay its fee. Extra inputs hold none of the four registry assets,
+have neither the request nor state role, and carry no request datum. Spending
+inputs are present, distinct and disjoint from references. The state is neither
+read nor spent. The refund address signs and receives at least all held
+lovelace, including the tip; both request tags burn. No tip is taken and
+nothing goes to the treasury. The checked payment bound below states precisely
+what ordinary change at another address may contain.
 
 A rejection references the actual unspent state output: one state token with
 the exact policy and name, state role, inline datum, complete matching
@@ -122,7 +132,8 @@ distinction remains a correspondence obligation.
 For a fold, let $I,O$ be the sums of ordinary input and output lovelace,
 respectively, $f$ its ledger fee, $T=\sum t$ its tips, $n$ its registrations,
 and $D$ its donation. State input and continuation values are equal.
-Carrier outputs hold exactly their declared amount, booked datum and newly
+Ordinary funding and change are lovelace only; an unrelated native asset is
+refused. Carrier outputs hold exactly their declared amount, booked datum and newly
 minted singular tag. Ordinary change is a separate output even if its address
 equals a carrier's address.
 \end{definition}
@@ -141,13 +152,13 @@ request allocation from fees.
 \evidence{fold_routes_every_amount}
 
 \begin{table}[ht]
-\caption{Request allocation. Refund rows are floors, not full balance proofs.}
+\caption{Request allocation. Rejection alone supplies no full balance proof.}
 \centering\small
 \begin{tabular}{p{.24\linewidth}p{.64\linewidth}}\toprule
 Exit & Allocation of held lovelace and token fate\\\midrule
 Registration fold & $R$ donation; $a$ carrier at destination; $t$ gross ordinary allocation. Burn both request tags; mint singular tag.\\
 Registration rejection & Refund address receives at least $R+a$. The judgement proves no exact processor reward. Burn both request tags.\\
-Registration retraction & Refund address receives at least $H$, including $t$; burn both request tags. \textbf{Missing mechanization: retraction paying a ledger fee.}\\
+Registration retraction & At least $H$ refunded, including $t$; ordinary funding pays $f$; zero donation, no tip taken. Burn both request tags. Balanced.\\
 Termination fold & $H-t=a$ donation; $t$ gross ordinary allocation. Burn trie-ready and singular tags; no refund or destination output.\\\bottomrule
 \end{tabular}
 \end{table}
@@ -157,6 +168,21 @@ checks a lower bound and does not require full monetary
 balance; neither an exact wage nor a rejection analogue of~\eqref{eq:gross}
 is supplied. A processor may leave part of its tip to the requester;
 over-refunding is compatible with that lower bound.
+
+\checked For a retraction, let $I$ be its ordinary funding, $F$ all output
+lovelace at its refund address and $P$ all output lovelace elsewhere. Every
+accepted retraction in a reachable world satisfies
+\[
+ F\ge H,\qquad f\le I,\qquad D=0,\qquad P\le I-f,
+\]
+and is balanced with an unchanged treasury. Ordinary funding and every output
+are lovelace only. The model has no wallet-ownership or output-purpose
+observation: $P$ may be change or a payment to a third party, but neither can
+consume the request's cost or tip. Saying that the requester pays assumes it
+owns the ordinary funding; the checked theorem itself does not assign owners.
+\evidence{retraction_pays_only_the_refund_and_the_fee}
+\hand Conservation gives $F+P+f=H+I$. Subtracting $F\ge H$ gives the
+outside-address bound; any over-refund consumes ordinary funding as well.
 
 \hand For a rejection whose inputs are exactly its members, additionally
 assume \decl{Singular.balanced} and zero donation. Partition its outputs into
@@ -178,14 +204,18 @@ For one request, assume separate funder, destination, processor and treasury;
 write $b$ for the booking fee. Measure transfers from before booking, treat
 assets and application services separately, and count carrier value as an
 asset of the destination. The following illustrative accounting sums to
-minus the ledger fees, before external costs. No retraction row is presented
-as a balanced model transaction.
+minus the ledger fees, before external costs. In the funded retraction row,
+the funder owns the refund address and ordinary funding, and all remaining
+funding returns to it. This is an accepted model construction under the
+availability theorem's window, signing and funding premises, not every
+possible accepted retraction.
 \begin{center}\small
 \begin{tabular}{lrrrr}\toprule
 Outcome & Funder & Destination & Processor & Treasury\\\midrule
 Registration fold & $-R-t-a-b$ & $a$ & $t-f$ & $R$\\
 Termination fold & $-t-a-b$ & $0$ & $t-f$ & $a$\\
-Rejection, exact refund\! & $-t-b$ & $0$ & $t-f$ & $0$\\\bottomrule
+Rejection, exact refund\! & $-t-b$ & $0$ & $t-f$ & $0$\\
+Funded retraction & $-b-f$ & $0$ & $0$ & $0$\\\bottomrule
 \end{tabular}
 \end{center}
 \hand The first two rows sum to $-b-f$ by cancellation. The third does too
@@ -193,6 +223,9 @@ Rejection, exact refund\! & $-t-b$ & $0$ & $t-f$ & $0$\\\bottomrule
 funder's refund address, donates zero and returns the residue to its processor.
 These added hypotheses are not proved by the rejection judgement. Native
 asset values and a preexisting singular tag's valuation are excluded.
+The retraction row returns $H+I-f$ to the funder from its total $H+I+b$
+outlay, giving $-b-f$; it pays no processor or treasury allocation.
+\evidence{pending_registration_can_be_retracted}
 
 For example, with $R=2{,}000{,}000$, $t=400{,}000$, $a=1{,}500{,}000$,
 $b=200{,}000$ and $f=170{,}000$, a registration holds $3{,}900{,}000$.

@@ -1,10 +1,10 @@
 All entries below use revision
 \begin{center}\small\texttt{\modelpin}\end{center}
 with Lean 4.27.0. The command \texttt{lake env lean tools/axioms.lean}
-was run over an archive of that revision using the repository's seeded compiled
-modules at the same model source. Every listed declaration was separately
+was run in the worktree using its seeded compiled modules. The entire model
+source tree equals the pinned revision. Every listed declaration was separately
 confirmed by \texttt{git show} at the pin. The raw report's SHA-256 is
-\begin{center}\scriptsize\nolinkurl{1f8cf8a5c792a9419da90ef0ab465923248a74914790985c10943b71c1621a08}\end{center}
+\begin{center}\scriptsize\nolinkurl{d22520a04f196bfe52e69ac18d156cce82c78d34f4a6365a16a2138a2815a2f9}\end{center}
 No listed result uses \texttt{sorryAx} or an additional nonstandard axiom.
 The following are verbatim axiom lines, with typographic wrapping only.
 Source paths are relative to the repository at the stated revision.
@@ -39,12 +39,14 @@ Source paths are relative to the repository at the stated revision.
 \nolinkurl{lean/Singular/Statements/Preservation.lean:19}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.parameters_preserved_by_fold}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Preservation.lean:11}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.pending_registration_can_be_retracted}\texttt{ [propext, Quot.sound, Classical.choice]}\\
+\nolinkurl{lean/Singular/Statements/Retraction.lean:59}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.processors_take_at_most_the_tips}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/FoldAccounting.lean:50}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.refunds_sum_per_address}\texttt{ [propext, Quot.sound, Classical.choice]}\\
-\nolinkurl{lean/Singular/Statements/Refunds.lean:92}\\[5pt]
+\nolinkurl{lean/Singular/Statements/Refunds.lean:90}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.registration_cost_returned_on_exit}\texttt{ [propext, Quot.sound, Classical.choice]}\\
-\nolinkurl{lean/Singular/Statements/Refunds.lean:70}\\[5pt]
+\nolinkurl{lean/Singular/Statements/Refunds.lean:68}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.rejection_batch_members_distinct}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/RejectionState.lean:91}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.rejection_cannot_invalidate_fold}\texttt{ [propext, Quot.sound, Classical.choice]}\\
@@ -55,6 +57,8 @@ Source paths are relative to the repository at the stated revision.
 \nolinkurl{lean/Singular/Statements/Refunds.lean:12}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.rejection_requires_referenced_state}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/RejectionState.lean:43}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.retraction_pays_only_the_refund_and_the_fee}\texttt{ [propext, Quot.sound, Classical.choice]}\\
+\nolinkurl{lean/Singular/Statements/Retraction.lean:16}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.retraction_refund_floor}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Refunds.lean:30}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.sweep_leaves_pool_untouched}\texttt{ [propext, Quot.sound, Classical.choice]}\\

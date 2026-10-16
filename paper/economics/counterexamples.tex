@@ -25,9 +25,12 @@ authorizes every request also authorizes a stranger's registration of a
 desirable key. Paying $R$ does not prove a right to its name. A tag's unique
 custody is an asset invariant, not an ownership adjudication.
 
-\missing \textbf{Full refund is not fee-paying retractability.} A single
+\hand \textbf{A full refund needs separate fee funding.} A single
 $3{,}000{,}000$ input cannot return that full amount and also pay $170{,}000$.
-The current accepted-retraction theorem and this conservation counterexample
-coexist because its judgement omits balance and excludes a funding input.
-Changing the model or claiming real-ledger retraction requires a separate
-ruling and new evidence; the floor is not silently weakened here.
+This motivates the ordinary funding now admitted by the checked model.
+With $I=200{,}000$ and $f=170{,}000$, the constructed retraction returns
+$3{,}030{,}000$ to the refund address and balances. The values illustrate
+the availability theorem under its other premises; they are not ledger
+minimums or measured fees. Sending the remaining $30{,}000$ elsewhere would
+use ordinary funding, not the request, and the model could not tell another
+wallet's payment from the requester's change.

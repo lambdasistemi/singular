@@ -77,12 +77,11 @@ refund address and a contained reclaim interval, burns both tags, returns at
 least its entire $H$, reads and spends no state output, and removes that
 request from the pool.
 \evidence{retraction_refund_floor}
-\missing Retraction paying a ledger fee. The current judgement permits exactly
-the request input and proves a full refund, but does not assert balance. With
-$H=3{,}000{,}000$ and fee $170{,}000$, nonnegative donation and full refund
-would require $3{,}000{,}000\ge3{,}170{,}000$. An ordinary funding input is
-refused. Thus the floor theorem supplies no positive-fee ledger retraction;
-affected real-ledger acceptance remains open. No weaker refund is inferred.
+\checked The request is among the spending inputs; ordinary funding may
+accompany it. The retraction balances, pays its fee from that funding, donates
+zero and leaves the treasury unchanged. Value at other addresses is bounded
+by ordinary funding minus the fee. Neither the cost nor the tip can pay it.
+\evidence{retraction_pays_only_the_refund_and_the_fee}
 
 \paragraph{7. Charge and return.}
 \checked An economic fold registering $n$ keys donates at least $nR$;
@@ -125,6 +124,14 @@ saying a folder accepts its tip, there exist a coherent unspent set and an
 accepted singleton fold with interval $[u,u+1)$. It ends the key as Terminal,
 removes the request and produces a reachable world.
 \evidence{booked_termination_foldable}
+\checked For a pending registration in a reachable world, choose a nonempty
+interval wholly inside its booked reclaim window, signers including its
+refund address, and ordinary funding $I\ge f$. There exist a coherent unspent
+set, a balanced accepted retraction with exactly that interval, signers, fee
+and funding total, and a reachable after-world without the request. The full
+held lovelace is returned. The theorem permits a positive fee and does not
+require it to fit inside the refundable tip.
+\evidence{pending_registration_can_be_retracted}
 \missing The theorem constructs its own unspent set; it does not find funding
 or prove an accepted transaction over an arbitrary live ledger snapshot.
 Its witness includes a zero-lovelace state output, illustrating the absent
@@ -144,8 +151,9 @@ No exact rejection reward, positive wage or service incentive follows.
 cost in a declared envelope, including the reference read and required refund
 output. The derivation and assumptions follow in Section~\ref{sec:sizing}.
 \missing No checked declaration or completed measurement establishes this
-cost cover. The positive-fee retraction gap must be resolved before that exit
-can be included in an implementable fee envelope.
+cost cover. Retraction's modeled fee funding is explicit, but a measured
+ledger envelope and implementation correspondence remain open. Its refunded
+tip is not a processor payment and does not enter a processor-income floor.
 
 \paragraph{Supporting supply statement.}
 \checked In every reachable world, the number of trie-ready tags actually

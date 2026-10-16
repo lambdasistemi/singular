@@ -7,7 +7,7 @@
 \g@addto@macro\UrlBreaks{\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D\do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N\do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X\do\Y\do\Z}
 \makeatother
 \setlength{\emergencystretch}{2em}
-\newcommand{\modelpin}{303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d}
+\newcommand{\modelpin}{8451749d3752129fb1ae8b5ea03710c5cc305561}
 \newcommand{\checked}{\par\noindent\textcolor{green!35!black}{\textbf{Existing checked declaration.}}\ }
 \newcommand{\hand}{\par\noindent\textcolor{blue!65!black}{\textbf{Hand proof supplied.}}\ }
 \newcommand{\proposed}{\par\noindent\textcolor{violet}{\textbf{Proposed statement.}}\ }
@@ -152,6 +152,10 @@ tip and all carried lovelace. A registration's carrier remains locked in the
 delivered application output after a successful fold; it is not necessarily
 returned to its original funder. A termination can wait without a time bound,
 so its capital cost has no finite universal bound here.
+For a retraction the requester supplies ordinary lovelace funding for the
+ledger fee in addition to the held request value. Its tip is returned, not
+earned by a processor. Ownership of the funding is an economic assumption:
+the model observes values and addresses, not wallets.
 
 \input{mechanism.tex}
 \input{properties.tex}
@@ -209,6 +213,14 @@ ledger envelope remain open. No carrier amount is a registry parameter:
 the requester declares it under ledger minimum rules. Parameter sufficiency
 need not survive changes in fees, output sizes, minimums or exchange rates.
 No selected number is claimed optimal.
+
+Ordinary funding and change are lovelace only: both the economic fold and
+retraction refuse an unrelated native asset. Retraction has checked balance
+and conditional availability, but neither statement supplies wallet funds,
+computes a ledger minimum, proves builder success or guarantees inclusion.
+The model cannot distinguish change at another address from a third-party
+payment. Such outputs can consume only ordinary funding left after the fee,
+never the request's registration cost, carrier or tip.
 
 \input{counterexamples.tex}
 
