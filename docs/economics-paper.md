@@ -86,7 +86,7 @@ A zero donation omits the field. Conway transaction-body field 22 accepts a posi
 
 **Existing checked declaration** means the register below quotes the declaration's fresh axiom result at the exact model pin. **Hand proof supplied** means the paper gives an argument and its premises. **Proposed statement** means a conditional design or sizing criterion. **Missing mechanization** marks an unproved boundary. These four labels do not imply implementation conformance.
 
-The exact model revision is `8451749d3752129fb1ae8b5ea03710c5cc305561`, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.
+The exact model revision is `4254a3073fe0457946eba0a68d974c999c930ebf`, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.
 
 | Property | Status and actual scope |
 |---|---|

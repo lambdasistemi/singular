@@ -161,7 +161,7 @@
       "pause": 400
     },
     {
-      "text": "The exact model revision is 8451749d3752129fb1ae8b5ea03710c5cc305561, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+      "text": "The exact model revision is 4254a3073fe0457946eba0a68d974c999c930ebf, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
       "pause": 400
     }
   ],
@@ -229,6 +229,6 @@
   ],
   "_source": {
     "file": "economics-paper.md",
-    "sha256": "7fcfe67ce88cd33f01d95a7837e01e63c6601c2ab3cc696e62c4d3b30c72ba04"
+    "sha256": "f5ad2249450058e71e023662c19206a2705afc4f43a8ea5de11953d1539198cf"
   }
 }
