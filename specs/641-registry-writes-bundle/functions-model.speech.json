@@ -7,7 +7,7 @@
   ],
   "chained-view-module": [
     {
-      "text": "The chained view module answers a query, an asset history and a mint record as if the staged transactions had landed, and builds the session that serves those answers over a real one.",
+      "text": "The chained view module answers a query, an asset history and a mint record as if the staged transactions had landed, and builds the session that serves those answers over a real one. The history is numbered after the held view's tip height and honours the read's range, as a list and as a stream.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "functions-model.md",
-    "sha256": "09298fe80ba81c858135d8bf8d562a7529813546e2f83fb324523de0d5b5f689"
+    "sha256": "14dcd93e53f3d990406c47fe664503995e9db13875d919e24e085232ad86ae12"
   }
 }

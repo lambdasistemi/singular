@@ -10,7 +10,7 @@ The unsigned body as built, the step that built it, and its effect lines in the 
 
 ## Chained view
 
-A list of staged transactions in build order over a real session. Its answers: the chain's answer without the references the staged bodies spend, plus the outputs the staged bodies create that the query selects, for every query form; a reference a staged body creates is answered without asking the chain, and one a staged body spends answers as missing. The asset history is the chain's followed by one block per staged body that spends or creates an output holding that asset. The mint record of an asset a staged body mints comes from that body. Tip, protocol parameters, time and script registration are the chain's.
+A list of staged transactions in build order over a real session; each staged transaction carries its body and the outputs its inputs and reference inputs resolve to, read when it was staged. Its answers: the chain's answer without the references the staged bodies spend, plus the outputs the staged bodies create that the query selects, for every query form; a reference a staged body creates is answered without asking the chain, and one a staged body spends answers as missing. The asset history is the chain's followed by one block per staged body that spends or creates an output holding that asset, numbered after the held view's tip height in build order, with a read's inclusive range applied over the whole answer. A compound query refuses a reference two of its sub-answers return with different outputs, as the providers do. The mint record of an asset a staged body mints comes from that body. Tip, protocol parameters, time and script registration are the chain's.
 
 ## Bundle
 

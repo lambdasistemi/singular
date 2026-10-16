@@ -5,7 +5,8 @@ Names, argument names and result types only. No bodies.
 ## Chained view module
 
 - `chainedAnswer(staged, query, chainAnswer)`: the outputs the chain would answer to the query after the staged transactions landed, given the chain's own answer to the part of the query the staged transactions do not serve. Pure.
-- `chainedHistory(staged, asset, chainBlocks)`: the asset's history blocks followed by one block per staged transaction that spends or creates an output holding it. Pure.
+- `chainedHistory(staged, asset, tipHeight, range, chainBlocks)`: the asset's history blocks followed by one block per staged transaction that spends or creates an output holding it, numbered after `tipHeight` in build order, with the inclusive `range` applied over the whole answer. Pure.
+- `chainedHistoryStream(staged, asset, tipHeight, range, chainStream)`: the same answer as a stream over the chain's range-limited stream; an upstream failure stays a failure.
 - `chainedMintRecord(staged, asset, chainRecord)`: the mint record of the asset, from the staged transaction that mints it when there is one. Pure.
 - `chainedSession(stagedNow, session)`: a session whose reads answer as if the staged transactions read by `stagedNow` at acquisition had landed; every read the staged list does not change goes to `session`.
 
