@@ -75,13 +75,31 @@
       "pause": 400
     }
   ],
+  "a-closed-registry-refuses-an-update": [
+    {
+      "text": "A closed registry refuses an update.",
+      "pause": 500
+    },
+    {
+      "text": "Some registries are closed: created with open-datum create --closed, their payloads are written once, and no update ever lands. The ordinary client says so before it builds anything — an update on a closed registry is refused on the machine, with nothing submitted. The host skips the client and asks the chain instead.",
+      "pause": 400
+    },
+    {
+      "text": "Alice registers alice-1 in a closed registry and folds it active, both with the ordinary commands. Through the host she then submits her own honest update of that key, signed by her, with no tamper flag and no local evaluation. The node refuses it, and the verdict names the registry's own closed application in the spending role: the refusal comes from the chain's script, not from the client's policy. A fresh read shows the registry exactly as it was. The create receipt names the closed application, and its pin is the closed pin — it matches the closed preview's pin and differs from the open pin of the same seed, so the refused script can only be closed-datum's.",
+      "pause": 400
+    },
+    {
+      "text": "The control runs in the same registry, on the same key: Alice books its termination and folds it, with the ordinary commands. The node accepts both, and the key reads as terminal. The chain refuses the update and nothing else.",
+      "pause": 400
+    }
+  ],
   "every-forbidden-move-and-what-refuses-it": [
     {
       "text": "Every forbidden move, and what refuses it.",
       "pause": 500
     },
     {
-      "text": "The scenario set is thirteen pairs in nine stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind each refusal are on the ticket's data model page.",
+      "text": "The scenario set is fourteen pairs in ten stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind the thirteen open-registry refusals are on the ticket's data model page. The write-once rule behind closed-update has no Lean statement, by operator ruling: the closed registry's refusal is shown by the run, not by a theorem.",
       "pause": 400
     },
     {
@@ -137,7 +155,7 @@
       "pause": 400
     },
     {
-      "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The thirteen scenario names are the pairs of the table above.",
+      "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The fourteen scenario names are the pairs of the table above.",
       "pause": 400
     },
     {
@@ -181,7 +199,7 @@
       "pause": 300
     },
     {
-      "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
+      "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Nine mutants cover all fourteen pairs.",
       "pause": 300
     },
     {
@@ -203,6 +221,6 @@
   ],
   "_source": {
     "file": "negative-host.md",
-    "sha256": "9907d5bd089f31d273e252ec01871087c4162a94abe6c2cf46092e4c99a16b10"
+    "sha256": "ca845660db3fceb2497e5e18891e0c10bc0087d3c95a3753b21ef55a3462986a"
   }
 }

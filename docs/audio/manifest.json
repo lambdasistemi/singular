@@ -147290,6 +147290,1291 @@
     }
    ]
   },
+  "docs-negative-host/a-closed-registry-refuses-an-update-00": {
+   "audio_sha256": "e51e64162ef03b2bb4de9e7c993e715a109bc7cdc6d1d4f4e533a1f0cd7da534",
+   "characters": 36,
+   "cost": 3.564e-05,
+   "duration": 2.75,
+   "index": 0,
+   "key": "6608ccf079476e0981dd731a4a567c224bbcc69066febb41175ef55ae934fe75",
+   "page": "docs/negative-host.md",
+   "pause_ms": 500,
+   "section": "a-closed-registry-refuses-an-update",
+   "sent_text": "A closed registry refuses an update.",
+   "text": "A closed registry refuses an update.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "A"
+    },
+    {
+     "end": 0.625,
+     "start": 0.25,
+     "text": "closed"
+    },
+    {
+     "end": 1.1,
+     "start": 0.625,
+     "text": "registry"
+    },
+    {
+     "end": 1.562,
+     "start": 1.1,
+     "text": "refuses"
+    },
+    {
+     "end": 1.65,
+     "start": 1.562,
+     "text": "an"
+    },
+    {
+     "end": 2.55,
+     "start": 1.65,
+     "text": "update"
+    },
+    {
+     "end": 2.75,
+     "start": 2.55,
+     "text": "."
+    }
+   ]
+  },
+  "docs-negative-host/a-closed-registry-refuses-an-update-01": {
+   "audio_sha256": "9046d2d35559a725ad9e998c9cd3bc05724ebd0a349b0cd0e32445fbf7d28eed",
+   "characters": 319,
+   "cost": 0.00031581,
+   "duration": 21.425,
+   "index": 1,
+   "key": "71ec945bae2ca2d99c9cac0f0888027c5199ab69e7a6c8ffda2a6e36193dd4f1",
+   "page": "docs/negative-host.md",
+   "pause_ms": 400,
+   "section": "a-closed-registry-refuses-an-update",
+   "sent_text": "Some registries are closed: created with open-datum create --closed, their payloads are written once, and no update ever lands. The ordinary client says so before it builds anything — an update on a closed registry is refused on the machine, with nothing submitted. The host skips the client and asks the chain instead.",
+   "text": "Some registries are closed: created with open-datum create --closed, their payloads are written once, and no update ever lands. The ordinary client says so before it builds anything — an update on a closed registry is refused on the machine, with nothing submitted. The host skips the client and asks the chain instead.",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.2,
+     "text": "Some"
+    },
+    {
+     "end": 0.887,
+     "start": 0.375,
+     "text": "registries"
+    },
+    {
+     "end": 0.975,
+     "start": 0.887,
+     "text": "are"
+    },
+    {
+     "end": 1.775,
+     "start": 0.975,
+     "text": "closed"
+    },
+    {
+     "end": 1.975,
+     "start": 1.775,
+     "text": ":"
+    },
+    {
+     "end": 2.625,
+     "start": 2.175,
+     "text": "created"
+    },
+    {
+     "end": 2.8,
+     "start": 2.625,
+     "text": "with"
+    },
+    {
+     "end": 3.475,
+     "start": 2.8,
+     "text": "open-datum"
+    },
+    {
+     "end": 3.888,
+     "start": 3.475,
+     "text": "create"
+    },
+    {
+     "end": 4.475,
+     "start": 3.888,
+     "text": "closed"
+    },
+    {
+     "end": 4.55,
+     "start": 4.475,
+     "text": ","
+    },
+    {
+     "end": 4.738,
+     "start": 4.55,
+     "text": "their"
+    },
+    {
+     "end": 5.25,
+     "start": 4.738,
+     "text": "payloads"
+    },
+    {
+     "end": 5.387,
+     "start": 5.25,
+     "text": "are"
+    },
+    {
+     "end": 5.675,
+     "start": 5.387,
+     "text": "written"
+    },
+    {
+     "end": 6.05,
+     "start": 5.675,
+     "text": "once"
+    },
+    {
+     "end": 6.1,
+     "start": 6.05,
+     "text": ","
+    },
+    {
+     "end": 6.225,
+     "start": 6.1,
+     "text": "and"
+    },
+    {
+     "end": 6.5,
+     "start": 6.225,
+     "text": "no"
+    },
+    {
+     "end": 6.95,
+     "start": 6.5,
+     "text": "update"
+    },
+    {
+     "end": 7.225,
+     "start": 6.95,
+     "text": "ever"
+    },
+    {
+     "end": 8.3,
+     "start": 7.225,
+     "text": "lands"
+    },
+    {
+     "end": 8.525,
+     "start": 8.3,
+     "text": "."
+    },
+    {
+     "end": 8.863,
+     "start": 8.725,
+     "text": "The"
+    },
+    {
+     "end": 9.387,
+     "start": 8.863,
+     "text": "ordinary"
+    },
+    {
+     "end": 9.887,
+     "start": 9.387,
+     "text": "client"
+    },
+    {
+     "end": 10.188,
+     "start": 9.887,
+     "text": "says"
+    },
+    {
+     "end": 10.45,
+     "start": 10.188,
+     "text": "so"
+    },
+    {
+     "end": 10.85,
+     "start": 10.45,
+     "text": "before"
+    },
+    {
+     "end": 10.975,
+     "start": 10.85,
+     "text": "it"
+    },
+    {
+     "end": 11.312,
+     "start": 10.975,
+     "text": "builds"
+    },
+    {
+     "end": 11.975,
+     "start": 11.312,
+     "text": "anything"
+    },
+    {
+     "end": 12.05,
+     "start": 11.975,
+     "text": "—"
+    },
+    {
+     "end": 12.212,
+     "start": 12.05,
+     "text": "an"
+    },
+    {
+     "end": 12.663,
+     "start": 12.212,
+     "text": "update"
+    },
+    {
+     "end": 12.788,
+     "start": 12.663,
+     "text": "on"
+    },
+    {
+     "end": 12.887,
+     "start": 12.788,
+     "text": "a"
+    },
+    {
+     "end": 13.375,
+     "start": 12.887,
+     "text": "closed"
+    },
+    {
+     "end": 13.988,
+     "start": 13.375,
+     "text": "registry"
+    },
+    {
+     "end": 14.15,
+     "start": 13.988,
+     "text": "is"
+    },
+    {
+     "end": 14.738,
+     "start": 14.15,
+     "text": "refused"
+    },
+    {
+     "end": 14.863,
+     "start": 14.738,
+     "text": "on"
+    },
+    {
+     "end": 14.95,
+     "start": 14.863,
+     "text": "the"
+    },
+    {
+     "end": 16.15,
+     "start": 14.95,
+     "text": "machine"
+    },
+    {
+     "end": 16.375,
+     "start": 16.15,
+     "text": ","
+    },
+    {
+     "end": 16.7,
+     "start": 16.55,
+     "text": "with"
+    },
+    {
+     "end": 17.025,
+     "start": 16.7,
+     "text": "nothing"
+    },
+    {
+     "end": 17.925,
+     "start": 17.025,
+     "text": "submitted"
+    },
+    {
+     "end": 18.125,
+     "start": 17.925,
+     "text": "."
+    },
+    {
+     "end": 18.375,
+     "start": 18.3,
+     "text": "The"
+    },
+    {
+     "end": 18.663,
+     "start": 18.375,
+     "text": "host"
+    },
+    {
+     "end": 18.938,
+     "start": 18.663,
+     "text": "skips"
+    },
+    {
+     "end": 19.025,
+     "start": 18.938,
+     "text": "the"
+    },
+    {
+     "end": 19.475,
+     "start": 19.025,
+     "text": "client"
+    },
+    {
+     "end": 19.6,
+     "start": 19.475,
+     "text": "and"
+    },
+    {
+     "end": 19.925,
+     "start": 19.6,
+     "text": "asks"
+    },
+    {
+     "end": 20.025,
+     "start": 19.925,
+     "text": "the"
+    },
+    {
+     "end": 20.263,
+     "start": 20.025,
+     "text": "chain"
+    },
+    {
+     "end": 21.225,
+     "start": 20.263,
+     "text": "instead"
+    },
+    {
+     "end": 21.425,
+     "start": 21.225,
+     "text": "."
+    }
+   ]
+  },
+  "docs-negative-host/a-closed-registry-refuses-an-update-02": {
+   "audio_sha256": "c11f9114019d1ccd256cde73c4305399e8e7655af295ef1ee455dd293db34f00",
+   "characters": 669,
+   "cost": 0.0006623099999999999,
+   "duration": 44.35,
+   "index": 2,
+   "key": "fa70fdf1e2a4ca8eb0e29909362c22b92608d0f4d501fcb561a3d047774477d0",
+   "page": "docs/negative-host.md",
+   "pause_ms": 400,
+   "section": "a-closed-registry-refuses-an-update",
+   "sent_text": "Alice registers alice-1 in a closed registry and folds it active, both with the ordinary commands. Through the host she then submits her own honest update of that key, signed by her, with no tamper flag and no local evaluation. The node refuses it, and the verdict names the registry's own closed application in the spending role: the refusal comes from the chain's script, not from the client's policy. A fresh read shows the registry exactly as it was. The create receipt names the closed application, and its pin is the closed pin — it matches the closed preview's pin and differs from the open pin of the same seed, so the refused script can only be closed-datum's.",
+   "text": "Alice registers alice-1 in a closed registry and folds it active, both with the ordinary commands. Through the host she then submits her own honest update of that key, signed by her, with no tamper flag and no local evaluation. The node refuses it, and the verdict names the registry's own closed application in the spending role: the refusal comes from the chain's script, not from the client's policy. A fresh read shows the registry exactly as it was. The create receipt names the closed application, and its pin is the closed pin — it matches the closed preview's pin and differs from the open pin of the same seed, so the refused script can only be closed-datum's.",
+   "words": [
+    {
+     "end": 0.575,
+     "start": 0.225,
+     "text": "Alice"
+    },
+    {
+     "end": 1.138,
+     "start": 0.575,
+     "text": "registers"
+    },
+    {
+     "end": 1.875,
+     "start": 1.138,
+     "text": "alice-1"
+    },
+    {
+     "end": 1.962,
+     "start": 1.875,
+     "text": "in"
+    },
+    {
+     "end": 2.062,
+     "start": 1.962,
+     "text": "a"
+    },
+    {
+     "end": 2.55,
+     "start": 2.062,
+     "text": "closed"
+    },
+    {
+     "end": 3.162,
+     "start": 2.55,
+     "text": "registry"
+    },
+    {
+     "end": 3.312,
+     "start": 3.162,
+     "text": "and"
+    },
+    {
+     "end": 3.662,
+     "start": 3.312,
+     "text": "folds"
+    },
+    {
+     "end": 3.812,
+     "start": 3.662,
+     "text": "it"
+    },
+    {
+     "end": 4.375,
+     "start": 3.812,
+     "text": "active"
+    },
+    {
+     "end": 4.488,
+     "start": 4.375,
+     "text": ","
+    },
+    {
+     "end": 4.85,
+     "start": 4.488,
+     "text": "both"
+    },
+    {
+     "end": 4.988,
+     "start": 4.85,
+     "text": "with"
+    },
+    {
+     "end": 5.1,
+     "start": 4.988,
+     "text": "the"
+    },
+    {
+     "end": 5.6,
+     "start": 5.1,
+     "text": "ordinary"
+    },
+    {
+     "end": 6.85,
+     "start": 5.6,
+     "text": "commands"
+    },
+    {
+     "end": 7.075,
+     "start": 6.85,
+     "text": "."
+    },
+    {
+     "end": 7.475,
+     "start": 7.275,
+     "text": "Through"
+    },
+    {
+     "end": 7.6,
+     "start": 7.475,
+     "text": "the"
+    },
+    {
+     "end": 7.975,
+     "start": 7.6,
+     "text": "host"
+    },
+    {
+     "end": 8.125,
+     "start": 7.975,
+     "text": "she"
+    },
+    {
+     "end": 8.35,
+     "start": 8.125,
+     "text": "then"
+    },
+    {
+     "end": 8.762,
+     "start": 8.35,
+     "text": "submits"
+    },
+    {
+     "end": 8.913,
+     "start": 8.762,
+     "text": "her"
+    },
+    {
+     "end": 9.238,
+     "start": 8.913,
+     "text": "own"
+    },
+    {
+     "end": 9.65,
+     "start": 9.238,
+     "text": "honest"
+    },
+    {
+     "end": 10.062,
+     "start": 9.65,
+     "text": "update"
+    },
+    {
+     "end": 10.15,
+     "start": 10.062,
+     "text": "of"
+    },
+    {
+     "end": 10.438,
+     "start": 10.15,
+     "text": "that"
+    },
+    {
+     "end": 10.85,
+     "start": 10.438,
+     "text": "key"
+    },
+    {
+     "end": 10.988,
+     "start": 10.85,
+     "text": ","
+    },
+    {
+     "end": 11.3,
+     "start": 10.988,
+     "text": "signed"
+    },
+    {
+     "end": 11.525,
+     "start": 11.3,
+     "text": "by"
+    },
+    {
+     "end": 12.275,
+     "start": 11.525,
+     "text": "her"
+    },
+    {
+     "end": 12.55,
+     "start": 12.275,
+     "text": ","
+    },
+    {
+     "end": 12.875,
+     "start": 12.725,
+     "text": "with"
+    },
+    {
+     "end": 13.05,
+     "start": 12.875,
+     "text": "no"
+    },
+    {
+     "end": 13.45,
+     "start": 13.05,
+     "text": "tamper"
+    },
+    {
+     "end": 13.887,
+     "start": 13.45,
+     "text": "flag"
+    },
+    {
+     "end": 14.025,
+     "start": 13.887,
+     "text": "and"
+    },
+    {
+     "end": 14.2,
+     "start": 14.025,
+     "text": "no"
+    },
+    {
+     "end": 14.488,
+     "start": 14.2,
+     "text": "local"
+    },
+    {
+     "end": 15.725,
+     "start": 14.488,
+     "text": "evaluation"
+    },
+    {
+     "end": 15.9,
+     "start": 15.725,
+     "text": "."
+    },
+    {
+     "end": 16.2,
+     "start": 16.1,
+     "text": "The"
+    },
+    {
+     "end": 16.55,
+     "start": 16.2,
+     "text": "node"
+    },
+    {
+     "end": 17.212,
+     "start": 16.55,
+     "text": "refuses"
+    },
+    {
+     "end": 17.4,
+     "start": 17.212,
+     "text": "it"
+    },
+    {
+     "end": 17.475,
+     "start": 17.4,
+     "text": ","
+    },
+    {
+     "end": 17.587,
+     "start": 17.475,
+     "text": "and"
+    },
+    {
+     "end": 17.675,
+     "start": 17.587,
+     "text": "the"
+    },
+    {
+     "end": 18.125,
+     "start": 17.675,
+     "text": "verdict"
+    },
+    {
+     "end": 18.475,
+     "start": 18.125,
+     "text": "names"
+    },
+    {
+     "end": 18.6,
+     "start": 18.475,
+     "text": "the"
+    },
+    {
+     "end": 19.263,
+     "start": 18.6,
+     "text": "registry's"
+    },
+    {
+     "end": 19.538,
+     "start": 19.263,
+     "text": "own"
+    },
+    {
+     "end": 20.05,
+     "start": 19.538,
+     "text": "closed"
+    },
+    {
+     "end": 20.775,
+     "start": 20.05,
+     "text": "application"
+    },
+    {
+     "end": 20.862,
+     "start": 20.775,
+     "text": "in"
+    },
+    {
+     "end": 20.95,
+     "start": 20.862,
+     "text": "the"
+    },
+    {
+     "end": 21.425,
+     "start": 20.95,
+     "text": "spending"
+    },
+    {
+     "end": 22.4,
+     "start": 21.425,
+     "text": "role"
+    },
+    {
+     "end": 22.6,
+     "start": 22.4,
+     "text": ":"
+    },
+    {
+     "end": 22.85,
+     "start": 22.775,
+     "text": "the"
+    },
+    {
+     "end": 23.35,
+     "start": 22.85,
+     "text": "refusal"
+    },
+    {
+     "end": 23.65,
+     "start": 23.35,
+     "text": "comes"
+    },
+    {
+     "end": 23.788,
+     "start": 23.65,
+     "text": "from"
+    },
+    {
+     "end": 23.888,
+     "start": 23.788,
+     "text": "the"
+    },
+    {
+     "end": 24.263,
+     "start": 23.888,
+     "text": "chain's"
+    },
+    {
+     "end": 24.775,
+     "start": 24.263,
+     "text": "script"
+    },
+    {
+     "end": 24.85,
+     "start": 24.775,
+     "text": ","
+    },
+    {
+     "end": 25.075,
+     "start": 24.85,
+     "text": "not"
+    },
+    {
+     "end": 25.212,
+     "start": 25.075,
+     "text": "from"
+    },
+    {
+     "end": 25.3,
+     "start": 25.212,
+     "text": "the"
+    },
+    {
+     "end": 25.7,
+     "start": 25.3,
+     "text": "client's"
+    },
+    {
+     "end": 26.75,
+     "start": 25.7,
+     "text": "policy"
+    },
+    {
+     "end": 26.95,
+     "start": 26.75,
+     "text": "."
+    },
+    {
+     "end": 27.212,
+     "start": 27.125,
+     "text": "A"
+    },
+    {
+     "end": 27.5,
+     "start": 27.212,
+     "text": "fresh"
+    },
+    {
+     "end": 27.812,
+     "start": 27.5,
+     "text": "read"
+    },
+    {
+     "end": 28.087,
+     "start": 27.812,
+     "text": "shows"
+    },
+    {
+     "end": 28.175,
+     "start": 28.087,
+     "text": "the"
+    },
+    {
+     "end": 28.675,
+     "start": 28.175,
+     "text": "registry"
+    },
+    {
+     "end": 29.25,
+     "start": 28.675,
+     "text": "exactly"
+    },
+    {
+     "end": 29.362,
+     "start": 29.25,
+     "text": "as"
+    },
+    {
+     "end": 29.45,
+     "start": 29.362,
+     "text": "it"
+    },
+    {
+     "end": 30.275,
+     "start": 29.45,
+     "text": "was"
+    },
+    {
+     "end": 30.475,
+     "start": 30.275,
+     "text": "."
+    },
+    {
+     "end": 30.725,
+     "start": 30.65,
+     "text": "The"
+    },
+    {
+     "end": 31.038,
+     "start": 30.725,
+     "text": "create"
+    },
+    {
+     "end": 31.425,
+     "start": 31.038,
+     "text": "receipt"
+    },
+    {
+     "end": 31.688,
+     "start": 31.425,
+     "text": "names"
+    },
+    {
+     "end": 31.775,
+     "start": 31.688,
+     "text": "the"
+    },
+    {
+     "end": 32.162,
+     "start": 31.775,
+     "text": "closed"
+    },
+    {
+     "end": 33.35,
+     "start": 32.162,
+     "text": "application"
+    },
+    {
+     "end": 33.55,
+     "start": 33.35,
+     "text": ","
+    },
+    {
+     "end": 33.888,
+     "start": 33.775,
+     "text": "and"
+    },
+    {
+     "end": 34.088,
+     "start": 33.888,
+     "text": "its"
+    },
+    {
+     "end": 34.463,
+     "start": 34.088,
+     "text": "pin"
+    },
+    {
+     "end": 34.625,
+     "start": 34.463,
+     "text": "is"
+    },
+    {
+     "end": 34.763,
+     "start": 34.625,
+     "text": "the"
+    },
+    {
+     "end": 35.263,
+     "start": 34.763,
+     "text": "closed"
+    },
+    {
+     "end": 35.812,
+     "start": 35.263,
+     "text": "pin"
+    },
+    {
+     "end": 35.912,
+     "start": 35.812,
+     "text": "—"
+    },
+    {
+     "end": 36.075,
+     "start": 35.912,
+     "text": "it"
+    },
+    {
+     "end": 36.5,
+     "start": 36.075,
+     "text": "matches"
+    },
+    {
+     "end": 36.638,
+     "start": 36.5,
+     "text": "the"
+    },
+    {
+     "end": 37.125,
+     "start": 36.638,
+     "text": "closed"
+    },
+    {
+     "end": 37.638,
+     "start": 37.125,
+     "text": "preview's"
+    },
+    {
+     "end": 37.987,
+     "start": 37.638,
+     "text": "pin"
+    },
+    {
+     "end": 38.125,
+     "start": 37.987,
+     "text": "and"
+    },
+    {
+     "end": 38.475,
+     "start": 38.125,
+     "text": "differs"
+    },
+    {
+     "end": 38.612,
+     "start": 38.475,
+     "text": "from"
+    },
+    {
+     "end": 38.737,
+     "start": 38.612,
+     "text": "the"
+    },
+    {
+     "end": 39.1,
+     "start": 38.737,
+     "text": "open"
+    },
+    {
+     "end": 39.338,
+     "start": 39.1,
+     "text": "pin"
+    },
+    {
+     "end": 39.412,
+     "start": 39.338,
+     "text": "of"
+    },
+    {
+     "end": 39.537,
+     "start": 39.412,
+     "text": "the"
+    },
+    {
+     "end": 39.888,
+     "start": 39.537,
+     "text": "same"
+    },
+    {
+     "end": 40.9,
+     "start": 39.888,
+     "text": "seed"
+    },
+    {
+     "end": 41.125,
+     "start": 40.9,
+     "text": ","
+    },
+    {
+     "end": 41.412,
+     "start": 41.325,
+     "text": "so"
+    },
+    {
+     "end": 41.5,
+     "start": 41.412,
+     "text": "the"
+    },
+    {
+     "end": 41.925,
+     "start": 41.5,
+     "text": "refused"
+    },
+    {
+     "end": 42.3,
+     "start": 41.925,
+     "text": "script"
+    },
+    {
+     "end": 42.425,
+     "start": 42.3,
+     "text": "can"
+    },
+    {
+     "end": 42.688,
+     "start": 42.425,
+     "text": "only"
+    },
+    {
+     "end": 42.825,
+     "start": 42.688,
+     "text": "be"
+    },
+    {
+     "end": 44.15,
+     "start": 42.825,
+     "text": "closed-datum's"
+    },
+    {
+     "end": 44.35,
+     "start": 44.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-negative-host/a-closed-registry-refuses-an-update-03": {
+   "audio_sha256": "6c118a393dd3a13ca4a9bc3de17a508d4bf57a5428ed7f110c451c05262b1340",
+   "characters": 226,
+   "cost": 0.00022373999999999997,
+   "duration": 14.425,
+   "index": 3,
+   "key": "7433c76eddf138e8a564bec97b4305747ac3366fdc2b4760755f083c7a528a56",
+   "page": "docs/negative-host.md",
+   "pause_ms": 400,
+   "section": "a-closed-registry-refuses-an-update",
+   "sent_text": "The control runs in the same registry, on the same key: Alice books its termination and folds it, with the ordinary commands. The node accepts both, and the key reads as terminal. The chain refuses the update and nothing else.",
+   "text": "The control runs in the same registry, on the same key: Alice books its termination and folds it, with the ordinary commands. The node accepts both, and the key reads as terminal. The chain refuses the update and nothing else.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.8,
+     "start": 0.25,
+     "text": "control"
+    },
+    {
+     "end": 1.062,
+     "start": 0.8,
+     "text": "runs"
+    },
+    {
+     "end": 1.138,
+     "start": 1.062,
+     "text": "in"
+    },
+    {
+     "end": 1.225,
+     "start": 1.138,
+     "text": "the"
+    },
+    {
+     "end": 1.475,
+     "start": 1.225,
+     "text": "same"
+    },
+    {
+     "end": 2.025,
+     "start": 1.475,
+     "text": "registry"
+    },
+    {
+     "end": 2.1,
+     "start": 2.025,
+     "text": ","
+    },
+    {
+     "end": 2.237,
+     "start": 2.1,
+     "text": "on"
+    },
+    {
+     "end": 2.325,
+     "start": 2.237,
+     "text": "the"
+    },
+    {
+     "end": 2.612,
+     "start": 2.325,
+     "text": "same"
+    },
+    {
+     "end": 3.375,
+     "start": 2.612,
+     "text": "key"
+    },
+    {
+     "end": 3.6,
+     "start": 3.375,
+     "text": ":"
+    },
+    {
+     "end": 4.125,
+     "start": 3.8,
+     "text": "Alice"
+    },
+    {
+     "end": 4.338,
+     "start": 4.125,
+     "text": "books"
+    },
+    {
+     "end": 4.525,
+     "start": 4.338,
+     "text": "its"
+    },
+    {
+     "end": 5.338,
+     "start": 4.525,
+     "text": "termination"
+    },
+    {
+     "end": 5.488,
+     "start": 5.338,
+     "text": "and"
+    },
+    {
+     "end": 5.9,
+     "start": 5.488,
+     "text": "folds"
+    },
+    {
+     "end": 6.05,
+     "start": 5.9,
+     "text": "it"
+    },
+    {
+     "end": 6.088,
+     "start": 6.05,
+     "text": ","
+    },
+    {
+     "end": 6.213,
+     "start": 6.088,
+     "text": "with"
+    },
+    {
+     "end": 6.325,
+     "start": 6.213,
+     "text": "the"
+    },
+    {
+     "end": 6.825,
+     "start": 6.325,
+     "text": "ordinary"
+    },
+    {
+     "end": 7.875,
+     "start": 6.825,
+     "text": "commands"
+    },
+    {
+     "end": 8.075,
+     "start": 7.875,
+     "text": "."
+    },
+    {
+     "end": 8.325,
+     "start": 8.25,
+     "text": "The"
+    },
+    {
+     "end": 8.562,
+     "start": 8.325,
+     "text": "node"
+    },
+    {
+     "end": 8.975,
+     "start": 8.562,
+     "text": "accepts"
+    },
+    {
+     "end": 9.325,
+     "start": 8.975,
+     "text": "both"
+    },
+    {
+     "end": 9.375,
+     "start": 9.325,
+     "text": ","
+    },
+    {
+     "end": 9.488,
+     "start": 9.375,
+     "text": "and"
+    },
+    {
+     "end": 9.575,
+     "start": 9.488,
+     "text": "the"
+    },
+    {
+     "end": 9.837,
+     "start": 9.575,
+     "text": "key"
+    },
+    {
+     "end": 10.175,
+     "start": 9.837,
+     "text": "reads"
+    },
+    {
+     "end": 10.325,
+     "start": 10.175,
+     "text": "as"
+    },
+    {
+     "end": 11.3,
+     "start": 10.325,
+     "text": "terminal"
+    },
+    {
+     "end": 11.5,
+     "start": 11.3,
+     "text": "."
+    },
+    {
+     "end": 11.75,
+     "start": 11.675,
+     "text": "The"
+    },
+    {
+     "end": 12.0,
+     "start": 11.75,
+     "text": "chain"
+    },
+    {
+     "end": 12.462,
+     "start": 12.0,
+     "text": "refuses"
+    },
+    {
+     "end": 12.575,
+     "start": 12.462,
+     "text": "the"
+    },
+    {
+     "end": 13.025,
+     "start": 12.575,
+     "text": "update"
+    },
+    {
+     "end": 13.15,
+     "start": 13.025,
+     "text": "and"
+    },
+    {
+     "end": 13.45,
+     "start": 13.15,
+     "text": "nothing"
+    },
+    {
+     "end": 14.225,
+     "start": 13.45,
+     "text": "else"
+    },
+    {
+     "end": 14.425,
+     "start": 14.225,
+     "text": "."
+    }
+   ]
+  },
   "docs-negative-host/a-refused-insertion-strands-a-booking-and-its-owner-reclaims-it-00": {
    "audio_sha256": "3585220d661acdd523a53391ae8c80f9b0366efef35d90684fbf83f1309a4e53",
    "characters": 65,
@@ -148451,17 +149736,17 @@
    ]
   },
   "docs-negative-host/every-forbidden-move-and-what-refuses-it-01": {
-   "audio_sha256": "241d1db43c4f9d7929b4b12ca209a75eba5169119f73d9b7162b30c95853b589",
-   "characters": 411,
-   "cost": 0.00040689,
-   "duration": 29.95,
+   "audio_sha256": "71a9f0d09babf56d39aed949970cb9453df465d07126630592d0d61d54b3690c",
+   "characters": 586,
+   "cost": 0.0005801399999999999,
+   "duration": 41.775,
    "index": 1,
-   "key": "d496cdf82d23551446303f97ce6e0f45e5935dc67a7a04e383ef3db86edc4f17",
+   "key": "44a51eab95d4a93858a961d01be62b36e2df620de4028e3384a2f0e0a99b6ca5",
    "page": "docs/negative-host.md",
    "pause_ms": 400,
    "section": "every-forbidden-move-and-what-refuses-it",
-   "sent_text": "The scenario set is thirteen pairs in nine stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind each refusal are on the ticket's data model page.",
-   "text": "The scenario set is thirteen pairs in nine stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind each refusal are on the ticket's data model page.",
+   "sent_text": "The scenario set is fourteen pairs in ten stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind the thirteen open-registry refusals are on the ticket's data model page. The write-once rule behind closed-update has no Lean statement, by operator ruling: the closed registry's refusal is shown by the run, not by a theorem.",
+   "text": "The scenario set is fourteen pairs in ten stories: the rewrite of a protected field has five variants, one per protected field. Each pair is one forbidden command and its accepting control, run on a fresh development node from the extracted release archive. The pair list itself lives in applications/open-datum/negative/pairs.json; the model statements behind the thirteen open-registry refusals are on the ticket's data model page. The write-once rule behind closed-update has no Lean statement, by operator ruling: the closed registry's refusal is shown by the run, not by a theorem.",
    "words": [
     {
      "end": 0.25,
@@ -148469,24 +149754,24 @@
      "text": "The"
     },
     {
-     "end": 0.75,
+     "end": 0.725,
      "start": 0.25,
      "text": "scenario"
     },
     {
-     "end": 0.975,
-     "start": 0.75,
+     "end": 0.925,
+     "start": 0.725,
      "text": "set"
     },
     {
-     "end": 1.125,
-     "start": 0.975,
+     "end": 1.075,
+     "start": 0.925,
      "text": "is"
     },
     {
      "end": 1.55,
-     "start": 1.125,
-     "text": "thirteen"
+     "start": 1.075,
+     "text": "fourteen"
     },
     {
      "end": 1.875,
@@ -148494,18 +149779,18 @@
      "text": "pairs"
     },
     {
-     "end": 1.975,
+     "end": 2.025,
      "start": 1.875,
      "text": "in"
     },
     {
-     "end": 2.25,
-     "start": 1.975,
-     "text": "nine"
+     "end": 2.275,
+     "start": 2.025,
+     "text": "ten"
     },
     {
      "end": 3.25,
-     "start": 2.25,
+     "start": 2.275,
      "text": "stories"
     },
     {
@@ -148744,73 +150029,228 @@
      "text": ";"
     },
     {
-     "end": 24.825,
-     "start": 24.725,
+     "end": 24.85,
+     "start": 24.75,
      "text": "the"
     },
     {
-     "end": 25.2,
-     "start": 24.825,
+     "end": 25.225,
+     "start": 24.85,
      "text": "model"
     },
     {
-     "end": 25.7,
-     "start": 25.2,
+     "end": 25.75,
+     "start": 25.225,
      "text": "statements"
     },
     {
-     "end": 26.2,
-     "start": 25.7,
+     "end": 26.188,
+     "start": 25.75,
      "text": "behind"
     },
     {
-     "end": 26.425,
-     "start": 26.2,
-     "text": "each"
-    },
-    {
-     "end": 27.225,
-     "start": 26.425,
-     "text": "refusal"
-    },
-    {
-     "end": 27.4,
-     "start": 27.225,
-     "text": "are"
-    },
-    {
-     "end": 27.538,
-     "start": 27.4,
-     "text": "on"
-    },
-    {
-     "end": 27.638,
-     "start": 27.538,
+     "end": 26.312,
+     "start": 26.188,
      "text": "the"
     },
     {
-     "end": 28.075,
-     "start": 27.638,
+     "end": 26.925,
+     "start": 26.312,
+     "text": "thirteen"
+    },
+    {
+     "end": 27.725,
+     "start": 26.925,
+     "text": "open-registry"
+    },
+    {
+     "end": 28.5,
+     "start": 27.725,
+     "text": "refusals"
+    },
+    {
+     "end": 28.675,
+     "start": 28.5,
+     "text": "are"
+    },
+    {
+     "end": 28.837,
+     "start": 28.675,
+     "text": "on"
+    },
+    {
+     "end": 28.962,
+     "start": 28.837,
+     "text": "the"
+    },
+    {
+     "end": 29.438,
+     "start": 28.962,
      "text": "ticket's"
     },
     {
-     "end": 28.4,
-     "start": 28.075,
+     "end": 29.775,
+     "start": 29.438,
      "text": "data"
     },
     {
-     "end": 28.775,
-     "start": 28.4,
+     "end": 30.15,
+     "start": 29.775,
      "text": "model"
     },
     {
-     "end": 29.725,
-     "start": 28.775,
+     "end": 31.2,
+     "start": 30.15,
      "text": "page"
     },
     {
-     "end": 29.95,
-     "start": 29.725,
+     "end": 31.425,
+     "start": 31.2,
+     "text": "."
+    },
+    {
+     "end": 31.7,
+     "start": 31.6,
+     "text": "The"
+    },
+    {
+     "end": 32.188,
+     "start": 31.7,
+     "text": "write-once"
+    },
+    {
+     "end": 32.5,
+     "start": 32.188,
+     "text": "rule"
+    },
+    {
+     "end": 32.9,
+     "start": 32.5,
+     "text": "behind"
+    },
+    {
+     "end": 33.725,
+     "start": 32.9,
+     "text": "closed-update"
+    },
+    {
+     "end": 33.938,
+     "start": 33.725,
+     "text": "has"
+    },
+    {
+     "end": 34.175,
+     "start": 33.938,
+     "text": "no"
+    },
+    {
+     "end": 34.45,
+     "start": 34.175,
+     "text": "Lean"
+    },
+    {
+     "end": 34.975,
+     "start": 34.45,
+     "text": "statement"
+    },
+    {
+     "end": 35.05,
+     "start": 34.975,
+     "text": ","
+    },
+    {
+     "end": 35.263,
+     "start": 35.05,
+     "text": "by"
+    },
+    {
+     "end": 35.85,
+     "start": 35.263,
+     "text": "operator"
+    },
+    {
+     "end": 36.825,
+     "start": 35.85,
+     "text": "ruling"
+    },
+    {
+     "end": 37.025,
+     "start": 36.825,
+     "text": ":"
+    },
+    {
+     "end": 37.3,
+     "start": 37.2,
+     "text": "the"
+    },
+    {
+     "end": 37.7,
+     "start": 37.3,
+     "text": "closed"
+    },
+    {
+     "end": 38.225,
+     "start": 37.7,
+     "text": "registry's"
+    },
+    {
+     "end": 38.838,
+     "start": 38.225,
+     "text": "refusal"
+    },
+    {
+     "end": 38.987,
+     "start": 38.838,
+     "text": "is"
+    },
+    {
+     "end": 39.325,
+     "start": 38.987,
+     "text": "shown"
+    },
+    {
+     "end": 39.463,
+     "start": 39.325,
+     "text": "by"
+    },
+    {
+     "end": 39.588,
+     "start": 39.463,
+     "text": "the"
+    },
+    {
+     "end": 39.975,
+     "start": 39.588,
+     "text": "run"
+    },
+    {
+     "end": 40.075,
+     "start": 39.975,
+     "text": ","
+    },
+    {
+     "end": 40.3,
+     "start": 40.075,
+     "text": "not"
+    },
+    {
+     "end": 40.475,
+     "start": 40.3,
+     "text": "by"
+    },
+    {
+     "end": 40.588,
+     "start": 40.475,
+     "text": "a"
+    },
+    {
+     "end": 41.575,
+     "start": 40.588,
+     "text": "theorem"
+    },
+    {
+     "end": 41.775,
+     "start": 41.575,
      "text": "."
     }
    ]
@@ -150986,17 +152426,17 @@
    ]
   },
   "docs-negative-host/how-to-run-it-02": {
-   "audio_sha256": "e52ddd8cfe2b3525afe11997f5b070c708794ecf90606f41f33ee3f5a479ff40",
+   "audio_sha256": "27706190b6937cb4d934458b8aab3602dd634dce7a1465352cecaeda10224806",
    "characters": 334,
    "cost": 0.00033066,
-   "duration": 20.975,
+   "duration": 21.0,
    "index": 2,
-   "key": "7fc88b879f6c9303aadcb05eadc1c2838ec6cc020e4dfa6db6ed5d9463318886",
+   "key": "a83a01a4e740bd526c5125d8eaad80957f63fb9cf24896eecc6fdfa8af749b84",
    "page": "docs/negative-host.md",
    "pause_ms": 400,
    "section": "how-to-run-it",
-   "sent_text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The thirteen scenario names are the pairs of the table above.",
-   "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The thirteen scenario names are the pairs of the table above.",
+   "sent_text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The fourteen scenario names are the pairs of the table above.",
+   "text": "One scenario run starts a fresh node, funds Alice and Bob, runs the forbidden command and its accepting control, judges every clause from the receipts alone, and scans every receipt and output for the key bytes the run generated (keys are given by path and never printed). The fourteen scenario names are the pairs of the table above.",
    "words": [
     {
      "end": 0.488,
@@ -151274,58 +152714,58 @@
      "text": "The"
     },
     {
-     "end": 17.875,
+     "end": 17.9,
      "start": 17.425,
-     "text": "thirteen"
+     "text": "fourteen"
     },
     {
-     "end": 18.375,
-     "start": 17.875,
+     "end": 18.4,
+     "start": 17.9,
      "text": "scenario"
     },
     {
-     "end": 18.837,
-     "start": 18.375,
+     "end": 18.862,
+     "start": 18.4,
      "text": "names"
     },
     {
-     "end": 18.962,
-     "start": 18.837,
+     "end": 18.987,
+     "start": 18.862,
      "text": "are"
     },
     {
-     "end": 19.05,
-     "start": 18.962,
+     "end": 19.075,
+     "start": 18.987,
      "text": "the"
     },
     {
-     "end": 19.413,
-     "start": 19.05,
+     "end": 19.438,
+     "start": 19.075,
      "text": "pairs"
     },
     {
-     "end": 19.487,
-     "start": 19.413,
+     "end": 19.513,
+     "start": 19.438,
      "text": "of"
     },
     {
-     "end": 19.575,
-     "start": 19.487,
+     "end": 19.6,
+     "start": 19.513,
      "text": "the"
     },
     {
-     "end": 19.925,
-     "start": 19.575,
+     "end": 19.95,
+     "start": 19.6,
      "text": "table"
     },
     {
-     "end": 20.775,
-     "start": 19.925,
+     "end": 20.8,
+     "start": 19.95,
      "text": "above"
     },
     {
-     "end": 20.975,
-     "start": 20.775,
+     "end": 21.0,
+     "start": 20.8,
      "text": "."
     }
    ]
@@ -153661,17 +155101,17 @@
    ]
   },
   "docs-negative-host/what-a-run-does-not-show-05": {
-   "audio_sha256": "c1bf078710fcef6caf0c61a22f264fcadb79a90d4d29f7fb8f00635e06ffe1b5",
-   "characters": 368,
-   "cost": 0.00036432,
-   "duration": 24.275,
+   "audio_sha256": "468452bf70cd83035ee80a57a307655f6f43a4c7b259f2d629b715b1dfbce048",
+   "characters": 367,
+   "cost": 0.00036333,
+   "duration": 24.325,
    "index": 5,
-   "key": "12515c94bc0e2b7093e57f8597095c62a3c2b0dcc3c605882dd0bbc1d4f2f854",
+   "key": "0d62b7937f68b8a7bdb21bc860fa1acf5f0c2552df4b483fd1692dba86c99aee",
    "page": "docs/negative-host.md",
    "pause_ms": 300,
    "section": "what-a-run-does-not-show",
-   "sent_text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
-   "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Eight mutants cover all thirteen pairs.",
+   "sent_text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Nine mutants cover all fourteen pairs.",
+   "text": "Each pair must be able to fail. A green refusal proves nothing unless a validator that dropped the rule would have accepted the move. For every refusing rule a mutant validator removes exactly that rule, the release archive is rebuilt from the mutated source, and the pair must flip — the node must accept what the rule refuses. Nine mutants cover all fourteen pairs.",
    "words": [
     {
      "end": 0.375,
@@ -153989,18 +155429,18 @@
      "text": "."
     },
     {
-     "end": 21.987,
+     "end": 22.013,
      "start": 21.825,
-     "text": "Eight"
+     "text": "Nine"
     },
     {
-     "end": 22.35,
-     "start": 21.987,
+     "end": 22.375,
+     "start": 22.013,
      "text": "mutants"
     },
     {
      "end": 22.6,
-     "start": 22.35,
+     "start": 22.375,
      "text": "cover"
     },
     {
@@ -154009,18 +155449,18 @@
      "text": "all"
     },
     {
-     "end": 23.2,
+     "end": 23.25,
      "start": 22.8,
-     "text": "thirteen"
+     "text": "fourteen"
     },
     {
-     "end": 24.075,
-     "start": 23.2,
+     "end": 24.125,
+     "start": 23.25,
      "text": "pairs"
     },
     {
-     "end": 24.275,
-     "start": 24.075,
+     "end": 24.325,
+     "start": 24.125,
      "text": "."
     }
    ]
