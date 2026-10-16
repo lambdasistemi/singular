@@ -19,7 +19,7 @@
       "pause": 500
     },
     {
-      "text": "No Lean source, theorem, corpus oracle or simulator-law edits. No main mutation, merge, release, other lane branch, old plan cherry-pick, issue-body rewrite or GitHub comment. No cleanup of another worker's changes. Model and application conflicts are escalated, not repaired by changing expected results.",
+      "text": "No root Singular Lean, root corpus oracle or simulator-law edits. Consumer-model edits are confined to A-006 above; no hand-edited expected corpus values. No main mutation, merge, release, other lane branch, old plan cherry-pick, issue-body rewrite or GitHub comment. No cleanup of another worker's changes. Unresolved model conflicts remain escalated.",
       "pause": 400
     }
   ],
@@ -35,6 +35,6 @@
   ],
   "_source": {
     "file": "touch-list.md",
-    "sha256": "01fe73ddbe09099a20bfc1f17b8fdb0394464d8abcb7eef3be2fc76acdd60e85"
+    "sha256": "08cf3d2b37e7874a6f05aa7a9c4880eb8153ecdbd29b083eb719810793b3b527"
   }
 }

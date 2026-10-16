@@ -20,7 +20,7 @@ Registrations have three exits. Terminations have only a fold. This ticket deliv
 
 ## Authority
 
-The accepted Singular model is commit `4254a3073fe0457946eba0a68d974c999c930ebf`, Lean tree `5c704fd7efb5ce2f1ced67cdb22b559ca40cf772`, released by PR 615. The integration base `45cd8a754dbb695ae55e91b1cede942ff627d69f` contains that same Lean tree. The [economic contract](../494-protected-rejection-rule/contracts/economic-contract.md), [release record](../494-protected-rejection-rule/contracts/release-record.md) and constitution 1.18.0 bind behavior. No Lean edit is authorized here.
+The accepted Singular model is commit `4254a3073fe0457946eba0a68d974c999c930ebf`, Lean tree `5c704fd7efb5ce2f1ced67cdb22b559ca40cf772`, released by PR 615. The integration base `45cd8a754dbb695ae55e91b1cede942ff627d69f` contains that same Lean tree. The [economic contract](../494-protected-rejection-rule/contracts/economic-contract.md), [release record](../494-protected-rejection-rule/contracts/release-record.md) and constitution 1.18.0 bind behavior. Singular's root Lean stays frozen. Epic answer A-006 authorizes the separate open-datum consumer-model registration amendment described in the plan; its checked revision must be bound before application acceptance.
 
 The epic owner's 16 October answers confirm that this ticket retains its library booking, discovery, packaged CLI and devnet criteria, and that the bounded booking interval applies only to registrations. The original issue body remains unchanged. The epic owner also assigned the minimum economic fold/settlement changes and shared rejection-state authentication to this ticket, so each pushed candidate remains lawful.
 
@@ -57,5 +57,7 @@ The epic owner's 16 October answers confirm that this ticket retains its library
 ## Decisions still required
 
 The bound open-datum model says termination booking keeps its application outputs and tag locked (`OpenDatumApplication.Statements.bookTerminate_keeps_locked`). Singular requires the tag to move into the request. Question Q-003 holds the affected consumer acceptance until the operator resolves it and the consumer model is aligned. A passing old application replay is not evidence for the new path.
+
+Its `mintApproval` also uses the historical name without a nonce. A-006 requires a model-first registration amendment to Singular's ruled `applicationTagAssetName`; application name changes wait for that amendment and its regenerated corpus. This is authorized work, not completed verification.
 
 The original unpayable-refund control must be realized through a documented concrete address representation and ledger output constraints. Do not silently turn it into an assumption about available wallet funds. Any missing semantic rule is escalated before acceptance.

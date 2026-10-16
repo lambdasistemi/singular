@@ -1,0 +1,19 @@
+# Slice brief: open-datum registration model
+
+## Story
+
+As an application requester, I need its model and mint policy to agree on the nonce-bound registration tag before the packaged booking path is accepted.
+
+Planning only, authorized by epic A-006. Schedule after generic booking and before application name changes, with one writer at a time. Writer: Codex gpt-6-astra high, `codex --dangerously-bypass-approvals-and-sandbox -C WORKTREE -m gpt-6-astra -c model_reasoning_effort=high`. Existing Sol persistent mute auditor; no draft or other seats.
+
+Fence: `applications/open-datum/lean/` and its generated corpus/oracle outputs. Bind exact paths, base, interfaces and gate hashes before dispatch. Carry the booking nonce through the consumer request, use Singular's `applicationTagAssetName` in `mintApproval` and `booked`, restate affected statements and regenerate expected corpus values from the amended model. Root Singular model 4254a307 stays frozen. Termination custody and deposit destination remain held under Q-003; no semantic invention.
+
+Load commit-owner, worker-protocol, lean4, lean-creator, code-the-design, gate-script, verification and invariants; read AGENTS.md and the constitution. Hosted carrier: root `nix develop --quiet -c just application-model`, ci.yml:508. Bind checked declarations, printed axioms, corpus hashes and limits. No implementation acceptance from model success alone.
+
+Every build, test, nix run and packaged control uses:
+
+```sh
+systemd-run --user --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -- timeout 900 COMMAND </dev/null
+```
+
+No unbounded producer or read loop. Signed commits, no AI attribution; no push, merge, GitHub comments or gh pr checks. Do not revert others' work. Check inbox before phases; questions and checkpoint receipts go through the parent. Application implementation waits for model acceptance.
