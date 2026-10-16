@@ -349,6 +349,7 @@ const SECTION_CLASS = {
   rejectionReadsState: 'uncovered',
   economicRefunds: 'uncovered',
   economicFolds: 'uncovered',
+  economicRetractionFunding: 'uncovered',
 };
 const classifySections = (c) => {
   const exported = Object.keys(c).filter((k) => Array.isArray(c[k]));

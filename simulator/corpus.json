@@ -1970,7 +1970,7 @@
     }
   ],
   "configRoundtrip": true,
-  "corpusSourceSha256": "1a5b4e98c5f69a8f4658f3aac4511b67725b0897e4246bc0c0c16fc9b8eaae10",
+  "corpusSourceSha256": "35deae40c7856c5a274e9fbc4e124cb1abc82212302095dedc477bca625b7e21",
   "economicControls": [
     {
       "result": true,
@@ -2509,6 +2509,254 @@
       "story": "a second retraction of the same request is refused"
     }
   ],
+  "economicRetractionFunding": [
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "ordinary wallet funding pays a positive retraction fee"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "ordinary surplus returns to the requester as separate change"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "funding may precede the pending registration"
+    },
+    {
+      "actualReason": "retract-fee-funding-short",
+      "expectedReason": "retract-fee-funding-short",
+      "matched": true,
+      "story": "the ledger fee cannot exceed ordinary funding by one lovelace"
+    },
+    {
+      "actualReason": "retract-fee-funding-short",
+      "expectedReason": "retract-fee-funding-short",
+      "matched": true,
+      "story": "a claimed input amount does not fund the fee"
+    },
+    {
+      "actualReason": "retract-state-spent",
+      "expectedReason": "retract-state-spent",
+      "matched": true,
+      "story": "funding holding a state token is refused"
+    },
+    {
+      "actualReason": "retract-state-spent",
+      "expectedReason": "retract-state-spent",
+      "matched": true,
+      "story": "a state output without its token is still not funding"
+    },
+    {
+      "actualReason": "retract-funding-trie-ready-tag",
+      "expectedReason": "retract-funding-trie-ready-tag",
+      "matched": true,
+      "story": "funding holding a trie-ready tag is refused"
+    },
+    {
+      "actualReason": "retract-funding-application-tag",
+      "expectedReason": "retract-funding-application-tag",
+      "matched": true,
+      "story": "funding holding an application tag is refused"
+    },
+    {
+      "actualReason": "retract-funding-singular-tag",
+      "expectedReason": "retract-funding-singular-tag",
+      "matched": true,
+      "story": "funding holding a singular tag is refused"
+    },
+    {
+      "actualReason": "retract-funding-request-address",
+      "expectedReason": "retract-funding-request-address",
+      "matched": true,
+      "story": "an untagged output at the request address is not funding"
+    },
+    {
+      "actualReason": "retract-funding-request",
+      "expectedReason": "retract-funding-request",
+      "matched": true,
+      "story": "an output carrying another request datum is not funding"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "ordinary funding may come from another wallet address"
+    },
+    {
+      "actualReason": "retract-single-request",
+      "expectedReason": "retract-single-request",
+      "matched": true,
+      "story": "two pending registrations cannot be retracted together"
+    },
+    {
+      "actualReason": "retract-registration-only",
+      "expectedReason": "retract-registration-only",
+      "matched": true,
+      "story": "a pending termination cannot accompany a retraction"
+    },
+    {
+      "actualReason": "retract-duplicate-input",
+      "expectedReason": "retract-duplicate-input",
+      "matched": true,
+      "story": "duplicate ordinary funding cannot be counted twice"
+    },
+    {
+      "actualReason": "retract-input-overlap",
+      "expectedReason": "retract-input-overlap",
+      "matched": true,
+      "story": "ordinary funding cannot also be a reference input"
+    },
+    {
+      "actualReason": "spent-input-missing",
+      "expectedReason": "spent-input-missing",
+      "matched": true,
+      "story": "a missing ordinary funding input is refused"
+    },
+    {
+      "actualReason": "retract-donation",
+      "expectedReason": "retract-donation",
+      "matched": true,
+      "story": "a balanced retraction cannot donate to the treasury"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "ordinary surplus may return to a fresh change address"
+    },
+    {
+      "actualReason": "retract-refund-short",
+      "expectedReason": "retract-refund-short",
+      "matched": true,
+      "story": "a payment to another address cannot take the request's declared tip"
+    },
+    {
+      "actualReason": "retract-unbalanced",
+      "expectedReason": "retract-unbalanced",
+      "matched": true,
+      "story": "an unbalanced surplus refund is refused"
+    },
+    {
+      "actualReason": "retract-refund-short",
+      "expectedReason": "retract-refund-short",
+      "matched": true,
+      "story": "a funded retraction still returns the whole request value"
+    },
+    {
+      "actualReason": null,
+      "expectedReason": null,
+      "matched": true,
+      "story": "a signed retraction returns cost, tip and carrier"
+    },
+    {
+      "actualReason": "retract-refund-short",
+      "expectedReason": "retract-refund-short",
+      "matched": true,
+      "story": "a retraction one lovelace short is refused"
+    },
+    {
+      "actualReason": "retract-refund-short",
+      "expectedReason": "retract-refund-short",
+      "matched": true,
+      "story": "a retraction cannot withhold the tip"
+    },
+    {
+      "actualReason": "retract-refund-short",
+      "expectedReason": "retract-refund-short",
+      "matched": true,
+      "story": "the registration cost cannot be omitted on retraction"
+    },
+    {
+      "actualReason": "retract-refund-short",
+      "expectedReason": "retract-refund-short",
+      "matched": true,
+      "story": "a retraction refund sent to another address is refused"
+    },
+    {
+      "actualReason": "retract-tag-not-burned",
+      "expectedReason": "retract-tag-not-burned",
+      "matched": true,
+      "story": "a retraction cannot carry the trie-ready tag out alive"
+    },
+    {
+      "actualReason": "retract-tag-not-burned",
+      "expectedReason": "retract-tag-not-burned",
+      "matched": true,
+      "story": "a retraction cannot carry the application tag out alive"
+    },
+    {
+      "actualReason": "retract-window",
+      "expectedReason": "retract-window",
+      "matched": true,
+      "story": "a retraction before the reclaim window is refused"
+    },
+    {
+      "actualReason": "retract-window",
+      "expectedReason": "retract-window",
+      "matched": true,
+      "story": "a retraction starting at the reclaim end is refused"
+    },
+    {
+      "actualReason": "retract-window",
+      "expectedReason": "retract-window",
+      "matched": true,
+      "story": "a retraction extending past the reclaim end is refused"
+    },
+    {
+      "actualReason": "retract-interval-empty",
+      "expectedReason": "retract-interval-empty",
+      "matched": true,
+      "story": "an empty retraction interval is refused"
+    },
+    {
+      "actualReason": "retract-interval-missing",
+      "expectedReason": "retract-interval-missing",
+      "matched": true,
+      "story": "a retraction without an interval is refused"
+    },
+    {
+      "actualReason": "retract-owner",
+      "expectedReason": "retract-owner",
+      "matched": true,
+      "story": "a retraction without the refund address signature is refused"
+    },
+    {
+      "actualReason": "retract-request-not-pending",
+      "expectedReason": "retract-request-not-pending",
+      "matched": true,
+      "story": "an untagged output is not a pending retraction"
+    },
+    {
+      "actualReason": "retract-registration-only",
+      "expectedReason": "retract-registration-only",
+      "matched": true,
+      "story": "a termination cannot be retracted"
+    },
+    {
+      "actualReason": "retract-duplicate-input",
+      "expectedReason": "retract-duplicate-input",
+      "matched": true,
+      "story": "a retraction cannot spend one request twice"
+    },
+    {
+      "actualReason": "retract-state-spent",
+      "expectedReason": "retract-state-spent",
+      "matched": true,
+      "story": "a retraction cannot consume the state"
+    },
+    {
+      "actualReason": "retract-state-read",
+      "expectedReason": "retract-state-read",
+      "matched": true,
+      "story": "a retraction cannot read the state"
+    }
+  ],
   "folds": [
     {
       "id": "GF01-empty-fold-refused",
@@ -2639,7 +2887,7 @@
     "terminalPolicy": 10
   },
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
-  "payloadSha256": "8e230c7e54049a7894bec42e4a3175d80b40c9dce1bc4c04cd1a53c484a6a843",
+  "payloadSha256": "e276fbe1d279b79b6852b7829633e7197cede827de9e06458677abbeb361b0e1",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -7111,7 +7359,7 @@
   ],
   "schema": "singular-logical-corpus-v2",
   "sourceHashes": {
-    "lean/Main.lean": "1a5b4e98c5f69a8f4658f3aac4511b67725b0897e4246bc0c0c16fc9b8eaae10",
+    "lean/Main.lean": "35deae40c7856c5a274e9fbc4e124cb1abc82212302095dedc477bca625b7e21",
     "lean/Main/Base.lean": "aeba32c3c799c5be627d477c4ca5f802cc9c76349c75349a25c0c89798b696da",
     "lean/Main/Economics.lean": "f197c71e32e7b95e48557f1814d2a06cd5702196c65548a0bd13c81d74244131",
     "lean/Main/Exits.lean": "43ca6827c376d2119607247e1b3b8c02c293e37f55fc31983dc16297cbbf6824",
@@ -7140,7 +7388,8 @@
     "lean/Singular/Economics/Refunds.lean": "48bfa12e6b182e34a8f27b0fc179242aa745d515eacba2c8127bcdc3c3c878a7",
     "lean/Singular/Economics/Rejection.lean": "0f59f3266b6906493c5a6a32451738f2b3c112eeca7641bc13be84178ff9dd7d",
     "lean/Singular/Economics/RequestSpend.lean": "9badb0439bae655fcf63103a0551100d59071d2ee7de5bc0681101bbd03856e3",
-    "lean/Singular/Economics/Retraction.lean": "f68ba2b95d80c8cc7c9ad2c4b23ddb6faf155fa8e36b72ad7b947f6ab358c144",
+    "lean/Singular/Economics/Retraction.lean": "52cfc44665c5109686374a23f49ac75d63171ad9d4ae9e7c1f4f2fed320abbec",
+    "lean/Singular/Economics/RetractionFunding.lean": "008ebab7e1f11d4b955b51979c73430797b6d03b0da394b45c52637a8cceff94",
     "lean/Singular/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
     "lean/Singular/Economics/Transaction.lean": "7ddf97653a69775151bab72d46965134b4588deb28553f80ce18e35d41232343",
     "lean/Singular/Economics/World.lean": "872733d8b6926c00baae124296da7f567d2ed3fc0e4110978fa5a0fcfffbe631",
@@ -7165,7 +7414,7 @@
     "lean/Singular/Lemmas/FoldWitnessRouting.lean": "90d9b9bc748c55c2e09258261c2b3bc8674090013bcb6845c5dc437741cc3e30",
     "lean/Singular/Lemmas/FoldWitnessTransaction.lean": "dc45d7d993302a30de44d80a927377c53f71a1fa15efad4794aa131fcdea98b6",
     "lean/Singular/Lemmas/Payments.lean": "4e557c15d1e9135e153b72b32844822a62172d626ece24204af152195722b142",
-    "lean/Singular/Lemmas/Refunds.lean": "8d86e3c31b93fb582ffa2ae484df73caa94a8b3329f5682de61470dcb14157d6",
+    "lean/Singular/Lemmas/Refunds.lean": "eaba3759e5455bfe32091efe1870c3ab8c7186f47f5df0b949bec2bbaf04becb",
     "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
@@ -7197,7 +7446,7 @@
     "lean/Singular/Statements/Inversions.lean": "290857529524ca802a0908129292731eab900e46bf0760b6e16ab10a961bd860",
     "lean/Singular/Statements/Payments.lean": "65435d1d6da926fe90557a438c05b63e74a85f8eb7e8675b5854f7f4637e256a",
     "lean/Singular/Statements/Preservation.lean": "dc19a17f6f82f9cfaabdf712ddfcf4ce6fe1ad5cbe7b5eb6337637ac1f578d1d",
-    "lean/Singular/Statements/Refunds.lean": "d399c6077568589ea3e66a3f5ce1a7d42a843c4bc09bde64c39f3ccf32a993ca",
+    "lean/Singular/Statements/Refunds.lean": "4f2dad2ec8129ea0171b917b09fa327865e5175fcfcd28099dc336b4209e114c",
     "lean/Singular/Statements/RegistrationTransaction.lean": "c353ae5a1f9304eac81a483607d738a1671962ebf8eaecc82a3441be7eaf85ea",
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
     "lean/Singular/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
@@ -10560,7 +10809,7 @@
       "story": "the state token cannot stand for a termination trie-ready tag is refused"
     }
   ],
-  "theoremManifestSha256": "68ab88ab84df540aef137a7e87b98c3f21175b0154e26eb1c68461293b25e484",
+  "theoremManifestSha256": "b5cdad495bb89629d2430043be136cf82a366e6441e12fa33911cf7b5554bb6a",
   "tokenPolicies": {
     "absent": 9,
     "active": 8,

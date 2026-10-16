@@ -1,4 +1,5 @@
 import Singular.Economics.Rejection
+import Singular.Economics.RetractionFunding
 
 /-! A registration's refund address may reclaim it inside its booked window.
 This judges observed transactions and never calls the legacy retraction. -/
@@ -17,14 +18,14 @@ def retractionInputsRefusal (u : EconomicUtxo) (tx : EconomicTransaction) : Opti
 
 def retractionRequest (world : World) (tx : EconomicTransaction) :
     Except String RegistrationRequest := do
-  let [input] := tx.transaction.inputs | throw "retract-single-request"
-  let some reference := input.ref | throw "spent-input-missing"
-  match world.pending.find? (fun b => b.request.reference == reference) with
-  | some booking => pure booking.request
-  | none =>
-    if world.terminations.any (fun b => b.request.reference == reference)
-    then throw "retract-registration-only"
-    else throw "retract-request-not-pending"
+  if world.terminations.any (fun b =>
+      inputsContainReference tx.transaction.inputs b.request.reference) then
+    throw "retract-registration-only"
+  match world.pending.filter (fun b =>
+      inputsContainReference tx.transaction.inputs b.request.reference) with
+  | [] => throw "retract-request-not-pending"
+  | [booking] => pure booking.request
+  | _ => throw "retract-single-request"
 
 def retractionRefusal (world : World) (u : EconomicUtxo)
     (tx : EconomicTransaction) : Option String := do
@@ -33,6 +34,7 @@ def retractionRefusal (world : World) (u : EconomicUtxo)
   match retractionRequest world tx with
   | .error why => return why
   | .ok request =>
+    if let some why := retractionFundingRefusal u tx request then return why
     if !(tx.transaction.signers.contains request.refundAddress) then return "retract-owner"
     let some interval := tx.transaction.validity | return "retract-interval-missing"
     if ¬ interval.valid then return "retract-interval-empty"
@@ -43,6 +45,10 @@ def retractionRefusal (world : World) (u : EconomicUtxo)
     if !rejectionSupplyUnchanged u tx then return "retract-registry-supply"
     if let some why := refundRefusal tx (refundObligations [request] true) "retract-refund-short"
       then return why
+    if tx.transaction.donation != 0 then return "retract-donation"
+    if retractionFundingLovelace u tx request < tx.transaction.fee then
+      return "retract-fee-funding-short"
+    if !balanced u.ledger tx.transaction then return "retract-unbalanced"
     none
 
 def retractionEffect (world : World) (tx : EconomicTransaction) : World :=

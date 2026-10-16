@@ -31,7 +31,7 @@ theorem retraction_refund_floor (world after : World) (reachable : WorldReachabl
     (u : EconomicUtxo) (tx : EconomicTransaction)
     (accepted : retractionAccepted world u tx = .ok after) :
     ∃ booking ∈ world.pending,
-      tx.transaction.inputs.map (·.ref) = [some booking.request.reference] ∧
+      some booking.request.reference ∈ tx.transaction.inputs.map (·.ref) ∧
       tx.transaction.signers.contains booking.request.refundAddress = true ∧
       (∃ interval, tx.transaction.validity = some interval ∧ interval.valid ∧
         booking.request.submittedAt + world.registry.config.processTime ≤ interval.lower ∧
@@ -58,9 +58,7 @@ theorem retraction_refund_floor (world after : World) (reachable : WorldReachabl
     rw [retractionAccepted_effect accepted] at remaining
     have unspent := (List.mem_filter.mp remaining).2
     have spent : inputsContainReference tx.transaction.inputs booking.request.reference = true := by
-      have member : some booking.request.reference ∈ tx.transaction.inputs.map (·.ref) := by
-        simp [consumed]
-      obtain ⟨input, present, ref⟩ := List.mem_map.mp member
+      obtain ⟨input, present, ref⟩ := List.mem_map.mp consumed
       apply List.any_eq_true.mpr
       exact ⟨input, present, by simp [ref]⟩
     simp [equal, spent] at unspent
@@ -74,7 +72,7 @@ theorem registration_cost_returned_on_exit (world : World) (reachable : WorldRea
         (·.registrationCost)).sum ≤ refundPaid r.transaction address) ∧
     (∀ (after : World) (u : EconomicUtxo) (tx : EconomicTransaction),
       retractionAccepted world u tx = .ok after → ∃ booking ∈ world.pending,
-      tx.transaction.inputs.map (·.ref) = [some booking.request.reference] ∧
+      some booking.request.reference ∈ tx.transaction.inputs.map (·.ref) ∧
       booking.request.registrationCost ≤ refundPaid tx booking.request.refundAddress) := by
   constructor
   · intro after u r accepted address

@@ -288,3 +288,13 @@ These new economic declarations have no implementation coverage. Every earlier i
 | `Singular.terminationWitness_routing` | none (new declaration) | `b8da90de0c673e0cfaad8e2add00b524c3f9f189e30c8215d61b8c7f904135bc` | uncovered |
 | `Singular.terminationWitness_spent` | none (new declaration) | `54a3adb927d2ae91b5e921c9516df648a51bedc6895bc6301a6e1edea41e196c` | uncovered |
 | `Singular.terminationWitness_spent_entries` | none (new declaration) | `19b34e63f6cc3a46844b1597eacb86a839ac3ff1348569bbf05ceeb6be15b84d` | uncovered |
+
+## Economic retraction with ordinary funding
+
+These economic retraction identities have no implementation coverage. Restated obligations retain their historical identities here; no legacy conformance receipt establishes the widened retraction.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.RefundProof.retraction_request` | `c6162a4c12b5c456956deeeba6de08d2f8e5c20638cd22c635fa76cfb4b72b30` | `f981f441c63d432b3321057a8be35f93a614301a80edc1acbce95ddbb9f0d108` | uncovered |
+| `Singular.Statements.registration_cost_returned_on_exit` | `b989571d70a36354c46600639d3aeefeee6cf0ea7fba55bfb2ca67c2ad24598d` | `020c88bd1d8c402bb794b60ca62e53480afea63e0c4b966f840aed776428a507` | uncovered |
+| `Singular.Statements.retraction_refund_floor` | `2eb1d47fa80f28d8629703cc318886288ded65b8379a42ccfef3156c5c4b4783` | `cf61ca08b5c5cedb781bd9db1d8f8f94a77633b2abd01858b0923e4f8c9d4f23` | uncovered |

@@ -127,17 +127,24 @@ theorem retraction_checks {world after : World} {u : EconomicUtxo} {tx : Economi
 theorem retraction_request {world : World} {tx : EconomicTransaction} {request : RegistrationRequest}
     (found : retractionRequest world tx = .ok request) :
     ∃ booking ∈ world.pending, booking.request = request ∧
-      tx.transaction.inputs.map (·.ref) = [some request.reference] := by
+      some request.reference ∈ tx.transaction.inputs.map (·.ref) := by
   unfold retractionRequest at found
   simp only [pure, Except.pure] at found
-  repeat (split at found <;> try contradiction)
-  next reference referenceEqual lookup booking selected =>
-    have equal : booking.request = request := by simpa using found
-    have ref : booking.request.reference = reference := by
-      simpa using List.find?_some selected
-    refine ⟨booking, List.mem_of_find?_eq_some selected, equal, ?_⟩
-    simp_all
-  · split at found <;> contradiction
+  split at found
+  · contradiction
+  · split at found
+    · contradiction
+    next booking selected =>
+      have equal : booking.request = request := by
+        simpa [bind, Except.bind, pure, Except.pure] using found
+      have member : booking ∈ world.pending.filter (fun b =>
+          inputsContainReference tx.transaction.inputs b.request.reference) := by
+        rw [selected]; simp
+      obtain ⟨pending, consumed⟩ := List.mem_filter.mp member
+      refine ⟨booking, pending, equal, ?_⟩
+      rw [equal] at consumed
+      simpa [inputsContainReference, List.any_eq_true, List.mem_map] using consumed
+    · contradiction
 
 theorem retraction_no_state {u : EconomicUtxo} {tx : EconomicTransaction}
     (checked : retractionInputsRefusal u tx = none) :
