@@ -5,6 +5,10 @@ adds or changes in the model. It names no function body and no proof. Where a si
 needed see [functions](functions-model.md); where a thing belongs see
 [modules](modules-model.md). The base is the two-edge model, unchanged between `e3c9ab01` and `e7b55ac9`.
 
+## Standing since 14 October 2026
+
+This page covers the first stage of the ticket: what an evidenced rejection carries and what a request records for it. The model keeps that stage as a named earlier path. The decided economic design ([design](economics-design.md)) is what the ticket now delivers: a rejection reads the current state by reference and spends no state output, never shares a transaction with a fold, and returns each refund address at least what its requests held minus their tips. The [economics plan](economics-plan.md) lists the slices and the [economics models](economics-models.md) the rows as built. The live conformance rows that still follow the earlier rules are published as unmet until the validators and builders follow the model.
+
 ## Story
 
 As the author of a validator or a builder, I read one page and learn exactly which facts a

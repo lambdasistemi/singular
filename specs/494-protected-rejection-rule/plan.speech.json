@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "Planning artifacts written, committed locally and rebased onto the current main. The one open question is settled: the public suite shows the in-window rejection of a foldable request as unmet by ruling until the validators change (decision B, recorded in the mandate and the decisions). The gate had two independent authors, synthesized once in the gate; the rebase moved line numbers and added hosted jobs, and the gate page records which rows that touched.",
+      "text": "Slices one to three, the economic model of slices five to ten and the paper are done and pushed; the task list shows each slice and its checks. The one open question of the first stage is settled: the public suite shows the in-window rejection of a foldable request as unmet by ruling until the validators change (decision B, recorded in the mandate and the decisions). The gate had two independent authors, synthesized once in the gate; the rebase moved line numbers and added hosted jobs, and the gate page records which rows that touched.",
       "pause": 400
     }
   ],
@@ -143,6 +143,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "b50e6b2e87896191009e439988a6bd68619d05647d8135b8ddc944964f3b10b6"
+    "sha256": "4994a540ac3eaa4907b2d074304afc81e6f52c958f2b31497a9077ac094fda17"
   }
 }

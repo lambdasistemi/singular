@@ -9,6 +9,16 @@
       "pause": 400
     }
   ],
+  "standing-since-14-october-2026": [
+    {
+      "text": "Standing since 14 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "This page records the first stage of the ticket: the rejection that carries evidence inside the transaction of a fold, which the model keeps as a named earlier path. The requirements below stay true statements about that path. The stories about a rejection inside a batch with a fold, and about a returned deposit, describe the earlier path only. The decided economic design (design) is what the ticket now delivers: a rejection reads the current state by reference and spends no state output, never shares a transaction with a fold, and returns each refund address at least what its requests held minus their tips. The economics plan lists the slices and the economics models the rows as built. The live conformance rows that still follow the earlier rules are published as unmet until the validators and builders follow the model.",
+      "pause": 400
+    }
+  ],
   "the-paramount-story": [
     {
       "text": "The paramount story.",
@@ -225,6 +235,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "7921728fe12d2d1bcfb0df79c0f7befb4c1ff0fd8b832e7f2dae78d35ec473cc"
+    "sha256": "46ba24d9845e2cd97d9827559485c9bea136c6049a387b2046c7592c4218d8d7"
   }
 }

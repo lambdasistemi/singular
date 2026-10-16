@@ -3,6 +3,10 @@
 This page owns responsibility and dependency direction for the modules ticket 494 changes. It
 sits above [data](data-model.md) and [functions](functions-model.md) and does not repeat them.
 
+## Standing since 14 October 2026
+
+This page covers where the first stage of the rule lives. The economic stage adds modules beside these, listed in the economics models, and leaves the earlier path in place. The decided economic design ([design](economics-design.md)) is what the ticket now delivers: a rejection reads the current state by reference and spends no state output, never shares a transaction with a fold, and returns each refund address at least what its requests held minus their tips. The [economics plan](economics-plan.md) lists the slices and the [economics models](economics-models.md) the rows as built. The live conformance rows that still follow the earlier rules are published as unmet until the validators and builders follow the model.
+
 ## Story
 
 As the person who reviews or later extends the rule, I see one module that owns it, the modules

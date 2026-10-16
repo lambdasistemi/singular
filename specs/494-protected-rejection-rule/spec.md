@@ -6,6 +6,10 @@ This ticket changes the Lean model and everything that consumes it. It changes n
 no off-chain builder and no shipped command; those belong to the neighbouring tickets named
 under out of scope.
 
+## Standing since 14 October 2026
+
+This page records the first stage of the ticket: the rejection that carries evidence inside the transaction of a fold, which the model keeps as a named earlier path. The requirements below stay true statements about that path. The stories about a rejection inside a batch with a fold, and about a returned deposit, describe the earlier path only. The decided economic design ([design](economics-design.md)) is what the ticket now delivers: a rejection reads the current state by reference and spends no state output, never shares a transaction with a fold, and returns each refund address at least what its requests held minus their tips. The [economics plan](economics-plan.md) lists the slices and the [economics models](economics-models.md) the rows as built. The live conformance rows that still follow the earlier rules are published as unmet until the validators and builders follow the model.
+
 ## The paramount story
 
 As a requester, I book a valid request and observe that a permissionless processor cannot

@@ -9,6 +9,16 @@
       "pause": 400
     }
   ],
+  "standing-since-14-october-2026": [
+    {
+      "text": "Standing since 14 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "This page covers the first stage of the ticket: what an evidenced rejection carries and what a request records for it. The model keeps that stage as a named earlier path. The decided economic design (design) is what the ticket now delivers: a rejection reads the current state by reference and spends no state output, never shares a transaction with a fold, and returns each refund address at least what its requests held minus their tips. The economics plan lists the slices and the economics models the rows as built. The live conformance rows that still follow the earlier rules are published as unmet until the validators and builders follow the model.",
+      "pause": 400
+    }
+  ],
   "story": [
     {
       "text": "Story.",
@@ -153,6 +163,6 @@
   ],
   "_source": {
     "file": "data-model.md",
-    "sha256": "448cc56afc6b693890828682b12a86c0057ce4d2a47312b6b8adeb819b33ca60"
+    "sha256": "bf4e82daad121d8e8db249778fb61348a0e35e6ec4b0f580e606719f7d17337b"
   }
 }

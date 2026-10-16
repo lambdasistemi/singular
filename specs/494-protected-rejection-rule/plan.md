@@ -8,7 +8,7 @@ for the files. No coder starts before the rebased plan has been reviewed.
 
 ## Status
 
-Planning artifacts written, committed locally and rebased onto the current main. The one open question
+Slices one to three, the economic model of slices five to ten and the paper are done and pushed; the task list shows each slice and its checks. The one open question of the first stage
 is settled: the public suite shows the in-window rejection of a foldable request as unmet by ruling
 until the validators change (decision B, recorded in the [mandate](mandate.md) and the
 [decisions](decisions.md)). The gate had two independent authors, synthesized once in the
