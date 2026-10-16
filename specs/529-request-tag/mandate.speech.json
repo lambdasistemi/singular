@@ -1,0 +1,52 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As an integrator, I want each promised behavior tied to the actual accepted declaration and its observation boundary, so that neither a theorem name nor a green test count substitutes for the transaction I need.",
+      "pause": 400
+    },
+    {
+      "text": "The model revision and tree are fixed in the specification. Statement identities and digests come from the release record and lean/theorem-debt.json; do not duplicate or hand-edit that register. The legacy driver is not the economic oracle.",
+      "pause": 400
+    }
+  ],
+  "invariants-the-writer-must-preserve": [
+    {
+      "text": "Invariants the writer must preserve.",
+      "pause": 500
+    },
+    {
+      "text": "A different registry, key, refund address, destination, operation allocation or nonce cannot reuse an authorization intended for another request. A moved tag cannot authenticate a different output condition. Every positive control has a reachable or explicitly constructed premise with its boundary named. Every adverse control invokes the actual policy, validator, provider or ledger boundary it claims to check.",
+      "pause": 400
+    },
+    {
+      "text": "No burn policy adds an owner, expiry or proof condition. No termination is expired, rejected or retracted. No rejection spends the state. No retraction reads the state. Refunds are obtained from transaction outputs, not builder predictions; two obligations sharing an address are not paid by one unsummed floor. Carrier ada is declared and checked exactly; ledger minimum calculation remains a separate builder obligation.",
+      "pause": 400
+    },
+    {
+      "text": "No code is accepted against an invented model reading. No conformance row is marked fulfilled because an old driver agrees with an old validator. Existing unmet economics remain published until evidence for their replacement exists. The issue's connected CLI/devnet obligations remain part of this ticket.",
+      "pause": 400
+    }
+  ],
+  "authority-and-checkpoints": [
+    {
+      "text": "Authority and checkpoints.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket owner owns these planning files, gates and acceptance. The approved Sonnet commit owner owns all code, tests, generated implementation and signed slice commits. The approved Sol auditor is mute, read-only and zero-execution, sees committed checkpoints and receipts, and answers through the ticket owner. There is no additional seat and no draft tool.",
+      "pause": 400
+    },
+    {
+      "text": "Checkpoints are the RED bundle, each requirement's GREEN evidence and pre-push. The writer continues while review runs; push requires every checkpoint approved. Concrete blocked findings are consolidated and forwarded once. An unresolved semantic finding becomes a parent question, never an expectation change.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "mandate.md",
+    "sha256": "255cb4c838a1db8df9a9e7df917478643f83674e7b32c6b87302dde32fdb1425"
+  }
+}

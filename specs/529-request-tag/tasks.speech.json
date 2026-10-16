@@ -1,0 +1,68 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want to distinguish a written plan from implemented and observed behavior, so that an unchecked box cannot disappear behind a passing aggregate.",
+      "pause": 400
+    },
+    {
+      "text": "[ ] confirm-shared-boundaries: resolve the bound consumer model and shared expiry/fold interfaces; obtain epic review of the touch list and plan.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] freeze-booking-representation: bind concrete signatures, identities, canonical encodings and all callers before dispatch.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] authenticate-booking: implement and check registration and termination booking under the ruled model, with negative mint controls.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] book-through-library: build real tagged requests through the library and packaged application commands.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] route-economic-folds: preserve state pins and value, require exact request burns, carrier routing, donation and gross-tip allocation through actual fold execution.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] sweep-untagged-outputs: demonstrate unrelated-wallet collection and genuine-tag refusal.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] retract-with-ordinary-funding: enforce and exercise the full registration refund and fee boundary.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] reject-expired-registrations: implement reference-read expiry, batch burns and summed refunds with a stranger's devnet transaction.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] discover-only-tagged-requests: exercise the real indexed provider query under junk and malformed outputs.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] publish-receipt-derived-evidence: add public description-language rows, retain gaps and update all affected identities and consumers.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] align-application-termination: after Q-003 is resolved model-first, exercise genuine custody transfer through the packaged application command.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] verify-exact-head: complete checkpoint reviews, capped local checks and the draft PR's affected hosted checks on its exact head.",
+      "pause": 300
+    },
+    {
+      "text": "No task is complete at planning time. Issue 495 owns mismatch proof verification and remaining state/batch obligations beyond the minimum economic fold delivered here; issue 496 owns mismatch-evidence construction; issue 497 owns its wider cross-layer acceptance. Those ownership boundaries do not remove this ticket's own connected paths.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "8bf75fde7a71c1faf4e233d705fd0e956d854eee1e919977bcc2e0867538870d"
+  }
+}

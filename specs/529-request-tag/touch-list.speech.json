@@ -1,0 +1,40 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the epic owner, I want to review the actual shared surfaces before coding starts, so that the first implementation child cannot silently take the state validator or a consumer's model from the next child.",
+      "pause": 400
+    },
+    {
+      "text": "This is the proposed touch list at 45cd8a754dbb695ae55e91b1cede942ff627d69f. It is a fence for planning, not authorization to change every file beneath a directory. Before each slice, the writer's representation proposal supplies exact files and a repository-wide caller census; the ticket owner freezes that smaller list. A newly discovered caller outside it is a question.",
+      "pause": 400
+    }
+  ],
+  "forbidden-work": [
+    {
+      "text": "Forbidden work.",
+      "pause": 500
+    },
+    {
+      "text": "No Lean source, theorem, corpus oracle or simulator-law edits. No main mutation, merge, release, other lane branch, old plan cherry-pick, issue-body rewrite or GitHub comment. No cleanup of another worker's changes. Model and application conflicts are escalated, not repaired by changing expected results.",
+      "pause": 400
+    }
+  ],
+  "consumers-to-verify-before-the-first-push": [
+    {
+      "text": "Consumers to verify before the first push.",
+      "pause": 500
+    },
+    {
+      "text": "An on-chain change reaches the open-datum and keri-stub application scripts and their library/CLI builders, naming scripts, blueprint identities, generated wire vectors, conformance encoders and live rows, ordinary CLI journeys and release archives, generated API docs, speech and presentation checks. These are intake dependencies even when a narrow gate omits them. Their local and hosted evidence stays distinct. The next slice's exact changed-name search must account for every caller in these groups.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "01fe73ddbe09099a20bfc1f17b8fdb0394464d8abcb7eef3be2fc76acdd60e85"
+  }
+}
