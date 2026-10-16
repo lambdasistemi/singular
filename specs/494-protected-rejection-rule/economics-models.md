@@ -120,6 +120,17 @@ The configuration carries one tip number, `minimumTip`, always written and read 
 
 The fold model moved without a change of meaning. `Singular/Model.lean`, `Lemmas.lean` and `Statements.lean` are facades that import their children, so every import path works. The model's fold declarations live in `Singular/Model/` (`Admission`, `Exits`, `Fold`, `Payments`, `Routing`), the lemmas that unfold them in `Singular/Lemmas/` (`Batch`, `State`, `Step`, `Transactions`, beside the existing `Assets`, `Payments` and `Retraction`), and the fold statements in `Singular/Statements/` by the property each group proves (`Admission`, `Batch`, `Delivery`, `ExitPayments`, `Inversions`, `Preservation`, `RegistrationTransaction`, `TerminationTransaction`, and the rejection group added to the existing `Rejection`). Twenty-nine complete moved source spans in eighteen groups equal their text at the base, and the fold lane's declarations equal their text on main. The 2202 non-internal declaration names are the same before and after (Lean's own classification; four compiler-generated auxiliary names disappeared and eleven appeared, all published as the internal difference), every statement keeps its `AXIOMS` line and digest, and the corpora of scenarios, the transaction baseline and the protocol version are byte-identical. The two mutant checkers (issue 566) are unchanged; the new places of the declarations they mutate are listed for that issue's owner. Slices seven-c, eight and ten add to these modules and never back to the facades.
 
+## Slice eleven: planned rows (16 October 2026)
+
+Rows only; the exact signatures of the slice are added to this page by the ticket owner when the slice is accepted, from its statement list.
+
+| Module or declaration | Row |
+|---|---|
+| `Singular/Economics/Retraction.lean` | The single-request refusal is replaced: exactly one input is a pending registration and every other input is an ordinary output of the unspent set (no state token, no trie-ready tag, no application tag, no singular tag, not at the request address, not another request); an extra input that fails is refused with the reason that names the failed part |
+| The retraction's world constructor and proof cases | Same effect: the request leaves the pending pool; the earlier induction proofs gain the new cases |
+| `Singular/Statements/` | The refund floor for retraction restated over the enlarged shape (a new identity, uncovered, appended to the restatement record); what leaves a retraction is the refund and the fee, from ordinary funds; a pending registration inside its window with covering ordinary funding has an accepted balanced retraction |
+| Corpus rows | A funded retraction with a positive fee accepted; the refusals of the plan |
+
 ## Slice five: signed rows
 
 Names and shapes the writer keeps; anything not stated is the writer's to choose, and a name that another slice or the paper depends on is stated here.

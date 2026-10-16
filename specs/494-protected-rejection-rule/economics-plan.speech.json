@@ -113,6 +113,10 @@
     {
       "text": "Ten: folds. *As the treasury, I receive at least the registration cost for each key registered and everything but the tip of each terminated key; as a requester with a booked termination, I see it can always be folded.* Adds the fold of a registration (the processing window; routing of the cost, tip and carrier) and of a termination (no window; the singular tag and the trie-ready tag burned; everything but the tip donated; the processor takes exactly the declared tip), the tag flow of both folds (a registration fold burns the trie-ready tag and the application tag and mints the singular tag at the destination; a termination fold burns the trie-ready tag and the singular tag), the donation floor and the processors' take. Statements 7 (first half), 10 (restated), 11 and 12 and two supporting statements. Controls: a termination stranded by a check made at fold time, one donation counted for many keys, a forged application tag on a registration, an unbalanced fold, a fold that carries a tag out alive.",
       "pause": 300
+    },
+    {
+      "text": "Eleven: a retraction pays its ledger fee (inserted on 16 October 2026). *As a requester with a pending registration inside its reclaim window, I retract it and get back at least everything it held while my wallet pays the ledger fee; I see that I am able to.* The accepted retraction of slice nine admits only the pending registration as an input, so no balanced retraction with a positive fee exists. The retraction may also spend the requester's ordinary outputs (no state token and no tag of the three kinds, not at the request address, not the state output, not another request), which pay the fee; the refund floor, signer, window, burn and state rules do not change; nobody else is paid, no tip is taken and nothing goes to the treasury. Statements: the refund floor for retraction restated over the enlarged shape, what leaves an accepted retraction (the refund and the fee, from ordinary funds), and the availability of a retraction for a pending registration inside its window with covering funding (the positive control). Writer Codex gpt-6-astra at high effort; the paper's retraction section and exit table follow on the new model revision.",
+      "pause": 300
     }
   ],
   "controls": [
@@ -179,6 +183,6 @@
   ],
   "_source": {
     "file": "economics-plan.md",
-    "sha256": "a61c457bfe8eddd3c1166954dada635c34d6ba591286b2b39dda6be7a485378a"
+    "sha256": "749875b429e7855ef78afe1cff2fb48ae6210d5fa092cf5ea0a4174af2058a58"
   }
 }

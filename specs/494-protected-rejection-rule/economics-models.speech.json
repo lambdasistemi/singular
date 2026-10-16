@@ -153,6 +153,16 @@
       "pause": 400
     }
   ],
+  "slice-eleven-planned-rows-16-october-2026": [
+    {
+      "text": "Slice eleven: planned rows (16 October 2026).",
+      "pause": 500
+    },
+    {
+      "text": "Rows only; the exact signatures of the slice are added to this page by the ticket owner when the slice is accepted, from its statement list.",
+      "pause": 400
+    }
+  ],
   "slice-five-signed-rows": [
     {
       "text": "Slice five: signed rows.",
@@ -169,6 +179,6 @@
   ],
   "_source": {
     "file": "economics-models.md",
-    "sha256": "2205b69ee904837885f4ceb6964b8ce37c6480624f4825e20f4d04ea6f60bb8b"
+    "sha256": "c22c85dbba012498fcd568ab139685ae241cf2dfdc3b3a7eeb40b7a83dc2c0a4"
   }
 }

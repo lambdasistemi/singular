@@ -140,6 +140,15 @@ Rulings of the operator on 14 and 15 October 2026, relayed by the epic owner, an
 
 Order after the rebase push: slice eight-a (the fold model moves, nothing else), seven-b, seven-c, then eight, eight-c, nine and ten. Slice eight is cut into eight-a (the move), eight (the rejection judgement) and eight-c (the live rows published as unmet, with a tripwire); no statement or control is dropped.
 
+## Ruling: the requester pays the retraction (16 October 2026)
+
+The accepted retraction of slice nine admitted only the pending registration as an input, so a retraction with a positive ledger fee could not balance: a request holding 3,000,000 lovelace under a fee of 170,000 lovelace has no balanced accepted retraction. Operator: the requester pays the retraction.
+
+| Ruling | What it changes |
+|---|---|
+| The retraction may also spend the requester's ordinary outputs, which pay the ledger fee. The refund address receives at least everything the request held except the two tags; nobody else is paid, no tip is taken, nothing goes to the treasury | Slice eleven. The paper's retraction section and exit table follow on the new model revision. Rejection and the fold are unchanged |
+| Alternatives not taken | The fee out of the refund (the promise "everything it held" would become "minus the fee"); leaving the model as it was (the paper could not say that a requester is able to retract) |
+
 ## Constitution number
 
 On 14 October 2026 main took version 1.16.0 for the first change of the fold admission lane (a batch cannot burn a holding it creates). This ticket's amendment, opened as 1.16.0 for the booked clock of retraction and extended by each slice, was renumbered 1.17.0 with its text intact. Main then took version 1.17.0 for the second change of the fold admission lane (a fold is admitted through every request's deadline), so this ticket's amendment is renumbered 1.18.0 with its text intact. It also states that it supersedes the row "Reject reads no time" of main's 1.17.0 entry: that row described a rejection that has no admission of its own, while protected rejection has one. The statement `reject_reads_no_time` is retired and replaced by `rejection_uses_its_own_admission` (the fold's deadline admission is not applied to a rejection, whose own admission governs); the retired and the new statement are both named in the append-only restatement record. The ruling is the desk's, relayed by the epic owner on 14 October 2026; nothing about the validators changes.

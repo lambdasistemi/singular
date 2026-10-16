@@ -125,6 +125,7 @@ Each statement becomes a result only once its definitions and proofs exist in Le
 6. Refund floor:
    - on rejection, each refund address receives at least the sum, over its distinct rejected requests, of (held − tip) in lovelace;
    - on retraction, it receives everything the request held except the two tags, which are burned.
+   - the requester's own ordinary outputs pay the ledger fee of a retraction (ruled on 16 October 2026); nobody else is paid, no tip is taken and nothing goes to the treasury.
 7. Registration charge: every accepted fold that registers n keys donates at least n·R. R is returned on rejection and retraction, and never after a successful registration.
 8. Terminations are unrejectable: in every reachable state, no rejection of a termination request carrying its key's genuine token is admitted, on either ground.
    - The mismatch half follows from `biconditional_supply_sync` (Statements.lean) once the token held in a pending request is counted in supply.

@@ -214,3 +214,13 @@ recorded in the ticket owner's journal when the section is committed.
 | Eight-c, the live rows published unmet | The "always" rows; conformance without a devnet, transport tests, format and lint of the Haskell the slice touches; the wrong-reason control; documents including narration and speech; strict coverage report; the "final" rows and `just ci` once | The tripwire is a check this slice adds to the hosted conformance workflow, marked "CI change in this ticket (slice eight-c)" and proved by the pushed head's CI; it is shown red once on a state that implements the ruled rule or on its planted input, and green on the deployed validators |
 
 Budget per candidate: as version 4.
+
+## Gate version 6: slice eleven, inserted on 16 October 2026
+
+Added before the writer of slice eleven, after the operator's ruling that the requester pays the retraction (see the [decisions](decisions.md)). Every row of versions 1 to 5 above is unchanged: same text, same commands, same minutes and exits. The hash of the file before this section (version 5) is `f518e2a773882599b70145fa637f48456b3d95478d6b54b55f10d6cee4f48ca8`; the hash of the file with this section is recorded in the ticket owner's journal when the section is committed.
+
+| Slice | Rows of version 4 that apply | Condition |
+|---|---|---|
+| Eleven, a retraction pays its ledger fee | The rows marked five to ten: the "always" rows at every checkpoint; the "final" rows and `nix develop --quiet -c just ci` once on the final head | The wrong-reason control and the conformance commands that need a devnet apply only if the diff touches `conformance/`; the statements of the slice are listed with qualified names, axiom lines and revisions |
+
+Budget per candidate: as version 4.

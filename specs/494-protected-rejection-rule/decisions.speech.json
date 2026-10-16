@@ -149,6 +149,16 @@
       "pause": 400
     }
   ],
+  "ruling-the-requester-pays-the-retraction-16-october-2026": [
+    {
+      "text": "Ruling: the requester pays the retraction (16 October 2026).",
+      "pause": 500
+    },
+    {
+      "text": "The accepted retraction of slice nine admitted only the pending registration as an input, so a retraction with a positive ledger fee could not balance: a request holding 3,000,000 lovelace under a fee of 170,000 lovelace has no balanced accepted retraction. Operator: the requester pays the retraction.",
+      "pause": 400
+    }
+  ],
   "constitution-number": [
     {
       "text": "Constitution number.",
@@ -161,6 +171,6 @@
   ],
   "_source": {
     "file": "decisions.md",
-    "sha256": "aa71870f2b9724fa006c4cae0f494bc24b87953c4bb803c64e66616f4f564f8a"
+    "sha256": "60c82b12dd50e680698d938c894b6ee9e3a3ab0050b7abc900a3410de1a32601"
   }
 }

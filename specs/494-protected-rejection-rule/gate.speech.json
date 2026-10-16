@@ -155,8 +155,22 @@
       "pause": 400
     }
   ],
+  "gate-version-6-slice-eleven-inserted-on-16-october-2026": [
+    {
+      "text": "Gate version 6: slice eleven, inserted on 16 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "Added before the writer of slice eleven, after the operator's ruling that the requester pays the retraction (see the decisions). Every row of versions 1 to 5 above is unchanged: same text, same commands, same minutes and exits. The hash of the file before this section (version 5) is f518e2a773882599b70145fa637f48456b3d95478d6b54b55f10d6cee4f48ca8; the hash of the file with this section is recorded in the ticket owner's journal when the section is committed.",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: as version 4.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "gate.md",
-    "sha256": "f518e2a773882599b70145fa637f48456b3d95478d6b54b55f10d6cee4f48ca8"
+    "sha256": "66493935123fa33a5a270220a68d91d9322a15204202f922d01e6f185d16e2e5"
   }
 }
