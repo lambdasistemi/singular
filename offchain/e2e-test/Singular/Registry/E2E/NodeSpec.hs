@@ -88,7 +88,7 @@ import Ouroboros.Network.Protocol.Handshake.Type
     ( HandshakeProtocolError (HandshakeError)
     , RefuseReason (Refused)
     )
-import Singular.CLI.Plan (faucetStep, resolveFunding)
+import Singular.CLI.Plan (resolveFunding, retainedFaucetStep)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (CommandFailure (..))
 import Singular.Provider.Koios.Wire (txIdHex)
@@ -212,7 +212,10 @@ spec = aroundAll withSource $ do
                     Left (CommandFailure cls reason fields) -> do
                         cls `shouldBe` ClientRefusal
                         reason `shouldSatisfy` isInfixOf (bech32Address (walletAddr wallet))
-                        reason `shouldSatisfy` isInfixOf faucetStep
+                        -- The retained faucet sentence, kept exactly: the
+                        -- seam's paths end with it; resolveFunding still
+                        -- carries update's hand step until pull request 3.
+                        reason `shouldSatisfy` isInfixOf retainedFaucetStep
                         lookup "held" fields `shouldBe` Just (toJSON (0 :: Integer))
                         lookup "wallet" fields
                             `shouldBe` Just (toJSON (Text.pack (bech32Address (walletAddr wallet))))
