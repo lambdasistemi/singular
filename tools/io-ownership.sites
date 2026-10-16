@@ -3,9 +3,6 @@
 # Each line binds one token's occurrences in one top-level function over
 # comment/string-stripped source (imports and export lists excluded). A new
 # site of any class changes a count with imports untouched (NOTE-001); a
-# site moved between functions changes the per-function counts with the
-# file totals untouched (NOTE-002). Regenerate, review and commit beside
-# the code change. bare wait is excluded by design.
 applications/open-datum/negative/src/Negative/Craft.hs hostPublicFoldTrie newIORef 1
 applications/open-datum/negative/src/Negative/Craft.hs hostPublicFoldTrie readIORef 1
 applications/open-datum/negative/src/Negative/Craft.hs hostRecordKeys IORef 1
@@ -506,15 +503,15 @@ offchain/test/Singular/Registry/PhaseLogSpec.hs spec atomicModifyIORef' 1
 offchain/test/Singular/Registry/PhaseLogSpec.hs spec mapConcurrently_ 1
 offchain/test/Singular/Registry/PhaseLogSpec.hs spec newIORef 1
 offchain/test/Singular/Registry/PhaseLogSpec.hs spec readIORef 1
-offchain/test/Singular/Registry/RawChainFixture.hs <decl> IORef 4
+offchain/test/Singular/Registry/RawChainFixture.hs <decl> IORef 5
 offchain/test/Singular/Registry/RawChainFixture.hs advanceChain atomicModifyIORef' 1
 offchain/test/Singular/Registry/RawChainFixture.hs jumpChainTo atomicModifyIORef' 1
 offchain/test/Singular/Registry/RawChainFixture.hs loseConnection atomicModifyIORef' 1
-offchain/test/Singular/Registry/RawChainFixture.hs newRawChain newIORef 4
+offchain/test/Singular/Registry/RawChainFixture.hs newRawChain newIORef 5
 offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider atomicModifyIORef' 1
-offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider readIORef 5
-offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction atomicModifyIORef' 1
-offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction readIORef 1
+offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider readIORef 7
+offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction atomicModifyIORef' 2
+offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction readIORef 2
 offchain/test/Singular/Registry/StubSession.hs servingSessionWithId newIORef 1
 offchain/test/Singular/Registry/StubSession.hs servingSessionWithId readIORef 2
 offchain/test/Singular/Registry/StubSession.hs servingSessionWithId writeIORef 1

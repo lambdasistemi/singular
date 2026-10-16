@@ -2,6 +2,7 @@
 
 module Singular.Provider.Koios.ProviderSpec (spec) where
 
+import Cardano.Crypto.Hash (hashFromBytes)
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Tx (IsValid (..))
@@ -25,13 +26,14 @@ import Cardano.Ledger.Core
     , txIdTxBody
     )
 import Cardano.Ledger.Credential (Credential (ScriptHashObj))
+import Cardano.Ledger.Hashes (unsafeMakeSafeHash)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
     , PolicyID (..)
     )
-import Cardano.Ledger.TxIn (TxId, TxIn (..))
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent
@@ -48,6 +50,7 @@ import Control.Tracer (nullTracer)
 import Data.Aeson
     ( Value (..)
     , decodeStrict'
+    , eitherDecode'
     , encode
     , object
     , toJSON
@@ -64,7 +67,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (permutations, sort, sortOn, subsequences)
 import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Maybe qualified
 import Data.Sequence.Strict qualified as Seq
 import Data.Set qualified as Set
@@ -89,6 +92,7 @@ import Singular.Provider.Koios.Http
 import Singular.Provider.Koios.Provider
 import Singular.Provider.Koios.Recorded
     ( Fixture (..)
+    , FixtureRequest (..)
     , FixtureSet (..)
     , bodySha256
     , encodeFixture
@@ -173,6 +177,41 @@ spec = describe "Koios ledger provider constructor" $ do
           | RawExchange _ request _ <- providerEvents state
           ]
             `shouldBe` [Wire.CallTxInfo]
+    it
+        "reads where each named transaction sits on the chain, from the recorded service"
+        $ do
+            source <- timeSource
+            set <- recordedSet
+            (foundHash, absentHash, expected) <- recordedInclusionExpectation set
+            let provider =
+                    koiosProvider
+                        stateRuntime
+                        (Network 1)
+                        (pure (Right source))
+                        (Client.Koios recordedConfig (recordedTransport set))
+                inclusionAsked = [txIdOfHex foundHash, txIdOfHex absentHash]
+                (result, state) =
+                    runState
+                        ( acquire
+                            provider
+                            (Latest (Network 1))
+                            (\session -> fmap (fmap value) (inclusion session inclusionAsked))
+                        )
+                        initialProviderState
+            persist
+                "recorded-inclusion"
+                ( object
+                    [ "result" .= show result
+                    , "events" .= map eventJson (providerEvents state)
+                    ]
+                )
+            result `shouldBe` Right (Right expected)
+            Set.null (openSessions state) `shouldBe` True
+            [ Client.rawCall request
+              | RawExchange _ request _ <- providerEvents state
+              ]
+                `shouldSatisfy` ( \calls -> Wire.CallTxStatus `elem` calls && Wire.CallTxInfo `elem` calls
+                                )
 
     it
         "orders a complete block by asset spends across a page despite opposite hash order"
@@ -1478,6 +1517,93 @@ recordedConfig = Client.ClientConfig 20 10
 
 recordedSet :: IO FixtureSet
 recordedSet = loadFixtureSet "test/fixtures/koios/preprod" >>= requireRight
+
+{- | The recorded service's own answer about where the fixture's two
+transactions sit: the found one's hash, the absent one's, and the
+inclusion statuses the provider must report, every value read from the
+recorded fixtures themselves.
+-}
+recordedInclusionExpectation
+    :: FixtureSet -> IO (Text, Text, [InclusionStatus])
+recordedInclusionExpectation set = do
+    statusRows <- decodeRows "tx_status" set
+    case statusRows of
+        [found, absent]
+            | Just (Number confirmations) <- fieldOf found "num_confirmations"
+            , Just Null <- fieldOf absent "num_confirmations"
+            , Just (String foundHash) <- fieldOf found "tx_hash" -> do
+                infoRows <- decodeRows "tx_info" set
+                case [ row
+                     | row <- infoRows
+                     , fieldOf row "tx_hash" == Just (String foundHash)
+                     ] of
+                    [] -> fail "no recorded tx_info answers the found transaction"
+                    -- the recordings may repeat the transaction; any one answers
+                    (info : _rest) ->
+                        case ( fieldOf info "block_hash"
+                             , fieldOf info "absolute_slot"
+                             , fieldOf absent "tx_hash"
+                             ) of
+                            ( Just (String blockHash)
+                                , Just (Number slot)
+                                , Just (String absentHash)
+                                ) ->
+                                    pure
+                                        ( foundHash
+                                        , absentHash
+                                        ,
+                                            [ IncludedAt
+                                                (At (SlotNo (round slot)) (hexBytes blockHash))
+                                                (round confirmations)
+                                            , NotOnChain
+                                            ]
+                                        )
+                            _ -> fail "the recorded tx_info row lacks its chain point"
+        _ ->
+            fail
+                "the recorded tx_status fixture does not hold one found and one absent transaction"
+  where
+    fieldOf row name = KM.lookup (AesonKey.fromText name) row
+    hexBytes spelling =
+        either
+            (error "block hash is not hex")
+            id
+            (B16.decode (TE.encodeUtf8 spelling))
+
+{- | The decoded rows of every recorded answer of a call, across all its
+recordings: the fixture set may hold several.
+-}
+decodeRows :: Text -> FixtureSet -> IO [KM.KeyMap Value]
+decodeRows call set =
+    case [ fields
+         | fixture <- setFixtures set
+         , callNameOf fixture == call
+         , Right (Array rows) <-
+            [ eitherDecode'
+                (LBS.fromStrict (Client.answerBody (fixtureAnswer fixture)))
+            ]
+         , Object fields <- toList rows
+         ] of
+        rows@(_ : _) -> pure rows
+        [] ->
+            fail
+                ( "the fixture set holds no "
+                    <> Text.unpack call
+                    <> " recording that decodes"
+                )
+  where
+    callNameOf fixture = Wire.callName (fixtureCall (fixtureRequest fixture))
+
+-- | A transaction id from its recorded hex spelling.
+txIdOfHex :: Text -> TxId
+txIdOfHex spelling =
+    TxId . unsafeMakeSafeHash . fromMaybe (error "txIdOfHex") $
+        hashFromBytes
+            ( either
+                (error "txIdOfHex is not hex")
+                id
+                (B16.decode (TE.encodeUtf8 spelling))
+            )
 
 timeSource :: IO TimeSource
 timeSource = do

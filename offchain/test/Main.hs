@@ -42,6 +42,7 @@ import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
+import Singular.Registry.SubmitSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
@@ -66,6 +67,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.Bundle" [Wallet])
         Singular.Registry.BundleSpec.spec
+    describe
+        (tagged "Singular.Registry.Submit" [Submit, Wallet])
+        Singular.Registry.SubmitSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
         Singular.Registry.TxBuilder.BookEdgeSpec.spec

@@ -2,8 +2,8 @@
 
 ## Slice: provider read and assembly
 
-- [ ] inclusion-read: the provider read for where a transaction sits on the chain, in the Koios provider, the synthetic ledgers and the devnet facade, with recorded fixtures.
-- [ ] assemble-signed: the signing export, the allowlist line and the export-freeze check.
+- [x] inclusion-read: the provider read for where a transaction sits on the chain, in the Koios provider, the synthetic ledgers and the devnet facade, with recorded fixtures.
+- [x] assemble-signed: the signing export, the allowlist line and the export-freeze check.
 
 ## Slice: submission planner
 

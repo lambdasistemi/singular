@@ -28,6 +28,7 @@ module Singular.Registry.LedgerProvider
     , HistoricalTransaction (..)
     , HistoryBlock (..)
     , HistoryStream (..)
+    , InclusionStatus (..)
     ) where
 
 import Cardano.Ledger.Api.Tx.Out (TxOut)
@@ -176,6 +177,17 @@ newtype HistoryStream m = HistoryStream
         :: m (Either HistoryFailure (Maybe (HistoryBlock, HistoryStream m)))
     }
 
+{- | Where a transaction sits on the provider's chain: found, with the
+chain point of the block that carries it and a confirmation count, or
+not found. Nothing else: no inference from outputs.
+-}
+data InclusionStatus
+    = -- | the chain point of the block carrying it, and its confirmations
+      IncludedAt ChainPoint Word64
+    | -- | this provider does not know the transaction
+      NotOnChain
+    deriving stock (Eq, Show)
+
 -- | Facts consumed within one acquired scope and its named network.
 data Session w m = Session
     { sessionNetwork :: Network
@@ -202,6 +214,12 @@ data Session w m = Session
     -- ^ No record for an asset the provider does not know
     , history
         :: Asset -> HistoryRange -> m (Either HistoryFailure (HistoryStream m))
+    , inclusion
+        :: [TxId] -> m (Either ReadFailure (Evidenced w [InclusionStatus]))
+    {- ^ Where each named transaction sits on this provider's chain, in
+    the order asked: found with the chain point of its block and a
+    confirmation count, or not found. A failure is a named read failure.
+    -}
     }
 
 -- | Reading and signed submission in the caller's monad and witness domain.

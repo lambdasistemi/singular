@@ -504,12 +504,13 @@ intersector server = scope
                 updateArchive server (appendFetched fetched)
                 blocks <- archiveBlocks <$> readIORef (serverArchive server)
                 case reverse blocks of
-                    block : _ ->
+                    block : _ -> do
+                        value <- blockValue block
                         record
                             server
                             ( object
                                 [ "kind" .= ("chain-sync-full-block" :: Text)
-                                , "block" .= blockValue block
+                                , "block" .= value
                                 ]
                             )
                     [] -> fail "private facade: missing appended block"
@@ -708,18 +709,20 @@ answer server request body
                     (sourceEraHistory source)
                 )
         let json value = pure (status200, [], encode value, sourceValue source)
-            archiveRows blocks =
+            archiveRows blocks values = do
+                blockValues <-
+                    traverse
+                        blockValue
+                        ( Map.elems
+                            (Map.fromList [(archivedHeight block, block) | block <- blocks])
+                        )
                 rowsFrom
                     ( object
                         [ "ledger" .= sourceValue source
-                        , "blocks"
-                            .= map
-                                blockValue
-                                ( Map.elems
-                                    (Map.fromList [(archivedHeight block, block) | block <- blocks])
-                                )
+                        , "blocks" .= blockValues
                         ]
                     )
+                    values
             rowsFrom origin values = do
                 (headers, value) <- paged request values
                 pure
@@ -1078,21 +1081,23 @@ answerArchive server request body = do
         blocks = case rawPathInfo request of
             "/api/v1/tx_status" -> archiveBlocks archive
             _ -> map fst material
-        origin =
-            object
-                [ "blocks"
-                    .= map
-                        blockValue
-                        ( Map.elems
-                            (Map.fromList [(archivedHeight block, block) | block <- blocks])
-                        )
-                ]
+    originValues <-
+        traverse
+            blockValue
+            ( Map.elems
+                (Map.fromList [(archivedHeight block, block) | block <- blocks])
+            )
+    let origin = object ["blocks" .= originValues]
         rows values = do
             (headers, value) <- paged request values
             pure (status200, headers, encode value, origin)
     case rawPathInfo request of
-        "/api/v1/tx_info" ->
-            rows [transactionValue block tx | (block, tx) <- material]
+        "/api/v1/tx_info" -> do
+            hashes <- traverse (archivedHash . archivedPoint . fst) material
+            rows
+                [ transactionValue blockHashText block tx
+                | ((block, tx), blockHashText) <- zip material hashes
+                ]
         "/api/v1/tx_cbor" ->
             rows
                 [ object
@@ -1243,11 +1248,14 @@ outputValue historical (TxIn identity (TxIx index)) output =
   where
     MaryValue (Coin amount) (MultiAsset assets) = output ^. valueTxOutL
 
-transactionValue :: ArchivedBlock -> ArchivedTransaction -> Value
-transactionValue block tx =
+transactionValue
+    :: Text -> ArchivedBlock -> ArchivedTransaction -> Value
+transactionValue blockHashText block tx =
     object
         [ "tx_hash" .= Wire.txIdHex (archivedId tx)
         , "block_height" .= archivedHeight block
+        , "block_hash" .= blockHashText
+        , "absolute_slot" .= archivedSlot block
         , "inputs"
             .= [ outputValue True reference output
                | (reference, output) <- Map.toAscList (archivedInputs tx)
@@ -1263,25 +1271,29 @@ transactionValue block tx =
         , "valid_contract" .= archivedValid tx
         ]
 
-blockValue :: ArchivedBlock -> Value
-blockValue block =
-    object
-        [ "point" .= show (archivedPoint block)
-        , "slot" .= archivedSlot block
-        , "height" .= archivedHeight block
-        , "transactions"
-            .= [ object
-                    [ "material" .= transactionValue block tx
-                    , "cbor" .= hex (archivedCBOR tx)
-                    , "cborSha256" .= digest (archivedCBOR tx)
-                    , "collateral"
-                        .= [ outputValue True reference output
-                           | (reference, output) <- Map.toAscList (archivedCollateral tx)
-                           ]
-                    ]
-               | tx <- archivedTransactions block
-               ]
-        ]
+blockValue :: ArchivedBlock -> IO Value
+blockValue block = do
+    blockHashText <- archivedHash (archivedPoint block)
+    pure
+        ( object
+            [ "point" .= show (archivedPoint block)
+            , "slot" .= archivedSlot block
+            , "height" .= archivedHeight block
+            , "block_hash" .= blockHashText
+            , "transactions"
+                .= [ object
+                        [ "material" .= transactionValue blockHashText block tx
+                        , "cbor" .= hex (archivedCBOR tx)
+                        , "cborSha256" .= digest (archivedCBOR tx)
+                        , "collateral"
+                            .= [ outputValue True reference output
+                               | (reference, output) <- Map.toAscList (archivedCollateral tx)
+                               ]
+                        ]
+                   | tx <- archivedTransactions block
+                   ]
+            ]
+        )
 
 sourceValue :: LedgerSource -> Value
 sourceValue source =
@@ -1305,6 +1317,12 @@ sourceValue source =
 pointHash :: Chain.Point Block -> IO Text
 pointHash point = case point of
     Chain.GenesisPoint -> fail "private facade tip has no block hash"
+    Chain.BlockPoint _ (OneEraHash header) -> pure (hex (SBS.fromShort header))
+
+-- | The archived block's hash, as the recorded evidence spells it.
+archivedHash :: HeaderPoint -> IO Text
+archivedHash point = case point of
+    Chain.GenesisPoint -> fail "an archived block has no hash"
     Chain.BlockPoint _ (OneEraHash header) -> pure (hex (SBS.fromShort header))
 
 hex :: ByteString -> Text

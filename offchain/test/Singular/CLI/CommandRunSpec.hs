@@ -162,6 +162,7 @@ import Cardano.Ledger.Mary.Value
     , PolicyID
     )
 import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.Val (inject, (<->))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Balance (BalanceResult (..), balanceTx)
 import Cardano.Tx.Ledger (ConwayTx)
@@ -236,7 +237,7 @@ import Singular.Registry.RawChainFixture
     )
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
-import Singular.Registry.Signing (signedTx)
+import Singular.Registry.Signing (SignedTx, signTx, signedTx)
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
@@ -296,6 +297,7 @@ spec =
         >> journalTransitionsRow
         >> foldOverSeveralRequestsRow
         >> settledListSingletonRow
+        >> inclusionPointRows
         >> createDescribeCommandRows
         >> prepareFundingRows
         >> previewFundingRows
@@ -3680,6 +3682,95 @@ seam stubbed (one folds): each row asserting two settles fails by assertion.
 -}
 
 -- A fold receipt's settled list holds exactly the one pending request.
+
+{- | The chain fixture reports a recorded transaction at the chain point
+of the block that actually applied it — the slot and header the chain
+itself reached when the record was taken — for both the submit path the
+rig drives and the planted request the setup records. A receipt built
+from this implementer must not name a slot the transaction never
+entered.
+-}
+
+{- | The rig wallet's own payment back to itself, as the row that reads
+an inclusion point submits.
+-}
+selfPayment :: Wallet -> Cage.Outputs -> SignedTx
+selfPayment wallet held = signTx (walletSignKey wallet) (mkBasicTx body)
+  where
+    fee = Coin 1_000_000
+    value = foldMap ((^. valueTxOutL) . snd) held
+    body =
+        mkBasicTxBody
+            & inputsTxBodyL .~ Set.fromList (map fst held)
+            & outputsTxBodyL
+                .~ StrictSeq.singleton
+                    (mkBasicTxOut (walletAddr wallet) (value <-> inject fee))
+            & feeTxBodyL .~ fee
+
+inclusionPointRows :: Spec
+inclusionPointRows = describe
+    "the fixture's inclusion read reports the block that applied the transaction"
+    $ do
+        it "names the slot and header the submit path advanced the chain to" $
+            withRig $ \rig -> do
+                held <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                        SessionIO.outputsAt v (walletAddr (rigWallet rig))
+                let transaction = selfPayment (rigWallet rig) held
+                answer <- capSubmit (capabilities rig) transaction
+                _ <- case answer of
+                    Cage.SubmitAccepted accepted -> pure accepted
+                    other -> fail ("the rig refused the payment: " <> show other)
+                (included, tip) <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+                        statuses <-
+                            either
+                                (fail . ("inclusion read failed: " <>) . show)
+                                (pure . value)
+                                =<< Cage.inclusion v [txIdTx (signedTx transaction)]
+                        status <- case statuses of
+                            [one] -> pure one
+                            _ -> fail "the inclusion read did not answer the payment once"
+                        observed <- SessionIO.tip v
+                        pure (status, observed)
+                case included of
+                    Cage.IncludedAt point _ -> do
+                        point
+                            `shouldBe` Cage.At
+                                (Cage.observedSlot tip)
+                                (Cage.observedHash tip)
+                    other ->
+                        expectationFailure
+                            ("the chain does not hold the payment: " <> show other)
+        it "names the slot and header the planted request entered" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                (reqIn, _) <-
+                    plantRequest rig t1 seed economics (TE.encodeUtf8 "inclusion")
+                let planted = case reqIn of TxIn identity _ -> identity
+                (included, tip) <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+                        statuses <-
+                            either
+                                (fail . ("inclusion read failed: " <>) . show)
+                                (pure . value)
+                                =<< Cage.inclusion v [planted]
+                        status <- case statuses of
+                            [one] -> pure one
+                            _ -> fail "the inclusion read did not answer the planted request once"
+                        observed <- SessionIO.tip v
+                        pure (status, observed)
+                case included of
+                    Cage.IncludedAt point _ ->
+                        point
+                            `shouldBe` Cage.At (Cage.observedSlot tip) (Cage.observedHash tip)
+                    other ->
+                        expectationFailure
+                            ("the chain does not hold the planted request: " <> show other)
+
 settledListSingletonRow :: Spec
 settledListSingletonRow = describe
     "a fold receipt's settled list holds exactly the one pending request"

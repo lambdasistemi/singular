@@ -996,6 +996,7 @@ test-suite cage-tests
     Singular.Provider.Koios.Scripted
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.BundleSpec
+    Singular.Registry.SubmitSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.ContractMemory
     Singular.Registry.ContractSuite

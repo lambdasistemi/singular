@@ -96,6 +96,10 @@ rawSession context resolved =
                 ( Left
                     (HistoryReadFailure (BackendReadFailure "unused fixture history"))
                 )
+        , inclusion = \_ ->
+            observed
+                "inclusion"
+                (Left (BackendReadFailure "unused fixture inclusion"))
         }
   where
     observed name result = modify' (<> [name]) >> pure result
