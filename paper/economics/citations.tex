@@ -4,13 +4,15 @@ with Lean 4.27.0. The command \texttt{lake env lean tools/axioms.lean}
 was run in the worktree using its seeded compiled modules. The entire model
 source tree equals the pinned revision. Every listed declaration was separately
 confirmed by \texttt{git show} at the pin. The raw report's SHA-256 is
-\begin{center}\scriptsize\nolinkurl{d22520a04f196bfe52e69ac18d156cce82c78d34f4a6365a16a2138a2815a2f9}\end{center}
+\begin{center}\scriptsize\nolinkurl{1b9155bc7e07189a9f3c8807a376a1411d99a0ad44f0422b9fd1c10398a97904}\end{center}
 No listed result uses \texttt{sorryAx} or an additional nonstandard axiom.
 The following are verbatim axiom lines, with typographic wrapping only.
 Source paths are relative to the repository at the stated revision.
 \begingroup\footnotesize
 \begin{longtable}{p{.94\linewidth}}
 \toprule Declaration evidence at the model pin\\\midrule\endhead
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.active_mint_at_unknown_key}\texttt{ [propext, Quot.sound, Classical.choice]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:75}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.at_most_one_pending_termination}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Termination.lean:141}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.booked_request_has_exact_contents}\texttt{ [propext, Quot.sound, Classical.choice]}\\
@@ -31,12 +33,18 @@ Source paths are relative to the repository at the stated revision.
 \nolinkurl{lean/Singular/Statements/FoldAccounting.lean:11}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.fold_inputs_public}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Delivery.lean:164}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.fold_required_for_active_and_absent}\texttt{ [propext, Quot.sound, Classical.choice]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:23}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.fold_requires_no_signer}\texttt{ [propext, Quot.sound]}\\
 \nolinkurl{lean/Singular/Statements/ExitPayments.lean:17}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.fold_routes_every_amount}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/FoldAccounting.lean:25}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.insert_active_transaction_row}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/RegistrationTransaction.lean:34}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.key_names_its_token}\texttt{ [propext, Quot.sound, Classical.choice]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:46}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.ledger_boundary_premises_satisfiable}\texttt{ [propext, Quot.sound]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:136}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.live_request_not_rejected}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/RejectionProtection.lean:13}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.only_booked_terminations_fold}\texttt{ [propext, Quot.sound, Classical.choice]}\\
@@ -73,6 +81,8 @@ Source paths are relative to the repository at the stated revision.
 \nolinkurl{lean/Singular/Statements/TagSupply.lean:13}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.terminal_attestation_permanent}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Preservation.lean:135}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.terminal_discard_changes_no_registry_state}\texttt{ [propext, Quot.sound]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:123}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.termination}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Preservation.lean:223}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.termination_booking_has_exact_contents}\texttt{ [propext, Quot.sound, Classical.choice]}\\
@@ -81,8 +91,12 @@ Source paths are relative to the repository at the stated revision.
 \nolinkurl{lean/Singular/Statements/Termination.lean:151}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.termination_unrejectable}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/RejectionProtection.lean:52}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.token_policies_read_no_staking}\texttt{ [propext, Quot.sound]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:113}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.trie_ready_tag_is_not_state_token}\texttt{ [propext]}\\
 \nolinkurl{lean/Singular/Statements/Booking.lean:185}\\[5pt]
+\texttt{AXIOMS }\nolinkurl{Singular.Statements.witness_decision_cases}\texttt{ [propext]}\\
+\nolinkurl{lean/Singular/Statements/LedgerBoundary.lean:10}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.world_supply_sync}\texttt{ [propext, Quot.sound, Classical.choice]}\\
 \nolinkurl{lean/Singular/Statements/Termination.lean:54}\\[5pt]
 \texttt{AXIOMS }\nolinkurl{Singular.Statements.zero_donation_omits_field}\texttt{ [propext, Quot.sound, Classical.choice]}\\

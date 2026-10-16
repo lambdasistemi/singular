@@ -7,7 +7,7 @@
 \g@addto@macro\UrlBreaks{\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D\do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N\do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X\do\Y\do\Z}
 \makeatother
 \setlength{\emergencystretch}{2em}
-\newcommand{\modelpin}{4254a3073fe0457946eba0a68d974c999c930ebf}
+\newcommand{\modelpin}{60af4aaefd64048f188fc9710cc953c5356f26f2}
 \newcommand{\checked}{\par\noindent\textcolor{green!35!black}{\textbf{Existing checked declaration.}}\ }
 \newcommand{\hand}{\par\noindent\textcolor{blue!65!black}{\textbf{Hand proof supplied.}}\ }
 \newcommand{\proposed}{\par\noindent\textcolor{violet}{\textbf{Proposed statement.}}\ }
@@ -73,8 +73,10 @@ at the key is terminal, every request at the key is refused and every accepted
 later batch leaves the leaf terminal.
 \evidence{termination}
 \checked A terminal attestation, once held, stays held and its key's leaf is
-terminal after any accepted batch.
+terminal after any accepted fold batch. A holder may separately discard an
+attestation without changing the terminal leaf; this is not a fold.
 \evidence{terminal_attestation_permanent}
+\evidence{terminal_discard_changes_no_registry_state}
 \hand By induction over the accepted batches from the genesis state, a key
 that is terminal at one reachable state is terminal at every later reachable
 state. Hence an active leaf at $R$ shows that the key was never terminal at
@@ -83,9 +85,10 @@ $R$. The argument uses only the checked one-batch statement and the
 reachability of $R$.
 \missing The lookup is a logical read of the root; verifying a concrete
 lookup proof is a correspondence obligation of the validator or verifier. A
-lookup is valid against the current root only until the next fold; durable
-attestations of presence, absence and termination are future work and are
-proposed, not proved. Singular alone neither verifies a duplicity proof nor
+lookup is valid against the current root only until the next fold;
+issuance and implementation of durable attestations of presence, absence
+and termination remain future work. Singular alone neither verifies a duplicity
+proof nor
 establishes a KERI checkpoint or conviction history, and the consumer's
 integration remains open.
 
@@ -176,6 +179,53 @@ existing request validator still uses a state-spending rejection path; the ruled
 economic judgement is separate. The public suite retains historical receipts
 and publishes affected requirements as unmet. The old driver's transactions and
 its proofs must not be substituted for the economic transactions described here.
+
+\section{The ledger boundary and staking}
+\checked The modeled policies have a complete per-kind decision. Active and
+absent movements, burns included, require a fold. Terminal movements require
+a fold unless every movement is a burn. A fold spends an input at the state
+script's payment credential, with exactly one unit of this registry's state
+token and the fold redeemer.
+\evidence{witness_decision_cases}
+\checked Under bound policy identifiers, ledger script execution and collision
+freedom on the scripts occurring in that transaction, an accepted active or
+absent movement also establishes that the state script accepted that spend.
+Collision freedom is a named local premise, not a global injective-hash claim.
+\evidence{fold_required_for_active_and_absent}
+
+\checked A positive active mint is connected to that same spent state, its
+datum, an admitted batch, the validity upper bound and the batch's complete
+token mint. The key was unknown before the fold; from a reachable state it
+has exactly one active token afterward. Besides the premises above, this
+uses the explicit \decl{StateScriptFolds} correspondence premise.
+\evidence{active_mint_at_unknown_key}
+\missing The premise is not a proof that a compiled state validator implements
+the model batch. That correspondence remains an implementation obligation.
+
+\checked All three token policies ignore staking: changing withdrawals,
+certificates, their redeemers and any input, reference-input or output stake
+credential leaves the decision unchanged when the transaction with those
+fields erased is the same.
+\evidence{token_policies_read_no_staking}
+\missing This result is not a staking theorem for the state or request rules;
+those remain in the state/request model and correspondence work. A delivered
+output still binds the whole address named by its request, stake part included.
+
+\checked Removing one terminal holding preserves every key's leaf, the root,
+configuration, custody, every active count and consistency. Terminal
+attestations are zero or many; their number is not the active supply invariant.
+A holder's discard is separate from a fold, so attestation permanence through
+folds remains true. The terminal fact survives discarding its evidence token.
+\evidence{terminal_discard_changes_no_registry_state}
+
+\checked One finite ledger satisfies all named premises. It accepts an active
+mint spending a reachable registry state, with one active token after the
+admitted batch, and a terminal pure burn without a fold that consumes a real
+attestation. The discarded holding exists in a consistent terminal state.
+\evidence{ledger_boundary_premises_satisfiable}
+\missing The example does not establish terminal issuance through the active
+two-edge lifecycle or either transaction's acceptance on Cardano. Terminal
+issuance and concrete deposit recovery require their own evidence.
 
 \section{Adversary and cost model}
 The actors are request funders, refund recipients, application custodians,
@@ -304,9 +354,10 @@ it. A proof against the registry's current root likewise depends on the
 state output, which a fold replaces. Once that referenced output is spent,
 the transaction cannot use it. This explains the desire for more durable
 attestations, without proving that a proposed token protocol achieves it.
-\missing The minting, invalidation, custody and verification rules of these
-witnesses, and their implementation correspondence, require a future model
-and evidence. A presence or absence witness cannot be promised valid after
+\missing The boundary model now specifies the three policy decisions and
+terminal discard. Issuance through the proposed lifecycle extensions,
+invalidation, custody and concrete verification still require model and
+implementation evidence. A presence or absence witness cannot be promised valid after
 its own condition has ceased to hold.
 
 \clearpage
