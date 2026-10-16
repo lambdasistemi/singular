@@ -16,6 +16,7 @@ module Main (main) where
 import Control.Exception
     ( SomeException
     , displayException
+    , throwIO
     , try
     )
 import Data.Text qualified as T
@@ -24,7 +25,12 @@ import System.Environment (getArgs, lookupEnv)
 import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
 
-import Conformance.Book (bookReceipts, bookStories, renderBook)
+import Conformance.Book
+    ( bookReceipts
+    , bookStories
+    , bookUnmet
+    , renderBook
+    )
 import Conformance.EvidencePage (runEvidencePage)
 import Conformance.ForkKeys
     ( runCheckForkExclusion
@@ -45,6 +51,7 @@ import Conformance.Rows
     , rowId
     )
 import Conformance.Run (runForkProbe, runRows)
+import Conformance.Run.Receipts (debtReport)
 import Conformance.Run.Replay (runReplayCapsule)
 import Conformance.Run.Temporary (TmpDirOwner, newTmpDirOwner)
 import Paths_conformance (getDataFileName)
@@ -129,7 +136,15 @@ an old receipt directory supplied in place of an actual run.
 -}
 runBook :: TmpDirOwner -> FilePath -> Maybe FilePath -> IO ()
 runBook owner dir output = do
-    runGuarded owner bookStories dir
+    outcome <-
+        try (runRows owner bookStories dir) :: IO (Either SomeException ())
+    debt <- case outcome of
+        Right () -> pure False
+        Left problem
+            | not (null bookUnmet)
+            , displayException problem == debtReport [] bookUnmet [] ->
+                pure True
+            | otherwise -> throwIO problem
     receipts <- loadReceipts dir >>= either fail pure
     case bookReceipts receipts of
         Left problem ->
@@ -141,9 +156,15 @@ runBook owner dir output = do
             path <- getDataFileName "rows.json"
             rows <- loadRows path >>= either fail pure
             case output of
-                Nothing -> putStrLn "Every live chapter and the unnamed sequence passed."
+                Nothing -> putStrLn (renderBook rows chapters)
                 Just target -> writeFile target (renderBook rows chapters)
             putStrLn ("Live run receipts: " <> dir)
+            if debt
+                then do
+                    hPutStrLn stderr (debtReport [] bookUnmet [])
+                    hPutStrLn stderr "exit_status: 1"
+                    exitWith (ExitFailure 1)
+                else putStrLn "exit_status: 0"
 
 runDispatch :: TmpDirOwner -> [String] -> IO ()
 runDispatch owner rest = case break (== "--receipts-dir") rest of

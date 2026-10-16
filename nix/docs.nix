@@ -62,6 +62,28 @@ let
   aikenReference = onchain.packages.${pkgs.system}.aiken-reference;
   # The shared toolchain pins a copy of Mermaid; serving it from the site keeps
   # every diagram inside the checked, byte-verified build.
+  # The registry paper uses llncs from the pinned TeX Live distribution.
+  paperTex = pkgs.texlive.combine {
+    inherit (pkgs.texlive) scheme-small llncs;
+  };
+  economicsPaper = pkgs.stdenvNoCC.mkDerivation {
+    pname = "singular-economics-paper";
+    version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
+    src = src + "/paper/economics";
+    nativeBuildInputs = [ paperTex ];
+    buildPhase = ''
+      export TEXMFVAR=$(mktemp -d)
+      export TEXMFCONFIG=$(mktemp -d)
+      pdflatex -halt-on-error -interaction=nonstopmode main.tex
+      bibtex main
+      pdflatex -halt-on-error -interaction=nonstopmode main.tex
+      pdflatex -halt-on-error -interaction=nonstopmode main.tex
+    '';
+    installPhase = ''
+      mkdir -p "$out"
+      cp main.pdf "$out/economics-paper.pdf"
+    '';
+  };
   docs = pkgs.stdenvNoCC.mkDerivation {
     pname = "singular-docs";
     version = pkgs.lib.removeSuffix "\n" (builtins.readFile (src + "/version.txt"));
@@ -72,6 +94,7 @@ let
     buildPhase = ''
       python3 tools/prepare_docs.py
       mkdocs build --strict
+      cp ${economicsPaper}/economics-paper.pdf site/docs/economics-paper.pdf
       python3 tools/api_reference.py manifest site ${apiHaddock.doc} ${offchain.outPath} ${apiPackageDb} ${apiReexportHaddock.doc}
       python3 tools/api_reference.py manifest --library conformance site ${apiConformanceHaddock.doc} ${conformance.outPath} ${apiConformancePackageDb}
       python3 tools/aiken_reference.py publish site ${aikenReference} onchain ${

@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 66 proved declarations — 45 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "a7431059f87f"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 108 proved declarations — 87 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "477901d6273e"
    },
    {
     "index": 2,
@@ -1690,8 +1690,15 @@
     "index": 1,
     "name": "docs-conformance-architecture/who-owns-the-conformance-suite-01",
     "pause_ms": 400,
+    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+    "v": "b033bceb0ffb"
+   },
+   {
+    "index": 2,
+    "name": "docs-conformance-architecture/who-owns-the-conformance-suite-02",
+    "pause_ms": 400,
     "text": "A contributor changing the conformance suite — adding a row's story, re-binding a theorem, adjusting a comparison, tightening the receipt record, re-rendering the published evidence — wants to open the one module that owns that concern and know which way the dependencies run, before touching a two-thousand-line live interpreter. This page is that map for the suite's library: what each concern's owner is, where the live runner's boundary sits, what may never change while the code moves, where to make a common change, and what the evidence does and does not show. The library's generated interface is the Conformance API reference; this page explains the responsibilities behind it.",
-    "v": "6a1bcbee58ad"
+    "v": "a11c43aeb8a0"
    }
   ]
  },
@@ -1708,8 +1715,15 @@
     "index": 1,
     "name": "docs-consumer-conformance/consumer-conformance-record-01",
     "pause_ms": 400,
+    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+    "v": "014420be1371"
+   },
+   {
+    "index": 2,
+    "name": "docs-consumer-conformance/consumer-conformance-record-02",
+    "pause_ms": 400,
     "text": "As a Singular integrator, I can replay the current conformance interface, distinguish partial evidence from completed coverage, and trace older observations to the candidate that produced them. The connected naming release journey is documented separately in recovery and permanent retirement.",
-    "v": "2a164b799cbd"
+    "v": "74a21053eb02"
    }
   ],
   "current-registry-mode-integration": [
@@ -2181,57 +2195,64 @@
     "index": 4,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-04",
     "pause_ms": 400,
-    "text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0e638fad, blob d38e81c0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
-    "v": "d00ac7146e85"
+    "text": "Unmet by ruling (unmet-by-ruling; reject-before-deadline-consumer-requirement, fold-against-superseded-root, surplus-fold-actions, wrong-redeemer-constructor-index): executed, and kept unmet by an operator ruling. The one verdict carries two meanings, and every row states which. reject-before-deadline-consumer-requirement: the registry deliberately does not do what the consumer requirement states, kept unmet by operator ruling 2026-10-01. The consumer requires that a folder must not reject a request during its processing window (cardano-keri R9_reject_needs_rejectable, 0e638fad, blob d38e81c0); Singular's model lets a folder reject a request with no timing admission, and the chain accepts that reject (#320). Alignment is cardano-keri#468. fold-against-superseded-root, surplus-fold-actions and wrong-redeemer-constructor-index: the chain refuses, Lean has no counterpart to compare with, kept unmet by operator ruling 2026-10-02 (\"Narrow #287\"); follow-ups: fold-against-superseded-root lambdasistemi/singular#346, surplus-fold-actions lambdasistemi/singular#345, wrong-redeemer-constructor-index lambdasistemi/singular#347. The session ends non-zero while any row is unmet; it is never a pass.",
+    "v": "94f4b3418bbc"
    },
    {
     "index": 5,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-05",
     "pause_ms": 400,
-    "text": "Evidence provenance. The receipts cited in this section are the generic session's ship run, taken fresh at clean tip 1d98d51 after the receipt-overwrite repair (blueprint state:ce7615f6… request:8970c286…, cardano-node 10.7.0, every receipt dirty: false, every held row carrying its acceptance with transaction id and measurements). historical-permissionless-fold's first post-repair execution was at clean tip 748c4a9 (txid fe54d3a6…); its ship-run repetition at 1d98d51 is 4142f7d6…. The overwritten pre-repair receipts are retained only as evidence of that defect.",
-    "v": "7bda9d527063"
+    "text": "Dated note, 2026-10-13 (decision B, ticket 494 slice three, ahead of validators 495): the dedicated in-window row is now a lawful lifecycle-mismatch rejection (a second insertActive for a key already Active, with bound mismatch evidence, both sides accepting, owner refunded) and stays green; the generic standing row now books a foldable insertActive for a fresh key with expiry evidence in-window, refused by the model for reject-not-expired and accepted by the chain (tampered refunds refused by both for different reasons), published as unmet with a tripwire for lambdasistemi/singular#495 (the validators ticket that must flip the row by refusing the untampered in-window reject). Ticket 320's early-rejection history above is not edited. Held (held-q002; empty-fold, request-value-and-refund-routing): executed, with the consumer requirements still unmet. empty-fold recorded a conflict with the pre-revision Singular model; rejecting empty batches is now approved. request-value-and-refund-routing requires the operation-specific value-routing repair. The rows move only after the required implementation and execution evidence is accepted. Resolved-by-ruling (historical-owner-change): a ruling settled the row's question; the observation is retained as defect evidence of the outstanding owner gate — never a pass, never an owner-semantics claim. Superseded (historical-owner-signed-sweep, historical-non-owner-sweep, historical-registry-termination): the expectation asserted authority, a sweep or a termination that does not exist at this commit; observations are preserved, claims are withdrawn, and no execution credit attaches. Retired (retired-stake-hook-with-withdrawal, retired-stake-hook-without-withdrawal): the registry interface has no stake_script hook, so nothing runs them.",
+    "v": "4c54f59dc9a8"
    },
    {
     "index": 6,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-06",
     "pause_ms": 400,
-    "text": "Held rows (operator question (Q-002), story 2). empty-fold and request-value-and-refund-routing are executed holds, never passes; surplus-fold-actions, held when this history was written, is now unmet by ruling (above). Only empty-fold was established as a direct conflict between the two model results. In the pinned pre-revision contract, Singular's Lean permits the empty fold (foldItems, | s, [] => .ok — Model.lean 188–189) and pairs each request with exactly one action in its FoldItem, so a surplus tail is unmodelled; State carries no owner field and Action.fold routes no refunds. Singular.Statements.fold_iff (Model.lean 250–256) makes its five conjuncts sufficient — native spend, fold items, net-mint match, representative-mint and application-mint witnesses — and no owner is among them: folding is permissionless. The consumer's theorems require the empty batch refused (R8_empty_fold_refused) and the 1:1 accounting. Its fold value routing is not R11_contribute_value — that states the deposit amount, and R11_retract_value states bond+tip on retract; fold routing lives in the consumer's Registry.processBody, Registry.stepFn and the Cage.delegated_is_registry equality, and it is operation-specific: register/revive lock the deposit into a checkpoint, goDormant/goConvicted/convict refund to the recorded owner, rejection returns the operation bond — guarded by rejectable and userPostable, not on demand — and the fold tip goes to the folder. A blanket exact-refund repair would preserve the wrong value mode and prevent checkpoint funding. Upstream #100/#101 are referenced proposals, not a delivered partition fix: #101 is open, and Singular owns the required local repair. R5_plugin_pinned needs a distinction this page previously collapsed. It is about the plugin, not a registry owner: the bound Registry.Sys carries plugin, and the consumer's fold checks pl = s.plugin. So registry-owner privileges and fields are superseded — the operator ruled Singular has no registry-owner role, and there is no owner to pin — but the application/plugin identity correspondence is not waived by that. The required application and native-witness bindings and the policy bindings remain required, and must be established through the actual ownerless representation; this is not a reason to reintroduce stake_script or to assert its old mechanism is the required one. The remaining requirements stay unmet; the receipts carry verdict held-q002 and the session ends non-zero while anything is held — a hold can never read as a pass, and a verdict moves only by execution. historical-owner-change is resolved-by-ruling, not a fourth unresolved hold: its receipt carries resolved-by-ruling, its acceptance stays defect evidence, and it is outside the held-set.",
-    "v": "f85a41dd2526"
+    "text": "Evidence provenance. The receipts cited in this section are the generic session's ship run, taken fresh at clean tip 1d98d51 after the receipt-overwrite repair (blueprint state:ce7615f6… request:8970c286…, cardano-node 10.7.0, every receipt dirty: false, every held row carrying its acceptance with transaction id and measurements). historical-permissionless-fold's first post-repair execution was at clean tip 748c4a9 (txid fe54d3a6…); its ship-run repetition at 1d98d51 is 4142f7d6…. The overwritten pre-repair receipts are retained only as evidence of that defect.",
+    "v": "dc86e4258b87"
    },
    {
     "index": 7,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-07",
     "pause_ms": 400,
-    "text": "A repair this slice had to make to keep that sentence true: a refused control used to submit through the same path as a refusal ROW and wrote its refusal under the row's id, so empty-fold/surplus-fold-actions/request-value-and-refund-routing's held receipts were being replaced by their controls' refusals in every earlier receipts directory — receipts asserting the opposite of the executed finding (historical-owner-change's survived only because its control was retired, which is what isolated the cause). The control now writes nothing: its outcome is run-log evidence under its own identity, it cannot silently pass (an accepted control fails the run as a FINDING; a refusal that does not attribute fails the run naming the mismatch), and the receipt policy is unit-tested to discriminate — a control never overwrites a held receipt, a refusal row always writes, a non-attributing refusal writes nothing. The overwritten historical receipts in /tmp/t70-receipts* are kept untouched as evidence of the defect, never relabelled as fresh proof; the receipts cited by this page are the ones taken fresh at the clean tip after the repair.",
-    "v": "1a8650c48625"
+    "text": "Held rows (operator question (Q-002), story 2). empty-fold and request-value-and-refund-routing are executed holds, never passes; surplus-fold-actions, held when this history was written, is now unmet by ruling (above). Only empty-fold was established as a direct conflict between the two model results. In the pinned pre-revision contract, Singular's Lean permits the empty fold (foldItems, | s, [] => .ok — Model.lean 188–189) and pairs each request with exactly one action in its FoldItem, so a surplus tail is unmodelled; State carries no owner field and Action.fold routes no refunds. Singular.Statements.fold_iff (Model.lean 250–256) makes its five conjuncts sufficient — native spend, fold items, net-mint match, representative-mint and application-mint witnesses — and no owner is among them: folding is permissionless. The consumer's theorems require the empty batch refused (R8_empty_fold_refused) and the 1:1 accounting. Its fold value routing is not R11_contribute_value — that states the deposit amount, and R11_retract_value states bond+tip on retract; fold routing lives in the consumer's Registry.processBody, Registry.stepFn and the Cage.delegated_is_registry equality, and it is operation-specific: register/revive lock the deposit into a checkpoint, goDormant/goConvicted/convict refund to the recorded owner, rejection returns the operation bond — guarded by rejectable and userPostable, not on demand — and the fold tip goes to the folder. A blanket exact-refund repair would preserve the wrong value mode and prevent checkpoint funding. Upstream #100/#101 are referenced proposals, not a delivered partition fix: #101 is open, and Singular owns the required local repair. R5_plugin_pinned needs a distinction this page previously collapsed. It is about the plugin, not a registry owner: the bound Registry.Sys carries plugin, and the consumer's fold checks pl = s.plugin. So registry-owner privileges and fields are superseded — the operator ruled Singular has no registry-owner role, and there is no owner to pin — but the application/plugin identity correspondence is not waived by that. The required application and native-witness bindings and the policy bindings remain required, and must be established through the actual ownerless representation; this is not a reason to reintroduce stake_script or to assert its old mechanism is the required one. The remaining requirements stay unmet; the receipts carry verdict held-q002 and the session ends non-zero while anything is held — a hold can never read as a pass, and a verdict moves only by execution. historical-owner-change is resolved-by-ruling, not a fourth unresolved hold: its receipt carries resolved-by-ruling, its acceptance stays defect evidence, and it is outside the held-set.",
+    "v": "8c77aaa8588f"
    },
    {
     "index": 8,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-08",
     "pause_ms": 400,
-    "text": "historical-permissionless-fold and F-002, both halves by execution. An independent audit found that the runner itself always supplied the state owner's signature, so no fold row in the suite could have observed the owner gate; historical-permissionless-fold was built as the exact regression property. Executed against the pre-#79 candidate it was REFUSED, attributed to the state script, and recorded diverges-from-lean (receipt retained as history). After epic 17's #79 repair it was executed again: the fold with no owner signer is accepted (agrees-with-model, txid 4142f7d6… at the ship run, fe54d3a6… at the first post-repair execution, blueprint state:ce7615f6… request:8970c286… both times), and the same fold with the owner signer is accepted in-run. Both acceptances are the post-repair evidence, not a weakened test: the two transactions differ in the signer set alone, so the acceptance is attributable to the removed gate. The expectation was always accept; what moved is the candidate, and the verdict moved by execution only — never by editing a row or flipping a stored receipt.",
-    "v": "1656549cc641"
+    "text": "A repair this slice had to make to keep that sentence true: a refused control used to submit through the same path as a refusal ROW and wrote its refusal under the row's id, so empty-fold/surplus-fold-actions/request-value-and-refund-routing's held receipts were being replaced by their controls' refusals in every earlier receipts directory — receipts asserting the opposite of the executed finding (historical-owner-change's survived only because its control was retired, which is what isolated the cause). The control now writes nothing: its outcome is run-log evidence under its own identity, it cannot silently pass (an accepted control fails the run as a FINDING; a refusal that does not attribute fails the run naming the mismatch), and the receipt policy is unit-tested to discriminate — a control never overwrites a held receipt, a refusal row always writes, a non-attributing refusal writes nothing. The overwritten historical receipts in /tmp/t70-receipts* are kept untouched as evidence of the defect, never relabelled as fresh proof; the receipts cited by this page are the ones taken fresh at the clean tip after the repair.",
+    "v": "0d468834bea0"
    },
    {
     "index": 9,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-09",
     "pause_ms": 400,
-    "text": "The owner-dependency extent. Before #79, every fold-based row flowed through validateOwnership: update-existing-key–insert-occupied-key, reject-before-deadline-consumer-requirement–retired-stake-hook-without-withdrawal, historical-non-owner-sweep and request-value-and-refund-routing depended on the state owner's signature, while retract-outside-window's retract never did (it depends only on the request owner). #79 removed the gate from Modify folding, and the 2026-09-12 operator ruling settles more: the registry has no owner role whatsoever — not latent, not transferable, not gating End or migration. state.ak's End and validateMigration still call validateOwnership; those calls are outstanding conformance defects owned by epic 17, and historical-owner-change's accepted owner change is their executed evidence.",
-    "v": "2f3c2ee37961"
+    "text": "historical-permissionless-fold and F-002, both halves by execution. An independent audit found that the runner itself always supplied the state owner's signature, so no fold row in the suite could have observed the owner gate; historical-permissionless-fold was built as the exact regression property. Executed against the pre-#79 candidate it was REFUSED, attributed to the state script, and recorded diverges-from-lean (receipt retained as history). After epic 17's #79 repair it was executed again: the fold with no owner signer is accepted (agrees-with-model, txid 4142f7d6… at the ship run, fe54d3a6… at the first post-repair execution, blueprint state:ce7615f6… request:8970c286… both times), and the same fold with the owner signer is accepted in-run. Both acceptances are the post-repair evidence, not a weakened test: the two transactions differ in the signer set alone, so the acceptance is attributable to the removed gate. The expectation was always accept; what moved is the candidate, and the verdict moved by execution only — never by editing a row or flipping a stored receipt.",
+    "v": "794d2bec2f2d"
    },
    {
     "index": 10,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-10",
     "pause_ms": 400,
-    "text": "Superseded rows, observations preserved. historical-owner-change is resolved-by-ruling: the owner-pinning question has no premise left to be pending on, the acceptance is defect evidence, and the retired control (previous-owner End refused, new-owner accepted) tested behaviour that must not exist — it was never landed. historical-non-owner-sweep's refusal and its owner-signed control stay in the record with the conformance claim withdrawn: a gate that tests authority that does not exist discriminates nothing Singular owes. historical-owner-signed-sweep and historical-registry-termination are superseded the same way: the registry has no sweep and no termination, the end-to-end examples they cited were removed on 2026-09-12 (f3a68b1b), nothing runs either row, and list prints both uncovered. retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are retired: the registry interface has no stake_script hook, so nothing runs them. The imported partition's State.stake_script hook supplies registry-owner authority by another name, which is exactly why epic 17 removes the field; the pinned staking credential cannot register anyway (the cause above), so the hook never reached a ledger. Preserved history stays unchanged, and changing applicability earns no execution credit.",
-    "v": "7c06de145496"
+    "text": "The owner-dependency extent. Before #79, every fold-based row flowed through validateOwnership: update-existing-key–insert-occupied-key, reject-before-deadline-consumer-requirement–retired-stake-hook-without-withdrawal, historical-non-owner-sweep and request-value-and-refund-routing depended on the state owner's signature, while retract-outside-window's retract never did (it depends only on the request owner). #79 removed the gate from Modify folding, and the 2026-09-12 operator ruling settles more: the registry has no owner role whatsoever — not latent, not transferable, not gating End or migration. state.ak's End and validateMigration still call validateOwnership; those calls are outstanding conformance defects owned by epic 17, and historical-owner-change's accepted owner change is their executed evidence.",
+    "v": "ca303093ec09"
    },
    {
     "index": 11,
     "name": "docs-consumer-conformance/the-issue-70-generic-rows-11",
     "pause_ms": 400,
+    "text": "Superseded rows, observations preserved. historical-owner-change is resolved-by-ruling: the owner-pinning question has no premise left to be pending on, the acceptance is defect evidence, and the retired control (previous-owner End refused, new-owner accepted) tested behaviour that must not exist — it was never landed. historical-non-owner-sweep's refusal and its owner-signed control stay in the record with the conformance claim withdrawn: a gate that tests authority that does not exist discriminates nothing Singular owes. historical-owner-signed-sweep and historical-registry-termination are superseded the same way: the registry has no sweep and no termination, the end-to-end examples they cited were removed on 2026-09-12 (f3a68b1b), nothing runs either row, and list prints both uncovered. retired-stake-hook-with-withdrawal/retired-stake-hook-without-withdrawal are retired: the registry interface has no stake_script hook, so nothing runs them. The imported partition's State.stake_script hook supplies registry-owner authority by another name, which is exactly why epic 17 removes the field; the pinned staking credential cannot register anyway (the cause above), so the hook never reached a ledger. Preserved history stays unchanged, and changing applicability earns no execution credit.",
+    "v": "9618e668db38"
+   },
+   {
+    "index": 12,
+    "name": "docs-consumer-conformance/the-issue-70-generic-rows-12",
+    "pause_ms": 400,
     "text": "execution-units-and-transaction-size for this session is written from the accepting folds of update-existing-key, delete-existing-key and reinsert-deleted-key, each read off the step that folded it in its row's receipt; the other rows' worst cases live in their own receipts.",
-    "v": "ac363d2b144c"
+    "v": "e242da316bf8"
    }
   ],
   "the-operation-a-fourth-constructor": [
@@ -2424,7 +2445,7 @@
     "name": "docs-consumer-onboarding/check-the-archive-and-build-its-commands-02",
     "pause_ms": 400,
     "text": "The archive's command interface depends on its revision. An older node-backed archive does not acquire this interface from reading this page. The archive guide records its runnable components and unverified legacy surfaces. Build the registry and naming blueprints from that tree and export REGISTRY_BLUEPRINT and NAMING_BLUEPRINT as the guide specifies. The extracted archive's own singular reads the registry page from its blueprint and the adjacent version file; the Demo 1 run page reads the page right after create with the command the create receipt printed.",
-    "v": "f8992cc9aa1d"
+    "v": "5a80d131c71c"
    }
   ],
   "choose-the-network-and-api": [
@@ -3291,6 +3312,386 @@
     "pause_ms": 400,
     "text": "The diagram shows registry states. Staging a pending Insert does not change whether the key is absent. An application can evolve its own state while preserving its representative; changing an address is such an evolution. Registry Update means retirement, and Over has no outgoing transition. Delete makes the key absent again; any reinsert still needs a valid certified output and approval scope for its incarnation.",
     "v": "7c2714323a8c"
+   }
+  ]
+ },
+ "docs/economics-paper.md": {
+  "checked-declaration-register": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/checked-declaration-register-00",
+    "pause_ms": 500,
+    "text": "Checked declaration register.",
+    "v": "0854301265a3"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/checked-declaration-register-01",
+    "pause_ms": 400,
+    "text": "The entries below are generated from a fresh run of lake env lean tools/axioms.lean over the pinned source, with every cited name confirmed by git show at that revision. Each row uses the full revision above and quotes its axiom line verbatim. Standard axioms are printed as observed; none of these entries contains an additional axiom or sorryAx. Definitions and supplied hand arguments are distinguished from checked declarations in the paper.",
+    "v": "23c8d1f3b4c9"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/checked-declaration-register-02",
+    "pause_ms": 400,
+    "text": "The axiom report digest is d22520a04f196bfe52e69ac18d156cce82c78d34f4a6365a16a2138a2815a2f9. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.",
+    "v": "7383e709c919"
+   }
+  ],
+  "every-exit-and-every-amount": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/every-exit-and-every-amount-00",
+    "pause_ms": 500,
+    "text": "Every exit and every amount.",
+    "v": "921b9aaf4956"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/every-exit-and-every-amount-01",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: fold routing separates state continuation, exact carrier outputs, donation and ordinary funding. With ordinary inputs I, ordinary outputs O, total tips T and ledger fee f, it proves O + f = I + T and f ≤ I. Donation equals the registration costs plus held-minus-tip for every termination. Ordinary change remains a separate output even at a carrier's address. Ordinary funding and change are lovelace only: the fold and retraction both refuse an unrelated native asset.",
+    "v": "81d509138b78"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/every-exit-and-every-amount-02",
+    "pause_ms": 400,
+    "text": "Hand proof supplied: subtracting in the integers gives O − I = T − f. If the processor owns the ordinary funding pool and no other role, that is its monetary net before external costs. It is not a wealth statement about every address receiving an output. The paper's separate net-payoff table includes the booking fee, destination carrier and treasury donation; its rows sum to minus ledger fees, not to request holdings.",
+    "v": "ec4a91e0e694"
+   },
+   {
+    "index": 3,
+    "name": "docs-economics-paper/every-exit-and-every-amount-03",
+    "pause_ms": 400,
+    "text": "Rejection refunds are added per address, with distinct request inputs and one shared interval. A repeated input or one live compatible member refuses the entire batch. A fold that lands first spends the referenced state output, so an in-flight rejection must be rebuilt; no starvation bound is proved.",
+    "v": "14fdaba78ea1"
+   },
+   {
+    "index": 4,
+    "name": "docs-economics-paper/every-exit-and-every-amount-04",
+    "pause_ms": 400,
+    "text": "A zero donation omits the field. Conway transaction-body field 22 accepts a positive donation; optional field 21 is the separate current-treasury assertion. Donation alone does not assert the current treasury balance. The paper cites the exact Conway CDDL revision and its treasury-value check.",
+    "v": "54f3ab0ec26c"
+   }
+  ],
+  "future-work-reusable-names-and-durable-evidence": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/future-work-reusable-names-and-durable-evidence-00",
+    "pause_ms": 500,
+    "text": "Future work: reusable names and durable evidence.",
+    "v": "e8c637037d63"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/future-work-reusable-names-and-durable-evidence-01",
+    "pause_ms": 400,
+    "text": "Proposed statement: non-terminality. Deleting an active key would let an application reuse its name. This is a proposed extension to a different lifecycle contract, not a way to undo termination in an existing permanent registry.",
+    "v": "b0bf5f6a1987"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/future-work-reusable-names-and-durable-evidence-02",
+    "pause_ms": 400,
+    "text": "Proposed statement: proof durability through witnesses. The other four proposed edges would create an absent witness, change that absent state to active, delete the absent state, and mint a terminal witness on demand. A separate presence witness would be minted with a name's token and burned when the name is terminated or deleted. Absence, presence and termination would then each have an attestation token. These five edges and the presence witness are proposed, not proved functionality of the active contract.",
+    "v": "3e257dcacef9"
+   },
+   {
+    "index": 3,
+    "name": "docs-economics-paper/future-work-reusable-names-and-durable-evidence-03",
+    "pause_ms": 400,
+    "text": "Hand proof supplied: a transaction referencing the application output holding a name's token loses that input when an application update spends it. A proof against the current registry root similarly depends on a state output that another fold may spend. The goal of the proposed witnesses is to make such evidence more durable. Missing mechanization: their minting, invalidation, custody and verification rules need a future model and implementation evidence. Presence and absence cannot be promised valid after their conditions cease to hold.",
+    "v": "701bcae12a88"
+   }
+  ],
+  "limitations-and-counterexamples": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/limitations-and-counterexamples-00",
+    "pause_ms": 500,
+    "text": "Limitations and counterexamples.",
+    "v": "ba15ee12f189"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/limitations-and-counterexamples-01",
+    "pause_ms": 400,
+    "text": "Existing checked declarations: Singular.Statements.retraction_pays_only_the_refund_and_the_fee proves full refund, zero donation, unchanged treasury, fee covered by ordinary funding and balance. If I is that funding, f the fee and P all outputs elsewhere than the refund address, then P ≤ I − f. The model has no wallet-ownership or output-purpose observation: other-address change and third-party payment are indistinguishable, but neither can consume the request's cost or tip. Singular.Statements.pending_registration_can_be_retracted proves existence with explicit reachable-world, pending-request, nonempty-window, signing and funding premises. Neither theorem supplies wallet funds, ledger minima, builder success or inclusion.",
+    "v": "21967ff9d8d1"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/limitations-and-counterexamples-02",
+    "pause_ms": 400,
+    "text": "Hand proof supplied: a request holding 3,000,000 lovelace cannot alone return that amount and pay a 170,000 fee. With 200,000 ordinary funding, the model's construction returns 3,030,000 to the refund address and balances. If the requester owns the refund and funding, its net loss is the booking fee plus the retraction fee, with no processor or treasury allocation. These numbers illustrate the checked construction under its premises, not measured ledger costs.",
+    "v": "a086fca346e4"
+   },
+   {
+    "index": 3,
+    "name": "docs-economics-paper/limitations-and-counterexamples-03",
+    "pause_ms": 400,
+    "text": "Hand proof supplied: conditional rejection cap. The refund promise is a floor, not an exact split; a processor may leave some tip to the requester. If the transaction additionally balances with zero donation, all outputs outside its refund addresses plus its fee total at most the tips. The paper derives this bound from the summed floors and names balance as an extra premise. Its exact-refund net-payoff illustration is also conditional, not a claim about every accepted rejection.",
+    "v": "4e844b5c34a8"
+   },
+   {
+    "index": 4,
+    "name": "docs-economics-paper/limitations-and-counterexamples-04",
+    "pause_ms": 400,
+    "text": "Hand proof supplied: a self-rejecting funder can make the tip an internal transfer, so the design has no universal treasury flood price. Successful junk folds still pay R and occupy turns. Two registrations can race for one key; the loser retains its refund floor, not priority or ownership. A processor's fee can exceed the tip. A rejection sharing a request input with a proposed fold can invalidate that fold despite preserving the state output. Repeated folds can invalidate rejection references indefinitely.",
+    "v": "43ca36a20665"
+   },
+   {
+    "index": 5,
+    "name": "docs-economics-paper/limitations-and-counterexamples-05",
+    "pause_ms": 400,
+    "text": "Proposed statement: the minimum tip should cover measured singleton costs within a declared ledger envelope. The paper derives conditional inequalities for costs and windows, without assuming a minimum service rate or full batches. No measurements establish the selected registration cost, minimum tip or booking-width bound. A later fee or output-minimum change can invalidate the envelope.",
+    "v": "f1a9cad3ded7"
+   },
+   {
+    "index": 6,
+    "name": "docs-economics-paper/limitations-and-counterexamples-06",
+    "pause_ms": 400,
+    "text": "The application's release rule and custody integration, the open-datum adaptation, the cardano-keri adaptation and validator/builder correspondence with live receipts remain open. The singular tag's fate is decided: mint and delivery on registration, movement at termination booking, burn at termination fold. No key-ownership, squatting, inclusion, priority or application-security guarantee follows from Singular's token counts.",
+    "v": "81d666e1dff7"
+   }
+  ],
+  "named": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/named-00",
+    "pause_ms": 500,
+    "text": "Named.",
+    "v": "a2fc4b1ca9a6"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/named-01",
+    "pause_ms": 400,
+    "text": "Each token has a name: registering a name mints exactly one token for it, and the registry is the only way to mint it. Holding the token is holding the name. The story is a registered name represented by a token an application holds with its own payload.",
+    "v": "37cd4ee9f832"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/named-02",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: Singular.Statements.insert_active_transaction_row describes the original registry's one minted active asset, its key-derived model name and its destination holding. Singular.Statements.world_supply_sync counts the economic world's actual singular tags across application custody and pending terminations. The register below supplies the exact pin and axiom lines. Missing mechanization: the actual minting policy and name encoding need correspondence evidence; holding the representative proves no legal right or personal identity.",
+    "v": "39e008ff81d3"
+   }
+  ],
+  "named-unique-permanent-permissionless-and-reusable": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/named-unique-permanent-permissionless-and-reusable-00",
+    "pause_ms": 500,
+    "text": "Named, unique, permanent; permissionless and reusable.",
+    "v": "804c3811dac1"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/named-unique-permanent-permissionless-and-reusable-01",
+    "pause_ms": 400,
+    "text": "Singular is a permissionless and reusable mint of named, unique and permanent tokens on Cardano. This is the adopted definition and the paper's organizing promise. The five meanings below distinguish checked model results from application goals and demonstrations.",
+    "v": "1caf85562601"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/named-unique-permanent-permissionless-and-reusable-02",
+    "pause_ms": 400,
+    "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. For KERI a conviction is a termination, and it is permanent. A lookup of an identifier at a registry root has three outcomes. An active leaf proves that the identifier is registered and not convicted at that root: “not convicted” means active. A terminal leaf proves conviction. An unknown leaf proves only that the identifier is not registered on Singular; that is a different answer and is never presented as “not convicted”. The stored Absent leaf belongs to the extension edges outside the contract of the first release and is not part of this reading. Existing checked declaration: Singular.Statements.termination keeps a terminal leaf terminal through every later accepted batch, and Singular.Statements.terminal_attestation_permanent keeps a held terminal attestation held and its leaf terminal. Hand proof supplied: by induction over the accepted batches from the genesis state, a key terminal at one reachable state is terminal at every later one, so an active leaf at a root shows the key was never terminal before it: an active identifier was never convicted before that root. Missing mechanization: the lookup is a logical read of the root and verifying a concrete lookup proof is a correspondence obligation; a lookup is valid only against the current root until the next fold; durable attestations are future work, proposed and not proved; Singular alone does not verify duplicity or establish a KERI history, and the consumer integration remains open.",
+    "v": "ce1bc2299b9a"
+   }
+  ],
+  "permanent": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/permanent-00",
+    "pause_ms": 500,
+    "text": "Permanent.",
+    "v": "9be65bf1ee0d"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/permanent-01",
+    "pause_ms": 400,
+    "text": "Terminating a name burns its token and records it as terminal; it can never be issued again. Alice terminates her name, then tries to register it again and is refused. For KERI, termination is intended to be conviction: the convicted identifier must never come back in that registry.",
+    "v": "5436f7139a19"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/permanent-02",
+    "pause_ms": 400,
+    "text": "Hand proof supplied: read as a lookup, a terminal leaf proves conviction and an active leaf at a reachable root shows the key was never terminal before it; an unknown leaf proves only that the identifier is not registered. Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: KERI's conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
+    "v": "fb6d075fac57"
+   }
+  ],
+  "permissionless": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/permissionless-00",
+    "pause_ms": 500,
+    "text": "Permissionless.",
+    "v": "1fb61fea71bf"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/permissionless-01",
+    "pause_ms": 400,
+    "text": "Anyone creates a registry, anyone books a name, anyone settles pending requests, all from public chain data. The creator has no power over the names. These participation promises remain subject to application authorization, funding and admission. Bob, who did not create the registry, settles pending requests, Alice's included.",
+    "v": "458682b8e269"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/permissionless-02",
+    "pause_ms": 400,
+    "text": "Existing checked declarations: Singular.Statements.fold_inputs_public equates the original builder with construction from its public view; Singular.Statements.fold_requires_no_signer proves empty required signers and invariance under changed approval signatures. Missing mechanization: these are original-builder results, not an economic-builder public-data theorem or a running demonstration. Creation, chain-data retrieval and Bob's actual batch require off-chain and validator evidence. No inclusion guarantee follows.",
+    "v": "ec6f7ad713c2"
+   }
+  ],
+  "requests-tokens-and-clocks": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/requests-tokens-and-clocks-00",
+    "pause_ms": 500,
+    "text": "Requests, tokens and clocks.",
+    "v": "83fd85cc3253"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/requests-tokens-and-clocks-01",
+    "pause_ms": 400,
+    "text": "Let R be the registration cost, t the declared tip, and a the declared carrier lovelace. Booking enforces the fixed minimum tip. The carrier amount follows actual ledger minimum rules; the model proves exact declared amounts and does not compute those minima.",
+    "v": "a8d64f9c79be"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/requests-tokens-and-clocks-02",
+    "pause_ms": 400,
+    "text": "A registration's application tag commits to its payload and nonce; its trie-ready tag commits to the operation and the same nonce. Both are minted in the same booking and burned on every exit. Application tags minted elsewhere are outside Singular's supply guarantee and cannot substitute for this booking. Termination booking moves the singular tag from custody; its fold burns that tag and the trie-ready tag. A registration fold mints the singular tag at the booked destination with the declared carrier and datum.",
+    "v": "91e8e1553f42"
+   },
+   {
+    "index": 3,
+    "name": "docs-economics-paper/requests-tokens-and-clocks-03",
+    "pause_ms": 400,
+    "text": "The fixed parameters are registration cost, minimum tip, maximum booking width, processing and reclaim windows, policy bindings and registry identity. The minimum tip retains the wire key maxFee. There is no parameter-update or migration authority. The paper treats the maximum booking width being smaller than the processing window as a sizing criterion, distinct from the checked booking-width bound.",
+    "v": "2428bec75301"
+   }
+  ],
+  "reusable": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/reusable-00",
+    "pause_ms": 500,
+    "text": "Reusable.",
+    "v": "f181d128cc1f"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/reusable-01",
+    "pause_ms": 400,
+    "text": "The same mint serves any application: open-datum today, a closed variant in the demonstration, KERI checkpoints next, with no change to its contract. Each name's token lives in its owner's application, which decides what the name points to.",
+    "v": "46b465f571aa"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/reusable-02",
+    "pause_ms": 400,
+    "text": "Missing mechanization: the concrete application demonstration uses a closed flag on the same release and commands. It sets the payload at registration, refuses every update and leaves only termination. This is application-validator and executable behavior outside the checked registry model; this paper asserts no release or running-demonstration receipt. KERI integration and serving both application kinds in one registry through application tags remain future work.",
+    "v": "22474796a959"
+   }
+  ],
+  "singular-registry-design-and-economics": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/singular-registry-design-and-economics-00",
+    "pause_ms": 500,
+    "text": "Singular: registry design and economics.",
+    "v": "bb82631b5b66"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/singular-registry-design-and-economics-01",
+    "pause_ms": 400,
+    "text": "As a reviewer, read this page to learn what a registration or termination commits, where its tokens and lovelace go, and which promises have checked evidence. The paper explains the complete mechanism, its assumptions and its counterexamples: download the paper PDF. The documentation build compiles the PDF from the committed LaTeX sources using the llncs class.",
+    "v": "b4160a206709"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/singular-registry-design-and-economics-02",
+    "pause_ms": 400,
+    "text": "Implementation standing: not yet conformant. The validators and builders still implement superseded economic rules. The conformance evidence keeps affected requirements unmet; a Lean proof is not a ledger receipt or deployment acceptance.",
+    "v": "a7e2844726ac"
+   }
+  ],
+  "the-mechanism-at-a-glance": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/the-mechanism-at-a-glance-00",
+    "pause_ms": 500,
+    "text": "The mechanism at a glance.",
+    "v": "70af86a32704"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/the-mechanism-at-a-glance-01",
+    "pause_ms": 400,
+    "text": "The registry records a permanent lifecycle. Registration changes an unknown key to active; termination changes an active key to terminal. The application authorizes registration and controls the resulting singular tag. It consents to termination by releasing that genuine tag into a request. Singular does not judge the application's release rule. Checked lifecycle and custody evidence appears in the declaration register below.",
+    "v": "6bc29ca03dc3"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/the-mechanism-at-a-glance-02",
+    "pause_ms": 400,
+    "text": "Pending requests occupy their own outputs. Folds spend and continue the registry state output. Rejection reads that output by reference and spends only the rejected registrations. It needs a current lifecycle mismatch or expiry after both registration windows. Compatible registrations are protected through the reclaim window; a lost race can create a mismatch earlier. A termination has no rejection, retraction or expiry exit.",
+    "v": "fdde5b935660"
+   }
+  ],
+  "unique": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/unique-00",
+    "pause_ms": 500,
+    "text": "Unique.",
+    "v": "e1e8ffe3d2e7"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/unique-01",
+    "pause_ms": 400,
+    "text": "A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused.",
+    "v": "2d7e73e490fd"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/unique-02",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: Singular.Statements.insert_active_transaction_row refuses a subsequent approved registration of the same key with key-exists. Singular.Statements.world_supply_sync bounds economic supply by one, including a token in a pending termination. Missing mechanization: actual absence-proof verification is a validator correspondence obligation. “Absent” in this story means unknown and untaken, not the historical stored Absent leaf. Booking does not reserve a name or establish who ought to own it.",
+    "v": "5ac83fc6bbdb"
+   }
+  ],
+  "what-is-checked-and-at-what-strength": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/what-is-checked-and-at-what-strength-00",
+    "pause_ms": 500,
+    "text": "What is checked, and at what strength.",
+    "v": "d82c1197c7bf"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/what-is-checked-and-at-what-strength-01",
+    "pause_ms": 400,
+    "text": "Existing checked declaration means the register below quotes the declaration's fresh axiom result at the exact model pin. Hand proof supplied means the paper gives an argument and its premises. Proposed statement means a conditional design or sizing criterion. Missing mechanization marks an unproved boundary. These four labels do not imply implementation conformance.",
+    "v": "d2df8b93eba0"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/what-is-checked-and-at-what-strength-02",
+    "pause_ms": 400,
+    "text": "The exact model revision is 4254a3073fe0457946eba0a68d974c999c930ebf, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+    "v": "787a1fdfaa0c"
    }
   ]
  },
@@ -7966,7 +8367,7 @@
     "name": "docs-registry-page/read-it-03",
     "pause_ms": 400,
     "text": "The command takes the state token, the blueprint of the packaged release, a provider and a network. It takes no wallet, no signing key, no state directory and no file of any actor; any other setting is refused by name before anything is read. The version label comes from the version file beside the blueprint. From an extracted release archive, run the archive's own singular with its blueprint and the adjacent version file: the Demo 1 journey reads the page this way right after create, from the command the create receipt printed. A success prints the page alone and writes no file; every refusal prints one JSON receipt and exits non-zero.",
-    "v": "6f819bf244a8"
+    "v": "cf0d0228e5ca"
    },
    {
     "index": 4,
@@ -8613,15 +9014,22 @@
     "index": 1,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-01",
     "pause_ms": 400,
-    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
-    "v": "a046fa187658"
+    "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+    "v": "403876252f62"
    },
    {
     "index": 2,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-02",
     "pause_ms": 400,
+    "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+    "v": "79fd8046f30b"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-03",
+    "pause_ms": 400,
     "text": "The ordinary provider is Koios. Old backend and socket settings are refused before acquisition or registry effects. The current provider session promises no coherent chain snapshot and carries no verification witness.",
-    "v": "aaff8e789c25"
+    "v": "f086ea8cafea"
    }
   ],
   "following-what-a-command-does": [
@@ -8741,7 +9149,7 @@
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-01",
     "pause_ms": 400,
     "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
-    "v": "557d4dbb6ae9"
+    "v": "121d04aed61b"
    },
    {
     "index": 2,
@@ -9117,8 +9525,15 @@
     "index": 1,
     "name": "docs-theorems/exact-declaration-inventory-01",
     "pause_ms": 400,
+    "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
+    "v": "2bf8cbd7e41c"
+   },
+   {
+    "index": 2,
+    "name": "docs-theorems/exact-declaration-inventory-02",
+    "pause_ms": 400,
     "text": "The naming, lifecycle and wire declarations are listed in their own manifests: naming-theorem-debt.json, lifecycle-theorem-debt.json and wire-theorem-debt.json.",
-    "v": "aac0c454eb39"
+    "v": "7d48a223fe3f"
    }
   ],
   "how-this-register-is-kept-honest": [
@@ -9163,8 +9578,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 45 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 66 in total, each with its own manifest and its own compiled gate.",
-    "v": "a48d57c64850"
+    "text": "All 87 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 108 in total, each with its own manifest and its own compiled gate.",
+    "v": "09eb7a88c443"
    },
    {
     "index": 3,
@@ -9209,29 +9624,22 @@
     "index": 1,
     "name": "docs-theorems/what-this-establishes-and-what-it-does-not-01",
     "pause_ms": 400,
-    "text": "A batch cannot create an active holding and terminate it in the same batch. Termination must use a holding from before the batch. Independent requests on distinct keys can form an accepted non-empty batch when each admits alone and claims its own edge mint. This is an acceptance guarantee; the model builds no batch transaction and makes no comparison of singleton or reordered batch effects.",
-    "v": "ae867744beea"
+    "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will: that is what the operator's rulings, the interface and the simulation are for. A theorem can also be true and narrower than its name, so the column above says what each one states rather than leaving the name to imply it.",
+    "v": "f49c274cfbea"
    },
    {
     "index": 2,
     "name": "docs-theorems/what-this-establishes-and-what-it-does-not-02",
     "pause_ms": 400,
-    "text": "These proofs establish properties of the model. They do not establish that the model is the right model, and no build ever will: that is what the operator's rulings, the interface and the simulation are for. A theorem can also be true and narrower than its name, so the column above says what each one states rather than leaving the name to imply it.",
-    "v": "7d2cfbe22709"
+    "text": "The model is abstract where the chain is concrete. Commitments stand for collision-free canonical commitments, the trie is a logical authenticated map, and an approval's asset name is a commitment over the tuple it scopes rather than a real BLAKE2b digest. The executable consumer supplies the real hashes; the model fixes the complete preimages.",
+    "v": "08143ca813a7"
    },
    {
     "index": 3,
     "name": "docs-theorems/what-this-establishes-and-what-it-does-not-03",
     "pause_ms": 400,
-    "text": "The model is abstract where the chain is concrete. Commitments stand for collision-free canonical commitments, the trie is a logical authenticated map, and an approval's asset name is a commitment over the tuple it scopes rather than a real BLAKE2b digest. The executable consumer supplies the real hashes; the model fixes the complete preimages.",
-    "v": "41faf6aa9501"
-   },
-   {
-    "index": 4,
-    "name": "docs-theorems/what-this-establishes-and-what-it-does-not-04",
-    "pause_ms": 400,
     "text": "Retraction admission is stated over a finite validity interval. Its bounds are read off the request script's in_phase2 and the ledger's validity interval, whose lower bound is included and upper bound excluded. The model's bounds are finite, so an interval open at either end is not a case it can be asked: that is a named non-goal, not a gap waiting on a ticket, and the chain side is pinned by the request validator's Aiken exact-outcome tests — they admit an owner-signed retraction at the window's included lower bound and where its excluded upper bound reaches the retraction time's end, and refuse it with the named not-phase2 one unit before the lower bound and one unit past the upper, and for an interval with no lower or no upper bound alike. The finite cases are compared live: the retraction-window row (retract-outside-window) submits an owner-signed retraction before phase 2 and one after it on a devnet, both refused by the request script and answered not-phase2 by the model, which agrees on every step. The deployed validators are compiled without traces, so this run's live refusals expose no name: they are attributed to the applied request script, and the name itself is never described as a live observation (#287).",
-    "v": "615fe756b5fa"
+    "v": "555fb7aca3da"
    }
   ]
  },

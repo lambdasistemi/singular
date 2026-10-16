@@ -1,0 +1,106 @@
+\section{The five properties and their stories}
+\label{sec:five-properties}
+The following meanings state the adopted design in plain words. Checked
+results concern the specified model; application behavior and a running
+demonstration require evidence at their own boundary. Every checked reference
+uses the exact revision and axiom line in Appendix~\ref{sec:artifact}.
+
+\subsection{Named}
+Each token has a name: registering a name mints exactly one token for it,
+and the registry is the only way to mint it. Holding the token is holding
+the name. The concrete story is that a registered name has a token which
+an application can hold and associate with its own payload.
+
+\checked The original registry's accepted registration transaction mints
+one active asset indexed by the request's key, delivers it to the named
+destination and records that holding. Its model asset name equals the key.
+\evidence{insert_active_transaction_row}
+\checked In an economic reachable world, actual singular-tag supply across
+application custody and pending terminations is one exactly for an active
+key, and zero otherwise.
+\evidence{world_supply_sync}
+\missing These results are about modeled identities and transitions.
+``Only way to mint'' on Cardano requires correspondence of the actual minting
+policy and name encoding. Holding the name's representative is not a proof
+of a legal right, personal identity or entitlement to that name. The
+application decides what its payload means.
+
+\subsection{Unique}
+A name can be taken only with a proof that it is absent, so two people cannot
+hold separate genuine tokens for the same name in one registry. Bob tries
+to register Alice's name after she has registered it; his registration is
+refused.
+
+\checked After an accepted original registration, another registration of
+the same key with valid approval is refused by the modeled builder with
+\texttt{key-exists}. The same declaration records exactly one active holding.
+\evidence{insert_active_transaction_row}
+\checked The economic supply invariant retains the bound of one while the
+token moves from application custody into a pending termination.
+\evidence{world_supply_sync}
+\missing A concrete absence proof's verification by the validator is a
+correspondence obligation. ``Absent'' here means an unknown, untaken key,
+not the historical stored Absent leaf. The refusal concerns taking an
+already active name; booking a competing request does not reserve it, and
+the model does not adjudicate who ought to have registered it first.
+
+\subsection{Permanent}
+Terminating a name burns its token and records it as terminal; it can never
+be issued again. Alice terminates her name and then tries to register it
+again. The attempt is refused. For KERI, termination is intended to be
+conviction, so a convicted identifier must never come back in that registry.
+
+\checked For a terminal key in a reachable original registry, every request
+at that key is refused; every accepted later batch keeps it terminal.
+\evidence{termination}
+\hand Read as a lookup, a terminal leaf proves conviction, and an active
+leaf at a reachable root shows that the key was never terminal before that
+root; an unknown leaf proves only that the identifier is not registered.
+\checked A genuine pending termination has an accepted economic fold that
+makes its key terminal under the theorem's explicit funding and willingness
+premises. World supply is then zero for that key.
+\evidence{booked_termination_foldable}
+\evidence{world_supply_sync}
+\missing The application decides when release from custody is authorized.
+A KERI conviction needs its own duplicity-proof and integration evidence,
+and a lookup stays valid only against the current root until the next fold.
+Permanence within this registry does not identify a new registry with the old
+one. Economically, the termination donates everything held except the tip
+to the treasury; it returns no deposit to Alice.
+\evidence{fold_routes_every_amount}
+
+\subsection{Permissionless}
+Anyone creates a registry, anyone books a name, anyone settles pending
+requests, all from public chain data. The creator has no power over the
+names. These are the design's participation promises, subject to application
+authorization, funding and the admission rules. The concrete story is Bob,
+who did not create the registry, settling the pending requests, Alice's included.
+
+\checked The original registry builder is equal to a construction from its
+public view: the registry and pending request, including the request's datum.
+An accepted original fold requires no signer, and changing approval signatures
+does not change that step or its built transaction.
+\evidence{fold_inputs_public}
+\evidence{fold_requires_no_signer}
+\missing These are original-builder statements, not a public-data theorem
+for the economic transaction builder or an execution of Bob's story. Registry
+creation, obtaining all chain data, funding and submitting the actual batch
+require off-chain and validator evidence. The story is a demonstration of
+that boundary, not a model theorem or an inclusion guarantee. Creator
+privilege over application payloads is likewise not decided by these results.
+
+\subsection{Reusable}
+The same mint serves any application: open-datum today, a closed variant in
+the demonstration, KERI checkpoints next, with no change to its contract.
+Each name's token lives in its owner's application, which decides what the
+name points to. This is the design's separation of the name from its payload.
+
+\missing The concrete application demonstration uses a closed flag on the
+same release and commands: a payload set at registration cannot be updated,
+the application refuses every update, and only termination remains. This
+is application-validator and executable behavior outside the checked registry
+model. No release or running-demonstration receipt is asserted by this paper.
+KERI is the next intended consumer, not a completed integration. Serving
+both application kinds within one registry through application tags is also
+a future integration claim. The application's release rule and adaptations
+to the ruled termination economics remain open.

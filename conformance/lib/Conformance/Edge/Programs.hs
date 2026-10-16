@@ -346,6 +346,18 @@ generalControls = ["wrong-fee", "wrong-timing", "wrong-delivery", "unknown-ident
 allControls :: [String]
 allControls = generalControls <> ["inside-phase-2", "signed-owner"]
 
+-- | The deployed rejection follows the retained legacy driver, not the ruled design.
+supersededRejection :: Standing
+supersededRejection =
+    Unmet
+        { unmetRuling =
+            "2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented"
+        , unmetRegistry =
+            "the legacy comparison still runs: rejection spends the registry state output"
+        , unmetConsumer =
+            "a rejection reads the registry state by reference and never spends it"
+        }
+
 -- | A registry with thirty seconds for processing and thirty for retraction.
 standard :: String -> String -> Registry
 standard name reading = Registry name reading 30_000 30_000
@@ -460,12 +472,12 @@ exits =
         , programCohort = noCohort
         , programStory = double Exit.story
         , programExpected = replicate 10 Agrees
-        , programStanding = Agreement
+        , programStanding = supersededRejection
         , programControls = generalControls <> ["signed-owner"]
         , programChapter =
             chapter
                 "A request that is never folded"
-                "A request can leave the queue without a fold. After its owner's retraction window has closed, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request."
+                "2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented. This chapter is unmet by ruling; its comparisons describe the legacy state-spending rejection. A request can leave the queue without a fold. After its owner's retraction window has closed, a folder rejects it and must refund its owner the deposit, keeping the tip; while it is still retractable, its owner retracts it and must get back everything it held, deposit and tip, through an output whose inline datum is the retracted request's own output reference. Each refund paid one lovelace short or to another address, a return bound to another request, and a retraction spending the registry's state beside it must be refused, each beside the untampered exit of the same request."
                 "Rejection and retraction compared"
         }
 
@@ -482,13 +494,13 @@ earlyRejection =
                 in  Right [(registry, first), (registry, second)]
             _ -> Left "the early rejection names one registry and one wallet"
         , programStory = single EarlyReject.story
-        , programExpected = replicate 6 Agrees
-        , programStanding = Agreement
-        , programControls = allControls
+        , programExpected = replicate 8 Agrees
+        , programStanding = supersededRejection
+        , programControls = allControls <> ["rejection-outcome"]
         , programChapter =
             chapter
                 "A folder rejects a request before its retraction deadline"
-                "A reject carries no admission: the model accepts it in every window, and the chain does too. Two insertion requests from the same owner are booked together in a registry of their own. The first is rejected while it can still be folded, the second while its owner can still retract it. In each window a reject refunding the owner one lovelace short, and one refunding another key, must be refused by both, leaving the request pending; the untampered reject of the same request must be accepted by both, refund the owner the deposit and leave the registry state as it was. Each reject's validity interval is checked to lie inside the window its step names before it is submitted."
+                "2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented. This chapter is unmet by ruling; its comparisons describe the legacy state-spending rejection. A rejection with bound lifecycle mismatch evidence is admitted at once: the model and the chain accept it in every window. Two insertion requests from the same owner are booked together in a registry of their own and each is registered Active in this run. A second request for the same key is then rejected while it can still be folded (first key) and while its owner can still retract it (second key). In each window a reject refunding the owner one lovelace short, and one refunding another key, must be refused by both for the refund reason, leaving the request pending; the untampered reject of the same request, with lifecycle mismatch evidence, must be accepted by both, refund the owner the deposit and leave the registry state as it was. Each reject's validity interval is checked to lie inside the window its step names before it is submitted."
                 "Early rejection compared"
         }
 
@@ -589,18 +601,19 @@ lateRejection =
                 (EdgeRequest InsertActive "cg08-key" holder)
                 >>= checked
         , programExpected = [Agrees]
-        , programStanding = Agreement
+        , programStanding = supersededRejection
         , programControls = generalControls
         , programChapter = Nothing
         }
 
-{- | A folder rejects a request while it can still be folded. Its control comes
+{- | A folder rejects a foldable request while it can still be folded. Its control comes
 first, on the same request: the reject refunding the owner one lovelace short,
-refused by both. Then the known divergence: one lovelace short at the refund's
-position and two ada more in another output at the owner's key, which the
-chain refuses and the model accepts (lambdasistemi/singular#361). Last the
-reject itself, accepted by both, while the consuming project requires it
-refused: its requirement is kept unmet by ruling.
+refused by both, but for different reasons (the model for the in-window admission,
+the chain for the refund). Then the known split shape: one lovelace short at the refund's
+position and two ada more in another output at the owner's key, refused by both,
+again for different reasons. Last the reject itself, refused by the model and accepted
+by the chain, while the consuming project requires it refused: its requirement is kept
+unmet by ruling.
 
 The three rejects run one after another inside the registry's processing
 window, each placed to end before the window does, so the window must outlast
@@ -618,7 +631,7 @@ processingRejection =
         , programStory = single $ \(Context registry owner) -> do
             let booked =
                     [
-                        ( EdgeRequest InsertAbsent "cg09-key" owner
+                        ( EdgeRequest InsertActive "cg09-key" owner
                         , Booking owner 3_000_000
                         )
                     ]
@@ -637,21 +650,31 @@ processingRejection =
             _ <- rejectBookedBatchWithin InProcessingWindow registry booked
             pure ()
         , programExpected =
-            [ Agrees
+            [ Diverges
+                { divergenceChain = "refused"
+                , divergenceModel = "refused"
+                , divergenceTrace = "deposit-returned"
+                , divergenceIssue = "lambdasistemi/singular#495"
+                }
             , Diverges
                 { divergenceChain = "refused"
-                , divergenceModel = "accepted"
+                , divergenceModel = "refused"
                 , divergenceTrace = "deposit-returned"
-                , divergenceIssue = "lambdasistemi/singular#361"
+                , divergenceIssue = "lambdasistemi/singular#495"
                 }
-            , Agrees
+            , Diverges
+                { divergenceChain = "accepted"
+                , divergenceModel = "refused"
+                , divergenceTrace = "reject-not-expired"
+                , divergenceIssue = "lambdasistemi/singular#495"
+                }
             ]
         , programStanding =
             Unmet
                 { unmetRuling =
-                    "kept unmet by operator ruling 2026-10-01 (singular#320; alignment: cardano-keri#468)"
+                    "kept unmet by operator ruling 2026-10-01 (singular#320; alignment: cardano-keri#468); 2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented"
                 , unmetRegistry =
-                    "Singular's Lean gives a reject no admission (Model.lean exitAdmission .reject = none): a folder may reject a request inside its process window"
+                    "Singular's Lean refuses the in-window rejection with bound expiry evidence (Model.lean rejectAdmission: reject-not-expired while the interval begins before expiry); the chain accepts the untampered reject and refuses the tampered ones for the refund reason"
                 , unmetConsumer =
                     "R9_reject_needs_rejectable — a reject is refused until the request's retract window has passed"
                 }
@@ -727,11 +750,12 @@ refundRouting =
             _ -> Left "refund routing names one registry and two wallets"
         , programExpected = replicate 4 Agrees
         , programStanding =
-            Held
-                { heldFor = "Q-002 (story 2)"
-                , heldLean =
+            Unmet
+                { unmetRuling =
+                    "2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented; the earlier consumer routing requirement remains unresolved (cardano-mpfs-onchain#101)"
+                , unmetRegistry =
                     "Singular's Lean refuses the crossed refunds: its reject batch owes each owner its deposit back and the first is paid short, deposit-returned, the reason the traced replay admits for the state script"
-                , heldConsumer =
+                , unmetConsumer =
                     "R11 — action-dependent routing (E18 disposition): processed Update value routes to the checkpoint/consumer hook (Update contributes no Rejected-owner obligations); Rejected owes input-tip per owner under a no-underpayment floor (upstream cardano-mpfs-onchain#101 is the partition fix)"
                 }
         , programControls = generalControls

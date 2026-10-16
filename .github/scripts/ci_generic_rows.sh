@@ -61,9 +61,9 @@ fi
 #    bound to this candidate on a clean tree (dirty:false)
 expect_verdict() {
   case "$1" in
-    insert-key | permanent-retire-active-key | insert-occupied-key | retract-inside-window | reject-after-window | register-active-key | execution-units-and-transaction-size) printf 'agrees-with-model' ;;
-    reject-before-deadline-consumer-requirement | fold-against-superseded-root | surplus-fold-actions) printf 'unmet-by-ruling' ;;
-    empty-fold | request-value-and-refund-routing) printf 'held-q002' ;;
+    insert-key | permanent-retire-active-key | insert-occupied-key | retract-inside-window | register-active-key | execution-units-and-transaction-size) printf 'agrees-with-model' ;;
+    reject-after-window | reject-before-deadline-consumer-requirement | fold-against-superseded-root | surplus-fold-actions | request-value-and-refund-routing) printf 'unmet-by-ruling' ;;
+    empty-fold) printf 'held-q002' ;;
     *) printf 'UNKNOWN-ROW' ;;
   esac
 }
@@ -111,15 +111,15 @@ nix run --quiet nixpkgs#jq -- -e \
 # 6. the run's own accounting must name exactly the expected
 #    held and unmet sets, with nothing failing against this candidate
 held="$(sed -n 's/^- Held .*held-q002): //p' /tmp/generic-rows.log)"
-[ "$held" = "empty-fold request-value-and-refund-routing" ] || {
-  echo "FAIL: held set moved: got '$held', expected 'empty-fold request-value-and-refund-routing'"
+[ "$held" = "empty-fold" ] || {
+  echo "FAIL: held set moved: got '$held', expected 'empty-fold'"
   exit 1
 }
 unmet="$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' /tmp/generic-rows.log)"
 # fold-against-superseded-root and surplus-fold-actions have no model counterpart: unmet by operator ruling
 # 2026-10-02, each naming its follow-up (#346, #345).
-[ "$unmet" = "reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions" ] || {
-  echo "FAIL: unmet set moved: got '$unmet', expected 'reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions'"
+[ "$unmet" = "reject-after-window reject-before-deadline-consumer-requirement request-value-and-refund-routing fold-against-superseded-root surplus-fold-actions" ] || {
+  echo "FAIL: unmet set moved: got '$unmet', expected 'reject-after-window reject-before-deadline-consumer-requirement request-value-and-refund-routing fold-against-superseded-root surplus-fold-actions'"
   exit 1
 }
 grep -q '^unmet: fold-against-superseded-root UNMET BY RULING: .*lambdasistemi/singular#346' /tmp/generic-rows.log || {
@@ -299,32 +299,33 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == "short-by-one" and .model.outcome == "refused"
-          and .model.reason == "deposit-returned" and (.request | del(.submittedAt)) == $tampered
+          and .model.reason == "deposit-returned" and .request.key == $tampered.key
           and .chain.outcome == "refused" and (.chain.txid | txid)
           and (.chain.refusal.hashes | index($state) != null))
   and any(.steps[]; .tamper == null and .model.outcome == "accepted"
-          and .chain.outcome == "accepted" and (.request | del(.submittedAt)) == $tampered)
+          and .chain.outcome == "accepted" and .request.key == $tampered.key)
 ' "$e" >/dev/null || {
   echo 'FAIL: register-active-key step evidence missing or incomplete'
   exit 1
 }
 # 10. reject-before-deadline-consumer-requirement (#320): the consumer's R9_reject_needs_rejectable forbids
-#     a reject inside the processing window; Singular's Lean admits
-#     it and the chain accepts it. By operator ruling 2026-10-01 the
+#     a reject inside the processing window; Singular's Lean refuses it with bound expiry
+#     evidence while the chain still accepts the untampered reject. By operator ruling 2026-10-01 the
 #     consumer requirement is kept unmet (alignment:
 #     lambdasistemi/cardano-keri#468): the verdict is unmet-by-ruling,
-#     never agreement and never held-q002. Its program rejects one
-#     request, owned by a wallet that receives no change, three times
-#     while it can still be folded, each asked of the model's reject
-#     batch: first refunding the owner one lovelace short, refused by
-#     the state script and by the model for deposit-returned; then the
-#     known divergence (lambdasistemi/singular#361, operator ruling
-#     2026-10-02 "Record now, fix later"): one lovelace short at the
-#     refund's position and two ada more in another output at the
-#     owner's key, refused by the chain for deposit-returned (the traced
-#     replay's reason) and accepted by the model, which sums the owner's
-#     outputs — a disagreement, never a pass; last the reject itself,
-#     accepted by both.
+#     never agreement and never held-q002. Its program rejects one foldable
+#     `insertActive` request for a key not yet registered, owned by a wallet that receives
+#     no change, three times while it can still be folded, each asked of the model's reject
+#     batch with expiry evidence: first refunding the owner one lovelace short, refused by
+#     both for different reasons (model `reject-not-expired`, chain `deposit-returned` with
+#     that reason in replay); then the split shape (one lovelace short at the refund's
+#     position and two ada more in another output at the owner's key), refused by both
+#     for different reasons (model `reject-not-expired`, chain `deposit-returned` in replay),
+#     never as the old `361` outcome divergence (the model no longer accepts in-window while
+#     protected holds); last the reject itself, refused by the model for `reject-not-expired`
+#     and accepted by the chain — three recorded divergences for `lambdasistemi/singular#495`
+#     (the validators ticket that must flip the row), never a pass. The row stops matching
+#     the day the chain refuses the untampered reject.
 # shellcheck disable=SC2016
 nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   def txid: type == "string" and test("^[0-9a-f]{64}$");
@@ -334,19 +335,23 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   and all(.steps[]; .batch == "rejectBatch" and (.requests | length) == 1)
   and ([.steps[].requests[0].request] | unique | length) == 1
   and .steps[0].requests[0].request.deposit == 3000000
+  and .steps[0].requests[0].request.edge == "insertActive"
   and ([.steps[] | [.tamper, .shortfall]]
     == [["short-first-refund", 1], ["split-first-refund", 1], [null, null]])
-  and (.steps[0] | .model == {"outcome": "refused", "reason": "deposit-returned"}
+  and (.steps[0] | .model == {"outcome": "refused", "reason": "reject-not-expired"}
     and .chain.outcome == "refused" and (.chain.refusal.hashes | index($state) != null)
-    and .chain.refusal.trace == "deposit-returned" and .comparison == "agrees"
+    and .chain.refusal.trace == null
+    and any(.chain.refusal.replay[]; .reason == "deposit-returned")
+    and .comparison == "disagrees"
     and ([.outputs[] | select(.role == "owner") | .lovelace] == [2999999]))
-  and (.steps[1] | .model.outcome == "accepted"
+  and (.steps[1] | .model == {"outcome": "refused", "reason": "reject-not-expired"}
     and .chain.outcome == "refused"
     and any(.chain.refusal.replay[]; .reason == "deposit-returned")
     and .chain.refusal.trace == null
     and .comparison == "disagrees")
-  and (.steps[2] | .model.outcome == "accepted" and .chain.outcome == "accepted"
-    and (.chain.txid | txid) and .comparison == "agrees")
+  and (.steps[2] | .model == {"outcome": "refused", "reason": "reject-not-expired"}
+    and .chain.outcome == "accepted"
+    and (.chain.txid | txid) and .comparison == "disagrees")
   and .transactions == [.steps[2].chain.txid]
 ' "${CONFORMANCE_RECEIPTS}"/receipt-reject-before-deadline-consumer-requirement.json >/dev/null || {
   echo 'FAIL: reject-before-deadline-consumer-requirement unmet acceptance, control or divergence evidence moved'
@@ -360,10 +365,18 @@ if grep -q '^held: reject-before-deadline-consumer-requirement ' /tmp/generic-ro
   echo 'FAIL: reject-before-deadline-consumer-requirement recorded held'
   exit 1
 fi
-grep -q '^divergence: reject-before-deadline-consumer-requirement KNOWN DIVERGENCE (lambdasistemi/singular#361): ' /tmp/generic-rows.log || {
-  echo 'FAIL: reject-before-deadline-consumer-requirement divergence not recorded by the run'
+grep -q '^divergence: reject-before-deadline-consumer-requirement KNOWN DIVERGENCE (lambdasistemi/singular#495): the chain refused it for deposit-returned ' /tmp/generic-rows.log || {
+  echo 'FAIL: reject-before-deadline-consumer-requirement tampered divergences not recorded by the run'
   exit 1
 }
+grep -q '^divergence: reject-before-deadline-consumer-requirement KNOWN DIVERGENCE (lambdasistemi/singular#495): the chain accepted it ' /tmp/generic-rows.log || {
+  echo 'FAIL: reject-before-deadline-consumer-requirement untampered divergence not recorded by the run'
+  exit 1
+}
+if grep -q '^divergence: reject-before-deadline-consumer-requirement KNOWN DIVERGENCE (lambdasistemi/singular#361)' /tmp/generic-rows.log; then
+  echo 'FAIL: reject-before-deadline-consumer-requirement still records the old 361 divergence'
+  exit 1
+fi
 # 11. empty-fold (#287): the empty fold is compared with the model's fold batch
 #     over no request, refused by both for empty-fold with the reason the
 #     traced replay admits for the state script, beside its accepting
@@ -431,45 +444,67 @@ nix run --quiet nixpkgs#jq -- -e --arg state "$state_hash" '
   echo 'FAIL: request-value-and-refund-routing refund routing or refund-floor evidence moved'
   exit 1
 }
-# 13. #287: the controls of reject-before-deadline-consumer-requirement and request-value-and-refund-routing that refuse a reject paying its
+# 13. #287: the lawful refund controls that refuse a reject paying its
 #     owner short are compared with the model's reject batch; their
-#     comparisons are in the session's replay index too. reject-before-deadline-consumer-requirement's control:
-#     one entry, deposit-returned, agreeing. request-value-and-refund-routing: its crossed refunds and
-#     its rejected-floor control, two entries. The agreement holds for the
-#     fixtures' shape only: every output at an owner's key is its refund.
-#     The chain judges refunds by position, the model by the owner's summed
-#     outputs; reject-before-deadline-consumer-requirement's divergence records that conflict
-#     (lambdasistemi/singular#361), and its refusal carries no model reason
-#     in the replay index.
-for pair in reject-before-deadline-consumer-requirement:1 request-value-and-refund-routing:2; do
-  row="${pair%%:*}"
-  want="${pair##*:}"
-  # shellcheck disable=SC2016
-  got="$(nix run --quiet nixpkgs#jq -- -r --arg row "$row" '
+#     comparisons are in the session's replay index too. request-value-and-refund-routing:
+#     its crossed refunds and its rejected-floor control, two entries, deposit-returned,
+#     agreeing. The agreement holds for the fixtures' shape only: every output at an
+#     owner's key is its refund. reject-before-deadline-consumer-requirement no longer has an
+#     agreeing control in-window while protected holds (its two tampers are refused by both
+#     for different reasons); its two tampered refusals are in the index as divergences
+#     (model `reject-not-expired`, comparison `differs`, chain `deposit-returned` admitted),
+#     and its untampered accept has no refusal entry. The old `361` outcome divergence
+#     (model accepted) has no live in-window example while protected holds.
+# shellcheck disable=SC2016
+got="$(nix run --quiet nixpkgs#jq -- -r --arg row "request-value-and-refund-routing" '
     [.[] | select(.kind == "refusal" and .row == $row
       and .extentClass == "A" and .modelReason == "deposit-returned"
       and .comparison == "agrees")] | length
   ' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
-  [ "$got" = "$want" ] || {
-    echo "FAIL: $row reject comparisons in the replay index: $got, expected $want"
-    exit 1
-  }
-done
-# shellcheck disable=SC2016
-got="$(nix run --quiet nixpkgs#jq -- -r '
-  [.[] | select(.kind == "refusal" and .row == "reject-before-deadline-consumer-requirement" and .modelReason == null
-    and any(.classes[]; .admitted == "deposit-returned"))] | length
-' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
-[ "$got" = "1" ] || {
-  echo "FAIL: reject-before-deadline-consumer-requirement divergence refusals in the replay index: $got, expected 1"
+[ "$got" = "2" ] || {
+  echo "FAIL: request-value-and-refund-routing reject comparisons in the replay index: $got, expected 2"
   exit 1
 }
-# 14. #287: every refusal of the session carries the traced replay
+# shellcheck disable=SC2016
+got="$(nix run --quiet nixpkgs#jq -- -r '
+    [.[] | select(.kind == "refusal" and .row == "reject-before-deadline-consumer-requirement"
+      and .extentClass == "A" and .modelReason == "deposit-returned"
+      and .comparison == "agrees")] | length
+  ' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
+[ "$got" = "0" ] || {
+  echo "FAIL: reject-before-deadline-consumer-requirement agreeing controls in the replay index: $got, expected 0 (all three diverge while protected holds)"
+  exit 1
+}
+# shellcheck disable=SC2016
+got="$(nix run --quiet nixpkgs#jq -- -r '
+    [.[] | select(.kind == "refusal" and .row == "reject-before-deadline-consumer-requirement" and .modelReason == null
+      and any(.classes[]; .admitted == "deposit-returned"))] | length
+  ' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
+[ "$got" = "0" ] || {
+  echo "FAIL: reject-before-deadline-consumer-requirement old 361 divergence refusals in the replay index: $got, expected 0"
+  exit 1
+}
+# shellcheck disable=SC2016
+got="$(nix run --quiet nixpkgs#jq -- -r '
+    [.[] | select(.kind == "refusal" and .row == "reject-before-deadline-consumer-requirement"
+      and .extentClass == "A" and .modelReason == "reject-not-expired"
+      and .comparison == "differs"
+      and any(.classes[]; .admitted == "deposit-returned"))] | length
+  ' "${CONFORMANCE_RECEIPTS}/replay/index.json")"
+[ "$got" = "2" ] || {
+  echo "FAIL: reject-before-deadline-consumer-requirement protected divergence refusals in the replay index: $got, expected 2"
+  exit 1
+}
+# 14. #287: every lawful refusal of the session carries the traced replay
 #     of its transaction (test/ci/replay-evidence.sh): the programs'
 #     refused steps and batches meet the model's reason, and each
 #     attribution row names, per failing purpose, the reason the replay
-#     admitted or the cause it admits none.
-for row in insert-occupied-key permanent-retire-active-key reject-before-deadline-consumer-requirement empty-fold request-value-and-refund-routing register-active-key; do
+#     admitted or the cause it admits none. reject-before-deadline-consumer-requirement's
+#     three batches are recorded divergences (model `reject-not-expired`, chain `deposit-returned`
+#     in replay for the tampers, chain accepted for the untampered), never agreement, so its
+#     refusals do not meet the agreement-only replay-evidence check; its replay is asserted
+#     in sections 10 and 13 instead.
+for row in insert-occupied-key permanent-retire-active-key empty-fold request-value-and-refund-routing register-active-key; do
   bash test/ci/replay-evidence.sh steps "${CONFORMANCE_RECEIPTS}/receipt-$row.json" || {
     echo "FAIL: $row refused steps lack the traced replay of their reason"
     exit 1
@@ -481,5 +516,7 @@ for row in fold-against-superseded-root surplus-fold-actions; do
     exit 1
   }
 done
-echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except fold-against-superseded-root and surplus-fold-actions, which the model cannot express; held debt exactly empty-fold request-value-and-refund-routing and reject-before-deadline-consumer-requirement fold-against-superseded-root surplus-fold-actions unmet by ruling; reject-before-deadline-consumer-requirement records the known refund-position divergence (#361). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits.'
+# CI change in this ticket (slice eight-c): exact debt, never legacy acceptance.
+echo '2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented. The earlier processing-window and refund-routing consumer requirements remain unmet.'
+echo 'GREEN = expected-debt assertion held: 11 rows executed on a clean candidate-bound tree, each with a program compared step by step with the model except fold-against-superseded-root and surplus-fold-actions, which the model cannot express; held debt exactly empty-fold and reject-after-window reject-before-deadline-consumer-requirement request-value-and-refund-routing fold-against-superseded-root surplus-fold-actions unmet by ruling; reject-before-deadline-consumer-requirement records three protected divergences for ticket 495 (two refused/refused with deposit-returned in replay, one accepted/refused with reject-not-expired). The empty fold, the crossed refunds, the short reject refunds and the registration batch are each refused by the chain and by the model for the reason the traced replay admits, except the unmet row whose divergences turn on admission.'
 echo 'A GREEN STEP IS NOT A FULFILLED CONSUMER PROMISE: R5_plugin_pinned, R8_empty_fold_refused, R9_reject_needs_rejectable and R11_contribute_value stay unmet (upstream #100/#101); strict completion and release stay RED on that debt.'

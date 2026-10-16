@@ -1,0 +1,100 @@
+{
+  "release-record-of-the-model-revision": [
+    {
+      "text": "Release record of the model revision.",
+      "pause": 500
+    },
+    {
+      "text": "This record is the release of ticket 494's model to the validator and builder tickets. The release is the merge commit of the ticket's pull request; the record names the model revision that commit contains, the contracts, the digest of every statement they cite, the corpus rows, the constitution version and the limits that remain. It is filled when the work is accepted.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the author of a validator or a builder, I find in one place the exact revision of the model I implement, the contract that states what each action must satisfy, the statements that prove it, the cases that exercise it, and what is not yet true of the deployed code, so that nothing I rely on is an inference.",
+      "pause": 400
+    }
+  ],
+  "the-model-revision": [
+    {
+      "text": "The model revision.",
+      "pause": 500
+    }
+  ],
+  "statement-digests": [
+    {
+      "text": "Statement digests.",
+      "pause": 500
+    },
+    {
+      "text": "Each line is the qualified name and the SHA-256 digest of the statement text, as recorded in lean/theorem-debt.json. A change of a statement changes its digest and is detected by the model check.",
+      "pause": 400
+    },
+    {
+      "text": "First stage, named in the functions model (the batch statements of the mixed batch and the restated window statement are not in the register: the first were withdrawn with the mixed batch, the second is a lemma):",
+      "pause": 400
+    },
+    {
+      "text": "Economic stage, named in the economic contract:",
+      "pause": 400
+    }
+  ],
+  "corpus-rows": [
+    {
+      "text": "Corpus rows.",
+      "pause": 500
+    },
+    {
+      "text": "The accepting and refusing cases are exported by the model runner and replayed by the model check, the simulator check and the application replay.",
+      "pause": 400
+    }
+  ],
+  "the-historical-scenario-run-on-the-unchanged-base": [
+    {
+      "text": "The historical scenario, run on the unchanged base.",
+      "pause": 500
+    },
+    {
+      "text": "The scenario of a valid live request rejected without justification (the insertion of key 5 for owner 42, booked at 10000, a signerless rejection witness) was run against the base model before any change, on 13 October 2026, on the pre-slice base 2d447ec2dd066b56af4e0e10e52739d29878d14f of the branch as it was then. The run printed",
+      "pause": 400
+    },
+    {
+      "text": "that is: the base accepted the rejection, left the registry state unchanged, minted nothing and paid only the deposit. The failing control that followed (the corpus row expecting the outcome refused and the reason reject-evidence-missing) failed on the base for those two reasons. The row is preserved as historical-unguarded-rejection in lean/driver-corpus.json, where the changed model refuses it. The commits of that stage were squashed when the branch was linearized, so their hashes are not part of the pushed history; the receipt is quoted here because the repository holds no other record of the base's behaviour.",
+      "pause": 400
+    }
+  ],
+  "what-stays-true-after-this-release": [
+    {
+      "text": "What stays true after this release.",
+      "pause": 500
+    },
+    {
+      "text": "No validator, no transaction builder and no command is changed by this ticket. The deployed validators and builders still follow the earlier rules: the live conformance rows that exercise them are published as unmet, with a tripwire that turns red when they change, and nothing counts the earlier behaviour as meeting the ruled design.",
+      "pause": 300
+    },
+    {
+      "text": "The model is the authority. Where a validator disagrees with it, the validator follows.",
+      "pause": 300
+    },
+    {
+      "text": "The model has no Merkle proof bytes, no wallet-ownership observation, no ledger minimum for any output, no native-asset funding and no fee market; the economic contract lists what is left to the implementation.",
+      "pause": 300
+    },
+    {
+      "text": "Measured values of the registration cost, the minimum tip and the booking width are not decided.",
+      "pause": 300
+    },
+    {
+      "text": "No dependent ticket (validators, builders, connected acceptance, the separate rejection command, the request-tag mint) is accepted by this release; each is scoped to this contract.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "release-record.md",
+    "sha256": "20b3406e7b63a494b05fd61b3879fd83432f166fdbf4906658f676ce9de0582e"
+  }
+}

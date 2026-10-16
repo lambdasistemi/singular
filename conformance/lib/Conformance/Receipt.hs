@@ -704,6 +704,20 @@ stepsComplete path receipt steps
     | null steps = Left (path <> ": live receipt has no steps")
     | otherwise = do
         mapM_ checkStep steps
+        -- A lawful receipt may not record a disagreement: agreement is what its
+        -- verdict claims. An unmet row records its divergences; a lawful row meeting
+        -- one fails here, so recording instead of throwing in the runner does not
+        -- weaken the suite (decision B tripwire: the day the chain refuses the
+        -- untampered in-window reject, the unmet row's expected divergences stop
+        -- matching and the lawful rows still require agreement).
+        case receiptVerdict receipt of
+            AgreesWithModel
+                | not (all isAgrees steps) ->
+                    Left
+                        ( path
+                            <> ": lawful receipt records a disagreement with the model"
+                        )
+            _ -> Right ()
         let landed =
                 [ txid
                 | step <- steps
@@ -720,6 +734,7 @@ stepsComplete path receipt steps
   where
     at name (Object fields) = KM.lookup name fields
     at _ _ = Nothing
+    isAgrees step = at "comparison" step == Just (String "agrees")
     failure reason = Left (path <> ": invalid live step: " <> reason)
     checkStep step = case at "batch" step of
         Just _ -> batchRecordProblem path step
@@ -1484,7 +1499,22 @@ batchRecordProblem path step = do
 batchSteps :: FilePath -> Receipt -> [Value] -> Either String Receipt
 batchSteps path receipt steps
     | null steps = Left (path <> ": batch steps name no batch")
-    | otherwise = receipt <$ mapM_ (batchRecordProblem path) steps
+    | otherwise = do
+        mapM_ (batchRecordProblem path) steps
+        -- A lawful receipt may not record a disagreement, batch or edge.
+        case receiptVerdict receipt of
+            AgreesWithModel
+                | not (all isAgrees steps) ->
+                    Left
+                        ( path
+                            <> ": lawful receipt records a disagreement with the model"
+                        )
+            _ -> Right ()
+        Right receipt
+  where
+    isAgrees step = case step of
+        Object fields -> KM.lookup "comparison" fields == Just (String "agrees")
+        _ -> False
 
 {- | Why a row stands @unmet-by-ruling@: the two meanings the operator's
 rulings give that one verdict, each with the issue that would close it.
@@ -1494,6 +1524,10 @@ data UnmetRuling
       requires (ruling 2026-10-01); the alignment issue
       -}
       ConsumerRequirementUnmet Text
+    | -- | the deployed implementation still follows the superseded rejection
+      SupersededRejection (Maybe UnmetRuling)
+    | -- | the earlier refund-routing consumer requirement remains unresolved
+      RefundRoutingUnresolved
     | {- | the chain refuses and Lean has no counterpart to compare with
       (ruling 2026-10-02, "Narrow #287"); the model follow-up
       -}
@@ -1506,7 +1540,15 @@ surface refuses to render it.
 -}
 unmetRuling :: Text -> Maybe UnmetRuling
 unmetRuling = \case
-    "reject-before-deadline-consumer-requirement" -> Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468")
+    "reject-before-deadline-consumer-requirement" ->
+        Just
+            ( SupersededRejection
+                (Just (ConsumerRequirementUnmet "lambdasistemi/cardano-keri#468"))
+            )
+    "request-value-and-refund-routing" -> Just (SupersededRejection (Just RefundRoutingUnresolved))
+    "reject-after-window" -> Just (SupersededRejection Nothing)
+    "reject-and-retract-refund-controls" -> Just (SupersededRejection Nothing)
+    "reject-inside-processing-and-retraction-windows" -> Just (SupersededRejection Nothing)
     "fold-against-superseded-root" -> Just (NoModelCounterpart "lambdasistemi/singular#346")
     "surplus-fold-actions" -> Just (NoModelCounterpart "lambdasistemi/singular#345")
     "wrong-redeemer-constructor-index" -> Just (NoModelCounterpart "lambdasistemi/singular#347")
@@ -1515,6 +1557,11 @@ unmetRuling = \case
 -- | An unmet ruling in plain words, naming the issue that would close it.
 unmetReading :: UnmetRuling -> Text
 unmetReading = \case
+    SupersededRejection earlier ->
+        "unmet by ruling 2026-10-15: implementation follows the superseded rule; the ruled rule is not implemented (lambdasistemi/singular#495 and #496)"
+            <> maybe "" (("; " <>) . unmetReading) earlier
+    RefundRoutingUnresolved ->
+        "the earlier consumer requirement remains unresolved: processed value follows its destination and rejected requests receive the per-owner refund floor (cardano-mpfs-onchain#101)"
     ConsumerRequirementUnmet issue ->
         "unmet by a ruling: the registry deliberately does not do what the \
         \consumer requirement states (operator ruling 2026-10-01; "

@@ -1,3 +1,5 @@
+import Singular.Driver.Codec
+import Singular.Driver.Surface
 import Singular.Model
 
 /-! # The generic model driver
@@ -19,7 +21,7 @@ premise that does not hold, a transaction the model cannot build. A driver that
 collapsed the third into the second would let a broken runner earn refusal
 evidence, which is the defect these classes exist to make visible.
 
-The serialization in the first section was written for the corpus producer in
+The serialization exported by `Singular.Driver.Codec` was written for the corpus producer in
 `lean/Main.lean` and is promoted here so that the driver and the corpus speak
 the same bytes; `Main` consumes it from this module rather than keeping a
 second copy. -/
@@ -28,157 +30,6 @@ namespace Singular
 namespace Driver
 
 open Lean
-
-/-! ## Serialization, promoted from the corpus producer -/
-
-/-- One keyed asset, spelled with the on-chain identity the model pins: the
-kind's policy and the asset name, which is the key. -/
-def assetJson (c : Config) (p : Asset × Int) : Json :=
-  Json.mkObj
-    [ ("kind", toJson p.1.1), ("key", toJson p.1.2)
-    , ("policy", toJson (kindPolicy c p.1.1))
-    , ("assetName", toJson (tokenAssetName p.1.1 p.1.2))
-    , ("quantity", toJson p.2) ]
-
-def assetsJson (c : Config) (ds : List (Asset × Int)) : Json :=
-  Json.arr ((ds.map (assetJson c)).toArray)
-
-def txRoleName : TxRole → String
-  | .state => "state" | .request => "request"
-  | .destination => "destination" | .cage => "cage"
-  | .witness => "witness" | .owner => "owner"
-
-def txInputJson (c : Config) (i : TxInput) : Json :=
-  Json.mkObj
-    [ ("role", toJson (txRoleName i.role))
-    , ("datum", toJson (datumFormName i.datum))
-    , ("stateToken", toJson i.stateTokens)
-    , ("approvalQuantity", toJson i.approvals)
-    , ("lovelace", toJson i.lovelace)
-    , ("assets", assetsJson c i.assets)
-    , ("datumValue", datumJson i.datumValue) ]
-
-def txOutputJson (c : Config) (o : TxOutput) : Json :=
-  Json.mkObj
-    [ ("role", toJson (txRoleName o.role))
-    , ("datum", toJson (datumFormName o.datum))
-    , ("address", match o.address with | none => Json.null | some a => toJson a)
-    , ("stateToken", toJson o.stateTokens)
-    , ("inlineConfig", match o.config with | none => Json.null | some cfg => toJson cfg)
-    , ("commitment", match o.commitment with | none => Json.null | some x => toJson x)
-    , ("assets", assetsJson c o.assets)
-    , ("custodyDatum", toJson o.custodyDatum)
-    , ("lovelace", toJson o.lovelace)
-    , ("reference", match o.reference with | none => Json.null | some x => toJson x)
-    , ("datumValue", datumJson o.datumValue) ]
-
-/-- The built transaction, serialized. Every field comes from the `Tx` the model
-constructed; nothing here is assembled beside it. -/
-def txJson (c : Config) (tx : Tx) : Json :=
-  Json.mkObj
-    [ ("inputs", Json.arr ((tx.inputs.map (txInputJson c)).toArray))
-    , ("outputs", Json.arr ((tx.outputs.map (txOutputJson c)).toArray))
-    , ("mint", assetsJson c tx.mint)
-    , ("signers", toJson tx.signers)
-    , ("refunds", Json.arr ((tx.refunds.map fun p =>
-        Json.mkObj [("address", toJson p.1), ("value", toJson p.2)]).toArray)) ]
-
-/-! ## The declared surface -/
-
-/-- An edge's name is the model's own `ToJson Edge` spelling, so the driver
-cannot acquire a second vocabulary for the seven edges. -/
-def edgeName (e : Edge) : String :=
-  match toJson e with
-  | .str s => s
-  | j => j.compress
-
-/-- An operation's name: a fold is named by its edge, so every fold keeps the
-edge's own spelling; a reject and a retract by their constructor names. -/
-def exitName : Exit → String
-  | .fold e => edgeName e
-  | .reject => "reject"
-  | .retract => "retract"
-
-/-- The nine exits are the declared operations: a fold of each of the seven
-edges, a reject and a retract. The extent is the model's inductives, listed once
-here because Lean has no enumeration of them. -/
-def declaredExits : List Exit :=
-  ([Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal,
-    .deleteAbsent, .deleteActive, .witnessTerminal].map .fold) ++ [.reject, .retract]
-
-def declaredOperations : List String := declaredExits.map exitName
-
-/-- The declared boundary observations. Every accepted scenario reports all of
-them; a row reporting a subset is a per-theorem projection and is rejected by
-the checker rather than counted as conformance. -/
-def declaredObservations : List String :=
-  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state", "tx"]
-
-/-- Fields the model has no vocabulary for, named here so they are a stated
-limit instead of a silent omission. The registry root is the leading case: the
-model's `rootOf` is FNV-1a over the sorted (key, leaf byte) list — its own
-commitment function — and is NOT the concrete trie hash a chain would carry.
-
-`outputMinimumAda` is the second of that kind: a ledger requires every output to
-carry a minimum, and this model says nothing about it. A transaction output's
-`lovelace` here is therefore a floor, not an amount: what the exit owes the
-recipient the output pays — the cage output's deposit, the destination output's
-deposit for a fold delivering a token, an owner output's payment — and a logical
-zero on an output that pays no recipient. It is named so that a consumer compares
-that field as a floor, observed at least the model's, and never reconstructs the
-ledger minimum as an equality the model never claimed. -/
-def declaredUnobservable : List String :=
-  ["concreteTrieHash", "outputMinimumAda", "registryAddress",
-   "scriptExecutionUnits", "transactionId", "utxoReference"]
-
-/-- The declared judgements: questions the driver answers about a transaction a
-caller observed, beside the boundary it reports, in the order it asks them.
-`spend` judges what the observed inputs spend, by `Singular.spendRefusal`;
-`settle` whether the observed outputs pay what the scenario's exit owes, by
-`Singular.settle`. -/
-def declaredJudgements : List String := ["spend", "settle"]
-
-/-- What a batch answer reports: the single-request boundary without its
-transaction, since the model builds none for a batch, and with `leaf` read at
-every distinct request key. -/
-def batchObservations : List String :=
-  ["config", "custody", "held", "leaf", "mint", "paid", "root", "state"]
-
-/-- The declared batch questions, each named with its own observation extent:
-`foldBatch`, answered by `Singular.foldBatch`, and `rejectBatch`, a batch of
-rejects judged by `Singular.settle` over their concatenated obligations. -/
-def declaredBatchQuestions : List (String × List String) :=
-  [("foldBatch", batchObservations), ("rejectBatch", batchObservations)]
-
-/-- D01: the surface identity a scenario is executed against. -/
-structure SurfaceIdentity where
-  declaration : String
-  protocolVersion : Nat
-  operations : List String
-  observations : List String
-  unobservable : List String
-  judgements : List String
-  batchQuestions : List (String × List String)
-
-def surface : SurfaceIdentity :=
-  { declaration := "Singular.Driver.runSurface"
-  , protocolVersion := 6
-  , operations := declaredOperations
-  , observations := declaredObservations
-  , unobservable := declaredUnobservable
-  , judgements := declaredJudgements
-  , batchQuestions := declaredBatchQuestions }
-
-def surfaceJson (s : SurfaceIdentity) (definitionDigest : String) : Json :=
-  Json.mkObj
-    [ ("declaration", toJson s.declaration)
-    , ("definitionDigest", toJson definitionDigest)
-    , ("protocolVersion", toJson s.protocolVersion)
-    , ("operations", toJson s.operations)
-    , ("observations", toJson s.observations)
-    , ("unobservable", toJson s.unobservable)
-    , ("judgements", toJson s.judgements)
-    , ("batchQuestions", Json.mkObj (s.batchQuestions.map fun q => (q.1, toJson q.2))) ]
 
 /-! ## The law premise -/
 
@@ -209,6 +60,14 @@ def consistentB (s : RegistryState) : Bool :=
 
 def premiseDeclaration : String := "Singular.Driver.consistentB"
 
+instance : ToJson RejectEvidence where
+  toJson e := Json.mkObj [("registry", toJson e.registry),
+    ("request", toJson e.request), ("reason", toJson e.reason)]
+
+instance : ToJson RejectWitness where
+  toJson w := Json.mkObj [("evidence", toJson w.evidence),
+    ("validFrom", toJson w.validFrom), ("validTo", toJson w.validTo)]
+
 /-! ## Scenarios and results -/
 
 /-- D02: one scenario. `setup` is a trace of requests that must each be accepted
@@ -218,7 +77,8 @@ needs a non-initial state declares `requiresReachableState` and must supply the
 trace that produces it, so a constructed final state cannot stand in for one.
 `witness` is what a retraction's admission reads beyond the request
 (`Singular.RetractWitness`); a fold carries its finite upper bound in
-`foldWitness`, and a reject reads neither witness (`admissionWitness`). -/
+`foldWitness`. `rejection` is what a rejection's admission reads (`Singular.RejectWitness`);
+a rejection without it is refused `reject-evidence-missing`, never `unsupported`. -/
 structure Scenario where
   id : String
   theoremName : String
@@ -233,6 +93,7 @@ structure Scenario where
   lovelace : Nat
   witness : Option RetractWitness := none
   foldWitness : Option FoldWitness := none
+  rejection : Option RejectWitness := none
   /-- The outputs of a transaction a caller observed for this exit, judged by
   `judgeSurface`; none when the scenario judges nothing. -/
   outputs : Option (List TxOutput) := none
@@ -298,7 +159,7 @@ def observationsJson (c : Config) (r : Request) (res : Result) (tx : Tx) : Json 
 /-- The witness a scenario's exit is admitted under. A retraction is admitted
 under the scenario's own, and a retraction that carries none has nothing to be
 admitted under. A fold requires its own upper-bound witness; its request carries
-the submission time. A reject uses an empty witness whose fields it ignores. -/
+the submission time. Rejects separately require `Scenario.rejection`; an empty retraction witness grants no rejection authority. -/
 def admissionWitness (sc : Scenario) : Option RetractWitness :=
   match sc.exit with
   | .retract => sc.witness
@@ -318,7 +179,7 @@ The exit is taken through admission: `Singular.admittedExitStep` and
 `Singular.admittedTxOfExit`, so a retraction is accepted only when
 `Singular.retractAdmission` admits it under its witness, and is otherwise refused
 with the admission's reason. A fold is admitted by `Singular.foldAdmission`
-before its step and transaction; a reject is unchanged. A fold or retraction
+before its step and transaction; a reject passes its separate evidence to `rejectAdmission`. A fold or retraction
 with no witness is `unsupported`: the case
 was not described, and reading it as the owner's absent signature would dress a
 missing input up as the model's refusal. -/
@@ -338,12 +199,12 @@ def runSurface (sc : Scenario) : List SetupStep × DriverResult :=
                   | _ => "retraction-without-witness")
               , premiseChecked := true, observations := none })
     | some witness =>
-    match admittedExitStep s sc.exit sc.request witness with
+    match admittedExitStep s sc.exit sc.request witness sc.rejection with
     | .error why =>
       (steps, { outcome := .refused, reason := some why
               , premiseChecked := true, observations := none })
     | .ok res =>
-      match admittedTxOfExit s sc.exit sc.request witness sc.lovelace with
+      match admittedTxOfExit s sc.exit sc.request witness sc.lovelace sc.rejection with
       | .error why =>
         (steps, { outcome := .unsupported, reason := some ("transaction-unbuildable: " ++ why)
                 , premiseChecked := true, observations := none })
@@ -396,6 +257,7 @@ def scenarioJson (sc : Scenario) : Json :=
     , ("start", toJson sc.start)
     , ("request", toJson sc.request)
     , ("lovelace", toJson sc.lovelace) ]
+    ++ (match sc.rejection with | none => [] | some w => [("rejection", toJson w)])
     ++ (match sc.witness with | none => [] | some w => [("witness", toJson w)])
     ++ (match sc.foldWitness with | none => [] | some w => [("foldWitness", toJson w)])
     ++
@@ -455,13 +317,25 @@ def batchRejects (batch : List (Exit × Request)) : Option (List Request) :=
   if batch.isEmpty then none
   else batch.mapM fun (exit, request) => if exit == .reject then some request else none
 
+/-- The validity intervals carried by the supplied rejection witnesses. -/
+def rejectBatchIntervals (witnesses : List (Option RejectWitness)) : List (Nat × Nat) :=
+  witnesses.filterMap fun w => w.map fun w => (w.validFrom, w.validTo)
+
+def emptyRetractWitness : RetractWitness :=
+  { submittedAt := 0, validFrom := 0, validTo := 0, signatories := [] }
+
 /-- A batch of rejects as the model steps it: each request through
-`Singular.exitStep` with `Exit.reject`, from the state the previous left, the
-results combined as `Singular.foldActions` combines a batch's. -/
-def rejectBatchStep (s : RegistryState) (requests : List Request) : Except String Result :=
-  requests.foldlM
-    (fun acc request => do
-      let t ← exitStep acc.state .reject request
+`Singular.admittedExitStep` with `Exit.reject`, from the state the previous left, the
+results combined as `Singular.foldActions` combines a batch's. One witness per request and one
+shared interval; a length mismatch is missing evidence and differing intervals do not combine. -/
+def rejectBatchStep (s : RegistryState) (requests : List Request)
+    (witnesses : List (Option RejectWitness) := []) : Except String Result := do
+  if requests.length != witnesses.length then throw "reject-evidence-missing"
+  let intervals := rejectBatchIntervals witnesses
+  if intervals.eraseDups.length > 1 then throw "reject-batch-interval-mismatch"
+  (requests.zip witnesses).foldlM
+    (fun acc p => do
+      let t ← admittedExitStep acc.state .reject p.1 emptyRetractWitness p.2
       pure (combineResults acc t))
     (emptyResult s)
 
@@ -524,7 +398,8 @@ def runFoldBatch (start : RegistryState) (setup batch : List Request)
 trace reaches, with the premise checked, a non-empty batch of rejects is stepped
 by `rejectBatchStep` and answered with the declared batch boundary; an empty
 batch, and one naming a fold or a retract, is `unsupported`. -/
-def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List (Exit × Request)) :
+def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List (Exit × Request))
+    (witnesses : List (Option RejectWitness) := []) :
     List SetupStep × DriverResult :=
   match reachBatchStart start setup with
   | (steps, .error result) => (steps, result)
@@ -536,7 +411,7 @@ def runRejectBatch (start : RegistryState) (setup : List Request) (batch : List 
                                 else "reject-batch-names-another-exit")
               , premiseChecked := true, observations := none })
     | some requests =>
-      match rejectBatchStep s requests with
+      match rejectBatchStep s requests witnesses with
       | .error why =>
         (steps, { outcome := .refused, reason := some why
                 , premiseChecked := true, observations := none })
@@ -558,6 +433,7 @@ structure BatchScenario where
   setup : List Request
   question : BatchQuestion
   foldWitness : Option FoldWitness := none
+  rejections : List (Option RejectWitness) := []
   outputs : Option (List TxOutput) := none
 
 /-- One executed batch scenario, serialized as the corpus row the checker reads.
@@ -572,7 +448,7 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
       let (steps, folded, result) := runFoldBatch sc.start sc.setup batch sc.foldWitness
       (steps, some folded, result, Json.arr (batch.map toJson).toArray, none)
     | .rejectBatch batch =>
-      let (steps, result) := runRejectBatch sc.start sc.setup batch
+      let (steps, result) := runRejectBatch sc.start sc.setup batch sc.rejections
       let settled : Option Json :=
         match sc.outputs, result.outcome, batchRejects batch with
         | some outputs, .accepted, some rejects =>
@@ -593,6 +469,7 @@ def batchScenarioJson (sc : BatchScenario) : Json :=
     , ("question", toJson (batchQuestionName sc.question))
     , ("requiresReachableState", toJson sc.requiresReachableState)
     , ("start", toJson sc.start)
+    , ("rejections", toJson sc.rejections)
     , ("requests", requests)
     , ("setup", Json.arr ((steps.map setupStepJson).toArray)) ]
     ++ (match sc.foldWitness with | none => [] | some w => [("foldWitness", toJson w)])

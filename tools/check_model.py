@@ -33,6 +33,7 @@ GENERIC_SOURCES = [
     "lean/Singular.lean",
     "lean/Singular/Audit.lean",
     "lean/Singular/Driver.lean",
+    "lean/Singular/Economics.lean",
     "lean/Singular/Lemmas.lean",
     "lean/Singular/Model.lean",
     "lean/Singular/Statements.lean",
@@ -69,6 +70,30 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def module_sources(path):
+    """A compatibility facade and its cohesive submodules, in path order.
+
+    The adjacent directory belongs to this surface. Discovery includes even an
+    unimported module: the compiled report/reachability check must reject it,
+    rather than letting a missing import remove an obligation.
+    """
+    return [path, *sorted(path.with_suffix("").rglob("*.lean"))]
+
+
+def module_text(path):
+    return "\n".join(p.read_text(encoding="utf-8") for p in module_sources(path))
+
+
+def generic_sources(root):
+    return [
+        str(path.relative_to(root))
+        for rel in GENERIC_SOURCES
+        for path in (
+            [root / rel] if rel == "lean/Singular.lean" else module_sources(root / rel)
+        )
+    ]
+
+
 def audit_sources(root):
     """Keyword and proof-hole audit over every Lean source, generic and naming."""
     for path in sorted((root / "lean").rglob("*.lean")):
@@ -87,8 +112,8 @@ def audit_sources(root):
 
 
 def statement_inventory(path, prefix):
-    """Parse one statements module into exact declaration identities."""
-    source = path.read_text()
+    """Parse a statements surface into exact declaration identities."""
+    source = module_text(path)
     clean = re.sub(r"/\-.*?\-/", "", source, flags=re.S)
     clean = re.sub(r"--[^\n]*", "", clean)
     clean = re.sub(r'"(?:\\.|[^"\\])*"', '""', clean)
@@ -183,6 +208,79 @@ def check_or_compare(target, encoded, export, label):
         assert target.read_text() == encoded, f"{label} identity drift"
 
 
+def check_transaction_compatibility(root, corpus, driver_corpus):
+    """Keep every historical transaction row, including explicit field presence.
+
+    The baseline was extracted from its recorded commit, never from the encoder
+    under test. These two statements were deliberately restated when the model
+    gained the state token identity. Their top-level digests may differ.
+    The one-tip ruling also retires exactly two top-level annotations from
+    these corpus transaction rows, never request tips or transaction fields.
+    """
+    restated = {
+        "Singular.Statements.insert_active_transaction_row",
+        "Singular.Statements.update_terminal_transaction_row",
+    }
+    retired_fields = {"tip", "lovelaceCoversTip"}
+    retired_profiles = {
+        "insertActive": "Singular.Statements.insert_active_transaction_row",
+        "updateTerminal": "Singular.Statements.update_terminal_transaction_row",
+    }
+    baseline = json.loads((root / "lean/transaction-baseline.json").read_text())
+    current = {
+        "lean/corpus.json": corpus["transactions"],
+        "lean/driver-corpus.json": driver_corpus["scenarios"],
+        "simulator/corpus.json": json.loads(
+            (root / "simulator/corpus.json").read_text()
+        )["transactions"],
+    }
+    assert set(baseline["rows"]) == set(current), "transaction baseline extent differs"
+    checked = 0
+    for path, expected_rows in baseline["rows"].items():
+        key = "id" if path == "lean/driver-corpus.json" else "profile"
+        observed = {row[key]: row for row in current[path]}
+        assert len(observed) == len(current[path]), f"duplicate transaction row: {path}"
+        assert expected_rows, f"empty transaction baseline: {path}"
+        assert len({row[key] for row in expected_rows}) == len(expected_rows)
+        for expected in expected_rows:
+            name = expected[key]
+            assert name in observed, f"missing historical transaction: {path}/{name}"
+            actual = copy.deepcopy(observed[name])
+            expected = copy.deepcopy(expected)
+            if path in {"lean/corpus.json", "simulator/corpus.json"} and (
+                retired_profiles.get(name) == expected["theorem"]
+            ):
+                assert not retired_fields & actual.keys(), (
+                    f"retired transaction fields: {path}/{name}"
+                )
+                for field in retired_fields:
+                    expected.pop(field, None)
+            if expected["theorem"] in restated:
+                actual["statementSha256"] = expected["statementSha256"]
+            before = json.dumps(expected, indent=2, sort_keys=True)
+            after = json.dumps(actual, indent=2, sort_keys=True)
+            if before != after:
+                import difflib
+
+                delta = "\n".join(
+                    difflib.unified_diff(
+                        before.splitlines(),
+                        after.splitlines(),
+                        fromfile="accepted transaction",
+                        tofile="candidate transaction",
+                    )
+                )
+                raise AssertionError(
+                    f"transaction compatibility: {path}/{name}\n{delta}"
+                )
+            checked += 1
+    print(
+        f"transaction compatibility: {checked} historical rows byte-identical "
+        "apart from the two declared statement digests and the listed retired "
+        "top-level tip and lovelaceCoversTip annotations"
+    )
+
+
 def unreachable_modules(root):
     """Modules on disk that `lake build` will never build.
 
@@ -206,7 +304,8 @@ def unreachable_modules(root):
             if line.startswith("import Singular"):
                 pending.append(line.split()[1])
     on_disk = {
-        "Singular." + f.stem for f in sorted((root / "lean/Singular").glob("*.lean"))
+        ".".join(f.relative_to(root / "lean").with_suffix("").parts)
+        for f in sorted((root / "lean/Singular").rglob("*.lean"))
     }
     assert on_disk, "EMPTY EXTENT: no modules discovered under lean/Singular"
     return sorted(on_disk - seen)
@@ -234,7 +333,7 @@ def model_refusal_vocabulary(root):
     ledger refusal — has nowhere to hide. The subject of the assertion is the
     driver's executed output; this only supplies the vocabulary it is held to.
     """
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef refusal ", 1)[1].split("\n/--", 1)[0]
     vocabulary = set(REFUSAL_LITERAL.findall(body))
     assert vocabulary, "EMPTY EXTENT: no refusal reasons discovered in Singular.refusal"
@@ -243,14 +342,15 @@ def model_refusal_vocabulary(root):
     assert exit_vocabulary, (
         "EMPTY EXTENT: no refusal reasons discovered in Singular.exitStep"
     )
-    vocabulary |= exit_vocabulary
+    rejection_body = source.split("\ndef rejectAdmission ", 1)[1].split("\n/--", 1)[0]
+    vocabulary |= exit_vocabulary | set(REFUSAL_LITERAL.findall(rejection_body))
     vocabulary |= set(model_fold_admission(root)["reasons"].values())
     return vocabulary
 
 
 def model_fold_admission(root):
     """Admission reasons and fixed edges read from the producer's definitions."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef foldAdmission ", 1)[1].split("\n/--", 1)[0]
     reasons = {}
     for guard in ("allowed", "inPhase1"):
@@ -301,7 +401,7 @@ def model_retraction(root):
     `=> true` arm of `Singular.retractableEdge`. Nothing here is typed from the
     model's words.
     """
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef retractAdmission ", 1)[1].split("\n/--", 1)[0]
     admission = REFUSAL_LITERAL.findall(body)
     assert admission, (
@@ -400,7 +500,7 @@ def model_exits(root):
     obtained from `Singular.Edge` and `Singular.Exit` rather than typed here, so a
     new exit the driver does not declare fails the check.
     """
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     edges = CONSTRUCTOR.findall(EDGE_INDUCTIVE.search(source).group(1))
     exits = CONSTRUCTOR.findall(EXIT_INDUCTIVE.search(source).group(1))
     assert edges, "EMPTY EXTENT: no constructors discovered in Singular.Edge"
@@ -635,9 +735,15 @@ def leaf_name(spelling):
 DELTA_CELL = re.compile(r"\(\.(\w+), (-?\d+)\)")
 
 
+def model_law_text(root):
+    """Read the law without the Oracle adapters that reuse its short names."""
+    source = module_text(root / "lean/Singular/Model.lean")
+    return re.sub(r"(?ms)^namespace Oracle\n.*?^end Oracle\b", "", source)
+
+
 def model_constants(root):
     """The leaf byte table and the R2 delta table, read off the model."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = model_law_text(root)
     state_body = source.split("\ndef stateByte ", 1)[1].split("\n/--", 1)[0]
     leaf_bytes = {
         name: int(value, 16) for name, value in STATE_BYTE_ARM.findall(state_body)
@@ -665,7 +771,7 @@ def model_transitions(root):
     An internally consistent row that simply echoes its starting state passes
     every other check here and fails this one.
     """
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = model_law_text(root)
     body = source.split("\ndef transition (e : Edge) (before : Leaf)", 1)[1].split(
         "\n/--", 1
     )[0]
@@ -823,7 +929,7 @@ def model_batch_refusals(root):
     """What a fold batch may be refused for, read off the model: every reason
     `Singular.refusal` gives a request, and `Singular.foldBatch`'s own two — the
     one on its `isEmpty` line and the one its mint guard throws — plus the created-holding scan."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef foldBatch ", 1)[1].split("\n/--", 1)[0]
 
     def reason_on(keyword):
@@ -855,7 +961,7 @@ def model_batch_refusals(root):
 
 def model_unpaid_reasons(root):
     """Every reason `Singular.unpaidReason` gives a recipient left unpaid."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef unpaidReason ", 1)[1].split("\n/--", 1)[0]
     reasons = set(REFUSAL_LITERAL.findall(body))
     assert reasons, "EMPTY EXTENT: no reasons discovered in Singular.unpaidReason"
@@ -870,7 +976,7 @@ def model_reject_settlement(root):
     floor `Singular.obligations` gives a reject, the role `Singular.paysRecipient`
     reads for that recipient, and the reason `Singular.unpaidReason` gives it
     unpaid. Nothing here is typed from the model's words."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef obligations ", 1)[1].split("\n/--", 1)[0]
     arms = re.split(r"\n  \| ", body)
     arm = next(a for a in arms if re.search(r"(^|\| )\.reject\b", a))
@@ -933,7 +1039,7 @@ def check_judged_scenarios(corpus, root):
     row, since a refused exit builds nothing to judge. The judgement is the
     model's own word: none, or a reason `Singular.unpaidReason` gives, read off
     its source, unhyphenated ones included."""
-    source = (root / "lean/Singular/Model.lean").read_text(encoding="utf-8")
+    source = module_text(root / "lean/Singular/Model.lean")
     body = source.split("\ndef unpaidReason ", 1)[1].split("\n/--", 1)[0]
     unpaid = set(re.findall(r'"([a-z][a-z0-9-]*)"', body))
     assert unpaid, "EMPTY EXTENT: no reasons discovered in Singular.unpaidReason"
@@ -1603,7 +1709,7 @@ def main():
     binary = args.binary or root / ".lake/build/bin/singular-corpus"
     corpus = json.loads(subprocess.check_output([str(binary)]))
     sources = {}
-    for rel in GENERIC_SOURCES:
+    for rel in generic_sources(root):
         data = (root / rel).read_bytes()
         if rel == "lean/Singular.lean":
             # The generic library may differ from its base only by `import
@@ -1712,15 +1818,15 @@ def main():
         "so no scenario, observation or translation row below can be established"
     )
     driver_corpus = json.loads(subprocess.check_output([str(driver_binary)]))
+    check_transaction_compatibility(root, corpus, driver_corpus)
     assert driver_corpus["schema"] == DRIVER_SCHEMA, (
         f"driver corpus schema {driver_corpus['schema']!r} != {DRIVER_SCHEMA!r}"
     )
     # The driver's extent is the generic one plus its own producer: a change to
     # either moves the driver corpus identity.
     driver_sources = dict(sources)
-    driver_sources["lean/DriverMain.lean"] = digest(
-        (root / "lean/DriverMain.lean").read_bytes()
-    )
+    for path in module_sources(root / "lean/DriverMain.lean"):
+        driver_sources[str(path.relative_to(root))] = digest(path.read_bytes())
     corpus_envelope(
         driver_corpus,
         driver_sources,

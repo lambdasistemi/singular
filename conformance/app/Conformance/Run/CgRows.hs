@@ -51,6 +51,7 @@ import Data.Aeson.KeyMap qualified as KM
 import Data.Foldable (toList)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (sortOn)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
@@ -125,7 +126,19 @@ runProgram env program = do
             <> show (length expected)
         )
         (length records == length expected)
-    mapM_ (expect row) (zip3 [0 :: Int ..] expected records)
+    checkedRecords <-
+        if control == Just "rejection-outcome"
+            then do
+                let seeded = map seedRejectionOutcome records
+                require
+                    "rejection outcome control did not alter both accepted rejections"
+                    (length (filter id (zipWith (/=) records seeded)) == 2)
+                emit
+                    "control"
+                    "seeded two changed rejection outcomes after the real comparisons"
+                pure seeded
+            else pure records
+    mapM_ (expect row) (zip3 [0 :: Int ..] expected checkedRecords)
     writeStoryReceipt
         env
         (T.pack row)
@@ -143,6 +156,34 @@ verdictOf = \case
     Held{} -> HeldQ002
     Unmet{} -> UnmetByRuling
 
+{- | Seed the changed outcome on the real dedicated row's completed records.
+This is a harness-only story control, applied after transaction comparison.
+It never changes a transaction or emits a successful receipt.
+-}
+seedRejectionOutcome :: Value -> Value
+seedRejectionOutcome (Object fields)
+    | KM.lookup "exit" fields == Just (String "reject")
+    , KM.lookup "tamper" fields == Just Null
+    , Just (Object chain) <- KM.lookup "chain" fields
+    , KM.lookup "outcome" chain == Just (String "accepted") =
+        Object
+            ( KM.insert
+                "comparison"
+                (String "disagrees")
+                ( KM.insert
+                    "chain"
+                    ( Object
+                        ( KM.insert
+                            "reason"
+                            (String "seeded state-spending refusal")
+                            (KM.insert "outcome" (String "refused") chain)
+                        )
+                    )
+                    fields
+                )
+            )
+seedRejectionOutcome record = record
+
 -- | The wallet of the run a program's wallet is, with its signing key.
 walletOf
     :: Env -> WalletRole -> IO (SignKeyDSIGN Ed25519DSIGN, Addr)
@@ -156,52 +197,124 @@ recorded divergence with its outcomes and the reason the traced replay admits
 for the chain, logged as a known divergence and never a pass.
 -}
 expect :: String -> (Int, Expected, Value) -> IO ()
-expect row (index, expected, record) = case expected of
-    Agrees ->
-        require
-            (row <> " record " <> show index <> " does not agree with the model")
-            (field ["comparison"] record == Just (String "agrees"))
-    Diverges
-        { divergenceChain
-        , divergenceModel
-        , divergenceTrace
-        , divergenceIssue
-        } -> do
-            require
-                ( row
-                    <> " record "
-                    <> show index
-                    <> " did not come out as the recorded divergence ("
-                    <> T.unpack divergenceIssue
-                    <> ")"
-                )
-                ( field ["comparison"] record == Just (String "disagrees")
-                    && field ["chain", "outcome"] record == Just (String divergenceChain)
-                    && field ["model", "outcome"] record == Just (String divergenceModel)
-                    && divergenceTrace `elem` replayReasons record
-                )
-            emit
-                "divergence"
-                ( row
-                    <> " KNOWN DIVERGENCE ("
-                    <> T.unpack divergenceIssue
-                    <> "): the chain "
-                    <> T.unpack divergenceChain
-                    <> " it for "
-                    <> T.unpack divergenceTrace
-                    <> " (tx="
-                    <> maybe "?" T.unpack (text ["chain", "txid"] record)
-                    <> ") and the model "
-                    <> T.unpack divergenceModel
-                    <> " it; recorded, never a pass"
-                )
+expect row (index, expected, record) = do
+    -- This is the existing expectation's changed-outcome diagnostic, not a
+    -- second verdict oracle. Setup, unsupported and incomplete runs never
+    -- enter it; no receipt is written before the expectation succeeds.
+    require
+        ( row
+            <> " step "
+            <> show index
+            <> " expected outcome accepted; observed outcome refused (reason: "
+            <> T.unpack (fromMaybe "unobserved; see retained replay" observedReason)
+            <> "); changed real outcome; the ruled rule may be deployed"
+        )
+        (not changedRejection)
+    case expected of
+        Agrees -> case differsMessage record of
+            Just message -> failWith message
+            Nothing ->
+                require
+                    (row <> " record " <> show index <> " does not agree with the model")
+                    (field ["comparison"] record == Just (String "agrees"))
+        Diverges
+            { divergenceChain
+            , divergenceModel
+            , divergenceTrace
+            , divergenceIssue
+            } -> do
+                require
+                    ( row
+                        <> " record "
+                        <> show index
+                        <> " did not come out as the recorded divergence ("
+                        <> T.unpack divergenceIssue
+                        <> ")"
+                    )
+                    ( field ["comparison"] record == Just (String "disagrees")
+                        && field ["chain", "outcome"] record == Just (String divergenceChain)
+                        && field ["model", "outcome"] record == Just (String divergenceModel)
+                        && ( if divergenceChain == "accepted"
+                                then field ["model", "reason"] record == Just (String divergenceTrace)
+                                else divergenceTrace `elem` replayReasons record
+                           )
+                    )
+                emit
+                    "divergence"
+                    ( if divergenceChain == "accepted"
+                        then
+                            row
+                                <> " KNOWN DIVERGENCE ("
+                                <> T.unpack divergenceIssue
+                                <> "): the chain accepted it (tx="
+                                <> maybe "?" T.unpack (text ["chain", "txid"] record)
+                                <> ") and the model refused it for "
+                                <> T.unpack divergenceTrace
+                                <> "; recorded, never a pass"
+                        else
+                            row
+                                <> " KNOWN DIVERGENCE ("
+                                <> T.unpack divergenceIssue
+                                <> "): the chain "
+                                <> T.unpack divergenceChain
+                                <> " it for "
+                                <> T.unpack divergenceTrace
+                                <> " (tx="
+                                <> maybe "?" T.unpack (text ["chain", "txid"] record)
+                                <> ") and the model "
+                                <> T.unpack divergenceModel
+                                <> " it; recorded, never a pass"
+                    )
   where
+    expectedAccepted = case expected of
+        Agrees -> field ["model", "outcome"] record == Just (String "accepted")
+        Diverges{divergenceChain} -> divergenceChain == "accepted"
+    changedRejection =
+        expectedAccepted
+            && ( field ["exit"] record == Just (String "reject")
+                    || field ["batch"] record == Just (String "rejectBatch")
+               )
+            && field ["tamper"] record == Just Null
+            && field ["chain", "outcome"] record == Just (String "refused")
+    observedReason = case text ["chain", "refusal", "rejection"] record of
+        Just reason -> Just reason
+        Nothing -> text ["chain", "reason"] record
     field [] value = Just value
     field (key : path) (Object fields) = KM.lookup key fields >>= field path
     field _ _ = Nothing
     text path value = case field path value of
         Just (String t) -> Just t
         _ -> Nothing
+    -- A lawful row meeting a different-reason refusal fails loudly, naming both
+    -- reasons from the record's own fields, before any receipt is written.
+    differsMessage value =
+        case ( field ["comparison"] value
+             , field ["chain", "outcome"] value
+             , field ["model", "outcome"] value
+             , text ["exit"] value
+             , text ["requestKey"] value
+             , text ["chainReason"] value
+             , text ["leanReason"] value
+             ) of
+            ( Just (String "disagrees")
+                , Just (String "refused")
+                , Just (String "refused")
+                , Just exit
+                , Just key
+                , Just chainReason
+                , Just leanReason
+                ) ->
+                    Just
+                        ( "model and chain refuse for different reasons for "
+                            <> T.unpack exit
+                            <> " at "
+                            <> T.unpack key
+                            <> ": chain="
+                            <> T.unpack chainReason
+                            <> " lean="
+                            <> T.unpack leanReason
+                        )
+            _ -> Nothing
     replayReasons value = case field ["chain", "refusal", "replay"] value of
         Just (Array entries) ->
             [ reason
@@ -477,7 +590,7 @@ runSurplusFoldActions env = do
 
 {- | The batch harness (#344): the story language's two batch instructions,
 executed on the devnet — a fold of two registrations in one transaction, then a
-reject of two more in one transaction while they can still be folded — and each
+reject of two more in one transaction after both windows with expiry evidence — and each
 asked of the model's matching batch question through the transport. It belongs
 to no requirement and its receipt is read by no row. Both batches are lawful, so
 it requires that both ran and that the chain and the model each accepted each
@@ -518,7 +631,7 @@ runBatchHarness env = do
                 ]
         _ <-
             Live.rejectBatchWithin
-                Live.InProcessingWindow
+                Live.AfterTheWindows
                 registry
                 [ Live.EdgeRequest Live.InsertActive "batch-rejected-one" holder
                 , Live.EdgeRequest Live.InsertActive "batch-rejected-two" holder

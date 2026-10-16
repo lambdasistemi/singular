@@ -1,0 +1,62 @@
+{
+  "modules-model-where-the-rejection-rule-lives-and-who-reads-it": [
+    {
+      "text": "Modules model: where the rejection rule lives and who reads it.",
+      "pause": 500
+    },
+    {
+      "text": "This page owns responsibility and dependency direction for the modules ticket 494 changes. It sits above data and functions and does not repeat them.",
+      "pause": 400
+    }
+  ],
+  "standing-since-14-october-2026": [
+    {
+      "text": "Standing since 14 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "This page covers where the first stage of the rule lives. The economic stage adds modules beside these, listed in the economics models, and leaves the earlier path in place. The decided economic design (design) is what the ticket now delivers: a rejection reads the current state by reference and spends no state output, never shares a transaction with a fold, and returns each refund address at least what its requests held minus their tips. The economics plan lists the slices and the economics models the rows as built. The live conformance rows that still follow the earlier rules are published as unmet until the validators and builders follow the model.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the person who reviews or later extends the rule, I see one module that owns it, the modules that only restate or execute it, and the generated copies that must follow, so that a change to the rule has one place to start and one list of places that must agree afterwards.",
+      "pause": 400
+    },
+    {
+      "text": "The arrows point from the owner to the readers. Nothing on the right of the model may state the rule differently from the model; the generated copies are produced from it, never edited.",
+      "pause": 400
+    }
+  ],
+  "responsibilities": [
+    {
+      "text": "Responsibilities.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    }
+  ],
+  "challenges-returned-to-planning": [
+    {
+      "text": "Challenges returned to planning.",
+      "pause": 500
+    },
+    {
+      "text": "A coder who finds that a function belongs elsewhere, or that a signature below does not suffice, stops and reports it; the ticket owner versions this page and the functions page before the work continues.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "22bac3d60ebc38fcd8772efd2263b031917968b2493e1319ab6987a097143a67"
+  }
+}

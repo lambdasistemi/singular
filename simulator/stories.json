@@ -26,7 +26,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "accept",
         "foldWitness": {
@@ -60,7 +61,8 @@
                 "signatures": []
               },
               "claimed": [],
-              "submittedAt": 0
+              "submittedAt": 0,
+              "registryId": 0
             },
             "expect": "key-exists",
             "foldWitness": {
@@ -98,7 +100,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "accept",
         "foldWitness": {
@@ -127,7 +130,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "accept",
         "foldWitness": {
@@ -156,7 +160,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "key-exists",
         "foldWitness": {
@@ -193,7 +198,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "edge-inadmissible",
         "foldWitness": {
@@ -230,7 +236,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "edge-inadmissible",
         "foldWitness": {
@@ -267,7 +274,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "edge-inadmissible",
         "foldWitness": {
@@ -296,7 +304,8 @@
           "datum": null,
           "approval": null,
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "edge-inadmissible",
         "foldWitness": {
@@ -333,7 +342,8 @@
             "signatures": []
           },
           "claimed": [],
-          "submittedAt": 0
+          "submittedAt": 0,
+          "registryId": 0
         },
         "expect": "edge-inadmissible",
         "foldWitness": {

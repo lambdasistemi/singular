@@ -1,0 +1,110 @@
+{
+  "touch-list-every-file-the-coding-slices-may-touch": [
+    {
+      "text": "Touch list: every file the coding slices may touch.",
+      "pause": 500
+    },
+    {
+      "text": "This page lists each file or group of files the four slices change, whether it is written by hand or regenerated, which shared surface it belongs to, and which other lane owns that surface and in which order. A coder who needs a file not listed here, or finds another lane's change in a listed one, stops and asks the ticket owner before continuing (merge queue rule five). The base is e7b55ac9; every path below was re-checked against it on 13 October 2026. Slice numbers follow the plan.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the desk granting merge slots, I read which surfaces this ticket shares with which lanes, so that I can order it behind the lanes it would collide with and tell every lane which of its files this ticket regenerates.",
+      "pause": 400
+    }
+  ],
+  "the-shared-surfaces-and-who-else-owns-them": [
+    {
+      "text": "The shared surfaces and who else owns them.",
+      "pause": 500
+    }
+  ],
+  "files-written-by-hand": [
+    {
+      "text": "Files written by hand.",
+      "pause": 500
+    }
+  ],
+  "files-regenerated-never-edited": [
+    {
+      "text": "Files regenerated, never edited.",
+      "pause": 500
+    }
+  ],
+  "files-this-ticket-must-not-touch": [
+    {
+      "text": "Files this ticket must not touch.",
+      "pause": 500
+    },
+    {
+      "text": "The pinned model revision file conformance/model-revision (moving it to the merge commit is a follow-up the release record names, because a commit cannot contain its own hash). Everything under onchain/, offchain/, naming-onchain/, onchain-release/, release-review/, nix/ and the root flake.nix; the state-directory, funding and fold-builder layers; every CLI module; the open-datum and keri-stub applications (their Lean project, offchain and onchain trees and the negative host), apart from regenerating the open-datum application's two committed generated files named above; specs/320-early-request-rejection/ and specs/395-reject-lower-bound/ (history); the branch feat/protected-rejection and pull request 508.",
+      "pause": 400
+    }
+  ],
+  "collision-check-redone-at-the-rebase": [
+    {
+      "text": "Collision check, redone at the rebase.",
+      "pause": 500
+    },
+    {
+      "text": "On 13 October 2026 the open pull requests and every unmerged branch and worktree of the repository were searched for the paths above. Of the open pull requests only the pull request being superseded (508) shares any; the others change the negative-host result cache (597), the release (574), the specification pages of ticket 471 (516) and the task list of ticket 233 (384). Lanes that have no pull request yet (495, 529, 506) are ordered by the queue, not by files; their branches share no path with this list.",
+      "pause": 400
+    }
+  ],
+  "shared-with-live-lanes": [
+    {
+      "text": "Shared with live lanes.",
+      "pause": 500
+    },
+    {
+      "text": "The release names two lanes working in parallel, the create funding lane (ticket 406) and epic 545 (command effects and state). Their changed files were listed from their branches and compared with this page path by path, not by file name.",
+      "pause": 400
+    },
+    {
+      "text": "The release also names Session.hs, Receipt.hs and Reconcile.hs and the command-line evidence collector. Those files are offchain/cli/src/Singular/CLI/Session.hs, Receipt.hs and Reconcile.hs, the Koios recorder and the recovery evidence check; this list names a different Receipt.hs, conformance/lib/Conformance/Receipt.hs (the suite's receipt vocabulary). No path is common.",
+      "pause": 400
+    },
+    {
+      "text": "Branches that share paths with this list but are parked or unmerged, not live, are named so that whoever merges second knows to rebase and regenerate:",
+      "pause": 400
+    }
+  ],
+  "surfaces-of-ticket-532-named-and-owned-by-other-children": [
+    {
+      "text": "Surfaces of ticket 532, named and owned by other children.",
+      "pause": 500
+    },
+    {
+      "text": "Ticket 532 reports that a reject pays the request's approval to the folder's change instead of the owner's refund. None of these files is touched by the four slices; they are listed so that no slice edits them by accident and so that the owning child is named.",
+      "pause": 400
+    }
+  ],
+  "slices-five-to-ten-the-economic-model": [
+    {
+      "text": "Slices five to ten: the economic model.",
+      "pause": 500
+    },
+    {
+      "text": "Planned in the economics plan; nothing here is committed yet. The paper is not part of these slices: it is written after them, from the finished model, and has its own list. A writer who needs a file not listed, or finds another lane's change in one that is, stops and asks. Every new runnable file is an obligation with a hosted job, a marked tool, or temporary.",
+      "pause": 400
+    },
+    {
+      "text": "Slices inserted on 15 October 2026 (the split of slice eight and the amendments after the rulings on the trie-ready tag and the tip). The files below are the ones each slice may touch beyond the table above; a writer who needs another stops and asks.",
+      "pause": 400
+    },
+    {
+      "text": "Not touched: the paper (paper/, docs/economics-paper.md, nix/docs.nix, tools/check_site.py, tools/code_inventory.py) until it is planned on its own; the root flake.nix and .github/workflows/ci.yml; everything under onchain/, offchain/, the builders and the command line.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "touch-list.md",
+    "sha256": "9bd07af3bec6ee33bf5f5f33a7f240f689dfc614529ed78b2300977ca5c3cf92"
+  }
+}

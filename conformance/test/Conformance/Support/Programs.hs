@@ -13,6 +13,7 @@ import Conformance.Edge.Programs
     , Kind (..)
     , Program (..)
     , Registry (..)
+    , Standing (..)
     , classify
     , classifyGroup
     , displayCohort
@@ -22,6 +23,7 @@ import Conformance.Edge.Programs
     , programs
     , recordsOf
     )
+import Conformance.Receipt qualified as Receipt
 import Conformance.Rows (Row (..), loadRows)
 import Conformance.Run.Live (tamperedRefunds)
 import Conformance.Story.Live (validateLive)
@@ -48,6 +50,61 @@ spec :: Spec
 spec = do
     refundSpec
     programSpec
+    rejectionStandingSpec
+
+rejectionStandingSpec :: Spec
+rejectionStandingSpec =
+    describe "Appendix: publishing rejection under the superseded rule" $ do
+        forM_
+            [ ("reject-after-window", "Rejection after both windows")
+            ,
+                ( "reject-before-deadline-consumer-requirement"
+                , "Rejection during processing"
+                )
+            ,
+                ( "request-value-and-refund-routing"
+                , "Routing rejected requests' refunds"
+                )
+            ,
+                ( "reject-and-retract-refund-controls"
+                , "Rejection and retraction refunds"
+                )
+            ,
+                ( "reject-inside-processing-and-retraction-windows"
+                , "Rejection inside each window"
+                )
+            ]
+            $ \(row, title) -> do
+                it (title <> " remains unmet despite legacy comparison agreement") $
+                    case programFor row of
+                        Just program -> case programStanding program of
+                            Unmet ruling registry _ ->
+                                (ruling <> " " <> registry)
+                                    `shouldSatisfy` isInfixOf supersededRule
+                            standing ->
+                                expectationFailure
+                                    (row <> " must be unmet by ruling, got " <> show standing)
+                        Nothing -> expectationFailure (row <> " lost its program")
+                it (title <> " publishes why the ruled implementation is unmet") $
+                    case Receipt.unmetRuling (T.pack row) of
+                        Just ruling ->
+                            Receipt.unmetReading ruling
+                                `shouldSatisfy` T.isInfixOf (T.pack supersededRule)
+                        Nothing -> expectationFailure (row <> " has no public unmet reading")
+        it
+            "Keeps the earlier processing-window consumer requirement and its follow-up"
+            $ case programFor "reject-before-deadline-consumer-requirement" of
+                Just program -> case programStanding program of
+                    Unmet ruling _ consumer -> do
+                        ruling `shouldSatisfy` isInfixOf "cardano-keri#468"
+                        consumer
+                            `shouldSatisfy` isInfixOf
+                                "a reject is refused until the request's retract window has passed"
+                    standing -> expectationFailure (show standing)
+                Nothing -> expectationFailure "the processing-window program is missing"
+  where
+    supersededRule =
+        "implementation follows the superseded rule; the ruled rule is not implemented"
 
 programSpec :: Spec
 programSpec = describe

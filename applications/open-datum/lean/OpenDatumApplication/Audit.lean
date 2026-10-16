@@ -24,9 +24,9 @@ open Lean Elab Command Term
 def discoveredStatements {m : Type → Type} [Monad m] [MonadEnv m] [MonadError m] :
     m (Array Name) := do
   let env ← getEnv
-  let some idx := env.getModuleIdx? `OpenDatumApplication.Statements
+  let some _ := env.getModuleIdx? `OpenDatumApplication.Statements
     | throwError "OpenDatumApplication.Statements is not imported"
-  let names := (env.header.moduleData[idx]!.constNames.filter fun n =>
+  let names := (env.constants.toList.toArray.map Prod.fst |>.filter fun n =>
     n.getPrefix == `OpenDatumApplication.Statements && !n.isInternalDetail).qsort Name.lt
   if names.isEmpty then throwError "no statement to audit"
   for n in names do
@@ -67,7 +67,12 @@ elab "compiled_statements%" : term => do
   let file ← getFileName
   let some dir := (System.FilePath.mk file).parent
     | throwError "no directory for {file}"
-  let source ← IO.FS.readFile (dir / "Statements.lean")
+  let mut source ← IO.FS.readFile (dir / "Statements.lean")
+  let children := dir / "Statements"
+  if ← children.isDir then
+    for path in (← children.walkDir).qsort (fun a b => a.toString < b.toString) do
+      if path.extension == some "lean" then
+        source := source ++ "\n" ++ (← IO.FS.readFile path)
   let rows ← (← discoveredStatements).toList.mapM fun n => do
     let header ← match headerOf source n with
       | .ok h => pure h

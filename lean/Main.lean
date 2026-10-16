@@ -1,115 +1,24 @@
+import Main.Base
+import Main.Transactions
+import Main.Payments
+import Main.Exits
+import Main.Retraction
+import Main.Economics
+import Main.RejectionPreservation
+import Main.Refunds
+import Main.RetractionFunding
+import Main.FoldControls
 import Singular.Driver
+import Singular.Economics
 open Singular
 open Singular.Driver
 open Lean
 
-/-! The generic registry-mode corpus: every seven-edge edge accepted, the full
-complement of seven-edge refused with its observable reason, the codec both ways, the
+/-! The generic registry-mode corpus: the two admitted edges and the excluded
+wire tags refused with their observable reasons, the codec both ways, the
 read bound to the intermediate root, custody and custody-lovelace-refund value flow, the mint
 check and the zero-request rule. Expectations are authored from the mandate;
 results are computed from the model. -/
-
-/-- The open application's policy id. It is unparameterised: one policy id, one
-blueprint, no applied hash to derive, and therefore no cross-registry
-separation to promise. -/
-def openPolicyHash : Nat := 7
-
-def cfg : Config :=
-  { root := rootOf [], maxFee := 1, processTime := 2, retractTime := 3
-  , applicationPolicy := openPolicyHash, activePolicy := 8, absentPolicy := 9
-  , terminalPolicy := 10 }
-
-def s0 : RegistryState := { config := cfg, trie := [], custody := [], held := [] }
-
-def apFor (e : Edge) (k o d : Nat) : Option Approval :=
-  some { policy := openPolicyHash, edge := e, key := k, owner := o, destination := d
-       , assetName := approvalAssetName e k o d }
-
-/-- A canonical booked key: known active, one active token at output 555. -/
-def booked (s : RegistryState) (k : Nat) : RegistryState :=
-  match step s ({ edge := .insertActive, key := k, owner := 42, output := 555
-                , approval := apFor .insertActive k 42 555 } : Request) with
-  | .ok r => r.state
-  | .error _ => s
-
-/-- A canonical legacyAbsent-absent key: known absent, custody with refund 91 and
-value 200 named by the witness. -/
-def legacyAbsent (s : RegistryState) (k : Nat) : RegistryState :=
-  let trie := trieSet s.trie k (.known .absent)
-  { s with trie := trie, config := { s.config with root := rootOf trie } }
-
-def req (e : Edge) (k : Nat) (owner : Nat) (out : Nat) : Request :=
-  let target : Request := { edge := e, key := k, owner := owner, output := out }
-  { edge := e, key := k, owner := owner, output := out
-  , approval := apFor e k owner (requestDestination target) }
-
-structure Case where
-  id : String
-  status : String := "modeled"
-  expectedAccept : Bool
-  expectedReason : String := ""
-  before : RegistryState
-  action : Request
-  actual : Except String Result
-
-def runCase (id : String) (accept : Bool) (reason : String) (s : RegistryState)
-    (r : Request) : Case :=
-  { id := id, expectedAccept := accept, expectedReason := reason
-  , before := s, action := r, actual := step s r }
-
-def caseActualString (c : Case) : String :=
-  match c.actual with
-  | .ok _ => s!"accepted(expected={c.expectedAccept})"
-  | .error e => s!"refused:{e}(expectedAccept={c.expectedAccept},reason={c.expectedReason})"
-
-def correct (c : Case) : Bool :=
-  match c.actual with
-  | .ok _ => c.expectedAccept
-  | .error e => !c.expectedAccept && e == c.expectedReason
-
-/-- A canonical retired key: known terminal (booked then retired). -/
-def retiredState : RegistryState :=
-  match step (booked s0 42) (req .updateTerminal 42 42 555) with
-  | .ok r => r.state | .error _ => s0
-
--- Only two success rows. Legacy absent starts below are synthetic, unreachable fixtures.
-def accInsertActive : Case :=
-  runCase "GA02-insert-active-accepted" true "" s0 (req .insertActive 42 42 555)
-def accUpdateTerminal : Case :=
-  runCase "GA04-update-terminal-accepted" true "" (booked s0 42)
-    (req .updateTerminal 42 42 555)
-
-def refusals : List Case :=
-  let starts := [("unknown", s0), ("absent", legacyAbsent s0 42),
-                 ("active", booked s0 42), ("terminal", retiredState)]
-  let excluded := [Edge.insertAbsent, .updateActive, .deleteAbsent, .deleteActive, .witnessTerminal]
-  excluded.flatMap fun e => starts.map fun (label, state) =>
-    runCase ("GR-excluded-" ++ edgeName e ++ "-" ++ label) false "edge-inadmissible" state
-      (req e 42 42 555)
-
-def readRows : List Case :=
-  [ runCase "GD01-register-occupied-refused" false "key-exists" (booked s0 42)
-      (req .insertActive 42 42 555)
-  , runCase "GD02-terminal-permanent-refused" false "key-exists" retiredState
-      (req .insertActive 42 42 555)
-  , runCase "GD03-termination-unknown-refused" false "key-unknown" s0
-      (req .updateTerminal 42 42 555)
-  , runCase "GD04-termination-terminal-refused" false "terminal-immutable" retiredState
-      (req .updateTerminal 42 42 555)
-  , runCase "GD05-approval-missing-refused" false "no-approval" s0
-      { req .insertActive 42 42 555 with approval := none } ]
-
-def custodyRows : List Case :=
-  [ runCase "GC05-update-terminal-without-token" false "token-missing"
-      { booked s0 42 with held := [] } (req .updateTerminal 42 42 555)
-  , runCase "GC06-update-terminal-legacy-absent" false "not-booked"
-      (legacyAbsent s0 42) (req .updateTerminal 42 42 555) ]
-
--- fold-level rows: zero batch, mint mismatch, read inside batch at position
-def foldRows : List (String × Bool × String) :=
-  [ ("GF01-empty-fold-refused", false, "empty-fold")
-  , ("GF02-batch-accepted", true, "")
-  , ("GF03-mint-mismatch-refused", false, "net-mint-mismatch") ]
 
 def batchOk : Bool :=
   match foldBatch s0
@@ -117,885 +26,417 @@ def batchOk : Bool :=
     , { req .insertActive 6 42 556 with claimed := [(.active, 1)] } ] with
   | .ok _ => true | .error _ => false
 
-def batchEmpty : Option String :=
-  match foldBatch s0 [] with | .error e => some e | .ok _ => none
-
-def batchMint : Option String :=
-  match foldBatch s0 [{ req .insertActive 5 42 555 with claimed := [(.active, 2)] }] with
-  | .error e => some e | .ok _ => none
-
-def adaRows : List (String × Bool × (List (Nat × Nat))) :=
-  [ ("GAda-reject-returns-deposit", true,
-      match exitStep s0 .reject { req .insertActive 5 91 555 with deposit := 55 } with
-      | .ok r => r.paid | .error _ => [])
-  , ("GAda-retract-returns-deposit-and-tip", true,
-      match exitStep s0 .retract { req .insertActive 5 91 555 with deposit := 55, tip := 7 } with
-      | .ok r => r.paid | .error _ => []) ]
-
--- codec rows
-/-- Each codec row carries the bytes it decodes, so a consumer replays the row
-rather than trusting its verdict. -/
-def codecInputs : List (String × Bool × List Nat) :=
-  [ ("GC01-decode-absent", true, [0])
-  , ("GC02-decode-active", true, [1])
-  , ("GC03-decode-terminal", true, [2])
-  , ("GC04-decode-03-refused", false, [3])
-  , ("GC05-decode-empty-refused", false, [])
-  , ("GC06-decode-naming-era-refused", false, [104, 101, 108, 108, 111])
-  , ("GC07-decode-two-bytes-refused", false, [0, 1]) ]
-
-def codecRows : List (String × Bool × Option State × List Nat) :=
-  codecInputs.map fun (id, expected, bytes) =>
-    (id, expected, decodeState (bytes.map (fun n => (n.toUInt8))).toByteArray, bytes)
-
-def configRow : Bool :=
-  match (fromJson? (toJson cfg) : Except String Config) with
-  | .ok c => c == cfg
-  | .error _ => false
-
-/-! ### transaction-correspondence — the `insertActive` transaction row and the keyed mint rows (#173)
-
-Every field of the rows below is read off a fold this file executes or off the
-model definition `Singular.Statements.insert_active_transaction_row` and
-`Singular.Statements.fold_batch_claimed_mint_by_kind_key` constrain. The two
-statement identities are the compiled ones; the coverage suite reconciles them
-against `lean/theorem-debt.json`, so a statement edited without re-exporting the
-manifest detaches the row from its proof and is caught there. -/
-
-def transactionRowTheorem : String := "Singular.Statements.insert_active_transaction_row"
-def transactionRowStatement : String :=
-  "3c8d7b9bd9092b29d2bbb58ebbca15b008dc9b9396899d9d67d55ea66e1f6070"
-def keyedMintTheorem : String := "Singular.Statements.fold_batch_claimed_mint_by_kind_key"
-def keyedMintStatement : String :=
-  "9c01e278443498d3488e6671cc1799393f565a2a1c0055c1926a8d3e559da988"
-
-/-- The lovelace the request input carries, above the registry's tip ceiling. -/
-def txLovelace : Nat := 5
-
-/-- The request this row folds: one `insertActive` at key 42 routed to output
-555, claiming exactly the active token it mints. -/
-def txRequest : Request :=
-  { req .insertActive 42 42 555 with claimed := [(.active, 1)] }
-
-def txResult : Except String Result := step s0 txRequest
-
-/-- A second `insertActive` at the same key, folded against the state the first
-produced. -/
-def txSecond : Except String Result :=
-  match txResult with
-  | .ok r => step r.state txRequest
-  | .error why => .error why
-
-def txSecondReason : String :=
-  match txSecond with | .ok _ => "" | .error why => why
-
-/-- A second registry pinning the same open policy and differing in every other
-field it may differ in: the frame in which cross-registry separation is observed
-to be absent. -/
-def otherRegistry : Config :=
-  { cfg with maxFee := 9, processTime := 20, retractTime := 30
-           , activePolicy := 80, absentPolicy := 90, terminalPolicy := 100 }
-
-/-- The transaction this row is about, built by the model from the executed
-step. -/
-def txBuilt : Except String Tx := txOf s0 txRequest txLovelace
-
-def transactionRowJson : Json :=
-  match txBuilt, txResult, txSecond with
-  | .ok tx, .ok r, .error why =>
-    Json.mkObj
-      [ ("profile", "insertActive")
-      , ("accepted", toJson true)
-      , ("theorem", toJson transactionRowTheorem)
-      , ("statementSha256", toJson transactionRowStatement)
-      , ("applicationPolicy", toJson cfg.applicationPolicy)
-      , ("openPolicy", Json.mkObj
-          [ ("hash", toJson openPolicyHash)
-          , ("parameters", toJson openPolicyParameters)
-          , ("admitsAnyTuple", toJson (openAdmitsEveryTuple cfg))
-          , ("crossRegistrySeparation",
-              toJson (crossRegistrySeparation cfg otherRegistry txRequest)) ])
-      , ("transaction", txJson cfg tx)
-      , ("tip", toJson cfg.maxFee)
-      , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace))
-      , ("claimed", assetsJson cfg (requestClaim txRequest))
-      , ("onlyRootChanges", toJson (onlyRootChanged cfg r.state.config
-          && r.state.config.root == rootOf r.state.trie))
-      , ("destinationDatumBinds", toJson (destinationDatumBinds txRequest))
-      , ("activeQuantity", toJson (kindCount r.state .active txRequest.key))
-      , ("secondInsert", Json.mkObj [("accepted", toJson false), ("reason", toJson why)]) ]
-  | _, _, _ => Json.mkObj [("profile", "insertActive"), ("accepted", toJson false)]
-
-/-- An insertion from genesis with a refund address different from the key. -/
-def retirementRowTheorem : String := "Singular.Statements.update_terminal_transaction_row"
-def retirementRowStatement : String :=
-  "4806b33d0b74c975981c8905ceb8aab758efbe5d780eca50f59e68202ea2a4bf"
-
-/-- The state an accepted `insertActive` at key 42 produced: the leaf reads
-`Active` and its one active token is held at output 555. -/
-def retireState : RegistryState := booked s0 42
-
-/-- The retirement this row folds: `updateTerminal` at key 42, claiming exactly
-the active token it burns. -/
-def retireRequest : Request :=
-  { req .updateTerminal 42 42 555 with claimed := [(.active, -1)] }
-
-def retireResult : Except String Result := step retireState retireRequest
-
-def retireTx : Except String Tx := txOf retireState retireRequest txLovelace
-
-/-- The assets the built transaction destroys, read off its own mint rather than
-off the edge — a row that counted the edge's delta would agree with itself. -/
-def retireBurned : List (Asset × Int) :=
-  match retireTx with
-  | .ok tx => tx.mint.filter (fun p => p.2 < 0)
-  | .error _ => []
-
-/-- The tokens the built transaction's inputs bring in. -/
-def retireSpent : List (Asset × Int) :=
-  match retireTx with
-  | .ok tx => tx.inputs.flatMap (·.assets)
-  | .error _ => []
-
-/-- Every burned asset is spent by an input, at the same `(kind, key)` and the
-same quantity: the burn's source, stated over the whole mint rather than over
-the one token this edge happens to destroy. -/
-def retireBurnSourced : Bool :=
-  !retireBurned.isEmpty && retireBurned.all fun p =>
-    assetKind retireSpent p.1 == -p.2
-
-/-- No output is left holding a quantity an output cannot hold. -/
-def retireOutputsPositive : Bool :=
-  match retireTx with
-  | .ok tx => tx.outputs.all fun o => o.assets.all fun p => 0 < p.2
-  | .error _ => false
-
-/-- The same retirement request folded from a state whose leaf for key 42 is
-elsewhere in its life, or whose active token is gone: the refusals, observed at
-the transaction the consumer would have to build. -/
-def retireRefusal (s : RegistryState) : String :=
-  match txOf s retireRequest txLovelace with
-  | .ok _ => "" | .error why => why
-
-def retireWithoutToken : RegistryState := { retireState with held := [] }
-
-def retirementRefusalRows : List (String × String × RegistryState) :=
-  [ ("GT01-update-terminal-unknown-refused", "key-unknown", s0)
-  , ("GT02-update-terminal-absent-refused", "not-booked", legacyAbsent s0 42)
-  , ("GT03-update-terminal-terminal-refused", "terminal-immutable", retiredState)
-  , ("GT04-update-terminal-without-token-refused", "token-missing", retireWithoutToken) ]
-
-def retirementRowJson : Json :=
-  match retireTx, retireResult with
-  | .ok tx, .ok r =>
-    Json.mkObj
-      [ ("profile", "updateTerminal")
-      , ("accepted", toJson true)
-      , ("theorem", toJson retirementRowTheorem)
-      , ("statementSha256", toJson retirementRowStatement)
-      , ("applicationPolicy", toJson cfg.applicationPolicy)
-      , ("transaction", txJson cfg tx)
-      , ("tip", toJson cfg.maxFee)
-      , ("lovelaceCoversTip", toJson (lovelaceCoversTip cfg txLovelace))
-      , ("claimed", assetsJson cfg (requestClaim retireRequest))
-      , ("burned", assetsJson cfg retireBurned)
-      , ("spentByInputs", assetsJson cfg retireSpent)
-      , ("burnSourced", toJson retireBurnSourced)
-      , ("outputsHoldOnlyPositiveQuantities", toJson retireOutputsPositive)
-      , ("onlyRootChanges", toJson (onlyRootChanged cfg r.state.config
-          && r.state.config.root == rootOf r.state.trie))
-      , ("leafAfter", leafJson (trieGet r.state.trie retireRequest.key))
-      , ("destinationDatumBinds", toJson (destinationDatumBinds retireRequest))
-      , ("activeQuantityBefore", toJson (kindCount retireState .active retireRequest.key))
-      , ("activeQuantityAfter", toJson (kindCount r.state .active retireRequest.key))
-      , ("refusals", Json.arr ((retirementRefusalRows.map fun row =>
-          Json.mkObj [("id", toJson row.1), ("accepted", toJson false),
-            ("reason", toJson (retireRefusal row.2.2))]).toArray)) ]
-  | _, _ => Json.mkObj [("profile", "updateTerminal"), ("accepted", toJson false)]
-
-/-- Two booking requests at two distinct keys, each claiming its own token: the
-accepted row at `n > 1` keys. -/
-def keyedAccepted : List Request :=
-  [ { req .insertActive 5 42 555 with claimed := [(.active, 1)] }
-  , { req .insertActive 6 42 555 with claimed := [(.active, 1)] } ]
-
-/-- The same two keys and the same per-kind total, at the wrong key: the first
-request claims both active tokens and the second claims none. A per-kind guard
-accepts this batch; the keyed guard refuses it. -/
-def keyedWrongKey : List Request :=
-  [ { req .insertActive 5 42 555 with claimed := [(.active, 2)] }
-  , { req .insertActive 6 42 555 with claimed := [] } ]
-
-def foldReason (v : Except String Result) : String :=
-  match v with | .ok _ => "" | .error why => why
-
-def keyedMintRowJson (id : String) (batch : List Request) : Json :=
-  let verdict := foldBatch s0 batch
-  let applied := match foldActions s0 batch with | .ok _ => true | .error _ => false
-  Json.mkObj
-    [ ("id", id)
-    , ("requestsApplied", toJson applied)
-    , ("perKindTotalsAgree", toJson
-        ([TokenKind.active, .absent, .terminal].all fun k =>
-          assetKindTotal (claimedMint batch) k == assetKindTotal (actualMint batch) k))
-    , ("theorem", toJson keyedMintTheorem)
-    , ("statementSha256", toJson keyedMintStatement)
-    , ("accepted", toJson (match verdict with | .ok _ => true | .error _ => false))
-    , ("reason", toJson (foldReason verdict))
-    , ("claimed", assetsJson cfg (claimedMint batch))
-    , ("actual", assetsJson cfg (actualMint batch)) ]
-
-def tokenPoliciesJson : Json :=
-  Json.mkObj
-    [ ("active", toJson (kindPolicy cfg .active))
-    , ("absent", toJson (kindPolicy cfg .absent))
-    , ("terminal", toJson (kindPolicy cfg .terminal)) ]
-
-/-- The signature sets each admitted fold is folded again with: one signer, and
-two signatures from different keys. -/
-def signatureSets : List (List (List Nat)) := [[[1]], [[2], [3, 4]]]
-
-/-- The fold of one accepted case, with an approval to sign. `witnessTerminal`
-needs none, so its request is given a stray one — admitted all the same — or
-changing the signature set would change nothing and exhibit nothing. -/
-def signedAction (c : Case) : Request :=
-  match c.action.approval with
-  | some _ => c.action
-  | none => { c.action with approval := apFor c.action.edge c.action.key c.action.owner
-                                          (requestDestination c.action) }
-
-def sameTx : Except String Tx → Except String Tx → Bool
-  | .ok a, .ok b => a == b
-  | .error x, .error y => x == y
-  | _, _ => false
-
-def sameStep : Except String Result → Except String Result → Bool
-  | .ok a, .ok b => a == b
-  | .error x, .error y => x == y
-  | _, _ => false
-
-/-- What an accepted edge violates of `fold_requires_no_signer`: the model built
-no transaction for the admitted fold, the transaction requires a signer, the
-signature set did not change the request, or the step or the transaction moved
-with it. One row per edge, all seven. -/
-def signerFailures : List String :=
-  [accInsertActive, accUpdateTerminal].flatMap fun c =>
-    let r := signedAction c
-    match txOf c.before r txLovelace with
-    | .error why => [s!"{c.id}: the model built no transaction ({why})"]
-    | .ok tx =>
-      (if tx.signers.isEmpty then [] else [s!"{c.id}: requires signers {tx.signers}"]) ++
-      signatureSets.flatMap fun sigs =>
-        let signed := withSignatures r sigs
-        (if signed == r then [s!"{c.id}: signatures {sigs} left the request unchanged"] else []) ++
-        (if sameStep (step c.before signed) (step c.before r) then []
-         else [s!"{c.id}: the step moved with signatures {sigs}"]) ++
-        (if sameTx (txOf c.before signed txLovelace) (txOf c.before r txLovelace) then []
-         else [s!"{c.id}: the transaction moved with signatures {sigs}"])
-
-
-def cases : List Case := [accInsertActive, accUpdateTerminal] ++ refusals ++ readRows ++ custodyRows
-
-def caseJson (c : Case) : Json :=
-  Json.mkObj [("id", toJson c.id), ("status", toJson c.status),
-    ("expectedAccept", toJson c.expectedAccept),
-    ("expectedReason", toJson c.expectedReason),
-    ("before", toJson c.before), ("action", toJson c.action),
-    ("result", match c.actual with
-      | .ok r => Json.mkObj [("accepted", toJson true), ("state", toJson r.state)]
-      | .error reason => Json.mkObj [("accepted", toJson false), ("reason", toJson reason)])]
-
-/-! ### Where every exit's deposit goes, and the judgement of a transaction's outputs
-
-Checked when this module elaborates: `lake build` fails on the first row that
-does not hold. The expected payments are the rule table's; the expected reasons
-are the chain's trace names. -/
-
-/-- A request whose payment-relevant fields all differ: owner 42, refund address
-91, destination 99, deposit 55, tip 7, sitting at reference 31. -/
-def exitRequest (e : Edge) : Request :=
-  { edge := e, key := 5, owner := 42, refundAddress := 91, output := 99
-  , deposit := 55, tip := 7, reference := 31 }
-
--- The rule table, one row per exit.
-#guard obligations (.fold .insertAbsent) (exitRequest .insertAbsent) ==
-  []
-#guard obligations (.fold .insertActive) (exitRequest .insertActive) ==
-  [{ recipient := .destination 99 none, atLeast := 55 }]
-#guard obligations (.fold .updateActive) (exitRequest .updateActive) ==
-  []
-#guard obligations (.fold .witnessTerminal) (exitRequest .witnessTerminal) ==
-  []
-#guard obligations (.fold .updateTerminal) (exitRequest .updateTerminal) ==
-  [{ recipient := .owner 42, atLeast := 55 }]
-#guard obligations (.fold .deleteAbsent) (exitRequest .deleteAbsent) ==
-  []
-#guard obligations (.fold .deleteActive) (exitRequest .deleteActive) ==
-  []
-#guard obligations .reject (exitRequest .insertActive) ==
-  [{ recipient := .owner 42, atLeast := 55 }]
-#guard obligations .retract (exitRequest .insertActive) ==
-  [{ recipient := .bound 42 31, atLeast := 62 }]
--- Reject and retract owe the owner whatever edge the request named; a retract
--- owes it through an output bound to the request's own reference.
-#guard obligations .reject (exitRequest .insertAbsent) ==
-  [{ recipient := .owner 42, atLeast := 55 }]
-#guard obligations .retract (exitRequest .insertAbsent) ==
-  [{ recipient := .bound 42 31, atLeast := 62 }]
-
--- The request carries its tip in its JSON, and a request that names none holds none.
-#guard match (toJson (exitRequest .insertActive)).getObjValAs? Nat "tip" with
-  | .ok 7 => true | _ => false
-#guard ({ edge := .insertActive, key := 5 } : Request).tip == 0
-
-/-- One exit's settlement: the outputs that carry none of its payment, and the
-one output that carries it. The three controls are that output as built, one
-lovelace short, and at another address. -/
-structure SettleCase where
-  exit : Exit
-  request : Request
-  context : List TxOutput
-  carrier : TxOutput
-
-def SettleCase.untampered (c : SettleCase) : Option String :=
-  settle (obligations c.exit c.request) (c.context ++ [c.carrier])
-
-def SettleCase.shortByOne (c : SettleCase) : Option String :=
-  settle (obligations c.exit c.request)
-    (c.context ++ [{ c.carrier with lovelace := c.carrier.lovelace - 1 }])
-
-def SettleCase.otherAddress (c : SettleCase) : Option String :=
-  settle (obligations c.exit c.request)
-    (c.context ++ [{ c.carrier with address := c.carrier.address.map (· + 1) }])
-
-/-- An output paying `lovelace` back to `owner`. -/
-def ownerOutput (owner lovelace : Nat) : TxOutput :=
-  { role := .owner, datum := .inline, address := some owner, stateTokens := 0
-  , config := none, commitment := none, assets := [], lovelace := lovelace }
-
-def txOutputs (t : Except String Tx) : List TxOutput :=
-  match t with | .ok tx => tx.outputs | .error _ => []
-
-def settleInsertActiveRequest : Request :=
-  { req .insertActive 8 42 99 with deposit := 55, tip := 7, reference := 31 }
-
-/-- The token-delivering fold: the model's own transaction, its destination
-output carrying the deposit. -/
-def settleInsertActive : SettleCase :=
-  let outs := txOutputs (txOf s0 settleInsertActiveRequest 1)
-  let dest := (outs.find? (·.role == .destination)).getD (ownerOutput 0 0)
-  { exit := .fold .insertActive, request := settleInsertActiveRequest
-  , context := outs.filter (·.role != .destination)
-  , carrier := { dest with lovelace := settleInsertActiveRequest.deposit } }
-
-def settleUpdateTerminalRequest : Request :=
-  { req .updateTerminal 8 42 99 with deposit := 55, tip := 7 }
-
-/-- The fold delivering nothing: the model's own transaction, its owner output
-carrying the deposit back. -/
-def settleUpdateTerminal : SettleCase :=
-  let outs := txOutputs (txOf (booked s0 8) settleUpdateTerminalRequest 1)
-  { exit := .fold .updateTerminal, request := settleUpdateTerminalRequest
-  , context := outs.filter (·.role != .owner)
-  , carrier := (outs.find? (·.role == .owner)).getD (ownerOutput 0 0) }
-
-/-- Reject: the registry continues unchanged, and the owner is refunded. -/
-def settleReject : SettleCase :=
-  { exit := .reject, request := settleInsertActiveRequest
-  , context := [txStateOutput (emptyResult s0)]
-  , carrier := ownerOutput 42 settleInsertActiveRequest.deposit }
-
-/-- Retract: the owner takes back everything the request held, through an output
-whose inline datum is the request's own reference. -/
-def settleRetract : SettleCase :=
-  { exit := .retract, request := settleInsertActiveRequest, context := []
-  , carrier := { ownerOutput 42 (settleInsertActiveRequest.deposit + settleInsertActiveRequest.tip)
-                 with reference := some settleInsertActiveRequest.reference } }
-
--- The model's own transactions exist, so the controls above are not vacuous.
-#guard (txOutputs (txOf s0 settleInsertActiveRequest 1)).any (·.role == .destination)
-#guard (txOutputs (txOf (booked s0 8) settleUpdateTerminalRequest 1)).any (·.role == .owner)
-
-#guard settleInsertActive.untampered == none
-#guard settleInsertActive.shortByOne == some "deposit-returned"
-#guard settleInsertActive.otherAddress == some "destination"
-#guard settleUpdateTerminal.untampered == none
-#guard settleUpdateTerminal.shortByOne == some "deposit-returned"
-#guard settleUpdateTerminal.otherAddress == some "deposit-returned"
-#guard settleReject.untampered == none
-#guard settleReject.shortByOne == some "deposit-returned"
-#guard settleReject.otherAddress == some "deposit-returned"
-#guard settleRetract.untampered == none
-#guard settleRetract.shortByOne == some "deposit-returned"
-#guard settleRetract.otherAddress == some "deposit-returned"
-
--- Retract returns the tip: the deposit alone does not settle it.
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [{ settleRetract.carrier with lovelace := settleInsertActiveRequest.deposit }]
-    == some "deposit-returned"
-
-/-- A second request retracted beside `settleInsertActiveRequest`, at reference 32. -/
-def secondRetracted : Request :=
-  { settleInsertActiveRequest with key := 9, reference := 32 }
-
--- A retraction's return is bound to the request it retracts, as the chain binds it:
--- an owner output presenting another request's reference, or none, returns nothing;
--- fragments bound to it are not summed; and one bound output cannot return two
--- retractions, each of which needs its own.
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [{ settleRetract.carrier with reference := some 32 }] == some "deposit-returned"
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [{ settleRetract.carrier with reference := none }] == some "deposit-returned"
--- The reference binds only as the output's inline datum: presented any other way,
--- or by an output with no datum, it returns nothing.
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [{ settleRetract.carrier with datum := .none }] == some "deposit-returned"
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [{ settleRetract.carrier with datum := .hashed }] == some "deposit-returned"
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [{ settleRetract.carrier with lovelace := 61 }, { settleRetract.carrier with lovelace := 1 }]
-    == some "deposit-returned"
--- A sufficient bound output settles it whatever else is bound beside it.
-#guard settle (obligations .retract settleInsertActiveRequest)
-  [settleRetract.carrier, { settleRetract.carrier with lovelace := 1 }] == none
-#guard settle (obligations .retract settleInsertActiveRequest ++ obligations .retract secondRetracted)
-  [{ settleRetract.carrier with lovelace := 124 }] == some "deposit-returned"
-#guard settle (obligations .retract settleInsertActiveRequest ++ obligations .retract secondRetracted)
-  [settleRetract.carrier, { settleRetract.carrier with reference := some 32 }] == none
-
--- The model's retraction returns everything the request held through one output at
--- the owner's key whose inline datum is the request's own reference; a reject
--- refunds the owner through an output with no datum that returns the request's
--- approval, as a fold delivering nothing does.
-#guard settleInsertActiveRequest.approval.isSome
-#guard txOutputs (txOfExit s0 .retract settleInsertActiveRequest 1) ==
-  [{ role := .owner, datum := .inline, address := some 42, stateTokens := 0, config := none
-   , commitment := none, assets := [], lovelace := 62, reference := some 31 }]
-#guard (txOutputs (txOfExit s0 .reject settleInsertActiveRequest 1)).filter (·.role == .owner) ==
-  [{ role := .owner, datum := .none, address := some 42, stateTokens := 0, config := none
-   , commitment := settleInsertActiveRequest.approval.map (·.assetName), assets := []
-   , lovelace := 55 }]
-
-def txInputs (t : Except String Tx) : List TxInput :=
-  match t with | .ok tx => tx.inputs | .error _ => []
-
-/-- An input holding a registry state token. -/
-def stateTokenInput : TxInput :=
-  { role := .state, datum := .inline, stateTokens := 1, approvals := 0, lovelace := 0 }
-
--- A retraction spends no input holding a state token: beside one it is refused
--- `retract-state-spent`, before its payment is judged. The model's own retraction
--- spends none, and no other exit is refused for what it spends: a reject spends
--- the state it returns.
-#guard spendRefusal .retract (txInputs (txOfExit s0 .retract settleInsertActiveRequest 1)
-  ++ [stateTokenInput]) == some "retract-state-spent"
-#guard spendRefusal .retract (txInputs (txOfExit s0 .retract settleInsertActiveRequest 1)) == none
-#guard (txInputs (txOfExit s0 .reject settleInsertActiveRequest 1)).any (0 < ·.stateTokens)
-#guard spendRefusal .reject (txInputs (txOfExit s0 .reject settleInsertActiveRequest 1)) == none
-#guard [Edge.insertAbsent, .insertActive, .updateActive, .updateTerminal, .deleteAbsent,
-    .deleteActive, .witnessTerminal].all fun e => spendRefusal (.fold e) [stateTokenInput] == none
-
--- Every recipient is paid only by an output of its role at its address: the same
--- lovelace at another address, or under any other role, pays nothing.
-#guard [ (obligations (.fold .insertActive) settleInsertActiveRequest, .destination, 99, "destination")
-       , (obligations .reject settleInsertActiveRequest, .owner, 42, "deposit-returned") ].all
-    fun (owed, role, address, reason) =>
-      let paid := { ownerOutput address 1000 with role := role, datum := .none }
-      settle owed [paid] == none &&
-      settle owed [{ paid with address := some (address + 1) }] == some reason &&
-      [TxRole.state, .request, .destination, .cage, .witness, .owner].all fun other =>
-        other == role || settle owed [{ paid with role := other }] != none
-
--- Two obligations to one recipient are summed: one output sized for one is refused,
--- two such outputs settle both.
-#guard settle (obligations .reject settleInsertActiveRequest ++ obligations .reject settleInsertActiveRequest)
-  [ownerOutput 42 55] == some "deposit-returned"
-#guard settle (obligations .reject settleInsertActiveRequest ++ obligations .reject settleInsertActiveRequest)
-  [ownerOutput 42 55, ownerOutput 42 55] == none
-
--- The state continuation pays no recipient, even at the recipient's own address.
-#guard [ (obligations (.fold .insertActive) settleInsertActiveRequest, some 99, "destination")
-       , (obligations .reject settleInsertActiveRequest, some 42, "deposit-returned") ].all
-    fun (owed, address, reason) =>
-      settle owed [{ txStateOutput (emptyResult s0) with address := address, lovelace := 1000 }] == some reason
--- An output counts toward one recipient: a destination output does not pay the owner.
-#guard settle (obligations .reject settleInsertActiveRequest)
-  [{ ownerOutput 42 55 with role := .destination }] == some "deposit-returned"
--- A destination is paid only by an output carrying exactly the request's datum:
--- the value inline, or no datum when the request carries none. Another value, a
--- datum where none is carried, none where one is, or a datum by hash, reaches no
--- destination and is refused `destination`.
-def carrying (datum : DatumForm) (value : Option Nat) : TxOutput :=
-  { ownerOutput 99 55 with role := .destination, datum := datum, datumValue := value }
-#guard [ (none, carrying .none none, true), (none, carrying .inline (some 7), false)
-       , (none, carrying .hashed none, false)
-       , (some 7, carrying .inline (some 7), true), (some 7, carrying .inline (some 8), false)
-       , (some 7, carrying .none none, false), (some 7, carrying .hashed (some 7), false)
-       , (some 7, carrying .inline none, false) ].all
-    fun (datum, output, pays) =>
-      settle (obligations (.fold .insertActive) { settleInsertActiveRequest with datum := datum })
-        [output] == if pays then none else some "destination"
--- The model builds the destination output carrying the request's datum, and it settles.
-#guard [none, some 0, some 7].all fun d =>
-  let r := { settleInsertActiveRequest with datum := d }
-  let outs := txOutputs (txOf s0 r 1)
-  outs.any (fun o => o.role == .destination && presentsDatum d o)
-    && settle (obligations (.fold .insertActive) r) outs == none
-
--- The reason is the first unpaid recipient's, in the order the payments are owed.
-#guard settle [{ recipient := .owner 42, atLeast := 55 }, { recipient := .destination 99 none, atLeast := 55 }]
-  [] == some "deposit-returned"
-#guard settle [{ recipient := .destination 99 none, atLeast := 55 }, { recipient := .owner 42, atLeast := 55 }]
-  [] == some "destination"
-
-/-! ### Every exit is a model step
-
-Checked when this module elaborates. The registry below holds keys in three
-different leaves, so an exit that moved anything would show; the requests name
-every edge, the ones the law admits and the ones it refuses alike. -/
-
-def exitEdges : List Edge :=
-  [.insertAbsent, .insertActive, .updateActive, .updateTerminal,
-   .deleteAbsent, .deleteActive, .witnessTerminal]
-
-/-- Keys 3 and 4 active, key 6 absent under custody. -/
-def exitState : RegistryState := legacyAbsent (booked (booked s0 3) 4) 6
-
-/-- A request of edge `e` at key `k`, owner 42, deposit 55, tip 7. -/
-def exitStepRequest (e : Edge) (k : Nat) : Request :=
-  { req e k 42 99 with deposit := 55, tip := 7 }
-
-/-- The keys the rows range over: active, absent, and unbound. -/
-def exitKeys : List Nat := [4, 6, 9]
-
-/-- The step leaves the registry as it was, mints nothing and pays `paid`. -/
-def leavesRegistry (s : RegistryState) (paid : List (Nat × Nat)) :
-    Except String Result → Bool
-  | .ok r => r.state == s && r.mint.isEmpty && r.paid == paid
-  | .error _ => false
-
--- A fold of any other edge is refused, whatever the law would say of the request.
-#guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
-  named == e || sameStep (exitStep exitState (.fold e) (exitStepRequest named k))
-    (.error "exit-edge-mismatch")
--- Reject pays the owner the deposit back, and retract the deposit and the tip,
--- for a request of any edge at any key: neither changes the registry or mints.
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  leavesRegistry exitState [(42, 55)] (exitStep exitState .reject (exitStepRequest e k))
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  leavesRegistry exitState [(42, 62)] (exitStep exitState .retract (exitStepRequest e k))
-
--- A fold's transaction is the edge's own, and a fold of another edge builds none.
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  match txOfExit exitState (.fold e) (exitStepRequest e k) 3, txOf exitState (exitStepRequest e k) 3 with
-  | .ok a, .ok b => a == b
-  | .error a, .error b => a == b
-  | _, _ => false
-#guard exitEdges.all fun e => exitEdges.all fun named => exitKeys.all fun k =>
-  named == e || match txOfExit exitState (.fold e) (exitStepRequest named k) 3 with
-    | .error why => why == "exit-edge-mismatch"
-    | .ok _ => false
-
-/-- The roles of a built transaction's inputs and outputs, and whether it mints
-nothing, requires exactly `signers`, refunds exactly `paid` and settles `exit`'s
-obligations. -/
-def exitTxShape (exit : Exit) (r : Request) (signers : List Nat) (paid : List (Nat × Nat)) :
-    Except String Tx → Option (List TxRole × List TxRole)
-  | .ok tx =>
-    if tx.mint.isEmpty && tx.signers == signers && tx.refunds == paid
-       && settle (obligations exit r) tx.outputs == none
-    then some (tx.inputs.map (·.role), tx.outputs.map (·.role)) else none
-  | .error _ => none
-
--- A reject is settled inside a transaction that spends the state and returns it
--- unchanged and requires no signer; a retract is its own transaction, touches no
--- state and requires the owner's signature, as the chain does. Each pays the owner
--- one output carrying what it owes, and so settles its obligations.
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  exitTxShape .reject (exitStepRequest e k) [] [(42, 55)]
-    (txOfExit exitState .reject (exitStepRequest e k) 3)
-    == some ([.state, .request], [.state, .owner])
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  exitTxShape .retract (exitStepRequest e k) [42] [(42, 62)]
-    (txOfExit exitState .retract (exitStepRequest e k) 3)
-    == some ([.request], [.owner])
-#guard exitEdges.all fun e => exitKeys.all fun k =>
-  match txOfExit exitState .reject (exitStepRequest e k) 3 with
-  | .ok tx => tx.outputs.head?.bind (·.config) == some exitState.config
-  | .error _ => false
-
-/-! ### Every exit carries its payments
-
-A fold's `paid` is what the exit owes, then the custody refunds its step already
-pays; its transaction carries each floor in the output that pays it, and settles.
-The registry below adds a terminal key to `exitState`, so every edge is admitted at
-one of the keys the rows range over. -/
-
-/-- Keys 3 and 4 active, key 5 terminal, key 6 absent under custody. -/
-def paidState : RegistryState :=
-  match step (booked exitState 5) (req .updateTerminal 5 42 555) with
-  | .ok r => r.state | .error _ => exitState
-
-/-- The keys the payment rows range over: active, terminal, absent, unbound. -/
-def paidKeys : List Nat := [4, 5, 6, 9]
-
-/-- Where a fold of edge `e` pays the deposit of `exitStepRequest e k`, read off the
-rule table: the cage for `insertAbsent`, the named output 99 for the edges that
-deliver a token, the owner 42 for the edges that deliver nothing. -/
-def foldPaysDepositTo : Edge → Nat
-  | .insertActive => 99
-  | .updateTerminal => 42
-  | _ => 0
-
-def deliversToken (e : Edge) : Bool := foldPaysDepositTo e == 99
-def returnsDeposit (e : Edge) : Bool := foldPaysDepositTo e == 42
-
--- Not vacuous: every edge is admitted at one of the keys.
-#guard exitEdges.filter (fun e => allowed e) |>.all fun e => paidKeys.any fun k =>
-  match step paidState (exitStepRequest e k) with | .ok _ => true | .error _ => false
-
--- A fold pays the deposit where the rule table says, then what its step pays.
-#guard exitEdges.all fun e => paidKeys.all fun k =>
-  match exitStep paidState (.fold e) (exitStepRequest e k), step paidState (exitStepRequest e k) with
-  | .ok a, .ok b =>
-    a.state == b.state && a.mint == b.mint && a.paid == (foldPaysDepositTo e, 55) :: b.paid
-  | .error x, .error y => x == y
-  | _, _ => false
-
--- A fold's transaction carries the deposit in the output that pays it: the
--- destination output of a delivering edge, one owner output of an edge that
--- delivers nothing, with no datum and naming the approval it returns; an edge
--- that delivers nothing has no destination output (#304); and it refunds exactly
--- what the exit pays.
-#guard exitEdges.all fun e => paidKeys.all fun k =>
-  match exitStep paidState (.fold e) (exitStepRequest e k),
-        txOfExit paidState (.fold e) (exitStepRequest e k) 3 with
-  | .ok t, .ok tx =>
-    (tx.outputs.filter (·.role == .destination)).map (·.lovelace)
-        == (if deliversToken e then [55] else []) &&
-      tx.outputs.filter (·.role == .owner)
-        == (if returnsDeposit e then
-              [{ ownerOutput 42 55 with
-                 datum := .none, commitment := (exitStepRequest e k).approval.map (·.assetName) }]
-            else []) &&
-      tx.refunds == t.paid
-  | .error x, .error y => x == y
-  | _, _ => false
-
-/-- The nine exits. -/
-def allExits : List Exit := exitEdges.map .fold ++ [.reject, .retract]
-
--- Every transaction an exit builds settles what the exit owes, and every exit
--- builds one at some key.
-#guard allExits.all fun x => exitEdges.all fun e => paidKeys.all fun k =>
-  match txOfExit paidState x (exitStepRequest e k) 3 with
-  | .ok tx => settle (obligations x (exitStepRequest e k)) tx.outputs == none
-  | .error _ => true
-#guard (allExits.filter fun x => match x with | .fold e => allowed e | _ => true).all fun x => exitEdges.any fun e => paidKeys.any fun k =>
-  match txOfExit paidState x (exitStepRequest e k) 3 with | .ok _ => true | .error _ => false
-
--- The driver's operations are the nine exits: the seven edges by their own
--- names, then reject and retract. It judges what a transaction spends, then what
--- it pays, and answers two batch questions, neither observing a transaction;
--- the surface's protocol moved for each, and again when a request came to carry
--- its datum.
-#guard declaredOperations == exitEdges.map edgeName ++ ["reject", "retract"]
-#guard surface.protocolVersion == 6
-#guard surface.judgements == ["spend", "settle"]
-#guard surface.batchQuestions.map (·.1) == ["foldBatch", "rejectBatch"]
-#guard surface.batchQuestions.all fun q => !q.2.contains "tx"
-
-/-- The scenario a caller asks the driver to judge a settle case's outputs for:
-the case's own exit and request, from the empty registry. -/
-def judgedScenario (c : SettleCase) : Scenario :=
-  { id := "judged", theoremName := "", statementSha256 := "", kind := "witness"
-  , mutates := none, requiresReachableState := false, start := s0, setup := []
-  , exit := c.exit, request := c.request, lovelace := 1 }
-
-/-- The driver's judgement of a settle case's three controls: its payment output
-as built, one lovelace short, and at another address. -/
-def SettleCase.judged (c : SettleCase) : List (Option String) :=
-  let judge := judgeSurface (judgedScenario c) []
-  [ judge (c.context ++ [c.carrier])
-  , judge (c.context ++ [{ c.carrier with lovelace := c.carrier.lovelace - 1 }])
-  , judge (c.context ++ [{ c.carrier with address := c.carrier.address.map (· + 1) }]) ]
-
--- The driver judges outputs a caller observed against what the scenario's own exit
--- owes: a delivering and a non-delivering fold, untampered, short and misdirected.
-#guard settleInsertActive.judged == [none, some "deposit-returned", some "destination"]
-#guard settleUpdateTerminal.judged == [none, some "deposit-returned", some "deposit-returned"]
--- A reject's refund, as built, short and misdirected.
-#guard settleReject.judged == [none, some "deposit-returned", some "deposit-returned"]
-
-/-- The driver's judgement of a retraction's controls beside its untampered
-return: short, misdirected, bound to another request, presenting its reference
-with no datum, and spending a state token beside the request. -/
-def retractJudged : List (Option String) :=
-  let c := settleRetract
-  let judge := judgeSurface (judgedScenario c)
-  let spent := txInputs (txOfExit s0 .retract c.request 1)
-  [ judge spent [c.carrier]
-  , judge spent [{ c.carrier with lovelace := c.carrier.lovelace - 1 }]
-  , judge spent [{ c.carrier with address := c.carrier.address.map (· + 1) }]
-  , judge spent [{ c.carrier with reference := some 32 }]
-  , judge spent [{ c.carrier with datum := .none }]
-  , judge (spent ++ [stateTokenInput]) [c.carrier] ]
-
-#guard (txInputs (txOfExit s0 .retract settleRetract.request 1)).length == 1
-#guard retractJudged ==
-  [none, some "deposit-returned", some "deposit-returned", some "deposit-returned",
-   some "deposit-returned",
-   some "retract-state-spent"]
-
-/-! ### Which pending requests their owner can retract, and when
-
-Each row retracts a request of owner 42, deposit 55 and tip 7 from `exitState`,
-which holds keys in three different leaves. The request was submitted at 100;
-with the corpus configuration's processing time 2 and retraction time 3, phase 2
-runs from 102, included, to 105, which the excluded upper bound may reach and not
-pass. The expected verdicts are the request script's, typed here; the verdicts
-compared with them are computed by `admittedExitStep`, `admittedTxOfExit` and
-`exitRefusal`.
-
-Consumers of `retract_admitted_iff` (every verdict), `retract_refusal_first_failing`
-(every reason, including rows failing more than one check),
-`admitted_exit_is_the_exit` (every admitted retraction, and every other exit
-under a witness a retraction would fail) and `admission_refuses_first` (the
-judgement rows). -/
-
-/-- A retraction submitted at 100, signed by `signatories`, valid from `validFrom`,
-included, to `validTo`, excluded. -/
-def retractWitness (signatories : List Nat) (validFrom validTo : Nat) : RetractWitness :=
-  { submittedAt := 100, validFrom := validFrom, validTo := validTo, signatories := signatories }
-
-/-- `(id, edge, key, witness, expected refusal)`; `none` expects admission. -/
-def admissionRows : List (String × Edge × Nat × RetractWitness × Option String) :=
-  [ ("RA01-insert-absent-retracted", .insertAbsent, 9, retractWitness [77, 42] 102 105, none)
-  , ("RA02-insert-active-retracted", .insertActive, 9, retractWitness [42, 77] 102 105, none)
-  , ("RA03-read-retracted", .witnessTerminal, 4, retractWitness [42] 103 104, none)
-  , ("RA04-update-active-not-retractable", .updateActive, 4, retractWitness [42] 102 105,
-      some "withdraw-insert-only")
-  , ("RA05-update-terminal-not-retractable", .updateTerminal, 4, retractWitness [42] 102 105,
-      some "withdraw-insert-only")
-  , ("RA06-delete-absent-not-retractable", .deleteAbsent, 6, retractWitness [42] 102 105,
-      some "withdraw-insert-only")
-  , ("RA07-delete-active-unsigned-outside-phase-2", .deleteActive, 4, retractWitness [] 0 1000,
-      some "withdraw-insert-only")
-  , ("RA08-unsigned-in-phase-2", .insertActive, 9, retractWitness [77, 88] 102 105,
-      some "retract-owner")
-  , ("RA09-unsigned-outside-phase-2", .insertAbsent, 9, retractWitness [77] 101 106,
-      some "retract-owner")
-  , ("RA10-starts-one-before-phase-2", .insertActive, 9, retractWitness [42] 101 105,
-      some "not-phase2")
-  , ("RA11-ends-one-past-phase-2", .insertActive, 9, retractWitness [42] 102 106,
-      some "not-phase2")
-  , ("RA12-inside-phase-1", .insertAbsent, 9, retractWitness [42] 50 60, some "not-phase2")
-  , ("RA13-inside-phase-3", .witnessTerminal, 4, retractWitness [42, 77] 106 110,
-      some "not-phase2") ]
-
-/-- What an admission row violates: the step's or the transaction's verdict or
-reason differs from the script's; an admitted retraction is not the retract exit
-(the state moved, something was minted, the owner is not paid the deposit and the
-tip, or the transaction spends more than the request, pays anything but one owner
-output, or requires a signer other than the owner alone); the witness does not
-read back from its own JSON. -/
-def admissionFailures : List String :=
-  admissionRows.flatMap fun (id, e, k, w, expected) =>
-    let r := exitStepRequest e k
-    (match admittedExitStep exitState .retract r w, expected with
-      | .ok t, none =>
-        if t.state == exitState && t.mint.isEmpty && t.paid == [(42, 62)] then []
-        else [s!"{id}: the admitted retraction is not the retract exit"]
-      | .error why, some want => if why == want then [] else [s!"{id}: refused {why}, expected {want}"]
-      | .ok _, some want => [s!"{id}: admitted, expected {want}"]
-      | .error why, none => [s!"{id}: refused {why}, expected admission"]) ++
-    (match admittedTxOfExit exitState .retract r w 3, expected with
-      | .ok tx, none =>
-        if tx.signers == [42] && tx.inputs.map (·.role) == [.request]
-            && tx.outputs.map (·.role) == [.owner] && tx.mint.isEmpty && tx.refunds == [(42, 62)]
-        then [] else [s!"{id}: the admitted retraction's transaction is not the retract exit's"]
-      | .error why, some want =>
-        if why == want then [] else [s!"{id}: the transaction refused {why}, expected {want}"]
-      | .ok _, some want => [s!"{id}: the transaction was built, expected {want}"]
-      | .error why, none => [s!"{id}: the transaction refused {why}, expected admission"]) ++
-    (match (fromJson? (toJson w) : Except String RetractWitness) with
-      | .ok v => if v == w then [] else [s!"{id}: the witness reads back changed from its JSON"]
-      | .error why => [s!"{id}: the witness does not read back from its JSON ({why})"])
-
-/-- A witness every retraction fails: nobody signed, and the interval is not in
-phase 2. -/
-def failingWitness : RetractWitness := retractWitness [] 0 1000
-
-/-- Every admitted exit keeps its step and transaction. Refused admission wins
-for both, including a fold under a late upper bound. -/
-def admittedExitFailures : List String :=
-  let others := (allExits.filter (· != .retract)).flatMap fun x =>
-    exitEdges.flatMap fun e => paidKeys.flatMap fun k =>
-      let r := exitStepRequest e k
-      let expectedStep := match exitAdmission paidState.config x r failingWitness with
-        | none => exitStep paidState x r
-        | some why => .error why
-      let expectedTx := match exitAdmission paidState.config x r failingWitness with
-        | none => txOfExit paidState x r 3
-        | some why => .error why
-      if sameStep (admittedExitStep paidState x r failingWitness) expectedStep
-          && sameTx (admittedTxOfExit paidState x r failingWitness 3) expectedTx
-      then [] else [s!"{repr x} at {repr e}/{k}: the exit differs from its admission then its law"]
-  let r := exitStepRequest .insertActive 9
-  let w := retractWitness [42, 77] 102 105
-  let retracted :=
-    if sameStep (admittedExitStep exitState .retract r w) (exitStep exitState .retract r)
-        && sameTx (admittedTxOfExit exitState .retract r w 3) (txOfExit exitState .retract r 3)
-    then [] else ["an admitted retraction is not the retract exit"]
-  others ++ retracted
-
-/-- `(id, exit, request, witness, inputs, outputs, expected refusal)`: what a
-transaction spends and pays, judged with admission first. -/
-def judgementRows : List (String × Exit × Request × RetractWitness × List TxInput ×
-    List TxOutput × Option String) :=
-  let r := exitStepRequest .insertActive 9
-  let signed := retractWitness [42] 102 105
-  let spent := txInputs (txOfExit exitState .retract r 3)
-  let paid := txOutputs (txOfExit exitState .retract r 3)
-  let short := paid.map fun o => { o with lovelace := o.lovelace - 1 }
-  [ ("RJ01-unsigned-beside-a-state-token", .retract, r, retractWitness [77] 102 105,
-      spent ++ [stateTokenInput], [], some "retract-owner")
-  , ("RJ02-update-beside-a-state-token-unpaid", .retract, exitStepRequest .updateActive 4, signed,
-      spent ++ [stateTokenInput], [], some "withdraw-insert-only")
-  , ("RJ03-outside-phase-2-beside-a-state-token", .retract, r, retractWitness [42] 101 105,
-      spent ++ [stateTokenInput], paid, some "not-phase2")
-  , ("RJ04-admitted-beside-a-state-token", .retract, r, signed,
-      spent ++ [stateTokenInput], paid, some "retract-state-spent")
-  , ("RJ05-admitted-paid-short", .retract, r, signed, spent, short, some "deposit-returned")
-  , ("RJ06-admitted-as-built", .retract, r, signed, spent, paid, none)
-  , ("RJ07-reject-under-a-failing-witness", .reject, r, failingWitness,
-      txInputs (txOfExit exitState .reject r 3), txOutputs (txOfExit exitState .reject r 3), none)
-  , ("RJ08-fold-past-deadline", .fold .insertActive, r, failingWitness,
-      txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), some "not-phase1")
-  , ("RJ09-fold-at-deadline", .fold .insertActive, r, { failingWitness with validTo := r.submittedAt + exitState.config.processTime },
-      txInputs (txOf exitState r 3), txOutputs (txOf exitState r 3), none) ]
-
-def judgementFailures : List String :=
-  judgementRows.flatMap fun (id, x, r, w, inputs, outputs, expected) =>
-    let got := exitRefusal exitState.config x r w inputs outputs
-    if got == expected then [] else [s!"{id}: judged {got}, expected {expected}"]
-
--- The judgement rows are not vacuous: the retraction and the exits under a
--- failing witness each build a transaction, and a retraction spends one input.
-#guard (txInputs (txOfExit exitState .retract (exitStepRequest .insertActive 9) 3)).length == 1
-#guard (txOutputs (txOfExit exitState .reject (exitStepRequest .insertActive 9) 3)).length == 2
-#guard (txOutputs (txOf exitState (exitStepRequest .insertActive 9) 3)).length ≥ 2
-
--- A saved state replays with the datum each holding's delivery wrote: a holding
--- serialised and read back is the same holding, with a datum value or none.
-#guard [none, some 0, some 7].all fun d =>
-  let h : Holding := { key := 42, kind := .active, output := 555, datum := d }
-  match (fromJson? (toJson h) : Except String Holding) with
-  | .ok back => back == h
-  | .error _ => false
+/-- Illustrative amounts, not network measurements. The carrier is a declared
+allocation; these controls do not determine any ledger minimum ada. -/
+def registrationConfig : Config :=
+  { cfg with
+    registryId := 31, registrationCost := 17, minimumTip := 3,
+    bookingWidth := 2, processTime := 10, retractTime := 5 }
+
+def registrationApplicationTag : Approval :=
+  { policy := registrationConfig.applicationPolicy, edge := .insertActive,
+    key := 5, owner := 42, destination := 555,
+    assetName := applicationTagAssetName 5 42 555 0 }
+
+/-- Construct the tags from this control's declared fields, independently of
+admission. Tamper controls change the resulting observed tags afterwards. -/
+def bindRegistrationTags (c : Config) (b : RegistrationBooking) : RegistrationBooking :=
+  let r := b.request
+  let application : Approval :=
+    { policy := c.applicationPolicy, edge := .insertActive, key := r.key,
+      owner := r.refundAddress, destination := r.destination,
+      assetName := applicationTagAssetName r.key r.refundAddress r.destination r.nonce }
+  { b with
+    request := { r with contents := { r.contents with
+      applicationTags := [application], trieReadyTags := [r.trieReadyTag c] } },
+    trieReadyTagsMinted := [r.trieReadyTag c], applicationTagsMinted := [application] }
+
+def lawfulRegistrationBooking : RegistrationBooking :=
+  let c := registrationConfig
+  bindRegistrationTags c {
+    request :=
+      { reference := ⟨71, 0⟩, registryId := c.registryId, key := 5,
+        refundAddress := 42, destination := 555, submittedAt := 102,
+        registrationCost := 17, declaredTip := 3, carrierAda := 2,
+        contents := { lovelace := 22, applicationTags := [], trieReadyTags := [] } },
+    interval := ⟨100, 102⟩, trieReadyTagsMinted := [], applicationTagsMinted := [] }
+
+/-- Each row changes the lawful booking at one enforcement boundary. Reasons
+are compared exactly; refusing the lawful row or refusing for another reason
+fails the corpus. A short carrier means held value below the declared sum. -/
+def registrationBookingControls : List (String × Config × RegistrationBooking × Option String) :=
+  let c := registrationConfig
+  let b := lawfulRegistrationBooking
+  let r := b.request
+  let contents := r.contents
+  let dirty (story : String) (request : RegistrationRequest) :=
+    (story, c, { b with request }, some "dirty-request")
+  let tag := r.trieReadyTag c
+  let tagVariants :=
+    [ ("no trie-ready tag is minted", []),
+      ("two trie-ready tags are minted", [tag, tag]),
+      ("another registry's trie-ready tag is minted", [{ tag with policy := c.registryId + 1 }]),
+      ("another trie-ready tag name is minted", [{ tag with name := tag.name + 1 }]) ]
+  [ ("a lawful registration is booked", c, b, none)
+  , ("a larger declared tip is booked", c,
+      (bindRegistrationTags c { b with request := { r with declaredTip := 8, contents := { contents with lovelace := 27 } } }), none)
+  , ("the one pinned minimum accepts a registration at the floor", c, b, none)
+  , ("the one pinned minimum refuses a registration below the floor", { c with minimumTip := 4 }, b, some "dirty-request")
+  , dirty "an extra asset is refused"
+      { r with contents := { contents with otherAssets := [(⟨99, 2⟩, 1)] } }
+  , dirty "a wrong registration cost is refused"
+      { r with registrationCost := 16, contents := { contents with lovelace := 21 } }
+  , dirty "a tip below the minimum is refused"
+      { r with declaredTip := 2, contents := { contents with lovelace := 21 } }
+  , dirty "held value short of the declared carrier is refused"
+      { r with contents := { contents with lovelace := 21 } }
+  , dirty "an application tag for another operation is refused"
+      { r with contents := { contents with applicationTags := [{ registrationApplicationTag with edge := .updateTerminal }] } }
+  , dirty "an application tag for another key is refused"
+      { r with contents := { contents with applicationTags := [{ registrationApplicationTag with key := 6 }] } }
+  , dirty "an application tag for another refund address is refused"
+      { r with contents := { contents with applicationTags := [{ registrationApplicationTag with owner := 43 }] } }
+  , dirty "an application tag for another destination is refused"
+      { r with contents := { contents with applicationTags := [{ registrationApplicationTag with destination := 556 }] } }
+  , dirty "an application tag of another policy is refused"
+      { r with contents := { contents with applicationTags := [{ registrationApplicationTag with policy := 9 }] } }
+  , dirty "an application tag with another commitment is refused"
+      { r with contents := { contents with applicationTags := [{ registrationApplicationTag with assetName := 0 }] } }
+  , dirty "a missing application tag is refused"
+      { r with contents := { contents with applicationTags := [] } }
+  , dirty "two application tags are refused"
+      { r with contents := { contents with applicationTags := [registrationApplicationTag, registrationApplicationTag] } }
+  , dirty "a request for another registry is refused" { r with registryId := c.registryId + 1 }
+  , ("lovelace beyond the declared contents is refused", c,
+      { b with request := { r with contents := { contents with lovelace := 23 } } }, some "hidden-surplus")
+  , ("the booked time cannot be backdated", c,
+      { b with request := { r with submittedAt := 101 } }, some "backdated-booking")
+  , ("the booked time cannot be moved beyond the interval", c,
+      { b with request := { r with submittedAt := 103 } }, some "backdated-booking")
+  , ("an interval wider than the limit is refused", c,
+      { b with interval := ⟨99, 102⟩ }, some "booking-too-wide")
+  , ("an empty interval is refused", c,
+      { b with interval := ⟨102, 102⟩ }, some "invalid-booking-interval")
+  , ("a reversed interval is refused", c,
+      { b with interval := ⟨103, 102⟩ }, some "invalid-booking-interval")
+  , ("a trie-ready tag must be held by the pending request", c,
+      { b with request := { r with contents := { contents with trieReadyTags := [] } } }, some "forged-trie-ready-tag")
+  , ("a second held trie-ready tag is refused", c,
+      { b with request := { r with contents := { contents with trieReadyTags := [tag, tag] } } }, some "forged-trie-ready-tag")
+  , ("an application tag must be minted with its request", c,
+      { b with applicationTagsMinted := [] }, some "dirty-request")
+  , ("a second application tag cannot be minted", c,
+      { b with applicationTagsMinted := [registrationApplicationTag, registrationApplicationTag] }, some "dirty-request") ] ++
+  tagVariants.map (fun (story, tags) =>
+    (story, c, { b with trieReadyTagsMinted := tags }, some "forged-trie-ready-tag")) ++
+  registrationCommitmentControls c b
+
+def registrationBookingRows : List Json :=
+  registrationBookingControls.map fun (story, config, booking, expected) =>
+    Json.mkObj [("story", toJson story), ("config", toJson config),
+      ("booking", toJson booking), ("expectedReason", toJson expected),
+      ("actualReason", toJson (registrationBookingRefusal config booking))]
+
+/-- Exercise the real pool update with all the admission rows and a two-booking
+history. Failed bookings return only a reason, and cannot produce a new pool. -/
+def registrationWorldControl : Except String Unit := do
+  for (story, config, booking, expected) in registrationBookingControls do
+    let before : World := { registry := { s0 with config } }
+    match book before booking, expected with
+    | .ok after, none =>
+      unless after.registry == before.registry && after.pending == [booking] do
+        throw s!"booking changed the registry or lost its request: {story}"
+    | .error actual, some reason =>
+      unless actual == reason do throw s!"booking step: {story}: expected {reason}, actual {actual}"
+    | _, _ => throw s!"booking step disagrees with admission: {story}"
+  let first := lawfulRegistrationBooking
+  let second := { first with request := { first.request with reference := ⟨72, 0⟩ } }
+  let initial : World := { registry := { s0 with config := registrationConfig } }
+  let once ← book initial first
+  let twice ← book once second
+  unless twice.registry == initial.registry && twice.pending == [second, first] do
+    throw "two bookings must preserve the registry and both original transactions"
+  unless (match book twice first with
+    | .error reason => reason == "request-already-pending"
+    | .ok _ => false) do
+    throw "a repeated pending reference must be refused for its own reason"
+
+/-- A termination starts from two keys registered by real model steps. No
+active leaf or holding is seeded. Amounts are illustrative declarations. -/
+def terminationWorld : Except String World := do
+  let first ← step { s0 with config := registrationConfig } (req .insertActive 5 42 555)
+  let second ← step first.state (req .insertActive 6 43 556)
+  return { registry := second.state }
+
+set_option autoImplicit false
+
+/-- Read the singular tag's custody input from the producing state. A
+termination needs no application tag: custody release supplies consent. -/
+def terminationBookingFor (world : World) (key : Key) (reference : OutRef) :
+    Except String TerminationBooking := do
+  let some holding := world.registry.held.find? (fun h => h.key == key && h.kind == .active)
+    | throw "control setup did not produce the active holding"
+  let c := world.registry.config
+  let r : TerminationRequest := {
+    reference, registryId := c.registryId, key, destination := holding.output,
+    declaredTip := 3, carrierAda := 2, singularTags := [c.singularTag key],
+    contents := { lovelace := 5, applicationTags := [], trieReadyTags := [] } }
+  return {
+    request := { r with contents := { r.contents with trieReadyTags := [r.trieReadyTag c] } },
+    custodyInputs := [holding], trieReadyTagsMinted := [r.trieReadyTag c] }
+
+/-- Each control has an exact oracle, including the lawful rows. Both the
+held tag and its mint are checked independently, with cardinality above one. -/
+def terminationBookingControls : Except String
+    (List (String × World × TerminationBooking × Option String)) := do
+  let world ← terminationWorld
+  let b ← terminationBookingFor world 5 ⟨81, 0⟩
+  let c := world.registry.config
+  let r := b.request
+  let value := r.contents
+  let tag := registrationApplicationTag
+  let trieReady := r.trieReadyTag c
+  let some singular := r.singularTags.head? | throw "control setup lost the singular tag"
+  let row story request reason := (story, world, { b with request }, some reason)
+  let tagRows := [
+    ("no trie-ready tag", []), ("two trie-ready tags", [trieReady, trieReady]),
+    ("another registry's trie-ready tag", [{ trieReady with policy := c.registryId + 1 }]),
+    ("another trie-ready tag name", [{ trieReady with name := trieReady.name + 1 }]) ]
+  return [
+    ("a lawful termination takes its singular tag from custody", world, b, none),
+    ("a larger declared tip is accepted", world,
+      { b with request := { r with declaredTip := 8, contents := { value with lovelace := 10 } } }, none),
+    ("the one pinned minimum accepts a termination at the floor", world, b, none),
+    ("the one pinned minimum refuses a termination below the floor",
+      { world with registry := { world.registry with config := { c with minimumTip := 4 } } }, b, some "dirty-request"),
+    row "another key's singular tag is refused"
+      { r with singularTags := [c.singularTag 6] } "forged-singular-tag",
+    row "another registry's singular tag is refused"
+      { r with singularTags := [{ singular with registryId := c.registryId + 1 }] } "forged-singular-tag",
+    row "another policy's singular tag is refused"
+      { r with singularTags := [{ singular with token := { singular.token with policy := singular.token.policy + 1 } }] } "forged-singular-tag",
+    row "no singular tag is refused" { r with singularTags := [] } "forged-singular-tag",
+    row "two singular tags are refused" { r with singularTags := [singular, singular] } "forged-singular-tag",
+    ("a singular tag not taken from custody is refused", world,
+      { b with custodyInputs := [] }, some "forged-singular-tag"),
+    ("two custody input claims are refused", world,
+      { b with custodyInputs := b.custodyInputs ++ b.custodyInputs }, some "forged-singular-tag"),
+    ("another custody output cannot supply the tag", world,
+      { b with custodyInputs := b.custodyInputs.map (fun h => { h with output := h.output + 1 }) },
+      some "forged-singular-tag"),
+    ("a key without active custody is refused",
+      { registry := { s0 with config := c } }, b, some "singular-tag-not-in-custody"),
+    row "an extra asset is refused"
+      { r with contents := { value with otherAssets := [(⟨99, 2⟩, 1)] } } "dirty-request",
+    row "a tip below the minimum is refused"
+      { r with declaredTip := 2, contents := { value with lovelace := 4 } } "dirty-request",
+    row "a refund address is refused" { r with refundAddress := some 42 } "dirty-request",
+    row "a booked time is refused" { r with submittedAt := some 102 } "dirty-request",
+    row "held value below the declared contents is refused"
+      { r with contents := { value with lovelace := 4 } } "dirty-request",
+    row "surplus beyond the declarations is refused"
+      { r with contents := { value with lovelace := 6 } } "hidden-surplus",
+    row "an application tag on a termination is dirty"
+      { r with contents := { value with applicationTags := [tag] } } "dirty-request",
+    row "two application tags on a termination are dirty"
+      { r with contents := { value with applicationTags := [tag, tag] } } "dirty-request" ] ++
+    tagRows.flatMap (fun (story, tags) => [
+      row (story ++ " held is refused")
+        { r with contents := { value with trieReadyTags := tags } } "forged-trie-ready-tag",
+      (story ++ " minted is refused", world, { b with trieReadyTagsMinted := tags }, some "forged-trie-ready-tag") ]) ++
+    terminationCommitmentControls world b
+
+def terminationControlRows : Except String (List Json) := do
+  let controls ← terminationBookingControls
+  controls.mapM fun (story, world, booking, expected) => do
+    let actual := terminationBookingRefusal world.registry booking
+    unless actual == expected do
+      throw s!"termination booking: {story}: expected {repr expected}, actual {repr actual}"
+    match bookTermination world booking, expected with
+    | .ok after, none =>
+      unless after.registry.trie == world.registry.trie &&
+          after.registry.config == world.registry.config &&
+          after.pending == world.pending && after.terminations == booking :: world.terminations &&
+          kindCount after.registry .active booking.request.key == 0 &&
+          kindCount after.registry .active 6 == kindCount world.registry .active 6 do
+        throw s!"termination booking lost custody or changed unrelated state: {story}"
+    | .error reason, some expectedReason =>
+      unless reason == expectedReason do throw s!"termination step: {story}: {reason}"
+    | _, _ => throw s!"termination step disagrees with admission: {story}"
+    return Json.mkObj [("story", toJson story), ("config", toJson world.registry.config),
+      ("heldBefore", toJson world.registry.held), ("booking", toJson booking),
+      ("expectedReason", toJson expected), ("actualReason", toJson actual)]
+
+/-- Test repeated bookings both as separate calls and within one atomic
+transaction. A refusal must leave the original one-request pool intact. -/
+def terminationPoolControls : Except String Unit := do
+  let world ← terminationWorld
+  let first ← terminationBookingFor world 5 ⟨81, 0⟩
+  let second ← terminationBookingFor world 6 ⟨81, 1⟩
+  let repeated := { first with request := { first.request with reference := ⟨82, 0⟩ } }
+  let repeatedWithin := { first with request := { first.request with reference := ⟨81, 1⟩ } }
+  let once ← bookTermination world first
+  unless (match bookTermination once repeated with
+    | .error reason => reason == "singular-tag-not-in-custody" | .ok _ => false) do
+    throw "a later second termination must be refused because its tag has left custody"
+  unless once.terminations == [first] && kindCount once.registry .active 5 == 0 do
+    throw "a failed second termination changed the pending pool"
+  unless (match bookTermination once repeatedWithin with
+    | .error reason => reason == "singular-tag-not-in-custody" | .ok _ => false) do
+    throw "a second output of the same transaction cannot take the intermediate world's tag"
+  unless once.terminations == [first] do
+    throw "the intermediate calculation must still contain just the first termination"
+  unless (match bookTerminations world [first, repeatedWithin] with
+    | .error reason => reason == "singular-tag-not-in-custody" | .ok _ => false) do
+    throw "two terminations of one key in one transaction must be refused"
+  unless world.terminations.isEmpty && kindCount world.registry .active 5 == 1 do
+    throw "the refused whole transaction must leave its original pool and custody unchanged"
+  let both ← bookTerminations world [first, second]
+  unless both.terminations == [second, first] && both.registry.held.isEmpty do
+    throw "two different keys may each move their singular tag from custody"
+  let mixed ← book once lawfulRegistrationBooking
+  unless mixed.terminations == [first] && mixed.pending == [lawfulRegistrationBooking] &&
+      mixed.registry == once.registry do
+    throw "registration booking must preserve a pending termination"
+
+/-- Booking controls for the registration-only application tag. These judge
+the submitted output directly, with exact refusal reasons. -/
+def trieReadyBookingControls : Except String Unit := do
+  let world ← terminationWorld
+  let withoutApplication ← terminationBookingFor world 5 ⟨81, 0⟩
+  let withApplication := { withoutApplication with
+    request := { withoutApplication.request with contents := {
+      withoutApplication.request.contents with applicationTags := [registrationApplicationTag] } } }
+  unless bookingNonceCodecControls lawfulRegistrationBooking.request withoutApplication.request do
+    throw "request nonce omission, default or roundtrip failed"
+  unless registrationConfig.trieReadyTag 0 != registrationConfig.stateToken do
+    throw "a zero commitment collided with the state token"
+  let controls := [
+    ("a termination holding an application tag is dirty", withApplication, some "dirty-request"),
+    ("a termination needs no application tag", withoutApplication, none) ]
+  let terminationFailures := controls.filterMap fun (story, booking, expected) =>
+    let actual := terminationBookingRefusal world.registry booking
+    if actual == expected then none
+    else some s!"{story}: expected {repr expected}, actual {repr actual}"
+  let registration := lawfulRegistrationBooking
+  let request := registration.request
+  let otherPayloads := [
+    ("key", { request with key := request.key + 1 }),
+    ("refund address", { request with refundAddress := request.refundAddress + 1 }),
+    ("destination", { request with destination := request.destination + 1 }) ]
+  let registrationFailures := otherPayloads.filterMap fun (field, changed) =>
+    let application := { registrationApplicationTag with
+      key := changed.key, owner := changed.refundAddress, destination := changed.destination,
+      assetName := applicationTagAssetName changed.key changed.refundAddress changed.destination changed.nonce }
+    let booking := { registration with
+      request := { changed with contents := { changed.contents with applicationTags := [application] } },
+      applicationTagsMinted := [application] }
+    let actual := registrationBookingRefusal registrationConfig booking
+    let expected := some "forged-trie-ready-tag"
+    if actual == expected then none
+    else some s!"a registration tag from another {field}: expected {repr expected}, actual {repr actual}"
+  let otherTermination ← terminationBookingFor world 6 ⟨81, 1⟩
+  let reusedTag := { otherTermination with
+    request := { otherTermination.request with contents := {
+      otherTermination.request.contents with trieReadyTags := withApplication.request.contents.trieReadyTags } },
+    trieReadyTagsMinted := withApplication.trieReadyTagsMinted }
+  let terminationActual := terminationBookingRefusal world.registry reusedTag
+  let failures := terminationFailures ++ registrationFailures ++
+    (if terminationActual == some "forged-trie-ready-tag" then [] else
+      [s!"a termination tag from another key and destination: expected forged-trie-ready-tag, actual {repr terminationActual}"])
+  unless failures.isEmpty do throw (String.intercalate "\n" failures)
+
+/-- Exercise the historical wire field through the real decoder, bookings and
+fold. These amounts are illustrative and say nothing about ledger minimum ada. -/
+def oneTipControls : Except String (List (String × Bool)) := do
+  let fields ← (toJson registrationConfig).getObj?
+  let encoded := Json.mkObj <|
+    (fields.toList.filter fun p => p.1 != "maxFee" && p.1 != "minimumTip") ++
+    [("maxFee", toJson (5 : Nat))]
+  let decoded ← (fromJson? encoded : Except String Config)
+  let initial : RegistryState := { s0 with config := decoded }
+  let active ← step initial (req .insertActive 5 42 555)
+  let world : World := { registry := active.state }
+  let termination ← terminationBookingFor world 5 ⟨91, 0⟩
+  let mut checks := [("the historical maxFee key decodes as minimum tip five", decoded.minimumTip == 5)]
+  for tip in [4, 5] do
+    let expected := if tip < 5 then some "dirty-request" else none
+    let original := lawfulRegistrationBooking
+    let registrationRequest := { original.request with
+      declaredTip := tip, contents := { original.request.contents with lovelace := 17 + tip + 2 } }
+    let registration := bindRegistrationTags decoded { original with request := registrationRequest }
+    let terminationRequest := { termination.request with
+      declaredTip := tip, contents := { termination.request.contents with lovelace := tip + 2 } }
+    let terminal := { termination with request := terminationRequest }
+    let registrationResult := book { registry := initial } registration
+    let terminationResult := bookTermination world terminal
+    let reason (result : Except String World) := match result with
+      | .ok _ => none | .error why => some why
+    checks := checks ++
+      [(s!"registration declared tip {tip} follows the one pinned floor", reason registrationResult == expected),
+       (s!"termination declared tip {tip} follows the one pinned floor", reason terminationResult == expected)]
+  let configured := { decoded with minimumTip := 3 }
+  let written := toJson configured
+  checks := checks ++
+    [("minimum tip three is written as maxFee three",
+        (written.getObjValAs? Nat "maxFee").toOption == some 3),
+     ("the second minimumTip wire key is absent", (written.getObjVal? "minimumTip").toOption.isNone),
+     ("the single tip configuration round trips",
+        match (fromJson? written : Except String Config) with
+        | .ok back => back == configured | .error _ => false),
+     ("a lawful fold preserves the one minimum tip", onlyRootChanged decoded active.state.config),
+     ("a fold changing the minimum tip fails the pin check",
+        !onlyRootChanged decoded { active.state.config with minimumTip := decoded.minimumTip + 1 }),
+     ("a fold transaction is built with request lovelace below the historical pin",
+        match txOf initial (req .insertActive 5 42 555) 4 with
+        | .ok tx => tx.inputs.any (fun input => input.role == .request && input.lovelace == 4)
+        | .error _ => false)]
+  for row in [transactionRowJson, retirementRowJson] do
+    let profile ← row.getObjValAs? String "profile"
+    checks := checks ++ [(s!"{profile} retires both tip-cover fields",
+      (row.getObjVal? "tip").toOption.isNone && (row.getObjVal? "lovelaceCoversTip").toOption.isNone)]
+  return checks
 
 def main : IO Unit := do
+  let foldEconomicRows ← FoldControls.run
+  let refundRows ← RefundControls.run
+  let retractionFundingRows ← RetractionFundingControls.run
+  let rejectionReadRows ← RejectionReadControls.run
+  let rejectionTransactionRows ← RejectionReadControls.runTransactionControls
+  let rejectionPreservationRows ← RejectionReadControls.runPreservationControls
   let stdout ← IO.getStdout
+  let checks ← match oneTipControls with
+    | .ok rows => pure rows
+    | .error reason => throw (IO.userError s!"one tip control setup: {reason}")
+  let stderr ← IO.getStderr
+  for (story, passed) in checks do
+    stderr.putStrLn s!"one tip: {if passed then "PASS" else "FAIL"}: {story}"
+  unless checks.all (·.2) do throw (IO.userError "one tip controls failed")
+  match trieReadyBookingControls with
+  | .ok () => pure ()
+  | .error reason => throw (IO.userError reason)
+  let terminationRows ← match terminationControlRows with
+    | .ok rows => pure rows
+    | .error reason => throw (IO.userError reason)
+  match terminationPoolControls with
+  | .ok () => pure ()
+  | .error reason => throw (IO.userError reason)
+  match registrationWorldControl with
+  | .ok () => pure ()
+  | .error reason => throw (IO.userError reason)
+  for (story, config, booking, expected) in registrationBookingControls do
+    let actual := registrationBookingRefusal config booking
+    unless actual == expected do
+      throw (IO.userError s!"registration booking: {story}: expected {repr expected}, actual {repr actual}")
+  match parameterPreservationControl with
+  | .ok () => pure ()
+  | .error reason => throw (IO.userError reason)
+  unless parameterCodecControl do
+    throw (IO.userError "economic parameter defaults, pins or roundtrip failed")
+  for (story, correct) in stateIdentityControls do
+    unless correct do throw (IO.userError s!"state token identity: {story}")
+  for (story, correct) in economicControls do
+    unless correct do throw (IO.userError s!"transaction vocabulary: {story}")
   for c in cases do
     unless correct c do
       throw (IO.userError s!"scenario expectation failed: {c.id}: {caseActualString c}")
@@ -1017,7 +458,6 @@ def main : IO Unit := do
   unless txSecondReason == "key-exists" do
     throw (IO.userError s!"Transaction correspondence second insertActive: {txSecondReason}")
   unless approvalsIn txRequest == 1 do throw (IO.userError "Transaction correspondence approval count")
-  unless lovelaceCoversTip cfg txLovelace do throw (IO.userError "Transaction correspondence tip not covered")
   unless destinationDatumBinds txRequest do throw (IO.userError "Transaction correspondence destination datum")
   unless openAdmitsEveryTuple cfg do throw (IO.userError "Transaction correspondence open policy admission")
   unless !crossRegistrySeparation cfg otherRegistry txRequest do
@@ -1066,11 +506,19 @@ def main : IO Unit := do
       ("bytes", toJson p.2.2.2)]
   let json := Json.mkObj
     [ ("schema", toJson "singular-logical-corpus-v2")
+    , ("economicFolds", toJson foldEconomicRows)
+    , ("economicRefunds", toJson refundRows)
+    , ("economicRetractionFunding", toJson retractionFundingRows)
+    , ("rejectionReadsState", toJson (rejectionReadRows ++ rejectionTransactionRows ++ rejectionPreservationRows))
+    , ("terminationBookings", toJson terminationRows)
+    , ("registrationBookings", toJson registrationBookingRows)
     , ("cases", toJson (cases.map caseJson))
     , ("folds", toJson foldJson)
     , ("ada", toJson adaJson)
     , ("codec", toJson codecJson)
     , ("configRoundtrip", toJson configRow)
+    , ("economicControls", toJson (economicControls.map fun (story, result) =>
+        Json.mkObj [("story", toJson story), ("result", toJson result)]))
     , ("tokenPolicies", tokenPoliciesJson)
     , ("transactions", Json.arr #[transactionRowJson, retirementRowJson])
     , ("keyedMintRows", Json.arr

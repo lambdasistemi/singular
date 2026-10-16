@@ -1,0 +1,68 @@
+{
+  "functions-model-the-callable-surface-this-ticket-adds-or-changes": [
+    {
+      "text": "Functions model: the callable surface this ticket adds or changes.",
+      "pause": 500
+    },
+    {
+      "text": "This page owns only new or changed function names, their argument names, argument and result types, and signature-level constraints. It contains no bodies, no algorithm and no proof; the coder owns those. Only changed functions appear. Each group names its module in the modules model and the slice of the plan that adds it.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the coder who ports the rule, I read the exact call surface the validators' authors and the conformance harness will depend on, so that I can implement it without choosing a name, an argument order or an error channel that a later ticket then has to reverse.",
+      "pause": 400
+    }
+  ],
+  "singularmodel-retraction-window-slice-one": [
+    {
+      "text": "Singular.Model: retraction window (slice one).",
+      "pause": 500
+    }
+  ],
+  "singularmodel-rejection-admission-slice-two": [
+    {
+      "text": "Singular.Model: rejection admission (slice two).",
+      "pause": 500
+    }
+  ],
+  "singularmodel-the-action-engine-and-the-mixed-batch-slice-four": [
+    {
+      "text": "Singular.Model: the action engine and the mixed batch (slice four).",
+      "pause": 500
+    },
+    {
+      "text": "Withdrawn on 14 October 2026: a rejection never spends the registry state output and never shares a transaction with a fold, so no batch holds both. The rows below describe the withdrawn slice.",
+      "pause": 400
+    }
+  ],
+  "singulardriver-and-the-transport-slices-two-and-four": [
+    {
+      "text": "Singular.Driver and the transport (slices two and four).",
+      "pause": 500
+    }
+  ],
+  "statements-the-coder-must-state-and-prove": [
+    {
+      "text": "Statements the coder must state and prove.",
+      "pause": 500
+    },
+    {
+      "text": "The names are fixed so that the register and the requirement pages agree. Each is a Lean statement of the requirement of the same name in the specification.",
+      "pause": 400
+    },
+    {
+      "text": "The statements are named as the earlier candidate named them, because the reviewed design is the reference; the coder may restate one only if the two-edge model makes the earlier wording false, and says which and why in the receipt.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "f36d539a7a819e5202b89b4b9a8312e58cead22e805633d65572ecc244796cd8"
+  }
+}

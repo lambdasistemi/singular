@@ -864,6 +864,12 @@ NONCODE_CLASSES: list[dict] = [
         "docs build and presentation carriers, not code lint",
     },
     {
+        "id": "paper-sources",
+        "pattern": "paper/**/*.{tex,bib,cls,sty}",
+        "note": "economics paper LaTeX sources and bibliography; built "
+        "into the documentation site by nix/docs.nix, never executed as code",
+    },
+    {
         "id": "json-data",
         "pattern": "**/*.json",
         "note": "fixtures, receipts, planning records, preprod evidence and other data",

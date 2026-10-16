@@ -193,8 +193,9 @@ data Booking wal = Booking
     deriving stock (Eq, Show)
 
 {- | Where a reject is placed: a fact about the submitted transaction, not a
-tamper. The model gives a reject no admission, so its answer does not depend
-on it; the chain is asked in the window the story names.
+tamper. A rejection is admitted only with bound evidence for a lifecycle
+mismatch or for expiry after both windows; the chain is asked in the window
+the story names.
 -}
 data Placement = InProcessingWindow | InRetractionWindow | AfterTheWindows
     deriving stock (Eq, Show, Enum, Bounded)

@@ -343,6 +343,13 @@ const SECTION_CLASS = {
   folds: 'evidence',
   keyedMintRows: 'evidence',
   transactions: 'evidence',
+  economicControls: 'uncovered',
+  registrationBookings: 'uncovered',
+  terminationBookings: 'uncovered',
+  rejectionReadsState: 'uncovered',
+  economicRefunds: 'uncovered',
+  economicFolds: 'uncovered',
+  economicRetractionFunding: 'uncovered',
 };
 const classifySections = (c) => {
   const exported = Object.keys(c).filter((k) => Array.isArray(c[k]));

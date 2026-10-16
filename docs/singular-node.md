@@ -1,5 +1,7 @@
 # Connecting singular to a ledger provider
 
+Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.
+
 As a registry operator, you want to use `create`, `fold`, `reclaim`, `reject`, `inspect` and `describe`
 through `singular registry`, and `create`, `insert`, `update`, `terminate`, `fold` and `inspect`
 through `open-datum`, with a Koios API on your chosen network.

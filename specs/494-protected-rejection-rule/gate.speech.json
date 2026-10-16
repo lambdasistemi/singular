@@ -1,0 +1,176 @@
+{
+  "gate-the-existing-ci-commands-that-prove-each-slice": [
+    {
+      "text": "Gate: the existing CI commands that prove each slice.",
+      "pause": 500
+    },
+    {
+      "text": "This page is the frozen gate for ticket 494. It is the union of two tables written independently from the specification and its acceptance lines, one by the ticket owner and one by a GLM gate author who never saw the first, synthesized once here. Every command is an existing step of .github/workflows/ci.yml or .github/workflows/conformance.yml at base e7b55ac9; nothing is invented. Hosted checks on the exact pushed head are the net for every row.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the auditor judging a slice, I read which commands decide it, which of them run on every candidate and which once before the push, and which acceptance lines have no command at all, so that I trust a green gate for exactly what it proves and no more.",
+      "pause": 400
+    }
+  ],
+  "provenance": [
+    {
+      "text": "Provenance.",
+      "pause": 500
+    },
+    {
+      "text": "Conflicts, resolved by the workflow line that decides them. The author listed the retire-active-key row as re-based onto evidenced rejection; the workflow (conformance.yml:302-381) runs a row with no rejection step, so it stays a guard that a fold's question did not change. The author listed the batch row under slice four; the batch harness story is re-based in slice two and only re-run in slice four. The author's rows for the release assembly, the build gate and the off-chain lint reach no file of this ticket and are left to the hosted checks. One row is the ticket owner's alone: the repository's aggregate run once on each final candidate.",
+      "pause": 400
+    }
+  ],
+  "the-rebase-onto-e7b55ac9": [
+    {
+      "text": "The rebase onto e7b55ac9.",
+      "pause": 500
+    },
+    {
+      "text": "Checked on 13 October 2026 by finding every command below in the two workflows on the new base: none of the commands changed, and the jobs that carry them kept their names. Only their line numbers moved, so the citations below are the new ones. The only change inside a job a row uses is a new format-controls step in the format and lint job, which first checks the real root exactly as the format check does. The conformance workflow now also starts on a change under applications/, which this ticket's regenerated application files will trigger. Because no existing row changed its command or its subject, no gate author was commissioned again.",
+      "pause": 400
+    },
+    {
+      "text": "Two hosted jobs that did not exist at the old base can be broken by this ticket's files; they are the ticket owner's rows, listed in the last row of the table and run only on the pushed head: \"Release review archive reproduction\" archives the Lean model, the simulator, the constitution, the theorem page and the transport source and re-checks them from the extracted bytes, and \"Declared checks are hosted\" refuses any flake app or check that no workflow step names. The jobs for the open-datum application's Haskell, the registry test vectors and the negative host read none of the files this ticket edits.",
+      "pause": 400
+    }
+  ],
+  "gate-version-2-the-book-the-generic-rows-and-the-extent-check-turn-green-in-slice-three": [
+    {
+      "text": "Gate version 2: the book, the generic rows and the extent check turn green in slice three.",
+      "pause": 500
+    },
+    {
+      "text": "Found while slice two was built: the running book contains every program that has a chapter, among them the dedicated early-rejection program, and the generic session contains the standing unmet consumer-requirement row. Decision B turns both lawful in slice three, so at the end of slice two they cannot agree and these three rows cannot exit 0. Slices two and three are pushed together, so no red head is pushed. Version 2 moves three rows from slice two to the final tier of slice three and changes nothing else: the running book, the generic rows and the refusal extent check. The slice-two commit places the lawful rejects of those rows after both windows with expiry evidence; their end-to-end proof is the hosted run on the head that includes slice three.",
+      "pause": 400
+    }
+  ],
+  "the-rows": [
+    {
+      "text": "The rows.",
+      "pause": 500
+    },
+    {
+      "text": "Commands run from the repository root unless a working directory is given. \"Candidate\" means every candidate of the named slices; \"final\" means once on the final candidate of a slice before the push; \"hosted\" means only the hosted check on the pushed head. Minutes are estimates from the last green runs. The red run column is the earlier attempt's hosted run (a7224021, run 37757702122 or 37757702153, or 4ee2082b, run 37755208632) that shows the command can fail.",
+      "pause": 400
+    }
+  ],
+  "budget-per-candidate": [
+    {
+      "text": "Budget per candidate.",
+      "pause": 500
+    },
+    {
+      "text": "The repository aggregate already runs the model, application, simulator, browser, documents, inventory, format and lint rows locally, so a final run is the aggregate plus the rows it does not cover: the coverage gate, the strict coverage report, the release check and the slice's devnet rows.",
+      "pause": 400
+    },
+    {
+      "text": "Rows run in parallel where independent. A candidate over budget has its devnet rows moved to the hosted checks or the slice is cut again; nobody waits on a gate. A hosted failure is one repair commit, never a local rerun of the hosted job list.",
+      "pause": 400
+    }
+  ],
+  "acceptance-lines-with-no-command": [
+    {
+      "text": "Acceptance lines with no command.",
+      "pause": 500
+    },
+    {
+      "text": "Two lines have no CI job: that the rulings and the truth table are recorded, and that the evidence contract and its release record exist. The truth table is also exported as corpus rows that the model check replays, which covers its content; the pages render under the documents row, which covers their existence. Nothing asserts the rulings' wording or the release record's fields. This is a missing CI job, reported to the epic owner; no local check is invented. Until it is answered the persistent auditor reads those pages at the pre-push checkpoint. The clause \"published unmet as the ruling directs\" has no job either, but its carrier is the generic rows' expected-debt assertion, a CI change in slice three.",
+      "pause": 400
+    }
+  ],
+  "falsification": [
+    {
+      "text": "Falsification.",
+      "pause": 500
+    },
+    {
+      "text": "A single green proves nothing. The slice's own failing control is committed first and must fail for the right reason: slice one's retraction scenarios, slice two's historical scenario accepted on the base, slice four's two-batch scenarios. Each failure class a row covers has a cited red run above; a row with none found is covered by that control or by the aggregate. Falsifying the unchanged guard rows (retire-active-key, wrong-reason) is their hosted reds on the earlier attempt.",
+      "pause": 400
+    }
+  ],
+  "gate-version-3-the-rows-of-slices-five-to-ten": [
+    {
+      "text": "Gate version 3: the rows of slices five to ten.",
+      "pause": 500
+    },
+    {
+      "text": "Added before the first economic coder, from existing CI commands only. Two independent tables were synthesized once: the ticket owner's (the slice rows above carried to the model slices, plus the documentation rows) and a Grok gate author's, read from the workflows at the plan commit (handoffs/gate-table.md in the author's runtime root, sha256 bf90020c3812cfa1b458431d9e4f5ea7066b934f209fa8c551367df690c07c52). The author found seven acceptance lines with no command; the disposition of each is below, and three of them become \"CI change in this ticket\" rows. The settled rows above are unchanged.",
+      "pause": 400
+    },
+    {
+      "text": "Acceptance lines with no command, and what is done:",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: slices five to eight about 40 minutes, the rows marked final about 60 once before a push; slices nine and ten about 5 and 25.",
+      "pause": 400
+    }
+  ],
+  "gate-version-4-the-rows-of-the-rebuilt-economic-slices": [
+    {
+      "text": "Gate version 4: the rows of the rebuilt economic slices.",
+      "pause": 500
+    },
+    {
+      "text": "Added on 14 October 2026, before the first economic writer, when the economic design was decided and the slices were cut again (the economics plan: parameters and the transaction vocabulary, registrations, terminations, rejection reads the state, refunds, folds). The rows of version 3 are unchanged and keep their commands, minutes, exits and red runs; only the slices they apply to change. The paper rows of version 3 (the PDF in the built site, the generated theorem table, the paper sources in the code inventory) leave this ticket's model slices: the paper is planned on its own, after the model is finished.",
+      "pause": 400
+    },
+    {
+      "text": "Falsification. Each slice commits its failing controls first (the controls named in the plan), and they must fail on the branch as it stands for the intended reason: a refusal for another reason, or a statement proved over the wrong thing, is not the control. Each slice ends with the list of its statements, their fully qualified names and their axiom lines.",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: about 40 minutes for the rows marked always and conditional; about 60 once before a push for the rows marked final. A candidate over budget is cut again.",
+      "pause": 400
+    },
+    {
+      "text": "Slice five-b (inserted on 14 October 2026) uses the rows of version 4 marked five to ten: the \"always\" rows at every checkpoint after the written review, the \"final\" rows and just ci once on its final head. A move or a rename changes no behaviour, so the corpora of scenarios must be byte-identical at every checkpoint; the axiom gate must still fail on a planted unproved statement in every module of the set it walks, shown once at the checkpoint that teaches the tools the module set.",
+      "pause": 400
+    },
+    {
+      "text": "Slice four is withdrawn (14 October 2026): its batch row and the two-batch scenarios of the falsification paragraph above no longer apply to any slice.",
+      "pause": 400
+    }
+  ],
+  "gate-version-5-the-slices-inserted-on-15-october-2026": [
+    {
+      "text": "Gate version 5: the slices inserted on 15 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "Added before the first writer of the inserted slices (eight-a, seven-b, seven-c, eight-c), after the operator's rulings on the trie-ready tag and the tip and the split of slice eight (see the decisions and the economics plan). Every row of versions 1 to 4 above is unchanged: same text, same commands, same minutes and exits; only the slices they apply to are named. The hash of the file before this section (version 4) is 9f981b6cd4161f0b6fc2379c042c1de01f076939c06729c6f5cdbd6f1534c16f; the hash of the file with this section is recorded in the ticket owner's journal when the section is committed.",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: as version 4.",
+      "pause": 400
+    }
+  ],
+  "gate-version-6-slice-eleven-inserted-on-16-october-2026": [
+    {
+      "text": "Gate version 6: slice eleven, inserted on 16 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "Added before the writer of slice eleven, after the operator's ruling that the requester pays the retraction (see the decisions). Every row of versions 1 to 5 above is unchanged: same text, same commands, same minutes and exits. The hash of the file before this section (version 5) is f518e2a773882599b70145fa637f48456b3d95478d6b54b55f10d6cee4f48ca8; the hash of the file with this section is recorded in the ticket owner's journal when the section is committed.",
+      "pause": 400
+    },
+    {
+      "text": "Budget per candidate: as version 4.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "66493935123fa33a5a270220a68d91d9322a15204202f922d01e6f185d16e2e5"
+  }
+}

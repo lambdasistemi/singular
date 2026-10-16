@@ -175,6 +175,9 @@ conformance/app/Conformance/Run/Live.hs compareStep modifyIORef' 2
 conformance/app/Conformance/Run/Live.hs compareStep readIORef 4
 conformance/app/Conformance/Run/Live.hs enterRegistry modifyIORef' 2
 conformance/app/Conformance/Run/Live.hs enterRegistry readIORef 2
+conformance/app/Conformance/Run/Live.hs intermediateAbstractConfig readIORef 1
+conformance/app/Conformance/Run/Live.hs mismatchLeafFor readIORef 1
+conformance/app/Conformance/Run/Live.hs modelRegistryIdentity readIORef 1
 conformance/app/Conformance/Run/Live.hs modelStart readIORef 2
 conformance/app/Conformance/Run/Live.hs newLiveIdentities newIORef 6
 conformance/app/Conformance/Run/Live.hs newLiveState newIORef 7

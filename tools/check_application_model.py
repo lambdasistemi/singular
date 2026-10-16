@@ -28,6 +28,8 @@ from pathlib import Path
 import re
 import sys
 
+from check_model import module_text
+
 STANDARD = {"propext", "Classical.choice", "Quot.sound"}
 PREFIX = "OpenDatumApplication.Statements."
 STATEMENTS = "applications/open-datum/lean/OpenDatumApplication/Statements.lean"
@@ -137,7 +139,7 @@ def main():
     args = parser.parse_args()
     try:
         report = parse_report(args.axioms_report.read_text())
-        declared = headers((args.root / STATEMENTS).read_text())
+        declared = headers(module_text(args.root / STATEMENTS))
         ledger = json.loads((args.root / LEDGERS).read_text())
         proved, total = check(report, declared, ledger)
     except (Refused, OSError, KeyError, json.JSONDecodeError) as reason:

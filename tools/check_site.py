@@ -258,8 +258,14 @@ for required in (
     "docs/design/index.html",
     "docs/decisions/index.html",
     "docs/simulation/index.html",
+    "docs/economics-paper/index.html",
+    "docs/economics-paper.pdf",
 ):
     assert (site / required).exists(), required
+# The economics page links the paper PDF it describes; the built site must
+# carry both, and the link must name the shipped file.
+econ_page = (site / "docs/economics-paper/index.html").read_text()
+assert "economics-paper.pdf" in econ_page, "economics page does not link its PDF"
 home = (site / "index.html").read_text()
 # Light and dark palettes: the shipped dark palette stylesheet, the palette
 # controller that follows the device preference until the reader chooses, and

@@ -298,7 +298,52 @@ jobs:
         run: |
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           receipts="$(mktemp -d "$RUNNER_TEMP/conformance-book.XXXXXX")"
-          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- book --receipts-dir "$receipts"
+          # CI change in this ticket (slice eight-c): render complete unmet chapters.
+          set +e
+          REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- book --receipts-dir "$receipts" --output "$receipts/book.md" 2>&1 | tee "$receipts/run.log"
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          test "$run_rc" -eq 1
+          grep -qx 'complete: 7/7 rows ok' "$receipts/run.log"
+          test "$(sed -n 's/^- Held .*held-q002): //p' "$receipts/run.log")" = none
+          test "$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' "$receipts/run.log")" = 'reject-and-retract-refund-controls reject-inside-processing-and-retraction-windows'
+          test "$(sed -n 's/^- Failing .*accepted): //p' "$receipts/run.log")" = none
+          test -s "$receipts/book.md"
+          grep -q 'implementation follows the superseded rule; the ruled rule is not implemented' "$receipts/book.md"
+          # shellcheck disable=SC2016
+          nix run --quiet nixpkgs#jq -- -s -e --arg base "$(git rev-parse HEAD)" '
+            (map(.row) | sort) == (["insert-occupied-key", "register-active-key", "permanent-retire-active-key", "reject-and-retract-refund-controls", "reject-inside-processing-and-retraction-windows", "retract-outside-window", "sequence"] | sort)
+            and all(.[]; .base == $base and .dirty == false
+              and .verdict == (if (.row == "reject-and-retract-refund-controls" or .row == "reject-inside-processing-and-retraction-windows") then "unmet-by-ruling" else "agrees-with-model" end))
+          ' "$receipts"/receipt-*.json
+          # A setup failure must render no book, even with the same public invocation.
+          broken="$(mktemp -d "$RUNNER_TEMP/conformance-book-broken.XXXXXX")"
+          set +e
+          REGISTRY_BLUEPRINT="$broken/missing.json" nix run --quiet .#conformance -- book --receipts-dir "$broken" --output "$broken/book.md" >"$broken/run.log" 2>&1
+          broken_rc=$?
+          set -e
+          test "$broken_rc" -ne 0
+          grep -q 'missing.json' "$broken/run.log"
+          test ! -e "$broken/book.md"
+          if grep -q '^complete:' "$broken/run.log"; then echo "FAIL: unexpected completed run or changed-outcome diagnostic"; exit 1; fi
+          # An executed chapter that fails its comparison must not render a book.
+          incomplete="$(mktemp -d "$RUNNER_TEMP/conformance-book-incomplete.XXXXXX")"
+          set +e
+          CONFORMANCE_STORY_CONTROL=wrong-fee REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- book --receipts-dir "$incomplete" --output "$incomplete/book.md" >"$incomplete/run.log" 2>&1
+          incomplete_rc=$?
+          set -e
+          test "$incomplete_rc" -ne 0
+          grep -q '^submit: .* accepted' "$incomplete/run.log"
+          grep -q 'config differs from Lean' "$incomplete/run.log"
+          test ! -e "$incomplete/book.md"
+          if grep -q '^complete:' "$incomplete/run.log"; then echo "FAIL: unexpected completed run or changed-outcome diagnostic"; exit 1; fi
+          if grep -q 'changed real outcome' "$incomplete/run.log"; then echo "FAIL: unexpected completed run or changed-outcome diagnostic"; exit 1; fi
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: conformance-running-book
+          path: ${{ runner.temp }}/conformance-book*
+          if-no-files-found: ignore
   conformance-retire:
     name: "Conformance devnet: retire-active-key"
     runs-on: nixos
@@ -404,14 +449,25 @@ jobs:
           done
       - name: Run the dedicated reject-and-retract-refund-controls exit row as a packaged app
         run: |
-          set -e
+          set -eo pipefail
           cd conformance
           blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
           # The row runs through the wrapper the retention control executes.
           CONFORMANCE_DEDICATED_RECEIPTS="${CONFORMANCE_DEDICATED_RECEIPTS:-$(mktemp -d "$RUNNER_TEMP/conformance-dedicated.XXXXXX")}"
           export CONFORMANCE_DEDICATED_RECEIPTS
           receipts="$CONFORMANCE_DEDICATED_RECEIPTS/reject-and-retract-refund-controls"
-          bash test/ci/dedicated-row.sh reject-and-retract-refund-controls -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-and-retract-refund-controls
+          log="$RUNNER_TEMP/refund-controls.log"
+          # CI change in this ticket (slice eight-c): handle only complete declared debt.
+          set +e
+          bash test/ci/dedicated-row.sh reject-and-retract-refund-controls -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-and-retract-refund-controls 2>&1 | tee "$log"
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          test "$run_rc" -eq 1 || { echo "FAIL: row run exit $run_rc, not complete expected debt"; exit 1; }
+          grep -qx 'complete: 1/1 rows ok' "$log" || { echo 'FAIL: incomplete row run, not expected debt'; exit 1; }
+          grep -q '^conformance run: FAILED: ROWS THE RUN CANNOT REPORT AS PASSING' "$log" || { echo 'FAIL: missing debt report'; exit 1; }
+          test "$(sed -n 's/^- Held .*held-q002): //p' "$log")" = none
+          test "$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' "$log")" = 'reject-and-retract-refund-controls'
+          test "$(sed -n 's/^- Failing .*accepted): //p' "$log")" = none
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-reject-and-retract-refund-controls.json"
           test -f "$f" || { echo 'FAIL: missing reject-and-retract-refund-controls receipt'; exit 1; }
@@ -427,7 +483,7 @@ jobs:
             def complete: .comparison == "agrees" and .tamper == null
               and (.compared | length) == 9 and .perturbation.refused > 0;
             .row == "reject-and-retract-refund-controls"
-            and .verdict == "agrees-with-model"
+            and .verdict == "unmet-by-ruling"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
             and (.steps | length) == 10
@@ -470,10 +526,12 @@ jobs:
           cp "$f" "$STORY_RECEIPTS/"
       # reject-inside-processing-and-retraction-windows (#320): a folder rejects a pending request before its owner's
       # retraction deadline. Two insertion requests are booked together in a
-      # registry of their own; the first is rejected inside its processing
-      # window, the second inside its owner's retraction window. In each window
+      # registry of their own and each is registered Active in this run; a second request
+      # for the same key is then rejected inside its processing window (first key),
+      # the second inside its owner's retraction window, each with bound lifecycle
+      # mismatch evidence. In each window
       # a reject refunding the owner one lovelace short and one refunding
-      # another key are refused by the chain and by the model, and the
+      # another key are refused by the chain and by the model for the refund reason, and the
       # untampered reject is accepted by both, refunding the owner the deposit
       # and leaving the registry state as it was. Each refusal is attributed by
       # the state script's hash, and the reason the traced replay of the
@@ -530,7 +588,17 @@ jobs:
           export CONFORMANCE_DEDICATED_RECEIPTS
           receipts="$CONFORMANCE_DEDICATED_RECEIPTS/reject-inside-processing-and-retraction-windows"
           log="$RUNNER_TEMP/cg24.log"
+          # CI change in this ticket (slice eight-c): handle only complete declared debt.
+          set +e
           bash test/ci/dedicated-row.sh reject-inside-processing-and-retraction-windows -- env REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-inside-processing-and-retraction-windows 2>&1 | tee "$log"
+          run_rc=${PIPESTATUS[0]}
+          set -e
+          test "$run_rc" -eq 1 || { echo "FAIL: row run exit $run_rc, not complete expected debt"; exit 1; }
+          grep -qx 'complete: 1/1 rows ok' "$log" || { echo 'FAIL: incomplete row run, not expected debt'; exit 1; }
+          grep -q '^conformance run: FAILED: ROWS THE RUN CANNOT REPORT AS PASSING' "$log" || { echo 'FAIL: missing debt report'; exit 1; }
+          test "$(sed -n 's/^- Held .*held-q002): //p' "$log")" = none
+          test "$(sed -n 's/^- Unmet by ruling .*unmet-by-ruling): //p' "$log")" = 'reject-inside-processing-and-retraction-windows'
+          test "$(sed -n 's/^- Failing .*accepted): //p' "$log")" = none
           head_sha="$(git rev-parse HEAD)"
           f="$receipts/receipt-reject-inside-processing-and-retraction-windows.json"
           test -f "$f" || { echo 'FAIL: missing reject-inside-processing-and-retraction-windows receipt'; exit 1; }
@@ -545,14 +613,15 @@ jobs:
             def complete: .comparison == "agrees" and .tamper == null
               and (.compared | length) == 9 and .perturbation.refused > 0;
             .row == "reject-inside-processing-and-retraction-windows"
-            and .verdict == "agrees-with-model"
+            and .verdict == "unmet-by-ruling"
             and .base == $base and .dirty == false
             and (.blueprint | text) and (.node | text)
-            and (.steps | length) == 6
-            and all(.steps[]; .edge == "insertActive" and .exit == "reject")
-            and ([.steps[].tamper] == ["short-by-one","other-address",null,"short-by-one","other-address",null])
-            and ([.steps[].model.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
-            and ([.steps[].chain.outcome] == ["refused","refused","accepted","refused","refused","accepted"])
+            and (.steps | length) == 8
+            and all(.steps[]; .edge == "insertActive")
+            and ([.steps[].exit] == ["insertActive","insertActive","reject","reject","reject","reject","reject","reject"])
+            and ([.steps[].tamper] == [null,null,"short-by-one","other-address",null,"short-by-one","other-address",null])
+            and ([.steps[].model.outcome] == ["accepted","accepted","refused","refused","accepted","refused","refused","accepted"])
+            and ([.steps[].chain.outcome] == ["accepted","accepted","refused","refused","accepted","refused","refused","accepted"])
             and all(.steps[]; .comparison == "agrees")
             and all(.steps[] | select(.model.outcome == "accepted"); complete and (.chain.txid | txid))
             and all(.steps[] | select(.model.outcome == "refused");
@@ -561,10 +630,12 @@ jobs:
               and (.chain.refusal.hashes | index($state) != null)
               and (.chain.refusal.scripts | index("state") != null))
             and ([.steps[].registry] | unique | length) == 1
-            and ([.steps[0,1,2].request] | unique | length) == 1
-            and ([.steps[3,4,5].request] | unique | length) == 1
-            and .steps[0].request != .steps[3].request
-            and (.transactions | length) == 2
+            and ([.steps[0,2,3,4].request.key] | unique | length) == 1
+            and ([.steps[1,5,6,7].request.key] | unique | length) == 1
+            and .steps[0].request.key != .steps[1].request.key
+            and .steps[0].request.key == .steps[2].request.key
+            and .steps[1].request.key == .steps[5].request.key
+            and (.transactions | length) == 4
           ' "$f" > /dev/null || { echo 'FAIL: reject-inside-processing-and-retraction-windows early rejection evidence moved'; exit 1; }
           # Each reject is placed in a named window; the interpreter refuses to
           # submit outside it. The run log states each placement with the
@@ -577,7 +648,37 @@ jobs:
           fi
           bash test/ci/replay-evidence.sh steps "$f" || { echo 'FAIL: reject-inside-processing-and-retraction-windows refused steps lack the traced replay of their reason'; exit 1; }
           cp "$f" "$STORY_RECEIPTS/"
-          echo 'GREEN = early rejection held: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (reject-before-deadline-consumer-requirement, unmet-by-ruling).'
+          echo 'GREEN = expected debt held, never implementation acceptance: implementation follows the superseded rule; the ruled rule is not implemented. Legacy comparison only: inside the processing window and inside the retraction window, the untampered reject is accepted by the chain and the model, refunding the owner and leaving the state as it was; the short and misdirected refunds are refused by both for deposit-returned. The consumer R9_reject_needs_rejectable stays unmet (reject-before-deadline-consumer-requirement, unmet-by-ruling).'
+      - name: "Rejection expectation tripwire and run-failure controls"
+        run: |
+          # CI change in this ticket (slice eight-c): existing story expectations.
+          set -eo pipefail
+          cd conformance
+          blueprint="$(nix build --quiet --no-link --print-out-paths ../onchain#plutus-blueprint)"
+          receipts="$CONFORMANCE_DEDICATED_RECEIPTS/rejection-outcome-control"
+          mkdir -p "$receipts"
+          set +e
+          CONFORMANCE_STORY_CONTROL=rejection-outcome REGISTRY_BLUEPRINT="$blueprint" nix run --quiet .#conformance -- run reject-inside-processing-and-retraction-windows --receipts-dir "$receipts" >"$receipts/run.log" 2>&1
+          run_rc=$?
+          set -e
+          test "$run_rc" -eq 1
+          grep -q '^control: seeded two changed rejection outcomes after the real comparisons$' "$receipts/run.log"
+          grep -q 'reject-inside-processing-and-retraction-windows step 4 expected outcome accepted; observed outcome refused (reason: seeded state-spending refusal); changed real outcome; the ruled rule may be deployed' "$receipts/run.log"
+          test ! -e "$receipts/receipt-reject-inside-processing-and-retraction-windows.json"
+          if grep -q '^complete:' "$receipts/run.log"; then echo "FAIL: unexpected completed run or changed-outcome diagnostic"; exit 1; fi
+          # An actual setup failure is not a changed real outcome.
+          broken="$CONFORMANCE_DEDICATED_RECEIPTS/rejection-setup-control"
+          mkdir -p "$broken"
+          set +e
+          REGISTRY_BLUEPRINT="$broken/missing.json" nix run --quiet .#conformance -- run reject-inside-processing-and-retraction-windows --receipts-dir "$broken" >"$broken/run.log" 2>&1
+          broken_rc=$?
+          set -e
+          test "$broken_rc" -ne 0
+          grep -q 'missing.json' "$broken/run.log"
+          if grep -q 'changed real outcome' "$broken/run.log"; then echo "FAIL: unexpected completed run or changed-outcome diagnostic"; exit 1; fi
+          if grep -q '^complete:' "$broken/run.log"; then echo "FAIL: unexpected completed run or changed-outcome diagnostic"; exit 1; fi
+          test ! -e "$broken/receipt-reject-inside-processing-and-retraction-windows.json"
+          echo 'Control passed: changed outcome fails the expectation; setup failure produces no complete debt receipt and no deployment claim.'
       # The timing refusals are compared in their own finite-window story.
       # The exit chapter above compares the other retraction admission refusals.
       - name: Collect this part's receipts

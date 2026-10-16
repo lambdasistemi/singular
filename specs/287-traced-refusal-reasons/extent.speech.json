@@ -31,7 +31,7 @@
       "pause": 500
     },
     {
-      "text": "Rebound 2026-10-02 to main 13f2b2e (#320's validators, #344's batch questions) under the operator's narrowed acceptance. Class A is not listed: it is every refusal whose step or batch carries an executed model reason, recorded by the runner — the story rows' refused steps (insert-occupied-key, retract-outside-window, register-active-key, retire-active-key, reject-and-retract-refund-controls, reject-inside-processing-and-retraction-windows), the fold batches (empty-fold's empty fold, register-active-key's two-key batch whose mint is moved onto its first key) and the reject batches (request-value-and-refund-routing's crossed refunds and its rejected-floor control, reject-before-deadline-consumer-requirement's short reject control), each compared with the reason the traced replay admits for the state script. reject-before-deadline-consumer-requirement's row transaction is accepted by the chain and by the model, so it is no refusal; its consumer requirement stays unmet by ruling (operator 2026-10-01).",
+      "text": "Rebound 2026-10-02 to main 13f2b2e (#320's validators, #344's batch questions) under the operator's narrowed acceptance, amended 2026-10-13 for decision B (protected rejection in-window: the dedicated mismatch row green, the foldable row unmet for lambdasistemi/singular#495). Class A is not listed: it is every refusal whose step or batch carries an executed model reason, recorded by the runner — the story rows' refused steps (insert-occupied-key, retract-outside-window, register-active-key, retire-active-key, reject-and-retract-refund-controls, reject-inside-processing-and-retraction-windows with lifecycle mismatch), the fold batches (empty-fold's empty fold, register-active-key's two-key batch whose mint is moved onto its first key) and the reject batches (request-value-and-refund-routing's crossed refunds and its rejected-floor control), each compared with the reason the traced replay admits for the state script. reject-before-deadline-consumer-requirement's two tampered batches are refused by both for different reasons (model reject-not-expired, replay deposit-returned); its untampered batch is accepted by the chain with no refusal, so it is no refusal; its consumer requirement stays unmet by ruling (operator 2026-10-01).",
       "pause": 400
     },
     {
@@ -47,13 +47,13 @@
       "pause": 400
     }
   ],
-  "a-conflict-the-compared-rejects-avoid": [
+  "a-conflict-the-compared-lawful-rejects-avoid": [
     {
-      "text": "A conflict the compared rejects avoid.",
+      "text": "A conflict the compared lawful rejects avoid.",
       "pause": 500
     },
     {
-      "text": "The reject comparisons (reject-before-deadline-consumer-requirement's control, request-value-and-refund-routing's crossed refunds and its rejected-floor control, and the story chapters' one-lovelace-short rejects) agree only for the shape their fixtures give the transaction: every output at a request owner's key is that owner's refund. The chain and the model read an owner's payment differently, and a transaction of another shape separates them. Operator ruling 2026-10-02, \"Record now, fix later\": reject-before-deadline-consumer-requirement submits that shape on the devnet and records the disagreement in its receipt (the class D row above), never as a pass; reject-refund equivalence in general stays unmet, lambdasistemi/singular#361.",
+      "text": "The lawful reject comparisons (request-value-and-refund-routing's crossed refunds and its rejected-floor control, and the story chapters' one-lovelace-short rejects, including the dedicated mismatch row's tampered refunds) agree only for the shape their fixtures give the transaction: every output at a request owner's key is that owner's refund. The chain and the model read an owner's payment differently, and a transaction of another shape separates them. Operator ruling 2026-10-02, \"Record now, fix later\": the split shape (one lovelace short at the refund's position and two ada more in another output at the owner's key) is refused by the chain for deposit-returned while the model, summing the owner's outputs, would accept; reject-refund equivalence in general stays unmet, lambdasistemi/singular#361. In-window while protected holds, the foldable row's split no longer diverges as 361 (the model refuses first for reject-not-expired); its chain refusal for deposit-returned stays in replay as part of the protected divergences above.",
       "pause": 400
     },
     {
@@ -63,6 +63,6 @@
   ],
   "_source": {
     "file": "extent.md",
-    "sha256": "9f5906bfdaf202636108dcea67be2e55945110ed2a7f224e1fdbffa14749979c"
+    "sha256": "ed06d779a29bb60f246863f3e3440166c3f5eeeaabb20292865004e8e8b865b4"
   }
 }

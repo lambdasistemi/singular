@@ -1,0 +1,286 @@
+{
+  "mandate-ticket-494-protected-rejection-in-the-lean-model": [
+    {
+      "text": "Mandate: ticket 494, protected rejection in the Lean model.",
+      "pause": 500
+    },
+    {
+      "text": "This page is the whole contract a coder and an auditor are given for ticket 494. It binds the work to an exact tree, quotes the rulings that govern it, lists the acceptance items with the check that proves each, names what is out of scope, and states the evidence the pull request will carry before any work starts. The coder and the auditor named below are launched only after the plan, rebased onto the current main, has been reviewed.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the epic owner reviewing this mandate, I read one page and find every fact a coder needs and every limit a coder must respect, so that no coder wanders into a neighbouring ticket and no auditor judges against a stale tree.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "The ticket touches no shipped command line. It changes the Lean model and everything generated from or checked against it; the operator command that will one day carry the rule belongs to tickets 495 and 496.",
+      "pause": 400
+    }
+  ],
+  "the-paramount-story": [
+    {
+      "text": "The paramount story.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I book a valid request and observe that a permissionless processor cannot cancel it and collect its tip without satisfying an explicit rejection rule.",
+      "pause": 400
+    }
+  ],
+  "rulings-in-force": [
+    {
+      "text": "Rulings in force.",
+      "pause": 500
+    },
+    {
+      "text": "The three rulings that decide the rule are quoted here in full, as the operator gave them, and again in the brief of each slice that implements them. The decisions page gives their stories. The rulings from the epic owner's brief of 9 October 2026 that bound this ticket follow.",
+      "pause": 400
+    }
+  ],
+  "a-lifecycle-mismatch-permits-immediate-rejection": [
+    {
+      "text": "A lifecycle mismatch permits immediate rejection.",
+      "pause": 500
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    },
+    {
+      "text": "Refund amounts are unchanged by it, and ticket 361 is not resolved by it.",
+      "pause": 400
+    }
+  ],
+  "expiry-follows-both-windows": [
+    {
+      "text": "Expiry follows both windows.",
+      "pause": 500
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    }
+  ],
+  "a-batch-is-judged-on-the-state-its-earlier-actions-left": [
+    {
+      "text": "A batch is judged on the state its earlier actions left.",
+      "pause": 500
+    },
+    {
+      "text": "Each action is judged against the state left by preceding actions in the same ordered batch. Rejection evidence binds that intermediate registry state/root.",
+      "pause": 400
+    }
+  ],
+  "a-request-naming-an-excluded-edge-is-rejectable-at-once": [
+    {
+      "text": "A request naming an excluded edge is rejectable at once.",
+      "pause": 500
+    },
+    {
+      "text": "Epic owner ruling of 9 October 2026, as an application of the first ruling and not a new operator decision: the first ruling admits rejection on \"authenticated incompatibility with the current lifecycle state\". Singular.transition gives no successor for an excluded edge at any leaf, so such a request is incompatible with every current state and is rejectable at once with the lifecycle evidence.",
+      "pause": 400
+    }
+  ],
+  "what-the-public-suite-shows-until-the-validators-change": [
+    {
+      "text": "What the public suite shows until the validators change.",
+      "pause": 500
+    },
+    {
+      "text": "Decision of 9 October 2026 (operator ruling, option B): this ticket merges alone, ahead of ticket 495. After it the suite shows two rows, and the second is never counted as passing.",
+      "pause": 400
+    },
+    {
+      "text": "The rejection at once, with lifecycle evidence, of a request that cannot be folded: model and chain both accept and the owner is refunded. This row is green.",
+      "pause": 300
+    },
+    {
+      "text": "The rejection, inside the windows, of a foldable request: an insertActive request for a key not yet registered. The model refuses and the chain accepts. The row is published as unmet by ruling, with a tripwire that turns red unless ticket 495 changes the validators so that the two agree; ticket 495's acceptance includes that flip.",
+      "pause": 300
+    },
+    {
+      "text": "The row books a foldable insertion because the insertion the standing row books today names an edge the two-edge model excludes, which is rejectable at once and would leave the row without its subject.",
+      "pause": 400
+    }
+  ],
+  "the-economic-design-and-the-paper": [
+    {
+      "text": "The economic design and the paper.",
+      "pause": 500
+    },
+    {
+      "text": "Operator, 13 October 2026: \"what I want is the lean model done, and from it the full economic system explained in a paper, so I get a review now\"; \"the paper will be reviewed by a scientist; do not gloss over details\". The operator then ruled each point of the review of the paper's first draft, and the earlier design (a bond forfeited at a booking root, a processor split and a termination fee) is withdrawn. The decided design, in short:",
+      "pause": 400
+    },
+    {
+      "text": "no bond, no split, no booking root and no termination fee;",
+      "pause": 300
+    },
+    {
+      "text": "a successful registration donates a registration cost to the treasury;",
+      "pause": 300
+    },
+    {
+      "text": "a rejection reads the registry state output by reference, is batchable and never spends it;",
+      "pause": 300
+    },
+    {
+      "text": "a termination carries the singular tag and no application tag (amended on 15 October 2026), cannot expire, cannot be retracted and cannot be rejected (a statement over reachable worlds), and donates everything but the tip;",
+      "pause": 300
+    },
+    {
+      "text": "a minimum tip pinned by the registry is checked at booking; it replaces the old fee pin in the same state field, and the processor takes exactly the declared tip (amended on 15 October 2026);",
+      "pause": 300
+    },
+    {
+      "text": "the booked time is the upper end of a booking interval at most a pinned width wide;",
+      "pause": 300
+    },
+    {
+      "text": "every parameter is fixed at creation, with no authority to change it;",
+      "pause": 300
+    },
+    {
+      "text": "the trie-ready tag (the syntax tag until 15 October 2026) is minted at booking only with its precondition present (the application tag for a registration, the singular tag for a termination) and burned by every exit; a registration's application tag is burned by every exit too, never returned; an output at the request address lacking the trie-ready tag may be spent by anyone;",
+      "pause": 300
+    },
+    {
+      "text": "the request policy refuses any request whose contents are not exactly those the design allows.",
+      "pause": 300
+    },
+    {
+      "text": "Operator, 14 October 2026: \"the research on the economics is done, so it's time to produce the paper and wake up the lean worker\"; then \"Let's wait for the lean rework before the paper\", so that the paper can refer to the model. The model states all of the design with the treasury donation as a transaction field; its properties are theorems, and where a property does not hold the model says so with the counterexample and no statement is weakened to make it prove. The plan holds the slices. Validators, builders and verification move after Demo 1.",
+      "pause": 400
+    }
+  ],
+  "only-two-grounds": [
+    {
+      "text": "Only two grounds.",
+      "pause": 500
+    },
+    {
+      "text": "Exactly two grounds authorize rejection, a lifecycle mismatch and expiry. A provider failure, a missing processor-supplied input, an invalid proof and a generic script failure are never evidence of inadmissibility (operator scope confirmation, recorded on the decisions page).",
+      "pause": 400
+    }
+  ],
+  "the-command-line-split-the-datum-the-tag-and-the-staffing": [
+    {
+      "text": "The command-line split, the datum, the tag and the staffing.",
+      "pause": 500
+    },
+    {
+      "text": "the Singular CLI is the registry; the open datum is its own executable built on the Singular library. Build against the library's request and fold, not the open-datum envelope. Desk answer t528 Q-001: singular links no application code; the termination fold moves to the application's executable.",
+      "pause": 400
+    },
+    {
+      "text": "the request keeps carrying its datum inline and the application decides its size.",
+      "pause": 400
+    },
+    {
+      "text": "The inline datum has no size cap (operator, 9 October 2026). Nothing in this ticket adds one.",
+      "pause": 400
+    },
+    {
+      "text": "every request carries a tag minted by Singular's request policy; the bond at mint and forfeit on rejection are specified in #529; #494's rule is what makes a heavy forfeit safe. #494 does not model the tag or the bond; name where it hands off.",
+      "pause": 400
+    },
+    {
+      "text": "The handoff is the \"What a rejection does\" and \"What a batch binds\" sections of the evidence contract: an admitted rejection leaves the state, mints nothing and owes the deposit; ticket 529 attaches the bond forfeit to an admitted rejection and nothing earlier.",
+      "pause": 400
+    },
+    {
+      "text": "Amended on 14 October 2026 by the decided design: the economic slices model the syntax tag as far as the design needs it, that is, what a booking guarantees about a pending request (its provenance); the mint validator that enforces it stays with ticket 529, and no validator, builder or command is touched. There is no bond to model.",
+      "pause": 400
+    },
+    {
+      "text": "Amended on 15 October 2026 by the operator's rulings: the syntax tag is renamed the trie-ready tag and is minted only with its precondition present; a termination carries no application tag; the fee pin is retired and the minimum tip replaces it in the same state field; the carrier amount is set by the ledger and declared by the requester. The plan takes them in slices seven-b and seven-c, after the move of slice eight-a (see the decisions). No validator, builder or command is touched.",
+      "pause": 400
+    },
+    {
+      "text": "Codex is out for now. Claude seats at the highest levels, GLM and Muse at the working levels.",
+      "pause": 400
+    },
+    {
+      "text": "Applied, as amended for coding on 13 October 2026: ticket owner Claude Sonnet 5.5 at extra-high effort; commit owner Muse (muse --approve); mute persistent auditor Grok (grok --always-approve -m grok-4.7 --effort high) in a read-only detached audit worktree; a gate author, also Grok, only for a gate row whose command or subject the rebase changed; no draft tool. The GLM quota is exhausted until 14 October 2026, so no seat alternates or races while it is out.",
+      "pause": 400
+    },
+    {
+      "text": "One merge into main at a time, in the order the desk publishes. Nobody rebases, retargets or merges without a slot.",
+      "pause": 400
+    },
+    {
+      "text": "Applied: validators and Lean (505, 494, 495, 529, 506) are one surface and strictly serial in that order. The command-line split (528) and ticket 505 have merged and coding was released on 13 October 2026; this ticket merges only in the slot the desk grants and rebases only at a safe boundary.",
+      "pause": 400
+    }
+  ],
+  "acceptance-each-item-with-the-check-that-proves-it": [
+    {
+      "text": "Acceptance, each item with the check that proves it.",
+      "pause": 500
+    },
+    {
+      "text": "The gate is the existing CI commands in the gate, frozen before any coder runs, written by the ticket owner and an independent author and synthesized once. Hosted checks on the exact head are the net for every item.",
+      "pause": 400
+    }
+  ],
+  "out-of-scope-by-number": [
+    {
+      "text": "Out of scope, by number.",
+      "pause": 500
+    },
+    {
+      "text": "Tickets 495 (validators), 496 (off-chain evidence and builders), 497 (connected acceptance), 487 (rejection as a separate command), 529 (the trie-ready tag and its mint; the bond is modelled here), 361 (the refund policy), 500 (address pollution), 528 (the command-line split), 506 (verification of the packaged two-edge contract), 532 (the approval a reject sends to the folder's change) and 310 (the open-datum application, except regenerating its committed corpus). A coder who needs to change something owned by one of them stops and reports it.",
+      "pause": 400
+    }
+  ],
+  "the-coders-brief-and-the-auditor": [
+    {
+      "text": "The coder's brief and the auditor.",
+      "pause": 500
+    },
+    {
+      "text": "The coder receives one brief per slice, each the whole of that slice with a terminal condition of green, blocked or at capacity: slice one, slice two, slice three and slice four. No run is counted and no nudge is sent. The auditor is launched beside the coder from its first run, reads commits and receipts only, and is mute toward the coder; the ticket owner carries one-line pointers between them. The push waits for every checkpoint approved.",
+      "pause": 400
+    }
+  ],
+  "evidence-the-pull-request-will-carry-and-what-stays-uncovered": [
+    {
+      "text": "Evidence the pull request will carry, and what stays uncovered.",
+      "pause": 500
+    },
+    {
+      "text": "The pull request body is a fill-in of the repository's pull request template, whose sections are filled from this table; no essay is written at the end. It names the superseded earlier attempt, pull request 508 at head a7224021.",
+      "pause": 400
+    },
+    {
+      "text": "Left uncovered by this ticket, and stated as such in the body: the validators (495); evidence construction and every builder (496); any ledger acceptance of protected rejection (497); a concrete proof format and its verifier; a live mixed batch, since no mixed transaction is built; the refund discrepancy (361); address pollution (500); the tip's routing; and, until the validators change, the chain's acceptance of a rejection the model refuses, published as unmet. Fold-time admission is unchanged.",
+      "pause": 400
+    }
+  ],
+  "budget": [
+    {
+      "text": "Budget.",
+      "pause": 500
+    },
+    {
+      "text": "One team per epic at a time. Each slice is one coder run and is cut again if it will run for hours. The operator is on credits: the coder is Muse, the auditor is Grok, and no further seat is authorized.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "mandate.md",
+    "sha256": "ead5e2c3a20d94846b784d75ca752a66722490ac05cd52838013aa148574d76a"
+  }
+}

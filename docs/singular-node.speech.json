@@ -5,6 +5,10 @@
       "pause": 500
     },
     {
+      "text": "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance.",
+      "pause": 400
+    },
+    {
       "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
       "pause": 400
     },
@@ -317,6 +321,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "79fc7ee843da15ea299e037a1c9f3e7aa07c4de200e73a0fd7bc0f51d4628cbb"
+    "sha256": "87e0d2a783c04fb082b61348df1422198909bfdd205180291bc5ea7ca7db39a6"
   }
 }

@@ -1,0 +1,136 @@
+{
+  "the-economic-contract-released-to-the-validator-and-builder-tickets": [
+    {
+      "text": "The economic contract released to the validator and builder tickets.",
+      "pause": 500
+    },
+    {
+      "text": "This page is the contract that the validator, builder and connected-acceptance tickets consume for the ruled economics of the registry (decided on 13 and 14 October 2026 and amended on 15 and 16 October). It states, for each action, what a transaction must contain, which refusal the model names for each way it can fail, in the order the model checks them, and what the model leaves to the implementation. It is written at the model's level: it fixes facts and their order, not byte encodings, redeemer layouts, proof formats or fees, which the consuming tickets choose and must show correspond. Where the model and a validator disagree, the model is the authority and the validator follows. The earlier rejection evidence contract describes the first stage of this ticket, which the model keeps as a named legacy path; this page replaces it as the contract for rejection, retraction and the fold.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As the author of a validator or a builder, I read for each action what the transaction holds, what the model refuses and by which name, and what is left to me, so that a transaction built by someone who bypasses every command line is still refused unless it satisfies the rule.",
+      "pause": 400
+    }
+  ],
+  "the-life-of-a-request": [
+    {
+      "text": "The life of a request.",
+      "pause": 500
+    },
+    {
+      "text": "A termination can only be folded: it cannot be rejected and it cannot be retracted. Every exit burns the request's trie-ready tag; the exits of a registration also burn its application tag. A fold of a registration mints the singular tag at the destination; a fold of a termination burns the singular tag.",
+      "pause": 400
+    }
+  ],
+  "what-every-judgement-observes-first": [
+    {
+      "text": "What every judgement observes first.",
+      "pause": 500
+    },
+    {
+      "text": "Each action is judged over an observed set of unspent outputs together with the pending requests the model holds. The consumer must present that observation faithfully; a mismatch is refused before any rule of the action is looked at.",
+      "pause": 400
+    },
+    {
+      "text": "An output at the request address that holds no trie-ready tag is not a request and anyone may spend it; a tagged output leaves only through an exit that burns its tags (request-input-missing, not-request-address, request-tagged-sweep, request-tag-not-burned; a sweep that duplicates or overlaps inputs is refused as request-duplicate-input or request-input-overlap).",
+      "pause": 400
+    }
+  ],
+  "booking-a-registration": [
+    {
+      "text": "Booking a registration.",
+      "pause": 500
+    },
+    {
+      "text": "The transaction creates one pending registration at the request address. It holds exactly the registration cost, the declared tip and the declared carrier amount in lovelace, one application tag bound to the key, the refund address, the destination and the request's nonce, and one trie-ready tag bound to the operation; the booking mints exactly those two tags. The booked time is the upper end of the booking's validity interval.",
+      "pause": 400
+    },
+    {
+      "text": "The carrier amount is the requester's declaration; the model does not say that it equals or covers the ledger's minimum. The application's authorization of the application tag is the application's own rule and is not executed by this judgement.",
+      "pause": 400
+    }
+  ],
+  "booking-a-termination": [
+    {
+      "text": "Booking a termination.",
+      "pause": 500
+    },
+    {
+      "text": "The transaction moves the key's genuine singular tag from application custody into one pending termination at the request address. The termination holds the declared tip and the declared carrier amount, the singular tag and a trie-ready tag, and nothing else: no application tag, no refund address, no booked time.",
+      "pause": 400
+    },
+    {
+      "text": "The application's consent to a termination is the release of the singular tag from its custody; Singular checks the tag, not the application's rule.",
+      "pause": 400
+    }
+  ],
+  "rejection-by-reference-read": [
+    {
+      "text": "Rejection by reference read.",
+      "pause": 500
+    },
+    {
+      "text": "A rejection judges one or more pending registrations in one transaction against the current state, which it reads by reference and never spends. Every member is admitted on a lifecycle mismatch (the leaf the key holds gives the request's edge no successor) or on expiry (the validity interval's lower bound is at or after the booked time plus the processing window plus the reclaim window). A termination is never admitted.",
+      "pause": 400
+    },
+    {
+      "text": "The registry state output is never spent. The processor keeps the tips: the model states the refund floor, not an exact processor take on a rejection, and promises no wage.",
+      "pause": 400
+    }
+  ],
+  "retraction": [
+    {
+      "text": "Retraction.",
+      "pause": 500
+    },
+    {
+      "text": "The refund address of a pending registration retracts it inside its reclaim window, and the requester's own ordinary outputs pay the ledger fee. The state output is neither read nor spent.",
+      "pause": 400
+    },
+    {
+      "text": "Change may go to any address: the model has no wallet-ownership or output-purpose observation, so a payment to another address of the requester's change cannot be told from a payment to a third party. What it proves is that the request's cost and tip reach only the refund address and that what is paid elsewhere is at most the ordinary funding left after the fee.",
+      "pause": 400
+    }
+  ],
+  "the-economic-fold": [
+    {
+      "text": "The economic fold.",
+      "pause": 500
+    },
+    {
+      "text": "A fold consumes pending requests by reference, spends the registry state output and continues it with the registry's own batch transition. A registration is admitted only inside its processing window with a non-empty interval whose lower bound is its booked time; a termination has no window and no clock.",
+      "pause": 400
+    },
+    {
+      "text": "What the processors take is exactly the declared tips, paid out of ordinary funding together with the fee: ordinary outputs plus the fee equal ordinary inputs plus the sum of the tips. The carrier holds exactly its declared value; ordinary change is a separate output even when addresses coincide.",
+      "pause": 400
+    }
+  ],
+  "what-each-action-is-covered-by": [
+    {
+      "text": "What each action is covered by.",
+      "pause": 500
+    }
+  ],
+  "what-the-model-leaves-to-the-implementation": [
+    {
+      "text": "What the model leaves to the implementation.",
+      "pause": 500
+    },
+    {
+      "text": "The byte encoding of requests, tags and transactions, the redeemer layouts, the authentication of the logical read of the state against the Merkle trie (the model states the read, not proof bytes), the rule of each application for authorizing a registration and releasing a singular tag, the choice of the carrier amount and its ledger minimum, wallet funding availability, how a processor finds the pending requests, fees and their envelope, inclusion and priority, and the measured values of the registration cost, the minimum tip and the booking width. None of them may weaken the rows above; each must show correspondence. Until a validator or a builder shows it, the live conformance rows that follow the earlier rules stay published as unmet.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "economic-contract.md",
+    "sha256": "bca714f0aa72d3aeaf4042d4890b7b35b6d8c97fb4b21bebfd5dd531405cec41"
+  }
+}

@@ -6,6 +6,7 @@
 // distinct failures.
 import { readdirSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { filesBelow } from './identity.mjs';
 
 const root = new URL('../', import.meta.url);
 const mirror = new URL('formal/', import.meta.url);
@@ -14,14 +15,15 @@ const digest = (url) => createHash('sha256').update(readFileSync(url)).digest('h
 // The canonical extent, read out of the tree rather than listed here: a model
 // file added under lean/ and not mirrored must fail this, not be invisible to it.
 const canonical = new Map();
-for (const f of readdirSync(new URL('lean/Singular/', root)))
+for (const f of filesBelow(new URL('lean/Singular/', root)))
   canonical.set(f, new URL(`lean/Singular/${f}`, root));
 // Every top-level Lean source: the library root, which decides what `lake build`
 // compiles at all, and each corpus generator. Read off the directory rather than
 // named one by one — Main.lean was mirrored and LifecycleMain.lean was not, so
 // the generator that emits the wire rows could change with the mirror silent.
-for (const f of readdirSync(new URL('lean/', root)))
-  if (f.endsWith('.lean')) canonical.set(f, new URL(`lean/${f}`, root));
+for (const f of filesBelow(new URL('lean/', root)))
+  if (!f.startsWith('Singular/') && f.endsWith('.lean'))
+    canonical.set(f, new URL(`lean/${f}`, root));
 for (const f of readdirSync(new URL('lean/', root)))
   if (f.endsWith('theorem-debt.json')) canonical.set(f, new URL(`lean/${f}`, root));
 
@@ -32,7 +34,7 @@ const problemsCorpus =
     ? []
     : ['stale beside the page: corpus.json'];
 
-const mirrored = new Set(readdirSync(mirror).filter((f) => f !== 'README.md'));
+const mirrored = new Set(filesBelow(mirror).filter((f) => f !== 'README.md'));
 const problems = [...problemsCorpus];
 for (const [name, source] of canonical) {
   if (!mirrored.has(name)) {

@@ -1,5 +1,5 @@
 -- | A book rendered from the same programs the live backend executes.
-module Conformance.Book (renderBook, bookStories, bookReceipts) where
+module Conformance.Book (renderBook, bookStories, bookUnmet, bookReceipts) where
 
 import Conformance.Edge.Permanent qualified as Permanent
 import Conformance.Edge.Programs
@@ -7,12 +7,18 @@ import Conformance.Edge.Programs
     , Classification (..)
     , Kind (..)
     , Program (..)
+    , Standing (Unmet)
     , classify
     , displayStory
     , programFor
     , programs
     )
-import Conformance.Receipt (Receipt (..), Verdict (..))
+import Conformance.Receipt
+    ( Receipt (..)
+    , Verdict (..)
+    , unmetReading
+    , unmetRuling
+    )
 import Conformance.Rows (Row (..), RowState (..))
 import Conformance.Story.Live (renderLive)
 import Data.Aeson (Value (..))
@@ -26,8 +32,17 @@ import Data.Text qualified as T
 bookStories :: [String]
 bookStories = [programRow p | p <- programs, isJust (programChapter p)]
 
-{- | The receipts a book renders: one per story of the book, each agreeing
-with the model, in book order; a missing or disagreeing story is refused,
+-- | The exact unmet chapters whose completed run still exits with debt.
+bookUnmet :: [String]
+bookUnmet =
+    [ programRow p
+    | p <- programs
+    , isJust (programChapter p)
+    , Unmet{} <- [programStanding p]
+    ]
+
+{- | The receipts a book renders: one per story of the book, each carrying
+its declared standing, in book order; a missing or wrongly labelled story is refused,
 named.
 -}
 bookReceipts :: [Receipt] -> Either String [Receipt]
@@ -35,12 +50,15 @@ bookReceipts receipts = traverse story bookStories
   where
     story name = case [r | r <- receipts, receiptRow r == T.pack name] of
         [r]
-            | receiptVerdict r == AgreesWithModel -> Right r
+            | receiptVerdict r == expected name -> Right r
             | otherwise ->
                 Left
-                    ("the book's " <> name <> " receipt does not agree with the model")
+                    ("the book's " <> name <> " receipt has the wrong standing")
         [] -> Left ("the book run has no receipt for " <> name)
         _ -> Left ("the book run has more than one receipt for " <> name)
+    expected name
+        | name `elem` bookUnmet = UnmetByRuling
+        | otherwise = AgreesWithModel
 
 -- | Called only after both live stories and their observations have succeeded.
 renderBook :: [Row] -> [Receipt] -> String
@@ -56,7 +74,7 @@ renderBook requirements receipts =
         <> "The following program requires the new permanent registry and bounded model evaluator. No live conformance receipt for it is attached to this book; its inventory row remains uncovered. Exported-code component checks and the ordinary packaged CLI journey are separate evidence boundaries. Earlier deployed registries are abandoned. Protected rejection follows this carve with its own identity change and remains required before the first milestone closes.\n\n"
         <> Permanent.description
         <> "## What these runs do not establish\n\n"
-        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The registration chapter folds two registrations in one transaction that mints both tokens at the first request's key; it is compared on its outcome and, both refusing, on the reason. The model builds no transaction for a batch, so no other observation of a batch is compared. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The original Absent retirement and deletion-refund requirements remain published and uncovered. The current retirement chapter starts from a reached Active registration; excluded encodings create no Absent state, and their refusals receive no credit for those broader requirements. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
+        <> "Every declared observation of an accepted request in the running chapters is compared with the model: configuration, custody, held tokens, leaf, mint, payments, root, the resulting state and the transaction. Output minimum ada remains a named unobservable. The transaction's required signers are compared: the model requires none for a fold and the owner for a retraction, and the comparison reads them from the submitted transaction. The registration chapter folds two registrations in one transaction that mints both tokens at the first request's key; it is compared on its outcome and, both refusing, on the reason. The model builds no transaction for a batch, so no other observation of a batch is compared. For any step whose receipt reports unsupported, no acceptance or refusal of a completed chain fold is established; the observed reasons are published in the appendix. The original Absent retirement and deletion-refund requirements remain published and uncovered. The current retirement chapter starts from a reached Active registration; excluded encodings create no Absent state, and their refusals receive no credit for those broader requirements. The model admits a retraction only when the pending request inserts a key or reads a terminal one, its owner is among the transaction's required signers, and its validity interval lies inside phase 2. The interval starts no earlier than submission plus the processing time; its excluded upper bound may reach, but not pass, the end of the retraction time that follows. The model represents only finite validity bounds. Open validity intervals remain a named gap: the Aiken tests establish their not-phase2 refusal, but no live model comparison can represent them. The early rejections are compared in the processing window and the retraction window of one registry, each for a key registered Active in the run and rejected at once with bound lifecycle mismatch evidence; a fold of an update in the retraction window is not compared there, because the validator refuses it while the model admits it, a separate tracked discrepancy. These examples exercise one local devnet and one protocol-parameter set; they do not establish every reachable state, every theorem consumer, or naming-application behavior beyond the observed approval.\n\n"
         <> refusalLimits
         <> "## Requirements inventory\n\n"
         <> "The descriptions and planned statuses below are preserved from the committed inventory. The transaction evidence above belongs to this particular run; it does not rewrite planned statuses or discharge unrelated requirements.\n\n"
@@ -81,6 +99,14 @@ renderBook requirements receipts =
             <> "`. Compiled validators: `"
             <> T.unpack (receiptBlueprint receipt)
             <> "`.\n\n"
+            <> ( if receiptVerdict receipt == UnmetByRuling
+                    then
+                        maybe
+                            ""
+                            ((<> ".\n\n") . T.unpack . unmetReading)
+                            (unmetRuling (receiptRow receipt))
+                    else ""
+               )
             <> maybe
                 ""
                 ( \steps -> case programFor (T.unpack (receiptRow receipt)) >>= programChapter of
@@ -339,7 +365,7 @@ renderBook requirements receipts =
             <> " replay admits none, and "
             <> counted (recorded null) "records" "record"
             <> " no traced replay.\n\n"
-            <> "Refusals outside these chapters, by row, recorded in the receipts of the conformance session rather than in this book. Three have no counterpart in the model, so their model comparison is unmet: each receipt carries the verdict unmet by ruling and shows what the traced replay of the refusal recorded. wrong-redeemer-constructor-index, a fold redeemer at a wrong constructor index: the model has no vocabulary for decoding a redeemer; the witness script names its refusal, while the state and request scripts fail on a path that carries no user-defined trace, so their live refusal reason is not observed (lambdasistemi/singular#347). fold-against-superseded-root, a fold whose proof was built against a root the registry has since superseded: the model takes no proof and no authenticated root and admits the insertion on that unoccupied key, so nothing compares with the chain's reason (lambdasistemi/singular#346). surplus-fold-actions, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345). The other refusals are compared with the model's batch questions, each against the reason the traced replay admits for the state script: empty-fold, an empty fold, with the fold batch over no request; request-value-and-refund-routing, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays; and reject-before-deadline-consumer-requirement's control, a reject refunding its owner one lovelace short, with the reject batch of that one request. reject-before-deadline-consumer-requirement itself, a reject while the request can still be folded, is accepted by the chain and by the model, while the consuming project requires it refused: that requirement stays unmet by ruling. Where a reject pays its owner, the chain and the model read the payment differently: the chain requires the output in each refund's position to pay that request's owner what it is owed, while the model credits an owner the sum of every output at its key. A reject paying its owner short in the refund's position and the rest in another output at the same key is refused by the chain and accepted by the model: reject-before-deadline-consumer-requirement's receipt records that disagreement from a devnet run, a known divergence and never a pass (lambdasistemi/singular#361). Every compared reject, here and in the conformance session, leaves no other output at its owners' keys, so their agreement holds for that shape only. Whether empty-fold and request-value-and-refund-routing meet the consuming project's requirements remains unresolved; the two rows stay held.\n\n"
+            <> "Refusals outside these chapters, by row, recorded in the receipts of the conformance session rather than in this book. Three have no counterpart in the model, so their model comparison is unmet: each receipt carries the verdict unmet by ruling and shows what the traced replay of the refusal recorded. wrong-redeemer-constructor-index, a fold redeemer at a wrong constructor index: the model has no vocabulary for decoding a redeemer; the witness script names its refusal, while the state and request scripts fail on a path that carries no user-defined trace, so their live refusal reason is not observed (lambdasistemi/singular#347). fold-against-superseded-root, a fold whose proof was built against a root the registry has since superseded: the model takes no proof and no authenticated root and admits the insertion on that unoccupied key, so nothing compares with the chain's reason (lambdasistemi/singular#346). surplus-fold-actions, a fold carrying an action beyond its requests, and one missing an action: the model takes no action list (lambdasistemi/singular#345). The other refusals are compared with the model's batch questions, each against the reason the traced replay admits for the state script: empty-fold, an empty fold, with the fold batch over no request; request-value-and-refund-routing, two rejects whose refunds are crossed and two whose first refund is short, with the reject batch judged on the refunds the transaction pays; and reject-before-deadline-consumer-requirement's three batches, each with the reject batch of one foldable insertion: two refund tampers refused by both for different reasons (the model for `reject-not-expired`, the chain for `deposit-returned` with that reason in replay) and the untampered refused by the model for `reject-not-expired` and accepted by the chain, each recorded as a divergence for `lambdasistemi/singular#495`. reject-before-deadline-consumer-requirement itself, a reject of a foldable insertion while it can still be folded, is refused by the model and accepted by the chain, while the consuming project requires it refused: that requirement stays unmet by ruling. Where a reject pays its owner short in the refund's position and the rest in another output at the same key, the chain and the model read the payment differently (chain by position, model by sum): that split shape no longer diverges as `361` in-window while protected holds (the model refuses first for admission); its chain refusal for `deposit-returned` stays in replay, and `361` as a general refund-position conflict stays open. Every compared lawful reject, here and in the conformance session, leaves no other output at its owners' keys, so their agreement holds for that shape only; the unmet row's divergences hold for the same shape (owners receiving no change) and turn on admission. Whether empty-fold and request-value-and-refund-routing meet the consuming project's requirements remains unresolved. Dated qualification, 2026-10-15: empty-fold stays held; request-value-and-refund-routing is unmet by ruling because implementation follows the superseded rule; the ruled rule is not implemented. Its earlier unresolved consumer requirement remains open.\n\n"
     -- A count with the words that agree with it.
     counted n one many = show n <> " " <> (if n == 1 then one else many)
     -- The capture each refused request's replay was evaluated from: harness

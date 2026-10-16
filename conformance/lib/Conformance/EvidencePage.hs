@@ -396,6 +396,13 @@ layout model rows snap =
     sections =
         [ Section
             2
+            "Current rejection requirements: unmet by ruling"
+            [ "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance."
+            ]
+            [ "Dated qualification, 2026-10-15: rejection after the window, rejection before the deadline, request value and refund routing, rejection and retraction refund controls, and rejection inside the processing and retraction windows are all unmet by ruling: implementation follows the superseded rule; the ruled rule is not implemented. The live comparisons still exercise the legacy rejection that spends the registry state output. The ruled rejection reads that output by reference and never spends it. Agreement with the legacy path is not acceptance of the ruled design. The earlier processing-window consumer requirement and the unresolved refund-routing requirement remain open. Historical results below retain their original revision and evidence binding; they do not establish current acceptance."
+            ]
+        , Section
+            2
             "Permanent registration and termination"
             [ "This bounded story targets the new permanent contract. Its evidence state is computed with the inventory below; historical broader receipts do not execute it. Exported script evaluation and the packaged ordinary CLI journey remain separate boundaries. The new release abandons earlier deployed registries; protected rejection follows this carve before the first milestone can close."
             , ""

@@ -24,6 +24,7 @@ import Data.ByteString.Lazy qualified as BSL
 import Data.Either (isLeft, isRight)
 import Data.Foldable (forM_)
 import Data.List (isInfixOf, isPrefixOf, tails)
+import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import System.Environment (lookupEnv)
@@ -38,7 +39,13 @@ import Test.Hspec
     , shouldSatisfy
     )
 
-import Conformance.Book (bookReceipts, bookStories, renderBook)
+import Conformance.Book
+    ( bookReceipts
+    , bookStories
+    , bookUnmet
+    , renderBook
+    )
+import Conformance.Extent (extentProblems)
 import Conformance.Fixture.NodeRejection (scriptRejection)
 import Conformance.NodeRejection (boundedNodeReason)
 import Conformance.Receipt
@@ -1577,7 +1584,14 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
     it
         "requires a receipt for every story the book runs, the occupied-key story among them"
         $ do
-            let receiptsFor rows = [acceptedLive{receiptRow = T.pack row} | row <- rows]
+            let receiptsFor rows =
+                    [ acceptedLive
+                        { receiptRow = T.pack row
+                        , receiptVerdict =
+                            if row `elem` bookUnmet then UnmetByRuling else AgreesWithModel
+                        }
+                    | row <- rows
+                    ]
                 others =
                     [ "register-active-key"
                     , "permanent-retire-active-key"
@@ -1601,6 +1615,21 @@ replayChecks = describe "Checking the traced replay a refused request carries" $
                        ]
                 )
                 `shouldSatisfy` either ("insert-occupied-key" `isInfixOf`) (const False)
+    it "refuses a book whose unmet chapters are presented as passing" $
+        bookReceipts
+            [acceptedLive{receiptRow = T.pack row} | row <- bookStories]
+            `shouldSatisfy` either (isInfixOf "receipt has the wrong standing") (const False)
+    it
+        "publishes the rejection ruling beside an unmet chapter's observations"
+        $ renderBook
+            []
+            [ acceptedLive
+                { receiptRow = "reject-and-retract-refund-controls"
+                , receiptVerdict = UnmetByRuling
+                }
+            ]
+            `shouldSatisfy` isInfixOf
+                "implementation follows the superseded rule; the ruled rule is not implemented"
     it
         "renders the occupied-key story and the refusal its receipt records"
         $ do
@@ -1917,6 +1946,29 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
                 }
             )
             `shouldReturn` Right 1
+    it
+        "rejects a lawful row carrying a recorded disagreement with the model"
+        $ loadRow
+            ( (emptyFoldWith [divergenceRecord])
+                { receiptRow = "reject-inside-processing-and-retraction-windows"
+                , receiptVerdict = AgreesWithModel
+                }
+            )
+            >>= (`shouldSatisfy` isLeft)
+    it
+        "refuses the protected difference when the unmet row is marked met"
+        $ extentProblems
+            Map.empty
+            [protectedDiffersEntry, protectedControlEntry]
+            [metUnmetRow]
+            `shouldSatisfy` (not . null)
+    it
+        "refuses the protected difference when the unmet row is missing"
+        $ extentProblems
+            Map.empty
+            [protectedDiffersEntry, protectedControlEntry]
+            []
+            `shouldSatisfy` (not . null)
     it "rejects a batch step on a row no batch question compares" $
         loadRow
             ( (emptyFoldWith [refusedBatchRecord])
@@ -1947,6 +1999,46 @@ batchChecks = describe "Checking a batch the model's batch questions compared" $
 -- | A record's chain object.
 batchChain :: Value -> Value
 batchChain record = fromMaybe Null (field "chain" record)
+
+{- | The protected in-window difference decision B records (model `reject-not-expired`,
+replay admits `deposit-returned`), with an accepting control for its script role, as the
+replay index carries it. Removed in validators `495`, when the chain refuses.
+-}
+protectedDiffersEntry :: Value
+protectedDiffersEntry =
+    object
+        [ "kind" .= ("refusal" :: String)
+        , "rejectedTxId" .= ("tx-protected" :: String)
+        , "row" .= ("reject-before-deadline-consumer-requirement" :: String)
+        , "role" .= ("state.state" :: String)
+        , "classes" .= [object ["admitted" .= ("deposit-returned" :: String)]]
+        , "extentClass" .= ("A" :: String)
+        , "modelReason" .= ("reject-not-expired" :: String)
+        , "comparison" .= ("differs" :: String)
+        ]
+
+protectedControlEntry :: Value
+protectedControlEntry =
+    object
+        [ "kind" .= ("accepting-control" :: String)
+        , "controls"
+            .= [ object
+                    [ "role" .= ("state.state" :: String)
+                    , "deployed" .= object ["outcome" .= ("succeeded" :: String)]
+                    , "traced" .= object ["outcome" .= ("succeeded" :: String)]
+                    ]
+               ]
+        ]
+
+{- | The unmet row marked met: the same row with a lawful verdict, which must fail
+the protected difference (tripwire for `495`).
+-}
+metUnmetRow :: Receipt
+metUnmetRow =
+    (emptyFoldWith [])
+        { receiptRow = "reject-before-deadline-consumer-requirement"
+        , receiptVerdict = AgreesWithModel
+        }
 
 {- | A reject batch the chain refused and the model accepted: the recorded
 refund-position divergence, its replay admitting @deposit-returned@ and no

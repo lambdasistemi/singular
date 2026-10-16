@@ -66,6 +66,18 @@ spec = describe "Appendix: binding examples to their specification" $ do
                 source
                 [("missing", ["no such conjunct in any statement"])]
                 `shouldBe` False
+    it "Finds a quoted rule in an imported statement module" $ do
+        sourceE <- loadStatementSource
+        source <-
+            either (\err -> expectationFailure err >> pure "") pure sourceE
+        anchorsPresent
+            source
+            [
+                ( "reference_inputs_not_consumed"
+                , ["theorem reference_inputs_not_consumed"]
+                )
+            ]
+            `shouldBe` True
     it "Detects test titles that use internal reference numbers" $ do
         nameViolation "plain condition and outcome" `shouldBe` False
         nameViolation ("row CG" <> show (21 :: Int) <> " evidence")
@@ -98,7 +110,6 @@ insertActiveConjuncts =
     , "lovelace := r.deposit"
     , "refunds := [(r.output, r.deposit)]"
     , "signers := []"
-    , "lovelaceCoversTip s.config lovelace = true"
     , "destinationDatumBinds r = true"
     , "onlyRootChanged s.config t.state.config = true"
     , "txOf t.state r₂ lovelace = .error \"key-exists\""

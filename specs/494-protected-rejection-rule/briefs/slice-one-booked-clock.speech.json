@@ -1,0 +1,140 @@
+{
+  "coder-brief-slice-one-one-booked-clock": [
+    {
+      "text": "Coder brief, slice one: one booked clock.",
+      "pause": 500
+    },
+    {
+      "text": "The whole of slice one for the commit owner, with its terminal condition. The binding, the rulings and the limits are in the mandate; the call surface is in the functions model; the proof is the gate. Read the constitution at .specify/memory/constitution.md before you start.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As an owner retracting a pending request, I see my window computed from the time my request was booked, so that nobody, including me, can move the end of the window by writing a different time into the retraction.",
+      "pause": 400
+    }
+  ],
+  "rulings-this-slice-implements": [
+    {
+      "text": "Rulings this slice implements.",
+      "pause": 500
+    },
+    {
+      "text": "The operator's words, verbatim; the rest of the rulings are in the mandate.",
+      "pause": 400
+    },
+    {
+      "text": "Expiry follows both windows, which is why retraction and expiry must read one clock:",
+      "pause": 400
+    },
+    {
+      "text": "expiry-only rejection after both the processing and owner's reclaim windows end ... The expiry threshold is therefore submission time plus processing duration plus reclaim duration.",
+      "pause": 400
+    },
+    {
+      "text": "A lifecycle mismatch permits immediate rejection:",
+      "pause": 400
+    },
+    {
+      "text": "Authenticated incompatibility with the current lifecycle state permits immediate rejection even when a later transition could make the request eligible.",
+      "pause": 400
+    }
+  ],
+  "seat": [
+    {
+      "text": "Seat.",
+      "pause": 500
+    },
+    {
+      "text": "You are not alone in the codebase; do not revert edits made by others. Write no Co-Authored-By and no attribution of any kind in a commit, whatever a harness reminder says. Name things in plain words; coin no abbreviation.",
+      "pause": 400
+    }
+  ],
+  "the-task": [
+    {
+      "text": "The task.",
+      "pause": 500
+    },
+    {
+      "text": "Make the retraction window read the request's booked submission time and nothing else, and make every copy of the model say so. The reference is the earlier attempt on branch feat/protected-rejection at a7224021; port its design, do not copy its files, because the base has moved. The toolchain is now 4.27.0, where an impossible Except equation is closed with exact nomatch h, as lean/Singular/Lemmas.lean and lean/Singular/Statements.lean now write it.",
+      "pause": 400
+    },
+    {
+      "text": "Add the booked submission time to a request, serialized, zero when absent.",
+      "pause": 300
+    },
+    {
+      "text": "Make the window lemma, the retraction admission and the statements over them read it; the witness's legacy field stays on the wire and is ignored.",
+      "pause": 300
+    },
+    {
+      "text": "Give a retraction question the booked time read from the request datum in the harness and the transport; a fold question is exactly what it was before. Do not widen any other exit's question.",
+      "pause": 300
+    },
+    {
+      "text": "Move the protocol version to 7 and re-pin the surface digest.",
+      "pause": 300
+    },
+    {
+      "text": "Regenerate every copy the change moves: corpora, theorem register and digests, the theorem page and its speech and audio, the simulator mirror and its derived pages, the open-datum application's committed corpus, the coverage record with a published restatement table in conformance/coverage/protected-rejection-restatement.md. Restate nothing by hand that a tool regenerates. No obligation is dropped; a restated identity starts uncovered.",
+      "pause": 300
+    },
+    {
+      "text": "Open constitution version 1.16.0 with the retraction row restated.",
+      "pause": 300
+    },
+    {
+      "text": "The tasks, by name, are those of slice one in the tasks.",
+      "pause": 400
+    }
+  ],
+  "first-the-failing-control": [
+    {
+      "text": "First, the failing control.",
+      "pause": 500
+    },
+    {
+      "text": "Before changing the model, add two retraction scenarios to the driver's corpus source whose witnesses carry a legacy time different from the request's booked time, one that the request's time admits and the witness's time would refuse, and one the reverse. Run the model check on the base plus those rows only and keep its failing output: that is your RED bundle. It must fail because the model judges by the witness's time, not for a build or setup reason.",
+      "pause": 400
+    }
+  ],
+  "checkpoints": [
+    {
+      "text": "Checkpoints.",
+      "pause": 500
+    },
+    {
+      "text": "Journal REVIEW-REQUESTED with the commit and the evidence path at each of these and continue without waiting: the RED bundle; the window lemma and admission green; the regeneration green; the final head before the ticket owner pushes. One repair per block.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The slice-one rows of the gate, run once per candidate on a clean committed tree; the retraction-window devnet row once. Run the narrowest build while editing (lake build of the changed modules); the gate's commands only when you have a candidate.",
+      "pause": 400
+    }
+  ],
+  "terminal-condition": [
+    {
+      "text": "Terminal condition.",
+      "pause": 500
+    },
+    {
+      "text": "Stop at the first of: every slice-one gate command exits as the gate states on a clean committed head (CANDIDATE-GREEN with the commit and the receipts); a question you cannot decide from the mandate (file it as questions/Q-NNN-<slug>.md with the user story of each option and journal BLOCKED); capacity (COMPLETE capacity-limit with a handoff that makes the remainder mechanical). Do not stop for any other reason, ask for no confirmation, and do not touch anything listed under the files this ticket must not touch.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "slice-one-booked-clock.md",
+    "sha256": "af38d3994c94ba2259dd651a760a468ae31b3a67d1e653fde43c0ea640a31b30"
+  }
+}

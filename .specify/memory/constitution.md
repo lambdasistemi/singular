@@ -1,5 +1,127 @@
 <!--
 Sync impact report
+Version: 1.17.0 -> 1.18.0 (one booked clock for retraction)
+Amended: 2026-10-13
+Authority: ticket 494 slice one under epic 498; operator rulings quoted in specs/494-protected-rejection-rule/mandate.md (expiry follows both windows; lifecycle mismatch permits immediate rejection).
+This amendment supersedes the row "Reject reads no time" of main's 1.17.0 entry:
+`Singular.Statements.reject_reads_no_time` is retired and replaced by
+`Singular.Statements.rejection_uses_its_own_admission`. The fold's deadline
+admission does not apply to a rejection; its own evidence admission governs.
+Changed obligations: a request carries its booked submission time (`Singular.Request.submittedAt`, serialized, zero when absent); the retraction window (`Singular.inPhase2`), its admission (`Singular.retractAdmission`) and the restated window statements (`Singular.Statements.retract_admitted_iff`, `retract_refusal_first_failing`, `inPhase2_iff` in `Singular.Lemmas`) read the booked time and ignore the witness legacy field, which stays on the wire; a retraction question carries the booked time read from the request datum while a fold question is unchanged; the driver protocol version moves to 7 with its digest re-pinned. Corpora, theorem register and digests, theorem page, simulator mirror, application corpus and coverage record are regenerated with a published restatement table in `conformance/coverage/protected-rejection-restatement.md`; no obligation is dropped and a restated identity starts uncovered.
+Named limits: validators (495), builders (496), live acceptance (497) and the tag and bond (529) are untouched; the chain comparison of a retraction outside the window is unchanged; no mixed transaction is built.
+Consumers: Lean model, driver and transport, corpora, theorem bindings, simulator mirror, open-datum application corpus, coverage record and this translation. No live caller can claim the rule from the model change alone.
+Templates: no template change required.
+Slice six, 2026-10-14: registration booking adds a separate request, booking
+transaction and pending pool to a world whose only new transition is booking.
+Reachable pending registrations have exact declared contents, both tags minted
+with the request, booked time equal to the valid interval's upper end, and width
+within the configured limit. For every inclusion inside that interval, the
+booked time and the threshold after both windows are no earlier than inclusion
+and its corresponding threshold. Four new statements start uncovered in the
+coverage record and are appended to the restatement table. Carrier ada is a
+requester's declared allocation; no ledger minimum is computed or guaranteed.
+The existing registry reachability, exits, driver questions, protocol version
+and transaction baseline remain unchanged. The simulator classifies booking
+controls as uncovered. No validator, builder or live implementation acceptance
+follows from these model proofs. The agreed economic design and the declared
+carrier ruling authorize this extension; Principles I-VII, AGENTS.md and the
+pull request template continue to apply unchanged.
+Slice seven, 2026-10-14: termination booking transfers the genuine singular tag
+from application custody to a pending request with exact declared contents.
+Both request tags are minted with the booking; the application tag binds the
+termination, key and destination. A termination has no refund address or booked
+time. The new world-level supply law counts actual tags in custody and pending
+outputs: one exactly for an active key and none otherwise. It proves at most
+one pending termination per key and retains the accepted booking that took its
+tag from custody. The registry component alone need not satisfy its old supply
+law after this transfer; all registry-level statements and reachability remain
+unchanged. Four new statement identities, including the supporting exact-booking
+statement, start uncovered and are appended to the restatement table. Existing
+registration statements retain their statements over the extended world.
+Corpora, theorem register, theorem page, simulator mirror and coverage record
+follow the model. The simulator marks termination booking uncovered. Carrier
+ada stays declared; token identities remain abstract; no relation between the
+old fee pin and minimum tip is assumed. Folds, exits, driver questions, protocol
+and transaction baseline are unchanged. No validator, builder, application
+release-rule or ledger acceptance follows. The decided economic design
+authorizes this extension; Principles I-VII and contributor guidance are unchanged.
+Slice seven-c, 2026-10-15: the operator retires the separate fee pin. The
+configuration carries one minimum tip under the existing maxFee wire key;
+booking reads that floor, and fold and batch preservation explicitly keep it.
+The two transaction-row statements drop the old tip-cover premise and its
+echoed conjunct, proving the remaining conclusions for every input lovelace
+amount. The predicate, corpus assertion and two top-level annotations retire;
+the historical transaction baseline loses only those annotations. The old
+independence controls become one-pin floor acceptance and refusal controls.
+The append-only restatement record names every retired or restated identity;
+new statement identities remain uncovered. The declared driver questions keep
+their written form and protocol version 7. Model corpora, theorem register,
+theorem page, simulator mirror, application corpus and coverage record follow.
+No validator, builder, command, chain datum shape or off-chain wire reader
+changes; exact processor take remains subsequent fold work. No ledger or
+implementation acceptance follows. Principles I-VII and contributor guidance
+are unchanged; the pull request template still records these evidence limits.
+Slices seven-b, eight, nine and ten, 2026-10-15: the ruled economic model
+uses trie-ready tags for both request kinds and application tags for
+registrations only, with one nonce per request and no hash-injectivity
+assumption. Registration booking authenticates the exact cost, declared tip,
+carrier and both tags, and fixes the booked time at the upper end of a bounded
+booking interval. Termination booking takes the genuine singular tag from
+application custody into a request with no application tag, refund address or
+clock. Rejection reads the current state by reference and spends no state
+output; rejection and retraction burn both registration tags and return their
+per-address refund floors. The economic fold spends and continues the state,
+uses the registry's own batch transition through an explicit custody/request
+projection, routes the registration cost and each termination's held value
+minus tip to the treasury, and pays the exact gross declared-tip allocation.
+Registration folds observe their processing window; termination folds have no
+window. The fee is funded by ordinary inputs. Carriers hold exactly their
+declared value and booked datum; ordinary change is a separate output, even
+when addresses coincide. Balance yields the gross-reward equation and the
+net-reward bound. The world counts actual trie-ready tags over pending
+requests and application tags held by pending registrations only. No total
+supply law for application tags outside Singular is asserted.
+
+Slice eleven, 2026-10-16: a retraction spends one observed pending registration
+and may spend ordinary lovelace funding to pay its ledger fee. Extra inputs
+hold no state token or trie-ready, application or singular tag, have neither
+the request nor state role, and carry no request datum. Spending inputs are
+distinct, present and disjoint from reference inputs. The refund address signs
+and receives at least all held request lovelace inside the booked reclaim
+window; the state is neither read nor spent, both request tags burn, and the
+request leaves the pending pool. The transaction balances, donates nothing,
+leaves the world treasury unchanged and pays its fee from ordinary funding.
+Conservation bounds payments outside the refund address by ordinary funding
+left after the fee. Other-address change and third-party payments cannot be
+distinguished by this model; neither may take the request's cost or tip.
+An accepted balanced retraction exists in a constructed coherent unspent set
+under explicit reachable-world, pending-request, nonempty-window, signing and
+funding premises. Ordinary funding and change are lovelace only. The two new
+public statements and the changed refund and cost-return identities start
+uncovered; the historical identities remain in the restatement record. Their
+generated consumers follow. No wallet funding availability, ledger fee minimum,
+builder success, inclusion or implementation acceptance follows. Rejection,
+the economic fold and the legacy driver remain unchanged.
+
+These economic rows supersede the legacy rejection, retraction, payment and
+transaction rules described below under reject, rejectBatch, paid and tx.
+Those rows remain an exact translation of the retained driver and deployed
+implementation, not the ruled economic authority. The live rows that still
+follow the superseded rules remain unmet until the validators and builders
+meet the ruled model with the required live evidence. Model proofs do not
+change those standings. The driver declarations and protocol, legacy fold,
+transaction baseline and existing scenario payloads remain unchanged. New
+statement identities begin uncovered and are appended to the restatement
+record; preserved statement text gains the cases for the enlarged world.
+The theorem register, corpora, theorem page and narration, simulator mirror,
+application corpus and coverage record follow the model. There is no claim
+about ledger minimums, fee-market stability, inclusion time, a flood price,
+application release rules, or validator and builder acceptance. Principles
+I-VII, contributor instructions and the pull request template remain in force.
+-->
+
+<!--
+Sync impact report
 Version: 1.16.0 -> 1.17.0 (a fold is admitted through every request's deadline)
 Amended: 2026-10-14
 Authority: the operator's 6 October 2026 ruling recorded in
@@ -622,7 +744,7 @@ a declared boundary. This section states what each declared name concretely
 means, so a support module cannot invent the correspondence and a missing field
 cannot be dropped in silence. The reconciliation is mechanical and runs in both
 directions in `tools/check_model.py`: a declared name with no row here fails,
-and a row naming something the driver does not declare fails. **That check
+and a row naming something the driver does not declare fails; evidence, interval and ground bindings are reconciled the same way. **That check
 establishes that every name is stated — never that a stated realization is
 true.** Whether a realization is correct is a review obligation under
 Principle III, not something a name-reconciliation can earn.
@@ -635,12 +757,12 @@ by `Singular.foldAdmission`: the fixed supported edge set is checked before
 only that finite excluded upper bound. Missing it is `unsupported`, with
 `fold-without-witness`. On chain, submission time comes from the booked datum
 and the upper bound from the built transaction, translated from its slot to
-POSIX milliseconds. A retract keeps `Singular.retractAdmission` and its separate
-witness; a reject reads no time. When admission succeeds, each exit is exactly
+POSIX milliseconds. A retract keeps `Singular.retractAdmission` under the booked `Singular.Request.submittedAt`
+and its separate witness (whose legacy time is ignored); a rejection is admitted first by `Singular.rejectAdmission` under bound evidence for a lifecycle mismatch or for expiry. When admission succeeds, each exit is exactly
 `Singular.exitStep` (`Singular.Statements.admitted_exit_is_the_exit`).
 A fold then runs `Singular.step`, and is refused `exit-edge-mismatch` when the
 request names another edge. An operation is refused when `Singular.foldAdmission`,
-`Singular.retractAdmission`, `Singular.refusal` or
+`Singular.retractAdmission`, `Singular.rejectAdmission`, `Singular.exitAdmission`, `Singular.refusal` or
 `Singular.exitStep` returns a reason; the driver reports that reason verbatim and
 never manufactures one. The driver also declares two judgements, `spend` then
 `settle`, answered about a transaction a caller observed rather than one the
@@ -649,6 +771,29 @@ it declares two batch questions, each with its own observation extent: `foldBatc
 several requests folded at once, and `rejectBatch`, several requests rejected at
 once. A batch is answered from the state its setup trace reaches, its premise
 checked first, and observes no transaction, since the model builds none for it.
+
+### Ruled economic translation
+
+The economic judgements below are separate from the declared legacy driver
+surface. They govern the ruled model; they are not new driver questions and
+are not reached by the retained live translation. In particular, the legacy
+reject, rejectBatch, paid and tx descriptions retain the superseded behavior
+for accurate comparison with the current implementation. Their agreement
+cannot establish the economic rules, and their affected live rows remain
+unmet until those rules are implemented and verified.
+
+| Economic behavior | Model realization and observation | Evidence limit |
+|---|---|---|
+| Registration booking | Singular.book admits the observed booking through registrationBookingRefusal. The held lovelace is exactly registration cost plus declared tip plus declared carrier; the bound application tag and trie-ready tag are minted with the booking; the booked time is the nonempty interval's upper end and its width is within the pinned bound. The admitted request enters the pending pool once by reference. | Carrier ada is declared, not a computation of the ledger minimum. Application authorization is not executed by this judgement. |
+| Termination booking | Singular.bookTermination admits terminationBookingRefusal and moves the genuine singular tag from application custody to the pending request. Its exact contents include the declared tip, carrier and trie-ready tag, with no application tag, refund address or booked time. | The application's release condition is outside Singular. Supply counts both custody and pending requests. |
+| Rejection | Singular.rejectionAccepted authenticates the current state output's exact token and complete configuration from an unspent reference, spends no state output, and checks every distinct pending registration against that current state and one shared interval. A lifecycle mismatch or expiry after both windows admits; every request's trie-ready and application tags burn. Each refund address receives at least its sum of held minus declared tip, read from actual output lovelace. | Refusal is atomic. Terminations cannot be rejected. Payments at one address are summed without a purpose oracle. This judgement does not establish full fee balance or exact processor reward. |
+| Retraction | Singular.retractionAccepted consumes one observed pending registration and may spend ordinary lovelace outputs to fund its ledger fee. Extra inputs hold no state token or trie-ready, application or singular tag, have neither the request nor state role, and carry no request datum; spending inputs are present, distinct and disjoint from references. The refund address signs, the nonempty interval lies wholly inside the booked reclaim window, no state output is read or spent, both tags burn, the registry supply is unchanged and the request leaves the pending pool. Actual outputs at the refund address return at least the whole held request lovelace. The transaction balances, has zero donation, leaves the treasury unchanged, and pays its fee from ordinary funding. Payments outside the refund address are bounded by ordinary funding left after the fee. | The legacy designated-output refund rule is superseded. Ordinary funding and change are lovelace only. The model has no wallet-ownership or output-purpose oracle: other-address change is indistinguishable from a third-party payment, but neither can consume the request's cost or tip. No ledger minimum, available wallet funds, builder success or implementation acceptance is established. |
+| Economic fold | Singular.foldAccepted consumes pending requests once by their observed references and contents, spends the actual registry state output, and continues it with the unchanged value and the registry batch transition's result. Registration admission checks its booked processing window; termination admission has no clock or expiry. Each registration burns both request tags and delivers a newly minted singular tag, booked datum and exact carrier to its destination. Each termination burns its trie-ready and singular tags and makes its leaf terminal. The donation equals the registration costs plus the terminations' held-minus-tip amounts. Ordinary inputs fund the fee. Conservation and exact routing imply ordinary output lovelace plus fee equals ordinary input lovelace plus all declared tips. | This is a judgement over observed economic transactions, not the legacy builder. Token holdings classify outputs; addresses may coincide, but carrier and ordinary change are separate. The reward equation states gross allocation, not total wealth at an address. Legacy correspondence is over the explicit request and custody projection, not equality of admissions. |
+| Pending tags and availability | WorldReachable includes bookings and accepted economic exits. Actual trie-ready tags in the world equal pending requests; the application tags held by pending registrations equal that pool's length and each holds one. A genuine pending termination has an accepted model fold at any later time under the explicit ordinary-funding and fee-envelope hypotheses. A pending registration has an accepted balanced model retraction for a nonempty interval inside its reclaim window, a signing refund address and ordinary lovelace funding covering the fee; its coherent unspent set is constructed from the reachable world. | No total application-tag supply outside Singular, real funding availability, builder success or ledger inclusion is claimed. Applications, measurements and live conformance remain separate obligations. |
+
+The existing driver table's declaration names, kinds and meanings remain intact
+below this qualification, so its mechanical two-way reconciliation still tests
+the surface that the driver actually declares.
 
 | declaration | kind | meaning |
 |---|---|---|
@@ -659,8 +804,8 @@ checked first, and observes no transaction, since the model builds none for it.
 | `deleteAbsent` | realization | `Singular.step` with `Edge.deleteAbsent`: the stable historical encoding is refused `edge-inadmissible` before approval, leaf or token effects. |
 | `deleteActive` | realization | `Singular.step` with `Edge.deleteActive`: the stable historical encoding is refused `edge-inadmissible` before approval, leaf or token effects. |
 | `witnessTerminal` | realization | `Singular.step` with `Edge.witnessTerminal`: the stable historical encoding is refused `edge-inadmissible` before approval, leaf or token effects. |
-| `reject` | realization | `Singular.exitStep` with `Exit.reject`: a folder turns the request away. It carries no admission, leaves the registry state as it was, mints nothing, and pays the owner the deposit back, as `Singular.obligations` states. |
-| `retract` | realization | `Singular.admittedExitStep` with `Exit.retract`: the owner takes the request back, admitted first by `Singular.retractAdmission` under the scenario's witness (`Singular.RetractWitness`: the request's submission time, the transaction's validity bounds, lower included and upper excluded, and its signatories). It is refused `withdraw-insert-only` unless the request inserts a key or reads a terminal one (`Singular.retractableEdge`), then `retract-owner` unless the request's owner is among the signatories, then `not-phase2` unless the validity interval lies inside phase 2, from `submittedAt + processTime`, included, to `submittedAt + processTime + retractTime`, which the excluded upper bound may reach and not pass (`Singular.inPhase2`), as `Singular.Statements.retract_refusal_first_failing` states. An admitted retraction is exactly `Singular.exitStep` with `Exit.retract` (`Singular.Statements.admitted_exit_is_the_exit`): it leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, through one output bound to the request by its own output reference (`Request.reference`), as `Singular.obligations` states. A retraction scenario with no witness is `unsupported`. On chain the witness is the retraction as built: its required signers, each translated to the wallet identity whose payment key it is; the `submitted_at` of the request's own datum; and its validity bounds, each bounding slot translated to the POSIX time of its start by the node's era history. The chain runs an owner-signed retraction of an insertion whose finite validity interval starts before phase 2, and one whose finite interval ends after it; the request script refuses both and the model answers `not-phase2` (the retract-outside-window conformance receipt carries both). The chain's refusal reason is not observed (#287); the two finite live cases establish the request script's refusal and the model's named reason separately. The model states only finite validity bounds; an open interval is outside them — a named non-goal whose `not-phase2` refusal the Aiken validator tests name; no live or model comparison of an open interval is claimed. |
+| `reject` | realization | `Singular.admittedExitStep` with `Exit.reject`: a folder turns the request away, admitted only with bound evidence for a lifecycle mismatch or for expiry. Evidence names the registry's identity, the complete configuration including the root at that action, the complete request, and a non-empty finite interval with lower included and upper excluded; each binding failure is refused with a reason naming it, in the order evidence-missing, registry, request, interval, then ground. A mismatch names the leaf the state holds and is admitted exactly when that leaf has no successor for the request's edge; unknown and Absent differ and an excluded edge is incompatible at every leaf. Expiry is admitted exactly when the interval starts at or after the booked time plus processing plus reclaim. An admitted rejection leaves the registry state as it was, mints nothing, and pays the owner the deposit back as before, as `Singular.obligations` states. |
+| `retract` | realization | `Singular.admittedExitStep` with `Exit.retract`: the owner takes the request back, admitted first by `Singular.retractAdmission` under the booked `Singular.Request.submittedAt` and the scenario's witness (`Singular.RetractWitness`: the transaction's validity bounds, lower included and upper excluded, and its signatories; its legacy submission-time field stays on the wire and is ignored). It is refused `withdraw-insert-only` unless the request inserts a key or reads a terminal one (`Singular.retractableEdge`), then `retract-owner` unless the request's owner is among the signatories, then `not-phase2` unless the validity interval lies inside phase 2, from `submittedAt + processTime`, included, to `submittedAt + processTime + retractTime`, which the excluded upper bound may reach and not pass (`Singular.inPhase2`), as `Singular.Statements.retract_refusal_first_failing` states. An admitted retraction is exactly `Singular.exitStep` with `Exit.retract` (`Singular.Statements.admitted_exit_is_the_exit`): it leaves the registry state as it was, mints nothing, and pays the owner everything the request held, deposit and tip, through one output bound to the request by its own output reference (`Request.reference`), as `Singular.obligations` states. A retraction scenario with no witness is `unsupported`. On chain the witness is the retraction as built: its required signers, each translated to the wallet identity whose payment key it is; the `submitted_at` of the request's own datum; and its validity bounds, each bounding slot translated to the POSIX time of its start by the node's era history. The chain runs an owner-signed retraction of an insertion whose finite validity interval starts before phase 2, and one whose finite interval ends after it; the request script refuses both and the model answers `not-phase2` (the retract-outside-window conformance receipt carries both). The chain's refusal reason is not observed (#287); the two finite live cases establish the request script's refusal and the model's named reason separately. The model states only finite validity bounds; an open interval is outside them — a named non-goal whose `not-phase2` refusal the Aiken validator tests name; no live or model comparison of an open interval is claimed. |
 | `foldBatch` | realization | a batch question, in `Singular.Driver.runFoldBatch`: `Singular.admittedFoldBatch` under the scenario's `foldWitness`. Missing it is `unsupported` with `fold-without-witness`. Admission refuses any excluded edge as `edge-inadmissible`, then any request whose own `submittedAt + processTime` is less than the finite excluded `validTo` as `not-phase1`. Once admitted it is exactly `Singular.foldBatch` over an ordered list of requests, each folded by `Singular.step` on its own edge from the state the previous left. It is refused `empty-fold` for no request, then for the first request's `step` reason, then `net-mint-mismatch` when the batch's claimed mint differs from what its edges mint at any `(kind, key)`, then `token-missing` when `Singular.batchConsumesCreated` finds a termination of a key an earlier insertion of the same batch created; otherwise it reports `config`, `custody`, `held`, `mint`, `paid`, `root` and `state` of the result, its mint the edges' keyed deltas summed per asset and its `paid` the step payment lists, concatenated (empty for supported registry steps), and `leaf` at every distinct key the batch names, in the order it first names them. After admission succeeds, the row carries each request's step until the first the law refuses. Under an admitted witness, a batch of one request whose claim is its own edge's delta folds exactly as `Singular.step` (`Singular.Statements.fold_batch_of_one_is_step`). An accepted batch burns only active holdings present in its starting state. After admission, a non-empty batch on pairwise distinct keys is accepted when each request is accepted alone from that state and claims its own edge's keyed mint; no equality of singleton or reordered effects is asserted. No transaction is built or observed. |
 | `rejectBatch` | realization | a batch question, in `Singular.Driver.runRejectBatch`: a non-empty list of requests, each taken by `Exit.reject`, stepped by `Singular.exitStep` from the state the previous left. It leaves the registry state as it was, mints nothing and pays each owner the deposit back, as `Singular.obligations` states, reporting the same fields as `foldBatch`. Given the outputs of a transaction a caller observed, its one judgement is `Singular.settle` over the concatenated obligations of its requests (`Singular.Driver.judgeRejectBatch`), so one owner owed by two requests must receive their sum; a batch of one judges exactly as the single reject (`Singular.Statements.reject_batch_of_one_is_reject`). An empty batch, and one naming a fold or a retract, is `unsupported`. No transaction is built or observed. |
 | `config` | realization | the whole eight-field `Singular.Config` of the state the step produced, through the model's own `ToJson Config`. Not the root alone. |
@@ -679,7 +824,7 @@ checked first, and observes no transaction, since the model builds none for it.
 | surface digest | identity | `definitionDigest` is taken over the declared operation, observation, unobservable and judgement names and each batch question's name and observation extent together, so a silently widened or narrowed surface changes it. A scenario's fields, the request's submission time and either exit's witness among them, are not part of the surface and do not move it. |
 | law premise | identity | `Singular.Driver.consistentB`, the decidable finite characterization of `Singular.Consistent` over the keys a state actually mentions. It is checked on the state reached by the setup trace *before* any accepted observation is reported. A key the state mentions nowhere satisfies every conjunct trivially, which is why the finite extent does not weaken the premise. |
 | starting state | identity | reached by running the setup trace through the law. A scenario that declares `requiresReachableState` must supply a non-empty trace, so a state typed in with the key already active cannot stand in for a lifecycle nobody executed. |
-| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.foldAdmission`, `Singular.retractAdmission`, `Singular.refusal` or `Singular.exitStep` can produce, a retraction only one of admission's, and a fold batch only one `Singular.foldAdmission` or `Singular.foldBatch` gives; `unsupported` is the driver failing to reach the case — a fold or retraction with no witness among them — and is never reported as a ledger refusal. |
+| outcome class | identity | `accepted`, `refused` and `unsupported` are disjoint. Only `accepted` carries observations; `refused` carries a reason `Singular.foldAdmission`, `Singular.retractAdmission`, `Singular.rejectAdmission`, `Singular.exitAdmission`, `Singular.refusal` or `Singular.exitStep` can produce, a retraction only one of admission's, a rejection without evidence `reject-evidence-missing` never `unsupported`, a foldable request protected from rejection while its interval begins before expiry, and a fold batch only one `Singular.foldAdmission` or `Singular.foldBatch` gives; batch interval and length mismatches are refused; `unsupported` is the driver failing to reach the case — a fold or retraction with no witness among them — and is never reported as a ledger refusal. |
 | `concreteTrieHash` | unobservable | the real authenticated-map root a chain would carry. The model commits with FNV-1a and the executable specification introduces no Cardano byte model, so no byte-level agreement between `root` and a real registry root is claimed anywhere. |
 | `outputMinimumAda` | unobservable | The ledger's actual minimum ada remains outside the model. Each transaction output's model `lovelace` is a floor — a delivering fold's destination deposit, an owner output's payment, zero on an output paying no recipient — so a consumer requires observed `lovelace >= model`, reads each payment's value in `paid` and `tx.refunds` by the same rule, and compares every other field for equality. Surplus above the model floor remains unobservable. |
 | `registryAddress` | unobservable | the registry's own address. The model has no vocabulary for it and the state output's address is `none` rather than an invented constant. |
@@ -780,4 +925,4 @@ minor version for new or materially expanded principles, and a patch version for
 clarifications without changed obligations. Each amendment MUST update the sync
 impact report and check the repository's contributor instructions and templates.
 
-**Version**: 1.17.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-14
+**Version**: 1.18.0 | **Ratified**: 2026-09-11 | **Last amended**: 2026-10-15
