@@ -18,6 +18,7 @@ import Singular.Statements.Retraction
 import Singular.Statements.FoldAccounting
 import Singular.Statements.FoldTermination
 import Singular.Statements.TagSupply
+import Singular.Statements.LedgerBoundary
 import Singular.Lemmas
 import Singular.Driver
 import Singular.Economics

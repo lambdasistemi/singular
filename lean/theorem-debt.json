@@ -258,6 +258,48 @@
     "statementSha256": "55610f5a33da76d49c9f8e5eee2170af33700b0222530d6548629960133bc470"
   },
   {
+    "name": "Singular.Statements.witness_decision_cases",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "bb7c03e1f06f05b4511e682f5421def977ad44db117b9416a9dbaefa24ccaedf"
+  },
+  {
+    "name": "Singular.Statements.fold_required_for_active_and_absent",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "a0aabf815bbc0931b971b2849134a4fb86760bfb0849708d4e7ad15f8deec7e2"
+  },
+  {
+    "name": "Singular.Statements.key_names_its_token",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "d8dbe9a6faf55b790158f33fd4c7e92c908463e7f84dddb6e0615f09bdbc237d"
+  },
+  {
+    "name": "Singular.Statements.active_mint_at_unknown_key",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "ed15487e65a23c98fcfd5d9e937864826db09722767e46246e5d905d263faf42"
+  },
+  {
+    "name": "Singular.Statements.token_policies_read_no_staking",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "82f537ee154ec6f4b6e543dfb5dc5eb2d0cbe8615bd6ce6e8c9179fe250695c5"
+  },
+  {
+    "name": "Singular.Statements.terminal_discard_changes_no_registry_state",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "5ff4ea434f61ff6dadc7b592d69cd3f1da775fdd649144a56da47046e12d7a86"
+  },
+  {
+    "name": "Singular.Statements.ledger_boundary_premises_satisfiable",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "753326c59ecd81e28cab973f172c9508ccc4a38b9865274f8c4b28f9e72f03a6"
+  },
+  {
     "name": "Singular.Statements.exit_settles_on_lovelace_received",
     "status": "PROVED",
     "debt": "none",

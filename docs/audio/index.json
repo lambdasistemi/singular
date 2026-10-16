@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 108 proved declarations — 87 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "477901d6273e"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 115 proved declarations — 94 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "e8e6b6ec5799"
    },
    {
     "index": 2,
@@ -9569,15 +9569,22 @@
     "index": 1,
     "name": "docs-theorems/exact-declaration-inventory-01",
     "pause_ms": 400,
-    "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
-    "v": "2bf8cbd7e41c"
+    "text": "The ledger-boundary statements apply to a registry whose three policy identifiers match its applied witness scripts. Script execution, collision freedom on occurring scripts, asset-name limits and agreement of the state script with the model fold are explicit premises. The satisfying example exercises an active mint from genesis and a terminal pure burn; it proves the terminal holding is present and consistent, without claiming its ledger-history provenance. The three token policies ignore staking data. This model evidence does not establish compiled-policy or builder correspondence.",
+    "v": "9f28b139ef73"
    },
    {
     "index": 2,
     "name": "docs-theorems/exact-declaration-inventory-02",
     "pause_ms": 400,
+    "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
+    "v": "363e0eff1e96"
+   },
+   {
+    "index": 3,
+    "name": "docs-theorems/exact-declaration-inventory-03",
+    "pause_ms": 400,
     "text": "The naming, lifecycle and wire declarations are listed in their own manifests: naming-theorem-debt.json, lifecycle-theorem-debt.json and wire-theorem-debt.json.",
-    "v": "7d48a223fe3f"
+    "v": "ce6e5ecc9b1f"
    }
   ],
   "how-this-register-is-kept-honest": [
@@ -9622,8 +9629,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 87 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 108 in total, each with its own manifest and its own compiled gate.",
-    "v": "09eb7a88c443"
+    "text": "All 94 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 115 in total, each with its own manifest and its own compiled gate.",
+    "v": "c2d105f1e50c"
    },
    {
     "index": 3,
