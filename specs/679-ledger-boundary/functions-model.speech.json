@@ -1,0 +1,46 @@
+{
+  "functions-and-statements-for-the-ledger-boundary": [
+    {
+      "text": "Functions and statements for the ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As the auditor of this child, I read each new name with its arguments and its result, and each statement with its premises, before any proof exists.",
+      "pause": 400
+    }
+  ],
+  "registry-free-library-namespace-cardanoledger": [
+    {
+      "text": "Registry-free library, namespace CardanoLedger.",
+      "pause": 500
+    },
+    {
+      "text": "Every transaction-level name is parametric in the datum, redeemer and script types.",
+      "pause": 400
+    }
+  ],
+  "registry-instance-namespace-singularledgerboundary": [
+    {
+      "text": "Registry instance, namespace Singular.LedgerBoundary.",
+      "pause": 500
+    }
+  ],
+  "statements-namespace-singularstatements": [
+    {
+      "text": "Statements, namespace Singular.Statements.",
+      "pause": 500
+    },
+    {
+      "text": "Each is a theorem proved from propext, Classical.choice and Quot.sound alone. Premises are listed as they appear in the signature; a premise a proof does not use is dropped.",
+      "pause": 400
+    },
+    {
+      "text": "The names are part of the vocabulary issues 680 and 681 cite; renaming one is a mandate change.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "971d30f3c5e1f43cca39be7d7659a6d03c198e7dbdd84a83f4b64d6f2f5a9515"
+  }
+}

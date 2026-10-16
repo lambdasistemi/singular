@@ -1,0 +1,88 @@
+{
+  "tasks-for-the-ledger-boundary": [
+    {
+      "text": "Tasks for the ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I stamp each task when its checkpoint is approved and its hosted job is green at the head.",
+      "pause": 400
+    }
+  ],
+  "model-slice": [
+    {
+      "text": "Model slice.",
+      "pause": 500
+    },
+    {
+      "text": "[x] registry-free-ledger-layer: the CardanoLedger library, its Lake library entry and default target",
+      "pause": 300
+    },
+    {
+      "text": "[x] ledger-premises: collision-free on a set, runs scripts, keeps names within limit, the staking-free view",
+      "pause": 300
+    },
+    {
+      "text": "[x] registry-instance: registry scripts, redeemers, datums, world, policy identifiers, bound, key names, occurring scripts, state-script folds, terminal discard",
+      "pause": 300
+    },
+    {
+      "text": "[x] witness-decision-cases: the per-kind decision and its equivalence statement",
+      "pause": 300
+    },
+    {
+      "text": "[x] fold-required-statement: the fold is required under the active and absent pins",
+      "pause": 300
+    },
+    {
+      "text": "[x] key-names-its-token-statement: names, the one-to-one correspondence, the active count, the 32-byte limit",
+      "pause": 300
+    },
+    {
+      "text": "[x] unknown-key-mint-statement: an active mint is at an unknown key",
+      "pause": 300
+    },
+    {
+      "text": "[x] token-policies-staking-statement: the three token policies read no staking data",
+      "pause": 300
+    },
+    {
+      "text": "[x] terminal-discard-statement: a holder's discard changes no registry state",
+      "pause": 300
+    },
+    {
+      "text": "[x] premises-satisfiable: one example meets every premise with an accepted active mint and an accepted terminal pure burn",
+      "pause": 300
+    },
+    {
+      "text": "[x] registry-free-import-check: the hosted refusal and its control, and reachability over the new library",
+      "pause": 300
+    },
+    {
+      "text": "[x] model-consumers: manifest, corpora, theorem page, README totals, simulator mirror and page, coverage record and counts, open-datum rebuild",
+      "pause": 300
+    }
+  ],
+  "paper-slice": [
+    {
+      "text": "Paper slice.",
+      "pause": 500
+    },
+    {
+      "text": "[x] paper-register-rows: the new statements with their premises, at the new model pin",
+      "pause": 300
+    },
+    {
+      "text": "[x] paper-named-and-staking-wording: the Named row's mechanization note, the staking wording, the terminal attestation wording",
+      "pause": 300
+    },
+    {
+      "text": "[x] narration: speech companions and audio clips for every changed page",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "943b2eb21ed554538b354d2baaf969bed23b5620a564491c6b78c426567394bd"
+  }
+}

@@ -87,9 +87,9 @@ class RealInventoryTest(unittest.TestCase):
         # Protected rejection adds five statements for bound evidence, protection,
         # effects and expiry: 126 = 72 manifest-bound + 54 unclassified.
         inv = build_inventory(REPO_ROOT)
-        self.assertEqual(inv.manifest_bound, 118)
-        self.assertEqual(inv.unclassified, 180)
-        self.assertEqual(inv.manifest_bound + inv.unclassified, 298)
+        self.assertEqual(inv.manifest_bound, 125)
+        self.assertEqual(inv.unclassified, 216)
+        self.assertEqual(inv.manifest_bound + inv.unclassified, 341)
         self.assertEqual(
             len([o for o in inv.obligations if o.source == "lean/Singular/M1.lean"]),
             10,
@@ -127,6 +127,18 @@ class FixtureInventoryTest(unittest.TestCase):
             self.assertIn("lean/Singular/Model/Values.lean", sources)
             self.assertNotIn("lean/Singular/NamingStatements.lean", sources)
             self.assertEqual(len(sources), len(set(sources)))
+            (root / "lakefile.toml").write_text(
+                'defaultTargets = ["Singular", "CardanoLedger"]\n'
+                '[[lean_lib]]\nname = "Singular"\n'
+                '[[lean_lib]]\nname = "CardanoLedger"\n'
+            )
+            (root / "lean/CardanoLedger").mkdir()
+            (root / "lean/CardanoLedger.lean").write_text(
+                "import CardanoLedger.Transaction\n"
+            )
+            (root / "lean/CardanoLedger/Transaction.lean").write_text(
+                "namespace CardanoLedger\nend CardanoLedger\n"
+            )
             self.assertIn(
                 "Singular.Model.Values", check_model.unreachable_modules(root)
             )

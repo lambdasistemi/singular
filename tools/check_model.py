@@ -23,6 +23,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import tomllib
 
 STANDARD = {"propext", "Classical.choice", "Quot.sound"}
 
@@ -281,6 +282,101 @@ def check_transaction_compatibility(root, corpus, driver_corpus):
     )
 
 
+def lean_code(source):
+    """Mask comments (including nested blocks) and strings, preserving newlines."""
+    result, index, depth, quoted = [], 0, 0, False
+    while index < len(source):
+        pair = source[index : index + 2]
+        char = source[index]
+        if depth:
+            if pair == "/-":
+                depth += 1
+                result.extend("  ")
+                index += 2
+                continue
+            if pair == "-/":
+                depth -= 1
+                result.extend("  ")
+                index += 2
+                continue
+            result.append("\n" if char == "\n" else " ")
+        elif quoted:
+            if char == "\\":
+                result.extend("  ")
+                index += 2
+                continue
+            if char == '"':
+                quoted = False
+            result.append("\n" if char == "\n" else " ")
+        elif pair == "/-":
+            depth = 1
+            result.extend("  ")
+            index += 2
+            continue
+        elif pair == "--":
+            end = source.find("\n", index)
+            if end < 0:
+                end = len(source)
+            result.extend(" " * (end - index))
+            index = end
+            continue
+        elif char == '"':
+            quoted = True
+            result.append(" ")
+        else:
+            result.append(char)
+        index += 1
+    assert not depth and not quoted, "unterminated Lean comment or string"
+    return "".join(result)
+
+
+def registry_free_violations(sources):
+    """Reject application names anywhere in the independent library's code."""
+    assert sources, "EMPTY EXTENT: no registry-free sources"
+    return [
+        path
+        for path, source in sources.items()
+        if re.search(r"\bSingular\b", lean_code(source))
+    ]
+
+
+def check_registry_free_library(root):
+    facade = root / "lean/CardanoLedger.lean"
+    modules = sorted((root / "lean/CardanoLedger").rglob("*.lean"))
+    assert facade.is_file() and modules, "missing registry-free library extent"
+    sources = {
+        str(path.relative_to(root)): path.read_text() for path in [facade, *modules]
+    }
+    violations = registry_free_violations(sources)
+    assert not violations, f"registry-free library mentions Singular: {violations}"
+    mutations = (
+        "import Singular.Model\n",
+        "import /- interposed /- nested -/ comment -/ Singular.Model\n",
+        "open Singular\n",
+        "namespace Singular\nend Singular\n",
+        "open «Singular»\n",
+        "#check _root_.Singular.RegistryState\n",
+    )
+    controls = 0
+    # Exercise the real checker at every discovered source, including the facade.
+    for path in sources:
+        for mutation in mutations:
+            changed = dict(sources)
+            changed[path] = mutation + changed[path]
+            assert path in registry_free_violations(changed), (path, mutation)
+            controls += 1
+        comments = dict(sources)
+        comments[path] = "/- Singular /- nested -/ -/\n-- Singular\n" + comments[path]
+        assert not registry_free_violations(comments), "comments are not dependencies"
+    try:
+        registry_free_violations({})
+    except AssertionError:
+        controls += 1
+    else:
+        raise AssertionError("empty registry-free extent was accepted")
+    print(f"registry-free library: {len(sources)} sources, {controls} refusal controls")
+
+
 def unreachable_modules(root):
     """Modules on disk that `lake build` will never build.
 
@@ -291,7 +387,13 @@ def unreachable_modules(root):
     axiom gate was in the tree, passing locally, and absent from a clean build.
     The extent is read off the directory, never listed here.
     """
-    seen, pending = set(), ["Singular"]
+    libraries = ("Singular", "CardanoLedger")
+    config = tomllib.loads((root / "lakefile.toml").read_text())
+    declared = {library["name"] for library in config["lean_lib"]}
+    assert set(libraries) <= declared & set(config["defaultTargets"]), (
+        "both model libraries must be declared default targets"
+    )
+    seen, pending = set(), list(libraries)
     while pending:
         module = pending.pop()
         if module in seen:
@@ -300,14 +402,24 @@ def unreachable_modules(root):
         source = root / "lean" / (module.replace(".", "/") + ".lean")
         if not source.exists():
             continue
-        for line in source.read_text(encoding="utf-8").splitlines():
-            if line.startswith("import Singular"):
-                pending.append(line.split()[1])
+        for imports in re.findall(
+            r"(?m)^\s*import\s+([^\n]+)", lean_code(source.read_text())
+        ):
+            for imported in imports.split():
+                if any(
+                    imported == lib or imported.startswith(lib + ".")
+                    for lib in libraries
+                ):
+                    pending.append(imported)
     on_disk = {
         ".".join(f.relative_to(root / "lean").with_suffix("").parts)
-        for f in sorted((root / "lean/Singular").rglob("*.lean"))
+        for library in libraries
+        for f in sorted((root / "lean" / library).rglob("*.lean"))
     }
-    assert on_disk, "EMPTY EXTENT: no modules discovered under lean/Singular"
+    for library in libraries:
+        assert any(module.startswith(library + ".") for module in on_disk), (
+            f"EMPTY EXTENT: no modules discovered under lean/{library}"
+        )
     return sorted(on_disk - seen)
 
 
@@ -1637,6 +1749,7 @@ def main():
     # was produced by rather than the one someone assumed.
     print(f"provenance: check_model.py sha256={digest(Path(__file__).read_bytes())}")
 
+    check_registry_free_library(root)
     audit_sources(root)
     generic_records = statement_inventory(
         root / "lean/Singular/Statements.lean", "Singular.Statements."
@@ -1703,7 +1816,7 @@ def main():
     orphans = unreachable_modules(root)
     assert not orphans, f"modules lake will never build: {orphans}"
     print(
-        "reachability: every module under lean/Singular is reachable from the library root"
+        "reachability: every module under lean/Singular and lean/CardanoLedger is reachable from its library roots"
     )
 
     binary = args.binary or root / ".lake/build/bin/singular-corpus"

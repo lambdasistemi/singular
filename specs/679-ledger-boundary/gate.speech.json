@@ -1,0 +1,64 @@
+{
+  "gate-for-the-ledger-boundary": [
+    {
+      "text": "Gate for the ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I accept this child only when each row below is green in its hosted job at the exact head, and each checkpoint the auditor reads is approved at an ancestor of that head.",
+      "pause": 400
+    }
+  ],
+  "how-this-gate-was-made": [
+    {
+      "text": "How this gate was made.",
+      "pause": 500
+    },
+    {
+      "text": "Two tables were written independently at base 45cd8a75: the ticket owner's, and the gate author's (Codex gpt-6.1-sol, high). This page is their union, with one command per row, each copied verbatim from its workflow step. Every row asserts exit 0 except the completion row, whose step asserts that the inner command exits 1 while the step itself exits 0. A red run is a real failed run of that step on this repository; \"none found\" means none in the searched window (22 September to 16 October).",
+      "pause": 400
+    }
+  ],
+  "rows": [
+    {
+      "text": "Rows.",
+      "pause": 500
+    }
+  ],
+  "what-each-acceptance-line-rests-on": [
+    {
+      "text": "What each acceptance line rests on.",
+      "pause": 500
+    }
+  ],
+  "running-it": [
+    {
+      "text": "Running it.",
+      "pause": 500
+    },
+    {
+      "text": "Every candidate: a scoped lake build of the modules changed, then nix run --quiet .#model-check, nix run --quiet .#simulator-check and nix run --quiet .#coverage-tests.",
+      "pause": 300
+    },
+    {
+      "text": "The paper candidate adds nix run --quiet .#docs-check.",
+      "pause": 300
+    },
+    {
+      "text": "The final candidate: nix develop --quiet -c just ci once, then the push.",
+      "pause": 300
+    },
+    {
+      "text": "Every other row runs hosted only: the release archive, presentation, lint, inventory, conformance transport and the application model among them. A hosted failure is one repair commit, never a local campaign.",
+      "pause": 300
+    },
+    {
+      "text": "Every command runs memory-capped and time-bounded with stdin closed.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "401e955a43dcc94257c4457e04dc77fa9f64622a252220a784f43e74e35875ea"
+  }
+}
