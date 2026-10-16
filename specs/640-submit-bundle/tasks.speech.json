@@ -1,0 +1,24 @@
+{
+  "slice-provider-read-and-assembly": [
+    {
+      "text": "inclusion-read: the provider read for where a transaction sits on the chain, in the Koios provider, the synthetic ledgers and the devnet facade, with recorded fixtures.",
+      "pause": 500
+    }
+  ],
+  "slice-submission-planner": [
+    {
+      "text": "witness-matching: pair witnesses with bodies by signature; different body and different key refused.",
+      "pause": 500
+    }
+  ],
+  "slice-submit-verb": [
+    {
+      "text": "submit-verb: singular submit with witnesses, bundle, node settings and receipt file; no wallet option; documented flags equal --help.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "d8360d0eac61319fae386e1d076a189334b80523198b8f3b40f6a24b0f80c04e"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "functions-for-submitting-a-bundle": [
+    {
+      "text": "Names, argument names and result types only. No bodies.",
+      "pause": 500
+    }
+  ],
+  "provider-module": [
+    {
+      "text": "inclusion(network, transactionIds): for each identity, found with chain point and confirmations, or not found; a named read failure otherwise.",
+      "pause": 500
+    }
+  ],
+  "signing-module": [
+    {
+      "text": "assembleSigned(tx, witnesses): the signed transaction with the body bytes and identity of tx and exactly witnesses.",
+      "pause": 500
+    }
+  ],
+  "submit-planner-module": [
+    {
+      "text": "neededKeys(bundle, resolvedInputs): for each transaction, the key hashes needing a witness. Pure.",
+      "pause": 500
+    }
+  ],
+  "submit-module": [
+    {
+      "text": "submitBundle(bundlePath, witnessPaths, receiptPath): reads, resolves, plans, sends in order, reads the chain again, writes the receipt; refuses with a named refusal.",
+      "pause": 500
+    }
+  ],
+  "command-module": [
+    {
+      "text": "submitCommand(bundlePath, witnessPaths, nodeSettings, receiptPath): the parsed submit command; it accepts the node settings and refuses every wallet and vault option by name.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "04f2471a84a6b809fa17c712ed7662cb96faab16bd4f8070571cdf2ee2216f7e"
+  }
+}

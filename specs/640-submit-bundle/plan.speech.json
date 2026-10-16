@@ -1,0 +1,30 @@
+{
+  "plan-for-submitting-a-bundle": [
+    {
+      "text": "Issue 640. One pull request, three slices of at most 90 minutes each.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Witnesses come as repeatable --witnesses FILE; a directory expands to its .witness files.",
+      "pause": 500
+    }
+  ],
+  "slices": [
+    {
+      "text": "Provider read and assembly export, with unit specs.",
+      "pause": 500
+    }
+  ],
+  "gate": [
+    {
+      "text": "Existing hosted commands, each as its step runs it. In offchain/: the focused suite with the submit and provider selections; the end-to-end lane for node, boot, insert and config; lint; the component build; the export-freeze check. At the root, inside the development shell: the repository lint, the effect-site inventory, the narration check; the documented-flags check and its controls; the wallet vault controls; the build graph check. Every run goes through a memory-capped, time-bounded scope with stdin closed.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "9d5de890739d460a78417a4d1191319d96620d7e7d498f45e34c2f87cebcfeef"
+  }
+}

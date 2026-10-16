@@ -1,0 +1,30 @@
+{
+  "modules-for-submitting-a-bundle": [
+    {
+      "text": "Dependency direction runs from the command line down to the shared library. The write commands and their signing call sites are not touched.",
+      "pause": 500
+    }
+  ],
+  "changed-responsibilities": [
+    {
+      "text": "The provider module (shared local-services library) gains the read that answers where a transaction sits on the chain. Every implementation answers it: the Koios provider through its transaction status call, the synthetic ledgers and the devnet facade in tests.",
+      "pause": 500
+    }
+  ],
+  "ownership": [
+    {
+      "text": "Files are read at the command boundary; the chain is read through the existing capabilities; sends use the existing bounded submission capability; nothing runs after the command; single-threaded. The command keeps no state.",
+      "pause": 500
+    }
+  ],
+  "not-changed": [
+    {
+      "text": "Fold, fold rules, preparation, the write commands and their signing call sites, --wallet-skey, the vault, the bundle format.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "fb4c1ca8cd7b7234c8300fe280816f72f0a85416ad78da8bb952c87eec110fdb"
+  }
+}

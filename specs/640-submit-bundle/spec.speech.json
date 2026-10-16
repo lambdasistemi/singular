@@ -1,0 +1,36 @@
+{
+  "submit-a-signed-bundle-without-sending-anything-twice": [
+    {
+      "text": "Issue 640, third of five tickets under issue 490. This page records the story, the requirements and the refusals. The write commands that produce bundles (issue 641) and the open-datum commands (issue 642) are not part of it.",
+      "pause": 500
+    }
+  ],
+  "story": [
+    {
+      "text": "As Bob, I hand back the witnesses for a bundle and run singular submit --witnesses FILE ... BUNDLE with the node settings. The command sends the transactions in the bundle's order and prints a receipt written from what the chain shows. If I run it again after a crash, it sends only the transactions that are still missing. If a body has expired it says \"rebuild\" and sends nothing. The command needs no wallet key and keeps no state of its own.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "witness-matches-its-body: each witness is matched to a transaction by verifying its signature over that body's identity, never by its file name.",
+      "pause": 500
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Exit with a named refusal and nothing sent: bundle unreadable or inconsistent (as in the signing step); witness unreadable; witness for a different body; witness for a key no transaction needs; needed witness missing; expired body (rebuild); input neither in an earlier body nor on the chain.",
+      "pause": 500
+    }
+  ],
+  "limits-recorded": [
+    {
+      "text": "The effect lines are the writer's claims, shown and not confirmed; structured effects belong to a later bundle version.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "6e30af5650d85aabea585b3744295d2656e836925ae8e020c6820f05c760899f"
+  }
+}
