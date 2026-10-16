@@ -242,6 +242,19 @@ pub type State {
   /// position in the fold; freely burnable by its holder (terminal-witnesses-plural).
   /// Set at genesis, preserved by every `Modify`.
   terminal_policy: PolicyId,
+  /// The cost every registration pays, in lovelace (Lean
+  /// `Config.registrationCost`). A booked registration must declare exactly
+  /// this cost. Set at genesis, preserved by every `Modify`.
+  registration_cost: Int,
+  /// The widest finite validity interval, in milliseconds, a registration
+  /// booking may carry (Lean `Config.bookingWidth`). Set at genesis,
+  /// preserved by every `Modify`.
+  booking_width: Int,
+  /// The applied request script hash of this registry: the policy of its
+  /// trie-ready tags and the payment credential of its request address.
+  /// Set at genesis, preserved by every `Modify`. The minimum tip stays
+  /// the `tip` field above.
+  request_policy: PolicyId,
 }
 
 /// The seven-admitted-edges row index of a request (#183, Lean `Request.edge`). An edge names
@@ -426,6 +439,38 @@ pub type CageDatum {
   /// output at `refund`. Whoever books the name later, the deposit goes
   /// back to whoever witnessed the absence.
   AbsentCustody { refund: ByteArray }
+  /// A registration booked with its tags (appended at index 3, so the
+  /// historical constructors never move). The old `RequestDatum` stays
+  /// distinct and decodable while the booking is transitional.
+  RegistrationDatum(RegistrationRequest)
+}
+
+/// A registration request as the booking policy authenticates it (Lean
+/// `RegistrationRequest`). The held assets and the output reference come
+/// from the transaction, never from this datum. `datum` is the optional
+/// datum delivered with the registered token; as in the model, neither
+/// tag commits to it.
+pub type RegistrationRequest {
+  /// The registry this request is for, by its state token name.
+  registry: TokenId,
+  /// The registry key being registered.
+  key: ByteArray,
+  /// The payment key hash that may retract and is refunded (28 bytes).
+  refund_address: VerificationKeyHash,
+  /// Binary address bytes of the output that will receive the token.
+  destination: ByteArray,
+  /// The datum the delivered output must carry, or none.
+  datum: Option<Data>,
+  /// The booked time: the upper end of the booking's validity interval.
+  submitted_at: Int,
+  /// The registration cost, equal to the registry's pin.
+  registration_cost: Int,
+  /// The declared tip, at least the registry's minimum tip.
+  declared_tip: Int,
+  /// The declared carrier lovelace.
+  carrier_ada: Int,
+  /// The one nonce both tags commit to.
+  nonce: Int,
 }
 
 /// The open application's mint redeemer (#173 I1).
@@ -452,5 +497,14 @@ pub type OpenRedeemer {
     /// Where the request's minted token goes, and the inline datum the
     /// receiving output must carry.
     destination: (ByteArray, ByteArray),
+  }
+  /// Certify one registration booking: the application tag binds the key,
+  /// the refund address, the destination and the request's nonce (Lean
+  /// `applicationTagAssetName`).
+  ApproveRegistration {
+    key: ByteArray,
+    refund_address: ByteArray,
+    destination: ByteArray,
+    nonce: Int,
   }
 }

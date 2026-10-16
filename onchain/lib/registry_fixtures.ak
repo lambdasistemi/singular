@@ -69,6 +69,16 @@ pub const requestLovelace: Int = tip + deposit
 
 pub const stateLovelace: Int = 5_000_000
 
+/// The registration pins of this registry: what a booking must declare as
+/// its cost, the widest interval it may carry, and the applied request
+/// policy (28 bytes) that mints its trie-ready tags.
+pub const registrationCost: Int = 2_000_000
+
+pub const bookingWidth: Int = 10_000
+
+pub const bookingRequestPolicy: ByteArray =
+  #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0"
+
 // ----------------------------------------------------------------------------
 // Keys, leaves and addresses
 // ----------------------------------------------------------------------------
@@ -322,6 +332,9 @@ pub fn stateOf(root: ByteArray) -> State {
     active_policy: activePolicy,
     absent_policy: absentPolicy,
     terminal_policy: terminalPolicy,
+    registration_cost: registrationCost,
+    booking_width: bookingWidth,
+    request_policy: bookingRequestPolicy,
   }
 }
 
