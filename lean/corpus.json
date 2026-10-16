@@ -2639,7 +2639,7 @@
     "terminalPolicy": 10
   },
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
-  "payloadSha256": "241d0d8a474092bbdf330a907eff011b8a207d5889e37ecbe49cc1a32f16762e",
+  "payloadSha256": "19b19d7cdb8632912dd1a4ee6c4e0a45af1e301f19ae44c356f7cf8c0db3de7b",
   "registrationBookings": [
     {
       "actualReason": null,
@@ -7123,6 +7123,7 @@
     "lean/Main/RejectionReadsState.lean": "bd60decf0a332f7a2cb1fcdce11e52e0936d6736724bfd16961c07233b0de559",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
+    "lean/Main/RetractionFunding.lean": "7f06aa6e97557989b6bb21e5ca3daefa0898fdf72b9ec33ed06edc3491478c0d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/Singular.lean": "e5cd108b30203008a9d1f57f30d8a7270fbcf3bce3c03ccefe3ac057bbd8c7da",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",

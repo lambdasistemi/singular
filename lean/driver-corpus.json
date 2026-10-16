@@ -5968,7 +5968,7 @@
   ],
   "corpusSourceSha256": "1a99fafbd6f8d3ca8b47161d3f8051a77c541fccd82fb65b75f93fd04c364f1f",
   "modelSha256": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
-  "payloadSha256": "e619d1800ddb0b70cc536b17c080550a05ccdb9d51a2012ecf413f012b223bab",
+  "payloadSha256": "af45987468eb64e76c81d4c9e8d581276ebcb49cc45ec46a7fcb6f078bf44c72",
   "scenarios": [
     {
       "foldWitness": {
@@ -16324,6 +16324,7 @@
     "lean/Main/RejectionReadsState.lean": "bd60decf0a332f7a2cb1fcdce11e52e0936d6736724bfd16961c07233b0de559",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
+    "lean/Main/RetractionFunding.lean": "7f06aa6e97557989b6bb21e5ca3daefa0898fdf72b9ec33ed06edc3491478c0d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/Singular.lean": "e5cd108b30203008a9d1f57f30d8a7270fbcf3bce3c03ccefe3ac057bbd8c7da",
     "lean/Singular/Audit.lean": "52f255cdc901ae693688f11f8a71c1073bd6e2f5cc9513d31fd2503fec20d117",
