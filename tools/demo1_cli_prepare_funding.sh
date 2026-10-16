@@ -77,6 +77,8 @@ hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
 hexkey >"$work/carol.skey"
 hexkey >"$work/bob.skey"
 hexkey >"$work/eve.skey"
+hexkey >"$work/dave.skey"
+hexkey >"$work/frank.skey"
 
 export TMPDIR="$work"
 # The node binds `$TMPDIR/cardano-e2e/node.sock` (22 characters after TMPDIR)
@@ -116,6 +118,8 @@ start_devnet() {
 carol=(--wallet-skey "$work/carol.skey")
 bob=(--wallet-skey "$work/bob.skey")
 eve=(--wallet-skey "$work/eve.skey")
+dave=(--wallet-skey "$work/dave.skey")
+frank=(--wallet-skey "$work/frank.skey")
 
 exit_of() {
   case "$1" in
@@ -145,6 +149,65 @@ srun() {
   [ "$(jq -r .outcome "$receipts/$name.json")" = "$want" ] || fail "$name: outcome $(jq -r .outcome "$receipts/$name.json"), wanted $want"
 }
 
+# --- check helpers (each negative-controlled: a corrupted copy fed to
+# the same check fails, see the run's handoffs) ---
+
+# prep_wellformed NAME FILE: NAME's receipt carries a preparation object
+# whose every member is typed and well-formed — a 64-hex transaction, an
+# output that is that transaction plus #index, numeric lovelace and fee.
+prep_wellformed() {
+  jq -e '
+    .preparation as $p |
+    ($p | type) == "object"
+    and ($p | has("transaction") and has("output") and has("lovelace") and has("fee"))
+    and ($p.transaction | type == "string" and test("^[0-9a-f]{64}$"))
+    and ($p.output | type == "string" and test("^[0-9a-f]{64}#[0-9]+$"))
+    and ($p.output | startswith($p.transaction))
+    and ($p.lovelace | type == "number")
+    and ($p.fee | type == "number")
+  ' "$2" >/dev/null \
+    || fail "$1 names no well-formed preparation: $(cat "$2")"
+}
+
+# subs_exact NAME FILE WANT: NAME's submissions are an array of objects
+# with string step and tx members, whose [step, tx] pairs equal WANT in
+# order.
+subs_exact() {
+  jq -e --argjson want "$3" '
+    (.submissions | type == "array")
+    and (all(.submissions[]; (.step | type == "string") and (.tx | type == "string")))
+    and ([.submissions[] | [.step, .tx]] == $want)
+  ' "$2" >/dev/null \
+    || fail "$1 submissions are not $3: $(jq -c .submissions "$2")"
+}
+
+# refs_wellformed NAME FILE: NAME's create receipt published exactly six
+# reference entries — an ARRAY of objects, the six roles each once, every
+# output a distinct well-formed reference.
+refs_wellformed() {
+  jq -e '
+    (.references | type) == "array"
+    and (.references | length) == 6
+    and (all(.references[]; type == "object"))
+    and ([.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"])
+    and ([.references[] | .output] | unique | length) == 6
+    and (all(.references[]; .output | type == "string" and test("^[0-9a-f]{64}#[0-9]+$")))
+  ' "$2" >/dev/null \
+    || fail "$1 did not publish six distinct references: $(jq -c .references "$2")"
+}
+
+# state_digest ROOT: the sorted `path<TAB>sha256` of every file under the
+# registry state root, paths relative to that root — the byte identity a
+# refusal that submits nothing must leave.
+state_digest() {
+  (
+    cd "$1" || exit 3
+    find . -type f -print | LC_ALL=C sort | while IFS= read -r f; do
+      printf '%s\t%s\n' "${f#./}" "$(sha256sum "$f" | awk '{print $1}')"
+    done
+  )
+}
+
 # wallet_utxos ADDR OUT: every unspent output at ADDR, one per line as
 # `TXID#IX COIN ASSETS REFDATUM` where ASSETS is the asset count and REFDATUM
 # is `script` or `none`. Read from the provider's `address_utxos`, never typed.
@@ -163,7 +226,8 @@ wallet_utxos() {
 # Bob's termination booking, Carol's termination fold
 # ------------------------------------------------------------------
 start_devnet devnet-rehearsal --fund "$work/carol.skey:1:500000000" \
-  --fund "$work/bob.skey:2:2000000000" --fund "$work/eve.skey:1:2000000"
+  --fund "$work/bob.skey:2:2000000000" --fund "$work/eve.skey:1:2000000" \
+  --fund "$work/dave.skey:1:500000000" --fund "$work/frank.skey:1:40000000"
 reg="$work/registry"
 common=(--state-dir "$reg" --blueprint "$blueprint")
 
@@ -177,8 +241,7 @@ carolkey="$(field carol-create .walletKeyHash)"
 carol_addr="$(field carol-create .wallet)"
 say "carol's one-output create made registry $token"
 common+=(--state-token "$token")
-jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
-  "$receipts/carol-create.json" >/dev/null || fail "carol's create did not publish the six references"
+refs_wellformed "carol's create" "$receipts/carol-create.json"
 for ref_out in $(jq -r '.references[] | .output' "$receipts/carol-create.json"); do
   probe_one="$work/carol-ref-probe.json"
   "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$ref_out" >"$probe_one"
@@ -451,5 +514,233 @@ wallet_utxos "$eve_addr" "$work/eve-utxos-after.json" >"$work/eve-utxo-after-lin
 [ "$journal_before_second" = "$journal_before" ] \
   || fail "the journal grew across eve's first refused fold"
 say "the journal is unchanged across eve's refused folds"
+
+# ------------------------------------------------------------------
+# The booking's own legs (#491 remainder, pull request 2b): a token-only
+# wallet books through one preparation, the faucet's single output books
+# with no hand step, a short wallet is refused before signing, and a
+# funded wallet books with no preparation member.
+# ------------------------------------------------------------------
+
+# Dave reaches the rehearsal shape in his own registry: he creates from
+# his single funded output, Bob books two insertions, Dave rejects both,
+# and his change carries the approvals beside his ada with no ada-only
+# output left. His registry keeps Carol's untouched.
+orun dave-create success -- create --process-time 120000 --retract-time 60000 \
+  --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
+dave_token="$(field dave-create .stateToken)"
+[ -n "$dave_token" ] && [ "$dave_token" != null ] || fail "dave's create named no token"
+dave_addr="$(field dave-create .wallet)"
+davekey="$(field dave-create .walletKeyHash)"
+say "dave's one-output create made registry $dave_token"
+davecommon=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$dave_token")
+orun dave-bob-insert-k success -- insert --key keyPrepareK --payload "$work/payload-insert.json" \
+  "${davecommon[@]}" "${node[@]}" "${bob[@]}"
+orun dave-bob-insert-l success -- insert --key keyPrepareL --payload "$work/payload-insert.json" \
+  "${davecommon[@]}" "${node[@]}" "${bob[@]}"
+say "bob booked keyPrepareK and keyPrepareL in dave's registry"
+deadline_k_ms="$(jq -er .foldDeadline.posixMs "$receipts/dave-bob-insert-k.json")"
+deadline_l_ms="$(jq -er .foldDeadline.posixMs "$receipts/dave-bob-insert-l.json")"
+[ "$deadline_l_ms" -gt "$deadline_k_ms" ] && deadline_k_ms="$deadline_l_ms"
+dave_retract_ms="$(jq -er .retractTime "$receipts/dave-create.json")"
+dave_retract_ends=$((deadline_k_ms + dave_retract_ms))
+dave_wait_ms=$((dave_retract_ends + 3000 - $(date +%s%3N)))
+if [ "$dave_wait_ms" -gt 0 ]; then
+  say "waiting $((dave_wait_ms / 1000 + 1)) s for dave's retract window to close"
+  sleep $((dave_wait_ms / 1000 + 1))
+fi
+srun dave-reject success -- registry reject "${davecommon[@]}" "${node[@]}" "${dave[@]}"
+say "dave rejected: $(field dave-reject .reject)"
+wallet_utxos "$dave_addr" "$work/dave-utxos.json" >"$work/dave-utxo-lines.txt"
+dave_ada_only="$(awk '$3 == 0 && $4 == "none"' "$work/dave-utxo-lines.txt" | wc -l)"
+[ "$dave_ada_only" -eq 0 ] || fail "dave's wallet holds $dave_ada_only ada-only outputs, expected none: $(cat "$work/dave-utxo-lines.txt")"
+jq -e --arg a "$dave_addr" '[.[] | select(.address == $a)] | (length > 0) and all(.[]; .asset_list != null)' \
+  "$work/dave-utxos.json" >/dev/null \
+  || fail "the provider's answer for dave names no assets on some output: $(jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | {output: "\(.tx_hash)#\(.tx_index)", assets: .asset_list}]' "$work/dave-utxos.json")"
+jq -e --arg a "$dave_addr" '[.[] | select(.address == $a) | .asset_list[] | "\(.policy_id).\(.asset_name)"] | unique | length > 1' \
+  "$work/dave-utxos.json" >/dev/null \
+  || fail "dave's wallet does not hold both approval kinds: $(jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | {output: "\(.tx_hash)#\(.tx_index)", assets: [.asset_list[] | "\(.policy_id).\(.asset_name)x\(.quantity)"]}]' "$work/dave-utxos.json")"
+say "dave's wallet is token-only, holding both approval kinds"
+
+# The booking preview from the token-only wallet: it plans the
+# preparation without submitting anything; the journal and the wallet
+# stand still around it.
+dave_state_before_preview="$(state_digest "$reg")"
+dave_preview_status=0
+"$open_datum" insert --key keyPrepare2b --payload "$work/payload-insert.json" \
+  --preview --wallet-address "$dave_addr" "${davecommon[@]}" "${node[@]}" \
+  >"$receipts/dave-insert-preview.json" 2>"$receipts/dave-insert-preview.err" || dave_preview_status=$?
+[ "$dave_preview_status" -eq 0 ] \
+  || fail "dave insert preview exits $dave_preview_status, wanted success ($(jq -r .reason "$receipts/dave-insert-preview.json" 2>/dev/null || head -n 3 "$receipts/dave-insert-preview.err"))"
+prep_wellformed "dave insert preview" "$receipts/dave-insert-preview.json"
+jq -r .preparation "$receipts/dave-insert-preview.json" >"$work/dave-preview-prep.json"
+jq -e 'tostring | contains("send one self-payment") | not' "$receipts/dave-insert-preview.json" >/dev/null \
+  || fail "dave insert preview still prints the self-payment instruction: $(cat "$receipts/dave-insert-preview.json")"
+say "dave insert preview plans $(jq -r .preparation.output "$receipts/dave-insert-preview.json")"
+wallet_utxos "$dave_addr" "$work/dave-utxos-after-preview.json" >"$work/dave-utxo-after-preview-lines.txt"
+[ "$(cat "$work/dave-utxo-after-preview-lines.txt")" = "$(cat "$work/dave-utxo-lines.txt")" ] \
+  || fail "dave's outputs moved across his preview"
+[ "$(state_digest "$reg")" = "$dave_state_before_preview" ] \
+  || fail "the registry state changed across dave's preview (byte-identity of every file)"
+say "dave's preview submitted and journalled nothing"
+
+# The booking itself: it completes through ONE preparation, whose figures
+# equal the preview's on the same wallet.
+jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | .asset_list[] | "\(.policy_id):\(.asset_name):\(.quantity)"] | sort' \
+  "$work/dave-utxos.json" >"$work/dave-assets-before.json"
+orun dave-insert success -- insert --key keyPrepare2b --payload "$work/payload-insert.json" \
+  "${davecommon[@]}" "${node[@]}" "${dave[@]}"
+prep_wellformed "dave insert" "$receipts/dave-insert.json"
+prep_wellformed "dave insert (figure equality)" "$receipts/dave-insert.json"
+jq -e '(.transaction | type == "string") and (.lovelace | type == "number") and (.fee | type == "number")' \
+  "$work/dave-preview-prep.json" >/dev/null \
+  || fail "the preview's preparation figures are not typed: $(cat "$work/dave-preview-prep.json")"
+[ "$(jq -r '.preparation.transaction' "$receipts/dave-insert.json")" = "$(jq -r .transaction "$work/dave-preview-prep.json")" ] \
+  || fail "the preview's preparation transaction differs from the insert's"
+[ "$(jq -r '.preparation.output' "$receipts/dave-insert.json")" = "$(jq -r .output "$work/dave-preview-prep.json")" ] \
+  || fail "the preview's made output differs from the insert's"
+[ "$(jq -r '.preparation.lovelace' "$receipts/dave-insert.json")" = "$(jq -r .lovelace "$work/dave-preview-prep.json")" ] \
+  || fail "the preview's funding lovelace differs from the insert's"
+[ "$(jq -r '.preparation.fee' "$receipts/dave-insert.json")" = "$(jq -r .fee "$work/dave-preview-prep.json")" ] \
+  || fail "the preview's preparation fee differs from the insert's"
+dave_prep_tx="$(field dave-insert .preparation.transaction)"
+dave_prep_out="$(field dave-insert .preparation.output)"
+[ "$dave_prep_out" = "${dave_prep_tx}#0" ] \
+  || fail "dave's made output $dave_prep_out is not the first output of $dave_prep_tx"
+dave_booking_tx="$(field dave-insert .booking)"
+[ -n "$dave_booking_tx" ] && [ "$dave_booking_tx" != null ] \
+  || fail "dave's insert names no booking: $(cat "$receipts/dave-insert.json")"
+dave_subs_want="$(jq -cn --arg p "$dave_prep_tx" --arg b "$dave_booking_tx" '[["book",$p],["book",$b]]')"
+subs_exact "dave's insert" "$receipts/dave-insert.json" "$dave_subs_want"
+dave_journal="$(managed_journal "$reg" "$dave_token" "$davekey")"
+[ -f "$dave_journal" ] || fail "dave's insert left no journal"
+jq -se --arg t "$dave_prep_tx" \
+  '[map(select(.journalTxId == $t) | .journalEvent)] | .[0] == ["prepared","submitted","confirmed","observed"]' \
+  "$dave_journal" >/dev/null \
+  || fail "the journal lacks the preparation's four phases in order for $dave_prep_tx"
+jq -se --arg t "$dave_prep_tx" --arg e "funding:$dave_addr" \
+  '[.[] | select(.journalTxId == $t and .journalEvent == "prepared") | .journalExpect] | any(. == $e)' \
+  "$dave_journal" >/dev/null \
+  || fail "the journal's prepared preparation for $dave_prep_tx expects no funding:$dave_addr"
+dave_booking_tx="$(field dave-insert .booking)"
+[ -n "$dave_booking_tx" ] && [ "$dave_booking_tx" != null ] \
+  || fail "dave's insert names no booking: $(cat "$receipts/dave-insert.json")"
+curl -s -X POST "$provider_url/tx_info" \
+  -H "Content-Type: application/json" \
+  -d "{\"_tx_hashes\":[\"$dave_booking_tx\"]}" >"$work/dave-booking-info.json" \
+  || fail "the provider did not answer tx_info for $dave_booking_tx"
+jq -e --arg r "$dave_prep_out" --arg t "$dave_booking_tx" \
+  '[.[] | select(.tx_hash == $t) | .inputs[] | "\(.tx_hash)#\(.tx_index)"] | any(. == $r)' \
+  "$work/dave-booking-info.json" >/dev/null \
+  || fail "the booking $dave_booking_tx does not spend the made $dave_prep_out"
+say "dave's insert made $dave_prep_out and booked through it"
+wallet_utxos "$dave_addr" "$work/dave-utxos-after.json" >"$work/dave-utxo-after-lines.txt"
+jq -e --arg a "$dave_addr" '[.[] | select(.address == $a)] | all(.[]; .asset_list != null)' \
+  "$work/dave-utxos-after.json" >/dev/null \
+  || fail "the provider's answer for dave names no assets on some output after his insert"
+jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | .asset_list[] | "\(.policy_id):\(.asset_name):\(.quantity)"] | sort' \
+  "$work/dave-utxos-after.json" >"$work/dave-assets-after.json"
+[ "$(cat "$work/dave-assets-after.json")" = "$(cat "$work/dave-assets-before.json")" ] \
+  || fail "dave's tokens changed across his insert: before $(cat "$work/dave-assets-before.json") after $(cat "$work/dave-assets-after.json")"
+say "dave still holds his approvals in exact quantities after his insert"
+refs_wellformed "dave's create" "$receipts/dave-create.json"
+dave_ref_count="$(jq -r '.references | length' "$receipts/dave-create.json")"
+dave_refs_probed=0
+for ref_out in $(jq -r '.references[] | .output' "$receipts/dave-create.json"); do
+  probe_one="$work/dave-ref-after.json"
+  "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$ref_out" >"$probe_one"
+  jq -e --arg r "$ref_out" 'any(.live[]; . == $r)' "$probe_one" >/dev/null \
+    || fail "dave's reference $ref_out is not live after his insert"
+  dave_refs_probed=$((dave_refs_probed + 1))
+done
+[ "$dave_refs_probed" -eq "$dave_ref_count" ] \
+  || fail "probed $dave_refs_probed references, the create receipt names $dave_ref_count"
+say "dave's $dave_ref_count references are live after his insert"
+
+# The faucet's single output: Frank holds exactly one ada-only output
+# (what the faucet pays). His insert and his terminate complete with no
+# hand step; each receipt says whether a preparation was made, and the
+# leg asserts what it says.
+orun frank-insert success -- insert --key keyFaucet1 --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${frank[@]}"
+if jq -e 'has("preparation")' "$receipts/frank-insert.json" >/dev/null; then
+  prep_wellformed "frank's insert" "$receipts/frank-insert.json"
+  frank_prep_tx="$(field frank-insert .preparation.transaction)"
+  frank_booking_tx="$(field frank-insert .booking)"
+  frank_subs_want="$(jq -cn --arg p "$frank_prep_tx" --arg b "$frank_booking_tx" '[["book",$p],["book",$b]]')"
+  subs_exact "frank's insert" "$receipts/frank-insert.json" "$frank_subs_want"
+  say "frank's insert prepared $(field frank-insert .preparation.output) from the single output"
+else
+  frank_tx="$(field frank-insert .booking)"
+  frank_subs_want="$(jq -cn --arg b "$frank_tx" '[["book",$b]]')"
+  subs_exact "frank's insert" "$receipts/frank-insert.json" "$frank_subs_want"
+  say "frank's insert needed no preparation: the single output funded and collateralised it"
+fi
+orun frank-fold-bob success -- fold --request "$(field frank-insert .request)" \
+  "${common[@]}" "${node[@]}" "${bob[@]}"
+say "bob folded keyFaucet1 active for frank"
+orun frank-terminate success -- terminate --key keyFaucet1 \
+  "${common[@]}" "${node[@]}" "${frank[@]}"
+if jq -e 'has("preparation")' "$receipts/frank-terminate.json" >/dev/null; then
+  prep_wellformed "frank's terminate" "$receipts/frank-terminate.json"
+  frank_t_prep_tx="$(field frank-terminate .preparation.transaction)"
+  frank_t_booking_tx="$(field frank-terminate .booking)"
+  frank_t_subs_want="$(jq -cn --arg p "$frank_t_prep_tx" --arg b "$frank_t_booking_tx" '[["book",$p],["book",$b]]')"
+  subs_exact "frank's terminate" "$receipts/frank-terminate.json" "$frank_t_subs_want"
+  say "frank's terminate prepared $(field frank-terminate .preparation.output)"
+else
+  frank_t_tx="$(field frank-terminate .booking)"
+  frank_t_subs_want="$(jq -cn --arg b "$frank_t_tx" '[["book",$b]]')"
+  subs_exact "frank's terminate" "$receipts/frank-terminate.json" "$frank_t_subs_want"
+  say "frank's terminate needed no preparation"
+fi
+
+# A short wallet is refused before signing: Eve's insert, nothing
+# submitted, the journal unchanged, her outputs all still there.
+eve_state_before_insert="$(state_digest "$reg")"
+wallet_utxos "$(jq -r '.wallet' "$receipts/eve-fold-short.json")" "$work/eve-utxos-insert.json" >"$work/eve-utxo-insert-lines.txt"
+orun eve-insert-short client-refusal -- insert --key keyEveShort --payload "$work/payload-insert.json" \
+  "${common[@]}" "${node[@]}" "${eve[@]}"
+case "$(jq -r .reason "$receipts/eve-insert-short.json")" in
+  "the wallet holds "*" lovelace but "*" is required for fold reserve (client policy)") ;;
+  *) fail "eve's short insert lacks the fold-reserve framing: $(cat "$receipts/eve-insert-short.json")" ;;
+esac
+[ "$(jq -r .requiredIs "$receipts/eve-insert-short.json")" = "fold reserve" ] \
+  || fail "eve's short insert does not name the fold reserve as what is required: $(cat "$receipts/eve-insert-short.json")"
+jq -e 'has("preparation") | not' "$receipts/eve-insert-short.json" >/dev/null \
+  || fail "eve's refused insert carries a preparation member: $(cat "$receipts/eve-insert-short.json")"
+jq -e '.submissions | type == "array" and length == 0' "$receipts/eve-insert-short.json" >/dev/null \
+  || fail "eve's refused insert lacks an empty submissions array: $(cat "$receipts/eve-insert-short.json")"
+wallet_utxos "$(jq -r '.wallet' "$receipts/eve-insert-short.json")" "$work/eve-utxos-after-insert.json" >"$work/eve-utxo-after-insert-lines.txt"
+[ "$(cat "$work/eve-utxo-after-insert-lines.txt")" = "$(cat "$work/eve-utxo-insert-lines.txt")" ] \
+  || fail "eve's outputs changed across her refused insert"
+[ "$(state_digest "$reg")" = "$eve_state_before_insert" ] \
+  || fail "the registry state changed across eve's refused insert (byte-identity of every file)"
+jq -e '(.held | type == "number") and (.required | type == "number") and (.shortfall | type == "number")' \
+  "$receipts/eve-insert-short.json" >/dev/null \
+  || fail "eve's refusal figures are not all numbers: $(cat "$receipts/eve-insert-short.json")"
+eve_i_held="$(jq -r .held "$receipts/eve-insert-short.json")"
+eve_i_required="$(jq -r .required "$receipts/eve-insert-short.json")"
+eve_i_shortfall="$(jq -r .shortfall "$receipts/eve-insert-short.json")"
+[ "$((eve_i_required - eve_i_held))" -eq "$eve_i_shortfall" ] \
+  || fail "eve's refusal arithmetic: required $eve_i_required - held $eve_i_held is not the shortfall $eve_i_shortfall"
+eve_i_addr="$(jq -r .wallet "$receipts/eve-insert-short.json")"
+[ "$(jq -r --arg a "$eve_i_addr" '[.[] | select(.address == $a) | .value] | add' "$work/eve-utxos-insert.json")" -eq "$eve_i_held" ] \
+  || fail "eve's on-chain total differs from the receipt's held $eve_i_held"
+say "eve's short insert was refused before signing: $(jq -r .reason "$receipts/eve-insert-short.json")"
+
+# A funded wallet books with no preparation member: every booking Bob
+# made in this run (inserts and the termination) lacked one, and each
+# submitted exactly its own transaction.
+for r in bob-insert bob-insert-b bob-insert-t bob-insert-e bob-insert-f bob-terminate; do
+  jq -e 'has("preparation") | not' "$receipts/$r.json" >/dev/null \
+    || fail "$r carries a preparation member: $(cat "$receipts/$r.json")"
+  b_tx="$(field "$r" .booking)"
+  [ -n "$b_tx" ] && [ "$b_tx" != null ] \
+    || fail "$r names no booking: $(cat "$receipts/$r.json")"
+  b_want="$(jq -cn --arg b "$b_tx" '[["book",$b]]')"
+  subs_exact "$r" "$receipts/$r.json" "$b_want"
+done
+say "bob's funded bookings made no preparation"
 
 say "prepare funding: PASS"
