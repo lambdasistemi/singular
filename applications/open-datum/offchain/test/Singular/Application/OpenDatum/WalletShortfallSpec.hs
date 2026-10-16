@@ -45,7 +45,7 @@ import Data.IORef
     )
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, listToMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -70,10 +70,17 @@ import System.Posix.IO
 import System.Posix.Types (Fd)
 import Test.Hspec
 
+import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
-import Cardano.Ledger.Api.Tx.Out (TxOut, addrTxOutL, mkBasicTxOut)
-import Cardano.Ledger.BaseTypes (TxIx (..))
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
+    )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -85,13 +92,19 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Data.Aeson ((.=))
 import Singular.Application.OpenDatum.Command (parseOpenDatumCommand)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
+import Singular.CLI.Live (txInText)
 import Singular.CLI.Outlay (walletShortfall)
 import Singular.CLI.Plan
     ( faucetStep
     , refuseUnderfunded
     , retainedFaucetStep
     )
-import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Receipt
+    ( JournalEntry (..)
+    , OutcomeClass (..)
+    , readJournal
+    )
+import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry (loadReleaseCodes)
 import Singular.CLI.Session (CommandFailure (..), Env (..))
 import Singular.CLI.Trace
@@ -856,6 +869,122 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                     100_000_000
                     14
             pure ()
+    it
+        "a token-only insert completes through one preparation (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let testPayer = walletAddr (rigTestWallet rig)
+                bundle = singleKindBundle policy kinds
+            plantTokenOutputs rig bundle 100_000_000 0
+            walletBefore <- readTestWallet rig
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            length (spendableOuts walletBefore) `shouldBe` 1
+            assetsOf walletBefore `shouldBe` bundle
+            refsBefore <- referenceOutputs rig
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert from the token-only wallet"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "bob-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--deposit"
+                      , "15000000"
+                      ]
+                        <> tokenArgs t
+                    )
+            _ <- expectBookedThroughPreparation rig testPayer inserted
+            walletAfter <- readTestWallet rig
+            assetsOf walletAfter `shouldBe` bundle
+            refsAfter <- referenceOutputs rig
+            refsAfter `shouldBe` refsBefore
+    it
+        "a token-only terminate completes through one preparation (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let testPayer = walletAddr (rigTestWallet rig)
+                bundle = singleKindBundle policy kinds
+            -- a live key first: an insert from the wallet as the rig
+            -- funds it (ada only, no preparation), then the fold that
+            -- delivers it
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert alice-1 for the terminate"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--deposit"
+                      , "15000000"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            -- token-only: the whole wallet replanted around the bundle
+            plantTokenOutputs rig bundle 100_000_000 0
+            walletBefore <- readTestWallet rig
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            assetsOf walletBefore `shouldBe` bundle
+            refsBefore <- referenceOutputs rig
+            terminated <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "terminate from the token-only wallet"
+                    (["open-datum", "terminate", "--key", "alice-1"] <> tokenArgs t)
+            _ <- expectBookedThroughPreparation rig testPayer terminated
+            walletAfter <- readTestWallet rig
+            assetsOf walletAfter `shouldBe` bundle
+            refsAfter <- referenceOutputs rig
+            refsAfter `shouldBe` refsBefore
+    it "a funded wallet books with no preparation member (#491 PR2b)" $ with20AdaRig $ \rig -> do
+        seed <- fundSeed rig
+        create <- run rig "create" ["open-datum", "create", "--seed", seed]
+        outcomeOf (runReceipt create) `shouldBe` Just "success"
+        t <- tokenOf create
+        inserted <-
+            runWithKey
+                (rigTestKey rig)
+                rig
+                "insert from a funded wallet"
+                ( [ "open-datum"
+                  , "insert"
+                  , "--key"
+                  , "alice-1"
+                  , "--payload"
+                  , rigDir rig </> "payload.json"
+                  ]
+                    <> tokenArgs t
+                )
+        outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+        runCode inserted `shouldBe` ExitSuccess
+        case runReceipt inserted of
+            Aeson.Object o -> KeyMap.member "preparation" o `shouldBe` False
+            _ -> fail "the funded insert printed no receipt object"
     it "opens a write session for 20 ada in two outputs with no threshold" $ do
         withSystemTempDirectory "wallet-floor-open" $ \dir -> do
             let keyPath = dir </> "payment.skey"
@@ -1351,6 +1480,158 @@ snapshotStateDir rig = walk (rigDir rig </> "registry")
                 else do
                     bytes <- BS.readFile p
                     pure [(makeRelative (rigDir rig) p, bytes)]
+
+{- | The directories holding a journal under the state directory: one
+managed partition per wallet that wrote here.
+-}
+journalDirs :: Rig -> IO [FilePath]
+journalDirs rig = walk (rigDir rig </> "registry")
+  where
+    walk dir = do
+        names <- sort <$> listDirectory dir
+        fmap concat (mapM one names)
+      where
+        one n = do
+            let p = dir </> n
+            isDir <- doesDirectoryExist p
+            if isDir then walk p else pure [dir | n == "journal.jsonl"]
+
+{- | Every published reference output at the creator's address, by its
+input: the references a booking must never spend. Read through the
+provider at run time.
+-}
+referenceOutputs :: Rig -> IO (Map.Map TxIn (TxOut ConwayEra))
+referenceOutputs rig = do
+    creator <- loadWallet (fromIntegral magic) (rigKey rig)
+    outs <-
+        SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+            SessionIO.outputsAt v (walletAddr creator)
+    pure
+        ( Map.fromList
+            [u | u@(_, o) <- outs, o ^. referenceScriptTxOutL /= SNothing]
+        )
+
+-- | The non-ada assets a wallet holds, summed over its outputs.
+assetsOf
+    :: [(TxIn, TxOut ConwayEra)]
+    -> Map.Map PolicyID (Map.Map AssetName Integer)
+assetsOf = foldr step mempty
+  where
+    step (_, o) acc = case o ^. valueTxOutL of
+        MaryValue _ (MultiAsset m) -> Map.unionWith (Map.unionWith (+)) m acc
+
+{- | The preparation a completing command made, typed from its receipt:
+the transaction identifier, the made output reference, the lovelace of
+the funding output and the fee.
+-}
+preparationMembersOf :: Run -> IO (Text, Text, Integer, Integer)
+preparationMembersOf r = case runReceipt r of
+    Aeson.Object o -> case KeyMap.lookup "preparation" o of
+        Just (Aeson.Object p) ->
+            case (KeyMap.lookup "transaction" p, KeyMap.lookup "output" p) of
+                (Just (Aeson.String tx), Just (Aeson.String out)) ->
+                    case (KeyMap.lookup "lovelace" p, KeyMap.lookup "fee" p) of
+                        (Just (Aeson.Number l), Just (Aeson.Number f)) ->
+                            pure (tx, out, round l, round f)
+                        _ -> fail ("preparation figures are not numbers in " <> runLabel r)
+                _ -> fail ("preparation members are not strings in " <> runLabel r)
+        _ -> fail ("no preparation object in " <> runLabel r)
+    _ -> fail ("no preparation member in " <> runLabel r)
+
+-- | The saved body path a transaction's prepared journal line names.
+preparedBodyOf :: [JournalEntry] -> Text -> Maybe FilePath
+preparedBodyOf entries txid =
+    listToMaybe
+        [ p
+        | e <- entries
+        , journalTxId e == txid
+        , journalEvent e == "prepared"
+        , Just p <- [journalBody e]
+        ]
+
+{- | What every booking command that completed through one preparation
+must show: the receipt's typed preparation member; exactly two submitted
+transactions for the command, both under the booking step — the
+preparation then the command's own booking; the preparation's journal
+phases in order with the @funding@ expectation naming the payer; and the
+booking's own prepared journal line listing the made output among its
+inputs, read from the journal the submission wrote, not the receipt.
+Returns the preparation's transaction and made output.
+-}
+expectBookedThroughPreparation
+    :: Rig -> Addr -> Run -> IO (Text, Text)
+expectBookedThroughPreparation rig payerOfRun r = do
+    outcomeOf (runReceipt r) `shouldBe` Just "success"
+    runCode r `shouldBe` ExitSuccess
+    (prepTx, prepOut, prepLovelace, prepFeeFig) <- preparationMembersOf r
+    prepLovelace `shouldSatisfy` (> 0)
+    prepFeeFig `shouldSatisfy` (> 0)
+    T.length prepTx `shouldBe` 64
+    prepTx `T.isPrefixOf` prepOut `shouldBe` True
+    bookingTx <- case textAt "booking" (runReceipt r) of
+        Just b -> pure b
+        Nothing -> fail ("no booking member in " <> runLabel r)
+    let submitted =
+            [ (step, txid)
+            | Trace _ (How (Tx TxSubmitted{submitStep = step, submitTxId = txid})) <-
+                runEvents r
+            ]
+    submitted `shouldBe` [("book", prepTx), ("book", bookingTx)]
+    entries <- concat <$> (mapM readJournal =<< journalDirs rig)
+    let phases = [journalEvent e | e <- entries, journalTxId e == prepTx]
+    phases `shouldBe` ["prepared", "submitted", "confirmed", "observed"]
+    let expects =
+            [ journalExpect e
+            | e <- entries
+            , journalTxId e == prepTx
+            , journalEvent e == "prepared"
+            ]
+    expects
+        `shouldBe` [Just ("funding:" <> T.pack (bech32Address payerOfRun))]
+    let bookingInputs =
+            [ journalInputs e
+            | e <- entries
+            , journalTxId e == bookingTx
+            , journalEvent e == "prepared"
+            ]
+    -- the SUBMITTED booking body, bound to its prepared line by byte hash
+    -- and derived id: the made output is among the inputs it decodes with
+    (mPreparedLine, bodyOrWhy) <- boundBody entries bookingTx
+    case bodyOrWhy of
+        Left why -> fail ("the booking's saved body does not bind: " <> T.unpack why)
+        Right tx ->
+            map txInText (toList (tx ^. bodyTxL . inputsTxBodyL))
+                `shouldContain` [prepOut]
+    -- the journal's own list of the booking's inputs agrees (second observation)
+    case bookingInputs of
+        [Just ins] -> ins `shouldContain` [prepOut]
+        _ ->
+            fail
+                ("the booking's prepared journal line is missing in " <> runLabel r)
+    -- negative control: a SUBSTITUTED saved body — another transaction's
+    -- bytes over the booking's file — is rejected, and the restored body
+    -- binds again
+    case (journalBody =<< mPreparedLine, preparedBodyOf entries prepTx) of
+        (Just bookingPath, Just preparationPath) -> do
+            original <- BS.readFile bookingPath
+            substitutedBytes <- BS.readFile preparationPath
+            BS.writeFile bookingPath substitutedBytes
+            (_, substituted) <- boundBody entries bookingTx
+            case substituted of
+                Left _ -> pure ()
+                Right _ ->
+                    fail
+                        ( "a substituted saved booking body was accepted in "
+                            <> runLabel r
+                        )
+            BS.writeFile bookingPath original
+            (_, restored) <- boundBody entries bookingTx
+            case restored of
+                Right _ -> pure ()
+                Left why ->
+                    fail ("the restored body no longer binds: " <> T.unpack why)
+        _ -> fail ("the bodies are not recorded in " <> runLabel r)
+    pure (prepTx, prepOut)
 
 policyOfRun :: Run -> Maybe Text
 policyOfRun r = do
