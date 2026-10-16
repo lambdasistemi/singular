@@ -462,7 +462,7 @@ offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime tryPutMVar 1
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime waitCatch 3
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime withAsync 3
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime writeIORef 3
-offchain/test/Singular/CLI/CommandRunSpec.hs previewFundingRows readIORef 5
+offchain/test/Singular/CLI/CommandRunSpec.hs previewFundingRows readIORef 10
 offchain/test/Singular/CLI/CommandRunSpec.hs runFoldAtBoundApp readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runFoldAtBoundApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp readIORef 1
