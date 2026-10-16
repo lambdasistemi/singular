@@ -2,8 +2,8 @@
 
 ## Slice: chained view
 
-- [ ] chained-answers: the pure answers for every output query form, the asset history and the mint record; a property that they equal the synthetic chain's answers after the staged bodies are applied.
-- [ ] chained-session: the session decorator, one snapshot per acquisition, with its IO-ownership entry.
+- [x] chained-answers: the pure answers for every output query form, the asset history and the mint record; a property that they equal the synthetic chain's answers after the staged bodies are applied.
+- [x] chained-session: the session decorator, one snapshot per acquisition, with its IO-ownership entry.
 
 ## Slice: staging and the external signer
 

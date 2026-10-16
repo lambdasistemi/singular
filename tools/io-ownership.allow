@@ -103,6 +103,7 @@ offchain/test/Singular/Provider/Koios/Scripted.hs: ioref — harness; owner=one 
 offchain/test/Singular/Registry/ContractMemory.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; contract-memory refs for assertions
 offchain/test/Singular/Registry/ContractNode.hs: async — harness; owner=the contract examples in this file; lifetime=single example; oracle and wallet legs run under link withAsync, joined by wait before the example ends
 offchain/test/Singular/Registry/ContractSuite.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; suite refs accumulated for assertions
+offchain/test/Singular/Registry/ChainedViewSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; the staged list of one staged run, appended transaction by transaction so each builder reads the earlier ones through the chained view
 offchain/test/Singular/Registry/DeploymentSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; deployment refs for assertions
 offchain/test/Singular/Registry/LineageSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; lineage refs for assertions
 offchain/test/Singular/Registry/LocalServicesCallerSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; caller refs for assertions

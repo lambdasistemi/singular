@@ -276,6 +276,7 @@ library local-services
   other-modules:    Paths_singular_registry
   exposed-modules:
     Singular.Registry.Bundle
+    Singular.Registry.ChainedView
     Singular.Registry.Evidence
     Singular.Registry.Ledger
     Singular.Registry.LedgerProvider
@@ -1001,6 +1002,7 @@ test-suite cage-tests
     Singular.Registry.BundleSpec
     Singular.Registry.SubmitSpec
     Singular.Registry.CandidateSpec
+    Singular.Registry.ChainedViewSpec
     Singular.Registry.ContractMemory
     Singular.Registry.ContractSuite
     Singular.Registry.DeploymentSpec

@@ -500,6 +500,12 @@ offchain/test/Singular/Provider/Koios/ProviderSpec.hs spec writeIORef 2
 offchain/test/Singular/Provider/Koios/Scripted.hs scriptedTransport atomicModifyIORef' 1
 offchain/test/Singular/Provider/Koios/Scripted.hs scriptedTransport newIORef 1
 offchain/test/Singular/Provider/Koios/Scripted.hs scriptedTransport readIORef 1
+offchain/test/Singular/Registry/ChainedViewSpec.hs spec modifyIORef' 1
+offchain/test/Singular/Registry/ChainedViewSpec.hs spec newIORef 1
+offchain/test/Singular/Registry/ChainedViewSpec.hs spec readIORef 2
+offchain/test/Singular/Registry/ChainedViewSpec.hs stagedRunWithPublication modifyIORef' 1
+offchain/test/Singular/Registry/ChainedViewSpec.hs stagedRunWithPublication newIORef 1
+offchain/test/Singular/Registry/ChainedViewSpec.hs stagedRunWithPublication readIORef 1
 offchain/test/Singular/Registry/ContractMemory.hs memoryHarness atomicModifyIORef' 2
 offchain/test/Singular/Registry/ContractMemory.hs memoryHarness newIORef 2
 offchain/test/Singular/Registry/ContractMemory.hs memoryHarness readIORef 1

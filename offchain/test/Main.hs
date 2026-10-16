@@ -28,6 +28,7 @@ import Singular.Provider.Koios.ReferenceScriptsSpec qualified
 import Singular.Registry.BlueprintParametersSpec qualified
 import Singular.Registry.BundleSpec qualified
 import Singular.Registry.CandidateSpec qualified
+import Singular.Registry.ChainedViewSpec qualified
 import Singular.Registry.DeploymentSpec qualified
 import Singular.Registry.FailureMatchSpec qualified
 import Singular.Registry.FoldAdmissionSpec qualified
@@ -71,6 +72,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.Submit" [Submit, Wallet])
         Singular.Registry.SubmitSpec.spec
+    describe
+        (tagged "Singular.Registry.ChainedView" [Provider, History])
+        Singular.Registry.ChainedViewSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
         Singular.Registry.TxBuilder.BookEdgeSpec.spec
