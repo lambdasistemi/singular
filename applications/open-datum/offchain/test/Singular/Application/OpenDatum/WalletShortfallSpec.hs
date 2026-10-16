@@ -810,8 +810,7 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                     :: (Integer, Integer) -> Integer -> Integer -> Int -> IO Run
                 search _ _ _ 0 =
                     fail
-                        ( "no token-only wallet between the preparation plan and the whole outlay refused"
-                        )
+                        "no token-only wallet between the preparation plan and the whole outlay refused"
                 search measured lower upper attempts = do
                     let k = 2 + (14 - attempts)
                         h =
@@ -1414,7 +1413,7 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                         if outcomeOf (runReceipt probed) == Just "success"
                             then findShort (h `div` 2) (attempts - 1)
                             else
-                                if isInfixOf "preparation-unfunded:" (reasonOf probed)
+                                if "preparation-unfunded:" `isInfixOf` reasonOf probed
                                     then pure (probed, h)
                                     else findShort (h + h `div` 2) (attempts - 1)
             (_, hShort) <- findShort 6_000_000 8
