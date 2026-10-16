@@ -286,6 +286,7 @@ library local-services
     Singular.Registry.SessionIO
     Singular.Registry.SessionServices
     Singular.Registry.Signing
+    Singular.Registry.Submit
     Singular.Registry.TimeMaterial
     Singular.Registry.TimeSource
     Singular.Registry.Trace

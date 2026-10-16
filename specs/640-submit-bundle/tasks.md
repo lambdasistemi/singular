@@ -7,9 +7,9 @@
 
 ## Slice: submission planner
 
-- [ ] witness-matching: pair witnesses with bodies by signature; different body and different key refused.
-- [ ] needed-keys-and-completeness: the needed key hashes per transaction; missing and unneeded witnesses refused.
-- [ ] expiry-and-skip: expired body refused with rebuild before any send; transactions found on chain skipped; order kept; uncertainty stops.
+- [x] witness-matching: pair witnesses with bodies by signature; different body and different key refused.
+- [x] needed-keys-and-completeness: the needed key hashes per transaction; missing and unneeded witnesses refused.
+- [x] expiry-and-skip: expired body refused with rebuild before any send; transactions found on chain skipped; order kept; uncertainty stops.
 
 ## Slice: submit verb
 
