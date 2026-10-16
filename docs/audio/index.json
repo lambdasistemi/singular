@@ -3499,8 +3499,8 @@
     "index": 2,
     "name": "docs-economics-paper/named-unique-permanent-permissionless-and-reusable-02",
     "pause_ms": 400,
-    "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. The latter motivates an absence proof as well as evidence of a recorded conviction. Termination is intended to represent conviction for KERI and to make it permanent. Missing mechanization: Singular alone does not verify duplicity or establish a KERI history. An unknown name and an active name differ; “not convicted” must not silently mean “unknown”. The consumer interpretation and integration remain open.",
-    "v": "5a0959c0f08b"
+    "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. For KERI a conviction is a termination, and it is permanent. A lookup of an identifier at a registry root has three outcomes. An active leaf proves that the identifier is registered and not convicted at that root: “not convicted” means active. A terminal leaf proves conviction. An unknown leaf proves only that the identifier is not registered on Singular; that is a different answer and is never presented as “not convicted”. The stored Absent leaf belongs to the extension edges outside the contract of the first release and is not part of this reading. Existing checked declaration: Singular.Statements.termination keeps a terminal leaf terminal through every later accepted batch, and Singular.Statements.terminal_attestation_permanent keeps a held terminal attestation held and its leaf terminal. Hand proof supplied: by induction over the accepted batches from the genesis state, a key terminal at one reachable state is terminal at every later one, so an active leaf at a root shows the key was never terminal before it: an active identifier was never convicted before that root. Missing mechanization: the lookup is a logical read of the root and verifying a concrete lookup proof is a correspondence obligation; a lookup is valid only against the current root until the next fold; durable attestations are future work, proposed and not proved; Singular alone does not verify duplicity or establish a KERI history, and the consumer integration remains open.",
+    "v": "ce1bc2299b9a"
    }
   ],
   "permanent": [
@@ -3522,8 +3522,8 @@
     "index": 2,
     "name": "docs-economics-paper/permanent-02",
     "pause_ms": 400,
-    "text": "Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: KERI's conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
-    "v": "f68366ae52c7"
+    "text": "Hand proof supplied: read as a lookup, a terminal leaf proves conviction and an active leaf at a reachable root shows the key was never terminal before it; an unknown leaf proves only that the identifier is not registered. Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: KERI's conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
+    "v": "fb6d075fac57"
    }
   ],
   "permissionless": [

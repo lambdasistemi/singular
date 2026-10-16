@@ -53,13 +53,17 @@ conviction, so a convicted identifier must never come back in that registry.
 \checked For a terminal key in a reachable original registry, every request
 at that key is refused; every accepted later batch keeps it terminal.
 \evidence{termination}
+\hand Read as a lookup, a terminal leaf proves conviction, and an active
+leaf at a reachable root shows that the key was never terminal before that
+root; an unknown leaf proves only that the identifier is not registered.
 \checked A genuine pending termination has an accepted economic fold that
 makes its key terminal under the theorem's explicit funding and willingness
 premises. World supply is then zero for that key.
 \evidence{booked_termination_foldable}
 \evidence{world_supply_sync}
 \missing The application decides when release from custody is authorized.
-A KERI conviction needs its own duplicity-proof and integration evidence.
+A KERI conviction needs its own duplicity-proof and integration evidence,
+and a lookup stays valid only against the current root until the next fold.
 Permanence within this registry does not identify a new registry with the old
 one. Economically, the termination donates everything held except the tip
 to the treasury; it returns no deposit to Alice.

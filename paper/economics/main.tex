@@ -59,15 +59,35 @@ ruled economics is already deployed.
 \subsection{Why a name matters}
 Cardano KERI motivates two questions: how to select checkpoints by KERI
 identifier, and how to prove whether an identifier was ever convicted on
-Cardano. The latter motivates an absence proof as well as evidence of a
-recorded conviction. Termination is intended to represent conviction for
-that application, and its permanence prevents a convicted identifier from
-coming back within the same registry.
-\missing These are application goals. Singular alone neither verifies a
-duplicity proof nor establishes a KERI checkpoint or conviction history.
-In particular, an unknown name and an active name are different registry
-states; ``not convicted'' must not silently be equated with ``unknown''.
-The consumer's interpretation and its integration remain open.
+Cardano. For that application a conviction is a termination, and it is
+permanent. A lookup of an identifier at a registry root $R$ has three
+outcomes. An active leaf proves that the identifier is registered and not
+convicted at $R$: ``not convicted'' means active. A terminal leaf proves
+conviction. An unknown leaf proves only that the identifier is not
+registered on Singular; that is a different answer, and it is never
+presented as ``not convicted''. The stored Absent leaf belongs to the
+extension edges outside the contract of the first release and is not part of
+this reading.
+\checked A terminal key stays terminal: for a reachable registry whose leaf
+at the key is terminal, every request at the key is refused and every accepted
+later batch leaves the leaf terminal.
+\evidence{termination}
+\checked A terminal attestation, once held, stays held and its key's leaf is
+terminal after any accepted batch.
+\evidence{terminal_attestation_permanent}
+\hand By induction over the accepted batches from the genesis state, a key
+that is terminal at one reachable state is terminal at every later reachable
+state. Hence an active leaf at $R$ shows that the key was never terminal at
+any earlier state: an active identifier at $R$ was never convicted before
+$R$. The argument uses only the checked one-batch statement and the
+reachability of $R$.
+\missing The lookup is a logical read of the root; verifying a concrete
+lookup proof is a correspondence obligation of the validator or verifier. A
+lookup is valid against the current root only until the next fold; durable
+attestations of presence, absence and termination are future work and are
+proposed, not proved. Singular alone neither verifies a duplicity proof nor
+establishes a KERI checkpoint or conviction history, and the consumer's
+integration remains open.
 
 \subsection{The reader's problem and the evidence boundary}
 A requester wants to know which funds a failed registration returns. An

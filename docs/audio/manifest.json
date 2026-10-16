@@ -120526,17 +120526,17 @@
    ]
   },
   "docs-economics-paper/named-unique-permanent-permissionless-and-reusable-02": {
-   "audio_sha256": "5a0959c0f08befe754a789e7398bc5a7509f628e994caf5218fdb6abce163868",
-   "characters": 587,
-   "cost": 0.00058113,
-   "duration": 38.375,
+   "audio_sha256": "ce1bc2299b9a8a4094274f03dd705e28294a86595d93def637c2aba3fcb04925",
+   "characters": 1644,
+   "cost": 0.00162756,
+   "duration": 109.25,
    "index": 2,
-   "key": "cde7aef52fde4df7601b9bff7c557c258d6d7986ab50f03d610844d8dbbe56e6",
+   "key": "1a49e162c3fed9ea957668619f5249d3028e27eac5b9f24d97c2f314be78d978",
    "page": "docs/economics-paper.md",
    "pause_ms": 400,
    "section": "named-unique-permanent-permissionless-and-reusable",
-   "sent_text": "Cardano [KERI](/kˈɛɹi/) motivates checkpoints selectable by [KERI](/kˈɛɹi/) identifier and evidence of whether an identifier was ever convicted on Cardano. The latter motivates an absence proof as well as evidence of a recorded conviction. Termination is intended to represent conviction for [KERI](/kˈɛɹi/) and to make it permanent. Missing mechanization: Singular alone does not verify duplicity or establish a [KERI](/kˈɛɹi/) history. An unknown name and an active name differ; “not convicted” must not silently mean “unknown”. The consumer interpretation and integration remain open.",
-   "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. The latter motivates an absence proof as well as evidence of a recorded conviction. Termination is intended to represent conviction for KERI and to make it permanent. Missing mechanization: Singular alone does not verify duplicity or establish a KERI history. An unknown name and an active name differ; “not convicted” must not silently mean “unknown”. The consumer interpretation and integration remain open.",
+   "sent_text": "Cardano [KERI](/kˈɛɹi/) motivates checkpoints selectable by [KERI](/kˈɛɹi/) identifier and evidence of whether an identifier was ever convicted on Cardano. For [KERI](/kˈɛɹi/) a conviction is a termination, and it is permanent. A lookup of an identifier at a registry root has three outcomes. An active leaf proves that the identifier is registered and not convicted at that root: “not convicted” means active. A terminal leaf proves conviction. An unknown leaf proves only that the identifier is not registered on Singular; that is a different answer and is never presented as “not convicted”. The stored Absent leaf belongs to the extension edges outside the contract of the first release and is not part of this reading. Existing checked declaration: Singular.Statements.termination keeps a terminal leaf terminal through every later accepted batch, and Singular.Statements.terminal_attestation_permanent keeps a held terminal attestation held and its leaf terminal. Hand proof supplied: by induction over the accepted batches from the genesis state, a key terminal at one reachable state is terminal at every later one, so an active leaf at a root shows the key was never terminal before it: an active identifier was never convicted before that root. Missing mechanization: the lookup is a logical read of the root and verifying a concrete lookup proof is a correspondence obligation; a lookup is valid only against the current root until the next fold; durable attestations are future work, proposed and not proved; Singular alone does not verify duplicity or establish a [KERI](/kˈɛɹi/) history, and the consumer integration remains open.",
+   "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. For KERI a conviction is a termination, and it is permanent. A lookup of an identifier at a registry root has three outcomes. An active leaf proves that the identifier is registered and not convicted at that root: “not convicted” means active. A terminal leaf proves conviction. An unknown leaf proves only that the identifier is not registered on Singular; that is a different answer and is never presented as “not convicted”. The stored Absent leaf belongs to the extension edges outside the contract of the first release and is not part of this reading. Existing checked declaration: Singular.Statements.termination keeps a terminal leaf terminal through every later accepted batch, and Singular.Statements.terminal_attestation_permanent keeps a held terminal attestation held and its leaf terminal. Hand proof supplied: by induction over the accepted batches from the genesis state, a key terminal at one reachable state is terminal at every later one, so an active leaf at a root shows the key was never terminal before it: an active identifier was never convicted before that root. Missing mechanization: the lookup is a logical read of the root and verifying a concrete lookup proof is a correspondence obligation; a lookup is valid only against the current root until the next fold; durable attestations are future work, proposed and not proved; Singular alone does not verify duplicity or establish a KERI history, and the consumer integration remains open.",
    "words": [
     {
      "end": 0.762,
@@ -120639,368 +120639,1308 @@
      "text": "."
     },
     {
-     "end": 9.925,
+     "end": 9.95,
      "start": 9.825,
-     "text": "The"
+     "text": "For"
     },
     {
-     "end": 10.337,
-     "start": 9.925,
-     "text": "latter"
+     "end": 10.275,
+     "start": 9.95,
+     "text": "KERI"
     },
     {
-     "end": 10.913,
-     "start": 10.337,
-     "text": "motivates"
-    },
-    {
-     "end": 11.038,
-     "start": 10.913,
-     "text": "an"
-    },
-    {
-     "end": 11.525,
-     "start": 11.038,
-     "text": "absence"
-    },
-    {
-     "end": 12.025,
-     "start": 11.525,
-     "text": "proof"
-    },
-    {
-     "end": 12.2,
-     "start": 12.025,
-     "text": "as"
-    },
-    {
-     "end": 12.425,
-     "start": 12.2,
-     "text": "well"
-    },
-    {
-     "end": 12.587,
-     "start": 12.425,
-     "text": "as"
-    },
-    {
-     "end": 13.137,
-     "start": 12.587,
-     "text": "evidence"
-    },
-    {
-     "end": 13.262,
-     "start": 13.137,
-     "text": "of"
-    },
-    {
-     "end": 13.35,
-     "start": 13.262,
+     "end": 10.35,
+     "start": 10.275,
      "text": "a"
     },
     {
-     "end": 13.9,
-     "start": 13.35,
-     "text": "recorded"
-    },
-    {
-     "end": 15.125,
-     "start": 13.9,
+     "end": 10.95,
+     "start": 10.35,
      "text": "conviction"
     },
     {
-     "end": 15.325,
-     "start": 15.125,
-     "text": "."
-    },
-    {
-     "end": 16.337,
-     "start": 15.525,
-     "text": "Termination"
-    },
-    {
-     "end": 16.5,
-     "start": 16.337,
+     "end": 11.062,
+     "start": 10.95,
      "text": "is"
     },
     {
-     "end": 17.075,
-     "start": 16.5,
-     "text": "intended"
-    },
-    {
-     "end": 17.2,
-     "start": 17.075,
-     "text": "to"
-    },
-    {
-     "end": 17.7,
-     "start": 17.2,
-     "text": "represent"
-    },
-    {
-     "end": 18.3,
-     "start": 17.7,
-     "text": "conviction"
-    },
-    {
-     "end": 18.462,
-     "start": 18.3,
-     "text": "for"
-    },
-    {
-     "end": 19.188,
-     "start": 18.462,
-     "text": "KERI"
-    },
-    {
-     "end": 19.35,
-     "start": 19.188,
-     "text": "and"
-    },
-    {
-     "end": 19.45,
-     "start": 19.35,
-     "text": "to"
-    },
-    {
-     "end": 19.675,
-     "start": 19.45,
-     "text": "make"
-    },
-    {
-     "end": 19.8,
-     "start": 19.675,
-     "text": "it"
-    },
-    {
-     "end": 20.875,
-     "start": 19.8,
-     "text": "permanent"
-    },
-    {
-     "end": 21.075,
-     "start": 20.875,
-     "text": "."
-    },
-    {
-     "end": 21.6,
-     "start": 21.3,
-     "text": "Missing"
-    },
-    {
-     "end": 22.5,
-     "start": 21.6,
-     "text": "mechanization"
-    },
-    {
-     "end": 22.612,
-     "start": 22.5,
-     "text": ":"
-    },
-    {
-     "end": 23.125,
-     "start": 22.612,
-     "text": "Singular"
-    },
-    {
-     "end": 23.575,
-     "start": 23.125,
-     "text": "alone"
-    },
-    {
-     "end": 23.775,
-     "start": 23.575,
-     "text": "does"
-    },
-    {
-     "end": 24.025,
-     "start": 23.775,
-     "text": "not"
-    },
-    {
-     "end": 24.5,
-     "start": 24.025,
-     "text": "verify"
-    },
-    {
-     "end": 25.237,
-     "start": 24.5,
-     "text": "duplicity"
-    },
-    {
-     "end": 25.375,
-     "start": 25.237,
-     "text": "or"
-    },
-    {
-     "end": 26.0,
-     "start": 25.375,
-     "text": "establish"
-    },
-    {
-     "end": 26.1,
-     "start": 26.0,
+     "end": 11.125,
+     "start": 11.062,
      "text": "a"
     },
     {
-     "end": 26.425,
-     "start": 26.1,
-     "text": "KERI"
+     "end": 11.95,
+     "start": 11.125,
+     "text": "termination"
     },
     {
-     "end": 27.475,
-     "start": 26.425,
-     "text": "history"
+     "end": 12.062,
+     "start": 11.95,
+     "text": ","
     },
     {
-     "end": 27.675,
-     "start": 27.475,
-     "text": "."
-    },
-    {
-     "end": 28.013,
-     "start": 27.875,
-     "text": "An"
-    },
-    {
-     "end": 28.55,
-     "start": 28.013,
-     "text": "unknown"
-    },
-    {
-     "end": 28.925,
-     "start": 28.55,
-     "text": "name"
-    },
-    {
-     "end": 29.038,
-     "start": 28.925,
+     "end": 12.225,
+     "start": 12.062,
      "text": "and"
     },
     {
-     "end": 29.163,
-     "start": 29.038,
+     "end": 12.35,
+     "start": 12.225,
+     "text": "it"
+    },
+    {
+     "end": 12.512,
+     "start": 12.35,
+     "text": "is"
+    },
+    {
+     "end": 13.575,
+     "start": 12.512,
+     "text": "permanent"
+    },
+    {
+     "end": 13.775,
+     "start": 13.575,
+     "text": "."
+    },
+    {
+     "end": 14.05,
+     "start": 13.975,
+     "text": "A"
+    },
+    {
+     "end": 14.413,
+     "start": 14.05,
+     "text": "lookup"
+    },
+    {
+     "end": 14.488,
+     "start": 14.413,
+     "text": "of"
+    },
+    {
+     "end": 14.575,
+     "start": 14.488,
      "text": "an"
     },
     {
-     "end": 29.6,
-     "start": 29.163,
-     "text": "active"
+     "end": 15.325,
+     "start": 14.575,
+     "text": "identifier"
     },
     {
-     "end": 29.925,
-     "start": 29.6,
-     "text": "name"
+     "end": 15.413,
+     "start": 15.325,
+     "text": "at"
     },
     {
-     "end": 30.45,
-     "start": 29.925,
-     "text": "differ"
+     "end": 15.5,
+     "start": 15.413,
+     "text": "a"
     },
     {
-     "end": 30.55,
-     "start": 30.45,
-     "text": ";"
+     "end": 16.0,
+     "start": 15.5,
+     "text": "registry"
     },
     {
-     "end": 30.625,
-     "start": 30.55,
-     "text": "“"
+     "end": 16.337,
+     "start": 16.0,
+     "text": "root"
     },
     {
-     "end": 30.85,
-     "start": 30.625,
-     "text": "not"
+     "end": 16.612,
+     "start": 16.337,
+     "text": "has"
     },
     {
-     "end": 31.475,
-     "start": 30.85,
-     "text": "convicted"
+     "end": 16.875,
+     "start": 16.612,
+     "text": "three"
     },
     {
-     "end": 31.525,
-     "start": 31.475,
-     "text": "”"
+     "end": 17.975,
+     "start": 16.875,
+     "text": "outcomes"
     },
     {
-     "end": 31.775,
-     "start": 31.525,
-     "text": "must"
-    },
-    {
-     "end": 32.037,
-     "start": 31.775,
-     "text": "not"
-    },
-    {
-     "end": 32.55,
-     "start": 32.037,
-     "text": "silently"
-    },
-    {
-     "end": 32.85,
-     "start": 32.55,
-     "text": "mean"
-    },
-    {
-     "end": 32.925,
-     "start": 32.85,
-     "text": "“"
-    },
-    {
-     "end": 34.075,
-     "start": 32.925,
-     "text": "unknown"
-    },
-    {
-     "end": 34.3,
-     "start": 34.075,
-     "text": "”"
-    },
-    {
-     "end": 34.35,
-     "start": 34.3,
+     "end": 18.175,
+     "start": 17.975,
      "text": "."
     },
     {
-     "end": 34.6,
-     "start": 34.525,
-     "text": "The"
+     "end": 18.513,
+     "start": 18.375,
+     "text": "An"
     },
     {
-     "end": 35.112,
-     "start": 34.6,
-     "text": "consumer"
+     "end": 18.925,
+     "start": 18.513,
+     "text": "active"
     },
     {
-     "end": 36.112,
-     "start": 35.112,
-     "text": "interpretation"
+     "end": 19.212,
+     "start": 18.925,
+     "text": "leaf"
     },
     {
-     "end": 36.25,
-     "start": 36.112,
+     "end": 19.675,
+     "start": 19.212,
+     "text": "proves"
+    },
+    {
+     "end": 19.812,
+     "start": 19.675,
+     "text": "that"
+    },
+    {
+     "end": 19.962,
+     "start": 19.812,
+     "text": "the"
+    },
+    {
+     "end": 20.8,
+     "start": 19.962,
+     "text": "identifier"
+    },
+    {
+     "end": 20.962,
+     "start": 20.8,
+     "text": "is"
+    },
+    {
+     "end": 21.775,
+     "start": 20.962,
+     "text": "registered"
+    },
+    {
+     "end": 21.925,
+     "start": 21.775,
      "text": "and"
     },
     {
-     "end": 36.95,
-     "start": 36.25,
+     "end": 22.175,
+     "start": 21.925,
+     "text": "not"
+    },
+    {
+     "end": 22.75,
+     "start": 22.175,
+     "text": "convicted"
+    },
+    {
+     "end": 22.85,
+     "start": 22.75,
+     "text": "at"
+    },
+    {
+     "end": 23.125,
+     "start": 22.85,
+     "text": "that"
+    },
+    {
+     "end": 23.975,
+     "start": 23.125,
+     "text": "root"
+    },
+    {
+     "end": 24.2,
+     "start": 23.975,
+     "text": ":"
+    },
+    {
+     "end": 24.425,
+     "start": 24.375,
+     "text": "“"
+    },
+    {
+     "end": 24.65,
+     "start": 24.425,
+     "text": "not"
+    },
+    {
+     "end": 25.225,
+     "start": 24.65,
+     "text": "convicted"
+    },
+    {
+     "end": 25.275,
+     "start": 25.225,
+     "text": "”"
+    },
+    {
+     "end": 25.562,
+     "start": 25.275,
+     "text": "means"
+    },
+    {
+     "end": 26.15,
+     "start": 25.562,
+     "text": "active"
+    },
+    {
+     "end": 26.25,
+     "start": 26.15,
+     "text": "."
+    },
+    {
+     "end": 26.35,
+     "start": 26.25,
+     "text": "A"
+    },
+    {
+     "end": 26.8,
+     "start": 26.35,
+     "text": "terminal"
+    },
+    {
+     "end": 27.05,
+     "start": 26.8,
+     "text": "leaf"
+    },
+    {
+     "end": 27.4,
+     "start": 27.05,
+     "text": "proves"
+    },
+    {
+     "end": 28.6,
+     "start": 27.4,
+     "text": "conviction"
+    },
+    {
+     "end": 28.8,
+     "start": 28.6,
+     "text": "."
+    },
+    {
+     "end": 29.138,
+     "start": 29.0,
+     "text": "An"
+    },
+    {
+     "end": 29.675,
+     "start": 29.138,
+     "text": "unknown"
+    },
+    {
+     "end": 29.987,
+     "start": 29.675,
+     "text": "leaf"
+    },
+    {
+     "end": 30.362,
+     "start": 29.987,
+     "text": "proves"
+    },
+    {
+     "end": 30.775,
+     "start": 30.362,
+     "text": "only"
+    },
+    {
+     "end": 30.913,
+     "start": 30.775,
+     "text": "that"
+    },
+    {
+     "end": 31.062,
+     "start": 30.913,
+     "text": "the"
+    },
+    {
+     "end": 31.913,
+     "start": 31.062,
+     "text": "identifier"
+    },
+    {
+     "end": 32.088,
+     "start": 31.913,
+     "text": "is"
+    },
+    {
+     "end": 32.375,
+     "start": 32.088,
+     "text": "not"
+    },
+    {
+     "end": 32.925,
+     "start": 32.375,
+     "text": "registered"
+    },
+    {
+     "end": 33.138,
+     "start": 32.925,
+     "text": "on"
+    },
+    {
+     "end": 34.225,
+     "start": 33.138,
+     "text": "Singular"
+    },
+    {
+     "end": 34.45,
+     "start": 34.225,
+     "text": ";"
+    },
+    {
+     "end": 34.875,
+     "start": 34.65,
+     "text": "that"
+    },
+    {
+     "end": 35.013,
+     "start": 34.875,
+     "text": "is"
+    },
+    {
+     "end": 35.112,
+     "start": 35.013,
+     "text": "a"
+    },
+    {
+     "end": 35.45,
+     "start": 35.112,
+     "text": "different"
+    },
+    {
+     "end": 35.987,
+     "start": 35.45,
+     "text": "answer"
+    },
+    {
+     "end": 36.125,
+     "start": 35.987,
+     "text": "and"
+    },
+    {
+     "end": 36.287,
+     "start": 36.125,
+     "text": "is"
+    },
+    {
+     "end": 36.55,
+     "start": 36.287,
+     "text": "never"
+    },
+    {
+     "end": 37.15,
+     "start": 36.55,
+     "text": "presented"
+    },
+    {
+     "end": 37.375,
+     "start": 37.15,
+     "text": "as"
+    },
+    {
+     "end": 37.45,
+     "start": 37.375,
+     "text": "“"
+    },
+    {
+     "end": 37.675,
+     "start": 37.45,
+     "text": "not"
+    },
+    {
+     "end": 38.775,
+     "start": 37.675,
+     "text": "convicted"
+    },
+    {
+     "end": 39.0,
+     "start": 38.775,
+     "text": "”"
+    },
+    {
+     "end": 39.05,
+     "start": 39.0,
+     "text": "."
+    },
+    {
+     "end": 39.362,
+     "start": 39.25,
+     "text": "The"
+    },
+    {
+     "end": 39.812,
+     "start": 39.362,
+     "text": "stored"
+    },
+    {
+     "end": 40.275,
+     "start": 39.812,
+     "text": "Absent"
+    },
+    {
+     "end": 40.55,
+     "start": 40.275,
+     "text": "leaf"
+    },
+    {
+     "end": 41.1,
+     "start": 40.55,
+     "text": "belongs"
+    },
+    {
+     "end": 41.188,
+     "start": 41.1,
+     "text": "to"
+    },
+    {
+     "end": 41.325,
+     "start": 41.188,
+     "text": "the"
+    },
+    {
+     "end": 41.975,
+     "start": 41.325,
+     "text": "extension"
+    },
+    {
+     "end": 42.362,
+     "start": 41.975,
+     "text": "edges"
+    },
+    {
+     "end": 42.838,
+     "start": 42.362,
+     "text": "outside"
+    },
+    {
+     "end": 42.925,
+     "start": 42.838,
+     "text": "the"
+    },
+    {
+     "end": 43.55,
+     "start": 42.925,
+     "text": "contract"
+    },
+    {
+     "end": 43.638,
+     "start": 43.55,
+     "text": "of"
+    },
+    {
+     "end": 43.763,
+     "start": 43.638,
+     "text": "the"
+    },
+    {
+     "end": 44.125,
+     "start": 43.763,
+     "text": "first"
+    },
+    {
+     "end": 44.775,
+     "start": 44.125,
+     "text": "release"
+    },
+    {
+     "end": 44.925,
+     "start": 44.775,
+     "text": "and"
+    },
+    {
+     "end": 45.075,
+     "start": 44.925,
+     "text": "is"
+    },
+    {
+     "end": 45.325,
+     "start": 45.075,
+     "text": "not"
+    },
+    {
+     "end": 45.588,
+     "start": 45.325,
+     "text": "part"
+    },
+    {
+     "end": 45.675,
+     "start": 45.588,
+     "text": "of"
+    },
+    {
+     "end": 45.9,
+     "start": 45.675,
+     "text": "this"
+    },
+    {
+     "end": 46.975,
+     "start": 45.9,
+     "text": "reading"
+    },
+    {
+     "end": 47.2,
+     "start": 46.975,
+     "text": "."
+    },
+    {
+     "end": 47.85,
+     "start": 47.4,
+     "text": "Existing"
+    },
+    {
+     "end": 48.088,
+     "start": 47.85,
+     "text": "checked"
+    },
+    {
+     "end": 49.25,
+     "start": 48.088,
+     "text": "declaration"
+    },
+    {
+     "end": 49.45,
+     "start": 49.25,
+     "text": ":"
+    },
+    {
+     "end": 51.263,
+     "start": 49.675,
+     "text": "Singular.Statements.termination"
+    },
+    {
+     "end": 51.575,
+     "start": 51.263,
+     "text": "keeps"
+    },
+    {
+     "end": 51.688,
+     "start": 51.575,
+     "text": "a"
+    },
+    {
+     "end": 52.2,
+     "start": 51.688,
+     "text": "terminal"
+    },
+    {
+     "end": 52.45,
+     "start": 52.2,
+     "text": "leaf"
+    },
+    {
+     "end": 53.013,
+     "start": 52.45,
+     "text": "terminal"
+    },
+    {
+     "end": 53.275,
+     "start": 53.013,
+     "text": "through"
+    },
+    {
+     "end": 53.638,
+     "start": 53.275,
+     "text": "every"
+    },
+    {
+     "end": 54.025,
+     "start": 53.638,
+     "text": "later"
+    },
+    {
+     "end": 54.55,
+     "start": 54.025,
+     "text": "accepted"
+    },
+    {
+     "end": 55.45,
+     "start": 54.55,
+     "text": "batch"
+    },
+    {
+     "end": 55.675,
+     "start": 55.45,
+     "text": ","
+    },
+    {
+     "end": 56.062,
+     "start": 55.925,
+     "text": "and"
+    },
+    {
+     "end": 56.6,
+     "start": 56.062,
+     "text": "Singular"
+    },
+    {
+     "end": 56.675,
+     "start": 56.6,
+     "text": "."
+    },
+    {
+     "end": 58.862,
+     "start": 56.675,
+     "text": "Statements.terminal_attestation_permanent"
+    },
+    {
+     "end": 59.175,
+     "start": 58.862,
+     "text": "keeps"
+    },
+    {
+     "end": 59.287,
+     "start": 59.175,
+     "text": "a"
+    },
+    {
+     "end": 59.638,
+     "start": 59.287,
+     "text": "held"
+    },
+    {
+     "end": 60.15,
+     "start": 59.638,
+     "text": "terminal"
+    },
+    {
+     "end": 60.987,
+     "start": 60.15,
+     "text": "attestation"
+    },
+    {
+     "end": 61.625,
+     "start": 60.987,
+     "text": "held"
+    },
+    {
+     "end": 61.787,
+     "start": 61.625,
+     "text": "and"
+    },
+    {
+     "end": 61.987,
+     "start": 61.787,
+     "text": "its"
+    },
+    {
+     "end": 62.263,
+     "start": 61.987,
+     "text": "leaf"
+    },
+    {
+     "end": 63.45,
+     "start": 62.263,
+     "text": "terminal"
+    },
+    {
+     "end": 63.675,
+     "start": 63.45,
+     "text": "."
+    },
+    {
+     "end": 64.05,
+     "start": 63.85,
+     "text": "Hand"
+    },
+    {
+     "end": 64.325,
+     "start": 64.05,
+     "text": "proof"
+    },
+    {
+     "end": 65.2,
+     "start": 64.325,
+     "text": "supplied"
+    },
+    {
+     "end": 65.4,
+     "start": 65.2,
+     "text": ":"
+    },
+    {
+     "end": 65.725,
+     "start": 65.575,
+     "text": "by"
+    },
+    {
+     "end": 66.325,
+     "start": 65.725,
+     "text": "induction"
+    },
+    {
+     "end": 66.537,
+     "start": 66.325,
+     "text": "over"
+    },
+    {
+     "end": 66.65,
+     "start": 66.537,
+     "text": "the"
+    },
+    {
+     "end": 67.15,
+     "start": 66.65,
+     "text": "accepted"
+    },
+    {
+     "end": 67.675,
+     "start": 67.15,
+     "text": "batches"
+    },
+    {
+     "end": 67.812,
+     "start": 67.675,
+     "text": "from"
+    },
+    {
+     "end": 67.9,
+     "start": 67.812,
+     "text": "the"
+    },
+    {
+     "end": 68.325,
+     "start": 67.9,
+     "text": "genesis"
+    },
+    {
+     "end": 69.15,
+     "start": 68.325,
+     "text": "state"
+    },
+    {
+     "end": 69.35,
+     "start": 69.15,
+     "text": ","
+    },
+    {
+     "end": 69.637,
+     "start": 69.55,
+     "text": "a"
+    },
+    {
+     "end": 69.912,
+     "start": 69.637,
+     "text": "key"
+    },
+    {
+     "end": 70.425,
+     "start": 69.912,
+     "text": "terminal"
+    },
+    {
+     "end": 70.588,
+     "start": 70.425,
+     "text": "at"
+    },
+    {
+     "end": 70.85,
+     "start": 70.588,
+     "text": "one"
+    },
+    {
+     "end": 71.3,
+     "start": 70.85,
+     "text": "reachable"
+    },
+    {
+     "end": 71.762,
+     "start": 71.3,
+     "text": "state"
+    },
+    {
+     "end": 71.938,
+     "start": 71.762,
+     "text": "is"
+    },
+    {
+     "end": 72.45,
+     "start": 71.938,
+     "text": "terminal"
+    },
+    {
+     "end": 72.588,
+     "start": 72.45,
+     "text": "at"
+    },
+    {
+     "end": 72.925,
+     "start": 72.588,
+     "text": "every"
+    },
+    {
+     "end": 73.3,
+     "start": 72.925,
+     "text": "later"
+    },
+    {
+     "end": 74.1,
+     "start": 73.3,
+     "text": "one"
+    },
+    {
+     "end": 74.3,
+     "start": 74.1,
+     "text": ","
+    },
+    {
+     "end": 74.588,
+     "start": 74.5,
+     "text": "so"
+    },
+    {
+     "end": 74.713,
+     "start": 74.588,
+     "text": "an"
+    },
+    {
+     "end": 75.1,
+     "start": 74.713,
+     "text": "active"
+    },
+    {
+     "end": 75.338,
+     "start": 75.1,
+     "text": "leaf"
+    },
+    {
+     "end": 75.412,
+     "start": 75.338,
+     "text": "at"
+    },
+    {
+     "end": 75.512,
+     "start": 75.412,
+     "text": "a"
+    },
+    {
+     "end": 75.9,
+     "start": 75.512,
+     "text": "root"
+    },
+    {
+     "end": 76.25,
+     "start": 75.9,
+     "text": "shows"
+    },
+    {
+     "end": 76.387,
+     "start": 76.25,
+     "text": "the"
+    },
+    {
+     "end": 76.675,
+     "start": 76.387,
+     "text": "key"
+    },
+    {
+     "end": 76.863,
+     "start": 76.675,
+     "text": "was"
+    },
+    {
+     "end": 77.175,
+     "start": 76.863,
+     "text": "never"
+    },
+    {
+     "end": 77.625,
+     "start": 77.175,
+     "text": "terminal"
+    },
+    {
+     "end": 78.05,
+     "start": 77.625,
+     "text": "before"
+    },
+    {
+     "end": 78.7,
+     "start": 78.05,
+     "text": "it"
+    },
+    {
+     "end": 78.9,
+     "start": 78.7,
+     "text": ":"
+    },
+    {
+     "end": 79.238,
+     "start": 79.1,
+     "text": "an"
+    },
+    {
+     "end": 79.637,
+     "start": 79.238,
+     "text": "active"
+    },
+    {
+     "end": 80.45,
+     "start": 79.637,
+     "text": "identifier"
+    },
+    {
+     "end": 80.662,
+     "start": 80.45,
+     "text": "was"
+    },
+    {
+     "end": 81.025,
+     "start": 80.662,
+     "text": "never"
+    },
+    {
+     "end": 81.625,
+     "start": 81.025,
+     "text": "convicted"
+    },
+    {
+     "end": 82.0,
+     "start": 81.625,
+     "text": "before"
+    },
+    {
+     "end": 82.275,
+     "start": 82.0,
+     "text": "that"
+    },
+    {
+     "end": 82.75,
+     "start": 82.275,
+     "text": "root"
+    },
+    {
+     "end": 82.887,
+     "start": 82.75,
+     "text": "."
+    },
+    {
+     "end": 83.225,
+     "start": 82.887,
+     "text": "Missing"
+    },
+    {
+     "end": 84.65,
+     "start": 83.225,
+     "text": "mechanization"
+    },
+    {
+     "end": 84.85,
+     "start": 84.65,
+     "text": ":"
+    },
+    {
+     "end": 85.15,
+     "start": 85.05,
+     "text": "the"
+    },
+    {
+     "end": 85.575,
+     "start": 85.15,
+     "text": "lookup"
+    },
+    {
+     "end": 85.725,
+     "start": 85.575,
+     "text": "is"
+    },
+    {
+     "end": 85.838,
+     "start": 85.725,
+     "text": "a"
+    },
+    {
+     "end": 86.363,
+     "start": 85.838,
+     "text": "logical"
+    },
+    {
+     "end": 86.688,
+     "start": 86.363,
+     "text": "read"
+    },
+    {
+     "end": 86.775,
+     "start": 86.688,
+     "text": "of"
+    },
+    {
+     "end": 86.912,
+     "start": 86.775,
+     "text": "the"
+    },
+    {
+     "end": 87.287,
+     "start": 86.912,
+     "text": "root"
+    },
+    {
+     "end": 87.438,
+     "start": 87.287,
+     "text": "and"
+    },
+    {
+     "end": 88.1,
+     "start": 87.438,
+     "text": "verifying"
+    },
+    {
+     "end": 88.213,
+     "start": 88.1,
+     "text": "a"
+    },
+    {
+     "end": 88.775,
+     "start": 88.213,
+     "text": "concrete"
+    },
+    {
+     "end": 89.15,
+     "start": 88.775,
+     "text": "lookup"
+    },
+    {
+     "end": 89.625,
+     "start": 89.15,
+     "text": "proof"
+    },
+    {
+     "end": 89.8,
+     "start": 89.625,
+     "text": "is"
+    },
+    {
+     "end": 89.912,
+     "start": 89.8,
+     "text": "a"
+    },
+    {
+     "end": 90.75,
+     "start": 89.912,
+     "text": "correspondence"
+    },
+    {
+     "end": 92.15,
+     "start": 90.75,
+     "text": "obligation"
+    },
+    {
+     "end": 92.35,
+     "start": 92.15,
+     "text": ";"
+    },
+    {
+     "end": 92.625,
+     "start": 92.55,
+     "text": "a"
+    },
+    {
+     "end": 92.975,
+     "start": 92.625,
+     "text": "lookup"
+    },
+    {
+     "end": 93.137,
+     "start": 92.975,
+     "text": "is"
+    },
+    {
+     "end": 93.588,
+     "start": 93.137,
+     "text": "valid"
+    },
+    {
+     "end": 93.925,
+     "start": 93.588,
+     "text": "only"
+    },
+    {
+     "end": 94.262,
+     "start": 93.925,
+     "text": "against"
+    },
+    {
+     "end": 94.35,
+     "start": 94.262,
+     "text": "the"
+    },
+    {
+     "end": 94.7,
+     "start": 94.35,
+     "text": "current"
+    },
+    {
+     "end": 95.0,
+     "start": 94.7,
+     "text": "root"
+    },
+    {
+     "end": 95.238,
+     "start": 95.0,
+     "text": "until"
+    },
+    {
+     "end": 95.325,
+     "start": 95.238,
+     "text": "the"
+    },
+    {
+     "end": 95.625,
+     "start": 95.325,
+     "text": "next"
+    },
+    {
+     "end": 96.55,
+     "start": 95.625,
+     "text": "fold"
+    },
+    {
+     "end": 96.775,
+     "start": 96.55,
+     "text": ";"
+    },
+    {
+     "end": 97.35,
+     "start": 96.975,
+     "text": "durable"
+    },
+    {
+     "end": 98.125,
+     "start": 97.35,
+     "text": "attestations"
+    },
+    {
+     "end": 98.262,
+     "start": 98.125,
+     "text": "are"
+    },
+    {
+     "end": 98.675,
+     "start": 98.262,
+     "text": "future"
+    },
+    {
+     "end": 98.975,
+     "start": 98.675,
+     "text": "work"
+    },
+    {
+     "end": 99.05,
+     "start": 98.975,
+     "text": ","
+    },
+    {
+     "end": 99.613,
+     "start": 99.05,
+     "text": "proposed"
+    },
+    {
+     "end": 99.713,
+     "start": 99.613,
+     "text": "and"
+    },
+    {
+     "end": 99.925,
+     "start": 99.713,
+     "text": "not"
+    },
+    {
+     "end": 100.85,
+     "start": 99.925,
+     "text": "proved"
+    },
+    {
+     "end": 101.05,
+     "start": 100.85,
+     "text": ";"
+    },
+    {
+     "end": 101.825,
+     "start": 101.325,
+     "text": "Singular"
+    },
+    {
+     "end": 102.275,
+     "start": 101.825,
+     "text": "alone"
+    },
+    {
+     "end": 102.475,
+     "start": 102.275,
+     "text": "does"
+    },
+    {
+     "end": 102.738,
+     "start": 102.475,
+     "text": "not"
+    },
+    {
+     "end": 103.225,
+     "start": 102.738,
+     "text": "verify"
+    },
+    {
+     "end": 103.963,
+     "start": 103.225,
+     "text": "duplicity"
+    },
+    {
+     "end": 104.125,
+     "start": 103.963,
+     "text": "or"
+    },
+    {
+     "end": 104.75,
+     "start": 104.125,
+     "text": "establish"
+    },
+    {
+     "end": 104.863,
+     "start": 104.75,
+     "text": "a"
+    },
+    {
+     "end": 105.2,
+     "start": 104.863,
+     "text": "KERI"
+    },
+    {
+     "end": 105.85,
+     "start": 105.2,
+     "text": "history"
+    },
+    {
+     "end": 105.95,
+     "start": 105.85,
+     "text": ","
+    },
+    {
+     "end": 106.062,
+     "start": 105.95,
+     "text": "and"
+    },
+    {
+     "end": 106.15,
+     "start": 106.062,
+     "text": "the"
+    },
+    {
+     "end": 106.75,
+     "start": 106.15,
+     "text": "consumer"
+    },
+    {
+     "end": 107.475,
+     "start": 106.75,
      "text": "integration"
     },
     {
-     "end": 37.3,
-     "start": 36.95,
-     "text": "remain"
+     "end": 107.975,
+     "start": 107.475,
+     "text": "remains"
     },
     {
-     "end": 38.175,
-     "start": 37.3,
+     "end": 109.025,
+     "start": 107.975,
      "text": "open"
     },
     {
-     "end": 38.375,
-     "start": 38.175,
+     "end": 109.25,
+     "start": 109.025,
      "text": "."
     }
    ]
@@ -121321,431 +122261,646 @@
    ]
   },
   "docs-economics-paper/permanent-02": {
-   "audio_sha256": "f68366ae52c7210a799f81bdd77737bfc734b25d50b3e0c4c2cb2153c5436c8e",
-   "characters": 624,
-   "cost": 0.00061776,
-   "duration": 41.7,
+   "audio_sha256": "fb6d075fac5770663ab29aee4e0b352f06f595738624a3a50d41d81471329f45",
+   "characters": 847,
+   "cost": 0.00083853,
+   "duration": 57.125,
    "index": 2,
-   "key": "ce9e43b6813def655fd31969fec43864fe52e45f25ca276625b048b77eac09d1",
+   "key": "0c554f3f5646e2038f7143b080c4a2d505e4914b9b78712739c789991cd9b21a",
    "page": "docs/economics-paper.md",
    "pause_ms": 400,
    "section": "permanent",
-   "sent_text": "Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: [KERI](/kˈɛɹi/)'s conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
-   "text": "Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: KERI's conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
+   "sent_text": "Hand proof supplied: read as a lookup, a terminal leaf proves conviction and an active leaf at a reachable root shows the key was never terminal before it; an unknown leaf proves only that the identifier is not registered. Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: [KERI](/kˈɛɹi/)'s conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
+   "text": "Hand proof supplied: read as a lookup, a terminal leaf proves conviction and an active leaf at a reachable root shows the key was never terminal before it; an unknown leaf proves only that the identifier is not registered. Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: KERI's conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
    "words": [
     {
+     "end": 0.375,
+     "start": 0.175,
+     "text": "Hand"
+    },
+    {
      "end": 0.65,
-     "start": 0.2,
-     "text": "Existing"
+     "start": 0.375,
+     "text": "proof"
     },
     {
-     "end": 0.887,
+     "end": 1.525,
      "start": 0.65,
-     "text": "checked"
+     "text": "supplied"
     },
     {
-     "end": 2.05,
-     "start": 0.887,
-     "text": "declaration"
-    },
-    {
-     "end": 2.25,
-     "start": 2.05,
+     "end": 1.725,
+     "start": 1.525,
      "text": ":"
     },
     {
-     "end": 4.275,
-     "start": 2.55,
-     "text": "Singular.Statements.termination"
+     "end": 2.125,
+     "start": 1.925,
+     "text": "read"
     },
     {
-     "end": 4.9,
-     "start": 4.275,
-     "text": "refuses"
-    },
-    {
-     "end": 5.575,
-     "start": 4.9,
-     "text": "requests"
-    },
-    {
-     "end": 5.662,
-     "start": 5.575,
-     "text": "at"
-    },
-    {
-     "end": 5.762,
-     "start": 5.662,
-     "text": "a"
-    },
-    {
-     "end": 6.287,
-     "start": 5.762,
-     "text": "terminal"
-    },
-    {
-     "end": 6.688,
-     "start": 6.287,
-     "text": "key"
-    },
-    {
-     "end": 6.825,
-     "start": 6.688,
-     "text": "in"
-    },
-    {
-     "end": 6.938,
-     "start": 6.825,
-     "text": "a"
-    },
-    {
-     "end": 7.4,
-     "start": 6.938,
-     "text": "reachable"
-    },
-    {
-     "end": 7.9,
-     "start": 7.4,
-     "text": "original"
-    },
-    {
-     "end": 8.65,
-     "start": 7.9,
-     "text": "registry"
-    },
-    {
-     "end": 8.8,
-     "start": 8.65,
-     "text": "and"
-    },
-    {
-     "end": 9.35,
-     "start": 8.8,
-     "text": "preserves"
-    },
-    {
-     "end": 9.562,
-     "start": 9.35,
-     "text": "its"
-    },
-    {
-     "end": 10.075,
-     "start": 9.562,
-     "text": "terminal"
-    },
-    {
-     "end": 10.462,
-     "start": 10.075,
-     "text": "leaf"
-    },
-    {
-     "end": 10.725,
-     "start": 10.462,
-     "text": "through"
-    },
-    {
-     "end": 11.15,
-     "start": 10.725,
-     "text": "later"
-    },
-    {
-     "end": 11.675,
-     "start": 11.15,
-     "text": "accepted"
-    },
-    {
-     "end": 12.95,
-     "start": 11.675,
-     "text": "batches"
-    },
-    {
-     "end": 13.175,
-     "start": 12.95,
-     "text": "."
-    },
-    {
-     "end": 13.95,
-     "start": 13.425,
-     "text": "Singular"
-    },
-    {
-     "end": 14.025,
-     "start": 13.95,
-     "text": "."
-    },
-    {
-     "end": 15.913,
-     "start": 14.025,
-     "text": "Statements.booked_termination_foldable"
-    },
-    {
-     "end": 16.5,
-     "start": 15.913,
-     "text": "supplies"
-    },
-    {
-     "end": 16.6,
-     "start": 16.5,
-     "text": "a"
-    },
-    {
-     "end": 17.25,
-     "start": 16.6,
-     "text": "conditional"
-    },
-    {
-     "end": 17.837,
-     "start": 17.25,
-     "text": "economic"
-    },
-    {
-     "end": 18.388,
-     "start": 17.837,
-     "text": "fold"
-    },
-    {
-     "end": 18.737,
-     "start": 18.388,
-     "text": "making"
-    },
-    {
-     "end": 18.862,
-     "start": 18.737,
-     "text": "the"
-    },
-    {
-     "end": 19.138,
-     "start": 18.862,
-     "text": "key"
-    },
-    {
-     "end": 20.275,
-     "start": 19.138,
-     "text": "terminal"
-    },
-    {
-     "end": 20.5,
-     "start": 20.275,
-     "text": ","
-    },
-    {
-     "end": 20.837,
-     "start": 20.7,
-     "text": "and"
-    },
-    {
-     "end": 21.375,
-     "start": 20.837,
-     "text": "Singular"
-    },
-    {
-     "end": 21.45,
-     "start": 21.375,
-     "text": "."
-    },
-    {
-     "end": 22.75,
-     "start": 21.45,
-     "text": "Statements.world_supply_sync"
-    },
-    {
-     "end": 23.0,
-     "start": 22.75,
-     "text": "then"
-    },
-    {
-     "end": 23.25,
-     "start": 23.0,
-     "text": "gives"
-    },
-    {
-     "end": 23.575,
-     "start": 23.25,
-     "text": "zero"
-    },
-    {
-     "end": 24.6,
-     "start": 23.575,
-     "text": "supply"
-    },
-    {
-     "end": 24.825,
-     "start": 24.6,
-     "text": "."
-    },
-    {
-     "end": 25.35,
-     "start": 25.05,
-     "text": "Missing"
-    },
-    {
-     "end": 26.325,
-     "start": 25.35,
-     "text": "mechanization"
-    },
-    {
-     "end": 26.438,
-     "start": 26.325,
-     "text": ":"
-    },
-    {
-     "end": 26.775,
-     "start": 26.438,
-     "text": "KERI"
-    },
-    {
-     "end": 26.85,
-     "start": 26.775,
-     "text": "'s"
-    },
-    {
-     "end": 27.5,
-     "start": 26.85,
-     "text": "conviction"
-    },
-    {
-     "end": 27.638,
-     "start": 27.5,
-     "text": "and"
-    },
-    {
-     "end": 28.1,
-     "start": 27.638,
-     "text": "custody"
-    },
-    {
-     "end": 28.638,
-     "start": 28.1,
-     "text": "release"
-    },
-    {
-     "end": 29.2,
-     "start": 28.638,
-     "text": "require"
-    },
-    {
-     "end": 29.9,
-     "start": 29.2,
-     "text": "application"
-    },
-    {
-     "end": 31.025,
-     "start": 29.9,
-     "text": "evidence"
-    },
-    {
-     "end": 31.225,
-     "start": 31.025,
-     "text": "."
-    },
-    {
-     "end": 31.55,
-     "start": 31.425,
-     "text": "The"
-    },
-    {
-     "end": 32.125,
-     "start": 31.55,
-     "text": "economic"
-    },
-    {
-     "end": 32.838,
-     "start": 32.125,
-     "text": "termination"
-    },
-    {
-     "end": 33.362,
-     "start": 32.838,
-     "text": "donates"
-    },
-    {
-     "end": 33.875,
-     "start": 33.362,
-     "text": "everything"
-    },
-    {
-     "end": 34.25,
-     "start": 33.875,
-     "text": "held"
-    },
-    {
-     "end": 34.65,
-     "start": 34.25,
-     "text": "except"
-    },
-    {
-     "end": 34.787,
-     "start": 34.65,
-     "text": "the"
-    },
-    {
-     "end": 35.175,
-     "start": 34.787,
-     "text": "tip"
-    },
-    {
-     "end": 35.3,
-     "start": 35.175,
-     "text": ","
-    },
-    {
-     "end": 35.525,
-     "start": 35.3,
+     "end": 2.237,
+     "start": 2.125,
      "text": "as"
     },
     {
-     "end": 36.225,
-     "start": 35.525,
-     "text": "Singular"
+     "end": 2.3,
+     "start": 2.237,
+     "text": "a"
     },
     {
-     "end": 36.35,
-     "start": 36.225,
-     "text": "."
+     "end": 3.025,
+     "start": 2.3,
+     "text": "lookup"
     },
     {
-     "end": 38.025,
-     "start": 36.35,
-     "text": "Statements.fold_routes_every_amount"
+     "end": 3.25,
+     "start": 3.025,
+     "text": ","
     },
     {
-     "end": 39.15,
-     "start": 38.025,
-     "text": "states"
+     "end": 3.562,
+     "start": 3.475,
+     "text": "a"
     },
     {
-     "end": 39.375,
-     "start": 39.15,
+     "end": 4.05,
+     "start": 3.562,
+     "text": "terminal"
+    },
+    {
+     "end": 4.338,
+     "start": 4.05,
+     "text": "leaf"
+    },
+    {
+     "end": 4.725,
+     "start": 4.338,
+     "text": "proves"
+    },
+    {
+     "end": 5.488,
+     "start": 4.725,
+     "text": "conviction"
+    },
+    {
+     "end": 5.613,
+     "start": 5.488,
+     "text": "and"
+    },
+    {
+     "end": 5.738,
+     "start": 5.613,
+     "text": "an"
+    },
+    {
+     "end": 6.175,
+     "start": 5.738,
+     "text": "active"
+    },
+    {
+     "end": 6.537,
+     "start": 6.175,
+     "text": "leaf"
+    },
+    {
+     "end": 6.65,
+     "start": 6.537,
+     "text": "at"
+    },
+    {
+     "end": 6.762,
+     "start": 6.65,
+     "text": "a"
+    },
+    {
+     "end": 7.238,
+     "start": 6.762,
+     "text": "reachable"
+    },
+    {
+     "end": 7.662,
+     "start": 7.238,
+     "text": "root"
+    },
+    {
+     "end": 8.025,
+     "start": 7.662,
+     "text": "shows"
+    },
+    {
+     "end": 8.163,
+     "start": 8.025,
+     "text": "the"
+    },
+    {
+     "end": 8.45,
+     "start": 8.163,
+     "text": "key"
+    },
+    {
+     "end": 8.663,
+     "start": 8.45,
+     "text": "was"
+    },
+    {
+     "end": 9.012,
+     "start": 8.663,
+     "text": "never"
+    },
+    {
+     "end": 9.525,
+     "start": 9.012,
+     "text": "terminal"
+    },
+    {
+     "end": 9.95,
+     "start": 9.525,
+     "text": "before"
+    },
+    {
+     "end": 10.7,
+     "start": 9.95,
+     "text": "it"
+    },
+    {
+     "end": 10.925,
+     "start": 10.7,
      "text": ";"
     },
     {
-     "end": 39.85,
-     "start": 39.575,
+     "end": 11.25,
+     "start": 11.125,
+     "text": "an"
+    },
+    {
+     "end": 11.725,
+     "start": 11.25,
+     "text": "unknown"
+    },
+    {
+     "end": 12.038,
+     "start": 11.725,
+     "text": "leaf"
+    },
+    {
+     "end": 12.413,
+     "start": 12.038,
+     "text": "proves"
+    },
+    {
+     "end": 12.775,
+     "start": 12.413,
+     "text": "only"
+    },
+    {
+     "end": 12.913,
+     "start": 12.775,
+     "text": "that"
+    },
+    {
+     "end": 13.038,
+     "start": 12.913,
+     "text": "the"
+    },
+    {
+     "end": 13.775,
+     "start": 13.038,
+     "text": "identifier"
+    },
+    {
+     "end": 13.925,
+     "start": 13.775,
+     "text": "is"
+    },
+    {
+     "end": 14.15,
+     "start": 13.925,
+     "text": "not"
+    },
+    {
+     "end": 15.225,
+     "start": 14.15,
+     "text": "registered"
+    },
+    {
+     "end": 15.425,
+     "start": 15.225,
+     "text": "."
+    },
+    {
+     "end": 16.075,
+     "start": 15.625,
+     "text": "Existing"
+    },
+    {
+     "end": 16.312,
+     "start": 16.075,
+     "text": "checked"
+    },
+    {
+     "end": 17.475,
+     "start": 16.312,
+     "text": "declaration"
+    },
+    {
+     "end": 17.675,
+     "start": 17.475,
+     "text": ":"
+    },
+    {
+     "end": 19.7,
+     "start": 17.975,
+     "text": "Singular.Statements.termination"
+    },
+    {
+     "end": 20.325,
+     "start": 19.7,
+     "text": "refuses"
+    },
+    {
+     "end": 21.0,
+     "start": 20.325,
+     "text": "requests"
+    },
+    {
+     "end": 21.087,
+     "start": 21.0,
+     "text": "at"
+    },
+    {
+     "end": 21.188,
+     "start": 21.087,
+     "text": "a"
+    },
+    {
+     "end": 21.712,
+     "start": 21.188,
+     "text": "terminal"
+    },
+    {
+     "end": 22.112,
+     "start": 21.712,
+     "text": "key"
+    },
+    {
+     "end": 22.25,
+     "start": 22.112,
+     "text": "in"
+    },
+    {
+     "end": 22.362,
+     "start": 22.25,
+     "text": "a"
+    },
+    {
+     "end": 22.825,
+     "start": 22.362,
+     "text": "reachable"
+    },
+    {
+     "end": 23.325,
+     "start": 22.825,
+     "text": "original"
+    },
+    {
+     "end": 24.075,
+     "start": 23.325,
+     "text": "registry"
+    },
+    {
+     "end": 24.225,
+     "start": 24.075,
+     "text": "and"
+    },
+    {
+     "end": 24.775,
+     "start": 24.225,
+     "text": "preserves"
+    },
+    {
+     "end": 24.987,
+     "start": 24.775,
+     "text": "its"
+    },
+    {
+     "end": 25.5,
+     "start": 24.987,
+     "text": "terminal"
+    },
+    {
+     "end": 25.888,
+     "start": 25.5,
+     "text": "leaf"
+    },
+    {
+     "end": 26.15,
+     "start": 25.888,
+     "text": "through"
+    },
+    {
+     "end": 26.575,
+     "start": 26.15,
+     "text": "later"
+    },
+    {
+     "end": 27.1,
+     "start": 26.575,
+     "text": "accepted"
+    },
+    {
+     "end": 28.375,
+     "start": 27.1,
+     "text": "batches"
+    },
+    {
+     "end": 28.6,
+     "start": 28.375,
+     "text": "."
+    },
+    {
+     "end": 29.375,
+     "start": 28.85,
+     "text": "Singular"
+    },
+    {
+     "end": 29.45,
+     "start": 29.375,
+     "text": "."
+    },
+    {
+     "end": 31.337,
+     "start": 29.45,
+     "text": "Statements.booked_termination_foldable"
+    },
+    {
+     "end": 31.925,
+     "start": 31.337,
+     "text": "supplies"
+    },
+    {
+     "end": 32.025,
+     "start": 31.925,
+     "text": "a"
+    },
+    {
+     "end": 32.675,
+     "start": 32.025,
+     "text": "conditional"
+    },
+    {
+     "end": 33.263,
+     "start": 32.675,
+     "text": "economic"
+    },
+    {
+     "end": 33.812,
+     "start": 33.263,
+     "text": "fold"
+    },
+    {
+     "end": 34.162,
+     "start": 33.812,
+     "text": "making"
+    },
+    {
+     "end": 34.287,
+     "start": 34.162,
+     "text": "the"
+    },
+    {
+     "end": 34.562,
+     "start": 34.287,
+     "text": "key"
+    },
+    {
+     "end": 35.7,
+     "start": 34.562,
+     "text": "terminal"
+    },
+    {
+     "end": 35.925,
+     "start": 35.7,
+     "text": ","
+    },
+    {
+     "end": 36.263,
+     "start": 36.125,
+     "text": "and"
+    },
+    {
+     "end": 36.8,
+     "start": 36.263,
+     "text": "Singular"
+    },
+    {
+     "end": 36.875,
+     "start": 36.8,
+     "text": "."
+    },
+    {
+     "end": 38.175,
+     "start": 36.875,
+     "text": "Statements.world_supply_sync"
+    },
+    {
+     "end": 38.425,
+     "start": 38.175,
+     "text": "then"
+    },
+    {
+     "end": 38.675,
+     "start": 38.425,
+     "text": "gives"
+    },
+    {
+     "end": 39.0,
+     "start": 38.675,
+     "text": "zero"
+    },
+    {
+     "end": 40.025,
+     "start": 39.0,
+     "text": "supply"
+    },
+    {
+     "end": 40.25,
+     "start": 40.025,
+     "text": "."
+    },
+    {
+     "end": 40.775,
+     "start": 40.475,
+     "text": "Missing"
+    },
+    {
+     "end": 41.75,
+     "start": 40.775,
+     "text": "mechanization"
+    },
+    {
+     "end": 41.862,
+     "start": 41.75,
+     "text": ":"
+    },
+    {
+     "end": 42.2,
+     "start": 41.862,
+     "text": "KERI"
+    },
+    {
+     "end": 42.275,
+     "start": 42.2,
+     "text": "'s"
+    },
+    {
+     "end": 42.925,
+     "start": 42.275,
+     "text": "conviction"
+    },
+    {
+     "end": 43.062,
+     "start": 42.925,
+     "text": "and"
+    },
+    {
+     "end": 43.525,
+     "start": 43.062,
+     "text": "custody"
+    },
+    {
+     "end": 44.062,
+     "start": 43.525,
+     "text": "release"
+    },
+    {
+     "end": 44.625,
+     "start": 44.062,
+     "text": "require"
+    },
+    {
+     "end": 45.325,
+     "start": 44.625,
+     "text": "application"
+    },
+    {
+     "end": 46.45,
+     "start": 45.325,
+     "text": "evidence"
+    },
+    {
+     "end": 46.65,
+     "start": 46.45,
+     "text": "."
+    },
+    {
+     "end": 46.975,
+     "start": 46.85,
+     "text": "The"
+    },
+    {
+     "end": 47.55,
+     "start": 46.975,
+     "text": "economic"
+    },
+    {
+     "end": 48.263,
+     "start": 47.55,
+     "text": "termination"
+    },
+    {
+     "end": 48.787,
+     "start": 48.263,
+     "text": "donates"
+    },
+    {
+     "end": 49.3,
+     "start": 48.787,
+     "text": "everything"
+    },
+    {
+     "end": 49.675,
+     "start": 49.3,
+     "text": "held"
+    },
+    {
+     "end": 50.075,
+     "start": 49.675,
+     "text": "except"
+    },
+    {
+     "end": 50.213,
+     "start": 50.075,
+     "text": "the"
+    },
+    {
+     "end": 50.6,
+     "start": 50.213,
+     "text": "tip"
+    },
+    {
+     "end": 50.725,
+     "start": 50.6,
+     "text": ","
+    },
+    {
+     "end": 50.95,
+     "start": 50.725,
+     "text": "as"
+    },
+    {
+     "end": 51.65,
+     "start": 50.95,
+     "text": "Singular"
+    },
+    {
+     "end": 51.775,
+     "start": 51.65,
+     "text": "."
+    },
+    {
+     "end": 53.45,
+     "start": 51.775,
+     "text": "Statements.fold_routes_every_amount"
+    },
+    {
+     "end": 54.575,
+     "start": 53.45,
+     "text": "states"
+    },
+    {
+     "end": 54.8,
+     "start": 54.575,
+     "text": ";"
+    },
+    {
+     "end": 55.275,
+     "start": 55.0,
      "text": "Alice"
     },
     {
-     "end": 40.225,
-     "start": 39.85,
+     "end": 55.65,
+     "start": 55.275,
      "text": "receives"
     },
     {
-     "end": 40.362,
-     "start": 40.225,
+     "end": 55.787,
+     "start": 55.65,
      "text": "no"
     },
     {
-     "end": 40.8,
-     "start": 40.362,
+     "end": 56.225,
+     "start": 55.787,
      "text": "deposit"
     },
     {
-     "end": 41.5,
-     "start": 40.8,
+     "end": 56.925,
+     "start": 56.225,
      "text": "back"
     },
     {
-     "end": 41.7,
-     "start": 41.5,
+     "end": 57.125,
+     "start": 56.925,
      "text": "."
     }
    ]
