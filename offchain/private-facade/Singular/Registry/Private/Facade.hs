@@ -8,6 +8,7 @@ receives a node socket; its clients use the normal shared HTTP/client/Wire.
 module Singular.Registry.Private.Facade
     ( Facade (..)
     , GenesisFunding (..)
+    , HeaderPoint
     , withGeneratedFacade
     , withRestartableGeneratedFacade
     ) where

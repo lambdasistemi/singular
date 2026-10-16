@@ -120,6 +120,7 @@ refusingSession calls =
         , LP.history = \_ _ -> do
             modifyIORef' calls (+ 1)
             pure (Left (LP.HistoryOrderMismatch 1 0))
+        , LP.inclusion = const unread
         }
   where
     unread :: IO (Either LP.ReadFailure a)

@@ -48,7 +48,6 @@ import Cardano.Node.Client.E2E.Setup
     , genesisSignKey
     , mkSignKey
     )
-import Cardano.Node.Client.N2C.ChainSync (HeaderPoint)
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (finally)
 import Control.Monad (forM, forM_)
@@ -120,7 +119,7 @@ import Singular.Registry.Private.Archive
     , archiveBlocks
     , archiveOutputs
     )
-import Singular.Registry.Private.Facade (Facade (..))
+import Singular.Registry.Private.Facade (Facade (..), HeaderPoint)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.Signing (signTx, signedTx)
