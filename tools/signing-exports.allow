@@ -4,3 +4,5 @@ SignedTx
 detachedWitness
 signTx
 signedTx
+# Assembling verified detached witnesses into a signed transaction (#640).
+assembleSigned

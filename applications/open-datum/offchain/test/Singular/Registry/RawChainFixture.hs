@@ -36,7 +36,7 @@ import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
 import Cardano.Ledger.Hashes (ScriptHash)
 import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
-import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Data.Bits (shiftR)
@@ -50,7 +50,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Data.Word (Word32)
+import Data.Word (Word32, Word64)
 import Lens.Micro ((^.))
 import Singular.Registry.Evidence
     ( Evidenced (..)
@@ -82,6 +82,10 @@ data RawChain = RawChain
     -- ^ Every transaction recorded, oldest first, one block each
     , chainAcquisitions :: IORef Int
     -- ^ How many views were acquired: each view is named by its count
+    , chainPlacements :: IORef (Map TxId (Word64, ChainPoint))
+    {- ^ Where each recorded transaction sits: its block's height and
+    chain point, as the fixture's inclusion read answers it
+    -}
     }
 newRawChain :: ChainFacts -> IO RawChain
 newRawChain facts =
@@ -90,6 +94,7 @@ newRawChain facts =
         <*> newIORef True
         <*> newIORef []
         <*> newIORef 0
+        <*> newIORef Map.empty
 
 advanceChain :: RawChain -> (ChainFacts -> ChainFacts) -> IO ()
 advanceChain chain change = atomicModifyIORef' (chainFacts chain) $ \facts ->
@@ -110,8 +115,10 @@ of its own, after every block recorded before it.
 -}
 recordTransaction :: RawChain -> ConwayTx -> IO ()
 recordTransaction chain tx = do
-    live <- csUTxO <$> readIORef (chainFacts chain)
-    let txid = txIdTx tx
+    facts <- readIORef (chainFacts chain)
+    blocks <- readIORef (chainHistory chain)
+    let live = csUTxO facts
+        txid = txIdTx tx
         resolved ins = [(i, out) | i <- Set.toList ins, Just out <- [Map.lookup i live]]
         record =
             HistoricalTransaction
@@ -128,11 +135,16 @@ recordTransaction chain tx = do
                         (toList (tx ^. bodyTxL . outputsTxBodyL))
                 , scriptValid = tx ^. isValidTxL == IsValid True
                 }
-    atomicModifyIORef' (chainHistory chain) $ \blocks ->
-        ( blocks
-            <> [HistoryBlock (fromIntegral (length blocks) + 1) (record NE.:| [])]
-        , ()
-        )
+        height = fromIntegral (length blocks) + 1
+        -- the point of the block this record creates: the next slot the
+        -- chain reaches once its caller applies the transaction, spelled
+        -- exactly as the tip the advance derives from the same state
+        nextSlot = maybe 1 (succ . fst) (csTip facts)
+        point = At nextSlot (blockHash nextSlot)
+    atomicModifyIORef' (chainHistory chain) $ \known ->
+        (known <> [HistoryBlock height (record NE.:| [])], ())
+    atomicModifyIORef' (chainPlacements chain) $ \placed ->
+        (Map.insert txid (height, point) placed, ())
 
 rawChainProvider :: RawChain -> (Network, LedgerProvider NoWitness IO)
 rawChainProvider chain =
@@ -155,6 +167,7 @@ rawChainProvider chain =
                     else do
                         captured <- readIORef (chainFacts chain)
                         recorded <- readIORef (chainHistory chain)
+                        placed <- readIORef (chainPlacements chain)
                         case csTip captured of
                             Nothing ->
                                 pure
@@ -184,6 +197,17 @@ rawChainProvider chain =
                                             , mintRecord = fact . findMint recorded
                                             , history = \asset _ ->
                                                 pure (Right (streamOf (filter (touches asset) recorded)))
+                                            , inclusion = \asked -> do
+                                                connected <- readIORef (chainConnected chain)
+                                                pure $
+                                                    if connected
+                                                        then
+                                                            Right
+                                                                ( Evidenced
+                                                                    (map (placedAt (length recorded) placed) asked)
+                                                                    Nothing
+                                                                )
+                                                        else Left (BackendReadFailure "ViewConnectionLost")
                                             }
                                 n <-
                                     atomicModifyIORef' (chainAcquisitions chain) (\k -> (k + 1, k + 1))
@@ -310,6 +334,19 @@ selectOutputs allOutputs = fmap Map.toAscList . selected
         AllOf queries -> do
             results <- traverse selected queries
             pure (foldl1 Map.intersection (NE.toList results))
+
+{- | Where a transaction sits on the fixture's chain: found at its block's
+point with one confirmation per block recorded from its own onwards, or
+not found. An asked identity the fixture never recorded is not on the
+chain.
+-}
+placedAt
+    :: Int -> Map TxId (Word64, ChainPoint) -> TxId -> InclusionStatus
+placedAt blocks placed asked = case Map.lookup asked placed of
+    Just (height, point) ->
+        IncludedAt point (fromIntegral (blocks - fromIntegral height + 1))
+    Nothing -> NotOnChain
+
 blockHash :: SlotNo -> BS.ByteString
 blockHash (SlotNo slot) =
     BS.replicate 24 0

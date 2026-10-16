@@ -539,6 +539,12 @@ data TxInfo = TxInfo
     { txInfoId :: TxId
     , txInfoBlockHeight :: Word64
     -- ^ Required raw block height, used to resolve omitted same-block creators.
+    , txInfoBlockHash :: ByteString
+    {- ^ The hash of the block carrying the transaction, when the answer
+    names one; the inclusion read spells it as the chain point
+    -}
+    , txInfoSlot :: Maybe Word64
+    -- ^ The absolute slot of the carrying block, when the answer names one
     , txInfoInputs :: [(TxIn, TxOut ConwayEra)]
     , txInfoReferenceInputs :: [(TxIn, TxOut ConwayEra)]
     , txInfoOutputs :: [(TxIn, TxOut ConwayEra)]
@@ -747,6 +753,9 @@ decodeTxInfos :: Value -> Either DecodeFailure [TxInfo]
 decodeTxInfos = runParser $ rows $ \o -> do
     txId <- o .: "tx_hash" >>= txIdOf
     height <- o .: "block_height" <?> Key "block_height"
+    blockHash <-
+        o .:? "block_hash" >>= maybe (pure emptyHash) hexAny
+    absoluteSlot <- o .:? "absolute_slot"
     inputs <- o .: "inputs" >>= ioRows "inputs"
     references <-
         o .:? "reference_inputs"
@@ -760,12 +769,17 @@ decodeTxInfos = runParser $ rows $ \o -> do
         TxInfo
             { txInfoId = txId
             , txInfoBlockHeight = height
+            , txInfoBlockHash = blockHash
+            , txInfoSlot = absoluteSlot
             , txInfoInputs = inputs
             , txInfoReferenceInputs = references
             , txInfoOutputs = outputs
             , txInfoValid = fromMaybe (and contracts) topLevel
             }
   where
+    -- an answer that names no block hash leaves the point unnamed; the
+    -- inclusion read refuses it rather than invent one
+    emptyHash = ""
     ioRows :: Key -> Value -> Parser [(TxIn, TxOut ConwayEra)]
     ioRows key v = rows ioRow v <?> Key key
     ioRow o = do

@@ -3,9 +3,6 @@
 # Each line binds one token's occurrences in one top-level function over
 # comment/string-stripped source (imports and export lists excluded). A new
 # site of any class changes a count with imports untouched (NOTE-001); a
-# site moved between functions changes the per-function counts with the
-# file totals untouched (NOTE-002). Regenerate, review and commit beside
-# the code change. bare wait is excluded by design.
 applications/open-datum/negative/src/Negative/Craft.hs hostPublicFoldTrie newIORef 1
 applications/open-datum/negative/src/Negative/Craft.hs hostPublicFoldTrie readIORef 1
 applications/open-datum/negative/src/Negative/Craft.hs hostRecordKeys IORef 1
@@ -97,15 +94,15 @@ applications/open-datum/offchain/test/Singular/Provider/Koios/FakeServer.hs with
 applications/open-datum/offchain/test/Singular/Provider/Koios/Scripted.hs scriptedTransport atomicModifyIORef' 1
 applications/open-datum/offchain/test/Singular/Provider/Koios/Scripted.hs scriptedTransport newIORef 1
 applications/open-datum/offchain/test/Singular/Provider/Koios/Scripted.hs scriptedTransport readIORef 1
-applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs <decl> IORef 4
+applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs <decl> IORef 5
 applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs advanceChain atomicModifyIORef' 1
 applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs jumpChainTo atomicModifyIORef' 1
 applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs loseConnection atomicModifyIORef' 1
-applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs newRawChain newIORef 4
+applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs newRawChain newIORef 5
 applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider atomicModifyIORef' 1
-applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider readIORef 5
-applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction atomicModifyIORef' 1
-applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction readIORef 1
+applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider readIORef 7
+applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction atomicModifyIORef' 2
+applications/open-datum/offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction readIORef 2
 applications/open-datum/offchain/test/Singular/Registry/StubSession.hs servingSessionWithId newIORef 1
 applications/open-datum/offchain/test/Singular/Registry/StubSession.hs servingSessionWithId readIORef 2
 applications/open-datum/offchain/test/Singular/Registry/StubSession.hs servingSessionWithId writeIORef 1
@@ -317,6 +314,14 @@ offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs replaySpec writeIORef 3
 offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs rootOf IORef 1
 offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs trieOf IORef 1
 offchain/e2e-test/Singular/Registry/E2E/ReplaySpec.hs verifiedCount IORef 1
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs <decl> IORef 3
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs expectArchived readIORef 1
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs expectRefused readIORef 1
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs newSends newIORef 3
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs recording atomicModifyIORef' 1
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs recording modifyIORef' 2
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs spec readIORef 7
+offchain/e2e-test/Singular/Registry/E2E/SubmitSpec.hs spec writeIORef 5
 offchain/journey/Journey/Proofs.hs stepVerifyAbsent IORef 1
 offchain/journey/Journey/Proofs.hs stepVerifyAbsent readIORef 1
 offchain/journey/Journey/Proofs.hs stepVerifyPresent IORef 1
@@ -467,6 +472,18 @@ offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv newIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
+offchain/test/Singular/CLI/SubmitSpec.hs <decl> IORef 5
+offchain/test/Singular/CLI/SubmitSpec.hs capabilitiesOf atomicModifyIORef' 1
+offchain/test/Singular/CLI/SubmitSpec.hs capabilitiesOf modifyIORef' 2
+offchain/test/Singular/CLI/SubmitSpec.hs expectChainFacts readIORef 2
+offchain/test/Singular/CLI/SubmitSpec.hs expectRefused readIORef 1
+offchain/test/Singular/CLI/SubmitSpec.hs land modifyIORef' 2
+offchain/test/Singular/CLI/SubmitSpec.hs theFoundWitnesses readIORef 4
+offchain/test/Singular/CLI/SubmitSpec.hs theRefusals readIORef 3
+offchain/test/Singular/CLI/SubmitSpec.hs theRerun readIORef 6
+offchain/test/Singular/CLI/SubmitSpec.hs theRerun writeIORef 2
+offchain/test/Singular/CLI/SubmitSpec.hs theSends readIORef 3
+offchain/test/Singular/CLI/SubmitSpec.hs withRig newIORef 5
 offchain/test/Singular/CLI/VaultSpec.hs exclusiveCreation link 5
 offchain/test/Singular/Provider/Koios/FakeServer.hs app IORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs app atomicModifyIORef' 1
@@ -506,15 +523,15 @@ offchain/test/Singular/Registry/PhaseLogSpec.hs spec atomicModifyIORef' 1
 offchain/test/Singular/Registry/PhaseLogSpec.hs spec mapConcurrently_ 1
 offchain/test/Singular/Registry/PhaseLogSpec.hs spec newIORef 1
 offchain/test/Singular/Registry/PhaseLogSpec.hs spec readIORef 1
-offchain/test/Singular/Registry/RawChainFixture.hs <decl> IORef 4
+offchain/test/Singular/Registry/RawChainFixture.hs <decl> IORef 5
 offchain/test/Singular/Registry/RawChainFixture.hs advanceChain atomicModifyIORef' 1
 offchain/test/Singular/Registry/RawChainFixture.hs jumpChainTo atomicModifyIORef' 1
 offchain/test/Singular/Registry/RawChainFixture.hs loseConnection atomicModifyIORef' 1
-offchain/test/Singular/Registry/RawChainFixture.hs newRawChain newIORef 4
+offchain/test/Singular/Registry/RawChainFixture.hs newRawChain newIORef 5
 offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider atomicModifyIORef' 1
-offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider readIORef 5
-offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction atomicModifyIORef' 1
-offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction readIORef 1
+offchain/test/Singular/Registry/RawChainFixture.hs rawChainProvider readIORef 7
+offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction atomicModifyIORef' 2
+offchain/test/Singular/Registry/RawChainFixture.hs recordTransaction readIORef 2
 offchain/test/Singular/Registry/StubSession.hs servingSessionWithId newIORef 1
 offchain/test/Singular/Registry/StubSession.hs servingSessionWithId readIORef 2
 offchain/test/Singular/Registry/StubSession.hs servingSessionWithId writeIORef 1

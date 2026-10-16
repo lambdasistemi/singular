@@ -16,6 +16,7 @@ import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.SignSpec qualified
+import Singular.CLI.SubmitSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.VaultSpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
@@ -42,6 +43,7 @@ import Singular.Registry.PhaseLogSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
+import Singular.Registry.SubmitSpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
@@ -66,6 +68,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.Bundle" [Wallet])
         Singular.Registry.BundleSpec.spec
+    describe
+        (tagged "Singular.Registry.Submit" [Submit, Wallet])
+        Singular.Registry.SubmitSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
         Singular.Registry.TxBuilder.BookEdgeSpec.spec
@@ -216,6 +221,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec
+    describe
+        (tagged "Singular.CLI.Submit" [Cli, Submit])
+        Singular.CLI.SubmitSpec.spec
     describe
         (tagged "Singular.CLI.Vault" [Cli, Wallet])
         Singular.CLI.VaultSpec.spec

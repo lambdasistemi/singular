@@ -27,6 +27,7 @@ import Singular.CLI.Command
     , InspectArgs (..)
     , ReclaimArgs (..)
     , RejectArgs (..)
+    , SubmitArgs (..)
     , usage
     , walletAddressCommand
     , walletCreateCommand
@@ -40,6 +41,7 @@ import Singular.CLI.Inspect (runInspect)
 import Singular.CLI.Reclaim (runReclaim)
 import Singular.CLI.Reject (runReject)
 import Singular.CLI.Session (Env (..))
+import Singular.CLI.Submit (submitBundle)
 import Singular.Registry.Application (Application)
 
 -- | Run one command in the environment the entry point composed; the exit status names its outcome class.
@@ -72,3 +74,10 @@ runRegistryCommand app env = \case
     WalletCreate a -> walletCreateCommand a
     WalletAddress a -> walletAddressCommand a
     WalletSign a -> walletSignCommand a
+    SubmitBundle a ->
+        submitBundle
+            env
+            (submitProvider a)
+            (submitBundlePath a)
+            (submitWitnessPaths a)
+            (submitReceipt a)

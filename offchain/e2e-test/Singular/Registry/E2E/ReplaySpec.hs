@@ -1146,6 +1146,7 @@ lineageSession blocks =
         , LP.history = \_ range -> do
             range `shouldBe` LP.HistoryRange Nothing Nothing
             Right . stream <$> readIORef blocks
+        , LP.inclusion = \_ -> pure (Left unused)
         }
   where
     unused = LP.BackendReadFailure "this row provides only chain history"

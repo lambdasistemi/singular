@@ -32,6 +32,7 @@ data Area
     | Application
     | Conformance
     | E2e
+    | Submit
     deriving (Eq, Show)
 
 -- | Stable module name followed by bracketed, lowercase area names.

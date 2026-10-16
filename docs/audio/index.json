@@ -9309,6 +9309,50 @@
     "v": "2f3f03b73a03"
    }
   ],
+  "submitting-a-signed-bundle": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/submitting-a-signed-bundle-00",
+    "pause_ms": 500,
+    "text": "Submitting a signed bundle.",
+    "v": "498f36fb700c"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/submitting-a-signed-bundle-01",
+    "pause_ms": 400,
+    "text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
+    "v": "db50aacf5d42"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/submitting-a-signed-bundle-02",
+    "pause_ms": 400,
+    "text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
+    "v": "65032db5d8b5"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/submitting-a-signed-bundle-03",
+    "pause_ms": 400,
+    "text": "A transaction the chain already holds, found by its identity, is skipped before those checks, and the witnesses supplied for it are ignored: the inputs it spent can no longer be read from the chain, and it is never sent again. A witness that cannot be read, or that verifies against no transaction of the bundle, is refused all the same, before the chain is read, even when every transaction is already on chain.",
+    "v": "97afcdecf54a"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/submitting-a-signed-bundle-04",
+    "pause_ms": 400,
+    "text": "Each transaction the chain does not hold is sent in turn, carrying exactly its own witnesses, and confirmed before the next. An answer that may or may not mean the node took the transaction stops the run as partial, and nothing is sent again within the run; the next run finds what landed. Once every transaction is on chain, the receipt is read back from the chain: for each transaction, whether this run sent it or found it, its chain point, its confirmations, and each of its outputs — unspent with what it holds, or spent since — plus the bundle's hash.",
+    "v": "a8c041839914"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/submitting-a-signed-bundle-05",
+    "pause_ms": 400,
+    "text": "The effect lines a bundle carries are its writer's claims: the receipt shows them under claims and never says they were confirmed. The completeness of the signatures is judged here, against the inputs the chain resolves, which the offline signing step cannot do. Expiry is judged against the tip read before the first send. A command that stops leaves nothing behind but its receipt, and it never resubmits on its own. A valid signature by an unneeded key over an already-landed body is not reported.",
+    "v": "55829b8d57e2"
+   }
+  ],
   "the-settings-you-give": [
    {
     "index": 0,

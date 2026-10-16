@@ -13,6 +13,7 @@ import Singular.Registry.E2E.InsertActiveSpec qualified
 import Singular.Registry.E2E.NodeSpec qualified
 import Singular.Registry.E2E.OpenBootSpec qualified
 import Singular.Registry.E2E.ReplaySpec qualified
+import Singular.Registry.E2E.SubmitSpec qualified
 import Singular.Registry.E2E.UpdateTerminalSpec qualified
 
 -- | Run all end-to-end test specs.
@@ -45,6 +46,10 @@ main = do
             describe
                 (tagged "Singular.Registry.E2E.Config" [E2e, Builders])
                 Singular.Registry.E2E.ConfigSpec.spec
+            describe (tagged "Singular.Registry.E2E.Submit" [E2e, Submit]) $
+                describe
+                    "Devnet scenarios (submitted transactions and refusals)"
+                    Singular.Registry.E2E.SubmitSpec.spec
         describe (lane ForkRecovery)
             $ describe
                 (tagged "Singular.Registry.E2E.Fork81" [E2e, History, Recovery])

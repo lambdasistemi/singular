@@ -88,6 +88,7 @@ viewOf utxos =
                         (BackendReadFailure "held-input control supplies no history")
                     )
                 )
+        , inclusion = const unavailable
         }
   where
     unavailable =

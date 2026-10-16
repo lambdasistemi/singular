@@ -18,11 +18,13 @@ import Cardano.Ledger.Api.Tx.Out (addrTxOutL)
 import Cardano.Ledger.BaseTypes (TxIx (..))
 import Cardano.Ledger.BaseTypes qualified as Ledger
 import Cardano.Ledger.Credential (Credential (ScriptHashObj))
-import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.TxIn (TxId, TxIn (..))
+import Cardano.Slotting.Slot (SlotNo (..))
 import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
 import Control.Tracer (nullTracer)
 import Data.Bifunctor (first)
 import Data.Bifunctor qualified
+import Data.ByteString qualified as BS
 import Data.Containers.ListUtils (nubOrd)
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -179,6 +181,10 @@ koiosProvider runtime configured loadSource client =
                         . runExceptT
                         . mintRecordOf scopedClient
                 , history = readHistory
+                , inclusion =
+                    guarded identity
+                        . fmap (fmap (`Evidenced` Nothing))
+                        . inclusionOf scopedClient
                 }
     guarded identity action = do
         open <- sessionOpen runtime identity
@@ -326,3 +332,63 @@ mintRecordOf client asset = do
                         ( BackendReadFailure
                             "tx_info did not answer the asset's minting transaction once"
                         )
+
+{- | Where each named transaction sits on the chain, in the order asked:
+one @tx_status@ call answers which are seen and with how many
+confirmations, then one @tx_info@ call carries the chain point of each
+seen one. A transaction @tx_status@ has not seen is not on the chain;
+a seen one whose point the service does not name is a named read
+failure, never a guess.
+-}
+inclusionOf
+    :: (Monad m)
+    => Client.Koios m
+    -> [TxId]
+    -> m (Either ReadFailure [InclusionStatus])
+inclusionOf client asked = do
+    statusResult <- Client.txStatus client asked
+    case statusResult of
+        Left failure -> pure (Left (backendFailure failure))
+        Right statuses -> do
+            let seen =
+                    [ (identity, confirmations)
+                    | (identity, Wire.TxStatus _ (Just confirmations)) <- zip asked statuses
+                    ]
+            infoResult <- Client.txInfo client (map fst seen)
+            case infoResult of
+                Left failure -> pure (Left (backendFailure failure))
+                Right infos ->
+                    pure $ do
+                        points <- traverse (pointOf infos) seen
+                        let found = Map.fromList points
+                        pure
+                            [ case Map.lookup identity found of
+                                Just (point, confirmations) -> IncludedAt point confirmations
+                                Nothing -> NotOnChain
+                            | identity <- asked
+                            ]
+  where
+    pointOf infos (identity, confirmations) =
+        case [info | info <- infos, Wire.txInfoId info == identity] of
+            (info : _)
+                | not (BS.null (Wire.txInfoBlockHash info))
+                , Just slot <- Wire.txInfoSlot info ->
+                    Right
+                        ( identity
+                        , (At (SlotNo slot) (Wire.txInfoBlockHash info), confirmations)
+                        )
+                | otherwise ->
+                    Left
+                        ( BackendReadFailure
+                            ( "tx_info names no block point for the transaction "
+                                <> Text.pack (show identity)
+                            )
+                        )
+            [] ->
+                Left
+                    ( BackendReadFailure
+                        ( "tx_status has seen the transaction "
+                            <> Text.pack (show identity)
+                            <> " and tx_info does not answer it"
+                        )
+                    )
