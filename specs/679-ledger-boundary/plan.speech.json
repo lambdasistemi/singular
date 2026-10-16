@@ -1,0 +1,160 @@
+{
+  "plan-for-the-ledger-boundary": [
+    {
+      "text": "Plan for the ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As the ticket owner, I hand one writer the whole model task with a terminal condition, and one auditor the checkpoints, and I accept on hosted jobs at the head.",
+      "pause": 400
+    }
+  ],
+  "binding": [
+    {
+      "text": "Binding.",
+      "pause": 500
+    },
+    {
+      "text": "Repository lambdasistemi/singular, worktree /code/singular-issue-679, branch feat/679-ledger-boundary, base origin/main 45cd8a75.",
+      "pause": 300
+    },
+    {
+      "text": "Runtime root /home/paolino/.orch-runtime/singular/m1/epic-676/ticket-679; temporary files under /code/.lanes-tmp/epic-676/ticket-679.",
+      "pause": 300
+    },
+    {
+      "text": "Lean 4.27.0 as lean-toolchain names; model revision is the base, constitution 1.18.0. No constitution amendment: the driver translation, its declared names and its protocol are unchanged.",
+      "pause": 300
+    },
+    {
+      "text": "Class: changes the Lean model and its published claims, so the full process applies.",
+      "pause": 300
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "The registry-free library first, with its premises and the staking-free view.",
+      "pause": 300
+    },
+    {
+      "text": "The registry instance over it and the existing model, with the terminal discard.",
+      "pause": 300
+    },
+    {
+      "text": "All statement signatures frozen and read by the auditor before any proof effort.",
+      "pause": 300
+    },
+    {
+      "text": "Proofs, then the satisfying example that meets every premise at once.",
+      "pause": 300
+    },
+    {
+      "text": "The import check in the model checker, with its control.",
+      "pause": 300
+    },
+    {
+      "text": "Regenerate the consumers the model checker, mirror and coverage tools bind.",
+      "pause": 300
+    },
+    {
+      "text": "The paper slice: the register at the new model pin, the Named and staking wording, narration.",
+      "pause": 300
+    }
+  ],
+  "checkpoints-and-commits": [
+    {
+      "text": "Checkpoints and commits.",
+      "pause": 500
+    },
+    {
+      "text": "Final history on the branch: this mandate's planning commit, one model commit, one paper commit, each signed, no attribution of any kind. A rebase moves the paper's printed model pin in all five places (paper/economics/main.tex, docs/economics-paper.md, its speech companion, and docs/audio/index.json and manifest.json).",
+      "pause": 400
+    }
+  ],
+  "touch-list": [
+    {
+      "text": "Touch list.",
+      "pause": 500
+    },
+    {
+      "text": "No open pull request touches lean/ (epic owner's check at 15:00 UTC); the writer rechecks before the first push.",
+      "pause": 400
+    }
+  ],
+  "team": [
+    {
+      "text": "Team.",
+      "pause": 500
+    },
+    {
+      "text": "Writer: Codex gpt-6-astra, reasoning high, in this worktree, one at a time. It gets the whole task and stops green, blocked, or at capacity with a handoff.",
+      "pause": 300
+    },
+    {
+      "text": "Auditor: Codex gpt-6.1-sol, reasoning high, mute and persistent, in a read-only worktree that tracks the branch; it reads commits and receipts and answers each checkpoint within 15 minutes. A block names a concrete failure scenario; everything else is advisory.",
+      "pause": 300
+    },
+    {
+      "text": "No draft seat and no other seat.",
+      "pause": 300
+    },
+    {
+      "text": "Every build, test and gate command runs memory-capped and time-bounded with stdin closed; no process is stopped by pattern.",
+      "pause": 300
+    }
+  ],
+  "budget-and-cut-line": [
+    {
+      "text": "Budget and cut line.",
+      "pause": 500
+    },
+    {
+      "text": "Aim merge-ready on 17 October, merged before the 20 October freeze. If the writing heads past about eight hours, the ticket owner tells the epic owner at once. The cut, in order: the unknown-key mint statement moves to issue 680 with its state-script premise; then the staking statement moves to its own slice.",
+      "pause": 400
+    }
+  ],
+  "evidence-the-pull-request-will-carry": [
+    {
+      "text": "Evidence the pull request will carry.",
+      "pause": 500
+    },
+    {
+      "text": "The hosted runs of every gate row at the exact head, read with the run list and run view commands.",
+      "pause": 300
+    },
+    {
+      "text": "The auditor's verdict per checkpoint, at commits that are ancestors of the head.",
+      "pause": 300
+    },
+    {
+      "text": "The statements, each with its premises, as the model check reports them.",
+      "pause": 300
+    },
+    {
+      "text": "Uncovered: every new statement identity starts uncovered in the coverage record; the correspondence with the compiled policies is issue 681's; the state and request rules' staking statement is issues 680 and 681's.",
+      "pause": 300
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The frozen gate is its own page: the union of the ticket owner's and the gate author's independent tables, one verbatim workflow command per row, with the acceptance line each row carries. No settled row changes during the slice; an adopted addition is a new version with the old rows byte for byte.",
+      "pause": 400
+    },
+    {
+      "text": "Two lines have no hosted reconciliation. That every premise has an example rests on the example statement pinned in the manifest plus the auditor's statements-frozen verdict. That the paper's register lists the new statements rests on the auditor's paper verdict, because no hosted job reconciles the register with the axiom report; the plan review asks whether that gap is filed or closed here.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "526744c3f89c14eadf36562c7c8b284367a3e880ca40de42b2899029ab68577e"
+  }
+}
