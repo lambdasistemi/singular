@@ -132,10 +132,11 @@ and funding total, and a reachable after-world without the request. The full
 held lovelace is returned. The theorem permits a positive fee and does not
 require it to fit inside the refundable tip.
 \evidence{pending_registration_can_be_retracted}
-\missing The theorem constructs its own unspent set; it does not find funding
-or prove an accepted transaction over an arbitrary live ledger snapshot.
-Its witness includes a zero-lovelace state output, illustrating the absent
-ledger-minimum premise. It proves no willingness, inclusion or bounded delay.
+\missing Both availability theorems construct their own unspent sets; they
+do not find funding or prove an accepted transaction over an arbitrary live
+ledger snapshot. The termination witness includes a zero-lovelace state output,
+illustrating the absent ledger-minimum premise. Neither theorem proves
+willingness, inclusion or bounded delay.
 
 \paragraph{12. Processor cap is a fold allocation bound.}
 \checked For an accepted economic fold, $O\le I+T$, with

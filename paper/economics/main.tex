@@ -21,12 +21,17 @@
 \institute{}
 \maketitle
 \begin{abstract}
-An application needs a unique representative of a registered key, while a
-requester needs predictable spending and protection from arbitrary cancellation.
-Singular separates a permanent key lifecycle from application state and places
+Singular is a permissionless and reusable mint of named, unique and permanent
+tokens on Cardano. These five properties organize the design: a name has one
+representative, termination cannot be undone, processing uses public data, and
+applications govern their own payloads. Cardano KERI motivates selection of
+checkpoints by identifier and evidence of whether an identifier was ever
+convicted. These application goals are not established by a registry proof alone.
+A requester also needs predictable spending and protection from arbitrary
+cancellation. Singular separates a permanent key lifecycle from application state and places
 pending requests in independent outputs. This paper describes the ruled design:
 registration and termination, booking and token provenance, reference-read
-rejection, timed retraction, and the allocation of request value. It separates
+rejection, funded timed retraction, and the allocation of request value. It separates
 properties checked in Lean from conditional arithmetic and unresolved ledger
 correspondence. Rejection requires a current lifecycle mismatch or expiry after
 both registration windows. Termination has only a fold exit. The accounting
@@ -38,7 +43,33 @@ to the ruled economics; model proofs do not change that standing.
 \keywords{registry \and extended UTxO \and formal specification \and
 protected rejection \and transaction accounting}
 
-\section{The reader's problem and the evidence boundary}
+\section{Named, unique, permanent; permissionless and reusable}
+\label{sec:introduction}
+\begin{quote}
+Singular is a permissionless and reusable mint of named, unique and permanent
+tokens on Cardano.
+\end{quote}
+This is the adopted definition and the organizing promise of the design.
+The tokens are named, unique and permanent; the mint is permissionless and
+reusable. Section~\ref{sec:five-properties} gives each meaning, its concrete
+story and the evidence that does, or does not yet, support it. The definition
+does not turn application demonstrations into Lean theorems or imply that the
+ruled economics is already deployed.
+
+\subsection{Why a name matters}
+Cardano KERI motivates two questions: how to select checkpoints by KERI
+identifier, and how to prove whether an identifier was ever convicted on
+Cardano. The latter motivates an absence proof as well as evidence of a
+recorded conviction. Termination is intended to represent conviction for
+that application, and its permanence prevents a convicted identifier from
+coming back within the same registry.
+\missing These are application goals. Singular alone neither verifies a
+duplicity proof nor establishes a KERI checkpoint or conviction history.
+In particular, an unknown name and an active name are different registry
+states; ``not convicted'' must not silently be equated with ``unknown''.
+The consumer's interpretation and its integration remain open.
+
+\subsection{The reader's problem and the evidence boundary}
 A requester wants to know which funds a failed registration returns. An
 application wants its key's representative to remain unique while its own state
 changes. A processor wants to know what it may consume, what it must pay and
@@ -68,6 +99,8 @@ premises. \textbf{Proposed statement} identifies a conditional design or sizing
 criterion without measurements establishing it. \textbf{Missing mechanization}
 identifies a promised boundary for which no checked result is supplied. These
 labels are independent of implementation conformance.
+
+\input{five-properties.tex}
 
 \section{System context and trust boundaries}
 The extended UTxO model attaches validation to outputs consumed by a
@@ -223,6 +256,38 @@ payment. Such outputs can consume only ordinary funding left after the fee,
 never the request's registration cost, carrier or tip.
 
 \input{counterexamples.tex}
+
+\section{Future work: reusable names and durable evidence}
+\proposed The next lifecycle extension would expose the five other edges.
+They are refused by the active contract and are not proved functionality
+here. One group is non-terminality: deleting an active key would let an
+application release a name for reuse. That would be a different lifecycle
+contract, not an exception to permanence in an existing registry.
+
+\proposed The second group aims at proof durability through witnesses.
+An absent witness would attest that a name is not taken; the proposed path
+also includes changing that absent state to active and deleting the absent
+state. A terminal witness would be minted on demand and attest a termination
+permanently. These four edges together with deletion of an active key account
+for the five proposed extensions.
+
+\proposed A separate presence witness is also proposed. It would be minted
+whenever the registry mints a name's token, and burned when that name is
+terminated or deleted. Thus the three proposed attestations concern absence,
+presence and termination. None is supplied as a working witness mechanism
+by this paper's active two-operation model.
+
+\hand The motivation is the lifetime of a referenced output. A proof used
+by a transaction against an application output holding the name's token
+depends on that output remaining unspent; an application update can replace
+it. A proof against the registry's current root likewise depends on the
+state output, which a fold replaces. Once that referenced output is spent,
+the transaction cannot use it. This explains the desire for more durable
+attestations, without proving that a proposed token protocol achieves it.
+\missing The minting, invalidation, custody and verification rules of these
+witnesses, and their implementation correspondence, require a future model
+and evidence. A presence or absence witness cannot be promised valid after
+its own condition has ceased to hold.
 
 \clearpage
 \appendix

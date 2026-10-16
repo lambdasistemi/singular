@@ -13,6 +13,90 @@
       "pause": 400
     }
   ],
+  "named-unique-permanent-permissionless-and-reusable": [
+    {
+      "text": "Named, unique, permanent; permissionless and reusable.",
+      "pause": 500
+    },
+    {
+      "text": "Singular is a permissionless and reusable mint of named, unique and permanent tokens on Cardano. This is the adopted definition and the paper's organizing promise. The five meanings below distinguish checked model results from application goals and demonstrations.",
+      "pause": 400
+    },
+    {
+      "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. The latter motivates an absence proof as well as evidence of a recorded conviction. Termination is intended to represent conviction for KERI and to make it permanent. Missing mechanization: Singular alone does not verify duplicity or establish a KERI history. An unknown name and an active name differ; “not convicted” must not silently mean “unknown”. The consumer interpretation and integration remain open.",
+      "pause": 400
+    }
+  ],
+  "named": [
+    {
+      "text": "Named.",
+      "pause": 500
+    },
+    {
+      "text": "Each token has a name: registering a name mints exactly one token for it, and the registry is the only way to mint it. Holding the token is holding the name. The story is a registered name represented by a token an application holds with its own payload.",
+      "pause": 400
+    },
+    {
+      "text": "Existing checked declaration: Singular.Statements.insert_active_transaction_row describes the original registry's one minted active asset, its key-derived model name and its destination holding. Singular.Statements.world_supply_sync counts the economic world's actual singular tags across application custody and pending terminations. The register below supplies the exact pin and axiom lines. Missing mechanization: the actual minting policy and name encoding need correspondence evidence; holding the representative proves no legal right or personal identity.",
+      "pause": 400
+    }
+  ],
+  "unique": [
+    {
+      "text": "Unique.",
+      "pause": 500
+    },
+    {
+      "text": "A name can be taken only with a proof that it is absent, so two people cannot hold separate genuine tokens for the same name in one registry. Bob tries to register Alice's already registered name and is refused.",
+      "pause": 400
+    },
+    {
+      "text": "Existing checked declaration: Singular.Statements.insert_active_transaction_row refuses a subsequent approved registration of the same key with key-exists. Singular.Statements.world_supply_sync bounds economic supply by one, including a token in a pending termination. Missing mechanization: actual absence-proof verification is a validator correspondence obligation. “Absent” in this story means unknown and untaken, not the historical stored Absent leaf. Booking does not reserve a name or establish who ought to own it.",
+      "pause": 400
+    }
+  ],
+  "permanent": [
+    {
+      "text": "Permanent.",
+      "pause": 500
+    },
+    {
+      "text": "Terminating a name burns its token and records it as terminal; it can never be issued again. Alice terminates her name, then tries to register it again and is refused. For KERI, termination is intended to be conviction: the convicted identifier must never come back in that registry.",
+      "pause": 400
+    },
+    {
+      "text": "Existing checked declaration: Singular.Statements.termination refuses requests at a terminal key in a reachable original registry and preserves its terminal leaf through later accepted batches. Singular.Statements.booked_termination_foldable supplies a conditional economic fold making the key terminal, and Singular.Statements.world_supply_sync then gives zero supply. Missing mechanization: KERI's conviction and custody release require application evidence. The economic termination donates everything held except the tip, as Singular.Statements.fold_routes_every_amount states; Alice receives no deposit back.",
+      "pause": 400
+    }
+  ],
+  "permissionless": [
+    {
+      "text": "Permissionless.",
+      "pause": 500
+    },
+    {
+      "text": "Anyone creates a registry, anyone books a name, anyone settles pending requests, all from public chain data. The creator has no power over the names. These participation promises remain subject to application authorization, funding and admission. Bob, who did not create the registry, settles pending requests, Alice's included.",
+      "pause": 400
+    },
+    {
+      "text": "Existing checked declarations: Singular.Statements.fold_inputs_public equates the original builder with construction from its public view; Singular.Statements.fold_requires_no_signer proves empty required signers and invariance under changed approval signatures. Missing mechanization: these are original-builder results, not an economic-builder public-data theorem or a running demonstration. Creation, chain-data retrieval and Bob's actual batch require off-chain and validator evidence. No inclusion guarantee follows.",
+      "pause": 400
+    }
+  ],
+  "reusable": [
+    {
+      "text": "Reusable.",
+      "pause": 500
+    },
+    {
+      "text": "The same mint serves any application: open-datum today, a closed variant in the demonstration, KERI checkpoints next, with no change to its contract. Each name's token lives in its owner's application, which decides what the name points to.",
+      "pause": 400
+    },
+    {
+      "text": "Missing mechanization: the concrete application demonstration uses a closed flag on the same release and commands. It sets the payload at registration, refuses every update and leaves only termination. This is application-validator and executable behavior outside the checked registry model; this paper asserts no release or running-demonstration receipt. KERI integration and serving both application kinds in one registry through application tags remain future work.",
+      "pause": 400
+    }
+  ],
   "the-mechanism-at-a-glance": [
     {
       "text": "The mechanism at a glance.",
@@ -51,7 +135,7 @@
       "pause": 500
     },
     {
-      "text": "Existing checked declaration: fold routing separates state continuation, exact carrier outputs, donation and ordinary funding. With ordinary inputs I, ordinary outputs O, total tips T and ledger fee f, it proves O + f = I + T and f ≤ I. Donation equals the registration costs plus held-minus-tip for every termination. Ordinary change remains a separate output even at a carrier's address.",
+      "text": "Existing checked declaration: fold routing separates state continuation, exact carrier outputs, donation and ordinary funding. With ordinary inputs I, ordinary outputs O, total tips T and ledger fee f, it proves O + f = I + T and f ≤ I. Donation equals the registration costs plus held-minus-tip for every termination. Ordinary change remains a separate output even at a carrier's address. Ordinary funding and change are lovelace only: the fold and retraction both refuse an unrelated native asset.",
       "pause": 400
     },
     {
@@ -77,7 +161,7 @@
       "pause": 400
     },
     {
-      "text": "The exact model revision is 303b4fd816b4a7dbd1e2fac5958eb85d0e72a03d, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+      "text": "The exact model revision is 8451749d3752129fb1ae8b5ea03710c5cc305561, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
       "pause": 400
     }
   ],
@@ -87,7 +171,11 @@
       "pause": 500
     },
     {
-      "text": "Missing mechanization: retraction paying a ledger fee. The current retraction judgement permits exactly one request input and requires its full refund. A request holding 3,000,000 lovelace cannot return that amount and pay a 170,000 fee in a balanced transaction. An ordinary funding input is refused. The checked floor remains true; real-ledger retractability is not established, and affected acceptance remains open.",
+      "text": "Existing checked declarations: Singular.Statements.retraction_pays_only_the_refund_and_the_fee proves full refund, zero donation, unchanged treasury, fee covered by ordinary funding and balance. If I is that funding, f the fee and P all outputs elsewhere than the refund address, then P ≤ I − f. The model has no wallet-ownership or output-purpose observation: other-address change and third-party payment are indistinguishable, but neither can consume the request's cost or tip. Singular.Statements.pending_registration_can_be_retracted proves existence with explicit reachable-world, pending-request, nonempty-window, signing and funding premises. Neither theorem supplies wallet funds, ledger minima, builder success or inclusion.",
+      "pause": 400
+    },
+    {
+      "text": "Hand proof supplied: a request holding 3,000,000 lovelace cannot alone return that amount and pay a 170,000 fee. With 200,000 ordinary funding, the model's construction returns 3,030,000 to the refund address and balances. If the requester owns the refund and funding, its net loss is the booking fee plus the retraction fee, with no processor or treasury allocation. These numbers illustrate the checked construction under its premises, not measured ledger costs.",
       "pause": 400
     },
     {
@@ -107,6 +195,24 @@
       "pause": 400
     }
   ],
+  "future-work-reusable-names-and-durable-evidence": [
+    {
+      "text": "Future work: reusable names and durable evidence.",
+      "pause": 500
+    },
+    {
+      "text": "Proposed statement: non-terminality. Deleting an active key would let an application reuse its name. This is a proposed extension to a different lifecycle contract, not a way to undo termination in an existing permanent registry.",
+      "pause": 400
+    },
+    {
+      "text": "Proposed statement: proof durability through witnesses. The other four proposed edges would create an absent witness, change that absent state to active, delete the absent state, and mint a terminal witness on demand. A separate presence witness would be minted with a name's token and burned when the name is terminated or deleted. Absence, presence and termination would then each have an attestation token. These five edges and the presence witness are proposed, not proved functionality of the active contract.",
+      "pause": 400
+    },
+    {
+      "text": "Hand proof supplied: a transaction referencing the application output holding a name's token loses that input when an application update spends it. A proof against the current registry root similarly depends on a state output that another fold may spend. The goal of the proposed witnesses is to make such evidence more durable. Missing mechanization: their minting, invalidation, custody and verification rules need a future model and implementation evidence. Presence and absence cannot be promised valid after their conditions cease to hold.",
+      "pause": 400
+    }
+  ],
   "checked-declaration-register": [
     {
       "text": "Checked declaration register.",
@@ -117,12 +223,12 @@
       "pause": 400
     },
     {
-      "text": "The axiom report digest is 1f8cf8a5c792a9419da90ef0ab465923248a74914790985c10943b71c1621a08. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.",
+      "text": "The axiom report digest is d22520a04f196bfe52e69ac18d156cce82c78d34f4a6365a16a2138a2815a2f9. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "economics-paper.md",
-    "sha256": "44cc67f9072949e57de1a4e62d357226fc6e74af846eeff13a19999f666ff578"
+    "sha256": "7fcfe67ce88cd33f01d95a7837e01e63c6601c2ab3cc696e62c4d3b30c72ba04"
   }
 }
