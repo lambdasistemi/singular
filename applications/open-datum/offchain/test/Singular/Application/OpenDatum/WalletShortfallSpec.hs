@@ -985,6 +985,488 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         case runReceipt inserted of
             Aeson.Object o -> KeyMap.member "preparation" o `shouldBe` False
             _ -> fail "the funded insert printed no receipt object"
+    it
+        "the booking preview plans the preparation the insert then makes equal (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let bundle = singleKindBundle policy kinds
+            plantTokenOutputs rig bundle 100_000_000 0
+            walletBefore <- readTestWallet rig
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            assetsOf walletBefore `shouldBe` bundle
+            stateBefore <- snapshotStateDir rig
+            previewed <-
+                run
+                    rig
+                    "insert preview from the token-only wallet"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "bob-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--deposit"
+                      , "15000000"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+            runCode previewed `shouldBe` ExitSuccess
+            BL.toStrict (Aeson.encode (runReceipt previewed))
+                `shouldSatisfy` (not . BS.isInfixOf "send one self-payment")
+            (prepTxP, prepOutP, coinP, feeP) <- preparationMembersOf previewed
+            submittedOf previewed `shouldBe` False
+            walletAfterPreview <- readTestWallet rig
+            walletAfterPreview `shouldBe` walletBefore
+            stateAfterPreview <- snapshotStateDir rig
+            stateAfterPreview `shouldBe` stateBefore
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert after the preview"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "bob-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--deposit"
+                      , "15000000"
+                      ]
+                        <> tokenArgs t
+                    )
+            _ <-
+                expectBookedThroughPreparation
+                    rig
+                    (walletAddr (rigTestWallet rig))
+                    inserted
+            (prepTxW, prepOutW, coinW, feeW) <- preparationMembersOf inserted
+            (prepTxW, coinW, feeW) `shouldBe` (prepTxP, coinP, feeP)
+            prepOutW `shouldBe` prepOutP
+    it
+        "the booking preview refuses a short token-only wallet with the write's figures (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let bundle = singleKindBundle policy kinds
+            plantTokenOutputs rig bundle 10_000_000 0
+            walletBefore <- readTestWallet rig
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            stateBefore <- snapshotStateDir rig
+            previewed <-
+                run
+                    rig
+                    "insert preview short token-only"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "bob-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--deposit"
+                      , "15000000"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+            runCode previewed `shouldBe` ExitFailure 10
+            reasonOf previewed `shouldSatisfy` isInfixOf "preparation-unfunded:"
+            reasonOf previewed
+                `shouldSatisfy` isSuffixOf "(client policy); nothing was submitted"
+            reasonOf previewed
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
+            reasonOf previewed
+                `shouldSatisfy` (not . isInfixOf retainedFaucetStep)
+            submittedOf previewed `shouldBe` False
+            walletAfterPreview <- readTestWallet rig
+            walletAfterPreview `shouldBe` walletBefore
+            stateAfterPreview <- snapshotStateDir rig
+            stateAfterPreview `shouldBe` stateBefore
+            written <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert short token-only"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "bob-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--deposit"
+                      , "15000000"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt written) `shouldBe` Just "client-refusal"
+            runCode written `shouldBe` ExitFailure 10
+            reasonOf written `shouldSatisfy` isInfixOf "preparation-unfunded:"
+            submissionsOfRun written `shouldBe` Just []
+            figuresPreview <- figuresPresentOf previewed
+            figuresWritten <- figuresPresentOf written
+            figuresPreview `shouldBe` figuresWritten
+            feePreview <- requireNumberOf "fee" previewed
+            feeWritten <- requireNumberOf "fee" written
+            feePreview `shouldBe` feeWritten
+            floorPreview <- requireNumberOf "remainderMin" previewed
+            floorWritten <- requireNumberOf "remainderMin" written
+            floorPreview `shouldBe` floorWritten
+    it "a funded wallet previews with no preparation member (#491 PR2b)" $
+        with20AdaRig $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            stateBefore <- snapshotStateDir rig
+            previewed <-
+                run
+                    rig
+                    "insert preview funded"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+            runCode previewed `shouldBe` ExitSuccess
+            case runReceipt previewed of
+                Aeson.Object o -> KeyMap.member "preparation" o `shouldBe` False
+                _ -> fail "the funded preview printed no receipt object"
+            submittedOf previewed `shouldBe` False
+            stateAfterPreview <- snapshotStateDir rig
+            stateAfterPreview `shouldBe` stateBefore
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert alice-1 for the terminate preview"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            stateBeforeTerminate <- snapshotStateDir rig
+            terminatedPreview <-
+                run
+                    rig
+                    "terminate preview funded"
+                    ( [ "open-datum"
+                      , "terminate"
+                      , "--key"
+                      , "alice-1"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt terminatedPreview) `shouldBe` Just "success"
+            runCode terminatedPreview `shouldBe` ExitSuccess
+            case runReceipt terminatedPreview of
+                Aeson.Object o -> KeyMap.member "preparation" o `shouldBe` False
+                _ -> fail "the funded terminate preview printed no receipt object"
+            submittedOf terminatedPreview `shouldBe` False
+            stateAfterTerminate <- snapshotStateDir rig
+            stateAfterTerminate `shouldBe` stateBeforeTerminate
+    it
+        "the booking preview refuses a foreign choice below the reserve with today's text (#491 PR2b)"
+        $ withFundedRig [(11, 500_000), (12, 500_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            let foreignMsg =
+                    "the chosen funding output is not an ada-only output of the payer"
+            walletBefore <- readTestWallet rig
+            pp <-
+                SessionIO.withLatest
+                    (rawChainProvider (rigChain rig))
+                    SessionIO.parameters
+            let Coin reserveBelow = protocolFeeReserve pp []
+            spendableHeld walletBefore `shouldSatisfy` (< reserveBelow)
+            stateBefore <- snapshotStateDir rig
+            previewed <-
+                run
+                    rig
+                    "insert preview foreign below the reserve"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--fund-input"
+                      , T.unpack (renderOutRef (fundOutput 99))
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+            runCode previewed `shouldBe` ExitFailure 10
+            reasonOf previewed
+                `shouldBe` (foreignMsg <> " for wallet " <> previewAddr rig <> " (client policy)")
+            walletOfRun previewed `shouldBe` Just (T.pack (previewAddr rig))
+            countOfRun previewed `shouldSatisfy` isJust
+            submittedOf previewed `shouldBe` False
+            walletAfter <- readTestWallet rig
+            walletAfter `shouldBe` walletBefore
+            stateAfter <- snapshotStateDir rig
+            stateAfter `shouldBe` stateBefore
+    it
+        "the booking preview refuses a foreign choice from a funded wallet with today's text (#491 PR2b)"
+        $ with20AdaRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            let foreignMsg =
+                    "the chosen funding output is not an ada-only output of the payer"
+            previewed <-
+                run
+                    rig
+                    "insert preview foreign funded"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      , "--fund-input"
+                      , T.unpack (renderOutRef (fundOutput 99))
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+            runCode previewed `shouldBe` ExitFailure 10
+            reasonOf previewed
+                `shouldBe` (foreignMsg <> " for wallet " <> previewAddr rig <> " (client policy)")
+            submittedOf previewed `shouldBe` False
+    it
+        "the terminate preview plans the preparation the command then makes equal (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let bundle = singleKindBundle policy kinds
+                insertFor k label =
+                    runWithKey
+                        (rigTestKey rig)
+                        rig
+                        label
+                        ( [ "open-datum"
+                          , "insert"
+                          , "--key"
+                          , k
+                          , "--payload"
+                          , rigDir rig </> "payload.json"
+                          ]
+                            <> tokenArgs t
+                        )
+            -- a live key from the funded wallet, then the fold that delivers it
+            inserted <-
+                insertFor "alice-1" "insert alice-1 for the terminate preview"
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            plantTokenOutputs rig bundle 100_000_000 0
+            walletBefore <- readTestWallet rig
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            stateBefore <- snapshotStateDir rig
+            previewed <-
+                run
+                    rig
+                    "terminate preview from the token-only wallet"
+                    ( [ "open-datum"
+                      , "terminate"
+                      , "--key"
+                      , "alice-1"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+            runCode previewed `shouldBe` ExitSuccess
+            BL.toStrict (Aeson.encode (runReceipt previewed))
+                `shouldSatisfy` (not . BS.isInfixOf "send one self-payment")
+            (prepTxP, prepOutP, coinP, feeP) <- preparationMembersOf previewed
+            submittedOf previewed `shouldBe` False
+            walletAfterPreview <- readTestWallet rig
+            walletAfterPreview `shouldBe` walletBefore
+            stateAfterPreview <- snapshotStateDir rig
+            stateAfterPreview `shouldBe` stateBefore
+            terminated <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "terminate after the preview"
+                    (["open-datum", "terminate", "--key", "alice-1"] <> tokenArgs t)
+            _ <-
+                expectBookedThroughPreparation
+                    rig
+                    (walletAddr (rigTestWallet rig))
+                    terminated
+            (prepTxW, prepOutW, coinW, feeW) <- preparationMembersOf terminated
+            (prepTxW, coinW, feeW) `shouldBe` (prepTxP, coinP, feeP)
+            prepOutW `shouldBe` prepOutP
+    it
+        "the terminate preview refuses a short token-only wallet with the write's figures (#491 PR2b)"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            outcomeOf (runReceipt create) `shouldBe` Just "success"
+            t <- tokenOf create
+            (policy, kinds) <- rehearsalKindsOf create
+            let bundle = singleKindBundle policy kinds
+            inserted <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "insert alice-1 for the short terminate preview"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "alice-1"
+                      , "--payload"
+                      , rigDir rig </> "payload.json"
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            folded <-
+                run
+                    rig
+                    "fold alice-1"
+                    (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+            outcomeOf (runReceipt folded) `shouldBe` Just "success"
+            -- a wallet the terminate booking itself refuses: found by
+            -- bisecting PREVIEW results (too rich completes; below the
+            -- fold reserve refuses with another text), every bound a run
+            let findShort h attempts
+                    | attempts <= 0 =
+                        fail "no token-only wallet refused the terminate preview"
+                    | otherwise = do
+                        plantTokenOutputs rig bundle h attempts
+                        probed <-
+                            run
+                                rig
+                                ("terminate preview probe " <> show (attempts :: Int))
+                                ( [ "open-datum"
+                                  , "terminate"
+                                  , "--key"
+                                  , "alice-1"
+                                  , "--preview"
+                                  , "--wallet-address"
+                                  , previewAddr rig
+                                  ]
+                                    <> tokenArgs t
+                                )
+                        if outcomeOf (runReceipt probed) == Just "success"
+                            then findShort (h `div` 2) (attempts - 1)
+                            else
+                                if isInfixOf "preparation-unfunded:" (reasonOf probed)
+                                    then pure (probed, h)
+                                    else findShort (h + h `div` 2) (attempts - 1)
+            (_, hShort) <- findShort 6_000_000 8
+            plantTokenOutputs rig bundle hShort 0
+            walletBefore <- readTestWallet rig
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            stateBefore <- snapshotStateDir rig
+            previewed <-
+                run
+                    rig
+                    "terminate preview short token-only"
+                    ( [ "open-datum"
+                      , "terminate"
+                      , "--key"
+                      , "alice-1"
+                      , "--preview"
+                      , "--wallet-address"
+                      , previewAddr rig
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+            runCode previewed `shouldBe` ExitFailure 10
+            reasonOf previewed `shouldSatisfy` isInfixOf "preparation-unfunded:"
+            reasonOf previewed
+                `shouldSatisfy` isSuffixOf "(client policy); nothing was submitted"
+            reasonOf previewed
+                `shouldSatisfy` (not . isInfixOf "send one self-payment")
+            submittedOf previewed `shouldBe` False
+            walletAfterPreview <- readTestWallet rig
+            walletAfterPreview `shouldBe` walletBefore
+            stateAfterPreview <- snapshotStateDir rig
+            stateAfterPreview `shouldBe` stateBefore
+            written <-
+                runWithKey
+                    (rigTestKey rig)
+                    rig
+                    "terminate short token-only"
+                    (["open-datum", "terminate", "--key", "alice-1"] <> tokenArgs t)
+            outcomeOf (runReceipt written) `shouldBe` Just "client-refusal"
+            runCode written `shouldBe` ExitFailure 10
+            reasonOf written `shouldSatisfy` isInfixOf "preparation-unfunded:"
+            submissionsOfRun written `shouldBe` Just []
+            figuresPreview <- figuresPresentOf previewed
+            figuresWritten <- figuresPresentOf written
+            figuresPreview `shouldBe` figuresWritten
+            feePreview <- requireNumberOf "fee" previewed
+            feeWritten <- requireNumberOf "fee" written
+            feePreview `shouldBe` feeWritten
+            floorPreview <- requireNumberOf "remainderMin" previewed
+            floorWritten <- requireNumberOf "remainderMin" written
+            floorPreview `shouldBe` floorWritten
     it "opens a write session for 20 ada in two outputs with no threshold" $ do
         withSystemTempDirectory "wallet-floor-open" $ \dir -> do
             let keyPath = dir </> "payment.skey"
@@ -1364,6 +1846,22 @@ heldOfRun r = do
 
 numberOfRun :: Aeson.Key -> Run -> Maybe Integer
 numberOfRun k r = numberAt k =<< findObjectWith (runReceipt r)
+
+{- | A refusal's numeric figure, required present: a missing or null
+member fails the row rather than comparing two nothings.
+-}
+requireNumberOf :: Aeson.Key -> Run -> IO Integer
+requireNumberOf k r = case numberOfRun k r of
+    Just n -> pure n
+    Nothing -> fail ("no " <> show k <> " figure in " <> runLabel r)
+
+-- | The refusal's held, required and shortfall, all required present.
+figuresPresentOf :: Run -> IO (Integer, Integer, Integer)
+figuresPresentOf r = do
+    held <- requireNumberOf "held" r
+    required <- requireNumberOf "required" r
+    shortfall <- requireNumberOf "shortfall" r
+    pure (held, required, shortfall)
 
 {- | The @submissions@ member of a receipt, present and typed: a refusal
 that submits nothing carries an empty list, never an absent member.

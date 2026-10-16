@@ -35,6 +35,7 @@ module Singular.Application.OpenDatum.Preview
     , runPreview
     ) where
 
+import Control.Exception (throwIO)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
@@ -95,6 +96,11 @@ import Singular.CLI.Outlay
     , collateralOfFee
     , outlayTotal
     , updateOutlay
+    )
+import Singular.CLI.Prepare
+    ( PrepareRefusal (..)
+    , preparationFields
+    , previewFunding
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry
@@ -270,8 +276,7 @@ previewBooking a v live addr key b = do
     pp <- Cage.parameters v
     walletUtxos <- Cage.outputsAt v addr
     -- Empty wallet names the retained faucet sentence (no self-payment), before
-    -- the fold-reserve floor; token-only previews still refuse via `resolveFunding`
-    -- until line (c) wires the booking preview to `previewFunding`.
+    -- the fold-reserve floor; token-only previews go to the seam to plan.
     case (selectFunding (entryFund a) walletUtxos, spendableOuts walletUtxos) of
         (Left msg, []) ->
             failWithFields
@@ -284,23 +289,66 @@ previewBooking a v live addr key b = do
                 )
                 (emptyFields addr walletUtxos)
         _ -> pure ()
-    _ <- resolveFunding addr walletUtxos (entryFund a)
+    -- An explicit choice is validated before the fold-reserve floor, as
+    -- this preview always did through the resolver: a foreign or
+    -- ineligible named output refuses with the foreign-choice wording
+    -- whatever the wallet holds, while a valid named output continues to
+    -- the floor and the plan.
+    case (entryFund a, selectFunding (entryFund a) walletUtxos) of
+        (Just _, Left msg)
+            | not (null (spendableOuts walletUtxos)) ->
+                failWithFields
+                    ClientRefusal
+                    ( msg
+                        <> " for wallet "
+                        <> bech32Address addr
+                        <> " (client policy)"
+                    )
+                    (emptyFields addr walletUtxos)
+        _ -> pure ()
     let Coin reserve = protocolFeeReserve pp (liveRefs live)
     refuseUnderfunded addr walletUtxos reserve "fold reserve"
-    booking <-
-        bookEdgeMeasured
-            cfg
-            v
+    let refs = liveRefs live
+        measure = bookingOutlay pp refs
+        build funded =
+            bookEdgeMeasured
+                cfg
+                funded
+                addr
+                (savedToken s)
+                key
+                (bookedEdge b)
+                (bookedDestination b)
+                (bookedDeposit b)
+                (bookedApproval b)
+                refs
+                (entryFund a)
+    prepared <-
+        previewFunding
+            "book"
             addr
-            (savedToken s)
-            key
-            (bookedEdge b)
-            (bookedDestination b)
-            (bookedDeposit b)
-            (bookedApproval b)
-            (liveRefs live)
             (entryFund a)
-    let outlay = bookingOutlay pp (liveRefs live) booking
+            (entryMaxOutlay a)
+            measure
+            build
+            v
+    (mPrep, booking) <- case prepared of
+        Left (ExplicitFundingRefusal why) ->
+            failWithFields
+                ClientRefusal
+                ( why
+                    <> " for wallet "
+                    <> bech32Address addr
+                    <> " (client policy)"
+                )
+                (emptyFields addr walletUtxos)
+        Left (OriginalFailure e) -> throwIO e
+        Left (PreparationShortfall text fields) ->
+            failWithFields ClientRefusal text fields
+        Left (AllowanceExceeded text fields) ->
+            failWithFields ClientRefusal text fields
+        Right (_, mPrep, cmdTx) -> pure (mPrep, cmdTx)
+    let outlay = measure booking
     refuseOver (entryMaxOutlay a) outlay
     refuseUnderfunded
         addr
@@ -308,10 +356,12 @@ previewBooking a v live addr key b = do
         (outlayTotal outlay)
         "measured outlay"
     pure
-        [ ("booking", bodyReport pp booking)
-        , ("fold", foldBound pp live outlay)
-        , ("outlay", outlayReport (entryMaxOutlay a) outlay)
-        ]
+        ( [ ("booking", bodyReport pp booking)
+          , ("fold", foldBound pp live outlay)
+          , ("outlay", outlayReport (entryMaxOutlay a) outlay)
+          ]
+            <> preparationFields mPrep
+        )
 
 -- | The caller, by the public address named and the key hash it carries.
 callerReport :: String -> ByteString -> Value
