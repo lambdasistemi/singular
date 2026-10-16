@@ -1,0 +1,24 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I want the value, addresses and clock I authorize to be the ones enforced on chain, so that a processor cannot reinterpret a carried token or spend my refund.",
+      "pause": 400
+    },
+    {
+      "text": "The two tags on a registration are the application and trie-ready tags. A termination holds the singular and trie-ready tags. The amount declarations are independent of observed lovelace, so hidden surplus is detectable.",
+      "pause": 400
+    },
+    {
+      "text": "Concrete byte encodings are implementation representations, not the model's numeric hash. The writer must present the encoding and cross-language correspondence before accepting it. Existing seven-edge wire tags remain distinguishable as refused values; do not silently reinterpret a historical encoding. New script identities must be propagated through all compiled consumers.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "0faa63626eb1b9586f6b7d8419045449b0302d97614685aa4bb7d3786200b271"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a requester, I book a registration whose exact contents and clock are authenticated, reclaim its whole value inside my reclaim window, or receive everything except its tip when anyone rejects it after both windows. As a processor, I discover requests by their trie-ready tags without decoding junk at the request address. Anyone may collect an untagged output; nobody may collect a genuine request that way.",
+      "pause": 400
+    },
+    {
+      "text": "This is the implementation plan for issue 529, on the protected-rejection integration branch. It is a proposed implementation contract, not evidence that these behaviors run today. Read the plan, model mapping, touch list and gate.",
+      "pause": 400
+    },
+    {
+      "text": "Registrations have three exits. Terminations have only a fold. This ticket delivers the minimum economic fold and settlement changes needed for lawful booking and existing journeys, plus tags, sweep, retraction and expiry. Issue 495 adds mismatch proof verification and any remaining state-validator obligations.",
+      "pause": 400
+    }
+  ],
+  "authority": [
+    {
+      "text": "Authority.",
+      "pause": 500
+    },
+    {
+      "text": "The accepted Singular model is commit 4254a3073fe0457946eba0a68d974c999c930ebf, Lean tree 5c704fd7efb5ce2f1ced67cdb22b559ca40cf772, released by PR 615. The integration base 45cd8a754dbb695ae55e91b1cede942ff627d69f contains that same Lean tree. The economic contract, release record and constitution 1.18.0 bind behavior. No Lean edit is authorized here.",
+      "pause": 400
+    },
+    {
+      "text": "The epic owner's 16 October answers confirm that this ticket retains its library booking, discovery, packaged CLI and devnet criteria, and that the bounded booking interval applies only to registrations. The original issue body remains unchanged. The epic owner also assigned the minimum economic fold/settlement changes and shared rejection-state authentication to this ticket, so each pushed candidate remains lawful.",
+      "pause": 400
+    }
+  ],
+  "required-outcomes": [
+    {
+      "text": "Required outcomes.",
+      "pause": 500
+    }
+  ],
+  "superseded-issue-claims": [
+    {
+      "text": "Superseded issue claims.",
+      "pause": 500
+    }
+  ],
+  "decisions-still-required": [
+    {
+      "text": "Decisions still required.",
+      "pause": 500
+    },
+    {
+      "text": "The bound open-datum model says termination booking keeps its application outputs and tag locked (OpenDatumApplication.Statements.bookTerminate_keeps_locked). Singular requires the tag to move into the request. Question Q-003 holds the affected consumer acceptance until the operator resolves it and the consumer model is aligned. A passing old application replay is not evidence for the new path.",
+      "pause": 400
+    },
+    {
+      "text": "The original unpayable-refund control must be realized through a documented concrete address representation and ledger output constraints. Do not silently turn it into an assumption about available wallet funds. Any missing semantic rule is escalated before acceptance.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "13773a58669aa989b400253a5ced899319272b2a6599a2095f0fec98d2a2eac5"
+  }
+}
