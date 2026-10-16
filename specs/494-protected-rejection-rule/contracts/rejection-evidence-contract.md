@@ -5,6 +5,10 @@ builders) consume. It states what the model proves and what an implementation mu
 correspond to it. It is written at the model's level: it fixes facts and their order, not byte
 encodings, redeemer layouts or fees, which the consuming tickets choose and must show correspond.
 
+## Standing since 14 October 2026
+
+This page is the contract of the first stage of the ticket: a rejection that carries evidence inside the transaction of a fold, and the mixed batch of folds and rejections. The model keeps that stage as a named legacy path, so the page stays true of it. It is not the contract for the ruled economics: a rejection now reads the current state by reference, spends no state output and never shares a transaction with a fold, and refunds are summed per refund address. The [economic contract](economic-contract.md) is the contract for booking, rejection, retraction and the fold, and the [release record](release-record.md) names the model revision.
+
 ## Story
 
 As the author of a validator, I read what a rejection must prove, in what order a refusal is
@@ -87,8 +91,4 @@ None of them may weaken the rows above; each must show correspondence.
 
 ## Release record
 
-The release is the merge commit of ticket 494's pull request. Its record, filled in when the work
-is accepted and never before, gives: the model revision; the digest of each statement named in the
-[functions model](../functions-model.md); the corpus rows that export the accepting and refusing
-cases; the constitution version; and the limits that remain: no concrete proof format, no
-validator, no transaction builder, no live acceptance.
+The release is the merge commit of ticket 494's pull request. Its record, with the model revision, the digest of each statement, the corpus rows, the constitution version and the limits that remain, is the [release record](release-record.md).

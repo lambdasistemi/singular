@@ -224,8 +224,9 @@ Conformance and CI code, after slice eight; Codex at medium effort.
 
 ## Closing the ticket
 
-- [ ] `release-record` — the contract's release record is filled with the model revision, statement
+- [x] `economic-contract` — the contract for the ruled economics (booking, rejection by reference read, retraction, the fold) is written for the validator and builder tickets, with the refusal reasons of each action in the order the model names them. (consumers-state-the-rule)
+- [x] `release-record` — the contract's release record is filled with the model revision, statement
   digests, corpus rows, constitution version and remaining limits. (consumers-state-the-rule)
-- [ ] `pull-request-body` — the body states the story, the exact model revision, the mapping from
+- [x] `pull-request-body` — the body states the story, the exact model revision, the mapping from
   requirement to statement to check, and the limits: no validator, no builder, no live acceptance.
   (unmet-stays-unmet)

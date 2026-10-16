@@ -9,6 +9,16 @@
       "pause": 400
     }
   ],
+  "standing-since-14-october-2026": [
+    {
+      "text": "Standing since 14 October 2026.",
+      "pause": 500
+    },
+    {
+      "text": "This page is the contract of the first stage of the ticket: a rejection that carries evidence inside the transaction of a fold, and the mixed batch of folds and rejections. The model keeps that stage as a named legacy path, so the page stays true of it. It is not the contract for the ruled economics: a rejection now reads the current state by reference, spends no state output and never shares a transaction with a fold, and refunds are summed per refund address. The economic contract is the contract for booking, rejection, retraction and the fold, and the release record names the model revision.",
+      "pause": 400
+    }
+  ],
   "story": [
     {
       "text": "Story.",
@@ -93,12 +103,12 @@
       "pause": 500
     },
     {
-      "text": "The release is the merge commit of ticket 494's pull request. Its record, filled in when the work is accepted and never before, gives: the model revision; the digest of each statement named in the functions model; the corpus rows that export the accepting and refusing cases; the constitution version; and the limits that remain: no concrete proof format, no validator, no transaction builder, no live acceptance.",
+      "text": "The release is the merge commit of ticket 494's pull request. Its record, with the model revision, the digest of each statement, the corpus rows, the constitution version and the limits that remain, is the release record.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "rejection-evidence-contract.md",
-    "sha256": "58684717ace97ecf8f212dc402f2ddbd8f42acc3e7a592d0e3004c314d8975a5"
+    "sha256": "f48d785e1f654ff7b51daf1c23a9a1fb79fdbcdc5026249e564545531c104cc8"
   }
 }
