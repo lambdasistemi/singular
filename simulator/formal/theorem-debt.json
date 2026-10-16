@@ -468,6 +468,18 @@
     "statementSha256": "ddd73703885e3b3a52bf612184af6ba1cde863c0f1936dc4288c0517c3d05496"
   },
   {
+    "name": "Singular.Statements.retraction_pays_only_the_refund_and_the_fee",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "84312f008c3afd8626c096225c9f1005509dc3c10eb66b50e3ce8878d48c4406"
+  },
+  {
+    "name": "Singular.Statements.pending_registration_can_be_retracted",
+    "status": "PROVED",
+    "debt": "none",
+    "statementSha256": "b325b874b8caeb1b42f555091840ec34b030982e8352b4a5e0621d7b2fd64091"
+  },
+  {
     "name": "Singular.Statements.tag_supplies_equal_pending",
     "status": "PROVED",
     "debt": "none",

@@ -14,6 +14,7 @@ import Singular.Statements.RejectionState
 import Singular.Statements.RejectionProtection
 import Singular.Statements.Termination
 import Singular.Statements.Refunds
+import Singular.Statements.Retraction
 import Singular.Statements.FoldAccounting
 import Singular.Statements.FoldTermination
 import Singular.Statements.TagSupply

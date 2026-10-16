@@ -69,6 +69,15 @@ def controls (world : World) : List RefundControls.Control :=
    changeFunding row "an output carrying another request datum is not funding"
      (fun output => { output with request := some (.registration request) })
      "retract-funding-request",
+   changeFunding row "ordinary funding cannot carry an unrelated native asset"
+     (fun output => { output with contents.otherAssets := [(⟨91, 92⟩, 1)] })
+     "retract-foreign-asset",
+   { more with
+     story := "ordinary change cannot carry an unrelated native asset",
+     transaction := RefundControls.withPayments more.transaction
+       [RefundControls.payment 42 request.contents.lovelace,
+        { RefundControls.payment 43 3 with contents.otherAssets := [(⟨91, 92⟩, 1)] }],
+     expected := some "retract-foreign-asset" },
    { row with
      story := "ordinary funding may come from another wallet address",
      unspent := row.unspent.map fun (reference, output) =>

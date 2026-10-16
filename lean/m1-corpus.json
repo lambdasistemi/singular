@@ -433,7 +433,7 @@
     "state",
     "tx"
   ],
-  "payloadSha256": "ca6e3e694b590cfb1d836e4330d16fa330ee6c59a71d1ccb9398283b36ba8c74",
+  "payloadSha256": "aa550fb6ac84e018de30245a56c6409f9cd7a91555eb670fbd1604a665608f97",
   "scenarios": [
     {
       "foldWitness": {
@@ -2152,7 +2152,7 @@
     "lean/Main/RejectionReadsState.lean": "bd60decf0a332f7a2cb1fcdce11e52e0936d6736724bfd16961c07233b0de559",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
-    "lean/Main/RetractionFunding.lean": "56673e6025c864d34ad12848bafd85f11bc184b7db2c95b0cd514d0368cfb53d",
+    "lean/Main/RetractionFunding.lean": "598a91672f2fb6481411969bddf79df96884361be0cd06cb650f6efcb6270175",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "e0084c68a0d2a041d5363c248f22c30cc6876fef589ae56fee1b9ab2fc6abeb6",
@@ -2170,7 +2170,7 @@
     "lean/Singular/Economics/Refunds.lean": "48bfa12e6b182e34a8f27b0fc179242aa745d515eacba2c8127bcdc3c3c878a7",
     "lean/Singular/Economics/Rejection.lean": "0f59f3266b6906493c5a6a32451738f2b3c112eeca7641bc13be84178ff9dd7d",
     "lean/Singular/Economics/RequestSpend.lean": "9badb0439bae655fcf63103a0551100d59071d2ee7de5bc0681101bbd03856e3",
-    "lean/Singular/Economics/Retraction.lean": "52cfc44665c5109686374a23f49ac75d63171ad9d4ae9e7c1f4f2fed320abbec",
+    "lean/Singular/Economics/Retraction.lean": "f555302c59fba5528d023858b75dd31f7f59ee628601f745e9f4438dbc1e6914",
     "lean/Singular/Economics/RetractionFunding.lean": "008ebab7e1f11d4b955b51979c73430797b6d03b0da394b45c52637a8cceff94",
     "lean/Singular/Economics/Termination.lean": "3bafd04f3b047bc3f2565f4faedc570ce9c6a30460115f346c7157992bc1760c",
     "lean/Singular/Economics/Transaction.lean": "7ddf97653a69775151bab72d46965134b4588deb28553f80ce18e35d41232343",
@@ -2199,6 +2199,11 @@
     "lean/Singular/Lemmas/Refunds.lean": "eaba3759e5455bfe32091efe1870c3ab8c7186f47f5df0b949bec2bbaf04becb",
     "lean/Singular/Lemmas/RejectionState.lean": "5c625f58a9cbd2d55eecee8289bae88b2700e2d6214c4a58b212b57b80834a0f",
     "lean/Singular/Lemmas/Retraction.lean": "c09bf631e263ae5ab649c9a1137cfdc1b875cadafacb1b767c67fc7081f2946e",
+    "lean/Singular/Lemmas/RetractionFunding.lean": "82e3b1c8be8f2350b7493da957b5e0cb1d8dc8d8ff4aa0314ec71b6bce9f145f",
+    "lean/Singular/Lemmas/RetractionPayments.lean": "e13b572ee1289e259e725fa1830e72878c4004984cdac94002fe643ffc4bb3b0",
+    "lean/Singular/Lemmas/RetractionWitness.lean": "5281e6ec9d0f73983a8fcf0033e38d08f7691df28fbc573b39aa23e32ca91ef1",
+    "lean/Singular/Lemmas/RetractionWitnessAccepted.lean": "7c96fb425fcd070bded2d462b08e2e5a53cec6b7de760a77ed86145e8a5c0d70",
+    "lean/Singular/Lemmas/RetractionWitnessAdmission.lean": "2753a5c40dff67e126ff4595956b271ff9708ae9649768157c87a0c01c7af4ec",
     "lean/Singular/Lemmas/State.lean": "15d6efe0ccd1f1f21187f4c86b632ebdca7c55a955feabe0da1bf94825c882d6",
     "lean/Singular/Lemmas/Step.lean": "0b973a4917fb2eb081bbf57fa012480d2dd87a33080d5f3092c7e0034c062316",
     "lean/Singular/Lemmas/Transactions.lean": "984d6ef9ae4deb5d74cfa292a8c5d7cc2e6f6779e410189108185c0d1945f7de",
@@ -2229,7 +2234,7 @@
     "lean/Singular/NamingWire.lean": "70bc91b7204a341217fd1d3fdbfdf07b7098d5f340271df350057f96e28aa6e5",
     "lean/Singular/NamingWireAudit.lean": "d9b30ec447dc8dfa6ad3691ed1ac629c095a3ae17936c53d03923a59be18f476",
     "lean/Singular/NamingWireStatements.lean": "322d892ddd92d16d147cd850022544afbda6ea5343a259e3d3243f207caa4cca",
-    "lean/Singular/Statements.lean": "6f845e49ee8a19370b0b9a930c9980c654f60796a269fbd1ee0619b64c112960",
+    "lean/Singular/Statements.lean": "7c963f275e8439a9003a1c38714086feeefd6a553754bafe8e026ec77131e237",
     "lean/Singular/Statements/Accounting.lean": "a11f3957d6dd28bea9804942b4cc06f5e44b207deb60b141abc9b812c9e9f256",
     "lean/Singular/Statements/Admission.lean": "d391b67e7b35618967c1b3ef4dca78554b0444ca490c06d2cb3321e2414fedd9",
     "lean/Singular/Statements/Batch.lean": "6a7c4e79aa89127f9a152e8d80811cc766a8606f1cda5bbea4ecb1724a5c5508",
@@ -2246,6 +2251,7 @@
     "lean/Singular/Statements/Rejection.lean": "031f24eb29f173d2c68b3ff29045847c97759943cdc127c0f833bf53c43a14bb",
     "lean/Singular/Statements/RejectionProtection.lean": "d545c734c179d7c096989d16cb4b6bf03a6af96d2285d4260a206582d0988fd4",
     "lean/Singular/Statements/RejectionState.lean": "4d8f5a76ed80c2918347d2b2cdddbffccaaa92384e47778a55aa8bde5e0b3749",
+    "lean/Singular/Statements/Retraction.lean": "29cd79fb99ffedce6e083b63883ce10343bdff9df3cea7c85fc32d89ba665f45",
     "lean/Singular/Statements/TagSupply.lean": "ac22f862bbf11e03ee2ec7f60363a6ef7158ac4ff58b7a0ed63e9242502c5e77",
     "lean/Singular/Statements/Termination.lean": "8ecb2243299057666c53aef5e3fe2f8e23e4be198187fc165042626b10704dcd",
     "lean/Singular/Statements/TerminationTransaction.lean": "b8ee03d4f9ca8cb8623d21baa345bbdaf46ebc56f848dd710fa76a724dcc84d9"

@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "All 85 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 106 in total, each with its own manifest and its own compiled gate.",
+      "text": "All 87 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 108 in total, each with its own manifest and its own compiled gate.",
       "pause": 400
     },
     {
@@ -79,6 +79,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "6d682b6b438a692626763cd9bc45b2e832fa59de68221c7bdddc3810fe96e0ef"
+    "sha256": "0d43d81fac35bf02a9c6c6ebbde9cfc48b60c6ec69caf7d405624eac82e5b934"
   }
 }

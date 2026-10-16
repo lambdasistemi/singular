@@ -298,3 +298,30 @@ These economic retraction identities have no implementation coverage. Restated o
 | `Singular.RefundProof.retraction_request` | `c6162a4c12b5c456956deeeba6de08d2f8e5c20638cd22c635fa76cfb4b72b30` | `f981f441c63d432b3321057a8be35f93a614301a80edc1acbce95ddbb9f0d108` | uncovered |
 | `Singular.Statements.registration_cost_returned_on_exit` | `b989571d70a36354c46600639d3aeefeee6cf0ea7fba55bfb2ca67c2ad24598d` | `020c88bd1d8c402bb794b60ca62e53480afea63e0c4b966f840aed776428a507` | uncovered |
 | `Singular.Statements.retraction_refund_floor` | `2eb1d47fa80f28d8629703cc318886288ded65b8379a42ccfef3156c5c4b4783` | `cf61ca08b5c5cedb781bd9db1d8f8f94a77633b2abd01858b0923e4f8c9d4f23` | uncovered |
+
+## Economic retraction payments and availability
+
+These economic retraction identities have no implementation coverage. Restated obligations retain their historical identities here; no legacy conformance receipt establishes the widened retraction.
+
+| Declaration | Old identity | New identity | Coverage after |
+|---|---|---|---|
+| `Singular.Statements.pending_registration_can_be_retracted` | none (new declaration) | `b325b874b8caeb1b42f555091840ec34b030982e8352b4a5e0621d7b2fd64091` | uncovered |
+| `Singular.Statements.retraction_pays_only_the_refund_and_the_fee` | none (new declaration) | `84312f008c3afd8626c096225c9f1005509dc3c10eb66b50e3ce8878d48c4406` | uncovered |
+| `Singular.retractionWitnessInputs_contains` | none (new declaration) | `bd3b82f203c3bef5168adc188de94a37679d90115ca556872ac767c94ad4cff8` | uncovered |
+| `Singular.retractionWitnessInputs_pending` | none (new declaration) | `2566ce69f5650acdf60ed526cb1dc2fc4c4183c398192588fadb64d982bfbad9` | uncovered |
+| `Singular.retractionWitness_accepted` | none (new declaration) | `6c478e01fda64ad94545c3056a5ad80cc454704528beb2450c4edf3c31235e0d` | uncovered |
+| `Singular.retractionWitness_balance` | none (new declaration) | `3cc10f129ce9f867653cbec186c274cc27496568b9ecbff4cb1e4f0ee60c236e` | uncovered |
+| `Singular.retractionWitness_funding` | none (new declaration) | `8a3cbb7a970a856e1f04f8e746cf72fac230b3d6443a9d7026ca94ad4c070ce6` | uncovered |
+| `Singular.retractionWitness_inputs` | none (new declaration) | `6cb9850684e022afa050f21da37fc70d893e1fbd01e02be3202304fdb3d0ac57` | uncovered |
+| `Singular.retractionWitness_observation` | none (new declaration) | `3d330b80366401045892a3ddb5a2a01b53382e9ce94881294b6723e9a8c318cd` | uncovered |
+| `Singular.retractionWitness_request` | none (new declaration) | `c7ec6ffb8b5a32e683730cf883199851f9c666124eb4b3687341a33c0a0192d7` | uncovered |
+| `Singular.retractionWitness_selection` | none (new declaration) | `fee1b57c9c5b6563c274193b650bf28efbc85ff1660fabdc1fc1a7c9cd920e06` | uncovered |
+| `Singular.retractionWitness_spent` | none (new declaration) | `43934f9025b94b29884f488ecff431283555a90b896c5fa827947ea42beb704d` | uncovered |
+| `Singular.retractionWitness_spent_entries` | none (new declaration) | `65699af2af559bcd2d945426503a5521641c475f13ef83b6a13e1837bb74fe1d` | uncovered |
+| `Singular.retraction_funding_checks` | none (new declaration) | `887c62e9110ab6df621dc2b848a67fce75c49fb33127b1161785a553ee9e8583` | uncovered |
+| `Singular.retraction_funding_ordinary` | none (new declaration) | `e03eac2bb18818647017cdbeca8becb28c82c5b432d76ce3a0116a1836ed02bb` | uncovered |
+| `Singular.retraction_input_lovelace` | none (new declaration) | `7a38a01b3fd6a83948390d343be9c4123624b1138b4fe53daad532eaa7b7d0e2` | uncovered |
+| `Singular.retraction_other_payments` | none (new declaration) | `75c37f760d61e596e28fa1ae101f47bff4d425e39720cf74ddfc6091512551c3` | uncovered |
+| `Singular.retraction_output_observations` | none (new declaration) | `3f503a795ff83b5e7dd13325e6377b4d13f11b969a7f39262582027bf1286b05` | uncovered |
+| `Singular.retraction_outputs_ordinary` | none (new declaration) | `036536edf5445b2b1f6b3a48ca1c683f9a73895bcab76428695af1cf94f3a6d2` | uncovered |
+| `Singular.sum_filter_parts` | none (new declaration) | `fc755b58adc12807174942ca2cc98eb144a288b816d78c126d4437a540c3b594` | uncovered |

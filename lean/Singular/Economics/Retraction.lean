@@ -42,6 +42,8 @@ def retractionRefusal (world : World) (u : EconomicUtxo)
         request.submittedAt + world.registry.config.processTime + world.registry.config.retractTime <
           interval.upper then return "retract-window"
     if !requestTagsBurned u tx then return "retract-tag-not-burned"
+    if !(tx.outputs.all foldBareValue) || !((economicSpent u tx).all foldBareValue) then
+      return "retract-foreign-asset"
     if !rejectionSupplyUnchanged u tx then return "retract-registry-supply"
     if let some why := refundRefusal tx (refundObligations [request] true) "retract-refund-short"
       then return why

@@ -119,7 +119,7 @@
       "pause": 500
     },
     {
-      "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 106 proved declarations — 85 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+      "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 108 proved declarations — 87 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
       "pause": 400
     },
     {
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "5403e659ff27bb5cf9a51dbd7794c1757d201518d8c1f8126c793d4d66d26683"
+    "sha256": "a216b37e808f141d44e9dd6076c680e43b12dad5c767f171070a1e1341620085"
   }
 }
