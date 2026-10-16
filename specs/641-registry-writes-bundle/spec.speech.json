@@ -1,0 +1,48 @@
+{
+  "registry-write-commands-end-in-a-bundle-or-sign-from-the-vault": [
+    {
+      "text": "Issue 641, fourth of five tickets under issue 490. This page records the story, the two signer modes, the journal phase of a bundle, the requirements, the refusals and the limits. Retiring the key-file flag and moving the harnesses to the vault is a separate ticket; the open-datum commands are issue 642.",
+      "pause": 500
+    }
+  ],
+  "story": [
+    {
+      "text": "As Alice, I fold with my vault: I type my passphrase once, and the command builds the whole run as one bundle, the preparation then the fold, signs it from the vault, sends it the way singular submit does and prints a receipt read from the chain. As Bob, I create a registry naming only my address and a bundle file: nothing is signed or sent, the command exits with its own status, and I sign the bundle elsewhere and send it with singular submit. Neither of us passes a key file.",
+      "pause": 500
+    }
+  ],
+  "signer-modes": [
+    {
+      "text": "The write commands create, fold, reject and reclaim take exactly one signer. The external signer names an address and a bundle file: the command builds the whole chain, writes the bundle, journals it as waiting for signatures and exits with status 19, reading no key. The vault names the vault file and, for scripts, a passphrase descriptor: the command builds the same bundle in memory, signs it from the vault and sends it through the core of singular submit. The key file is unchanged by this ticket. The shared flag group reads the signer for every binary, so the open-datum and keri-stub commands parse the new flags too, and issue 642 documents them there. A bundle holds the run's whole chain in build order, each later transaction spending an earlier one's outputs by identity.",
+      "pause": 500
+    }
+  ],
+  "the-journal-phase": [
+    {
+      "text": "A staged run saves the bundle and its bodies and journals one waiting line per transaction before anything is sent. Membership is by identity for the transaction's whole life, and the per-transaction recovery never judges a member. A member later lands or dies. A bundle is landed when every member is found on chain, dead when any member can never land, by expiry or by a refusal from the node, and pending otherwise. Admission and reporting read the same state: a pending bundle stops the next write with status 19; landed and dead bundles never block. Older journals reconcile as before.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Each requirement has a stable name: one bundle per run; the chained view answers as if the staged transactions landed; nothing signed or sent while building; the bodies equal the existing builds; the external mode reads no key; the signer is a payment key; the bundle file is created exclusively; status 19; receipts state only what landed; effects are the readbacks as claims; the vault builds the same bundle and sends it through submit; the journal phase's rules; no secret in any output; existing commands unchanged; committed controls bounded.",
+      "pause": 500
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Before anything is read or built, the command refuses two signer modes together, an address without a bundle file outside a preview, a bundle file without an address or with a preview, a script address, an existing bundle file, a passphrase descriptor without a vault, and a vault it cannot open. Before building, a pending bundle stops it with status 19.",
+      "pause": 500
+    }
+  ],
+  "limits-recorded": [
+    {
+      "text": "The builders' deadlines are unchanged: a reject bundle expires about two minutes after it is built, a fold at the earliest request's processing deadline, a reclaim at the end of the retract window, and a create bundle never, which blocks nothing else because its directory is keyed by its own token. A bundle submitted elsewhere and refused is seen only when it expires. A landed member is not checked again for a rollback. The effect lines are claims.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "ee5e0ed13ffa881ce482bd2bd06eddc8933e4239aedc4971be15b3505fc4d504"
+  }
+}

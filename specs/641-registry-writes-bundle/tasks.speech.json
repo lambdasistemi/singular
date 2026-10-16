@@ -1,0 +1,48 @@
+{
+  "tasks-for-registry-writes-that-end-in-a-bundle": [
+    {
+      "text": "The tasks, grouped by slice.",
+      "pause": 500
+    }
+  ],
+  "slice-chained-view": [
+    {
+      "text": "The chained view: its pure answers with a property against the synthetic chain, and its session decorator.",
+      "pause": 500
+    }
+  ],
+  "slice-staging-and-the-external-signer": [
+    {
+      "text": "Staging and the external signer: the write mode, the flags and refusals, status 19, the receipt with the waiting lines, and one bundle per command for fold, reject and reclaim.",
+      "pause": 500
+    }
+  ],
+  "slice-creates-chain": [
+    {
+      "text": "Create's whole chain in one bundle, with its pending identity and receipt.",
+      "pause": 500
+    }
+  ],
+  "slice-journal-phase": [
+    {
+      "text": "The journal phase: membership by identity, the bundle state shared by admission and the report, and the reconciliation by identity with its connected rows.",
+      "pause": 500
+    }
+  ],
+  "slice-vault-mode": [
+    {
+      "text": "The vault mode: its flags, the submit core separated from its front, and the same bundle signed and sent, journalled landed or dead.",
+      "pause": 500
+    }
+  ],
+  "slice-devnet-control-and-documentation": [
+    {
+      "text": "The packaged devnet control on its hosted job, and the documentation with its narration.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "fd79865276660416ad8d1b090d265069322aecfd8612cc60625ac85b0a85e936"
+  }
+}

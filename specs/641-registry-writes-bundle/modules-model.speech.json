@@ -1,0 +1,30 @@
+{
+  "modules-for-registry-writes-that-end-in-a-bundle": [
+    {
+      "text": "Dependency direction runs from the command line down to the shared library. This page names who owns what.",
+      "pause": 500
+    }
+  ],
+  "new": [
+    {
+      "text": "One new module, the chained view, in the shared library: the answers a chain read gives after the staged transactions landed, and the session that serves them, one snapshot per acquisition.",
+      "pause": 500
+    }
+  ],
+  "changed": [
+    {
+      "text": "The write session owns the write mode and the staged list of a run, and ends a staged run in the bundle. The receipt module owns the new outcome, the waiting, landed and dead lines, membership and the bundle state. The reconciliation partitions by membership and reconciles bundles by identity. The shared flag group reads the signer for both parsers, so open-datum and keri-stub parse the new flags without documenting them until issue 642. The command, managed-state, attached-registry and create modules change only where the signer reaches them. The submit core is separated from its file front, the sign module exports the witnesses of an in-memory bundle, and the trace names a staged transaction as built and staged.",
+      "pause": 500
+    }
+  ],
+  "not-changed": [
+    {
+      "text": "The builders and their deadlines, the funding preparation, fold selection, the bundle format, wallet sign and submit's behaviour, the key-file path, the read-only commands, preview, the open-datum and keri-stub commands, the validators, the blueprint and the Lean model are not changed.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "87b21fc50c8aeac74f89f36db534c7b553147013aeb05011aaaf57a3d8983a42"
+  }
+}

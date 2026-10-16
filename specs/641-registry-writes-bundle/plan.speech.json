@@ -1,0 +1,36 @@
+{
+  "plan-for-registry-writes-that-end-in-a-bundle": [
+    {
+      "text": "Issue 641. One pull request, six slices of at most about ninety minutes of writing each, approved by the M1 desk on 16 October 2026.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Two staged signer modes beside the unchanged key-file path. One bundle per run through a chained view, so the commands' code and the funding preparation stay unchanged. Readbacks become effect claims, and receipts state as fact only what landed. A new outcome, waiting for signatures, status 19. The journal phase as the spec states it. The vault calls the core of singular submit. Deadlines unchanged. Hosted evidence in the focused suite, the documented-flags job and one new packaged devnet job on the required list. Lean is silent, and nothing on chain changes.",
+      "pause": 500
+    }
+  ],
+  "what-this-ticket-takes-from-issue-640": [
+    {
+      "text": "From issue 640: the inclusion read, the assembly export and the planner and core of singular submit. Slice one starts from main before issue 640 merges; every later slice starts after it merges, with this list rebound to the merged interface.",
+      "pause": 500
+    }
+  ],
+  "slices": [
+    {
+      "text": "Six slices: the chained view; staging and the external signer for fold, reject and reclaim; create's chain; the journal phase; the vault mode; the packaged devnet control and the documentation.",
+      "pause": 500
+    }
+  ],
+  "gate": [
+    {
+      "text": "The gate is the existing hosted commands, narrowed to what each slice can break and run in a bounded scope: the focused suite, lint, the component build, the repository lint, the IO-ownership inventory, the narration check, the documented-flags check, the vault controls and the build graph. The last slice adds the packaged devnet control. The aggregate local CI runs once on the final candidate.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "7afcc9fb46d882cf67bdde7a6839aade859cdee30ceec92a9771a0d6093bf8d2"
+  }
+}
