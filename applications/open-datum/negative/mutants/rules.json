@@ -65,6 +65,14 @@
       "file": "onchain/lib/registry/fold.ak",
       "flip": [{"pair": "stranger-registers-a-taken-key", "command": "insert"}, {"pair": "owner-registers-a-taken-key-again", "command": "insert"}, {"pair": "owner-revives-a-terminated-key", "command": "insert"}, {"pair": "stranger-revives-a-terminated-key", "command": "insert"}],
       "control": "stranger-updates-the-key"
+    },
+    {
+      "name": "closed-update-accepted",
+      "patch": "closed-update-accepted.patch",
+      "rule": "closed-datum-update",
+      "file": "applications/open-datum/onchain/validators/open_datum.ak",
+      "flip": [{"pair": "closed-update", "command": "update"}],
+      "control": "stranger-updates-the-key"
     }
   ]
 }

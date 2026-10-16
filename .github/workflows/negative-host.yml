@@ -216,6 +216,8 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Run the mutant self-check over the registry mutant
         run: nix run --quiet .#negative-host-mutants -- --control-noop registry-accepts-a-taken-key
+      - name: Run the mutant self-check over the closed-update mutant
+        run: nix run --quiet .#negative-host-mutants -- --control-noop closed-update-accepted
   negative-host-pairs:
     name: Negative host pairs
     needs: [negative-host-parts, negative-host-part]
