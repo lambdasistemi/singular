@@ -94,13 +94,21 @@ import GHC.Generics
 import Lens.Micro ((&), (.~), (^.))
 import System.Directory
     ( createDirectory
+    , createDirectoryIfMissing
     , doesDirectoryExist
     , doesFileExist
     , listDirectory
     , removePathForcibly
+    , renameDirectory
+    , renameFile
     )
 import System.Exit (ExitCode (..))
-import System.FilePath (takeDirectory, takeFileName, (</>))
+import System.FilePath
+    ( makeRelative
+    , takeDirectory
+    , takeFileName
+    , (</>)
+    )
 import System.IO
     ( IOMode (..)
     , hClose
@@ -180,7 +188,12 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFoldBounded)
-import Singular.CLI.Outlay (outlayTotal, updateOutlay)
+import Singular.CLI.Outlay
+    ( bookingOutlay
+    , outlayTotal
+    , spendableHeld
+    , updateOutlay
+    )
 import Singular.CLI.Prepare
     ( PrepareRefusal (..)
     , measureRequirement
@@ -188,7 +201,11 @@ import Singular.CLI.Prepare
     , prepareFunding
     , previewFunding
     )
-import Singular.CLI.Receipt (FoldTransition (..), JournalEntry (..))
+import Singular.CLI.Receipt
+    ( FoldTransition (..)
+    , JournalEntry (..)
+    , readJournal
+    )
 import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry
     ( economics
@@ -227,6 +244,7 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
@@ -248,7 +266,8 @@ import Singular.Registry.Trace (ReadEvent (Evaluated))
 import Singular.Registry.TxBuilder.BookingFixture (preprodParams)
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut, selectFunding)
 import Singular.Registry.TxBuilder.Internal
-    ( addrKeyHashBytes
+    ( addrFromKeyHashBytes
+    , addrKeyHashBytes
     , approvalDestination
     , approvalName
     , cageAddrFromCfg
@@ -285,7 +304,11 @@ import Singular.Registry.Types
     , stateAppPolicyBytes
     )
 import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    )
 
 spec :: Spec
 spec =
@@ -1422,6 +1445,28 @@ readWallet rig =
     SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
         SessionIO.outputsAt v (walletAddr (rigWallet rig))
 
+{- | Every file under a directory with its bytes, each path recorded
+relative to the FIXED root given: a relocation, a rename, a deletion and
+an append all change the snapshot. A refusal that submits nothing must
+leave the whole state directory byte-identical, journal, saved bodies
+and all.
+-}
+snapshotDir :: FilePath -> IO [(FilePath, BS.ByteString)]
+snapshotDir root = walk root
+  where
+    walk dir = do
+        names <- sort <$> listDirectory dir
+        fmap concat (mapM one names)
+      where
+        one n = do
+            let p = dir </> n
+            isDir <- doesDirectoryExist p
+            if isDir
+                then walk p
+                else do
+                    bytes <- BS.readFile p
+                    pure [(makeRelative root p, bytes)]
+
 -- | How many wallet outputs carry a reference script.
 countRefs :: [(TxIn, TxOut ConwayEra)] -> Int
 countRefs outs =
@@ -2236,6 +2281,311 @@ previewFundingRows = describe
                         )
             chainAfter <- readWallet rig
             chainAfter `shouldBe` wallet
+        it
+            "whole-outlay interval refuses before signing with nothing submitted"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyA = TE.encodeUtf8 "carol-a"
+                    keyB = TE.encodeUtf8 "carol-b"
+                (reqA, _) <- plantRequest rig t1 seed economics keyA
+                (reqB, _) <- plantRequest rig t1 seed economics keyB
+                assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+                names <- reshapeRehearsalWallet rig assets
+                names `shouldBe` 2
+                wallet0 <- readWallet rig
+                [o | (_, o) <- wallet0, adaOnlyOut o] `shouldBe` []
+                let payer = walletAddr (rigWallet rig)
+                pp <-
+                    SessionIO.withLatest
+                        (rawChainProvider (rigChain rig))
+                        SessionIO.parameters
+                let measure = bookingOutlay pp []
+                    Coin reserveInt = protocolFeeReserve pp []
+                    build = buildBookingLike payer
+                large <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    previewFunding "book" payer Nothing Nothing measure build v
+                (oLarge, pLarge) <- case large of
+                    Right (_, Just prep, overTx) ->
+                        pure (outlayTotal (measure overTx), prepFee prep)
+                    other ->
+                        fail
+                            ( "whole-outlay interval: large wallet did not prepare: "
+                                <> show (voidPrep other)
+                            )
+                let hBelow = oLarge + pLarge - 100_000
+                shortenWallet rig hBelow
+                walletBelow <- readWallet rig
+                [o | (_, o) <- walletBelow, adaOnlyOut o] `shouldBe` []
+                length (spendableOuts walletBelow) `shouldBe` 1
+                let heldBelow = spendableHeld walletBelow
+                heldBelow `shouldBe` hBelow
+                heldBelow `shouldSatisfy` (>= reserveInt)
+                nLarge <- case large of
+                    Right (_, Just prep, _) -> pure (prepFundingCoin prep)
+                    _ -> fail "whole-outlay interval: no large preparation"
+                case planPreparation pp payer nLarge walletBelow of
+                    Left err ->
+                        fail
+                            ("whole-outlay interval: below still short of N+P+M: " <> show err)
+                    Right _ -> pure ()
+                chainBefore <- readWallet rig
+                stateBeforePreview <- snapshotDir (rigDir rig)
+                previewed <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    previewFunding "book" payer Nothing Nothing measure build v
+                case previewed of
+                    Left (PreparationShortfall text fields) -> do
+                        text `shouldSatisfy` isInfixOf "preparation-unfunded:"
+                        text
+                            `shouldSatisfy` isInfixOf "(client policy); nothing was submitted"
+                        lookup "remainderMin" fields
+                            `shouldBe` Just (Aeson.toJSON (0 :: Integer))
+                        lookup "held" fields `shouldBe` Just (Aeson.toJSON hBelow)
+                        lookup "required" fields
+                            `shouldBe` Just (Aeson.toJSON (oLarge + pLarge))
+                    other ->
+                        expectationFailure
+                            ( "whole-outlay interval preview planned unexpectedly: "
+                                <> show (voidPrep other)
+                            )
+                chainAfterPreview <- readWallet rig
+                chainAfterPreview `shouldBe` chainBefore
+                stateAfterPreview <- snapshotDir (rigDir rig)
+                stateAfterPreview `shouldBe` stateBeforePreview
+                eventsBefore <- readIORef (rigEvents rig)
+                stateBeforeWrite <- snapshotDir (rigDir rig)
+                let wc =
+                        WriteContext
+                            { wcDir = rigDir rig
+                            , wcCommand = "whole-outlay-interval"
+                            , wcWallet = rigWallet rig
+                            , wcCapabilities = capabilities rig
+                            , wcTimeout = Nothing
+                            , wcTracer = rigTracer rig
+                            , wcSource = "fixture"
+                            }
+                actual <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    prepareFunding wc "book" payer Nothing Nothing measure build v
+                case actual of
+                    Left (PreparationShortfall text _) -> do
+                        text `shouldSatisfy` isInfixOf "preparation-unfunded:"
+                        text
+                            `shouldSatisfy` isInfixOf "(client policy); nothing was submitted"
+                    other ->
+                        expectationFailure
+                            ( "whole-outlay interval prepare planned unexpectedly: "
+                                <> show (voidPrep other)
+                            )
+                eventsAfter <- readIORef (rigEvents rig)
+                eventsAfter `shouldBe` eventsBefore
+                chainAfter <- readWallet rig
+                chainAfter `shouldBe` chainBefore
+                stateAfterWrite <- snapshotDir (rigDir rig)
+                stateAfterWrite `shouldBe` stateBeforeWrite
+        it
+            "whole-outlay boundary accepts at outlay plus fee and refuses one below"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <- run rig "create" (["registry", "create"] <> policyArgs)
+                runExit create `shouldBe` ExitSuccess
+                t1 <- tokenOf create
+                let keyA = TE.encodeUtf8 "carol-a"
+                    keyB = TE.encodeUtf8 "carol-b"
+                (reqA, _) <- plantRequest rig t1 seed economics keyA
+                (reqB, _) <- plantRequest rig t1 seed economics keyB
+                assets <- certifyPlanted rig t1 seed economics [reqA, reqB]
+                names <- reshapeRehearsalWallet rig assets
+                names `shouldBe` 2
+                let payer = walletAddr (rigWallet rig)
+                pp <-
+                    SessionIO.withLatest
+                        (rawChainProvider (rigChain rig))
+                        SessionIO.parameters
+                let measure = bookingOutlay pp []
+                    build = buildBookingLike payer
+                    findExact :: Integer -> Int -> IO (Integer, Integer, Integer, Integer)
+                    findExact _ 0 = fail "whole-outlay boundary: fee did not stabilise"
+                    findExact h n = do
+                        shortenWallet rig h
+                        wallet <- readWallet rig
+                        [o | (_, o) <- wallet, adaOnlyOut o] `shouldBe` []
+                        previewed <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                            previewFunding "book" payer Nothing Nothing measure build v
+                        case previewed of
+                            Right (_, Just prep, overTx) -> do
+                                let o = outlayTotal (measure overTx)
+                                    p = prepFee prep
+                                    target = o + p
+                                if h == target
+                                    then pure (h, o, p, prepFundingCoin prep)
+                                    else findExact target (n - 1)
+                            other ->
+                                fail
+                                    ( "whole-outlay boundary: exact candidate refused: "
+                                        <> show (voidPrep other)
+                                    )
+                large <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    previewFunding "book" payer Nothing Nothing measure build v
+                (o0, p0) <- case large of
+                    Right (_, Just prep, overTx) ->
+                        pure (outlayTotal (measure overTx), prepFee prep)
+                    other ->
+                        fail
+                            ( "whole-outlay boundary: large wallet did not prepare: "
+                                <> show (voidPrep other)
+                            )
+                (hExact, oExact, pExact, nExact) <- findExact (o0 + p0) 5
+                hExact `shouldBe` (oExact + pExact)
+                walletExact <- readWallet rig
+                case planPreparation pp payer nExact walletExact of
+                    Left err -> fail ("whole-outlay boundary: exact short of N+P+M: " <> show err)
+                    Right _ -> pure ()
+                chainBeforeExact <- readWallet rig
+                previewExact <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    previewFunding "book" payer Nothing Nothing measure build v
+                case previewExact of
+                    Right (shown, Just prep, _) -> do
+                        shown `shouldBe` [prepFunding prep]
+                        prepFundingCoin prep `shouldBe` nExact
+                        prepFee prep `shouldBe` pExact
+                    other ->
+                        expectationFailure
+                            ( "whole-outlay boundary exact refused unexpectedly: "
+                                <> show (voidPrep other)
+                            )
+                chainAfterExact <- readWallet rig
+                chainAfterExact `shouldBe` chainBeforeExact
+                let hBelow = hExact - 1
+                shortenWallet rig hBelow
+                walletBelow <- readWallet rig
+                length (spendableOuts walletBelow) `shouldBe` 1
+                spendableHeld walletBelow `shouldBe` hBelow
+                case planPreparation pp payer nExact walletBelow of
+                    Left err -> fail ("whole-outlay boundary: below short of N+P+M: " <> show err)
+                    Right _ -> pure ()
+                previewBelow <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    previewFunding "book" payer Nothing Nothing measure build v
+                case previewBelow of
+                    Left (PreparationShortfall text fields) -> do
+                        text `shouldSatisfy` isInfixOf "preparation-unfunded:"
+                        text
+                            `shouldSatisfy` isInfixOf "(client policy); nothing was submitted"
+                        lookup "remainderMin" fields
+                            `shouldBe` Just (Aeson.toJSON (0 :: Integer))
+                        lookup "held" fields `shouldBe` Just (Aeson.toJSON hBelow)
+                    other ->
+                        expectationFailure
+                            ( "whole-outlay boundary below planned unexpectedly: "
+                                <> show (voidPrep other)
+                            )
+                chainAfterBelow <- readWallet rig
+                chainAfterBelow `shouldBe` walletBelow
+                -- The write at the same boundary: one lovelace below,
+                -- prepareFunding itself refuses with nothing submitted —
+                -- journal and state directory byte-identical — and at
+                -- exactly outlay plus fee it accepts, submitting one
+                -- preparation journalled with the funding expectation.
+                eventsBeforeWrite <- readIORef (rigEvents rig)
+                stateBeforeWrite <- snapshotDir (rigDir rig)
+                let wc =
+                        WriteContext
+                            { wcDir = rigDir rig
+                            , wcCommand = "whole-outlay-boundary"
+                            , wcWallet = rigWallet rig
+                            , wcCapabilities = capabilities rig
+                            , wcTimeout = Nothing
+                            , wcTracer = rigTracer rig
+                            , wcSource = "fixture"
+                            }
+                refusedWrite <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                        prepareFunding wc "book" payer Nothing Nothing measure build v
+                case refusedWrite of
+                    Left (PreparationShortfall text fields) -> do
+                        text `shouldSatisfy` isInfixOf "preparation-unfunded:"
+                        text
+                            `shouldSatisfy` isInfixOf "(client policy); nothing was submitted"
+                        lookup "remainderMin" fields
+                            `shouldBe` Just (Aeson.toJSON (0 :: Integer))
+                        lookup "held" fields `shouldBe` Just (Aeson.toJSON hBelow)
+                    other ->
+                        expectationFailure
+                            ( "whole-outlay boundary write refused unexpectedly: "
+                                <> show (voidPrep other)
+                            )
+                eventsAfterRefusal <- readIORef (rigEvents rig)
+                eventsAfterRefusal `shouldBe` eventsBeforeWrite
+                stateAfterRefusal <- snapshotDir (rigDir rig)
+                stateAfterRefusal `shouldBe` stateBeforeWrite
+                chainAfterRefusal <- readWallet rig
+                chainAfterRefusal `shouldBe` walletBelow
+                shortenWallet rig hExact
+                walletExactAgain <- readWallet rig
+                spendableHeld walletExactAgain `shouldBe` hExact
+                acceptedWrite <-
+                    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                        prepareFunding wc "book" payer Nothing Nothing measure build v
+                accepted <- case acceptedWrite of
+                    Right (shown, Just prep, realTx) -> do
+                        shown `shouldBe` [prepFunding prep]
+                        prepFundingCoin prep `shouldBe` nExact
+                        prepFee prep `shouldBe` pExact
+                        pure (prepTx prep, realTx)
+                    other -> do
+                        expectationFailure
+                            ( "whole-outlay boundary write accepted unexpectedly: "
+                                <> show (voidPrep other)
+                            )
+                        fail "unreachable"
+                eventsAfterAccepted <- readIORef (rigEvents rig)
+                let newEvents = drop (length eventsAfterRefusal) eventsAfterAccepted
+                    submittedSteps =
+                        [ step
+                        | Trace _ (How (Tx TxSubmitted{submitStep = step})) <- newEvents
+                        ]
+                submittedSteps `shouldBe` ["book"]
+                entries <- readJournal (rigDir rig)
+                let txid = txIdHex (fst accepted)
+                    phases = [journalEvent e | e <- entries, journalTxId e == txid]
+                phases `shouldBe` ["prepared", "submitted", "confirmed", "observed"]
+                let expects =
+                        [ journalExpect e
+                        | e <- entries
+                        , journalTxId e == txid
+                        , journalEvent e == "prepared"
+                        ]
+                expects
+                    `shouldBe` [Just ("funding:" <> T.pack (bech32Address payer))]
+                chainAfterAccepted <- readWallet rig
+                chainAfterAccepted `shouldNotBe` walletExactAgain
+        it
+            "a state directory snapshot detects a moved subtree and a renamed file"
+            $ withSystemTempDirectory "snapshot-detect"
+            $ \dir -> do
+                createDirectoryIfMissing True (dir </> "registry" </> "wallets")
+                BS.writeFile (dir </> "registry" </> "journal.jsonl") "one line\n"
+                BS.writeFile
+                    (dir </> "registry" </> "wallets" </> "body.cbor.hex")
+                    "bytes"
+                snapshotBefore <- snapshotDir dir
+                createDirectoryIfMissing True (dir </> "registry-moved")
+                renameDirectory (dir </> "registry") (dir </> "registry-moved")
+                moved <- snapshotDir dir
+                moved `shouldNotBe` snapshotBefore
+                renameFile
+                    (dir </> "registry-moved" </> "journal.jsonl")
+                    (dir </> "registry-moved" </> "journal2.jsonl")
+                renamed <- snapshotDir dir
+                renamed `shouldNotBe` moved
+                BS.appendFile
+                    (dir </> "registry-moved" </> "journal2.jsonl")
+                    "two lines\n"
+                appended <- snapshotDir dir
+                appended `shouldNotBe` renamed
 
 dummyTxFromWallet
     :: PParams ConwayEra -> Addr -> [(TxIn, TxOut ConwayEra)] -> IO ConwayTx
@@ -2273,6 +2623,49 @@ buildFundingAware dummy payer v = do
     case selectFunding Nothing wallet of
         Left why -> throwIO (ErrorCall why)
         Right _ -> pure dummy
+
+{- | A booking-like build for the whole-outlay interval (#491 PR2b line 1).
+Singleton funding input, a bond out to another address plus change back,
+balanced by the ledger. Fails when no ada-only output exists (natural),
+succeeds from the oversized probe. The bond is a fixture input; every
+bound (outlay, requirement, fee, reserve) is read from producers.
+-}
+bookingBond :: Integer
+bookingBond = 2_000_000
+
+otherBookingAddr :: Addr
+otherBookingAddr =
+    addrFromKeyHashBytes Testnet (BS.replicate 28 0xbb)
+
+buildBookingLike
+    :: Addr -> Cage.Session NoWitness IO -> IO ConwayTx
+buildBookingLike payer v = do
+    wallet <- SessionIO.outputsAt v payer
+    case selectFunding Nothing wallet of
+        Left why -> throwIO (ErrorCall why)
+        Right (fundIn, fundOut) -> do
+            pp <- SessionIO.parameters v
+            let unsigned =
+                    mkBasicTx $
+                        mkBasicTxBody
+                            & inputsTxBodyL .~ Set.singleton fundIn
+                            & outputsTxBodyL
+                                .~ StrictSeq.fromList
+                                    [ mkBasicTxOut
+                                        otherBookingAddr
+                                        (MaryValue (Coin bookingBond) mempty)
+                                    , mkBasicTxOut
+                                        payer
+                                        (MaryValue (Coin 1_000_000) mempty)
+                                    ]
+                            & feeTxBodyL .~ Coin 0
+                            & reqSignerHashesTxBodyL
+                                .~ Set.singleton
+                                    (addrWitnessKeyHash (addrKeyHashBytes payer))
+            case balanceTx pp [(fundIn, fundOut)] [] payer unsigned of
+                Left err ->
+                    throwIO (ErrorCall ("buildBookingLike: " <> show err))
+                Right (BalanceResult tx _) -> pure tx
 
 voidPrep
     :: Either PrepareRefusal ([TxIn], Maybe Preparation, ConwayTx) -> String
