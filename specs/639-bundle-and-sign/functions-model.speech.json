@@ -1,0 +1,36 @@
+{
+  "functions-for-signing-a-bundle": [
+    {
+      "text": "Names, argument names and result types only. No bodies.",
+      "pause": 500
+    }
+  ],
+  "bundle-module": [
+    {
+      "text": "encodeBundle(bundle): the JSON bytes of a bundle. Pure.",
+      "pause": 500
+    }
+  ],
+  "signing-module": [
+    {
+      "text": "detachedWitness(signKey, tx): the verification-key witness of the body hash of tx, signed by signKey.",
+      "pause": 500
+    }
+  ],
+  "sign-module": [
+    {
+      "text": "signBundle(bundlePath, vaultPath, passphraseSource, outputDirectory): reads, opens, checks, writes one witness file per transaction exclusively, prints the paths and the summary; refuses with a named refusal.",
+      "pause": 500
+    }
+  ],
+  "command-module": [
+    {
+      "text": "walletSignCommand(vaultPath, bundlePath, passphraseSource, outputDirectory): the parsed wallet sign command; refuses every registry and provider option by name.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "913564ca2988af8dc7f1459c93f62eb8fabca38c9f197d1abee7f9a26ce8898a"
+  }
+}

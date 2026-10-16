@@ -49,6 +49,24 @@
       "pause": 400
     }
   ],
+  "signing-a-bundle-of-unsigned-transactions-offline": [
+    {
+      "text": "Signing a bundle of unsigned transactions offline.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I receive a bundle of unsigned transactions from a writer — one JSON file — and I run singular wallet sign on an offline machine, naming my vault and the bundle. I type my passphrase once and get one witness file per transaction, with the paths on standard output and a short summary of what I signed on standard error:",
+      "pause": 400
+    },
+    {
+      "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
+      "pause": 400
+    },
+    {
+      "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
+      "pause": 400
+    }
+  ],
   "naming-the-registry-by-its-state-token": [
     {
       "text": "Naming the registry by its state token.",
@@ -299,6 +317,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "b6c7055176da8afa1b7234f0d5687b26c26320a623f3f55d8395135105d09659"
+    "sha256": "79fc7ee843da15ea299e037a1c9f3e7aa07c4de200e73a0fd7bc0f51d4628cbb"
   }
 }

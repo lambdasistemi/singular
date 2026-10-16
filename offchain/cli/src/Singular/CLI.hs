@@ -30,6 +30,7 @@ import Singular.CLI.Command
     , usage
     , walletAddressCommand
     , walletCreateCommand
+    , walletSignCommand
     )
 import Singular.CLI.Create (createApplication, runCreate)
 import Singular.CLI.Describe (runDescribeCommand)
@@ -70,3 +71,4 @@ runRegistryCommand app env = \case
     Describe a -> runDescribeCommand app env a
     WalletCreate a -> walletCreateCommand a
     WalletAddress a -> walletAddressCommand a
+    WalletSign a -> walletSignCommand a

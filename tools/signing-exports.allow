@@ -1,4 +1,6 @@
 # The defining generic Signing module's exports (tools/signed_tx_control.sh).
 SignedTx
+# A detached witness, not a signed transaction.
+detachedWitness
 signTx
 signedTx

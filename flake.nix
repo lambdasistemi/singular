@@ -939,16 +939,25 @@
               }
             );
           };
-          # #638: the packaged wallet vault controls — the real `singular`
-          # through a passphrase descriptor with no `cardano-cli` on the
-          # path, each control planted-defect falsified:
+          # #638 + #639: the packaged wallet vault controls — the real
+          # `singular` through a passphrase descriptor with no
+          # `cardano-cli` on the path, each control planted-defect
+          # falsified; the sign family rewrites the committed bundle
+          # fixture's signers with jq, and proves the offline verb under
+          # a bwrap network namespace where the runner allows one, else
+          # through provider refusals plus a python counting canary:
           # `nix run --quiet .#wallet-vault-controls`.
           wallet-vault-controls = {
             type = "app";
             program = pkgs.lib.getExe (
               pkgs.writeShellApplication {
                 name = "wallet-vault-controls";
-                runtimeInputs = flagsTools ++ [ pkgs.systemd ];
+                runtimeInputs = flagsTools ++ [
+                  pkgs.jq
+                  pkgs.python3
+                  pkgs.bubblewrap
+                  pkgs.systemd
+                ];
                 text = ''bash ${./tools/wallet_vault_controls.sh} "$PWD"'';
               }
             );

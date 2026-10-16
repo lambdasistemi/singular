@@ -1,0 +1,30 @@
+{
+  "modules-for-signing-a-bundle": [
+    {
+      "text": "Dependency direction runs from the command line down to the shared library. Nothing here touches the write commands.",
+      "pause": 500
+    }
+  ],
+  "changed-responsibilities": [
+    {
+      "text": "The bundle module (shared local-services library, new) owns the bundle: its types, its JSON codec, the text envelopes of a transaction and of a witness, and the offline consistency check. It is pure: no files, no clock, no network, no age library.",
+      "pause": 500
+    }
+  ],
+  "ownership": [
+    {
+      "text": "Witness files belong to the command that writes them for the length of that command. Passphrase and key live in memory for one command. No state is kept.",
+      "pause": 500
+    }
+  ],
+  "not-changed": [
+    {
+      "text": "Fold, fold rules, preparation, session, lifecycle, the write commands, --wallet-skey, the vault format.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "756296a36404e6b48bba963008cbeb036c0e5bddf1ddcad1c92a431db8f9b1c0"
+  }
+}

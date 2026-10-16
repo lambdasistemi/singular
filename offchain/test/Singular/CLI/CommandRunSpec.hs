@@ -764,7 +764,7 @@ vault spec: standard output is the address alone), so the receipt
 harness below names none of them.
 -}
 commandsWithoutReceipt :: [String]
-commandsWithoutReceipt = ["Help", "WalletCreate", "WalletAddress"]
+commandsWithoutReceipt = ["Help", "WalletCreate", "WalletAddress", "WalletSign"]
 
 -- | Every receipted command the command line can name, by constructor.
 commandNames :: [String]
@@ -787,6 +787,7 @@ constructorOf = \case
     Inspect _ -> "Inspect"
     WalletCreate _ -> "WalletCreate"
     WalletAddress _ -> "WalletAddress"
+    WalletSign _ -> "WalletSign"
 
 -- ---------------------------------------------------------
 -- Tracing setup re-cut: a trace file that cannot be written

@@ -224,6 +224,7 @@ library registry-cli
     Singular.CLI.RequestWindow
     Singular.CLI.Root
     Singular.CLI.Session
+    Singular.CLI.Sign
     Singular.CLI.Trace
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
@@ -273,6 +274,7 @@ library local-services
   autogen-modules:  Paths_singular_registry
   other-modules:    Paths_singular_registry
   exposed-modules:
+    Singular.Registry.Bundle
     Singular.Registry.Evidence
     Singular.Registry.Ledger
     Singular.Registry.LedgerProvider
@@ -980,6 +982,7 @@ test-suite cage-tests
     Singular.CLI.JournalTransitionsSpec
     Singular.CLI.ReclaimSpec
     Singular.CLI.RejectSpec
+    Singular.CLI.SignSpec
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.VaultSpec
     Singular.PhaseLogFixture
@@ -992,6 +995,7 @@ test-suite cage-tests
     Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
     Singular.Registry.BlueprintParametersSpec
+    Singular.Registry.BundleSpec
     Singular.Registry.CandidateSpec
     Singular.Registry.ContractMemory
     Singular.Registry.ContractSuite
