@@ -56,6 +56,10 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
     }
   }
 
+  mint(_redeemer: Data, _policy_id: PolicyId, _tx: Transaction) {
+    False
+  }
+
   else(_) {
     fail
   }

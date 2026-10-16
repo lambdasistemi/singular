@@ -9,7 +9,8 @@ use cage_fixtures.{
   legacyWallet, modifyRedeemerData, noDestination, output, owner_fuzzer,
   phase1Range, phase2Range, phase3Range, rawStateDatum, rejectedActionData,
   request, state, stateDatum, stateSpendRedeemerData, testAbsentPolicy,
-  testAppPolicy, testProcessTime, testRepPolicy, testRequestRef, testRetractTime,
+  testAppPolicy, testBookingWidth, testProcessTime, testRegistrationCost,
+  testRepPolicy, testRequestPolicy, testRequestRef, testRetractTime,
   testScriptAddress, testSeed, testStakeScript, testStateRef, testTerminalPolicy,
   testToken, testValue, update, updateActionData, zfDelivery,
 }
@@ -117,6 +118,9 @@ test modify_rejects_foreign_policy_same_asset() fail {
       active_policy: testRepPolicy,
       absent_policy: testAbsentPolicy,
       terminal_policy: testTerminalPolicy,
+      registration_cost: testRegistrationCost,
+      booking_width: testBookingWidth,
+      request_policy: testRequestPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =
@@ -164,6 +168,9 @@ test end_rejects_foreign_policy_same_asset() fail {
       active_policy: testRepPolicy,
       absent_policy: testAbsentPolicy,
       terminal_policy: testTerminalPolicy,
+      registration_cost: testRegistrationCost,
+      booking_width: testBookingWidth,
+      request_policy: testRequestPolicy,
     }
   let foreign_value = valueFromToken("foreign_policy", testToken)
   let fake_input =

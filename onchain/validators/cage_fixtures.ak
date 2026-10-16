@@ -60,6 +60,16 @@ pub const testAbsentPolicy =
 pub const testTerminalPolicy =
   #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
 
+/// The three registration pins every historical `State` fixture now carries
+/// (this slice appends them to the datum). The values belong to no
+/// historical row: they only make each fixture a total `State`.
+pub const testRegistrationCost = 2_000_000
+
+pub const testBookingWidth = 10_000
+
+pub const testRequestPolicy =
+  #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0"
+
 /// The destination of a request that names none (#157 request-destination-binding): the
 /// requests in this module exercise the cage's non-registry paths —
 /// minting, contribute, retract, sweep, rejection — none of which moves
@@ -135,6 +145,9 @@ pub const state =
     active_policy: testRepPolicy,
     absent_policy: testAbsentPolicy,
     terminal_policy: testTerminalPolicy,
+    registration_cost: testRegistrationCost,
+    booking_width: testBookingWidth,
+    request_policy: testRequestPolicy,
   }
 
 // Raw datum for input/output UTxOs (no Option wrapper)
@@ -224,6 +237,9 @@ pub const feeState =
     active_policy: testRepPolicy,
     absent_policy: testAbsentPolicy,
     terminal_policy: testTerminalPolicy,
+    registration_cost: testRegistrationCost,
+    booking_width: testBookingWidth,
+    request_policy: testRequestPolicy,
   }
 
 pub const feeStateDatum = Some(StateDatum(feeState))
@@ -292,6 +308,9 @@ pub const feeStateOutput =
           active_policy: testRepPolicy,
           absent_policy: testAbsentPolicy,
           terminal_policy: testTerminalPolicy,
+          registration_cost: testRegistrationCost,
+          booking_width: testBookingWidth,
+          request_policy: testRequestPolicy,
         },
       ),
     ),
@@ -331,6 +350,9 @@ pub const capturedRefundState =
     active_policy: testRepPolicy,
     absent_policy: testAbsentPolicy,
     terminal_policy: testTerminalPolicy,
+    registration_cost: testRegistrationCost,
+    booking_width: testBookingWidth,
+    request_policy: testRequestPolicy,
   }
 
 pub const capturedRefundStateDatum = Some(StateDatum(capturedRefundState))
@@ -463,6 +485,9 @@ pub const output =
           active_policy: testRepPolicy,
           absent_policy: testAbsentPolicy,
           terminal_policy: testTerminalPolicy,
+          registration_cost: testRegistrationCost,
+          booking_width: testBookingWidth,
+          request_policy: testRequestPolicy,
         },
       ),
     ),
