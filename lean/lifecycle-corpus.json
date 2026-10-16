@@ -33,7 +33,7 @@
   ],
   "lifecycleStatementsSha256": "22543ca5fb08916e9b0533575cb1e83bc888a1ee03fc0cc9b38dd45b9ae2e5d8",
   "modelSha256": "250898964493c74c0af2a8838a640f1cdc3b1426552fb12b0dda3d883841adbb",
-  "payloadSha256": "d821737de67145d525e975e2dfb087db196cc393bc97c19e201379f46cb55575",
+  "payloadSha256": "40014c0b33c7333dde30ec8dcfb101139429b208e3ef8b0ffdea51dbc334463b",
   "recovery": [
     {
       "detail": true,
@@ -122,7 +122,7 @@
     "lean/Main/RejectionReadsState.lean": "bd60decf0a332f7a2cb1fcdce11e52e0936d6736724bfd16961c07233b0de559",
     "lean/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "lean/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
-    "lean/Main/RetractionFunding.lean": "7f06aa6e97557989b6bb21e5ca3daefa0898fdf72b9ec33ed06edc3491478c0d",
+    "lean/Main/RetractionFunding.lean": "56673e6025c864d34ad12848bafd85f11bc184b7db2c95b0cd514d0368cfb53d",
     "lean/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "lean/NamingMain.lean": "4bb994f8823c91f55a2517a8caf5da5f2cfc9ad1624360111cb4e2a725a35675",
     "lean/Singular.lean": "e0084c68a0d2a041d5363c248f22c30cc6876fef589ae56fee1b9ab2fc6abeb6",

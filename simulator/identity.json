@@ -80,7 +80,7 @@
     "formal/Main/RejectionReadsState.lean": "bd60decf0a332f7a2cb1fcdce11e52e0936d6736724bfd16961c07233b0de559",
     "formal/Main/RejectionTransactions.lean": "3d26636a3446e246db359b46302fca8b770d63ad9b348eaba996031a965fa486",
     "formal/Main/Retraction.lean": "0ad727db5594921110303a97c32d9593404bbfe5a102a64de432305a5e99a95d",
-    "formal/Main/RetractionFunding.lean": "7f06aa6e97557989b6bb21e5ca3daefa0898fdf72b9ec33ed06edc3491478c0d",
+    "formal/Main/RetractionFunding.lean": "56673e6025c864d34ad12848bafd85f11bc184b7db2c95b0cd514d0368cfb53d",
     "formal/Main/Transactions.lean": "9f524e7b0a2ff96fa91ae5bf9ab06166e04660bfb5c57c49fea83cd812c6f34a",
     "formal/Model.lean": "d4c7d9e45d3a9978b2be2e19481dfd0b5ce96b6a38b7a68d30ba5eed7ddbd087",
     "formal/Model/Admission.lean": "8faff36834234dd96fdf1a740f64b6b469b06ad5e04d84e367e0f3f0545e8d51",
@@ -133,7 +133,7 @@
     "formal/naming-theorem-debt.json": "e3fd5918f923ee2651d316b099ea5da50eb244ce1dc86808d826f42ca54fa622",
     "formal/theorem-debt.json": "68ab88ab84df540aef137a7e87b98c3f21175b0154e26eb1c68461293b25e484",
     "formal/wire-theorem-debt.json": "0976487a901c4321b02998ebd178ba66d2f438fccd0332b4c760a7a593453c65",
-    "corpus.json": "66abe9c9a4b035808070eaa31a62c1b801c4a7af92708b0bf9b21b3232e5bb7e"
+    "corpus.json": "650ccbcedbc5e6c0f6994c160dc5aa533808f28c31f80f216083021b67e5448b"
   },
   "templateSha256": "e56d9c1ea41da19a50e01a1d6945ea51e4b5f29f6c72389cd86a91219ecce416",
   "corpusCases": 29,

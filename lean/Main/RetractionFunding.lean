@@ -69,8 +69,11 @@ def controls (world : World) : List RefundControls.Control :=
    changeFunding row "an output carrying another request datum is not funding"
      (fun output => { output with request := some (.registration request) })
      "retract-funding-request",
-   changeFunding row "another address cannot supply the requester's ordinary funding"
-     (fun output => { output with output.address := some 43 }) "retract-funding-owner",
+   { row with
+     story := "ordinary funding may come from another wallet address",
+     unspent := row.unspent.map fun (reference, output) =>
+       (reference, if reference == fundingReference then
+         { output with output.address := some 43 } else output) },
    { row with
      story := "two pending registrations cannot be retracted together",
      transaction.transaction.inputs := row.transaction.transaction.inputs ++
@@ -98,10 +101,15 @@ def controls (world : World) : List RefundControls.Control :=
        [RefundControls.payment 42 request.contents.lovelace],
      expected := some "retract-donation" },
    { more with
-     story := "ordinary change cannot pay a tip to another address",
+     story := "ordinary surplus may return to a fresh change address",
      transaction := RefundControls.withPayments more.transaction
-       [RefundControls.payment 42 request.contents.lovelace, RefundControls.payment 43 3],
-     expected := some "retract-payment-address" },
+       [RefundControls.payment 42 request.contents.lovelace, RefundControls.payment 43 3] },
+   { more with
+     story := "a payment to another address cannot take the request's declared tip",
+     transaction := RefundControls.withPayments more.transaction
+       [RefundControls.payment 42 (request.contents.lovelace - request.declaredTip),
+        RefundControls.payment 43 (3 + request.declaredTip)],
+     expected := some "retract-refund-short" },
    { row with
      story := "an unbalanced surplus refund is refused",
      transaction := RefundControls.withPayments row.transaction
