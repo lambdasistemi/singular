@@ -96,7 +96,7 @@ let
     '';
   };
   # #562: the node-free legs of the retired negative host proof script:
-  # the 13-name membership of the discovered parts, the empty-list
+  # the membership of the discovered parts, the empty-list
   # refusal control on the discovery assertion, the four exit-2 parser
   # refusals, the unknown-part refusal of the part dispatcher, and the
   # terminate and insert handler receipts with exit 10 against an

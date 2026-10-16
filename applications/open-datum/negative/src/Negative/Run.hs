@@ -46,7 +46,14 @@ import Singular.Application.OpenDatum.Envelope
     ( dataFromJson
     , envelopeFromData
     )
-import Singular.Application.OpenDatum.Value (openDatumApplication)
+import Singular.Application.OpenDatum.Run
+    ( readModeFor
+    , readModeForFold
+    )
+import Singular.Application.OpenDatum.Value
+    ( applicationIn
+    , openDatumApplication
+    )
 import Singular.CLI.Attached
     ( Attached (..)
     , attached
@@ -140,6 +147,7 @@ runNegativeInsert env args = case entryMode args of
                 (dataFromJson payloadValue)
         let deposit = fromMaybe minimumDeposit (entryDeposit args)
         dir <- negativeStateDir args ws
+        (mode, modeEnv) <- readModeFor env args
         -- The fold needs every reference role, whatever the command line
         -- says: build the roles host-privately with the fold bit set, so
         -- the command line never carries `--fold` (issue 486 removes it
@@ -147,8 +155,8 @@ runNegativeInsert env args = case entryMode args of
         -- requesting the fold roles) is stated in the ticket's decisions
         -- record as enforced: NONE.
         attached
-            openDatumApplication
-            env
+            (applicationIn mode)
+            modeEnv
             dir
             (entryBlueprint args)
             (entryAccess args)
@@ -331,9 +339,10 @@ runNegativeUpdate env args tamper = case entryMode args of
                 pure
                 (dataFromJson payloadValue)
         dir <- negativeStateDir args ws
+        (mode, modeEnv) <- readModeFor env args
         attached
-            openDatumApplication
-            env
+            (applicationIn mode)
+            modeEnv
             dir
             (entryBlueprint args)
             (entryAccess args)
@@ -458,9 +467,10 @@ runNegativeTerminate env args = case entryMode args of
                 ClientRefusal
                 "not in this slice: folds arrive in the third slice"
         dir <- negativeStateDir args ws
+        (mode, modeEnv) <- readModeFor env args
         attached
-            openDatumApplication
-            env
+            (applicationIn mode)
+            modeEnv
             dir
             (entryBlueprint args)
             (entryAccess args)
@@ -560,9 +570,10 @@ runNegativeWithdraw env args = case entryMode args of
     Submit ws -> do
         let Key key = entryKey args
         dir <- negativeStateDir args ws
+        (mode, modeEnv) <- readModeFor env args
         attached
-            openDatumApplication
-            env
+            (applicationIn mode)
+            modeEnv
             dir
             (entryBlueprint args)
             (entryAccess args)
@@ -683,9 +694,10 @@ runNegativeFold env args short = do
             (providerMagic (writeProvider ws))
             (accessToken (foldAccess args))
             (writeWalletKey ws)
+    (mode, modeEnv) <- readModeForFold env args
     attached
-        openDatumApplication
-        env
+        (applicationIn mode)
+        modeEnv
         dir
         (foldBlueprint args)
         (foldAccess args)
