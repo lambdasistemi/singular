@@ -317,3 +317,74 @@ test prop_mint_roundtrip(
     },
   )
 }
+
+// ============================================================================
+// Registration pins at genesis
+// ============================================================================
+//
+// The registry's registration cost, widest booking interval and minimum tip
+// are naturals in the model, and its request policy is a script hash. Genesis
+// admits only values the model can represent; the pins then never change.
+
+fn bootState() -> State {
+  State {
+    root: root(empty),
+    tip: 0,
+    process_time: testProcessTime,
+    retract_time: testRetractTime,
+    application_policy: testAppPolicy,
+    active_policy: testRepPolicy,
+    absent_policy: testAbsentPolicy,
+    terminal_policy: testTerminalPolicy,
+    registration_cost: testRegistrationCost,
+    booking_width: testBookingWidth,
+    request_policy: testRequestPolicy,
+  }
+}
+
+fn mintingState(state: State) -> Bool {
+  mint(
+    Minting(testSeed),
+    "policy_id",
+    Transaction {
+      ..mint_tx(),
+      outputs: [Output { ..minted, datum: InlineDatum(StateDatum(state)) }],
+    },
+  )
+}
+
+test mint_accepts_zero_valued_registration_pins() {
+  mintingState(
+    State { ..bootState(), tip: 0, registration_cost: 0, booking_width: 0 },
+  )
+}
+
+test mint_refuses_a_negative_registration_cost() fail {
+  mintingState(State { ..bootState(), registration_cost: -1 })
+}
+
+test mint_refuses_a_negative_booking_width() fail {
+  mintingState(State { ..bootState(), booking_width: -1 })
+}
+
+test mint_refuses_a_negative_minimum_tip() fail {
+  mintingState(State { ..bootState(), tip: -1 })
+}
+
+test mint_refuses_a_request_policy_one_byte_short() fail {
+  mintingState(
+    State {
+      ..bootState(),
+      request_policy: #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+    },
+  )
+}
+
+test mint_refuses_a_request_policy_one_byte_long() fail {
+  mintingState(
+    State {
+      ..bootState(),
+      request_policy: #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
+    },
+  )
+}
