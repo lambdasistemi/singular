@@ -12,6 +12,7 @@ import Singular.Registry.E2E.Fork81Spec qualified
 import Singular.Registry.E2E.InsertActiveSpec qualified
 import Singular.Registry.E2E.NodeSpec qualified
 import Singular.Registry.E2E.OpenBootSpec qualified
+import Singular.Registry.E2E.RegistrationBookingSpec qualified
 import Singular.Registry.E2E.ReplaySpec qualified
 import Singular.Registry.E2E.SubmitSpec qualified
 import Singular.Registry.E2E.UpdateTerminalSpec qualified
@@ -67,11 +68,16 @@ main = do
             $ describe
                 "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
             $ Singular.Registry.E2E.Criterion3Spec.spec blueprint
-        describe (lane Cage)
-            $ describe (tagged "Singular.Registry.E2E.Cage" [E2e, Builders])
-            $ describe
-                "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
-            $ Singular.Registry.E2E.CageSpec.spec blueprint
+        describe (lane Cage) $ do
+            describe (tagged "Singular.Registry.E2E.Cage" [E2e, Builders])
+                $ describe
+                    "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+                $ Singular.Registry.E2E.CageSpec.spec blueprint
+            describe
+                (tagged "Singular.Registry.E2E.RegistrationBooking" [E2e, Builders])
+                $ describe
+                    "Devnet scenarios (compiled scripts, submitted transactions and refusals)"
+                $ Singular.Registry.E2E.RegistrationBookingSpec.spec blueprint
         describe (lane DriverReplay) $ do
             describe (tagged "Singular.Registry.E2E.Driver" [E2e, Builders])
                 $ describe
