@@ -192,6 +192,8 @@ economics =
         { reProcessTime = 600_000
         , reRetractTime = 300_000
         , reTip = Coin 1_000_000
+        , reRegistrationCost = Coin 0
+        , reBookingWidth = 60_000
         }
 
 {- | The configuration of the application registry this release boots from

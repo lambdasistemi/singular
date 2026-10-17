@@ -70,6 +70,7 @@ import Singular.Registry.Types
     , Migration (..)
     , MintRedeemer (..)
     , Neighbor (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
     , OnChainRoot (..)
     , OnChainTokenId (..)
@@ -234,6 +235,21 @@ sampleRequest =
         , requestDestination = ("cs01-address", Just (B "cs01-datum"))
         }
 
+sampleRegistration :: OnChainRegistrationRequest
+sampleRegistration =
+    OnChainRegistrationRequest
+        { regRegistry = sampleToken
+        , regKey = "cs01-key"
+        , regRefundAddress = BuiltinByteString (BS.replicate 28 0)
+        , regDestination = "cs01-address"
+        , regDatum = Just (B "cs01-datum")
+        , regSubmittedAt = 1234567890
+        , regRegistrationCost = 2000000
+        , regDeclaredTip = 1000000
+        , regCarrierAda = 1500000
+        , regNonce = 7
+        }
+
 sampleState :: OnChainTokenState
 sampleState =
     OnChainTokenState
@@ -245,6 +261,9 @@ sampleState =
         , stateActivePolicy = BuiltinByteString (BS.replicate 28 8)
         , stateAbsentPolicy = BuiltinByteString (BS.replicate 28 9)
         , stateTerminalPolicy = BuiltinByteString (BS.replicate 28 10)
+        , stateRegistrationCost = 2000000
+        , stateBookingWidth = 10000
+        , stateRequestPolicy = BuiltinByteString (BS.replicate 28 11)
         }
 
 {- | Second round-trip sample varying one pin (NOTE-046: the old stake
@@ -438,16 +457,25 @@ checkCageDatum defs = do
     let req = RequestDatum sampleRequest
         st = StateDatum sampleState
         custody = AbsentCustody "cs01-refund"
+        registration = RegistrationDatum sampleRegistration
     requireRoundTripReal req "RequestDatum"
     requireRoundTripReal st "StateDatum"
     requireRoundTripReal custody "AbsentCustody"
+    requireRoundTripReal registration "RegistrationDatum"
     requireSchema defs "types/CageDatum" (toD req) "RequestDatum"
     requireSchema defs "types/CageDatum" (toD st) "StateDatum"
     requireSchema defs "types/CageDatum" (toD custody) "AbsentCustody"
+    requireSchema
+        defs
+        "types/CageDatum"
+        (toD registration)
+        "RegistrationDatum"
     requireIndex (toD req) 0 "RequestDatum"
     requireIndex (toD st) 1 "StateDatum"
     -- #157 absent-custody-datum: appended at index 2; 0 and 1 do not move.
     requireIndex (toD custody) 2 "AbsentCustody"
+    -- The booked registration: appended at index 3; 0, 1 and 2 do not move.
+    requireIndex (toD registration) 3 "RegistrationDatum"
 
 checkMintRedeemer :: Map.Map Text Schema -> IO ()
 checkMintRedeemer defs = do
@@ -617,26 +645,70 @@ instance RealFromData OnChainRequest where
                     }
     realFromData _ = Nothing
 
+instance RealFromData OnChainRegistrationRequest where
+    realFromData
+        ( Constr
+                0
+                [ reg
+                    , B k
+                    , B refund
+                    , B dest
+                    , carried
+                    , I sub
+                    , I cost
+                    , I tip
+                    , I carrier
+                    , I nonce
+                    ]
+            ) = do
+            registry <- realFromData reg :: Maybe OnChainTokenId
+            datum <- case carried of
+                Constr 0 [d] -> Just (Just d)
+                Constr 1 [] -> Just Nothing
+                _ -> Nothing
+            Just
+                OnChainRegistrationRequest
+                    { regRegistry = registry
+                    , regKey = k
+                    , regRefundAddress = BuiltinByteString refund
+                    , regDestination = dest
+                    , regDatum = datum
+                    , regSubmittedAt = sub
+                    , regRegistrationCost = cost
+                    , regDeclaredTip = tip
+                    , regCarrierAda = carrier
+                    , regNonce = nonce
+                    }
+    realFromData _ = Nothing
+
 instance RealFromData OnChainTokenState where
-    realFromData (Constr 0 [r, I mf, I pt, I rt, B ap, B cp, B bp, B tp]) = do
-        rt' <- realFromData r :: Maybe OnChainRoot
-        Just
-            OnChainTokenState
-                { stateRoot = rt'
-                , stateMaxFee = mf
-                , stateProcessTime = pt
-                , stateRetractTime = rt
-                , stateAppPolicy = BuiltinByteString ap
-                , stateActivePolicy = BuiltinByteString cp
-                , stateAbsentPolicy = BuiltinByteString bp
-                , stateTerminalPolicy = BuiltinByteString tp
-                }
+    realFromData
+        ( Constr
+                0
+                [r, I mf, I pt, I rt, B ap, B cp, B bp, B tp, I cost, I width, B rp]
+            ) = do
+            rt' <- realFromData r :: Maybe OnChainRoot
+            Just
+                OnChainTokenState
+                    { stateRoot = rt'
+                    , stateMaxFee = mf
+                    , stateProcessTime = pt
+                    , stateRetractTime = rt
+                    , stateAppPolicy = BuiltinByteString ap
+                    , stateActivePolicy = BuiltinByteString cp
+                    , stateAbsentPolicy = BuiltinByteString bp
+                    , stateTerminalPolicy = BuiltinByteString tp
+                    , stateRegistrationCost = cost
+                    , stateBookingWidth = width
+                    , stateRequestPolicy = BuiltinByteString rp
+                    }
     realFromData _ = Nothing
 
 instance RealFromData CageDatum where
     realFromData (Constr 0 [d]) = RequestDatum <$> realFromData d
     realFromData (Constr 1 [d]) = StateDatum <$> realFromData d
     realFromData (Constr 2 [B refund]) = Just (AbsentCustody refund)
+    realFromData (Constr 3 [d]) = RegistrationDatum <$> realFromData d
     realFromData _ = Nothing
 
 instance RealFromData Migration where
@@ -729,6 +801,24 @@ checkFieldTitles titles = do
         , "active_policy"
         , "absent_policy"
         , "terminal_policy"
+        , "registration_cost"
+        , "booking_width"
+        , "request_policy"
+        ]
+    expectFields
+        titles
+        "types/RegistrationRequest"
+        "RegistrationRequest"
+        [ "registry"
+        , "key"
+        , "refund_address"
+        , "destination"
+        , "datum"
+        , "submitted_at"
+        , "registration_cost"
+        , "declared_tip"
+        , "carrier_ada"
+        , "nonce"
         ]
     expectFields
         titles
@@ -773,7 +863,7 @@ checkFieldTitles titles = do
         "aiken/merkle_patricia_forestry/ProofStep"
         "Leaf"
         ["skip", "key", "value"]
-    emit "fields" "title order matches Haskell record order for 9 shapes"
+    emit "fields" "title order matches Haskell record order for 10 shapes"
 
 expectFields :: TitleMap -> Text -> Text -> [Text] -> IO ()
 expectFields titles defName constrName want =

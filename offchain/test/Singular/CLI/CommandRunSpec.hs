@@ -1722,6 +1722,8 @@ prepareFundingRows = describe
                             { reProcessTime = 1
                             , reRetractTime = 1
                             , reTip = Coin 1_000_000
+                            , reRegistrationCost = Coin 0
+                            , reBookingWidth = 60_000
                             }
                     keyA = TE.encodeUtf8 "carol-a"
                     keyB = TE.encodeUtf8 "carol-b"
@@ -1826,6 +1828,8 @@ prepareFundingRows = describe
                             { reProcessTime = 1
                             , reRetractTime = 1
                             , reTip = Coin 1_000_000
+                            , reRegistrationCost = Coin 0
+                            , reBookingWidth = 60_000
                             }
                     keyA = TE.encodeUtf8 "carol-a"
                 (reqA, subA) <- plantRequest rig t1 seed shortEcon keyA
@@ -2828,6 +2832,8 @@ lifecycle rig = do
                 { reProcessTime = 1
                 , reRetractTime = 1
                 , reTip = Coin 1_000_000
+                , reRegistrationCost = Coin 0
+                , reBookingWidth = 60_000
                 }
     (_, sub3) <-
         plantRequest rig t2 seed2 shortEcon (TE.encodeUtf8 "alice-3")

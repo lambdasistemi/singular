@@ -271,10 +271,13 @@ cfg =
         , defaultProcessTime = 30_000
         , defaultRetractTime = 30_000
         , defaultTip = Coin 1_000_000
+        , defaultRegistrationCost = Coin 2_000_000
+        , defaultBookingWidth = 10_000
         , cfgApplicationPolicy = SBS.empty
         , cfgActivePolicy = SBS.empty
         , cfgAbsentPolicy = SBS.empty
         , cfgTerminalPolicy = SBS.empty
+        , cfgRequestPolicy = SBS.empty
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }

@@ -130,6 +130,10 @@ data Deployment = Deployment
     -- ^ Phase-2 window (ms) the registry was booted with
     , depTip :: Integer
     -- ^ Oracle tip (lovelace) the registry was booted with
+    , depRegistrationCost :: Integer
+    -- ^ Registration cost (lovelace) the registry was booted with
+    , depBookingWidth :: Integer
+    -- ^ Widest booking validity interval (ms) the registry was booted with
     , depReferenceScripts :: [ReferenceScript]
     -- ^ The outputs published once and reused by every later run
     , depBootstrapTxs :: [Text]

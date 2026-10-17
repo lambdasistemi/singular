@@ -60,6 +60,14 @@ data CageConfig = CageConfig
     -- ^ Phase 2 window (ms) for requester retract
     , defaultTip :: !Coin
     -- ^ Default oracle tip for newly booted tokens
+    , defaultRegistrationCost :: !Coin
+    {- ^ The registration cost (lovelace) a booking declares and a booted
+    registry pins; a registry that joins reads it from the state datum.
+    -}
+    , defaultBookingWidth :: !Integer
+    {- ^ The widest booking validity interval (ms) a booted registry pins;
+    a registry that joins reads it from the state datum.
+    -}
     , cfgApplicationPolicy :: !ShortByteString
     {- ^ The application policy the registry pins (28 raw bytes, #157 tree-edge-admission-by-approval,
     genesis-policy-pins): the hash of the application script the registry was booted
@@ -80,6 +88,11 @@ data CageConfig = CageConfig
     , cfgTerminalPolicy :: !ShortByteString
     {- ^ The terminal-token policy (28 raw bytes, genesis-policy-pins): the applied hash
     of `witness(2, registry)`. Derived, never a literal.
+    -}
+    , cfgRequestPolicy :: !ShortByteString
+    {- ^ The applied request validator hash (28 raw bytes): the one policy
+    that may book a registration for this registry. Derived from the request
+    script, the state policy and the registry token, never a literal.
     -}
     , cfgConsumerScript :: !ShortByteString
     {- ^ Applied consumer script bytes (the witness every consuming
@@ -120,4 +133,7 @@ bootStateFromCfg cfg root =
             BuiltinByteString (SBS.fromShort (cfgAbsentPolicy cfg))
         , stateTerminalPolicy =
             BuiltinByteString (SBS.fromShort (cfgTerminalPolicy cfg))
+        , stateRegistrationCost = 0
+        , stateBookingWidth = 0
+        , stateRequestPolicy = BuiltinByteString mempty
         }

@@ -132,6 +132,9 @@ deploy args = do
                         , depProcessTime = defaultProcessTime cfg
                         , depRetractTime = defaultRetractTime cfg
                         , depTip = let Coin c = defaultTip cfg in c
+                        , depRegistrationCost =
+                            let Coin c = defaultRegistrationCost cfg in c
+                        , depBookingWidth = defaultBookingWidth cfg
                         , depReferenceScripts = refs
                         , depBootstrapTxs = bootstrap
                         }

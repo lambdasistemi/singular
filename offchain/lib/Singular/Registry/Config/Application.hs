@@ -44,6 +44,8 @@ data RegistryEconomics = RegistryEconomics
     { reProcessTime :: Integer
     , reRetractTime :: Integer
     , reTip :: Coin
+    , reRegistrationCost :: Coin
+    , reBookingWidth :: Integer
     }
     deriving stock (Eq, Show)
 
@@ -81,10 +83,13 @@ configForApplication pin codes stateBytes requestBytes econ net seed =
             , defaultProcessTime = reProcessTime econ
             , defaultRetractTime = reRetractTime econ
             , defaultTip = reTip econ
+            , defaultRegistrationCost = reRegistrationCost econ
+            , defaultBookingWidth = reBookingWidth econ
             , cfgApplicationPolicy = appPin
             , cfgActivePolicy = activePin
             , cfgAbsentPolicy = absentPin
             , cfgTerminalPolicy = terminalPin
+            , cfgRequestPolicy = SBS.empty
             , cfgConsumerScript = SBS.empty
             , network = net
             }

@@ -18,6 +18,7 @@ module Singular.Registry.TxBuilder.BookingFixture
     , fundIn
     , applicationPolicy
     , applicationScript
+    , requestPin
     , payer
     , tokenId
     , keys
@@ -71,8 +72,11 @@ import Singular.Registry.TxBuilder.Edges
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
+    , onChainTokenId
     , policyIdFromPin
+    , requestPolicyHash
     , scriptFromBytes
+    , scriptHashBytes
     , txInToRef
     )
 import Singular.Registry.Types
@@ -145,10 +149,13 @@ unpinned =
         , defaultProcessTime = 30_000
         , defaultRetractTime = 30_000
         , defaultTip = Coin 1_000_000
+        , defaultRegistrationCost = Coin 2_000_000
+        , defaultBookingWidth = 10_000
         , cfgApplicationPolicy = SBS.empty
         , cfgActivePolicy = SBS.empty
         , cfgAbsentPolicy = SBS.empty
         , cfgTerminalPolicy = SBS.empty
+        , cfgRequestPolicy = SBS.empty
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -179,7 +186,20 @@ cfg =
         , cfgAbsentPolicy = absentPin
         , cfgActivePolicy = activePin
         , cfgTerminalPolicy = terminalPin
+        , cfgRequestPolicy = requestPin
         }
+
+{- | The request policy this registry pins: the request program applied to
+the state hash and the registry token, by the one shared derivation.
+-}
+requestPin :: SBS.ShortByteString
+requestPin =
+    SBS.toShort $
+        scriptHashBytes $
+            requestPolicyHash
+                (cfgScriptHash unpinned)
+                program
+                (onChainTokenId tokenId)
 
 applicationPin
     , absentPin

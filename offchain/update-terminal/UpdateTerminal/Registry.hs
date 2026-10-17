@@ -357,10 +357,13 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
+            , defaultRegistrationCost = Coin 0
+            , defaultBookingWidth = 60_000
             , cfgApplicationPolicy = appPin
             , cfgActivePolicy = activePin
             , cfgAbsentPolicy = absentPin
             , cfgTerminalPolicy = terminalPin
+            , cfgRequestPolicy = SBS.empty
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }
