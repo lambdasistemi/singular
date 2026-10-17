@@ -1,4 +1,5 @@
 use aiken/builtin
+use aiken/collection/list
 use aiken/interval.{
   Finite, Interval, IntervalBound, NegativeInfinity, PositiveInfinity,
 }
@@ -1079,11 +1080,45 @@ test registration_booking_names_hidden_surplus_for_lovelace_one_over() {
   ) == Some(@"hidden-surplus")
 }
 
-test registration_booking_names_forged_trie_ready_tag_for_a_datum_with_another_key() {
+// The held tags are the original request's. The application tag certifies the
+// key, refund address, destination and nonce, so a datum that disagrees with it
+// on any of them fails the contents shape, which the model checks first. The
+// trie-ready tag alone also commits the tip and the carrier, so a datum that
+// disagrees only there names the forged trie-ready tag.
+
+test registration_booking_names_dirty_request_for_a_datum_with_another_key() {
   let p = plan(requestOne())
   reason(restated(p, RegistrationRequest { ..p.request, key: fx.keyD })) == Some(
-    @"forged-trie-ready-tag",
+    @"dirty-request",
   )
+}
+
+test registration_booking_names_forged_trie_ready_tag_for_a_datum_with_another_tip() {
+  let p = plan(requestOne())
+  reason(
+    restated(
+      p,
+      RegistrationRequest {
+        ..p.request,
+        declared_tip: p.request.declared_tip + 1,
+      },
+    ),
+  ) == Some(@"forged-trie-ready-tag")
+}
+
+test registration_booking_names_the_reason_of_each_other_datum_field_changed() {
+  let p = plan(requestOne())
+  let r = p.request
+  let shape = Some(@"dirty-request")
+  reason(restated(p, RegistrationRequest { ..r, refund_address: thirdKey })) == shape && reason(
+    restated(p, RegistrationRequest { ..r, destination: fx.strangerAddress }),
+  ) == shape && reason(
+    restated(p, RegistrationRequest { ..r, nonce: r.nonce + 1 }),
+  ) == shape && reason(
+    restated(p, RegistrationRequest { ..r, registry: fx.foreignCageToken }),
+  ) == shape && reason(
+    restated(p, RegistrationRequest { ..r, carrier_ada: r.carrier_ada + 1 }),
+  ) == Some(@"forged-trie-ready-tag")
 }
 
 test registration_booking_names_forged_trie_ready_tag_for_a_missing_mint() {
@@ -1169,6 +1204,191 @@ test registration_booking_names_the_interval_before_the_booked_time() {
       lower: finite(r.submitted_at + 1, True),
     },
   ) == Some(@"invalid-booking-interval")
+}
+
+// ----------------------------------------------------------------------------
+// Several faults at once: the earliest check in the model's order names it
+// ----------------------------------------------------------------------------
+//
+// Seven independent faults, each touching a part of the booking that no other
+// fault touches (the output's value, the mint, one end of the interval, the
+// datum's booked time). All 128 subsets of them are applied to each request.
+// The model names the first check that fails, so a subset's expected reason is
+// the reason of its earliest member, and an untouched booking has none. The
+// table lists the faults in the model's order; `dirty-request` appears twice
+// because the model reaches it at two different checks.
+
+/// What the fault at this position (counted from the earliest check) does to
+/// a plan. Every fault edits only its own part of the plan.
+fn faulted(index: Int, p: Plan) -> Plan {
+  let r = p.request
+  let o = outputOf(p)
+  when index is {
+    // A foreign asset beside the declared contents.
+    0 ->
+      withOutput(
+        p,
+        Output {
+          ..o,
+          value: merge(o.value, from_asset(fx.foreignPolicy, #"01", 1)),
+        },
+      )
+    // One lovelace over the declared allocation.
+    1 -> withOutput(p, Output { ..o, value: merge(o.value, from_lovelace(1)) })
+    // The trie-ready tag minted twice.
+    2 ->
+      Plan {
+        ..p,
+        mint: merge(p.mint, from_asset(requestPolicyId(), trieTag(r), 1)),
+      }
+    // The application tag minted twice.
+    3 ->
+      Plan {
+        ..p,
+        mint: merge(p.mint, from_asset(fx.appPolicy, applicationTag(r), 1)),
+      }
+    // No upper end to the validity interval.
+    4 ->
+      Plan {
+        ..p,
+        upper: IntervalBound {
+          bound_type: PositiveInfinity,
+          is_inclusive: True,
+        },
+      }
+    // The datum's booked time one before the interval's upper end.
+    5 ->
+      withOutput(
+        p,
+        Output {
+          ..o,
+          datum: InlineDatum(
+            RegistrationDatum(
+              RegistrationRequest { ..r, submitted_at: r.submitted_at - 1 },
+            ),
+          ),
+        },
+      )
+    // The lower end one millisecond past the widest interval.
+    6 -> Plan { ..p, lower: finite(r.submitted_at - fx.bookingWidth - 1, True) }
+    _ -> fail
+  }
+}
+
+/// The reason of each fault in the model's order of checks.
+fn modelReasons() -> List<String> {
+  [
+    @"dirty-request", @"hidden-surplus", @"forged-trie-ready-tag",
+    @"dirty-request", @"invalid-booking-interval", @"backdated-booking",
+    @"booking-too-wide",
+  ]
+}
+
+/// A deliberately mis-ranked order: the surplus and the forged trie-ready tag
+/// exchange places.
+fn swappedReasons() -> List<String> {
+  [
+    @"dirty-request", @"forged-trie-ready-tag", @"hidden-surplus",
+    @"dirty-request", @"invalid-booking-interval", @"backdated-booking",
+    @"booking-too-wide",
+  ]
+}
+
+/// Every choice of applying or leaving out each of `n` faults, the earliest
+/// fault first in each choice.
+fn subsets(n: Int) -> List<List<Bool>> {
+  if n <= 0 {
+    [[]]
+  } else {
+    let rest = subsets(n - 1)
+    list.concat(
+      list.map(rest, fn(chosen) { [True, ..chosen] }),
+      list.map(rest, fn(chosen) { [False, ..chosen] }),
+    )
+  }
+}
+
+fn applied(p: Plan, chosen: List<Bool>, index: Int) -> Plan {
+  when chosen is {
+    [] -> p
+    [True, ..more] -> applied(faulted(index, p), more, index + 1)
+    [False, ..more] -> applied(p, more, index + 1)
+  }
+}
+
+/// The reason of the earliest chosen fault, under the given order.
+fn earliest(chosen: List<Bool>, reasons: List<String>) -> Option<String> {
+  when chosen is {
+    [] -> None
+    [picked, ..more] ->
+      when reasons is {
+        [] -> None
+        [first, ..later] ->
+          if picked {
+            Some(first)
+          } else {
+            earliest(more, later)
+          }
+      }
+  }
+}
+
+/// How many of the 128 subsets the real judgement names as the given order
+/// expects.
+fn subsetsAgreeing(s: Scenario, reasons: List<String>) -> Int {
+  let p = plan(s)
+  list.count(
+    subsets(7),
+    fn(chosen) { reason(applied(p, chosen, 0)) == earliest(chosen, reasons) },
+  )
+}
+
+test registration_booking_names_the_earliest_of_several_faults_first_request() {
+  subsetsAgreeing(requestOne(), modelReasons()) == 128
+}
+
+test registration_booking_names_the_earliest_of_several_faults_second_request() {
+  subsetsAgreeing(requestTwo(), modelReasons()) == 128
+}
+
+test registration_booking_names_the_earliest_of_several_faults_third_request() {
+  subsetsAgreeing(requestThree(), modelReasons()) == 128
+}
+
+// Guards on the property above. Each is about the table and its enumeration,
+// so none of them depends on the handler being implemented.
+
+test registration_booking_several_faults_cover_every_subset_once() {
+  let every = subsets(7)
+  list.length(every) == 128 && list.length(list.unique(every)) == 128
+}
+
+test registration_booking_several_faults_expect_each_model_reason_and_no_refusal() {
+  let expected =
+    list.map(subsets(7), fn(chosen) { earliest(chosen, modelReasons()) })
+  let distinct = list.unique(expected)
+  list.length(distinct) == 7 && list.has(distinct, None) && list.all(
+    [
+      @"dirty-request", @"hidden-surplus", @"forged-trie-ready-tag",
+      @"invalid-booking-interval", @"backdated-booking", @"booking-too-wide",
+    ],
+    fn(named) { list.has(distinct, Some(named)) },
+  )
+}
+
+test registration_booking_several_faults_expectations_depend_on_the_order() {
+  // Exchanging two reasons changes the expectation of every subset whose
+  // earliest member is one of them: 32 subsets for the second, 16 for the third.
+  list.count(
+    subsets(7),
+    fn(chosen) {
+      earliest(chosen, modelReasons()) != earliest(chosen, swappedReasons())
+    },
+  ) == 48
+}
+
+test registration_booking_several_faults_check_rejects_a_mis_ranked_order() fail {
+  subsetsAgreeing(requestOne(), swappedReasons()) == 128
 }
 
 // ----------------------------------------------------------------------------
