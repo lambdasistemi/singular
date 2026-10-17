@@ -1,8 +1,9 @@
-use aiken/collection/dict.{get, keys}
+use aiken/collection/dict.{Dict, get, keys}
+use booking.{applicationTagName, pureBurn}
 use cardano/assets.{PolicyId, tokens}
 use cardano/transaction.{Transaction}
 use lib.{approvalName}
-use types.{Approve, OpenRedeemer}
+use types.{Approve, ApproveRegistration, OpenRedeemer}
 
 /// The open application (#173 I1, A-001 row 1).
 ///
@@ -36,36 +37,26 @@ validator open {
       // and no binding.
       True
     } else {
-      expect Approve { edge, key, owner, destination }: OpenRedeemer = redeemer
-      if !isTreeEdge(edge) {
-        // `witnessTerminal` (edge 6) needs no approval at all — the
-        // model admits it unconditionally — so minting one would be a
-        // token that certifies nothing. Edge 7 is not an edge.
-        trace @"approval-edge"
-        False
-      } else {
-        when keys(moved) is {
-          [name] ->
-            if get(moved, name) != Some(1) {
-              // Quantity is part of the binding: one approval certifies
-              // the ONE request it names. Widening it would let a single
-              // mint certify a batch.
-              trace @"approval-quantity"
-              False
-            } else if name != approvalName(edge, key, owner, destination) {
-              trace @"approval-binding"
-              False
-            } else {
-              True
-            }
-          // Zero names is nothing to admit; two or more is the same
-          // widening by another route — one redeemer cannot bind two
-          // tuples.
-          _ -> {
-            trace @"approval-quantity"
+      expect typed: OpenRedeemer = redeemer
+      when typed is {
+        Approve { edge, key, owner, destination } ->
+          if !isTreeEdge(edge) {
+            // `witnessTerminal` (edge 6) needs no approval at all — the
+            // model admits it unconditionally — so minting one would be a
+            // token that certifies nothing. Edge 7 is not an edge.
+            trace @"approval-edge"
             False
+          } else {
+            approves(moved, approvalName(edge, key, owner, destination))
           }
-        }
+        // One registration booking: the name binds the key, the refund
+        // address, the destination and the request's nonce (Lean
+        // `applicationTagAssetName`).
+        ApproveRegistration { key, refund_address, destination, nonce } ->
+          approves(
+            moved,
+            applicationTagName(key, refund_address, destination, nonce),
+          )
       }
     }
   }
@@ -75,30 +66,32 @@ validator open {
   }
 }
 
+/// The mint moves exactly one name, at quantity one, and it is the bound
+/// name. Quantity is part of the binding: widening it would let a single
+/// mint certify a batch, and two names are the same widening by another
+/// route — one redeemer cannot bind two tuples.
+fn approves(moved: Dict<ByteArray, Int>, expected: ByteArray) -> Bool {
+  when keys(moved) is {
+    [name] ->
+      if get(moved, name) != Some(1) {
+        trace @"approval-quantity"
+        False
+      } else if name != expected {
+        trace @"approval-binding"
+        False
+      } else {
+        True
+      }
+    _ -> {
+      trace @"approval-quantity"
+      False
+    }
+  }
+}
+
 /// The six TREE edges, the ones `admitsFor` requires an approval for.
 /// `witnessTerminal` is deliberately outside: it is admitted without
 /// one.
 fn isTreeEdge(edge: Int) -> Bool {
   edge >= lib.edgeInsertAbsent && edge <= lib.edgeDeleteActive
-}
-
-/// Every movement under this policy in this transaction is a burn, and
-/// there is at least one. A mint hiding beside a burn is not a pure
-/// burn and is held to the binding rule like any other mint.
-fn pureBurn(moved: dict.Dict<ByteArray, Int>) -> Bool {
-  when keys(moved) is {
-    [] -> False
-    names -> allBurns(moved, names)
-  }
-}
-
-fn allBurns(moved: dict.Dict<ByteArray, Int>, names: List<ByteArray>) -> Bool {
-  when names is {
-    [] -> True
-    [name, ..rest] ->
-      when get(moved, name) is {
-        Some(quantity) -> quantity < 0 && allBurns(moved, rest)
-        None -> False
-      }
-  }
 }
