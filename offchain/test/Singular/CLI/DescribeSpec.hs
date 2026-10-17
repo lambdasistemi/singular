@@ -214,6 +214,6 @@ testEnv =
         { envTracer = nullTracer
         , envSource = "describe-test"
         , envLoadRelease = \_ _ -> pure (Left "no release in this test")
-        , envReads = \_ _ -> error "the page read the provider before refusing the version"
-        , envWrites = \_ _ _ -> error "the page wrote before refusing the version"
+        , envReads = \_ _ -> fail "the page read the provider before refusing the version"
+        , envWrites = \_ _ -> fail "the page wrote before refusing the version"
         }

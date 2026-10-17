@@ -123,9 +123,9 @@ import Singular.CLI.Session
     , failWith
     , journalObserved
     , journalObservedId
+    , loadSignerWallet
     , readOnce
     , readStep
-    , signerWallet
     , submitBuilt
     , submitBuiltIn
     , withSession
@@ -201,10 +201,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     )
-import Singular.Registry.Wallet
-    ( Wallet (..)
-    , bech32Address
-    )
+import Singular.Registry.Wallet (bech32Address)
 
 {- | The application a @registry create@ runs with: the hash the flag pins
 through 'hashPinnedApplication', or the composed value. A neutral value
@@ -327,9 +324,15 @@ createWith
     -> IO Value
 createWith app env a rel ws = do
     let magic = providerMagic (writeProvider ws)
-    caller <- signerWallet magic (writeSigner ws)
+    (callerAddr, callerWallet) <- loadSignerWallet magic (writeSigner ws)
+    caller <- case callerWallet of
+        Just loaded -> pure loaded
+        Nothing ->
+            failWith
+                ClientRefusal
+                "registry create signs with a key file; an external signer is refused at the command line"
     root <- resolveStateRoot (createStateDir a)
-    let addr = walletAddr caller
+    let addr = callerAddr
         settings = writeProvider ws
     -- An explicit seed already names its managed partition before any chain
     -- read: a real create with existing state there refuses before seed
@@ -441,7 +444,7 @@ createWith app env a rel ws = do
                 -- not for the seed the winner just spent.
                 refuseExisting dir
                     >>= either (failWith ClientRefusal . renderIdentityError) pure
-                let addrUnder = walletAddr (wcWallet wc)
+                let addrUnder = wcCaller wc
                     stateScriptPre = scriptFromBytes "state" (releaseState rel)
                 (freshUtxos, ppFreshPre, mustPubFresh) <-
                     readStep
@@ -715,7 +718,7 @@ boot
     -}
     -> IO Booted
 boot wc cfg pinned seedIn foundState isChained pendingFile = do
-    let addr = walletAddr (wcWallet wc)
+    let addr = wcCaller wc
         -- One transaction, built from one view, journalled with its point.
         -- A first-publication refusal happens before any submission, so the
         -- pending file just written is removed and nothing stays behind.

@@ -67,7 +67,7 @@ stubSession =
                     (HistoryReadFailure (BackendReadFailure "fixture supplies no history"))
                 )
         , inclusion = \_ ->
-            error "not implemented: the fixture's inclusion read"
+            fail "not implemented: the fixture's inclusion read"
         }
 
 withParameters

@@ -81,7 +81,7 @@ import Data.Char
     , isDigit
     )
 import Data.List (stripPrefix)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -484,6 +484,7 @@ parseWithGroup group environment args = do
                     ["registry", "inspect"] ->
                         refuseApplicationPolicy flags
                             >> refuseSpendingFlags "inspect" flags
+                            >> refuseBundle "registry inspect" flags
                             >> refuseRequest flags
                             >> refuseFold flags
                             >> (Inspect <$> inspectArgs environment flags)
@@ -518,6 +519,15 @@ parseWithGroup group environment args = do
                             flag
                             "is a registry create flag: windows are fixed for the life of a registry"
                         )
+    -- @--bundle@ is where a write's run goes for signing elsewhere; a
+    -- command that writes nothing refuses it by name rather than ignore it.
+    refuseBundle command flags =
+        when (isJust (lookup "--bundle" flags)) $
+            Left
+                ( BadValue
+                    "--bundle"
+                    ("is a write flag: " <> command <> " writes nothing")
+                )
     -- The constraints on a write's spending belong to insert, update and
     -- terminate. A command that does not enforce one refuses it by name rather
     -- than discard what the caller stated.
@@ -609,6 +619,7 @@ parseWithGroup group environment args = do
     describeRefusedFlags :: [String]
     describeRefusedFlags =
         [ "--wallet-skey"
+        , "--bundle"
         , "--state-dir"
         , "--receipt"
         , "--wallet-address"
@@ -705,11 +716,6 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
                         )
-        when
-            ( isJust (lookup "--wallet-address" flags)
-                && isNothing (lookup "--bundle" flags)
-            )
-            $ Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -751,11 +757,6 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry reject: it takes every pending request, once each is past both its windows"
                         )
-        when
-            ( isJust (lookup "--wallet-address" flags)
-                && isNothing (lookup "--bundle" flags)
-            )
-            $ Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -788,11 +789,6 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry reclaim: it takes back the named pending request"
                         )
-        when
-            ( isJust (lookup "--wallet-address" flags)
-                && isNothing (lookup "--bundle" flags)
-            )
-            $ Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag

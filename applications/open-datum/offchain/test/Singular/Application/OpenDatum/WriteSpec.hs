@@ -715,7 +715,9 @@ writeContext fx =
     WriteContext
         { wcDir = fxDir fx
         , wcCommand = "insert"
-        , wcWallet = fxWallet fx
+        , wcWallet = Just (fxWallet fx)
+        , wcCaller = walletAddr (fxWallet fx)
+        , wcStaged = Nothing
         , wcCapabilities =
             Capabilities
                 { capReads =

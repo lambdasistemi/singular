@@ -55,7 +55,7 @@ withDevnetSource action = do
     let wallet = Wallet genesisAddr genesisSignKey Testnet
         run observer =
             withGeneratedFacade FundGenesis directory observer $ \start facade ->
-                withRecordedWrites (facadeSettings facade) wallet $ \caps ->
+                withRecordedWrites (facadeSettings facade) $ \caps ->
                     action start facade wallet caps
     evidence <- lookupEnv "SINGULAR_PROVIDER_CONTROL_EVIDENCE"
     case evidence of
@@ -78,10 +78,9 @@ withDevnetSource action = do
 -- | Retain each actual constructor even when funding refuses before its body.
 withRecordedWrites
     :: ProviderSettings
-    -> Wallet
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
-withRecordedWrites settings wallet action = do
+withRecordedWrites settings action = do
     observed <- newIORef Nothing
     finally
         ( withWritesObserved
@@ -89,7 +88,6 @@ withRecordedWrites settings wallet action = do
             mempty
             (writeIORef observed . Just)
             settings
-            wallet
             action
         )
         ( readIORef observed

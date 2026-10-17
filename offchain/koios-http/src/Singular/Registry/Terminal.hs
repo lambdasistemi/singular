@@ -137,20 +137,19 @@ withReadsObserved backend reading observe settings action = do
     action capabilities
 
 {- | The same, opening the provider with no wallet threshold.
-Its reads are traced into the second tracer. The wallet
-argument stays as a residual; nothing reads it.
+Its reads are traced into the second tracer. The wallet argument is
+gone: a staged run holds no key at all, so nothing here may demand one.
 -}
 withWrites
     :: Tracer IO BackendEvent
     -> Tracer IO ReadEvent
     -> ProviderSettings
-    -> Wallet
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
 withWrites backend reading = withWritesObserved backend reading (const (pure ()))
 
-{- | Startup with no wallet threshold. The wallet argument
-stays as a residual; nothing reads it. Opening reads the
+{- | Startup with no wallet threshold. No wallet is demanded: the
+operation judges its own signer where it signs. Opening reads the
 provider; the operation judges the wallet where its cost
 is measured.
 -}
@@ -159,11 +158,9 @@ withWritesObserved
     -> Tracer IO ReadEvent
     -> (Capabilities NoWitness IO -> IO ())
     -> ProviderSettings
-    -> Wallet
     -> (Capabilities NoWitness IO -> IO a)
     -> IO a
-withWritesObserved backend reading observe settings _wallet =
-    withReadsObserved backend reading observe settings
+withWritesObserved = withReadsObserved
 
 -- | Sign with the caller's explicit wallet and confirm only these signed bytes.
 submitWithWallet

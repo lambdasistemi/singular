@@ -63,6 +63,10 @@
       "pause": 400
     },
     {
+      "text": "The writer's side is a singular registry fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+      "pause": 400
+    },
+    {
       "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
       "pause": 400
     },
@@ -347,6 +351,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "5293b23d92c3e79c3e94a680cac67ff827f4f09bed29f59973c07a35ada9dec9"
+    "sha256": "60e38b18714054b0c0d94682b3ab2b15ac8d7b5a40f0653e1c121ef2d19331b5"
   }
 }

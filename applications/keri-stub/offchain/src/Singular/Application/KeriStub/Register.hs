@@ -148,7 +148,6 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 {- | The deposit a register rides with when the command line names none:
 the library's own booking deposit, the least an insertion protects.
@@ -301,7 +300,7 @@ book at a key verb plan = do
                     bookEdgeMeasured
                         cfg
                         v
-                        (walletAddr (wcWallet wc))
+                        (wcCaller wc)
                         (savedToken s)
                         key
                         (rbEdge b)

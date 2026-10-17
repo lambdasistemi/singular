@@ -172,7 +172,7 @@ sessionChain settings socket wallet action =
     withIndependentConnection settings socket $ \oracle -> do
         watched <- freshAddress
         unregistered <- freshScriptHash
-        withWrites mempty mempty settings wallet $ \caps ->
+        withWrites mempty mempty settings $ \caps ->
             keepEvidence caps $
                 let (network, provider) = capReads caps
                 in  action
@@ -322,7 +322,7 @@ withGenerated action = do
                 BS.writeFile key . B16.encode =<< uniformByteStringM 32 globalStdGen
                 funded <- loadWallet (providerMagic settings) key
                 withIndependentConnection settings socket $ \oracle ->
-                    withWrites mempty mempty settings genesisWallet $ \caps -> keepEvidence caps $ do
+                    withWrites mempty mempty settings $ \caps -> keepEvidence caps $ do
                         transaction <-
                             payment oracle genesisWallet (walletAddr funded) 1_000_000_000
                         submitPayment caps transaction
@@ -390,7 +390,7 @@ phaseLogOnDevnet =
                 $ \settings socket wallet ->
                     withIndependentConnection settings socket $ \oracle ->
                         withLogFile $ \path -> do
-                            (answer, trace, facts) <- withWrites (backendPhaseLog path) mempty settings wallet $ \caps ->
+                            (answer, trace, facts) <- withWrites (backendPhaseLog path) mempty settings $ \caps ->
                                 keepEvidence caps $ do
                                     answer <- Services.withLatest (capReads caps) $ \session -> do
                                         actual <- Services.outputsAt session (walletAddr wallet)

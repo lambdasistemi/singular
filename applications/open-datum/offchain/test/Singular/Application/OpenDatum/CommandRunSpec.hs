@@ -1263,7 +1263,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
-        , envWrites = \_ _ k -> k (capabilities rig)
+        , envWrites = \_ k -> k (capabilities rig)
         }
 
 -- | Reads of the chain fixture, and a submission it applies to its outputs.
@@ -1759,7 +1759,7 @@ runAtTxIn answer rig =
         rig
         ( (envOf rig)
             { envReads = \_ k -> k (atTxInCapabilities answer rig)
-            , envWrites = \_ _ k -> k (atTxInCapabilities answer rig)
+            , envWrites = \_ k -> k (atTxInCapabilities answer rig)
             }
         )
         "registry"

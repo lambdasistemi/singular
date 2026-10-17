@@ -97,6 +97,7 @@ import System.Directory
     , createDirectoryIfMissing
     , doesDirectoryExist
     , doesFileExist
+    , doesPathExist
     , listDirectory
     , removePathForcibly
     , renameFile
@@ -136,13 +137,14 @@ import Cardano.Crypto.Hash.Class
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
-    ( collateralInputsTxBodyL
+    ( ValidityInterval (..)
+    , collateralInputsTxBodyL
     , feeTxBodyL
     , inputsTxBodyL
-    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     , reqSignerHashesTxBodyL
+    , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
@@ -185,15 +187,19 @@ import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
     , FoldArgs (..)
+    , ProviderSettings (..)
+    , WriteSettings (..)
     , parseCommand
     , renderCLIError
     )
 import Singular.CLI.Finish (finish)
+import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Fold (runFoldBounded)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
-import Singular.CLI.Outlay (outlayTotal, updateOutlay)
+import Singular.CLI.Outlay (Outlay (..), outlayTotal, updateOutlay)
 import Singular.CLI.Prepare
     ( PrepareRefusal (..)
+    , allowanceRefusal
     , measureRequirement
     , preparationFields
     , prepareFunding
@@ -202,6 +208,7 @@ import Singular.CLI.Prepare
 import Singular.CLI.Receipt
     ( FoldTransition (..)
     , JournalEntry (..)
+    , OutcomeClass (..)
     , bodiesDir
     , journalPath
     , readJournal
@@ -215,7 +222,17 @@ import Singular.CLI.Registry
     , registryConfigFor
     )
 import Singular.CLI.Root (runPackagedVia)
-import Singular.CLI.Session (Env (..), WriteContext (..), txIdHex)
+import Singular.CLI.Session
+    ( CommandFailure (..)
+    , Env (..)
+    , WriteContext (..)
+    , confirmedTx
+    , expecting
+    , failWithFields
+    , submitBuilt
+    , txIdHex
+    , withSession
+    )
 import Singular.CLI.Sign (renderSignRefusal, witnessPlan)
 import Singular.CLI.SubmitSpec (selfPaymentFiles)
 import Singular.CLI.Trace
@@ -477,7 +494,7 @@ confirmationLifetime = describe "CLI confirmation lifetime" $ do
                         `finally` putMVar released ()
                 env =
                     (envOf rig)
-                        { envWrites = \_ _ action ->
+                        { envWrites = \_ action ->
                             action (capabilities rig){capConfirm = confirm}
                         }
             seed <- fundSeed rig
@@ -653,7 +670,7 @@ withConfirmationEnv rig confirm use = do
                     modifyIORef' submitted (<> [txIdHex (signedTx signed)])
                     capSubmit original signed
                 }
-        env = (envOf rig){envWrites = \_ _ action -> action caps}
+        env = (envOf rig){envWrites = \_ action -> action caps}
     use env (readIORef submitted)
 
 confirmationCreate :: Rig -> Env -> [String] -> IO Run
@@ -1246,7 +1263,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
-        , envWrites = \_ _ k -> k (capabilities rig)
+        , envWrites = \_ k -> k (capabilities rig)
         }
 
 -- | Reads of the chain fixture, and a submission it applies to its outputs.
@@ -2062,11 +2079,13 @@ previewFundingRows = describe
                     WriteContext
                         { wcDir = rigDir rig
                         , wcCommand = "preview-test"
-                        , wcWallet = rigWallet rig
+                        , wcWallet = Just (rigWallet rig)
+                        , wcCaller = walletAddr (rigWallet rig)
                         , wcCapabilities = capabilities rig
                         , wcTimeout = Nothing
                         , wcTracer = rigTracer rig
                         , wcSource = "fixture"
+                        , wcStaged = Nothing
                         }
             actual <- SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
                 prepareFunding
@@ -2605,7 +2624,7 @@ runAtTxIn answer rig =
         rig
         ( (envOf rig)
             { envReads = \_ k -> k (atTxInCapabilities answer rig)
-            , envWrites = \_ _ k -> k (atTxInCapabilities answer rig)
+            , envWrites = \_ k -> k (atTxInCapabilities answer rig)
             }
         )
         "registry"
@@ -4318,17 +4337,15 @@ saved bytes, the refusals and the trace.
 -}
 externalSignerRows :: Spec
 externalSignerRows = describe "the external signer" $ do
-    staged stagedFoldRow
-    staged stagedFoldWithPreparationRow
-    staged stagedRejectRow
-    staged stagedReclaimRow
-    staged noKeyFileRow
+    stagedFoldRow
+    stagedFoldWithPreparationRow
+    stagedRejectRow
+    stagedReclaimRow
+    noKeyFileRow
     scriptAddressRow
     existingBundleRow
+    stagedStopRow
     signerFlagRefusalRows
-  where
-    -- A row whose assertion needs a staged run waits for staging itself.
-    staged = before_ (pendingWith "slice 2b")
 
 {- | The external signer's flags for the rig's own wallet: the address as
 given (bech32, derived from the rig's key at run time) and the bundle file.
@@ -4373,7 +4390,7 @@ withCountedSubmissions rig use = do
     counted <- newIORef (0 :: Int)
     let env =
             (envOf rig)
-                { envWrites = \_ _ k ->
+                { envWrites = \_ k ->
                     k
                         (capabilities rig)
                             { capSubmit = \tx -> do
@@ -4407,15 +4424,43 @@ hashOfBytes :: BS.ByteString -> Text
 hashOfBytes bytes =
     hexT (hashToBytes (hashWith @Blake2b_256 id bytes))
 
-{- | The unsigned bodies the key-file path built for this registry, read back
-from its own journal's prepared lines, in build order.
+{- | The unsigned bodies the key-file path built for this registry's command,
+read back from its own journal's prepared lines, in build order. The
+registry's boot, journalled by @registry create@ into the same partition, is
+setup and is left out; a preparation the command made is journalled under
+the command and stays in.
 -}
-keyFilePreparedBodies :: Rig -> String -> String -> IO [ConwayTx]
-keyFilePreparedBodies rig registry tokenStr = do
+keyFilePreparedBodies
+    :: Rig -> String -> String -> Text -> IO [ConwayTx]
+keyFilePreparedBodies rig registry tokenStr command = do
     entries <- readJournal (stagedPartition rig registry tokenStr)
-    forM [e | e <- entries, journalEvent e == "prepared"] $ \e -> do
-        (_, body) <- boundBody entries (journalTxId e)
-        either (fail . T.unpack) pure body
+    forM
+        [ e
+        | e <- entries
+        , journalEvent e == "prepared"
+        , journalCommand e == command
+        ]
+        $ \e -> do
+            (_, body) <- boundBody entries (journalTxId e)
+            either (fail . T.unpack) pure body
+
+{- | A transaction as the oracle compares its body: the validity interval set aside,
+because the staged run and the key-file run build at different moments and
+their bounds follow the clock; every other field is compared.
+-}
+apartFromValidity :: ConwayTx -> ConwayTx
+apartFromValidity tx =
+    tx & bodyTxL . vldtTxBodyL .~ ValidityInterval SNothing SNothing
+
+{- | The command's own staged transaction, the last of the run, carries an
+upper validity bound: the deadline its receipt states.
+-}
+ownBodyBounded :: [ConwayTx] -> IO ()
+ownBodyBounded bodies = case reverse bodies of
+    own : _ -> case invalidHereafter (own ^. bodyTxL . vldtTxBodyL) of
+        SJust _ -> pure ()
+        SNothing -> expectationFailure "the command's staged body has no upper bound"
+    [] -> expectationFailure "no staged body"
 
 {- | The transaction a saved body file holds, through the same checks the
 prepared-body reader applies: hex text, a decodable Conway transaction
@@ -4545,6 +4590,7 @@ stagedFoldRow =
             t <- tokenOf create
             (req, _) <-
                 plantRequest rig t seed economics (TE.encodeUtf8 "bob-fold")
+            _ <- certifyPlanted rig t seed economics [req]
             let bundlePath = rigDir rig </> "bob-fold.bundle"
                 registry = "bob-external"
             staged <-
@@ -4622,8 +4668,10 @@ stagedFoldRow =
                     )
             outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
             assertExpectationOnly staged keyRun
-            keyBodies <- keyFilePreparedBodies rig "registry" t
-            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+            keyBodies <- keyFilePreparedBodies rig "registry" t "fold"
+            map ((^. bodyTxL) . apartFromValidity) keyBodies
+                `shouldBe` map ((^. bodyTxL) . apartFromValidity) bodies
+            ownBodyBounded bodies
 
 stagedFoldWithPreparationRow :: Spec
 stagedFoldWithPreparationRow =
@@ -4646,7 +4694,8 @@ stagedFoldWithPreparationRow =
                     economics
                     (TE.encodeUtf8 "bob-fold-prep")
                     3_000_000_000
-            shrinkWalletForPreparation rig
+            approvals <- certifyPlanted rig t seed economics [req]
+            _ <- reshapeRehearsalWallet rig approvals
             let bundlePath = rigDir rig </> "bob-fold-prep.bundle"
                 registry = "bob-external-prep"
             staged <-
@@ -4717,9 +4766,11 @@ stagedFoldWithPreparationRow =
                     )
             outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
             assertExpectationOnly staged keyRun
-            keyBodies <- keyFilePreparedBodies rig "registry" t
+            keyBodies <- keyFilePreparedBodies rig "registry" t "fold"
             length keyBodies `shouldBe` 2
-            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+            map ((^. bodyTxL) . apartFromValidity) keyBodies
+                `shouldBe` map ((^. bodyTxL) . apartFromValidity) bodies
+            ownBodyBounded bodies
 
 stagedRejectRow :: Spec
 stagedRejectRow =
@@ -4785,8 +4836,10 @@ stagedRejectRow =
                     (["registry", "reject"] <> tokenArgs t2)
             outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
             assertExpectationOnly staged keyRun
-            keyBodies <- keyFilePreparedBodies rig "registry-2" t2
-            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+            keyBodies <- keyFilePreparedBodies rig "registry-2" t2 "reject"
+            map ((^. bodyTxL) . apartFromValidity) keyBodies
+                `shouldBe` map ((^. bodyTxL) . apartFromValidity) bodies
+            ownBodyBounded bodies
 
 stagedReclaimRow :: Spec
 stagedReclaimRow =
@@ -4839,8 +4892,10 @@ stagedReclaimRow =
                     )
             outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
             assertExpectationOnly staged keyRun
-            keyBodies <- keyFilePreparedBodies rig "registry" t
-            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+            keyBodies <- keyFilePreparedBodies rig "registry" t "reclaim"
+            map ((^. bodyTxL) . apartFromValidity) keyBodies
+                `shouldBe` map ((^. bodyTxL) . apartFromValidity) bodies
+            ownBodyBounded bodies
 
 noKeyFileRow :: Spec
 noKeyFileRow =
@@ -4855,6 +4910,7 @@ noKeyFileRow =
             t <- tokenOf create
             (req, _) <-
                 plantRequest rig t seed economics (TE.encodeUtf8 "bob-nokey")
+            _ <- certifyPlanted rig t seed economics [req]
             let key = rigKey rig
                 hidden = key <> ".hidden"
                 bundlePath = rigDir rig </> "bob-nokey.bundle"
@@ -4984,6 +5040,78 @@ existingBundleRow =
                 "staged fold onto an existing bundle file, the partition unusable"
             BS.readFile occupied `shouldReturn` "not a partition"
 
+stagedStopRow :: Spec
+stagedStopRow =
+    it
+        "a staged run stopped after staging names no body as landed and writes no bundle"
+        $ withRig
+        $ \rig -> do
+            let bundlePath = rigDir rig </> "stopped.bundle"
+                dir = rigDir rig </> "stopped"
+                ws =
+                    WriteSettings
+                        ( ProviderSettings
+                            "http://fixture.invalid"
+                            (fromIntegral magic)
+                            Nothing
+                            Nothing
+                        )
+                        ( SignerExternal
+                            (T.pack (bech32Address (walletAddr (rigWallet rig))))
+                            bundlePath
+                        )
+                        Nothing
+            stagedId <- newIORef ""
+            stopped <-
+                try $
+                    withSession (envOf rig) dir "fold" ws $ \wc -> do
+                        (confirmed, ()) <-
+                            submitBuilt wc "fold" (const (expecting "funding")) $ \v -> do
+                                held <- SessionIO.outputsAt v (walletAddr (rigWallet rig))
+                                (i, o) <- case held of
+                                    first : _ -> pure first
+                                    [] -> fail "the rig wallet holds nothing to stage"
+                                pure
+                                    ( mkBasicTx
+                                        ( mkBasicTxBody
+                                            & inputsTxBodyL .~ Set.singleton i
+                                            & outputsTxBodyL .~ StrictSeq.singleton o
+                                        )
+                                    , ()
+                                    )
+                        let identity = txIdHex (confirmedTx confirmed)
+                            ref = TxIn (txIdTx (confirmedTx confirmed)) (TxIx 0)
+                            (text, fields) =
+                                allowanceRefusal
+                                    100_000
+                                    Outlay{outlayFee = 200_000, outlayBond = 0, outlayFoldBound = 0}
+                                    50_000
+                                    (Just ref)
+                        writeIORef stagedId identity
+                        failWithFields ClientRefusal text fields
+            identity <- readIORef stagedId
+            identity `shouldNotBe` ""
+            case stopped of
+                Right v -> expectationFailure ("the staged run did not stop: " <> show v)
+                Left (CommandFailure c why fields) -> do
+                    c `shouldBe` ClientRefusal
+                    why `shouldNotSatisfy` isInfixOf (T.unpack identity)
+                    why `shouldNotSatisfy` isInfixOf "stands confirmed"
+                    lookup "submissions" fields `shouldBe` Nothing
+                    [ k
+                      | (k, value) <- fields
+                      , k /= "staged"
+                      , BS.isInfixOf
+                            (TE.encodeUtf8 identity)
+                            (BL.toStrict (Aeson.encode value))
+                      ]
+                        `shouldBe` []
+                    fmap
+                        (BS.isInfixOf (TE.encodeUtf8 identity) . BL.toStrict . Aeson.encode)
+                        (lookup "staged" fields)
+                        `shouldBe` Just True
+            doesPathExist bundlePath `shouldReturn` False
+
 signerFlagRefusalRows :: Spec
 signerFlagRefusalRows =
     it "refuses the incomplete and mixed signer lines on the three writes" $ do
@@ -5015,7 +5143,13 @@ signerFlagRefusalRows =
         forM_ ["fold", "reject", "reclaim"] $ \write -> do
             let line flags = parseCommand (base write flags)
             line ["--wallet-address", address]
-                `shouldBe` Left addressNeedsPreview
+                `shouldBe` Left
+                    ( BadValue
+                        "--bundle"
+                        ( "is required with --wallet-address: the run's transactions are "
+                            <> "written to the bundle for signing elsewhere"
+                        )
+                    )
             line
                 [ "--wallet-skey"
                 , "key.skey"
@@ -5050,41 +5184,3 @@ signerFlagRefusalRows =
             , "run.bundle"
             ]
             `shouldBe` Left addressNeedsPreview
-
-{- | Leave the payer one small ada-only output beside one large output that
-carries a token, so a write whose requirement exceeds the small output must
-make a preparation.
--}
-shrinkWalletForPreparation :: Rig -> IO ()
-shrinkWalletForPreparation rig = do
-    held <- readWallet rig
-    let addr = walletAddr (rigWallet rig)
-        asset =
-            MultiAsset
-                ( Map.singleton
-                    (PolicyID (ScriptHash holderHash))
-                    (Map.singleton (AssetName "") 1)
-                )
-        holderHash = case hashFromBytes (BS.replicate 28 3) of
-            Just h -> h
-            Nothing -> error "shrinkWalletForPreparation: 28 bytes are not a hash"
-        outs =
-            [ mkBasicTxOut addr (MaryValue (Coin 1_000_000_000) mempty)
-            , mkBasicTxOut addr (MaryValue (Coin 8_000_000_000) asset)
-            ]
-        body =
-            mkBasicTxBody
-                & inputsTxBodyL .~ Set.fromList (map fst held)
-                & outputsTxBodyL .~ StrictSeq.fromList outs
-                & mintTxBodyL .~ asset
-        tx = mkBasicTx body
-        txid = txIdTx tx
-        made = [TxIn txid (TxIx ix) | ix <- [0 ..]]
-    recordTransaction (rigChain rig) tx
-    advanceChain (rigChain rig) $ \facts ->
-        facts
-            { csUTxO =
-                Map.union
-                    (Map.fromList (zip made outs))
-                    (foldr (Map.delete . fst) (csUTxO facts) held)
-            }

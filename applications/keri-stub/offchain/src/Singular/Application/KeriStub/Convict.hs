@@ -136,7 +136,6 @@ import Singular.Registry.Types
     , edgeName
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 {- | What one convict books: the edge, where the fold delivers (nowhere:
 a termination delivers nothing) and the evidence it carries, the deposit
@@ -276,7 +275,7 @@ book at a key verb plan = do
                     bookEdgeMeasured
                         cfg
                         v
-                        (walletAddr (wcWallet wc))
+                        (wcCaller wc)
                         (savedToken s)
                         key
                         (cbEdge b)

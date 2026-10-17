@@ -546,6 +546,7 @@ genHow =
         , Read <$> genRead
         , Backend <$> genBackend
         , Tx <$> genTx
+        , Staged <$> genText <*> genHex
         ]
 
 genQuery :: Gen Query
@@ -1193,6 +1194,7 @@ lineKinds =
     , line
         (Tx (TxConfirmed "fold" tx 1.5 (ConfirmThrew failure)))
         (confirming <> ["error_class"])
+    , line (Staged "fold" tx) ["phase", "step", "ts", "tx"]
     , (how' (Tx (TxObserved "fold" tx 1.5)), Nothing)
     , (how' (Fetched (Fetch ["state"] "Koios" 1.5 Done)), Nothing)
     ]

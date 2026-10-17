@@ -93,7 +93,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | Reclaim, signed and funded by the command's own wallet, then observed.
 runReclaim :: Env -> ReclaimArgs -> IO Value
@@ -118,7 +118,7 @@ runReclaim env a = do
             let s = savedOf at
                 wc = atWrite at
                 caller = callerKey at
-                wallet = walletAddr (wcWallet wc)
+                wallet = wcCaller wc
                 cfg = savedCfg s
                 requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
                 named = reclaimRequest a

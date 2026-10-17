@@ -358,7 +358,7 @@ noWeakening = describe "no refusal is weakened" $ do
                     fail
                         "the early existing-state refusal must fire before any chain read"
             , envWrites =
-                \_ _ _ ->
+                \_ _ ->
                     fail
                         "the early existing-state refusal must fire before any chain write"
             }

@@ -993,7 +993,8 @@ storyContext dir wallet recordedReads answer = do
         WriteContext
             { wcDir = dir
             , wcCommand = "insert"
-            , wcWallet = wallet
+            , wcWallet = Just wallet
+            , wcCaller = walletAddr wallet
             , wcCapabilities =
                 Capabilities
                     { capReads = recordedReads
@@ -1005,6 +1006,7 @@ storyContext dir wallet recordedReads answer = do
             , wcTimeout = Just 5
             , wcTracer = nullTracer
             , wcSource = "recorded"
+            , wcStaged = Nothing
             }
 
 -- | The transaction the journal's one @prepared@ line names.
@@ -1283,7 +1285,8 @@ withSyntheticSavedRegistry publishHistory story =
                 WriteContext
                     { wcDir = dir </> "registry"
                     , wcCommand = "insert"
-                    , wcWallet = wallet
+                    , wcWallet = Just wallet
+                    , wcCaller = walletAddr wallet
                     , wcCapabilities =
                         Capabilities
                             { capReads = provider
@@ -1296,6 +1299,7 @@ withSyntheticSavedRegistry publishHistory story =
                     , wcTimeout = Just 5
                     , wcTracer = nullTracer
                     , wcSource = "fixture"
+                    , wcStaged = Nothing
                     }
         -- Permanent computed guard over the actual constructed request
         -- and holding: absent or foreign carried datum cannot regress

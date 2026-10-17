@@ -331146,11 +331146,246 @@
    ]
   },
   "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-02": {
-   "audio_sha256": "8a633cfb1d19b5e87f9d1514881e980aab9097628f3908d2a24460a80019c445",
+   "audio_sha256": "1b279425b55c24273b34eeb17ba238a5a6890128390ce7d90e27c0371365b064",
+   "characters": 238,
+   "cost": 0.00023562,
+   "duration": 16.05,
+   "index": 2,
+   "key": "8319efa41956c19120f471179cc0176089e9f65d862862f8bedae967a1044068",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "signing-a-bundle-of-unsigned-transactions-offline",
+   "sent_text": "The writer's side is a singular registry fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+   "text": "The writer's side is a singular registry fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.712,
+     "start": 0.3,
+     "text": "writer's"
+    },
+    {
+     "end": 1.075,
+     "start": 0.712,
+     "text": "side"
+    },
+    {
+     "end": 1.2,
+     "start": 1.075,
+     "text": "is"
+    },
+    {
+     "end": 1.325,
+     "start": 1.2,
+     "text": "a"
+    },
+    {
+     "end": 1.875,
+     "start": 1.325,
+     "text": "singular"
+    },
+    {
+     "end": 2.513,
+     "start": 1.875,
+     "text": "registry"
+    },
+    {
+     "end": 3.075,
+     "start": 2.513,
+     "text": "fold"
+    },
+    {
+     "end": 3.188,
+     "start": 3.075,
+     "text": ","
+    },
+    {
+     "end": 3.787,
+     "start": 3.188,
+     "text": "reject"
+    },
+    {
+     "end": 3.95,
+     "start": 3.787,
+     "text": "or"
+    },
+    {
+     "end": 4.488,
+     "start": 3.95,
+     "text": "reclaim"
+    },
+    {
+     "end": 4.875,
+     "start": 4.488,
+     "text": "run"
+    },
+    {
+     "end": 5.05,
+     "start": 4.875,
+     "text": "that"
+    },
+    {
+     "end": 5.387,
+     "start": 5.05,
+     "text": "names"
+    },
+    {
+     "end": 6.15,
+     "start": 5.387,
+     "text": "--wallet-address"
+    },
+    {
+     "end": 6.3,
+     "start": 6.15,
+     "text": "and"
+    },
+    {
+     "end": 6.725,
+     "start": 6.3,
+     "text": "--bundle"
+    },
+    {
+     "end": 6.875,
+     "start": 6.725,
+     "text": "in"
+    },
+    {
+     "end": 7.188,
+     "start": 6.875,
+     "text": "place"
+    },
+    {
+     "end": 7.262,
+     "start": 7.188,
+     "text": "of"
+    },
+    {
+     "end": 7.387,
+     "start": 7.262,
+     "text": "the"
+    },
+    {
+     "end": 7.775,
+     "start": 7.387,
+     "text": "signing"
+    },
+    {
+     "end": 8.725,
+     "start": 7.775,
+     "text": "key"
+    },
+    {
+     "end": 9.0,
+     "start": 8.725,
+     "text": ":"
+    },
+    {
+     "end": 9.3,
+     "start": 9.2,
+     "text": "it"
+    },
+    {
+     "end": 9.55,
+     "start": 9.3,
+     "text": "writes"
+    },
+    {
+     "end": 9.762,
+     "start": 9.55,
+     "text": "such"
+    },
+    {
+     "end": 9.85,
+     "start": 9.762,
+     "text": "a"
+    },
+    {
+     "end": 10.275,
+     "start": 9.85,
+     "text": "bundle"
+    },
+    {
+     "end": 10.363,
+     "start": 10.275,
+     "text": ","
+    },
+    {
+     "end": 10.9,
+     "start": 10.363,
+     "text": "signs"
+    },
+    {
+     "end": 11.038,
+     "start": 10.9,
+     "text": "and"
+    },
+    {
+     "end": 11.425,
+     "start": 11.038,
+     "text": "sends"
+    },
+    {
+     "end": 11.85,
+     "start": 11.425,
+     "text": "nothing"
+    },
+    {
+     "end": 11.925,
+     "start": 11.85,
+     "text": ","
+    },
+    {
+     "end": 12.062,
+     "start": 11.925,
+     "text": "and"
+    },
+    {
+     "end": 12.5,
+     "start": 12.062,
+     "text": "exits"
+    },
+    {
+     "end": 12.688,
+     "start": 12.5,
+     "text": "with"
+    },
+    {
+     "end": 13.175,
+     "start": 12.688,
+     "text": "status"
+    },
+    {
+     "end": 13.925,
+     "start": 13.175,
+     "text": "19"
+    },
+    {
+     "end": 14.025,
+     "start": 13.925,
+     "text": ","
+    },
+    {
+     "end": 15.85,
+     "start": 14.025,
+     "text": "waiting-for-signatures"
+    },
+    {
+     "end": 16.05,
+     "start": 15.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-03": {
+   "audio_sha256": "8d3cfde757637d13c24ae0a3880c58116b3a68c051844033599bb4c0f49d29c8",
    "characters": 645,
    "cost": 0.00063855,
    "duration": 43.25,
-   "index": 2,
+   "index": 3,
    "key": "87163828f09760f39f502c7f27d99a99d821d34f024a06ac0a0266047e0aa682",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -331800,12 +332035,12 @@
     }
    ]
   },
-  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-03": {
-   "audio_sha256": "2f3f03b73a03bebfbb720958546a1912a10bb6a59a2321841c23149babcb9ea2",
+  "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-04": {
+   "audio_sha256": "189e9a50f34323ba4b1c265f63af7fbc27491c8192448a9aff8e3f86f8f96e8f",
    "characters": 613,
    "cost": 0.00060687,
    "duration": 40.475,
-   "index": 3,
+   "index": 4,
    "key": "33f344e1b19bd470ebe510be3b69e7279e9391e1d5f2cf14b26e259297b5c41c",
    "page": "docs/singular-node.md",
    "pause_ms": 400,

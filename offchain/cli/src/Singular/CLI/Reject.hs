@@ -105,7 +105,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | One pending request the reject takes, and what it is owed.
 data Row = Row
@@ -169,7 +169,7 @@ rejectPending at a = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-        addr = walletAddr (wcWallet wc)
+        addr = wcCaller wc
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
     rootBefore <- selectedTrieRoot (atTrie at)
     (tx, (plan, preparation)) <-

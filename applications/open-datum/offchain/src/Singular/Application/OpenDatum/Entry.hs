@@ -154,7 +154,7 @@ import Singular.Registry.Types
     , OnChainTokenState
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | The state a request's deadline is read under, and the request it names.
 requestAndState
@@ -211,7 +211,7 @@ book at a key verb plan = do
                 refuseBooking (atTrie at) key verb
                 (b, decided) <- plan v live
                 let edge = T.pack (edgeName (bookedEdge b))
-                    payerAddr = walletAddr (wcWallet wc)
+                    payerAddr = wcCaller wc
                 walletUtxos <- Cage.outputsAt v payerAddr
                 -- Empty wallet (nothing spendable at all) keeps the friendly refusal
                 -- with the retained faucet sentence (no self-payment); a token-only
@@ -528,7 +528,7 @@ runUpdate env a = case entryMode a of
             $ \at -> do
                 let s = savedOf at
                     wc = atWrite at
-                    addr = walletAddr (wcWallet wc)
+                    addr = wcCaller wc
                 rootBefore <- selectedTrieRoot (atTrie at)
                 -- The live output, its controller, the funding output, the
                 -- parameters, the script evaluation and the outlay judged against

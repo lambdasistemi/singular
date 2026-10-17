@@ -9,7 +9,7 @@
 # timeout) and #343 (release-hook exclusion).
 
 # ---- production: libraries shipped in release builds ----
-offchain/cli/src/Singular/CLI/Session.hs: ioref — owner=the CLI session of one command; lifetime=single command run; serial on the calling thread; connection flag and blueprint-progress refs threaded through the session, never shared between commands
+offchain/cli/src/Singular/CLI/Session.hs: ioref — owner=the CLI session of one command; lifetime=single command run; serial on the calling thread; connection flag and blueprint-progress refs threaded through the session, and a staged run's transactions, effect lines and state token collected by that one command and read once when it ends in the bundle, never shared between commands
 offchain/cli/src/Singular/CLI/Reconcile.hs: ioref — owner=one reconcile view-cache lookup; lifetime=single liveReader call; serial on the calling thread; the fresh per-call cache sits beside the implementation
 offchain/koios-http/src/Singular/Provider/Koios/Recorder.hs: ioref — owner=one fixture-recording run; lifetime=single recorder command; serial; accumulates recorded exchanges before writing them as fixtures
 offchain/koios-http/src/Singular/Registry/Terminal.hs: ioref — owner=the Capabilities value of one acquisition; lifetime=one observed session; serial callbacks on the calling thread; newest-first raw/fact buffers reversed on read, partial evidence preserved on exceptions

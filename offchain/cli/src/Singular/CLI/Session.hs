@@ -43,6 +43,7 @@ module Singular.CLI.Session
 
       -- * Writes
     , WriteContext (..)
+    , StagedRun (..)
     , ConfirmedSubmission
     , confirmedTx
     , confirmedTxId
@@ -52,10 +53,14 @@ module Singular.CLI.Session
     , withSession
     , signerWallet
     , refuseTakenBundle
+    , stageRegistry
+    , signingWallet
     , readsIn
     , readOnce
     , submitBuilt
     , submitBuiltIn
+    , bundleOfRun
+    , loadSignerWallet
     , Building (..)
     , readStep
     , timedRead
@@ -76,7 +81,8 @@ module Singular.CLI.Session
     ) where
 
 import Control.Exception
-    ( Exception (..)
+    ( ErrorCall (..)
+    , Exception (..)
     , IOException
     , SomeAsyncException
     , SomeException (..)
@@ -88,7 +94,7 @@ import Control.Exception
     , try
     , tryJust
     )
-import Control.Monad (when)
+import Control.Monad (forM_, unless, when, (>=>))
 import Control.Tracer (Tracer (..), traceWith)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.KeyMap qualified as KeyMap
@@ -99,6 +105,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.Foldable (toList)
 import Data.IORef
     ( IORef
+    , modifyIORef'
     , newIORef
     , readIORef
     , writeIORef
@@ -106,6 +113,7 @@ import Data.IORef
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Typeable (cast)
@@ -123,15 +131,19 @@ import System.Posix.IO
     , openFd
     , setLock
     )
+import System.Posix.IO.ByteString (fdWrite)
+import System.Posix.Unistd (fileSynchronise)
 import System.Timeout (timeout)
 
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( ValidityInterval (..)
     , feeTxBodyL
     , inputsTxBodyL
+    , referenceInputsTxBodyL
     , vldtTxBodyL
     )
 import Cardano.Ledger.BaseTypes (StrictMaybe (..))
@@ -147,7 +159,7 @@ import Singular.CLI.Command
     ( ProviderSettings (..)
     , WriteSettings (..)
     )
-import Singular.CLI.FlagGroup (Signer (..))
+import Singular.CLI.FlagGroup (Signer (..), signerAddress)
 import Singular.CLI.Harness
     ( harnessHoldAt
     , harnessSubmission
@@ -162,6 +174,8 @@ import Singular.CLI.Receipt
     , bodiesDir
     , caseName
     , durableWrite
+    , journalWaitingForSignatures
+    , outcomeName
     , readJournal
     , submissionCase
     )
@@ -189,7 +203,19 @@ import Singular.CLI.Trace
     )
 import Singular.Provider.Koios.Runtime (koiosSource)
 import Singular.Registry.Application (Application)
+import Singular.Registry.Bundle
+    ( Bundle (..)
+    , BundleTransaction (..)
+    , bodyDeadline
+    , bodyIdentity
+    , encodeBundle
+    , transactionEnvelope
+    )
 import Singular.Registry.Capabilities (sessionReceipt)
+import Singular.Registry.ChainedView
+    ( StagedTransaction (..)
+    , chainedSession
+    )
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
@@ -276,7 +302,6 @@ data Env = Env
     , envWrites
         :: forall a
          . ProviderSettings
-        -> Wallet
         -> (Capabilities Cage.NoWitness IO -> IO a)
         -> IO a
     }
@@ -300,13 +325,44 @@ command-wide mutable index.
 data WriteContext = WriteContext
     { wcDir :: FilePath
     , wcCommand :: Text
-    , wcWallet :: Wallet
+    , wcWallet :: Maybe Wallet
+    {- ^ The loaded key-file wallet, present only when the signer is a key
+    file: the signing path's own input. A staged run holds no key at all.
+    -}
+    , wcCaller :: Addr
+    -- ^ The address every command reads its caller through, whichever signer
     , wcCapabilities :: Capabilities Cage.NoWitness IO
     , wcTimeout :: Maybe Int
     , wcTracer :: Tracer IO Trace
     -- ^ Where the write reports its transactions, in the scope that runs it
     , wcSource :: Text
     -- ^ The name the provider's reads report as
+    , wcStaged :: Maybe StagedRun
+    {- ^ The staged run, when the write signs externally: its transactions
+    are collected here, one owner (this command's lifetime), single-threaded
+    (the constitution's single-writer rule), and the run ends in the bundle.
+    -}
+    }
+
+{- | The state one staged write collects: the transactions in build order
+with the step that built each, the effect lines the command's readbacks
+produced for each, the signer's address as given, the bundle file to
+write, and the registry state token the command attached to. Owned by the
+one command; nothing else sees it.
+-}
+data StagedRun = StagedRun
+    { srDir :: FilePath
+    -- ^ the journal's directory, where the bundle and bodies are saved
+    , srTxs :: IORef [(Text, StagedTransaction)]
+    -- ^ each staged transaction with the journal step that built it
+    , srEffects :: IORef [(Text, [Text])]
+    -- ^ per identity, the effect lines in the order the readbacks produced
+    , srSigner :: Text
+    , srBundlePath :: FilePath
+    , srToken :: IORef (Maybe Text)
+    {- ^ the registry's state token, written when the command attaches; a
+    bundle before a registry exists carries none
+    -}
     }
 
 {- | A CONFIRMED successful submission: the signed transaction, the scopes
@@ -322,6 +378,11 @@ data ConfirmedSubmission = ConfirmedSubmission
     , csTxId :: Text
     , csScopes :: [Scope]
     , csElapsed :: IO Double
+    , csStaged :: Maybe (Text -> IO ())
+    {- ^ In a staged run, where the command's readback of this body lands:
+    the staged transaction's effect lines, not a journal @observed@ line.
+    Absent in the key-file path.
+    -}
     }
 
 -- | The signed transaction a confirmed submission carries.
@@ -381,33 +442,45 @@ withSession env dir command ws body = do
     let settings = writeProvider ws
         magic = providerMagic settings
         url = providerUrl settings
-    wallet <- signerWallet magic (writeSigner ws)
+    (callerAddr, walletOpt, stagedOpt) <-
+        signerWallet dir magic (writeSigner ws)
     connected <- newIORef False
     before <- length <$> readJournal dir
     result <-
         try $
-            envWrites env settings wallet $ \caps -> do
+            envWrites env settings $ \caps -> do
                 writeIORef connected True
+                let caps' = case stagedOpt of
+                        Nothing -> caps
+                        Just staged -> stagedCapabilities staged caps
                 ran <-
                     tryJust failureOf $
                         body
                             WriteContext
                                 { wcDir = dir
                                 , wcCommand = command
-                                , wcWallet = wallet
-                                , wcCapabilities = caps
+                                , wcWallet = walletOpt
+                                , wcCaller = callerAddr
+                                , wcCapabilities = caps'
                                 , wcTimeout = writeConfirmTimeout ws
                                 , wcTracer = envTracer env
                                 , wcSource = envSource env
+                                , wcStaged = stagedOpt
                                 }
                 named <- submissionsOf dir before
-                case ran of
-                    Left (reported, CommandFailure c why fields) ->
+                case (ran, stagedOpt) of
+                    (Right (Object o), Just staged) ->
+                        endStagedRun magic o staged
+                    (Right (Object o), Nothing) ->
+                        pure (Object (KeyMap.insert "submissions" named o))
+                    (Right v, _) -> pure v
+                    (Left (reported, CommandFailure c why fields), Just staged) -> do
+                        stagedSoFar <- readIORef (srTxs staged)
+                        throwIO . markedLike reported . toException $
+                            stagedFailure command stagedSoFar c why fields
+                    (Left (reported, CommandFailure c why fields), Nothing) ->
                         throwIO . markedLike reported . toException $
                             CommandFailure c why (fields <> [("submissions", named)])
-                    Right (Object o) ->
-                        pure (Object (KeyMap.insert "submissions" named o))
-                    Right v -> pure v
     case result of
         Right a -> pure a
         Left (e :: SomeException) -> do
@@ -425,22 +498,6 @@ withSession env dir command ws body = do
     failureOf e = case reportedOf e of
         (reported, inner) -> (,) reported <$> fromException inner
 
-{- | The wallet a write signs with, before anything is read: the caller's
-key file, loaded as every write loads it. The external signer, an address
-with its bundle file, is refused here, before the node is contacted, a key
-file is opened or the chain is read: an external run stops with a client
-refusal until staging the run as one bundle lands (slice 2b of issue 641).
--}
-signerWallet :: Word32 -> Signer -> IO Wallet
-signerWallet magic = \case
-    SignerKeyFile path -> loadWallet magic path
-    SignerExternal _ _ ->
-        failWith
-            ClientRefusal
-            ( "--wallet-address with --bundle is read but not staged yet: "
-                <> "staging the run as one bundle comes with slice 2b of issue 641"
-            )
-
 {- | Refuse a bundle path that already exists, of any kind, its bytes
 untouched: a bundle is created exclusively. The first step of a write with
 an external signer ('Singular.CLI.ManagedState.resolveSignerDir'), before
@@ -456,6 +513,130 @@ refuseTakenBundle bundle = do
                 <> bundle
                 <> " already exists: name a new file, the bundle is created exclusively"
             )
+
+{- | Name the registry a staged run attached to, for its bundle: the state
+token as the command was given it. Nothing in the key-file path.
+-}
+stageRegistry :: WriteContext -> Text -> IO ()
+stageRegistry wc token =
+    forM_ (wcStaged wc) $ \staged -> writeIORef (srToken staged) (Just token)
+
+{- | The key-file wallet a command that signs for itself needs: refused as
+a client refusal when the write runs with an external signer, which holds
+no key at all.
+-}
+signingWallet :: WriteContext -> IO Wallet
+signingWallet wc = case wcWallet wc of
+    Just loaded -> pure loaded
+    Nothing ->
+        failWith
+            ClientRefusal
+            "a staged run signs nothing: no key is held to sign with"
+
+{- | The caller a write runs as and the wallet it signs from when the
+signer is a key file; the staged run it collects when the signer is
+external. The key file loads as today. The external signer carries only
+its address — no key file is opened, no vault, and no key value is held
+at all: a staged run signs nothing. An existing bundle path was already
+refused by 'refuseTakenBundle', before anything of the run was read.
+-}
+signerWallet
+    :: FilePath
+    -> Word32
+    -> Signer
+    -> IO (Addr, Maybe Wallet, Maybe StagedRun)
+signerWallet dir magic = \case
+    SignerKeyFile keyPath -> do
+        loaded <- loadWallet magic keyPath
+        pure (walletAddr loaded, Just loaded, Nothing)
+    SignerExternal given bundlePath -> do
+        addr <-
+            either
+                (failWith ClientRefusal)
+                pure
+                (signerAddress given)
+        staged <- newIORef []
+        effects <- newIORef []
+        token <- newIORef Nothing
+        pure
+            ( addr
+            , Nothing
+            , Just
+                StagedRun
+                    { srDir = dir
+                    , srTxs = staged
+                    , srEffects = effects
+                    , srSigner = given
+                    , srBundlePath = bundlePath
+                    , srToken = token
+                    }
+            )
+
+{- | The capabilities of a staged run: every acquisition reads through the
+chained view over the transactions staged so far — one snapshot per
+acquisition, exactly the model — and the submission capability is never
+called: a staged run sends nothing.
+-}
+stagedCapabilities
+    :: StagedRun
+    -> Capabilities Cage.NoWitness IO
+    -> Capabilities Cage.NoWitness IO
+stagedCapabilities staged caps =
+    let (network, provider) = capReads caps
+        chained =
+            Cage.LedgerProvider
+                { Cage.acquire = \requested action ->
+                    Cage.acquire
+                        provider
+                        requested
+                        ( chainedSession
+                            (map snd <$> readIORef (srTxs staged))
+                            >=> action
+                        )
+                , Cage.submitTx = Cage.submitTx provider
+                }
+    in  caps
+            { capReads = (network, chained)
+            , capSubmit = \_ ->
+                throwIO
+                    (ErrorCall "the submission capability is never called in a staged run")
+            }
+
+{- | A staged run's failure as its receipt states it. Nothing a staged run
+builds is signed, sent or confirmed, but the command's own account of a
+stop is written for the key-file path, where every built body has landed by
+then ("the preparation … stands confirmed", "the reject confirmed but …").
+So once a body is staged that account is replaced by one that claims nothing
+landed, the staged bodies are listed as staged, and the account's structured
+fields (amounts, allowances) are kept. Before anything is staged the account
+stands as written. Never a submissions field: nothing was submitted.
+-}
+stagedFailure
+    :: Text
+    -> [(Text, StagedTransaction)]
+    -> OutcomeClass
+    -> String
+    -> [(Text, Value)]
+    -> CommandFailure
+stagedFailure command stagedSoFar c why fields = case stagedSoFar of
+    [] -> CommandFailure c why kept
+    _ ->
+        CommandFailure
+            c
+            ( T.unpack command
+                <> " stopped after staging "
+                <> show (length stagedSoFar)
+                <> " unsigned transaction(s), before its bundle was written: none was"
+                <> " signed, sent or confirmed, and no bundle file was written"
+            )
+            (kept <> [("staged", toJSON (map stagedEntry stagedSoFar))])
+  where
+    kept = [f | f@(k, _) <- fields, k `notElem` ["submissions", "submitted"]]
+    stagedEntry (step, stagedTx) =
+        object
+            [ "step" .= step
+            , "identity" .= txIdHex (stagedBody stagedTx)
+            ]
 
 {- | Each transaction this command prepared — the @prepared@ lines it
 appended after the first @before@ — in order, with the case the journal shows
@@ -722,11 +903,18 @@ submitBuiltIn wc step items expect build = do
                 }
     built <-
         try $ Cage.withLatest provider $ \v -> do
-            made <-
+            made@(unsigned, _) <-
                 timedTrace
                     (txUnder building)
                     (\ms end -> TxBuilt step ms (ended end))
                     (build acting (recording v))
+            -- A fresh acquisition: a preparation the build itself staged (the
+            -- funding seam runs inside the build) is in this snapshot, not in v.
+            forM_ (wcStaged wc) $ \staged -> do
+                stagedTx <-
+                    Cage.withLatest provider $ \now ->
+                        stagedTransactionOf step now unsigned
+                modifyIORef' (srTxs staged) (<> [(step, stagedTx)])
             scope <- sessionReceipt (wcCapabilities wc) v
             pure (scope, made)
     (scope, (unsigned, extra)) <- case built of
@@ -747,10 +935,73 @@ submitBuiltIn wc step items expect build = do
                     Nothing -> throwIO (Reported e)
     placed <- readIORef (bpScopes progress)
     let tracer = within (InTransaction step) (inScopes placed (wcTracer wc))
-    (signed, elapsed) <-
-        journalledSubmit tracer wc step (expect extra) scope unsigned
+    case wcStaged wc of
+        Just staged -> do
+            traceWith
+                (how tracer)
+                (Staged step (txIdHex unsigned))
+            let record detail =
+                    modifyIORef'
+                        (srEffects staged)
+                        (upsert (txIdHex unsigned) detail)
+            pure
+                ( ConfirmedSubmission
+                    unsigned
+                    (txIdHex unsigned)
+                    placed
+                    (pure 0)
+                    (Just record)
+                , extra
+                )
+        Nothing -> do
+            (signed, elapsed) <-
+                journalledSubmit tracer wc step (expect extra) scope unsigned
+            pure
+                ( ConfirmedSubmission signed (txIdHex signed) placed elapsed Nothing
+                , extra
+                )
+  where
+    upsert key detail = \case
+        [] -> [(key, [detail])]
+        ((k, ds) : rest)
+            | k == key -> (k, ds <> [detail]) : rest
+            | otherwise -> (k, ds) : upsert key detail rest
+
+{- | One staged transaction: the unsigned body with the resolution of
+every input it spends and references, read from a view acquired after the
+build — the chained view holding every transaction staged before it,
+including a preparation the build itself staged. A reference the view
+cannot resolve is a refusal: the body would not have been built over it.
+-}
+stagedTransactionOf
+    :: Text
+    -> Cage.Session Cage.NoWitness IO
+    -> ConwayTx
+    -> IO StagedTransaction
+stagedTransactionOf step v body = do
+    spent <-
+        concat <$> mapM resolve (Set.toList (body ^. bodyTxL . inputsTxBodyL))
+    reference <-
+        concat
+            <$> mapM resolve (Set.toList (body ^. bodyTxL . referenceInputsTxBodyL))
     pure
-        (ConfirmedSubmission signed (txIdHex signed) placed elapsed, extra)
+        StagedTransaction
+            { stagedBody = body
+            , stagedSpentOutputs = spent
+            , stagedReferenceOutputs = reference
+            }
+  where
+    resolve ref =
+        Cage.outputs v (Cage.AtTxIn ref) >>= \case
+            Left failure ->
+                failWith
+                    ClientRefusal
+                    ( "the staged "
+                        <> T.unpack step
+                        <> " spends or reads an output the view does not hold: "
+                        <> show failure
+                    )
+            Right found -> pure (Cage.value found)
 
 {- | The necessary synchronous exceptional state of one 'submitBuiltIn'
 invocation, private to this module. 'bpScopes' collects the placement the
@@ -849,7 +1100,13 @@ journalledSubmit tracer wc step ex scope unsigned = do
             txs
             (\ms end -> TxSigned step txid (Just fee) ms (ended end))
             $ do
-                let sealed' = signTx (walletSignKey (wcWallet wc)) unsigned
+                signing <- case wcWallet wc of
+                    Just loaded -> pure (signTx (walletSignKey loaded) unsigned)
+                    Nothing ->
+                        failWith
+                            ClientRefusal
+                            "a staged run signs nothing: no key is held to sign with"
+                let sealed' = signing
                     bytes' = serialize' (eraProtVerHigh @ConwayEra) (signedTx sealed')
                 _ <- evaluate (BS.length bytes')
                 pure (sealed', bytes')
@@ -1026,16 +1283,18 @@ transaction-id lookup.
 -}
 journalObserved
     :: WriteContext -> Text -> ConfirmedSubmission -> Text -> IO ()
-journalObserved wc step confirmed detail = do
-    let txid = confirmedTxId confirmed
-    appendJournal
-        (wcDir wc)
-        (blankEntry wc step txid "observed"){journalDetail = Just detail}
-    readback <- confirmedElapsed confirmed
-    let placed = confirmedScopes confirmed
-    traceWith
-        (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))
-        (TxObserved step txid readback)
+journalObserved wc step confirmed detail = case csStaged confirmed of
+    Just record -> record detail
+    Nothing -> do
+        let txid = confirmedTxId confirmed
+        appendJournal
+            (wcDir wc)
+            (blankEntry wc step txid "observed"){journalDetail = Just detail}
+        readback <- confirmedElapsed confirmed
+        let placed = confirmedScopes confirmed
+        traceWith
+            (txUnder (within (InTransaction step) (inScopes placed (wcTracer wc))))
+            (TxObserved step txid readback)
 
 {- | The same, for an already-live reference found before this command:
 known by its original id, with no current-command confirmation, so zero
@@ -1079,3 +1338,161 @@ readOnce
 readOnce env settings items body =
     envReads env settings $ \caps ->
         readStep (envTracer env) (envSource env) items caps (body caps)
+
+-- ---------------------------------------------------------
+-- The staged run's end: one bundle, waiting for signatures
+-- ---------------------------------------------------------
+
+{- | The bundle of a staged run: its transactions in build order, each with
+its identity, envelope, deadline and the effect lines the command's
+readbacks produced for it. The signer is the address as given. Pure.
+-}
+bundleOfRun
+    :: Text
+    -> Word32
+    -> Maybe Text
+    -> Text
+    -> [(Text, StagedTransaction, [Text])]
+    -> Bundle
+bundleOfRun command magic token signer entries =
+    Bundle
+        { bundleCommand = command
+        , bundleNetworkMagic = magic
+        , bundleStateToken = token
+        , bundleSigners = signer :| []
+        , bundleTransactions = entryOf <$> ne
+        }
+  where
+    ne = case entries of
+        [] -> error "bundleOfRun: a staged run with no transaction"
+        (e : es) -> e :| es
+    entryOf (_step, staged, effects) =
+        let body = stagedBody staged
+        in  BundleTransaction
+                { bundleTxIdentity = bodyIdentity body
+                , bundleTxEnvelope = transactionEnvelope body
+                , bundleTxDeadline = bodyDeadline body
+                , bundleTxEffects = effects
+                }
+
+{- | End a staged run: assemble the bundle from what the run collected in
+build order, save its bytes and every body beside the journal with one
+waiting line per transaction, then create the bundle file exclusively.
+The receipt states the outcome and the bundle as fact, the command's own
+fields as expectations — nothing derived from a staged body is stated as
+observed.
+-}
+endStagedRun
+    :: Word32 -> KeyMap.KeyMap Value -> StagedRun -> IO Value
+endStagedRun magic fields staged = do
+    collected <- readIORef (srTxs staged)
+    effects <- readIORef (srEffects staged)
+    token <- readIORef (srToken staged)
+    case collected of
+        [] -> failWith ClientRefusal "the staged run built no transaction"
+        (_ : _) -> pure ()
+    let command = case KeyMap.lookup "command" fields of
+            Just (String c) -> c
+            _ -> ""
+        inOrder = collected
+        effectOf stagedTx =
+            fromMaybe [] (lookup (txIdHex (stagedBody stagedTx)) effects)
+        entries = [(step, stagedTx, effectOf stagedTx) | (step, stagedTx) <- inOrder]
+        bundle = bundleOfRun command magic token (srSigner staged) entries
+        bytes = encodeBundle bundle
+        bundleHash = hexT (hashToBytes (hashWith @Blake2b_256 id bytes))
+    journalWaitingForSignatures
+        (srDir staged)
+        magic
+        bytes
+        bundle
+        [ (step, hexT (bodyIdentity (stagedBody stagedTx)))
+        | (step, stagedTx) <- inOrder
+        ]
+    created <- writeBundleExclusively (srBundlePath staged) bytes
+    unless created $
+        failWith
+            ClientRefusal
+            ( "the bundle file "
+                <> srBundlePath staged
+                <> " cannot be written: it already exists; the bundle "
+                <> T.unpack bundleHash
+                <> " is saved beside the journal and journalled waiting for signatures"
+            )
+    let saved =
+            bodiesDir (srDir staged)
+                </> ("bundle-" <> T.unpack bundleHash <> ".bundle")
+        own =
+            KeyMap.delete "command" $
+                KeyMap.delete "outcome" $
+                    KeyMap.delete "reconciled" fields
+        summary =
+            object
+                [ "hash" .= bundleHash
+                , "written" .= T.pack (srBundlePath staged)
+                , "saved" .= T.pack saved
+                , "signers" .= [srSigner staged]
+                , "transactions"
+                    .= [ object
+                            ( [ "step" .= step
+                              , "identity" .= hexT (bodyIdentity (stagedBody stagedTx))
+                              ]
+                                <> [ "deadline" .= slot
+                                   | Just slot <- [bodyDeadline (stagedBody stagedTx)]
+                                   ]
+                                <> [ "effects" .= effectOf stagedTx
+                                   | not (null (effectOf stagedTx))
+                                   ]
+                            )
+                       | (step, stagedTx) <- inOrder
+                       ]
+                ]
+        framed =
+            KeyMap.fromList $
+                [ ("command", String command)
+                , ("outcome", String (outcomeName WaitingForSignatures))
+                ]
+                    <> [("reconciled", r) | Just r <- [KeyMap.lookup "reconciled" fields]]
+                    <> [ ("expected", Object own)
+                       , ("bundle", summary)
+                       ]
+    pure (Object framed)
+
+{- | Create the bundle file exclusively and make it durable: an existing
+file wins, and its bytes stay untouched. Nothing else may hold the path.
+-}
+writeBundleExclusively :: FilePath -> BS.ByteString -> IO Bool
+writeBundleExclusively path bytes = do
+    opened <-
+        try
+            ( openFd
+                path
+                WriteOnly
+                defaultFileFlags{exclusive = True, creat = Just 0o644}
+            )
+    case opened of
+        Left (_ :: IOException) -> pure False
+        Right fd -> do
+            writeAllFd fd bytes
+            fileSynchronise fd
+            True <$ closeFd fd
+  where
+    writeAllFd fd b
+        | BS.null b = pure ()
+        | otherwise = do
+            n <- fdWrite fd b
+            writeAllFd fd (BS.drop (fromIntegral n) b)
+
+{- | The caller a signer names: the key file loads as today and yields its
+wallet; the external signer yields its address alone — no key file is
+opened and no key value is constructed. The key-file refusal texts are
+the loader's own.
+-}
+loadSignerWallet :: Word32 -> Signer -> IO (Addr, Maybe Wallet)
+loadSignerWallet magic = \case
+    SignerKeyFile keyPath -> do
+        loaded <- loadWallet magic keyPath
+        pure (walletAddr loaded, Just loaded)
+    SignerExternal given _ ->
+        either (failWith ClientRefusal) pure (signerAddress given)
+            >>= \addr -> pure (addr, Nothing)

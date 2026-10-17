@@ -173,7 +173,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 -- ---------------------------------------------------------
 -- The processing deadline
@@ -544,7 +543,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-        addr = walletAddr (wcWallet wc)
+        addr = wcCaller wc
         named = case fsOrigin of
             Combined booking -> Just (TxIn (txIdTx booking) (TxIx 0))
             Standalone -> fsRequest

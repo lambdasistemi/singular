@@ -688,7 +688,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = \_ _ -> pure (Left "submit loads no release")
         , envReads = \_ k -> k (capabilitiesOf rig)
-        , envWrites = \_ _ _ -> fail "submit opened the write side"
+        , envWrites = \_ _ -> fail "submit opened the write side"
         }
 
 capabilitiesOf :: Rig -> Capabilities NoWitness IO
