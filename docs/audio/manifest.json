@@ -92911,17 +92911,17 @@
    ]
   },
   "docs-consumer-onboarding/make-a-wallet-and-fund-it-01": {
-   "audio_sha256": "c730f06e71b5641147264fa7e8778e798e36a9faf36d6fa9ef2420bbebc377b6",
-   "characters": 309,
-   "cost": 0.00030590999999999995,
-   "duration": 19.625,
+   "audio_sha256": "56ba0dbedb9cb6e691caaf9fb3c98f1d9f0ab6f96502b0ce3c0946c4cfc2f09d",
+   "characters": 434,
+   "cost": 0.00042965999999999995,
+   "duration": 28.325,
    "index": 1,
-   "key": "8553d73a1adaadaf93659d8a9eae50e54611059464b258ba1a1c356acd4dec5a",
+   "key": "700c3834dfa4a44a739c3f20dadd8d34bc90f9705bc0c5ed7a6d9d90a0fc6167",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "make-a-wallet-and-fund-it",
-   "sent_text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address; the passphrase is typed once, or read from --passphrase-fd FD in a script. singular wallet address prints the same address again from the vault.",
-   "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address; the passphrase is typed once, or read from --passphrase-fd FD in a script. singular wallet address prints the same address again from the vault.",
+   "sent_text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd FD supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
+   "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd FD supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
    "words": [
     {
      "end": 0.363,
@@ -93059,153 +93059,283 @@
      "text": "the"
     },
     {
-     "end": 9.075,
+     "end": 9.05,
      "start": 8.65,
      "text": "wallet's"
     },
     {
-     "end": 10.125,
-     "start": 9.075,
+     "end": 10.1,
+     "start": 9.05,
      "text": "address"
     },
     {
      "end": 10.325,
-     "start": 10.125,
-     "text": ";"
-    },
-    {
-     "end": 10.575,
-     "start": 10.5,
-     "text": "the"
-    },
-    {
-     "end": 11.175,
-     "start": 10.575,
-     "text": "passphrase"
-    },
-    {
-     "end": 11.325,
-     "start": 11.175,
-     "text": "is"
-    },
-    {
-     "end": 11.65,
-     "start": 11.325,
-     "text": "typed"
-    },
-    {
-     "end": 12.075,
-     "start": 11.65,
-     "text": "once"
-    },
-    {
-     "end": 12.15,
-     "start": 12.075,
-     "text": ","
-    },
-    {
-     "end": 12.312,
-     "start": 12.15,
-     "text": "or"
-    },
-    {
-     "end": 12.6,
-     "start": 12.312,
-     "text": "read"
-    },
-    {
-     "end": 12.75,
-     "start": 12.6,
-     "text": "from"
-    },
-    {
-     "end": 13.625,
-     "start": 12.75,
-     "text": "--passphrase-fd"
-    },
-    {
-     "end": 14.1,
-     "start": 13.625,
-     "text": "FD"
-    },
-    {
-     "end": 14.188,
-     "start": 14.1,
-     "text": "in"
-    },
-    {
-     "end": 14.25,
-     "start": 14.188,
-     "text": "a"
-    },
-    {
-     "end": 15.225,
-     "start": 14.25,
-     "text": "script"
-    },
-    {
-     "end": 15.425,
-     "start": 15.225,
+     "start": 10.1,
      "text": "."
     },
     {
-     "end": 16.125,
-     "start": 15.65,
+     "end": 10.637,
+     "start": 10.525,
+     "text": "At"
+    },
+    {
+     "end": 10.738,
+     "start": 10.637,
+     "text": "a"
+    },
+    {
+     "end": 11.25,
+     "start": 10.738,
+     "text": "terminal"
+    },
+    {
+     "end": 11.387,
+     "start": 11.25,
+     "text": "it"
+    },
+    {
+     "end": 11.825,
+     "start": 11.387,
+     "text": "asks"
+    },
+    {
+     "end": 11.938,
+     "start": 11.825,
+     "text": "for"
+    },
+    {
+     "end": 12.038,
+     "start": 11.938,
+     "text": "the"
+    },
+    {
+     "end": 12.738,
+     "start": 12.038,
+     "text": "passphrase"
+    },
+    {
+     "end": 13.275,
+     "start": 12.738,
+     "text": "twice"
+    },
+    {
+     "end": 13.35,
+     "start": 13.275,
+     "text": ","
+    },
+    {
+     "end": 13.512,
+     "start": 13.35,
+     "text": "an"
+    },
+    {
+     "end": 14.0,
+     "start": 13.512,
+     "text": "entry"
+    },
+    {
+     "end": 14.113,
+     "start": 14.0,
+     "text": "and"
+    },
+    {
+     "end": 14.175,
+     "start": 14.113,
+     "text": "a"
+    },
+    {
+     "end": 15.0,
+     "start": 14.175,
+     "text": "confirmation"
+    },
+    {
+     "end": 15.075,
+     "start": 15.0,
+     "text": ","
+    },
+    {
+     "end": 15.2,
+     "start": 15.075,
+     "text": "and"
+    },
+    {
+     "end": 15.85,
+     "start": 15.2,
+     "text": "refuses"
+    },
+    {
+     "end": 15.95,
+     "start": 15.85,
+     "text": "a"
+    },
+    {
+     "end": 16.7,
+     "start": 15.95,
+     "text": "confirmation"
+    },
+    {
+     "end": 16.875,
+     "start": 16.7,
+     "text": "that"
+    },
+    {
+     "end": 18.05,
+     "start": 16.875,
+     "text": "differs"
+    },
+    {
+     "end": 18.25,
+     "start": 18.05,
+     "text": ";"
+    },
+    {
+     "end": 18.538,
+     "start": 18.45,
+     "text": "in"
+    },
+    {
+     "end": 18.625,
+     "start": 18.538,
+     "text": "a"
+    },
+    {
+     "end": 19.0,
+     "start": 18.625,
+     "text": "script"
+    },
+    {
+     "end": 19.05,
+     "start": 19.0,
+     "text": ","
+    },
+    {
+     "end": 19.962,
+     "start": 19.05,
+     "text": "--passphrase-fd"
+    },
+    {
+     "end": 20.375,
+     "start": 19.962,
+     "text": "FD"
+    },
+    {
+     "end": 20.875,
+     "start": 20.375,
+     "text": "supplies"
+    },
+    {
+     "end": 21.025,
+     "start": 20.875,
+     "text": "it"
+    },
+    {
+     "end": 21.175,
+     "start": 21.025,
+     "text": "as"
+    },
+    {
+     "end": 21.4,
+     "start": 21.175,
+     "text": "one"
+    },
+    {
+     "end": 21.675,
+     "start": 21.4,
+     "text": "line"
+    },
+    {
+     "end": 21.925,
+     "start": 21.675,
+     "text": "read"
+    },
+    {
+     "end": 22.825,
+     "start": 21.925,
+     "text": "once"
+    },
+    {
+     "end": 23.025,
+     "start": 22.825,
+     "text": "."
+    },
+    {
+     "end": 23.75,
+     "start": 23.275,
      "text": "singular"
     },
     {
-     "end": 16.475,
-     "start": 16.125,
+     "end": 24.1,
+     "start": 23.75,
      "text": "wallet"
     },
     {
-     "end": 17.013,
-     "start": 16.475,
+     "end": 24.587,
+     "start": 24.1,
      "text": "address"
     },
     {
-     "end": 17.3,
-     "start": 17.013,
+     "end": 24.987,
+     "start": 24.587,
+     "text": "asks"
+    },
+    {
+     "end": 25.425,
+     "start": 24.987,
+     "text": "once"
+    },
+    {
+     "end": 25.5,
+     "start": 25.425,
+     "text": ","
+    },
+    {
+     "end": 25.625,
+     "start": 25.5,
+     "text": "and"
+    },
+    {
+     "end": 25.9,
+     "start": 25.625,
      "text": "prints"
     },
     {
-     "end": 17.438,
-     "start": 17.3,
+     "end": 26.038,
+     "start": 25.9,
      "text": "the"
     },
     {
-     "end": 17.688,
-     "start": 17.438,
+     "end": 26.288,
+     "start": 26.038,
      "text": "same"
     },
     {
-     "end": 18.025,
-     "start": 17.688,
+     "end": 26.625,
+     "start": 26.288,
      "text": "address"
     },
     {
-     "end": 18.35,
-     "start": 18.025,
+     "end": 26.95,
+     "start": 26.625,
      "text": "again"
     },
     {
-     "end": 18.487,
-     "start": 18.35,
+     "end": 27.112,
+     "start": 26.95,
      "text": "from"
     },
     {
-     "end": 18.575,
-     "start": 18.487,
+     "end": 27.2,
+     "start": 27.112,
      "text": "the"
     },
     {
-     "end": 19.425,
-     "start": 18.575,
+     "end": 28.1,
+     "start": 27.2,
      "text": "vault"
     },
     {
-     "end": 19.625,
-     "start": 19.425,
+     "end": 28.325,
+     "start": 28.1,
      "text": "."
     }
    ]
@@ -345391,17 +345521,17 @@
    ]
   },
   "docs-singular-node/what-each-receipt-says-05": {
-   "audio_sha256": "c95b50eb722f2d3bebc647a0b1803e06b1d63fcd14863f32fd9dd13640278750",
-   "characters": 313,
-   "cost": 0.00030986999999999996,
-   "duration": 20.55,
+   "audio_sha256": "53b9857ffaaea922f56b0dba70e5374b88bf6bf7b491f46f62c7bab513e5b96d",
+   "characters": 229,
+   "cost": 0.00022671,
+   "duration": 14.875,
    "index": 5,
-   "key": "2b2b6221690d35eb2aaed1f8b82ae6399c0d3121fde7510f01eacf3ba37fc2a7",
+   "key": "1a13f00851971626f7830a56295e8f1589f4b5d20c509337dc801bd17cf060e2",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "what-each-receipt-says",
-   "sent_text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. That bundle then dies by expiry, and the way out is to rebuild it after the expiry.",
-   "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. That bundle then dies by expiry, and the way out is to rebuild it after the expiry.",
+   "sent_text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs.",
+   "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs.",
    "words": [
     {
      "end": 0.287,
@@ -345642,100 +345772,600 @@
      "end": 14.875,
      "start": 14.675,
      "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/what-each-receipt-says-06": {
+   "audio_sha256": "3fd5726903d3f5ae72b068eba47b3c5559798da24306db95ece77971d6a7793b",
+   "characters": 599,
+   "cost": 0.00059301,
+   "duration": 38.95,
+   "index": 6,
+   "key": "1d7d45dbc13ce713690e770834487f62d5882d0067560975294f8bf1624952ee",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "what-each-receipt-says",
+   "sent_text": "A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an open-datum insert, update or terminate without --fold and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with --seed, as When a bundle waits for signatures says; for the others, --state-dir naming another state directory, which starts a fresh journal for that registry and wallet.",
+   "text": "A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an open-datum insert, update or terminate without --fold and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with --seed, as When a bundle waits for signatures says; for the others, --state-dir naming another state directory, which starts a fresh journal for that registry and wallet.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.2,
+     "text": "A"
     },
     {
-     "end": 15.25,
-     "start": 15.075,
-     "text": "That"
-    },
-    {
-     "end": 15.625,
-     "start": 15.25,
+     "end": 0.725,
+     "start": 0.287,
      "text": "bundle"
     },
     {
-     "end": 15.85,
-     "start": 15.625,
+     "end": 0.95,
+     "start": 0.725,
+     "text": "whose"
+    },
+    {
+     "end": 1.837,
+     "start": 0.95,
+     "text": "transactions"
+    },
+    {
+     "end": 2.175,
+     "start": 1.837,
+     "text": "carry"
+    },
+    {
+     "end": 2.287,
+     "start": 2.175,
+     "text": "a"
+    },
+    {
+     "end": 2.85,
+     "start": 2.287,
+     "text": "deadline"
+    },
+    {
+     "end": 3.088,
+     "start": 2.85,
      "text": "then"
     },
     {
-     "end": 16.225,
-     "start": 15.85,
+     "end": 3.5,
+     "start": 3.088,
      "text": "dies"
     },
     {
-     "end": 16.425,
-     "start": 16.225,
+     "end": 3.7,
+     "start": 3.5,
      "text": "by"
     },
     {
-     "end": 17.075,
-     "start": 16.425,
+     "end": 4.4,
+     "start": 3.7,
      "text": "expiry"
     },
     {
-     "end": 17.175,
-     "start": 17.075,
+     "end": 4.5,
+     "start": 4.4,
      "text": ","
     },
     {
-     "end": 17.288,
-     "start": 17.175,
+     "end": 4.625,
+     "start": 4.5,
      "text": "and"
     },
     {
-     "end": 17.388,
-     "start": 17.288,
+     "end": 4.912,
+     "start": 4.625,
+     "text": "running"
+    },
+    {
+     "end": 5.0,
+     "start": 4.912,
      "text": "the"
     },
     {
-     "end": 17.65,
-     "start": 17.388,
-     "text": "way"
+     "end": 5.475,
+     "start": 5.0,
+     "text": "command"
     },
     {
-     "end": 17.925,
-     "start": 17.65,
-     "text": "out"
+     "end": 5.8,
+     "start": 5.475,
+     "text": "again"
     },
     {
-     "end": 18.075,
-     "start": 17.925,
-     "text": "is"
+     "end": 6.325,
+     "start": 5.8,
+     "text": "rebuilds"
     },
     {
-     "end": 18.2,
-     "start": 18.075,
-     "text": "to"
+     "end": 7.075,
+     "start": 6.325,
+     "text": "it"
+    },
+    {
+     "end": 7.3,
+     "start": 7.075,
+     "text": "."
+    },
+    {
+     "end": 7.588,
+     "start": 7.5,
+     "text": "A"
+    },
+    {
+     "end": 8.012,
+     "start": 7.588,
+     "text": "bundle"
+    },
+    {
+     "end": 8.375,
+     "start": 8.012,
+     "text": "signed"
+    },
+    {
+     "end": 8.925,
+     "start": 8.375,
+     "text": "elsewhere"
+    },
+    {
+     "end": 9.125,
+     "start": 8.925,
+     "text": "whose"
+    },
+    {
+     "end": 9.875,
+     "start": 9.125,
+     "text": "transactions"
+    },
+    {
+     "end": 10.212,
+     "start": 9.875,
+     "text": "carry"
+    },
+    {
+     "end": 10.65,
+     "start": 10.212,
+     "text": "none"
+    },
+    {
+     "end": 10.75,
+     "start": 10.65,
+     "text": ","
+    },
+    {
+     "end": 10.9,
+     "start": 10.75,
+     "text": "an"
+    },
+    {
+     "end": 11.55,
+     "start": 10.9,
+     "text": "open-datum"
+    },
+    {
+     "end": 12.55,
+     "start": 11.55,
+     "text": "insert"
+    },
+    {
+     "end": 12.75,
+     "start": 12.55,
+     "text": ","
+    },
+    {
+     "end": 13.35,
+     "start": 12.95,
+     "text": "update"
+    },
+    {
+     "end": 13.5,
+     "start": 13.35,
+     "text": "or"
+    },
+    {
+     "end": 13.988,
+     "start": 13.5,
+     "text": "terminate"
+    },
+    {
+     "end": 14.337,
+     "start": 13.988,
+     "text": "without"
+    },
+    {
+     "end": 14.712,
+     "start": 14.337,
+     "text": "--fold"
+    },
+    {
+     "end": 14.812,
+     "start": 14.712,
+     "text": "and"
+    },
+    {
+     "end": 14.875,
+     "start": 14.812,
+     "text": "a"
+    },
+    {
+     "end": 15.375,
+     "start": 14.875,
+     "text": "create"
+    },
+    {
+     "end": 15.475,
+     "start": 15.375,
+     "text": ","
+    },
+    {
+     "end": 15.75,
+     "start": 15.475,
+     "text": "never"
+    },
+    {
+     "end": 16.95,
+     "start": 15.75,
+     "text": "expires"
+    },
+    {
+     "end": 17.15,
+     "start": 16.95,
+     "text": ":"
+    },
+    {
+     "end": 17.475,
+     "start": 17.375,
+     "text": "if"
+    },
+    {
+     "end": 17.6,
+     "start": 17.475,
+     "text": "it"
+    },
+    {
+     "end": 17.8,
+     "start": 17.6,
+     "text": "can"
+    },
+    {
+     "end": 18.125,
+     "start": 17.8,
+     "text": "never"
+    },
+    {
+     "end": 18.55,
+     "start": 18.125,
+     "text": "land"
     },
     {
      "end": 18.625,
-     "start": 18.2,
-     "text": "rebuild"
+     "start": 18.55,
+     "text": ","
     },
     {
-     "end": 18.775,
+     "end": 18.75,
      "start": 18.625,
      "text": "it"
     },
     {
-     "end": 19.062,
-     "start": 18.775,
-     "text": "after"
+     "end": 19.025,
+     "start": 18.75,
+     "text": "keeps"
     },
     {
-     "end": 19.2,
-     "start": 19.062,
+     "end": 19.462,
+     "start": 19.025,
+     "text": "stopping"
+    },
+    {
+     "end": 19.55,
+     "start": 19.462,
      "text": "the"
     },
     {
-     "end": 20.325,
-     "start": 19.2,
-     "text": "expiry"
+     "end": 19.875,
+     "start": 19.55,
+     "text": "next"
     },
     {
-     "end": 20.55,
-     "start": 20.325,
+     "end": 20.112,
+     "start": 19.875,
+     "text": "write"
+    },
+    {
+     "end": 20.2,
+     "start": 20.112,
+     "text": "of"
+    },
+    {
+     "end": 20.45,
+     "start": 20.2,
+     "text": "that"
+    },
+    {
+     "end": 21.05,
+     "start": 20.45,
+     "text": "registry"
+    },
+    {
+     "end": 21.225,
+     "start": 21.05,
+     "text": "by"
+    },
+    {
+     "end": 21.513,
+     "start": 21.225,
+     "text": "that"
+    },
+    {
+     "end": 21.925,
+     "start": 21.513,
+     "text": "wallet"
+    },
+    {
+     "end": 22.075,
+     "start": 21.925,
+     "text": "at"
+    },
+    {
+     "end": 22.5,
+     "start": 22.075,
+     "text": "status"
+    },
+    {
+     "end": 23.75,
+     "start": 22.5,
+     "text": "19"
+    },
+    {
+     "end": 23.95,
+     "start": 23.75,
+     "text": "."
+    },
+    {
+     "end": 24.2,
+     "start": 24.125,
+     "text": "The"
+    },
+    {
+     "end": 24.362,
+     "start": 24.2,
+     "text": "way"
+    },
+    {
+     "end": 24.525,
+     "start": 24.362,
+     "text": "out"
+    },
+    {
+     "end": 24.888,
+     "start": 24.525,
+     "text": "today"
+    },
+    {
+     "end": 25.075,
+     "start": 24.888,
+     "text": "is"
+    },
+    {
+     "end": 25.125,
+     "start": 25.075,
+     "text": ","
+    },
+    {
+     "end": 25.237,
+     "start": 25.125,
+     "text": "for"
+    },
+    {
+     "end": 25.3,
+     "start": 25.237,
+     "text": "a"
+    },
+    {
+     "end": 25.825,
+     "start": 25.3,
+     "text": "create"
+    },
+    {
+     "end": 25.9,
+     "start": 25.825,
+     "text": ","
+    },
+    {
+     "end": 26.013,
+     "start": 25.9,
+     "text": "a"
+    },
+    {
+     "end": 26.4,
+     "start": 26.013,
+     "text": "create"
+    },
+    {
+     "end": 26.55,
+     "start": 26.4,
+     "text": "that"
+    },
+    {
+     "end": 26.8,
+     "start": 26.55,
+     "text": "names"
+    },
+    {
+     "end": 27.2,
+     "start": 26.8,
+     "text": "another"
+    },
+    {
+     "end": 27.612,
+     "start": 27.2,
+     "text": "output"
+    },
+    {
+     "end": 27.788,
+     "start": 27.612,
+     "text": "with"
+    },
+    {
+     "end": 28.7,
+     "start": 27.788,
+     "text": "--seed"
+    },
+    {
+     "end": 28.925,
+     "start": 28.7,
+     "text": ","
+    },
+    {
+     "end": 29.212,
+     "start": 29.125,
+     "text": "as"
+    },
+    {
+     "end": 29.337,
+     "start": 29.212,
+     "text": "When"
+    },
+    {
+     "end": 29.4,
+     "start": 29.337,
+     "text": "a"
+    },
+    {
+     "end": 29.8,
+     "start": 29.4,
+     "text": "bundle"
+    },
+    {
+     "end": 30.075,
+     "start": 29.8,
+     "text": "waits"
+    },
+    {
+     "end": 30.2,
+     "start": 30.075,
+     "text": "for"
+    },
+    {
+     "end": 30.725,
+     "start": 30.2,
+     "text": "signatures"
+    },
+    {
+     "end": 31.5,
+     "start": 30.725,
+     "text": "says"
+    },
+    {
+     "end": 31.7,
+     "start": 31.5,
+     "text": ";"
+    },
+    {
+     "end": 31.987,
+     "start": 31.9,
+     "text": "for"
+    },
+    {
+     "end": 32.125,
+     "start": 31.987,
+     "text": "the"
+    },
+    {
+     "end": 32.55,
+     "start": 32.125,
+     "text": "others"
+    },
+    {
+     "end": 32.6,
+     "start": 32.55,
+     "text": ","
+    },
+    {
+     "end": 33.3,
+     "start": 32.6,
+     "text": "--state-dir"
+    },
+    {
+     "end": 33.725,
+     "start": 33.3,
+     "text": "naming"
+    },
+    {
+     "end": 34.125,
+     "start": 33.725,
+     "text": "another"
+    },
+    {
+     "end": 34.425,
+     "start": 34.125,
+     "text": "state"
+    },
+    {
+     "end": 35.05,
+     "start": 34.425,
+     "text": "directory"
+    },
+    {
+     "end": 35.125,
+     "start": 35.05,
+     "text": ","
+    },
+    {
+     "end": 35.325,
+     "start": 35.125,
+     "text": "which"
+    },
+    {
+     "end": 35.638,
+     "start": 35.325,
+     "text": "starts"
+    },
+    {
+     "end": 35.75,
+     "start": 35.638,
+     "text": "a"
+    },
+    {
+     "end": 36.112,
+     "start": 35.75,
+     "text": "fresh"
+    },
+    {
+     "end": 36.525,
+     "start": 36.112,
+     "text": "journal"
+    },
+    {
+     "end": 36.65,
+     "start": 36.525,
+     "text": "for"
+    },
+    {
+     "end": 36.925,
+     "start": 36.65,
+     "text": "that"
+    },
+    {
+     "end": 37.55,
+     "start": 36.925,
+     "text": "registry"
+    },
+    {
+     "end": 37.675,
+     "start": 37.55,
+     "text": "and"
+    },
+    {
+     "end": 38.725,
+     "start": 37.675,
+     "text": "wallet"
+    },
+    {
+     "end": 38.95,
+     "start": 38.725,
      "text": "."
     }
    ]

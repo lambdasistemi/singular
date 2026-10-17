@@ -55,7 +55,7 @@
       "pause": 500
     },
     {
-      "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address; the passphrase is typed once, or read from --passphrase-fd FD in a script. singular wallet address prints the same address again from the vault.",
+      "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd FD supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
       "pause": 400
     },
     {
@@ -125,6 +125,6 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "a535bd2f7b8653eb4ed4e4ed2b520fffe2b1d66de08d8cd9ef52614248da2125"
+    "sha256": "4696ba70689cb5fbc42543234679b1fb787fae857ba2d01f96f935085cfaf1ad"
   }
 }

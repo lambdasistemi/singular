@@ -145,7 +145,11 @@
       "pause": 400
     },
     {
-      "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. That bundle then dies by expiry, and the way out is to rebuild it after the expiry.",
+      "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs.",
+      "pause": 400
+    },
+    {
+      "text": "A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an open-datum insert, update or terminate without --fold and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with --seed, as When a bundle waits for signatures says; for the others, --state-dir naming another state directory, which starts a fresh journal for that registry and wallet.",
       "pause": 400
     }
   ],
@@ -417,6 +421,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "b6c1601ec8520791732ff3a7d98a4ced44f4e636319b3f6b5699ad2d3003f2b0"
+    "sha256": "2c3771663647fe745652f41beaaeb4d92eb82403b2a669bccf9c5e130192f911"
   }
 }

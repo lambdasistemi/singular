@@ -2594,8 +2594,8 @@
     "index": 1,
     "name": "docs-consumer-onboarding/make-a-wallet-and-fund-it-01",
     "pause_ms": 400,
-    "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address; the passphrase is typed once, or read from --passphrase-fd FD in a script. singular wallet address prints the same address again from the vault.",
-    "v": "c730f06e71b5"
+    "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd FD supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
+    "v": "56ba0dbedb9c"
    },
    {
     "index": 2,
@@ -9601,8 +9601,15 @@
     "index": 5,
     "name": "docs-singular-node/what-each-receipt-says-05",
     "pause_ms": 400,
-    "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. That bundle then dies by expiry, and the way out is to rebuild it after the expiry.",
-    "v": "c95b50eb722f"
+    "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs.",
+    "v": "53b9857ffaae"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/what-each-receipt-says-06",
+    "pause_ms": 400,
+    "text": "A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an open-datum insert, update or terminate without --fold and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with --seed, as When a bundle waits for signatures says; for the others, --state-dir naming another state directory, which starts a fresh journal for that registry and wallet.",
+    "v": "3fd5726903d3"
    }
   ],
   "when-the-provider-cannot-be-used": [

@@ -75,9 +75,10 @@ the command the create receipt printed.
 
 Make a wallet with `singular wallet create`, giving `--network-magic 1` for
 preprod. It seals a fresh signing key in an encrypted vault and prints the
-wallet's address; the passphrase is typed once, or read from `--passphrase-fd FD`
-in a script. `singular wallet address` prints the same address again from the
-vault.
+wallet's address. At a terminal it asks for the passphrase twice, an entry and a
+confirmation, and refuses a confirmation that differs; in a script,
+`--passphrase-fd FD` supplies it as one line read once. `singular wallet address`
+asks once, and prints the same address again from the vault.
 
 Fund that address from the preprod faucet so that it holds ordinary outputs,
 including an ada-only collateral output. A funded balance alone is insufficient
