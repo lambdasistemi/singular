@@ -288,7 +288,7 @@ runCreate app env a = do
                         pure $ case publicationFunding
                             pp
                             seedIn
-                            (bootCostBound pp carrier)
+                            (bootCostBound pp cfg carrier)
                             beforeBoot
                             (laterScripts cfg pinned (TokenId (snd token)))
                             utxos of
@@ -448,7 +448,7 @@ createWith app env a rel ws = do
                     pure $ case publicationFunding
                         pp
                         seedIn
-                        (bootCostBound pp carrier)
+                        (bootCostBound pp cfg carrier)
                         beforeBoot
                         (laterScripts cfg pinned (TokenId (snd token)))
                         utxos of
@@ -592,7 +592,7 @@ createWith app env a rel ws = do
                     ( publicationFunding
                         pp
                         seedIn
-                        (bootCostBound pp carrier)
+                        (bootCostBound pp cfg carrier)
                         beforeBoot
                         (laterScripts cfg pinned (TokenId (snd token)))
                         freshUtxos
@@ -1073,7 +1073,7 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
                         , mkBasicTxOut addr (MaryValue (Coin 0) mempty)
                             & referenceScriptTxOutL .~ SJust stateScript
                         )
-                    bootCostDummy = bootCostBound pp dummyCarrier
+                    bootCostDummy = bootCostBound pp cfgDummy dummyCarrier
                     refCoinsDummy =
                         [ publicationRefCoin pp addr script
                         | (_, script) <- ("state", stateScript) : laterDummy

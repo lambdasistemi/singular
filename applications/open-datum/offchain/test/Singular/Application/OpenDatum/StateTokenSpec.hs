@@ -310,7 +310,7 @@ funding = describe "a create's publication funding" $ do
             publicationFunding
                 preprodParams
                 seedIn
-                (bootCostBound preprodParams reusedCarrier)
+                (bootCostBound preprodParams bootCfg reusedCarrier)
     it "is accepted when the real create can fund every publication" $ do
         let funded = walletOf [400_000_000]
         createAll Nothing beforeBoot laterScripts funded
