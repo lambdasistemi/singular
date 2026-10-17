@@ -12,7 +12,7 @@ Base: issue 641's external-signer flags (head `5b18caea`). open-datum's parser s
 
 ### Slice 2: external mode
 
-Base: issue 641's staging checkpoint (its slice 2b), and its create chain (its slice 3) for create. Mostly rows: insert, update, terminate and fold, alone and with the fold, each end in one bundle and status 19; refusals write no bundle; a pending bundle stops the next write. Code only where open-datum states a staged fact as done: its own receipt fields under expected and its own narration events marked staged, unless issue 641's mechanism already covers them. Create's rows and usage join when the registry's create stages.
+Base: issue 641's staging checkpoint (its slice 2b), and its create chain (its slice 3) for create. Mostly rows: insert, update, terminate and fold, alone and with the fold, each end in one bundle and status 19; refusals write no bundle. Code only where open-datum states a staged fact as done: its own receipt fields under expected and its own narration events marked staged, unless issue 641's mechanism already covers them. Create's rows and usage join when the registry's create stages (issue 641 slice 3); the row that a pending bundle stops the next open-datum write joins when issue 641's journal phase lands (its slice 4), since admission of a pending bundle is that phase's.
 
 ### Slice 3: vault mode
 

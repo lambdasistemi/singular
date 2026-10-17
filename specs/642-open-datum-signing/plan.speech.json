@@ -19,7 +19,7 @@
   ],
   "slice-2-external-mode": [
     {
-      "text": "Slice two: each write ends in one bundle and status 19, refusals write no bundle, and open-datum states its own staged fields as expected.",
+      "text": "Slice two: each write ends in one bundle and status 19, refusals write no bundle, and open-datum states its own staged fields as expected. Create joins when the registry create stages, and the pending bundle row when the journal phase lands.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "4d61e9e0688c1e8e1ffe23fff6a305f5940a15b0e482bccfba4e1e7a968bb9ca"
+    "sha256": "c8e47e4d47e19697412f81255790f0382b51a209e60610e4bd61275f5806e74d"
   }
 }

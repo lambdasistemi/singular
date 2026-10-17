@@ -13,7 +13,7 @@
   ],
   "slice-external-mode": [
     {
-      "text": "External mode: staged writes, the staged receipt, and create once the registry create stages.",
+      "text": "External mode: staged writes, the staged receipt, create once the registry create stages, and the pending bundle once the journal phase lands.",
       "pause": 500
     }
   ],
@@ -37,6 +37,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "5d416cf4df51bca0ba2aa06659c2cd502bf75eca7aab417f8396b07c6c154379"
+    "sha256": "872aeab643f0557268579d3eecc31aa82363da7024b0dcbd7f51ebec17fd3cb7"
   }
 }
