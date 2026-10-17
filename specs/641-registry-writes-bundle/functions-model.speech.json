@@ -1,0 +1,60 @@
+{
+  "functions-for-registry-writes-that-end-in-a-bundle": [
+    {
+      "text": "Names, argument names and result types only, with no bodies.",
+      "pause": 500
+    }
+  ],
+  "chained-view-module": [
+    {
+      "text": "The chained view module answers a query, an asset history and a mint record as if the staged transactions had landed, and builds the session that serves those answers over a real one. The history is numbered after the held view's tip height and honours the read's range, as a list and as a stream.",
+      "pause": 500
+    }
+  ],
+  "write-session-module": [
+    {
+      "text": "The write session keeps its signature; the write settings carry the signer. A pure function assembles the bundle of a staged run.",
+      "pause": 500
+    }
+  ],
+  "receipt-module": [
+    {
+      "text": "The receipt module journals the waiting lines with the saved bundle and bodies, and computes the members and the bundle states from the journal, purely.",
+      "pause": 500
+    }
+  ],
+  "reconciliation-module": [
+    {
+      "text": "The reconciliation reads the inclusion of unsettled members and the tip, appends landed and dead lines, and admission stops on a pending bundle with status 19.",
+      "pause": 500
+    }
+  ],
+  "submit-command-module": [
+    {
+      "text": "The submit core takes a bundle, its bytes and the witnesses in memory; the file front reads the files and calls it.",
+      "pause": 500
+    }
+  ],
+  "sign-command-module": [
+    {
+      "text": "A pure function gives the detached witness of every transaction of a checked bundle.",
+      "pause": 500
+    }
+  ],
+  "flag-group-module": [
+    {
+      "text": "The shared write reader keeps its arguments; the write settings it builds now carry the signer read from the flags in place of the key-file path.",
+      "pause": 500
+    }
+  ],
+  "managed-state-module": [
+    {
+      "text": "The partition is resolved from a key file, an address or a vault, by payment key hash.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "14dcd93e53f3d990406c47fe664503995e9db13875d919e24e085232ad86ae12"
+  }
+}

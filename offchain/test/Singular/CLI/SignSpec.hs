@@ -77,10 +77,12 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
+    , FoldArgs (..)
     , SignArgs (..)
+    , WriteSettings (..)
     , parseCommand
     )
-import Singular.CLI.FlagGroup (commonFlagGroup)
+import Singular.CLI.FlagGroup (Signer (..), commonFlagGroup)
 import Singular.CLI.Passphrase
     ( PassphraseSource (..)
     , mkPassphrase
@@ -192,10 +194,10 @@ theCommandLine = describe "the command line" $ do
             ] of
             Left (BadValue "--network-magic" _) -> pure ()
             other -> expectationFailure ("--network-magic was taken: " <> show other)
-    it "refuses the wallet vault flag on a registry command" $
-        case parseCommand ["registry", "fold", "--vault", "x"] of
-            Left (BadValue "--vault" _) -> pure ()
-            other -> expectationFailure ("--vault was taken: " <> show other)
+    it "takes the wallet vault flag on a registry write, as its signer" $
+        case parseCommand (vaultFoldLine ["--vault", "x"]) of
+            Right (Fold a) -> writeSigner (foldWrite a) `shouldBe` SignerVault "x" Nothing
+            other -> expectationFailure ("--vault was not taken: " <> show other)
     it "refuses the output directory outside wallet sign" $
         case parseCommand ["wallet", "create", "--out", "d", "--vault", "v"] of
             Left (BadValue flag why) -> do
@@ -235,6 +237,19 @@ thePureCore = describe "the pure core" $ do
                     key
                     (bodyIdentity (envelopeBody tx))
                     `shouldBe` True
+    it
+        "gives an in-memory bundle the witnesses wallet sign writes, in order"
+        $ do
+            key <- freshSignKey
+            let bundle = bundleWithSigners [Text.pack (vaultAddressOf key)]
+            bundleWitnesses bundle key
+                `shouldBe` Right (map (decodedWitness . plannedBytes) (thePlan bundle key))
+    it "refuses an in-memory bundle the vault's key is not a signer of" $ do
+        key <- freshSignKey
+        other <- freshSignKey
+        let bundle = bundleWithSigners [Text.pack (vaultAddressOf other)]
+        bundleWitnesses bundle key
+            `shouldBe` Left (SignVaultNotAmongSigners (vaultAddressOf key))
     it "summarises identity, deadline, signers and effects" $ do
         key <- freshSignKey
         let bundle = bundleWithSigners [Text.pack (vaultAddressOf key)]
@@ -593,3 +608,19 @@ secretSpellings key =
     ]
   where
     raw = rawSerialiseSignKeyDSIGN key
+
+-- | A registry fold line complete but for its signer, which the probe names.
+vaultFoldLine :: [String] -> [String]
+vaultFoldLine signer =
+    [ "registry"
+    , "fold"
+    , "--blueprint"
+    , "blueprint.json"
+    , "--state-token"
+    , replicate 56 'a' <> "." <> replicate 64 'b'
+    , "--koios-url"
+    , "https://koios.example"
+    , "--network-magic"
+    , "1"
+    ]
+        <> signer

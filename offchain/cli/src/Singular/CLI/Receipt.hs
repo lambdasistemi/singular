@@ -51,10 +51,18 @@ module Singular.CLI.Receipt
     , foldScalarsAgree
     , journalPath
     , appendJournal
+    , journalWaitingForSignatures
+    , BundleState (..)
+    , bundleMembers
+    , bundleStates
+    , pendingBundles
+    , unjudgedMembers
+    , nonMemberLines
     , readJournal
     , unresolved
     , bodiesDir
     , durableWrite
+    , syncDirectory
 
       -- * The case each submission met
     , SubmissionCase (..)
@@ -68,18 +76,24 @@ module Singular.CLI.Receipt
     ) where
 
 import Control.Exception (ErrorCall (..), bracket, throwIO)
+import Control.Monad (forM_)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Aeson qualified as Aeson
 import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
+import Data.Foldable (toList)
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Word (Word32)
 import GHC.Generics (Generic)
-import System.Directory (doesFileExist)
+import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.Exit (ExitCode (..))
 import System.FilePath (takeDirectory, (</>))
 import System.Posix.IO
@@ -92,6 +106,14 @@ import System.Posix.IO
 import System.Posix.IO.ByteString (fdWrite)
 import System.Posix.Unistd (fileSynchronise)
 
+import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
+import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
+
+import Singular.Registry.Bundle
+    ( Bundle (..)
+    , BundleTransaction (..)
+    , TextEnvelope (..)
+    )
 import Singular.Registry.Trace (isoNow)
 
 -- | One journal line: one phase of one submission.
@@ -101,7 +123,8 @@ data JournalEntry = JournalEntry
     , journalTxId :: Text
     , journalEvent :: Text
     {- ^ @prepared@, @submitted@, @rejected@, @submit-unknown@,
-    @confirmed@, @unconfirmed@, @observed@, @rolled-back@ or @excluded@
+    @confirmed@, @unconfirmed@, @observed@, @rolled-back@,
+    @excluded@ or @waiting-for-signatures@
     -}
     , journalDetail :: Maybe Text
     , journalInputs :: Maybe [Text]
@@ -109,15 +132,19 @@ data JournalEntry = JournalEntry
     @rolled-back@ and @excluded@: those of them found live
     -}
     , journalBody :: Maybe FilePath
-    -- ^ At @prepared@: where the signed transaction's CBOR is saved
+    {- ^ At @prepared@ and @waiting-for-signatures@: where the
+    transaction's CBOR is saved
+    -}
     , journalBodyHash :: Maybe Text
-    -- ^ At @prepared@: BLAKE2b-256 of those saved bytes
+    {- ^ At @prepared@ and @waiting-for-signatures@: BLAKE2b-256 of those
+    saved bytes
+    -}
     , journalNetwork :: Maybe Word32
-    {- ^ At @prepared@: the network magic of the view the body was
-    built from
+    {- ^ At @prepared@ and @waiting-for-signatures@: the network magic of
+    the view the body was built from
     -}
     , journalEra :: Maybe Text
-    -- ^ At @prepared@: the era of that view
+    -- ^ At @prepared@ and @waiting-for-signatures@: the era of that view
     , journalChainPoint :: Maybe Text
     {- ^ At @prepared@: that view's chain point, @slot.headerhash@. At
     @rolled-back@ and @excluded@: the chain point the evidence was read at
@@ -296,6 +323,69 @@ syncDirectory :: FilePath -> IO ()
 syncDirectory dir =
     bracket (openFd dir ReadOnly defaultFileFlags) closeFd fileSynchronise
 
+{- | The producer half of the journal phase for a staged run: save the
+bundle's own bytes beside the journal under its hash, save every body as a
+prepared body is saved (hex text, hashed over its raw bytes), then append
+one waiting-for-signatures line per transaction — the step, the identity,
+the bundle's hash in the detail, the saved body's path and hash, the
+network and the era. Nothing is signed or sent; the consumer that settles
+these lines is the journal phase of the bundle ticket.
+-}
+journalWaitingForSignatures
+    :: FilePath
+    -- ^ the journal's directory
+    -> Word32
+    -- ^ the network the run built for
+    -> BS.ByteString
+    -- ^ the bundle's own bytes
+    -> Bundle
+    -> [(Text, Text)]
+    -- ^ each transaction's step and identity, in build order
+    -> IO ()
+journalWaitingForSignatures dir magic bytes bundle steps = do
+    createDirectoryIfMissing True (bodiesDir dir)
+    let bundleHash = hashOfBundle bytes
+        saved = bodiesDir dir </> ("bundle-" <> T.unpack bundleHash <> ".bundle")
+    durableWrite saved bytes
+    forM_ (zip steps (toList (bundleTransactions bundle))) $ \((step, identity), entry) -> do
+        let bodyPath = bodiesDir dir </> T.unpack identity <> ".cbor.hex"
+        raw <-
+            either
+                (\why -> throwIO (ErrorCall ("a bundle envelope is not hex: " <> why)))
+                pure
+                (B16.decode (TE.encodeUtf8 (envelopeCborHex (bundleTxEnvelope entry))))
+        durableWrite bodyPath (B16.encode raw)
+        appendJournal
+            dir
+            (waitingEntry step identity bundleHash bodyPath (hashOfBundle raw))
+  where
+    hashOfBundle raw =
+        T.pack
+            (BC.unpack (B16.encode (hashToBytes (hashWith @Blake2b_256 id raw))))
+    waitingEntry step identity bundleHash bodyPath bodyHash =
+        JournalEntry
+            { journalCommand = bundleCommand bundle
+            , journalStep = step
+            , journalTxId = identity
+            , journalEvent = "waiting-for-signatures"
+            , journalDetail = Just bundleHash
+            , journalInputs = Nothing
+            , journalBody = Just bodyPath
+            , journalBodyHash = Just bodyHash
+            , journalNetwork = Just magic
+            , journalEra = Just "Conway"
+            , journalChainPoint = Nothing
+            , journalSession = Nothing
+            , journalObservedTip = Nothing
+            , journalKey = Nothing
+            , journalExpect = Nothing
+            , journalEdge = Nothing
+            , journalRootBefore = Nothing
+            , journalRootAfter = Nothing
+            , journalTransitions = Nothing
+            , journalTime = Nothing
+            }
+
 -- | Every line, in the order it was appended; a missing journal is empty.
 readJournal :: FilePath -> IO [JournalEntry]
 readJournal dir = do
@@ -314,7 +404,8 @@ readJournal dir = do
             (Aeson.eitherDecodeStrict' l)
 
 {- | The latest line of the first transaction whose last phase does not
-settle it, if any.
+settle it, if any. A bundle member is never selected: it is judged only by
+its bundle's state.
 -}
 unresolved :: [JournalEntry] -> Maybe JournalEntry
 unresolved entries =
@@ -326,8 +417,18 @@ unresolved entries =
         [] -> Nothing
   where
     settled = ["observed", "rejected", "excluded"]
-    txIds = nub (map journalTxId entries)
-    lastOf t = last [e | e <- entries, journalTxId e == t]
+    own = nonMemberLines entries
+    txIds = nub (map journalTxId own)
+    lastOf t = last [e | e <- own, journalTxId e == t]
+
+{- | The lines of the transactions no bundle names: what the per-transaction
+reconciliation of the key-file path reads. A member's lines, of any phase,
+belong to its bundle for its whole life. Pure.
+-}
+nonMemberLines :: [JournalEntry] -> [JournalEntry]
+nonMemberLines entries = [e | e <- entries, journalTxId e `notElem` ids]
+  where
+    ids = map fst (bundleMembers entries)
 
 -- | The journal's directory of saved signed bodies.
 bodiesDir :: FilePath -> FilePath
@@ -397,6 +498,7 @@ data OutcomeClass
     | ConcurrentWriter
     | ProofMissing
     | ProofInconsistent
+    | WaitingForSignatures
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | The class as a receipt names it.
@@ -412,6 +514,7 @@ outcomeName = \case
     ConcurrentWriter -> "concurrent-writer"
     ProofMissing -> "proof-missing"
     ProofInconsistent -> "proof-inconsistent"
+    WaitingForSignatures -> "waiting-for-signatures"
 
 -- | The exit status of each class; 2 stays the command line's own.
 exitCodeOf :: OutcomeClass -> ExitCode
@@ -426,3 +529,79 @@ exitCodeOf = \case
     ConcurrentWriter -> ExitFailure 16
     ProofMissing -> ExitFailure 17
     ProofInconsistent -> ExitFailure 18
+    WaitingForSignatures -> ExitFailure 19
+
+{- | One bundle's state, as admission and the report both read it: pending
+with the members still awaited, in the order the bundle holds them; landed
+when every member is found on chain; dead with the reason, the members that
+died and the members that went through.
+-}
+data BundleState
+    = BundlePending [Text]
+    | BundleLanded
+    | BundleDead Text [Text] [Text]
+    deriving stock (Eq, Show)
+
+{- | Every identity a waiting line names, with its bundle's hash, in the
+order the waiting lines name them: a member of that bundle in every later
+line. Pure.
+-}
+bundleMembers :: [JournalEntry] -> [(Text, Text)]
+bundleMembers entries =
+    nub
+        [ (journalTxId e, h)
+        | e <- entries
+        , journalEvent e == "waiting-for-signatures"
+        , Just h <- [journalDetail e]
+        ]
+
+-- | Each bundle hash in the journal with its state, by the journal phase's rules. Pure.
+bundleStates :: [JournalEntry] -> [(Text, BundleState)]
+bundleStates entries =
+    [ (h, stateOf [m | (m, h') <- members, h' == h])
+    | h <- nub (map snd members)
+    ]
+  where
+    members = bundleMembers entries
+    linesOf event m = [e | e <- entries, journalTxId e == m, journalEvent e == event]
+    landed m = not (null (linesOf "landed" m))
+    stateOf ms =
+        let notLanded = filter (not . landed) ms
+            deadLines =
+                [ e
+                | e <- entries
+                , journalEvent e == "dead"
+                , journalTxId e `elem` ms
+                ]
+        in  case deadLines of
+                first : _ ->
+                    BundleDead
+                        (fromMaybe "" (journalDetail first))
+                        notLanded
+                        (filter landed ms)
+                []
+                    | null notLanded -> BundleLanded
+                    | otherwise -> BundlePending notLanded
+
+-- | The bundles admission stops on and the report names as pending.
+pendingBundles :: [(Text, BundleState)] -> [(Text, [Text])]
+pendingBundles states = [(h, awaited) | (h, BundlePending awaited) <- states]
+
+{- | The members a reconciliation still has to judge, by bundle: every
+member a pending bundle awaits, and every member of a dead bundle with
+neither a landed nor a dead line, which a run stopped while appending its
+dead lines leaves behind. A landed bundle, and a dead one whose members all
+have their line, have none. Pure.
+-}
+unjudgedMembers :: [JournalEntry] -> [(Text, [Text])]
+unjudgedMembers entries =
+    [ (h, ms)
+    | (h, st) <- bundleStates entries
+    , let ms = case st of
+            BundlePending awaited -> awaited
+            BundleDead _ died _ -> filter (`notElem` deadIds) died
+            BundleLanded -> []
+    , not (null ms)
+    ]
+  where
+    deadIds = [journalTxId e | e <- entries, journalEvent e == "dead"]

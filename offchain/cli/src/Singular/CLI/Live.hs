@@ -83,11 +83,11 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.CLI.Command (RegistryAccess (..))
+import Singular.CLI.Failure (failWith, failWithFields)
 import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
 import Singular.CLI.Receipt qualified as Receipt
 import Singular.CLI.Registry (Release (..), hexT)
-import Singular.CLI.Session (failWith, failWithFields)
 import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Application
     ( Application (..)

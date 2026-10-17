@@ -26,6 +26,7 @@ module Singular.CLI.Sign
     , renderSignRefusal
     , PlannedWitness (..)
     , witnessPlan
+    , bundleWitnesses
     , signBundle
     ) where
 
@@ -161,6 +162,28 @@ witnessPlan
     -> Either SignRefusal [PlannedWitness]
 witnessPlan bytes key = do
     bundle <- first SignBundle (decodeBundle bytes)
+    witnesses <- bundleWitnesses bundle key
+    pure
+        [ PlannedWitness
+            { plannedPath = hexText (bundleTxIdentity tx) <> ".witness"
+            , plannedBytes = encodeTextEnvelope (witnessEnvelope witness)
+            , plannedSummary = summaryOf bundle tx
+            }
+        | (tx, witness) <- zip (toList (bundleTransactions bundle)) witnesses
+        ]
+
+{- | The detached witness of every transaction of a checked, in-memory
+bundle for the vault's key, in the bundle's order, or the first named
+refusal: the bundle is checked, the vault's address is derived for the
+bundle's network and must be among the signers, and each body's witness
+is signed over its own hash. The witnesses @wallet sign@ writes, and the
+ones the vault mode sends without a file. Pure.
+-}
+bundleWitnesses
+    :: Bundle
+    -> SignKeyDSIGN Ed25519DSIGN
+    -> Either SignRefusal [DetachedWitness]
+bundleWitnesses bundle key = do
     first SignBundle (checkBundle bundle)
     let address = vaultAddress (bundleNetworkMagic bundle) key
     unless
@@ -173,15 +196,7 @@ witnessPlan bytes key = do
                     ( SignBundle
                         (BundleEnvelopeUndecodable (hexText (bundleTxIdentity tx)))
                     )
-            Right transaction -> do
-                let witness = detachedWitness key transaction
-                pure
-                    PlannedWitness
-                        { plannedPath = hexText (bundleTxIdentity tx) <> ".witness"
-                        , plannedBytes =
-                            encodeTextEnvelope (witnessEnvelope (witnessData witness))
-                        , plannedSummary = summaryOf bundle tx
-                        }
+            Right transaction -> pure (witnessData (detachedWitness key transaction))
 
 -- | The witness as the envelope's data: the key and signature bytes.
 witnessData :: WitVKey Witness -> DetachedWitness

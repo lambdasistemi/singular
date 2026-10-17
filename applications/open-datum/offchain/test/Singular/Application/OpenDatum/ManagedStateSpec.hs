@@ -39,6 +39,7 @@ import Singular.Application.OpenDatum.Command
     , CreateArgs (..)
     , EntryMode (..)
     , ProviderSettings (..)
+    , Signer (..)
     , WriteSettings (..)
     , openDatumUsage
     , parseOpenDatumCommand
@@ -338,7 +339,7 @@ noWeakening = describe "no refusal is weakened" $ do
                                 , providerTokenFile = Nothing
                                 , providerTimeDirectory = Nothing
                                 }
-                        , writeWalletKey = keyPath
+                        , writeSigner = SignerKeyFile keyPath
                         , writeConfirmTimeout = Nothing
                         }
             , createSeed = Just (T.unpack (txInText seedIn))
@@ -357,7 +358,7 @@ noWeakening = describe "no refusal is weakened" $ do
                     fail
                         "the early existing-state refusal must fire before any chain read"
             , envWrites =
-                \_ _ _ ->
+                \_ _ ->
                     fail
                         "the early existing-state refusal must fire before any chain write"
             }

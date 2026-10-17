@@ -198,6 +198,7 @@ library registry-cli
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Describe
+    Singular.CLI.Failure
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
     Singular.CLI.Fold
@@ -276,6 +277,7 @@ library local-services
   other-modules:    Paths_singular_registry
   exposed-modules:
     Singular.Registry.Bundle
+    Singular.Registry.ChainedView
     Singular.Registry.Evidence
     Singular.Registry.Ledger
     Singular.Registry.LedgerProvider
@@ -1001,6 +1003,7 @@ test-suite cage-tests
     Singular.Registry.BundleSpec
     Singular.Registry.SubmitSpec
     Singular.Registry.CandidateSpec
+    Singular.Registry.ChainedViewSpec
     Singular.Registry.ContractMemory
     Singular.Registry.ContractSuite
     Singular.Registry.DeploymentSpec
@@ -1352,6 +1355,22 @@ executable singular
   build-depends:
     , base                              >=4.14 && <5
     , singular-registry
+    , singular-registry:registry-cli
+
+  ghc-options:      -threaded -with-rtsopts=-N
+
+-- A test-harness tool for the packaged controls, never evidence: seals a
+-- devnet key file into a wallet vault with the production sealing.
+executable vault-seal
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   test/vault-seal
+  main-is:          Main.hs
+
+  build-depends:
+    , base                              >=4.14 && <5
+    , bytestring
+    , singular-registry:local-services
     , singular-registry:registry-cli
 
   ghc-options:      -threaded -with-rtsopts=-N

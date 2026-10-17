@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- | Signed journal bodies bound by byte hash and derived transaction id.
-module Singular.CLI.ReceiptBody (boundBody, txIdHexOf) where
+module Singular.CLI.ReceiptBody (boundBody, waitingBody, txIdHexOf) where
 
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class (hashToBytes, hashWith)
@@ -33,29 +33,8 @@ boundBody
     -> Text
     -> IO (Maybe JournalEntry, Either Text ConwayTx)
 boundBody entries txid = case prepared of
-    Just p
-        | Just path <- journalBody p
-        , Just wantHash <- journalBodyHash p -> do
-            stored <- try (BS.readFile path)
-            pure . (prepared,) $ case stored of
-                Left (_ :: IOException) -> Left "the saved body is missing"
-                Right hexBytes -> case B16.decode (BC.filter (not . isSpace) hexBytes) of
-                    Left _ -> Left "the saved body is not hex"
-                    Right raw
-                        | hexT (hashToBytes (hashWith @Blake2b_256 id raw)) /= wantHash ->
-                            Left "the saved body's hash differs from its prepared line"
-                        | otherwise ->
-                            case decodeFullAnnotator
-                                (eraProtVerHigh @ConwayEra)
-                                "transaction"
-                                decCBOR
-                                (BL.fromStrict raw) of
-                                Left _ -> Left "the saved body does not decode"
-                                Right (tx :: ConwayTx)
-                                    | txIdHexOf tx /= txid ->
-                                        Left "the saved body is another transaction"
-                                    | otherwise -> Right tx
-    _ -> pure (prepared, Left "no prepared line names a saved body")
+    Just p -> (prepared,) <$> savedBodyOf "prepared" p txid
+    Nothing -> pure (prepared, Left "no prepared line names a saved body")
   where
     prepared =
         listToMaybe
@@ -64,6 +43,48 @@ boundBody entries txid = case prepared of
             , journalTxId p == txid
             , journalEvent p == "prepared"
             ]
+
+{- | A bundle member's saved unsigned body, bound to its
+@waiting-for-signatures@ line by byte hash and derived id, or why it is not.
+-}
+waitingBody :: [JournalEntry] -> Text -> IO (Either Text ConwayTx)
+waitingBody entries txid = case waiting of
+    Just w -> savedBodyOf "waiting" w txid
+    Nothing -> pure (Left "no waiting line names a saved body")
+  where
+    waiting =
+        listToMaybe
+            [ w
+            | w <- entries
+            , journalTxId w == txid
+            , journalEvent w == "waiting-for-signatures"
+            ]
+
+-- | The body a line saved, checked against its hash and the identity asked.
+savedBodyOf
+    :: Text -> JournalEntry -> Text -> IO (Either Text ConwayTx)
+savedBodyOf kind line txid = case (journalBody line, journalBodyHash line) of
+    (Just path, Just wantHash) -> do
+        stored <- try (BS.readFile path)
+        pure $ case stored of
+            Left (_ :: IOException) -> Left "the saved body is missing"
+            Right hexBytes -> case B16.decode (BC.filter (not . isSpace) hexBytes) of
+                Left _ -> Left "the saved body is not hex"
+                Right raw
+                    | hexT (hashToBytes (hashWith @Blake2b_256 id raw)) /= wantHash ->
+                        Left ("the saved body's hash differs from its " <> kind <> " line")
+                    | otherwise ->
+                        case decodeFullAnnotator
+                            (eraProtVerHigh @ConwayEra)
+                            "transaction"
+                            decCBOR
+                            (BL.fromStrict raw) of
+                            Left _ -> Left "the saved body does not decode"
+                            Right (tx :: ConwayTx)
+                                | txIdHexOf tx /= txid ->
+                                    Left "the saved body is another transaction"
+                                | otherwise -> Right tx
+    _ -> pure (Left ("no " <> kind <> " line names a saved body"))
 
 txIdHexOf :: ConwayTx -> Text
 txIdHexOf tx = let TxId h = txIdTx tx in hexT (hashToBytes (extractHash h))

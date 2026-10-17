@@ -1,0 +1,36 @@
+{
+  "plan-for-registry-writes-that-end-in-a-bundle": [
+    {
+      "text": "Issue 641. One pull request, six slices of at most about ninety minutes of writing each, approved by the M1 desk on 16 October 2026.",
+      "pause": 500
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Two staged signer modes beside the unchanged key-file path. One bundle per run through a chained view, so the commands' code and the funding preparation stay unchanged. Readbacks become effect claims, and receipts state as fact only what landed. A new outcome, waiting for signatures, status 19. The journal phase as the spec states it. The vault calls the core of singular submit. Deadlines unchanged. Hosted evidence in the focused suite, the documented-flags job and one new packaged devnet job on the required list. Lean is silent, and nothing on chain changes.",
+      "pause": 500
+    }
+  ],
+  "what-this-ticket-takes-from-issue-640": [
+    {
+      "text": "Rebound to the merged interface of issue 640: the session's inclusion read, found at a chain point with confirmations or not on chain; the assembly export, which replaces the whole key-witness set; the planner; and the file-reading front of singular submit, whose core slice five separates. The chained view passes the inclusion read through to the chain, because a staged transaction is not on chain and no builder reads it while staging.",
+      "pause": 500
+    }
+  ],
+  "slices": [
+    {
+      "text": "Six slices: the chained view; staging and the external signer for fold, reject and reclaim; create's chain; the journal phase; the vault mode; the packaged devnet control and the documentation.",
+      "pause": 500
+    }
+  ],
+  "gate": [
+    {
+      "text": "The gate is the existing hosted commands, narrowed to what each slice can break and run in a bounded scope: the focused suite, lint, the component build, the repository lint, the IO-ownership inventory, the narration check, the documented-flags check, the vault controls and the build graph. The last slice adds the packaged devnet control. The aggregate local CI runs once on the final candidate.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "645ebad9c2c5915d807c296752c6adfd5d3e893b99fa420520afde0a70b5d7d7"
+  }
+}

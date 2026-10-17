@@ -30,7 +30,8 @@ no coherent chain snapshot and carries no verification witness.
 | `--state-dir ROOT` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. |
 | `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect`, `describe` | The registry, by its state token: the policy and the name in hex, as `create` prints it. Read from `SINGULAR_STATE_TOKEN` when the flag is absent; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
 | `--blueprint PLUTUS_JSON` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
-| `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate`, `inspect` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. On `inspect` it locates the managed journal that address's wallet reconciles, with the same lock-or-skip semantics as a write; without it `inspect` is a stateless chain read that checks no wallet journal and creates no state. |
+| `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate`, `inspect`, `singular fold`, `singular reclaim`, `singular reject` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. On `inspect` it locates the managed journal that address's wallet reconciles, with the same lock-or-skip semantics as a write; without it `inspect` is a stateless chain read that checks no wallet journal and creates no state. On `singular create`, `singular fold`, `singular reclaim` and `singular reject` it names an external signer in place of the signing key, together with `--bundle`: the address must be bech32 and pay a key, so a script or bootstrap address is refused, naming it, and so is `--wallet-skey` beside it, because a write takes exactly one signer. |
+| `--bundle FILE` | `singular create`, `singular fold`, `singular reclaim`, `singular reject` | The new file an external signer's run is written to: one bundle of unsigned transactions for `singular wallet sign`. It goes with `--wallet-address`: either one alone is refused, a preview refuses it, and an existing path is refused with its bytes untouched. The command builds its whole run as that one bundle (for create its whole chain: the state publication when no carrier is live, the boot, the request, the witness publications and the pinned application publication; otherwise the preparation when its funding needs one, then its own transaction spending it), signs and sends nothing, saves the bundle and each unsigned body beside the journal with one `waiting-for-signatures` line per transaction, and ends with the outcome `waiting-for-signatures`, exit status 19. Its receipt names the bundle (its hash, the written and saved paths, the signer, and per transaction its step, identity, deadline and effects) and states the command's own fields under `expected`, because nothing has landed yet. A create bundle names no state token and carries no deadline, and create keeps its pending identity recorded, so the token the bundle will mint is never lost. |
 | `--seed TXID#IX` or `--preview` | `create` | The output the new registry is booted from, which fixes its identity: your wallet's largest ada-only output when a live state carrier exists, or the first publication's change when the state script must be published (preview names it before anything is submitted). An explicit `--seed` names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused — omit `--seed` and the first publication's change becomes the seed. |
 | `--closed` | `open-datum create` | Boot a closed-datum registry whose payload is written once. The receipt names the application `open_datum.closed_datum`. Every later command follows the registry's mode with no further flag, and an update on a closed registry stops before anything is built or signed, saying the registry is closed. |
 | `--preview` | `insert`, `update`, `terminate` | Build and measure what the command would submit — fee, measured units, stated collateral, outlay — from the wallet a public address names, and print it; nothing is signed, submitted or journalled. |
@@ -44,8 +45,8 @@ no coherent chain snapshot and carries no verification witness.
 | `--payload DATUM_JSON` | `insert`, `update` | The key's payload, a datum in detailed-schema JSON. `insert` makes it the key's first value: the command builds the protected control itself, from the registry's state asset and active policy, the key, the signing wallet's payment key hash as controller (the public address's on a preview) and the deposit. `update` replaces the payload; the protected control stays as it was. A file that is not Plutus data is refused: by `insert`, in either mode, before anything is read from the provider; by `update`, before anything is signed or submitted. |
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
 | `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `singular submit`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
-| `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. |
-| `--passphrase-fd FD` | `singular wallet create`, `singular wallet address`, `singular wallet sign` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. The passphrase itself is never taken as an argument, and no output, refusal or trace names it. |
+| `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. On `singular create`, `singular fold`, `singular reclaim` and `singular reject` it names the signer in place of the signing key: the command opens the vault once, before anything else is read, builds the same bundle an external signer's run writes for the vault's address, signs every transaction from the vault and sends them in order as `singular submit` does. When every one has landed, each is journalled landed and the receipt states the command's fields as fact. When the node refuses one, the bundle is journalled dead and the run ends as a ledger refusal naming what went through. An uncertain answer ends the run partial, and the next run settles the bundle by identity. A wrong passphrase or an unreadable vault is refused, naming the vault, and so is `--wallet-skey` or `--wallet-address` beside it, because a write takes exactly one signer. |
+| `--passphrase-fd FD` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. |
 | `--out DIR` | `singular wallet sign` | Where the witness files go: one file per transaction of the bundle, each named by its transaction's identity with `.witness` appended and created exclusively — an existing file is refused with its bytes untouched. The directory is made when absent; the bundle's own directory when not given. |
 | `--witnesses FILE` | `singular submit` | A witness file `singular wallet sign` wrote, or a directory standing for the `.witness` files it holds; give it once per file or directory. Each witness is matched to its transaction by its signature, never by its file name. |
 | `--json` | `singular describe` | Print the registry page as JSON for a program to read; without it the page prints as text for a person. A success prints the page alone and writes no file. |
@@ -53,7 +54,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
 | `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
 
-The URL, network magic and signing key travel together on a write: naming only some of
+The URL, network magic and one signer (the signing key, or on `singular create`, `singular fold`, `singular reclaim` and `singular reject` an address with its bundle file) travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
 chain that dies with the process could not be attached to again. The
@@ -133,6 +134,8 @@ output and a short summary of what I signed on standard error:
 singular wallet sign --vault bob.vault bundle.json
 singular wallet sign --vault bob.vault --passphrase-fd 9 --out witnesses bundle.json
 ```
+
+The writer's side is a `singular registry create`, `fold`, `reject` or `reclaim` run that names `--wallet-address` and `--bundle` in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, `waiting-for-signatures`.
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%
@@ -248,6 +251,70 @@ judged against the tip read before the first send. A command that stops
 leaves nothing behind but its receipt, and it never resubmits on its
 own. A valid signature by an unneeded key over an already-landed body is
 not reported.
+
+## Signing a write elsewhere, or from your vault
+
+As Bob, I keep my key away from the machine that talks to the node. I run a write — `singular registry create`, `fold`, `reject` or `reclaim` — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, `waiting-for-signatures`. I sign the bundle with `singular wallet sign` and send it with `singular submit`.
+
+As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as `singular submit` does. Its receipt reads what the chain shows.
+
+```sh
+singular registry fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
+  --koios-url URL --network-magic 1 --wallet-address ADDR --bundle fold.bundle
+singular registry fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
+  --koios-url URL --network-magic 1 --vault alice.vault --passphrase-fd 9
+```
+
+A write takes exactly one signer:
+
+| signer | the flags | what the command does | how it ends |
+|---|---|---|---|
+| a key file | `--wallet-skey FILE` | signs and sends each transaction as it builds it | the command's own outcome |
+| an address, signing elsewhere | `--wallet-address ADDR --bundle FILE` | builds the run as one bundle, writes the file and saves it beside the journal | `waiting-for-signatures`, status 19 |
+| your vault | `--vault FILE`, and `--passphrase-fd FD` in a script | builds the same bundle, signs it from the vault in memory and sends it through the core of `singular submit` | the submission's outcome |
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 120, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant A as Alice
+    participant W as singular registry fold
+    participant V as alice.vault
+    participant N as Node
+    A->>W: Run the fold, naming the vault
+    W->>V: Open it once, before anything else is read
+    V-->>W: The signing key, in memory only
+    W->>N: Read the registry and build the whole run as one bundle
+    W->>W: Save the bundle and journal one waiting line per transaction
+    W->>W: Sign every transaction from the vault
+    W->>N: Send them in order, as singular submit does
+    N-->>W: Each transaction found on chain
+    W-->>A: Every member journalled landed, the receipt read from the chain
+```
+
+The address must pay a key: a script address is refused, naming it. A key file, an address and a vault are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.
+
+### What each receipt says
+
+- **A key file**: the receipt it has always printed.
+- **Signing elsewhere**: the outcome `waiting-for-signatures` and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under `expected`, because nothing has landed yet.
+- **Your vault**: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under `submissions`. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under `expected`. When the node refuses a transaction, the run ends as a ledger refusal, and `wentThrough` names the transactions that landed before it.
+
+Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under `pendingBundle`: its hash, its saved path, and the transactions still awaited with their deadlines. [Recovering a registry command](cli-recovery.md) follows a bundle from there.
+
+### How long a bundle can wait
+
+A bundle can be sent until the first deadline of its transactions. The builders' validity bounds are unchanged by signing elsewhere. Each command's builder may choose at most this deadline:
+
+| command | the latest deadline its bundle may carry |
+|---|---|
+| `singular registry reject` | about two minutes after it is built |
+| `singular registry fold` | the processing deadline of the earliest request it folds |
+| `singular registry reclaim` | the end of the request's retract window |
+| `singular registry create` | none: its transactions carry no upper bound, so the bundle stays pending until it lands |
+
+A builder can choose an earlier bound. It takes a near one when the end of a window cannot be translated to a slot yet, and it never goes past the ledger's horizon. So the deadline a transaction actually carries is the one the receipt prints for it, `deadline` per transaction, and it can be only seconds or minutes after the build: sign and send before that printed deadline.
+
+A pending create bundle blocks its own state directory only, which is keyed by the network, the token it will mint and the wallet. A second create from the same wallet and seed waits for it. So does one without `--seed` while the same output is unspent, because it picks that output again. A create naming another output with `--seed` makes a different registry, which nothing blocks, and the pending create's journal stays as a record.
 
 ## Naming the registry by its state token
 

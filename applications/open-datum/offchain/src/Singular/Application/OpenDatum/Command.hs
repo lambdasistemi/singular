@@ -34,6 +34,7 @@ module Singular.Application.OpenDatum.Command
     , FoldArgs (..)
     , InspectArgs (..)
     , ProviderSettings (..)
+    , Signer (..)
     , WriteSettings (..)
     , RegistryAccess (..)
     , Key (..)
@@ -83,7 +84,8 @@ import Singular.CLI.Command
     , WriteSettings (..)
     )
 import Singular.CLI.FlagGroup
-    ( commonFlagGroup
+    ( Signer (..)
+    , commonFlagGroup
     , parseFlagGroup
     , readProviderSettings
     , splitTracingFor

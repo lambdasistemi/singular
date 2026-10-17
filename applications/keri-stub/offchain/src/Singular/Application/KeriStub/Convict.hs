@@ -99,7 +99,7 @@ import Singular.CLI.FoldRules
     , renderFoldRequestsRefusal
     )
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (bookingOutlay)
 import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
@@ -136,7 +136,6 @@ import Singular.Registry.Types
     , edgeName
     , edgeUpdateTerminal
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 {- | What one convict books: the edge, where the fold delivers (nowhere:
 a termination delivers nothing) and the evidence it carries, the deposit
@@ -276,7 +275,7 @@ book at a key verb plan = do
                     bookEdgeMeasured
                         cfg
                         v
-                        (walletAddr (wcWallet wc))
+                        (wcCaller wc)
                         (savedToken s)
                         key
                         (cbEdge b)
@@ -347,11 +346,11 @@ wallet, before any lock or journal use.
 -}
 managedEntryDir :: EntryArgs -> WriteSettings -> IO FilePath
 managedEntryDir a ws =
-    resolveWalletDir
+    resolveSignerDir
         (entryStateDir a)
         (providerMagic (writeProvider ws))
         (accessToken (entryAccess a))
-        (writeWalletKey ws)
+        (writeSigner ws)
 
 {- | Run @keri-stub convict@: refuse early, book one termination under the
 stub's policy, and fold it in the same command when asked.

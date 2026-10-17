@@ -754,6 +754,33 @@ jobs:
       # boots the registry.
       - name: Run the one-output create on its own fresh devnet
         run: nix run --quiet .#demo1-cli-one-output-create
+  registry-bundle-control:
+    name: Registry bundles signed elsewhere and from the vault, stopped while pending, dead past their deadline
+    needs: blueprint
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Reuse this runner's Nix cache
+        run: |
+          cache_dir="$HOME/.cache/singular-ci-nix"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # #641: on one fresh devnet, by the packaged commands, Bob creates
+      # with an external signer (exit 19, a second create stopped by his
+      # pending bundle), signs with `wallet sign` and sends with `submit`;
+      # Alice folds a booked request from her vault; an unsent fold bundle
+      # is reported dead past its deadline and the next fold builds.
+      # Falsification: with the bundle expiry disabled the dead-bundle step
+      # fails, the next fold staying stopped at 19.
+      - name: Run the bundle signers on their own fresh devnet
+        run: nix run --quiet .#registry-bundle-control
   demo1-prepare-funding:
     name: Demo 1 prepare a funding output when none suits
     needs: blueprint

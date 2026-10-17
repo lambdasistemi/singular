@@ -949,7 +949,7 @@ testEnv record chain hasClosed =
                         pure (Left "the blueprint carries no open_datum.closed_datum")
                 _ -> pure (Left ("the blueprint carries no " <> T.unpack title))
         , envReads = \_ k -> k caps
-        , envWrites = \_ _ k -> k caps
+        , envWrites = \_ k -> k caps
         }
   where
     sess = sessionFor chain

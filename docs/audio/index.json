@@ -1064,15 +1064,80 @@
     "index": 1,
     "name": "docs-cli-recovery/what-the-checks-show-01",
     "pause_ms": 400,
-    "text": "The recovery controls run each case as separate singular processes against one generated development node, and judge every clause from the receipts the processes printed, the registry's journal, its saved bodies and its files, and — for exclusion and rollback — from the node's own answers, read with devnet probe and its block adoption trace, never through the command under test:",
-    "v": "6a440489970f"
+    "text": "The recovery controls run each hosted partition as separate singular processes against its own generated development node, and judge every clause from the receipts the processes printed, the registry's journal, its saved bodies and its files, and — for exclusion and rollback — from the node's own answers, read with devnet probe and its block adoption trace, never through the command under test. The partitions are listed in one place in the root flake; the discovery command prints them for the workflow matrix, and each partition runs by key:",
+    "v": "caf770efdfd3"
    },
    {
     "index": 2,
     "name": "docs-cli-recovery/what-the-checks-show-02",
     "pause_ms": 400,
+    "text": "The combined .#cli-recovery-controls command is retired: it serialised every part on one node and exceeded the receipt cap of 52428800 bytes before reaching never-sent and rollback. The per-partition commands above are generated from the same partition list the workflow matrix uses.",
+    "v": "ed38b92bafb7"
+   },
+   {
+    "index": 3,
+    "name": "docs-cli-recovery/what-the-checks-show-03",
+    "pause_ms": 400,
     "text": "The rolled-back control is a mechanism of the generated development node — its database restored to an earlier copy — and not a fork of a public chain: it shows what the commands do when the chain they read no longer holds a transaction, not how often or how deeply a public network rolls back. Across every control, each journalled transaction has exactly one prepared line, the journal is only ever appended to, and no saved body changes. These controls do not establish durability across a power loss, only across a killed process.",
-    "v": "5b0dcac031cf"
+    "v": "0456ee022617"
+   }
+  ],
+  "when-a-bundle-waits-for-signatures": [
+   {
+    "index": 0,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-00",
+    "pause_ms": 500,
+    "text": "When a bundle waits for signatures.",
+    "v": "74b33b047e8d"
+   },
+   {
+    "index": 1,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-01",
+    "pause_ms": 400,
+    "text": "As Bob, I ran a write naming my address and a bundle file, or Alice ran one from her vault, and I want to know where its bundle stands: still waiting for signatures, landed, or dead. The next write in the same state directory tells me, before it builds anything. The bundle's transactions are judged by one thing only: whether the chain holds their identities. Their outputs, their inputs and the after-state of the registry do not count. A transaction of a bundle is its member for its whole life.",
+    "v": "a8ac8f838170"
+   },
+   {
+    "index": 2,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-02",
+    "pause_ms": 300,
+    "text": "Pending. Some member is not on chain yet, and the tip has not reached any member's deadline. The next write stops before it builds anything, with status 19, waiting-for-signatures, naming the bundle's hash, its saved path, and the members awaited with their deadlines.",
+    "v": "79c9ecaef266"
+   },
+   {
+    "index": 3,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-03",
+    "pause_ms": 300,
+    "text": "Landed. Every member is found on chain. Each gets a landed line with its chain point and confirmations. The next write builds normally, and its receipt reports the bundle under reconciled.",
+    "v": "765108ca4600"
+   },
+   {
+    "index": 4,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-04",
+    "pause_ms": 300,
+    "text": "Dead. A member can never land. Every member not landed gets a dead line, and the report names the members that went through. The next write builds normally.",
+    "v": "1d3823eb8d6c"
+   },
+   {
+    "index": 5,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-05",
+    "pause_ms": 400,
+    "text": "A bundle dies one of these ways, and the dead line says which:",
+    "v": "ab4a507d2ae7"
+   },
+   {
+    "index": 6,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-06",
+    "pause_ms": 400,
+    "text": "A pending bundle never needs the journal edited. Sign the bundle and send it with singular submit, or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.",
+    "v": "775199bd4854"
+   },
+   {
+    "index": 7,
+    "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-07",
+    "pause_ms": 400,
+    "text": "A bundle sent elsewhere and refused by the node is not seen by your journal, since singular submit keeps no state: it dies when a member's deadline passes. A create bundle has no deadline, so it stays pending. As Alice, if my co-signer never signs the create bundle I staged, or it is refused when sent elsewhere, I correct the cause and send it again. A create from the same wallet without --seed picks the same output again while that output is unspent, so it is stopped at 19 too. The way out is a create that names another output with --seed: a different registry, in a different state directory, which nothing blocks. The pending create's journal stays as a record and blocks nothing else.",
+    "v": "d436461cbe0c"
    }
   ],
   "when-a-transaction-can-never-land": [
@@ -9092,6 +9157,36 @@
     "v": "14a04afcf19d"
    }
   ],
+  "how-long-a-bundle-can-wait": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/how-long-a-bundle-can-wait-00",
+    "pause_ms": 500,
+    "text": "How long a bundle can wait.",
+    "v": "a53823c12608"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/how-long-a-bundle-can-wait-01",
+    "pause_ms": 400,
+    "text": "A bundle can be sent until the first deadline of its transactions. The builders' validity bounds are unchanged by signing elsewhere. Each command's builder may choose at most this deadline:",
+    "v": "c5b0a2325cba"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/how-long-a-bundle-can-wait-02",
+    "pause_ms": 400,
+    "text": "A builder can choose an earlier bound. It takes a near one when the end of a window cannot be translated to a slot yet, and it never goes past the ledger's horizon. So the deadline a transaction actually carries is the one the receipt prints for it, deadline per transaction, and it can be only seconds or minutes after the build: sign and send before that printed deadline.",
+    "v": "341594315438"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/how-long-a-bundle-can-wait-03",
+    "pause_ms": 400,
+    "text": "A pending create bundle blocks its own state directory only, which is keyed by the network, the token it will mint and the wallet. A second create from the same wallet and seed waits for it. So does one without --seed while the same output is unspent, because it picks that output again. A create naming another output with --seed makes a different registry, which nothing blocks, and the pending create's journal stays as a record.",
+    "v": "a91914b3c3ce"
+   }
+  ],
   "keeping-your-signing-key-in-an-encrypted-vault": [
    {
     "index": 0,
@@ -9298,15 +9393,59 @@
     "index": 2,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-02",
     "pause_ms": 400,
-    "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
-    "v": "8a633cfb1d19"
+    "text": "The writer's side is a singular registry create, fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+    "v": "d8c8a66621cf"
    },
    {
     "index": 3,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-03",
     "pause_ms": 400,
+    "text": "The bundle names the network it is built for, so no network setting is taken: every provider and registry option is refused by name, and the command opens no connection — it reads nothing but the bundle file, the vault file and the passphrase. A bundle is refused by name, and nothing is written, when a recorded identity is not the hash of its transaction's body, a recorded deadline is not the body's validity upper bound, an identity names two transactions, a key hash a body requires is covered by no signer address, or the vault's own address is not among the signers. A witness file that already exists is refused with its bytes untouched.",
+    "v": "8d3cfde75763"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-04",
+    "pause_ms": 400,
     "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
-    "v": "2f3f03b73a03"
+    "v": "189e9a50f343"
+   }
+  ],
+  "signing-a-write-elsewhere-or-from-your-vault": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-00",
+    "pause_ms": 500,
+    "text": "Signing a write elsewhere, or from your vault.",
+    "v": "fcfd61ca29e6"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-01",
+    "pause_ms": 400,
+    "text": "As Bob, I keep my key away from the machine that talks to the node. I run a write — singular registry create, fold, reject or reclaim — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, waiting-for-signatures. I sign the bundle with singular wallet sign and send it with singular submit.",
+    "v": "ad9a5c114fde"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-02",
+    "pause_ms": 400,
+    "text": "As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as singular submit does. Its receipt reads what the chain shows.",
+    "v": "d62a5ac203fd"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-03",
+    "pause_ms": 400,
+    "text": "A write takes exactly one signer:",
+    "v": "0749357b4ded"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/signing-a-write-elsewhere-or-from-your-vault-04",
+    "pause_ms": 400,
+    "text": "The address must pay a key: a script address is refused, naming it. A key file, an address and a vault are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
+    "v": "f4aba415997b"
    }
   ],
   "submitting-a-signed-bundle": [
@@ -9365,8 +9504,8 @@
     "index": 1,
     "name": "docs-singular-node/the-settings-you-give-01",
     "pause_ms": 400,
-    "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
-    "v": "a5bc088a3009"
+    "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim and singular reject an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+    "v": "799a5158eaa3"
    }
   ],
   "what-a-write-records": [
@@ -9397,6 +9536,43 @@
     "pause_ms": 400,
     "text": "Confirmation waits for the exact transaction output, rather than a status flag alone. With an upper validity bound, its provider deadline is the POSIX start of that slot plus 120 seconds; with no upper bound, it is now plus 300 seconds. The CLI's --confirm-timeout also bounds its wait. The latest observed block can establish expiry. An unresolved submission remains journalled and is not sent again by recovery.",
     "v": "a08c1f8882b0"
+   }
+  ],
+  "what-each-receipt-says": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/what-each-receipt-says-00",
+    "pause_ms": 500,
+    "text": "What each receipt says.",
+    "v": "b38f4bfb4b09"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/what-each-receipt-says-01",
+    "pause_ms": 300,
+    "text": "A key file: the receipt it has always printed.",
+    "v": "27be3d8e8ecb"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/what-each-receipt-says-02",
+    "pause_ms": 300,
+    "text": "Signing elsewhere: the outcome waiting-for-signatures and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under expected, because nothing has landed yet.",
+    "v": "0c09206fe5b6"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/what-each-receipt-says-03",
+    "pause_ms": 300,
+    "text": "Your vault: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under submissions. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under expected. When the node refuses a transaction, the run ends as a ledger refusal, and wentThrough names the transactions that landed before it.",
+    "v": "f36f2062f6ab"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/what-each-receipt-says-04",
+    "pause_ms": 400,
+    "text": "Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under pendingBundle: its hash, its saved path, and the transactions still awaited with their deadlines. Recovering a registry command follows a bundle from there.",
+    "v": "76bb39ef2c58"
    }
   ],
   "when-the-provider-cannot-be-used": [

@@ -108,7 +108,7 @@ import Singular.CLI.Command
 import Singular.CLI.FoldRules
 import Singular.CLI.Harness (holdBeforeCommit, holdBeforeObserved)
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay
     ( foldOutlay
     , foldPastAllowance
@@ -173,7 +173,6 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 -- ---------------------------------------------------------
 -- The processing deadline
@@ -438,11 +437,11 @@ runFoldBounded :: Int -> Application -> Env -> FoldArgs -> IO Value
 runFoldBounded bound app env a = do
     let ws = foldWrite a
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (foldStateDir a)
             (providerMagic (writeProvider ws))
             (accessToken (foldAccess a))
-            (writeWalletKey ws)
+            (writeSigner ws)
     attached
         app
         env
@@ -544,7 +543,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-        addr = walletAddr (wcWallet wc)
+        addr = wcCaller wc
         named = case fsOrigin of
             Combined booking -> Just (TxIn (txIdTx booking) (TxIx 0))
             Standalone -> fsRequest
@@ -964,7 +963,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
                 DeliveredDatum out _ -> txInText out
                 Released out _ -> txInText out
             )
-    report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT local))
+    reportSeen wc [] (RootSeen (hexT rootBefore) (hexT local))
     pure
         Folded
             { fdSettled = case [toSettled entry delivery | (entry, delivery) <- entryDeliveries] of

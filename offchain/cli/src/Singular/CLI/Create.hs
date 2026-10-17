@@ -40,13 +40,14 @@ submitting nothing and writing nothing.
 module Singular.CLI.Create (createApplication, runCreate, stateTokenOf) where
 
 import Control.Exception
-    ( SomeAsyncException
+    ( ErrorCall (..)
+    , SomeAsyncException
     , SomeException
     , fromException
     , throwIO
     , try
     )
-import Control.Monad (when)
+import Control.Monad (unless, when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -55,7 +56,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -88,13 +89,20 @@ import Singular.CLI.Command
     , ProviderSettings (..)
     , WriteSettings (..)
     )
+import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Live (receipt, txInText)
 import Singular.CLI.ManagedState
-    ( managedDir
+    ( addressPartition
+    , managedDir
     , resolveStateRoot
-    , walletPartition
     )
-import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
+import Singular.CLI.Receipt
+    ( OutcomeClass (..)
+    , durableWrite
+    , readJournal
+    , unjudgedMembers
+    )
+import Singular.CLI.Reconcile (reconcileBundles, refusePendingBundle)
 import Singular.CLI.Registry
     ( IdentityError (..)
     , Release (..)
@@ -123,11 +131,14 @@ import Singular.CLI.Session
     , failWith
     , journalObserved
     , journalObservedId
+    , loadSignerWallet
     , readOnce
     , readStep
+    , refuseTakenBundle
     , submitBuilt
     , submitBuiltIn
     , withSession
+    , withTargetLockOr
     , withWrite
     )
 import Singular.CLI.Trace
@@ -200,11 +211,7 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenState (..)
     )
-import Singular.Registry.Wallet
-    ( Wallet (..)
-    , bech32Address
-    , loadWallet
-    )
+import Singular.Registry.Wallet (bech32Address)
 
 {- | The application a @registry create@ runs with: the hash the flag pins
 through 'hashPinnedApplication', or the composed value. A neutral value
@@ -232,6 +239,12 @@ applicationPolicyNotAccepted =
 
 runCreate :: Application -> Env -> CreateArgs -> IO Value
 runCreate app env a = do
+    -- An external signer's bundle path is judged first: an existing one is
+    -- refused before the blueprint, the wallet or the state root is read.
+    case createMode a of
+        Submit WriteSettings{writeSigner = SignerExternal _ bundle} ->
+            refuseTakenBundle bundle
+        _ -> pure ()
     -- A direct caller composing the neutral value meets the same refusal
     -- as the dispatch: at boot no state datum exists to read a pin from.
     case appPin app of
@@ -318,6 +331,28 @@ catchSelection act settings = do
                             <> show e
                         )
 
+{- | A staged create still waiting for its signatures stops another create
+of the same registry before any existing-state check, whichever signer
+this one uses: the same wallet and seed derive the same token and
+directory, and the first bundle must land or die before anything else is
+built there. A journal with no member left to judge reads nothing from the
+chain, and the existing-state check then behaves as before; so does a
+journal that does not decode, which holds no bundle admission can read and
+which that check refuses.
+-}
+admitBeforeExisting :: Env -> ProviderSettings -> FilePath -> IO ()
+admitBeforeExisting env settings dir = do
+    journalled <-
+        either (\(ErrorCall _) -> []) id <$> try (readJournal dir)
+    unless (null (unjudgedMembers journalled)) $ do
+        (_, waiting) <-
+            readOnce env settings ["chain tip", "journal transactions"] $ \_ v ->
+                withTargetLockOr
+                    dir
+                    (reconcileBundles "create" dir v)
+                    (pure ([], []))
+        mapM_ (`refusePendingBundle` []) (take 1 waiting)
+
 createWith
     :: Application
     -> Env
@@ -327,9 +362,11 @@ createWith
     -> IO Value
 createWith app env a rel ws = do
     let magic = providerMagic (writeProvider ws)
-    caller <- loadWallet magic (writeWalletKey ws)
+    -- The caller's address names the partition for either signer: a key
+    -- file's payment key hash is its address's.
+    (callerAddr, _) <- loadSignerWallet magic (writeSigner ws)
     root <- resolveStateRoot (createStateDir a)
-    let addr = walletAddr caller
+    let addr = callerAddr
         settings = writeProvider ws
     -- An explicit seed already names its managed partition before any chain
     -- read: a real create with existing state there refuses before seed
@@ -341,13 +378,14 @@ createWith app env a rel ws = do
     case createSeed a of
         Just s | not (createPreview a) -> do
             named <- either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
-            refuseExisting
-                ( managedDir
-                    root
-                    magic
-                    (stateTokenOf rel named)
-                    (walletPartition caller)
-                )
+            let namedDir =
+                    managedDir
+                        root
+                        magic
+                        (stateTokenOf rel named)
+                        (addressPartition callerAddr)
+            admitBeforeExisting env settings namedDir
+            refuseExisting namedDir
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
         _ -> pure ()
     -- The seed is selected before any lock or journal use, from one view
@@ -381,7 +419,7 @@ createWith app env a rel ws = do
             ppPre
             mustPubPre
     let token = stateTokenOf rel seedIn
-        dir = managedDir root magic token (walletPartition caller)
+        dir = managedDir root magic token (addressPartition callerAddr)
     -- A preview writes nothing: no lock, no directory, no journal.
     if createPreview a
         then withSession env dir "create" ws $ \wc -> do
@@ -430,6 +468,7 @@ createWith app env a rel ws = do
                         <> identity'
                     )
         else do
+            admitBeforeExisting env settings dir
             refuseExisting dir
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
             withWrite env dir "create" ws $ \wc -> do
@@ -441,7 +480,7 @@ createWith app env a rel ws = do
                 -- not for the seed the winner just spent.
                 refuseExisting dir
                     >>= either (failWith ClientRefusal . renderIdentityError) pure
-                let addrUnder = walletAddr (wcWallet wc)
+                let addrUnder = wcCaller wc
                     stateScriptPre = scriptFromBytes "state" (releaseState rel)
                 (freshUtxos, ppFreshPre, mustPubFresh) <-
                     readStep
@@ -582,8 +621,11 @@ createWith app env a rel ws = do
                         foundState
                         (seedFromPre == "publication-change")
                         (pendingPath dir)
-                -- The registry is its token: nothing of it stays on disk.
-                removeFile (pendingPath dir)
+                -- The registry is its token: nothing of it stays on disk. A
+                -- staged create has landed nothing yet, so its pending
+                -- identity stays recorded until the bundle's own state
+                -- settles it.
+                unless (isJust (wcStaged wc)) $ removeFile (pendingPath dir)
                 pure
                     ( receipt
                         "create"
@@ -715,7 +757,7 @@ boot
     -}
     -> IO Booted
 boot wc cfg pinned seedIn foundState isChained pendingFile = do
-    let addr = walletAddr (wcWallet wc)
+    let addr = wcCaller wc
         -- One transaction, built from one view, journalled with its point.
         -- A first-publication refusal happens before any submission, so the
         -- pending file just written is removed and nothing stays behind.

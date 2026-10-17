@@ -707,7 +707,7 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         withSystemTempDirectory "wallet-floor-open" $ \dir -> do
             let keyPath = dir </> "payment.skey"
             BS.writeFile keyPath (B16.encode (BC.replicate 32 'w'))
-            wallet <- loadWallet 1 keyPath
+            _ <- loadWallet 1 keyPath
             set <- loadFixtureSet "test/fixtures/koios/preprod" >>= requireRight
             Fake.withFakeKoios (Fake.replayFixtures set) $ \url _ -> do
                 let settings = ProviderSettings (T.unpack url) 1 Nothing Nothing
@@ -719,7 +719,6 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                             nullTracer
                             (const (pure ()))
                             settings
-                            wallet
                         $ \_ ->
                             writeIORef ran True
                 readIORef ran `shouldReturn` True
@@ -897,7 +896,7 @@ envOf rig =
         , envSource = "fixture"
         , envLoadRelease = loadReleaseCodes
         , envReads = \_ k -> k (capabilities rig)
-        , envWrites = \_ _ k -> k (capabilities rig)
+        , envWrites = \_ k -> k (capabilities rig)
         }
 
 capabilities :: Rig -> Capabilities NoWitness IO

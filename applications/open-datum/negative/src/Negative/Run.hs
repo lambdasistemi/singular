@@ -67,7 +67,7 @@ import Singular.CLI.Live
     , receipt
     , txInText
     )
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Plan (readJson)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
@@ -75,9 +75,9 @@ import Singular.CLI.Session
     ( CommandFailure (..)
     , Env
     , Expectation (..)
-    , WriteContext (..)
     , confirmedTx
     , failWith
+    , signingWallet
     , submitBuiltIn
     , txIdHex
     )
@@ -112,11 +112,11 @@ the shared function, which alone decides the default.
 -}
 negativeStateDir :: EntryArgs -> WriteSettings -> IO FilePath
 negativeStateDir args ws =
-    resolveWalletDir
+    resolveSignerDir
         (entryStateDir args)
         (providerMagic (writeProvider ws))
         (accessToken (entryAccess args))
-        (writeWalletKey ws)
+        (writeSigner ws)
 
 {- | Book an insertion for any signer, unevaluated, then fold it. The payer wallet
 funds it and is named its owner, with no controller check here: the
@@ -166,7 +166,7 @@ runNegativeInsert env args = case entryMode args of
             $ \at -> do
                 let s = savedOf at
                     wc = atWrite at
-                    wallet = wcWallet wc
+                wallet <- signingWallet wc
                 beforeBooking <- readAround at key wallet
                 resultBooking <-
                     try
@@ -352,7 +352,7 @@ runNegativeUpdate env args tamper = case entryMode args of
             $ \at -> do
                 let s = savedOf at
                     wc = atWrite at
-                    wallet = wcWallet wc
+                wallet <- signingWallet wc
                 before <- readAround at key wallet
                 result <-
                     try
@@ -480,7 +480,7 @@ runNegativeTerminate env args = case entryMode args of
             $ \at -> do
                 let s = savedOf at
                     wc = atWrite at
-                    wallet = wcWallet wc
+                wallet <- signingWallet wc
                 before <- readAround at key wallet
                 result <-
                     try
@@ -583,7 +583,7 @@ runNegativeWithdraw env args = case entryMode args of
             $ \at -> do
                 let s = savedOf at
                     wc = atWrite at
-                    wallet = wcWallet wc
+                wallet <- signingWallet wc
                 before <- readAround at key wallet
                 result <-
                     try
@@ -689,11 +689,11 @@ runNegativeFold :: Env -> FoldArgs -> Maybe Integer -> IO Value
 runNegativeFold env args short = do
     let ws = foldWrite args
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (foldStateDir args)
             (providerMagic (writeProvider ws))
             (accessToken (foldAccess args))
-            (writeWalletKey ws)
+            (writeSigner ws)
     (mode, modeEnv) <- readModeForFold env args
     attached
         (applicationIn mode)
@@ -705,8 +705,8 @@ runNegativeFold env args short = do
         ws
         "fold"
         $ \at -> do
-            let wallet = wcWallet (atWrite at)
-                payment = maybe PayAsOwed PayShort short
+            wallet <- signingWallet (atWrite at)
+            let payment = maybe PayAsOwed PayShort short
             pairs <- reading at (\v -> selectFoldRequests v (atLive at) FoldEvery)
             firstKey <- case pairs of
                 ((_, _), q) : _ -> pure (requestKey q)

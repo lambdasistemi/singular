@@ -25,6 +25,9 @@ order; the reading itself is shared.
 module Singular.CLI.FlagGroup
     ( commonFlagGroup
     , commonSwitches
+    , Signer (..)
+    , OpenedVault (..)
+    , signerAddress
     , tokenizeWith
     , tokenizeFor
     , splitTracingFor
@@ -34,9 +37,16 @@ module Singular.CLI.FlagGroup
 
 import Control.Applicative ((<|>))
 import Control.Monad (forM_, when)
+import Data.Bifunctor (first)
 import Data.List (isPrefixOf)
 import Data.Maybe (fromMaybe, isJust, isNothing)
+import Data.Text (Text)
+import Data.Text qualified as Text
 import Text.Read (readMaybe)
+
+import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
+import Cardano.Ledger.Credential (Credential (..))
+import Codec.Binary.Bech32 qualified as Bech32
 
 import Singular.CLI.Trace
     ( TraceFormat (..)
@@ -46,6 +56,61 @@ import Singular.CLI.Trace
     , noTraceRequest
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.Wallet (Wallet, bech32Address, walletAddr)
+
+{- | How one write signs: a key file, as today; an external signer — an
+address spelled in bech32 exactly as the caller gave it together with the
+bundle file the run's unsigned transactions are written to; or a vault —
+the vault file and the descriptor its passphrase is read from, the
+terminal when none is named. Exactly one signer names a run; the write
+reader refuses the mixtures. The reader holds no secret: the vault is a
+path until the command opens it, once, into 'SignerVaultOpened'.
+-}
+data Signer
+    = SignerKeyFile FilePath
+    | SignerExternal Text FilePath
+    | SignerVault FilePath (Maybe Int)
+    | SignerVaultOpened OpenedVault
+    deriving stock (Eq, Show)
+
+{- | A vault opened for one run: the wallet its key derives, held in memory
+for the command's lifetime. It shows as its address alone and compares by
+it, so no rendering of a signer carries a key byte.
+-}
+newtype OpenedVault = OpenedVault Wallet
+
+instance Show OpenedVault where
+    showsPrec p (OpenedVault wallet) =
+        showParen (p > 10) $
+            showString "OpenedVault " . shows (bech32Address (walletAddr wallet))
+
+instance Eq OpenedVault where
+    OpenedVault a == OpenedVault b = walletAddr a == walletAddr b
+
+{- | The address of an external signer, as the ledger reads it: bech32,
+decoded, and refused unless its payment part is a payment key — an address
+that pays a script, or a bootstrap address, cannot sign a bundle. Pure.
+-}
+signerAddress :: Text -> Either String Addr
+signerAddress given = do
+    (_, dataPart) <- first (const notBech32) (Bech32.decode given)
+    bytes <-
+        maybe (Left notBech32) Right (Bech32.dataPartToBytes dataPart)
+    address <- first (const notBech32) (decodeAddrEither bytes)
+    case address of
+        Addr _ (KeyHashObj _) _ -> Right address
+        Addr _ (ScriptHashObj _) _ -> Left paysScript
+        AddrBootstrap _ -> Left bootstrap
+  where
+    notBech32 =
+        Text.unpack given
+            <> " is not a bech32 address: name the signer's own address"
+    paysScript =
+        Text.unpack given
+            <> " pays a script, not a payment key: the bundle's signer must be a payment key"
+    bootstrap =
+        Text.unpack given
+            <> " is a bootstrap address: the bundle's signer must be a payment key"
 
 -- | The valued flags every binary reads with today's refusals.
 commonFlagGroup :: [String]
@@ -65,6 +130,9 @@ commonFlagGroup =
     , "--receipt"
     , "--confirm-timeout"
     , "--wallet-address"
+    , "--bundle"
+    , "--vault"
+    , "--passphrase-fd"
     , "--outputs-at"
     , "--fund-input"
     , "--max-outlay"
@@ -237,9 +305,11 @@ readProviderSettings missing bad flags = case readProvider flags of
     Right settings -> Right settings
 
 {- | Read the write settings from tokenized flags: the caller names the
-service, network and signing key together, mainnet is refused, and a
-non-numeric network magic is an unsafe configuration rather than a bad
-value. The single write reader both binaries call.
+service, network and exactly one signer — the signing key, or the address
+with its bundle file — mainnet is refused, and a non-numeric network magic
+is an unsafe configuration rather than a bad value. The single write reader
+both binaries call; it hands the signer to the settings constructor in place
+of the old key-file path.
 -}
 parseFlagGroup
     :: (String -> e)
@@ -248,21 +318,85 @@ parseFlagGroup
     -- ^ the bad-value refusal
     -> (String -> e)
     -- ^ the unsafe-settings refusal
-    -> (ProviderSettings -> FilePath -> Maybe Int -> w)
+    -> (ProviderSettings -> Signer -> Maybe Int -> w)
     -- ^ the write settings the calling binary keeps
     -> [(String, Maybe String)]
     -- ^ the tokenized flags
     -> Either e w
 parseFlagGroup missing bad unsafe mkWrite flags = do
-    forM_ ["--koios-url", "--network-magic", "--wallet-skey"] $ \name ->
+    let keyNamed = flagValue "--wallet-skey" flags
+        addressNamed = flagValue "--wallet-address" flags
+        bundleNamed = flagValue "--bundle" flags
+        vaultNamed = flagValue "--vault" flags
+        descriptorNamed = flagValue "--passphrase-fd" flags
+    case (keyNamed, addressNamed) of
+        (Just _, Just _) ->
+            Left
+                ( bad
+                    "--wallet-address"
+                    "cannot be combined with --wallet-skey: a write takes exactly one signer"
+                )
+        _ -> Right ()
+    case (vaultNamed, keyNamed, addressNamed) of
+        (Just _, Just _, _) ->
+            Left
+                ( bad
+                    "--vault"
+                    "cannot be combined with --wallet-skey: a write takes exactly one signer"
+                )
+        (Just _, _, Just _) ->
+            Left
+                ( bad
+                    "--vault"
+                    "cannot be combined with --wallet-address: a write takes exactly one signer"
+                )
+        _ -> Right ()
+    when (isJust descriptorNamed && isNothing vaultNamed) $
+        Left
+            ( bad
+                "--passphrase-fd"
+                "is meaningless without --vault: name the vault too"
+            )
+    case (addressNamed, bundleNamed) of
+        (Just _, Nothing) ->
+            Left
+                ( bad
+                    "--bundle"
+                    ( "is required with --wallet-address: the run's transactions are "
+                        <> "written to the bundle for signing elsewhere"
+                    )
+                )
+        (Nothing, Just _) ->
+            Left
+                ( bad
+                    "--bundle"
+                    "is meaningless without --wallet-address: name the signer too"
+                )
+        _ -> Right ()
+    when (isJust bundleNamed && isJust (lookup "--preview" flags)) $
+        Left
+            ( bad
+                "--bundle"
+                "cannot be used with --preview: a preview signs and writes nothing"
+            )
+    let staged = isJust addressNamed || isJust bundleNamed || isJust vaultNamed
+    forM_ ["--koios-url", "--network-magic"] $ \name ->
         when (isNothing (flagValue name flags)) $
             Left
                 ( unsafe
                     ( "partially configured write: missing "
                         <> name
-                        <> "; a write needs --koios-url, --network-magic and --wallet-skey"
+                        <> "; a write needs --koios-url, --network-magic and "
+                        <> (if staged then "a signer" else "--wallet-skey")
                     )
                 )
+    when (not staged && isNothing keyNamed) $
+        Left
+            ( unsafe
+                ( "partially configured write: missing --wallet-skey"
+                    <> "; a write needs --koios-url, --network-magic and --wallet-skey"
+                )
+            )
     settings <- case readProvider flags of
         Left (ProviderBad "--network-magic" _) ->
             Left
@@ -276,13 +410,23 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
         Right providers -> Right providers
     when (providerMagic settings == 764824073) $
         Left (unsafe "mainnet is not supported")
-    skey <- case flagValue "--wallet-skey" flags of
-        Just v -> Right v
-        Nothing -> Left (missing "--wallet-skey")
+    signer <- case (keyNamed, addressNamed, bundleNamed, vaultNamed) of
+        (Just path, Nothing, Nothing, Nothing) -> Right (SignerKeyFile path)
+        (Nothing, Just address, Just bundle, Nothing) -> do
+            let given = Text.pack address
+            SignerExternal given bundle
+                <$ first (bad "--wallet-address") (signerAddress given)
+        (Nothing, Nothing, Nothing, Just vault) ->
+            SignerVault vault <$> case descriptorNamed of
+                Nothing -> Right Nothing
+                Just spelling -> case readMaybe spelling of
+                    Just n | n >= 0 -> Right (Just n)
+                    _ -> Left (bad "--passphrase-fd" "not a descriptor number")
+        _ -> Left (missing "--wallet-skey")
     confirmationTimeout <- case flagValue "--confirm-timeout" flags of
         Nothing -> Right Nothing
         Just value -> case readMaybe value of
             Just n | n >= 0 -> Right (Just n)
             _ ->
                 Left (bad "--confirm-timeout" "is not a whole number of seconds")
-    pure (mkWrite settings skey confirmationTimeout)
+    pure (mkWrite settings signer confirmationTimeout)

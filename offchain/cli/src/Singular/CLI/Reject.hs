@@ -65,7 +65,7 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Prepare
@@ -105,7 +105,7 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | One pending request the reject takes, and what it is owed.
 data Row = Row
@@ -146,11 +146,11 @@ runReject :: Env -> RejectArgs -> IO Value
 runReject env a = do
     let ws = rejectWrite a
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (rejectStateDir a)
             (providerMagic (writeProvider ws))
             (accessToken (rejectAccess a))
-            (writeWalletKey ws)
+            (writeSigner ws)
     attached
         neutralApplication
         env
@@ -169,7 +169,7 @@ rejectPending at a = do
     let s = savedOf at
         cfg = savedCfg s
         wc = atWrite at
-        addr = walletAddr (wcWallet wc)
+        addr = wcCaller wc
         requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
     rootBefore <- selectedTrieRoot (atTrie at)
     (tx, (plan, preparation)) <-
@@ -375,8 +375,8 @@ rejectPending at a = do
         (wcTracer wc)
         [InEdge Rejecting]
         (Trace.Rejected (map (txInText . rowRequest) (plRows plan)))
-    report
-        (wcTracer wc)
+    reportSeen
+        wc
         []
         (RootSeen (hexT (plRootBefore plan)) (hexT onChain))
     pure

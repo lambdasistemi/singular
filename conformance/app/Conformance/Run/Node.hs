@@ -135,9 +135,9 @@ openHarnessNode body =
             directory <- Setup.genesisDir
             let wallet = Wallet Setup.genesisAddr Setup.genesisSignKey Testnet
             withGeneratedFacade FundGenesis directory (const (pure ())) $ \_ facade ->
-                withWrites mempty mempty (facadeSettings facade) wallet $ \caps ->
+                withWrites mempty mempty (facadeSettings facade) $ \caps ->
                     body (NetworkMagic 42) (facadeSocket facade) (Actor wallet caps)
         ExternalProbe provider probe key -> do
             wallet <- loadWallet (providerMagic provider) key
-            withWrites mempty mempty provider wallet $ \caps ->
+            withWrites mempty mempty provider $ \caps ->
                 body (NetworkMagic (providerMagic provider)) probe (Actor wallet caps)

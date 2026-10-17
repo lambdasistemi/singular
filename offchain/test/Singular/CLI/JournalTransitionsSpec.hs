@@ -21,6 +21,16 @@ import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
 import Test.Hspec
+import Test.QuickCheck
+    ( Gen
+    , chooseInt
+    , elements
+    , forAll
+    , property
+    , vectorOf
+    , (.&&.)
+    , (===)
+    )
 
 import Cardano.Ledger.Api.Tx.Out (mkBasicTxOut, referenceScriptTxOutL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
@@ -32,11 +42,14 @@ import Cardano.Ledger.Mary.Value
     )
 
 import Singular.CLI.Receipt
-    ( FoldTransition (..)
+    ( BundleState (..)
+    , FoldTransition (..)
     , JournalEntry (..)
+    , bundleStates
     , chainTransitions
     , foldScalarsAgree
     , foldTransitions
+    , pendingBundles
     )
 import Singular.CLI.Reconcile (observeVerdicts)
 import Singular.CLI.Session
@@ -53,7 +66,7 @@ import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
 import Singular.Registry.Wallet (bech32Address)
 
 spec :: Spec
-spec = transitionRows >> fundingHolds
+spec = transitionRows >> fundingHolds >> bundleStateRows
 
 transitionRows :: Spec
 transitionRows =
@@ -305,3 +318,108 @@ fundingHolds = describe "the funding expectation" $ do
         verdicts `shouldBe` [Left "fold: its after-state is not read back"]
   where
     stranger = addrFromKeyHashBytes Testnet (BS.replicate 28 0x11)
+
+-- ---------------------------------------------------------
+-- The bundle state (#641 journal phase)
+-- ---------------------------------------------------------
+
+-- | What a generated journal says one member went through.
+data MemberFate = Awaiting | Landed | Died T.Text
+    deriving stock (Eq, Show)
+
+{- | The bundle state a generated journal must read as, by the journal
+phase's rules: dead when any member died (the first dead line's reason,
+every member not landed died, the landed ones went through); landed when
+every member was found; pending otherwise, awaiting the members not landed.
+-}
+modelState :: [(T.Text, MemberFate)] -> BundleState
+modelState members
+    | (reason : _) <- [r | (_, Died r) <- members] =
+        BundleDead reason notLanded landed
+    | null notLanded = BundleLanded
+    | otherwise = BundlePending notLanded
+  where
+    landed = [m | (m, Landed) <- members]
+    notLanded = [m | (m, fate) <- members, fate /= Landed]
+
+{- | A journal of one to three bundles of one to three members each, every
+member's fate drawn, with key-file lines around them and later lines a
+member may carry that never judge it (a submission answer, an observation).
+-}
+genJournal :: Gen ([(T.Text, [(T.Text, MemberFate)])], [JournalEntry])
+genJournal = do
+    n <- chooseInt (1, 3)
+    bundles <- mapM genBundle [1 .. n]
+    noiseBefore <- keyFileLines "k1"
+    noiseAfter <- keyFileLines "k2"
+    let waiting =
+            [ line m "waiting-for-signatures" (Just h)
+            | (h, members) <- bundles
+            , (m, _) <- members
+            ]
+        fates =
+            concat
+                [ case fate of
+                    Awaiting -> []
+                    Landed -> [line m "landed" Nothing, line m "observed" Nothing]
+                    Died reason -> [line m "submitted" Nothing, line m "dead" (Just reason)]
+                | (_, members) <- bundles
+                , (m, fate) <- members
+                ]
+    pure (bundles, noiseBefore <> waiting <> fates <> noiseAfter)
+  where
+    genBundle i = do
+        k <- chooseInt (1, 3)
+        let h = "bundle-" <> T.pack (show i)
+        fates <-
+            vectorOf
+                k
+                ( elements
+                    [Awaiting, Landed, Died "expired, rebuild", Died "its bundle died"]
+                )
+        pure
+            ( h
+            , [ (h <> "-member-" <> T.pack (show j), f)
+              | (j, f) <- zip [1 :: Int ..] fates
+              ]
+            )
+    keyFileLines t = do
+        settled <- elements [True, False]
+        pure
+            ([line t "prepared" Nothing] <> [line t "observed" Nothing | settled])
+    line t event detail =
+        JournalEntry
+            { journalCommand = "fold"
+            , journalStep = "fold"
+            , journalTxId = t
+            , journalEvent = event
+            , journalDetail = detail
+            , journalInputs = Nothing
+            , journalBody = Nothing
+            , journalBodyHash = Nothing
+            , journalNetwork = Nothing
+            , journalEra = Nothing
+            , journalChainPoint = Nothing
+            , journalSession = Nothing
+            , journalObservedTip = Nothing
+            , journalKey = Nothing
+            , journalExpect = Nothing
+            , journalEdge = Nothing
+            , journalRootBefore = Nothing
+            , journalRootAfter = Nothing
+            , journalTransitions = Nothing
+            , journalTime = Nothing
+            }
+
+bundleStateRows :: Spec
+bundleStateRows = describe "the bundle state"
+    $ it
+        "is what the journal phase's rules say for generated member states, and admission stops exactly on the pending ones"
+    $ property
+    $ forAll genJournal
+    $ \(bundles, entries) ->
+        let expected = [(h, modelState members) | (h, members) <- bundles]
+            actual = bundleStates entries
+        in  actual === expected
+                .&&. map fst (pendingBundles actual)
+                    === [h | (h, BundlePending _) <- expected]

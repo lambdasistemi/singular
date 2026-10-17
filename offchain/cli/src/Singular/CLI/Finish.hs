@@ -35,13 +35,13 @@ import Data.ByteString.Lazy.Char8 qualified as BLC
 import Data.Text qualified as T
 import System.Exit (ExitCode (..))
 
+import Singular.CLI.Failure (CommandFailure (..), reportedOf)
 import Singular.CLI.Live (receipt)
 import Singular.CLI.Receipt
     ( OutcomeClass (..)
     , exitCodeOf
     , outcomeName
     )
-import Singular.CLI.Session (CommandFailure (..), reportedOf)
 import Singular.CLI.Trace
     ( Event (..)
     , RefusalKind (..)

@@ -109,7 +109,7 @@ import Singular.CLI.FoldRules
     , renderFoldRequestsRefusal
     )
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (bookingOutlay)
 import Singular.CLI.Plan (readJson, refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
@@ -148,7 +148,6 @@ import Singular.Registry.Types
     , edgeInsertActive
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..))
 
 {- | The deposit a register rides with when the command line names none:
 the library's own booking deposit, the least an insertion protects.
@@ -301,7 +300,7 @@ book at a key verb plan = do
                     bookEdgeMeasured
                         cfg
                         v
-                        (walletAddr (wcWallet wc))
+                        (wcCaller wc)
                         (savedToken s)
                         key
                         (rbEdge b)
@@ -372,11 +371,11 @@ wallet, before any lock or journal use.
 -}
 managedEntryDir :: EntryArgs -> WriteSettings -> IO FilePath
 managedEntryDir a ws =
-    resolveWalletDir
+    resolveSignerDir
         (entryStateDir a)
         (providerMagic (writeProvider ws))
         (accessToken (entryAccess a))
-        (writeWalletKey ws)
+        (writeSigner ws)
 
 {- | The payload a register carries: the file its @--payload@ names as
 Plutus data, or the empty prefix when none is named.

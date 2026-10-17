@@ -1,0 +1,60 @@
+{
+  "data-for-registry-writes-that-end-in-a-bundle": [
+    {
+      "text": "The values this ticket adds or changes.",
+      "pause": 500
+    }
+  ],
+  "signer": [
+    {
+      "text": "A signer is a key file, an external address with its bundle file, or a vault with the source of its passphrase.",
+      "pause": 500
+    }
+  ],
+  "staged-transaction": [
+    {
+      "text": "A staged transaction is the unsigned body, the step that built it and its effect lines; its identity is fixed before any signature.",
+      "pause": 500
+    }
+  ],
+  "chained-view": [
+    {
+      "text": "The chained view answers a read as the chain would after the staged transactions landed: their outputs present, the inputs they spend absent, for every query form, with the asset history and mint record they change. Each staged transaction carries the outputs its inputs resolve to. Staged history blocks are numbered after the held view's tip height, and a read's range applies to the whole answer. A compound query keeps the providers' refusal when two sub-answers disagree about one output. Tip, parameters, time and the inclusion read are the chain's, so a staged transaction is not found by the inclusion read.",
+      "pause": 500
+    }
+  ],
+  "bundle": [
+    {
+      "text": "The bundle is the existing version 1 format, with the run's one address as its signer and no state token for create.",
+      "pause": 500
+    }
+  ],
+  "journal-lines": [
+    {
+      "text": "Three lines: waiting for signatures, one per transaction with the bundle's hash and the saved body; landed, with the chain point and confirmations; and dead, with the reason. The bundle's bytes are saved under its hash.",
+      "pause": 500
+    }
+  ],
+  "bundle-state": [
+    {
+      "text": "Each bundle is pending, landed or dead, computed from the lines of its members, which are every identity a waiting line names.",
+      "pause": 500
+    }
+  ],
+  "outcome": [
+    {
+      "text": "The new outcome is waiting for signatures, status 19.",
+      "pause": 500
+    }
+  ],
+  "receipt": [
+    {
+      "text": "In the external mode the receipt names the bundle and puts the command's fields under expected. In the vault mode it adds the chain facts of the submission and states the command's fields as fact only when the whole bundle landed. A write stopped by a pending bundle names that bundle.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "43a5f847331dced216d3b210aea28786945624d5cda6390daabe9dbe6d0edc07"
+  }
+}

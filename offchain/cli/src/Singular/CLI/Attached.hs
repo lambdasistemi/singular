@@ -51,9 +51,8 @@ import Singular.Registry.Ledger
     )
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.StateToken (ReferenceRole)
+import Singular.Registry.StateToken (ReferenceRole, renderStateToken)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
-import Singular.Registry.Wallet (Wallet (..))
 
 -- | Everything a write holds once attached.
 data Attached = Attached
@@ -101,6 +100,7 @@ attached app env dir blueprint access roles ws command body = do
                             (InRegistry (hexT (SBS.fromShort raw)))
                             (wcTracer connected)
                     }
+        stageRegistry wc (renderStateToken (accessToken access))
         Cage.withLatest
             (readsIn (wcSource wc) (wcTracer wc) (wcCapabilities wc))
             $ \v -> do
@@ -111,7 +111,7 @@ attached app env dir blueprint access roles ws command body = do
                         release
                         access
                         roles
-                        (Just (walletAddr (wcWallet wc)))
+                        (Just (wcCaller wc))
                         v
                 (reconciled, live) <-
                     timedRead
@@ -138,7 +138,7 @@ attached app env dir blueprint access roles ws command body = do
 
 -- | The payment key hash of the wallet this command signs with.
 callerKey :: Attached -> ByteString
-callerKey = addrKeyHashBytes . walletAddr . wcWallet . atWrite
+callerKey = addrKeyHashBytes . wcCaller . atWrite
 
 provider
     :: Attached -> (Cage.Network, Cage.LedgerProvider Cage.NoWitness IO)

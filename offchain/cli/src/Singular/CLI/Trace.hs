@@ -237,6 +237,10 @@ data How
     | -- | A backend's own mechanics
       Backend BackendEvent
     | Tx TxEvent
+    | {- | Step, transaction id: an unsigned body staged into the run's
+      bundle; it is never signed, sent, confirmed or observed in that run
+      -}
+      Staged Text Text
     deriving stock (Eq, Show, Data)
 
 -- | A read step a command opens and closes around its queries.
@@ -567,6 +571,7 @@ howLine = \case
                 waitElapsed
         _ -> Nothing
     Backend _ -> Nothing
+    Staged step tx -> Just ("stage " <> step <> " " <> short tx, Nothing)
     Tx t -> case t of
         TxBuilt step ms end -> timed ("build " <> step <> endText end) ms
         TxSigned _ tx fee ms end ->
@@ -835,6 +840,7 @@ howJson = \case
         Exchanged q -> named "exchange" (queryJson q)
         BackendViewOpened o -> named "backend-view-opened" (openingJson o)
         BackendViewReleased o -> named "backend-view-released" (releaseJson o)
+    Staged step tx -> named "tx-staged" ["step" .= step, "tx" .= tx]
     Tx t -> case t of
         TxBuilt step ms end ->
             named "tx-built" (["step" .= step, "elapsedMs" .= ms] <> endJson end)
@@ -1052,6 +1058,7 @@ howParser name o = case name of
     "exchange" -> Backend . Exchanged <$> queryParser
     "backend-view-opened" -> Backend . BackendViewOpened <$> openingParser
     "backend-view-released" -> Backend . BackendViewReleased <$> releaseParser
+    "tx-staged" -> Staged <$> o .: "step" <*> o .: "tx"
     "tx-built" ->
         fmap Tx $ TxBuilt <$> o .: "step" <*> o .: "elapsedMs" <*> endParser
     "tx-signed" ->
@@ -1145,6 +1152,7 @@ renderPhaseLog (Trace _ event) = case event of
     How (Read e) -> readPhase e
     How (Backend e) -> backendPhase e
     How (Tx e) -> txPhase e
+    How (Staged step tx) -> Just ("stage", ["step" .= step, "tx" .= tx])
     _ -> Nothing
 
 -- | The phase-log line of a transaction mechanic.

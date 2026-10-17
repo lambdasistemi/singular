@@ -52,7 +52,7 @@ import Singular.CLI.Command
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.FoldRules (boundStartMs, placedEdge)
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Prepare
@@ -93,18 +93,18 @@ import Singular.Registry.Types
     , OnChainTokenState (..)
     , edgeName
     )
-import Singular.Registry.Wallet (Wallet (..), bech32Address)
+import Singular.Registry.Wallet (bech32Address)
 
 -- | Reclaim, signed and funded by the command's own wallet, then observed.
 runReclaim :: Env -> ReclaimArgs -> IO Value
 runReclaim env a = do
     let ws = reclaimWrite a
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (reclaimStateDir a)
             (providerMagic (writeProvider ws))
             (accessToken (reclaimAccess a))
-            (writeWalletKey ws)
+            (writeSigner ws)
     attached
         neutralApplication
         env
@@ -118,7 +118,7 @@ runReclaim env a = do
             let s = savedOf at
                 wc = atWrite at
                 caller = callerKey at
-                wallet = walletAddr (wcWallet wc)
+                wallet = wcCaller wc
                 cfg = savedCfg s
                 requestAddr = requestAddrFromCfg cfg (savedToken s) Testnet
                 named = reclaimRequest a
@@ -292,7 +292,7 @@ runReclaim env a = do
                 (wcTracer wc)
                 (placed req)
                 (Reclaimed (txInText named) (coinOf returned))
-            report (wcTracer wc) [] (RootSeen (hexT root) (hexT rootAfter))
+            reportSeen wc [] (RootSeen (hexT root) (hexT rootAfter))
             pure $
                 receipt
                     "reclaim"

@@ -154,7 +154,7 @@ spec = aroundAll withSource $ do
             $ \(settings, socket, _, _) -> withSkeyFile genesisSignKey $ \key -> do
                 wallet <- loadWallet (providerMagic settings) key
                 withPrivateConnection socket $ \oracle ->
-                    withRecordedWrites settings wallet $ \caps ->
+                    withRecordedWrites settings $ \caps ->
                         Services.withLatest (capReads caps) $ \session -> do
                             parameters <- Services.parameters session
                             expectedParameters <- withRawFacts oracle factParameters
@@ -183,7 +183,7 @@ spec = aroundAll withSource $ do
                 let transaction = fundingPayment genesisWallet held (walletAddr wallet)
                 submitAndConfirm caps transaction
                 withPrivateConnection socket $ \oracle ->
-                    withRecordedWrites settings wallet $ \joinerCaps ->
+                    withRecordedWrites settings $ \joinerCaps ->
                         Services.withLatest (capReads joinerCaps) $ \session -> do
                             actual <- Services.outputsAt session (walletAddr wallet)
                             expected <- privateOutputs oracle (walletAddr wallet)

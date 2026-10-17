@@ -299,6 +299,7 @@
             cp ${./tools/demo1_closed_journey.sh} $out/demo1_closed_journey.sh
             cp ${./tools/demo1_cli_create_race.sh} $out/demo1_cli_create_race.sh
             cp ${./tools/demo1_cli_one_output_create.sh} $out/demo1_cli_one_output_create.sh
+            cp ${./tools/registry_bundle_control.sh} $out/registry_bundle_control.sh
             cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
             cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
           '';
@@ -857,6 +858,60 @@
                     exit 3
                   }
                   bash ${managedScripts}/demo1_cli_one_output_create.sh "$singular" "$open_datum" "$devnet" "$deployment_bp" "$work"
+                '';
+              }
+            );
+          };
+          # #641: the registry writes' staged signers on a fresh devnet, by
+          # the packaged commands: a create signed elsewhere, a fold from
+          # the vault, a pending bundle stopping a second create, and an
+          # unsent fold bundle reported dead past its deadline:
+          # `nix run --quiet .#registry-bundle-control`.
+          registry-bundle-control = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "registry-bundle-control";
+                runtimeInputs = with pkgs; [
+                  bash
+                  coreutils
+                  diffutils
+                  findutils
+                  gawk
+                  git
+                  gnugrep
+                  gnused
+                  jq
+                  nix
+                  procps
+                  util-linux
+                ];
+                text = ''
+                  base="''${REGISTRY_JOURNEY_ROOT:-''${TMPDIR:-/tmp}/singular-bundles}"
+                  mkdir -p "$base"
+                  work="$(mktemp -d "$base/run.XXXXXX")/bundles"
+                  echo "bundle control: receipts in $work"
+                  export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+                  root="$PWD"
+                  [ -f "$root/applications/open-datum/offchain/flake.nix" ] || {
+                    echo "registry-bundle-control: run from the repository root" >&2
+                    exit 3
+                  }
+                  open_datum_out="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")" || exit 3
+                  open_datum="$open_datum_out/bin/open-datum"
+                  singular_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#singular")" || exit 3
+                  singular="$singular_out/bin/singular"
+                  devnet_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#devnet")" || exit 3
+                  devnet="$devnet_out/bin/devnet"
+                  # a test-harness tool: it seals the devnet keys into vaults
+                  vault_seal_out="$(nix build --quiet --no-link --print-out-paths "$root/offchain#vault-seal")" || exit 3
+                  vault_seal="$vault_seal_out/bin/vault-seal"
+                  deployment_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")" || exit 3
+                  [ -f "$deployment_bp" ] || {
+                    echo "registry-bundle-control: no deployment blueprint" >&2
+                    exit 3
+                  }
+                  bash ${managedScripts}/registry_bundle_control.sh "$singular" "$open_datum" "$devnet" "$vault_seal" "$deployment_bp" "$root/version.txt" "$work"
                 '';
               }
             );

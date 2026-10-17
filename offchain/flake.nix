@@ -660,6 +660,9 @@
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
           inherit (components.exes) singular;
+          # #641: a test-harness tool the packaged bundle control seals its
+          # devnet keys with; never evidence of anything.
+          inherit (components.exes) vault-seal;
           singular-test-harness = harnessComponents.exes.singular;
           # #528 slice 4: the negative host moved to the application's
           # own tree with the application; this

@@ -133,7 +133,7 @@ confirmationSmoke output genesisDirectory =
                             watching <- readIORef watchingDeadline
                             when watching (getMonotonicTime >>= writeIORef enteredDeadline . Just)
                         _ -> pure ()
-                withWrites observe mempty (facadeSettings facade) wallet $ \caps -> do
+                withWrites observe mempty (facadeSettings facade) $ \caps -> do
                     let SlotNo tip = Node.ledgerTipSlot point
                         upper = SlotNo (tip + 50)
                         SlotNo horizonSlot = horizon

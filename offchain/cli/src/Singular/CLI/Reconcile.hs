@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
@@ -24,7 +25,9 @@ module Singular.CLI.Reconcile
     , Recovery (..)
     , reconcile
     , reconcileIncomplete
+    , reconcileBundles
     , refuseUnreconciled
+    , refusePendingBundle
     , observe
     , observeVerdicts
     , rollBack
@@ -38,7 +41,7 @@ module Singular.CLI.Reconcile
     , renderPoint
     ) where
 
-import Control.Monad (forM, forM_, when)
+import Control.Monad (forM, forM_, unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
@@ -54,6 +57,8 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lens.Micro ((^.))
+import System.Directory (doesFileExist, removeFile)
+import System.FilePath ((</>))
 
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
@@ -74,6 +79,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
+import Singular.CLI.Failure (failWith, failWithFields)
 import Singular.CLI.Live
     ( Saved (..)
     , attachLive
@@ -86,19 +92,25 @@ import Singular.CLI.Live
     )
 import Singular.CLI.Proof (AuthError, Leaf (..))
 import Singular.CLI.Receipt
-    ( FoldTransition (..)
+    ( BundleState (..)
+    , FoldTransition (..)
     , JournalEntry (..)
     , OutcomeClass (..)
     , SubmissionCase (..)
     , appendJournal
+    , bodiesDir
+    , bundleStates
     , caseName
     , foldScalarsAgree
     , foldTransitions
+    , nonMemberLines
+    , pendingBundles
     , readJournal
     , submissionCase
+    , unjudgedMembers
     , unresolved
     )
-import Singular.CLI.ReceiptBody (boundBody)
+import Singular.CLI.ReceiptBody (boundBody, waitingBody)
 import Singular.CLI.Recovery
     ( Inclusion (..)
     , excludedAt
@@ -107,8 +119,8 @@ import Singular.CLI.Recovery
     )
 import Singular.CLI.Registry
     ( hexT
+    , pendingPath
     )
-import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Application
     ( Application (..)
     , DecodedHolding (..)
@@ -121,6 +133,7 @@ import Singular.Registry.Ledger
     , SlotNo (..)
     )
 import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.LedgerProvider qualified as Provider
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.TxBuilder.Edges (adaOnlyOut)
 import Singular.Registry.TxBuilder.Internal
@@ -148,7 +161,12 @@ data Reconciliation = Reconciliation
     , rcObserved :: [Text]
     -- ^ The transactions it journalled @observed@
     , rcRemaining :: Maybe (JournalEntry, SubmissionCase)
-    -- ^ The first transaction still unresolved, with its case
+    , rcBundles :: [(Text, BundleState)]
+    -- ^ Every bundle in the journal with its state, judged by this reconciliation
+    , rcPendingBundles :: [(Text, Value)]
+    {- ^ For each bundle still pending, what a stop names: hash, saved path, members awaited
+    ^ The first transaction still unresolved, with its case
+    -}
     }
 
 -- | What chain evidence showed for one unresolved transaction.
@@ -177,6 +195,7 @@ reconcile
     -> Cage.Session Cage.NoWitness IO
     -> IO Reconciliation
 reconcile app command dir saved view = do
+    (bundles, pendingReports) <- reconcileBundles command dir view
     liveAt <- liveReader view
     rolled <- rollBack command dir view liveAt
     recovered <- recoverInclusion command dir view liveAt
@@ -196,6 +215,8 @@ reconcile app command dir saved view = do
             , rcExcluded = excludedOf recovered
             , rcObserved = observedNow
             , rcRemaining = remaining
+            , rcBundles = bundles
+            , rcPendingBundles = pendingReports
             }
 
 {- | Reconcile the journal of a create that stopped before saving its
@@ -208,6 +229,7 @@ reconcileIncomplete
     -> Cage.Session Cage.NoWitness IO
     -> IO Reconciliation
 reconcileIncomplete command dir view = do
+    (bundles, pendingReports) <- reconcileBundles command dir view
     liveAt <- liveReader view
     rolled <- rollBack command dir view liveAt
     recovered <- recoverInclusion command dir view liveAt
@@ -220,6 +242,8 @@ reconcileIncomplete command dir view = do
             , rcExcluded = excludedOf recovered
             , rcObserved = observedNow
             , rcRemaining = remaining
+            , rcBundles = bundles
+            , rcPendingBundles = pendingReports
             }
 
 excludedOf :: [Recovery] -> [Text]
@@ -231,14 +255,36 @@ remainingOf entries = do
     c <- submissionCase entries (journalTxId e)
     pure (e, c)
 
-{- | A write stops before building anything on a transaction that
-reconciliation left unresolved, naming its case and id: @partial@ while
-its outcome is unknown, acknowledged, timed out or rolled back;
-@stale-state@ when it was included but its journalled edge does not take
-the replay to the ledger's root. Nothing is resubmitted.
+{- | A write stops before building anything on a bundle still pending,
+with status 19, naming the bundle (its hash, saved path, the members
+awaited and their deadlines); or on a transaction that reconciliation left
+unresolved, naming its case and id: @partial@ while its outcome is unknown,
+acknowledged, timed out or rolled back; @stale-state@ when it was included
+but its journalled edge does not take the replay to the ledger's root.
+Nothing is resubmitted.
 -}
 refuseUnreconciled :: Reconciliation -> IO ()
-refuseUnreconciled r = case rcRemaining r of
+refuseUnreconciled r = case rcPendingBundles r of
+    pending : _ -> refusePendingBundle pending [("reconciled", reconciledJson r)]
+    [] -> refuseRemaining r
+
+{- | Stop at status 19 on a pending bundle, naming it and what the receipt
+adds. The one place a write is stopped by a pending bundle.
+-}
+refusePendingBundle :: (Text, Value) -> [(Text, Value)] -> IO a
+refusePendingBundle (h, pending) fields =
+    failWithFields
+        WaitingForSignatures
+        ( "the journal holds bundle "
+            <> T.unpack h
+            <> ", waiting for signatures: sign it and send it with singular submit,"
+            <> " or let a member's deadline pass; nothing was built or submitted"
+        )
+        (("pendingBundle", pending) : fields)
+
+-- | The stop on the first transaction reconciliation left unresolved.
+refuseRemaining :: Reconciliation -> IO ()
+refuseRemaining r = case rcRemaining r of
     Nothing -> pure ()
     Just (e, c) ->
         failWithFields
@@ -279,6 +325,7 @@ reconciledJson r =
         , "recovery" .= recoveryJson (rcRecovered r)
         , "excluded" .= rcExcluded r
         , "observed" .= rcObserved r
+        , "bundles" .= map bundleJson (rcBundles r)
         ]
 
 -- | Each unresolved transaction and what chain evidence showed.
@@ -359,7 +406,7 @@ rollBack
     -> IO [Text]
 rollBack command dir view liveAt = do
     observed <- Cage.tip view
-    entries <- readJournal dir
+    entries <- nonMemberLines <$> readJournal dir
     let included =
             [ t
             | t <- nub (map journalTxId entries)
@@ -414,7 +461,7 @@ recoverInclusion
     -> IO [Recovery]
 recoverInclusion command dir view liveAt = do
     observed <- Cage.tip view
-    entries <- readJournal dir
+    entries <- nonMemberLines <$> readJournal dir
     let settled = ["observed", "rejected", "excluded"]
         open =
             [ lastOf entries t
@@ -702,3 +749,153 @@ recoveryLine command e event detail =
         , journalRootAfter = Nothing
         , journalTransitions = Nothing
         }
+
+{- | Judge the members of every pending bundle, and the members of a dead
+bundle still without their line, by where the chain holds their identities
+and by the tip, and nothing else: a landed line for each member found, with
+its chain point and confirmations. Once a member not found has the tip at or
+past its exclusive upper bound, or the bundle is already dead, every member
+not landed gets a dead line ("expired, rebuild" for the expired, first, then
+"its bundle died"). A run stopped between those appends is completed by the
+next. A create bundle that lands settles the pending identity its create
+recorded, as the key-file create does once its boot is confirmed. Returns
+every bundle's state and, for each still pending, what a stop names. A
+failed tip or inclusion read stops the command, the bundle left as it was.
+-}
+reconcileBundles
+    :: Text
+    -> FilePath
+    -> Cage.Session Cage.NoWitness IO
+    -> IO ([(Text, BundleState)], [(Text, Value)])
+reconcileBundles command dir view = do
+    entries <- readJournal dir
+    let toJudge = unjudgedMembers entries
+        alreadyDead h = case lookup h (bundleStates entries) of
+            Just BundleDead{} -> True
+            _ -> False
+    unless (null toJudge) $ do
+        observed <- Cage.tip view
+        let tipSlot = Cage.observedSlot observed
+            tipText = renderPoint observed
+        forM_ toJudge $ \(h, awaited) -> do
+            bodies <- mapM (memberBody entries) awaited
+            answered <- Cage.inclusion view (map txIdTx bodies)
+            statuses <-
+                either
+                    ( \failure ->
+                        failWith
+                            NodeUnavailable
+                            ( "the inclusion of a pending bundle's members could not be read: "
+                                <> show failure
+                            )
+                    )
+                    (pure . Cage.value)
+                    answered
+            let judged = zip3 awaited bodies statuses
+                line m event detail =
+                    (recoveryLine command (waitingLine entries m) event detail)
+                        { journalObservedTip = Just tipText
+                        }
+            forM_ judged $ \case
+                (m, _, Cage.IncludedAt point confirmations) ->
+                    appendJournal
+                        dir
+                        (line m "landed" (T.pack (show confirmations) <> " confirmations"))
+                            { journalChainPoint = Just (chainPointText point)
+                            }
+                _ -> pure ()
+            let unfound = [(m, body) | (m, body, Cage.NotOnChain) <- judged]
+                expired =
+                    [ m
+                    | (m, body) <- unfound
+                    , Just upper <- [upperOf body]
+                    , tipSlot >= upper
+                    ]
+            -- The expired members' lines come first: a bundle's reason is
+            -- its first dead line's, and that is why it died. A bundle
+            -- already dead gets the lines a stopped run did not write.
+            unless (null expired && not (alreadyDead h))
+                $ forM_
+                    ( [(m, "expired, rebuild") | (m, _) <- unfound, m `elem` expired]
+                        <> [(m, "its bundle died") | (m, _) <- unfound, m `notElem` expired]
+                    )
+                $ \(m, reason) -> appendJournal dir (line m "dead" reason)
+    after <- readJournal dir
+    let states = bundleStates after
+    forM_ states $ \(h, st) ->
+        when (st == BundleLanded && createBundle after h) $ do
+            recorded <- doesFileExist (pendingPath dir)
+            when recorded $ removeFile (pendingPath dir)
+    reports <- forM (pendingBundles states) $ \(h, awaited) -> do
+        members <- forM awaited $ \m -> do
+            body <- memberBody after m
+            pure $
+                object
+                    ( [ "identity" .= m
+                      , "step" .= journalStep (waitingLine after m)
+                      ]
+                        <> [ "deadline" .= Cage.unSlotNo upper
+                           | Just upper <- [upperOf body]
+                           ]
+                    )
+        pure
+            ( h
+            , object
+                [ "hash" .= h
+                , "saved" .= (bodiesDir dir </> ("bundle-" <> T.unpack h <> ".bundle"))
+                , "awaited" .= members
+                ]
+            )
+    pure (states, reports)
+  where
+    memberBody entries m =
+        waitingBody entries m
+            >>= either
+                ( \why ->
+                    failWith
+                        ClientRefusal
+                        ( "the saved body of bundle member "
+                            <> T.unpack m
+                            <> " cannot be read: "
+                            <> T.unpack why
+                        )
+                )
+                pure
+    waitingLine entries m =
+        case [ e
+             | e <- entries
+             , journalTxId e == m
+             , journalEvent e == "waiting-for-signatures"
+             ] of
+            e : _ -> e
+            [] ->
+                error
+                    ("reconcileBundles: a member without its waiting line: " <> T.unpack m)
+    createBundle entries h =
+        or
+            [ journalCommand e == "create"
+            | e <- entries
+            , journalEvent e == "waiting-for-signatures"
+            , journalDetail e == Just h
+            ]
+
+-- | A bundle's state as a receipt reports it.
+bundleJson :: (Text, BundleState) -> Value
+bundleJson (h, st) = object (("hash" .= h) : fields)
+  where
+    fields = case st of
+        BundlePending awaited -> ["state" .= ("pending" :: Text), "awaited" .= awaited]
+        BundleLanded -> ["state" .= ("landed" :: Text)]
+        BundleDead reason died went ->
+            [ "state" .= ("dead" :: Text)
+            , "reason" .= reason
+            , "died" .= died
+            , "wentThrough" .= went
+            ]
+
+-- | A chain point as the journal writes it: slot, a dot, the block hash.
+chainPointText :: Provider.ChainPoint -> Text
+chainPointText = \case
+    Provider.Genesis -> "genesis"
+    Provider.At slot header ->
+        T.pack (show (Cage.unSlotNo slot)) <> "." <> hexT header

@@ -9,7 +9,7 @@
 # timeout) and #343 (release-hook exclusion).
 
 # ---- production: libraries shipped in release builds ----
-offchain/cli/src/Singular/CLI/Session.hs: ioref — owner=the CLI session of one command; lifetime=single command run; serial on the calling thread; connection flag and blueprint-progress refs threaded through the session, never shared between commands
+offchain/cli/src/Singular/CLI/Session.hs: ioref — owner=the CLI session of one command; lifetime=single command run; serial on the calling thread; connection flag and blueprint-progress refs threaded through the session, and a staged run's transactions, effect lines and state token collected by that one command and read once when it ends in the bundle, never shared between commands
 offchain/cli/src/Singular/CLI/Reconcile.hs: ioref — owner=one reconcile view-cache lookup; lifetime=single liveReader call; serial on the calling thread; the fresh per-call cache sits beside the implementation
 offchain/koios-http/src/Singular/Provider/Koios/Recorder.hs: ioref — owner=one fixture-recording run; lifetime=single recorder command; serial; accumulates recorded exchanges before writing them as fixtures
 offchain/koios-http/src/Singular/Registry/Terminal.hs: ioref — owner=the Capabilities value of one acquisition; lifetime=one observed session; serial callbacks on the calling thread; newest-first raw/fact buffers reversed on read, partial evidence preserved on exceptions
@@ -103,6 +103,7 @@ offchain/test/Singular/Provider/Koios/Scripted.hs: ioref — harness; owner=one 
 offchain/test/Singular/Registry/ContractMemory.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; contract-memory refs for assertions
 offchain/test/Singular/Registry/ContractNode.hs: async — harness; owner=the contract examples in this file; lifetime=single example; oracle and wallet legs run under link withAsync, joined by wait before the example ends
 offchain/test/Singular/Registry/ContractSuite.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; suite refs accumulated for assertions
+offchain/test/Singular/Registry/ChainedViewSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; the staged list of one staged run, appended transaction by transaction so each builder reads the earlier ones through the chained view
 offchain/test/Singular/Registry/DeploymentSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; deployment refs for assertions
 offchain/test/Singular/Registry/LineageSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; lineage refs for assertions
 offchain/test/Singular/Registry/LocalServicesCallerSpec.hs: ioref — harness; owner=the examples in this file; lifetime=single example; serial; caller refs for assertions

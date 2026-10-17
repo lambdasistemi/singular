@@ -621,7 +621,6 @@ runWith chooseStory args = do
         try
             ( withBackendNode
                 (providerSettings o)
-                wallet
                 $ \caps -> do
                     -- Before anything is written the wallet must be able to
                     -- fund every action the take will ask of it.
@@ -1115,7 +1114,6 @@ withSession env body = do
     wallet <- loadWallet (fromIntegral (optMagic o)) (optWalletKey o)
     withBackendNode
         (providerSettings o)
-        wallet
         (`body` wallet)
 
 txIdHex :: ConwayTx -> Text

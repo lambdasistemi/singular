@@ -95,7 +95,8 @@ import Text.Read (readMaybe)
 import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Ledger.TxIn (TxIn)
 import Singular.CLI.FlagGroup
-    ( commonFlagGroup
+    ( Signer (..)
+    , commonFlagGroup
     , parseFlagGroup
     , readProviderSettings
     , splitTracingFor
@@ -152,11 +153,13 @@ newtype ApplicationPolicy = ApplicationPolicy
     }
     deriving stock (Eq, Show)
 
--- | The node and the wallet a write command funds and signs from.
+{- | The node and the wallet a write command funds and signs from, or the
+external signer it stages for: one signer names the run.
+-}
 data WriteSettings = WriteSettings
     { writeProvider :: ProviderSettings
-    , writeWalletKey :: FilePath
-    -- ^ Path of the caller's payment signing key; read, never printed
+    , writeSigner :: Signer
+    -- ^ The key file, or the address with its bundle file; read, never printed
     , writeConfirmTimeout :: Maybe Int
     {- ^ Seconds to wait for each submission to confirm; unset, ten minutes.
     The bound holds even when the node is lost after accepting the
@@ -481,6 +484,7 @@ parseWithGroup group environment args = do
                     ["registry", "inspect"] ->
                         refuseApplicationPolicy flags
                             >> refuseSpendingFlags "inspect" flags
+                            >> refuseBundle "registry inspect" flags
                             >> refuseRequest flags
                             >> refuseFold flags
                             >> (Inspect <$> inspectArgs environment flags)
@@ -515,6 +519,15 @@ parseWithGroup group environment args = do
                             flag
                             "is a registry create flag: windows are fixed for the life of a registry"
                         )
+    -- @--bundle@ is where a write's run goes for signing elsewhere; a
+    -- command that writes nothing refuses it by name rather than ignore it.
+    refuseBundle command flags =
+        when (isJust (lookup "--bundle" flags)) $
+            Left
+                ( BadValue
+                    "--bundle"
+                    ("is a write flag: " <> command <> " writes nothing")
+                )
     -- The constraints on a write's spending belong to insert, update and
     -- terminate. A command that does not enforce one refuses it by name rather
     -- than discard what the caller stated.
@@ -550,17 +563,28 @@ parseWithGroup group environment args = do
                     "--fold"
                     "is taken by insert and terminate only: they book, and with it also fold"
                 )
-    -- The wallet flags belong to the wallet verbs alone; a registry
-    -- command refuses each by name rather than ignore it.
+    -- The output directory belongs to the wallet verbs alone, and the
+    -- vault and its passphrase descriptor to them and the four registry
+    -- writes, which sign from the vault; any other command refuses each by
+    -- name rather than ignore it.
     refuseWalletSettings words' flags =
-        unless (take 1 words' == ["wallet"]) $
-            forM_ ["--vault", "--passphrase-fd", "--out"] $ \flag ->
-                when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is a wallet flag: only singular wallet commands read it"
-                        )
+        unless (take 1 words' == ["wallet"]) $ do
+            when (isJust (lookup "--out" flags)) $
+                Left
+                    ( BadValue
+                        "--out"
+                        "is a wallet flag: only singular wallet commands read it"
+                    )
+            unless (words' `elem` registryWrites) $
+                forM_ ["--vault", "--passphrase-fd"] $ \flag ->
+                    when (isJust (lookup flag flags)) $
+                        Left
+                            ( BadValue
+                                flag
+                                "is a signer flag: only the wallet commands and the registry writes read it"
+                            )
+    registryWrites =
+        [["registry", w] | w <- ["create", "fold", "reject", "reclaim"]]
     -- A wallet command takes its own flags and nothing else from
     -- the shared group: every other setting is refused by name rather
     -- than ignored.
@@ -606,6 +630,7 @@ parseWithGroup group environment args = do
     describeRefusedFlags :: [String]
     describeRefusedFlags =
         [ "--wallet-skey"
+        , "--bundle"
         , "--state-dir"
         , "--receipt"
         , "--wallet-address"
@@ -636,8 +661,6 @@ parseWithGroup group environment args = do
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
             publicPreview = preview && isJust (lookup "--wallet-address" flags)
-        when (not preview && isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
         mode <-
             if publicPreview
                 then previewMode flags
@@ -702,8 +725,6 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -745,8 +766,6 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry reject: it takes every pending request, once each is past both its windows"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -779,8 +798,6 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry reclaim: it takes back the named pending request"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -859,13 +876,15 @@ parseWithGroup group environment args = do
                 }
     -- A preview reads a node and names a public address; it holds no key,
     -- so a signing key is refused before anything is read.
-    addressNeedsPreview =
-        BadValue
-            "--wallet-address"
-            "names a caller for --preview and registry inspect only; a write signs with --wallet-skey"
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
+        when (isJust (lookup "--bundle" flags)) $
+            Left
+                ( BadValue
+                    "--bundle"
+                    "cannot be used with --preview: a preview signs and writes nothing"
+                )
         settings <- readProviderSettings MissingFlag BadValue flags
         addr <- required "--wallet-address" flags
         pure (Preview settings addr)
@@ -990,7 +1009,7 @@ The one valued flag this binary owns beyond the common group: create
 pins an application policy, and no other command reads it.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = ["--application-policy", "--vault", "--passphrase-fd", "--out"]
+extraValuedFlags = ["--application-policy", "--out"]
 
 {- | Split the @--json@ switch off a command line: describe reads it, no
 other command takes it. Only the exact switch is taken; anything else
@@ -1065,6 +1084,12 @@ usage =
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--preview] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
         , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
@@ -1072,13 +1097,37 @@ usage =
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"

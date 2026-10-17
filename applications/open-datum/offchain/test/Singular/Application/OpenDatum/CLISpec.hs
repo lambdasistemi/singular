@@ -648,7 +648,7 @@ commandLine = describe "the command line" $ do
         WriteSettings
             { writeProvider =
                 ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
-            , writeWalletKey = "/keys/payment.skey"
+            , writeSigner = SignerKeyFile "/keys/payment.skey"
             , writeConfirmTimeout = Nothing
             }
     isUnknown = \case UnknownCommand _ -> True; _ -> False
@@ -1502,7 +1502,7 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
             WriteSettings
                 { writeProvider =
                     ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
-                , writeWalletKey = "/keys/payment.skey"
+                , writeSigner = SignerKeyFile "/keys/payment.skey"
                 , writeConfirmTimeout = Nothing
                 }
     it

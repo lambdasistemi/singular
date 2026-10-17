@@ -102,7 +102,7 @@ withRunner action = do
             (providerMagic (runnerProvider settings))
             (runnerWalletFile settings)
     target <- lookupEnv "SINGULAR_RUNNER_EVIDENCE"
-    withWrites nullTracer nullTracer (runnerProvider settings) wallet $ \capabilities ->
+    withWrites nullTracer nullTracer (runnerProvider settings) $ \capabilities ->
         action wallet capabilities `finally` case target of
             Nothing -> pure ()
             Just path -> do
