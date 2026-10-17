@@ -62,6 +62,9 @@ let
       "singular"
       # #389: the read-only Koios probe and fixture recorder.
       "singular-koios"
+      # #641: the test-harness tool that seals a devnet key into a vault for
+      # the packaged bundle control.
+      "vault-seal"
     ];
     tests = [
       "record-value-tests"

@@ -1358,3 +1358,19 @@ executable singular
     , singular-registry:registry-cli
 
   ghc-options:      -threaded -with-rtsopts=-N
+
+-- A test-harness tool for the packaged controls, never evidence: seals a
+-- devnet key file into a wallet vault with the production sealing.
+executable vault-seal
+  import:           warnings
+  default-language: GHC2021
+  hs-source-dirs:   test/vault-seal
+  main-is:          Main.hs
+
+  build-depends:
+    , base                              >=4.14 && <5
+    , bytestring
+    , singular-registry:local-services
+    , singular-registry:registry-cli
+
+  ghc-options:      -threaded -with-rtsopts=-N
