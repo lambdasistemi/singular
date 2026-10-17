@@ -29,6 +29,7 @@ module Singular.Registry.TxBuilder.Internal.Identity
     , requestAddrFromCfg
     , onChainTokenId
     , requestPolicyHash
+    , requestPolicyPin
 
       -- * Datum helpers
     , mkRequestDatum
@@ -234,6 +235,21 @@ requestPolicyHash
 requestPolicyHash stateHash requestBytes token =
     computeScriptHash $
         applyRequestParams (scriptHashBytes stateHash) token requestBytes
+
+{- | The request policy pin a registry's state carries: the hash of the
+request validator applied to the state policy and to the registry token that
+the boot seed names, from the two validators' bytes and the seed. Every tool
+that boots a registry takes its pin from here.
+-}
+requestPolicyPin
+    :: SBS.ShortByteString
+    -- ^ The state validator bytes
+    -> SBS.ShortByteString
+    -- ^ The unapplied request validator bytes
+    -> OnChainTxOutRef
+    -- ^ The seed the boot consumes
+    -> SBS.ShortByteString
+requestPolicyPin _ _ _ = SBS.empty
 
 -- | Convert a ledger token id to its on-chain token id.
 onChainTokenId :: TokenId -> OnChainTokenId

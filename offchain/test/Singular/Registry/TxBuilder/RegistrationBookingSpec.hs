@@ -145,6 +145,7 @@ import Singular.Registry.TxBuilder.Internal
     , onChainTokenId
     , policyIdFromPin
     , requestAddrFromCfg
+    , requestPolicyPin
     , scriptFromBytes
     , scriptHashBytes
     , toPlcData
@@ -434,6 +435,8 @@ spec = do
                 `shouldBe` (Coin 2_000_000, 10_000)
         it "a configuration derived from a seed pins the applied request hash" $
             cfgRequestPolicy derived `shouldBe` expectedPin
+        it "the shared pin derivation gives that same pin" $
+            requestPolicyPin program program seed `shouldBe` expectedPin
         it
             "the pin is the payment credential of the address requests are sent to"
             $ case requestAddrFromCfg derived derivedToken Testnet of
