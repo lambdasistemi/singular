@@ -135,6 +135,7 @@ library
     Singular.Registry.TxBuilder.Internal.Lookup
     Singular.Registry.TxBuilder.Prepare
     Singular.Registry.TxBuilder.Register
+    Singular.Registry.TxBuilder.RegistrationBooking
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
     Singular.Registry.TxBuilder.Retract
