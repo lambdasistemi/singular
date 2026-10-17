@@ -198,6 +198,7 @@ library registry-cli
     Singular.CLI.Command
     Singular.CLI.Create
     Singular.CLI.Describe
+    Singular.CLI.Failure
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
     Singular.CLI.Fold

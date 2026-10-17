@@ -79,6 +79,7 @@ import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Cardano.Slotting.Slot qualified as Cage
+import Singular.CLI.Failure (failWith, failWithFields)
 import Singular.CLI.Live
     ( Saved (..)
     , attachLive
@@ -120,7 +121,6 @@ import Singular.CLI.Registry
     ( hexT
     , pendingPath
     )
-import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Application
     ( Application (..)
     , DecodedHolding (..)

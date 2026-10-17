@@ -79,9 +79,12 @@ import Crypto.Age.Scrypt (WorkFactor, mkWorkFactor)
 import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
+    , FoldArgs (..)
     , WalletArgs (..)
+    , WriteSettings (..)
     , parseCommand
     )
+import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Passphrase
 import Singular.CLI.Vault
 import Singular.Registry.Wallet
@@ -576,12 +579,27 @@ walletVerbs = describe "the wallet verbs on the command line" $ do
                     "--blueprint"
                     "is not accepted by wallet create: a wallet command takes only its vault, network magic and passphrase descriptor"
                 )
-    it "refuses the wallet flags on a registry command, by name" $
-        parseCommand ["registry", "fold", "--vault", "x"]
-            `shouldBe` Left
-                ( BadValue
-                    "--vault"
-                    "is a wallet flag: only singular wallet commands read it"
-                )
+    it
+        "takes the vault and its passphrase descriptor on a registry write, as its signer"
+        $ case parseCommand
+            (registryFoldLine <> ["--vault", "x", "--passphrase-fd", "3"]) of
+            Right (Fold a) ->
+                writeSigner (foldWrite a) `shouldBe` SignerVault "x" (Just 3)
+            other -> expectationFailure ("the vault was not taken: " <> show other)
     it "takes a bare wallet word as help" $
         parseCommand ["wallet"] `shouldBe` Right Help
+
+-- | A registry fold line complete but for its signer.
+registryFoldLine :: [String]
+registryFoldLine =
+    [ "registry"
+    , "fold"
+    , "--blueprint"
+    , "blueprint.json"
+    , "--state-token"
+    , replicate 56 'a' <> "." <> replicate 64 'b'
+    , "--koios-url"
+    , "https://koios.example"
+    , "--network-magic"
+    , "1"
+    ]

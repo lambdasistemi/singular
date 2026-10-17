@@ -124,13 +124,15 @@ import Control.Tracer (nullTracer)
 
 import Singular.CLI (runCommand)
 import Singular.CLI.Command
-    ( Command (..)
+    ( CLIError (..)
+    , Command (..)
     , SubmitArgs (..)
     , parseCommand
     , renderCLIError
     )
 import Singular.CLI.Session (Env (..))
 import Singular.CLI.Sign (PlannedWitness (..), witnessPlan)
+import Singular.CLI.Submit (submitInMemory)
 import Singular.Registry.Application (neutralApplication)
 import Singular.Registry.Bundle
 import Singular.Registry.Capabilities (Capabilities (..))
@@ -163,6 +165,7 @@ spec :: Spec
 spec = describe "submitting a signed bundle" $ do
     theCommandLine
     theSends
+    theCore
     theRefusals
     theRerun
     theFoundWitnesses
@@ -201,6 +204,19 @@ theCommandLine = describe "the command line" $ do
                         , submitReceipt = Just "receipt.json"
                         }
                 )
+    it
+        "refuses the vault and its passphrase descriptor as signer flags, with that reason"
+        $ forM_ ["--vault", "--passphrase-fd"]
+        $ \flag ->
+            parseCommand
+                ( ["submit", "--witnesses", "w", flag, "3", "bundle.json"]
+                    <> nodeSettings
+                )
+                `shouldBe` Left
+                    ( BadValue
+                        flag
+                        "is a signer flag: only the wallet commands and the registry writes read it"
+                    )
     it "refuses a wallet key, a vault and a passphrase descriptor by name" $
         forM_ ["--wallet-skey", "--vault", "--passphrase-fd"] $ \flag ->
             case parseCommand
@@ -286,6 +302,48 @@ theSends = describe "the sends and the receipt" $ do
 -- ---------------------------------------------------------
 -- The refusals
 -- ---------------------------------------------------------
+
+{- | The submit core over a bundle and witnesses held in memory: the
+vault mode's way in. It sends in the bundle's order with exactly the
+verified witnesses and yields the receipt fields the command prints.
+-}
+theCore :: Spec
+theCore = describe "the core over a bundle in memory"
+    $ it
+        "sends the in-memory bundle with its witnesses in order and yields the receipt fields the file front prints"
+    $ withRig
+    $ \rig -> do
+        tip <- tipSlot rig
+        let bodies = chained (tip + 1000)
+            bundle = bundleOf bodies
+            bytes = encodeBundle bundle
+        planned <-
+            either (fail . show) pure (witnessPlan bytes walletKey)
+        witnesses <-
+            either (fail . renderBundleRefusal) pure $
+                mapM (decodeWitnessEnvelope . plannedBytes) planned
+        settings <-
+            case parseCommand
+                (["submit", "--witnesses", "w", "b.json"] <> nodeSettings) of
+                Right (SubmitBundle a) -> pure (submitProvider a)
+                other -> fail ("the submit line did not parse: " <> show other)
+        fields <- submitInMemory (envOf rig) settings bundle bytes witnesses
+        sends <- readIORef (rigSends rig)
+        map fst sends `shouldBe` map bodyIdentity bodies
+        map snd sends `shouldBe` replicate 2 [verKeyBytes walletKey]
+        let receipt =
+                Aeson.Object
+                    (KeyMap.fromList [(Key.fromText k, v) | (k, v) <- fields])
+        textAt "bundleHash" receipt
+            `shouldBe` Just (hexText' (hashToBytes (hashWith @Blake2b_256 id bytes)))
+        points <- readIORef (rigPoints rig)
+        let entries = submissionsOf receipt
+        map (textAt "identity") entries
+            `shouldBe` map (Just . hexText' . bodyIdentity) bodies
+        map (textAt "how") entries `shouldBe` [Just "sent", Just "sent"]
+        map pointOf entries
+            `shouldBe` [Map.lookup (bodyIdentity b) points | b <- bodies]
+        map (integerAt "confirmations") entries `shouldBe` [Just 2, Just 1]
 
 theRefusals :: Spec
 theRefusals = describe "the refusals, each with nothing sent" $ do

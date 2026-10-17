@@ -26,6 +26,7 @@ module Singular.CLI.FlagGroup
     ( commonFlagGroup
     , commonSwitches
     , Signer (..)
+    , OpenedVault (..)
     , signerAddress
     , tokenizeWith
     , tokenizeFor
@@ -55,16 +56,36 @@ import Singular.CLI.Trace
     , noTraceRequest
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.Wallet (Wallet, bech32Address, walletAddr)
 
-{- | How one write signs: a key file, as today, or an external signer — an
+{- | How one write signs: a key file, as today; an external signer — an
 address spelled in bech32 exactly as the caller gave it together with the
-bundle file the run's unsigned transactions are written to. Exactly one
-signer names a run; the write reader refuses the mixtures.
+bundle file the run's unsigned transactions are written to; or a vault —
+the vault file and the descriptor its passphrase is read from, the
+terminal when none is named. Exactly one signer names a run; the write
+reader refuses the mixtures. The reader holds no secret: the vault is a
+path until the command opens it, once, into 'SignerVaultOpened'.
 -}
 data Signer
     = SignerKeyFile FilePath
     | SignerExternal Text FilePath
+    | SignerVault FilePath (Maybe Int)
+    | SignerVaultOpened OpenedVault
     deriving stock (Eq, Show)
+
+{- | A vault opened for one run: the wallet its key derives, held in memory
+for the command's lifetime. It shows as its address alone and compares by
+it, so no rendering of a signer carries a key byte.
+-}
+newtype OpenedVault = OpenedVault Wallet
+
+instance Show OpenedVault where
+    showsPrec p (OpenedVault wallet) =
+        showParen (p > 10) $
+            showString "OpenedVault " . shows (bech32Address (walletAddr wallet))
+
+instance Eq OpenedVault where
+    OpenedVault a == OpenedVault b = walletAddr a == walletAddr b
 
 {- | The address of an external signer, as the ledger reads it: bech32,
 decoded, and refused unless its payment part is a payment key — an address
@@ -110,6 +131,8 @@ commonFlagGroup =
     , "--confirm-timeout"
     , "--wallet-address"
     , "--bundle"
+    , "--vault"
+    , "--passphrase-fd"
     , "--outputs-at"
     , "--fund-input"
     , "--max-outlay"
@@ -304,6 +327,8 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
     let keyNamed = flagValue "--wallet-skey" flags
         addressNamed = flagValue "--wallet-address" flags
         bundleNamed = flagValue "--bundle" flags
+        vaultNamed = flagValue "--vault" flags
+        descriptorNamed = flagValue "--passphrase-fd" flags
     case (keyNamed, addressNamed) of
         (Just _, Just _) ->
             Left
@@ -312,6 +337,26 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
                     "cannot be combined with --wallet-skey: a write takes exactly one signer"
                 )
         _ -> Right ()
+    case (vaultNamed, keyNamed, addressNamed) of
+        (Just _, Just _, _) ->
+            Left
+                ( bad
+                    "--vault"
+                    "cannot be combined with --wallet-skey: a write takes exactly one signer"
+                )
+        (Just _, _, Just _) ->
+            Left
+                ( bad
+                    "--vault"
+                    "cannot be combined with --wallet-address: a write takes exactly one signer"
+                )
+        _ -> Right ()
+    when (isJust descriptorNamed && isNothing vaultNamed) $
+        Left
+            ( bad
+                "--passphrase-fd"
+                "is meaningless without --vault: name the vault too"
+            )
     case (addressNamed, bundleNamed) of
         (Just _, Nothing) ->
             Left
@@ -334,7 +379,7 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
                 "--bundle"
                 "cannot be used with --preview: a preview signs and writes nothing"
             )
-    let external = isJust addressNamed || isJust bundleNamed
+    let staged = isJust addressNamed || isJust bundleNamed || isJust vaultNamed
     forM_ ["--koios-url", "--network-magic"] $ \name ->
         when (isNothing (flagValue name flags)) $
             Left
@@ -342,10 +387,10 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
                     ( "partially configured write: missing "
                         <> name
                         <> "; a write needs --koios-url, --network-magic and "
-                        <> (if external then "a signer" else "--wallet-skey")
+                        <> (if staged then "a signer" else "--wallet-skey")
                     )
                 )
-    when (not external && isNothing keyNamed) $
+    when (not staged && isNothing keyNamed) $
         Left
             ( unsafe
                 ( "partially configured write: missing --wallet-skey"
@@ -365,12 +410,18 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
         Right providers -> Right providers
     when (providerMagic settings == 764824073) $
         Left (unsafe "mainnet is not supported")
-    signer <- case (keyNamed, addressNamed, bundleNamed) of
-        (Just path, Nothing, Nothing) -> Right (SignerKeyFile path)
-        (Nothing, Just address, Just bundle) -> do
+    signer <- case (keyNamed, addressNamed, bundleNamed, vaultNamed) of
+        (Just path, Nothing, Nothing, Nothing) -> Right (SignerKeyFile path)
+        (Nothing, Just address, Just bundle, Nothing) -> do
             let given = Text.pack address
             SignerExternal given bundle
                 <$ first (bad "--wallet-address") (signerAddress given)
+        (Nothing, Nothing, Nothing, Just vault) ->
+            SignerVault vault <$> case descriptorNamed of
+                Nothing -> Right Nothing
+                Just spelling -> case readMaybe spelling of
+                    Just n | n >= 0 -> Right (Just n)
+                    _ -> Left (bad "--passphrase-fd" "not a descriptor number")
         _ -> Left (missing "--wallet-skey")
     confirmationTimeout <- case flagValue "--confirm-timeout" flags of
         Nothing -> Right Nothing

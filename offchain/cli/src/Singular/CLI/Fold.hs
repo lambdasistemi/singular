@@ -963,7 +963,7 @@ foldPendingBounded bound app at FoldSpec{..} = do
                 DeliveredDatum out _ -> txInText out
                 Released out _ -> txInText out
             )
-    report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT local))
+    reportSeen wc [] (RootSeen (hexT rootBefore) (hexT local))
     pure
         Folded
             { fdSettled = case [toSettled entry delivery | (entry, delivery) <- entryDeliveries] of

@@ -93,6 +93,8 @@ pinnedCommonValued =
     , "--confirm-timeout"
     , "--wallet-address"
     , "--bundle"
+    , "--vault"
+    , "--passphrase-fd"
     , "--outputs-at"
     , "--fund-input"
     , "--max-outlay"
@@ -392,6 +394,80 @@ settings = describe "settings" $ do
             (validWriteFlags <> [("--confirm-timeout", Just "soon")])
             `shouldBe` Left
                 (BadValue "--confirm-timeout" "is not a whole number of seconds")
+    it "reads a vault write from a vault file and a passphrase descriptor" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            WriteSettings
+            (vaultWriteFlags <> [("--passphrase-fd", Just "3")])
+            `shouldBe` Right
+                ( WriteSettings
+                    validProvider
+                    (SignerVault "alice.vault" (Just 3))
+                    Nothing
+                )
+    it "reads a vault write whose passphrase is asked at the terminal" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            WriteSettings
+            vaultWriteFlags
+            `shouldBe` Right
+                ( WriteSettings
+                    validProvider
+                    (SignerVault "alice.vault" Nothing)
+                    Nothing
+                )
+    it "refuses a vault with a key file, as two signer modes" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (vaultWriteFlags <> [("--wallet-skey", Just "key.skey")])
+            `shouldBe` Left
+                ( BadValue
+                    "--vault"
+                    "cannot be combined with --wallet-skey: a write takes exactly one signer"
+                )
+    it "refuses a vault with an external signer, as two signer modes" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (externalWriteFlags <> [("--vault", Just "alice.vault")])
+            `shouldBe` Left
+                ( BadValue
+                    "--vault"
+                    "cannot be combined with --wallet-address: a write takes exactly one signer"
+                )
+    it "refuses the passphrase descriptor without a vault" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (validWriteFlags <> [("--passphrase-fd", Just "3")])
+            `shouldBe` Left
+                ( BadValue
+                    "--passphrase-fd"
+                    "is meaningless without --vault: name the vault too"
+                )
+    it "refuses a passphrase descriptor that is not a descriptor number" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (vaultWriteFlags <> [("--passphrase-fd", Just "stdin")])
+            `shouldBe` Left (BadValue "--passphrase-fd" "not a descriptor number")
+
+-- | Tokenized flags naming a complete vault write, the passphrase asked.
+vaultWriteFlags :: [(String, Maybe String)]
+vaultWriteFlags = validProviderFlags <> [("--vault", Just "alice.vault")]
 
 -- | Tokenized flags naming a complete external write.
 externalWriteFlags :: [(String, Maybe String)]

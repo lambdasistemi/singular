@@ -120,6 +120,13 @@ import System.IO
     , stdout
     )
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Files
+    ( nullFileMode
+    , ownerReadMode
+    , ownerWriteMode
+    , setFileMode
+    , unionFileModes
+    )
 import System.Posix.IO
     ( OpenFileFlags (..)
     , OpenMode (..)
@@ -131,10 +138,11 @@ import System.Posix.IO
     , stdError
     , stdOutput
     )
-import System.Posix.Types (Fd)
+import System.Posix.Types (Fd (..))
 import System.Timeout (timeout)
 import Test.Hspec
 
+import Cardano.Crypto.DSIGN (rawSerialiseSignKeyDSIGN)
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class
     ( hashFromBytes
@@ -205,6 +213,7 @@ import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Fold (runFoldBounded)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
 import Singular.CLI.Outlay (Outlay (..), outlayTotal, updateOutlay)
+import Singular.CLI.Passphrase (mkPassphrase)
 import Singular.CLI.Prepare
     ( PrepareRefusal (..)
     , allowanceRefusal
@@ -245,6 +254,11 @@ import Singular.CLI.Session
 import Singular.CLI.Sign (renderSignRefusal, witnessPlan)
 import Singular.CLI.SubmitSpec (selfPaymentFiles)
 import Singular.CLI.Trace
+import Singular.CLI.Vault
+    ( createVaultFile
+    , sealVault
+    , vaultWorkFactor
+    )
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
@@ -368,6 +382,10 @@ spec =
         >> externalSignerRows
         >> externalCreateRows
         >> journalPhaseRows
+        >> vaultSignerRows
+        >> stagedNarrationRows
+        >> vaultBookkeepingRows
+        >> vaultUnreadJournalRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -2670,7 +2688,7 @@ commandLine rig registry args
         take 2 args /= ["registry", "inspect"]
             && take 2 args /= ["registry", "describe"]
             -- an external signer names its own signer: the key file never joins it
-            && not (any (`elem` args) ["--wallet-address", "--bundle"])
+            && not (any (`elem` args) ["--wallet-address", "--bundle", "--vault"])
 
 -- ---------------------------------------------------------
 -- --application-policy (#528)
@@ -6121,3 +6139,751 @@ explicitSeedCreateStoppedRow =
                                | e <- toList (bundleTransactions bundle)
                                ]
             doesPathExist secondBundle `shouldReturn` False
+
+-- ---------------------------------------------------------
+-- The vault signer (#641 slice 5)
+-- ---------------------------------------------------------
+
+{- | The vault mode over the rig: the command builds the bundle the
+external mode writes for the vault's address, signs every member from
+the vault, sends them in order through the submit core and journals the
+outcome by the journal phase's rules. The vault is the rig wallet's own
+key, sealed under a passphrase the run reads from a descriptor.
+-}
+vaultSignerRows :: Spec
+vaultSignerRows = describe "the vault signer" $ do
+    vaultSameBundleRow
+    vaultAllLandedRow
+    vaultRefusedRow
+    vaultUncertainRow
+    vaultRefusalsRow
+
+-- | The passphrase the rows' vaults are sealed with.
+vaultPassphrase :: String
+vaultPassphrase = "a passphrase only the rig's vault knows"
+
+-- | The rig wallet's key sealed into a vault of this name, under the rig.
+rigVault :: Rig -> String -> IO FilePath
+rigVault rig name = do
+    passphrase <-
+        either (fail . show) pure (mkPassphrase (BC.pack vaultPassphrase))
+    sealed <-
+        sealVault vaultWorkFactor passphrase (walletSignKey (rigWallet rig))
+            >>= either (fail . show) pure
+    let path = rigDir rig </> (name <> ".vault")
+    createVaultFile path sealed >>= either (fail . show) pure
+    pure path
+
+{- | A descriptor that yields this passphrase once, as a script hands it
+over; the reader closes it.
+-}
+passphraseDescriptor :: Rig -> String -> String -> IO Int
+passphraseDescriptor rig name spelling = do
+    let path = rigDir rig </> (name <> ".passphrase")
+    BC.writeFile path (BC.pack (spelling <> "\n"))
+    Fd n <- openFd path ReadOnly defaultFileFlags
+    pure (fromIntegral n)
+
+-- | The vault signer's flags.
+vaultArgs :: FilePath -> Int -> [String]
+vaultArgs vault fd = ["--vault", vault, "--passphrase-fd", show fd]
+
+-- | Every spelling of the vault's secrets: the passphrase and the key bytes.
+vaultSecrets :: Rig -> [BS.ByteString]
+vaultSecrets rig =
+    [ BC.pack vaultPassphrase
+    , raw
+    , B16.encode raw
+    ]
+  where
+    raw = rawSerialiseSignKeyDSIGN (walletSignKey (rigWallet rig))
+
+-- | No secret of the vault in the receipt, the journal or the trace of a run.
+assertNoVaultSecret :: Rig -> FilePath -> Run -> IO ()
+assertNoVaultSecret rig dir r = do
+    journalled <- BS.readFile (journalPath dir)
+    let printed = BL.toStrict (Aeson.encode (runReceipt r))
+        traced = BC.pack (show (runEvents r))
+    forM_ (vaultSecrets rig) $ \secret -> do
+        printed `shouldNotSatisfy` BS.isInfixOf secret
+        journalled `shouldNotSatisfy` BS.isInfixOf secret
+        traced `shouldNotSatisfy` BS.isInfixOf secret
+
+{- | The rig's environment with the submission of this ordinal answered by
+the given function of the rig's own submission: the node refusing it, or
+the node applying it and its answer lost.
+-}
+answeringAt
+    :: Rig
+    -> Int
+    -> (IO Cage.SubmitResult -> IO Cage.SubmitResult)
+    -> IO Env
+answeringAt rig ordinal answer = do
+    counted <- newIORef (0 :: Int)
+    let caps = capabilities rig
+        caps' =
+            caps
+                { capSubmit = \tx -> do
+                    modifyIORef' counted (+ 1)
+                    n <- readIORef counted
+                    if n == ordinal
+                        then answer (capSubmit caps tx)
+                        else capSubmit caps tx
+                }
+    pure
+        (envOf rig){envReads = \_ k -> k caps', envWrites = \_ k -> k caps'}
+
+-- | The bundle a vault run names in its receipt, read from beside the journal.
+vaultBundleOf :: Run -> FilePath -> IO (Text, Bundle, [ConwayTx])
+vaultBundleOf r dir = do
+    h <-
+        maybe
+            (fail ("no bundle hash in the receipt: " <> show (runReceipt r)))
+            pure
+            (valueAt "bundle" (runReceipt r) >>= textAt "hash")
+    (bundle, bodies) <-
+        checkedBundle
+            (bodiesDir dir </> ("bundle-" <> T.unpack h <> ".bundle"))
+    pure (h, bundle, bodies)
+
+-- | A registry with one certified request, to fold from the vault.
+vaultRegistry
+    :: Rig -> String -> Integer -> Bool -> IO (String, TxIn, Integer)
+vaultRegistry rig key deposit reshape = do
+    seed <- fundSeed rig
+    create <-
+        run
+            rig
+            "create"
+            (["registry", "create", "--seed", seed] <> policyArgs)
+    t <- tokenOf create
+    (req, submitted) <-
+        plantRequestDeposit
+            rig
+            t
+            seed
+            economics
+            (TE.encodeUtf8 (T.pack key))
+            deposit
+    approvals <- certifyPlanted rig t seed economics [req]
+    when reshape (void (reshapeRehearsalWallet rig approvals))
+    pure (t, req, submitted)
+
+-- | The fold line of a request.
+foldLineOf :: String -> TxIn -> [String]
+foldLineOf t req =
+    ["registry", "fold", "--request", T.unpack (renderOutRef req)]
+        <> tokenArgs t
+
+vaultSameBundleRow :: Spec
+vaultSameBundleRow =
+    it
+        "a vault fold builds the bundle bytes the external mode writes for the vault's address"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-same" 1_000_000 False
+            let bundlePath = rigDir rig </> "alice-external.bundle"
+            external <-
+                runAt
+                    rig
+                    "alice-external"
+                    "external fold"
+                    (foldLineOf t req <> externalArgs rig bundlePath)
+            runExit external `shouldBe` ExitFailure 19
+            externalBytes <- BS.readFile bundlePath
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            let registry = "alice-vault"
+            signed <-
+                runAt
+                    rig
+                    registry
+                    "vault fold"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            outcomeOf (runReceipt signed) `shouldBe` Just "success"
+            (h, _, _) <- vaultBundleOf signed (stagedPartition rig registry t)
+            h `shouldBe` hashOfBytes externalBytes
+            BS.readFile
+                ( bodiesDir (stagedPartition rig registry t)
+                    </> ("bundle-" <> T.unpack h <> ".bundle")
+                )
+                `shouldReturn` externalBytes
+
+vaultAllLandedRow :: Spec
+vaultAllLandedRow =
+    it
+        "a vault fold signs every member, sends them in order through the submit core and, all landed, journals each landed and states the command's fields as fact, with no secret anywhere"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-prep" 3_000_000_000 True
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            let registry = "alice-vault-prep"
+                dir = stagedPartition rig registry t
+            signed <-
+                runAt
+                    rig
+                    registry
+                    "vault fold with a preparation"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            runExit signed `shouldBe` ExitSuccess
+            outcomeOf (runReceipt signed) `shouldBe` Just "success"
+            (_, _, bodies) <- vaultBundleOf signed dir
+            length bodies `shouldBe` 2
+            sent <- case valueAt "submissions" (runReceipt signed) of
+                Just (Aeson.Array xs) -> pure (toList xs)
+                other -> fail ("no submissions: " <> show other)
+            map (textAt "identity") sent `shouldBe` map (Just . txIdHex) bodies
+            map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
+            entries <- readJournal dir
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
+            [ e
+              | e <- entries
+              , journalEvent e == "landed"
+              , isNothing (journalChainPoint e)
+              ]
+                `shouldBe` []
+            valueAt "expected" (runReceipt signed) `shouldBe` Nothing
+            textAt "fold" (runReceipt signed)
+                `shouldBe` fmap txIdHex (listToMaybe (reverse bodies))
+            assertNoVaultSecret rig dir signed
+
+vaultRefusedRow :: Spec
+vaultRefusedRow =
+    it
+        "a node refusal of a member journals the bundle dead and ends as a ledger refusal naming the members that went through"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-refused" 3_000_000_000 True
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            env <-
+                answeringAt
+                    rig
+                    2
+                    (const (pure (Cage.SubmitRefused "the fold's inputs are gone")))
+            let registry = "alice-vault-refused"
+                dir = stagedPartition rig registry t
+            signed <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "vault fold refused by the node"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            runExit signed `shouldBe` ExitFailure 11
+            outcomeOf (runReceipt signed) `shouldBe` Just "ledger-refusal"
+            (_, _, bodies) <- vaultBundleOf signed dir
+            (preparation, foldTx) <- case bodies of
+                [p, f'] -> pure (p, f')
+                _ -> fail "the refused bundle is not two members"
+            entries <- readJournal dir
+            memberEvents entries preparation
+                `shouldBe` ["waiting-for-signatures", "landed"]
+            memberEvents entries foldTx
+                `shouldBe` ["waiting-for-signatures", "dead"]
+            [journalDetail e | e <- entries, journalEvent e == "dead"]
+                `shouldSatisfy` all (maybe False (T.isPrefixOf "refused by the node"))
+            identitiesAt "wentThrough" (runReceipt signed)
+                `shouldBe` Just [txIdHex preparation]
+            fromMaybe "" (receiptReason signed)
+                `shouldSatisfy` T.isInfixOf "the fold's inputs are gone"
+            assertNoVaultSecret rig dir signed
+            reference <- keyFileFoldOf 3_000_000_000 True
+            assertExpectationOnly signed reference
+
+vaultUncertainRow :: Spec
+vaultUncertainRow =
+    it
+        "an uncertain answer ends the vault run partial, and the next run settles the bundle by identity"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    ( ["registry", "create", "--seed", seed]
+                        <> [ "--process-time"
+                           , show (reProcessTime journalWindows)
+                           , "--retract-time"
+                           , show (reRetractTime journalWindows)
+                           ]
+                        <> policyArgs
+                    )
+            t <- tokenOf create
+            (req, _) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    journalWindows
+                    (TE.encodeUtf8 "alice-uncertain")
+            _ <- certifyPlanted rig t seed journalWindows [req]
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            env <-
+                answeringAt
+                    rig
+                    1
+                    ( \applied -> applied >> pure (Cage.SubmitFailed "the node did not answer")
+                    )
+            let registry = "alice-vault-uncertain"
+                dir = stagedPartition rig registry t
+            signed <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "vault fold whose answer was lost"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            runExit signed `shouldBe` ExitFailure 15
+            outcomeOf (runReceipt signed) `shouldBe` Just "partial"
+            reference <- keyFileFoldOf 1_000_000 False
+            assertExpectationOnly signed reference
+            (h, _, bodies) <- vaultBundleOf signed dir
+            (second, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    journalWindows
+                    (TE.encodeUtf8 "alice-uncertain-second")
+            _ <- certifyPlanted rig t seed journalWindows [second]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    submitted
+                    "key-file reject after the lost answer"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal dir
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
+            fmap (textAt "state") (reportedBundle next h)
+                `shouldBe` Just (Just "landed")
+
+vaultRefusalsRow :: Spec
+vaultRefusalsRow =
+    it
+        "a wrong passphrase, an unreadable vault or a descriptor without a vault is refused naming it, before the blueprint or anything else is read or written"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-wrong" 1_000_000 False
+            vault <- rigVault rig "alice"
+            let registry = "alice-vault-wrong"
+                dir = stagedPartition rig registry t
+                -- nothing can be read: no chain, and no blueprint either, so
+                -- a refusal that came after either would name that instead
+                blind =
+                    (envOf rig)
+                        { envReads = \_ _ -> fail "read"
+                        , envWrites = \_ _ -> fail "read"
+                        , envLoadRelease = \_ _ -> pure (Left "the blueprint cannot be loaded")
+                        }
+            wrong <- passphraseDescriptor rig "wrong" "not the passphrase"
+            refused <-
+                runVia
+                    rig
+                    blind
+                    registry
+                    "vault fold, wrong passphrase"
+                    (foldLineOf t req <> vaultArgs vault wrong)
+            fd <- passphraseDescriptor rig "missing" vaultPassphrase
+            missing <-
+                runVia
+                    rig
+                    blind
+                    registry
+                    "vault fold, no vault"
+                    (foldLineOf t req <> vaultArgs (rigDir rig </> "absent.vault") fd)
+            forM_ [(refused, vault), (missing, rigDir rig </> "absent.vault")] $ \(r, named) -> do
+                runExit r `shouldBe` ExitFailure 10
+                outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+                fromMaybe "" (receiptReason r)
+                    `shouldSatisfy` T.isInfixOf (T.pack named)
+                fromMaybe "" (receiptReason r)
+                    `shouldNotSatisfy` T.isInfixOf "blueprint"
+            parseCommand
+                ( commandLine
+                    rig
+                    registry
+                    (foldLineOf t req <> ["--passphrase-fd", "3"])
+                )
+                `shouldSatisfy` \case
+                    Left (BadValue "--passphrase-fd" _) -> True
+                    _ -> False
+            doesPathExist dir `shouldReturn` False
+
+{- | The receipt of a key-file fold over the same setup, on a rig of its own:
+the command's own fields, which a vault run that did not land states only
+under expected.
+-}
+keyFileFoldOf :: Integer -> Bool -> IO Run
+keyFileFoldOf deposit reshape = withRig $ \rig -> do
+    (t, req, _) <- vaultRegistry rig "alice-reference" deposit reshape
+    r <- run rig "key-file fold for reference" (foldLineOf t req)
+    outcomeOf (runReceipt r) `shouldBe` Just "success"
+    pure r
+
+-- | The roots a run narrates as seen on chain.
+rootsSeen :: Run -> [(Text, Text)]
+rootsSeen r = [(b, a) | Trace _ (What (RootSeen b a)) <- runEvents r]
+
+{- | A staged body was never on chain, so its readback names no root as
+seen: an external fold, reject and reclaim narrate none, and a vault fold
+narrates the root once its bundle has landed, as a key-file fold does.
+-}
+stagedNarrationRows :: Spec
+stagedNarrationRows = describe "staged narration" $ do
+    it
+        "an external fold narrates no root as seen; a landed vault fold narrates it"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-narration" 1_000_000 False
+            let bundlePath = rigDir rig </> "alice-narration.bundle"
+            staged <-
+                runAt
+                    rig
+                    "alice-narration-external"
+                    "external fold"
+                    (foldLineOf t req <> externalArgs rig bundlePath)
+            runExit staged `shouldBe` ExitFailure 19
+            rootsSeen staged `shouldBe` []
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            signed <-
+                runAt
+                    rig
+                    "alice-narration-vault"
+                    "vault fold"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            outcomeOf (runReceipt signed) `shouldBe` Just "success"
+            length (rootsSeen signed) `shouldBe` 1
+    it "an external reject narrates no root as seen" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    ( [ "registry"
+                      , "create"
+                      , "--seed"
+                      , seed
+                      , "--process-time"
+                      , "1"
+                      , "--retract-time"
+                      , "1"
+                      ]
+                        <> policyArgs
+                    )
+            t <- tokenOf create
+            let windows =
+                    RegistryEconomics
+                        { reProcessTime = 1
+                        , reRetractTime = 1
+                        , reTip = Coin 1_000_000
+                        }
+            (_, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    windows
+                    (TE.encodeUtf8 "alice-narration-reject")
+            jumpToAfter
+                rig
+                (submitted + reProcessTime windows + reRetractTime windows)
+                2
+            staged <-
+                runAt
+                    rig
+                    "alice-narration-reject"
+                    "external reject"
+                    ( ["registry", "reject"]
+                        <> tokenArgs t
+                        <> externalArgs rig (rigDir rig </> "alice-reject.bundle")
+                    )
+            runExit staged `shouldBe` ExitFailure 19
+            rootsSeen staged `shouldBe` []
+    it "an external reclaim narrates no root as seen" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            (req, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    economics
+                    (TE.encodeUtf8 "alice-narration-reclaim")
+            jumpToAfter rig (submitted + reProcessTime economics) 0
+            staged <-
+                runAt
+                    rig
+                    "alice-narration-reclaim"
+                    "external reclaim"
+                    ( ["registry", "reclaim", "--request", T.unpack (renderOutRef req)]
+                        <> tokenArgs t
+                        <> externalArgs rig (rigDir rig </> "alice-reclaim.bundle")
+                    )
+            runExit staged `shouldBe` ExitFailure 19
+            rootsSeen staged `shouldBe` []
+
+-- | A registry with one certified request under these windows, to fold from the vault.
+vaultRegistryWith
+    :: Rig
+    -> RegistryEconomics
+    -> String
+    -> Integer
+    -> Bool
+    -> IO (String, TxIn, Integer)
+vaultRegistryWith rig windows key deposit reshape = do
+    seed <- fundSeed rig
+    create <-
+        run
+            rig
+            "create"
+            ( ["registry", "create", "--seed", seed]
+                <> [ "--process-time"
+                   , show (reProcessTime windows)
+                   , "--retract-time"
+                   , show (reRetractTime windows)
+                   ]
+                <> policyArgs
+            )
+    t <- tokenOf create
+    (req, submitted) <-
+        plantRequestDeposit
+            rig
+            t
+            seed
+            windows
+            (TE.encodeUtf8 (T.pack key))
+            deposit
+    approvals <- certifyPlanted rig t seed windows [req]
+    when reshape (void (reshapeRehearsalWallet rig approvals))
+    pure (t, req, submitted)
+
+-- | The submissions a receipt names.
+submissionsIn :: Run -> IO [Aeson.Value]
+submissionsIn r = case valueAt "submissions" (runReceipt r) of
+    Just (Aeson.Array xs) -> pure (toList xs)
+    other -> fail ("no submissions: " <> show other)
+
+{- | Once the submit core has answered, the transactions it sent are paid
+for: a journal that cannot be appended afterwards keeps the core's outcome
+and sends in the receipt, names the failure apart, and the next run
+settles the bundle by identity. The journal is made read-only by the rig's
+own submission of the last member, after the node has applied it or
+refused it.
+-}
+vaultBookkeepingRows :: Spec
+vaultBookkeepingRows = describe "the vault signer's bookkeeping" $ do
+    it
+        "a journal that cannot be appended after every member landed keeps the core's sends and a partial outcome, and the next run settles the bundle"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <-
+                vaultRegistryWith
+                    rig
+                    journalWindows
+                    "alice-unjournalled"
+                    3_000_000_000
+                    True
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            let registry = "alice-vault-unjournalled"
+                dir = stagedPartition rig registry t
+            env <-
+                answeringAt rig 2 $ \applied ->
+                    applied <* setFileMode (journalPath dir) ownerReadMode
+            signed <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "vault fold whose journal cannot be appended"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            setFileMode
+                (journalPath dir)
+                (ownerReadMode `unionFileModes` ownerWriteMode)
+            runExit signed `shouldBe` ExitFailure 15
+            outcomeOf (runReceipt signed) `shouldBe` Just "partial"
+            (h, _, bodies) <- vaultBundleOf signed dir
+            sent <- submissionsIn signed
+            map (textAt "identity") sent `shouldBe` map (Just . txIdHex) bodies
+            map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
+            valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
+            reference <- keyFileFoldOf 3_000_000_000 True
+            assertExpectationOnly signed reference
+            seed <- fundSeed rig
+            (second, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    journalWindows
+                    (TE.encodeUtf8 "alice-unjournalled-second")
+            _ <- certifyPlanted rig t seed journalWindows [second]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    submitted
+                    "key-file reject after the unjournalled landing"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal dir
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
+            fmap (textAt "state") (reportedBundle next h)
+                `shouldBe` Just (Just "landed")
+    it
+        "a journal that cannot be appended after the node refused a member keeps the ledger refusal, its answer and what went through, and the next run settles the bundle"
+        $ withRig
+        $ \rig -> do
+            (t, req, submitted) <-
+                vaultRegistryWith
+                    rig
+                    journalWindows
+                    "alice-refused-unjournalled"
+                    3_000_000_000
+                    True
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            let registry = "alice-vault-refused-unjournalled"
+                dir = stagedPartition rig registry t
+            env <-
+                answeringAt rig 2 $ \_ -> do
+                    setFileMode (journalPath dir) ownerReadMode
+                    pure (Cage.SubmitRefused "the fold's inputs are gone")
+            signed <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "vault fold refused, its journal not appendable"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            setFileMode
+                (journalPath dir)
+                (ownerReadMode `unionFileModes` ownerWriteMode)
+            runExit signed `shouldBe` ExitFailure 11
+            outcomeOf (runReceipt signed) `shouldBe` Just "ledger-refusal"
+            fromMaybe "" (receiptReason signed)
+                `shouldSatisfy` T.isInfixOf "the fold's inputs are gone"
+            (h, _, bodies) <- vaultBundleOf signed dir
+            (preparation, foldTx) <- case bodies of
+                [p, f'] -> pure (p, f')
+                _ -> fail "the refused bundle is not two members"
+            sent <- submissionsIn signed
+            map (textAt "how") sent
+                `shouldBe` [Just "sent", Just "submission-refused"]
+            identitiesAt "wentThrough" (runReceipt signed)
+                `shouldBe` Just [txIdHex preparation]
+            valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
+            reference <- keyFileFoldOf 3_000_000_000 True
+            assertExpectationOnly signed reference
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    submitted
+                    "key-file reject after the unjournalled refusal"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal dir
+            memberEvents entries preparation
+                `shouldBe` ["waiting-for-signatures", "landed"]
+            memberEvents entries foldTx
+                `shouldBe` ["waiting-for-signatures", "dead"]
+            bundleReport <- requireBundle next h
+            textAt "state" bundleReport `shouldBe` Just "dead"
+            identitiesAt "wentThrough" bundleReport
+                `shouldBe` Just [txIdHex preparation]
+
+{- | After the sends, the journal itself cannot be read back: neither the
+bookkeeping nor the session's own closing read may replace the outcome the
+submit core gave; each failure is named beside it.
+-}
+vaultUnreadJournalRows :: Spec
+vaultUnreadJournalRows = describe "the vault signer's journal unread" $ do
+    it
+        "a journal that cannot be read after every member landed keeps the core's sends and a partial outcome, naming both failures"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <-
+                vaultRegistryWith rig journalWindows "alice-unread" 3_000_000_000 True
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            let registry = "alice-vault-unread"
+                dir = stagedPartition rig registry t
+            env <-
+                answeringAt rig 2 $ \applied ->
+                    applied <* setFileMode (journalPath dir) nullFileMode
+            signed <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "vault fold whose journal cannot be read"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            setFileMode
+                (journalPath dir)
+                (ownerReadMode `unionFileModes` ownerWriteMode)
+            runExit signed `shouldBe` ExitFailure 15
+            outcomeOf (runReceipt signed) `shouldBe` Just "partial"
+            (_, _, bodies) <- vaultBundleOf signed dir
+            sent <- submissionsIn signed
+            map (textAt "identity") sent `shouldBe` map (Just . txIdHex) bodies
+            map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
+            valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
+            valueAt "journalUnread" (runReceipt signed) `shouldSatisfy` isJust
+            reference <- keyFileFoldOf 3_000_000_000 True
+            assertExpectationOnly signed reference
+    it
+        "a half-written last journal line after the node refused a member keeps the ledger refusal, its answer and what went through, naming both failures"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <-
+                vaultRegistryWith rig journalWindows "alice-half" 3_000_000_000 True
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            let registry = "alice-vault-half"
+                dir = stagedPartition rig registry t
+            env <-
+                answeringAt rig 2 $ \_ -> do
+                    BS.appendFile (journalPath dir) "{\"journalCommand\":\"fold\""
+                    pure (Cage.SubmitRefused "the fold's inputs are gone")
+            signed <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "vault fold refused over a half-written journal"
+                    (foldLineOf t req <> vaultArgs vault fd)
+            runExit signed `shouldBe` ExitFailure 11
+            outcomeOf (runReceipt signed) `shouldBe` Just "ledger-refusal"
+            fromMaybe "" (receiptReason signed)
+                `shouldSatisfy` T.isInfixOf "the fold's inputs are gone"
+            (_, _, bodies) <- vaultBundleOf signed dir
+            preparation <- case bodies of
+                [p, _] -> pure p
+                _ -> fail "the refused bundle is not two members"
+            sent <- submissionsIn signed
+            map (textAt "how") sent
+                `shouldBe` [Just "sent", Just "submission-refused"]
+            identitiesAt "wentThrough" (runReceipt signed)
+                `shouldBe` Just [txIdHex preparation]
+            valueAt "bookkeeping" (runReceipt signed) `shouldSatisfy` isJust
+            valueAt "journalUnread" (runReceipt signed) `shouldSatisfy` isJust
+            reference <- keyFileFoldOf 3_000_000_000 True
+            assertExpectationOnly signed reference

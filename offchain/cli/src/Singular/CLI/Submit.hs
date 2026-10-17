@@ -38,6 +38,7 @@ landed and sends only the rest.
 -}
 module Singular.CLI.Submit
     ( submitBundle
+    , submitInMemory
     , earlierBodyInputs
     ) where
 
@@ -90,10 +91,10 @@ import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Singular.Registry.Ledger (ConwayEra)
 
+import Singular.CLI.Failure (CommandFailure, Env (..), failWithFields)
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Live (assetsOf, coinOf, receipt, txInText)
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Session (CommandFailure, Env (..), failWithFields)
 import Singular.Registry.Bundle
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
@@ -149,45 +150,62 @@ submitBundle env settings bundlePath witnessPaths receiptPath =
         bundle <-
             either (refusedBy . SubmitBundleRefused) pure (decodeBundle bytes)
         either (refusedBy . SubmitBundleRefused) pure (checkBundle bundle)
-        bodies <- mapM decoded (toList (bundleTransactions bundle))
+        -- an undecodable body is refused before any witness file is read
+        mapM_ decoded (toList (bundleTransactions bundle))
         witnesses <- concat <$> mapM readWitnesses witnessPaths
-        -- a witness for no body of the bundle is refused before the chain is read
-        either refusedBy (const (pure ())) (matchWitnesses bundle witnesses)
-        -- opening the provider is a read too: a failure there, like any
-        -- read before the first send, is the node being unavailable
-        reached <- Wait.tryOutcome $ envReads env settings $ \caps -> do
-            (statuses, tip, resolved) <- chainFacts settings caps bundle bodies
-            plan <-
-                either
-                    refusedBy
-                    pure
-                    (planSubmission bundle witnesses resolved statuses tip)
-            done <- sendInOrder bytes caps (toList plan)
-            entries <-
-                Wait.tryOutcome (readBack caps (zip done bodies)) >>= \case
-                    Right entries -> pure entries
-                    Left failure ->
-                        failWithFields
-                            Partial
-                            ( "every transaction is on the chain, but reading them back failed: "
-                                <> show failure
-                            )
-                            [ ("cause", toJSON ("readback-failed" :: Text))
-                            , ("bundleHash", toJSON (bundleHash bytes))
-                            , ("submissions", toJSON [stopped t (doneName d) | (t, d) <- done])
-                            ]
-            pure $
-                receipt
-                    "submit"
-                    Success
-                    [ ("bundleHash", toJSON (bundleHash bytes))
-                    , ("submissions", toJSON entries)
-                    ]
-        case reached of
-            Right value' -> pure value'
-            Left failure -> case fromException failure of
-                Just (_ :: CommandFailure) -> throwIO failure
-                Nothing -> unavailable settings (show failure)
+        receipt "submit" Success
+            <$> submitInMemory env settings bundle bytes witnesses
+
+{- | The core of @singular submit@ over a bundle and its witnesses held in
+memory: the receipt fields of submitting them, or a named command
+failure. 'submitBundle' reads the files and calls it; the vault mode
+calls it with the bundle it built and the witnesses it signed. A witness
+for no body of the bundle is refused before the chain is read.
+-}
+submitInMemory
+    :: Env
+    -> ProviderSettings
+    -> Bundle
+    -> ByteString
+    -- ^ the bundle's bytes, which its hash is taken over
+    -> [DetachedWitness]
+    -> IO [(Text, Value)]
+submitInMemory env settings bundle bytes witnesses = do
+    bodies <- mapM decoded (toList (bundleTransactions bundle))
+    -- a witness for no body of the bundle is refused before the chain is read
+    either refusedBy (const (pure ())) (matchWitnesses bundle witnesses)
+    -- opening the provider is a read too: a failure there, like any
+    -- read before the first send, is the node being unavailable
+    reached <- Wait.tryOutcome $ envReads env settings $ \caps -> do
+        (statuses, tip, resolved) <- chainFacts settings caps bundle bodies
+        plan <-
+            either
+                refusedBy
+                pure
+                (planSubmission bundle witnesses resolved statuses tip)
+        done <- sendInOrder bytes caps (toList plan)
+        entries <-
+            Wait.tryOutcome (readBack caps (zip done bodies)) >>= \case
+                Right entries -> pure entries
+                Left failure ->
+                    failWithFields
+                        Partial
+                        ( "every transaction is on the chain, but reading them back failed: "
+                            <> show failure
+                        )
+                        [ ("cause", toJSON ("readback-failed" :: Text))
+                        , ("bundleHash", toJSON (bundleHash bytes))
+                        , ("submissions", toJSON [stopped t (doneName d) | (t, d) <- done])
+                        ]
+        pure
+            [ ("bundleHash", toJSON (bundleHash bytes))
+            , ("submissions", toJSON entries)
+            ]
+    case reached of
+        Right fields -> pure fields
+        Left failure -> case fromException failure of
+            Just (_ :: CommandFailure) -> throwIO failure
+            Nothing -> unavailable settings (show failure)
 
 -- ---------------------------------------------------------
 -- Offline: the witness files

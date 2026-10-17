@@ -261,9 +261,11 @@ conformance/test/fold-budget/Conformance/FoldFixture.hs prepare atomicModifyIORe
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader modifyIORef' 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader newIORef 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader readIORef 1
-offchain/cli/src/Singular/CLI/Session.hs <decl> IORef 6
+offchain/cli/src/Singular/CLI/Session.hs <decl> IORef 7
+offchain/cli/src/Singular/CLI/Session.hs endFromVault readIORef 1
 offchain/cli/src/Singular/CLI/Session.hs endStagedRun readIORef 3
-offchain/cli/src/Singular/CLI/Session.hs signerWallet newIORef 3
+offchain/cli/src/Singular/CLI/Session.hs newStagedRun newIORef 4
+offchain/cli/src/Singular/CLI/Session.hs reportSeen modifyIORef' 1
 offchain/cli/src/Singular/CLI/Session.hs stageRegistry writeIORef 1
 offchain/cli/src/Singular/CLI/Session.hs stagedCapabilities readIORef 1
 offchain/cli/src/Singular/CLI/Session.hs submitBuiltIn modifyIORef' 2
@@ -454,6 +456,9 @@ offchain/private-facade/Singular/Registry/Private/Facade.hs withFacadeSession wi
 offchain/private-facade/Singular/Registry/Private/Smoke.hs runFacadeSmoke newMVar 1
 offchain/private-facade/Singular/Registry/Private/Smoke.hs runFacadeSmoke withMVar 1
 offchain/test/Singular/CLI/CommandRunSpec.hs <decl> IORef 2
+offchain/test/Singular/CLI/CommandRunSpec.hs answeringAt modifyIORef' 1
+offchain/test/Singular/CLI/CommandRunSpec.hs answeringAt newIORef 1
+offchain/test/Singular/CLI/CommandRunSpec.hs answeringAt readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs capabilities readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs capabilities writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs confirmationLifetime cancel 1
@@ -489,6 +494,7 @@ offchain/test/Singular/CLI/SubmitSpec.hs capabilitiesOf modifyIORef' 2
 offchain/test/Singular/CLI/SubmitSpec.hs expectChainFacts readIORef 2
 offchain/test/Singular/CLI/SubmitSpec.hs expectRefused readIORef 1
 offchain/test/Singular/CLI/SubmitSpec.hs land modifyIORef' 2
+offchain/test/Singular/CLI/SubmitSpec.hs theCore readIORef 2
 offchain/test/Singular/CLI/SubmitSpec.hs theFoundWitnesses readIORef 4
 offchain/test/Singular/CLI/SubmitSpec.hs theRefusals readIORef 3
 offchain/test/Singular/CLI/SubmitSpec.hs theRerun readIORef 6

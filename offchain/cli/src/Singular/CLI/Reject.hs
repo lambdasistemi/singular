@@ -375,8 +375,8 @@ rejectPending at a = do
         (wcTracer wc)
         [InEdge Rejecting]
         (Trace.Rejected (map (txInText . rowRequest) (plRows plan)))
-    report
-        (wcTracer wc)
+    reportSeen
+        wc
         []
         (RootSeen (hexT (plRootBefore plan)) (hexT onChain))
     pure

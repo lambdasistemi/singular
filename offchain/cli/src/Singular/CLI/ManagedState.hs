@@ -51,9 +51,17 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 import Cardano.Ledger.Address (Addr)
-import Singular.CLI.FlagGroup (Signer (..), signerAddress)
+import Singular.CLI.FlagGroup
+    ( OpenedVault (..)
+    , Signer (..)
+    , signerAddress
+    )
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Session (failWith, refuseTakenBundle)
+import Singular.CLI.Session
+    ( failWith
+    , refuseTakenBundle
+    , unopenedVault
+    )
 
 {- | The default state root: the platform per-user state location with
 the @singular@ namespace (@XDG_STATE_HOME@, falling back to
@@ -89,6 +97,8 @@ resolveSignerDir rootOpt magic token signer = do
                 (failWith ClientRefusal)
                 (pure . addressPartition)
                 (signerAddress given)
+        SignerVaultOpened (OpenedVault wallet) -> pure (walletPartition wallet)
+        SignerVault vault _ -> unopenedVault vault
     root <- resolveStateRoot rootOpt
     pure (managedDir root magic token identity)
 

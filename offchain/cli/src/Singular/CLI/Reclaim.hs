@@ -292,7 +292,7 @@ runReclaim env a = do
                 (wcTracer wc)
                 (placed req)
                 (Reclaimed (txInText named) (coinOf returned))
-            report (wcTracer wc) [] (RootSeen (hexT root) (hexT rootAfter))
+            reportSeen wc [] (RootSeen (hexT root) (hexT rootAfter))
             pure $
                 receipt
                     "reclaim"

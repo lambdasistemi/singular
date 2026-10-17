@@ -24,9 +24,9 @@
 
 ## Slice: vault mode
 
-- [ ] vault-signer-flags: the vault and passphrase-descriptor flags in the shared flag group, accepted on the four writes; the refusals; documented flags equal `--help`.
-- [ ] submit-core: the submit core separated from its file-reading front, `submit` unchanged.
-- [ ] vault-submission: the same bundle signed from the vault, sent through the core, journalled landed or dead, the receipt.
+- [x] vault-signer-flags: the vault and passphrase-descriptor flags in the shared flag group, accepted on the four writes; the refusals; documented flags equal `--help`.
+- [x] submit-core: the submit core separated from its file-reading front, `submit` unchanged.
+- [x] vault-submission: the same bundle signed from the vault, sent through the core, journalled landed or dead, the receipt.
 
 ## Slice: devnet control and documentation
 
