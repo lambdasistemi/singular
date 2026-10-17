@@ -31,7 +31,7 @@ import Data.List (sort)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
 import Data.Set qualified as Set
-import Lens.Micro ((&), (.~))
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 
@@ -51,9 +51,11 @@ import Cardano.Ledger.Api.Tx.Body
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
-    ( datumTxOutL
+    ( TxOut
+    , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
+    , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits
     ( Redeemers (..)
@@ -75,7 +77,7 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (Coin (..), TokenId)
+import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
 import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.SessionIO qualified as Services
@@ -168,10 +170,11 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
     upperMs <- Services.slotStart view (rbUpper b)
     unless (upperMs - lowerMs <= defaultBookingWidth cfg) $
         refuse "the interval is wider than the registry's booking width"
-    unless
-        ( PolicyID (hashScript (mkRequestScript cfg tid))
-            == policyIdFromPin (cfgRequestPolicy cfg)
-        ) $
+    let requestScript = mkRequestScript cfg tid
+        requestScriptAgrees =
+            PolicyID (hashScript requestScript)
+                == policyIdFromPin (cfgRequestPolicy cfg)
+    unless requestScriptAgrees $
         refuse "the request script is not the registry's request policy"
     -- The state output the booking reads: it must be the registry's, with
     -- the pins this configuration derived.
@@ -180,6 +183,8 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
         Just (_, out) -> pure out
         Nothing ->
             refuse "the state output not found at the registry's state address"
+    unless (holdsStateToken cfg tid stateOut) $
+        refuse "the state output does not hold the registry's state token"
     case extractCageDatum stateOut of
         Just (StateDatum st)
             | stateRegistrationCost st == cost
@@ -204,7 +209,6 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
                 , regCarrierAda = carrier
                 , regNonce = rbNonce b
                 }
-        requestScript = mkRequestScript cfg tid
         requestPolicy = PolicyID (hashScript requestScript)
         applicationName =
             applicationTagName
@@ -282,3 +286,17 @@ applicationRedeemer b refund =
         , PLC.B (rbDestination b)
         , PLC.I (rbNonce b)
         ]
+
+{- | Whether the output holds exactly one of the registry's state token: the
+state policy's asset named by the registry token. Anyone may pay an output
+with any datum to the state address, so the address and the datum alone do
+not make an output the registry's state.
+-}
+holdsStateToken :: CageConfig -> TokenId -> TxOut ConwayEra -> Bool
+holdsStateToken cfg tid out =
+    case out ^. valueTxOutL of
+        MaryValue _ (MultiAsset assets) ->
+            ( Map.lookup (PolicyID (cfgScriptHash cfg)) assets
+                >>= Map.lookup (unTokenId tid)
+            )
+                == Just 1
