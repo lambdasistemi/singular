@@ -39,9 +39,10 @@ import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
-import Cardano.Ledger.Api.Tx (mkBasicTx, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
+    , collateralReturnTxBodyL
     , inputsTxBodyL
     , mintTxBodyL
     , mkBasicTxBody
@@ -52,6 +53,7 @@ import Cardano.Ledger.Api.Tx.Body
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , coinTxOutL
     , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
@@ -77,7 +79,12 @@ import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (Coin (..), ConwayEra, TokenId (..))
+import Singular.Registry.Ledger
+    ( Coin (..)
+    , ConwayEra
+    , PParams
+    , TokenId (..)
+    )
 import Singular.Registry.LedgerProvider (Session)
 import Singular.Registry.SessionIO (outputsAt, parameters)
 import Singular.Registry.SessionIO qualified as Services
@@ -134,7 +141,9 @@ one, an interval wider than the registry's widest, a tip below its minimum,
 a negative carrier or nonce, a refund address that is not a key address, an
 application script that is not the pinned application policy, a state output
 that is missing or does not carry the configuration's pins, and a request
-output below the minimum ada.
+output below the minimum ada. After balancing, a funding output that cannot
+leave its change and its collateral return their minimum ada is refused. A
+state output that carries a script is priced into the fee by its bytes.
 -}
 bookRegistrationImpl
     :: CageConfig
@@ -272,7 +281,19 @@ bookRegistrationImpl cfg view tid stateRef b payer = do
                         , (hashScript applicationScript, applicationScript)
                         ]
                 & witsTxL . rdmrsTxWitsL .~ redeemers
-    evaluateAndBalance view pp [funding] payer tx
+    -- The state output is a reference input: when it carries a script, the
+    -- ledger charges the fee for the script's bytes, so the balancer is
+    -- given the resolved output to price them.
+    balanced <-
+        evaluateAndBalanceReferencing
+            view
+            pp
+            [funding]
+            [(stateRef, stateOut)]
+            payer
+            tx
+    requireCarriesMinimums pp balanced
+    pure balanced
 
 {- | The open policy's registration arm: constructor 1 over the booking's key,
 refund hash, destination and nonce.
@@ -300,3 +321,24 @@ holdsStateToken cfg tid out =
                 >>= Map.lookup (unTokenId tid)
             )
                 == Just 1
+
+{- | The balancer appends a change output and a collateral return whatever
+they hold and rejects only a negative remainder. A funding output that
+leaves either less than its minimum ada would make a transaction the ledger
+refuses, so the booking refuses it first; and when the balancer states no
+collateral return the whole funding output would be at risk, which a booking
+never accepts.
+-}
+requireCarriesMinimums :: PParams ConwayEra -> ConwayTx -> IO ()
+requireCarriesMinimums pp tx = do
+    unless (all carries (body ^. outputsTxBodyL)) $
+        refuse
+            "the funding output is too small to carry the booking, its fee, its collateral and their change"
+    case body ^. collateralReturnTxBodyL of
+        SJust r | carries r -> pure ()
+        _ ->
+            refuse
+                "the funding output cannot leave a collateral return of its minimum ada, so its whole value would be collateral"
+  where
+    body = tx ^. bodyTxL
+    carries o = o ^. coinTxOutL >= getMinCoinTxOut pp o
