@@ -5,6 +5,7 @@ Dependency direction runs from the command line down to the shared library. The 
 ## New
 
 - The chained view module (shared local-services library). Owns the answers a chain read gives after a list of staged transactions has landed, and the session that serves them over a real session. Pure answers; the session takes one snapshot of the staged list per acquisition, so one view stays consistent. It knows ledger transactions and provider reads, nothing of registries, journals or signers.
+- The command-failure module (native command-line library). Owns the command-failure type with its reported mark, the two ways a command fails with fields, and the environment a command runs in. It sits below the write session, which re-exports it, so that the session can call the submit core and the reconciliation, both of which need it; its code moved unchanged from the write session.
 
 ## Changed
 
