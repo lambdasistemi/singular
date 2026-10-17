@@ -1,0 +1,30 @@
+{
+  "modules-model-for-open-datum-signing": [
+    {
+      "text": "No new module; responsibilities change in place, and open-datum still depends on the registry library, never the reverse.",
+      "pause": 500
+    }
+  ],
+  "open-datum-command-line": [
+    {
+      "text": "The open-datum parser reads the signer only through the shared write reader, and keeps its own refusals for previews and inspect.",
+      "pause": 500
+    }
+  ],
+  "open-datum-entry-commands": [
+    {
+      "text": "The entry commands gain no signing code; only their own receipt fields and events learn to say staged.",
+      "pause": 500
+    }
+  ],
+  "command-reference-and-guides": [
+    {
+      "text": "The settings table names the open-datum writes per flag, bound to each help by the documented flags check.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "8fc05b010dd8c4813d7b8bae27b335bcc49e5ff4fdbb5c7db3c9a12ea3dfcb1d"
+  }
+}

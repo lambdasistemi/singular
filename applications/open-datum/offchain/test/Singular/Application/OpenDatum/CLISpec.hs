@@ -36,7 +36,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Either (fromLeft)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, isPrefixOf)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
@@ -116,6 +116,8 @@ import Singular.Registry.Wallet
 spec :: Spec
 spec = describe "singular registry commands" $ do
     commandLine
+    externalSignerRows
+    vaultSignerRows
     creatorChecks
     journal
     localProof
@@ -686,6 +688,366 @@ isLeftWith p = either p (const False)
 
 seedText :: String
 seedText = replicate 64 'b' <> "#1"
+
+{- | The external signer (#642 slice 1): an address with its bundle file
+names the signer of each write, the shared reader refuses the mixtures,
+previews and inspect refuse the bundle file, and create keeps the
+registry's create behaviour. Every address here is produced from a key
+hash, never typed.
+-}
+externalSignerRows :: Spec
+externalSignerRows = describe "the external signer" $ do
+    let payerHash = BS.replicate 28 0x5a
+        addrOf = addrFromKeyHashBytes
+        textOf net h = bech32Address (addrOf net h)
+        address = textOf Testnet payerHash
+        bundle = ["--bundle", "run.bundle"]
+        named = ["--wallet-address", address]
+        signerOf = \case
+            OpenInsert EntryArgs{entryMode = Submit w} -> Just (writeSigner w)
+            OpenUpdate EntryArgs{entryMode = Submit w} -> Just (writeSigner w)
+            OpenTerminate EntryArgs{entryMode = Submit w} -> Just (writeSigner w)
+            OpenFold FoldArgs{foldWrite = w} -> Just (writeSigner w)
+            _ -> Nothing
+        entryBase name extra =
+            ["open-datum", name, "--key", "key"] <> extra <> reg <> provider
+        writes =
+            [ entryBase "insert" ["--payload", "/p.json"]
+            , entryBase "update" ["--payload", "/p.json"]
+            , entryBase "terminate" []
+            , ["open-datum", "fold"] <> reg <> provider
+            ]
+        withArgs base extra = parseOpenDatumCommand (base <> extra)
+    it "reads the address with the bundle file as each write's signer" $
+        forM_ writes $ \base -> do
+            let parsed = withArgs base (named <> bundle)
+            parsed `shouldSatisfy` either (const False) (const True)
+            fmap signerOf parsed
+                `shouldBe` Right (Just (SignerExternal (T.pack address) "run.bundle"))
+    it
+        "reads the external signer on an insert or a terminate that also folds"
+        $ do
+            let insertBase = entryBase "insert" ["--payload", "/p.json"]
+                terminateBase = entryBase "terminate" []
+            fmap
+                signerOf
+                (parseOpenDatumCommand (insertBase <> named <> bundle <> ["--fold"]))
+                `shouldBe` Right (Just (SignerExternal (T.pack address) "run.bundle"))
+            fmap
+                (\case OpenInsert e -> entryFold e; _ -> False)
+                (parseOpenDatumCommand (insertBase <> named <> bundle <> ["--fold"]))
+                `shouldBe` Right True
+            fmap
+                signerOf
+                (parseOpenDatumCommand (terminateBase <> named <> bundle <> ["--fold"]))
+                `shouldBe` Right (Just (SignerExternal (T.pack address) "run.bundle"))
+            fmap
+                (\case OpenTerminate e -> entryFold e; _ -> False)
+                (parseOpenDatumCommand (terminateBase <> named <> bundle <> ["--fold"]))
+                `shouldBe` Right True
+    it
+        "refuses an address without its bundle file, naming the bundle as required"
+        $ forM_ writes
+        $ \base ->
+            withArgs base named
+                `shouldBe` Left
+                    ( BadValue
+                        "--bundle"
+                        ( "is required with --wallet-address: the run's transactions are "
+                            <> "written to the bundle for signing elsewhere"
+                        )
+                    )
+    it "refuses a bundle file without an address" $
+        forM_ writes $
+            \base ->
+                withArgs base bundle
+                    `shouldBe` Left
+                        ( BadValue
+                            "--bundle"
+                            "is meaningless without --wallet-address: name the signer too"
+                        )
+    it "refuses the bundle file on every preview" $ do
+        let previewNode =
+                [ "--koios-url"
+                , "http://127.0.0.1:8080/api/v1"
+                , "--network-magic"
+                , "1"
+                ]
+            refused =
+                BadValue
+                    "--bundle"
+                    "cannot be used with --preview: a preview signs and writes nothing"
+        parseOpenDatumCommand
+            ( entryBase "insert" ["--payload", "/p.json", "--preview"]
+                <> previewNode
+                <> named
+                <> bundle
+            )
+            `shouldBe` Left refused
+        parseOpenDatumCommand
+            ( entryBase "update" ["--payload", "/p.json", "--preview"]
+                <> previewNode
+                <> named
+                <> bundle
+            )
+            `shouldBe` Left refused
+        parseOpenDatumCommand
+            (entryBase "terminate" ["--preview"] <> previewNode <> named <> bundle)
+            `shouldBe` Left refused
+        parseOpenDatumCommand
+            ( [ "open-datum"
+              , "create"
+              , "--preview"
+              , "--state-dir"
+              , "/srv/reg"
+              , "--blueprint"
+              , "/srv/plutus.json"
+              ]
+                <> previewNode
+                <> named
+                <> bundle
+            )
+            `shouldBe` Left refused
+    it "refuses the bundle file on inspect, by name" $
+        parseOpenDatumCommand
+            (["open-datum", "inspect", "--key", "key"] <> reg <> provider <> bundle)
+            `shouldBe` Left
+                ( BadValue
+                    "--bundle"
+                    ( "is not accepted by open-datum inspect: it reads, and takes the "
+                        <> "address only to locate a journal"
+                    )
+                )
+    it
+        "reads the external signer on create as the registry's create does"
+        $ do
+            let create extra =
+                    parseOpenDatumCommand
+                        ( [ "open-datum"
+                          , "create"
+                          , "--state-dir"
+                          , "/srv/reg"
+                          , "--blueprint"
+                          , "/srv/plutus.json"
+                          ]
+                            <> provider
+                            <> extra
+                        )
+                signerOfCreate = \case
+                    Right (OpenCreate _ CreateArgs{createMode = Submit w}) -> Just (writeSigner w)
+                    _ -> Nothing
+            signerOfCreate (create (named <> bundle))
+                `shouldBe` Just (SignerExternal (T.pack address) "run.bundle")
+            create named
+                `shouldBe` Left
+                    ( BadValue
+                        "--bundle"
+                        ( "is required with --wallet-address: the run's transactions are "
+                            <> "written to the bundle for signing elsewhere"
+                        )
+                    )
+    it
+        "names the external signer beside the key file on each write's usage"
+        $ do
+            let ls = lines openDatumUsage
+                startsWith prefix l = prefix `isPrefixOf` l
+                blockStarts verb =
+                    [ i
+                    | (i, l) <- zip [0 :: Int ..] ls
+                    , startsWith ("  open-datum " <> verb <> " ") l
+                        || startsWith ("  open-datum " <> verb <> "[") l
+                    , not ("--preview" `isInfixOf` l)
+                    ]
+                blockAt start =
+                    takeWhile
+                        (\l -> not (startsWith "  open-datum" l || null l))
+                        (drop (start + 1) ls)
+                keySigner l = "--wallet-skey FILE" `isInfixOf` l
+                withoutPreview = T.unpack . T.replace "[--preview] " "" . T.pack
+                extSigner l = "--wallet-address ADDR --bundle FILE" `isInfixOf` l
+            forM_ ["create", "insert", "update", "terminate", "fold"] $ \verb -> do
+                case blockStarts verb of
+                    [first, second, _vaultBlock] -> do
+                        let firstBlock = blockAt first
+                            secondBlock = blockAt second
+                        (any keySigner firstBlock, any extSigner firstBlock)
+                            `shouldBe` (True, False)
+                        (any keySigner secondBlock, any extSigner secondBlock)
+                            `shouldBe` (False, True)
+                        -- the external shape carries the same optional flags as
+                        -- the key-file shape: only the signer line differs
+                        -- (create's key-file shape also lists the preview switch, which an
+                        -- external run refuses)
+                        map
+                            (\l -> if keySigner l then "SIGNER" else withoutPreview l)
+                            firstBlock
+                            `shouldBe` map (\l -> if extSigner l then "SIGNER" else l) secondBlock
+                    other ->
+                        expectationFailure
+                            ( "the usage does not carry exactly the key-file, external and vault shapes for "
+                                <> verb
+                                <> ": "
+                                <> show other
+                            )
+
+{- | The vault signer (#642 slice 3): the vault file, with the descriptor its
+passphrase is read from, names the signer of each of the five writes, read
+by the shared reader the registry's parser reads; the mixtures are its to
+refuse; every preview and inspect refuse both flags by name; each write's
+usage prints its vault line beside its key-file and external lines.
+-}
+vaultSignerRows :: Spec
+vaultSignerRows = describe "the vault signer" $ do
+    let payerHash = BS.replicate 28 0x5a
+        address = bech32Address (addrFromKeyHashBytes Testnet payerHash)
+        vault = ["--vault", "alice.vault"]
+        withFd = vault <> ["--passphrase-fd", "3"]
+        signerOf = \case
+            OpenInsert EntryArgs{entryMode = Submit w} -> Just (writeSigner w)
+            OpenUpdate EntryArgs{entryMode = Submit w} -> Just (writeSigner w)
+            OpenTerminate EntryArgs{entryMode = Submit w} -> Just (writeSigner w)
+            OpenFold FoldArgs{foldWrite = w} -> Just (writeSigner w)
+            OpenCreate _ CreateArgs{createMode = Submit w} -> Just (writeSigner w)
+            _ -> Nothing
+        entryBase name extra =
+            ["open-datum", name, "--key", "key"] <> extra <> reg <> provider
+        createBase =
+            [ "open-datum"
+            , "create"
+            , "--state-dir"
+            , "/srv/reg"
+            , "--blueprint"
+            , "/srv/plutus.json"
+            ]
+                <> provider
+        writes =
+            [ entryBase "insert" ["--payload", "/p.json"]
+            , entryBase "update" ["--payload", "/p.json"]
+            , entryBase "terminate" []
+            , ["open-datum", "fold"] <> reg <> provider
+            , createBase
+            ]
+        previewNode =
+            [ "--koios-url"
+            , "http://127.0.0.1:8080/api/v1"
+            , "--network-magic"
+            , "1"
+            ]
+        previews =
+            [ entryBase "insert" ["--payload", "/p.json", "--preview"]
+                <> previewNode
+            , entryBase "update" ["--payload", "/p.json", "--preview"]
+                <> previewNode
+            , entryBase "terminate" ["--preview"] <> previewNode
+            , [ "open-datum"
+              , "create"
+              , "--preview"
+              , "--state-dir"
+              , "/srv/reg"
+              , "--blueprint"
+              , "/srv/plutus.json"
+              ]
+                <> previewNode
+            ]
+        withArgs base extra = parseOpenDatumCommand (base <> extra)
+        refusedBy flag = \case
+            Left (BadValue f _) -> f == flag
+            _ -> False
+    it
+        "reads the vault, alone or with its descriptor, as each of the five writes' signer"
+        $ forM_ writes
+        $ \base -> do
+            fmap signerOf (withArgs base vault)
+                `shouldBe` Right (Just (SignerVault "alice.vault" Nothing))
+            fmap signerOf (withArgs base withFd)
+                `shouldBe` Right (Just (SignerVault "alice.vault" (Just 3)))
+    it "reads the vault on an insert or a terminate that also folds"
+        $ forM_
+            [ entryBase "insert" ["--payload", "/p.json"]
+            , entryBase "terminate" []
+            ]
+        $ \base ->
+            fmap signerOf (withArgs base (withFd <> ["--fold"]))
+                `shouldBe` Right (Just (SignerVault "alice.vault" (Just 3)))
+    it
+        "refuses a vault beside a key file or an address, the shared reader's refusal"
+        $ forM_ writes
+        $ \base -> do
+            withArgs base (vault <> ["--wallet-skey", "/k"])
+                `shouldSatisfy` refusedBy "--vault"
+            withArgs
+                base
+                (vault <> ["--wallet-address", address, "--bundle", "run.bundle"])
+                `shouldSatisfy` refusedBy "--vault"
+    it "refuses a descriptor without a vault, by name" $
+        forM_ writes $ \base ->
+            withArgs base ["--passphrase-fd", "3"]
+                `shouldSatisfy` refusedBy "--passphrase-fd"
+    it
+        "refuses the vault and its descriptor on every preview, naming each"
+        $ forM_ previews
+        $ \base -> do
+            withArgs base (["--wallet-address", address] <> vault)
+                `shouldBe` Left
+                    ( BadValue
+                        "--vault"
+                        "cannot be used with --preview: a preview signs and writes nothing"
+                    )
+            withArgs base ["--wallet-address", address, "--passphrase-fd", "3"]
+                `shouldBe` Left
+                    ( BadValue
+                        "--passphrase-fd"
+                        "cannot be used with --preview: a preview signs and writes nothing"
+                    )
+    it "refuses the vault and its descriptor on inspect, naming each" $ do
+        let inspectBase = ["open-datum", "inspect", "--key", "key"] <> reg <> provider
+        parseOpenDatumCommand (inspectBase <> vault)
+            `shouldBe` Left
+                ( BadValue
+                    "--vault"
+                    ( "is not accepted by open-datum inspect: it reads, and takes the "
+                        <> "address only to locate a journal"
+                    )
+                )
+        parseOpenDatumCommand (inspectBase <> ["--passphrase-fd", "3"])
+            `shouldBe` Left
+                ( BadValue
+                    "--passphrase-fd"
+                    ( "is not accepted by open-datum inspect: it reads, and takes the "
+                        <> "address only to locate a journal"
+                    )
+                )
+    it
+        "names the vault beside the key file and the external signer on each write's usage"
+        $ do
+            let ls = lines openDatumUsage
+                startsWith prefix l = prefix `isPrefixOf` l
+                blockStarts verb =
+                    [ i
+                    | (i, l) <- zip [0 :: Int ..] ls
+                    , startsWith ("  open-datum " <> verb <> " ") l
+                        || startsWith ("  open-datum " <> verb <> "[") l
+                    , not ("--preview" `isInfixOf` l)
+                    ]
+                blockAt start =
+                    takeWhile
+                        (\l -> not (startsWith "  open-datum" l || null l))
+                        (drop (start + 1) ls)
+                vaultLine l = "--vault FILE [--passphrase-fd FD]" `isInfixOf` l
+            forM_ ["create", "insert", "update", "terminate", "fold"] $ \verb ->
+                case blockStarts verb of
+                    [_, _, third] ->
+                        ( any vaultLine (blockAt third)
+                        , any ("--wallet-skey" `isInfixOf`) (blockAt third)
+                        )
+                            `shouldBe` (True, False)
+                    other ->
+                        expectationFailure
+                            ( "the usage does not carry the key-file, external and vault shapes for "
+                                <> verb
+                                <> ": "
+                                <> show other
+                            )
 
 -- ---------------------------------------------------------
 -- A creator's seed and directory

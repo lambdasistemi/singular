@@ -1,0 +1,24 @@
+{
+  "functions-model-for-open-datum-signing": [
+    {
+      "text": "Only changed signatures are listed; every other function keeps its type.",
+      "pause": 500
+    }
+  ],
+  "open-datum-command-line": [
+    {
+      "text": "The argument readers keep their types and change only which signer lines they refuse.",
+      "pause": 500
+    }
+  ],
+  "open-datum-entry-commands": [
+    {
+      "text": "No signature changes in slice one; slice two may pass the staged or landed distinction where issue 641 does not already carry it.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "b3a2020e0fb0b5915642a768fd038da5264124b92ba0e5b5ebe5e71e9a166cb2"
+  }
+}

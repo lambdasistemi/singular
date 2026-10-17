@@ -128,7 +128,6 @@ import Singular.CLI.Trace
     ( EdgeAction (..)
     , Scope (..)
     , What (EdgeStarted, RootSeen, Updated)
-    , report
     )
 import Singular.CLI.Trace qualified as Trace
 import Singular.Registry.Application (DecodedHolding (..))
@@ -311,8 +310,8 @@ book at a key verb plan = do
         "book"
         booking
         ("request " <> txInText request <> " live")
-    report
-        (wcTracer wc)
+    reportSeen
+        wc
         [InRequest (txInText request)]
         (Trace.Booked (txInText request) (Just (deadlineMs deadline)))
     pure (booking, decided, deadline, mPrep)
@@ -595,8 +594,8 @@ runUpdate env a = case entryMode a of
                         <> txInText liveIn
                         <> " with the new payload; root unchanged"
                     )
-                report (wcTracer wc) placed (Updated key (txInText liveIn))
-                report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT rootAfter))
+                reportSeen wc placed (Updated key (txInText liveIn))
+                reportSeen wc [] (RootSeen (hexT rootBefore) (hexT rootAfter))
                 pure $
                     receipt
                         "update"

@@ -21,8 +21,12 @@ control.
 module Singular.Application.OpenDatum.FlagGroupExtentSpec (spec) where
 
 import Control.Monad (forM_)
+import Data.ByteString qualified as BS
 import Data.Either (isRight)
+import Data.Text qualified as T
 import Test.Hspec
+
+import Cardano.Ledger.BaseTypes (Network (..))
 
 import Singular.Application.OpenDatum.Command
     ( parseOpenDatumCommand
@@ -38,6 +42,8 @@ import Singular.CLI.FlagGroup
     , commonSwitches
     , tokenizeWith
     )
+import Singular.Registry.TxBuilder.Internal (addrFromKeyHashBytes)
+import Singular.Registry.Wallet (bech32Address)
 
 spec :: Spec
 spec = describe "flag group extent" $ do
@@ -46,6 +52,57 @@ spec = describe "flag group extent" $ do
     extrasAsymmetry
     anchors
     productionVariants
+    createFollowsRegistry
+
+{- | Open-datum's create accepts a signer exactly when the registry's create
+does: both parsers answer the same create lines the same way, their
+refusal texts differing only in the binary's own name.
+-}
+createFollowsRegistry :: Spec
+createFollowsRegistry = describe "create follows the registry's create" $ do
+    it
+        "answers the external-signer create lines as the registry's create does"
+        $ do
+            let node = ["--koios-url", "u", "--network-magic", "1"]
+                registryCreate extra =
+                    parseCommand
+                        (["registry", "create", "--blueprint", "b"] <> node <> extra)
+                siblingCreate extra =
+                    parseOpenDatumCommand
+                        (["open-datum", "create", "--blueprint", "b"] <> node <> extra)
+                inRegistryName =
+                    T.unpack
+                        . T.replace "open-datum inspect" "registry inspect"
+                        . T.pack
+                normalize (Registry.BadValue flag why) = Just (flag, inRegistryName why)
+                normalize Registry.PreviewTakesNoKey = Just ("--wallet-skey", "no key")
+                normalize _ = Nothing
+                normalizeSibling (Sibling.BadValue flag why) =
+                    Just (flag, inRegistryName why)
+                normalizeSibling Sibling.PreviewTakesNoKey =
+                    Just ("--wallet-skey", "no key")
+                normalizeSibling _ = Nothing
+                sameAs line = do
+                    let registryAnswer = either normalize (const Nothing) (registryCreate line)
+                        siblingAnswer =
+                            either normalizeSibling (const Nothing) (siblingCreate line)
+                    registryAnswer `shouldBe` siblingAnswer
+            -- outside a preview, the address with its bundle file is accepted by
+            -- both creates
+            sameAs ["--wallet-address", anAddress, "--bundle", "b"]
+            -- the address alone gets the shared reader's refusal in both
+            sameAs ["--wallet-address", anAddress]
+            -- the bundle file alone is meaningless in both
+            sameAs ["--bundle", "b"]
+            -- two signers together are refused by both
+            sameAs
+                ["--wallet-skey", "k", "--wallet-address", anAddress, "--bundle", "b"]
+            -- a preview refuses the bundle file in both binaries
+            sameAs ["--preview", "--wallet-address", anAddress, "--bundle", "b"]
+
+-- | A bech32 payment-key address, produced from a key hash, never typed.
+anAddress :: String
+anAddress = bech32Address (addrFromKeyHashBytes Testnet (BS.replicate 28 0x5a))
 
 -- | The one valued flag the registry parser owns beyond the group.
 registryExtras :: [String]

@@ -34,6 +34,8 @@ applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunS
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs lifecycle writeIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs runVia readIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs runVia writeIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs vaultRefusedMemberRow writeIORef 1
+applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs vaultUncertainRow writeIORef 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs withRigIn modifyIORef' 1
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/CommandRunSpec.hs withRigIn newIORef 2
 applications/open-datum/offchain/test/Singular/Application/OpenDatum/IndependentActorsSpec.hs checkRefusal modifyIORef' 1
