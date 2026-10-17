@@ -46,6 +46,7 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , extractCageDatum
     , findStateUtxo
+    , requestPolicyPin
     , scriptHashBytes
     )
 import Singular.Registry.Types
@@ -80,8 +81,10 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
-            , defaultRegistrationCost = Coin 0
-            , defaultBookingWidth = 60_000
+            , -- The scenario's own registration economics, stated here and
+              -- pinned in the state it boots.
+              defaultRegistrationCost = Coin 2_000_000
+            , defaultBookingWidth = 10_000
             , -- #157 genesis-policy-pins: the four pins for THIS registry identity,
               -- derived from the registry blueprint's own compiled code
               -- (`loadRegistryCodesFromEnv`) — the open application
@@ -92,7 +95,9 @@ cageCfg stateBytes requestBytes codes seed =
             , cfgActivePolicy = activePin
             , cfgAbsentPolicy = absentPin
             , cfgTerminalPolicy = terminalPin
-            , cfgRequestPolicy = SBS.empty
+            , -- The request validator applied to this registry's state hash
+              -- and token, by the one shared derivation.
+              cfgRequestPolicy = requestPolicyPin stateBytes requestBytes seed
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

@@ -19,7 +19,9 @@ module Singular.CLI.Registry
     , loadRelease
     , loadReleaseCodes
     , registryConfigFor
-    , economics
+    , shippedProcessTime
+    , shippedRetractTime
+    , shippedTip
     , Pins (..)
     , pinsOf
     , hexT
@@ -185,16 +187,17 @@ loadReleaseWith app recognize path = do
                 NamingCodes{ncApplication = application, ncWitness = witness}
             )
 
--- | The windows and tip a registry this command creates is booted with.
-economics :: RegistryEconomics
-economics =
-    RegistryEconomics
-        { reProcessTime = 600_000
-        , reRetractTime = 300_000
-        , reTip = Coin 1_000_000
-        , reRegistrationCost = Coin 0
-        , reBookingWidth = 60_000
-        }
+{- | The processing window, the retract window and the minimum tip a registry
+is created with when the caller names none. They are the windows and tip the
+release has always shipped. The registration cost and the widest booking
+interval have no shipped value: the caller states both.
+-}
+shippedProcessTime, shippedRetractTime :: Integer
+shippedProcessTime = 600_000
+shippedRetractTime = 300_000
+
+shippedTip :: Coin
+shippedTip = Coin 1_000_000
 
 {- | The configuration of the application registry this release boots from
 this seed, and the codes as that registry runs them: the application
