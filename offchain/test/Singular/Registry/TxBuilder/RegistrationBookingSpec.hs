@@ -20,7 +20,7 @@ by a program from that output, never typed.
 -}
 module Singular.Registry.TxBuilder.RegistrationBookingSpec (spec) where
 
-import Control.Exception (SomeException, displayException)
+import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_, void)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -45,6 +45,7 @@ import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Api.PParams (ppTxFeeFixedL)
 import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
@@ -62,7 +63,9 @@ import Cardano.Ledger.Api.Tx.Out
     , addrTxOutL
     , coinTxOutL
     , datumTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
+    , referenceScriptTxOutL
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits
@@ -88,6 +91,7 @@ import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.State (UTxO (..))
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Application (ApplicationPin (..))
@@ -523,10 +527,15 @@ start, so a slot's start in milliseconds is a thousand times its number) and
 the preprod parameters.
 -}
 viewServing :: Served -> Session NoWitness IO
-viewServing served =
+viewServing = viewServingUnder ledgerParameters
+
+-- | The same world under other protocol parameters.
+viewServingUnder
+    :: PParams ConwayEra -> Served -> Session NoWitness IO
+viewServingUnder params served =
     withAddressOutputs
         (\a -> pure (concat [os | (x, os) <- served, x == a]))
-        $ withParameters ledgerParameters
+        $ withParameters params
         $ withTime (pure syntheticTime)
         $ withResolvedOutputs
             ( \wanted ->
@@ -668,6 +677,151 @@ measuredSpec = describe "the measured budget" $ do
                     }
                 tx
                 `shouldBe` []
+
+-- ---------------------------------------------------------
+-- The funding output
+-- ---------------------------------------------------------
+
+-- | The lovelace the request output holds: the declared cost, tip and carrier.
+requestLovelace :: Integer
+requestLovelace =
+    let r = requestFor booking
+    in  regRegistrationCost r + regDeclaredTip r + regCarrierAda r
+
+-- | The fee a transaction states.
+feeOf :: ConwayTx -> Integer
+feeOf tx = let Coin f = tx ^. bodyTxL . feeTxBodyL in f
+
+-- | Book for a payer who holds only this one ada-only output.
+bookedFundedBy :: PParams ConwayEra -> Integer -> IO ConwayTx
+bookedFundedBy params lovelace =
+    bookRegistrationImpl
+        cfg
+        ( viewServingUnder
+            params
+            [
+                ( payer
+                , [(fundingIn, mkBasicTxOut payer (MaryValue (Coin lovelace) mempty))]
+                )
+            , (cageAddrFromCfg cfg Testnet, [(stateRef, stateOutputFor cfg)])
+            ]
+        )
+        tokenId
+        stateRef
+        booking
+        payer
+
+{- | The minimum ada of an ada-only output at the payer's address, derived
+from the parameters: what a change output must hold.
+-}
+changeMinimum :: PParams ConwayEra -> Integer
+changeMinimum params =
+    let Coin m =
+            getMinCoinTxOut
+                params
+                (mkBasicTxOut payer (MaryValue (Coin 1_000_000) mempty))
+    in  m
+
+{- | A payer with one ada-only output has to pay the request, the fee and
+leave each output the ledger will check its minimum ada. A booking that
+cannot is refused with the reason, or states exactly what it owes: no
+transaction the ledger would refuse is returned.
+
+The fee that sizes each funding output is read from a booking funded amply;
+the judgement of every transaction derives its own expectations from the
+parameters and from the funding output alone.
+-}
+fundingSpec :: Spec
+fundingSpec = describe "the funding output" $ do
+    let owes lovelace =
+            Spend
+                { spInputs = [(fundingIn, lovelace)]
+                , spFunding = fundingIn
+                , spRefBytes = 0
+                }
+        feeAmply = feeOf <$> bookedFundedBy ledgerParameters 100_000_000
+        refusedOrOwesNothing lovelace = do
+            outcome <- try (bookedFundedBy ledgerParameters lovelace)
+            case outcome of
+                Left e ->
+                    displayException (e :: SomeException)
+                        `shouldSatisfy` isInfixOf "the funding output is too small"
+                Right tx -> judgeCollateral (owes lovelace) tx `shouldBe` []
+        minimum' = changeMinimum ledgerParameters
+    it "leaves the change its minimum ada when it holds a little more" $ do
+        fee <- feeAmply
+        let lovelace = requestLovelace + fee + minimum' + 50_000
+        tx <- bookedFundedBy ledgerParameters lovelace
+        judgeCollateral (owes lovelace) tx `shouldBe` []
+    it "does not return a change output a little below its minimum ada" $ do
+        fee <- feeAmply
+        refusedOrOwesNothing (requestLovelace + fee + minimum' - 50_000)
+    it "does not return a change output of a fraction of its minimum ada" $ do
+        fee <- feeAmply
+        refusedOrOwesNothing (requestLovelace + fee + minimum' `div` 4)
+    it
+        "does not put the whole funding output at risk when it cannot leave a collateral return"
+        $ do
+            -- A fixed fee above twice the request makes the required
+            -- collateral exceed what the request and the fee leave, so a
+            -- funding output can pay for the booking and its change and
+            -- still be unable to return its collateral's remainder.
+            let costly = ledgerParameters & ppTxFeeFixedL .~ Coin 12_000_000
+            fee <- feeOf <$> bookedFundedBy costly 100_000_000
+            let collateral = (fee * 150 + 99) `div` 100
+                lovelace = collateral + changeMinimum costly `div` 2
+            lovelace - requestLovelace - fee
+                `shouldSatisfy` (>= changeMinimum costly)
+            bookedFundedBy costly lovelace
+                `shouldThrow` \e ->
+                    "collateral return" `isInfixOf` displayException (e :: SomeException)
+
+-- ---------------------------------------------------------
+-- A state output that carries a script
+-- ---------------------------------------------------------
+
+{- | The registry's state output also carrying a Plutus script. Nothing in
+the registry forbids it, and a transaction that references the output is
+charged for the script's bytes whether or not it runs them.
+-}
+stateWithScript :: TxOut ConwayEra
+stateWithScript =
+    stateOutputFor cfg
+        & referenceScriptTxOutL
+            .~ SJust (scriptFromBytes "state-reference" (ncApplication codes))
+
+{- | The lovelace the ledger charges for each reference-script byte, in
+the public preprod parameters the fixtures run under.
+-}
+referenceByteLovelace :: Integer
+referenceByteLovelace = 15
+
+stateReferenceScriptSpec :: Spec
+stateReferenceScriptSpec =
+    describe "a state output that carries a reference script" $ do
+        let bytes =
+                toInteger $
+                    refScriptsSize
+                        (Set.singleton stateRef)
+                        [(stateRef, stateWithScript)]
+        it "carries script bytes the ledger prices" $
+            bytes `shouldSatisfy` (> 0)
+        it
+            "states the fee the ledger charges for the script bytes the booking references"
+            $ do
+                tx <- bookedAgainst stateWithScript
+                judgeCollateral
+                    Spend
+                        { spInputs = [(fundingIn, 100_000_000)]
+                        , spFunding = fundingIn
+                        , spRefBytes = fromInteger bytes
+                        }
+                    tx
+                    `shouldBe` []
+        it "pays at least the byte price for each byte more than without it" $ do
+            without <- feeOf <$> bookedAgainst (stateOutputFor cfg)
+            with <- feeOf <$> bookedAgainst stateWithScript
+            with - without `shouldSatisfy` (>= referenceByteLovelace * bytes)
 
 -- | A booking at the upper slot 4 005, the lower slot five seconds earlier.
 booking :: RegistrationBooking
@@ -820,6 +974,8 @@ bookingTxSpec = describe "the registration booking transaction" $ do
         length outs `shouldBe` 2
     presentButNotTheRegistrys
     measuredSpec
+    fundingSpec
+    stateReferenceScriptSpec
     describe "refuses before building" $ do
         it "an interval wider than the registry's widest" $
             refusesWith "wider than the registry's booking width" $
