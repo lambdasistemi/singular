@@ -405,7 +405,7 @@ collateralised whole.
 takes an existing registry by its state token, a state directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts,
 stops or resets a node. This test executable also requires `--node-socket`
 for its separate independent LSQ probe; that socket is never sent to ordinary
-`singular` or `open-datum`. Its attach behavior is a harness surface, not another provider:
+`singular` or `open-datum`. Its attach behavior is a harness surface, not another provider, and it keeps key files (the wallet and stranger key files named below) for now:
 
 ```bash
 cli-controls attach --singular "$singular" --blueprint "$blueprint" \

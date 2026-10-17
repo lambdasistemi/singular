@@ -39,7 +39,7 @@ flowchart TB
 | --- | --- | --- |
 | API base URL | `--koios-url URL` | `SINGULAR_KOIOS_URL` |
 | Network magic | `--network-magic N` | `SINGULAR_NETWORK_MAGIC` |
-| Payment signing-key file | `--wallet-skey FILE` | `SINGULAR_WALLET_SKEY` |
+| Payment signing-key file (the harnesses `journey` and `deployment` keep key files) | `--wallet-skey FILE` | `SINGULAR_WALLET_SKEY` |
 | Pinned time directory, when needed | `--network-time DIR` | `SINGULAR_NETWORK_TIME` |
 | Optional API token file | `--koios-token-file FILE` | `SINGULAR_KOIOS_TOKEN_FILE` |
 
@@ -81,20 +81,21 @@ the command the create receipt printed.
 
 ## Fund a wallet you control
 
-Create a payment key and derive its preprod address locally:
+The bounded journey and the `deployment` tool are harnesses, and they keep key
+files: they read a payment signing key from a file and cannot open a vault.
+Make that key from 32 random bytes in hex, which is all the file holds, with no
+other tool:
 
 ```sh
-cardano-cli address key-gen \
-  --verification-key-file joiner.vkey --signing-key-file joiner.skey
-cardano-cli address build \
-  --payment-verification-key-file joiner.vkey --testnet-magic 1 \
-  --out-file joiner.addr
-cat joiner.addr
+od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > joiner.skey
 ```
 
-Fund the address from the preprod faucet, then make a self-payment that leaves
-several ordinary outputs, including an ada-only collateral output. The runner
-loads the key from its local file and derives the paying address from it. A
+Run the journey once with the file (the next section gives the command). With no
+funds it stops with a funding refusal that names the wallet's address and the
+faucet: fund that address from the preprod faucet, then make a self-payment
+that leaves several ordinary outputs, including an ada-only collateral output,
+and run the journey again. The runner loads the key from its local file and
+derives the paying address from it. A
 key's bytes do not belong in command output or receipts. A funded balance alone
 is insufficient when the transaction needs distinct seed, funding and
 collateral outputs.
@@ -102,6 +103,17 @@ collateral outputs.
 The retained funding checks name the wallet address, available outputs and
 required amount. They catch an empty or inadequately funded wallet; their
 initial floor does not guarantee that a long run can finish with that balance.
+
+Your own `open-datum` and `singular registry` commands do not use that key file.
+Make a wallet with `singular wallet create`, which seals a fresh signing key in
+an encrypted vault and prints its address, and sign each write from the vault
+with `--vault FILE` (the passphrase typed once, or read from `--passphrase-fd FD`
+in a script); or name the wallet's address and a new bundle file, let the command
+write its transactions there, sign the bundle elsewhere with `singular wallet
+sign --vault FILE` and send it with `singular submit`. The settings table in the
+[command reference](singular-node.md) lists the flags of each way, and the Demo 1
+run page in the release archive (`DEMO1.md`) shows both ways from the first
+command to the last.
 
 ## Run the bounded registry journey
 
@@ -161,7 +173,7 @@ guarantee of eventual ledger acceptance.
 
 ## Deployment and naming availability
 
-The `deployment` tool uses the same provider/wallet configuration. From
+The `deployment` tool is a harness that keeps a key file: it uses the same provider/wallet configuration as the journey. From
 `offchain`, these are its current command forms:
 
 ```sh

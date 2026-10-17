@@ -120,9 +120,9 @@ covers the registry protocol, not the naming lifecycle of the retained
 rows below.
 
 The packaged journey defaults to a private generated devnet behind the Koios
-HTTP facade. To use a test-network API and your own wallet, pass
-`--koios-url URL --network-magic N --wallet-skey FILE`; the matching environment
-variables are `SINGULAR_KOIOS_URL`, `SINGULAR_NETWORK_MAGIC` and
+HTTP facade. The journey is a harness and keeps a key file: to use a test-network
+API and your own wallet, pass `--koios-url URL --network-magic N --wallet-skey FILE`;
+the matching environment variables are `SINGULAR_KOIOS_URL`, `SINGULAR_NETWORK_MAGIC` and
 `SINGULAR_WALLET_SKEY`. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
 pinned genesis/history material; preprod otherwise uses the reviewed packaged
 recording. The launcher checks configuration before spawning its private
@@ -132,6 +132,18 @@ its command description alone is not a current release or hosted pass. The
 [onboarding runbook](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
 explains the API, time and wallet settings. The legacy naming commands below
 retain their stated unverified status.
+
+The write commands (`singular registry create`, `fold`, `reject` and `reclaim`,
+and `open-datum create`, `insert`, `update`, `terminate` and `fold`) take exactly
+one signer, which is one of three: a key file, `--wallet-skey FILE`; an address
+with a bundle file, `--wallet-address ADDR --bundle FILE`, where the command
+builds its whole run as that bundle, signs and sends nothing and exits with
+status 19, `singular wallet sign --vault FILE` signs the bundle and `singular
+submit` sends it; or a vault, `--vault FILE` (with `--passphrase-fd FD` for a
+script, otherwise the passphrase is typed once), where the command signs,
+sends and lands its run in one step. `singular wallet create` makes a vault and
+prints its address. The Demo 1 run page, `DEMO1.md` in this archive, shows the
+vault and the external way from the first command to the last.
 
 Build the two compiled blueprints from this archive's own flakes, then run
 the journey from `offchain/` (it reads the pinned identity manifests from

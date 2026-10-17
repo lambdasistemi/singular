@@ -55,15 +55,19 @@
       "pause": 500
     },
     {
-      "text": "Create a payment key and derive its preprod address locally:",
+      "text": "The bounded journey and the deployment tool are harnesses, and they keep key files: they read a payment signing key from a file and cannot open a vault. Make that key from 32 random bytes in hex, which is all the file holds, with no other tool:",
       "pause": 400
     },
     {
-      "text": "Fund the address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
+      "text": "Run the journey once with the file (the next section gives the command). With no funds it stops with a funding refusal that names the wallet's address and the faucet: fund that address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output, and run the journey again. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
       "pause": 400
     },
     {
       "text": "The retained funding checks name the wallet address, available outputs and required amount. They catch an empty or inadequately funded wallet; their initial floor does not guarantee that a long run can finish with that balance.",
+      "pause": 400
+    },
+    {
+      "text": "Your own open-datum and singular registry commands do not use that key file. Make a wallet with singular wallet create, which seals a fresh signing key in an encrypted vault and prints its address, and sign each write from the vault with --vault FILE (the passphrase typed once, or read from --passphrase-fd FD in a script); or name the wallet's address and a new bundle file, let the command write its transactions there, sign the bundle elsewhere with singular wallet sign --vault FILE and send it with singular submit. The settings table in the command reference lists the flags of each way, and the Demo 1 run page in the release archive (DEMO1.md) shows both ways from the first command to the last.",
       "pause": 400
     }
   ],
@@ -105,7 +109,7 @@
       "pause": 500
     },
     {
-      "text": "The deployment tool uses the same provider/wallet configuration. From offchain, these are its current command forms:",
+      "text": "The deployment tool is a harness that keeps a key file: it uses the same provider/wallet configuration as the journey. From offchain, these are its current command forms:",
       "pause": 400
     },
     {
@@ -119,6 +123,6 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "2d39c9a9101d1fd8706d1f4324578d92f24d85226d1400af6814a60b4b41496f"
+    "sha256": "861df982b1979d8fa4ab368763e9e0a6e7127a5234d23565d475bdbb8327f5ed"
   }
 }

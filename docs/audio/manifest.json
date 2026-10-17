@@ -91401,111 +91401,176 @@
    ]
   },
   "docs-consumer-onboarding/deployment-and-naming-availability-01": {
-   "audio_sha256": "25926ae5268f1d11a79095d3a82be708470c9aabde1785985e4126ebd51bc0d1",
-   "characters": 116,
-   "cost": 7.192e-05,
-   "duration": 7.475,
+   "audio_sha256": "135af85e1e21535e309fd045d56511370a1590f99b9fa4a929e1f0eee074af30",
+   "characters": 170,
+   "cost": 0.00016829999999999997,
+   "duration": 10.675,
    "index": 1,
-   "key": "033deb3b3ae319ccc1b89aa96bb7e1976c609538fb257803d004bc409b4f7ad6",
+   "key": "f6b921a0e6d10ee107dfaf106b85e55d49994444a67e8a842c7ad5501038090c",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "deployment-and-naming-availability",
-   "sent_text": "The deployment tool uses the same provider/wallet configuration. From offchain, these are its current command forms:",
-   "text": "The deployment tool uses the same provider/wallet configuration. From offchain, these are its current command forms:",
+   "sent_text": "The deployment tool is a harness that keeps a key file: it uses the same provider/wallet configuration as the journey. From offchain, these are its current command forms:",
+   "text": "The deployment tool is a harness that keeps a key file: it uses the same provider/wallet configuration as the journey. From offchain, these are its current command forms:",
    "words": [
     {
-     "end": 0.25,
+     "end": 0.237,
      "start": 0.175,
      "text": "The"
     },
     {
-     "end": 0.712,
-     "start": 0.25,
+     "end": 0.675,
+     "start": 0.237,
      "text": "deployment"
     },
     {
-     "end": 1.112,
-     "start": 0.712,
+     "end": 1.025,
+     "start": 0.675,
      "text": "tool"
     },
     {
-     "end": 1.55,
-     "start": 1.112,
+     "end": 1.138,
+     "start": 1.025,
+     "text": "is"
+    },
+    {
+     "end": 1.2,
+     "start": 1.138,
+     "text": "a"
+    },
+    {
+     "end": 1.625,
+     "start": 1.2,
+     "text": "harness"
+    },
+    {
+     "end": 1.775,
+     "start": 1.625,
+     "text": "that"
+    },
+    {
+     "end": 2.037,
+     "start": 1.775,
+     "text": "keeps"
+    },
+    {
+     "end": 2.1,
+     "start": 2.037,
+     "text": "a"
+    },
+    {
+     "end": 2.312,
+     "start": 2.1,
+     "text": "key"
+    },
+    {
+     "end": 3.15,
+     "start": 2.312,
+     "text": "file"
+    },
+    {
+     "end": 3.35,
+     "start": 3.15,
+     "text": ":"
+    },
+    {
+     "end": 3.65,
+     "start": 3.55,
+     "text": "it"
+    },
+    {
+     "end": 4.075,
+     "start": 3.65,
      "text": "uses"
     },
     {
-     "end": 1.688,
-     "start": 1.55,
+     "end": 4.213,
+     "start": 4.075,
      "text": "the"
     },
     {
-     "end": 2.05,
-     "start": 1.688,
+     "end": 4.55,
+     "start": 4.213,
      "text": "same"
     },
     {
-     "end": 2.9,
-     "start": 2.05,
+     "end": 5.4,
+     "start": 4.55,
      "text": "provider/wallet"
     },
     {
-     "end": 4.25,
-     "start": 2.9,
+     "end": 6.25,
+     "start": 5.4,
      "text": "configuration"
     },
     {
-     "end": 4.45,
-     "start": 4.25,
+     "end": 6.412,
+     "start": 6.25,
+     "text": "as"
+    },
+    {
+     "end": 6.512,
+     "start": 6.412,
+     "text": "the"
+    },
+    {
+     "end": 7.425,
+     "start": 6.512,
+     "text": "journey"
+    },
+    {
+     "end": 7.65,
+     "start": 7.425,
      "text": "."
     },
     {
-     "end": 4.775,
-     "start": 4.625,
+     "end": 7.975,
+     "start": 7.825,
      "text": "From"
     },
     {
-     "end": 5.225,
-     "start": 4.775,
+     "end": 8.425,
+     "start": 7.975,
      "text": "offchain"
     },
     {
-     "end": 5.275,
-     "start": 5.225,
+     "end": 8.475,
+     "start": 8.425,
      "text": ","
     },
     {
-     "end": 5.512,
-     "start": 5.275,
+     "end": 8.712,
+     "start": 8.475,
      "text": "these"
     },
     {
-     "end": 5.588,
-     "start": 5.512,
+     "end": 8.788,
+     "start": 8.712,
      "text": "are"
     },
     {
-     "end": 5.725,
-     "start": 5.588,
+     "end": 8.925,
+     "start": 8.788,
      "text": "its"
     },
     {
-     "end": 6.0,
-     "start": 5.725,
+     "end": 9.2,
+     "start": 8.925,
      "text": "current"
     },
     {
-     "end": 6.375,
-     "start": 6.0,
+     "end": 9.575,
+     "start": 9.2,
      "text": "command"
     },
     {
-     "end": 7.275,
-     "start": 6.375,
+     "end": 10.475,
+     "start": 9.575,
      "text": "forms"
     },
     {
-     "end": 7.475,
-     "start": 7.275,
+     "end": 10.675,
+     "start": 10.475,
      "text": ":"
     }
    ]
@@ -92956,441 +93021,851 @@
    ]
   },
   "docs-consumer-onboarding/fund-a-wallet-you-control-01": {
-   "audio_sha256": "c5fdafdac84a26f2a81da4e8f8820df7816d70a99cf0827872c1d0857365be60",
-   "characters": 60,
-   "cost": 3.72e-05,
-   "duration": 3.95,
+   "audio_sha256": "12cf3e708a917b577385ad668d688e46b05ac6a90986d64925b0f877c8dd6624",
+   "characters": 244,
+   "cost": 0.00024155999999999996,
+   "duration": 15.525,
    "index": 1,
-   "key": "f9d13860cc98247c1181cee650deefcccaf98e268307c323af419760cc653484",
+   "key": "803dddfc572bf7b555d508bc64e30252092356a24d328a718cc0de1eecf2de76",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "fund-a-wallet-you-control",
-   "sent_text": "Create a payment key and derive its preprod address locally:",
-   "text": "Create a payment key and derive its preprod address locally:",
+   "sent_text": "The bounded journey and the deployment tool are harnesses, and they keep key files: they read a payment signing key from a file and cannot open a vault. Make that key from 32 random bytes in hex, which is all the file holds, with no other tool:",
+   "text": "The bounded journey and the deployment tool are harnesses, and they keep key files: they read a payment signing key from a file and cannot open a vault. Make that key from 32 random bytes in hex, which is all the file holds, with no other tool:",
    "words": [
     {
-     "end": 0.488,
-     "start": 0.2,
-     "text": "Create"
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
     },
     {
-     "end": 0.55,
-     "start": 0.488,
-     "text": "a"
+     "end": 0.688,
+     "start": 0.25,
+     "text": "bounded"
     },
     {
-     "end": 0.875,
-     "start": 0.55,
-     "text": "payment"
+     "end": 1.1,
+     "start": 0.688,
+     "text": "journey"
     },
     {
-     "end": 1.288,
-     "start": 0.875,
-     "text": "key"
-    },
-    {
-     "end": 1.413,
-     "start": 1.288,
+     "end": 1.212,
+     "start": 1.1,
      "text": "and"
     },
     {
-     "end": 1.837,
-     "start": 1.413,
-     "text": "derive"
+     "end": 1.288,
+     "start": 1.212,
+     "text": "the"
     },
     {
-     "end": 1.975,
-     "start": 1.837,
-     "text": "its"
+     "end": 1.725,
+     "start": 1.288,
+     "text": "deployment"
     },
     {
-     "end": 2.425,
-     "start": 1.975,
-     "text": "preprod"
+     "end": 2.025,
+     "start": 1.725,
+     "text": "tool"
     },
     {
-     "end": 2.775,
-     "start": 2.425,
-     "text": "address"
+     "end": 2.175,
+     "start": 2.025,
+     "text": "are"
     },
     {
-     "end": 3.75,
-     "start": 2.775,
-     "text": "locally"
+     "end": 2.85,
+     "start": 2.175,
+     "text": "harnesses"
     },
     {
-     "end": 3.95,
-     "start": 3.75,
+     "end": 2.925,
+     "start": 2.85,
+     "text": ","
+    },
+    {
+     "end": 3.037,
+     "start": 2.925,
+     "text": "and"
+    },
+    {
+     "end": 3.188,
+     "start": 3.037,
+     "text": "they"
+    },
+    {
+     "end": 3.45,
+     "start": 3.188,
+     "text": "keep"
+    },
+    {
+     "end": 3.688,
+     "start": 3.45,
+     "text": "key"
+    },
+    {
+     "end": 4.75,
+     "start": 3.688,
+     "text": "files"
+    },
+    {
+     "end": 4.95,
+     "start": 4.75,
+     "text": ":"
+    },
+    {
+     "end": 5.25,
+     "start": 5.125,
+     "text": "they"
+    },
+    {
+     "end": 5.438,
+     "start": 5.25,
+     "text": "read"
+    },
+    {
+     "end": 5.5,
+     "start": 5.438,
+     "text": "a"
+    },
+    {
+     "end": 5.85,
+     "start": 5.5,
+     "text": "payment"
+    },
+    {
+     "end": 6.238,
+     "start": 5.85,
+     "text": "signing"
+    },
+    {
+     "end": 6.475,
+     "start": 6.238,
+     "text": "key"
+    },
+    {
+     "end": 6.613,
+     "start": 6.475,
+     "text": "from"
+    },
+    {
+     "end": 6.713,
+     "start": 6.613,
+     "text": "a"
+    },
+    {
+     "end": 7.213,
+     "start": 6.713,
+     "text": "file"
+    },
+    {
+     "end": 7.35,
+     "start": 7.213,
+     "text": "and"
+    },
+    {
+     "end": 7.7,
+     "start": 7.35,
+     "text": "cannot"
+    },
+    {
+     "end": 7.963,
+     "start": 7.7,
+     "text": "open"
+    },
+    {
+     "end": 8.025,
+     "start": 7.963,
+     "text": "a"
+    },
+    {
+     "end": 8.875,
+     "start": 8.025,
+     "text": "vault"
+    },
+    {
+     "end": 9.075,
+     "start": 8.875,
+     "text": "."
+    },
+    {
+     "end": 9.5,
+     "start": 9.3,
+     "text": "Make"
+    },
+    {
+     "end": 9.762,
+     "start": 9.5,
+     "text": "that"
+    },
+    {
+     "end": 10.025,
+     "start": 9.762,
+     "text": "key"
+    },
+    {
+     "end": 10.238,
+     "start": 10.025,
+     "text": "from"
+    },
+    {
+     "end": 10.837,
+     "start": 10.238,
+     "text": "32"
+    },
+    {
+     "end": 11.275,
+     "start": 10.837,
+     "text": "random"
+    },
+    {
+     "end": 11.625,
+     "start": 11.275,
+     "text": "bytes"
+    },
+    {
+     "end": 11.775,
+     "start": 11.625,
+     "text": "in"
+    },
+    {
+     "end": 12.175,
+     "start": 11.775,
+     "text": "hex"
+    },
+    {
+     "end": 12.212,
+     "start": 12.175,
+     "text": ","
+    },
+    {
+     "end": 12.387,
+     "start": 12.212,
+     "text": "which"
+    },
+    {
+     "end": 12.525,
+     "start": 12.387,
+     "text": "is"
+    },
+    {
+     "end": 12.712,
+     "start": 12.525,
+     "text": "all"
+    },
+    {
+     "end": 12.837,
+     "start": 12.712,
+     "text": "the"
+    },
+    {
+     "end": 13.175,
+     "start": 12.837,
+     "text": "file"
+    },
+    {
+     "end": 13.625,
+     "start": 13.175,
+     "text": "holds"
+    },
+    {
+     "end": 13.675,
+     "start": 13.625,
+     "text": ","
+    },
+    {
+     "end": 13.863,
+     "start": 13.675,
+     "text": "with"
+    },
+    {
+     "end": 14.087,
+     "start": 13.863,
+     "text": "no"
+    },
+    {
+     "end": 14.337,
+     "start": 14.087,
+     "text": "other"
+    },
+    {
+     "end": 15.325,
+     "start": 14.337,
+     "text": "tool"
+    },
+    {
+     "end": 15.525,
+     "start": 15.325,
      "text": ":"
     }
    ]
   },
   "docs-consumer-onboarding/fund-a-wallet-you-control-02": {
-   "audio_sha256": "617c588e5a627f4316245c1e70b433069de20eb9491b039da2e3bfb7593c0475",
-   "characters": 402,
-   "cost": 0.00024924,
-   "duration": 26.4,
+   "audio_sha256": "609c22f4efee74a6b393ad0dc6b00a93d1d7a1a4ad4d561f31bd6042af24ac04",
+   "characters": 597,
+   "cost": 0.00059103,
+   "duration": 38.425,
    "index": 2,
-   "key": "6cf619cbdb8318217b32696995817ffc0da1a9ef778507e06c561910b3dc1e42",
+   "key": "13cdb1f450ca56bedb1de7303164c82e09957b1aacbf12bb33e2ad1cb55cce70",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "fund-a-wallet-you-control",
-   "sent_text": "Fund the address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
-   "text": "Fund the address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
+   "sent_text": "Run the journey once with the file (the next section gives the command). With no funds it stops with a funding refusal that names the wallet's address and the faucet: fund that address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output, and run the journey again. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
+   "text": "Run the journey once with the file (the next section gives the command). With no funds it stops with a funding refusal that names the wallet's address and the faucet: fund that address from the preprod faucet, then make a self-payment that leaves several ordinary outputs, including an ada-only collateral output, and run the journey again. The runner loads the key from its local file and derives the paying address from it. A key's bytes do not belong in command output or receipts. A funded balance alone is insufficient when the transaction needs distinct seed, funding and collateral outputs.",
    "words": [
     {
-     "end": 0.463,
-     "start": 0.25,
-     "text": "Fund"
+     "end": 0.387,
+     "start": 0.2,
+     "text": "Run"
     },
     {
-     "end": 0.575,
-     "start": 0.463,
+     "end": 0.488,
+     "start": 0.387,
      "text": "the"
     },
     {
-     "end": 0.975,
-     "start": 0.575,
-     "text": "address"
+     "end": 0.913,
+     "start": 0.488,
+     "text": "journey"
     },
     {
-     "end": 1.138,
-     "start": 0.975,
-     "text": "from"
+     "end": 1.25,
+     "start": 0.913,
+     "text": "once"
     },
     {
-     "end": 1.225,
-     "start": 1.138,
+     "end": 1.388,
+     "start": 1.25,
+     "text": "with"
+    },
+    {
+     "end": 1.513,
+     "start": 1.388,
      "text": "the"
     },
     {
-     "end": 1.737,
-     "start": 1.225,
-     "text": "preprod"
-    },
-    {
-     "end": 2.35,
-     "start": 1.737,
-     "text": "faucet"
-    },
-    {
-     "end": 2.425,
-     "start": 2.35,
-     "text": ","
-    },
-    {
-     "end": 2.65,
-     "start": 2.425,
-     "text": "then"
-    },
-    {
-     "end": 2.838,
-     "start": 2.65,
-     "text": "make"
-    },
-    {
-     "end": 2.938,
-     "start": 2.838,
-     "text": "a"
-    },
-    {
-     "end": 3.7,
-     "start": 2.938,
-     "text": "self-payment"
-    },
-    {
-     "end": 3.9,
-     "start": 3.7,
-     "text": "that"
-    },
-    {
-     "end": 4.287,
-     "start": 3.9,
-     "text": "leaves"
-    },
-    {
-     "end": 4.787,
-     "start": 4.287,
-     "text": "several"
-    },
-    {
-     "end": 5.375,
-     "start": 4.787,
-     "text": "ordinary"
-    },
-    {
-     "end": 6.025,
-     "start": 5.375,
-     "text": "outputs"
-    },
-    {
-     "end": 6.1,
-     "start": 6.025,
-     "text": ","
-    },
-    {
-     "end": 6.65,
-     "start": 6.1,
-     "text": "including"
-    },
-    {
-     "end": 6.812,
-     "start": 6.65,
-     "text": "an"
-    },
-    {
-     "end": 7.488,
-     "start": 6.812,
-     "text": "ada-only"
-    },
-    {
-     "end": 8.125,
-     "start": 7.488,
-     "text": "collateral"
-    },
-    {
-     "end": 9.35,
-     "start": 8.125,
-     "text": "output"
-    },
-    {
-     "end": 9.575,
-     "start": 9.35,
-     "text": "."
-    },
-    {
-     "end": 9.863,
-     "start": 9.75,
-     "text": "The"
-    },
-    {
-     "end": 10.225,
-     "start": 9.863,
-     "text": "runner"
-    },
-    {
-     "end": 10.55,
-     "start": 10.225,
-     "text": "loads"
-    },
-    {
-     "end": 10.688,
-     "start": 10.55,
-     "text": "the"
-    },
-    {
-     "end": 11.0,
-     "start": 10.688,
-     "text": "key"
-    },
-    {
-     "end": 11.137,
-     "start": 11.0,
-     "text": "from"
-    },
-    {
-     "end": 11.3,
-     "start": 11.137,
-     "text": "its"
-    },
-    {
-     "end": 11.637,
-     "start": 11.3,
-     "text": "local"
-    },
-    {
-     "end": 12.175,
-     "start": 11.637,
+     "end": 2.0,
+     "start": 1.513,
      "text": "file"
     },
     {
-     "end": 12.325,
-     "start": 12.175,
-     "text": "and"
+     "end": 2.05,
+     "start": 2.0,
+     "text": "("
     },
     {
-     "end": 12.85,
-     "start": 12.325,
-     "text": "derives"
-    },
-    {
-     "end": 12.95,
-     "start": 12.85,
+     "end": 2.125,
+     "start": 2.05,
      "text": "the"
     },
     {
-     "end": 13.325,
-     "start": 12.95,
-     "text": "paying"
+     "end": 2.4,
+     "start": 2.125,
+     "text": "next"
     },
     {
-     "end": 13.675,
-     "start": 13.325,
-     "text": "address"
+     "end": 2.85,
+     "start": 2.4,
+     "text": "section"
     },
     {
-     "end": 13.85,
-     "start": 13.675,
-     "text": "from"
+     "end": 3.112,
+     "start": 2.85,
+     "text": "gives"
     },
     {
-     "end": 14.5,
-     "start": 13.85,
-     "text": "it"
+     "end": 3.2,
+     "start": 3.112,
+     "text": "the"
     },
     {
-     "end": 14.7,
-     "start": 14.5,
-     "text": "."
-    },
-    {
-     "end": 14.975,
-     "start": 14.9,
-     "text": "A"
-    },
-    {
-     "end": 15.275,
-     "start": 14.975,
-     "text": "key's"
-    },
-    {
-     "end": 15.6,
-     "start": 15.275,
-     "text": "bytes"
-    },
-    {
-     "end": 15.712,
-     "start": 15.6,
-     "text": "do"
-    },
-    {
-     "end": 15.925,
-     "start": 15.712,
-     "text": "not"
-    },
-    {
-     "end": 16.275,
-     "start": 15.925,
-     "text": "belong"
-    },
-    {
-     "end": 16.425,
-     "start": 16.275,
-     "text": "in"
-    },
-    {
-     "end": 16.8,
-     "start": 16.425,
+     "end": 4.125,
+     "start": 3.2,
      "text": "command"
     },
     {
-     "end": 17.225,
-     "start": 16.8,
-     "text": "output"
+     "end": 4.35,
+     "start": 4.125,
+     "text": ")"
     },
     {
-     "end": 17.35,
-     "start": 17.225,
-     "text": "or"
-    },
-    {
-     "end": 18.375,
-     "start": 17.35,
-     "text": "receipts"
-    },
-    {
-     "end": 18.575,
-     "start": 18.375,
+     "end": 4.425,
+     "start": 4.35,
      "text": "."
     },
     {
-     "end": 18.862,
-     "start": 18.775,
-     "text": "A"
+     "end": 4.787,
+     "start": 4.6,
+     "text": "With"
     },
     {
-     "end": 19.25,
-     "start": 18.862,
-     "text": "funded"
+     "end": 5.062,
+     "start": 4.787,
+     "text": "no"
     },
     {
-     "end": 19.675,
-     "start": 19.25,
-     "text": "balance"
+     "end": 5.45,
+     "start": 5.062,
+     "text": "funds"
     },
     {
-     "end": 20.125,
-     "start": 19.675,
-     "text": "alone"
+     "end": 5.6,
+     "start": 5.45,
+     "text": "it"
     },
     {
-     "end": 20.275,
-     "start": 20.125,
-     "text": "is"
+     "end": 6.025,
+     "start": 5.6,
+     "text": "stops"
     },
     {
-     "end": 21.05,
-     "start": 20.275,
-     "text": "insufficient"
+     "end": 6.162,
+     "start": 6.025,
+     "text": "with"
     },
     {
-     "end": 21.188,
-     "start": 21.05,
-     "text": "when"
+     "end": 6.275,
+     "start": 6.162,
+     "text": "a"
     },
     {
-     "end": 21.275,
-     "start": 21.188,
-     "text": "the"
-    },
-    {
-     "end": 22.05,
-     "start": 21.275,
-     "text": "transaction"
-    },
-    {
-     "end": 22.35,
-     "start": 22.05,
-     "text": "needs"
-    },
-    {
-     "end": 22.95,
-     "start": 22.35,
-     "text": "distinct"
-    },
-    {
-     "end": 23.5,
-     "start": 22.95,
-     "text": "seed"
-    },
-    {
-     "end": 23.638,
-     "start": 23.5,
-     "text": ","
-    },
-    {
-     "end": 24.237,
-     "start": 23.638,
+     "end": 6.7,
+     "start": 6.275,
      "text": "funding"
     },
     {
-     "end": 24.375,
-     "start": 24.237,
+     "end": 7.425,
+     "start": 6.7,
+     "text": "refusal"
+    },
+    {
+     "end": 7.65,
+     "start": 7.425,
+     "text": "that"
+    },
+    {
+     "end": 8.0,
+     "start": 7.65,
+     "text": "names"
+    },
+    {
+     "end": 8.137,
+     "start": 8.0,
+     "text": "the"
+    },
+    {
+     "end": 8.575,
+     "start": 8.137,
+     "text": "wallet's"
+    },
+    {
+     "end": 9.113,
+     "start": 8.575,
+     "text": "address"
+    },
+    {
+     "end": 9.238,
+     "start": 9.113,
      "text": "and"
     },
     {
-     "end": 24.925,
-     "start": 24.375,
-     "text": "collateral"
+     "end": 9.337,
+     "start": 9.238,
+     "text": "the"
     },
     {
-     "end": 26.175,
-     "start": 24.925,
+     "end": 10.425,
+     "start": 9.337,
+     "text": "faucet"
+    },
+    {
+     "end": 10.625,
+     "start": 10.425,
+     "text": ":"
+    },
+    {
+     "end": 10.988,
+     "start": 10.8,
+     "text": "fund"
+    },
+    {
+     "end": 11.137,
+     "start": 10.988,
+     "text": "that"
+    },
+    {
+     "end": 11.462,
+     "start": 11.137,
+     "text": "address"
+    },
+    {
+     "end": 11.587,
+     "start": 11.462,
+     "text": "from"
+    },
+    {
+     "end": 11.675,
+     "start": 11.587,
+     "text": "the"
+    },
+    {
+     "end": 12.1,
+     "start": 11.675,
+     "text": "preprod"
+    },
+    {
+     "end": 13.025,
+     "start": 12.1,
+     "text": "faucet"
+    },
+    {
+     "end": 13.225,
+     "start": 13.025,
+     "text": ","
+    },
+    {
+     "end": 13.512,
+     "start": 13.4,
+     "text": "then"
+    },
+    {
+     "end": 13.688,
+     "start": 13.512,
+     "text": "make"
+    },
+    {
+     "end": 13.75,
+     "start": 13.688,
+     "text": "a"
+    },
+    {
+     "end": 14.45,
+     "start": 13.75,
+     "text": "self-payment"
+    },
+    {
+     "end": 14.625,
+     "start": 14.45,
+     "text": "that"
+    },
+    {
+     "end": 14.988,
+     "start": 14.625,
+     "text": "leaves"
+    },
+    {
+     "end": 15.4,
+     "start": 14.988,
+     "text": "several"
+    },
+    {
+     "end": 15.925,
+     "start": 15.4,
+     "text": "ordinary"
+    },
+    {
+     "end": 16.975,
+     "start": 15.925,
      "text": "outputs"
     },
     {
-     "end": 26.4,
-     "start": 26.175,
+     "end": 17.175,
+     "start": 16.975,
+     "text": ","
+    },
+    {
+     "end": 17.825,
+     "start": 17.375,
+     "text": "including"
+    },
+    {
+     "end": 17.962,
+     "start": 17.825,
+     "text": "an"
+    },
+    {
+     "end": 18.55,
+     "start": 17.962,
+     "text": "ada-only"
+    },
+    {
+     "end": 19.075,
+     "start": 18.55,
+     "text": "collateral"
+    },
+    {
+     "end": 19.625,
+     "start": 19.075,
+     "text": "output"
+    },
+    {
+     "end": 19.725,
+     "start": 19.625,
+     "text": ","
+    },
+    {
+     "end": 19.85,
+     "start": 19.725,
+     "text": "and"
+    },
+    {
+     "end": 20.062,
+     "start": 19.85,
+     "text": "run"
+    },
+    {
+     "end": 20.163,
+     "start": 20.062,
+     "text": "the"
+    },
+    {
+     "end": 20.525,
+     "start": 20.163,
+     "text": "journey"
+    },
+    {
+     "end": 21.4,
+     "start": 20.525,
+     "text": "again"
+    },
+    {
+     "end": 21.6,
+     "start": 21.4,
+     "text": "."
+    },
+    {
+     "end": 21.888,
+     "start": 21.775,
+     "text": "The"
+    },
+    {
+     "end": 22.25,
+     "start": 21.888,
+     "text": "runner"
+    },
+    {
+     "end": 22.575,
+     "start": 22.25,
+     "text": "loads"
+    },
+    {
+     "end": 22.712,
+     "start": 22.575,
+     "text": "the"
+    },
+    {
+     "end": 23.025,
+     "start": 22.712,
+     "text": "key"
+    },
+    {
+     "end": 23.163,
+     "start": 23.025,
+     "text": "from"
+    },
+    {
+     "end": 23.325,
+     "start": 23.163,
+     "text": "its"
+    },
+    {
+     "end": 23.663,
+     "start": 23.325,
+     "text": "local"
+    },
+    {
+     "end": 24.2,
+     "start": 23.663,
+     "text": "file"
+    },
+    {
+     "end": 24.35,
+     "start": 24.2,
+     "text": "and"
+    },
+    {
+     "end": 24.875,
+     "start": 24.35,
+     "text": "derives"
+    },
+    {
+     "end": 24.975,
+     "start": 24.875,
+     "text": "the"
+    },
+    {
+     "end": 25.35,
+     "start": 24.975,
+     "text": "paying"
+    },
+    {
+     "end": 25.7,
+     "start": 25.35,
+     "text": "address"
+    },
+    {
+     "end": 25.875,
+     "start": 25.7,
+     "text": "from"
+    },
+    {
+     "end": 26.525,
+     "start": 25.875,
+     "text": "it"
+    },
+    {
+     "end": 26.725,
+     "start": 26.525,
+     "text": "."
+    },
+    {
+     "end": 27.0,
+     "start": 26.925,
+     "text": "A"
+    },
+    {
+     "end": 27.3,
+     "start": 27.0,
+     "text": "key's"
+    },
+    {
+     "end": 27.625,
+     "start": 27.3,
+     "text": "bytes"
+    },
+    {
+     "end": 27.737,
+     "start": 27.625,
+     "text": "do"
+    },
+    {
+     "end": 27.95,
+     "start": 27.737,
+     "text": "not"
+    },
+    {
+     "end": 28.3,
+     "start": 27.95,
+     "text": "belong"
+    },
+    {
+     "end": 28.45,
+     "start": 28.3,
+     "text": "in"
+    },
+    {
+     "end": 28.825,
+     "start": 28.45,
+     "text": "command"
+    },
+    {
+     "end": 29.25,
+     "start": 28.825,
+     "text": "output"
+    },
+    {
+     "end": 29.375,
+     "start": 29.25,
+     "text": "or"
+    },
+    {
+     "end": 30.4,
+     "start": 29.375,
+     "text": "receipts"
+    },
+    {
+     "end": 30.6,
+     "start": 30.4,
+     "text": "."
+    },
+    {
+     "end": 30.888,
+     "start": 30.8,
+     "text": "A"
+    },
+    {
+     "end": 31.275,
+     "start": 30.888,
+     "text": "funded"
+    },
+    {
+     "end": 31.7,
+     "start": 31.275,
+     "text": "balance"
+    },
+    {
+     "end": 32.15,
+     "start": 31.7,
+     "text": "alone"
+    },
+    {
+     "end": 32.3,
+     "start": 32.15,
+     "text": "is"
+    },
+    {
+     "end": 33.075,
+     "start": 32.3,
+     "text": "insufficient"
+    },
+    {
+     "end": 33.213,
+     "start": 33.075,
+     "text": "when"
+    },
+    {
+     "end": 33.3,
+     "start": 33.213,
+     "text": "the"
+    },
+    {
+     "end": 34.075,
+     "start": 33.3,
+     "text": "transaction"
+    },
+    {
+     "end": 34.375,
+     "start": 34.075,
+     "text": "needs"
+    },
+    {
+     "end": 34.975,
+     "start": 34.375,
+     "text": "distinct"
+    },
+    {
+     "end": 35.525,
+     "start": 34.975,
+     "text": "seed"
+    },
+    {
+     "end": 35.662,
+     "start": 35.525,
+     "text": ","
+    },
+    {
+     "end": 36.263,
+     "start": 35.662,
+     "text": "funding"
+    },
+    {
+     "end": 36.4,
+     "start": 36.263,
+     "text": "and"
+    },
+    {
+     "end": 36.95,
+     "start": 36.4,
+     "text": "collateral"
+    },
+    {
+     "end": 38.2,
+     "start": 36.95,
+     "text": "outputs"
+    },
+    {
+     "end": 38.425,
+     "start": 38.2,
      "text": "."
     }
    ]
@@ -93606,6 +94081,706 @@
     {
      "end": 14.675,
      "start": 14.45,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-onboarding/fund-a-wallet-you-control-04": {
+   "audio_sha256": "92f08a58c06d2001811006599966c668fc6d7b49743c179ff813993dd8b600b1",
+   "characters": 704,
+   "cost": 0.0006969599999999999,
+   "duration": 45.7,
+   "index": 4,
+   "key": "2454d097e264e772b0352bb66d88374f46398f433ca00b925748e25f8da856d6",
+   "page": "docs/consumer-onboarding.md",
+   "pause_ms": 400,
+   "section": "fund-a-wallet-you-control",
+   "sent_text": "Your own open-datum and singular registry commands do not use that key file. Make a wallet with singular wallet create, which seals a fresh signing key in an encrypted vault and prints its address, and sign each write from the vault with --vault FILE (the passphrase typed once, or read from --passphrase-fd FD in a script); or name the wallet's address and a new bundle file, let the command write its transactions there, sign the bundle elsewhere with singular wallet sign --vault FILE and send it with singular submit. The settings table in the command reference lists the flags of each way, and the Demo 1 run page in the release archive (DEMO1.md) shows both ways from the first command to the last.",
+   "text": "Your own open-datum and singular registry commands do not use that key file. Make a wallet with singular wallet create, which seals a fresh signing key in an encrypted vault and prints its address, and sign each write from the vault with --vault FILE (the passphrase typed once, or read from --passphrase-fd FD in a script); or name the wallet's address and a new bundle file, let the command write its transactions there, sign the bundle elsewhere with singular wallet sign --vault FILE and send it with singular submit. The settings table in the command reference lists the flags of each way, and the Demo 1 run page in the release archive (DEMO1.md) shows both ways from the first command to the last.",
+   "words": [
+    {
+     "end": 0.387,
+     "start": 0.2,
+     "text": "Your"
+    },
+    {
+     "end": 0.65,
+     "start": 0.387,
+     "text": "own"
+    },
+    {
+     "end": 1.4,
+     "start": 0.65,
+     "text": "open-datum"
+    },
+    {
+     "end": 1.55,
+     "start": 1.4,
+     "text": "and"
+    },
+    {
+     "end": 2.05,
+     "start": 1.55,
+     "text": "singular"
+    },
+    {
+     "end": 2.55,
+     "start": 2.05,
+     "text": "registry"
+    },
+    {
+     "end": 3.188,
+     "start": 2.55,
+     "text": "commands"
+    },
+    {
+     "end": 3.325,
+     "start": 3.188,
+     "text": "do"
+    },
+    {
+     "end": 3.55,
+     "start": 3.325,
+     "text": "not"
+    },
+    {
+     "end": 3.775,
+     "start": 3.55,
+     "text": "use"
+    },
+    {
+     "end": 4.025,
+     "start": 3.775,
+     "text": "that"
+    },
+    {
+     "end": 4.238,
+     "start": 4.025,
+     "text": "key"
+    },
+    {
+     "end": 5.175,
+     "start": 4.238,
+     "text": "file"
+    },
+    {
+     "end": 5.375,
+     "start": 5.175,
+     "text": "."
+    },
+    {
+     "end": 5.713,
+     "start": 5.55,
+     "text": "Make"
+    },
+    {
+     "end": 5.8,
+     "start": 5.713,
+     "text": "a"
+    },
+    {
+     "end": 6.113,
+     "start": 5.8,
+     "text": "wallet"
+    },
+    {
+     "end": 6.287,
+     "start": 6.113,
+     "text": "with"
+    },
+    {
+     "end": 6.7,
+     "start": 6.287,
+     "text": "singular"
+    },
+    {
+     "end": 7.025,
+     "start": 6.7,
+     "text": "wallet"
+    },
+    {
+     "end": 7.85,
+     "start": 7.025,
+     "text": "create"
+    },
+    {
+     "end": 8.05,
+     "start": 7.85,
+     "text": ","
+    },
+    {
+     "end": 8.413,
+     "start": 8.225,
+     "text": "which"
+    },
+    {
+     "end": 8.738,
+     "start": 8.413,
+     "text": "seals"
+    },
+    {
+     "end": 8.837,
+     "start": 8.738,
+     "text": "a"
+    },
+    {
+     "end": 9.137,
+     "start": 8.837,
+     "text": "fresh"
+    },
+    {
+     "end": 9.538,
+     "start": 9.137,
+     "text": "signing"
+    },
+    {
+     "end": 9.85,
+     "start": 9.538,
+     "text": "key"
+    },
+    {
+     "end": 9.938,
+     "start": 9.85,
+     "text": "in"
+    },
+    {
+     "end": 10.012,
+     "start": 9.938,
+     "text": "an"
+    },
+    {
+     "end": 10.525,
+     "start": 10.012,
+     "text": "encrypted"
+    },
+    {
+     "end": 10.962,
+     "start": 10.525,
+     "text": "vault"
+    },
+    {
+     "end": 11.1,
+     "start": 10.962,
+     "text": "and"
+    },
+    {
+     "end": 11.337,
+     "start": 11.1,
+     "text": "prints"
+    },
+    {
+     "end": 11.475,
+     "start": 11.337,
+     "text": "its"
+    },
+    {
+     "end": 12.5,
+     "start": 11.475,
+     "text": "address"
+    },
+    {
+     "end": 12.7,
+     "start": 12.5,
+     "text": ","
+    },
+    {
+     "end": 13.012,
+     "start": 12.9,
+     "text": "and"
+    },
+    {
+     "end": 13.35,
+     "start": 13.012,
+     "text": "sign"
+    },
+    {
+     "end": 13.575,
+     "start": 13.35,
+     "text": "each"
+    },
+    {
+     "end": 13.8,
+     "start": 13.575,
+     "text": "write"
+    },
+    {
+     "end": 13.938,
+     "start": 13.8,
+     "text": "from"
+    },
+    {
+     "end": 14.025,
+     "start": 13.938,
+     "text": "the"
+    },
+    {
+     "end": 14.337,
+     "start": 14.025,
+     "text": "vault"
+    },
+    {
+     "end": 14.5,
+     "start": 14.337,
+     "text": "with"
+    },
+    {
+     "end": 14.788,
+     "start": 14.5,
+     "text": "--vault"
+    },
+    {
+     "end": 15.312,
+     "start": 14.788,
+     "text": "FILE"
+    },
+    {
+     "end": 15.375,
+     "start": 15.312,
+     "text": "("
+    },
+    {
+     "end": 15.45,
+     "start": 15.375,
+     "text": "the"
+    },
+    {
+     "end": 16.025,
+     "start": 15.45,
+     "text": "passphrase"
+    },
+    {
+     "end": 16.325,
+     "start": 16.025,
+     "text": "typed"
+    },
+    {
+     "end": 17.225,
+     "start": 16.325,
+     "text": "once"
+    },
+    {
+     "end": 17.45,
+     "start": 17.225,
+     "text": ","
+    },
+    {
+     "end": 17.775,
+     "start": 17.65,
+     "text": "or"
+    },
+    {
+     "end": 18.05,
+     "start": 17.775,
+     "text": "read"
+    },
+    {
+     "end": 18.2,
+     "start": 18.05,
+     "text": "from"
+    },
+    {
+     "end": 19.05,
+     "start": 18.2,
+     "text": "--passphrase-fd"
+    },
+    {
+     "end": 19.45,
+     "start": 19.05,
+     "text": "FD"
+    },
+    {
+     "end": 19.538,
+     "start": 19.45,
+     "text": "in"
+    },
+    {
+     "end": 19.6,
+     "start": 19.538,
+     "text": "a"
+    },
+    {
+     "end": 20.475,
+     "start": 19.6,
+     "text": "script"
+    },
+    {
+     "end": 20.65,
+     "start": 20.475,
+     "text": ")"
+    },
+    {
+     "end": 20.7,
+     "start": 20.65,
+     "text": ";"
+    },
+    {
+     "end": 21.0,
+     "start": 20.9,
+     "text": "or"
+    },
+    {
+     "end": 21.237,
+     "start": 21.0,
+     "text": "name"
+    },
+    {
+     "end": 21.325,
+     "start": 21.237,
+     "text": "the"
+    },
+    {
+     "end": 21.688,
+     "start": 21.325,
+     "text": "wallet's"
+    },
+    {
+     "end": 22.125,
+     "start": 21.688,
+     "text": "address"
+    },
+    {
+     "end": 22.237,
+     "start": 22.125,
+     "text": "and"
+    },
+    {
+     "end": 22.3,
+     "start": 22.237,
+     "text": "a"
+    },
+    {
+     "end": 22.5,
+     "start": 22.3,
+     "text": "new"
+    },
+    {
+     "end": 22.913,
+     "start": 22.5,
+     "text": "bundle"
+    },
+    {
+     "end": 23.75,
+     "start": 22.913,
+     "text": "file"
+    },
+    {
+     "end": 23.95,
+     "start": 23.75,
+     "text": ","
+    },
+    {
+     "end": 24.237,
+     "start": 24.125,
+     "text": "let"
+    },
+    {
+     "end": 24.325,
+     "start": 24.237,
+     "text": "the"
+    },
+    {
+     "end": 24.725,
+     "start": 24.325,
+     "text": "command"
+    },
+    {
+     "end": 24.888,
+     "start": 24.725,
+     "text": "write"
+    },
+    {
+     "end": 24.987,
+     "start": 24.888,
+     "text": "its"
+    },
+    {
+     "end": 25.7,
+     "start": 24.987,
+     "text": "transactions"
+    },
+    {
+     "end": 26.45,
+     "start": 25.7,
+     "text": "there"
+    },
+    {
+     "end": 26.65,
+     "start": 26.45,
+     "text": ","
+    },
+    {
+     "end": 27.163,
+     "start": 26.875,
+     "text": "sign"
+    },
+    {
+     "end": 27.25,
+     "start": 27.163,
+     "text": "the"
+    },
+    {
+     "end": 27.65,
+     "start": 27.25,
+     "text": "bundle"
+    },
+    {
+     "end": 28.25,
+     "start": 27.65,
+     "text": "elsewhere"
+    },
+    {
+     "end": 28.45,
+     "start": 28.25,
+     "text": "with"
+    },
+    {
+     "end": 28.987,
+     "start": 28.45,
+     "text": "singular"
+    },
+    {
+     "end": 29.413,
+     "start": 28.987,
+     "text": "wallet"
+    },
+    {
+     "end": 29.788,
+     "start": 29.413,
+     "text": "sign"
+    },
+    {
+     "end": 30.112,
+     "start": 29.788,
+     "text": "vault"
+    },
+    {
+     "end": 30.725,
+     "start": 30.112,
+     "text": "FILE"
+    },
+    {
+     "end": 30.9,
+     "start": 30.725,
+     "text": "and"
+    },
+    {
+     "end": 31.2,
+     "start": 30.9,
+     "text": "send"
+    },
+    {
+     "end": 31.35,
+     "start": 31.2,
+     "text": "it"
+    },
+    {
+     "end": 31.538,
+     "start": 31.35,
+     "text": "with"
+    },
+    {
+     "end": 32.05,
+     "start": 31.538,
+     "text": "singular"
+    },
+    {
+     "end": 33.1,
+     "start": 32.05,
+     "text": "submit"
+    },
+    {
+     "end": 33.325,
+     "start": 33.1,
+     "text": "."
+    },
+    {
+     "end": 33.612,
+     "start": 33.5,
+     "text": "The"
+    },
+    {
+     "end": 34.037,
+     "start": 33.612,
+     "text": "settings"
+    },
+    {
+     "end": 34.45,
+     "start": 34.037,
+     "text": "table"
+    },
+    {
+     "end": 34.537,
+     "start": 34.45,
+     "text": "in"
+    },
+    {
+     "end": 34.625,
+     "start": 34.537,
+     "text": "the"
+    },
+    {
+     "end": 35.025,
+     "start": 34.625,
+     "text": "command"
+    },
+    {
+     "end": 35.562,
+     "start": 35.025,
+     "text": "reference"
+    },
+    {
+     "end": 35.875,
+     "start": 35.562,
+     "text": "lists"
+    },
+    {
+     "end": 36.013,
+     "start": 35.875,
+     "text": "the"
+    },
+    {
+     "end": 36.463,
+     "start": 36.013,
+     "text": "flags"
+    },
+    {
+     "end": 36.55,
+     "start": 36.463,
+     "text": "of"
+    },
+    {
+     "end": 36.8,
+     "start": 36.55,
+     "text": "each"
+    },
+    {
+     "end": 37.625,
+     "start": 36.8,
+     "text": "way"
+    },
+    {
+     "end": 37.85,
+     "start": 37.625,
+     "text": ","
+    },
+    {
+     "end": 38.162,
+     "start": 38.075,
+     "text": "and"
+    },
+    {
+     "end": 38.25,
+     "start": 38.162,
+     "text": "the"
+    },
+    {
+     "end": 38.6,
+     "start": 38.25,
+     "text": "Demo"
+    },
+    {
+     "end": 38.825,
+     "start": 38.6,
+     "text": "1"
+    },
+    {
+     "end": 39.062,
+     "start": 38.825,
+     "text": "run"
+    },
+    {
+     "end": 39.5,
+     "start": 39.062,
+     "text": "page"
+    },
+    {
+     "end": 39.588,
+     "start": 39.5,
+     "text": "in"
+    },
+    {
+     "end": 39.675,
+     "start": 39.588,
+     "text": "the"
+    },
+    {
+     "end": 40.05,
+     "start": 39.675,
+     "text": "release"
+    },
+    {
+     "end": 40.6,
+     "start": 40.05,
+     "text": "archive"
+    },
+    {
+     "end": 40.65,
+     "start": 40.6,
+     "text": "("
+    },
+    {
+     "end": 42.15,
+     "start": 40.65,
+     "text": "DEMO1.md"
+    },
+    {
+     "end": 42.263,
+     "start": 42.15,
+     "text": ")"
+    },
+    {
+     "end": 42.588,
+     "start": 42.263,
+     "text": "shows"
+    },
+    {
+     "end": 42.875,
+     "start": 42.588,
+     "text": "both"
+    },
+    {
+     "end": 43.25,
+     "start": 42.875,
+     "text": "ways"
+    },
+    {
+     "end": 43.412,
+     "start": 43.25,
+     "text": "from"
+    },
+    {
+     "end": 43.513,
+     "start": 43.412,
+     "text": "the"
+    },
+    {
+     "end": 43.825,
+     "start": 43.513,
+     "text": "first"
+    },
+    {
+     "end": 44.225,
+     "start": 43.825,
+     "text": "command"
+    },
+    {
+     "end": 44.312,
+     "start": 44.225,
+     "text": "to"
+    },
+    {
+     "end": 44.4,
+     "start": 44.312,
+     "text": "the"
+    },
+    {
+     "end": 45.475,
+     "start": 44.4,
+     "text": "last"
+    },
+    {
+     "end": 45.7,
+     "start": 45.475,
      "text": "."
     }
    ]
@@ -181161,11 +182336,446 @@
    ]
   },
   "docs-negative-host/who-this-is-for-07": {
-   "audio_sha256": "4d8e40b2ef62ad07d655d17d68ea0187661c31a0dabfe1d47942b6045bd08b79",
+   "audio_sha256": "dc4eb40040f2f179dd29c32545e21ed3d18b28b479ec9ce7c822de60a39ba2ce",
+   "characters": 418,
+   "cost": 0.00041381999999999996,
+   "duration": 27.15,
+   "index": 7,
+   "key": "c9a60daa51017fc679b56b656f77246e5d108b40dc2620b79a118a5826e3ecb0",
+   "page": "docs/negative-host.md",
+   "pause_ms": 400,
+   "section": "who-this-is-for",
+   "sent_text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd FD in a script) or names an address and a bundle file for a signer elsewhere.",
+   "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd FD in a script) or names an address and a bundle file for a signer elsewhere.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.65,
+     "start": 0.25,
+     "text": "negative"
+    },
+    {
+     "end": 1.0,
+     "start": 0.65,
+     "text": "host's"
+    },
+    {
+     "end": 1.3,
+     "start": 1.0,
+     "text": "parts"
+    },
+    {
+     "end": 1.55,
+     "start": 1.3,
+     "text": "keep"
+    },
+    {
+     "end": 1.763,
+     "start": 1.55,
+     "text": "key"
+    },
+    {
+     "end": 2.2,
+     "start": 1.763,
+     "text": "files"
+    },
+    {
+     "end": 2.325,
+     "start": 2.2,
+     "text": "as"
+    },
+    {
+     "end": 2.7,
+     "start": 2.325,
+     "text": "harness"
+    },
+    {
+     "end": 3.825,
+     "start": 2.7,
+     "text": "controls"
+    },
+    {
+     "end": 4.025,
+     "start": 3.825,
+     "text": ":"
+    },
+    {
+     "end": 4.35,
+     "start": 4.225,
+     "text": "it"
+    },
+    {
+     "end": 4.713,
+     "start": 4.35,
+     "text": "signs"
+    },
+    {
+     "end": 4.838,
+     "start": 4.713,
+     "text": "with"
+    },
+    {
+     "end": 5.125,
+     "start": 4.838,
+     "text": "whatever"
+    },
+    {
+     "end": 5.338,
+     "start": 5.125,
+     "text": "key"
+    },
+    {
+     "end": 5.625,
+     "start": 5.338,
+     "text": "file"
+    },
+    {
+     "end": 5.775,
+     "start": 5.625,
+     "text": "you"
+    },
+    {
+     "end": 6.125,
+     "start": 5.775,
+     "text": "name"
+    },
+    {
+     "end": 6.25,
+     "start": 6.125,
+     "text": "and"
+    },
+    {
+     "end": 6.625,
+     "start": 6.25,
+     "text": "opens"
+    },
+    {
+     "end": 6.825,
+     "start": 6.625,
+     "text": "no"
+    },
+    {
+     "end": 7.65,
+     "start": 6.825,
+     "text": "vault"
+    },
+    {
+     "end": 7.875,
+     "start": 7.65,
+     "text": ","
+    },
+    {
+     "end": 8.163,
+     "start": 8.075,
+     "text": "so"
+    },
+    {
+     "end": 8.3,
+     "start": 8.163,
+     "text": "its"
+    },
+    {
+     "end": 8.675,
+     "start": 8.3,
+     "text": "command"
+    },
+    {
+     "end": 9.012,
+     "start": 8.675,
+     "text": "lines"
+    },
+    {
+     "end": 9.113,
+     "start": 9.012,
+     "text": "on"
+    },
+    {
+     "end": 9.275,
+     "start": 9.113,
+     "text": "this"
+    },
+    {
+     "end": 9.575,
+     "start": 9.275,
+     "text": "page"
+    },
+    {
+     "end": 9.8,
+     "start": 9.575,
+     "text": "name"
+    },
+    {
+     "end": 10.6,
+     "start": 9.8,
+     "text": "--wallet-skey"
+    },
+    {
+     "end": 10.7,
+     "start": 10.6,
+     "text": ","
+    },
+    {
+     "end": 10.825,
+     "start": 10.7,
+     "text": "and"
+    },
+    {
+     "end": 11.125,
+     "start": 10.825,
+     "text": "only"
+    },
+    {
+     "end": 11.325,
+     "start": 11.125,
+     "text": "they"
+    },
+    {
+     "end": 12.1,
+     "start": 11.325,
+     "text": "do"
+    },
+    {
+     "end": 12.375,
+     "start": 12.1,
+     "text": "."
+    },
+    {
+     "end": 12.875,
+     "start": 12.575,
+     "text": "Every"
+    },
+    {
+     "end": 13.525,
+     "start": 12.875,
+     "text": "open-datum"
+    },
+    {
+     "end": 13.962,
+     "start": 13.525,
+     "text": "line"
+    },
+    {
+     "end": 14.075,
+     "start": 13.962,
+     "text": "a"
+    },
+    {
+     "end": 14.425,
+     "start": 14.075,
+     "text": "reader"
+    },
+    {
+     "end": 14.7,
+     "start": 14.425,
+     "text": "types"
+    },
+    {
+     "end": 14.938,
+     "start": 14.7,
+     "text": "here"
+    },
+    {
+     "end": 15.35,
+     "start": 14.938,
+     "text": "signs"
+    },
+    {
+     "end": 15.488,
+     "start": 15.35,
+     "text": "from"
+    },
+    {
+     "end": 15.55,
+     "start": 15.488,
+     "text": "a"
+    },
+    {
+     "end": 15.825,
+     "start": 15.55,
+     "text": "vault"
+    },
+    {
+     "end": 15.9,
+     "start": 15.825,
+     "text": "("
+    },
+    {
+     "end": 16.15,
+     "start": 15.9,
+     "text": "--vault"
+    },
+    {
+     "end": 17.05,
+     "start": 16.15,
+     "text": "FILE"
+    },
+    {
+     "end": 17.25,
+     "start": 17.05,
+     "text": ","
+    },
+    {
+     "end": 17.5,
+     "start": 17.425,
+     "text": "the"
+    },
+    {
+     "end": 18.05,
+     "start": 17.5,
+     "text": "passphrase"
+    },
+    {
+     "end": 18.325,
+     "start": 18.05,
+     "text": "typed"
+    },
+    {
+     "end": 18.538,
+     "start": 18.325,
+     "text": "once"
+    },
+    {
+     "end": 18.612,
+     "start": 18.538,
+     "text": "at"
+    },
+    {
+     "end": 18.7,
+     "start": 18.612,
+     "text": "the"
+    },
+    {
+     "end": 19.5,
+     "start": 18.7,
+     "text": "prompt"
+    },
+    {
+     "end": 19.7,
+     "start": 19.5,
+     "text": ","
+    },
+    {
+     "end": 20.087,
+     "start": 19.925,
+     "text": "or"
+    },
+    {
+     "end": 20.4,
+     "start": 20.087,
+     "text": "read"
+    },
+    {
+     "end": 20.6,
+     "start": 20.4,
+     "text": "from"
+    },
+    {
+     "end": 21.538,
+     "start": 20.6,
+     "text": "--passphrase-fd"
+    },
+    {
+     "end": 22.163,
+     "start": 21.538,
+     "text": "FD"
+    },
+    {
+     "end": 22.288,
+     "start": 22.163,
+     "text": "in"
+    },
+    {
+     "end": 22.388,
+     "start": 22.288,
+     "text": "a"
+    },
+    {
+     "end": 22.875,
+     "start": 22.388,
+     "text": "script"
+    },
+    {
+     "end": 22.987,
+     "start": 22.875,
+     "text": ")"
+    },
+    {
+     "end": 23.15,
+     "start": 22.987,
+     "text": "or"
+    },
+    {
+     "end": 23.587,
+     "start": 23.15,
+     "text": "names"
+    },
+    {
+     "end": 23.675,
+     "start": 23.587,
+     "text": "an"
+    },
+    {
+     "end": 24.2,
+     "start": 23.675,
+     "text": "address"
+    },
+    {
+     "end": 24.312,
+     "start": 24.2,
+     "text": "and"
+    },
+    {
+     "end": 24.388,
+     "start": 24.312,
+     "text": "a"
+    },
+    {
+     "end": 24.812,
+     "start": 24.388,
+     "text": "bundle"
+    },
+    {
+     "end": 25.175,
+     "start": 24.812,
+     "text": "file"
+    },
+    {
+     "end": 25.3,
+     "start": 25.175,
+     "text": "for"
+    },
+    {
+     "end": 25.413,
+     "start": 25.3,
+     "text": "a"
+    },
+    {
+     "end": 25.775,
+     "start": 25.413,
+     "text": "signer"
+    },
+    {
+     "end": 26.925,
+     "start": 25.775,
+     "text": "elsewhere"
+    },
+    {
+     "end": 27.15,
+     "start": 26.925,
+     "text": "."
+    }
+   ]
+  },
+  "docs-negative-host/who-this-is-for-08": {
+   "audio_sha256": "85d9a0330a91611e909cbc3a1688b66589fae23025e4e6db2f4ffd0b06cfa61e",
    "characters": 251,
    "cost": 0.00024849,
    "duration": 16.475,
-   "index": 7,
+   "index": 8,
    "key": "35d689af9bb0c75bae33288a21a340681915ea5a58f1f8395326eee24f9e1d1f",
    "page": "docs/negative-host.md",
    "pause_ms": 400,
@@ -181420,12 +183030,12 @@
     }
    ]
   },
-  "docs-negative-host/who-this-is-for-08": {
-   "audio_sha256": "ba61ede37a5f869bdb707adbcce06f07ee01a9231515e694bad0fc11f1fe1e2b",
+  "docs-negative-host/who-this-is-for-09": {
+   "audio_sha256": "7045d20a21099d5a3d3caaa2c7c3ce6ea71f3019d5059deb529c65efaed84d84",
    "characters": 258,
    "cost": 0.00025541999999999996,
    "duration": 16.625,
-   "index": 8,
+   "index": 9,
    "key": "0697cfb252255ce55caf0a2362acd2de339d021c4d47ef95371e27beec8c837d",
    "page": "docs/negative-host.md",
    "pause_ms": 400,
@@ -342116,17 +343726,17 @@
    ]
   },
   "docs-singular-node/the-settings-you-give-01": {
-   "audio_sha256": "c663024e89f9a0d6c0bf0adc31c6c8f6016c885a3623185c0bce02406dbbcf50",
-   "characters": 681,
-   "cost": 0.00067419,
-   "duration": 43.85,
+   "audio_sha256": "235254947f3220decf159d75771f3905c5fe72b988ea28ccfb0de26f3a287f1c",
+   "characters": 692,
+   "cost": 0.00068508,
+   "duration": 44.05,
    "index": 1,
-   "key": "e707eb207d58cc81ba224c729840e2aaf9b6a1fbd5cc66c8053c399cc1070bb1",
+   "key": "519b139d4b79b65bfd79cea7e27d97927415b3c03681154026dbe39974cfe0d5",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "the-settings-you-give",
-   "sent_text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
-   "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+   "sent_text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+   "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
    "words": [
     {
      "end": 0.3,
@@ -342134,623 +343744,638 @@
      "text": "The"
     },
     {
-     "end": 0.975,
+     "end": 0.925,
      "start": 0.3,
      "text": "URL"
     },
     {
-     "end": 1.05,
-     "start": 0.975,
+     "end": 1.0,
+     "start": 0.925,
      "text": ","
     },
     {
-     "end": 1.45,
-     "start": 1.05,
+     "end": 1.4,
+     "start": 1.0,
      "text": "network"
     },
     {
-     "end": 1.875,
-     "start": 1.45,
+     "end": 1.85,
+     "start": 1.4,
      "text": "magic"
     },
     {
-     "end": 2.0,
-     "start": 1.875,
+     "end": 1.975,
+     "start": 1.85,
      "text": "and"
     },
     {
-     "end": 2.263,
-     "start": 2.0,
+     "end": 2.237,
+     "start": 1.975,
      "text": "one"
     },
     {
-     "end": 2.662,
-     "start": 2.263,
+     "end": 2.65,
+     "start": 2.237,
      "text": "signer"
     },
     {
      "end": 2.7,
-     "start": 2.662,
+     "start": 2.65,
      "text": "("
     },
     {
-     "end": 2.812,
+     "end": 2.787,
      "start": 2.7,
      "text": "the"
     },
     {
-     "end": 3.213,
-     "start": 2.812,
+     "end": 3.188,
+     "start": 2.787,
      "text": "signing"
     },
     {
-     "end": 3.55,
-     "start": 3.213,
+     "end": 3.475,
+     "start": 3.188,
      "text": "key"
     },
     {
-     "end": 3.662,
-     "start": 3.55,
+     "end": 3.525,
+     "start": 3.475,
      "text": ","
     },
     {
-     "end": 3.85,
+     "end": 3.662,
+     "start": 3.525,
+     "text": "the"
+    },
+    {
+     "end": 4.025,
      "start": 3.662,
+     "text": "vault"
+    },
+    {
+     "end": 4.075,
+     "start": 4.025,
+     "text": ","
+    },
+    {
+     "end": 4.225,
+     "start": 4.075,
      "text": "or"
     },
     {
-     "end": 4.062,
-     "start": 3.85,
+     "end": 4.438,
+     "start": 4.225,
      "text": "on"
     },
     {
-     "end": 4.55,
-     "start": 4.062,
+     "end": 4.9,
+     "start": 4.438,
      "text": "singular"
     },
     {
-     "end": 5.0,
-     "start": 4.55,
+     "end": 5.425,
+     "start": 4.9,
      "text": "create"
     },
     {
-     "end": 5.088,
-     "start": 5.0,
+     "end": 5.537,
+     "start": 5.425,
      "text": ","
     },
     {
-     "end": 5.562,
-     "start": 5.088,
+     "end": 6.012,
+     "start": 5.537,
      "text": "singular"
     },
     {
-     "end": 6.05,
-     "start": 5.562,
+     "end": 6.5,
+     "start": 6.012,
      "text": "fold"
     },
     {
-     "end": 6.137,
-     "start": 6.05,
+     "end": 6.588,
+     "start": 6.5,
      "text": ","
     },
     {
-     "end": 6.625,
-     "start": 6.137,
+     "end": 7.025,
+     "start": 6.588,
      "text": "singular"
     },
     {
-     "end": 7.225,
-     "start": 6.625,
+     "end": 7.625,
+     "start": 7.025,
      "text": "reclaim"
     },
     {
-     "end": 7.312,
-     "start": 7.225,
+     "end": 7.713,
+     "start": 7.625,
      "text": ","
     },
     {
-     "end": 7.8,
-     "start": 7.312,
+     "end": 8.175,
+     "start": 7.713,
      "text": "singular"
     },
     {
-     "end": 8.3,
-     "start": 7.8,
+     "end": 8.625,
+     "start": 8.175,
      "text": "reject"
     },
     {
-     "end": 8.375,
-     "start": 8.3,
+     "end": 8.7,
+     "start": 8.625,
      "text": ","
     },
     {
-     "end": 9.025,
-     "start": 8.375,
+     "end": 9.35,
+     "start": 8.7,
      "text": "open-datum"
     },
     {
-     "end": 9.525,
-     "start": 9.025,
+     "end": 9.825,
+     "start": 9.35,
      "text": "create"
     },
     {
-     "end": 9.6,
-     "start": 9.525,
+     "end": 9.9,
+     "start": 9.825,
      "text": ","
     },
     {
-     "end": 10.25,
-     "start": 9.6,
+     "end": 10.55,
+     "start": 9.9,
      "text": "open-datum"
     },
     {
-     "end": 10.775,
-     "start": 10.25,
+     "end": 11.075,
+     "start": 10.55,
      "text": "insert"
     },
     {
-     "end": 10.85,
-     "start": 10.775,
+     "end": 11.15,
+     "start": 11.075,
      "text": ","
     },
     {
-     "end": 11.5,
-     "start": 10.85,
+     "end": 11.8,
+     "start": 11.15,
      "text": "open-datum"
     },
     {
-     "end": 11.975,
-     "start": 11.5,
+     "end": 12.275,
+     "start": 11.8,
      "text": "update"
     },
     {
-     "end": 12.05,
-     "start": 11.975,
+     "end": 12.35,
+     "start": 12.275,
      "text": ","
     },
     {
-     "end": 12.7,
-     "start": 12.05,
+     "end": 13.0,
+     "start": 12.35,
      "text": "open-datum"
     },
     {
-     "end": 13.25,
-     "start": 12.7,
+     "end": 13.55,
+     "start": 13.0,
      "text": "terminate"
     },
     {
-     "end": 13.375,
-     "start": 13.25,
+     "end": 13.675,
+     "start": 13.55,
      "text": "and"
     },
     {
-     "end": 14.113,
-     "start": 13.375,
+     "end": 14.413,
+     "start": 13.675,
      "text": "open-datum"
     },
     {
-     "end": 14.438,
-     "start": 14.113,
+     "end": 14.738,
+     "start": 14.413,
      "text": "fold"
     },
     {
-     "end": 14.525,
-     "start": 14.438,
+     "end": 14.825,
+     "start": 14.738,
      "text": "an"
     },
     {
-     "end": 14.925,
-     "start": 14.525,
+     "end": 15.225,
+     "start": 14.825,
      "text": "address"
     },
     {
-     "end": 15.062,
-     "start": 14.925,
+     "end": 15.363,
+     "start": 15.225,
      "text": "with"
     },
     {
-     "end": 15.25,
-     "start": 15.062,
+     "end": 15.55,
+     "start": 15.363,
      "text": "its"
     },
     {
-     "end": 15.637,
-     "start": 15.25,
+     "end": 15.938,
+     "start": 15.55,
      "text": "bundle"
     },
     {
-     "end": 16.125,
-     "start": 15.637,
+     "end": 16.35,
+     "start": 15.938,
      "text": "file"
     },
     {
-     "end": 16.237,
-     "start": 16.125,
+     "end": 16.438,
+     "start": 16.35,
      "text": ")"
     },
     {
-     "end": 16.6,
-     "start": 16.237,
+     "end": 16.85,
+     "start": 16.438,
      "text": "travel"
     },
     {
-     "end": 17.013,
-     "start": 16.6,
+     "end": 17.263,
+     "start": 16.85,
      "text": "together"
     },
     {
-     "end": 17.138,
-     "start": 17.013,
+     "end": 17.388,
+     "start": 17.263,
      "text": "on"
     },
     {
-     "end": 17.225,
-     "start": 17.138,
+     "end": 17.475,
+     "start": 17.388,
      "text": "a"
     },
     {
-     "end": 18.25,
-     "start": 17.225,
+     "end": 18.475,
+     "start": 17.475,
      "text": "write"
     },
     {
-     "end": 18.5,
-     "start": 18.25,
+     "end": 18.7,
+     "start": 18.475,
      "text": ":"
     },
     {
-     "end": 19.025,
-     "start": 18.7,
+     "end": 19.225,
+     "start": 18.9,
      "text": "naming"
     },
     {
-     "end": 19.337,
-     "start": 19.025,
+     "end": 19.538,
+     "start": 19.225,
      "text": "only"
     },
     {
-     "end": 19.562,
-     "start": 19.337,
+     "end": 19.763,
+     "start": 19.538,
      "text": "some"
     },
     {
-     "end": 19.65,
-     "start": 19.562,
+     "end": 19.85,
+     "start": 19.763,
      "text": "of"
     },
     {
-     "end": 19.987,
-     "start": 19.65,
+     "end": 20.188,
+     "start": 19.85,
      "text": "them"
     },
     {
-     "end": 20.15,
-     "start": 19.987,
+     "end": 20.35,
+     "start": 20.188,
      "text": "is"
     },
     {
-     "end": 20.812,
-     "start": 20.15,
+     "end": 21.013,
+     "start": 20.35,
      "text": "refused"
     },
     {
-     "end": 20.987,
-     "start": 20.812,
+     "end": 21.188,
+     "start": 21.013,
      "text": "as"
     },
     {
-     "end": 21.475,
-     "start": 20.987,
+     "end": 21.675,
+     "start": 21.188,
      "text": "partially"
     },
     {
-     "end": 22.575,
-     "start": 21.475,
+     "end": 22.775,
+     "start": 21.675,
      "text": "configured"
     },
     {
-     "end": 22.775,
-     "start": 22.575,
+     "end": 22.975,
+     "start": 22.775,
      "text": ","
-    },
-    {
-     "end": 23.05,
-     "start": 22.95,
-     "text": "and"
     },
     {
      "end": 23.25,
-     "start": 23.05,
-     "text": "so"
-    },
-    {
-     "end": 23.362,
-     "start": 23.25,
-     "text": "is"
-    },
-    {
-     "end": 23.425,
-     "start": 23.362,
-     "text": "a"
-    },
-    {
-     "end": 23.638,
-     "start": 23.425,
-     "text": "write"
-    },
-    {
-     "end": 23.737,
-     "start": 23.638,
-     "text": "that"
-    },
-    {
-     "end": 24.0,
-     "start": 23.737,
-     "text": "names"
-    },
-    {
-     "end": 24.725,
-     "start": 24.0,
-     "text": "none"
-    },
-    {
-     "end": 24.925,
-     "start": 24.725,
-     "text": ","
-    },
-    {
-     "end": 25.45,
-     "start": 25.125,
-     "text": "because"
-    },
-    {
-     "end": 26.013,
-     "start": 25.45,
-     "text": "singular"
-    },
-    {
-     "end": 26.35,
-     "start": 26.013,
-     "text": "never"
-    },
-    {
-     "end": 26.7,
-     "start": 26.35,
-     "text": "starts"
-    },
-    {
-     "end": 26.8,
-     "start": 26.7,
-     "text": "a"
-    },
-    {
-     "end": 27.062,
-     "start": 26.8,
-     "text": "node"
-    },
-    {
-     "end": 27.138,
-     "start": 27.062,
-     "text": "of"
-    },
-    {
-     "end": 27.3,
-     "start": 27.138,
-     "text": "its"
-    },
-    {
-     "end": 27.788,
-     "start": 27.3,
-     "text": "own"
-    },
-    {
-     "end": 27.875,
-     "start": 27.788,
-     "text": "—"
-    },
-    {
-     "end": 27.975,
-     "start": 27.875,
-     "text": "a"
-    },
-    {
-     "end": 28.513,
-     "start": 27.975,
-     "text": "registry"
-    },
-    {
-     "end": 28.812,
-     "start": 28.513,
-     "text": "booted"
-    },
-    {
-     "end": 28.938,
-     "start": 28.812,
-     "text": "on"
-    },
-    {
-     "end": 29.038,
-     "start": 28.938,
-     "text": "a"
-    },
-    {
-     "end": 29.45,
-     "start": 29.038,
-     "text": "chain"
-    },
-    {
-     "end": 29.663,
-     "start": 29.45,
-     "text": "that"
-    },
-    {
-     "end": 30.075,
-     "start": 29.663,
-     "text": "dies"
-    },
-    {
-     "end": 30.212,
-     "start": 30.075,
-     "text": "with"
-    },
-    {
-     "end": 30.3,
-     "start": 30.212,
-     "text": "the"
-    },
-    {
-     "end": 30.925,
-     "start": 30.3,
-     "text": "process"
-    },
-    {
-     "end": 31.125,
-     "start": 30.925,
-     "text": "could"
-    },
-    {
-     "end": 31.35,
-     "start": 31.125,
-     "text": "not"
-    },
-    {
-     "end": 31.5,
-     "start": 31.35,
-     "text": "be"
-    },
-    {
-     "end": 31.975,
-     "start": 31.5,
-     "text": "attached"
-    },
-    {
-     "end": 32.125,
-     "start": 31.975,
-     "text": "to"
-    },
-    {
-     "end": 33.225,
-     "start": 32.125,
-     "text": "again"
-    },
-    {
-     "end": 33.475,
-     "start": 33.225,
-     "text": "."
-    },
-    {
-     "end": 33.725,
-     "start": 33.65,
-     "text": "The"
-    },
-    {
-     "end": 34.225,
-     "start": 33.725,
-     "text": "connection"
-    },
-    {
-     "end": 34.737,
-     "start": 34.225,
-     "text": "settings"
-    },
-    {
-     "end": 34.9,
-     "start": 34.737,
-     "text": "are"
-    },
-    {
-     "end": 35.175,
-     "start": 34.9,
-     "text": "read"
-    },
-    {
-     "end": 35.312,
-     "start": 35.175,
-     "text": "from"
-    },
-    {
-     "end": 35.4,
-     "start": 35.312,
-     "text": "the"
-    },
-    {
-     "end": 35.8,
-     "start": 35.4,
-     "text": "command"
-    },
-    {
-     "end": 36.075,
-     "start": 35.8,
-     "text": "line"
-    },
-    {
-     "end": 36.925,
-     "start": 36.075,
-     "text": "only"
-    },
-    {
-     "end": 37.125,
-     "start": 36.925,
-     "text": "."
-    },
-    {
-     "end": 37.675,
-     "start": 37.325,
-     "text": "Public"
-    },
-    {
-     "end": 38.25,
-     "start": 37.675,
-     "text": "environment"
-    },
-    {
-     "end": 39.188,
-     "start": 38.25,
-     "text": "configuration"
-    },
-    {
-     "end": 39.713,
-     "start": 39.188,
-     "text": "supplies"
-    },
-    {
-     "end": 39.862,
-     "start": 39.713,
-     "text": "the"
-    },
-    {
-     "end": 40.375,
-     "start": 39.862,
-     "text": "optional"
-    },
-    {
-     "end": 41.188,
-     "start": 40.375,
-     "text": "registry-token"
-    },
-    {
-     "end": 41.862,
-     "start": 41.188,
-     "text": "fallback"
-    },
-    {
-     "end": 42.037,
-     "start": 41.862,
+     "start": 23.15,
      "text": "and"
     },
     {
-     "end": 42.638,
-     "start": 42.037,
+     "end": 23.45,
+     "start": 23.25,
+     "text": "so"
+    },
+    {
+     "end": 23.562,
+     "start": 23.45,
+     "text": "is"
+    },
+    {
+     "end": 23.625,
+     "start": 23.562,
+     "text": "a"
+    },
+    {
+     "end": 23.837,
+     "start": 23.625,
+     "text": "write"
+    },
+    {
+     "end": 23.938,
+     "start": 23.837,
+     "text": "that"
+    },
+    {
+     "end": 24.2,
+     "start": 23.938,
+     "text": "names"
+    },
+    {
+     "end": 24.925,
+     "start": 24.2,
+     "text": "none"
+    },
+    {
+     "end": 25.125,
+     "start": 24.925,
+     "text": ","
+    },
+    {
+     "end": 25.65,
+     "start": 25.325,
+     "text": "because"
+    },
+    {
+     "end": 26.212,
+     "start": 25.65,
+     "text": "singular"
+    },
+    {
+     "end": 26.55,
+     "start": 26.212,
+     "text": "never"
+    },
+    {
+     "end": 26.9,
+     "start": 26.55,
+     "text": "starts"
+    },
+    {
+     "end": 27.0,
+     "start": 26.9,
+     "text": "a"
+    },
+    {
+     "end": 27.263,
+     "start": 27.0,
+     "text": "node"
+    },
+    {
+     "end": 27.337,
+     "start": 27.263,
+     "text": "of"
+    },
+    {
+     "end": 27.5,
+     "start": 27.337,
+     "text": "its"
+    },
+    {
+     "end": 27.987,
+     "start": 27.5,
+     "text": "own"
+    },
+    {
+     "end": 28.075,
+     "start": 27.987,
+     "text": "—"
+    },
+    {
+     "end": 28.175,
+     "start": 28.075,
+     "text": "a"
+    },
+    {
+     "end": 28.712,
+     "start": 28.175,
+     "text": "registry"
+    },
+    {
+     "end": 29.013,
+     "start": 28.712,
+     "text": "booted"
+    },
+    {
+     "end": 29.138,
+     "start": 29.013,
+     "text": "on"
+    },
+    {
+     "end": 29.237,
+     "start": 29.138,
+     "text": "a"
+    },
+    {
+     "end": 29.65,
+     "start": 29.237,
+     "text": "chain"
+    },
+    {
+     "end": 29.862,
+     "start": 29.65,
+     "text": "that"
+    },
+    {
+     "end": 30.275,
+     "start": 29.862,
+     "text": "dies"
+    },
+    {
+     "end": 30.413,
+     "start": 30.275,
+     "text": "with"
+    },
+    {
+     "end": 30.5,
+     "start": 30.413,
+     "text": "the"
+    },
+    {
+     "end": 31.125,
+     "start": 30.5,
+     "text": "process"
+    },
+    {
+     "end": 31.325,
+     "start": 31.125,
+     "text": "could"
+    },
+    {
+     "end": 31.55,
+     "start": 31.325,
+     "text": "not"
+    },
+    {
+     "end": 31.7,
+     "start": 31.55,
+     "text": "be"
+    },
+    {
+     "end": 32.175,
+     "start": 31.7,
+     "text": "attached"
+    },
+    {
+     "end": 32.325,
+     "start": 32.175,
+     "text": "to"
+    },
+    {
+     "end": 33.425,
+     "start": 32.325,
+     "text": "again"
+    },
+    {
+     "end": 33.675,
+     "start": 33.425,
+     "text": "."
+    },
+    {
+     "end": 33.925,
+     "start": 33.85,
+     "text": "The"
+    },
+    {
+     "end": 34.425,
+     "start": 33.925,
+     "text": "connection"
+    },
+    {
+     "end": 34.938,
+     "start": 34.425,
+     "text": "settings"
+    },
+    {
+     "end": 35.1,
+     "start": 34.938,
+     "text": "are"
+    },
+    {
+     "end": 35.375,
+     "start": 35.1,
+     "text": "read"
+    },
+    {
+     "end": 35.513,
+     "start": 35.375,
+     "text": "from"
+    },
+    {
+     "end": 35.6,
+     "start": 35.513,
+     "text": "the"
+    },
+    {
+     "end": 36.0,
+     "start": 35.6,
+     "text": "command"
+    },
+    {
+     "end": 36.275,
+     "start": 36.0,
+     "text": "line"
+    },
+    {
+     "end": 37.125,
+     "start": 36.275,
+     "text": "only"
+    },
+    {
+     "end": 37.325,
+     "start": 37.125,
+     "text": "."
+    },
+    {
+     "end": 37.875,
+     "start": 37.525,
+     "text": "Public"
+    },
+    {
+     "end": 38.45,
+     "start": 37.875,
+     "text": "environment"
+    },
+    {
+     "end": 39.388,
+     "start": 38.45,
+     "text": "configuration"
+    },
+    {
+     "end": 39.912,
+     "start": 39.388,
+     "text": "supplies"
+    },
+    {
+     "end": 40.062,
+     "start": 39.912,
+     "text": "the"
+    },
+    {
+     "end": 40.575,
+     "start": 40.062,
+     "text": "optional"
+    },
+    {
+     "end": 41.388,
+     "start": 40.575,
+     "text": "registry-token"
+    },
+    {
+     "end": 42.062,
+     "start": 41.388,
+     "text": "fallback"
+    },
+    {
+     "end": 42.237,
+     "start": 42.062,
+     "text": "and"
+    },
+    {
+     "end": 42.838,
+     "start": 42.237,
      "text": "phase-log"
     },
     {
-     "end": 43.6,
-     "start": 42.638,
+     "end": 43.8,
+     "start": 42.838,
      "text": "path"
     },
     {
-     "end": 43.85,
-     "start": 43.6,
+     "end": 44.05,
+     "start": 43.8,
      "text": "."
     }
    ]

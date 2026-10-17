@@ -39,6 +39,10 @@
       "pause": 400
     },
     {
+      "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd FD in a script) or names an address and a bundle file for a signer elsewhere.",
+      "pause": 400
+    },
+    {
       "text": "The host builds the update, signs it as Bob, and submits it unevaluated. The application's spending contract refuses it, the node's verdict names that script, and a fresh read shows the registry, the key's holding and the wallets exactly as they were.",
       "pause": 400
     },
@@ -221,6 +225,6 @@
   ],
   "_source": {
     "file": "negative-host.md",
-    "sha256": "ca845660db3fceb2497e5e18891e0c10bc0087d3c95a3753b21ef55a3462986a"
+    "sha256": "08709bf31e60b05aea16523c8b2947454e0101558ca715827b8de001ce094c8f"
   }
 }

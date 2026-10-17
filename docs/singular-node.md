@@ -22,7 +22,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
 | `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
 | `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. |
-| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. |
+| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. The five open-datum writes still accept the key file, until it is retired; the registry's `singular` commands, the negative host, the bounded journey and the deployment tool keep key files for now (issue 672 retires the registry's), and the last three are harnesses. |
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--application-policy HEX` | `singular create` | The application policy pinned at creation, as hex, for an application whose script does not depend on the registry identity. `open-datum create` carries its own from its application value and refuses this flag. |
@@ -54,7 +54,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--trace-to SINK` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | Where the narration goes: `stderr`, or `file:PATH`, appended a line at a time as each event happens. Give it more than once to narrate to several places; standard error when not given. Any other value is refused before anything runs. |
 | `--trace-format FORMAT` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | `text`, indented lines for a person, or `json`, one JSON object per line for a program. When not given: text on standard error, JSON in a file. |
 
-The URL, network magic and one signer (the signing key, or on `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` an address with its bundle file) travel together on a write: naming only some of
+The URL, network magic and one signer (the signing key, the vault, or on `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` an address with its bundle file) travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
 chain that dies with the process could not be attached to again. The
@@ -66,7 +66,7 @@ the optional registry-token fallback and phase-log path.
 open-datum insert --state-dir ./work --blueprint plutus.json \
   --state-token "$state_token" --key keyA --payload alice.json \
   --koios-url "$koios_url" --network-magic 1 \
-  --wallet-skey ~/keys/payment.skey
+  --vault ~/keys/alice.vault
 ```
 
 ## Keeping your signing key in an encrypted vault
