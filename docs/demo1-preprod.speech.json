@@ -23,7 +23,7 @@
       "pause": 400
     },
     {
-      "text": "Sign without a key file. The reviewer's wallets come from singular wallet create: a vault sealed by a passphrase, whose printed address is all a development node needs to fund it. Every write names that address and a new bundle file instead of a key file: the command builds its whole run as one bundle, signs and sends nothing and exits with status 19. singular wallet sign --vault signs the bundle and singular submit sends it, and the command's own fields are only expected until submit finds the bundle on chain. The controls runner below is a harness and keeps its key files.",
+      "text": "Sign without a key file, in one command or in three. The reviewer's wallets come from singular wallet create: a vault sealed by a passphrase, whose printed address is all a development node needs to fund it. With --vault and the descriptor its passphrase is read from, a write opens the vault, builds its whole run as one bundle, signs every transaction in memory, sends them in order and prints its receipt once all of them have landed. With an address and a new bundle file instead, the write builds the same bundle, signs and sends nothing and exits with status 19; singular wallet sign --vault signs the bundle and singular submit sends it, and the command's own fields are only expected until submit finds the bundle on chain. The controls runner below is a harness and keeps its key files.",
       "pause": 300
     },
     {
@@ -117,6 +117,6 @@
   ],
   "_source": {
     "file": "demo1-preprod.md",
-    "sha256": "66a818e7d41611526a00aa008da0599bfb67bf8842f857ceed446a2f247b80cc"
+    "sha256": "9e6476d548e6ed46e0cbeb27745fe745ab202d4d0dcdbccfb6c069a193ad6962"
   }
 }

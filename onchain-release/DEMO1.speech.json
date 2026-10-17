@@ -27,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "Alice and Bob keep no signing key on disk. Every write of theirs names the wallet's address and a new bundle file: the command builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures. The wallet's owner then signs the bundle from the vault with singular wallet sign and sends it with singular submit. Until submit finds the bundle's transactions on chain, the command's own fields (the request, the fold, the root) are only what the bundle expects, and the receipt says so under expected.",
+      "text": "Alice and Bob keep no signing key on disk, and the story shows both ways to sign. Alice signs from her vault in one command: she names the vault file and the descriptor her passphrase is read from where a key file used to go, and the command builds the run's one bundle, signs it from the vault, sends it and prints its receipt once every transaction has landed. Bob signs the external way: his write names his wallet's address and a new bundle file, and the command builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures. He then signs the bundle from his vault with singular wallet sign and sends it with singular submit. Until submit finds the bundle's transactions on chain, the command's own fields (the request, the fold, the root) are only what the bundle expects, and the receipt says so under expected.",
       "pause": 400
     }
   ],
@@ -57,11 +57,11 @@
       "pause": 500
     },
     {
-      "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by open-datum, naming the deadline, before anything is signed. Giving open-datum insert or open-datum terminate the --fold switch books and folds in one command, with one wallet: with the external signer the one bundle then holds the booking and the fold, and one signing covers both.",
+      "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by open-datum, naming the deadline, before anything is signed. Giving open-datum insert or open-datum terminate the --fold switch books and folds in one command, with one wallet: with the external signer the one bundle then holds the booking and the fold, and one signing covers both; with the vault the one command signs and sends both.",
       "pause": 400
     },
     {
-      "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed.",
+      "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read; a vault run whose answer is lost leaves its bundle pending, its fields under expected, and the next write of that wallet stops on it like any waiting bundle.",
       "pause": 400
     },
     {
@@ -79,7 +79,7 @@
       "pause": 500
     },
     {
-      "text": "open-datum create builds the registry's whole boot as one bundle and exits 19: its receipt names the bundle and states, under expected, the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the reference outputs it will publish. Nothing is on chain until singular submit has sent the signed bundle. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand under expected.",
+      "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
       "pause": 300
     },
     {
@@ -87,7 +87,7 @@
       "pause": 300
     },
     {
-      "text": "open-datum insert stages the insertion through the application: its receipt names the bundle and, under expected, the pending request, the booking's transaction, the envelope kept for the fold and foldDeadline, the time (and, where pinned time converts it, the slot) by which the fold must happen. Once singular submit has sent the bundle the request is pending at the registry. Nothing is folded, and the registry's root and your saved state do not move.",
+      "text": "open-datum insert books the insertion through the application: its receipt names the pending request, the booking's transaction, the envelope kept for the fold and foldDeadline, the time (and, where pinned time converts it, the slot) by which the fold must happen. Nothing is folded, and the registry's root and your saved state do not move.",
       "pause": 300
     },
     {
@@ -99,7 +99,7 @@
       "pause": 300
     },
     {
-      "text": "open-datum update replaces only the payload. The receipt's expected root equals the root before it.",
+      "text": "open-datum update replaces only the payload. The receipt's root equals the root before it.",
       "pause": 300
     },
     {
@@ -107,7 +107,7 @@
       "pause": 300
     },
     {
-      "text": "open-datum terminate stages the termination against the live holding: its receipt names, under expected, the pending request, the live output the fold will release and the deposit.",
+      "text": "open-datum terminate books the termination against the live holding: its receipt names the pending request, the live output the fold will release and the deposit.",
       "pause": 300
     },
     {
@@ -251,6 +251,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "fae29857b0b28346ebbc9c5793a9ebea30860a382d308f389fc87dcd6bf63f62"
+    "sha256": "02dc50aaf8bc95997385b4bd1099913814758219f1ffb53834a8ece7c7b3a2a3"
   }
 }
