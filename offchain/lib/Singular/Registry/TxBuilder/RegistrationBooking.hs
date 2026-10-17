@@ -64,7 +64,10 @@ import Cardano.Ledger.Api.Tx.Wits
     , rdmrsTxWitsL
     , scriptTxWitsL
     )
-import Cardano.Ledger.BaseTypes (SlotNo, StrictMaybe (SJust))
+import Cardano.Ledger.BaseTypes
+    ( SlotNo
+    , StrictMaybe (SJust, SNothing)
+    )
 import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
 import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential (Credential (..))
@@ -142,8 +145,8 @@ a negative carrier or nonce, a refund address that is not a key address, an
 application script that is not the pinned application policy, a state output
 that is missing or does not carry the configuration's pins, and a request
 output below the minimum ada. After balancing, a funding output that cannot
-leave its change and its collateral return their minimum ada is refused. A
-state output that carries a script is priced into the fee by its bytes.
+leave its change its minimum ada, or a collateral return at all, is refused.
+A state output that carries a script is priced into the fee by its bytes.
 -}
 bookRegistrationImpl
     :: CageConfig
@@ -322,12 +325,12 @@ holdsStateToken cfg tid out =
             )
                 == Just 1
 
-{- | The balancer appends a change output and a collateral return whatever
-they hold and rejects only a negative remainder. A funding output that
-leaves either less than its minimum ada would make a transaction the ledger
-refuses, so the booking refuses it first; and when the balancer states no
-collateral return the whole funding output would be at risk, which a booking
-never accepts.
+{- | The balancer appends a change output whatever it holds and rejects only a
+negative remainder, so a funding output that leaves the change less than its
+minimum ada would make a transaction the ledger refuses; the booking refuses
+it first. The balancer states a collateral return only when it holds its
+minimum; otherwise it states none and the whole funding output would be at
+risk, which a booking never accepts.
 -}
 requireCarriesMinimums :: PParams ConwayEra -> ConwayTx -> IO ()
 requireCarriesMinimums pp tx = do
@@ -335,8 +338,8 @@ requireCarriesMinimums pp tx = do
         refuse
             "the funding output is too small to carry the booking, its fee, its collateral and their change"
     case body ^. collateralReturnTxBodyL of
-        SJust r | carries r -> pure ()
-        _ ->
+        SJust _ -> pure ()
+        SNothing ->
             refuse
                 "the funding output cannot leave a collateral return of its minimum ada, so its whole value would be collateral"
   where
