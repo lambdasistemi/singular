@@ -20,11 +20,19 @@ by a program from that output, never typed.
 -}
 module Singular.Registry.TxBuilder.RegistrationBookingSpec (spec) where
 
-import Control.Monad (forM_)
+import Control.Exception (SomeException, displayException)
+import Control.Monad (forM_, void)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
+import Data.Foldable (toList)
+import Data.List (isInfixOf, sort)
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
+import Data.Text qualified as T
+import Data.Word (Word32)
+import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
@@ -34,34 +42,99 @@ import PlutusTx.IsData.Class (FromData (..), ToData (..))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..))
-import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , feeTxBodyL
+    , inputsTxBodyL
+    , mintTxBodyL
+    , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , scriptIntegrityHashTxBodyL
+    , vldtTxBodyL
+    )
+import Cardano.Ledger.Api.Tx.Out
+    ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , datumTxOutL
+    , mkBasicTxOut
+    , valueTxOutL
+    )
+import Cardano.Ledger.Api.Tx.Wits
+    ( Redeemers (..)
+    , rdmrsTxWitsL
+    , scriptTxWitsL
+    )
+import Cardano.Ledger.BaseTypes
+    ( Network (Testnet)
+    , SlotNo (..)
+    , StrictMaybe (..)
+    )
+import Cardano.Ledger.Conway.Scripts (ConwayPlutusPurpose (..))
+import Cardano.Ledger.Core (hashScript)
 import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID (..)
+    )
+import Cardano.Ledger.Plutus.Data (getPlutusData)
+import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Singular.Registry.Application (ApplicationPin (..))
 import Singular.Registry.AssetName (deriveAssetName)
-import Singular.Registry.Blueprint (applyRequestParams)
+import Singular.Registry.Blueprint
+    ( NamingCodes (..)
+    , applyRequestParams
+    )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Config.Application
     ( RegistryEconomics (..)
     , configForApplication
     )
+import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
+    , ConwayEra
     , TokenId (..)
     )
+import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.StubSession
+import Singular.Registry.SyntheticLedger (withCostCoefficients)
+import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
     ( cfg
     , codes
+    , payer
+    , preprodParams
     , program
     , requestPin
     , tokenId
     )
 import Singular.Registry.TxBuilder.Internal
-    ( computeScriptHash
+    ( addrKeyHashBytes
+    , cageAddrFromCfg
+    , computeScriptHash
+    , extractCageDatum
+    , mkInlineDatum
+    , onChainTokenId
+    , policyIdFromPin
     , requestAddrFromCfg
+    , scriptFromBytes
     , scriptHashBytes
+    , toPlcData
+    )
+import Singular.Registry.TxBuilder.RegistrationBooking
+    ( RegistrationBooking (..)
+    , bookRegistrationImpl
     )
 import Singular.Registry.Types
 
@@ -357,6 +430,322 @@ spec = do
                 Addr _ (ScriptHashObj (ScriptHash h)) _ ->
                     scriptHashBytes (ScriptHash h) `shouldBe` SBS.fromShort requestPin
                 other -> expectationFailure ("not a script address: " <> show other)
+
+    bookingTxSpec
+
+-- ---------------------------------------------------------
+-- The booking transaction
+-- ---------------------------------------------------------
+
+{- | The registry state output the booking references: at the state address,
+holding the one state token, with an inline state datum whose pins are the
+configuration's. The pins are written out here, not read through the
+library's boot state.
+-}
+stateRef :: TxIn
+stateRef = outRef '7' 0
+
+stateOutputFor :: CageConfig -> TxOut ConwayEra
+stateOutputFor c =
+    mkBasicTxOut
+        (cageAddrFromCfg c Testnet)
+        ( MaryValue
+            (Coin 2_000_000)
+            ( MultiAsset
+                ( Map.singleton
+                    (PolicyID (cfgScriptHash c))
+                    (Map.singleton (unTokenId tokenId) 1)
+                )
+            )
+        )
+        & datumTxOutL .~ mkInlineDatum (toPlcData (StateDatum (pinnedBy c)))
+
+-- | The state a registry booted under this configuration carries.
+pinnedBy :: CageConfig -> OnChainTokenState
+pinnedBy c =
+    OnChainTokenState
+        { stateRoot = OnChainRoot (BS.replicate 32 0)
+        , stateMaxFee = let Coin t = defaultTip c in t
+        , stateProcessTime = defaultProcessTime c
+        , stateRetractTime = defaultRetractTime c
+        , stateAppPolicy =
+            BuiltinByteString (SBS.fromShort (cfgApplicationPolicy c))
+        , stateActivePolicy =
+            BuiltinByteString (SBS.fromShort (cfgActivePolicy c))
+        , stateAbsentPolicy =
+            BuiltinByteString (SBS.fromShort (cfgAbsentPolicy c))
+        , stateTerminalPolicy =
+            BuiltinByteString (SBS.fromShort (cfgTerminalPolicy c))
+        , stateRegistrationCost = let Coin n = defaultRegistrationCost c in n
+        , stateBookingWidth = defaultBookingWidth c
+        , stateRequestPolicy =
+            BuiltinByteString (SBS.fromShort (cfgRequestPolicy c))
+        }
+
+outRef :: Char -> Int -> TxIn
+outRef c i =
+    either
+        (error . ("RegistrationBookingSpec fixture: " <>))
+        id
+        (parseOutRef (T.pack (replicate 64 c <> "#" <> show i)))
+
+fundingIn :: TxIn
+fundingIn = outRef '4' 0
+
+fundingOut :: TxOut ConwayEra
+fundingOut = mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty)
+
+{- | One view: the payer's funding output, the state output at the state
+address, the resolved outputs the evaluator needs, the synthetic network
+time (one-second slots from the start, so a slot's start in milliseconds is
+a thousand times its number) and the preprod parameters.
+-}
+viewFor :: CageConfig -> Session NoWitness IO
+viewFor c =
+    withAddressOutputs
+        ( \a ->
+            pure
+                ( [(fundingIn, fundingOut) | a == payer]
+                    <> [(stateRef, stateOutputFor c) | a == cageAddrFromCfg c Testnet]
+                )
+        )
+        $ withParameters
+            (withCostCoefficients (ExUnits 500_000 200_000_000) 10 preprodParams)
+        $ withTime (pure syntheticTime)
+        $ withResolvedOutputs
+            ( \wanted ->
+                pure
+                    [ (r, o)
+                    | (r, o) <-
+                        [(fundingIn, fundingOut), (stateRef, stateOutputFor c)]
+                    , r `Set.member` wanted
+                    ]
+            )
+            stubSession
+
+-- | A booking at the upper slot 4 005, the lower slot five seconds earlier.
+booking :: RegistrationBooking
+booking =
+    RegistrationBooking
+        { rbKey = "booked-key"
+        , rbRefundAddress = payer
+        , rbDestination = BS.cons 0x60 (BS.replicate 28 0x77)
+        , rbDatum = Just (I 7)
+        , rbDeclaredTip = Coin 1_500_000
+        , rbCarrier = Coin 1_500_000
+        , rbNonce = 5
+        , rbLower = SlotNo 4_000
+        , rbUpper = SlotNo 4_005
+        , rbApplicationScript = ncApplication codes
+        }
+
+built :: CageConfig -> RegistrationBooking -> IO ConwayTx
+built c b = bookRegistrationImpl c (viewFor c) tokenId stateRef b payer
+
+-- | The request the booking states, written from the booking's own values.
+requestFor :: RegistrationBooking -> OnChainRegistrationRequest
+requestFor b =
+    OnChainRegistrationRequest
+        { regRegistry = onChainTokenId tokenId
+        , regKey = rbKey b
+        , regRefundAddress =
+            BuiltinByteString (addrKeyHashBytes (rbRefundAddress b))
+        , regDestination = rbDestination b
+        , regDatum = rbDatum b
+        , regSubmittedAt = 1000 * slotNumber (rbUpper b)
+        , regRegistrationCost = let Coin n = defaultRegistrationCost cfg in n
+        , regDeclaredTip = let Coin n = rbDeclaredTip b in n
+        , regCarrierAda = let Coin n = rbCarrier b in n
+        , regNonce = rbNonce b
+        }
+  where
+    slotNumber (SlotNo s) = fromIntegral s
+
+appPolicyId, requestPolicyId :: PolicyID
+appPolicyId = policyIdFromPin (cfgApplicationPolicy cfg)
+requestPolicyId = policyIdFromPin requestPin
+
+refusesWith :: String -> IO a -> Expectation
+refusesWith what action =
+    action `shouldThrow` \e -> what `isInfixOf` displayException (e :: SomeException)
+
+bookingTxSpec :: Spec
+bookingTxSpec = describe "the registration booking transaction" $ do
+    it
+        "pays the request address the declared cost, tip and carrier with both tags and the registration datum"
+        $ do
+            tx <- built cfg booking
+            let r = requestFor booking
+                outs = toList (tx ^. bodyTxL . outputsTxBodyL)
+                atRequest =
+                    [ o
+                    | o <- outs
+                    , o ^. addrTxOutL == requestAddrFromCfg cfg tokenId Testnet
+                    ]
+                tags =
+                    MultiAsset
+                        ( Map.fromList
+                            [
+                                ( requestPolicyId
+                                , Map.singleton (AssetName (SBS.toShort (trieReadyTagName r))) 1
+                                )
+                            ,
+                                ( appPolicyId
+                                , Map.singleton (AssetName (SBS.toShort (applicationTagOf r))) 1
+                                )
+                            ]
+                        )
+            case atRequest of
+                [o] -> do
+                    o ^. valueTxOutL `shouldBe` MaryValue (Coin 5_000_000) tags
+                    extractCageDatum o `shouldBe` Just (RegistrationDatum r)
+                other -> expectationFailure ("request outputs: " <> show (length other))
+    it
+        "mints exactly the two tags, one under each policy, and nothing else"
+        $ do
+            tx <- built cfg booking
+            let r = requestFor booking
+            tx ^. bodyTxL . mintTxBodyL
+                `shouldBe` MultiAsset
+                    ( Map.fromList
+                        [
+                            ( requestPolicyId
+                            , Map.singleton (AssetName (SBS.toShort (trieReadyTagName r))) 1
+                            )
+                        ,
+                            ( appPolicyId
+                            , Map.singleton (AssetName (SBS.toShort (applicationTagOf r))) 1
+                            )
+                        ]
+                    )
+    it
+        "states the booked time as the start of the upper slot and the interval as the slots"
+        $ do
+            tx <- built cfg booking
+            tx ^. bodyTxL . vldtTxBodyL
+                `shouldBe` ValidityInterval (SJust (SlotNo 4_000)) (SJust (SlotNo 4_005))
+            fmap regSubmittedAt (registrationOf tx) `shouldBe` Just 4_005_000
+    it
+        "references the registry state and spends the payer's output, which is also its collateral"
+        $ do
+            tx <- built cfg booking
+            tx ^. bodyTxL . referenceInputsTxBodyL
+                `shouldBe` Set.singleton stateRef
+            tx ^. bodyTxL . inputsTxBodyL `shouldBe` Set.singleton fundingIn
+            tx ^. bodyTxL . collateralInputsTxBodyL
+                `shouldBe` Set.singleton fundingIn
+    it "carries each mint's script and its redeemer, with measured units" $ do
+        tx <- built cfg booking
+        Map.keysSet (tx ^. witsTxL . scriptTxWitsL)
+            `shouldBe` Set.fromList
+                [ hashScript (scriptFromBytes "request" (appliedRequest cfg))
+                , hashScript
+                    (scriptFromBytes "application" (rbApplicationScript booking))
+                ]
+        let Redeemers rs = tx ^. witsTxL . rdmrsTxWitsL
+            byPolicy =
+                [ (p, getPlutusData d, units)
+                | (ConwayMinting (AsIx i), (d, units)) <- Map.toList rs
+                , (p, ix) <- zip (sort [requestPolicyId, appPolicyId]) [0 :: Word32 ..]
+                , ix == i
+                ]
+        map (\(p, d, _) -> (p, d)) byPolicy
+            `shouldMatchList` [ (requestPolicyId, Constr 0 [])
+                              ,
+                                  ( appPolicyId
+                                  , Constr
+                                        1
+                                        [ B (rbKey booking)
+                                        , B (addrKeyHashBytes (rbRefundAddress booking))
+                                        , B (rbDestination booking)
+                                        , I (rbNonce booking)
+                                        ]
+                                  )
+                              ]
+        all (\(_, _, ExUnits m s) -> m > 0 && s > 0) byPolicy `shouldBe` True
+        tx ^. bodyTxL . scriptIntegrityHashTxBodyL `shouldSatisfy` setS
+    it "is balanced: the payer's output is the outputs plus the fee" $ do
+        tx <- built cfg booking
+        let Coin fee = tx ^. bodyTxL . feeTxBodyL
+            outs = toList (tx ^. bodyTxL . outputsTxBodyL)
+            total = sum [c | o <- outs, let Coin c = o ^. coinTxOutL]
+        fee `shouldSatisfy` (> 0)
+        total + fee `shouldBe` 100_000_000
+        length outs `shouldBe` 2
+    describe "refuses before building" $ do
+        it "an interval wider than the registry's widest" $
+            refusesWith "wider than the registry's booking width" $
+                built cfg booking{rbLower = SlotNo 3_994}
+        it "an interval exactly as wide as the registry's widest is accepted" $
+            void (built cfg booking{rbLower = SlotNo 3_995})
+        it "an empty interval" $
+            refusesWith "lower slot is not before the upper slot" $
+                built cfg booking{rbLower = SlotNo 4_005}
+        it "an inverted interval" $
+            refusesWith "lower slot is not before the upper slot" $
+                built cfg booking{rbLower = SlotNo 4_006}
+        it "a tip below the registry's minimum" $
+            refusesWith "tip is below the registry's minimum tip" $
+                built cfg booking{rbDeclaredTip = Coin 999_999}
+        it "a negative carrier" $
+            refusesWith "carrier is negative" $
+                built cfg booking{rbCarrier = Coin (-1)}
+        it "a negative nonce" $
+            refusesWith "nonce is negative" $
+                built cfg booking{rbNonce = -1}
+        it "a refund address that is not a key address" $
+            refusesWith "refund address is not a key address" $
+                built cfg booking{rbRefundAddress = cageAddrFromCfg cfg Testnet}
+        it
+            "an application script that is not the registry's application policy"
+            $ refusesWith
+                "application script is not the registry's application policy"
+            $ built cfg booking{rbApplicationScript = program}
+        it "a state output that is not at the registry's state address" $
+            refusesWith "state output not found" $
+                bookRegistrationImpl
+                    cfg
+                    (viewFor cfg)
+                    tokenId
+                    (outRef '8' 3)
+                    booking
+                    payer
+        it "a state output pinning other booking terms than the configuration" $
+            refusesWith "does not carry this configuration's booking pins" $ do
+                let other = cfg{defaultBookingWidth = 20_000}
+                bookRegistrationImpl
+                    cfg
+                    (viewFor other)
+                    tokenId
+                    stateRef
+                    booking
+                    payer
+        it "a booking that cannot carry its own minimum ada" $
+            refusesWith "below the minimum ada" $ do
+                let thin = cfg{defaultRegistrationCost = Coin 0, defaultTip = Coin 0}
+                built thin booking{rbDeclaredTip = Coin 0, rbCarrier = Coin 0}
+  where
+    setS (SJust _) = True
+    setS SNothing = False
+
+-- | The registration a booking transaction carries, read back from its request output.
+registrationOf :: ConwayTx -> Maybe OnChainRegistrationRequest
+registrationOf tx =
+    case [ r
+         | o <- toList (tx ^. bodyTxL . outputsTxBodyL)
+         , o ^. addrTxOutL == requestAddrFromCfg cfg tokenId Testnet
+         , Just (RegistrationDatum r) <- [extractCageDatum o]
+         ] of
+        [r] -> Just r
+        _ -> Nothing
+
+-- | The request script as the booking attaches it: the unapplied bytes applied to the registry.
+appliedRequest :: CageConfig -> SBS.ShortByteString
+appliedRequest c =
+    applyRequestParams
+        (scriptHashBytes (cfgScriptHash c))
+        (onChainTokenId tokenId)
+        (requestScriptBytes c)
 
 -- ---------------------------------------------------------
 -- Small helpers
