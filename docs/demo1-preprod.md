@@ -21,6 +21,11 @@ sequenceDiagram
     S->>N: read only
     R->>S: open-datum insert, update, terminate with --preview
     S-->>R: measured fee, units, collateral, outlay
+    R->>S: create, insert, fold with an address and a bundle file
+    S-->>R: the bundle, exit 19, nothing signed or sent
+    R->>R: singular wallet sign with the vault
+    R->>S: singular submit sends the signed bundle
+    S->>N: each transaction, in the bundle's order
     R->>C: attach to the registry with a fresh key
     C->>N: ordinary commands, four refusals, retractions
     C->>I: the Active key, read from both indexers before its termination
@@ -30,6 +35,7 @@ sequenceDiagram
     I-->>R: output, datum, block, lag
 ```
 
+- **Sign without a key file.** The reviewer's wallets come from `singular wallet create`: a vault sealed by a passphrase, whose printed address is all a development node needs to fund it. Every write names that address and a new bundle file instead of a key file: the command builds its whole run as one bundle, signs and sends nothing and exits with status 19. `singular wallet sign --vault` signs the bundle and `singular submit` sends it, and the command's own fields are only expected until `submit` finds the bundle on chain. The controls runner below is a harness and keeps its key files.
 - **Measure before writing.** A preview names the caller by a public address, builds what each command would submit and prints its fee, the execution units the node's own evaluator measured, the collateral it states and returns, and the outlay. The fold of an insertion or a termination is a command of its own, `registry fold`, run by any wallet once the booking confirms, so the preview bounds it from the network's parameters.
 - **Fund for the whole take.** An approval a booking mints returns to the wallet in the change output of the fold or retraction that releases it, so that output is no longer ada-only. A take refuses, before it writes, a wallet without one ada-only output for every insert, terminate and retraction of its story and one more, each large enough for the allowance or outlay bound and the ledger's minimum output.
 - **Four refusals on one registry.** An update that needs another wallet's signature, a release outside any fold, a second insertion of the Active key and an insertion of the Terminal key are each refused by the node at the script that owns the rule, beside the ordinary command that does the same thing legitimately.
