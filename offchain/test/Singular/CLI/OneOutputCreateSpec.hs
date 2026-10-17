@@ -54,6 +54,7 @@ import Singular.Registry.StubSession
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
     ( applicationScript
+    , cfg
     , payer
     , preprodParams
     )
@@ -249,7 +250,7 @@ chainedJudgementAcceptsOneOutput = describe "the chained judgement" $ do
         publicationFunding
             preprodParams
             chained
-            (bootCostBound preprodParams carrier)
+            (bootCostBound preprodParams cfg carrier)
             beforeOne
             []
             ginaWallet

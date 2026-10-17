@@ -328,8 +328,11 @@ A create checks its publications against what the boot leaves with it,
 before anything is submitted.
 -}
 bootCostBound
-    :: PParams ConwayEra -> (TxIn, TxOut ConwayEra) -> Integer
-bootCostBound pp carrier =
+    :: PParams ConwayEra
+    -> CageConfig
+    -> (TxIn, TxOut ConwayEra)
+    -> Integer
+bootCostBound pp _ carrier =
     let Coin allowance = protocolFeeReserve pp [carrier]
     in  bootStateLovelace + allowance
 
