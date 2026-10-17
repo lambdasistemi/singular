@@ -143,6 +143,10 @@
     {
       "text": "Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under pendingBundle: its hash, its saved path, and the transactions still awaited with their deadlines. Recovering a registry command follows a bundle from there.",
       "pause": 400
+    },
+    {
+      "text": "A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. That bundle then dies by expiry, and the way out is to rebuild it after the expiry.",
+      "pause": 400
     }
   ],
   "how-long-a-bundle-can-wait": [
@@ -413,6 +417,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "da0fb098e518b1829d447e53f5c95d78ec240f2d0fc61b81cd82737f93bb0fac"
+    "sha256": "b6c1601ec8520791732ff3a7d98a4ced44f4e636319b3f6b5699ad2d3003f2b0"
   }
 }
