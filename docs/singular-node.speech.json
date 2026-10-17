@@ -63,7 +63,7 @@
       "pause": 400
     },
     {
-      "text": "The writer's side is a singular registry create, fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+      "text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
       "pause": 400
     },
     {
@@ -413,6 +413,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "80ce4939765397dbd54cf99e9fba6f03dea3a767ae336f5d87ceda6e3506d151"
+    "sha256": "e3bf31b80a55c57ba465182f1bcac7c9bfc6e154f9daad064ebba611d0eccf10"
   }
 }

@@ -335116,246 +335116,391 @@
    ]
   },
   "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-02": {
-   "audio_sha256": "d8c8a66621cfd8d52ef38636c4132cfb657e0adba5cf8f4c33760afe046c1fbe",
-   "characters": 246,
-   "cost": 0.00024353999999999996,
-   "duration": 16.525,
+   "audio_sha256": "7dc998694a4c58a4253d06c58e6a02118492752113dfed15149092a27cf6f997",
+   "characters": 385,
+   "cost": 0.00038114999999999997,
+   "duration": 26.475,
    "index": 2,
-   "key": "a2374e810496311ca6908701d19aaf16174a18fd4218a05799cf3109b48b6126",
+   "key": "beb766ee28d40e6fc2c343c841426fdcc06fbe2273b00f074efc77ba7de80874",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "signing-a-bundle-of-unsigned-transactions-offline",
-   "sent_text": "The writer's side is a singular registry create, fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
-   "text": "The writer's side is a singular registry create, fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+   "sent_text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
+   "text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
    "words": [
     {
-     "end": 0.325,
-     "start": 0.225,
+     "end": 0.35,
+     "start": 0.25,
      "text": "The"
     },
     {
-     "end": 0.738,
-     "start": 0.325,
+     "end": 0.762,
+     "start": 0.35,
      "text": "writer's"
     },
     {
-     "end": 1.1,
-     "start": 0.738,
+     "end": 1.125,
+     "start": 0.762,
      "text": "side"
     },
     {
-     "end": 1.225,
-     "start": 1.1,
+     "end": 1.25,
+     "start": 1.125,
      "text": "is"
     },
     {
-     "end": 1.35,
-     "start": 1.225,
+     "end": 1.375,
+     "start": 1.25,
      "text": "a"
     },
     {
-     "end": 1.9,
-     "start": 1.35,
+     "end": 1.925,
+     "start": 1.375,
      "text": "singular"
     },
     {
-     "end": 2.388,
-     "start": 1.9,
+     "end": 2.412,
+     "start": 1.925,
      "text": "registry"
     },
     {
-     "end": 2.85,
-     "start": 2.388,
+     "end": 2.875,
+     "start": 2.412,
      "text": "create"
     },
     {
-     "end": 2.975,
-     "start": 2.85,
+     "end": 3.0,
+     "start": 2.875,
      "text": ","
     },
     {
      "end": 3.55,
-     "start": 2.975,
+     "start": 3.0,
      "text": "fold"
     },
     {
-     "end": 3.662,
+     "end": 3.638,
      "start": 3.55,
      "text": ","
     },
     {
-     "end": 4.262,
-     "start": 3.662,
+     "end": 4.225,
+     "start": 3.638,
      "text": "reject"
     },
     {
-     "end": 4.425,
-     "start": 4.262,
+     "end": 4.375,
+     "start": 4.225,
      "text": "or"
     },
     {
-     "end": 4.988,
-     "start": 4.425,
+     "end": 4.9,
+     "start": 4.375,
      "text": "reclaim"
     },
     {
-     "end": 5.35,
-     "start": 4.988,
+     "end": 5.275,
+     "start": 4.9,
      "text": "run"
     },
     {
-     "end": 5.525,
-     "start": 5.35,
-     "text": "that"
+     "end": 5.387,
+     "start": 5.275,
+     "text": ","
     },
     {
-     "end": 5.863,
-     "start": 5.525,
-     "text": "names"
+     "end": 5.55,
+     "start": 5.387,
+     "text": "or"
     },
     {
-     "end": 6.625,
-     "start": 5.863,
-     "text": "--wallet-address"
+     "end": 5.688,
+     "start": 5.55,
+     "text": "an"
     },
     {
-     "end": 6.775,
-     "start": 6.625,
-     "text": "and"
+     "end": 6.4,
+     "start": 5.688,
+     "text": "open-datum"
     },
     {
-     "end": 7.175,
-     "start": 6.775,
-     "text": "--bundle"
+     "end": 6.925,
+     "start": 6.4,
+     "text": "insert"
     },
     {
-     "end": 7.325,
-     "start": 7.175,
-     "text": "in"
+     "end": 7.0,
+     "start": 6.925,
+     "text": ","
     },
     {
-     "end": 7.637,
-     "start": 7.325,
-     "text": "place"
+     "end": 7.525,
+     "start": 7.0,
+     "text": "update"
     },
     {
-     "end": 7.713,
-     "start": 7.637,
-     "text": "of"
+     "end": 7.613,
+     "start": 7.525,
+     "text": ","
     },
     {
-     "end": 7.838,
-     "start": 7.713,
-     "text": "the"
+     "end": 8.225,
+     "start": 7.613,
+     "text": "terminate"
     },
     {
-     "end": 8.238,
-     "start": 7.838,
-     "text": "signing"
+     "end": 8.387,
+     "start": 8.225,
+     "text": "or"
+    },
+    {
+     "end": 8.775,
+     "start": 8.387,
+     "text": "fold"
+    },
+    {
+     "end": 9.125,
+     "start": 8.775,
+     "text": "run"
     },
     {
      "end": 9.2,
-     "start": 8.238,
+     "start": 9.125,
+     "text": ","
+    },
+    {
+     "end": 9.375,
+     "start": 9.2,
+     "text": "that"
+    },
+    {
+     "end": 9.663,
+     "start": 9.375,
+     "text": "names"
+    },
+    {
+     "end": 10.425,
+     "start": 9.663,
+     "text": "--wallet-address"
+    },
+    {
+     "end": 10.587,
+     "start": 10.425,
+     "text": "and"
+    },
+    {
+     "end": 11.025,
+     "start": 10.587,
+     "text": "--bundle"
+    },
+    {
+     "end": 11.175,
+     "start": 11.025,
+     "text": "in"
+    },
+    {
+     "end": 11.488,
+     "start": 11.175,
+     "text": "place"
+    },
+    {
+     "end": 11.562,
+     "start": 11.488,
+     "text": "of"
+    },
+    {
+     "end": 11.663,
+     "start": 11.562,
+     "text": "the"
+    },
+    {
+     "end": 12.062,
+     "start": 11.663,
+     "text": "signing"
+    },
+    {
+     "end": 13.025,
+     "start": 12.062,
      "text": "key"
     },
     {
-     "end": 9.475,
-     "start": 9.2,
+     "end": 13.3,
+     "start": 13.025,
      "text": ":"
     },
     {
-     "end": 9.775,
-     "start": 9.675,
+     "end": 13.6,
+     "start": 13.5,
      "text": "it"
     },
     {
-     "end": 10.025,
-     "start": 9.775,
-     "text": "writes"
+     "end": 13.887,
+     "start": 13.6,
+     "text": "builds"
     },
     {
-     "end": 10.238,
-     "start": 10.025,
-     "text": "such"
+     "end": 14.0,
+     "start": 13.887,
+     "text": "its"
     },
     {
-     "end": 10.325,
-     "start": 10.238,
-     "text": "a"
+     "end": 14.25,
+     "start": 14.0,
+     "text": "whole"
     },
     {
-     "end": 10.75,
-     "start": 10.325,
+     "end": 14.587,
+     "start": 14.25,
+     "text": "run"
+    },
+    {
+     "end": 14.762,
+     "start": 14.587,
+     "text": "as"
+    },
+    {
+     "end": 15.025,
+     "start": 14.762,
+     "text": "one"
+    },
+    {
+     "end": 15.425,
+     "start": 15.025,
      "text": "bundle"
     },
     {
-     "end": 10.837,
-     "start": 10.75,
-     "text": ","
+     "end": 15.575,
+     "start": 15.425,
+     "text": "in"
     },
     {
-     "end": 11.375,
-     "start": 10.837,
-     "text": "signs"
-    },
-    {
-     "end": 11.512,
-     "start": 11.375,
-     "text": "and"
-    },
-    {
-     "end": 11.9,
-     "start": 11.512,
-     "text": "sends"
-    },
-    {
-     "end": 12.325,
-     "start": 11.9,
-     "text": "nothing"
-    },
-    {
-     "end": 12.4,
-     "start": 12.325,
-     "text": ","
-    },
-    {
-     "end": 12.538,
-     "start": 12.4,
-     "text": "and"
-    },
-    {
-     "end": 12.975,
-     "start": 12.538,
-     "text": "exits"
-    },
-    {
-     "end": 13.163,
-     "start": 12.975,
-     "text": "with"
-    },
-    {
-     "end": 13.65,
-     "start": 13.163,
-     "text": "status"
-    },
-    {
-     "end": 14.4,
-     "start": 13.65,
-     "text": "19"
-    },
-    {
-     "end": 14.5,
-     "start": 14.4,
-     "text": ","
+     "end": 15.85,
+     "start": 15.575,
+     "text": "build"
     },
     {
      "end": 16.325,
-     "start": 14.5,
+     "start": 15.85,
+     "text": "order"
+    },
+    {
+     "end": 16.462,
+     "start": 16.325,
+     "text": ","
+    },
+    {
+     "end": 17.0,
+     "start": 16.462,
+     "text": "signs"
+    },
+    {
+     "end": 17.138,
+     "start": 17.0,
+     "text": "and"
+    },
+    {
+     "end": 17.525,
+     "start": 17.138,
+     "text": "sends"
+    },
+    {
+     "end": 18.525,
+     "start": 17.525,
+     "text": "nothing"
+    },
+    {
+     "end": 18.725,
+     "start": 18.525,
+     "text": ","
+    },
+    {
+     "end": 19.212,
+     "start": 18.925,
+     "text": "states"
+    },
+    {
+     "end": 19.35,
+     "start": 19.212,
+     "text": "its"
+    },
+    {
+     "end": 19.612,
+     "start": 19.35,
+     "text": "own"
+    },
+    {
+     "end": 20.05,
+     "start": 19.612,
+     "text": "fields"
+    },
+    {
+     "end": 20.375,
+     "start": 20.05,
+     "text": "under"
+    },
+    {
+     "end": 20.975,
+     "start": 20.375,
+     "text": "expected"
+    },
+    {
+     "end": 21.087,
+     "start": 20.975,
+     "text": "in"
+    },
+    {
+     "end": 21.225,
+     "start": 21.087,
+     "text": "its"
+    },
+    {
+     "end": 21.825,
+     "start": 21.225,
+     "text": "receipt"
+    },
+    {
+     "end": 21.9,
+     "start": 21.825,
+     "text": ","
+    },
+    {
+     "end": 22.038,
+     "start": 21.9,
+     "text": "and"
+    },
+    {
+     "end": 22.5,
+     "start": 22.038,
+     "text": "exits"
+    },
+    {
+     "end": 22.675,
+     "start": 22.5,
+     "text": "with"
+    },
+    {
+     "end": 23.1,
+     "start": 22.675,
+     "text": "status"
+    },
+    {
+     "end": 24.35,
+     "start": 23.1,
+     "text": "19"
+    },
+    {
+     "end": 24.55,
+     "start": 24.35,
+     "text": ","
+    },
+    {
+     "end": 26.275,
+     "start": 24.75,
      "text": "waiting-for-signatures"
     },
     {
-     "end": 16.525,
-     "start": 16.325,
+     "end": 26.475,
+     "start": 26.275,
      "text": "."
     }
    ]

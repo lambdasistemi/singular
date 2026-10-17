@@ -9393,8 +9393,8 @@
     "index": 2,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-02",
     "pause_ms": 400,
-    "text": "The writer's side is a singular registry create, fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
-    "v": "d8c8a66621cf"
+    "text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
+    "v": "7dc998694a4c"
    },
    {
     "index": 3,

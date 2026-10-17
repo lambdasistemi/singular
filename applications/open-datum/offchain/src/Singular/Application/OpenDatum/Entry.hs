@@ -51,6 +51,7 @@ import Control.Exception (throwIO)
 import Control.Monad (unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
+import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Text qualified as T
 
@@ -311,11 +312,21 @@ book at a key verb plan = do
         "book"
         booking
         ("request " <> txInText request <> " live")
-    report
-        (wcTracer wc)
+    reportLanded
+        wc
         [InRequest (txInText request)]
         (Trace.Booked (txInText request) (Just (deadlineMs deadline)))
     pure (booking, decided, deadline, mPrep)
+
+{- | Narrate an event that says a transaction is done, unless the write is
+staged: a staged run built its transactions and sent none, so what it
+narrates of them is what the shared session reports (built, staged) and
+nothing that claims they landed. The key-file path narrates as before.
+-}
+reportLanded :: WriteContext -> [Scope] -> What -> IO ()
+reportLanded wc scopes what =
+    unless (isJust (wcStaged wc)) $
+        report (wcTracer wc) scopes what
 
 -- | What a booking-only command's receipt names of its pending request.
 pendingFields
@@ -595,8 +606,8 @@ runUpdate env a = case entryMode a of
                         <> txInText liveIn
                         <> " with the new payload; root unchanged"
                     )
-                report (wcTracer wc) placed (Updated key (txInText liveIn))
-                report (wcTracer wc) [] (RootSeen (hexT rootBefore) (hexT rootAfter))
+                reportLanded wc placed (Updated key (txInText liveIn))
+                reportLanded wc [] (RootSeen (hexT rootBefore) (hexT rootAfter))
                 pure $
                     receipt
                         "update"
