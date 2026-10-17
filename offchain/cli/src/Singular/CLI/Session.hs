@@ -583,8 +583,10 @@ stagedCapabilities
     -> Capabilities Cage.NoWitness IO
 stagedCapabilities staged caps =
     let (network, provider) = capReads caps
+        -- The composed provider with only its acquisition decorated: every
+        -- other capability stays the one composition supplied.
         chained =
-            Cage.LedgerProvider
+            provider
                 { Cage.acquire = \requested action ->
                     Cage.acquire
                         provider
@@ -593,7 +595,6 @@ stagedCapabilities staged caps =
                             (map snd <$> readIORef (srTxs staged))
                             >=> action
                         )
-                , Cage.submitTx = Cage.submitTx provider
                 }
     in  caps
             { capReads = (network, chained)

@@ -18,7 +18,6 @@ import Singular.Registry.LedgerProvider
 import Singular.Registry.ProviderSettings (ProviderSettings)
 import Singular.Registry.Signing (SignedTx)
 import Singular.Registry.Terminal (withWrites)
-import Singular.Registry.Wallet (Wallet)
 
 -- | The actual provider operations retained by a backend action.
 data NodeCaps = NodeCaps
@@ -28,9 +27,9 @@ data NodeCaps = NodeCaps
     }
 
 withBackendNode
-    :: ProviderSettings -> Wallet -> (NodeCaps -> IO a) -> IO a
-withBackendNode settings wallet body =
-    withWrites mempty mempty settings wallet $ \caps ->
+    :: ProviderSettings -> (NodeCaps -> IO a) -> IO a
+withBackendNode settings body =
+    withWrites mempty mempty settings $ \caps ->
         body
             NodeCaps
                 { ncReads = capReads caps
