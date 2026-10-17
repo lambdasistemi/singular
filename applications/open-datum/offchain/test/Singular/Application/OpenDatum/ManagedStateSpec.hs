@@ -421,6 +421,7 @@ directoryOptional = describe "every command works without --state-dir" $ do
               , "--blueprint"
               , "/srv/plutus.json"
               ]
+                <> ["--registration-cost", "0", "--booking-width", "60000"]
                 <> provider
                 <> wallet
             )
@@ -664,6 +665,8 @@ noWeakening = describe "no refusal is weakened" $ do
             , createReceipt = Nothing
             , createProcessTime = 1000
             , createRetractTime = 1000
+            , createRegistrationCost = 0
+            , createBookingWidth = 60000
             }
     noChainEnv =
         Env

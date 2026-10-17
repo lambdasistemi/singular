@@ -1753,11 +1753,20 @@ commandLine rig registry args =
            ]
         <> ["--wallet-skey" | wantsKey]
         <> [rigKey rig | wantsKey]
+        <> createValues
   where
     wantsKey =
         take 2 args /= ["open-datum", "inspect"]
             && "--preview" `notElem` args
             && "--wallet-skey" `notElem` args
+    -- A create is given the registration cost and the booking width it
+    -- requires; a line that already names either keeps its own.
+    createValues
+        | take 2 args == ["open-datum", "create"]
+            && "--registration-cost" `notElem` args
+            && "--booking-width" `notElem` args =
+            ["--registration-cost", "0", "--booking-width", "60000"]
+        | otherwise = []
 
 runWithKey :: FilePath -> Rig -> String -> [String] -> IO Run
 runWithKey keyPath rig label args =
