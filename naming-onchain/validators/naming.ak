@@ -206,11 +206,14 @@ pub const mpfs_state_hash =
 /// Mirror of the registry `State` datum (issue #77, E-001 repair; sixth field
 /// NOTE-013/NOTE-019): the registry configuration carrying the expected
 /// representative policy and the pinned consumer script hash. Field order
-/// matches onchain/validators/types.ak `State` byte-for-byte (the policy
-/// was appended fifth, the pin sixth). The first arm is a unit placeholder
-/// so `StateDatum` keeps constr index 1 — folds and retires only decode
-/// spent states, never requests (a request datum does not match
-/// `MpfsStateDatum` and refuses).
+/// matches onchain/lib/types.ak `State` byte-for-byte (the policy was
+/// appended fifth, the pin sixth; the registration cost, the widest booking
+/// interval and the request policy close the eleven fields). The consumer
+/// reads the root and the policies; the three booking fields are carried so
+/// the datum decodes, and no consumer decision depends on them. The first
+/// arm is a unit placeholder so `StateDatum` keeps constr index 1 — folds
+/// and retires only decode spent states, never requests (a request datum
+/// does not match `MpfsStateDatum` and refuses).
 pub type MpfsState {
   MpfsState {
     root: ByteArray,
@@ -221,6 +224,9 @@ pub type MpfsState {
     active_policy: PolicyId,
     absent_policy: PolicyId,
     terminal_policy: PolicyId,
+    registration_cost: Int,
+    booking_width: Int,
+    request_policy: PolicyId,
   }
 }
 
@@ -375,6 +381,9 @@ pub fn mpfs_state_datum_with_root(
         active_policy,
         absent_policy: #"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
         terminal_policy: #"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
+        registration_cost: 2_000_000,
+        booking_width: 10_000,
+        request_policy: #"e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0",
       },
     )
   datum
