@@ -60,7 +60,7 @@ import Data.Char
     , generalCategory
     , isDigit
     )
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -367,11 +367,10 @@ parseOpenDatumWithGroup group environment args = do
                     "--fold"
                     "is not accepted with --preview: a preview measures the booking and never folds"
                 )
-        when
-            ( isNothing (lookup "--preview" flags)
-                && isJust (lookup "--wallet-address" flags)
-            )
-            $ Left addressNeedsPreview
+        -- The signer is the shared write reader's to judge here: an
+        -- address may name an external signer with its bundle file, and
+        -- the mixtures are refused by the reader below, before anything
+        -- is read.
         mode <-
             if isJust (lookup "--preview" flags)
                 then previewMode flags
@@ -413,8 +412,9 @@ parseOpenDatumWithGroup group environment args = do
                             flag
                             "is not accepted by open-datum fold: it folds the pending request, whose key and edge the request names"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
+        -- The signer is the shared write reader's to judge, as for the
+        -- entry writes: an address with its bundle file names an external
+        -- signer, and the mixtures are refused by the reader below.
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -467,6 +467,14 @@ parseOpenDatumWithGroup group environment args = do
     inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
+        when (isJust (lookup "--bundle" flags)) $
+            Left
+                ( BadValue
+                    "--bundle"
+                    ( "is not accepted by open-datum inspect: it reads, and takes the "
+                        <> "address only to locate a journal"
+                    )
+                )
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         key <- keyFrom flags
@@ -484,7 +492,8 @@ parseOpenDatumWithGroup group environment args = do
                 , inspectReceipt = optional "--receipt" flags
                 }
     -- A preview reads a node and names a public address; it holds no key,
-    -- so a signing key is refused before anything is read.
+    -- so a signing key is refused before anything is read, and so is the
+    -- bundle file of an external signer: a preview writes nothing.
     addressNeedsPreview =
         BadValue
             "--wallet-address"
@@ -492,6 +501,12 @@ parseOpenDatumWithGroup group environment args = do
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
+        when (isJust (lookup "--bundle" flags)) $
+            Left
+                ( BadValue
+                    "--bundle"
+                    "cannot be used with --preview: a preview signs and writes nothing"
+                )
         settings <- readProviderSettings MissingFlag BadValue flags
         addr <- required "--wallet-address" flags
         pure (Preview settings addr)
@@ -607,6 +622,11 @@ openDatumUsage =
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
+        , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --payload DATUM_JSON [--deposit LOVELACE]"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  open-datum insert --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
@@ -617,6 +637,11 @@ openDatumUsage =
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  open-datum update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --payload DATUM_JSON"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  open-datum update --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
@@ -626,6 +651,10 @@ openDatumUsage =
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
+        , "  open-datum terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  open-datum terminate --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
@@ -634,6 +663,10 @@ openDatumUsage =
         , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  open-datum inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"

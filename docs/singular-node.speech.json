@@ -23,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim and singular reject an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+      "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim, singular reject, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
       "pause": 400
     }
   ],
@@ -413,6 +413,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "8c4c7927a0b8419d909b8087daef69f69792091048e8190e470e65ee032ccb90"
+    "sha256": "80ce4939765397dbd54cf99e9fba6f03dea3a767ae336f5d87ceda6e3506d151"
   }
 }

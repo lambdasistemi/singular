@@ -2,7 +2,7 @@
 
 ## Slice: the command line names the signer
 
-- [ ] open-datum-external-flags: insert, update, terminate and fold accept the address with the bundle file outside a preview; an address alone names the bundle file as required; previews and inspect refuse the bundle file; create follows the registry; the usage lines; the settings table with its speech and clip.
+- [x] open-datum-external-flags: insert, update, terminate and fold accept the address with the bundle file outside a preview; an address alone names the bundle file as required; previews and inspect refuse the bundle file; create follows the registry; the usage lines; the settings table with its speech and clip.
 
 ## Slice: external mode
 
