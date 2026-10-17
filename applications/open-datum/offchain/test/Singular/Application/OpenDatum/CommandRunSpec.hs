@@ -1881,6 +1881,7 @@ commandLine rig registry args =
            ]
         <> ["--wallet-skey" | wantsKey]
         <> [rigKey rig | wantsKey]
+        <> createValues
   where
     -- A preview holds no signing key: it names the caller by address.
     -- A line that already names one keeps it: the key-ordering control
@@ -1891,6 +1892,14 @@ commandLine rig registry args =
             && "--bundle" `notElem` args
             && "--vault" `notElem` args
             && "--wallet-skey" `notElem` args
+    -- A create is given the registration cost and the booking width it
+    -- requires; a line that already names either keeps its own.
+    createValues
+        | take 2 args == ["open-datum", "create"]
+            && "--registration-cost" `notElem` args
+            && "--booking-width" `notElem` args =
+            ["--registration-cost", "0", "--booking-width", "60000"]
+        | otherwise = []
 
 -- | One command line with this signing-key path instead of the rig's.
 runWithKey :: FilePath -> Rig -> String -> [String] -> IO Run

@@ -153,6 +153,12 @@ walletArgs = ["--wallet-skey", "/keys/payment.skey"]
 createBase :: [String]
 createBase = ["--state-dir", "/srv/reg", "--blueprint", "/srv/plutus.json"]
 
+{- | The registration cost and booking width every create is given: neither
+has a default, and both are fixed for the life of the registry.
+-}
+createValues :: [String]
+createValues = ["--registration-cost", "3000000", "--booking-width", "20000"]
+
 fixtureTokenSpelling :: String
 fixtureTokenSpelling =
     let (PolicyID policy, AssetName name) = Fixture.token
@@ -180,6 +186,7 @@ switchAtCreateOnly = describe "the closed switch at create only" $ do
         case parseOpenDatumCommand
             ( ["open-datum", "create", "--seed", seedText, "--closed"]
                 <> createBase
+                <> createValues
                 <> providerArgs
                 <> walletArgs
             ) of
@@ -192,6 +199,7 @@ switchAtCreateOnly = describe "the closed switch at create only" $ do
         case parseOpenDatumCommand
             ( ["open-datum", "create", "--preview", "--closed"]
                 <> createBase
+                <> createValues
                 <> [ "--koios-url"
                    , "http://127.0.0.1:8080/api/v1"
                    , "--network-magic"
@@ -207,6 +215,7 @@ switchAtCreateOnly = describe "the closed switch at create only" $ do
         case parseOpenDatumCommand
             ( ["open-datum", "create", "--seed", seedText]
                 <> createBase
+                <> createValues
                 <> providerArgs
                 <> walletArgs
             ) of
@@ -299,6 +308,7 @@ createPinsMode = describe "create pins the mode it names" $ do
         case parseOpenDatumCommand
             ( ["open-datum", "create", "--seed", seedText, "--closed"]
                 <> createBase
+                <> createValues
                 <> providerArgs
                 <> walletArgs
             ) of
@@ -316,6 +326,7 @@ createPinsMode = describe "create pins the mode it names" $ do
         case parseOpenDatumCommand
             ( ["open-datum", "create", "--seed", seedText]
                 <> createBase
+                <> createValues
                 <> providerArgs
                 <> walletArgs
             ) of
@@ -333,6 +344,7 @@ closedCreateRefusals = describe "a closed create passes every refusal an open cr
             base =
                 ["open-datum", "create", "--seed", seedText]
                     <> createBase
+                    <> createValues
                     <> providerArgs
                     <> walletArgs
             misuses =
