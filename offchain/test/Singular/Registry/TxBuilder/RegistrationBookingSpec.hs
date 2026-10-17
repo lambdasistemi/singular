@@ -43,7 +43,9 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
+import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
+import Cardano.Ledger.Api.Scripts.Data (Datum (..))
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
@@ -84,6 +86,7 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.Plutus.Data (getPlutusData)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.State (UTxO (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -104,9 +107,14 @@ import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
     , ConwayEra
+    , PParams
     , TokenId (..)
     )
 import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.NetworkTime
+    ( networkEpochInfo
+    , networkSystemStart
+    )
 import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger (withCostCoefficients)
 import Singular.Registry.SyntheticTime (syntheticTime)
@@ -118,6 +126,10 @@ import Singular.Registry.TxBuilder.BookingFixture
     , program
     , requestPin
     , tokenId
+    )
+import Singular.Registry.TxBuilder.CollateralJudgement
+    ( Spend (..)
+    , judgeCollateral
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrKeyHashBytes
@@ -495,33 +507,167 @@ fundingIn = outRef '4' 0
 fundingOut :: TxOut ConwayEra
 fundingOut = mkBasicTxOut payer (MaryValue (Coin 100_000_000) mempty)
 
-{- | One view: the payer's funding output, the state output at the state
-address, the resolved outputs the evaluator needs, the synthetic network
-time (one-second slots from the start, so a slot's start in milliseconds is
-a thousand times its number) and the preprod parameters.
+-- | What each address answers with, for the view.
+type Served = [(Addr, [(TxIn, TxOut ConwayEra)])]
+
+-- | The ordinary view: the payer's funding output and the given state output.
+servedWith :: CageConfig -> TxOut ConwayEra -> Served
+servedWith c stateOut =
+    [ (payer, [(fundingIn, fundingOut)])
+    , (cageAddrFromCfg c Testnet, [(stateRef, stateOut)])
+    ]
+
+{- | One view of a served world: outputs by address, the resolved outputs the
+evaluator needs, the synthetic network time (one-second slots from the
+start, so a slot's start in milliseconds is a thousand times its number) and
+the preprod parameters.
 -}
-viewFor :: CageConfig -> Session NoWitness IO
-viewFor c =
+viewServing :: Served -> Session NoWitness IO
+viewServing served =
     withAddressOutputs
-        ( \a ->
-            pure
-                ( [(fundingIn, fundingOut) | a == payer]
-                    <> [(stateRef, stateOutputFor c) | a == cageAddrFromCfg c Testnet]
-                )
-        )
-        $ withParameters
-            (withCostCoefficients (ExUnits 500_000 200_000_000) 10 preprodParams)
+        (\a -> pure (concat [os | (x, os) <- served, x == a]))
+        $ withParameters ledgerParameters
         $ withTime (pure syntheticTime)
         $ withResolvedOutputs
             ( \wanted ->
-                pure
-                    [ (r, o)
-                    | (r, o) <-
-                        [(fundingIn, fundingOut), (stateRef, stateOutputFor c)]
-                    , r `Set.member` wanted
-                    ]
+                pure [(r, o) | (r, o) <- concatMap snd served, r `Set.member` wanted]
             )
             stubSession
+
+ledgerParameters :: PParams ConwayEra
+ledgerParameters =
+    withCostCoefficients (ExUnits 500_000 200_000_000) 10 preprodParams
+
+viewFor :: CageConfig -> Session NoWitness IO
+viewFor c = viewServing (servedWith c (stateOutputFor c))
+
+-- | Book against a view serving this state output.
+bookedAgainst :: TxOut ConwayEra -> IO ConwayTx
+bookedAgainst stateOut =
+    bookRegistrationImpl
+        cfg
+        (viewServing (servedWith cfg stateOut))
+        tokenId
+        stateRef
+        booking
+        payer
+
+{- | Fourteen distinct bytes make a 28-byte policy that is none of the
+registry's.
+-}
+anotherPolicy :: SBS.ShortByteString
+anotherPolicy = SBS.toShort (BS.replicate 28 0x5e)
+
+presentButNotTheRegistrys :: Spec
+presentButNotTheRegistrys =
+    describe
+        "refuses a state output that is present but not the registry's"
+        $ do
+            let honest = stateOutputFor cfg
+                holding v = honest & valueTxOutL .~ v
+                stateToken policy name =
+                    MaryValue
+                        (Coin 2_000_000)
+                        ( MultiAsset
+                            (Map.singleton policy (Map.singleton (AssetName name) 1))
+                        )
+                registryToken = unTokenId tokenId
+            it
+                "at the state address, with the honest datum, without the state token"
+                $ refusesWith "does not hold the registry's state token"
+                $ bookedAgainst (holding (MaryValue (Coin 2_000_000) mempty))
+            it "holding another registry's state token" $
+                refusesWith "does not hold the registry's state token" $
+                    bookedAgainst
+                        ( holding
+                            ( stateToken
+                                (PolicyID (cfgScriptHash cfg))
+                                (SBS.toShort "another-registry")
+                            )
+                        )
+            it "holding a token of this name under another policy" $
+                refusesWith "does not hold the registry's state token" $
+                    bookedAgainst
+                        ( holding
+                            ( stateToken
+                                (policyIdFromPin anotherPolicy)
+                                (case registryToken of AssetName n -> n)
+                            )
+                        )
+            it "with a registration datum where the state datum belongs" $
+                refusesWith "does not carry this configuration's booking pins" $
+                    bookedAgainst
+                        ( honest
+                            & datumTxOutL
+                                .~ mkInlineDatum
+                                    (toPlcData (RegistrationDatum (requestFor booking)))
+                        )
+            it "with no datum" $
+                refusesWith "does not carry this configuration's booking pins" $
+                    bookedAgainst (honest & datumTxOutL .~ NoDatum)
+            it "served only at the payer's address, not at the state address" $
+                refusesWith "state output not found" $
+                    bookRegistrationImpl
+                        cfg
+                        ( viewServing
+                            [ (payer, [(fundingIn, fundingOut), (stateRef, honest)])
+                            , (cageAddrFromCfg cfg Testnet, [])
+                            ]
+                        )
+                        tokenId
+                        stateRef
+                        booking
+                        payer
+            describe "pinning other terms, one at a time" $ do
+                let pinsOf c = bookedAgainst (stateOutputFor c)
+                    refused = refusesWith "does not carry this configuration's booking pins"
+                it "a registration cost one lovelace higher" $
+                    refused (pinsOf cfg{defaultRegistrationCost = Coin 2_000_001})
+                it "a minimum tip one lovelace higher" $
+                    refused (pinsOf cfg{defaultTip = Coin 1_000_001})
+                it "a booking width one millisecond wider" $
+                    refused (pinsOf cfg{defaultBookingWidth = 10_001})
+                it "another request policy" $
+                    refused (pinsOf cfg{cfgRequestPolicy = anotherPolicy})
+                it "another application policy" $
+                    refused (pinsOf cfg{cfgApplicationPolicy = anotherPolicy})
+
+-- | The units the ledger's own evaluator measures on the final body.
+measuredOn
+    :: ConwayTx -> Map.Map (ConwayPlutusPurpose AsIx ConwayEra) ExUnits
+measuredOn tx =
+    Map.map
+        (either (error . ("independent evaluation: " <>) . show) id)
+        ( evalTxExUnits
+            ledgerParameters
+            tx
+            ( UTxO
+                (Map.fromList [(fundingIn, fundingOut), (stateRef, stateOutputFor cfg)])
+            )
+            (networkEpochInfo syntheticTime)
+            (networkSystemStart syntheticTime)
+        )
+
+measuredSpec :: Spec
+measuredSpec = describe "the measured budget" $ do
+    it
+        "declares for each redeemer the units the ledger evaluator measures on the final body"
+        $ do
+            tx <- built cfg booking
+            let Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
+            Map.map snd declared `shouldBe` measuredOn tx
+    it
+        "states the fee and collateral the ledger charges for the body it submits"
+        $ do
+            tx <- built cfg booking
+            judgeCollateral
+                Spend
+                    { spInputs = [(fundingIn, 100_000_000)]
+                    , spFunding = fundingIn
+                    , spRefBytes = 0
+                    }
+                tx
+                `shouldBe` []
 
 -- | A booking at the upper slot 4 005, the lower slot five seconds earlier.
 booking :: RegistrationBooking
@@ -672,6 +818,8 @@ bookingTxSpec = describe "the registration booking transaction" $ do
         fee `shouldSatisfy` (> 0)
         total + fee `shouldBe` 100_000_000
         length outs `shouldBe` 2
+    presentButNotTheRegistrys
+    measuredSpec
     describe "refuses before building" $ do
         it "an interval wider than the registry's widest" $
             refusesWith "wider than the registry's booking width" $
@@ -701,7 +849,7 @@ bookingTxSpec = describe "the registration booking transaction" $ do
             $ refusesWith
                 "application script is not the registry's application policy"
             $ built cfg booking{rbApplicationScript = program}
-        it "a state output that is not at the registry's state address" $
+        it "a state reference that no output at the state address answers" $
             refusesWith "state output not found" $
                 bookRegistrationImpl
                     cfg
