@@ -18,7 +18,9 @@
 ////
 //// - The ledger guarantees an input is spent at most once, so consuming the
 ////   seed makes the minted token name unique to this registry.
-//// - The seven non-root state fields are chosen freely at boot; a fold, not
+//// - The ten non-root state fields are chosen at boot, except that the three
+////   booking pins (minimum tip, registration cost, widest booking interval)
+////   must be naturals and the request policy a 28-byte hash; a fold, not
 ////   genesis, keeps them fixed afterwards.
 ////
 //// ## Invariants
@@ -26,13 +28,15 @@
 //// - Minting succeeds only when the seed is an input, exactly one token of
 ////   that name is minted under this policy, and the first output is at this
 ////   script's address, with an inline state datum whose root is the empty
-////   trie's, and holds that token at quantity exactly one.
+////   trie's, representable booking pins, and holds that token at quantity
+////   exactly one.
 //// - Every failing condition is an `expect`: genesis crashes rather than
 ////   tracing a user-defined reason.
 
 use aiken/collection/list.{head}
 use aiken/merkle_patricia_forestry.{empty, root}
 use aiken/option.{is_some}
+use aiken/primitive/bytearray
 use cardano/address
 use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, OutputReference, Transaction, find_input}
@@ -53,8 +57,20 @@ pub fn validateMint(seed: OutputReference, policyId: PolicyId, tx: Transaction) 
   expect address.Script(targetScriptHash) = output.address.payment_credential
   expect targetScriptHash == policyId
   expect InlineDatum(tokenState) = output.datum
-  expect StateDatum(State { root: tokenRoot, .. }) = tokenState
+  expect StateDatum(State {
+    root: tokenRoot,
+    tip,
+    registration_cost,
+    booking_width,
+    request_policy,
+    ..
+  }) = tokenState
   expect tokenRoot == root(empty)
+  // The booking pins must be representable: naturals, and a 28-byte policy.
+  expect tip >= 0
+  expect registration_cost >= 0
+  expect booking_width >= 0
+  expect bytearray.length(request_policy) == 28
   expect exactQuantity(policyId, output.value, tokenId, 1)
   True
 }

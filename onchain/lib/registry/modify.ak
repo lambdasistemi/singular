@@ -78,7 +78,7 @@ pub fn validFold(
     // conservation plus the rejected-row floors close the rest.
     Some(@"state-drain")
   } else if !pinsPreserved(pins, next) {
-    // state-datum-fields: the seven non-root fields are registry configuration — genesis
+    // state-datum-fields: the ten non-root fields are registry configuration — genesis
     // sets them, every fold preserves them. A fold altering any of them
     // refuses here, before any root, delta or destination check.
     Some(@"pins-altered")
@@ -149,6 +149,9 @@ fn pinsPreserved(before: State, after: State) -> Bool {
     before.active_policy == after.active_policy,
     before.absent_policy == after.absent_policy,
     before.terminal_policy == after.terminal_policy,
+    before.registration_cost == after.registration_cost,
+    before.booking_width == after.booking_width,
+    before.request_policy == after.request_policy,
   }
 }
 
