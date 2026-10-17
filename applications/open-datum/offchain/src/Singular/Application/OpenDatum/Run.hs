@@ -34,6 +34,7 @@ import Control.Exception
     )
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
+import Data.Text (Text)
 import Data.Text qualified as T
 import System.Exit (ExitCode (..))
 
@@ -69,6 +70,7 @@ import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session
     ( Env (..)
     , failWith
+    , openWriteSigner
     , readOnce
     )
 import Singular.Registry.Application (ApplicationPin (..), applyPin)
@@ -204,15 +206,17 @@ runOpenDatum env = \case
             (envTracer env)
             "create"
             (createReceipt a)
-            (runCreate (applicationIn mode) env a)
-    OpenInsert a -> do
+            (openCreate a >>= runCreate (applicationIn mode) env)
+    -- A write that names a vault opens it first, before the registry's mode is
+    -- read from the chain: a refused opening is the command's own refusal.
+    OpenInsert a0 -> openedFirst env "insert" (entryReceipt a0) (openEntry a0) $ \a -> do
         (_, modeEnv) <- readModeFor env a
         finish
             (envTracer modeEnv)
             "insert"
             (entryReceipt a)
             (runInsert modeEnv a)
-    OpenUpdate a -> do
+    OpenUpdate a0 -> openedFirst env "update" (entryReceipt a0) (openEntry a0) $ \a -> do
         (mode, modeEnv) <- readModeFor env a
         case mode of
             Closed ->
@@ -227,14 +231,14 @@ runOpenDatum env = \case
                     "update"
                     (entryReceipt a)
                     (runUpdate modeEnv a)
-    OpenTerminate a -> do
+    OpenTerminate a0 -> openedFirst env "terminate" (entryReceipt a0) (openEntry a0) $ \a -> do
         (_, modeEnv) <- readModeFor env a
         finish
             (envTracer modeEnv)
             "terminate"
             (entryReceipt a)
             (runTerminate modeEnv a)
-    OpenFold a -> do
+    OpenFold a0 -> openedFirst env "fold" (foldReceipt a0) (openFold a0) $ \a -> do
         (mode, modeEnv) <- readModeForFold env a
         finish
             (envTracer modeEnv)
@@ -254,6 +258,44 @@ runOpenDatum env = \case
         failWith
             ClientRefusal
             (closedUpdateRefusal (accessToken (entryAccess args)))
+
+{- | Run the rest of a command over the arguments its vault opened into, or end
+it as the command's own refusal receipt when the opening is refused. A
+vault is opened once, at dispatch, before the blueprint, the chain or the
+state directory is touched; any other signer opens to itself.
+-}
+openedFirst
+    :: Env
+    -> Text
+    -> Maybe FilePath
+    -> IO a
+    -> (a -> IO ExitCode)
+    -> IO ExitCode
+openedFirst env command receipt open rest =
+    try open >>= \case
+        Right opened -> rest opened
+        Left (refused :: SomeException)
+            | Just (_ :: SomeAsyncException) <- fromException refused ->
+                throwIO refused
+            | otherwise ->
+                finish (envTracer env) command receipt (throwIO refused)
+
+-- | A create's arguments with the vault its write names opened.
+openCreate :: CreateArgs -> IO CreateArgs
+openCreate a = case createMode a of
+    Submit ws -> (\opened -> a{createMode = Submit opened}) <$> openWriteSigner ws
+    Preview{} -> pure a
+
+-- | An entry write's arguments with the vault it names opened.
+openEntry :: EntryArgs -> IO EntryArgs
+openEntry a = case entryMode a of
+    Submit ws -> (\opened -> a{entryMode = Submit opened}) <$> openWriteSigner ws
+    Preview{} -> pure a
+
+-- | A fold's arguments with the vault it names opened.
+openFold :: FoldArgs -> IO FoldArgs
+openFold a =
+    (\opened -> a{foldWrite = opened}) <$> openWriteSigner (foldWrite a)
 
 -- | Read the mode for an entry command (insert, update, terminate).
 readModeFor :: Env -> EntryArgs -> IO (Mode, Env)

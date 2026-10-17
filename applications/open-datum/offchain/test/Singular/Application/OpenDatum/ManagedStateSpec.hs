@@ -339,6 +339,8 @@ externalWriteRows =
     signerBundle = \case
         SignerExternal _ b -> b
         SignerKeyFile _ -> error "the external line parsed without its bundle file"
+        SignerVault _ _ -> error "the external line parsed as a vault"
+        SignerVaultOpened _ -> error "the external line parsed as an opened vault"
     -- One temp directory, one real key's address, a provider that is not
     -- listening: every read and write of the chain fails loudly, so a row
     -- observes that the run stopped and wrote nothing.

@@ -110,9 +110,10 @@ import System.Posix.IO
     , stdError
     , stdOutput
     )
-import System.Posix.Types (Fd)
+import System.Posix.Types (Fd (..))
 import Test.Hspec
 
+import Cardano.Crypto.DSIGN (rawSerialiseSignKeyDSIGN)
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class
     ( hashFromBytes
@@ -169,9 +170,11 @@ import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
+import Singular.CLI.Passphrase (mkPassphrase)
 import Singular.CLI.Proof (Leaf (..), leafName)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
+    , bodiesDir
     , journalPath
     , readJournal
     )
@@ -183,6 +186,11 @@ import Singular.CLI.Registry
     )
 import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Trace
+import Singular.CLI.Vault
+    ( createVaultFile
+    , sealVault
+    , vaultWorkFactor
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Bundle
     ( Bundle (..)
@@ -261,6 +269,7 @@ spec =
         >> settledListSingletonRow
         >> openDatumDescribeCommandRows
         >> externalWriteRows
+        >> vaultWriteRows
 
 {- | The open datum create receipt carries the working describe line. The
 application owns no describe verb, so the line always names the registry
@@ -1880,6 +1889,7 @@ commandLine rig registry args =
         take 2 args /= ["open-datum", "inspect"]
             && "--preview" `notElem` args
             && "--bundle" `notElem` args
+            && "--vault" `notElem` args
             && "--wallet-skey" `notElem` args
 
 -- | One command line with this signing-key path instead of the rig's.
@@ -4028,3 +4038,474 @@ stoppedLeavesNothingOfItsOwn found appended = do
 -- | A journal line as the stop must leave it: its event and the transaction it names.
 journalKey' :: JournalEntry -> (Text, Text)
 journalKey' e = (journalEvent e, journalTxId e)
+
+-- ---------------------------------------------------------
+-- The vault signer (#642 slice 3)
+-- ---------------------------------------------------------
+
+{- | The vault mode on the five open-datum writes: with the vault and its
+passphrase descriptor, a write builds the bundle the external mode writes for
+the vault's address, signs every member from the vault, sends them in order
+through the submit core and journals the outcome by the journal phase's
+rules. The vault is the rig wallet's own key, sealed under a passphrase the
+run reads from a descriptor, and the key file is hidden throughout.
+-}
+vaultWriteRows :: Spec
+vaultWriteRows = describe "the vault signer on the open-datum writes" $ do
+    forM_ shapes $ \shape ->
+        describe (shapeName shape) $
+            aroundAll (vaultShapeStaging shape) (vaultShapeRows shape)
+    describe "create" $
+        forM_ createScenarios $ \sc ->
+            describe (csName sc) $
+                aroundAll (vaultCreateStaging sc) $ do
+                    vaultShapeRows (createShapeOf sc)
+                    it "leaves a registry the token reads back" $ \vs -> do
+                        t <- case valueAt "stateToken" (runReceipt (vsSigned vs)) of
+                            Just (Aeson.String s) -> pure (T.unpack s)
+                            other -> fail ("no state token stated as fact: " <> show other)
+                        inspected <-
+                            runAt
+                                (vsRig vs)
+                                vaultRoot
+                                "inspect of the vault-made registry"
+                                (["open-datum", "inspect", "--key", "any"] <> tokenArgs t)
+                        outcomeOf (runReceipt inspected) `shouldBe` Just "success"
+    vaultRefusedMemberRow
+    vaultUncertainRow
+    vaultRefusalsRow
+
+-- | The passphrase the rows' vaults are sealed with.
+vaultPassphrase :: String
+vaultPassphrase = "a passphrase only the rig's vault knows"
+
+-- | The state root the vault runs use, apart from the external run's.
+vaultRoot :: FilePath
+vaultRoot = "bob-vault"
+
+-- | The rig wallet's key sealed into a vault of this name, under the rig.
+rigVault :: Rig -> String -> IO FilePath
+rigVault rig name = do
+    passphrase <-
+        either (fail . show) pure (mkPassphrase (BC.pack vaultPassphrase))
+    sealed <-
+        sealVault vaultWorkFactor passphrase (walletSignKey (rigWallet rig))
+            >>= either (fail . show) pure
+    let path = rigDir rig </> (name <> ".vault")
+    createVaultFile path sealed >>= either (fail . show) pure
+    pure path
+
+{- | A descriptor that yields this passphrase once, as a script hands it
+over; the reader closes it.
+-}
+passphraseDescriptor :: Rig -> String -> String -> IO Int
+passphraseDescriptor rig name spelling = do
+    let path = rigDir rig </> (name <> ".passphrase")
+    BC.writeFile path (BC.pack (spelling <> "\n"))
+    Fd n <- openFd path ReadOnly defaultFileFlags
+    pure (fromIntegral n)
+
+-- | The vault signer's flags.
+vaultArgs :: FilePath -> Int -> [String]
+vaultArgs vault fd = ["--vault", vault, "--passphrase-fd", show fd]
+
+-- | Every spelling of the vault's secrets: the passphrase and the key bytes.
+vaultSecrets :: Rig -> [BS.ByteString]
+vaultSecrets rig =
+    [ BC.pack vaultPassphrase
+    , raw
+    , B16.encode raw
+    ]
+  where
+    raw = rawSerialiseSignKeyDSIGN (walletSignKey (rigWallet rig))
+
+-- | No secret of the vault in the receipt, the journal or the trace of a run.
+assertNoVaultSecret :: Rig -> FilePath -> Run -> IO ()
+assertNoVaultSecret rig dir r = do
+    journalled <- BS.readFile (journalPath dir)
+    let printed = BL.toStrict (Aeson.encode (runReceipt r))
+        traced = BC.pack (show (runEvents r))
+    forM_ (vaultSecrets rig) $ \secret -> do
+        printed `shouldNotSatisfy` BS.isInfixOf secret
+        journalled `shouldNotSatisfy` BS.isInfixOf secret
+        traced `shouldNotSatisfy` BS.isInfixOf secret
+
+-- | The events a journal holds for one transaction, in order.
+memberEvents :: [JournalEntry] -> ConwayTx -> [Text]
+memberEvents entries body =
+    [journalEvent e | e <- entries, journalTxId e == txIdHex body]
+
+-- | The wallet's key file is hidden while the action runs, and restored after.
+withKeyHidden :: Rig -> IO a -> IO a
+withKeyHidden rig act = do
+    renameFile (rigKey rig) (hiddenKeyPath rig)
+    act `finally` renameFile (hiddenKeyPath rig) (rigKey rig)
+
+-- | One vault scenario: the same line run staged externally and then from the vault.
+data VaultStaging = VaultStaging
+    { vsRig :: Rig
+    , vsToken :: String
+    , vsStaged :: Run
+    -- ^ The external run: exit 19, its bundle file written
+    , vsExternal :: Either String (BS.ByteString, Bundle, [ConwayTx])
+    -- ^ The external run's bundle
+    , vsSigned :: Run
+    -- ^ The vault run over the same chain state, the key file hidden
+    , vsJournal :: [JournalEntry]
+    -- ^ The vault run's journal
+    , vsStagedWindow :: (Integer, Integer)
+    -- ^ The wall-clock milliseconds before and after the external run
+    , vsSignedWindow :: (Integer, Integer)
+    -- ^ The same for the vault run
+    , vsParams :: PParams ConwayEra
+    -- ^ The chain's protocol parameters, whose cost models the script data hash covers
+    }
+
+-- | Run a shape staged externally, then from the vault, over the same chain.
+vaultShapeStaging :: Shape -> (VaultStaging -> IO ()) -> IO ()
+vaultShapeStaging shape use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    t <- tokenOf create
+    extra <- shapeSetup shape rig t
+    case shapeFunding shape of
+        PlainFunding -> pure ()
+        TokenOnlyFunding -> tokenOnlyWallet rig
+    vaultStagingOver
+        rig
+        t
+        (shapeWords shape rig <> extra <> tokenArgs t)
+        use
+
+-- | Run a create staged externally, then from the vault, over the same chain.
+vaultCreateStaging
+    :: CreateScenario -> (VaultStaging -> IO ()) -> IO ()
+vaultCreateStaging sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> do
+    seed <-
+        if csLiveCarrier sc
+            then do
+                first' <-
+                    runAt
+                        rig
+                        "carrier"
+                        "key-file create publishing the carrier"
+                        (createWords sc <> ["--seed", T.unpack (renderOutRef (fundOutput 1))])
+                outcomeOf (runReceipt first') `shouldBe` Just "success"
+                (\s -> ["--seed", s]) <$> fundSeed2 rig
+            else pure []
+    let line = createWords sc <> seed
+    (stagedWindow, staged) <-
+        windowed (runHidden rig "staged create" line)
+    t <- case valueAt "expected" (runReceipt staged) >>= textAt "stateToken" of
+        Just token -> pure (T.unpack token)
+        Nothing -> fail "the staged create names no state token"
+    vault <- rigVault rig "bob"
+    fd <- passphraseDescriptor rig "bob" vaultPassphrase
+    (signedWindow, signed) <-
+        windowed $
+            withKeyHidden rig $
+                runAt rig vaultRoot "vault create" (line <> vaultArgs vault fd)
+    external <- readBundle (stagedBundlePath rig)
+    journal <- journalAt (stagedPartition rig vaultRoot t)
+    params <-
+        SessionIO.withLatest
+            (rawChainProvider (rigChain rig))
+            SessionIO.parameters
+    use
+        VaultStaging
+            { vsRig = rig
+            , vsToken = t
+            , vsStaged = staged
+            , vsExternal = external
+            , vsSigned = signed
+            , vsJournal = journal
+            , vsStagedWindow = stagedWindow
+            , vsSignedWindow = signedWindow
+            , vsParams = params
+            }
+
+vaultStagingOver
+    :: Rig -> String -> [String] -> (VaultStaging -> IO ()) -> IO ()
+vaultStagingOver rig t line use = do
+    (stagedWindow, staged) <- windowed (runHidden rig "staged" line)
+    vault <- rigVault rig "bob"
+    fd <- passphraseDescriptor rig "bob" vaultPassphrase
+    (signedWindow, signed) <-
+        windowed $
+            withKeyHidden rig $
+                runAt rig vaultRoot "vault" (line <> vaultArgs vault fd)
+    external <- readBundle (stagedBundlePath rig)
+    journal <- journalAt (stagedPartition rig vaultRoot t)
+    params <-
+        SessionIO.withLatest
+            (rawChainProvider (rigChain rig))
+            SessionIO.parameters
+    use
+        VaultStaging
+            { vsRig = rig
+            , vsToken = t
+            , vsStaged = staged
+            , vsExternal = external
+            , vsSigned = signed
+            , vsJournal = journal
+            , vsStagedWindow = stagedWindow
+            , vsSignedWindow = signedWindow
+            , vsParams = params
+            }
+
+-- | The rows every vault scenario owes, whichever command it runs.
+vaultShapeRows :: Shape -> SpecWith VaultStaging
+vaultShapeRows shape = do
+    it
+        "ends in success and sends the bundle, where the same line staged ends at 19"
+        $ \vs -> do
+            runExit (vsStaged vs) `shouldBe` ExitFailure 19
+            ( runExit (vsSigned vs)
+                , outcomeOf (runReceipt (vsSigned vs))
+                , textAt "reason" (runReceipt (vsSigned vs))
+                )
+                `shouldBe` (ExitSuccess, Just "success", Nothing)
+    it
+        "builds the bodies the external mode writes for the vault's address, the clock-bound fields set aside and bound to their own bodies"
+        $ \vs -> do
+            (_, _, external) <- either fail pure (vsExternal vs)
+            (_, _, signed) <- vaultBundleOf vs
+            length signed `shouldBe` shapeBodies shape
+            map (^. bodyTxL) (canonicalChain signed)
+                `shouldBe` map (^. bodyTxL) (canonicalChain external)
+            unboundFields (vsParams vs) (vsSignedWindow vs) signed `shouldBe` []
+            unboundFields (vsParams vs) (vsStagedWindow vs) external `shouldBe` []
+    unless (shapeBooks shape)
+        $ it
+            "builds exactly the bundle bytes the external mode writes when no body carries the clock"
+        $ \vs -> do
+            (bytes, _, _) <- either fail pure (vsExternal vs)
+            (signedBytes, _, _) <- vaultBundleOf vs
+            signedBytes `shouldBe` bytes
+    it
+        "sends every member in order and journals each landed after its waiting line"
+        $ \vs -> do
+            (_, _, bodies) <- vaultBundleOf vs
+            sent <- case valueAt "submissions" (runReceipt (vsSigned vs)) of
+                Just (Aeson.Array xs) -> pure (toList xs)
+                other -> fail ("no submissions: " <> show other)
+            map (textAt "identity") sent `shouldBe` map (Just . txIdHex) bodies
+            map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
+            map (memberEvents (vsJournal vs)) bodies
+                `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
+    it "states open-datum's own fields as fact, none under expected" $
+        \vs -> do
+            expected <- case valueAt "expected" (runReceipt (vsStaged vs)) of
+                Just (Aeson.Object o) -> pure o
+                other -> fail ("no expected fields on the staged run: " <> show other)
+            KeyMap.keys expected `shouldNotBe` []
+            valueAt "expected" (runReceipt (vsSigned vs)) `shouldBe` Nothing
+            forM_ (KeyMap.keys expected) $ \k ->
+                valueAt k (runReceipt (vsSigned vs)) `shouldNotBe` Nothing
+    unless (null (shapeOwnDone shape)) $
+        it "narrates open-datum's own done events once the bundle has landed" $
+            \vs -> do
+                ownDone shape (runEvents (vsStaged vs)) `shouldBe` []
+                nub (ownDone shape (runEvents (vsSigned vs)))
+                    `shouldMatchList` shapeOwnDone shape
+    it "opens no key file and carries no secret of the vault anywhere" $
+        \vs -> do
+            doesFileExist (rigKey (vsRig vs)) `shouldReturn` True
+            assertNoVaultSecret
+                (vsRig vs)
+                (stagedPartition (vsRig vs) vaultRoot (vsToken vs))
+                (vsSigned vs)
+
+-- | The bundle the vault run saved beside its journal, read as the receipt names it.
+vaultBundleOf
+    :: VaultStaging -> IO (BS.ByteString, Bundle, [ConwayTx])
+vaultBundleOf vs = do
+    h <-
+        maybe
+            (fail "no bundle hash in the vault receipt")
+            pure
+            (valueAt "bundle" (runReceipt (vsSigned vs)) >>= textAt "hash")
+    found <-
+        readBundle
+            ( bodiesDir (stagedPartition (vsRig vs) vaultRoot (vsToken vs))
+                </> ("bundle-" <> T.unpack h <> ".bundle")
+            )
+    either fail pure found
+
+-- | Whether a shape's chain holds a booking, whose request datum reads the clock.
+shapeBooks :: Shape -> Bool
+shapeBooks shape = shapeCommand shape `notElem` ["update", "fold"]
+
+-- | A registry with the insert line over it, ready for a vault run.
+vaultInsertRig :: Rig -> IO String
+vaultInsertRig rig = do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    tokenOf create
+
+{- | The command's own fields as the external mode's staged receipt of this
+line states them under @expected@, read from a run of the line, never typed.
+-}
+stagedExpectedKeys :: Rig -> String -> [String] -> IO [Aeson.Key]
+stagedExpectedKeys rig label line = do
+    staged <- runHidden rig label line
+    runExit staged `shouldBe` ExitFailure 19
+    case valueAt "expected" (runReceipt staged) of
+        Just (Aeson.Object o) | not (KeyMap.null o) -> pure (KeyMap.keys o)
+        other ->
+            fail
+                ("the staged reference states no fields under expected: " <> show other)
+
+{- | What a vault run whose bundle has not landed states of the command: its
+own fields under @expected@, exactly the set the external mode's staged
+receipt of the same line carries, each present and not null, and none of
+them at the top level.
+-}
+assertNotLandedStatesOnlyExpected :: [Aeson.Key] -> Run -> Expectation
+assertNotLandedStatesOnlyExpected reference r = do
+    reference `shouldNotBe` []
+    expected <- case valueAt "expected" (runReceipt r) of
+        Just (Aeson.Object o) -> pure o
+        other ->
+            fail
+                ( "expected is not an object of the command's own fields: "
+                    <> show other
+                )
+    sort (KeyMap.keys expected) `shouldBe` sort reference
+    forM_ (KeyMap.toList expected) $ \(k, v) ->
+        (k, v == Aeson.Null) `shouldBe` (k, False)
+    forM_ reference $ \k ->
+        (k, valueAt k (runReceipt r)) `shouldBe` (k, Nothing)
+
+vaultRefusedMemberRow :: Spec
+vaultRefusedMemberRow =
+    it
+        "a node refusal of a member journals the bundle dead and ends as a ledger refusal naming the members that went through"
+        $ withRig
+        $ \rig -> do
+            t <- vaultInsertRig rig
+            vault <- rigVault rig "bob"
+            fd <- passphraseDescriptor rig "bob" vaultPassphrase
+            ownFields <-
+                stagedExpectedKeys
+                    rig
+                    "reference staged insert with the fold"
+                    (insertWords rig <> ["--fold"] <> tokenArgs t)
+            writeIORef
+                (rigAnswer rig)
+                (Just (Cage.SubmitRefused "the booking's inputs are gone"))
+            signed <-
+                withKeyHidden rig $
+                    runAt
+                        rig
+                        vaultRoot
+                        "vault insert refused by the node"
+                        (insertWords rig <> ["--fold"] <> tokenArgs t <> vaultArgs vault fd)
+            runExit signed `shouldBe` ExitFailure 11
+            outcomeOf (runReceipt signed) `shouldBe` Just "ledger-refusal"
+            fromMaybe "" (textAt "reason" (runReceipt signed))
+                `shouldSatisfy` T.isInfixOf "the booking's inputs are gone"
+            identitiesIn "wentThrough" (runReceipt signed) `shouldBe` Just []
+            assertNotLandedStatesOnlyExpected ownFields signed
+            entries <- journalAt (stagedPartition rig vaultRoot t)
+            [ journalEvent e
+              | e <- entries
+              , journalEvent e `elem` ["landed", "dead"]
+              ]
+                `shouldBe` ["dead", "dead"]
+            -- the refused member names the node's answer; the others die with it
+            case [journalDetail e | e <- entries, journalEvent e == "dead"] of
+                refused : others -> do
+                    refused
+                        `shouldSatisfy` maybe False (T.isPrefixOf "refused by the node")
+                    others `shouldSatisfy` notElem Nothing
+                [] -> expectationFailure "no member was journalled dead"
+            assertNoVaultSecret rig (stagedPartition rig vaultRoot t) signed
+
+-- | The identities in a receipt's list field.
+identitiesIn :: Aeson.Key -> Aeson.Value -> Maybe [Text]
+identitiesIn k v = case valueAt k v of
+    Just (Aeson.Array xs) -> Just [x | Aeson.String x <- toList xs]
+    _ -> Nothing
+
+vaultUncertainRow :: Spec
+vaultUncertainRow =
+    it
+        "an uncertain answer ends the vault run partial with its fields under expected, and the next open-datum write stops on the bundle at 19"
+        $ withRig
+        $ \rig -> do
+            t <- vaultInsertRig rig
+            vault <- rigVault rig "bob"
+            fd <- passphraseDescriptor rig "bob" vaultPassphrase
+            ownFields <-
+                stagedExpectedKeys
+                    rig
+                    "reference staged insert"
+                    (insertWords rig <> tokenArgs t)
+            writeIORef
+                (rigAnswer rig)
+                (Just (Cage.SubmitFailed "the node did not answer"))
+            signed <-
+                withKeyHidden rig $
+                    runAt
+                        rig
+                        vaultRoot
+                        "vault insert whose answer was lost"
+                        (insertWords rig <> tokenArgs t <> vaultArgs vault fd)
+            runExit signed `shouldBe` ExitFailure 15
+            outcomeOf (runReceipt signed) `shouldBe` Just "partial"
+            assertNotLandedStatesOnlyExpected ownFields signed
+            next <-
+                runAt
+                    rig
+                    vaultRoot
+                    "the next write of the same wallet"
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "bob-2"
+                      , "--payload"
+                      , payload2Of rig
+                      ]
+                        <> tokenArgs t
+                    )
+            runExit next `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt next) `shouldBe` Just "waiting-for-signatures"
+            assertNoVaultSecret rig (stagedPartition rig vaultRoot t) signed
+
+vaultRefusalsRow :: Spec
+vaultRefusalsRow =
+    it
+        "a wrong passphrase or an unreadable vault is refused alike, naming the vault, before the blueprint, the chain or the state directory is touched"
+        $ withRig
+        $ \rig -> do
+            t <- vaultInsertRig rig
+            vault <- rigVault rig "bob"
+            let absent = rigDir rig </> "absent.vault"
+                blind =
+                    (envOf rig)
+                        { envReads = \_ _ -> fail "read"
+                        , envWrites = \_ _ -> fail "read"
+                        , envLoadRelease = \_ _ -> pure (Left "the blueprint cannot be loaded")
+                        }
+            wrong <- passphraseDescriptor rig "wrong" "not the passphrase"
+            fd <- passphraseDescriptor rig "missing" vaultPassphrase
+            forM_
+                [ ("wrong passphrase", vault, wrong)
+                , ("unreadable vault", absent, fd)
+                ]
+                $ \(label, named, descriptor) -> do
+                    r <-
+                        runVia
+                            rig
+                            blind
+                            "never-made"
+                            ("vault " <> label)
+                            (insertWords rig <> tokenArgs t <> vaultArgs named descriptor)
+                    runExit r `shouldBe` ExitFailure 10
+                    outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+                    fromMaybe "" (textAt "reason" (runReceipt r))
+                        `shouldSatisfy` T.isInfixOf (T.pack named)
+                    fromMaybe "" (textAt "reason" (runReceipt r))
+                        `shouldNotSatisfy` T.isInfixOf "blueprint"
+            doesPathExist (rigDir rig </> "never-made") `shouldReturn` False

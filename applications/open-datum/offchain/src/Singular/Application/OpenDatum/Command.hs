@@ -465,6 +465,15 @@ parseOpenDatumWithGroup group environment args = do
     inspectArgs env flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left SigningKeyNotAccepted
+        forM_ ["--vault", "--passphrase-fd"] $ \flag ->
+            when (isJust (lookup flag flags)) $
+                Left
+                    ( BadValue
+                        flag
+                        ( "is not accepted by open-datum inspect: it reads, and takes the "
+                            <> "address only to locate a journal"
+                        )
+                    )
         when (isJust (lookup "--bundle" flags)) $
             Left
                 ( BadValue
@@ -495,6 +504,13 @@ parseOpenDatumWithGroup group environment args = do
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
+        forM_ ["--vault", "--passphrase-fd"] $ \flag ->
+            when (isJust (lookup flag flags)) $
+                Left
+                    ( BadValue
+                        flag
+                        "cannot be used with --preview: a preview signs and writes nothing"
+                    )
         when (isJust (lookup "--bundle" flags)) $
             Left
                 ( BadValue
@@ -611,6 +627,9 @@ openDatumUsage =
         , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
         , "  open-datum create --preview [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
@@ -623,6 +642,11 @@ openDatumUsage =
         , "      --state-token POLICY.NAME"
         , "      --payload DATUM_JSON [--deposit LOVELACE]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
+        , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --payload DATUM_JSON [--deposit LOVELACE]"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  open-datum insert --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
@@ -639,6 +663,11 @@ openDatumUsage =
         , "      --payload DATUM_JSON"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  open-datum update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --payload DATUM_JSON"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  open-datum update --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
@@ -652,6 +681,10 @@ openDatumUsage =
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
+        , "  open-datum terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
         , "  open-datum terminate --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      (--key KEY | --key-hex HEX)"
@@ -664,6 +697,10 @@ openDatumUsage =
         , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  open-datum inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"

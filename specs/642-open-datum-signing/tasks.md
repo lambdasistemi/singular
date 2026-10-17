@@ -13,7 +13,7 @@
 
 ## Slice: vault mode
 
-- [ ] open-datum-vault-writes: the five writes with the vault land, one passphrase, receipts as fact once landed; the usage lines and the settings table.
+- [x] open-datum-vault-writes: the five writes with the vault land, one passphrase, receipts as fact once landed; the usage lines and the settings table.
 
 ## Pull request 2: Demo 1 on the devnet
 
