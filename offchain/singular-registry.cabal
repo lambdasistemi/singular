@@ -161,6 +161,7 @@ library
     Singular.Registry.TxBuilder.Update.Build
     Singular.Registry.TxBuilder.Update.Context
     Singular.Registry.TxBuilder.Update.Duties
+    Singular.Registry.Wire.Booking
     Singular.Registry.Wire.Primitive
     Singular.Registry.Wire.Proof
     Singular.Registry.Wire.Redeemer
@@ -1032,6 +1033,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.PublicationFundingSpec
+    Singular.Registry.TxBuilder.RegistrationBookingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec

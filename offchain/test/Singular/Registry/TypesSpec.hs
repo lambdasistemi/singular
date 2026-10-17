@@ -100,6 +100,20 @@ genRequest =
         <*> genNonNeg
         <*> genDestination
 
+genRegistrationRequest :: Gen OnChainRegistrationRequest
+genRegistrationRequest =
+    OnChainRegistrationRequest
+        <$> genTokenId
+        <*> genBS
+        <*> genBBS28
+        <*> genBS
+        <*> oneof [pure Nothing, Just . B <$> genBS]
+        <*> genNonNeg
+        <*> genNonNeg
+        <*> genNonNeg
+        <*> genNonNeg
+        <*> genNonNeg
+
 {- | The destination a request names: its address and the datum the receiving
 output must carry, or none (#419).
 -}
@@ -117,6 +131,9 @@ genTokenState =
         <*> genBBS28
         <*> genBBS28
         <*> genBBS28
+        <*> genNonNeg
+        <*> genNonNeg
+        <*> genBBS28
 
 genCageDatum :: Gen CageDatum
 genCageDatum =
@@ -124,6 +141,7 @@ genCageDatum =
         [ RequestDatum <$> genRequest
         , StateDatum <$> genTokenState
         , AbsentCustody <$> genBS
+        , RegistrationDatum <$> genRegistrationRequest
         ]
 
 genMigration :: Gen Migration
@@ -257,6 +275,9 @@ fixedState =
         , stateActivePolicy = BuiltinByteString "active-policy-bytes"
         , stateAbsentPolicy = BuiltinByteString "absent-policy-bytes"
         , stateTerminalPolicy = BuiltinByteString "terminal-policy-bytes"
+        , stateRegistrationCost = 2000000
+        , stateBookingWidth = 10000
+        , stateRequestPolicy = BuiltinByteString "request-policy-bytes"
         }
 
 fixedStateWire :: Data
@@ -271,6 +292,9 @@ fixedStateWire =
         , B "active-policy-bytes"
         , B "absent-policy-bytes"
         , B "terminal-policy-bytes"
+        , I 2000000
+        , I 10000
+        , B "request-policy-bytes"
         ]
 
 -- ---------------------------------------------------------
@@ -421,7 +445,7 @@ spec = do
         it "roundtrips via ToData/FromData" $
             property $
                 forAll genTokenState roundtrips
-        it "encodes the eight-field state in Aiken field order" $ do
+        it "encodes the eleven-field state in Aiken field order" $ do
             let state =
                     OnChainTokenState
                         { stateRoot =
@@ -442,6 +466,11 @@ spec = do
                         , stateTerminalPolicy =
                             BuiltinByteString $
                                 BS.replicate 28 0xc0
+                        , stateRegistrationCost = 2000000
+                        , stateBookingWidth = 10000
+                        , stateRequestPolicy =
+                            BuiltinByteString $
+                                BS.replicate 28 0xe0
                         }
                 BuiltinData datum = toBuiltinData state
             datum
@@ -455,6 +484,9 @@ spec = do
                     , B $ BS.replicate 28 0xaa
                     , B $ BS.replicate 28 0xb0
                     , B $ BS.replicate 28 0xc0
+                    , I 2000000
+                    , I 10000
+                    , B $ BS.replicate 28 0xe0
                     ]
         it "each policy accessor unwraps its own field's bytes" $ do
             stateAppPolicyBytes fixedState
@@ -465,6 +497,8 @@ spec = do
                 `shouldBe` "absent-policy-bytes"
             stateTerminalPolicyBytes fixedState
                 `shouldBe` "terminal-policy-bytes"
+            stateRequestPolicyBytes fixedState
+                `shouldBe` "request-policy-bytes"
 
     describe "CageDatum" $ do
         it "roundtrips via ToData/FromData" $
@@ -604,7 +638,7 @@ spec = do
         it "reads the seven-field request back from its hand-typed wire" $
             unsafeFromBuiltinData (BuiltinData fixedRequestWire)
                 `shouldBe` fixedRequest
-        it "reads the eight-field state back from its hand-typed wire" $
+        it "reads the eleven-field state back from its hand-typed wire" $
             unsafeFromBuiltinData (BuiltinData fixedStateWire)
                 `shouldBe` fixedState
         it "reads a request datum back from its hand-typed wire" $

@@ -158,10 +158,13 @@ cageConfigFor dep parts = do
                     , defaultProcessTime = depProcessTime dep
                     , defaultRetractTime = depRetractTime dep
                     , defaultTip = Coin (depTip dep)
+                    , defaultRegistrationCost = Coin (depRegistrationCost dep)
+                    , defaultBookingWidth = depBookingWidth dep
                     , cfgApplicationPolicy = partsApplicationPolicy parts
                     , cfgActivePolicy = partsActivePolicy parts
                     , cfgAbsentPolicy = partsAbsentPolicy parts
                     , cfgTerminalPolicy = partsTerminalPolicy parts
+                    , cfgRequestPolicy = SBS.empty
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }

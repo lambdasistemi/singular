@@ -17,6 +17,7 @@ module Singular.Registry.Wire.State
     , stateAppPolicyBytes
     , stateAbsentPolicyBytes
     , stateTerminalPolicyBytes
+    , stateRequestPolicyBytes
 
       -- * Cage datum
     , CageDatum (..)
@@ -42,7 +43,8 @@ import Singular.Registry.Wire.Primitive
     , unD
     )
 import Singular.Registry.Wire.Request
-    ( OnChainRequest (..)
+    ( OnChainRegistrationRequest (..)
+    , OnChainRequest (..)
     )
 
 {- | On-chain token state. Matches Aiken @types\/State@ (#157 state-datum-fields: eight
@@ -79,6 +81,18 @@ data OnChainTokenState = OnChainTokenState
     {- ^ The policy that mints the TERMINAL token: a name is over,
     forever.
     -}
+    , stateRegistrationCost :: !Integer
+    {- ^ The registration cost (lovelace) every booking declares, pinned at
+    genesis and preserved by every fold.
+    -}
+    , stateBookingWidth :: !Integer
+    {- ^ The widest booking validity interval (ms), pinned at genesis and
+    preserved by every fold.
+    -}
+    , stateRequestPolicy :: !BuiltinByteString
+    {- ^ The applied request validator hash (28 bytes): the one policy that
+    may book a registration for this registry.
+    -}
     }
     deriving stock (Show, Eq)
 
@@ -106,6 +120,11 @@ stateTerminalPolicyBytes :: OnChainTokenState -> ByteString
 stateTerminalPolicyBytes st = case stateTerminalPolicy st of
     BuiltinByteString bs -> bs
 
+-- | The request policy as plain bytes (the booking policy this registry pins).
+stateRequestPolicyBytes :: OnChainTokenState -> ByteString
+stateRequestPolicyBytes st = case stateRequestPolicy st of
+    BuiltinByteString bs -> bs
+
 {- | Cage datum: either a pending request or a token
 state. Matches Aiken @types\/CageDatum@.
 -}
@@ -120,6 +139,10 @@ data CageDatum
       non-ADA asset carried by the output.
       -}
       AbsentCustody !ByteString
+    | {- | A booked registration (Constr 3, appended): the authenticated
+      request the request policy minted its two tags for.
+      -}
+      RegistrationDatum !OnChainRegistrationRequest
     deriving stock (Show, Eq)
 
 -- ---------------------------------------------------------
@@ -152,6 +175,9 @@ instance FromData OnChainTokenState where
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
+            let stateRegistrationCost = 0
+                stateBookingWidth = 0
+                stateRequestPolicy = BuiltinByteString mempty
             Just OnChainTokenState{..}
         _ -> Nothing
 
@@ -170,6 +196,9 @@ instance UnsafeFromData OnChainTokenState where
                         , stateActivePolicy = activeP
                         , stateAbsentPolicy = absentP
                         , stateTerminalPolicy = terminalP
+                        , stateRegistrationCost = 0
+                        , stateBookingWidth = 0
+                        , stateRequestPolicy = BuiltinByteString mempty
                         }
                 _ ->
                     error
@@ -190,6 +219,8 @@ instance ToData CageDatum where
     toBuiltinData (AbsentCustody refund) =
         mkD $
             Constr 2 [bsToD refund]
+    toBuiltinData (RegistrationDatum _) =
+        error "RegistrationDatum: encoding is not implemented"
 
 instance FromData CageDatum where
     fromBuiltinData bd = case unD bd of
@@ -212,4 +243,6 @@ instance UnsafeFromData CageDatum where
             StateDatum $
                 unsafeFromBuiltinData (mkD d)
         Constr 2 [B refund] -> AbsentCustody refund
+        Constr 3 [_] ->
+            error "RegistrationDatum: decoding is not implemented"
         _ -> error "unsafeFromBuiltinData: CageDatum"

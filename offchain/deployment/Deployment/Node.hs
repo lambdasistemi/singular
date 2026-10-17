@@ -154,6 +154,8 @@ bootRegistry wallet prov caps unbound txs processTime retractTime = do
                     , defaultProcessTime = processTime
                     , defaultRetractTime = retractTime
                     , defaultTip = Coin 1_000_000
+                    , defaultRegistrationCost = Coin 0
+                    , defaultBookingWidth = 60_000
                     , -- #157 genesis-policy-pins: the four pins the boot datum carries come
                       -- from the one derivation `partsOf` performs, so the
                       -- manifest, the config and the state datum cannot drift
@@ -162,6 +164,7 @@ bootRegistry wallet prov caps unbound txs processTime retractTime = do
                     , cfgActivePolicy = partsActivePolicy parts
                     , cfgAbsentPolicy = partsAbsentPolicy parts
                     , cfgTerminalPolicy = partsTerminalPolicy parts
+                    , cfgRequestPolicy = mempty
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }

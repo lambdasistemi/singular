@@ -37,6 +37,7 @@ module Singular.Registry.Types
     , requestPhase
     , OnChainRoot (..)
     , OnChainRequest (..)
+    , OnChainRegistrationRequest (..)
     , RequestDestination
     , OnChainTokenState (..)
     , OnChainTxOutRef (..)
@@ -50,11 +51,20 @@ module Singular.Registry.Types
     , stateAppPolicyBytes
     , stateAbsentPolicyBytes
     , stateTerminalPolicyBytes
+    , stateRequestPolicyBytes
+
+      -- * Registration booking tag names
+    , applicationTagName
+    , trieReadyTagName
 
       -- * Pinned-hook consumer redeemer (NOTE-021)
     , ConsumerRedeemer (..)
     ) where
 
+import Singular.Registry.Wire.Booking
+    ( applicationTagName
+    , trieReadyTagName
+    )
 import Singular.Registry.Wire.Primitive
     ( OnChainRoot (..)
     , OnChainTokenId (..)
@@ -73,6 +83,7 @@ import Singular.Registry.Wire.Redeemer
     )
 import Singular.Registry.Wire.Request
     ( Edge
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
     , RequestDestination
     , RequestPhase (..)
@@ -92,5 +103,6 @@ import Singular.Registry.Wire.State
     , stateAbsentPolicyBytes
     , stateActivePolicyBytes
     , stateAppPolicyBytes
+    , stateRequestPolicyBytes
     , stateTerminalPolicyBytes
     )

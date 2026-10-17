@@ -491,6 +491,10 @@ datumEncodingVectors =
                     BuiltinByteString $ BS.replicate 28 0xb0
                 , stateTerminalPolicy =
                     BuiltinByteString $ BS.replicate 28 0xc0
+                , stateRegistrationCost = 2000000
+                , stateBookingWidth = 10000
+                , stateRequestPolicy =
+                    BuiltinByteString $ BS.replicate 28 0xe0
                 }
       in  Aeson.object
             [ "description" .= txt "StateDatum encoding"

@@ -400,6 +400,8 @@ econ =
         { reProcessTime = 600_000
         , reRetractTime = 300_000
         , reTip = Coin 1_000_000
+        , reRegistrationCost = Coin 2_000_000
+        , reBookingWidth = 10_000
         }
 
 cfgOpen :: CageConfig

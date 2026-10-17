@@ -44,6 +44,7 @@ module Singular.Registry.TxBuilder.Internal
     , cagePolicyIdFromCfg
     , cageAddrFromCfg
     , requestAddrFromCfg
+    , requestPolicyHash
     , onChainTokenId
 
       -- * Datum helpers
@@ -144,6 +145,7 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , onChainTokenId
     , policyIdFromPin
     , requestAddrFromCfg
+    , requestPolicyHash
     , scriptFromBytes
     , scriptHashBytes
     , toLedgerData

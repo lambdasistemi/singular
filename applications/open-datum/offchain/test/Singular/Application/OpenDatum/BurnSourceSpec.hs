@@ -218,10 +218,13 @@ cfg =
         , defaultProcessTime = 30000
         , defaultRetractTime = 30000
         , defaultTip = Coin 1000000
+        , defaultRegistrationCost = Coin 2000000
+        , defaultBookingWidth = 10000
         , cfgApplicationPolicy = pin 0xa1
         , cfgActivePolicy = witnessPin 1
         , cfgAbsentPolicy = witnessPin 0
         , cfgTerminalPolicy = witnessPin 2
+        , cfgRequestPolicy = pin 0xe1
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -243,6 +246,10 @@ tokenState =
         , stateAbsentPolicy = toBuiltin (SBS.fromShort (cfgAbsentPolicy cfg))
         , stateTerminalPolicy =
             toBuiltin (SBS.fromShort (cfgTerminalPolicy cfg))
+        , stateRegistrationCost = 2000000
+        , stateBookingWidth = 10000
+        , stateRequestPolicy =
+            toBuiltin (SBS.fromShort (cfgRequestPolicy cfg))
         }
 
 requestIn :: TxIn

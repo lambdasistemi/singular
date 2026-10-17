@@ -52,6 +52,7 @@ import Singular.Registry.TxBuilder.BootSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.PrepareSpec qualified
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
+import Singular.Registry.TxBuilder.RegistrationBookingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
@@ -99,6 +100,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.PublicationFunding" [Builders])
         Singular.Registry.TxBuilder.PublicationFundingSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.RegistrationBooking" [Builders])
+        Singular.Registry.TxBuilder.RegistrationBookingSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.SelectedFold" [Builders])
         Singular.Registry.TxBuilder.SelectedFoldSpec.spec

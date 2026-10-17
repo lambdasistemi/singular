@@ -126,6 +126,7 @@ import Singular.Registry.Types
     , stateAbsentPolicyBytes
     , stateActivePolicyBytes
     , stateAppPolicyBytes
+    , stateRequestPolicyBytes
     , stateTerminalPolicyBytes
     )
 
@@ -252,6 +253,7 @@ data PinField
     | PinActive
     | PinAbsent
     | PinTerminal
+    | PinRequest
     deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 -- | A registry exists only once every identity check has passed.
@@ -337,6 +339,8 @@ resolveRegistry app release token@(PolicyID policy, AssetName name) session =
                         { reProcessTime = stateProcessTime datum
                         , reRetractTime = stateRetractTime datum
                         , reTip = Coin (stateMaxFee datum)
+                        , reRegistrationCost = Coin (stateRegistrationCost datum)
+                        , reBookingWidth = stateBookingWidth datum
                         }
                     Ledger.Testnet
                     (txInToRef seed)
@@ -363,7 +367,7 @@ resolveRegistry app release token@(PolicyID policy, AssetName name) session =
     -- always, the application pin only for a script pin.
     checkFields = case appPin app of
         PinByScript _ -> [minBound .. maxBound]
-        _ -> [PinActive, PinAbsent, PinTerminal]
+        _ -> [PinActive, PinAbsent, PinTerminal, PinRequest]
     derivesName input = deriveAssetName (txInToRef input) == SBS.fromShort name
     readFact action =
         ExceptT
@@ -523,6 +527,7 @@ pinName = \case
     PinActive -> "active"
     PinAbsent -> "absent"
     PinTerminal -> "terminal"
+    PinRequest -> "request"
 
 -- | The pin a state datum carries.
 datumPin :: PinField -> OnChainTokenState -> ByteString
@@ -531,6 +536,7 @@ datumPin = \case
     PinActive -> stateActivePolicyBytes
     PinAbsent -> stateAbsentPolicyBytes
     PinTerminal -> stateTerminalPolicyBytes
+    PinRequest -> stateRequestPolicyBytes
 
 -- | The pin a configuration derives.
 configPin :: PinField -> CageConfig -> SBS.ShortByteString
@@ -539,6 +545,7 @@ configPin = \case
     PinActive -> cfgActivePolicy
     PinAbsent -> cfgAbsentPolicy
     PinTerminal -> cfgTerminalPolicy
+    PinRequest -> cfgRequestPolicy
 
 -- | The ledger network a provider's magic names: mainnet's, or a test network.
 ledgerNetwork :: Network -> Ledger.Network

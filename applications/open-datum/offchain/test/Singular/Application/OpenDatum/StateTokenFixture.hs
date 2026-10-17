@@ -136,6 +136,8 @@ bootEconomics =
         { reProcessTime = 777_000
         , reRetractTime = 333_000
         , reTip = Coin 3_000_000
+        , reRegistrationCost = Coin 2_500_000
+        , reBookingWidth = 20_000
         }
 
 bootCfg :: CageConfig

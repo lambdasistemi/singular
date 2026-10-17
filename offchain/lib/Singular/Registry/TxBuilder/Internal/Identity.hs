@@ -28,6 +28,7 @@ module Singular.Registry.TxBuilder.Internal.Identity
     , cageAddrFromCfg
     , requestAddrFromCfg
     , onChainTokenId
+    , requestPolicyHash
 
       -- * Datum helpers
     , mkRequestDatum
@@ -207,10 +208,32 @@ requestAddrFromCfg cfg tid net =
     Addr
         net
         ( ScriptHashObj $
-            computeScriptHash
-                (requestScriptBytesFromCfg cfg tid)
+            requestPolicyHash
+                (cfgScriptHash cfg)
+                (requestScriptBytes cfg)
+                (onChainTokenId tid)
         )
         StakeRefNull
+
+{- | The applied hash of the request validator for one registry: the
+unapplied request script after @(state policy, registry token)@. This is the
+one derivation of a registry's request policy. The configuration pin, the
+deployment attachment and the request address all call it, so the pin the
+state carries, the policy the booking mints under and the address the
+request sits at are one value. The unapplied blueprint hash is the same for
+every registry and is never the pin.
+-}
+requestPolicyHash
+    :: ScriptHash
+    -- ^ The state policy (the state script hash)
+    -> SBS.ShortByteString
+    -- ^ The unapplied request script bytes
+    -> OnChainTokenId
+    -- ^ The registry token
+    -> ScriptHash
+requestPolicyHash stateHash requestBytes token =
+    computeScriptHash $
+        applyRequestParams (scriptHashBytes stateHash) token requestBytes
 
 -- | Convert a ledger token id to its on-chain token id.
 onChainTokenId :: TokenId -> OnChainTokenId

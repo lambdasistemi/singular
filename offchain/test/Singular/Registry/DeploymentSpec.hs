@@ -47,6 +47,7 @@ import Test.Hspec
 
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.KeyMap qualified as KeyMap
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx.Out
@@ -70,6 +71,7 @@ import UntypedPlutusCore qualified as UPLC
 import MPF.Backend.Pure (MPFInMemoryDB (..))
 
 import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (applyRequestParams)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
@@ -95,6 +97,7 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRoot (..)
+    , OnChainTokenId (..)
     , OnChainTokenState (..)
     , OnChainTxOutRef (..)
     )
@@ -323,6 +326,12 @@ spec = do
                                 <> " ms, retract "
                                 <> show (depRetractTime manifest)
                                 <> " ms"
+                           , "registry state carries the recorded booking pins: registration cost "
+                                <> show (depRegistrationCost manifest)
+                                <> " lovelace, booking width "
+                                <> show (depBookingWidth manifest)
+                                <> " ms, request policy 0x"
+                                <> BC.unpack (B16.encode (SBS.fromShort requestPolicyPin))
                            ]
                     <> [ "reference script "
                             <> T.unpack (refRole r)
@@ -359,6 +368,54 @@ spec = do
             verifyDeployment prov manifest parts
                 `shouldThrow` refusalContaining
                     "does not configure this registry-bound representative policy"
+
+    describe "RegistrationBooking pins in a deployment" $ do
+        it
+            "attaches with the cost, width and request policy the manifest records"
+            $ do
+                case cageConfigFor manifest parts of
+                    Left refusal -> expectationFailure refusal
+                    Right c ->
+                        ( defaultRegistrationCost c
+                        , defaultBookingWidth c
+                        , cfgRequestPolicy c
+                        )
+                            `shouldBe` ( Coin (depRegistrationCost manifest)
+                                       , depBookingWidth manifest
+                                       , requestPolicyPin
+                                       )
+        it "refuses a live state whose registration cost disagrees" $ do
+            (_, prov) <-
+                providerServing
+                    (servingState agreeingState{stateRegistrationCost = 3_000_001})
+            verifyDeployment prov manifest parts
+                `shouldThrow` refusalContaining
+                    "the live registry state carries booking pins"
+        it "refuses a live state whose booking width disagrees" $ do
+            (_, prov) <-
+                providerServing
+                    (servingState agreeingState{stateBookingWidth = 20_001})
+            verifyDeployment prov manifest parts
+                `shouldThrow` refusalContaining
+                    "the live registry state carries booking pins"
+        it "refuses a live state pinning another request policy" $ do
+            (_, prov) <-
+                providerServing
+                    ( servingState
+                        agreeingState
+                            { stateRequestPolicy =
+                                BuiltinByteString (BS.replicate 28 0xEE)
+                            }
+                    )
+            verifyDeployment prov manifest parts
+                `shouldThrow` refusalContaining
+                    "the live registry state carries booking pins"
+        it "refuses a manifest without a registration cost" $
+            Aeson.eitherDecode (Aeson.encode (withoutKey "depRegistrationCost"))
+                `shouldSatisfy` isMissing "depRegistrationCost"
+        it "refuses a manifest without a booking width" $
+            Aeson.eitherDecode (Aeson.encode (withoutKey "depBookingWidth"))
+                `shouldSatisfy` isMissing "depBookingWidth"
 
 -- ---------------------------------------------------------
 -- The manifest fixture
@@ -397,6 +454,23 @@ terminalProgram = lambdas 6
 consumerProgram = lambdas 7
 custodyProgram = lambdas 9
 otherProgram = lambdas 8
+
+{- | The request policy the fixture registry pins, assembled here from
+primitives: the request program applied to the state policy and the registry
+token the seed determines, then hashed. It is compared with what the
+production derivation answers; it does not call it.
+-}
+requestPolicyPin :: SBS.ShortByteString
+requestPolicyPin =
+    SBS.toShort $
+        scriptHashBytes $
+            computeScriptHash $
+                applyRequestParams
+                    (scriptHashBytes (computeScriptHash stateProgram))
+                    ( OnChainTokenId $
+                        BuiltinByteString (deriveAssetName (txInToRef seedIn))
+                    )
+                    requestProgram
 
 toHex :: ByteString -> String
 toHex = BC.unpack . B16.encode
@@ -482,6 +556,8 @@ manifest =
         , depProcessTime = 30_000
         , depRetractTime = 60_000
         , depTip = 2_000_000
+        , depRegistrationCost = 3_000_000
+        , depBookingWidth = 20_000
         , depReferenceScripts =
             [ refScriptOf "state" refAddr1 refIn1 stateProgram
             , refScriptOf "request" refAddr2 refIn2 requestProgram
@@ -535,10 +611,13 @@ fixtureCfg =
         , defaultProcessTime = 30_000
         , defaultRetractTime = 60_000
         , defaultTip = Coin 2_000_000
+        , defaultRegistrationCost = Coin 3_000_000
+        , defaultBookingWidth = 20_000
         , cfgApplicationPolicy = applicationProgram
         , cfgActivePolicy = activeProgram
         , cfgAbsentPolicy = absentProgram
         , cfgTerminalPolicy = terminalProgram
+        , cfgRequestPolicy = requestPolicyPin
         , cfgConsumerScript = consumerProgram
         , network = Testnet
         }
@@ -558,6 +637,7 @@ cfgOf
        , SBS.ShortByteString
        , SBS.ShortByteString
        , SBS.ShortByteString
+       , (Integer, Integer, SBS.ShortByteString)
        , Network
        )
 cfgOf c =
@@ -573,6 +653,11 @@ cfgOf c =
     , cfgAbsentPolicy c
     , cfgTerminalPolicy c
     , cfgConsumerScript c
+    ,
+        ( let Coin n = defaultRegistrationCost c in n
+        , defaultBookingWidth c
+        , cfgRequestPolicy c
+        )
     , network c
     )
 
@@ -592,6 +677,8 @@ expectedManifestValue =
         , "depProcessTime" Aeson..= (30_000 :: Integer)
         , "depRetractTime" Aeson..= (60_000 :: Integer)
         , "depTip" Aeson..= (2_000_000 :: Integer)
+        , "depRegistrationCost" Aeson..= (3_000_000 :: Integer)
+        , "depBookingWidth" Aeson..= (20_000 :: Integer)
         , "depBootstrapTxs"
             Aeson..= [ T.pack (toHex (BS.replicate 32 1))
                      , T.pack (toHex (BS.replicate 32 2))
@@ -680,6 +767,10 @@ agreeingState =
         , stateAbsentPolicy = BuiltinByteString (SBS.fromShort absentProgram)
         , stateTerminalPolicy =
             BuiltinByteString (SBS.fromShort terminalProgram)
+        , stateRegistrationCost = 3_000_000
+        , stateBookingWidth = 20_000
+        , stateRequestPolicy =
+            BuiltinByteString (SBS.fromShort requestPolicyPin)
         }
 
 stateUtxo :: (TxIn, TxOut ConwayEra)
@@ -807,3 +898,13 @@ under the first.
 movedState, movedRequest :: (TxIn, TxOut ConwayEra)
 movedState = (outRefOf 'c' 1, publishedAt refAddr2 stateProgram 7_000_000)
 movedRequest = (outRefOf 'd' 2, publishedAt refAddr1 requestProgram 8_000_000)
+
+-- | The expected manifest as JSON with one key removed.
+withoutKey :: Aeson.Key -> Aeson.Value
+withoutKey key = case expectedManifestValue of
+    Aeson.Object o -> Aeson.Object (KeyMap.delete key o)
+    other -> other
+
+-- | A decoding that failed by naming the missing key.
+isMissing :: String -> Either String Deployment -> Bool
+isMissing key = either (isInfixOf key) (const False)
