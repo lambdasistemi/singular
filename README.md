@@ -16,7 +16,7 @@ A permissionless registry on Cardano for unique identities and independent appli
 
 **A resolver** wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.
 
-**An integrator with their own node** wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. [Run against your own preprod node](docs/consumer-onboarding.md) covers the release download, the node and wallet setup, the funding diagnostic and each journey end to end.
+**An integrator with their own node** wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. [Run against your own preprod node](docs/consumer-onboarding.md) covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine.
 
 ## How the parts fit
 
