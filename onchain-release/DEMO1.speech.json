@@ -23,7 +23,11 @@
       "pause": 400
     },
     {
-      "text": "An insert or a terminate books and stops: its request waits at the registry, and its receipt names the request and the deadline by which it must be folded. The fold is its own command, open-datum fold, run with whichever wallet folds. Every command signs with the wallet it is given.",
+      "text": "An insert or a terminate books and stops: its request waits at the registry, and its receipt names the request and the deadline by which it must be folded. The fold is its own command, open-datum fold, run with whichever wallet folds.",
+      "pause": 400
+    },
+    {
+      "text": "Alice and Bob keep no signing key on disk. Every write of theirs names the wallet's address and a new bundle file: the command builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures. The wallet's owner then signs the bundle from the vault with singular wallet sign and sends it with singular submit. Until submit finds the bundle's transactions on chain, the command's own fields (the request, the fold, the root) are only what the bundle expects, and the receipt says so under expected.",
       "pause": 400
     }
   ],
@@ -43,7 +47,7 @@
       "pause": 500
     },
     {
-      "text": "The development node is private and generated: a fresh chain whose genesis funds the wallets you name. Its keys are 32 random bytes in hex; they fund nothing outside this node. Alice books, and Bob folds.",
+      "text": "The development node is private and generated: a fresh chain whose genesis funds the addresses you name. Alice and Bob each make a wallet with singular wallet create: a vault, a file that holds the wallet's signing key sealed by a passphrase, which a script supplies on an inherited file descriptor (typed at a prompt when you run it by hand). The devnet is given the printed addresses and never sees a key; it funds nothing outside this node. Alice books, and Bob folds.",
       "pause": 400
     }
   ],
@@ -53,7 +57,11 @@
       "pause": 500
     },
     {
-      "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by open-datum, naming the deadline, before anything is signed. Giving open-datum insert or open-datum terminate the --fold switch books and folds in one command, with one wallet.",
+      "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by open-datum, naming the deadline, before anything is signed. Giving open-datum insert or open-datum terminate the --fold switch books and folds in one command, with one wallet: with the external signer the one bundle then holds the booking and the fold, and one signing covers both.",
+      "pause": 400
+    },
+    {
+      "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed.",
       "pause": 400
     },
     {
@@ -71,7 +79,7 @@
       "pause": 500
     },
     {
-      "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+      "text": "open-datum create builds the registry's whole boot as one bundle and exits 19: its receipt names the bundle and states, under expected, the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the reference outputs it will publish. Nothing is on chain until singular submit has sent the signed bundle. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand under expected.",
       "pause": 300
     },
     {
@@ -79,11 +87,11 @@
       "pause": 300
     },
     {
-      "text": "open-datum insert books the insertion through the application: its receipt names the pending request, the booking's transaction, the envelope kept for the fold and foldDeadline, the time (and, where pinned time converts it, the slot) by which the fold must happen. Nothing is folded, and the registry's root and your saved state do not move.",
+      "text": "open-datum insert stages the insertion through the application: its receipt names the bundle and, under expected, the pending request, the booking's transaction, the envelope kept for the fold and foldDeadline, the time (and, where pinned time converts it, the slot) by which the fold must happen. Once singular submit has sent the bundle the request is pending at the registry. Nothing is folded, and the registry's root and your saved state do not move.",
       "pause": 300
     },
     {
-      "text": "open-datum fold folds the pending requests with the wallet that runs it, which need not be the wallet that booked: it settles every request that passes, up to nine, each settled key's one active token landing in an output at the application, carrying its envelope inline. Its receipt names each settled request, its key, its edge and the output it delivered in the settled list, beside the fold's transaction, the new root, the host clock at which it was decided and how many milliseconds remained before the deadline, and lists the requests it left in excluded.",
+      "text": "open-datum fold stages the fold of the pending requests with the wallet whose address it is given, which need not be the wallet that booked: it settles every request that passes, up to nine, each settled key's one active token landing in an output at the application, carrying its envelope inline. Its receipt names, under expected, each settled request, its key, its edge and the output it delivered in the settled list, beside the fold's transaction, the new root, the host clock at which it was decided and how many milliseconds remained before the deadline, and lists the requests it left in excluded.",
       "pause": 300
     },
     {
@@ -91,7 +99,7 @@
       "pause": 300
     },
     {
-      "text": "open-datum update replaces only the payload. The receipt's root equals the root before it.",
+      "text": "open-datum update replaces only the payload. The receipt's expected root equals the root before it.",
       "pause": 300
     },
     {
@@ -99,11 +107,11 @@
       "pause": 300
     },
     {
-      "text": "open-datum terminate books the termination against the live holding: its receipt names the pending request, the live output the fold will release and the deposit.",
+      "text": "open-datum terminate stages the termination against the live holding: its receipt names, under expected, the pending request, the live output the fold will release and the deposit.",
       "pause": 300
     },
     {
-      "text": "open-datum fold folds it: the token is burned and the protected deposit is paid back to the controller together with everything else the fold owes you.",
+      "text": "open-datum fold stages and, once sent, lands its fold: the token is burned and the protected deposit is paid back to the controller together with everything else the fold owes you.",
       "pause": 300
     },
     {
@@ -111,11 +119,11 @@
       "pause": 300
     },
     {
-      "text": "singular registry reject clears a request that is past both its windows: its processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. It is refused, naming each request and when its retract window closes, while any pending request is still inside a window, and when nothing is pending. The windows are judged from the ledger's tip, not the host's clock. Its receipt names every request rejected, the value it actually locked (its lovelace and any other assets, nothing it never held), the tip the rejecting wallet keeps, and the refund: the designated output, its recipient and its amount. The registry's root does not move. The refund is the whole owed amount in one output to the request's owner, the one shape the chain accepts: a refund split across several outputs to the same owner is accepted by the model and refused by the chain (issue 361), so a successful reject is that shape on this chain, not general reject-refund conformance.",
+      "text": "singular registry reject clears a request that is past both its windows: its processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. It is refused, naming each request and when its retract window closes, while any pending request is still inside a window, and when nothing is pending. The windows are judged from the ledger's tip, not the host's clock. Its receipt names, under expected, every request rejected, the value it actually locked (its lovelace and any other assets, nothing it never held), the tip the rejecting wallet keeps, and the refund: the designated output, its recipient and its amount. The registry's root does not move. The refund is the whole owed amount in one output to the request's owner, the one shape the chain accepts: a refund split across several outputs to the same owner is accepted by the model and refused by the chain (issue 361), so a successful reject is that shape on this chain, not general reject-refund conformance.",
       "pause": 300
     },
     {
-      "text": "open-datum insert books a new request, which the cleared registry now takes.",
+      "text": "open-datum insert stages a new request, which the cleared registry now takes.",
       "pause": 300
     },
     {
@@ -243,6 +251,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "c2cb528b9b325ae2fd3044a6143757f69a521f0d2bf66dac1abf0a9cc117cf86"
+    "sha256": "fae29857b0b28346ebbc9c5793a9ebea30860a382d308f389fc87dcd6bf63f62"
   }
 }

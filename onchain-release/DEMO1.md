@@ -22,7 +22,16 @@ identity from one process to the next.
 An `insert` or a `terminate` books and stops: its request waits at the
 registry, and its receipt names the request and the deadline by which it must
 be folded. The fold is its own command, `open-datum fold`, run with whichever
-wallet folds. Every command signs with the wallet it is given.
+wallet folds.
+
+Alice and Bob keep no signing key on disk. Every write of theirs names the
+wallet's address and a new bundle file: the command builds its whole run as
+that one bundle, signs nothing, sends nothing and exits with status 19, the
+outcome `waiting-for-signatures`. The wallet's owner then signs the bundle
+from the vault with `singular wallet sign` and sends it with `singular
+submit`. Until `submit` finds the bundle's transactions on chain, the
+command's own fields (the request, the fold, the root) are only what the
+bundle expects, and the receipt says so under `expected`.
 
 ```mermaid
 flowchart LR
@@ -57,13 +66,21 @@ blueprint=../onchain/plutus.json
 ## Start one development node
 
 The development node is private and generated: a fresh chain whose
-genesis funds the wallets you name. Its keys are 32 random bytes in hex;
-they fund nothing outside this node. Alice books, and Bob folds.
+genesis funds the addresses you name. Alice and Bob each make a wallet with
+`singular wallet create`: a vault, a file that holds the wallet's signing key
+sealed by a passphrase, which a script supplies on an inherited file
+descriptor (typed at a prompt when you run it by hand). The devnet is given
+the printed addresses and never sees a key; it funds nothing outside this
+node. Alice books, and Bob folds.
 
 ```bash
-od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > alice.skey
-od -An -tx1 -N32 /dev/urandom | tr -d ' \n' > bob.skey
-"$devnet" --fund-skey alice.skey --fund-skey bob.skey --fund-outputs 6 --fund-lovelace 2000000000 > devnet.out &
+printf '%s\n' "alice's passphrase" > alice.passphrase
+printf '%s\n' "bob's passphrase" > bob.passphrase
+"$singular" wallet create --vault alice.vault --network-magic 42 --passphrase-fd 3 3< alice.passphrase
+"$singular" wallet create --vault bob.vault --network-magic 42 --passphrase-fd 3 3< bob.passphrase
+alice_addr="$("$singular" wallet address --vault alice.vault --network-magic 42 --passphrase-fd 3 3< alice.passphrase)"
+bob_addr="$("$singular" wallet address --vault bob.vault --network-magic 42 --passphrase-fd 3 3< bob.passphrase)"
+"$devnet" --fund-address "$alice_addr:6:2000000000" --fund-address "$bob_addr:6:2000000000" > devnet.out &
 # Wait for the launcher to print its settings, then check the JSON.
 # If it exits without settings, inspect its diagnostic before continuing.
 jq -e . devnet.out
@@ -76,78 +93,120 @@ provider=(--koios-url "$koios_url" --network-time "$time_dir" --network-magic 42
 ## Run the story
 
 ```bash
-# 1. Preview the identity a seed gives, then create the registry on it.
-"$open_datum" create --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey
-"$open_datum" create --seed TXID#IX --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-skey alice.skey \
-  > create.json
+# Every write below names a wallet's address and a new bundle file where a key
+# file used to go. It builds its whole run as that one bundle, signs nothing,
+# sends nothing and exits 19, so each command is followed by two steps: the
+# wallet's owner signs the bundle from the vault, and the signed bundle is sent.
+sign() { "$singular" wallet sign --vault "$1.vault" --passphrase-fd 3 --out "witnesses-$2" "$2.bundle" 3< "$1.passphrase"; }
+send() { "$singular" submit --witnesses "witnesses-$1" "${provider[@]}" --receipt "$1.submitted.json" "$1.bundle"; }
+
+# 1. Preview the identity a seed gives, from Alice's address alone, then create the
+#    registry on it. The windows are short, so steps 11 and 14 wait minutes
+#    rather than the ten and five of the defaults.
+"$open_datum" create --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-address "$alice_addr"
+"$open_datum" create --seed TXID#IX --process-time 120000 --retract-time 60000 \
+  --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-address "$alice_addr" --bundle create.bundle \
+  > create.json   # exits 19
+sign alice create && send create
 # Every later command names the registry by the state token create printed.
 # The directory reg only keeps your own journal: nothing in it names the registry.
-token=(--state-token "$(jq -r .stateToken create.json)")
+token=(--state-token "$(jq -r .expected.stateToken create.json)")
 
 # 2. Read the registry page with the command the create receipt printed.
 #    This archive's singular comes first on the path, so the bare program
 #    name resolves to it.
 export PATH="$(dirname "$singular"):$PATH"
-eval "$(jq -r .describeCommand create.json)"
+eval "$(jq -r .expected.describeCommand create.json)"
 
 # 3. Book an insertion of a key with its first payload; Alice's wallet is its controller.
-#    The request stays pending; the receipt names it and its fold deadline.
+#    The request stays pending; the staged receipt names it and its fold deadline.
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
-  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-address "$alice_addr" --bundle insert.bundle > insert.json
+sign alice insert && send insert
 
 # 4. Fold it, before that deadline. Any wallet may fold: here, Bob's.
-"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
+  --wallet-address "$bob_addr" --bundle fold-insert.bundle
+sign bob fold-insert && send fold-insert
 
 # 5. Read it back: no signing key, nothing submitted.
 "$open_datum" inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
 
 # 6. Replace the payload.
 "$open_datum" update --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
-  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-address "$alice_addr" --bundle update.bundle
+sign alice update && send update
 
 # 7. Read it back.
 "$open_datum" inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
 
 # 8. Book the termination of the key.
 "$open_datum" terminate --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \
-  "${provider[@]}" --wallet-skey alice.skey
+  "${provider[@]}" --wallet-address "$alice_addr" --bundle terminate.bundle
+sign alice terminate && send terminate
 
 # 9. Fold it: the fold burns the token and releases the deposit.
-"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
+  --wallet-address "$bob_addr" --bundle fold-terminate.bundle
+sign bob fold-terminate && send fold-terminate
 
 # 10. Read it back.
 "$open_datum" inspect --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice "${provider[@]}"
 
 # 11. A request nobody folded or took back stays pending past both its windows and
-#     blocks the registry's fold. Reject it; any wallet may: here, Bob's.
-"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+#     blocks the registry's fold. Alice books one and nobody folds it. While a
+#     window is open a reject is refused and writes no bundle; once both have
+#     passed (three minutes here) any wallet may reject it: here, Bob's.
+"$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key late \
+  --payload payload.json "${provider[@]}" --wallet-address "$alice_addr" --bundle late.bundle
+sign alice late && send late
+"$singular" registry reject --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
+  --wallet-address "$bob_addr" --bundle reject.bundle
+sign bob reject && send reject
 
 # 12. The registry takes requests again: book a new insertion.
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key bob \
-  --payload payload.json "${provider[@]}" --wallet-skey bob.skey
+  --payload payload.json "${provider[@]}" --wallet-address "$bob_addr" --bundle insert-bob.bundle
+sign bob insert-bob && send insert-bob
 
 # 13. Fold it.
-"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey alice.skey
+"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
+  --wallet-address "$alice_addr" --bundle fold-bob.bundle
+sign alice fold-bob && send fold-bob
 
 # 14. Book a different insertion and keep its request reference from the receipt.
 #     Let its processing deadline pass, then reclaim during its retract window.
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key carol \
-  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-address "$alice_addr" --bundle insert-carol.bundle > carol.json
+sign alice insert-carol && send insert-carol
 "$singular" registry reclaim --state-dir reg --blueprint "$blueprint" "${token[@]}" --request TXID#IX \
-  "${provider[@]}" --wallet-skey alice.skey
+  "${provider[@]}" --wallet-address "$alice_addr" --bundle reclaim.bundle
+sign alice reclaim && send reclaim
 
 # 15. The reclaimed request no longer blocks the next insertion.
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key dave \
-  --payload payload.json "${provider[@]}" --wallet-skey alice.skey
+  --payload payload.json "${provider[@]}" --wallet-address "$alice_addr" --bundle insert-dave.bundle
+sign alice insert-dave && send insert-dave
 
 # 16. Fold it with Bob's wallet.
-"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" --wallet-skey bob.skey
+"$open_datum" fold --state-dir reg --blueprint "$blueprint" "${token[@]}" "${provider[@]}" \
+  --wallet-address "$bob_addr" --bundle fold-dave.bundle
+sign bob fold-dave && send fold-dave
 ```
 
 Run the fold of a request before the deadline its booking's receipt names
 (`foldDeadline`); a later fold is refused by `open-datum`, naming the deadline,
 before anything is signed. Giving `open-datum insert` or `open-datum terminate` the `--fold` switch
-books and folds in one command, with one wallet.
+books and folds in one command, with one wallet: with the external signer the one
+bundle then holds the booking and the fold, and one signing covers both.
+
+A write that is refused before it builds anything (a reject while a window is
+open, a closed registry's update, a terminal key) writes no bundle. While a
+bundle waits for its signatures, the same wallet's next write of that registry
+stops with the same outcome, `waiting-for-signatures`, naming the waiting bundle,
+and builds nothing. `singular wallet sign` refuses a bundle whose signers do not
+include the vault's address, and `singular submit` sends only the transactions
+the chain does not hold, so it can be run again on a bundle that has landed.
 
 `--key` is the key as text, its UTF-8 bytes (`616c696365` is `alice`).
 `--key-hex 616c696365` names that key too, which is how a key that is not
@@ -170,41 +229,45 @@ insert receipt and the preview receipt print the envelope it built.
 
 ## What you should see
 
-1. **`open-datum create`** prints the state token (`stateToken`), the seed,
-   the token, the pins — the applied open-datum script, the state script and
-   the three witness policies — and the published reference outputs. It
-   writes no identity file. Every later command derives the registry from
+1. **`open-datum create`** builds the registry's whole boot as one bundle and
+   exits 19: its receipt names the bundle and states, under `expected`, the state
+   token (`stateToken`), the seed, the token, the pins — the applied open-datum
+   script, the state script and the three witness policies — and the reference
+   outputs it will publish. Nothing is on chain until `singular submit` has
+   sent the signed bundle. It writes no identity file. Every later command derives the registry from
    the state token and this archive's blueprint, checks it against the chain
    and refuses by name when they disagree, such as `state-token-not-found`
    or `registry-pin-mismatch application`. Its receipt carries the describe
-   command the next step runs, printed as `describeCommand`.
+   command the next step runs, printed as `describeCommand` under `expected`.
 2. **`singular registry describe`** reads the registry page with the command the
    create receipt printed (`describeCommand`, run as printed): which registry this
    is, which release it runs, what its rules are and what it holds now. The page
    shows the public history of the state token from create to the live state
    output, read through the named provider whose answers are unverified claims;
    the release label is the archive's own claim, and the page is unsigned.
-3. **`open-datum insert`** books the insertion through the application: its
-   receipt names the pending request, the booking's transaction, the envelope kept
-   for the fold and `foldDeadline`, the time (and, where pinned time converts it, the slot) by which the fold must
-   happen. Nothing is folded, and the registry's root and your saved state do not
+3. **`open-datum insert`** stages the insertion through the application: its
+   receipt names the bundle and, under `expected`, the pending request, the
+   booking's transaction, the envelope kept for the fold and `foldDeadline`, the
+   time (and, where pinned time converts it, the slot) by which the fold must
+   happen. Once `singular submit` has sent the bundle the request is pending at the
+   registry. Nothing is folded, and the registry's root and your saved state do not
    move.
-4. **`open-datum fold`** folds the pending requests with the wallet that runs
-   it, which need not be the wallet that booked: it settles every request that passes, up to nine, each settled key's one active token landing in
-   an output at the application, carrying its envelope inline. Its receipt names each settled
+4. **`open-datum fold`** stages the fold of the pending requests with the wallet
+   whose address it is given, which need not be the wallet that booked: it settles every request that passes, up to nine, each settled key's one active token landing in
+   an output at the application, carrying its envelope inline. Its receipt names, under `expected`, each settled
    request, its key, its edge and the output it delivered in the `settled` list, beside
    the fold's transaction, the new root, the host clock at which it was decided and how many milliseconds remained before the deadline, and lists the requests it left in `excluded`.
 5. **`open-datum inspect`** reads the key `active`, with the holding, its envelope and
    payload, the registry's root and its separately observed tip. Its Unbound facts do not prove a common
    chain point for the reads used to prepare a write.
-6. **`open-datum update`** replaces only the payload. The receipt's root equals the
-   root before it.
+6. **`open-datum update`** replaces only the payload. The receipt's expected root
+   equals the root before it.
 7. **`open-datum inspect`** shows the new payload, the same control and deposit, and
    the same root.
-8. **`open-datum terminate`** books the termination against the live holding:
-   its receipt names the pending request, the live output the fold will release and
-   the deposit.
-9. **`open-datum fold`** folds it: the token is burned and the protected deposit is
+8. **`open-datum terminate`** stages the termination against the live holding:
+   its receipt names, under `expected`, the pending request, the live output the fold
+   will release and the deposit.
+9. **`open-datum fold`** stages and, once sent, lands its fold: the token is burned and the protected deposit is
    paid back to the controller together with everything else the fold owes you.
 10. **`open-datum inspect`** reads the key `terminal`, with no holding.
 11. **`singular registry reject`** clears a request that is past both its windows: its
@@ -212,14 +275,14 @@ insert receipt and the preview receipt print the envelope it built.
     after it, in which its owner may take it back. It is refused, naming each request and
     when its retract window closes, while any pending request is still inside a window, and
     when nothing is pending. The windows are judged from the ledger's tip, not the host's
-    clock. Its receipt names every request rejected, the value it actually locked (its
+    clock. Its receipt names, under `expected`, every request rejected, the value it actually locked (its
     lovelace and any other assets, nothing it never held), the tip the rejecting wallet keeps,
     and the refund: the designated output, its recipient and its amount. The registry's root
     does not move. The refund is the whole owed amount in one output to the request's owner,
     the one shape the chain accepts: a refund split across several outputs to the same owner
     is accepted by the model and refused by the chain (issue 361), so a successful reject
     is that shape on this chain, not general reject-refund conformance.
-12. **`open-datum insert`** books a new request, which the cleared registry now takes.
+12. **`open-datum insert`** stages a new request, which the cleared registry now takes.
 13. **`open-datum fold`** folds it, and the key reads `active`.
 14. **`singular registry reclaim`** takes back a new pending insertion that nobody
     folded, inside its retract window. An earlier attempt is refused, naming when

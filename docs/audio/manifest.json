@@ -103466,11 +103466,591 @@
    ]
   },
   "docs-demo1-preprod/what-you-run-02": {
-   "audio_sha256": "c9406e86d1dbd70cc3b880067958f6a14218bba79201be044e5aef6c61604271",
-   "characters": 421,
-   "cost": 0.00026102,
-   "duration": 27.125,
+   "audio_sha256": "b36f01775283f3af05d30970a7af3541955ac1d4882794f00da791698220db0c",
+   "characters": 580,
+   "cost": 0.0005742,
+   "duration": 38.825,
    "index": 2,
+   "key": "82ea1aa21b2b619cff13acb09a700d38a71101c4affedcf268aac4ad3c093da7",
+   "page": "docs/demo1-preprod.md",
+   "pause_ms": 300,
+   "section": "what-you-run",
+   "sent_text": "Sign without a key file. The reviewer's wallets come from singular wallet create: a vault sealed by a passphrase, whose printed address is all a development node needs to fund it. Every write names that address and a new bundle file instead of a key file: the command builds its whole run as one bundle, signs and sends nothing and exits with status 19. singular wallet sign --vault signs the bundle and singular submit sends it, and the command's own fields are only expected until submit finds the bundle on chain. The controls runner below is a harness and keeps its key files.",
+   "text": "Sign without a key file. The reviewer's wallets come from singular wallet create: a vault sealed by a passphrase, whose printed address is all a development node needs to fund it. Every write names that address and a new bundle file instead of a key file: the command builds its whole run as one bundle, signs and sends nothing and exits with status 19. singular wallet sign --vault signs the bundle and singular submit sends it, and the command's own fields are only expected until submit finds the bundle on chain. The controls runner below is a harness and keeps its key files.",
+   "words": [
+    {
+     "end": 0.412,
+     "start": 0.2,
+     "text": "Sign"
+    },
+    {
+     "end": 0.637,
+     "start": 0.412,
+     "text": "without"
+    },
+    {
+     "end": 0.7,
+     "start": 0.637,
+     "text": "a"
+    },
+    {
+     "end": 0.913,
+     "start": 0.7,
+     "text": "key"
+    },
+    {
+     "end": 1.675,
+     "start": 0.913,
+     "text": "file"
+    },
+    {
+     "end": 1.875,
+     "start": 1.675,
+     "text": "."
+    },
+    {
+     "end": 2.125,
+     "start": 2.05,
+     "text": "The"
+    },
+    {
+     "end": 2.625,
+     "start": 2.125,
+     "text": "reviewer's"
+    },
+    {
+     "end": 3.025,
+     "start": 2.625,
+     "text": "wallets"
+    },
+    {
+     "end": 3.275,
+     "start": 3.025,
+     "text": "come"
+    },
+    {
+     "end": 3.5,
+     "start": 3.275,
+     "text": "from"
+    },
+    {
+     "end": 4.025,
+     "start": 3.5,
+     "text": "singular"
+    },
+    {
+     "end": 4.35,
+     "start": 4.025,
+     "text": "wallet"
+    },
+    {
+     "end": 5.25,
+     "start": 4.35,
+     "text": "create"
+    },
+    {
+     "end": 5.45,
+     "start": 5.25,
+     "text": ":"
+    },
+    {
+     "end": 5.738,
+     "start": 5.65,
+     "text": "a"
+    },
+    {
+     "end": 6.137,
+     "start": 5.738,
+     "text": "vault"
+    },
+    {
+     "end": 6.475,
+     "start": 6.137,
+     "text": "sealed"
+    },
+    {
+     "end": 6.65,
+     "start": 6.475,
+     "text": "by"
+    },
+    {
+     "end": 6.762,
+     "start": 6.65,
+     "text": "a"
+    },
+    {
+     "end": 7.575,
+     "start": 6.762,
+     "text": "passphrase"
+    },
+    {
+     "end": 7.625,
+     "start": 7.575,
+     "text": ","
+    },
+    {
+     "end": 7.863,
+     "start": 7.625,
+     "text": "whose"
+    },
+    {
+     "end": 8.225,
+     "start": 7.863,
+     "text": "printed"
+    },
+    {
+     "end": 8.725,
+     "start": 8.225,
+     "text": "address"
+    },
+    {
+     "end": 8.887,
+     "start": 8.725,
+     "text": "is"
+    },
+    {
+     "end": 9.113,
+     "start": 8.887,
+     "text": "all"
+    },
+    {
+     "end": 9.175,
+     "start": 9.113,
+     "text": "a"
+    },
+    {
+     "end": 9.725,
+     "start": 9.175,
+     "text": "development"
+    },
+    {
+     "end": 10.075,
+     "start": 9.725,
+     "text": "node"
+    },
+    {
+     "end": 10.35,
+     "start": 10.075,
+     "text": "needs"
+    },
+    {
+     "end": 10.475,
+     "start": 10.35,
+     "text": "to"
+    },
+    {
+     "end": 10.75,
+     "start": 10.475,
+     "text": "fund"
+    },
+    {
+     "end": 11.45,
+     "start": 10.75,
+     "text": "it"
+    },
+    {
+     "end": 11.675,
+     "start": 11.45,
+     "text": "."
+    },
+    {
+     "end": 12.15,
+     "start": 11.875,
+     "text": "Every"
+    },
+    {
+     "end": 12.4,
+     "start": 12.15,
+     "text": "write"
+    },
+    {
+     "end": 12.75,
+     "start": 12.4,
+     "text": "names"
+    },
+    {
+     "end": 12.9,
+     "start": 12.75,
+     "text": "that"
+    },
+    {
+     "end": 13.462,
+     "start": 12.9,
+     "text": "address"
+    },
+    {
+     "end": 13.587,
+     "start": 13.462,
+     "text": "and"
+    },
+    {
+     "end": 13.688,
+     "start": 13.587,
+     "text": "a"
+    },
+    {
+     "end": 13.9,
+     "start": 13.688,
+     "text": "new"
+    },
+    {
+     "end": 14.312,
+     "start": 13.9,
+     "text": "bundle"
+    },
+    {
+     "end": 14.725,
+     "start": 14.312,
+     "text": "file"
+    },
+    {
+     "end": 15.087,
+     "start": 14.725,
+     "text": "instead"
+    },
+    {
+     "end": 15.163,
+     "start": 15.087,
+     "text": "of"
+    },
+    {
+     "end": 15.225,
+     "start": 15.163,
+     "text": "a"
+    },
+    {
+     "end": 15.488,
+     "start": 15.225,
+     "text": "key"
+    },
+    {
+     "end": 16.425,
+     "start": 15.488,
+     "text": "file"
+    },
+    {
+     "end": 16.625,
+     "start": 16.425,
+     "text": ":"
+    },
+    {
+     "end": 16.9,
+     "start": 16.825,
+     "text": "the"
+    },
+    {
+     "end": 17.438,
+     "start": 16.9,
+     "text": "command"
+    },
+    {
+     "end": 17.737,
+     "start": 17.438,
+     "text": "builds"
+    },
+    {
+     "end": 17.875,
+     "start": 17.737,
+     "text": "its"
+    },
+    {
+     "end": 18.163,
+     "start": 17.875,
+     "text": "whole"
+    },
+    {
+     "end": 18.538,
+     "start": 18.163,
+     "text": "run"
+    },
+    {
+     "end": 18.712,
+     "start": 18.538,
+     "text": "as"
+    },
+    {
+     "end": 18.975,
+     "start": 18.712,
+     "text": "one"
+    },
+    {
+     "end": 19.5,
+     "start": 18.975,
+     "text": "bundle"
+    },
+    {
+     "end": 19.612,
+     "start": 19.5,
+     "text": ","
+    },
+    {
+     "end": 20.15,
+     "start": 19.612,
+     "text": "signs"
+    },
+    {
+     "end": 20.288,
+     "start": 20.15,
+     "text": "and"
+    },
+    {
+     "end": 20.688,
+     "start": 20.288,
+     "text": "sends"
+    },
+    {
+     "end": 21.175,
+     "start": 20.688,
+     "text": "nothing"
+    },
+    {
+     "end": 21.312,
+     "start": 21.175,
+     "text": "and"
+    },
+    {
+     "end": 21.775,
+     "start": 21.312,
+     "text": "exits"
+    },
+    {
+     "end": 21.95,
+     "start": 21.775,
+     "text": "with"
+    },
+    {
+     "end": 22.375,
+     "start": 21.95,
+     "text": "status"
+    },
+    {
+     "end": 23.625,
+     "start": 22.375,
+     "text": "19"
+    },
+    {
+     "end": 23.825,
+     "start": 23.625,
+     "text": "."
+    },
+    {
+     "end": 24.525,
+     "start": 24.05,
+     "text": "singular"
+    },
+    {
+     "end": 24.888,
+     "start": 24.525,
+     "text": "wallet"
+    },
+    {
+     "end": 25.225,
+     "start": 24.888,
+     "text": "sign"
+    },
+    {
+     "end": 25.612,
+     "start": 25.225,
+     "text": "vault"
+    },
+    {
+     "end": 26.0,
+     "start": 25.612,
+     "text": "signs"
+    },
+    {
+     "end": 26.1,
+     "start": 26.0,
+     "text": "the"
+    },
+    {
+     "end": 26.562,
+     "start": 26.1,
+     "text": "bundle"
+    },
+    {
+     "end": 26.737,
+     "start": 26.562,
+     "text": "and"
+    },
+    {
+     "end": 27.2,
+     "start": 26.737,
+     "text": "singular"
+    },
+    {
+     "end": 27.638,
+     "start": 27.2,
+     "text": "submit"
+    },
+    {
+     "end": 28.013,
+     "start": 27.638,
+     "text": "sends"
+    },
+    {
+     "end": 28.7,
+     "start": 28.013,
+     "text": "it"
+    },
+    {
+     "end": 28.925,
+     "start": 28.7,
+     "text": ","
+    },
+    {
+     "end": 29.212,
+     "start": 29.125,
+     "text": "and"
+    },
+    {
+     "end": 29.3,
+     "start": 29.212,
+     "text": "the"
+    },
+    {
+     "end": 29.75,
+     "start": 29.3,
+     "text": "command's"
+    },
+    {
+     "end": 30.013,
+     "start": 29.75,
+     "text": "own"
+    },
+    {
+     "end": 30.45,
+     "start": 30.013,
+     "text": "fields"
+    },
+    {
+     "end": 30.612,
+     "start": 30.45,
+     "text": "are"
+    },
+    {
+     "end": 30.925,
+     "start": 30.612,
+     "text": "only"
+    },
+    {
+     "end": 31.625,
+     "start": 30.925,
+     "text": "expected"
+    },
+    {
+     "end": 31.962,
+     "start": 31.625,
+     "text": "until"
+    },
+    {
+     "end": 32.412,
+     "start": 31.962,
+     "text": "submit"
+    },
+    {
+     "end": 32.763,
+     "start": 32.412,
+     "text": "finds"
+    },
+    {
+     "end": 32.85,
+     "start": 32.763,
+     "text": "the"
+    },
+    {
+     "end": 33.25,
+     "start": 32.85,
+     "text": "bundle"
+    },
+    {
+     "end": 33.463,
+     "start": 33.25,
+     "text": "on"
+    },
+    {
+     "end": 34.475,
+     "start": 33.463,
+     "text": "chain"
+    },
+    {
+     "end": 34.675,
+     "start": 34.475,
+     "text": "."
+    },
+    {
+     "end": 34.925,
+     "start": 34.85,
+     "text": "The"
+    },
+    {
+     "end": 35.425,
+     "start": 34.925,
+     "text": "controls"
+    },
+    {
+     "end": 35.7,
+     "start": 35.425,
+     "text": "runner"
+    },
+    {
+     "end": 36.1,
+     "start": 35.7,
+     "text": "below"
+    },
+    {
+     "end": 36.213,
+     "start": 36.1,
+     "text": "is"
+    },
+    {
+     "end": 36.275,
+     "start": 36.213,
+     "text": "a"
+    },
+    {
+     "end": 36.838,
+     "start": 36.275,
+     "text": "harness"
+    },
+    {
+     "end": 36.975,
+     "start": 36.838,
+     "text": "and"
+    },
+    {
+     "end": 37.237,
+     "start": 36.975,
+     "text": "keeps"
+    },
+    {
+     "end": 37.4,
+     "start": 37.237,
+     "text": "its"
+    },
+    {
+     "end": 37.612,
+     "start": 37.4,
+     "text": "key"
+    },
+    {
+     "end": 38.625,
+     "start": 37.612,
+     "text": "files"
+    },
+    {
+     "end": 38.825,
+     "start": 38.625,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-preprod/what-you-run-03": {
+   "audio_sha256": "005e004c2ce03cab9faee597e4d01e9839616359fd44b7f17722e7d00fc938c6",
+   "characters": 421,
+   "cost": 0.00041679,
+   "duration": 27.125,
+   "index": 3,
    "key": "32f6236a19782b59346e9a20e10643c460cb3b1b8f0d4678bde793200a59ffa1",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 300,
@@ -103890,12 +104470,12 @@
     }
    ]
   },
-  "docs-demo1-preprod/what-you-run-03": {
-   "audio_sha256": "a21633068a1d96b9054f72c5582d67d1c93720dbd51c23e813632714ce5531b6",
+  "docs-demo1-preprod/what-you-run-04": {
+   "audio_sha256": "d39a89549b8ea84e6b8c180d0b31abac7ffdc6d1f90b91edc9fdaf8f1aa57c93",
    "characters": 403,
-   "cost": 0.00024986,
+   "cost": 0.00039896999999999996,
    "duration": 26.675,
-   "index": 3,
+   "index": 4,
    "key": "a942c0a28dc8a75f3783dbf5d76d57a8921d861303be232e5055a2a264365f54",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 300,
@@ -104300,12 +104880,12 @@
     }
    ]
   },
-  "docs-demo1-preprod/what-you-run-04": {
-   "audio_sha256": "5cdb58b06e4e7822a3eff902459acbbe7206ef3dd4d82ca702bc69d3e9b2dbbd",
+  "docs-demo1-preprod/what-you-run-05": {
+   "audio_sha256": "ca5e5c633ceeedd7f6a0e23b4b89031c1cb3e6463d8548acc5bed17c1fd70144",
    "characters": 311,
-   "cost": 0.00019282000000000001,
+   "cost": 0.00030788999999999995,
    "duration": 20.2,
-   "index": 4,
+   "index": 5,
    "key": "431bc70b7f0f8622855d5f13a6ad5b9dc9eee469322c689d54ee2528bf5e45e5",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 300,
@@ -104610,12 +105190,12 @@
     }
    ]
   },
-  "docs-demo1-preprod/what-you-run-05": {
-   "audio_sha256": "7ac12ed4c3464383bcd5ff3d2a32aeef88b05bab5fc0e1309a9d4b313fb0de0c",
+  "docs-demo1-preprod/what-you-run-06": {
+   "audio_sha256": "0e4c1e75d2f719d9b9b3e4a2b011cf5f05b5512fe7a65fa5afd9319c10375e8e",
    "characters": 771,
    "cost": 0.0007632899999999999,
    "duration": 50.55,
-   "index": 5,
+   "index": 6,
    "key": "078db2ee25ff47150750ae3b280f6a43b00b49d3324cada25a1cba58e54353e1",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 300,
@@ -105365,12 +105945,12 @@
     }
    ]
   },
-  "docs-demo1-preprod/what-you-run-06": {
-   "audio_sha256": "7e8ee9c1c55d90edbdbed1882212079e05003e02afd89d0f9b32d1394f44dcae",
+  "docs-demo1-preprod/what-you-run-07": {
+   "audio_sha256": "a799f429913a0dffae6d29ddd0427eceb0a616c98d3f3194958d0e6bc9bd3946",
    "characters": 719,
-   "cost": 0.00044578,
+   "cost": 0.0007118099999999999,
    "duration": 46.05,
-   "index": 6,
+   "index": 7,
    "key": "1441c6a3fe91012e59d3aaa5cb86dd29f52ea8d5cc18575203406b684e9e3398",
    "page": "docs/demo1-preprod.md",
    "pause_ms": 300,
