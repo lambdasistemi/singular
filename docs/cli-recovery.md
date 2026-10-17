@@ -139,6 +139,36 @@ or one rolled back and not included again, stays unresolved however far
 the chain moves on, and every write stops on it. That is a known limit
 of these commands, not a judgement about the transaction.
 
+## When a bundle waits for signatures
+
+As Bob, I ran a write naming my address and a bundle file, or Alice ran one from her vault, and I want to know where its bundle stands: still waiting for signatures, landed, or dead. The next write in the same state directory tells me, before it builds anything. The bundle's transactions are judged by one thing only: whether the chain holds their identities. Their outputs, their inputs and the after-state of the registry do not count. A transaction of a bundle is its member for its whole life.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: the run journals one waiting line per transaction
+    Pending --> Landed: every member is found on chain
+    Pending --> Dead: a member is not found with the tip at its deadline
+    Pending --> Dead: the node refused a member the vault sent
+    Landed --> [*]
+    Dead --> [*]
+```
+
+- **Pending.** Some member is not on chain yet, and the tip has not reached any member's deadline. The next write stops before it builds anything, with status 19, `waiting-for-signatures`, naming the bundle's hash, its saved path, and the members awaited with their deadlines.
+- **Landed.** Every member is found on chain. Each gets a `landed` line with its chain point and confirmations. The next write builds normally, and its receipt reports the bundle under `reconciled`.
+- **Dead.** A member can never land. Every member not landed gets a `dead` line, and the report names the members that went through. The next write builds normally.
+
+A bundle dies one of these ways, and the dead line says which:
+
+| the dead line reads | what happened | what you do |
+|---|---|---|
+| `expired, rebuild` | a member was not found on chain once the tip reached its deadline | run the command again: it builds a new bundle from what is on chain now |
+| `refused by the node: <its answer>` | the node refused a member that your vault run sent | read the answer, fix its cause, and run the command again |
+| `its bundle died` | this member was not landed when another member died | nothing on its own: the next run of the command rebuilds it with the rest |
+
+A pending bundle never needs the journal edited. Sign the bundle and send it with `singular submit`, or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.
+
+A bundle sent elsewhere and refused by the node is not seen by your journal, since `singular submit` keeps no state: it dies when a member's deadline passes. A create bundle has no deadline, so it stays pending. As Alice, if my co-signer never signs the create bundle I staged, or it is refused when sent elsewhere, I correct the cause and send it again. A create from the same wallet without `--seed` picks the same output again while that output is unspent, so it is stopped at 19 too. The way out is a create that names another output with `--seed`: a different registry, in a different state directory, which nothing blocks. The pending create's journal stays as a record and blocks nothing else.
+
 ## When the next command stops
 
 A write that finds a transaction it cannot reconcile stops before it

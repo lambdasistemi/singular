@@ -252,6 +252,70 @@ leaves nothing behind but its receipt, and it never resubmits on its
 own. A valid signature by an unneeded key over an already-landed body is
 not reported.
 
+## Signing a write elsewhere, or from your vault
+
+As Bob, I keep my key away from the machine that talks to the node. I run a write — `singular registry create`, `fold`, `reject` or `reclaim` — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, `waiting-for-signatures`. I sign the bundle with `singular wallet sign` and send it with `singular submit`.
+
+As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as `singular submit` does. Its receipt reads what the chain shows.
+
+```sh
+singular registry fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
+  --koios-url URL --network-magic 1 --wallet-address ADDR --bundle fold.bundle
+singular registry fold --state-dir ./reg --blueprint plutus.json --state-token POLICY.NAME \
+  --koios-url URL --network-magic 1 --vault alice.vault --passphrase-fd 9
+```
+
+A write takes exactly one signer:
+
+| signer | the flags | what the command does | how it ends |
+|---|---|---|---|
+| a key file | `--wallet-skey FILE` | signs and sends each transaction as it builds it | the command's own outcome |
+| an address, signing elsewhere | `--wallet-address ADDR --bundle FILE` | builds the run as one bundle, writes the file and saves it beside the journal | `waiting-for-signatures`, status 19 |
+| your vault | `--vault FILE`, and `--passphrase-fd FD` in a script | builds the same bundle, signs it from the vault in memory and sends it through the core of `singular submit` | the submission's outcome |
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 20, 'width': 120, 'wrap': true, 'mirrorActors': false}}}%%
+sequenceDiagram
+    participant A as Alice
+    participant W as singular registry fold
+    participant V as alice.vault
+    participant N as Node
+    A->>W: Run the fold, naming the vault
+    W->>V: Open it once, before anything else is read
+    V-->>W: The signing key, in memory only
+    W->>N: Read the registry and build the whole run as one bundle
+    W->>W: Save the bundle and journal one waiting line per transaction
+    W->>W: Sign every transaction from the vault
+    W->>N: Send them in order, as singular submit does
+    N-->>W: Each transaction found on chain
+    W-->>A: Every member journalled landed, the receipt read from the chain
+```
+
+The address must pay a key: a script address is refused, naming it. A key file, an address and a vault are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.
+
+### What each receipt says
+
+- **A key file**: the receipt it has always printed.
+- **Signing elsewhere**: the outcome `waiting-for-signatures` and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under `expected`, because nothing has landed yet.
+- **Your vault**: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under `submissions`. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under `expected`. When the node refuses a transaction, the run ends as a ledger refusal, and `wentThrough` names the transactions that landed before it.
+
+Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under `pendingBundle`: its hash, its saved path, and the transactions still awaited with their deadlines. [Recovering a registry command](cli-recovery.md) follows a bundle from there.
+
+### How long a bundle can wait
+
+A bundle can be sent until the first deadline of its transactions. The builders' validity bounds are unchanged by signing elsewhere. Each command's builder may choose at most this deadline:
+
+| command | the latest deadline its bundle may carry |
+|---|---|
+| `singular registry reject` | about two minutes after it is built |
+| `singular registry fold` | the processing deadline of the earliest request it folds |
+| `singular registry reclaim` | the end of the request's retract window |
+| `singular registry create` | none: its transactions carry no upper bound, so the bundle stays pending until it lands |
+
+A builder can choose an earlier bound. It takes a near one when the end of a window cannot be translated to a slot yet, and it never goes past the ledger's horizon. So the deadline a transaction actually carries is the one the receipt prints for it, `deadline` per transaction, and it can be only seconds or minutes after the build: sign and send before that printed deadline.
+
+A pending create bundle blocks its own state directory only, which is keyed by the network, the token it will mint and the wallet. A second create from the same wallet and seed waits for it. So does one without `--seed` while the same output is unspent, because it picks that output again. A create naming another output with `--seed` makes a different registry, which nothing blocks, and the pending create's journal stays as a record.
+
 ## Naming the registry by its state token
 
 As Carol, the creator, I run `create` from an empty directory. Its receipt

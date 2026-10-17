@@ -101,6 +101,68 @@
       "pause": 400
     }
   ],
+  "signing-a-write-elsewhere-or-from-your-vault": [
+    {
+      "text": "Signing a write elsewhere, or from your vault.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I keep my key away from the machine that talks to the node. I run a write — singular registry create, fold, reject or reclaim — naming my address and a new bundle file in place of the signing key. The command builds its whole run as one bundle of unsigned transactions, signs and sends nothing, and exits with status 19, waiting-for-signatures. I sign the bundle with singular wallet sign and send it with singular submit.",
+      "pause": 400
+    },
+    {
+      "text": "As Alice, I name my vault instead. I type my passphrase once, or hand it over through a descriptor in a script. The command builds the same bundle, signs every transaction from the vault, and sends them in order as singular submit does. Its receipt reads what the chain shows.",
+      "pause": 400
+    },
+    {
+      "text": "A write takes exactly one signer:",
+      "pause": 400
+    },
+    {
+      "text": "The address must pay a key: a script address is refused, naming it. A key file, an address and a vault are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
+      "pause": 400
+    }
+  ],
+  "what-each-receipt-says": [
+    {
+      "text": "What each receipt says.",
+      "pause": 500
+    },
+    {
+      "text": "A key file: the receipt it has always printed.",
+      "pause": 300
+    },
+    {
+      "text": "Signing elsewhere: the outcome waiting-for-signatures and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under expected, because nothing has landed yet.",
+      "pause": 300
+    },
+    {
+      "text": "Your vault: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under submissions. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under expected. When the node refuses a transaction, the run ends as a ledger refusal, and wentThrough names the transactions that landed before it.",
+      "pause": 300
+    },
+    {
+      "text": "Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under pendingBundle: its hash, its saved path, and the transactions still awaited with their deadlines. Recovering a registry command follows a bundle from there.",
+      "pause": 400
+    }
+  ],
+  "how-long-a-bundle-can-wait": [
+    {
+      "text": "How long a bundle can wait.",
+      "pause": 500
+    },
+    {
+      "text": "A bundle can be sent until the first deadline of its transactions. The builders' validity bounds are unchanged by signing elsewhere. Each command's builder may choose at most this deadline:",
+      "pause": 400
+    },
+    {
+      "text": "A builder can choose an earlier bound. It takes a near one when the end of a window cannot be translated to a slot yet, and it never goes past the ledger's horizon. So the deadline a transaction actually carries is the one the receipt prints for it, deadline per transaction, and it can be only seconds or minutes after the build: sign and send before that printed deadline.",
+      "pause": 400
+    },
+    {
+      "text": "A pending create bundle blocks its own state directory only, which is keyed by the network, the token it will mint and the wallet. A second create from the same wallet and seed waits for it. So does one without --seed while the same output is unspent, because it picks that output again. A create naming another output with --seed makes a different registry, which nothing blocks, and the pending create's journal stays as a record.",
+      "pause": 400
+    }
+  ],
   "naming-the-registry-by-its-state-token": [
     {
       "text": "Naming the registry by its state token.",
@@ -351,6 +413,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "fd1fd0314f6477d55bf7e4305f65b1ea7255be0bcda7e83952c55d246b6a6d4b"
+    "sha256": "8c4c7927a0b8419d909b8087daef69f69792091048e8190e470e65ee032ccb90"
   }
 }

@@ -30,5 +30,5 @@
 
 ## Slice: devnet control and documentation
 
-- [ ] packaged-bundle-control: on a fresh devnet, a create signed externally end to end and a fold signed from the vault, a pending bundle stopping a second write, an expired fold bundle reported dead; the harness tool that seals a devnet key into a vault; the hosted job on the required list.
-- [ ] write-documentation: the command reference (signer modes, receipt, status 19, each command's window), the recovery page (the bundle phase and its three ways to die), their narration clips.
+- [x] packaged-bundle-control: on a fresh devnet, a create signed externally end to end and a fold signed from the vault, a pending bundle stopping a second write, an expired fold bundle reported dead; the harness tool that seals a devnet key into a vault; the hosted job on the required list.
+- [x] write-documentation: the command reference (signer modes, receipt, status 19, each command's window), the recovery page (the bundle phase and its three ways to die), their narration clips.

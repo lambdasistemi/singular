@@ -87,6 +87,40 @@
       "pause": 400
     }
   ],
+  "when-a-bundle-waits-for-signatures": [
+    {
+      "text": "When a bundle waits for signatures.",
+      "pause": 500
+    },
+    {
+      "text": "As Bob, I ran a write naming my address and a bundle file, or Alice ran one from her vault, and I want to know where its bundle stands: still waiting for signatures, landed, or dead. The next write in the same state directory tells me, before it builds anything. The bundle's transactions are judged by one thing only: whether the chain holds their identities. Their outputs, their inputs and the after-state of the registry do not count. A transaction of a bundle is its member for its whole life.",
+      "pause": 400
+    },
+    {
+      "text": "Pending. Some member is not on chain yet, and the tip has not reached any member's deadline. The next write stops before it builds anything, with status 19, waiting-for-signatures, naming the bundle's hash, its saved path, and the members awaited with their deadlines.",
+      "pause": 300
+    },
+    {
+      "text": "Landed. Every member is found on chain. Each gets a landed line with its chain point and confirmations. The next write builds normally, and its receipt reports the bundle under reconciled.",
+      "pause": 300
+    },
+    {
+      "text": "Dead. A member can never land. Every member not landed gets a dead line, and the report names the members that went through. The next write builds normally.",
+      "pause": 300
+    },
+    {
+      "text": "A bundle dies one of these ways, and the dead line says which:",
+      "pause": 400
+    },
+    {
+      "text": "A pending bundle never needs the journal edited. Sign the bundle and send it with singular submit, or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.",
+      "pause": 400
+    },
+    {
+      "text": "A bundle sent elsewhere and refused by the node is not seen by your journal, since singular submit keeps no state: it dies when a member's deadline passes. A create bundle has no deadline, so it stays pending. As Alice, if my co-signer never signs the create bundle I staged, or it is refused when sent elsewhere, I correct the cause and send it again. A create from the same wallet without --seed picks the same output again while that output is unspent, so it is stopped at 19 too. The way out is a create that names another output with --seed: a different registry, in a different state directory, which nothing blocks. The pending create's journal stays as a record and blocks nothing else.",
+      "pause": 400
+    }
+  ],
   "when-the-next-command-stops": [
     {
       "text": "When the next command stops.",
@@ -119,7 +153,11 @@
       "pause": 500
     },
     {
-      "text": "The recovery controls run each case as separate singular processes against one generated development node, and judge every clause from the receipts the processes printed, the registry's journal, its saved bodies and its files, and — for exclusion and rollback — from the node's own answers, read with devnet probe and its block adoption trace, never through the command under test:",
+      "text": "The recovery controls run each hosted partition as separate singular processes against its own generated development node, and judge every clause from the receipts the processes printed, the registry's journal, its saved bodies and its files, and — for exclusion and rollback — from the node's own answers, read with devnet probe and its block adoption trace, never through the command under test. The partitions are listed in one place in the root flake; the discovery command prints them for the workflow matrix, and each partition runs by key:",
+      "pause": 400
+    },
+    {
+      "text": "The combined .#cli-recovery-controls command is retired: it serialised every part on one node and exceeded the receipt cap of 52428800 bytes before reaching never-sent and rollback. The per-partition commands above are generated from the same partition list the workflow matrix uses.",
       "pause": 400
     },
     {
@@ -129,6 +167,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "8638448ab1db3b2870b371e37b48a22caafa73e69cf553f5336815454a3d8f50"
+    "sha256": "3b26f02f3050f3f2575e9f787fb3fd1f2a9e807d0725ed04fdfc512365081b7a"
   }
 }
