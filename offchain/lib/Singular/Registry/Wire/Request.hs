@@ -280,12 +280,78 @@ carriedDatum option = case option of
     _ -> Nothing
 
 instance ToData OnChainRegistrationRequest where
-    toBuiltinData _ =
-        error "OnChainRegistrationRequest: encoding is not implemented"
+    toBuiltinData OnChainRegistrationRequest{..} =
+        mkD $
+            Constr
+                0
+                [ unD (toBuiltinData regRegistry)
+                , bsToD regKey
+                , bbsToD regRefundAddress
+                , bsToD regDestination
+                , maybe (Constr 1 []) (Constr 0 . pure) regDatum
+                , I regSubmittedAt
+                , I regRegistrationCost
+                , I regDeclaredTip
+                , I regCarrierAda
+                , I regNonce
+                ]
 
 instance FromData OnChainRegistrationRequest where
-    fromBuiltinData _ = Nothing
+    fromBuiltinData bd = case unD bd of
+        Constr
+            0
+            [ reg
+                , k
+                , refund
+                , dest
+                , carried
+                , I sub
+                , I cost
+                , I tip
+                , I carrier
+                , I nonce
+                ] -> do
+                regRegistry <- fromBuiltinData (mkD reg)
+                regKey <- bsFromD k
+                regRefundAddress <- bbsFromD refund
+                regDestination <- bsFromD dest
+                regDatum <- carriedDatum carried
+                let regSubmittedAt = sub
+                    regRegistrationCost = cost
+                    regDeclaredTip = tip
+                    regCarrierAda = carrier
+                    regNonce = nonce
+                Just OnChainRegistrationRequest{..}
+        _ -> Nothing
 
 instance UnsafeFromData OnChainRegistrationRequest where
-    unsafeFromBuiltinData _ =
-        error "OnChainRegistrationRequest: decoding is not implemented"
+    unsafeFromBuiltinData bd = case unD bd of
+        Constr
+            0
+            [ reg
+                , B k
+                , B refund
+                , B dest
+                , carried
+                , I sub
+                , I cost
+                , I tip
+                , I carrier
+                , I nonce
+                ]
+                | Just datum <- carriedDatum carried ->
+                    OnChainRegistrationRequest
+                        { regRegistry = unsafeFromBuiltinData (mkD reg)
+                        , regKey = k
+                        , regRefundAddress = BuiltinByteString refund
+                        , regDestination = dest
+                        , regDatum = datum
+                        , regSubmittedAt = sub
+                        , regRegistrationCost = cost
+                        , regDeclaredTip = tip
+                        , regCarrierAda = carrier
+                        , regNonce = nonce
+                        }
+        _ ->
+            error
+                "unsafeFromBuiltinData: OnChainRegistrationRequest"

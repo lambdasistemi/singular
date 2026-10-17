@@ -17,13 +17,31 @@ module Singular.Registry.Wire.Booking
     , trieReadyTagName
     ) where
 
+import Cardano.Crypto.Hash (Blake2b_256, hashToBytes, hashWith)
 import Data.ByteString (ByteString)
-import PlutusTx.Builtins.Internal (BuiltinByteString)
-import Singular.Registry.Wire.Request (OnChainRegistrationRequest)
+import PlutusCore.Data (Data (..))
+import PlutusTx.Builtins qualified as Builtins
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
+import Singular.Registry.Wire.Request
+    ( OnChainRegistrationRequest (..)
+    )
 
-{- | The application tag name of a registration.
+{- | The name a list of data fields hashes to: BLAKE2b-256 of the data
+encoding of the list, by the same builtin a script's @serialise_data@ runs.
+Integers stay integers and byte strings stay byte strings, so the encoding
+separates its fields.
+-}
+nameOf :: [Data] -> ByteString
+nameOf fields =
+    case Builtins.serialiseData (BuiltinData (List fields)) of
+        BuiltinByteString encoded ->
+            hashToBytes (hashWith @Blake2b_256 id encoded)
 
-Not implemented yet: answers the empty name.
+{- | The application tag name of a registration: the hash of the list
+@[0, 1, key, refund_address, destination, nonce]@, the list the model hashes.
 -}
 applicationTagName
     :: ByteString
@@ -35,11 +53,24 @@ applicationTagName
     -> Integer
     -- ^ The nonce
     -> ByteString
-applicationTagName _ _ _ _ = mempty
+applicationTagName key (BuiltinByteString refund) destination nonce =
+    nameOf [I 0, I 1, B key, B refund, B destination, I nonce]
 
-{- | The trie-ready tag name of a registration.
-
-Not implemented yet: answers the empty name.
+{- | The trie-ready tag name of a registration: the hash of the list
+@[1, 0, key, refund_address, destination, cost, tip, carrier, nonce]@.
 -}
 trieReadyTagName :: OnChainRegistrationRequest -> ByteString
-trieReadyTagName _ = mempty
+trieReadyTagName OnChainRegistrationRequest{..} =
+    nameOf
+        [ I 1
+        , I 0
+        , B regKey
+        , B refund
+        , B regDestination
+        , I regRegistrationCost
+        , I regDeclaredTip
+        , I regCarrierAda
+        , I regNonce
+        ]
+  where
+    BuiltinByteString refund = regRefundAddress

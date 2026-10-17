@@ -51,6 +51,7 @@ import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Data.Map.Strict qualified as Map
 
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment.Manifest
@@ -82,14 +83,17 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , cagePolicyIdFromCfg
     , computeScriptHash
     , extractCageDatum
+    , requestPolicyHash
     , scriptHashBytes
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Internal.Lookup (findStateUtxo)
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainTokenId (..)
     , OnChainTokenState (..)
     , stateActivePolicyBytes
+    , stateRequestPolicyBytes
     )
 
 -- ---------------------------------------------------------
@@ -164,7 +168,19 @@ cageConfigFor dep parts = do
                     , cfgActivePolicy = partsActivePolicy parts
                     , cfgAbsentPolicy = partsAbsentPolicy parts
                     , cfgTerminalPolicy = partsTerminalPolicy parts
-                    , cfgRequestPolicy = SBS.empty
+                    , cfgRequestPolicy =
+                        SBS.toShort
+                            ( scriptHashBytes
+                                ( requestPolicyHash
+                                    stateHash
+                                    (partsRequestBytes parts)
+                                    ( OnChainTokenId
+                                        ( BuiltinByteString
+                                            (deriveAssetName (txInToRef seedIn))
+                                        )
+                                    )
+                                )
+                            )
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }
@@ -231,6 +247,26 @@ verifyDeployment view dep parts = do
                 <> " but the manifest records "
                 <> show (depProcessTime dep, depRetractTime dep)
             )
+    unless
+        ( stateRegistrationCost stateLive == depRegistrationCost dep
+            && stateBookingWidth stateLive == depBookingWidth dep
+            && stateRequestPolicyBytes stateLive
+                == SBS.fromShort (cfgRequestPolicy cfg)
+        )
+        $ die
+            ( "the live registry state carries booking pins "
+                <> show
+                    ( stateRegistrationCost stateLive
+                    , stateBookingWidth stateLive
+                    , hex (stateRequestPolicyBytes stateLive)
+                    )
+                <> " but the manifest and release record "
+                <> show
+                    ( depRegistrationCost dep
+                    , depBookingWidth dep
+                    , hex (SBS.fromShort (cfgRequestPolicy cfg))
+                    )
+            )
     pure
         ( [ "release "
                 <> T.unpack (depRelease dep)
@@ -247,6 +283,12 @@ verifyDeployment view dep parts = do
                 <> " ms, retract "
                 <> show (depRetractTime dep)
                 <> " ms"
+          , "registry state carries the recorded booking pins: registration cost "
+                <> show (depRegistrationCost dep)
+                <> " lovelace, booking width "
+                <> show (depBookingWidth dep)
+                <> " ms, request policy 0x"
+                <> hex (SBS.fromShort (cfgRequestPolicy cfg))
           ]
             <> [ "reference script "
                     <> T.unpack (refRole r)
