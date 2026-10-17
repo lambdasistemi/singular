@@ -14,7 +14,7 @@
 
 ## Slice: create's chain
 
-- [ ] staged-create: create's whole chain in one bundle, its pending identity, its receipt; the same bodies as the key-file path.
+- [x] staged-create: create's whole chain in one bundle, its pending identity, its receipt; the same bodies as the key-file path.
 
 ## Slice: journal phase
 

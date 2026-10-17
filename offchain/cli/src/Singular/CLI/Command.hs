@@ -650,8 +650,6 @@ parseWithGroup group environment args = do
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
             publicPreview = preview && isJust (lookup "--wallet-address" flags)
-        when (not preview && isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
         mode <-
             if publicPreview
                 then previewMode flags
@@ -867,10 +865,6 @@ parseWithGroup group environment args = do
                 }
     -- A preview reads a node and names a public address; it holds no key,
     -- so a signing key is refused before anything is read.
-    addressNeedsPreview =
-        BadValue
-            "--wallet-address"
-            "names a caller for --preview and registry inspect only; a write signs with --wallet-skey"
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
@@ -1079,6 +1073,9 @@ usage =
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--preview] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"

@@ -64,6 +64,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
+import Data.Either (isRight)
 import Data.Foldable (toList)
 import Data.IORef
     ( IORef
@@ -141,6 +142,7 @@ import Cardano.Ledger.Api.Tx.Body
     , collateralInputsTxBodyL
     , feeTxBodyL
     , inputsTxBodyL
+    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     , reqSignerHashesTxBodyL
@@ -219,6 +221,7 @@ import Singular.CLI.Registry
     , hexT
     , loadRelease
     , loadReleaseCodes
+    , pendingPath
     , registryConfigFor
     )
 import Singular.CLI.Root (runPackagedVia)
@@ -357,6 +360,7 @@ spec =
         >> prepareFundingRows
         >> previewFundingRows
         >> externalSignerRows
+        >> externalCreateRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -5130,12 +5134,6 @@ signerFlagRefusalRows =
                        , "--network-magic"
                        , "1"
                        ]
-            addressNeedsPreview =
-                BadValue
-                    "--wallet-address"
-                    ( "names a caller for --preview and registry inspect only; "
-                        <> "a write signs with --wallet-skey"
-                    )
             address = bech32Address (walletAddr (walletFromSignKey 1 rigKeyOfTest))
             rigKeyOfTest = case parseSignKey (B16.encode (BS.replicate 32 0x77)) of
                 Right k -> k
@@ -5169,18 +5167,211 @@ signerFlagRefusalRows =
                         "--bundle"
                         "is meaningless without --wallet-address: name the signer too"
                     )
-        parseCommand
-            [ "registry"
-            , "create"
-            , "--blueprint"
-            , "blueprint.json"
-            , "--koios-url"
-            , "https://koios.example"
-            , "--network-magic"
-            , "1"
-            , "--wallet-address"
-            , address
-            , "--bundle"
-            , "run.bundle"
-            ]
-            `shouldBe` Left addressNeedsPreview
+
+-- ---------------------------------------------------------
+-- The external signer's create (#641 slice 3)
+-- ---------------------------------------------------------
+
+{- | A staged create: the caller names their address and a bundle file, the
+command builds create's whole chain as one bundle, in the order it builds it
+(the state publication when no carrier is live, the boot, the request, the
+witness publications and, pinned, the application publication), each later
+transaction spending an earlier one's output, sends nothing and exits 19.
+The bundle names no state token, carries no deadline, the pending identity
+stays recorded, and every body equals the key-file create's over the same
+chain.
+-}
+externalCreateRows :: Spec
+externalCreateRows = describe "the external signer's create" $ do
+    stagedCreatePublishingRow
+    stagedCreateLiveCarrierRow
+    existingBundleCreateRow
+    createSignerLineRows
+
+stagedCreatePublishingRow :: Spec
+stagedCreatePublishingRow =
+    it "stages a create with the state publication as one bundle" $
+        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
+            assertStagedCreate rig env Nothing "bob-external-create" "registry"
+
+stagedCreateLiveCarrierRow :: Spec
+stagedCreateLiveCarrierRow =
+    it "stages a create over a live state carrier as one bundle" $
+        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed <- fundSeed rig
+            first <-
+                run
+                    rig
+                    "key-file create publishing the carrier"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            outcomeOf (runReceipt first) `shouldBe` Just "success"
+            seed2 <- fundSeed2 rig
+            assertStagedCreate
+                rig
+                env
+                (Just seed2)
+                "bob-external-create-2"
+                "registry-2"
+
+{- | Run a staged create of this seed into one registry directory, then the
+key-file create of the same seed into another over the same chain, and hold
+the staged run to everything the bundle must be.
+-}
+assertStagedCreate
+    :: Rig -> Env -> Maybe String -> String -> String -> IO ()
+assertStagedCreate rig env seed registry keyRegistry = do
+    let bundlePath = rigDir rig </> (registry <> ".bundle")
+        createLine =
+            ["registry", "create"]
+                <> maybe [] (\s -> ["--seed", s]) seed
+                <> policyArgs
+    staged <-
+        runVia
+            rig
+            env
+            registry
+            "staged create"
+            (createLine <> externalArgs rig bundlePath)
+    runExit staged `shouldBe` ExitFailure 19
+    outcomeOf (runReceipt staged) `shouldBe` Just "waiting-for-signatures"
+    bytes <- BS.readFile bundlePath
+    (bundle, bodies) <- checkedBundle bundlePath
+    bundleCommand bundle `shouldBe` "create"
+    bundleStateToken bundle `shouldBe` Nothing
+    [bundleTxDeadline e | e <- toList (bundleTransactions bundle)]
+        `shouldSatisfy` all isNothing
+    assertChained bodies
+    expected <- case valueAt "expected" (runReceipt staged) of
+        Just v@(Aeson.Object _) -> pure v
+        other -> fail ("no expected fields: " <> show other)
+    t <- case textAt "stateToken" expected of
+        Just tok -> pure (T.unpack tok)
+        Nothing -> fail ("no expected state token: " <> show expected)
+    assertWaitingJournal rig registry t (hashOfBytes bytes) bundle bodies
+    assertStagedTrace staged bodies
+    doesFileExist (pendingPath (stagedPartition rig registry t))
+        `shouldReturn` True
+    -- The pending identity, read back by the reader inspect uses for it: it
+    -- decodes, records a seed whose state token is the one this bundle will
+    -- mint, and names the bundle's network and the seed its boot spends.
+    inspected <-
+        runAt
+            rig
+            registry
+            "inspect of the pending create"
+            ( ["registry", "inspect"]
+                <> tokenArgs t
+                <> [ "--key"
+                   , "any"
+                   , "--wallet-address"
+                   , bech32Address (walletAddr (rigWallet rig))
+                   ]
+            )
+    outcomeOf (runReceipt inspected) `shouldBe` Just "partial"
+    pendingIdentity <- case valueAt "incompleteCreate" (runReceipt inspected) of
+        Just v@(Aeson.Object _) -> pure v
+        other -> fail ("no pending identity read back: " <> show other)
+    valueAt "networkMagic" pendingIdentity
+        `shouldBe` Just (Aeson.toJSON (bundleNetworkMagic bundle))
+    seedIn <- case textAt "seed" pendingIdentity of
+        Just s -> either fail pure (parseOutRef s)
+        Nothing ->
+            fail ("the pending identity names no seed: " <> show pendingIdentity)
+    case [b | b <- bodies, b ^. bodyTxL . mintTxBodyL /= mempty] of
+        boot : _ ->
+            Set.member seedIn (boot ^. bodyTxL . inputsTxBodyL) `shouldBe` True
+        [] -> expectationFailure "no staged body mints the state token"
+    keyRun <-
+        runAt
+            rig
+            keyRegistry
+            "key-file create after the staged one"
+            createLine
+    outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
+    tokenOf keyRun `shouldReturn` t
+    assertExpectationOnly staged keyRun
+    keyBodies <- keyFilePreparedBodies rig keyRegistry t "create"
+    length keyBodies `shouldBe` length bodies
+    map ((^. bodyTxL) . apartFromValidity) keyBodies
+        `shouldBe` map ((^. bodyTxL) . apartFromValidity) bodies
+
+-- | Each transaction after the first spends an output of an earlier one.
+assertChained :: [ConwayTx] -> IO ()
+assertChained bodies =
+    forM_ (zip [1 ..] (drop 1 bodies)) $ \(n, body) -> do
+        let earlier = Set.fromList (map txIdTx (take n bodies))
+            spent =
+                Set.map
+                    (\(TxIn i _) -> i)
+                    (body ^. bodyTxL . inputsTxBodyL)
+        Set.null (Set.intersection earlier spent) `shouldBe` False
+
+existingBundleCreateRow :: Spec
+existingBundleCreateRow =
+    it
+        "refuses an existing bundle file on create before anything is read, its bytes untouched"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            let bundlePath = rigDir rig </> "taken-create.bundle"
+                sentinel = "sentinel bytes"
+                registry = "bob-external-create-taken"
+                refusedOnTheBundle at label = do
+                    refused <-
+                        runAt
+                            rig
+                            at
+                            label
+                            ( ["registry", "create", "--seed", seed]
+                                <> policyArgs
+                                <> externalArgs rig bundlePath
+                            )
+                    runExit refused `shouldBe` ExitFailure 10
+                    outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                    fromMaybe "" (receiptReason refused)
+                        `shouldSatisfy` T.isInfixOf (T.pack bundlePath)
+                    BS.readFile bundlePath `shouldReturn` sentinel
+            BS.writeFile bundlePath sentinel
+            refusedOnTheBundle
+                registry
+                "staged create onto an existing bundle file"
+            doesDirectoryExist (rigDir rig </> registry) `shouldReturn` False
+            let blueprint = rigBlueprint rig
+                hiddenBlueprint = blueprint <> ".hidden"
+            renameFile blueprint hiddenBlueprint
+            refusedOnTheBundle
+                (registry <> "-blueprint")
+                "staged create onto an existing bundle file, the blueprint unreadable"
+                `finally` renameFile hiddenBlueprint blueprint
+
+createSignerLineRows :: Spec
+createSignerLineRows =
+    it
+        "reads the external signer on create and refuses an address without a bundle file"
+        $ do
+            let line extra =
+                    parseCommand
+                        ( ["registry", "create"]
+                            <> extra
+                            <> [ "--blueprint"
+                               , "blueprint.json"
+                               , "--koios-url"
+                               , "https://koios.example"
+                               , "--network-magic"
+                               , "1"
+                               ]
+                        )
+                address = bech32Address (walletAddr (walletFromSignKey 1 key))
+                key = case parseSignKey (B16.encode (BS.replicate 32 0x77)) of
+                    Right k -> k
+                    Left _ -> error "a fixed 32-byte key always parses"
+            line ["--wallet-address", address, "--bundle", "run.bundle"]
+                `shouldSatisfy` isRight
+            line ["--wallet-address", address]
+                `shouldBe` Left
+                    ( BadValue
+                        "--bundle"
+                        ( "is required with --wallet-address: the run's transactions are "
+                            <> "written to the bundle for signing elsewhere"
+                        )
+                    )

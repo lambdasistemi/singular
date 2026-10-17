@@ -112,7 +112,7 @@ import Data.IORef
     )
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -1298,10 +1298,12 @@ journalObserved wc step confirmed detail = case csStaged confirmed of
 
 {- | The same, for an already-live reference found before this command:
 known by its original id, with no current-command confirmation, so zero
-elapsed and empty scopes by construction (there is no map to consult).
+elapsed and empty scopes by construction (there is no map to consult). A
+staged run records nothing here: it observes no chain fact of its own, and
+the reference its view found may be one of its own staged outputs.
 -}
 journalObservedId :: WriteContext -> Text -> Text -> Text -> IO ()
-journalObservedId wc step txid detail = do
+journalObservedId wc step txid detail = unless (isJust (wcStaged wc)) $ do
     appendJournal
         (wcDir wc)
         (blankEntry wc step txid "observed"){journalDetail = Just detail}

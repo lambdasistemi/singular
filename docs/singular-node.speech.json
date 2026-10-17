@@ -23,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and one signer (the signing key, or on singular fold, singular reclaim and singular reject an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+      "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim and singular reject an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
       "pause": 400
     }
   ],
@@ -63,7 +63,7 @@
       "pause": 400
     },
     {
-      "text": "The writer's side is a singular registry fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
+      "text": "The writer's side is a singular registry create, fold, reject or reclaim run that names --wallet-address and --bundle in place of the signing key: it writes such a bundle, signs and sends nothing, and exits with status 19, waiting-for-signatures.",
       "pause": 400
     },
     {
@@ -351,6 +351,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "60e38b18714054b0c0d94682b3ab2b15ac8d7b5a40f0653e1c121ef2d19331b5"
+    "sha256": "646a94469b9df68fb144f4c1a2a4a3fa042500bb4c31e09353c298d89679edc2"
   }
 }

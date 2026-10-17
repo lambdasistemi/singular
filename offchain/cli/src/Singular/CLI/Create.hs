@@ -46,7 +46,7 @@ import Control.Exception
     , throwIO
     , try
     )
-import Control.Monad (when)
+import Control.Monad (unless, when)
 import Data.Aeson (Value, toJSON)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
@@ -55,7 +55,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -88,11 +88,12 @@ import Singular.CLI.Command
     , ProviderSettings (..)
     , WriteSettings (..)
     )
+import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Live (receipt, txInText)
 import Singular.CLI.ManagedState
-    ( managedDir
+    ( addressPartition
+    , managedDir
     , resolveStateRoot
-    , walletPartition
     )
 import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
 import Singular.CLI.Registry
@@ -126,6 +127,7 @@ import Singular.CLI.Session
     , loadSignerWallet
     , readOnce
     , readStep
+    , refuseTakenBundle
     , submitBuilt
     , submitBuiltIn
     , withSession
@@ -229,6 +231,12 @@ applicationPolicyNotAccepted =
 
 runCreate :: Application -> Env -> CreateArgs -> IO Value
 runCreate app env a = do
+    -- An external signer's bundle path is judged first: an existing one is
+    -- refused before the blueprint, the wallet or the state root is read.
+    case createMode a of
+        Submit WriteSettings{writeSigner = SignerExternal _ bundle} ->
+            refuseTakenBundle bundle
+        _ -> pure ()
     -- A direct caller composing the neutral value meets the same refusal
     -- as the dispatch: at boot no state datum exists to read a pin from.
     case appPin app of
@@ -324,13 +332,9 @@ createWith
     -> IO Value
 createWith app env a rel ws = do
     let magic = providerMagic (writeProvider ws)
-    (callerAddr, callerWallet) <- loadSignerWallet magic (writeSigner ws)
-    caller <- case callerWallet of
-        Just loaded -> pure loaded
-        Nothing ->
-            failWith
-                ClientRefusal
-                "registry create signs with a key file; an external signer is refused at the command line"
+    -- The caller's address names the partition for either signer: a key
+    -- file's payment key hash is its address's.
+    (callerAddr, _) <- loadSignerWallet magic (writeSigner ws)
     root <- resolveStateRoot (createStateDir a)
     let addr = callerAddr
         settings = writeProvider ws
@@ -349,7 +353,7 @@ createWith app env a rel ws = do
                     root
                     magic
                     (stateTokenOf rel named)
-                    (walletPartition caller)
+                    (addressPartition callerAddr)
                 )
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
         _ -> pure ()
@@ -384,7 +388,7 @@ createWith app env a rel ws = do
             ppPre
             mustPubPre
     let token = stateTokenOf rel seedIn
-        dir = managedDir root magic token (walletPartition caller)
+        dir = managedDir root magic token (addressPartition callerAddr)
     -- A preview writes nothing: no lock, no directory, no journal.
     if createPreview a
         then withSession env dir "create" ws $ \wc -> do
@@ -585,8 +589,11 @@ createWith app env a rel ws = do
                         foundState
                         (seedFromPre == "publication-change")
                         (pendingPath dir)
-                -- The registry is its token: nothing of it stays on disk.
-                removeFile (pendingPath dir)
+                -- The registry is its token: nothing of it stays on disk. A
+                -- staged create has landed nothing yet, so its pending
+                -- identity stays recorded until the bundle's own state
+                -- settles it.
+                unless (isJust (wcStaged wc)) $ removeFile (pendingPath dir)
                 pure
                     ( receipt
                         "create"
