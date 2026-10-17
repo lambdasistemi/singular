@@ -635,6 +635,39 @@ test registration_booking_refuses_a_second_application_tag_in_the_request() {
   )
 }
 
+// The mint is exactly right in the next two rows; only what the request output
+// holds differs, as when an input already carries an earlier trie-ready tag.
+test registration_booking_refuses_a_second_trie_ready_name_held_in_the_request() {
+  let p = plan(requestOne())
+  let o = outputOf(p)
+  !handler(
+    withOutput(
+      p,
+      Output {
+        ..o,
+        value: merge(o.value, from_asset(requestPolicyId(), #"09", 1)),
+      },
+    ),
+  )
+}
+
+test registration_booking_refuses_the_trie_ready_tag_held_twice_in_the_request() {
+  let p = plan(requestOne())
+  let o = outputOf(p)
+  !handler(
+    withOutput(
+      p,
+      Output {
+        ..o,
+        value: merge(
+          o.value,
+          from_asset(requestPolicyId(), trieTag(p.request), 1),
+        ),
+      },
+    ),
+  )
+}
+
 test registration_booking_refuses_an_application_tag_under_another_policy() {
   let p = plan(requestOne())
   let r = p.request
@@ -1125,6 +1158,20 @@ test registration_booking_names_forged_trie_ready_tag_for_a_missing_mint() {
   let p = plan(requestOne())
   reason(
     Plan { ..p, mint: from_asset(fx.appPolicy, applicationTag(p.request), 1) },
+  ) == Some(@"forged-trie-ready-tag")
+}
+
+test registration_booking_names_forged_trie_ready_tag_for_a_second_name_held_in_the_request() {
+  let p = plan(requestOne())
+  let o = outputOf(p)
+  reason(
+    withOutput(
+      p,
+      Output {
+        ..o,
+        value: merge(o.value, from_asset(requestPolicyId(), #"09", 1)),
+      },
+    ),
   ) == Some(@"forged-trie-ready-tag")
 }
 
