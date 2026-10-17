@@ -1211,6 +1211,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.MixedFold
     Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.OpenBootSpec
+    Singular.Registry.E2E.RegistrationBookingSpec
     Singular.Registry.E2E.ReplayHistory
     Singular.Registry.E2E.ReplaySpec
     Singular.Registry.E2E.SubmitSpec
@@ -1260,6 +1261,7 @@ test-suite e2e-tests
     , ouroboros-consensus:protocol
     , ouroboros-network:api
     , ouroboros-network:framework
+    , plutus-core
     , plutus-tx
     , process
     , random
