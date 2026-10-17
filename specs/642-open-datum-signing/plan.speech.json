@@ -1,0 +1,60 @@
+{
+  "plan-for-open-datum-signing": [
+    {
+      "text": "Three pull requests: the first changes behaviour and is stacked on issue 641; the second and third move pages and harnesses. No on-chain change.",
+      "pause": 500
+    }
+  ],
+  "pull-request-1-open-datum-writes-end-in-a-bundle-or-sign-from-the-vault": [
+    {
+      "text": "The first pull request has three slices, each starting from the issue 641 checkpoint it needs.",
+      "pause": 500
+    }
+  ],
+  "slice-1-the-command-line-names-the-signer": [
+    {
+      "text": "Slice one: the four writes accept the address with the bundle file, previews and inspect refuse the bundle file, the usage and the settings table name the external signer. A complete external line stops with the shared refusal until staging lands.",
+      "pause": 500
+    }
+  ],
+  "slice-2-external-mode": [
+    {
+      "text": "Slice two: each write ends in one bundle and status 19, refusals write no bundle, and open-datum states its own staged fields as expected.",
+      "pause": 500
+    }
+  ],
+  "slice-3-vault-mode": [
+    {
+      "text": "Slice three: the same commands with the vault land, with one passphrase and receipts stated as fact once the bundle is on chain.",
+      "pause": 500
+    }
+  ],
+  "pull-request-2-demo-1-on-the-devnet": [
+    {
+      "text": "The second pull request moves the Demo 1 journey and its run page to wallets from singular wallet create, and teaches the devnet to fund a given address.",
+      "pause": 500
+    }
+  ],
+  "pull-request-3-the-guides-open-datum-retires-the-key-file": [
+    {
+      "text": "The third pull request removes the key file from open-datum and moves the remaining guides to the vault.",
+      "pause": 500
+    }
+  ],
+  "neighbours-and-order": [
+    {
+      "text": "Issue 641 gates slices two and three; issue 672 retires the key file from the registry and rebases on the second and third pull requests.",
+      "pause": 500
+    }
+  ],
+  "gate-and-budget": [
+    {
+      "text": "Every gate row is a hosted command, run under a memory and time bound. Slice one is bounded at 45 minutes, slices two and three at 90.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "4d61e9e0688c1e8e1ffe23fff6a305f5940a15b0e482bccfba4e1e7a968bb9ca"
+  }
+}

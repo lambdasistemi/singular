@@ -1,0 +1,36 @@
+{
+  "data-model-for-open-datum-signing": [
+    {
+      "text": "The data this ticket touches: the shared signer, which command takes which signer, the receipt fields under expected, and the narration events.",
+      "pause": 500
+    }
+  ],
+  "signer": [
+    {
+      "text": "The signer comes from issue 641, unchanged: key file, external signer or vault. Open-datum adds nothing to it.",
+      "pause": 500
+    }
+  ],
+  "which-command-takes-which-signer": [
+    {
+      "text": "The table shows, per command, when it takes the key file, the external signer and the vault.",
+      "pause": 500
+    }
+  ],
+  "receipt-fields-under-expected": [
+    {
+      "text": "Open-datum fields derived from a staged body sit under expected until the whole bundle is found on chain.",
+      "pause": 500
+    }
+  ],
+  "narration-events": [
+    {
+      "text": "The booked, updated and root seen events never call a staged transaction done.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "81b9098a7661e0f35cef546e4383d13ab9a0c0a015d2999763b1479fd048ff85"
+  }
+}

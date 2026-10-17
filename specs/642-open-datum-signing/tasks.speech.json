@@ -1,0 +1,42 @@
+{
+  "tasks-for-open-datum-signing": [
+    {
+      "text": "The tasks of this ticket, grouped by slice and pull request.",
+      "pause": 500
+    }
+  ],
+  "slice-the-command-line-names-the-signer": [
+    {
+      "text": "The command line names the signer: flags, refusals, usage and the settings table.",
+      "pause": 500
+    }
+  ],
+  "slice-external-mode": [
+    {
+      "text": "External mode: staged writes, the staged receipt, and create once the registry create stages.",
+      "pause": 500
+    }
+  ],
+  "slice-vault-mode": [
+    {
+      "text": "Vault mode: the five writes signed from the vault.",
+      "pause": 500
+    }
+  ],
+  "pull-request-2-demo-1-on-the-devnet": [
+    {
+      "text": "Demo 1 on the devnet: address funding and the journey on new wallets.",
+      "pause": 500
+    }
+  ],
+  "pull-request-3-the-guides": [
+    {
+      "text": "The guides, and open-datum without the key file.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "f344829be2895aed5a85874948ba92cd1b4e3aee72c88b4323a6aae0e85db18b"
+  }
+}

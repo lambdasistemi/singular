@@ -1,0 +1,42 @@
+{
+  "open-datum-commands-and-guides-use-the-vault-and-external-signing": [
+    {
+      "text": "Issue 642, fifth of five tickets under issue 490. It brings the shared signing machinery of issue 641 to the open-datum commands, and moves the guides off key files.",
+      "pause": 500
+    }
+  ],
+  "story": [
+    {
+      "text": "As Alice, I insert an entry and fold it in one command with my vault, typing my passphrase once. As Bob, I update my entry naming only my address and a bundle file; nothing is signed or sent, and I sign and submit elsewhere. Neither of us makes a key file.",
+      "pause": 500
+    }
+  ],
+  "signer-per-command": [
+    {
+      "text": "Each open-datum write takes exactly one signer: the external signer, the vault, or the key file until the last pull request removes it. Create follows the registry create. Inspect is read only and refuses the bundle file and the vault.",
+      "pause": 500
+    }
+  ],
+  "requirements": [
+    {
+      "text": "The requirements name what must hold: the external signer accepted on the four writes, one bundle per run holding its whole chain, no key read in the external mode, refusals that write no bundle, a pending bundle stopping the next write with status 19, receipt fields under expected until they land, the vault landing the same bundle, and guides on the vault.",
+      "pause": 500
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Mixtures of signers, an address without its bundle file, a bundle file on a preview or on inspect, a script or bootstrap address, and an existing bundle file are refused before anything is read. A pending bundle is refused before building.",
+      "pause": 500
+    }
+  ],
+  "limits-recorded": [
+    {
+      "text": "Read-backs run against the chained view, a bundle refused elsewhere dies by expiry, the deadlines are the builders own, and keri-stub is not this ticket.",
+      "pause": 500
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "c2ffb535a87343cea0b04bdb49d1c4852a21724a1533f8313d58db4fc002739b"
+  }
+}
