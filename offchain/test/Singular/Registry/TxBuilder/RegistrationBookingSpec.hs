@@ -29,6 +29,7 @@ import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (isInfixOf, sort)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (listToMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Word (Word32)
@@ -692,6 +693,11 @@ requestLovelace =
 feeOf :: ConwayTx -> Integer
 feeOf tx = let Coin f = tx ^. bodyTxL . feeTxBodyL in f
 
+-- | The output a balancer appends last: the change.
+lastOutput :: ConwayTx -> Maybe (TxOut ConwayEra)
+lastOutput tx =
+    listToMaybe (reverse (toList (tx ^. bodyTxL . outputsTxBodyL)))
+
 -- | Book for a payer who holds only this one ada-only output.
 bookedFundedBy :: PParams ConwayEra -> Integer -> IO ConwayTx
 bookedFundedBy params lovelace =
@@ -753,6 +759,23 @@ fundingSpec = describe "the funding output" $ do
         let lovelace = requestLovelace + fee + minimum' + 50_000
         tx <- bookedFundedBy ledgerParameters lovelace
         judgeCollateral (owes lovelace) tx `shouldBe` []
+    it
+        "leaves the change exactly its minimum ada when the funding output holds just that"
+        $ do
+            fee <- feeAmply
+            let lovelace = requestLovelace + fee + minimum'
+            tx <- bookedFundedBy ledgerParameters lovelace
+            -- The fee does not depend on the amount funded, so this funding
+            -- leaves exactly the minimum; if it did, the example would say so.
+            feeOf tx `shouldBe` fee
+            fmap (^. coinTxOutL) (lastOutput tx)
+                `shouldBe` Just (Coin minimum')
+            judgeCollateral (owes lovelace) tx `shouldBe` []
+    it
+        "does not return a change output one lovelace below its minimum ada"
+        $ do
+            fee <- feeAmply
+            refusedOrOwesNothing (requestLovelace + fee + minimum' - 1)
     it "does not return a change output a little below its minimum ada" $ do
         fee <- feeAmply
         refusedOrOwesNothing (requestLovelace + fee + minimum' - 50_000)
