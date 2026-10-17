@@ -53,7 +53,7 @@ import Control.Exception
     , try
     , uninterruptibleMask_
     )
-import Control.Monad (void, when)
+import Control.Monad (forM, forM_, unless, void, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
@@ -64,7 +64,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
-import Data.Foldable (forM_, toList)
+import Data.Foldable (toList)
 import Data.IORef
     ( IORef
     , modifyIORef'
@@ -74,7 +74,7 @@ import Data.IORef
     )
 import Data.List (isInfixOf, nub, partition, sort, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down (..))
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
@@ -94,10 +94,12 @@ import GHC.Generics
 import Lens.Micro ((&), (.~), (^.))
 import System.Directory
     ( createDirectory
+    , createDirectoryIfMissing
     , doesDirectoryExist
     , doesFileExist
     , listDirectory
     , removePathForcibly
+    , renameFile
     )
 import System.Exit (ExitCode (..))
 import System.FilePath (takeDirectory, takeFileName, (</>))
@@ -125,13 +127,19 @@ import System.Posix.Types (Fd)
 import System.Timeout (timeout)
 import Test.Hspec
 
-import Cardano.Crypto.Hash.Class (hashFromBytes)
+import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
+import Cardano.Crypto.Hash.Class
+    ( hashFromBytes
+    , hashToBytes
+    , hashWith
+    )
 import Cardano.Ledger.Address (Addr (..), serialiseAddr)
 import Cardano.Ledger.Api.Tx (bodyTxL, mkBasicTx, txIdTx)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , feeTxBodyL
     , inputsTxBodyL
+    , mintTxBodyL
     , mkBasicTxBody
     , outputsTxBodyL
     , reqSignerHashesTxBodyL
@@ -150,6 +158,8 @@ import Cardano.Ledger.BaseTypes
     , StrictMaybe (..)
     , TxIx (..)
     )
+import Cardano.Ledger.Binary (decCBOR, decodeFullAnnotator)
+import Cardano.Ledger.Core (eraProtVerHigh)
 import Cardano.Ledger.Credential
     ( Credential (..)
     , StakeReference (..)
@@ -159,7 +169,7 @@ import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
-    , PolicyID
+    , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Ledger.Val (inject, (<->))
@@ -180,6 +190,7 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.Fold (runFoldBounded)
+import Singular.CLI.ManagedState (addressPartition, managedDir)
 import Singular.CLI.Outlay (outlayTotal, updateOutlay)
 import Singular.CLI.Prepare
     ( PrepareRefusal (..)
@@ -188,16 +199,24 @@ import Singular.CLI.Prepare
     , prepareFunding
     , previewFunding
     )
-import Singular.CLI.Receipt (FoldTransition (..), JournalEntry (..))
+import Singular.CLI.Receipt
+    ( FoldTransition (..)
+    , JournalEntry (..)
+    , bodiesDir
+    , journalPath
+    , readJournal
+    )
 import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry
     ( economics
+    , hexT
     , loadRelease
     , loadReleaseCodes
     , registryConfigFor
     )
 import Singular.CLI.Root (runPackagedVia)
 import Singular.CLI.Session (Env (..), WriteContext (..), txIdHex)
+import Singular.CLI.Sign (renderSignRefusal, witnessPlan)
 import Singular.CLI.SubmitSpec (selfPaymentFiles)
 import Singular.CLI.Trace
 import Singular.Registry.Application
@@ -209,6 +228,17 @@ import Singular.Registry.Application
     , datumHash
     , hashPinnedApplication
     , neutralApplication
+    )
+import Singular.Registry.Bundle
+    ( Bundle (..)
+    , BundleTransaction (..)
+    , TextEnvelope (..)
+    , bodyDeadline
+    , bodyIdentity
+    , checkBundle
+    , decodeBundle
+    , decodeTransactionEnvelope
+    , renderBundleRefusal
     )
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config (CageConfig (..))
@@ -239,6 +269,7 @@ import Singular.Registry.RawChainFixture
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
 import Singular.Registry.Signing (SignedTx, signTx, signedTx)
+import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.SyntheticLedger
     ( unitProgram
     , withSyntheticCosts
@@ -285,7 +316,13 @@ import Singular.Registry.Types
     , stateAppPolicyBytes
     )
 import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
-import Singular.Registry.Wallet (Wallet (..), loadWallet)
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , loadWallet
+    , parseSignKey
+    , walletFromSignKey
+    )
 
 spec :: Spec
 spec =
@@ -302,6 +339,7 @@ spec =
         >> createDescribeCommandRows
         >> prepareFundingRows
         >> previewFundingRows
+        >> externalSignerRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -2419,7 +2457,22 @@ plantRequest
     -> RegistryEconomics
     -> BS.ByteString
     -> IO (TxIn, Integer)
-plantRequest rig tokenStr seedStr econ key = do
+plantRequest rig tokenStr seedStr econ key =
+    plantRequestDeposit rig tokenStr seedStr econ key 1_000_000
+
+{- | 'plantRequest' with the request's deposit in lovelace named: a deposit
+beyond the wallet's largest ada-only output forces a later write to make a
+preparation.
+-}
+plantRequestDeposit
+    :: Rig
+    -> String
+    -> String
+    -> RegistryEconomics
+    -> BS.ByteString
+    -> Integer
+    -> IO (TxIn, Integer)
+plantRequestDeposit rig tokenStr seedStr econ key deposit = do
     seedIn <-
         either
             (fail . ("plantRequest seed: " <>))
@@ -2434,7 +2487,7 @@ plantRequest rig tokenStr seedStr econ key = do
         wallet = walletAddr (rigWallet rig)
     unsigned <-
         SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
-            requestEdgeImpl cfg v (Coin 1_000_000) tid key edgeInsertActive wallet
+            requestEdgeImpl cfg v (Coin deposit) tid key edgeInsertActive wallet
     let txid = txIdTx unsigned
         spent = Set.toList (unsigned ^. bodyTxL . inputsTxBodyL)
         made = zip [0 ..] (toList (unsigned ^. bodyTxL . outputsTxBodyL))
@@ -2586,6 +2639,8 @@ commandLine rig registry args
     wantsKey =
         take 2 args /= ["registry", "inspect"]
             && take 2 args /= ["registry", "describe"]
+            -- an external signer names its own signer: the key file never joins it
+            && not (any (`elem` args) ["--wallet-address", "--bundle"])
 
 -- ---------------------------------------------------------
 -- --application-policy (#528)
@@ -4249,4 +4304,787 @@ testAppExpecting expected =
                                     <> show (length live)
                                 )
                             )
+            }
+
+-- ---------------------------------------------------------
+-- The external signer (#641 slice 2)
+-- ---------------------------------------------------------
+
+{- | A staged write: the caller names their address and a bundle file, the
+command builds its whole run as one bundle, sends nothing and exits 19. The
+rows cover the three writes, the funding preparation through the chained
+view, the bodies' equality with the key-file path's, the waiting lines, the
+saved bytes, the refusals and the trace.
+-}
+externalSignerRows :: Spec
+externalSignerRows = describe "the external signer" $ do
+    staged stagedFoldRow
+    staged stagedFoldWithPreparationRow
+    staged stagedRejectRow
+    staged stagedReclaimRow
+    staged noKeyFileRow
+    scriptAddressRow
+    existingBundleRow
+    signerFlagRefusalRows
+  where
+    -- A row whose assertion needs a staged run waits for staging itself.
+    staged = before_ (pendingWith "slice 2b")
+
+{- | The external signer's flags for the rig's own wallet: the address as
+given (bech32, derived from the rig's key at run time) and the bundle file.
+-}
+externalArgs :: Rig -> FilePath -> [String]
+externalArgs rig bundlePath =
+    [ "--wallet-address"
+    , bech32Address (walletAddr (rigWallet rig))
+    , "--bundle"
+    , bundlePath
+    ]
+
+-- | The bech32 spelling of an address whose payment part is a script.
+aScriptAddress :: String
+aScriptAddress =
+    bech32Address (Addr Testnet (ScriptHashObj scriptHash) StakeRefNull)
+  where
+    scriptHash = case hashFromBytes (BS.replicate 28 3) of
+        Just h -> ScriptHash h
+        Nothing -> error "aScriptAddress: 28 bytes are not a script hash"
+
+{- | The partition directory a run of this registry resolves for a signer
+whose payment key hash is the rig wallet's.
+-}
+stagedPartition :: Rig -> String -> String -> FilePath
+stagedPartition rig registry tokenStr =
+    managedDir
+        (rigDir rig </> registry)
+        (fromIntegral magic)
+        token
+        (addressPartition (walletAddr (rigWallet rig)))
+  where
+    token = case parseStateToken (T.pack tokenStr) of
+        Right t -> t
+        Left why -> error ("stagedPartition: " <> T.unpack why)
+
+{- | An environment whose submission capability counts every call: a staged
+run must never reach it, and the count proves it.
+-}
+withCountedSubmissions :: Rig -> (Env -> IO a) -> IO a
+withCountedSubmissions rig use = do
+    counted <- newIORef (0 :: Int)
+    let env =
+            (envOf rig)
+                { envWrites = \_ _ k ->
+                    k
+                        (capabilities rig)
+                            { capSubmit = \tx -> do
+                                modifyIORef' counted (+ 1)
+                                capSubmit (capabilities rig) tx
+                            }
+                }
+    result <- use env
+    n <- readIORef counted
+    n `shouldBe` 0
+    pure result
+
+-- | The bundle at a path, checked, with every body decoded.
+checkedBundle :: FilePath -> IO (Bundle, [ConwayTx])
+checkedBundle path = do
+    bytes <- BS.readFile path
+    bundle <-
+        either (fail . renderBundleRefusal) pure (decodeBundle bytes)
+    either (fail . renderBundleRefusal) pure (checkBundle bundle)
+    bodies <-
+        forM (toList (bundleTransactions bundle)) $
+            either
+                (fail . ("a bundle envelope does not decode: " <>))
+                pure
+                . decodeTransactionEnvelope
+                . bundleTxEnvelope
+    pure (bundle, bodies)
+
+-- | The BLAKE2b-256 of some bytes, as the receipt names it.
+hashOfBytes :: BS.ByteString -> Text
+hashOfBytes bytes =
+    hexT (hashToBytes (hashWith @Blake2b_256 id bytes))
+
+{- | The unsigned bodies the key-file path built for this registry, read back
+from its own journal's prepared lines, in build order.
+-}
+keyFilePreparedBodies :: Rig -> String -> String -> IO [ConwayTx]
+keyFilePreparedBodies rig registry tokenStr = do
+    entries <- readJournal (stagedPartition rig registry tokenStr)
+    forM [e | e <- entries, journalEvent e == "prepared"] $ \e -> do
+        (_, body) <- boundBody entries (journalTxId e)
+        either (fail . T.unpack) pure body
+
+{- | The transaction a saved body file holds, through the same checks the
+prepared-body reader applies: hex text, a decodable Conway transaction
+whose own id is the identity the line names, and the line's hash over the
+raw bytes. The saved material is bound to what it claims to be, never
+taken at its own hash.
+-}
+savedBodyOf :: JournalEntry -> IO (ConwayTx, BS.ByteString)
+savedBodyOf e = do
+    path <- case journalBody e of
+        Just p -> pure p
+        Nothing -> fail "the line names no saved body"
+    stored <- BS.readFile path
+    raw <-
+        either
+            (fail . ("the saved body is not hex: " <>))
+            pure
+            (B16.decode (BC.filter (/= '\n') stored))
+    decoded <-
+        either
+            (fail . ("the saved body does not decode to a transaction: " <>) . show)
+            pure
+            ( decodeFullAnnotator
+                (eraProtVerHigh @ConwayEra)
+                "transaction"
+                decCBOR
+                (BL.fromStrict raw)
+            )
+    txIdHex decoded `shouldBe` journalTxId e
+    journalBodyHash e `shouldBe` Just (hashOfBytes raw)
+    pure (decoded, raw)
+
+{- | What a staged run's journal must hold: nothing but one waiting line per
+staged transaction, each naming the step, the identity, the bundle's hash in
+its detail, the saved body's path and hash, the network and the era; and
+each saved body is the bundle's own transaction under that identity — its
+raw bytes the envelope's CBOR, its decoded self the bundle's body.
+-}
+assertWaitingJournal
+    :: Rig -> String -> String -> Text -> Bundle -> [ConwayTx] -> IO ()
+assertWaitingJournal rig registry tokenStr bundleHash bundle bodies = do
+    let dir = stagedPartition rig registry tokenStr
+    entries <- readJournal dir
+    [e | e <- entries, journalEvent e /= "waiting-for-signatures"]
+        `shouldBe` []
+    let waiting = [e | e <- entries, journalEvent e == "waiting-for-signatures"]
+    length waiting `shouldBe` length bodies
+    forM_ (zip3 waiting (toList (bundleTransactions bundle)) bodies) $ \(e, entry, body) -> do
+        journalTxId e `shouldBe` txIdHex body
+        journalDetail e `shouldBe` Just bundleHash
+        journalNetwork e `shouldBe` Just (fromIntegral magic)
+        journalEra e `shouldBe` Just "Conway"
+        let path = fromMaybe "" (journalBody e)
+        path `shouldStartWith` (bodiesDir dir </> "")
+        path `shouldEndWith` (T.unpack (txIdHex body) <> ".cbor.hex")
+        (decoded, raw) <- savedBodyOf e
+        decoded `shouldBe` body
+        envelopeBytes <-
+            either
+                (fail . ("the bundle envelope is not hex: " <>))
+                pure
+                (B16.decode (TE.encodeUtf8 (envelopeCborHex (bundleTxEnvelope entry))))
+        raw `shouldBe` envelopeBytes
+
+{- | A staged run's trace holds one built and one staged event per
+transaction, and never a signed, submitted, confirmed or observed one.
+-}
+assertStagedTrace :: Run -> [ConwayTx] -> IO ()
+assertStagedTrace staged bodies = do
+    let txEvents = [t | Trace _ (How (Tx t)) <- runEvents staged]
+    length [() | TxBuilt{} <- txEvents] `shouldBe` length bodies
+    filter otherThanBuilt txEvents `shouldBe` []
+    let rendered = mconcat [renderJsonLine e | e <- runEvents staged]
+    rendered `shouldSatisfy` BS.isInfixOf "\"tx-staged\""
+  where
+    otherThanBuilt txEv = case txEv of
+        TxBuilt{} -> False
+        _ -> True
+
+-- | The receipt's bundle summary, as JSON.
+bundleSummaryOf :: Run -> IO Aeson.Value
+bundleSummaryOf r = case valueAt "bundle" (runReceipt r) of
+    Just v -> pure v
+    Nothing -> do
+        expectationFailure
+            ("no bundle in the receipt: " <> show (runReceipt r))
+        pure Aeson.Null
+
+{- | The staged receipt states the command's own fields as expectations only:
+every field the key-file receipt of the same command states as an observed
+fact appears under expected and never at the top level. The factual set is
+read from the key-file run's own receipt, never listed by hand.
+-}
+assertExpectationOnly :: Run -> Run -> IO ()
+assertExpectationOnly staged keyRun = do
+    expected <- case valueAt "expected" (runReceipt staged) of
+        Just v@(Aeson.Object _) -> pure v
+        other -> fail ("no expected fields: " <> show other)
+    forM_ (KeyMap.keys (fieldsOf (runReceipt keyRun))) $ \k ->
+        unless (k `elem` excluded) $ do
+            valueAt k (runReceipt staged) `shouldBe` Nothing
+            valueAt k expected `shouldNotBe` Nothing
+  where
+    excluded = ["command", "outcome", "reconciled", "submissions"]
+    fieldsOf = \case
+        Aeson.Object o -> o
+        _ -> KeyMap.empty
+
+-- | The effect lines of one transaction summary, as text.
+effectsOf :: Aeson.Value -> [Text]
+effectsOf = \case
+    Aeson.Object o -> case KeyMap.lookup "effects" o of
+        Just (Aeson.Array ls) -> [t | Aeson.String t <- toList ls]
+        _ -> []
+    _ -> []
+
+stagedFoldRow :: Spec
+stagedFoldRow =
+    it "stages a fold as one bundle, waiting for signatures" $
+        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            (req, _) <-
+                plantRequest rig t seed economics (TE.encodeUtf8 "bob-fold")
+            let bundlePath = rigDir rig </> "bob-fold.bundle"
+                registry = "bob-external"
+            staged <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "staged fold"
+                    ( [ "registry"
+                      , "fold"
+                      , "--request"
+                      , T.unpack (renderOutRef req)
+                      ]
+                        <> tokenArgs t
+                        <> externalArgs rig bundlePath
+                    )
+            runExit staged `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt staged)
+                `shouldBe` Just "waiting-for-signatures"
+            bytes <- BS.readFile bundlePath
+            let bundleHash = hashOfBytes bytes
+            (bundle, bodies) <- checkedBundle bundlePath
+            bundleCommand bundle `shouldBe` "fold"
+            bundleNetworkMagic bundle `shouldBe` fromIntegral magic
+            bundleStateToken bundle `shouldBe` Just (T.pack t)
+            toList (bundleSigners bundle)
+                `shouldBe` [T.pack (bech32Address (walletAddr (rigWallet rig)))]
+            length bodies `shouldBe` 1
+            [bundleTxIdentity entry | entry <- toList (bundleTransactions bundle)]
+                `shouldBe` map bodyIdentity bodies
+            case witnessPlan bytes (walletSignKey (rigWallet rig)) of
+                Right plan -> length plan `shouldBe` length bodies
+                Left refusal ->
+                    expectationFailure
+                        ("the staged bundle does not sign: " <> renderSignRefusal refusal)
+            assertWaitingJournal rig registry t bundleHash bundle bodies
+            assertStagedTrace staged bodies
+            summary <- bundleSummaryOf staged
+            textAt "hash" summary `shouldBe` Just bundleHash
+            textAt "written" summary `shouldBe` Just (T.pack bundlePath)
+            saved <- case textAt "saved" summary of
+                Just p -> pure (T.unpack p)
+                Nothing -> fail "no saved path in the bundle summary"
+            savedBytes <- BS.readFile saved
+            savedBytes `shouldBe` bytes
+            saved `shouldSatisfy` isInfixOf (T.unpack bundleHash)
+            case valueAt "transactions" summary of
+                Just (Aeson.Array txs) -> do
+                    length txs `shouldBe` 1
+                    forM_ (zip (toList txs) bodies) $ \(txv, _body) ->
+                        textAt "step" txv `shouldBe` Just "fold"
+                other ->
+                    expectationFailure ("no transactions in summary: " <> show other)
+            valueAt "submissions" (runReceipt staged) `shouldBe` Nothing
+            expected <- case valueAt "expected" (runReceipt staged) of
+                Just v@(Aeson.Object _) -> pure v
+                other -> fail ("no expected fields: " <> show other)
+            case bodies of
+                [body] -> do
+                    textAt "fold" expected `shouldBe` Just (txIdHex body)
+                    textAt "folder" expected
+                        `shouldBe` Just
+                            (hexT (addrKeyHashBytes (walletAddr (rigWallet rig))))
+                _ -> expectationFailure "the bundle holds not exactly one body"
+            keyRun <-
+                run
+                    rig
+                    "key-file fold after the staged one"
+                    ( [ "registry"
+                      , "fold"
+                      , "--request"
+                      , T.unpack (renderOutRef req)
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
+            assertExpectationOnly staged keyRun
+            keyBodies <- keyFilePreparedBodies rig "registry" t
+            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+
+stagedFoldWithPreparationRow :: Spec
+stagedFoldWithPreparationRow =
+    it
+        "stages the preparation then the fold, the fold spending the preparation's output"
+        $ withRig
+        $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            (req, _) <-
+                plantRequestDeposit
+                    rig
+                    t
+                    seed
+                    economics
+                    (TE.encodeUtf8 "bob-fold-prep")
+                    3_000_000_000
+            shrinkWalletForPreparation rig
+            let bundlePath = rigDir rig </> "bob-fold-prep.bundle"
+                registry = "bob-external-prep"
+            staged <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "staged fold with a preparation"
+                    ( [ "registry"
+                      , "fold"
+                      , "--request"
+                      , T.unpack (renderOutRef req)
+                      ]
+                        <> tokenArgs t
+                        <> externalArgs rig bundlePath
+                    )
+            runExit staged `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt staged) `shouldBe` Just "waiting-for-signatures"
+            bytes <- BS.readFile bundlePath
+            (bundle, bodies) <- checkedBundle bundlePath
+            case bodies of
+                [preparation, foldTx] ->
+                    Set.member
+                        (txIdTx preparation)
+                        ( Set.fromList
+                            [i | TxIn i _ <- Set.toList (foldTx ^. bodyTxL . inputsTxBodyL)]
+                        )
+                        `shouldBe` True
+                _ ->
+                    expectationFailure
+                        "the bundle holds other than two transactions"
+            assertWaitingJournal
+                rig
+                registry
+                t
+                (hashOfBytes bytes)
+                bundle
+                bodies
+            assertStagedTrace staged bodies
+            summary <- bundleSummaryOf staged
+            case valueAt "transactions" summary of
+                Just (Aeson.Array txs) -> do
+                    length txs `shouldBe` 2
+                    forM_ (zip (toList txs) bodies) $ \(txv, body) -> do
+                        textAt "step" txv `shouldBe` Just "fold"
+                        textAt "identity" txv `shouldBe` Just (txIdHex body)
+                        case bodyDeadline body of
+                            Just slot ->
+                                valueAt "deadline" txv `shouldBe` Just (Aeson.toJSON slot)
+                            Nothing -> valueAt "deadline" txv `shouldBe` Nothing
+                    case toList txs of
+                        (prepSummary : _) ->
+                            effectsOf prepSummary
+                                `shouldSatisfy` any (T.isInfixOf "ada only")
+                        _ -> pure ()
+                other ->
+                    expectationFailure ("no transactions in summary: " <> show other)
+            keyRun <-
+                run
+                    rig
+                    "key-file fold after the staged one"
+                    ( [ "registry"
+                      , "fold"
+                      , "--request"
+                      , T.unpack (renderOutRef req)
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
+            assertExpectationOnly staged keyRun
+            keyBodies <- keyFilePreparedBodies rig "registry" t
+            length keyBodies `shouldBe` 2
+            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+
+stagedRejectRow :: Spec
+stagedRejectRow =
+    it "stages a reject as one bundle the key-file path would build too" $
+        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed2 <- fundSeed2 rig
+            create2 <-
+                runAt
+                    rig
+                    "registry-2"
+                    "create short windows"
+                    ( [ "registry"
+                      , "create"
+                      , "--seed"
+                      , seed2
+                      , "--process-time"
+                      , "1"
+                      , "--retract-time"
+                      , "1"
+                      ]
+                        <> policyArgs
+                    )
+            t2 <- tokenOf create2
+            let shortEcon =
+                    RegistryEconomics
+                        { reProcessTime = 1
+                        , reRetractTime = 1
+                        , reTip = Coin 1_000_000
+                        }
+            (_, submitted) <-
+                plantRequest
+                    rig
+                    t2
+                    seed2
+                    shortEcon
+                    (TE.encodeUtf8 "bob-reject")
+            jumpToAfter
+                rig
+                (submitted + reProcessTime shortEcon + reRetractTime shortEcon)
+                2
+            let bundlePath = rigDir rig </> "bob-reject.bundle"
+                registry = "bob-external-reject"
+            staged <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "staged reject"
+                    (["registry", "reject"] <> tokenArgs t2 <> externalArgs rig bundlePath)
+            runExit staged `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt staged) `shouldBe` Just "waiting-for-signatures"
+            bytes <- BS.readFile bundlePath
+            (bundle, bodies) <- checkedBundle bundlePath
+            bundleCommand bundle `shouldBe` "reject"
+            length bodies `shouldBe` 1
+            assertWaitingJournal rig registry t2 (hashOfBytes bytes) bundle bodies
+            assertStagedTrace staged bodies
+            keyRun <-
+                runAt
+                    rig
+                    "registry-2"
+                    "key-file reject after the staged one"
+                    (["registry", "reject"] <> tokenArgs t2)
+            outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
+            assertExpectationOnly staged keyRun
+            keyBodies <- keyFilePreparedBodies rig "registry-2" t2
+            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+
+stagedReclaimRow :: Spec
+stagedReclaimRow =
+    it "stages a reclaim as one bundle the key-file path would build too" $
+        withRig $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            (req, submitted) <-
+                plantRequest rig t seed economics (TE.encodeUtf8 "bob-reclaim")
+            jumpToAfter rig (submitted + reProcessTime economics) 0
+            let bundlePath = rigDir rig </> "bob-reclaim.bundle"
+                registry = "bob-external-reclaim"
+            staged <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "staged reclaim"
+                    ( [ "registry"
+                      , "reclaim"
+                      , "--request"
+                      , T.unpack (renderOutRef req)
+                      ]
+                        <> tokenArgs t
+                        <> externalArgs rig bundlePath
+                    )
+            runExit staged `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt staged) `shouldBe` Just "waiting-for-signatures"
+            bytes <- BS.readFile bundlePath
+            (bundle, bodies) <- checkedBundle bundlePath
+            bundleCommand bundle `shouldBe` "reclaim"
+            length bodies `shouldBe` 1
+            assertWaitingJournal rig registry t (hashOfBytes bytes) bundle bodies
+            assertStagedTrace staged bodies
+            keyRun <-
+                run
+                    rig
+                    "key-file reclaim after the staged one"
+                    ( [ "registry"
+                      , "reclaim"
+                      , "--request"
+                      , T.unpack (renderOutRef req)
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt keyRun) `shouldBe` Just "success"
+            assertExpectationOnly staged keyRun
+            keyBodies <- keyFilePreparedBodies rig "registry" t
+            map (^. bodyTxL) keyBodies `shouldBe` map (^. bodyTxL) bodies
+
+noKeyFileRow :: Spec
+noKeyFileRow =
+    it "opens no key file in the external mode" $
+        withRig $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            (req, _) <-
+                plantRequest rig t seed economics (TE.encodeUtf8 "bob-nokey")
+            let key = rigKey rig
+                hidden = key <> ".hidden"
+                bundlePath = rigDir rig </> "bob-nokey.bundle"
+            renameFile key hidden
+            staged <-
+                ( do
+                    r <-
+                        runAt
+                            rig
+                            "bob-external-nokey"
+                            "staged fold with the key file absent"
+                            ( [ "registry"
+                              , "fold"
+                              , "--request"
+                              , T.unpack (renderOutRef req)
+                              ]
+                                <> tokenArgs t
+                                <> externalArgs rig bundlePath
+                            )
+                    pure (Just r)
+                )
+                    `finally` renameFile hidden key
+            case staged of
+                Nothing -> expectationFailure "the run did not finish"
+                Just r -> do
+                    runExit r `shouldBe` ExitFailure 19
+                    outcomeOf (runReceipt r)
+                        `shouldBe` Just "waiting-for-signatures"
+
+scriptAddressRow :: Spec
+scriptAddressRow =
+    it
+        "refuses a script-payment address before anything is read, naming it"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            let bundlePath = rigDir rig </> "script.bundle"
+            parseCommand
+                ( commandLine
+                    rig
+                    "bob-external-script"
+                    ( [ "registry"
+                      , "fold"
+                      ]
+                        <> tokenArgs t
+                        <> ["--wallet-address", aScriptAddress, "--bundle", bundlePath]
+                    )
+                )
+                `shouldBe` Left
+                    ( BadValue
+                        "--wallet-address"
+                        ( aScriptAddress
+                            <> " pays a script, not a payment key: the bundle's signer must be a payment key"
+                        )
+                    )
+            doesFileExist bundlePath `shouldReturn` False
+
+existingBundleRow :: Spec
+existingBundleRow =
+    it
+        "refuses an existing bundle file before anything is read, its bytes untouched"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <-
+                run
+                    rig
+                    "create"
+                    (["registry", "create", "--seed", seed] <> policyArgs)
+            t <- tokenOf create
+            (req, _) <-
+                plantRequest rig t seed economics (TE.encodeUtf8 "bob-taken")
+            let bundlePath = rigDir rig </> "taken.bundle"
+                sentinel = "sentinel bytes"
+                registry = "bob-external-taken"
+                -- The refusal names the bundle file and leaves its bytes as
+                -- they were, whatever else the run would have met.
+                refusedOnTheBundle at label = do
+                    refused <-
+                        runAt
+                            rig
+                            at
+                            label
+                            ( [ "registry"
+                              , "fold"
+                              , "--request"
+                              , T.unpack (renderOutRef req)
+                              ]
+                                <> tokenArgs t
+                                <> externalArgs rig bundlePath
+                            )
+                    runExit refused `shouldBe` ExitFailure 10
+                    outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                    fromMaybe "" (receiptReason refused)
+                        `shouldSatisfy` T.isInfixOf (T.pack bundlePath)
+                    BS.readFile bundlePath `shouldReturn` sentinel
+            BS.writeFile bundlePath sentinel
+            -- Nothing of the run is written: no partition, so no lock and
+            -- no journal.
+            refusedOnTheBundle registry "staged fold onto an existing bundle file"
+            doesDirectoryExist (stagedPartition rig registry t)
+                `shouldReturn` False
+            doesFileExist (journalPath (stagedPartition rig registry t))
+                `shouldReturn` False
+            -- The blueprint is not read: with it unreadable the refusal is
+            -- still the bundle's.
+            let blueprint = rigBlueprint rig
+                hiddenBlueprint = blueprint <> ".hidden"
+            renameFile blueprint hiddenBlueprint
+            refusedOnTheBundle
+                (registry <> "-blueprint")
+                "staged fold onto an existing bundle file, the blueprint unreadable"
+                `finally` renameFile hiddenBlueprint blueprint
+            -- The partition is not touched: with a file where its directory
+            -- and lock would go, the refusal is still the bundle's.
+            let occupied = stagedPartition rig (registry <> "-lock") t
+            createDirectoryIfMissing True (takeDirectory occupied)
+            BS.writeFile occupied "not a partition"
+            refusedOnTheBundle
+                (registry <> "-lock")
+                "staged fold onto an existing bundle file, the partition unusable"
+            BS.readFile occupied `shouldReturn` "not a partition"
+
+signerFlagRefusalRows :: Spec
+signerFlagRefusalRows =
+    it "refuses the incomplete and mixed signer lines on the three writes" $ do
+        let token = replicate 56 'a' <> "." <> replicate 64 'b'
+            base write extra =
+                [ "registry"
+                , write
+                ]
+                    <> extra
+                    <> [ "--blueprint"
+                       , "blueprint.json"
+                       , "--state-token"
+                       , token
+                       , "--koios-url"
+                       , "https://koios.example"
+                       , "--network-magic"
+                       , "1"
+                       ]
+            addressNeedsPreview =
+                BadValue
+                    "--wallet-address"
+                    ( "names a caller for --preview and registry inspect only; "
+                        <> "a write signs with --wallet-skey"
+                    )
+            address = bech32Address (walletAddr (walletFromSignKey 1 rigKeyOfTest))
+            rigKeyOfTest = case parseSignKey (B16.encode (BS.replicate 32 0x77)) of
+                Right k -> k
+                Left _ -> error "a fixed 32-byte key always parses"
+        forM_ ["fold", "reject", "reclaim"] $ \write -> do
+            let line flags = parseCommand (base write flags)
+            line ["--wallet-address", address]
+                `shouldBe` Left addressNeedsPreview
+            line
+                [ "--wallet-skey"
+                , "key.skey"
+                , "--wallet-address"
+                , address
+                , "--bundle"
+                , "run.bundle"
+                ]
+                `shouldBe` Left
+                    ( BadValue
+                        "--wallet-address"
+                        "cannot be combined with --wallet-skey: a write takes exactly one signer"
+                    )
+            line ["--bundle", "run.bundle"]
+                `shouldBe` Left
+                    ( BadValue
+                        "--bundle"
+                        "is meaningless without --wallet-address: name the signer too"
+                    )
+        parseCommand
+            [ "registry"
+            , "create"
+            , "--blueprint"
+            , "blueprint.json"
+            , "--koios-url"
+            , "https://koios.example"
+            , "--network-magic"
+            , "1"
+            , "--wallet-address"
+            , address
+            , "--bundle"
+            , "run.bundle"
+            ]
+            `shouldBe` Left addressNeedsPreview
+
+{- | Leave the payer one small ada-only output beside one large output that
+carries a token, so a write whose requirement exceeds the small output must
+make a preparation.
+-}
+shrinkWalletForPreparation :: Rig -> IO ()
+shrinkWalletForPreparation rig = do
+    held <- readWallet rig
+    let addr = walletAddr (rigWallet rig)
+        asset =
+            MultiAsset
+                ( Map.singleton
+                    (PolicyID (ScriptHash holderHash))
+                    (Map.singleton (AssetName "") 1)
+                )
+        holderHash = case hashFromBytes (BS.replicate 28 3) of
+            Just h -> h
+            Nothing -> error "shrinkWalletForPreparation: 28 bytes are not a hash"
+        outs =
+            [ mkBasicTxOut addr (MaryValue (Coin 1_000_000_000) mempty)
+            , mkBasicTxOut addr (MaryValue (Coin 8_000_000_000) asset)
+            ]
+        body =
+            mkBasicTxBody
+                & inputsTxBodyL .~ Set.fromList (map fst held)
+                & outputsTxBodyL .~ StrictSeq.fromList outs
+                & mintTxBodyL .~ asset
+        tx = mkBasicTx body
+        txid = txIdTx tx
+        made = [TxIn txid (TxIx ix) | ix <- [0 ..]]
+    recordTransaction (rigChain rig) tx
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.union
+                    (Map.fromList (zip made outs))
+                    (foldr (Map.delete . fst) (csUTxO facts) held)
             }

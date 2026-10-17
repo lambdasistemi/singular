@@ -125,6 +125,7 @@ import Singular.CLI.Session
     , journalObservedId
     , readOnce
     , readStep
+    , signerWallet
     , submitBuilt
     , submitBuiltIn
     , withSession
@@ -203,7 +204,6 @@ import Singular.Registry.Types
 import Singular.Registry.Wallet
     ( Wallet (..)
     , bech32Address
-    , loadWallet
     )
 
 {- | The application a @registry create@ runs with: the hash the flag pins
@@ -327,7 +327,7 @@ createWith
     -> IO Value
 createWith app env a rel ws = do
     let magic = providerMagic (writeProvider ws)
-    caller <- loadWallet magic (writeWalletKey ws)
+    caller <- signerWallet magic (writeSigner ws)
     root <- resolveStateRoot (createStateDir a)
     let addr = walletAddr caller
         settings = writeProvider ws

@@ -470,6 +470,9 @@ offchain/test/Singular/CLI/CommandRunSpec.hs runViaApp writeIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv newIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withConfirmationEnv readIORef 1
+offchain/test/Singular/CLI/CommandRunSpec.hs withCountedSubmissions modifyIORef' 1
+offchain/test/Singular/CLI/CommandRunSpec.hs withCountedSubmissions newIORef 1
+offchain/test/Singular/CLI/CommandRunSpec.hs withCountedSubmissions readIORef 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn modifyIORef' 1
 offchain/test/Singular/CLI/CommandRunSpec.hs withRigIn newIORef 2
 offchain/test/Singular/CLI/SubmitSpec.hs <decl> IORef 5

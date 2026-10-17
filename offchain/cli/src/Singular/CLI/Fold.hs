@@ -108,7 +108,7 @@ import Singular.CLI.Command
 import Singular.CLI.FoldRules
 import Singular.CLI.Harness (holdBeforeCommit, holdBeforeObserved)
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay
     ( foldOutlay
     , foldPastAllowance
@@ -438,11 +438,11 @@ runFoldBounded :: Int -> Application -> Env -> FoldArgs -> IO Value
 runFoldBounded bound app env a = do
     let ws = foldWrite a
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (foldStateDir a)
             (providerMagic (writeProvider ws))
             (accessToken (foldAccess a))
-            (writeWalletKey ws)
+            (writeSigner ws)
     attached
         app
         env

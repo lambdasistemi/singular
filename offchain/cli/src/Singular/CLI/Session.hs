@@ -50,6 +50,8 @@ module Singular.CLI.Session
     , confirmedElapsed
     , withWrite
     , withSession
+    , signerWallet
+    , refuseTakenBundle
     , readsIn
     , readOnce
     , submitBuilt
@@ -109,7 +111,7 @@ import Data.Text qualified as T
 import Data.Typeable (cast)
 import Data.Word (Word32, Word64)
 import Lens.Micro ((^.))
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, doesPathExist)
 import System.FilePath ((</>))
 import System.IO (SeekMode (..))
 import System.Posix.IO
@@ -145,6 +147,7 @@ import Singular.CLI.Command
     ( ProviderSettings (..)
     , WriteSettings (..)
     )
+import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Harness
     ( harnessHoldAt
     , harnessSubmission
@@ -378,7 +381,7 @@ withSession env dir command ws body = do
     let settings = writeProvider ws
         magic = providerMagic settings
         url = providerUrl settings
-    wallet <- loadWallet magic (writeWalletKey ws)
+    wallet <- signerWallet magic (writeSigner ws)
     connected <- newIORef False
     before <- length <$> readJournal dir
     result <-
@@ -421,6 +424,38 @@ withSession env dir command ws body = do
   where
     failureOf e = case reportedOf e of
         (reported, inner) -> (,) reported <$> fromException inner
+
+{- | The wallet a write signs with, before anything is read: the caller's
+key file, loaded as every write loads it. The external signer, an address
+with its bundle file, is refused here, before the node is contacted, a key
+file is opened or the chain is read: an external run stops with a client
+refusal until staging the run as one bundle lands (slice 2b of issue 641).
+-}
+signerWallet :: Word32 -> Signer -> IO Wallet
+signerWallet magic = \case
+    SignerKeyFile path -> loadWallet magic path
+    SignerExternal _ _ ->
+        failWith
+            ClientRefusal
+            ( "--wallet-address with --bundle is read but not staged yet: "
+                <> "staging the run as one bundle comes with slice 2b of issue 641"
+            )
+
+{- | Refuse a bundle path that already exists, of any kind, its bytes
+untouched: a bundle is created exclusively. The first step of a write with
+an external signer ('Singular.CLI.ManagedState.resolveSignerDir'), before
+anything else of the run is read or written.
+-}
+refuseTakenBundle :: FilePath -> IO ()
+refuseTakenBundle bundle = do
+    taken <- doesPathExist bundle
+    when taken $
+        failWith
+            ClientRefusal
+            ( "the bundle file "
+                <> bundle
+                <> " already exists: name a new file, the bundle is created exclusively"
+            )
 
 {- | Each transaction this command prepared — the @prepared@ lines it
 appended after the first @before@ — in order, with the case the journal shows

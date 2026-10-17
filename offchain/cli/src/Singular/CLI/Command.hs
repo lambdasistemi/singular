@@ -81,7 +81,7 @@ import Data.Char
     , isDigit
     )
 import Data.List (stripPrefix)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -95,7 +95,8 @@ import Text.Read (readMaybe)
 import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Ledger.TxIn (TxIn)
 import Singular.CLI.FlagGroup
-    ( commonFlagGroup
+    ( Signer (..)
+    , commonFlagGroup
     , parseFlagGroup
     , readProviderSettings
     , splitTracingFor
@@ -152,11 +153,13 @@ newtype ApplicationPolicy = ApplicationPolicy
     }
     deriving stock (Eq, Show)
 
--- | The node and the wallet a write command funds and signs from.
+{- | The node and the wallet a write command funds and signs from, or the
+external signer it stages for: one signer names the run.
+-}
 data WriteSettings = WriteSettings
     { writeProvider :: ProviderSettings
-    , writeWalletKey :: FilePath
-    -- ^ Path of the caller's payment signing key; read, never printed
+    , writeSigner :: Signer
+    -- ^ The key file, or the address with its bundle file; read, never printed
     , writeConfirmTimeout :: Maybe Int
     {- ^ Seconds to wait for each submission to confirm; unset, ten minutes.
     The bound holds even when the node is lost after accepting the
@@ -702,8 +705,11 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry fold: it folds the pending request, whose key and edge the request names"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
+        when
+            ( isJust (lookup "--wallet-address" flags)
+                && isNothing (lookup "--bundle" flags)
+            )
+            $ Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -745,8 +751,11 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry reject: it takes every pending request, once each is past both its windows"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
+        when
+            ( isJust (lookup "--wallet-address" flags)
+                && isNothing (lookup "--bundle" flags)
+            )
+            $ Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -779,8 +788,11 @@ parseWithGroup group environment args = do
                             flag
                             "is not accepted by registry reclaim: it takes back the named pending request"
                         )
-        when (isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
+        when
+            ( isJust (lookup "--wallet-address" flags)
+                && isNothing (lookup "--bundle" flags)
+            )
+            $ Left addressNeedsPreview
         settings <-
             parseFlagGroup
                 MissingFlag
@@ -866,6 +878,12 @@ parseWithGroup group environment args = do
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
+        when (isJust (lookup "--bundle" flags)) $
+            Left
+                ( BadValue
+                    "--bundle"
+                    "cannot be used with --preview: a preview signs and writes nothing"
+                )
         settings <- readProviderSettings MissingFlag BadValue flags
         addr <- required "--wallet-address" flags
         pure (Preview settings addr)
@@ -1072,13 +1090,25 @@ usage =
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
+        , "      --state-token POLICY.NAME"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "  singular registry inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"

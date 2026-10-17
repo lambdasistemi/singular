@@ -397,6 +397,7 @@ data OutcomeClass
     | ConcurrentWriter
     | ProofMissing
     | ProofInconsistent
+    | WaitingForSignatures
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | The class as a receipt names it.
@@ -412,6 +413,7 @@ outcomeName = \case
     ConcurrentWriter -> "concurrent-writer"
     ProofMissing -> "proof-missing"
     ProofInconsistent -> "proof-inconsistent"
+    WaitingForSignatures -> "waiting-for-signatures"
 
 -- | The exit status of each class; 2 stays the command line's own.
 exitCodeOf :: OutcomeClass -> ExitCode
@@ -426,3 +428,4 @@ exitCodeOf = \case
     ConcurrentWriter -> ExitFailure 16
     ProofMissing -> ExitFailure 17
     ProofInconsistent -> ExitFailure 18
+    WaitingForSignatures -> ExitFailure 19

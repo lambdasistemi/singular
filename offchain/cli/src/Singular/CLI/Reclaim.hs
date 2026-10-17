@@ -52,7 +52,7 @@ import Singular.CLI.Command
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.FoldRules (boundStartMs, placedEdge)
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Prepare
@@ -100,11 +100,11 @@ runReclaim :: Env -> ReclaimArgs -> IO Value
 runReclaim env a = do
     let ws = reclaimWrite a
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (reclaimStateDir a)
             (providerMagic (writeProvider ws))
             (accessToken (reclaimAccess a))
-            (writeWalletKey ws)
+            (writeSigner ws)
     attached
         neutralApplication
         env

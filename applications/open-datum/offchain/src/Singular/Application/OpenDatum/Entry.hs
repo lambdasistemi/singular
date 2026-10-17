@@ -110,7 +110,7 @@ import Singular.CLI.FoldRules
     , renderFoldRequestsRefusal
     )
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay
     ( bookingOutlay
     , outlayTotal
@@ -378,11 +378,11 @@ wallet, before any lock or journal use.
 -}
 managedEntryDir :: EntryArgs -> WriteSettings -> IO FilePath
 managedEntryDir a ws =
-    resolveWalletDir
+    resolveSignerDir
         (entryStateDir a)
         (providerMagic (writeProvider ws))
         (accessToken (entryAccess a))
-        (writeWalletKey ws)
+        (writeSigner ws)
 
 -- ---------------------------------------------------------
 -- insert

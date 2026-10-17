@@ -25,7 +25,7 @@ non-I/O sentinel that must never reach journal, pending or lock helpers.
 module Singular.CLI.ManagedState
     ( managedStateRoot
     , resolveStateRoot
-    , resolveWalletDir
+    , resolveSignerDir
     , managedDir
     , statelessDir
     , walletPartition
@@ -51,6 +51,9 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Wallet (Wallet (..), loadWallet)
 
 import Cardano.Ledger.Address (Addr)
+import Singular.CLI.FlagGroup (Signer (..), signerAddress)
+import Singular.CLI.Receipt (OutcomeClass (..))
+import Singular.CLI.Session (failWith, refuseTakenBundle)
 
 {- | The default state root: the platform per-user state location with
 the @singular@ namespace (@XDG_STATE_HOME@, falling back to
@@ -66,16 +69,28 @@ identity partitioning; it is never a per-registry directory.
 resolveStateRoot :: Maybe FilePath -> IO FilePath
 resolveStateRoot = maybe managedStateRoot pure
 
-{- | The managed directory for a wallet command: loads the caller's wallet
-from its key file, derives the stable payment identity and resolves the
-partition. Runs before any lock or journal use; loads no chain state.
+{- | The managed directory for a write's signer: loads the caller's wallet
+from its key file, or resolves the external signer's address through the
+same payment identity, and resolves the partition. Runs before any lock or
+journal use; loads no chain state. For an external signer it is the run's
+first step: a bundle path that already exists is refused here, its bytes
+untouched, before the blueprint, the partition or its lock is touched. The
+external address is already a payment-key address - the flag reader
+refused the rest.
 -}
-resolveWalletDir
-    :: Maybe FilePath -> Word32 -> Asset -> FilePath -> IO FilePath
-resolveWalletDir rootOpt magic token keyPath = do
-    wallet <- loadWallet magic keyPath
+resolveSignerDir
+    :: Maybe FilePath -> Word32 -> Asset -> Signer -> IO FilePath
+resolveSignerDir rootOpt magic token signer = do
+    identity <- case signer of
+        SignerKeyFile keyPath -> walletPartition <$> loadWallet magic keyPath
+        SignerExternal given bundle -> do
+            refuseTakenBundle bundle
+            either
+                (failWith ClientRefusal)
+                (pure . addressPartition)
+                (signerAddress given)
     root <- resolveStateRoot rootOpt
-    pure (managedDir root magic token (walletPartition wallet))
+    pure (managedDir root magic token identity)
 
 {- | The managed directory for one identity: the root, the network, the
 complete state token (policy and asset) and the wallet's payment

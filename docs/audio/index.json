@@ -9365,8 +9365,8 @@
     "index": 1,
     "name": "docs-singular-node/the-settings-you-give-01",
     "pause_ms": 400,
-    "text": "The URL, network magic and signing key travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
-    "v": "a5bc088a3009"
+    "text": "The URL, network magic and one signer (the signing key, or on singular fold, singular reclaim and singular reject an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+    "v": "9f5f32cf8878"
    }
   ],
   "what-a-write-records": [

@@ -67,7 +67,7 @@ import Singular.CLI.Live
     , receipt
     , txInText
     )
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Plan (readJson)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
@@ -112,11 +112,11 @@ the shared function, which alone decides the default.
 -}
 negativeStateDir :: EntryArgs -> WriteSettings -> IO FilePath
 negativeStateDir args ws =
-    resolveWalletDir
+    resolveSignerDir
         (entryStateDir args)
         (providerMagic (writeProvider ws))
         (accessToken (entryAccess args))
-        (writeWalletKey ws)
+        (writeSigner ws)
 
 {- | Book an insertion for any signer, unevaluated, then fold it. The payer wallet
 funds it and is named its owner, with no controller check here: the
@@ -689,11 +689,11 @@ runNegativeFold :: Env -> FoldArgs -> Maybe Integer -> IO Value
 runNegativeFold env args short = do
     let ws = foldWrite args
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (foldStateDir args)
             (providerMagic (writeProvider ws))
             (accessToken (foldAccess args))
-            (writeWalletKey ws)
+            (writeSigner ws)
     (mode, modeEnv) <- readModeForFold env args
     attached
         (applicationIn mode)

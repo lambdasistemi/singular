@@ -19,9 +19,21 @@ prove it.
 module Singular.CLI.FlagGroupSpec (spec) where
 
 import Control.Monad (forM_)
+import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
+import Data.ByteString.Char8 qualified as BC
 import Data.Either (isRight)
 import Data.List (nub)
 import Test.Hspec
+
+import Cardano.Crypto.Hash.Class (hashFromBytes)
+import Cardano.Ledger.Address (Addr (..))
+import Cardano.Ledger.BaseTypes (Network (Testnet))
+import Cardano.Ledger.Credential
+    ( Credential (..)
+    , StakeReference (..)
+    )
+import Cardano.Ledger.Hashes (ScriptHash (..))
 
 import Singular.CLI.Command
     ( CLIError (..)
@@ -29,7 +41,8 @@ import Singular.CLI.Command
     , parseCommand
     )
 import Singular.CLI.FlagGroup
-    ( commonFlagGroup
+    ( Signer (..)
+    , commonFlagGroup
     , commonSwitches
     , parseFlagGroup
     , readProviderSettings
@@ -44,6 +57,12 @@ import Singular.CLI.Trace
     , TraceSink (..)
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
+import Singular.Registry.Wallet
+    ( Wallet (..)
+    , bech32Address
+    , parseSignKey
+    , walletFromSignKey
+    )
 
 spec :: Spec
 spec = describe "common flag group" $ do
@@ -73,6 +92,7 @@ pinnedCommonValued =
     , "--receipt"
     , "--confirm-timeout"
     , "--wallet-address"
+    , "--bundle"
     , "--outputs-at"
     , "--fund-input"
     , "--max-outlay"
@@ -258,7 +278,81 @@ settings = describe "settings" $ do
             UnsafeSettings
             WriteSettings
             validWriteFlags
-            `shouldBe` Right (WriteSettings validProvider "key.skey" Nothing)
+            `shouldBe` Right (WriteSettings validProvider (SignerKeyFile "key.skey") Nothing)
+    it "reads an external write from an address and a bundle file" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            externalWriteFlags
+            `shouldSatisfy` isRight
+    it "refuses two signer modes together" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (externalWriteFlags <> [("--wallet-skey", Just "key.skey")])
+            `shouldBe` Left
+                ( BadValue
+                    "--wallet-address"
+                    "cannot be combined with --wallet-skey: a write takes exactly one signer"
+                )
+    it "refuses an address without a bundle file" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (validProviderFlags <> [("--wallet-address", Just signerSpelling)])
+            `shouldBe` Left
+                ( BadValue
+                    "--bundle"
+                    ( "is required with --wallet-address: the run's transactions are "
+                        <> "written to the bundle for signing elsewhere"
+                    )
+                )
+    it "refuses a bundle file without an address" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (validProviderFlags <> [("--bundle", Just "run.bundle")])
+            `shouldBe` Left
+                ( BadValue
+                    "--bundle"
+                    "is meaningless without --wallet-address: name the signer too"
+                )
+    it "refuses a bundle file with a preview" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            (externalWriteFlags <> [("--preview", Nothing)])
+            `shouldBe` Left
+                ( BadValue
+                    "--bundle"
+                    "cannot be used with --preview: a preview signs and writes nothing"
+                )
+    it "refuses a script-payment address, naming it" $
+        parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            signerKeeper
+            ( validProviderFlags
+                <> [("--wallet-address", Just scriptSpelling), ("--bundle", Just "b")]
+            )
+            `shouldBe` Left
+                ( BadValue
+                    "--wallet-address"
+                    ( scriptSpelling
+                        <> " pays a script, not a payment key: the bundle's signer must be a payment key"
+                    )
+                )
     it "refuses a partial write before anything else" $
         parseFlagGroup MissingFlag BadValue UnsafeSettings WriteSettings []
             `shouldBe` Left
@@ -298,6 +392,41 @@ settings = describe "settings" $ do
             (validWriteFlags <> [("--confirm-timeout", Just "soon")])
             `shouldBe` Left
                 (BadValue "--confirm-timeout" "is not a whole number of seconds")
+
+-- | Tokenized flags naming a complete external write.
+externalWriteFlags :: [(String, Maybe String)]
+externalWriteFlags =
+    validProviderFlags
+        <> [ ("--wallet-address", Just signerSpelling)
+           , ("--bundle", Just "run.bundle")
+           ]
+
+{- | The write reader's own view of what it hands the settings constructor:
+whatever it read as the signer, projected to unit so the row pins only
+that the line parses. The signer's own value is pinned end to end by the
+staged-run rows over the rig.
+-}
+signerKeeper :: p -> s -> t -> ()
+signerKeeper _provider _signer _timeout = ()
+
+{- | The bech32 spelling of a payment-key enterprise address, derived at run
+time from a fixed key through the wallet module's own derivation.
+-}
+signerSpelling :: String
+signerSpelling = case parseSignKey (B16.encode (BC.pack (replicate 32 'w'))) of
+    Right key -> bech32Address (walletAddr (walletFromSignKey 1 key))
+    Left _ -> error "signerSpelling: a fixed 32-byte key always parses"
+
+{- | The bech32 spelling of an address whose payment part is a script,
+derived at run time.
+-}
+scriptSpelling :: String
+scriptSpelling =
+    bech32Address (Addr Testnet (ScriptHashObj scriptHash) StakeRefNull)
+  where
+    scriptHash = case hashFromBytes (BS.replicate 28 3) of
+        Just h -> ScriptHash h
+        Nothing -> error "scriptSpelling: 28 bytes are not a script hash"
 
 -- | A well-formed state token spelling, built at run time.
 registryToken :: String

@@ -122,7 +122,8 @@ exit_of() {
     success) echo 0 ;; client-refusal) echo 10 ;; ledger-refusal) echo 11 ;;
     node-unavailable) echo 12 ;; timeout) echo 13 ;; stale-state) echo 14 ;;
     partial) echo 15 ;; concurrent-writer) echo 16 ;; proof-missing) echo 17 ;;
-    proof-inconsistent) echo 18 ;; *) fail "no exit status for class $1" ;;
+    proof-inconsistent) echo 18 ;; waiting-for-signatures) echo 19 ;;
+    *) fail "no exit status for class $1" ;;
   esac
 }
 field() { jq -r "$2" "$receipts/$1.json"; }

@@ -8,7 +8,7 @@
 ## Slice: staging and the external signer
 
 - [ ] write-mode: the signer in the write settings, the staged build, the effect claims and the bundle at the end of the run; nothing signed, journalled as prepared or sent while building.
-- [ ] external-signer-flags: the signer read by the shared flag group, the address and bundle-file flags on fold, reject and reclaim; the refusals; status 19; documented flags equal `--help`.
+- [x] external-signer-flags: the signer read by the shared flag group, the address and bundle-file flags on fold, reject and reclaim; the refusals; status 19; documented flags equal `--help`.
 - [ ] staged-receipt: the bundle summary and the command's fields under expected; the waiting lines and saved bytes.
 - [ ] staged-fold-reject-reclaim: per command, one bundle holding the preparation then the command's transaction, bodies equal to the key-file path's, accepted by the bundle checks and by `wallet sign`.
 

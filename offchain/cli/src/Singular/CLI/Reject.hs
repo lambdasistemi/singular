@@ -65,7 +65,7 @@ import Singular.CLI.Command
     )
 import Singular.CLI.Fold (slotAt)
 import Singular.CLI.Live
-import Singular.CLI.ManagedState (resolveWalletDir)
+import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (updateOutlay)
 import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Prepare
@@ -146,11 +146,11 @@ runReject :: Env -> RejectArgs -> IO Value
 runReject env a = do
     let ws = rejectWrite a
     dir <-
-        resolveWalletDir
+        resolveSignerDir
             (rejectStateDir a)
             (providerMagic (writeProvider ws))
             (accessToken (rejectAccess a))
-            (writeWalletKey ws)
+            (writeSigner ws)
     attached
         neutralApplication
         env
