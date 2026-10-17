@@ -29,6 +29,14 @@ which pay every @--fund-skey@ wallet the same. A journey that needs one
 wallet funded differently from the others names it this way; the value
 is read before the node starts and a malformed one is refused by name.
 
+@--fund-address ADDRESS:N:LOVELACE@ pays the same kind of group to a
+bech32 address instead of a key file's wallet: a wallet made elsewhere
+(@singular wallet create@) is funded from its public address alone, and
+no signing key is ever handed to the devnet. It may repeat. The address
+must be a test-network Shelley address; a malformed group, a malformed
+address or one for another network is refused by name before the node
+starts.
+
 @--genesis-only@ retains the checked initial allocation without the private
 funding actor, for the retained coverage refusal control. It changes no
 ledger, genesis, epoch, slot, safe-zone or time-publication setting.
@@ -85,6 +93,7 @@ import System.Process
     )
 import Text.Read (readMaybe)
 
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Api.Tx (mkBasicTx)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -93,6 +102,7 @@ import Cardano.Ledger.Api.Tx.Body
     , outputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out (coinTxOutL, mkBasicTxOut)
+import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Node.Client.E2E.Setup
     ( genesisAddr
@@ -102,6 +112,7 @@ import Cardano.Node.Client.E2E.Setup
     )
 import Control.Tracer (nullTracer)
 import Devnet.Probe qualified as Probe
+import Singular.Provider.Koios.Wire (parseAddress)
 import Singular.Registry.Private.Facade
 import Singular.Registry.Private.Smoke (runFacadeSmoke)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -127,9 +138,14 @@ import Singular.Registry.Wallet
     , loadWallet
     )
 
+-- | Who a funding pays: a key file's wallet, or an address as given.
+data Target
+    = TargetKey FilePath
+    | TargetAddress Addr
+
 -- | The optional funding a caller asked for.
 data Funding = Funding
-    { fundKey :: FilePath
+    { fundTarget :: Target
     , fundOutputs :: Int
     , fundLovelace :: Integer
     }
@@ -305,18 +321,23 @@ fixtureInputs args = do
 
 {- | Read the funding flags: every @--fund-skey@ given (it may repeat, one
 wallet each), all paid the same @--fund-outputs@ of @--fund-lovelace@, plus
-every @--fund FILE:N:LOVELACE@, one wallet-sized group each. None of the
-uniform flags pays anything unless all three are present; each group pays
-exactly what it says. A malformed group is named, before any node starts.
+every @--fund FILE:N:LOVELACE@ and every @--fund-address ADDRESS:N:LOVELACE@,
+one wallet-sized group each. None of the uniform flags pays anything unless
+all three are present; each group pays exactly what it says. A malformed
+group or address is named, before any node starts.
 -}
 fundingFrom :: [String] -> Either String [Funding]
 fundingFrom args = do
     groups <- traverse fundGroup (every "--fund" args)
+    addressed <- traverse fundAddressGroup (every "--fund-address" args)
     let uniform = fromMaybe [] $ do
             outputs <- flag "--fund-outputs" args >>= readMaybe
             lovelace <- flag "--fund-lovelace" args >>= readMaybe
-            pure [Funding key outputs lovelace | key <- every "--fund-skey" args]
-    pure (uniform <> groups)
+            pure
+                [ Funding (TargetKey key) outputs lovelace
+                | key <- every "--fund-skey" args
+                ]
+    pure (uniform <> groups <> addressed)
 
 {- | One @--fund FILE:N:LOVELACE@: a key file, a positive number of outputs
 and a positive lovelace amount, each separated by a colon.
@@ -329,7 +350,7 @@ fundGroup spelling = case break (== ':') spelling of
             , Just l <- readMaybe lovelace
             , n > 0
             , l > 0 ->
-                Right (Funding key n l)
+                Right (Funding (TargetKey key) n l)
         _ -> Left malformed
     _ -> Left malformed
   where
@@ -337,6 +358,48 @@ fundGroup spelling = case break (== ':') spelling of
         "devnet: --fund expects FILE:N:LOVELACE, a key file, a positive"
             <> " output count and a positive lovelace amount, not "
             <> show spelling
+
+{- | One @--fund-address ADDRESS:N:LOVELACE@: a bech32 address of the test
+network, a positive number of outputs and a positive lovelace amount, each
+separated by a colon (a bech32 address holds no colon). The address is
+decoded here, so a spelling that is no address, a mainnet address and a
+bootstrap address are each refused by name before any node starts.
+-}
+fundAddressGroup :: String -> Either String Funding
+fundAddressGroup spelling = case break (== ':') spelling of
+    (address, ':' : rest) -> case break (== ':') rest of
+        (outputs, ':' : lovelace)
+            | Just n <- readMaybe outputs
+            , Just l <- readMaybe lovelace
+            , n > 0
+            , l > 0 -> do
+                target <- testnetAddress address
+                Right (Funding (TargetAddress target) n l)
+        _ -> Left malformed
+    _ -> Left malformed
+  where
+    malformed =
+        "devnet: --fund-address expects ADDRESS:N:LOVELACE, a test-network"
+            <> " bech32 address, a positive output count and a positive"
+            <> " lovelace amount, not "
+            <> show spelling
+
+-- | A test-network Shelley address, or the reason it is none.
+testnetAddress :: String -> Either String Addr
+testnetAddress spelling = case parseAddress (T.pack spelling) of
+    Left reason ->
+        refuse ("is not a bech32 address (" <> T.unpack reason <> ")")
+    Right address@(Addr Testnet _ _) -> Right address
+    Right (Addr Mainnet _ _) -> refuse "is a mainnet address"
+    Right (AddrBootstrap _) -> refuse "is a bootstrap address"
+  where
+    refuse why =
+        Left $
+            "devnet: --fund-address "
+                <> show spelling
+                <> " "
+                <> why
+                <> ": the devnet funds a test-network Shelley address"
 
 -- | Every value a repeatable flag was given.
 every :: String -> [String] -> [String]
@@ -378,7 +441,9 @@ through the shipping shared HTTP constructor and exact-output confirmation.
 -}
 fund :: Capabilities NoWitness IO -> Funding -> IO ()
 fund caps f = do
-    target <- walletAddr <$> loadWallet 42 (fundKey f)
+    target <- case fundTarget f of
+        TargetKey key -> walletAddr <$> loadWallet 42 key
+        TargetAddress address -> pure address
     utxos <-
         Session.withLatest (capReads caps) (`Session.outputsAt` genesisAddr)
     (txIn, out) <- case sortOn (Down . (^. coinTxOutL) . snd) utxos of

@@ -205,6 +205,23 @@ bad_status=0
 grep -q '^devnet: --fund expects FILE:N:LOVELACE' "$bad_fund" \
   || fail "the malformed funding group was not refused by name: $(head -n 1 "$bad_fund")"
 say "the devnet refuses a malformed per-wallet funding group by name"
+# A wallet made elsewhere is funded from its public address alone
+# (--fund-address ADDRESS:N:LOVELACE); the same parse-first rule holds: a
+# group that is not three parts, a spelling that is no address and an address
+# of the main network are each refused by name before any node starts.
+# Bounded: a harness that took one would start a node and wait for ever.
+refuses_fund_address() {
+  local group="$1" expected="$2" out="$work/bad-fund-address.out" code=0
+  timeout 60 "$devnet" --fund-address "$group" >"$out" 2>&1 || code=$?
+  [ "$code" -ne 0 ] && [ "$code" -ne 124 ] \
+    || fail "the devnet did not refuse the funding group $group (exit $code)"
+  grep -q "^devnet: --fund-address $expected" "$out" \
+    || fail "the funding group $group was not refused by name: $(head -n 1 "$out")"
+}
+refuses_fund_address 'addr_test1vq6aahffs2sreuu70h8q8jpen98lmmpwc6cy788j6s8xrgc64xuck:two:4000000' 'expects ADDRESS:N:LOVELACE'
+refuses_fund_address 'not-an-address:1:4000000' '"not-an-address" is not a bech32 address'
+refuses_fund_address 'addr1vy6aahffs2sreuu70h8q8jpen98lmmpwc6cy788j6s8xrgcpajqhn:1:4000000' '"addr1vy6aahffs2sreuu70h8q8jpen98lmmpwc6cy788j6s8xrgcpajqhn" is a mainnet address'
+say "the devnet refuses a malformed funding address by name"
 # The node is the devnet runner's child: reap both, so no node of this
 # run outlives it holding the development network's ports.
 trap release_work EXIT
