@@ -106,7 +106,6 @@ import Singular.CLI.Reconcile (reconcileBundles, refusePendingBundle)
 import Singular.CLI.Registry
     ( IdentityError (..)
     , Release (..)
-    , economics
     , hexT
     , parseEnterpriseAddress
     , pendingPath
@@ -118,6 +117,7 @@ import Singular.CLI.Registry
     , seedChecks
     , seedHeld
     , selectSeed
+    , shippedTip
     )
 import Singular.CLI.Session
     ( Building (..)
@@ -634,6 +634,11 @@ createWith app env a rel ws = do
                             <> [ ("token", toJSON (tokenHex (bootedToken booted)))
                                , ("processTime", toJSON (stateProcessTime (bootedState booted)))
                                , ("retractTime", toJSON (stateRetractTime (bootedState booted)))
+                               ,
+                                   ( "registrationCost"
+                                   , toJSON (stateRegistrationCost (bootedState booted))
+                                   )
+                               , ("bookingWidth", toJSON (stateBookingWidth (bootedState booted)))
                                , ("boot", toJSON (bootedBoot booted))
                                , ("transactions", toJSON (bootedTxs booted))
                                ,
@@ -1058,11 +1063,7 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
         -- `SoleSeedWhilePublishing` is only for an explicit `--seed`.
         wholeRunText err = case (err, adaOnlyHeld) of
             (PublicationUnfunded _ needed (largest, held, _), (dummy, _) : _) ->
-                let chosenDummy =
-                        economics
-                            { reProcessTime = createProcessTime a
-                            , reRetractTime = createRetractTime a
-                            }
+                let chosenDummy = economicsOf a
                     (cfgDummy, pinnedDummy) =
                         registryConfigFor app rel chosenDummy (txInToRef dummy)
                     tokenDummy = stateTokenOf rel dummy
@@ -1149,11 +1150,7 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
                                     (failWith ClientRefusal . renderIdentityError)
                                     pure
                                     (seedChecks submitting seedIn utxos)
-    let chosen =
-            economics
-                { reProcessTime = createProcessTime a
-                , reRetractTime = createRetractTime a
-                }
+    let chosen = economicsOf a
         (cfg, pinned) =
             registryConfigFor app rel chosen (txInToRef seedIn)
         providerFromCreate = case createMode a of
@@ -1216,3 +1213,17 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
                 <> ([("pins", toJSON (pinsOf cfg)) | not isFirstFailure])
                 <> funding
     pure ((seedIn, cfg, pinned, seedFrom), identity)
+
+{- | What a create states: the windows and the booking terms it was given, and
+the minimum tip the release ships. There is no shipped registration cost or
+booking width: the caller states both.
+-}
+economicsOf :: CreateArgs -> RegistryEconomics
+economicsOf a =
+    RegistryEconomics
+        { reProcessTime = createProcessTime a
+        , reRetractTime = createRetractTime a
+        , reTip = shippedTip
+        , reRegistrationCost = Coin (createRegistrationCost a)
+        , reBookingWidth = createBookingWidth a
+        }

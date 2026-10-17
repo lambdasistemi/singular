@@ -73,9 +73,15 @@ data DeployOptions = DeployOptions
     -- ^ @--process-time@ in milliseconds, 120000 when absent
     , deployRetractTime :: Integer
     -- ^ @--retract-time@ in milliseconds, 30000 when absent
+    , deployRegistrationCost :: Integer
+    -- ^ @--registration-cost@ in lovelace, required
+    , deployBookingWidth :: Integer
+    -- ^ @--booking-width@ in milliseconds, required
     }
 
--- | Read @deploy@'s flags, refusing a missing @--out@ or a bad window.
+{- | Read @deploy@'s flags, refusing a missing @--out@, a bad window, or a
+missing or bad registration cost or booking width.
+-}
 deployOptions :: [String] -> IO DeployOptions
 deployOptions args = do
     out <- case flagValue "--out" args of
@@ -93,7 +99,27 @@ deployOptions args = do
         Just ms -> case reads ms of
             [(n :: Integer, "")] | n > 0 -> pure n
             _ -> failWith "--retract-time needs a positive number of milliseconds"
-    pure (DeployOptions out release leanRev processTime retractTime)
+    registrationCost <- case flagValue "--registration-cost" args of
+        Nothing -> failWith "deploy needs --registration-cost LOVELACE"
+        Just n -> case reads n of
+            [(c :: Integer, "")] | c >= 0 -> pure c
+            _ ->
+                failWith "--registration-cost needs a non-negative number of lovelace"
+    bookingWidth <- case flagValue "--booking-width" args of
+        Nothing -> failWith "deploy needs --booking-width MS"
+        Just ms -> case reads ms of
+            [(n :: Integer, "")] | n > 0 -> pure n
+            _ -> failWith "--booking-width needs a positive number of milliseconds"
+    pure
+        ( DeployOptions
+            out
+            release
+            leanRev
+            processTime
+            retractTime
+            registrationCost
+            bookingWidth
+        )
 
 -- | The manifest @verify@ checks.
 verifyManifest :: [String] -> IO FilePath

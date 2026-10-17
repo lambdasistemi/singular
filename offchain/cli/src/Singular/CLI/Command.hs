@@ -133,7 +133,7 @@ import Singular.CLI.Passphrase
     , readPassphrase
     , renderPassphraseRefusal
     )
-import Singular.CLI.Registry (economics)
+import Singular.CLI.Registry (shippedProcessTime, shippedRetractTime)
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Sources
     ( Sources (..)
@@ -152,7 +152,6 @@ import Singular.CLI.Vault
     , vaultWorkFactor
     )
 import Singular.CLI.Version (releaseVersion)
-import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -220,6 +219,10 @@ data CreateArgs = CreateArgs
     -- ^ Positive processing window in milliseconds, fixed at creation
     , createRetractTime :: Integer
     -- ^ Positive retract window in milliseconds, fixed at creation
+    , createRegistrationCost :: Integer
+    -- ^ Registration cost in lovelace, at least zero, fixed at creation
+    , createBookingWidth :: Integer
+    -- ^ Widest booking interval in milliseconds, positive, fixed at creation
     }
     deriving stock (Eq, Show)
 
@@ -586,14 +589,22 @@ commandFrom environment (Raw ws allFlags) = do
                     "is a registry describe flag: only describe prints the page as JSON"
                 )
     refuseWindows words' flags =
-        unless (words' == ["registry", "create"]) $
-            forM_ ["--process-time", "--retract-time"] $ \flag ->
+        unless (words' == ["registry", "create"])
+            $ forM_
+                [ ("--process-time", "windows are fixed for the life of a registry")
+                , ("--retract-time", "windows are fixed for the life of a registry")
+                ,
+                    ( "--registration-cost"
+                    , "the registration cost is fixed for the life of a registry"
+                    )
+                ,
+                    ( "--booking-width"
+                    , "the widest booking interval is fixed for the life of a registry"
+                    )
+                ]
+            $ \(flag, why) ->
                 when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is a registry create flag: windows are fixed for the life of a registry"
-                        )
+                    Left (BadValue flag ("is a registry create flag: " <> why))
     -- @--bundle@ is where a write's run goes for signing elsewhere; a
     -- command that writes nothing refuses it by name rather than ignore it.
     refuseBundle command flags =
@@ -729,9 +740,11 @@ commandFrom environment (Raw ws allFlags) = do
                     "is refused by registry create, which makes one"
                 )
         processing <-
-            windowFrom "--process-time" (reProcessTime economics) flags
+            windowFrom "--process-time" shippedProcessTime flags
         retracting <-
-            windowFrom "--retract-time" (reRetractTime economics) flags
+            windowFrom "--retract-time" shippedRetractTime flags
+        cost <- registrationCostFrom flags
+        width <- bookingWidthFrom flags
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
@@ -764,6 +777,8 @@ commandFrom environment (Raw ws allFlags) = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
+                , createRegistrationCost = cost
+                , createBookingWidth = width
                 }
     applicationPolicyFrom flags = case optional "--application-policy" flags of
         Nothing -> Right Nothing
@@ -781,6 +796,26 @@ commandFrom environment (Raw ws allFlags) = do
                     ( "is "
                         <> show (BS.length bytes)
                         <> " bytes, not 28: give 56 hex characters (a 28-byte policy hash)"
+                    )
+    registrationCostFrom flags = case optional "--registration-cost" flags of
+        Nothing -> Left (MissingFlag "--registration-cost")
+        Just value -> case readMaybe value of
+            Just n | n >= 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--registration-cost"
+                        "needs a non-negative integer number of lovelace"
+                    )
+    bookingWidthFrom flags = case optional "--booking-width" flags of
+        Nothing -> Left (MissingFlag "--booking-width")
+        Just value -> case readMaybe value of
+            Just n | n > 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--booking-width"
+                        "needs a positive integer number of milliseconds"
                     )
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
@@ -1119,7 +1154,12 @@ invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 an application policy, and the wallet commands name an output directory.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = ["--application-policy", "--out"]
+extraValuedFlags =
+    [ "--application-policy"
+    , "--out"
+    , "--registration-cost"
+    , "--booking-width"
+    ]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String

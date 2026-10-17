@@ -119,7 +119,7 @@ import Singular.CLI.Options
     , refusalAs
     , resolvePath
     )
-import Singular.CLI.Registry (economics)
+import Singular.CLI.Registry (shippedProcessTime, shippedRetractTime)
 import Singular.CLI.Sources
     ( Sources (..)
     , applySources
@@ -129,7 +129,6 @@ import Singular.CLI.Sources
     )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Version (releaseVersion)
-import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
@@ -307,14 +306,22 @@ commandFrom environment (Raw ws allFlags) = do
                                 _ -> Left (UnknownCommand ws)
   where
     refuseWindows words' flags =
-        unless (words' == ["open-datum", "create"]) $
-            forM_ ["--process-time", "--retract-time"] $ \flag ->
+        unless (words' == ["open-datum", "create"])
+            $ forM_
+                [ ("--process-time", "windows are fixed for the life of a registry")
+                , ("--retract-time", "windows are fixed for the life of a registry")
+                ,
+                    ( "--registration-cost"
+                    , "the registration cost is fixed for the life of a registry"
+                    )
+                ,
+                    ( "--booking-width"
+                    , "the widest booking interval is fixed for the life of a registry"
+                    )
+                ]
+            $ \(flag, why) ->
                 when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is an open-datum create flag: windows are fixed for the life of a registry"
-                        )
+                    Left (BadValue flag ("is an open-datum create flag: " <> why))
     -- The constraints on a write's spending belong to insert, update and
     -- terminate. A command that does not enforce one refuses it by name rather
     -- than discard what the caller stated.
@@ -358,9 +365,11 @@ commandFrom environment (Raw ws allFlags) = do
                     "is refused by open-datum create, which makes one"
                 )
         processing <-
-            windowFrom "--process-time" (reProcessTime economics) flags
+            windowFrom "--process-time" shippedProcessTime flags
         retracting <-
-            windowFrom "--retract-time" (reRetractTime economics) flags
+            windowFrom "--retract-time" shippedRetractTime flags
+        cost <- registrationCostFrom flags
+        width <- bookingWidthFrom flags
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
@@ -393,7 +402,29 @@ commandFrom environment (Raw ws allFlags) = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
+                , createRegistrationCost = cost
+                , createBookingWidth = width
                 }
+    registrationCostFrom flags = case optional "--registration-cost" flags of
+        Nothing -> Left (MissingFlag "--registration-cost")
+        Just value -> case readMaybe value of
+            Just n | n >= 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--registration-cost"
+                        "needs a non-negative integer number of lovelace"
+                    )
+    bookingWidthFrom flags = case optional "--booking-width" flags of
+        Nothing -> Left (MissingFlag "--booking-width")
+        Just value -> case readMaybe value of
+            Just n | n > 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--booking-width"
+                        "needs a positive integer number of milliseconds"
+                    )
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
         Just value -> case readMaybe value of
@@ -672,7 +703,7 @@ invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 
 -- | The valued flags this binary owns beyond the common group: none.
 extraValuedFlags :: [String]
-extraValuedFlags = []
+extraValuedFlags = ["--registration-cost", "--booking-width"]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String

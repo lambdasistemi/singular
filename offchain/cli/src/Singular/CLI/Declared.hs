@@ -32,6 +32,8 @@ module Singular.CLI.Declared
     , preview
     , processTime
     , retractTime
+    , registrationCost
+    , bookingWidth
     , keyText
     , keyHex
     , outputsAt
@@ -236,6 +238,20 @@ retractTime =
     )
         { flagDefault = Just "300000, five minutes"
         }
+
+registrationCost :: Flag
+registrationCost =
+    valued
+        "--registration-cost"
+        "LOVELACE"
+        "What a registration request pays into the registry, at least zero; fixed for the life of the registry, and with no default."
+
+bookingWidth :: Flag
+bookingWidth =
+    valued
+        "--booking-width"
+        "MS"
+        "The widest interval a request may be booked over, in milliseconds, positive; fixed for the life of the registry, and with no default."
 
 keyText :: Flag
 keyText =

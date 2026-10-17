@@ -111,6 +111,7 @@ import PlutusTx.IsData.Class
     ( FromData (..)
     , ToData (..)
     )
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint.Params (applyRequestParams)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
@@ -249,7 +250,15 @@ requestPolicyPin
     -> OnChainTxOutRef
     -- ^ The seed the boot consumes
     -> SBS.ShortByteString
-requestPolicyPin _ _ _ = SBS.empty
+requestPolicyPin stateBytes requestBytes seed =
+    SBS.toShort $
+        scriptHashBytes $
+            requestPolicyHash
+                (computeScriptHash stateBytes)
+                requestBytes
+                ( OnChainTokenId $
+                    BuiltinByteString (deriveAssetName seed)
+                )
 
 -- | Convert a ledger token id to its on-chain token id.
 onChainTokenId :: TokenId -> OnChainTokenId

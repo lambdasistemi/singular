@@ -59,8 +59,9 @@ createLeaf =
             , leafDescription =
                 [ "Boots one registry from a seed output of your wallet and prints \
                   \its state token, which every other command names the registry \
-                  \by. The processing window and the retract window are fixed here \
-                  \for the life of the registry."
+                  \by. The processing window, the retract window, the registration \
+                  \cost and the widest booking interval are fixed here for the life \
+                  \of the registry; the cost and the width have no default."
                 , "With --closed the registry is a closed-datum registry whose \
                   \payload is written once; every later command follows the \
                   \registry's mode with no further flag, and an update on a closed \
@@ -76,6 +77,8 @@ createLeaf =
                     , Takes seed
                     , Takes processTime
                     , Takes retractTime
+                    , Needs registrationCost
+                    , Needs bookingWidth
                     , nodeShape
                     , OneOf
                         [ writeShape
@@ -87,6 +90,7 @@ createLeaf =
             , leafEnvironment = [environmentLog, environmentState]
             , leafExamples =
                 [ "open-datum create --blueprint plutus.json \\"
+                , "    --registration-cost 0 --booking-width 60000 \\"
                 , "    " <> preprodExample <> " \\"
                 , "    --vault alice.vault"
                 ]

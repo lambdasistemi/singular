@@ -95,8 +95,9 @@ createLeaf =
             , leafDescription =
                 [ "Boots one registry from a seed output of your wallet and prints its \
                   \state token, which every other command names the registry by. The \
-                  \processing window and the retract window are fixed here for the life \
-                  \of the registry."
+                  \processing window, the retract window, the registration cost and \
+                  \the widest booking interval are fixed here for the life of the \
+                  \registry; the cost and the width have no default."
                 , signerParagraph
                 , previewParagraph
                 ]
@@ -108,6 +109,8 @@ createLeaf =
                     , Takes applicationPolicy
                     , Takes processTime
                     , Takes retractTime
+                    , Needs registrationCost
+                    , Needs bookingWidth
                     , nodeShape
                     , OneOf
                         [ writeShape
@@ -119,6 +122,7 @@ createLeaf =
             , leafEnvironment = [environmentLog, environmentState]
             , leafExamples =
                 [ "singular registry create --blueprint plutus.json \\"
+                , "    --registration-cost 0 --booking-width 60000 \\"
                 , "    " <> preprodExample <> " \\"
                 , "    --vault alice.vault"
                 ]

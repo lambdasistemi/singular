@@ -3179,6 +3179,10 @@ pinsPolicy rig registry seed policyBytes = do
             , seed
             , "--application-policy"
             , policyHex
+            , "--registration-cost"
+            , "0"
+            , "--booking-width"
+            , "60000"
             ]
     outcomeOf (runReceipt r) `shouldBe` Just "success"
     -- the receipt's pins name the hash
@@ -3285,6 +3289,10 @@ applicationPolicyRows =
                     , "payment.skey"
                     , "--application-policy"
                     , "not hex at all"
+                    , "--registration-cost"
+                    , "0"
+                    , "--booking-width"
+                    , "60000"
                     ] of
                     Left err ->
                         renderCLIError err
@@ -3309,6 +3317,10 @@ applicationPolicyRows =
                     , "payment.skey"
                     , "--application-policy"
                     , "abcd"
+                    , "--registration-cost"
+                    , "0"
+                    , "--booking-width"
+                    , "60000"
                     ] of
                     Left err ->
                         renderCLIError err

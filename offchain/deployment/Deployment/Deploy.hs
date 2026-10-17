@@ -80,6 +80,8 @@ deploy args = do
         , deployLeanRevision = leanRev
         , deployProcessTime = processTime
         , deployRetractTime = retractTime
+        , deployRegistrationCost = registrationCost
+        , deployBookingWidth = bookingWidth
         } <-
         deployOptions args
     unbound <- loadCompiled
@@ -109,7 +111,16 @@ deploy args = do
                     txs
                     (scriptFromBytes "state" (cStateBytes unbound))
             (cfg, tok, bootTx, seedIn, compiled) <-
-                bootRegistry wallet prov caps unbound txs processTime retractTime
+                bootRegistry
+                    wallet
+                    prov
+                    caps
+                    unbound
+                    txs
+                    processTime
+                    retractTime
+                    registrationCost
+                    bookingWidth
             registerCredentials wallet prov caps compiled txs
             refs <- publishAll wallet prov caps cfg tok compiled stateIn txs
             bootstrap <- reverse <$> readIORef txs

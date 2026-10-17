@@ -87,6 +87,7 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , mkCageScript
     , mkRequestScript
+    , requestPolicyPin
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
@@ -128,11 +129,15 @@ bootRegistry
     -> Compiled
     -> IORef [Text]
     -> Integer
-    -> Integer
     -- ^ Process window (ms), from @--process-time@.
-    -> IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
+    -> Integer
     -- ^ Retract window (ms), from @--retract-time@.
-bootRegistry wallet prov caps unbound txs processTime retractTime = do
+    -> Integer
+    -- ^ Registration cost (lovelace), from @--registration-cost@.
+    -> Integer
+    -- ^ Widest booking interval (ms), from @--booking-width@.
+    -> IO (CageConfig, TokenId, ConwayTx, TxIn, Compiled)
+bootRegistry wallet prov caps unbound txs processTime retractTime registrationCost bookingWidth = do
     -- The seed and the boot that spends it are read from one session.
     (seedIn, cfg, compiled, unsigned) <- Cage.withLatest prov $ \v -> do
         utxos <- Cage.outputsAt v (walletAddr wallet)
@@ -154,8 +159,8 @@ bootRegistry wallet prov caps unbound txs processTime retractTime = do
                     , defaultProcessTime = processTime
                     , defaultRetractTime = retractTime
                     , defaultTip = Coin 1_000_000
-                    , defaultRegistrationCost = Coin 0
-                    , defaultBookingWidth = 60_000
+                    , defaultRegistrationCost = Coin registrationCost
+                    , defaultBookingWidth = bookingWidth
                     , -- #157 genesis-policy-pins: the four pins the boot datum carries come
                       -- from the one derivation `partsOf` performs, so the
                       -- manifest, the config and the state datum cannot drift
@@ -164,7 +169,14 @@ bootRegistry wallet prov caps unbound txs processTime retractTime = do
                     , cfgActivePolicy = partsActivePolicy parts
                     , cfgAbsentPolicy = partsAbsentPolicy parts
                     , cfgTerminalPolicy = partsTerminalPolicy parts
-                    , cfgRequestPolicy = mempty
+                    , -- The request policy is the request validator applied to the
+                      -- state hash and the registry token this seed derives, by
+                      -- the one derivation the CLI and the builders share.
+                      cfgRequestPolicy =
+                        requestPolicyPin
+                            (cStateBytes compiled)
+                            (cRequestBytes compiled)
+                            (txInToRef seedIn)
                     , cfgConsumerScript = partsConsumerScript parts
                     , network = Testnet
                     }

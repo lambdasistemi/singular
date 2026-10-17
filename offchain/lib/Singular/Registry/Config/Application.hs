@@ -27,7 +27,6 @@ import Data.ByteString.Short qualified as SBS
 
 import Cardano.Ledger.BaseTypes (Network (..))
 
-import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.Application (ApplicationPin, applyPin)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint (NamingCodes (..))
@@ -36,10 +35,10 @@ import Singular.Registry.Ledger (Coin)
 import Singular.Registry.TxBuilder.Edges (namingPins)
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
-    , requestPolicyHash
+    , requestPolicyPin
     , scriptHashBytes
     )
-import Singular.Registry.Types (OnChainTokenId (..), OnChainTxOutRef)
+import Singular.Registry.Types (OnChainTxOutRef)
 
 -- | The windows and tip a registry is booted with.
 data RegistryEconomics = RegistryEconomics
@@ -91,15 +90,7 @@ configForApplication pin codes stateBytes requestBytes econ net seed =
             , cfgActivePolicy = activePin
             , cfgAbsentPolicy = absentPin
             , cfgTerminalPolicy = terminalPin
-            , cfgRequestPolicy =
-                SBS.toShort
-                    ( scriptHashBytes
-                        ( requestPolicyHash
-                            (computeScriptHash stateBytes)
-                            requestBytes
-                            (OnChainTokenId (BuiltinByteString (deriveAssetName seed)))
-                        )
-                    )
+            , cfgRequestPolicy = requestPolicyPin stateBytes requestBytes seed
             , cfgConsumerScript = SBS.empty
             , network = net
             }
