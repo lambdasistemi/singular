@@ -1,11 +1,13 @@
 use aiken/collection/list.{has}
 use aiken/collection/pairs
+use booking.{pureBurn, registrationBookingRefusal}
 use cardano/address.{VerificationKey}
-use cardano/assets.{AssetName, PolicyId, lovelace_of, policies}
+use cardano/assets.{AssetName, PolicyId, lovelace_of, policies, tokens}
 use cardano/transaction.{
   InlineDatum, Input, OutputReference, Spend, Transaction,
 }
 use lib.{edgeInsertAbsent, edgeInsertActive, edgeWitnessTerminal}
+use registry/refusal.{traceFalse}
 use shared.{
   carriesStateToken, in_phase1, in_phase2, inputByRef, inputOrReferenceByRef,
   readState,
@@ -56,8 +58,26 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
     }
   }
 
-  mint(_redeemer: Data, _policy_id: PolicyId, _tx: Transaction) {
-    False
+  // The booking policy: its own applied hash is the request address's
+  // payment credential. A pure burn is accepted without reading the
+  // redeemer, a state or an output; anything else is a registration
+  // booking and is judged by `booking.registrationBookingRefusal`.
+  mint(_redeemer: Data, policy_id: PolicyId, tx: Transaction) {
+    if pureBurn(tokens(tx.mint, policy_id)) {
+      True
+    } else {
+      when
+        registrationBookingRefusal(
+          statePolicyId,
+          TokenId { assetName: cageTokenName },
+          policy_id,
+          tx,
+        )
+      is {
+        None -> True
+        Some(reason) -> traceFalse(reason)
+      }
+    }
   }
 
   else(_) {
