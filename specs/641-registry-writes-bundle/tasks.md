@@ -18,9 +18,9 @@
 
 ## Slice: journal phase
 
-- [ ] bundle-membership: membership by identity, the partition of the per-transaction recovery, legacy journals unchanged.
-- [ ] bundle-state: landed, dead and pending from the journal; one state for admission and the report, with the property over member states.
-- [ ] bundle-reconciliation: the inclusion and tip read, the landed and dead lines, expiry, the pending-bundle refusal with status 19, connected rows from the real producer.
+- [x] bundle-membership: membership by identity, the partition of the per-transaction recovery, legacy journals unchanged.
+- [x] bundle-state: landed, dead and pending from the journal; one state for admission and the report, with the property over member states.
+- [x] bundle-reconciliation: the inclusion and tip read, the landed and dead lines, expiry, the pending-bundle refusal with status 19, connected rows from the real producer.
 
 ## Slice: vault mode
 

@@ -52,6 +52,12 @@ module Singular.CLI.Receipt
     , journalPath
     , appendJournal
     , journalWaitingForSignatures
+    , BundleState (..)
+    , bundleMembers
+    , bundleStates
+    , pendingBundles
+    , unjudgedMembers
+    , nonMemberLines
     , readJournal
     , unresolved
     , bodiesDir
@@ -81,6 +87,7 @@ import Data.Foldable (toList)
 import Data.List (nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -397,7 +404,8 @@ readJournal dir = do
             (Aeson.eitherDecodeStrict' l)
 
 {- | The latest line of the first transaction whose last phase does not
-settle it, if any.
+settle it, if any. A bundle member is never selected: it is judged only by
+its bundle's state.
 -}
 unresolved :: [JournalEntry] -> Maybe JournalEntry
 unresolved entries =
@@ -409,8 +417,18 @@ unresolved entries =
         [] -> Nothing
   where
     settled = ["observed", "rejected", "excluded"]
-    txIds = nub (map journalTxId entries)
-    lastOf t = last [e | e <- entries, journalTxId e == t]
+    own = nonMemberLines entries
+    txIds = nub (map journalTxId own)
+    lastOf t = last [e | e <- own, journalTxId e == t]
+
+{- | The lines of the transactions no bundle names: what the per-transaction
+reconciliation of the key-file path reads. A member's lines, of any phase,
+belong to its bundle for its whole life. Pure.
+-}
+nonMemberLines :: [JournalEntry] -> [JournalEntry]
+nonMemberLines entries = [e | e <- entries, journalTxId e `notElem` ids]
+  where
+    ids = map fst (bundleMembers entries)
 
 -- | The journal's directory of saved signed bodies.
 bodiesDir :: FilePath -> FilePath
@@ -512,3 +530,78 @@ exitCodeOf = \case
     ProofMissing -> ExitFailure 17
     ProofInconsistent -> ExitFailure 18
     WaitingForSignatures -> ExitFailure 19
+
+{- | One bundle's state, as admission and the report both read it: pending
+with the members still awaited, in the order the bundle holds them; landed
+when every member is found on chain; dead with the reason, the members that
+died and the members that went through.
+-}
+data BundleState
+    = BundlePending [Text]
+    | BundleLanded
+    | BundleDead Text [Text] [Text]
+    deriving stock (Eq, Show)
+
+{- | Every identity a waiting line names, with its bundle's hash, in the
+order the waiting lines name them: a member of that bundle in every later
+line. Pure.
+-}
+bundleMembers :: [JournalEntry] -> [(Text, Text)]
+bundleMembers entries =
+    nub
+        [ (journalTxId e, h)
+        | e <- entries
+        , journalEvent e == "waiting-for-signatures"
+        , Just h <- [journalDetail e]
+        ]
+
+-- | Each bundle hash in the journal with its state, by the journal phase's rules. Pure.
+bundleStates :: [JournalEntry] -> [(Text, BundleState)]
+bundleStates entries =
+    [ (h, stateOf [m | (m, h') <- members, h' == h])
+    | h <- nub (map snd members)
+    ]
+  where
+    members = bundleMembers entries
+    linesOf event m = [e | e <- entries, journalTxId e == m, journalEvent e == event]
+    landed m = not (null (linesOf "landed" m))
+    stateOf ms =
+        let notLanded = filter (not . landed) ms
+            deadLines =
+                [ e
+                | e <- entries
+                , journalEvent e == "dead"
+                , journalTxId e `elem` ms
+                ]
+        in  case deadLines of
+                first : _ ->
+                    BundleDead
+                        (fromMaybe "" (journalDetail first))
+                        notLanded
+                        (filter landed ms)
+                []
+                    | null notLanded -> BundleLanded
+                    | otherwise -> BundlePending notLanded
+
+-- | The bundles admission stops on and the report names as pending.
+pendingBundles :: [(Text, BundleState)] -> [(Text, [Text])]
+pendingBundles states = [(h, awaited) | (h, BundlePending awaited) <- states]
+
+{- | The members a reconciliation still has to judge, by bundle: every
+member a pending bundle awaits, and every member of a dead bundle with
+neither a landed nor a dead line, which a run stopped while appending its
+dead lines leaves behind. A landed bundle, and a dead one whose members all
+have their line, have none. Pure.
+-}
+unjudgedMembers :: [JournalEntry] -> [(Text, [Text])]
+unjudgedMembers entries =
+    [ (h, ms)
+    | (h, st) <- bundleStates entries
+    , let ms = case st of
+            BundlePending awaited -> awaited
+            BundleDead _ died _ -> filter (`notElem` deadIds) died
+            BundleLanded -> []
+    , not (null ms)
+    ]
+  where
+    deadIds = [journalTxId e | e <- entries, journalEvent e == "dead"]

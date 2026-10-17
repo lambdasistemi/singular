@@ -75,7 +75,13 @@ import Data.IORef
     )
 import Data.List (isInfixOf, nub, partition, sort, sortOn)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    , isNothing
+    , listToMaybe
+    , mapMaybe
+    )
 import Data.Ord (Down (..))
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
@@ -361,6 +367,7 @@ spec =
         >> previewFundingRows
         >> externalSignerRows
         >> externalCreateRows
+        >> journalPhaseRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -5375,3 +5382,742 @@ createSignerLineRows =
                             <> "written to the bundle for signing elsewhere"
                         )
                     )
+
+-- ---------------------------------------------------------
+-- The journal phase (#641 slice 4)
+-- ---------------------------------------------------------
+
+{- | The real staged run writes the journal, the real reconciliation reads
+it and admission decides: a pending bundle stops the next write at 19, a
+landed one settles, an expired one dies with every member, and a second
+staged create from the same wallet is stopped by the first one's bundle.
+Members are judged by their identity and the tip alone: a landed member
+whose outputs were spent stays landed, a member whose inputs were consumed
+elsewhere stays pending until its deadline and then dies, never rolled back.
+-}
+journalPhaseRows :: Spec
+journalPhaseRows = describe "the journal phase" $ do
+    pendingStopsRow
+    landedSettlesRow
+    landedOutputsSpentRow
+    expiredDiesRow
+    inputsConsumedElsewhereRow
+    preparedBundleDiesWholeRow
+    partialLandingRow
+    interruptedDeathRow
+    secondCreateStoppedRow
+    explicitSeedCreateStoppedRow
+
+{- | The windows of the registries these rows create. Both bounds are read
+from the wall clock: a fold builds only while the request's processing
+deadline is at least thirty seconds ahead of it, and a reject's upper
+bound is at most two minutes ahead of it. A processing window of a hundred
+seconds and a retract window of one second keep the staged fold buildable
+right after the plant, and put the tip one slot past the retract window
+still inside the reject's reach.
+-}
+journalWindows :: RegistryEconomics
+journalWindows =
+    RegistryEconomics
+        { reProcessTime = 100_000
+        , reRetractTime = 1_000
+        , reTip = Coin 1_000_000
+        }
+
+-- | A staged fold over the rig, as 'stageFoldWith' leaves it.
+data StagedFold = StagedFold
+    { sfToken :: String
+    , sfRequest :: TxIn
+    , sfSubmitted :: Integer
+    -- ^ the request's submission time, in milliseconds, which fixes its windows
+    , sfBundlePath :: FilePath
+    , sfHash :: Text
+    , sfBundle :: Bundle
+    , sfBodies :: [ConwayTx]
+    }
+
+{- | A registry with one certified planted request of this deposit, the
+wallet shaped by the given action over the certified approvals, and a
+staged fold of the request in this registry directory.
+-}
+stageFoldWith
+    :: Integer
+    -> (Map.Map PolicyID (Map.Map AssetName Integer) -> IO ())
+    -> Rig
+    -> String
+    -> IO StagedFold
+stageFoldWith deposit shape rig registry = do
+    seed <- fundSeed rig
+    create <-
+        run
+            rig
+            "create"
+            ( ["registry", "create", "--seed", seed]
+                <> [ "--process-time"
+                   , show (reProcessTime journalWindows)
+                   , "--retract-time"
+                   , show (reRetractTime journalWindows)
+                   ]
+                <> policyArgs
+            )
+    t <- tokenOf create
+    (req, submitted) <-
+        plantRequestDeposit
+            rig
+            t
+            seed
+            journalWindows
+            (TE.encodeUtf8 (T.pack registry))
+            deposit
+    approvals <- certifyPlanted rig t seed journalWindows [req]
+    shape approvals
+    let bundlePath = rigDir rig </> (registry <> ".bundle")
+    staged <-
+        runAt
+            rig
+            registry
+            "staged fold"
+            ( ["registry", "fold", "--request", T.unpack (renderOutRef req)]
+                <> tokenArgs t
+                <> externalArgs rig bundlePath
+            )
+    runExit staged `shouldBe` ExitFailure 19
+    h <- hashOfBytes <$> BS.readFile bundlePath
+    (bundle, bodies) <- checkedBundle bundlePath
+    pure
+        StagedFold
+            { sfToken = t
+            , sfRequest = req
+            , sfSubmitted = submitted
+            , sfBundlePath = bundlePath
+            , sfHash = h
+            , sfBundle = bundle
+            , sfBodies = bodies
+            }
+
+-- | An ordinary staged fold: a funded wallet, no preparation.
+stageAFold :: Rig -> String -> IO StagedFold
+stageAFold = stageFoldWith 1_000_000 (const (pure ()))
+
+{- | A staged fold that must prepare its funding, with the setup of the
+staged preparation row: a deposit beyond the wallet's largest ada-only
+output and the wallet reshaped to hold the approvals beside its ada. The
+bundle is two members, the preparation, which has no upper bound, then the
+fold, which has one.
+-}
+stagePreparedFold :: Rig -> String -> IO StagedFold
+stagePreparedFold rig registry = do
+    sf <-
+        stageFoldWith
+            3_000_000_000
+            (void . reshapeRehearsalWallet rig)
+            rig
+            registry
+    map bodyDeadline (sfBodies sf)
+        `shouldSatisfy` \case
+            [Nothing, Just _] -> True
+            _ -> False
+    pure sf
+
+-- | The upper bound of the staged member that has one.
+boundedDeadline :: StagedFold -> IO Word64
+boundedDeadline sf =
+    case mapMaybe bundleTxDeadline (toList (bundleTransactions (sfBundle sf))) of
+        d : _ -> pure d
+        [] -> fail "the staged bundle carries no deadline"
+
+{- | The next write of these rows, one that builds over the rig: the tip
+moved one slot past the retract window the registry fixes for a request
+submitted at this time ('journalWindows', which the registry was created
+with and the request planted under), then a key-file reject, which takes
+that request.
+-}
+rejectPast :: Rig -> String -> String -> Integer -> String -> IO Run
+rejectPast rig registry t submitted label = do
+    jumpToAfter
+        rig
+        ( submitted
+            + reProcessTime journalWindows
+            + reRetractTime journalWindows
+        )
+        0
+    runAt rig registry label (["registry", "reject"] <> tokenArgs t)
+
+-- | The same reject, at the rig's current tip.
+rejectNow :: Rig -> String -> String -> String -> IO Run
+rejectNow rig registry t label =
+    runAt rig registry label (["registry", "reject"] <> tokenArgs t)
+
+-- | Apply bodies to the rig's chain in order, as a node lands them.
+landOnRig :: Rig -> [ConwayTx] -> IO ()
+landOnRig rig =
+    mapM_ $ \tx -> do
+        let txid = txIdTx tx
+            spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+            made = zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+        recordTransaction (rigChain rig) tx
+        advanceChain (rigChain rig) $ \facts ->
+            facts
+                { csUTxO =
+                    Map.union
+                        (Map.fromList [(TxIn txid (TxIx ix), out) | (ix, out) <- made])
+                        (foldr Map.delete (csUTxO facts) spent)
+                }
+
+-- | Every output of these bodies, by its reference.
+outputsOf :: [ConwayTx] -> [(TxIn, TxOut ConwayEra)]
+outputsOf bodies =
+    [ (TxIn (txIdTx tx) (TxIx ix), out)
+    | tx <- bodies
+    , (ix, out) <- zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+    ]
+
+{- | Every output of the landed members is spent by transactions no member
+made, through the rig's own chain: a payment takes every output but the
+registry's state, and a key-file fold of another certified request, run
+from another directory, takes the state output as a later folder would.
+-}
+spendOutputsElsewhere
+    :: Rig -> String -> String -> [ConwayTx] -> IO ()
+spendOutputsElsewhere rig t seed bodies = do
+    let spentByMembers =
+            Set.unions [tx ^. bodyTxL . inputsTxBodyL | tx <- bodies]
+        live =
+            [ (i, out)
+            | (i, out) <- outputsOf bodies
+            , not (Set.member i spentByMembers)
+            ]
+        isState out = case extractCageDatum out of
+            Just (StateDatum _) -> True
+            _ -> False
+    landOnRig
+        rig
+        [ signedTx
+            (selfPayment (rigWallet rig) (filter (not . isState . snd) live))
+        ]
+    (other, _) <-
+        plantRequest rig t seed journalWindows (TE.encodeUtf8 "carol-other")
+    _ <- certifyPlanted rig t seed journalWindows [other]
+    folded <-
+        runAt
+            rig
+            "carol-elsewhere"
+            "key-file fold of another request elsewhere"
+            ( ["registry", "fold", "--request", T.unpack (renderOutRef other)]
+                <> tokenArgs t
+            )
+    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+
+-- | Which of these outputs the rig's chain holds live.
+liveAmong :: Rig -> [(TxIn, TxOut ConwayEra)] -> IO [TxIn]
+liveAmong rig outs =
+    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+        held <-
+            concat
+                <$> mapM
+                    (SessionIO.outputsAt v . (^. addrTxOutL))
+                    (nub (map snd outs))
+        pure [i | (i, _) <- outs, i `elem` map fst held]
+
+-- | The reconciled bundles a receipt reports, by hash.
+reportedBundle :: Run -> Text -> Maybe Aeson.Value
+reportedBundle r h = case valueAt "reconciled" (runReceipt r) >>= valueAt "bundles" of
+    Just (Aeson.Array bs) ->
+        listToMaybe [b | b <- toList bs, textAt "hash" b == Just h]
+    _ -> Nothing
+
+-- | The reconciled bundle a receipt reports, or the row fails.
+requireBundle :: Run -> Text -> IO Aeson.Value
+requireBundle r h =
+    maybe
+        (fail ("no reconciled bundle reported: " <> show (runReceipt r)))
+        pure
+        (reportedBundle r h)
+
+-- | The identities a receipt's reconciliation rolled back.
+rolledBackOf :: Run -> [Text]
+rolledBackOf r = case valueAt "reconciled" (runReceipt r) >>= valueAt "rolledBack" of
+    Just (Aeson.Array xs) -> [x | Aeson.String x <- toList xs]
+    _ -> []
+
+-- | The events the journal holds for one member, in order.
+memberEvents :: [JournalEntry] -> ConwayTx -> [Text]
+memberEvents entries body =
+    [journalEvent e | e <- entries, journalTxId e == txIdHex body]
+
+-- | The identities in a report's list field.
+identitiesAt :: Aeson.Key -> Aeson.Value -> Maybe [Text]
+identitiesAt k v = case valueAt k v of
+    Just (Aeson.Array xs) -> Just [x | Aeson.String x <- toList xs]
+    _ -> Nothing
+
+pendingStopsRow :: Spec
+pendingStopsRow =
+    it
+        "a pending bundle stops the next write before it builds anything, naming it"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-pending"
+            sf <- stageAFold rig registry
+            let t = sfToken sf
+                h = sfHash sf
+                bodies = sfBodies sf
+                dir = stagedPartition rig registry t
+            journalBefore <- readJournal dir
+            next <-
+                withCountedSubmissions rig $ \env ->
+                    runVia
+                        rig
+                        env
+                        registry
+                        "key-file fold while the bundle is pending"
+                        ( [ "registry"
+                          , "fold"
+                          , "--request"
+                          , T.unpack (renderOutRef (sfRequest sf))
+                          ]
+                            <> tokenArgs t
+                        )
+            runExit next `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt next) `shouldBe` Just "waiting-for-signatures"
+            [() | Trace _ (How (Tx TxBuilt{})) <- runEvents next] `shouldBe` []
+            readJournal dir `shouldReturn` journalBefore
+            named <- case valueAt "pendingBundle" (runReceipt next) of
+                Just v@(Aeson.Object _) -> pure v
+                other -> fail ("no pending bundle named: " <> show other)
+            textAt "hash" named `shouldBe` Just h
+            textAt "saved" named
+                `shouldBe` Just
+                    (T.pack (bodiesDir dir </> ("bundle-" <> T.unpack h <> ".bundle")))
+            awaited <- case valueAt "awaited" named of
+                Just (Aeson.Array as) -> pure (toList as)
+                other -> fail ("no awaited members: " <> show other)
+            map (textAt "identity") awaited `shouldBe` map (Just . txIdHex) bodies
+            map (valueAt "deadline") awaited
+                `shouldBe` [ Aeson.toJSON <$> bundleTxDeadline e
+                           | e <- toList (bundleTransactions (sfBundle sf))
+                           ]
+            fromMaybe "" (receiptReason next) `shouldSatisfy` T.isInfixOf h
+
+landedSettlesRow :: Spec
+landedSettlesRow =
+    it
+        "a bundle whose members all landed settles, and the next write builds"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-landed"
+            sf <- stageAFold rig registry
+            let t = sfToken sf
+                bodies = sfBodies sf
+            landOnRig rig bodies
+            seed <- fundSeed rig
+            (second, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    journalWindows
+                    (TE.encodeUtf8 "bob-landed-second")
+            _ <- certifyPlanted rig t seed journalWindows [second]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    submitted
+                    "key-file reject after the bundle landed"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal (stagedPartition rig registry t)
+            let landed = [e | e <- entries, journalEvent e == "landed"]
+            map journalTxId landed `shouldBe` map txIdHex bodies
+            all (isJust . journalChainPoint) landed `shouldBe` True
+            fmap (textAt "state") (reportedBundle next (sfHash sf))
+                `shouldBe` Just (Just "landed")
+
+landedOutputsSpentRow :: Spec
+landedOutputsSpentRow =
+    it
+        "a landed member whose outputs were spent before the next run is still judged landed, by its identity"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-landed-spent"
+            sf <- stageAFold rig registry
+            let t = sfToken sf
+                bodies = sfBodies sf
+            landOnRig rig bodies
+            seed <- fundSeed rig
+            spendOutputsElsewhere rig t seed bodies
+            liveAmong rig (outputsOf bodies) `shouldReturn` []
+            (second, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    journalWindows
+                    (TE.encodeUtf8 "bob-landed-spent-second")
+            _ <- certifyPlanted rig t seed journalWindows [second]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    submitted
+                    "key-file reject after the landed outputs were spent"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal (stagedPartition rig registry t)
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
+            [ e
+              | e <- entries
+              , journalEvent e == "landed"
+              , isNothing (journalChainPoint e)
+              ]
+                `shouldBe` []
+            bundleReport <- requireBundle next (sfHash sf)
+            textAt "state" bundleReport `shouldBe` Just "landed"
+            filter (`elem` map txIdHex bodies) (rolledBackOf next) `shouldBe` []
+
+expiredDiesRow :: Spec
+expiredDiesRow =
+    it
+        "a bundle past a member's deadline dies, every member not landed gets a dead line, and the next write builds"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-expired"
+            sf <- stageAFold rig registry
+            let t = sfToken sf
+                bodies = sfBodies sf
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    (sfSubmitted sf)
+                    "key-file reject after the bundle expired"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal (stagedPartition rig registry t)
+            let dead = [e | e <- entries, journalEvent e == "dead"]
+            map journalTxId dead `shouldBe` map txIdHex bodies
+            map journalDetail dead
+                `shouldBe` [Just "expired, rebuild" | _ <- bodies]
+            bundleReport <- requireBundle next (sfHash sf)
+            textAt "state" bundleReport `shouldBe` Just "dead"
+            valueAt "wentThrough" bundleReport
+                `shouldBe` Just (Aeson.toJSON ([] :: [Text]))
+
+inputsConsumedElsewhereRow :: Spec
+inputsConsumedElsewhereRow =
+    it
+        "a member whose inputs were consumed elsewhere stays pending until its deadline, then dies, never landed and never rolled back"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-raced"
+                elsewhere = "carol-elsewhere"
+            sf <- stageAFold rig registry
+            let t = sfToken sf
+                bodies = sfBodies sf
+                dir = stagedPartition rig registry t
+            -- The wallet spends the funding Bob's fold takes, and Carol folds
+            -- the same request from another directory: every input of Bob's
+            -- member is consumed elsewhere, by transactions that are not it.
+            held <-
+                SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v ->
+                    SessionIO.outputsAt v (walletAddr (rigWallet rig))
+            let memberInputs =
+                    Set.unions [tx ^. bodyTxL . inputsTxBodyL | tx <- bodies]
+                funding = [u | u@(i, _) <- held, Set.member i memberInputs]
+            funding `shouldSatisfy` (not . null)
+            landOnRig rig [signedTx (selfPayment (rigWallet rig) funding)]
+            raced <-
+                runAt
+                    rig
+                    elsewhere
+                    "key-file fold of the same request elsewhere"
+                    ( [ "registry"
+                      , "fold"
+                      , "--request"
+                      , T.unpack (renderOutRef (sfRequest sf))
+                      ]
+                        <> tokenArgs t
+                    )
+            outcomeOf (runReceipt raced) `shouldBe` Just "success"
+            racedBodies <- keyFilePreparedBodies rig elsewhere t "fold"
+            filter (`elem` map txIdTx bodies) (map txIdTx racedBodies)
+                `shouldBe` []
+            let consumed =
+                    Set.unions [tx ^. bodyTxL . inputsTxBodyL | tx <- racedBodies]
+            [ i
+              | tx <- bodies
+              , i <- Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+              , Set.member i consumed
+              ]
+                `shouldSatisfy` elem (sfRequest sf)
+            seed <- fundSeed rig
+            (second, submitted) <-
+                plantRequest
+                    rig
+                    t
+                    seed
+                    journalWindows
+                    (TE.encodeUtf8 "bob-raced-second")
+            _ <- certifyPlanted rig t seed journalWindows [second]
+            stopped <-
+                rejectNow rig registry t "key-file reject before the deadline"
+            runExit stopped `shouldBe` ExitFailure 19
+            fmap (textAt "hash") (valueAt "pendingBundle" (runReceipt stopped))
+                `shouldBe` Just (Just (sfHash sf))
+            journalAtStop <- readJournal dir
+            map (memberEvents journalAtStop) bodies
+                `shouldBe` [["waiting-for-signatures"] | _ <- bodies]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    submitted
+                    "key-file reject past the deadline"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal dir
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "dead"] | _ <- bodies]
+            [journalDetail e | e <- entries, journalEvent e == "dead"]
+                `shouldBe` [Just "expired, rebuild" | _ <- bodies]
+            bundleReport <- requireBundle next (sfHash sf)
+            textAt "state" bundleReport `shouldBe` Just "dead"
+            identitiesAt "wentThrough" bundleReport `shouldBe` Just []
+            filter (`elem` map txIdHex bodies) (rolledBackOf next) `shouldBe` []
+
+preparedBundleDiesWholeRow :: Spec
+preparedBundleDiesWholeRow =
+    it
+        "a preparation and fold bundle is pending until the fold's bound, then dies whole: the unbounded preparation gets its dead line too"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-prepared-expired"
+            sf <- stagePreparedFold rig registry
+            let t = sfToken sf
+                bodies = sfBodies sf
+                dir = stagedPartition rig registry t
+            deadline <- boundedDeadline sf
+            jumpChainTo (rigChain rig) (SlotNo (deadline - 1))
+            stopped <-
+                rejectNow rig registry t "key-file reject one slot before the bound"
+            runExit stopped `shouldBe` ExitFailure 19
+            awaitedIds <- case valueAt "pendingBundle" (runReceipt stopped) >>= valueAt "awaited" of
+                Just (Aeson.Array as) -> pure (map (textAt "identity") (toList as))
+                other -> fail ("no awaited members: " <> show other)
+            awaitedIds `shouldBe` map (Just . txIdHex) bodies
+            jumpChainTo (rigChain rig) (SlotNo deadline)
+            atBound <-
+                rejectNow rig registry t "key-file reject at the bound"
+            runExit atBound `shouldNotBe` ExitFailure 19
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    (sfSubmitted sf)
+                    "key-file reject past the request's windows"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal dir
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "dead"] | _ <- bodies]
+            sort
+                [ (journalTxId e, journalDetail e)
+                | e <- entries
+                , journalEvent e == "dead"
+                ]
+                `shouldBe` sort
+                    ( zip
+                        (map txIdHex bodies)
+                        [Just "its bundle died", Just "expired, rebuild"]
+                    )
+            bundleReport <- requireBundle next (sfHash sf)
+            textAt "state" bundleReport `shouldBe` Just "dead"
+            textAt "reason" bundleReport `shouldBe` Just "expired, rebuild"
+            identitiesAt "died" bundleReport `shouldBe` Just (map txIdHex bodies)
+            identitiesAt "wentThrough" bundleReport `shouldBe` Just []
+
+partialLandingRow :: Spec
+partialLandingRow =
+    it
+        "a bundle whose preparation landed and whose fold expired is dead, naming the preparation as gone through"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-partial"
+            sf <- stagePreparedFold rig registry
+            let t = sfToken sf
+            (preparation, foldTx) <- case sfBodies sf of
+                [p, f] -> pure (p, f)
+                _ -> fail "the prepared bundle is not two members"
+            landOnRig rig [preparation]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    (sfSubmitted sf)
+                    "key-file reject after the fold expired"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal (stagedPartition rig registry t)
+            memberEvents entries preparation
+                `shouldBe` ["waiting-for-signatures", "landed"]
+            memberEvents entries foldTx
+                `shouldBe` ["waiting-for-signatures", "dead"]
+            [journalDetail e | e <- entries, journalEvent e == "dead"]
+                `shouldBe` [Just "expired, rebuild"]
+            bundleReport <- requireBundle next (sfHash sf)
+            textAt "state" bundleReport `shouldBe` Just "dead"
+            textAt "reason" bundleReport `shouldBe` Just "expired, rebuild"
+            identitiesAt "wentThrough" bundleReport
+                `shouldBe` Just [txIdHex preparation]
+            identitiesAt "died" bundleReport `shouldBe` Just [txIdHex foldTx]
+
+secondCreateStoppedRow :: Spec
+secondCreateStoppedRow =
+    it
+        "a second staged create from the same wallet is stopped by the first one's pending bundle"
+        $ withRig
+        $ \rig -> withCountedSubmissions rig $ \env -> do
+            let registry = "bob-create-twice"
+                firstBundle = rigDir rig </> "first-create.bundle"
+                secondBundle = rigDir rig </> "second-create.bundle"
+                createLine = ["registry", "create"] <> policyArgs
+            first <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "first staged create"
+                    (createLine <> externalArgs rig firstBundle)
+            runExit first `shouldBe` ExitFailure 19
+            h <- hashOfBytes <$> BS.readFile firstBundle
+            second <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "second staged create"
+                    (createLine <> externalArgs rig secondBundle)
+            runExit second `shouldBe` ExitFailure 19
+            outcomeOf (runReceipt second) `shouldBe` Just "waiting-for-signatures"
+            fmap (textAt "hash") (valueAt "pendingBundle" (runReceipt second))
+                `shouldBe` Just (Just h)
+            doesPathExist secondBundle `shouldReturn` False
+
+{- | Cut the real journal right after its first dead line, as a run stopped
+between two appends leaves it: a prefix of what the producer wrote, one
+entry per line.
+-}
+cutAfterFirstDead :: FilePath -> IO ()
+cutAfterFirstDead dir = do
+    entries <- readJournal dir
+    rows <- BC.lines <$> BS.readFile (journalPath dir)
+    length rows `shouldBe` length entries
+    case [i | (i, e) <- zip [1 ..] entries, journalEvent e == "dead"] of
+        i : _ -> BS.writeFile (journalPath dir) (BC.unlines (take i rows))
+        [] -> fail "the journal holds no dead line to cut after"
+
+interruptedDeathRow :: Spec
+interruptedDeathRow =
+    it
+        "a dead bundle whose run stopped after its first dead line is completed by the next run, every member not landed getting its dead line"
+        $ withRig
+        $ \rig -> do
+            let registry = "bob-interrupted"
+            sf <- stagePreparedFold rig registry
+            let t = sfToken sf
+                bodies = sfBodies sf
+                dir = stagedPartition rig registry t
+            deadline <- boundedDeadline sf
+            jumpChainTo (rigChain rig) (SlotNo deadline)
+            atBound <-
+                rejectNow rig registry t "key-file reject at the bound"
+            runExit atBound `shouldNotBe` ExitFailure 19
+            cutAfterFirstDead dir
+            cut <- readJournal dir
+            [journalDetail e | e <- cut, journalEvent e == "dead"]
+                `shouldBe` [Just "expired, rebuild"]
+            next <-
+                rejectPast
+                    rig
+                    registry
+                    t
+                    (sfSubmitted sf)
+                    "key-file reject after the interrupted run"
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            entries <- readJournal dir
+            map (memberEvents entries) bodies
+                `shouldBe` [["waiting-for-signatures", "dead"] | _ <- bodies]
+            sort
+                [ (journalTxId e, journalDetail e)
+                | e <- entries
+                , journalEvent e == "dead"
+                ]
+                `shouldBe` sort
+                    ( zip
+                        (map txIdHex bodies)
+                        [Just "its bundle died", Just "expired, rebuild"]
+                    )
+            bundleReport <- requireBundle next (sfHash sf)
+            textAt "state" bundleReport `shouldBe` Just "dead"
+            identitiesAt "died" bundleReport `shouldBe` Just (map txIdHex bodies)
+
+explicitSeedCreateStoppedRow :: Spec
+explicitSeedCreateStoppedRow =
+    it
+        "a second create naming the same seed is stopped by the first one's pending bundle before the existing-state check, for either signer"
+        $ withRig
+        $ \rig -> withCountedSubmissions rig $ \env -> do
+            seed <- fundSeed rig
+            let registry = "bob-create-seed-twice"
+                firstBundle = rigDir rig </> "first-seeded.bundle"
+                secondBundle = rigDir rig </> "second-seeded.bundle"
+                createLine =
+                    ["registry", "create", "--seed", seed] <> policyArgs
+            first <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "first staged create naming its seed"
+                    (createLine <> externalArgs rig firstBundle)
+            runExit first `shouldBe` ExitFailure 19
+            firstBytes <- BS.readFile firstBundle
+            (bundle, bodies) <- checkedBundle firstBundle
+            let h = hashOfBytes firstBytes
+            staged <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "second staged create naming the same seed"
+                    (createLine <> externalArgs rig secondBundle)
+            keyFile <-
+                runVia
+                    rig
+                    env
+                    registry
+                    "key-file create naming the same seed"
+                    createLine
+            forM_ [staged, keyFile] $ \second -> do
+                runExit second `shouldBe` ExitFailure 19
+                outcomeOf (runReceipt second) `shouldBe` Just "waiting-for-signatures"
+                named <- case valueAt "pendingBundle" (runReceipt second) of
+                    Just v@(Aeson.Object _) -> pure v
+                    other -> fail ("no pending bundle named: " <> show other)
+                textAt "hash" named `shouldBe` Just h
+                case textAt "saved" named of
+                    Just saved -> do
+                        T.unpack saved `shouldSatisfy` isInfixOf (T.unpack h)
+                        BS.readFile (T.unpack saved) `shouldReturn` firstBytes
+                    Nothing -> expectationFailure "no saved path named"
+                awaited <- case valueAt "awaited" named of
+                    Just (Aeson.Array as) -> pure (toList as)
+                    other -> fail ("no awaited members: " <> show other)
+                map (textAt "identity") awaited `shouldBe` map (Just . txIdHex) bodies
+                map (valueAt "deadline") awaited
+                    `shouldBe` [ Aeson.toJSON <$> bundleTxDeadline e
+                               | e <- toList (bundleTransactions bundle)
+                               ]
+            doesPathExist secondBundle `shouldReturn` False

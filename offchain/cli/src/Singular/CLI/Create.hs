@@ -40,7 +40,8 @@ submitting nothing and writing nothing.
 module Singular.CLI.Create (createApplication, runCreate, stateTokenOf) where
 
 import Control.Exception
-    ( SomeAsyncException
+    ( ErrorCall (..)
+    , SomeAsyncException
     , SomeException
     , fromException
     , throwIO
@@ -95,7 +96,13 @@ import Singular.CLI.ManagedState
     , managedDir
     , resolveStateRoot
     )
-import Singular.CLI.Receipt (OutcomeClass (..), durableWrite)
+import Singular.CLI.Receipt
+    ( OutcomeClass (..)
+    , durableWrite
+    , readJournal
+    , unjudgedMembers
+    )
+import Singular.CLI.Reconcile (reconcileBundles, refusePendingBundle)
 import Singular.CLI.Registry
     ( IdentityError (..)
     , Release (..)
@@ -131,6 +138,7 @@ import Singular.CLI.Session
     , submitBuilt
     , submitBuiltIn
     , withSession
+    , withTargetLockOr
     , withWrite
     )
 import Singular.CLI.Trace
@@ -323,6 +331,28 @@ catchSelection act settings = do
                             <> show e
                         )
 
+{- | A staged create still waiting for its signatures stops another create
+of the same registry before any existing-state check, whichever signer
+this one uses: the same wallet and seed derive the same token and
+directory, and the first bundle must land or die before anything else is
+built there. A journal with no member left to judge reads nothing from the
+chain, and the existing-state check then behaves as before; so does a
+journal that does not decode, which holds no bundle admission can read and
+which that check refuses.
+-}
+admitBeforeExisting :: Env -> ProviderSettings -> FilePath -> IO ()
+admitBeforeExisting env settings dir = do
+    journalled <-
+        either (\(ErrorCall _) -> []) id <$> try (readJournal dir)
+    unless (null (unjudgedMembers journalled)) $ do
+        (_, waiting) <-
+            readOnce env settings ["chain tip", "journal transactions"] $ \_ v ->
+                withTargetLockOr
+                    dir
+                    (reconcileBundles "create" dir v)
+                    (pure ([], []))
+        mapM_ (`refusePendingBundle` []) (take 1 waiting)
+
 createWith
     :: Application
     -> Env
@@ -348,13 +378,14 @@ createWith app env a rel ws = do
     case createSeed a of
         Just s | not (createPreview a) -> do
             named <- either (failWith ClientRefusal) pure (parseOutRef (T.pack s))
-            refuseExisting
-                ( managedDir
-                    root
-                    magic
-                    (stateTokenOf rel named)
-                    (addressPartition callerAddr)
-                )
+            let namedDir =
+                    managedDir
+                        root
+                        magic
+                        (stateTokenOf rel named)
+                        (addressPartition callerAddr)
+            admitBeforeExisting env settings namedDir
+            refuseExisting namedDir
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
         _ -> pure ()
     -- The seed is selected before any lock or journal use, from one view
@@ -437,6 +468,7 @@ createWith app env a rel ws = do
                         <> identity'
                     )
         else do
+            admitBeforeExisting env settings dir
             refuseExisting dir
                 >>= either (failWith ClientRefusal . renderIdentityError) pure
             withWrite env dir "create" ws $ \wc -> do
