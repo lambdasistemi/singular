@@ -3,7 +3,7 @@ Module      : Singular.Registry.Wire.State
 Description : Token state, policy accessors, and the cage datum
 License     : Apache-2.0
 
-What the cage holds: the eight-field token state with its codec and
+What the cage holds: the eleven-field token state with its codec and
 policy-byte accessors, and the cage datum — a pending request, a
 state, or the refund-only custody of an absent token. Reads
 "Singular.Registry.Wire.Primitive" and
@@ -48,10 +48,12 @@ import Singular.Registry.Wire.Request
     )
 
 {- | On-chain token state. Matches Aiken @types\/State@ (#157 state-datum-fields: eight
-fields, replacing the six). `consumer_pin` is deleted with the pinned
-consumer; `representative_policy` is renamed `active_policy`; the
-application, absent and terminal policies are new. All four policies are
-set at genesis and preserved by every `Modify`.
+fields, replacing the six, and then three booking pins appended: eleven).
+`consumer_pin` is deleted with the pinned consumer; `representative_policy`
+is renamed `active_policy`; the application, absent and terminal policies
+are new. All four policies and the three booking pins (registration cost,
+widest booking interval, request policy) are set at genesis and preserved by
+every `Modify`.
 -}
 data OnChainTokenState = OnChainTokenState
     { stateRoot :: !OnChainRoot
@@ -162,30 +164,33 @@ instance ToData OnChainTokenState where
                 , bbsToD stateActivePolicy
                 , bbsToD stateAbsentPolicy
                 , bbsToD stateTerminalPolicy
+                , I stateRegistrationCost
+                , I stateBookingWidth
+                , bbsToD stateRequestPolicy
                 ]
 
 instance FromData OnChainTokenState where
     fromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp] -> do
+        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp, I cost, I width, rp] -> do
             stateRoot <- fromBuiltinData (mkD r)
             stateAppPolicy <- bbsFromD ap
             stateActivePolicy <- bbsFromD cp
             stateAbsentPolicy <- bbsFromD bp
             stateTerminalPolicy <- bbsFromD tp
+            stateRequestPolicy <- bbsFromD rp
             let stateMaxFee = mf
                 stateProcessTime = pt
                 stateRetractTime = rt
-            let stateRegistrationCost = 0
-                stateBookingWidth = 0
-                stateRequestPolicy = BuiltinByteString mempty
+                stateRegistrationCost = cost
+                stateBookingWidth = width
             Just OnChainTokenState{..}
         _ -> Nothing
 
 instance UnsafeFromData OnChainTokenState where
     unsafeFromBuiltinData bd = case unD bd of
-        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp] ->
-            case (bbsFromD ap, bbsFromD cp, bbsFromD bp, bbsFromD tp) of
-                (Just appP, Just activeP, Just absentP, Just terminalP) ->
+        Constr 0 [r, I mf, I pt, I rt, ap, cp, bp, tp, I cost, I width, rp] ->
+            case (bbsFromD ap, bbsFromD cp, bbsFromD bp, bbsFromD tp, bbsFromD rp) of
+                (Just appP, Just activeP, Just absentP, Just terminalP, Just requestP) ->
                     OnChainTokenState
                         { stateRoot =
                             unsafeFromBuiltinData (mkD r)
@@ -196,9 +201,9 @@ instance UnsafeFromData OnChainTokenState where
                         , stateActivePolicy = activeP
                         , stateAbsentPolicy = absentP
                         , stateTerminalPolicy = terminalP
-                        , stateRegistrationCost = 0
-                        , stateBookingWidth = 0
-                        , stateRequestPolicy = BuiltinByteString mempty
+                        , stateRegistrationCost = cost
+                        , stateBookingWidth = width
+                        , stateRequestPolicy = requestP
                         }
                 _ ->
                     error
@@ -219,8 +224,9 @@ instance ToData CageDatum where
     toBuiltinData (AbsentCustody refund) =
         mkD $
             Constr 2 [bsToD refund]
-    toBuiltinData (RegistrationDatum _) =
-        error "RegistrationDatum: encoding is not implemented"
+    toBuiltinData (RegistrationDatum r) =
+        mkD $
+            Constr 3 [unD (toBuiltinData r)]
 
 instance FromData CageDatum where
     fromBuiltinData bd = case unD bd of
@@ -232,6 +238,9 @@ instance FromData CageDatum where
                 <$> fromBuiltinData (mkD d)
         Constr 2 [refund] ->
             AbsentCustody <$> bsFromD refund
+        Constr 3 [d] ->
+            RegistrationDatum
+                <$> fromBuiltinData (mkD d)
         _ -> Nothing
 
 instance UnsafeFromData CageDatum where
@@ -243,6 +252,7 @@ instance UnsafeFromData CageDatum where
             StateDatum $
                 unsafeFromBuiltinData (mkD d)
         Constr 2 [B refund] -> AbsentCustody refund
-        Constr 3 [_] ->
-            error "RegistrationDatum: decoding is not implemented"
+        Constr 3 [d] ->
+            RegistrationDatum $
+                unsafeFromBuiltinData (mkD d)
         _ -> error "unsafeFromBuiltinData: CageDatum"

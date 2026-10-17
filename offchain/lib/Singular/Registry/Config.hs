@@ -105,7 +105,7 @@ data CageConfig = CageConfig
 
 {- | Initial `State` datum from a cage configuration (#157 state-datum-fields, genesis-policy-pins):
 empty trie root, configured economics, and the four pinned policies the
-eight-field datum carries. Each of the four comes from the config, which
+eleven-field datum carries. Each of the four comes from the config, which
 derives it from the two partitions' `script-identity.json` for the registry
 identity this boot is about to create — the application policy from the
 naming application script, the three witness policies from
@@ -133,7 +133,9 @@ bootStateFromCfg cfg root =
             BuiltinByteString (SBS.fromShort (cfgAbsentPolicy cfg))
         , stateTerminalPolicy =
             BuiltinByteString (SBS.fromShort (cfgTerminalPolicy cfg))
-        , stateRegistrationCost = 0
-        , stateBookingWidth = 0
-        , stateRequestPolicy = BuiltinByteString mempty
+        , stateRegistrationCost =
+            let Coin c = defaultRegistrationCost cfg in c
+        , stateBookingWidth = defaultBookingWidth cfg
+        , stateRequestPolicy =
+            BuiltinByteString (SBS.fromShort (cfgRequestPolicy cfg))
         }
