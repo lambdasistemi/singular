@@ -56,8 +56,7 @@ spec = describe "flag group extent" $ do
 
 {- | Open-datum's create accepts a signer exactly when the registry's create
 does: both parsers answer the same create lines the same way, their
-refusal texts differing only in the binary's own name. The preview line
-is the diverging one until the sibling's preview refuses the bundle file.
+refusal texts differing only in the binary's own name.
 -}
 createFollowsRegistry :: Spec
 createFollowsRegistry = describe "create follows the registry's create" $ do
@@ -88,9 +87,13 @@ createFollowsRegistry = describe "create follows the registry's create" $ do
                         siblingAnswer =
                             either normalizeSibling (const Nothing) (siblingCreate line)
                     registryAnswer `shouldBe` siblingAnswer
-            -- outside a preview, the address with its bundle file is refused by
-            -- both creates exactly as each binary words it
+            -- outside a preview, the address with its bundle file is accepted by
+            -- both creates
             sameAs ["--wallet-address", anAddress, "--bundle", "b"]
+            -- the address alone gets the shared reader's refusal in both
+            sameAs ["--wallet-address", anAddress]
+            -- the bundle file alone is meaningless in both
+            sameAs ["--bundle", "b"]
             -- two signers together are refused by both
             sameAs
                 ["--wallet-skey", "k", "--wallet-address", anAddress, "--bundle", "b"]

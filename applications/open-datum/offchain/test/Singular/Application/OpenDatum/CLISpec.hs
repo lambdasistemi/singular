@@ -818,30 +818,33 @@ externalSignerRows = describe "the external signer" $ do
                     )
                 )
     it
-        "refuses the external signer on create as the registry's create does, and keeps create's usage"
+        "reads the external signer on create as the registry's create does"
         $ do
-            parseOpenDatumCommand
-                ( [ "open-datum"
-                  , "create"
-                  , "--state-dir"
-                  , "/srv/reg"
-                  , "--blueprint"
-                  , "/srv/plutus.json"
-                  ]
-                    <> provider
-                    <> named
-                    <> bundle
-                )
+            let create extra =
+                    parseOpenDatumCommand
+                        ( [ "open-datum"
+                          , "create"
+                          , "--state-dir"
+                          , "/srv/reg"
+                          , "--blueprint"
+                          , "/srv/plutus.json"
+                          ]
+                            <> provider
+                            <> extra
+                        )
+                signerOfCreate = \case
+                    Right (OpenCreate _ CreateArgs{createMode = Submit w}) -> Just (writeSigner w)
+                    _ -> Nothing
+            signerOfCreate (create (named <> bundle))
+                `shouldBe` Just (SignerExternal (T.pack address) "run.bundle")
+            create named
                 `shouldBe` Left
                     ( BadValue
-                        "--wallet-address"
-                        ( "names a caller for --preview and open-datum inspect only; "
-                            <> "a write signs with --wallet-skey"
+                        "--bundle"
+                        ( "is required with --wallet-address: the run's transactions are "
+                            <> "written to the bundle for signing elsewhere"
                         )
                     )
-            forM_ (lines openDatumUsage) $ \line ->
-                ("open-datum create" `isInfixOf` line && "--bundle" `isInfixOf` line)
-                    `shouldBe` False
     it
         "names the external signer beside the key file on each write's usage"
         $ do
@@ -859,8 +862,9 @@ externalSignerRows = describe "the external signer" $ do
                         (\l -> not (startsWith "  open-datum" l || null l))
                         (drop (start + 1) ls)
                 keySigner l = "--wallet-skey FILE" `isInfixOf` l
+                withoutPreview = T.unpack . T.replace "[--preview] " "" . T.pack
                 extSigner l = "--wallet-address ADDR --bundle FILE" `isInfixOf` l
-            forM_ ["insert", "update", "terminate", "fold"] $ \verb -> do
+            forM_ ["create", "insert", "update", "terminate", "fold"] $ \verb -> do
                 case blockStarts verb of
                     [first, second] -> do
                         let firstBlock = blockAt first
@@ -871,7 +875,11 @@ externalSignerRows = describe "the external signer" $ do
                             `shouldBe` (False, True)
                         -- the external shape carries the same optional flags as
                         -- the key-file shape: only the signer line differs
-                        map (\l -> if keySigner l then "SIGNER" else l) firstBlock
+                        -- (create's key-file shape also lists the preview switch, which an
+                        -- external run refuses)
+                        map
+                            (\l -> if keySigner l then "SIGNER" else withoutPreview l)
+                            firstBlock
                             `shouldBe` map (\l -> if extSigner l then "SIGNER" else l) secondBlock
                     other ->
                         expectationFailure

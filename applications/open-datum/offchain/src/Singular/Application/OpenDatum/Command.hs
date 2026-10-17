@@ -302,8 +302,6 @@ parseOpenDatumWithGroup group environment args = do
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
             publicPreview = preview && isJust (lookup "--wallet-address" flags)
-        when (not preview && isJust (lookup "--wallet-address" flags)) $
-            Left addressNeedsPreview
         mode <-
             if publicPreview
                 then previewMode flags
@@ -494,10 +492,6 @@ parseOpenDatumWithGroup group environment args = do
     -- A preview reads a node and names a public address; it holds no key,
     -- so a signing key is refused before anything is read, and so is the
     -- bundle file of an external signer: a preview writes nothing.
-    addressNeedsPreview =
-        BadValue
-            "--wallet-address"
-            "names a caller for --preview and open-datum inspect only; a write signs with --wallet-skey"
     previewMode flags = do
         when (isJust (lookup "--wallet-skey" flags)) $
             Left PreviewTakesNoKey
@@ -614,6 +608,9 @@ openDatumUsage =
         , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--preview] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
+        , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
+        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "  open-datum create --preview [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"

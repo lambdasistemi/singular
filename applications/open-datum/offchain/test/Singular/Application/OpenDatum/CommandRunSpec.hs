@@ -51,7 +51,13 @@ import Data.IORef
     )
 import Data.List (nub, partition, sort)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isJust, isNothing, listToMaybe, mapMaybe)
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    , isNothing
+    , listToMaybe
+    , mapMaybe
+    )
 import Data.Proxy (Proxy (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -60,6 +66,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Time.Format.ISO8601 (iso8601ParseM)
+import Data.Word (Word64)
 import GHC.Generics
     ( C1
     , Constructor
@@ -122,6 +129,7 @@ import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , inputsTxBodyL
+    , mintTxBodyL
     , outputsTxBodyL
     , referenceInputsTxBodyL
     , scriptIntegrityHashTxBodyL
@@ -144,6 +152,7 @@ import Cardano.Ledger.Mary.Value
     )
 import Cardano.Ledger.Plutus.Language (Language (PlutusV3))
 import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
 import PlutusCore.MkPlc (mkConstant)
@@ -167,7 +176,11 @@ import Singular.CLI.Receipt
     , readJournal
     )
 import Singular.CLI.ReceiptBody (boundBody)
-import Singular.CLI.Registry (loadRelease, loadReleaseCodes)
+import Singular.CLI.Registry
+    ( loadRelease
+    , loadReleaseCodes
+    , pendingPath
+    )
 import Singular.CLI.Session (Env (..), txIdHex)
 import Singular.CLI.Trace
 import Singular.Registry.AssetName (deriveAssetName)
@@ -176,6 +189,7 @@ import Singular.Registry.Bundle
     , BundleRefusal
     , BundleTransaction (..)
     , TextEnvelope (..)
+    , bodyDeadline
     , bodyIdentity
     , checkBundle
     , decodeBundle
@@ -195,6 +209,7 @@ import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
     , advanceChain
+    , jumpChainTo
     , newRawChain
     , rawChainProvider
     , recordTransaction
@@ -2719,97 +2734,106 @@ externalWriteRows =
     describe "the external signer on the open-datum writes" $ do
         forM_ shapes $ \shape ->
             describe (shapeName shape) $
-                aroundAll (stagingOf shape) $ do
-                    it "ends with waiting-for-signatures, status 19, and sends nothing" $
-                        \st -> do
-                            ( runExit (stStaged st)
-                                , outcomeOf (runReceipt (stStaged st))
-                                , textAt "reason" (runReceipt (stStaged st))
-                                )
-                                `shouldBe` ( ExitFailure 19
-                                           , Just "waiting-for-signatures"
-                                           , Nothing
-                                           )
-                            stWalletAfter st `shouldBe` stWalletBefore st
-                    it "writes exactly one bundle holding the whole chain in build order" $
-                        \st -> do
-                            (_, bundle, bodies) <- bundleOf st
-                            bundleCommand bundle `shouldBe` shapeCommand shape
-                            length bodies `shouldBe` shapeBodies shape
-                            [bundleTxIdentity entry | entry <- toList (bundleTransactions bundle)]
-                                `shouldBe` map bodyIdentity bodies
-                            summarySteps (runReceipt (stStaged st))
-                                `shouldBe` stKeySteps st
-                            chainedInOrder bodies
-                                `shouldBe` True
-                    it
-                        "builds the bodies the key-file path builds once every earlier body has landed"
-                        $ \st -> do
-                            (_, _, bodies) <- bundleOf st
-                            length (stKeyBodies st) `shouldBe` shapeBodies shape
-                            map (^. bodyTxL) (canonicalChain bodies)
-                                `shouldBe` map (^. bodyTxL) (canonicalChain (stKeyBodies st))
-                    it
-                        "binds what the body comparison sets aside to the bodies themselves"
-                        $ \st -> do
-                            (_, _, bodies) <- bundleOf st
-                            unboundFields (stParams st) (stStagedWindow st) bodies
-                                `shouldBe` []
-                            unboundFields (stParams st) (stKeyWindow st) (stKeyBodies st)
-                                `shouldBe` []
-                    it
-                        "saves the bundle and each unsigned body beside the journal, one waiting line per transaction"
-                        $ \st -> do
-                            (bytes, bundle, bodies) <- bundleOf st
-                            let waiting = [e | e <- stJournal st, journalEvent e == "waiting-for-signatures"]
-                                bundleHash = hashOfBytes bytes
-                            map journalEvent (stJournal st)
-                                `shouldBe` replicate (length bodies) "waiting-for-signatures"
-                            map journalTxId waiting `shouldBe` map txIdHex bodies
-                            forM_ (zip3 waiting (toList (bundleTransactions bundle)) bodies) $
-                                \(e, entry, _) -> do
-                                    journalDetail e `shouldBe` Just bundleHash
-                                    raw <- savedRaw e
-                                    journalBodyHash e `shouldBe` Just (hashOfBytes raw)
-                                    B16.encode raw
-                                        `shouldBe` TE.encodeUtf8 (envelopeCborHex (bundleTxEnvelope entry))
-                            saved <- case textAt "saved" =<< valueAt "bundle" (runReceipt (stStaged st)) of
-                                Just p -> pure (T.unpack p)
-                                Nothing -> fail "no saved bundle path in the receipt"
-                            BS.readFile saved `shouldReturn` bytes
-                    it "opens no key file" $
-                        \st -> do
-                            hiddenKey st `shouldReturn` True
-                            runExit (stStaged st) `shouldBe` ExitFailure 19
-                    it
-                        "states open-datum's own fields under expected, none at the top level"
-                        $ \st -> do
-                            expected <- case valueAt "expected" (runReceipt (stStaged st)) of
-                                Just v@(Aeson.Object _) -> pure v
-                                other -> fail ("no expected fields: " <> show other)
-                            let own =
-                                    [ k
-                                    | k <- KeyMap.keys (fieldsOfReceipt (runReceipt (stKeyFile st)))
-                                    , k `notElem` ["command", "outcome", "reconciled", "submissions"]
-                                    ]
-                            own `shouldNotBe` []
-                            forM_ own $ \k -> do
-                                valueAt k (runReceipt (stStaged st)) `shouldBe` Nothing
-                                valueAt k expected `shouldNotBe` Nothing
-                    unless (null (shapeOwnDone shape)) $
-                        it "narrates none of open-datum's own done events for what it staged" $
-                            \st -> do
-                                ownDone shape (runEvents (stStaged st)) `shouldBe` []
-                                nub (ownDone shape (runEvents (stKeyFile st)))
-                                    `shouldMatchList` shapeOwnDone shape
-                    it "leaves the key-file receipt unchanged" $
-                        \st -> do
-                            runExit (stKeyFile st) `shouldBe` ExitSuccess
-                            outcomeOf (runReceipt (stKeyFile st)) `shouldBe` Just "success"
-                            valueAt "expected" (runReceipt (stKeyFile st)) `shouldBe` Nothing
-                            valueAt "bundle" (runReceipt (stKeyFile st)) `shouldBe` Nothing
+                aroundAll (stagingOf shape) (stagedShapeRows shape)
+        externalCreateRows
         keyFileNeedsItsKeyRow
         refusalsWriteNoBundleRows
+        pendingBundleRows
+
+{- | The rows every staged scenario owes, whichever command it runs: the
+bundle, the bodies against the key-file path's, the journal, the receipt and
+the narration.
+-}
+stagedShapeRows :: Shape -> SpecWith Staging
+stagedShapeRows shape = do
+    it "ends with waiting-for-signatures, status 19, and sends nothing" $
+        \st -> do
+            ( runExit (stStaged st)
+                , outcomeOf (runReceipt (stStaged st))
+                , textAt "reason" (runReceipt (stStaged st))
+                )
+                `shouldBe` ( ExitFailure 19
+                           , Just "waiting-for-signatures"
+                           , Nothing
+                           )
+            stWalletAfter st `shouldBe` stWalletBefore st
+    it "writes exactly one bundle holding the whole chain in build order" $
+        \st -> do
+            (_, bundle, bodies) <- bundleOf st
+            bundleCommand bundle `shouldBe` shapeCommand shape
+            length bodies `shouldBe` shapeBodies shape
+            [bundleTxIdentity entry | entry <- toList (bundleTransactions bundle)]
+                `shouldBe` map bodyIdentity bodies
+            summarySteps (runReceipt (stStaged st))
+                `shouldBe` stKeySteps st
+            chainedInOrder bodies
+                `shouldBe` True
+    it
+        "builds the bodies the key-file path builds once every earlier body has landed"
+        $ \st -> do
+            (_, _, bodies) <- bundleOf st
+            length (stKeyBodies st) `shouldBe` shapeBodies shape
+            map (^. bodyTxL) (canonicalChain bodies)
+                `shouldBe` map (^. bodyTxL) (canonicalChain (stKeyBodies st))
+    it
+        "binds what the body comparison sets aside to the bodies themselves"
+        $ \st -> do
+            (_, _, bodies) <- bundleOf st
+            unboundFields (stParams st) (stStagedWindow st) bodies
+                `shouldBe` []
+            unboundFields (stParams st) (stKeyWindow st) (stKeyBodies st)
+                `shouldBe` []
+    it
+        "saves the bundle and each unsigned body beside the journal, one waiting line per transaction"
+        $ \st -> do
+            (bytes, bundle, bodies) <- bundleOf st
+            let waiting = [e | e <- stJournal st, journalEvent e == "waiting-for-signatures"]
+                bundleHash = hashOfBytes bytes
+            map journalEvent (stJournal st)
+                `shouldBe` replicate (length bodies) "waiting-for-signatures"
+            map journalTxId waiting `shouldBe` map txIdHex bodies
+            forM_ (zip3 waiting (toList (bundleTransactions bundle)) bodies) $
+                \(e, entry, _) -> do
+                    journalDetail e `shouldBe` Just bundleHash
+                    raw <- savedRaw e
+                    journalBodyHash e `shouldBe` Just (hashOfBytes raw)
+                    B16.encode raw
+                        `shouldBe` TE.encodeUtf8 (envelopeCborHex (bundleTxEnvelope entry))
+            saved <- case textAt "saved" =<< valueAt "bundle" (runReceipt (stStaged st)) of
+                Just p -> pure (T.unpack p)
+                Nothing -> fail "no saved bundle path in the receipt"
+            BS.readFile saved `shouldReturn` bytes
+    it "opens no key file" $
+        \st -> do
+            hiddenKey st `shouldReturn` True
+            runExit (stStaged st) `shouldBe` ExitFailure 19
+    it
+        "states open-datum's own fields under expected, none at the top level"
+        $ \st -> do
+            expected <- case valueAt "expected" (runReceipt (stStaged st)) of
+                Just v@(Aeson.Object _) -> pure v
+                other -> fail ("no expected fields: " <> show other)
+            let own =
+                    [ k
+                    | k <- KeyMap.keys (fieldsOfReceipt (runReceipt (stKeyFile st)))
+                    , k `notElem` ["command", "outcome", "reconciled", "submissions"]
+                    ]
+            own `shouldNotBe` []
+            forM_ own $ \k -> do
+                valueAt k (runReceipt (stStaged st)) `shouldBe` Nothing
+                valueAt k expected `shouldNotBe` Nothing
+    unless (null (shapeOwnDone shape)) $
+        it "narrates none of open-datum's own done events for what it staged" $
+            \st -> do
+                ownDone shape (runEvents (stStaged st)) `shouldBe` []
+                nub (ownDone shape (runEvents (stKeyFile st)))
+                    `shouldMatchList` shapeOwnDone shape
+    it "leaves the key-file receipt unchanged" $
+        \st -> do
+            runExit (stKeyFile st) `shouldBe` ExitSuccess
+            outcomeOf (runReceipt (stKeyFile st)) `shouldBe` Just "success"
+            valueAt "expected" (runReceipt (stKeyFile st)) `shouldBe` Nothing
+            valueAt "bundle" (runReceipt (stKeyFile st)) `shouldBe` Nothing
 
 -- | How the wallet is funded for a shape.
 data Funding = PlainFunding | TokenOnlyFunding
@@ -3463,3 +3487,544 @@ unboundFields pp (opened, closed) bodies = concat (zipWith check [0 :: Int ..] b
         , Just j <- [lookup spent ids]
         , not (j < k && toInteger ix < toInteger (outputCounts !! j))
         ]
+
+-- ---------------------------------------------------------
+-- The external signer's create
+-- ---------------------------------------------------------
+
+-- | One create scenario: the registry's mode and whether a state carrier is live.
+data CreateScenario = CreateScenario
+    { csName :: String
+    , csMode :: Mode
+    , csLiveCarrier :: Bool
+    , csSteps :: [Text]
+    -- ^ The steps create's whole chain holds in this scenario, in build order
+    }
+
+createScenarios :: [CreateScenario]
+createScenarios =
+    [ CreateScenario
+        "create with the state publication"
+        OpenMode
+        False
+        (publishing <> chain)
+    , CreateScenario "create over a live state carrier" OpenMode True chain
+    , CreateScenario
+        "closed create with the state publication"
+        ClosedMode
+        False
+        (publishing <> chain)
+    ]
+  where
+    publishing = ["publish-state"]
+    chain =
+        [ "boot"
+        , "publish-request"
+        , "publish-witness-absent"
+        , "publish-witness-active"
+        , "publish-witness-terminal"
+        , "publish-application"
+        ]
+
+createWords :: CreateScenario -> [String]
+createWords sc =
+    ["open-datum", "create"] <> ["--closed" | ClosedMode <- [csMode sc]]
+
+{- | open-datum create with an address and a new bundle file builds create's
+whole chain as one bundle, in the order the key-file create builds it, and
+exits 19; every rule the other staged writes owe holds for it too.
+-}
+externalCreateRows :: Spec
+externalCreateRows = describe "create" $ do
+    forM_ createScenarios $ \sc ->
+        describe (csName sc) $
+            around (createStagingOf sc) $ do
+                stagedShapeRows (createShapeOf sc)
+                it
+                    "builds create's whole chain in the order the key-file path builds it"
+                    $ \st -> summarySteps (runReceipt (stStaged st)) `shouldBe` csSteps sc
+                it "names no state token and no deadline in its bundle" $
+                    \st -> do
+                        (_, bundle, _) <- bundleOf st
+                        bundleStateToken bundle `shouldBe` Nothing
+                        [bundleTxDeadline e | e <- toList (bundleTransactions bundle)]
+                            `shouldSatisfy` all isNothing
+                it "records its pending identity before the bundle, and reads it back" $
+                    \st -> do
+                        let rig = stRig st
+                        (_, bundle, bodies) <- bundleOf st
+                        doesFileExist
+                            (pendingPath (stagedPartition rig stagedRoot (stToken st)))
+                            `shouldReturn` True
+                        inspected <-
+                            runAt
+                                rig
+                                stagedRoot
+                                "inspect of the pending create"
+                                ( ["open-datum", "inspect", "--key", "any"]
+                                    <> tokenArgs (stToken st)
+                                    <> ["--wallet-address", bech32Address (walletAddr (rigWallet rig))]
+                                )
+                        outcomeOf (runReceipt inspected) `shouldBe` Just "partial"
+                        pendingIdentity <- case valueAt "incompleteCreate" (runReceipt inspected) of
+                            Just v@(Aeson.Object _) -> pure v
+                            other -> fail ("no pending identity read back: " <> show other)
+                        valueAt "networkMagic" pendingIdentity
+                            `shouldBe` Just (toJSON (bundleNetworkMagic bundle))
+                        seedIn <- case textAt "seed" pendingIdentity of
+                            Just s -> either fail pure (parseOutRef s)
+                            Nothing ->
+                                fail ("the pending identity names no seed: " <> show pendingIdentity)
+                        case [b | b <- bodies, b ^. bodyTxL . mintTxBodyL /= mempty] of
+                            boot : _ ->
+                                Set.member seedIn (boot ^. bodyTxL . inputsTxBodyL) `shouldBe` True
+                            [] -> expectationFailure "no staged body mints the state token"
+    existingBundleCreateRow
+
+createShapeOf :: CreateScenario -> Shape
+createShapeOf sc =
+    Shape
+        (csName sc)
+        "create"
+        (length (csSteps sc))
+        PlainFunding
+        []
+        (\_ _ -> pure [])
+        (const [])
+
+-- | Run a staged create, then the key-file create over the same chain.
+createStagingOf :: CreateScenario -> (Staging -> IO ()) -> IO ()
+createStagingOf sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> do
+    seed <-
+        if csLiveCarrier sc
+            then do
+                first' <-
+                    runAt
+                        rig
+                        "carrier"
+                        "key-file create publishing the carrier"
+                        (createWords sc <> ["--seed", T.unpack (renderOutRef (fundOutput 1))])
+                outcomeOf (runReceipt first') `shouldBe` Just "success"
+                (\s -> ["--seed", s]) <$> fundSeed2 rig
+            else pure []
+    let line = createWords sc <> seed
+    walletBefore <- walletRefs rig
+    (stagedWindow, staged) <-
+        windowed (runHidden rig "staged create" line)
+    walletAfter <- walletRefs rig
+    (keyWindow, keyFile) <- windowed (run rig "key file create" line)
+    t <- case valueAt "expected" (runReceipt staged) >>= textAt "stateToken" of
+        Just token -> pure (T.unpack token)
+        Nothing -> tokenOf keyFile
+    journal <- journalAt (stagedPartition rig stagedRoot t)
+    keyJournal <- journalAt (stagedPartition rig "registry" t)
+    let prepared =
+            [ e
+            | e <- keyJournal
+            , journalEvent e == "prepared"
+            , journalCommand e == "create"
+            ]
+    keyBodies <-
+        forM prepared $ \e -> do
+            (_, body) <- boundBody keyJournal (journalTxId e)
+            either (fail . T.unpack) pure body
+    bundle <- readBundle (stagedBundlePath rig)
+    params <-
+        SessionIO.withLatest
+            (rawChainProvider (rigChain rig))
+            SessionIO.parameters
+    use
+        Staging
+            { stRig = rig
+            , stToken = t
+            , stStaged = staged
+            , stKeyFile = keyFile
+            , stBundle = bundle
+            , stJournal = journal
+            , stKeyBodies = keyBodies
+            , stKeySteps = map journalStep prepared
+            , stWalletBefore = walletBefore
+            , stWalletAfter = walletAfter
+            , stStagedWindow = stagedWindow
+            , stKeyWindow = keyWindow
+            , stParams = params
+            }
+
+existingBundleCreateRow :: Spec
+existingBundleCreateRow =
+    it
+        "refuses an existing bundle file on create before anything is read, its bytes untouched"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            let bundlePath = rigDir rig </> "taken-create.bundle"
+                sentinel = "sentinel bytes"
+                refusedOnTheBundle at label = do
+                    refused <-
+                        runAt
+                            rig
+                            at
+                            label
+                            ( ["open-datum", "create", "--seed", seed]
+                                <> externalArgs rig bundlePath
+                            )
+                    runExit refused `shouldBe` ExitFailure 10
+                    outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                    fromMaybe "" (textAt "reason" (runReceipt refused))
+                        `shouldSatisfy` T.isInfixOf (T.pack bundlePath)
+                    BS.readFile bundlePath `shouldReturn` sentinel
+            BS.writeFile bundlePath sentinel
+            refusedOnTheBundle
+                "bob-external-create-taken"
+                "staged create onto an existing bundle file"
+            doesDirectoryExist (rigDir rig </> "bob-external-create-taken")
+                `shouldReturn` False
+            let blueprint = rigBlueprint rig
+                hiddenBlueprint = blueprint <> ".hidden"
+            renameFile blueprint hiddenBlueprint
+            refusedOnTheBundle
+                "bob-external-create-taken-blueprint"
+                "staged create onto an existing bundle file, the blueprint unreadable"
+                `finally` renameFile hiddenBlueprint blueprint
+
+-- ---------------------------------------------------------
+-- A pending bundle stops the next write
+-- ---------------------------------------------------------
+
+-- | What a staged write left: its run, the bundle it is waiting on and where.
+data Pending = Pending
+    { pgRig :: Rig
+    , pgToken :: String
+    , pgBundle :: Bundle
+    , pgBodies :: [ConwayTx]
+    , pgHash :: Text
+    , pgSaved :: Text
+    }
+
+{- | A staged write of a registry left one bundle pending: key-file setup
+over the registry, then the staged line with the key file hidden.
+-}
+pendingStaged
+    :: (Rig -> String -> IO [String])
+    -> (Rig -> [String])
+    -> (Pending -> IO ())
+    -> IO ()
+pendingStaged setup stagedWords use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    t <- tokenOf create
+    extra <- setup rig t
+    staged <-
+        runHidden rig "staged" (stagedWords rig <> extra <> tokenArgs t)
+    runExit staged `shouldBe` ExitFailure 19
+    (bytes, bundle, bodies) <-
+        readBundle (stagedBundlePath rig) >>= either fail pure
+    saved <- case textAt "saved" =<< valueAt "bundle" (runReceipt staged) of
+        Just p -> pure p
+        Nothing -> fail "no saved bundle path in the receipt"
+    use
+        Pending
+            { pgRig = rig
+            , pgToken = t
+            , pgBundle = bundle
+            , pgBodies = bodies
+            , pgHash = hashOfBytes bytes
+            , pgSaved = saved
+            }
+
+-- | A staged update of an active entry leaves one bundle pending.
+pendingUpdate :: (Pending -> IO ()) -> IO ()
+pendingUpdate = pendingStaged (\rig t -> [] <$ activeEntry rig t) updateLine
+
+-- | A staged insert with the fold leaves one bundle of two members pending.
+pendingInsertWithFold :: (Pending -> IO ()) -> IO ()
+pendingInsertWithFold =
+    pendingStaged
+        (\_ _ -> pure [])
+        (\rig -> insertWords rig <> ["--fold"])
+
+-- | A staged fold of a pending request leaves one bundle pending; the fold has a deadline.
+pendingFold :: (Pending -> IO ()) -> IO ()
+pendingFold =
+    pendingStaged
+        (\rig t -> requestOf <$> pendingEntry rig t)
+        (const ["open-datum", "fold"])
+
+-- | An insert of a key no setup booked.
+insertOtherWords :: Rig -> [String]
+insertOtherWords rig =
+    ["open-datum", "insert", "--key", "bob-2", "--payload", payloadOf rig]
+
+updateLine :: Rig -> [String]
+updateLine rig =
+    [ "open-datum"
+    , "update"
+    , "--key"
+    , "bob-1"
+    , "--payload"
+    , payload2Of rig
+    ]
+
+-- | Whether the next write names the key file or the external signer.
+data NextSigner = ByKeyFile | ByExternal FilePath
+
+signerLabel :: NextSigner -> String
+signerLabel = \case
+    ByKeyFile -> "by the key file"
+    ByExternal _ -> "by the external signer"
+
+pendingBundleRows :: Spec
+pendingBundleRows = describe "a pending bundle stops the next write" $ do
+    describe "after a staged update" $
+        around pendingUpdate $
+            forM_ nextWrites $ \(verb, wordsOf) ->
+                forM_ [ByKeyFile, ByExternal "next.bundle"] $ \signer ->
+                    it (verb <> " " <> signerLabel signer) $ \p -> do
+                        let rig = pgRig p
+                            stateDir = stagedPartition rig stagedRoot (pgToken p)
+                            nextBundle = case signer of
+                                ByExternal name -> Just (rigDir rig </> (verb <> "-" <> name))
+                                ByKeyFile -> Nothing
+                            signerArgs = maybe [] (externalArgs rig) nextBundle
+                        journalBefore <- journalAt stateDir
+                        walletBefore <- walletRefs rig
+                        next <-
+                            runAt
+                                rig
+                                stagedRoot
+                                ("next " <> verb)
+                                (wordsOf rig <> tokenArgs (pgToken p) <> signerArgs)
+                        walletAfter <- walletRefs rig
+                        journalAfter <- journalAt stateDir
+                        ( runExit next
+                            , outcomeOf (runReceipt next)
+                            , textAt "hash" =<< valueAt "pendingBundle" (runReceipt next)
+                            , textAt "saved" =<< valueAt "pendingBundle" (runReceipt next)
+                            )
+                            `shouldBe` ( ExitFailure 19
+                                       , Just "waiting-for-signatures"
+                                       , Just (pgHash p)
+                                       , Just (pgSaved p)
+                                       )
+                        awaitedIn (runReceipt next)
+                            `shouldBe` [ (txIdHex body, bodyDeadline body)
+                                       | body <- pgBodies p
+                                       ]
+                        maybe
+                            (pure ())
+                            (\path -> doesPathExist path `shouldReturn` False)
+                            nextBundle
+                        stoppedLeavesNothingOfItsOwn journalBefore journalAfter
+                        walletAfter `shouldBe` walletBefore
+    describe
+        "after a staged insert with the fold, its booking found on chain"
+        $ around pendingInsertWithFold
+        $ forM_ [ByKeyFile, ByExternal "partial.bundle"]
+        $ \signer ->
+            it ("the next insert " <> signerLabel signer) $ \p -> do
+                let rig = pgRig p
+                    stateDir = stagedPartition rig stagedRoot (pgToken p)
+                    nextBundle = case signer of
+                        ByExternal name -> Just (rigDir rig </> name)
+                        ByKeyFile -> Nothing
+                (booking, fold) <- case pgBodies p of
+                    [b, f] -> pure (b, f)
+                    other ->
+                        fail
+                            ( "the staged insert with the fold holds "
+                                <> show (length other)
+                                <> " bodies"
+                            )
+                landBodies rig [booking]
+                journalBefore <- journalAt stateDir
+                walletBefore <- walletRefs rig
+                next <-
+                    runAt
+                        rig
+                        stagedRoot
+                        "next insert, the booking landed"
+                        ( insertOtherWords rig
+                            <> tokenArgs (pgToken p)
+                            <> maybe [] (externalArgs rig) nextBundle
+                        )
+                walletAfter <- walletRefs rig
+                journalAfter <- journalAt stateDir
+                ( runExit next
+                    , outcomeOf (runReceipt next)
+                    , textAt "hash" =<< valueAt "pendingBundle" (runReceipt next)
+                    )
+                    `shouldBe` (ExitFailure 19, Just "waiting-for-signatures", Just (pgHash p))
+                awaitedIn (runReceipt next)
+                    `shouldBe` [(txIdHex fold, bodyDeadline fold)]
+                map journalKey' (drop (length journalBefore) journalAfter)
+                    `shouldBe` [("landed", txIdHex booking)]
+                stoppedLeavesNothingOfItsOwn journalBefore journalAfter
+                -- the check can fail: an appended line of the write's own is refused
+                stoppedLeavesNothingOfItsOwn
+                    journalBefore
+                    [ e
+                        { journalEvent =
+                            if journalEvent e == "landed" then "prepared" else journalEvent e
+                        }
+                    | e <- journalAfter
+                    ]
+                    `shouldThrow` anyException
+                maybe
+                    (pure ())
+                    (\path -> doesPathExist path `shouldReturn` False)
+                    nextBundle
+                walletAfter `shouldBe` walletBefore
+    describe "after a staged create" $
+        around pendingCreate $
+            forM_ [ByKeyFile, ByExternal "second.bundle"] $ \signer ->
+                it ("a second create " <> signerLabel signer) $ \p -> do
+                    let rig = pgRig p
+                        stateDir = stagedPartition rig stagedRoot (pgToken p)
+                        nextBundle = case signer of
+                            ByExternal name -> Just (rigDir rig </> name)
+                            ByKeyFile -> Nothing
+                    journalBefore <- journalAt stateDir
+                    walletBefore <- walletRefs rig
+                    next <-
+                        runAt
+                            rig
+                            stagedRoot
+                            "second create"
+                            (["open-datum", "create"] <> maybe [] (externalArgs rig) nextBundle)
+                    walletAfter <- walletRefs rig
+                    journalAfter <- journalAt stateDir
+                    ( runExit next
+                        , outcomeOf (runReceipt next)
+                        , textAt "hash" =<< valueAt "pendingBundle" (runReceipt next)
+                        )
+                        `shouldBe` (ExitFailure 19, Just "waiting-for-signatures", Just (pgHash p))
+                    maybe
+                        (pure ())
+                        (\path -> doesPathExist path `shouldReturn` False)
+                        nextBundle
+                    stoppedLeavesNothingOfItsOwn journalBefore journalAfter
+                    walletAfter `shouldBe` walletBefore
+    it
+        "a landed bundle never blocks, and the next write reports it as landed"
+        $ pendingUpdate
+        $ \p -> do
+            let rig = pgRig p
+            landBodies rig (pgBodies p)
+            next <-
+                runAt
+                    rig
+                    stagedRoot
+                    "write after the bundle landed"
+                    (insertOtherWords rig <> tokenArgs (pgToken p))
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            bundleStatesOf (runReceipt next)
+                `shouldBe` [(pgHash p, "landed")]
+    it "a dead bundle never blocks, and the next write reports it as dead" $
+        pendingFold $ \p -> do
+            let rig = pgRig p
+            deadline <- case mapMaybe bodyDeadline (pgBodies p) of
+                d : _ -> pure d
+                [] -> fail "the staged fold carries no deadline"
+            jumpChainTo (rigChain rig) (SlotNo (deadline + 1))
+            next <-
+                runAt
+                    rig
+                    stagedRoot
+                    "write after the bundle died"
+                    (insertOtherWords rig <> tokenArgs (pgToken p))
+            outcomeOf (runReceipt next) `shouldBe` Just "success"
+            bundleStatesOf (runReceipt next)
+                `shouldBe` [(pgHash p, "dead")]
+  where
+    nextWrites =
+        [
+            ( "insert"
+            , \rig ->
+                ["open-datum", "insert", "--key", "bob-2", "--payload", payloadOf rig]
+            )
+        , ("update", updateLine)
+        , ("terminate", const ["open-datum", "terminate", "--key", "bob-1"])
+        , ("fold", const ["open-datum", "fold"])
+        ]
+
+-- | A staged create leaves one bundle pending, its pending identity recorded.
+pendingCreate :: (Pending -> IO ()) -> IO ()
+pendingCreate use = withRig $ \rig -> do
+    staged <- runHidden rig "staged create" ["open-datum", "create"]
+    runExit staged `shouldBe` ExitFailure 19
+    t <- case valueAt "expected" (runReceipt staged) >>= textAt "stateToken" of
+        Just token -> pure (T.unpack token)
+        Nothing -> fail "the staged create names no state token"
+    (bytes, bundle, bodies) <-
+        readBundle (stagedBundlePath rig) >>= either fail pure
+    saved <- case textAt "saved" =<< valueAt "bundle" (runReceipt staged) of
+        Just p -> pure p
+        Nothing -> fail "no saved bundle path in the receipt"
+    use
+        Pending
+            { pgRig = rig
+            , pgToken = t
+            , pgBundle = bundle
+            , pgBodies = bodies
+            , pgHash = hashOfBytes bytes
+            , pgSaved = saved
+            }
+
+-- | The transactions applied to the chain, as a submission would, in order.
+landBodies :: Rig -> [ConwayTx] -> IO ()
+landBodies rig bodies =
+    forM_ bodies $ \tx -> do
+        let txid = txIdTx tx
+            spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
+            made = zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
+        recordTransaction (rigChain rig) tx
+        advanceChain (rigChain rig) $ \facts ->
+            facts
+                { csUTxO =
+                    Map.union
+                        (Map.fromList [(TxIn txid (TxIx ix), out) | (ix, out) <- made])
+                        (foldr Map.delete (csUTxO facts) spent)
+                }
+
+-- | The members a stop names as awaited: identity and deadline, in order.
+awaitedIn :: Aeson.Value -> [(Text, Maybe Word64)]
+awaitedIn receipt = case valueAt "pendingBundle" receipt >>= valueAt "awaited" of
+    Just (Aeson.Array members) ->
+        [ (identity, deadline)
+        | m <- toList members
+        , let deadline = case valueAt "deadline" m of
+                Just (Aeson.Number n) -> Just (floor n)
+                _ -> Nothing
+        , Just identity <- [textAt "identity" m]
+        ]
+    _ -> []
+
+-- | Each bundle a receipt's reconciliation reports: its hash and state.
+bundleStatesOf :: Aeson.Value -> [(Text, Text)]
+bundleStatesOf receipt = case valueAt "reconciled" receipt >>= valueAt "bundles" of
+    Just (Aeson.Array bundles) ->
+        [ (h, s)
+        | b <- toList bundles
+        , Just h <- [textAt "hash" b]
+        , Just s <- [textAt "state" b]
+        ]
+    _ -> []
+
+{- | A stopped write leaves nothing of its own in the journal: the lines it
+found stay as they were, and the only lines appended are the earlier bundle's
+reconciliation (a member found on chain is recorded landed, a bundle that
+died, dead). No prepared, waiting or submission line is its own.
+-}
+stoppedLeavesNothingOfItsOwn
+    :: [JournalEntry] -> [JournalEntry] -> Expectation
+stoppedLeavesNothingOfItsOwn found appended = do
+    map journalKey' (take (length found) appended)
+        `shouldBe` map journalKey' found
+    filter
+        ((`notElem` ["landed", "dead"]) . fst)
+        (map journalKey' (drop (length found) appended))
+        `shouldBe` []
+
+-- | A journal line as the stop must leave it: its event and the transaction it names.
+journalKey' :: JournalEntry -> (Text, Text)
+journalKey' e = (journalEvent e, journalTxId e)

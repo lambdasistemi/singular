@@ -8,8 +8,8 @@
 
 - [x] open-datum-staged-writes: insert, update, terminate and fold, alone and with the fold, each one bundle and status 19; bodies equal the key-file path's; refusals write no bundle.
 - [x] open-datum-staged-receipt: open-datum's own receipt fields under expected and its narration events marked staged.
-- [ ] open-datum-staged-create: create's rows and usage once the registry's create stages.
-- [ ] open-datum-pending-bundle: a pending bundle stops the next open-datum write with status 19, once issue 641's journal phase lands.
+- [x] open-datum-staged-create: create's rows and usage once the registry's create stages.
+- [x] open-datum-pending-bundle: a pending bundle stops the next open-datum write with status 19, once issue 641's journal phase lands.
 
 ## Slice: vault mode
 

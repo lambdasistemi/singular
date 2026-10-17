@@ -23,7 +23,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim, singular reject, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
+      "text": "The URL, network magic and one signer (the signing key, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
       "pause": 400
     }
   ],
@@ -63,7 +63,7 @@
       "pause": 400
     },
     {
-      "text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
+      "text": "The writer's side is a singular registry create, fold, reject or reclaim run, or an open-datum create, insert, update, terminate or fold run, that names --wallet-address and --bundle in place of the signing key: it builds its whole run as one bundle in build order, signs and sends nothing, states its own fields under expected in its receipt, and exits with status 19, waiting-for-signatures.",
       "pause": 400
     },
     {
@@ -413,6 +413,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "e3bf31b80a55c57ba465182f1bcac7c9bfc6e154f9daad064ebba611d0eccf10"
+    "sha256": "eac37073fa8fc3a144edfa7d5aa4bde38b77012da41175e7a0a06736a2b94f28"
   }
 }
