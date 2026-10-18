@@ -234,7 +234,7 @@ common=(--state-dir "$reg" --blueprint "$blueprint")
 
 jq -n '{map:[{k:{bytes:"6e616d65"},v:{list:[{int:-7},{bytes:"616c696365"},{constructor:2,fields:[]}]}}]}' >"$work/payload-insert.json"
 
-orun carol-create success -- create --process-time 120000 --retract-time 60000 \
+orun carol-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 60000 \
   "${common[@]}" "${node[@]}" "${carol[@]}"
 token="$(field carol-create .stateToken)"
 [ -n "$token" ] && [ "$token" != null ] || fail "carol's create named no token"
