@@ -17,10 +17,11 @@
 
 ## Pull request 2: Demo 1 on the devnet
 
-- [ ] devnet-address-funding: the devnet harness funds a given address.
-- [ ] demo1-journey-vault: the Demo 1 journey and run page for both binaries, the closed-datum journey and the preprod walk-through on wallets from `singular wallet create`; the sixteen numbered items keep their positions.
+- [x] devnet-address-funding: the devnet harness funds a given address.
+- [x] demo1-journey-vault: the Demo 1 journey and run page for both binaries, the closed-datum journey and the preprod walk-through on wallets from `singular wallet create`; the sixteen numbered items keep their positions.
 
 ## Pull request 3: the guides
 
-- [ ] open-datum-retires-key-file: open-datum's usage drops the key-file flag; the command reference drops its row; the documented-flags check finds the write commands without it.
-- [ ] guides-vault: the negative-host page, the integrator guide and the release archive's read-me on the vault or the external signer.
+- [x] guides-vault: the negative-host page, the integrator guide and the release archive's read-me on the vault or the external signer.
+
+Moved to issue 672 (decision of 2026-10-17): open-datum-retires-key-file. There the key-file flag leaves open-datum's usage and the command reference together with the registry's, in one harness migration.
