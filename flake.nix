@@ -1740,6 +1740,34 @@
                     exit 1
                   }
                   echo "script-hash-comparison: changed-hash plant refused" >&2
+                  # The same for an UNDECLARED base validator. The plant above now
+                  # moves a declared title, so this one moves staking.staking.withdraw,
+                  # an unchanged base entry that no record declares: the comparison
+                  # must still refuse it, naming it.
+                  jq -e -s 'all(.[]; (.changed + .added) | index("staking.staking.withdraw") == null)' "''${declared_changes_records[@]}" >/dev/null || {
+                    echo "script-hash-comparison: staking.staking.withdraw is declared, so it cannot serve as the undeclared-moved plant" >&2
+                    exit 2
+                  }
+                  jq '(.validators |= map(if .title == "staking.staking.withdraw" then .hash = "00000000000000000000000000000000000000000000000000000000" else . end))' "$work/union.json" >"$work/plant-undeclared-moved.json"
+                  jq -e '[.validators[] | select(.title == "staking.staking.withdraw" and .hash == "00000000000000000000000000000000000000000000000000000000")] | length == 1' "$work/plant-undeclared-moved.json" >/dev/null || {
+                    echo "script-hash-comparison: undeclared-moved plant did not apply to staking.staking.withdraw" >&2
+                    exit 2
+                  }
+                  if compare "$work/expected.json" "$work/plant-undeclared-moved.json" >"$work/plant-undeclared-moved.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the undeclared-moved plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'moved' "$work/plant-undeclared-moved.log" || {
+                    echo "script-hash-comparison: undeclared-moved plant refused without naming the moved validator:" >&2
+                    cat "$work/plant-undeclared-moved.log" >&2
+                    exit 1
+                  }
+                  grep -q 'staking\.staking\.withdraw\|staking\.withdraw' "$work/plant-undeclared-moved.log" || {
+                    echo "script-hash-comparison: undeclared-moved plant refused without naming staking.staking.withdraw:" >&2
+                    cat "$work/plant-undeclared-moved.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: undeclared-moved plant refused" >&2
                   jq '.validators |= map(select(.title != "state.state.spend"))' "$work/union.json" >"$work/plant-missing.json"
                   jq -e '[.validators[] | select(.title == "state.state.spend")] | length == 0' "$work/plant-missing.json" >/dev/null || {
                     echo "script-hash-comparison: missing-validator plant did not apply to state.state.spend" >&2
