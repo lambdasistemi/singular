@@ -1,58 +1,52 @@
 # Delivering authenticated requests
 
-## Story
+## Story and authority
 
-As the reviewer of this change, I want each commit to state which usable path it adds and which later integration it still needs, so that a passing component check never becomes an unsupported lifecycle claim.
+As a registry user, I can submit an authenticated request, find it despite pollution at the request address, and use a lawful exit with the ruled payments. As a reviewer, I can distinguish a reviewed component from a completed lifecycle and see every failed or uncovered obligation.
 
-This changes on-chain behavior and public conformance claims. It uses the approved commit owner and persistent mute auditor, with no draft tool. The target is a running product with checks for the named invariants and real boundary journeys; it does not claim universal implementation equivalence.
+The acceptance items below were re-read from [issue 529](https://github.com/lambdasistemi/singular/issues/529) on 18 October 2026. The constitution and the ruled Lean model are the behavioral authority. Singular's root model remains frozen at `4254a3073fe0457946eba0a68d974c999c930ebf`, with Lean 4.27.0. The open-datum consumer amendment is a later, model-first chunk; no root Lean or simulator-law change is authorized by this plan.
 
-```mermaid
-flowchart TD
-    Contract[Model and scope] -->|Review plan| Booking[Authenticated booking]
-    Booking -->|Protect requests| Exits[Sweep and retraction]
-    Exits -->|Keep refunds| Expiry[Permissionless expiry]
-    Expiry -->|Observe transactions| Evidence[Packaged journeys and public rows]
-    Consumer[Consumer model decision] -->|Align termination| Evidence
-    Evidence -->|Exact head CI| Draft[Held integration draft]
-```
+## Four chunks, each reviewed and pushed
 
-The commits share one branch, `integration/498-protected-rejection`; there are no child pull requests. No merge occurs before the 22 October review, and this ticket owner never merges. At the first push the draft title is `Protected rejection (1.0.0)`, with the repository PR template and the review hold stated explicitly.
+The operator's 18 October cut replaces the earlier slice order. Each chunk has its own short story, acceptance mapping, exact fence, gate and audit checkpoints. Each reviewed chunk is pushed to the same branch, `integration/498-protected-rejection`. Paths below are the expected areas of work; a later chunk's intake census fixes its exact file list before its first code commit.
 
-## Ordered slices
-
-| Slice | Deliverable | Acceptance boundary |
+| Chunk | Acceptance items and limits | Paths expected to change |
 |---|---|---|
-| Authenticated booking | Request/configuration representation, trie-ready policy, canonical commitments, immutable pins and generic library minting | Real mint evaluation and a booked registration; malformed contents, mint, address, fields, tags and clock controls. Application names wait for the next model slice. |
-| Open-datum consumer model, registration | Amend the consumer's request, `mintApproval` and `booked` to carry the nonce and use Singular's ruled `applicationTagAssetName`; restate affected statements and regenerate the corpus | Model-first, before application name changes. Historical expected values change only through the amended model and generated corpus. Singular's root model stays frozen. |
-| Economic fold | Minimum state, fold, settlement, codec and builder changes needed by the new booking | Both request kinds obey `foldAccepted`, exact burns, carrier routing, donation and gross-tip equation; no state-spending rejection. |
-| Sweep and retraction | Request spend prerequisite, unconditional policy burns, junk sweep, ordinary-funded registration retraction and builders | Stranger sweeps actual junk; tagged sweep refused; signed retraction returns full held value with fee from ordinary funding and no state access. |
-| Permissionless expiry | Authenticated reference-read expiry, batch refunds, request-side rejection interface, library and CLI rejection | A stranger exits genuinely booked expired registrations, including shared refund addresses; live requests and terminations cannot take expiry. |
-| Discovery and published evidence | Tag-indexed discovery, pollution controls, compiled and packaged registration paths, receipt-derived public rows and identity propagation | Actual provider query/read evidence, positive and adverse journeys, exact-head hosted CI; all acceptance items retained. |
-| Application termination integration, held | Align the packaged application termination path after its model-first decision | Last slice; Q-003 must be resolved first. No weakening of the existing consumer guarantee by this lane. |
+| 1. Authenticated booking | The booking portion of the Lean/on-chain/library/CLI items: exact request contents and tags, registry binding, booked time and bounded interval, immutable economics, codecs, builder and explicit create values. Include the boot repair, deployment parser/router, compiled identity consumers, and declared hash-change controls already in flight. Keep the mint-refusal and real booking evidence, with unexercised adversarial and public rows explicit. Finish comparison fixups and review012, then push. Hosted Demo1 supplies journey evidence; it is no longer a condition on this push. | The frozen booking fence: registry policy and validators, shared library and builders, CLI/deployment code, application consumers and identities, naming mirrors, two journey scripts, release/count checks, root comparison, and `specs/529-request-tag/`. |
+| 2. Minimum economic fold and settlement | Only folds spend the state. Registration burns both request tags, donates the registration cost, pays exactly the declared tip and delivers the singular tag with its carrier. Termination burns trie-ready and singular tags, donates held value minus tip and pays exactly the tip. Add the tag-indexed discovery and selection the fold needs: untagged and malformed pollution must not change its reads or verdicts. Retain the donation, balance and gross-tip obligations and the applicable adversarial controls. | `onchain/validators/state.ak`, `onchain/validators/request.ak`, `onchain/validators/witness.ak`, affected `onchain/lib/` modules; `offchain/lib/Singular/Registry/` selection, codecs and fold builder; matching tests, CLI/journeys, identity consumers and receipt-derived conformance rows. |
+| 3. Other request exits | Shared authentication of this registry's referenced state, with no state spend; permissionless expiry after both windows, including summed refunds for shared addresses. A stranger must execute expiry on devnet and the owner receives the ruled refund; live requests and terminations cannot use registration expiry. Implement requester-signed retraction in `[s + W_p, s + W_p + W_r)`, returning the full held value with the fee funded from ordinary inputs and no state access. Untagged junk is spendable by a stranger to any destination, while a tagged request cannot use that path. Include the CLI, public rows and malformed/moved-tag/unpayable-refund controls or their demonstrated exits. | `onchain/validators/request.ak` and shared reference-state helpers in `onchain/lib/`; `offchain/lib/Singular/Registry/TxBuilder/{Reject,Retract}.hs` and affected observation/discovery code; CLI, devnet tests and journeys, identity consumers and receipt-derived conformance rows. |
+| 4. Open-datum model, then consumers | Amend the consumer Lean model first: nonce-bearing registration names use Singular's ruled commitment. For termination, the controller releases the singular tag and locked deposit into the request, receiving nothing back; the fold sends held value minus tip to the treasury. Restate the affected statements and regenerate the corpus before accepting consumers. This covers the application integration portions of the issue, not a change to Singular's root law. | `applications/open-datum/lean/`, `applications/open-datum/corpus.json` and generated oracle bindings; then affected application on-chain/off-chain code, tests, CLI/journeys, identities and public evidence. |
 
-Every slice is committed locally and reviewed through checkpoints. RED-before-GREEN records demonstrate the real behavioral failure, not missing symbols or setup errors. Final task stamps precede the final candidate's verification. Only reviewed candidates are pushed.
+Receipt-derived conformance rows, exact model/artifact bindings and the command-recovery obligations of the affected commands travel with their behavior's chunk. Publish uncovered rows; do not type a passing state or promote harness evidence to product acceptance. The adversarial items from issue529 require an actual mint refusal or demonstrated exit, not a blanket claim from a successful build.
 
-## Shared boundary with the following ticket
+If hosted checks for chunk1 are red, their repair is the first item of chunk2, with the problem and evidence recorded in that chunk's plan. It does not retroactively turn the failed check into a pass or hold the reviewed chunk1 push.
 
-The epic owner's 16 October answer assigns this ticket the minimum economic fold, settlement and state-validator changes its booking and existing journeys require. Registration burns both tags, donates cost and delivers its exact carrier; termination burns trie-ready and singular tags and donates held minus tip. Only folds spend the state. This ticket owns shared reference-state authentication and expiry, including tag burns, distinct consumption and summed refunds. Issue 495 owns mismatch proofs against that referenced root, any remaining per-member batch admission and state-validator work beyond this cut.
+## Disagreements with the historical issue text
 
-A current legacy fold cannot be relabelled economic. New datum and tag changes can break its consumers; no expected result is weakened merely to keep CI green. The explicit shared ownership above covers the required fold changes. Any further expansion remains a question. Each push is lawful; local RED or incomplete intermediate slices are never pushed as green candidates. The first slice's exact touch list is reviewed before coding.
+| Issue wording | Later ruling used by this plan |
+|---|---|
+| A separate minimum bond and a forfeit with an undecided destination | The ruled economics use the registration cost and declared tip; no separate bond/reclaim mechanism is introduced. The registration cost and the termination's held value minus tip go to the treasury under the specified exits. |
+| Owner reclaim | Implement retraction, not bond reclaim: the requester signs and pays in the ruled window and may fund the fee from ordinary inputs. The request's held value is returned as the model requires. This belongs to chunk3. |
+| Both insert and terminate mint an application approval beside the request tag | Registration has its ruled trie-ready and application tags. Termination takes the genuine singular tag and locked deposit from application custody into the request and has no registration application tag. Apply the current model and the operator's treasury ruling, not the older wording. |
 
-## Resources and execution
+## Shared ownership and intake
 
-Every cabal build/test, nix build/run, aiken build/check and packaged control runs under this wrapper, with COMMAND replaced by the exact command:
+Issue495 owns the mismatch proof against the authenticated referenced root, remaining per-member batch rejection admission not covered here, and state-validator work beyond the minimum cut above. Issue529 owns the shared reference-state helper and expiry ground. A legacy fold is not an economic fold merely because it has been renamed.
+
+Before a chunk's first code commit, perform one census of every validator/hash consumer: counts, title lists, source pins, goldens, identity manifests, declared-change records and journeys. Put every relevant hit in that chunk's fence at the start. A later-discovered mechanical consumer is an intake miss to repair within the chunk, not a new scope question. A semantic change, model conflict or change beyond the mechanical consequence remains a question. No expected result is weakened to make a check green.
+
+The approved Sonnet commit owner writes implementation and the persistent Sol auditor independently inspects checkpoints without product execution. No extra implementation seats are authorized. For chunk4, the already-approved Codex gpt-6-astra high Lean writer works between Sonnet slices, one writer at a time, using the same persistent auditor. The custody decision formerly held as Q003 is settled by the operator's 17 October treasury ruling; its model amendment still precedes code acceptance.
+
+## Verification and delivery
+
+Every build, test and packaged control uses its exact command inside this wrapper:
 
 ```sh
 systemd-run --user --scope --quiet -p MemoryMax=12G -p MemorySwapMax=0 -- timeout 900 COMMAND </dev/null
 ```
- A command exceeding the cap stops for a question. Read loops have byte caps and deadlines; no unowned producer threads.
 
-The inner loop uses the narrowest real test filter. Candidate checks target changed behavior. One local `nix develop --quiet -c just ci` precedes the first push; additionally run the listed affected consumers locally before that push. Hosted CI then supplies the exact-head net; do not rerun its job list locally. Every check records command, candidate/tree, exit, duration and evidence hash. Local planning checks are not hosted acceptance.
+There is no aggregate execution budget. A single cap hit is recorded and follows its explicit ruling or becomes a question. Use the narrowest real changed-behavior checks; preserve RED-before-GREEN evidence and distinguish setup failure, refusal, acceptance, local receipts and hosted execution. Record the candidate/tree, command, exit, duration and evidence hash. Do not replay hosted job lists locally.
 
-## Release and recovery
+For chunk1, finish the in-flight comparison fixup and review-record corrections, obtain review012 approval, rebase once, inspect status and the log, run `just ci` once, then push and open the draft PR. Neither Demo1 nor the later economic fold holds this first push. The failed local archive attempt and the unexecuted deployment carrier remain explicit; hosted CI supplies their evidence. Later chunks repeat their own plan, audit and push cycle.
 
-Rebase before a push, at least daily while live, and earlier when main touches changed paths or the draft conflicts. Inspect status and log after the rebase before any push. Refresh candidate-bound evidence after source or identity changes. Signed commits only, no attribution trailers; inspect the whole pushed range. Use `gh run list` and `gh run view`, never GitHub comments or `gh pr checks`.
-
-The epic approved the initial plan at `063b3fe5`; its later A-006 assigns the consumer-model amendment to this ticket. Planning source ceiling is revised to 64 KiB for that added slice, with 12 KiB per page; each child packet remains at most 20 KiB excluding source pointers. An oversized slice is split. Singular's accepted model remains frozen; unresolved consumer conflicts hold affected acceptance.
-
-The consumer-model writer is Codex gpt-6-astra high, launched with `codex --dangerously-bypass-approvals-and-sandbox -C WORKTREE -m gpt-6-astra -c model_reasoning_effort=high`, with the existing Sol auditor. Schedule it between Sonnet slices: one writer at a time. Its fence is `applications/open-datum/lean/` and generated consumer corpus/oracle outputs. Part one is the nonce-bearing registration name already ruled by the operator; part two, termination custody and deposit destination, remains held under Q-003. No root Lean or simulator-law edit is authorized. The same capped execution and checkpoint requirements apply.
+Only signed commits, with no attribution trailers, enter the pushed range. Use the repository PR template with model revision, implementation mapping and verification limits. The first draft title is `Protected rejection (1.0.0)`. Keep it draft and held for the 22 October review; this owner never merges. No child PRs or GitHub comments; inspect CI through `gh run list` and `gh run view`, not `gh pr checks`.
