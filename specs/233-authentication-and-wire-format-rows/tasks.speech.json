@@ -1,0 +1,18 @@
+{
+  "acceptance": [
+    {
+      "text": "Classify all five authentication requirements and eight wire-format requirements with a reason for each. Interpret each coherent vocabulary once. Remove the replaced per-row runners while preserving their devnet outcomes, receipt-derived states and recorded gaps. Report the runner size before and after, the unchanged model revision and the limits of the verification.",
+      "pause": 350
+    }
+  ],
+  "limits": [
+    {
+      "text": "Lean remains the behavioral authority. This migration changes no model and does not wire the separate authentication specification. The wrong-constructor requirement remains unmet by ruling, and partial constructor coverage stays partial. Newly executed rows or newly exposed model gaps need a ruling before acceptance. No task is complete without its checkpoint review and required evidence.",
+      "pause": 350
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "cb9c76150fe5202130786dfc15d5f09698907677c1061b4f49f44fe1c186a05f"
+  }
+}
