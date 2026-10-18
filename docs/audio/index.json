@@ -12,8 +12,8 @@
     "index": 1,
     "name": "README/design-status-01",
     "pause_ms": 400,
-    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 108 proved declarations — 87 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
-    "v": "477901d6273e"
+    "text": "These documents record the adopted design and name the decisions still needed for a concrete protocol. The executable design candidate has 115 proved declarations — 94 for the registry, 7 for the naming instance, 9 for its lifecycle and 5 for its wire encoding, counts that the model check derives from the theorem manifests — plus a playable simulation transcribed from them. The focused checks replay 29 registry rows, 15 naming rows and 21 lifecycle rows; they test correspondence on those finite inputs rather than proving browser behaviour generally. No independent audit acceptance is claimed. The compiled validators and a registry deployed on the public preprod network are recorded in the preprod record, and the conformance evidence states which consumer requirements a named code revision demonstrated against them. The coverage ledger distinguishes finite executable evidence from conditions, abstractions and omissions, and the clarity record states plainly how much independence that evidence has.",
+    "v": "e8e6b6ec5799"
    },
    {
     "index": 2,
@@ -3400,8 +3400,8 @@
     "index": 2,
     "name": "docs-economics-paper/checked-declaration-register-02",
     "pause_ms": 400,
-    "text": "The axiom report digest is d22520a04f196bfe52e69ac18d156cce82c78d34f4a6365a16a2138a2815a2f9. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.",
-    "v": "7383e709c919"
+    "text": "The axiom report digest is 1b9155bc7e07189a9f3c8807a376a1411d99a0ad44f0422b9fd1c10398a97904. The trusted base includes Lean's kernel and the printed axioms, specification adequacy, authentic ledger observations, application authorization and the unproved model-to-validator correspondence. Executable commitment functions are stand-ins; tag counts do not establish cryptographic binding.",
+    "v": "ffc0b6f076c7"
    }
   ],
   "every-exit-and-every-amount": [
@@ -3467,8 +3467,8 @@
     "index": 3,
     "name": "docs-economics-paper/future-work-reusable-names-and-durable-evidence-03",
     "pause_ms": 400,
-    "text": "Hand proof supplied: a transaction referencing the application output holding a name's token loses that input when an application update spends it. A proof against the current registry root similarly depends on a state output that another fold may spend. The goal of the proposed witnesses is to make such evidence more durable. Missing mechanization: their minting, invalidation, custody and verification rules need a future model and implementation evidence. Presence and absence cannot be promised valid after their conditions cease to hold.",
-    "v": "701bcae12a88"
+    "text": "Hand proof supplied: a transaction referencing the application output holding a name's token loses that input when an application update spends it. A proof against the current registry root similarly depends on a state output that another fold may spend. The goal of the proposed witnesses is to make such evidence more durable. Missing mechanization: the boundary model now specifies the three policy decisions and terminal discard, but issuance through the proposed lifecycle extensions, invalidation, custody and concrete verification still need model and implementation evidence. Presence and absence cannot be promised valid after their conditions cease to hold.",
+    "v": "8d6be3a34a7d"
    }
   ],
   "limitations-and-counterexamples": [
@@ -3541,8 +3541,8 @@
     "index": 2,
     "name": "docs-economics-paper/named-02",
     "pause_ms": 400,
-    "text": "Existing checked declaration: Singular.Statements.insert_active_transaction_row describes the original registry's one minted active asset, its key-derived model name and its destination holding. Singular.Statements.world_supply_sync counts the economic world's actual singular tags across application custody and pending terminations. The register below supplies the exact pin and axiom lines. Missing mechanization: the actual minting policy and name encoding need correspondence evidence; holding the representative proves no legal right or personal identity.",
-    "v": "39e008ff81d3"
+    "text": "Existing checked declaration: Singular.Statements.insert_active_transaction_row describes the original registry's one minted active asset, its key-derived model name and its destination holding. Singular.Statements.world_supply_sync counts the economic world's actual singular tags across application custody and pending terminations. The register below supplies the exact pin and axiom lines. Existing checked declarations: Singular.Statements.key_names_its_token gives a reversible byte-string name for every key, the bound active policy identifier and the reachable active count. Under the ledger name-length premise, an accepted transaction cannot mint a name longer than 32 bytes. Singular.Statements.active_mint_at_unknown_key ties positive active minting to an unknown key in the spent state, under the explicit ledger and state-script premises described below. Missing mechanization: correspondence of the actual minting policy, byte encoding and state validator remains open; holding the representative proves no legal right or personal identity.",
+    "v": "4f30999a9532"
    }
   ],
   "named-unique-permanent-permissionless-and-reusable": [
@@ -3564,8 +3564,8 @@
     "index": 2,
     "name": "docs-economics-paper/named-unique-permanent-permissionless-and-reusable-02",
     "pause_ms": 400,
-    "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. For KERI a conviction is a termination, and it is permanent. A lookup of an identifier at a registry root has three outcomes. An active leaf proves that the identifier is registered and not convicted at that root: “not convicted” means active. A terminal leaf proves conviction. An unknown leaf proves only that the identifier is not registered on Singular; that is a different answer and is never presented as “not convicted”. The stored Absent leaf belongs to the extension edges outside the contract of the first release and is not part of this reading. Existing checked declaration: Singular.Statements.termination keeps a terminal leaf terminal through every later accepted batch, and Singular.Statements.terminal_attestation_permanent keeps a held terminal attestation held and its leaf terminal. Hand proof supplied: by induction over the accepted batches from the genesis state, a key terminal at one reachable state is terminal at every later one, so an active leaf at a root shows the key was never terminal before it: an active identifier was never convicted before that root. Missing mechanization: the lookup is a logical read of the root and verifying a concrete lookup proof is a correspondence obligation; a lookup is valid only against the current root until the next fold; durable attestations are future work, proposed and not proved; Singular alone does not verify duplicity or establish a KERI history, and the consumer integration remains open.",
-    "v": "ce1bc2299b9a"
+    "text": "Cardano KERI motivates checkpoints selectable by KERI identifier and evidence of whether an identifier was ever convicted on Cardano. For KERI a conviction is a termination, and it is permanent. A lookup of an identifier at a registry root has three outcomes. An active leaf proves that the identifier is registered and not convicted at that root: “not convicted” means active. A terminal leaf proves conviction. An unknown leaf proves only that the identifier is not registered on Singular; that is a different answer and is never presented as “not convicted”. The stored Absent leaf belongs to the extension edges outside the contract of the first release and is not part of this reading. Existing checked declaration: Singular.Statements.termination keeps a terminal leaf terminal through every later accepted batch, and Singular.Statements.terminal_attestation_permanent keeps a held terminal attestation held and its leaf terminal through accepted folds. A holder may separately discard an attestation without changing the terminal leaf, as Singular.Statements.terminal_discard_changes_no_registry_state proves. Hand proof supplied: by induction over the accepted batches from the genesis state, a key terminal at one reachable state is terminal at every later one, so an active leaf at a root shows the key was never terminal before it: an active identifier was never convicted before that root. Missing mechanization: the lookup is a logical read of the root and verifying a concrete lookup proof is a correspondence obligation; a lookup is valid only against the current root until the next fold; issuance and implementation of durable attestations remain future work; Singular alone does not verify duplicity or establish a KERI history, and the consumer integration remains open.",
+    "v": "e520677b87a8"
    }
   ],
   "permanent": [
@@ -3690,6 +3690,50 @@
     "v": "a7e2844726ac"
    }
   ],
+  "the-ledger-boundary-and-staking": [
+   {
+    "index": 0,
+    "name": "docs-economics-paper/the-ledger-boundary-and-staking-00",
+    "pause_ms": 500,
+    "text": "The ledger boundary and staking.",
+    "v": "2382ebdd5173"
+   },
+   {
+    "index": 1,
+    "name": "docs-economics-paper/the-ledger-boundary-and-staking-01",
+    "pause_ms": 400,
+    "text": "Existing checked declarations: Singular.Statements.witness_decision_cases gives the complete modeled policy decision. Active and absent movements, burns included, need a fold. Terminal movements need a fold unless they are exclusively burns. The fold must spend an input at the state script's payment credential with exactly one unit of this registry's state token and the fold redeemer. Singular.Statements.fold_required_for_active_and_absent also establishes that this state script accepted the spend, under the bound policy identifiers, ledger script execution and collision freedom on the scripts occurring in that transaction. Collision freedom is a named local premise, not a global assumption that every hash is injective.",
+    "v": "db4aab9bd27a"
+   },
+   {
+    "index": 2,
+    "name": "docs-economics-paper/the-ledger-boundary-and-staking-02",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: Singular.Statements.active_mint_at_unknown_key connects a positive active mint to that same spent state, its datum, an admitted batch, the validity upper bound and the batch's complete token mint. It proves that the key was unknown before the fold and, if that state was reachable, has exactly one active token afterward. This uses the explicit StateScriptFolds correspondence premise as well as bound identifiers, ledger script execution and collision freedom. It does not prove that a compiled validator realizes the premise.",
+    "v": "aafe97f23763"
+   },
+   {
+    "index": 3,
+    "name": "docs-economics-paper/the-ledger-boundary-and-staking-03",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: Singular.Statements.token_policies_read_no_staking covers all three token policies. Changing withdrawals, certificates, their redeemers and any input, reference-input or output stake credential leaves a policy's decision unchanged when the transaction with those fields erased is the same. Missing mechanization: this is not a staking theorem for the state or request rules; those remain in the state/request model and correspondence work. A delivered output still binds the whole address named by its request, including its stake part.",
+    "v": "8790bb91480b"
+   },
+   {
+    "index": 4,
+    "name": "docs-economics-paper/the-ledger-boundary-and-staking-04",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: Singular.Statements.terminal_discard_changes_no_registry_state permits removing one terminal holding while preserving every key's leaf, the root, configuration, custody, every active count and consistency. Terminal attestations are zero or many; their number is not the active supply invariant. A holder's discard is separate from a fold, so the earlier attestation-permanence result through folds remains true. The registry's terminal fact survives a holder discarding the evidence token.",
+    "v": "ea04ed22c2eb"
+   },
+   {
+    "index": 5,
+    "name": "docs-economics-paper/the-ledger-boundary-and-staking-05",
+    "pause_ms": 400,
+    "text": "Existing checked declaration: Singular.Statements.ledger_boundary_premises_satisfiable gives one finite ledger satisfying all named premises. It accepts an active mint spending a reachable registry state, with one active token after the admitted batch, and a terminal pure burn with no fold that consumes a real attestation. The discarded holding exists in a consistent terminal state. Missing mechanization: the example does not establish that the active two-edge lifecycle can issue terminal attestations, nor that either transaction has been accepted on Cardano. Terminal issuance and concrete deposit recovery need their own evidence.",
+    "v": "349e24393235"
+   }
+  ],
   "the-mechanism-at-a-glance": [
    {
     "index": 0,
@@ -3755,8 +3799,8 @@
     "index": 2,
     "name": "docs-economics-paper/what-is-checked-and-at-what-strength-02",
     "pause_ms": 400,
-    "text": "The exact model revision is 4254a3073fe0457946eba0a68d974c999c930ebf, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
-    "v": "787a1fdfaa0c"
+    "text": "The exact model revision is 60af4aaefd64048f188fc9710cc953c5356f26f2, the last ancestor commit changing the model, checked with Lean 4.27.0. Economic reachability starts from any reachable original registry with empty pending pools and a zero treasury counter, then admits bookings, rejections, retractions and economic folds. It does not claim a complete economic history from ledger genesis.",
+    "v": "6223f48dddbe"
    }
   ]
  },
@@ -9745,15 +9789,22 @@
     "index": 1,
     "name": "docs-theorems/exact-declaration-inventory-01",
     "pause_ms": 400,
-    "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
-    "v": "2bf8cbd7e41c"
+    "text": "The ledger-boundary statements apply to a registry whose three policy identifiers match its applied witness scripts. Script execution, collision freedom on occurring scripts, asset-name limits and agreement of the state script with the model fold are explicit premises. The satisfying example exercises an active mint from genesis and a terminal pure burn; it proves the terminal holding is present and consistent, without claiming its ledger-history provenance. The three token policies ignore staking data. This model evidence does not establish compiled-policy or builder correspondence.",
+    "v": "9f28b139ef73"
    },
    {
     "index": 2,
     "name": "docs-theorems/exact-declaration-inventory-02",
     "pause_ms": 400,
+    "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
+    "v": "363e0eff1e96"
+   },
+   {
+    "index": 3,
+    "name": "docs-theorems/exact-declaration-inventory-03",
+    "pause_ms": 400,
     "text": "The naming, lifecycle and wire declarations are listed in their own manifests: naming-theorem-debt.json, lifecycle-theorem-debt.json and wire-theorem-debt.json.",
-    "v": "7d48a223fe3f"
+    "v": "ce6e5ecc9b1f"
    }
   ],
   "how-this-register-is-kept-honest": [
@@ -9798,8 +9849,8 @@
     "index": 2,
     "name": "docs-theorems/theorem-manifest-02",
     "pause_ms": 400,
-    "text": "All 87 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 108 in total, each with its own manifest and its own compiled gate.",
-    "v": "09eb7a88c443"
+    "text": "All 94 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 115 in total, each with its own manifest and its own compiled gate.",
+    "v": "c2d105f1e50c"
    },
    {
     "index": 3,

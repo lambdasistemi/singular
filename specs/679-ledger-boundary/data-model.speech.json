@@ -1,0 +1,68 @@
+{
+  "data-for-the-ledger-boundary": [
+    {
+      "text": "Data for the ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As the writer of the next child or of the 1.x tag policy, I build on one fixed vocabulary for transactions, scripts and registry identities.",
+      "pause": 400
+    }
+  ],
+  "the-registry-free-library": [
+    {
+      "text": "The registry-free library.",
+      "pause": 500
+    },
+    {
+      "text": "Invoked purposes of a transaction: the spend of every input whose payment credential is a script, the mint of every policy the mint moves, every withdrawal and certificate whose credential is a script.",
+      "pause": 400
+    },
+    {
+      "text": "Premises, each a named proposition:",
+      "pause": 400
+    },
+    {
+      "text": "The staking-free view of a transaction clears the stake credential of every address in inputs, reference inputs and outputs, drops withdrawals and certificates, and drops the redeemers of withdrawal and certificate purposes.",
+      "pause": 400
+    }
+  ],
+  "the-registry-instance": [
+    {
+      "text": "The registry instance.",
+      "pause": 500
+    },
+    {
+      "text": "Witness decision, per kind:",
+      "pause": 400
+    },
+    {
+      "text": "fold present: some input sits at the address whose payment credential is the state script's hash, carries exactly one unit of the registry identity, and its spend's redeemer is the fold;",
+      "pause": 300
+    },
+    {
+      "text": "active and absent: fold present;",
+      "pause": 300
+    },
+    {
+      "text": "terminal: every movement under its own policy in the mint is a burn and there is at least one, or fold present.",
+      "pause": 300
+    },
+    {
+      "text": "Invariants the statements rely on:",
+      "pause": 400
+    },
+    {
+      "text": "The witness decision reads only spent inputs' payment credentials, values and output references, spend redeemers, and the mint under the policy's own identifier.",
+      "pause": 300
+    },
+    {
+      "text": "A terminal attestation is the holder's: the discard touches only the holdings list, and only that one terminal entry.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "b47a62509c97877d999e95383449239c68e45cbcf4576d42ba28852c796043b6"
+  }
+}

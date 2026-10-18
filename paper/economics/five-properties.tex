@@ -19,9 +19,17 @@ destination and records that holding. Its model asset name equals the key.
 application custody and pending terminations is one exactly for an active
 key, and zero otherwise.
 \evidence{world_supply_sync}
+\checked The boundary model assigns each key a reversible byte-string name
+and the bound active policy identifier. Reachability gives the active count;
+the ledger name-length premise rules out minting an oversized name in an
+accepted transaction.
+\evidence{key_names_its_token}
+\checked Positive active minting starts at an unknown key in the spent
+state under the explicit ledger and state-script premises described below.
+\evidence{active_mint_at_unknown_key}
 \missing These results are about modeled identities and transitions.
-``Only way to mint'' on Cardano requires correspondence of the actual minting
-policy and name encoding. Holding the name's representative is not a proof
+``Only way to mint'' on Cardano still requires correspondence of the actual
+minting policy, byte encoding and state validator. Holding the name's representative is not a proof
 of a legal right, personal identity or entitlement to that name. The
 application decides what its payload means.
 

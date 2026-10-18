@@ -1,0 +1,66 @@
+{
+  "modules-for-the-ledger-boundary": [
+    {
+      "text": "Modules for the ledger boundary.",
+      "pause": 500
+    },
+    {
+      "text": "As a later extractor of a shared Cardano ledger library, I find the ledger layer in its own library with no Singular dependency, and the registry's use of it in Singular's own modules.",
+      "pause": 400
+    }
+  ],
+  "boundary": [
+    {
+      "text": "Boundary.",
+      "pause": 500
+    },
+    {
+      "text": "The registry instance sits inside the model's existing source extent and the statements inside the statement extent, so the frozen generic corpus extent in the model checker needs no change. The registry-free library is bound by the full-extent corpora and by the simulator mirror, both of which already read every Lean file.",
+      "pause": 400
+    },
+    {
+      "text": "The registry-free library is its own Lake library, built by default, so that no module of it is reachable only by accident; the model checker's reachability check covers it as it covers lean/Singular/.",
+      "pause": 400
+    }
+  ],
+  "what-stays-untouched": [
+    {
+      "text": "What stays untouched.",
+      "pause": 500
+    },
+    {
+      "text": "Singular.Economics.Transaction, Singular.Model.Transaction and Singular.Model.Assets: the economic unspent-output accounting, the fold transaction the model builds, and keyed assets by kind and key are unchanged. They remain Singular's private ledger pieces until lambdasistemi/lockness#42 replaces them with instances of the shared library.",
+      "pause": 300
+    },
+    {
+      "text": "Singular.Model.Registry: the configuration's abstract pins and state token identity are unchanged; this child relates the ledger's identities to the model only through the bound predicate and the state-script premise.",
+      "pause": 300
+    },
+    {
+      "text": "The fold law, the driver, its protocol and every existing statement: unchanged in meaning and text.",
+      "pause": 300
+    }
+  ],
+  "dependency-rules": [
+    {
+      "text": "Dependency rules.",
+      "pause": 500
+    },
+    {
+      "text": "Nothing under lean/CardanoLedger/ imports a Singular module, declares or opens the Singular namespace, or mentions a Singular name. A hosted check enforces this.",
+      "pause": 300
+    },
+    {
+      "text": "The instance depends on the library, never the reverse.",
+      "pause": 300
+    },
+    {
+      "text": "Statement modules hold theorems only; definitions live in the instance or lemma modules, as the compiled gate requires.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "22c0a45021a043961e1955660c45b22dda3025212d4bbce2af73ee84c28e3235"
+  }
+}

@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "All 87 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 108 in total, each with its own manifest and its own compiled gate.",
+      "text": "All 94 declarations of the registry's own statement module are PROVED from the standard axioms — propext, Classical.choice, Quot.sound — and nothing else. The naming instance adds 7, its lifecycle 9 and its wire encoding 5, for 115 in total, each with its own manifest and its own compiled gate.",
       "pause": 400
     },
     {
@@ -35,6 +35,10 @@
     {
       "text": "Exact declaration inventory.",
       "pause": 500
+    },
+    {
+      "text": "The ledger-boundary statements apply to a registry whose three policy identifiers match its applied witness scripts. Script execution, collision freedom on occurring scripts, asset-name limits and agreement of the state script with the model fold are explicit premises. The satisfying example exercises an active mint from genesis and a terminal pure burn; it proves the terminal holding is present and consistent, without claiming its ledger-history provenance. The three token policies ignore staking data. This model evidence does not establish compiled-policy or builder correspondence.",
+      "pause": 400
     },
     {
       "text": "The reference-read rejection statements concern accepted economic transactions and reachable worlds. They preserve the registry and its state and singular tokens, require actual state reference reads, protect live registrations and terminations, and preserve the inputs of a disjoint fold. Tag burns count policy/name quantities without a hash-injectivity premise. The retained legacy rejection statements describe the superseded state-spending path followed by the deployed validators; their proof status does not certify the reference-read rule. Economic rejection and retraction now enforce refund floors. Each refund address receives at least the sum owed by its distinct consumed requests: held lovelace minus the declared tip on rejection, and all held lovelace on retraction. Registration cost is included in both returns. Retraction requires the refund address signature, one pending registration, its whole reclaim interval, both tags burned, no state read or spend, and removal from the pool. All actual outputs at an address contribute, including payments for another purpose at that address. Economic folds now enforce observed model balance, exact donation and declared carrier routing, with ordinary funding paying the fee. Gross processor reward equals the consumed tips: ordinary outputs plus fee equal actual ordinary inputs plus tips. Output categories follow holdings, including when addresses coincide. A pending termination has an accepted model transaction at any time under explicit folder willingness, funding and fee hypotheses. This is not ledger inclusion or builder acceptance. Trie-ready tags in the world match pending requests; application tags held by pending registrations match those registrations, with one each. No total application-tag supply outside Singular, ledger minimum, fee market or flood price is proved. These statements carry no implementation or ledger acceptance.",
@@ -79,6 +83,6 @@
   ],
   "_source": {
     "file": "theorems.md",
-    "sha256": "0d43d81fac35bf02a9c6c6ebbde9cfc48b60c6ec69caf7d405624eac82e5b934"
+    "sha256": "f091da4088025abd5824dabf2dc2b28837143e7c2a2602ab2dd118dc4c94df1a"
   }
 }
