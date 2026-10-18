@@ -1102,6 +1102,10 @@
           // (coverage system).apps
           // (inventory system).apps
           // (demo1 system)
+          // (import ./nix/demo1-rehearsal.nix {
+            pkgs = import nixpkgs { inherit system; };
+            rehearsal = ./demo1/rehearsal;
+          })
           // (import ./nix/ci-apps.nix {
             pkgs = import nixpkgs { inherit system; };
             inherit offchain onchain system;

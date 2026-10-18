@@ -34,6 +34,7 @@
 #                                      path of that file).
 .|default|app|tool: the local documentation site server (the same wrapper as docs-serve)|nix/docs.nix
 .|demo1-cli-attach|app|hosted under another name: the demo1-attach-part matrix job runs each part this composite serialises (demo1-cli-attach-takes through demo1-cli-attach-over-allowance), each with its own registry and node
+.|demo1-rehearsal|app|tool: one command records the whole Demo 1 play (release build, fresh devnet, one cast per scene, cast gate, chain assertions) for the presenter's rehearsal, never as evidence|nix/demo1-rehearsal.nix
 .|docs-serve|app|tool: the local documentation site server for reviewing the built site without publishing it|nix/docs.nix
 .|publish-docs-boundary-test|app|hosted under another name: the publication-boundary job runs the publication-boundary-controls app, which exercises this same recorded publisher (the unchanged nix/release.nix definition with gh replaced by a recorder) through its positive and mutated cases
 .|browser|check|hosted under another name: the browser job runs the browser-check app, the same checker body this check's sandbox executes
