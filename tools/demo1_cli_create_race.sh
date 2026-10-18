@@ -66,7 +66,7 @@ node=(--koios-url "$provider_url" --network-time "$time_directory" --network-mag
 # seed it succeeds only while that seed is an unspent output of the wallet.
 preview() {
   local name="$1" skey="$2" seed="${3:-}"
-  local args=(create --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
+  local args=(create --registration-cost 0 --booking-width 60000 --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
     "${node[@]}" --wallet-skey "$skey")
   [ -z "$seed" ] || args+=(--seed "$seed")
   local status=0
