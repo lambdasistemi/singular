@@ -7,8 +7,8 @@
   },
   "scripts": [
     {
-      "compiledCodeSha256": "897dadc512c7fcff3938972cbe6e70a9158c89cbc16e4a8718cbb31f01c6c8bf",
-      "hash": "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33",
+      "compiledCodeSha256": "23f4635bb3938c68f38739b4596c457e2063d565c19507c6d252149d47a1d32f",
+      "hash": "a02174f57a8a51968ec658058399c84b7f467f15dfc6903973cf50b7",
       "parameters": 1,
       "title": "open_datum.open_datum"
     }
