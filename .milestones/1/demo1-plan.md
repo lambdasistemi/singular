@@ -1,0 +1,5 @@
+# Demo 1 current scope and next boundary
+
+The earlier minimum-only founding plan is superseded by the operator-confirmed protected-envelope application story. Read ledger.md and the current epic301 owner-authored mandate/plan, not the old founding proposal. Alice inserts a fresh key, updates arbitrary valid PlutusData while the token/original deposit remain protected, and terminates to burn/Terminal/deposit return. Separate ordinary CLI processes share a permanent registry and durable public configuration. Intended refusals, a pinned extracted artifact, fresh observations and two public indexers remain acceptance obligations.
+
+Current work: PR317 integration/API repair, bounded CLI confirmation/recovery, exact committed integrated/devnet/archive evidence, then separately approved #300 preprod/publication. Current approved E301 owner/Opus author/Sol auditor topology persists; no extra model/seat/budget or live transaction is granted by the 30 September resume. Wider M1/registry/KERI/escrow obligations remain open.
