@@ -1364,17 +1364,18 @@ say "the refused create left dave's seed unspent"
 # Erin holds five 30 tADA ada-only outputs and nothing else: the seed stays
 # withheld from the publications, so four outputs fund them. Each output is
 # strictly below the largest remaining single publication need (the
-# application, needs 46966310 as the journey prints; state 11557 bytes is
-# already live and reused, so no state publication remains), but the four
-# permitted outputs cover the whole run (run need 109950687 as the refusals
-# print; the seed is withheld from the publications). Her preview reports no
+# application, as the journey prints; the state script is already live and
+# reused, so no state publication remains), but the four permitted outputs
+# cover the whole run (the run need the refusals print; the seed is withheld
+# from the publications). Her preview reports no
 # refusal and her create completes;
 # every reference is live carrying its script; at least one publication spent
 # two or more inputs (read from her journal, never typed); Bob reads the
 # registry from the token alone.
-# Frank holds four 30 tADA outputs (seed withheld, so three fund them): the run's
-# lowest total need 109950687 exceeds his total, short by less than one 30 tADA
-# output. His preview and his create give one
+# Frank holds four 30 tADA outputs, one fewer than Erin, whose five equal
+# outputs complete just before him: the whole run's lowest total need, which
+# his refusal prints, exceeds the ada-only outputs he holds on the chain, and
+# by less than one 30 tADA output. His preview and his create give one
 # verdict, naming totals from the refusal itself, never typed; nothing is
 # submitted and every wallet output stays live.
 two_erin="$work/erin-actor"
@@ -1429,16 +1430,39 @@ run frank-create client-refusal -- create --registration-cost 0 --booking-width 
   --seed "$frank_seed" --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
 [ "$(field frank-create .reason)" = "$frank_refusal" ] \
   || fail "frank's create refusal differs from his preview: $(field frank-create .reason) vs $frank_refusal"
-# From the refusal's own numbers, never typed: the shortfall is positive and
-# less than one 30 tADA output.
+# The refusal names the short publication step, what that step needs and what
+# the wallet holds at that step. Those two numbers say only that the step is
+# short; they are the gap at whichever step runs out first, after the
+# simulated earlier steps have consumed outputs, so the gap depends on the
+# path and moves whenever a reference script grows. They are checked for
+# direction and nothing more.
 read -r frank_needed frank_held <<<"$(printf '%s' "$frank_refusal" | grep -oE '[0-9]+' | head -n 2 | tr '\n' ' ')"
 [ -n "${frank_needed:-}" ] && [ -n "${frank_held:-}" ] \
   || fail "frank's refusal carries no numbers: $frank_refusal"
 [ "$frank_needed" -gt "$frank_held" ] \
   || fail "frank's needed $frank_needed does not exceed held $frank_held"
-[ "$((frank_needed - frank_held))" -le 30000000 ] \
-  || fail "frank's shortfall exceeds one 30 tADA output: needed $frank_needed held $frank_held"
-say "frank refused with one verdict: needed $frank_needed held $frank_held"
+# What "one output short" means is a statement about the whole run: Erin, with
+# one more equal output, completes just before him, so a wallet one output
+# larger would cover the run. Measured from two readings, neither typed nor
+# recomputed here: the whole run's lowest total need, parsed from the refusal's
+# own sentence, and the ada-only lovelace Frank holds on the chain, read back
+# with inspect. The shortage must be positive and at most one 30 tADA output.
+frank_minimum="$(printf '%s' "$frank_refusal" | sed -nE 's/.*the whole run needs at least ([0-9]+) lovelace.*/\1/p')"
+[[ "$frank_minimum" =~ ^[0-9]+$ ]] \
+  || fail "frank's refusal carries no whole-run minimum: $frank_refusal"
+frank_reads="$work/frank-holdings"
+mkdir -p "$frank_reads"
+run frank-holdings success -- inspect --key keyEmpty --state-token "$erin_token" \
+  --state-dir "$frank_reads" --blueprint "$blueprint" --outputs-at "$frank_addr" "${node[@]}"
+[ "$(field frank-holdings .outputsAt.address)" = "$frank_addr" ] \
+  || fail "frank's holdings were read at another address: $(field frank-holdings .outputsAt.address) vs $frank_addr"
+frank_total="$(jq -r '[.outputsAt.outputs[] | select((.locked.assets | length) == 0) | .locked.lovelace] | if length == 0 then "none" else add end' "$receipts/frank-holdings.json")"
+[[ "$frank_total" =~ ^[0-9]+$ ]] \
+  || fail "frank holds no ada-only output on the chain ($frank_total)"
+frank_shortage=$((frank_minimum - frank_total))
+{ [ "$frank_shortage" -gt 0 ] && [ "$frank_shortage" -le 30000000 ]; } \
+  || fail "frank's whole-run shortage is not within one 30 tADA output: the run needs at least $frank_minimum, his ada-only outputs hold $frank_total, shortage $frank_shortage"
+say "frank refused with one verdict: step needed $frank_needed held $frank_held; whole run needs at least $frank_minimum, his ada-only outputs hold $frank_total, short by $frank_shortage"
 [ -z "$(managed_find "$two_frank" journal.jsonl)" ] || fail "the refused frank create wrote a journal"
 [ -z "$(managed_find "$two_frank" registry.pending.json)" ] || fail "the refused frank create wrote a pending identity"
 frank_probe="$work/frank-seed-probe.json"
