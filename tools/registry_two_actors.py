@@ -50,6 +50,17 @@ REQUIREMENTS = (
     "An altered request edge refuses RootDoesNotChain without a trie",
     "Another actor folds an insertion",
 )
+# What the reject row observes. The row is the legacy state-spending rejection
+# of an untagged request, which refunds the held value minus the registry's
+# minimum tip; the ruled refund (held value minus the declared tip, with the
+# state read by reference) is not observed by it, and the report says so.
+REJECT_ROW = "Bob rejects Alice's expired request"
+REJECT_ROW_SCOPE = (
+    "this row observes the legacy state-spending rejection, which refunds the "
+    "held value minus the registry's minimum tip; the ruled refund (held value "
+    "minus the declared tip, with the state read by reference) is not covered "
+    "by it"
+)
 PAGE_ROWS = REQUIREMENTS[0:2]
 RUN_ONE_ROWS = REQUIREMENTS[2:4]
 RUN_TWO_TERMINATE_ROWS = REQUIREMENTS[4:6]
@@ -102,8 +113,11 @@ BOOKING_WIDTH_MS = 60000
 # Neutral observations: the harness's own readings, never an actor
 # command and never a receipt under test. Address derivation mirrors
 # Singular.Registry.Wallet.loadWallet (Ed25519 seed, enterprise
-# Testnet address); the fee bound is read from the state datum on the
-# chain through the development network's Koios-shaped provider.
+# Testnet address); the registry's minimum tip is read from the state
+# datum on the chain through the development network's Koios-shaped
+# provider. (Names such as fee_bound, "fee-bound" and stateMaxFee below keep
+# the wire name of that field for compatibility: it is a floor that bookings
+# declare at least, never a fee bound or ceiling.)
 # ---------------------------------------------------------------
 
 _ED_Q = (1 << 255) - 19
@@ -439,17 +453,54 @@ def _datum_candidates(provider_base, row, reasons):
         reasons.append("a row carries neither inline datum nor datum hash")
 
 
+# The state datum, field by field, in the order of onchain/lib/types.ak
+# `State`: the root, the registry's minimum tip (the second field, kept
+# under the wire name maxFee), the process and retract windows, the
+# application, active, absent and terminal policies, the registration cost,
+# the booking width and the request policy. Positions 0 to 3 are the ones
+# this reader has always used; the others are only type-checked.
+STATE_FIELDS = (
+    ("root", bytes),
+    ("minimum tip", int),
+    ("process time", int),
+    ("retract time", int),
+    ("application policy", bytes),
+    ("active policy", bytes),
+    ("absent policy", bytes),
+    ("terminal policy", bytes),
+    ("registration cost", int),
+    ("booking width", int),
+    ("request policy", bytes),
+)
+
+
+def _state_field_problem(fields):
+    """The first field of a state record whose type is not the record's, or None."""
+    for index, (field, (name, kind)) in enumerate(zip(fields, STATE_FIELDS)):
+        right = isinstance(field, kind) and not isinstance(field, bool)
+        if not right:
+            return (
+                f"a state datum has the wrong type at field {index} ({name}): "
+                f"{type(field).__name__}, expected {kind.__name__}"
+            )
+    return None
+
+
 def fetch_state_fee_bound(
     provider_url, policy_hex, name_hex, expect_process_ms, expect_retract_ms
 ):
-    """Read the registry's fee bound from its state datum on the chain.
+    """Read the registry's minimum tip from its state datum on the chain.
+
+    (The name is kept for compatibility: the value is the registry's
+    minimum tip, a floor, not a fee bound.)
 
     Queries the Koios-shaped provider for unspent outputs holding the
     state token, reads each output's datum (inline bytes, inline JSON
-    value, or datum_info by hash), and takes the Constr-0 eight-field
-    state datum whose process and retract windows match the
-    independently observed registry windows. Returns the fee bound with
-    its provenance. Raises RuntimeError with a diagnostic otherwise.
+    value, or datum_info by hash), and takes the Constr-0 eleven-field
+    state datum, with every field of the type its record gives it, whose
+    process and retract windows match the independently observed registry
+    windows. Returns the minimum tip with its provenance. Raises
+    RuntimeError with a diagnostic otherwise.
     """
     base = provider_url.rstrip("/")
     reasons = []
@@ -463,7 +514,7 @@ def fetch_state_fee_bound(
             if not isinstance(rows, list) or not rows:
                 reasons.append("asset_utxos answered no rows for the state token")
                 raise ValueError(reasons[-1])
-            print(f"two actors: fee bound query saw {len(rows)} rows", flush=True)
+            print(f"two actors: minimum tip query saw {len(rows)} rows", flush=True)
             for row in rows:
                 if not isinstance(row, dict):
                     reasons.append("a row is not an object")
@@ -480,7 +531,7 @@ def fetch_state_fee_bound(
                         reasons.append(f"a datum did not decode: {error}")
                         continue
                     # The chain carries the CageDatum envelope: StateDatum is
-                    # variant 1 holding the eight-field State record.
+                    # variant 1 holding the eleven-field State record.
                     if (
                         isinstance(datum, tuple)
                         and len(datum) == 3
@@ -496,33 +547,37 @@ def fetch_state_fee_bound(
                         or datum[0] != "constr"
                         or datum[1] != 0
                         or not isinstance(datum[2], list)
-                        or len(datum[2]) != 8
+                        or len(datum[2]) != len(STATE_FIELDS)
                     ):
                         if isinstance(datum, tuple) and datum[0] == "constr":
                             kinds = ",".join(type(f).__name__ for f in datum[2])
                             reasons.append(
-                                "a datum is not the eight-field state datum: "
+                                "a datum is not the eleven-field state datum: "
                                 f"constr {datum[1]} of {len(datum[2])} ({kinds}) "
                                 f"at {datum_len} bytes"
                             )
                         else:
                             reasons.append(
-                                "a datum is not the eight-field state datum: "
+                                "a datum is not the eleven-field state datum: "
                                 f"{type(datum).__name__}"
                             )
                         continue
-                    _root, fee, process, retract = datum[2][0:4]
-                    if not all(isinstance(v, int) for v in (fee, process, retract)):
-                        reasons.append("a state datum carries non-integer windows")
+                    problem = _state_field_problem(datum[2])
+                    if problem:
+                        reasons.append(problem)
                         continue
+                    _root, fee, process, retract = datum[2][0:4]
                     if process != expect_process_ms or retract != expect_retract_ms:
                         reasons.append(
                             f"a state datum carries other windows: {process}/{retract}"
                         )
                         continue
                     if fee <= 0:
-                        reasons.append("a state datum carries no positive fee")
+                        reasons.append("a state datum carries no positive minimum tip")
                         continue
+                    # The key keeps the wire name of the state's second field
+                    # (maxFee). Its value is the registry's minimum tip, a floor
+                    # that bookings declare at least, never a fee ceiling.
                     return {
                         "stateMaxFee": fee,
                         "processTime": process,
@@ -541,7 +596,7 @@ def fetch_state_fee_bound(
                 break
             time.sleep(2)
     detail = "; ".join(reasons[-4:])
-    raise RuntimeError(f"the fee bound is not established: {detail}")
+    raise RuntimeError(f"the registry's minimum tip is not established: {detail}")
 
 
 class SetupFailure(Exception):
@@ -1728,14 +1783,16 @@ class Journey:
         return address
 
     def fetch_fee_bound(self):
-        """Read the registry's fee bound from its state datum on chain.
+        """Read the registry's minimum tip from its state datum on chain.
 
         A neutral harness read through the development network's
         provider (no actor command, no wallet): the unspent output
-        holding the state token carries the eight-field state datum
-        whose second field is the published fee. Stored for the rows
-        beside the command receipts. A missing bound is setup, never a
-        row result.
+        holding the state token carries the eleven-field state datum
+        whose second field is the registry's minimum tip, a floor that
+        bookings declare at least. Stored for the rows beside the command
+        receipts; the receipt keeps the names fee-bound and stateMaxFee,
+        the wire name of that field, for compatibility. A missing tip is
+        setup, never a row result.
         """
         policy, _, name = self.state_token.partition(".")
         setup_require(policy and name, "the state token names no asset")
@@ -1755,7 +1812,7 @@ class Journey:
         (self.receipts / "fee-bound.json").write_text(
             json.dumps(bound, indent=2) + "\n"
         )
-        print(f"two actors: fee bound {bound['stateMaxFee']}", flush=True)
+        print(f"two actors: minimum tip {bound['stateMaxFee']}", flush=True)
         return bound
 
     def now_ms(self):
@@ -2774,10 +2831,15 @@ class Journey:
         return leg
 
     def report(self, rows):
-        report = {
-            "requirements": rows,
-            "harnessAppendix": self.appendix,
-        }
+        notes = [
+            {"requirement": REJECT_ROW, "scope": REJECT_ROW_SCOPE}
+            for row in rows
+            if row["requirement"] == REJECT_ROW
+        ]
+        report = {"requirements": rows}
+        if notes:
+            report["scopeNotes"] = notes
+        report["harnessAppendix"] = self.appendix
         (self.work / "journey.json").write_text(json.dumps(report, indent=2) + "\n")
         for row in rows:
             waiting = (
@@ -2787,6 +2849,11 @@ class Journey:
             )
             print(
                 f"two actors: {row['requirement']}: {row['state']}{waiting}",
+                flush=True,
+            )
+        for note in notes:
+            print(
+                f'two actors: scope of "{note["requirement"]}": {note["scope"]}',
                 flush=True,
             )
         print(
@@ -3263,15 +3330,26 @@ class Journey:
             or row.get("locked") != expected_locked
         ):
             return False, list(leg.values()), "the locked value"
+        # This leg observes the LEGACY state-spending rejection: a legacy
+        # request declares no tip of its own (its deposit is the input less
+        # the state's tip), and that rejection refunds the held value minus
+        # the registry's minimum tip, which the reject receipt reports as
+        # its tip. The ruled refund (held value minus the DECLARED tip, the
+        # state read by reference) is not observed here; see
+        # REJECT_ROW_SCOPE.
         tip = row.get("tip")
         fee_bound = self.load_receipt("fee-bound", receipts)
         if fee_bound is None or not isinstance(fee_bound.get("stateMaxFee"), int):
-            return False, [], "the fee bound"
-        bound = fee_bound["stateMaxFee"]
-        if bound <= 0:
-            return False, [], "the fee bound"
-        if tip != bound:
-            return False, list(leg.values()), "the authorized tip"
+            return False, [], "the registry minimum tip"
+        minimum_tip = fee_bound["stateMaxFee"]
+        if minimum_tip <= 0:
+            return False, [], "the registry minimum tip"
+        if tip != minimum_tip:
+            return (
+                False,
+                list(leg.values()),
+                "the reject's tip against the registry minimum tip",
+            )
         returned = row.get("returned")
         if not isinstance(returned, dict):
             return False, list(leg.values()), "the owner refund"
@@ -3281,8 +3359,12 @@ class Journey:
             returned_lovelace, int
         ):
             return False, list(leg.values()), "the refund lovelace"
-        if returned_lovelace != locked_lovelace - bound:
-            return False, list(leg.values()), "the refund net of the fee bound"
+        if returned_lovelace != locked_lovelace - minimum_tip:
+            return (
+                False,
+                list(leg.values()),
+                "the refund net of the registry minimum tip",
+            )
         if row.get("topUp", 0) != 0:
             return False, list(leg.values()), "the top-up"
         if row.get("processingEnds") != deadline_ms:
