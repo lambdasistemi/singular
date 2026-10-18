@@ -882,6 +882,7 @@ externalSignerRows = describe "the external signer" $ do
               , "--blueprint"
               , "/srv/plutus.json"
               ]
+                <> createValues
                 <> previewNode
                 <> named
                 <> bundle
@@ -909,6 +910,7 @@ externalSignerRows = describe "the external signer" $ do
                           , "--blueprint"
                           , "/srv/plutus.json"
                           ]
+                            <> createValues
                             <> provider
                             <> extra
                         )
@@ -962,6 +964,7 @@ vaultSignerRows = describe "the vault signer" $ do
             , "--blueprint"
             , "/srv/plutus.json"
             ]
+                <> createValues
                 <> provider
         writes =
             [ entryBase "insert" ["--payload", "/p.json"]
@@ -990,6 +993,7 @@ vaultSignerRows = describe "the vault signer" $ do
               , "--blueprint"
               , "/srv/plutus.json"
               ]
+                <> createValues
                 <> previewNode
             ]
         withArgs base extra = parseOpenDatumCommand (base <> extra)
