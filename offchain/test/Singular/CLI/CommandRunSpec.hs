@@ -5944,6 +5944,7 @@ createSignerLineRows =
             let line extra =
                     parseCommand
                         ( ["registry", "create"]
+                            <> economicsArgs
                             <> extra
                             <> [ "--blueprint"
                                , "blueprint.json"
