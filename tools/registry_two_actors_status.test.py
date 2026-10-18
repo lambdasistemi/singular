@@ -402,7 +402,7 @@ def _reject_valid_base(tmp):
         "command": "fee-bound",
         "outcome": "success",
         "stateToken": "policy.name",
-        "stateMaxFee": 1000000,
+        "minimumTip": 1000000,
         "processTime": 120000,
         "retractTime": 120000,
         "observedTx": "statetx#0",
@@ -1135,7 +1135,7 @@ def test_fee_bound_fetch_mocked(mod, tmp):
         bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
     check(
         "fee-bound-fetch-inline",
-        bound["stateMaxFee"] == 1000000 and bound["observedTx"] == f"{'aa' * 32}#1",
+        bound["minimumTip"] == 1000000 and bound["observedTx"] == f"{'aa' * 32}#1",
         f"the inline datum gave {bound}",
     )
     hashed_row = {
@@ -1155,7 +1155,7 @@ def test_fee_bound_fetch_mocked(mod, tmp):
         bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
     check(
         "fee-bound-fetch-by-hash",
-        bound["stateMaxFee"] == 1000000,
+        bound["minimumTip"] == 1000000,
         f"the datum_info fallback gave {bound}",
     )
     other_row = {
@@ -1233,7 +1233,7 @@ def test_fee_bound_fetch_mocked(mod, tmp):
         bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
     check(
         "min-tip-read-from-field-one",
-        bound["stateMaxFee"] == 1500000,
+        bound["minimumTip"] == 1500000,
         f"the second field gave {bound}",
     )
 
