@@ -61,6 +61,7 @@ The shared vocabulary and the other validators:
 - <a href="../onchain/lib/lib.ak" data-api="module">lib</a> — the edge table, the approval name and the named refusal reasons
 - <a href="../onchain/lib/types.ak" data-api="module">types</a> — the datum, redeemer and request types
 - <a href="../onchain/lib/shared.ak" data-api="module">shared</a> — reading state from inputs and the phase windows
+- <a href="../onchain/lib/booking.ak" data-api="module">booking</a> — the two canonical tag names and the one judgement the request policy's mint handler enforces on a registration
 - <a href="../onchain/validators/request.ak" data-api="module">request</a> — the request validator and its retraction refusal
 - <a href="../onchain/lib/registry_pin.ak" data-api="module">registry_pin</a> — the pinned state hash shared by the witness and the open-datum application
 - <a href="../onchain/validators/cage.ak" data-api="module">cage</a> — the phase predicates the property tests use
