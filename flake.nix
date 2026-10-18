@@ -1303,8 +1303,10 @@
               # to the build by the identity jobs), never typed. A declaration
               # is honest both ways: a title declared changed whose built hash
               # still equals its base hash is refused, and so is a title
-              # declared both changed and added, or an added title that is a
-              # base title. base-hashes.json and declared-additions.json are
+              # declared both changed and added in one record, an added title
+              # that is a base title, or a changed title that is neither a base
+              # title nor added by an earlier record. A later record may declare
+              # a title an earlier one declared. base-hashes.json and declared-additions.json are
               # historical evidence and stay byte-identical; a later slice
               # appends its own record to the list of records below.
               # Titles are compared modulo the module path
@@ -1318,7 +1320,8 @@
               # each be refused, naming the validator, as must each dishonest
               # declaration (a manifest hash that differs from the build, an
               # over-declared title, an added title equal to a base title, a
-              # title in both lists) — a comparison
+              # title in both lists, a duplicate within a record, a changed
+              # title no record has added, an added title added twice) — a comparison
               # that cannot fail guards nothing. Takes the repository root
               # (default: the working tree) and builds both blueprints
               # itself, so CI runs it with no other setup.
@@ -1363,8 +1366,10 @@
                   registry_manifest="$root/onchain/script-identity.json"
                   # Records of declared hash changes: one per slice that moves or
                   # adds a validator hash after the #528 base. A later slice
-                  # appends its own path to this list and nothing else in this
-                  # check changes. A record names titles only, in two lists,
+                  # appends its own path to the END of this list (the list is
+                  # ordered, the order the slices landed in, and a later record
+                  # may declare a title an earlier one declared) and nothing
+                  # else in this check changes. A record names titles only, in two lists,
                   # changed (base titles whose hash the slice moves) and added;
                   # every hash is read from the committed identity manifests,
                   # never typed into a record.
@@ -1399,16 +1404,20 @@
                   jq -s '(.[0].validators + .[1].validators) | map({key: .title, value: .hash}) | from_entries' "$registry_manifest" "$manifest" >"$work/manifest-hashes.json"
                   # expected_from_records OUT BUILT HASHES RECORD...: refuse a
                   # dishonest declaration, else write the expected set to OUT.
-                  # Every base entry whose title no record declares changed keeps
-                  # its base hash; a changed title takes its hash from the
-                  # committed identity manifests (HASHES); the #650 additions
-                  # take theirs from the application manifest as before; an
-                  # added title takes its manifest hash. A declaration is honest
-                  # both ways: a changed title must be a base title whose BUILT
-                  # hash (BUILT, the union) really differs from its base hash, an
-                  # added title must not be a base title, no title is declared in
-                  # both lists or twice, and every declared title has a manifest
-                  # hash. Problems are printed one per line on stderr.
+                  # The records are an ORDERED list, the order the slices landed
+                  # in. Within one record a title is declared at most once in
+                  # each list and never in both. Across records changed is a set
+                  # union (a later slice may move a title again, and a repeat is
+                  # counted once) and every changed title is a base title or was
+                  # added by an earlier record; an added title is added by one
+                  # record only and is not a base title. A base title in the
+                  # union of changed must have a BUILT hash (BUILT, the union)
+                  # that really differs from its base hash. A record never holds
+                  # a hash: a base entry that no record declares keeps its base
+                  # hash, every declared title takes its hash from the committed
+                  # identity manifests (HASHES), the #650 additions from the
+                  # application manifest. Problems are printed one per line on
+                  # stderr.
                   expected_from_records() {
                     local out="$1" built="$2" hashes="$3" merged problems rec
                     shift 3
@@ -1423,25 +1432,32 @@
                       return 1
                     }
                     merged="$(mktemp "$work/declared.XXXXXX")"
-                    jq -s '{changed: (map(.changed) | add), added: (map(.added) | add)}' "$@" >"$merged" || return 2
+                    jq -s '.' "$@" >"$merged" || return 2
                     problems="$(jq -r -n --slurpfile b "$base" --slurpfile u "$built" --slurpfile h "$hashes" --slurpfile a "$work/app-hashes.json" --slurpfile c "$declared" --slurpfile r "$merged" '
                       ($b[0].validators | map({key: .title, value: .hash}) | from_entries) as $baseh
                       | ($u[0].validators | map({key: .title, value: .hash}) | from_entries) as $builth
                       | $h[0] as $mh
                       | $a[0] as $ah
                       | $c[0].titles as $closed
-                      | $r[0].changed as $ch
-                      | $r[0].added as $ad
+                      | $r[0] as $recs
+                      | ([$recs[].changed[]] | unique) as $chu
+                      | [$recs[].added[]] as $adall
                       | (
-                          (if ($ch | length) != ($ch | unique | length) then "FAIL: a changed title is declared more than once" else empty end),
-                          (if ($ad | length) != ($ad | unique | length) then "FAIL: an added title is declared more than once" else empty end),
-                          ($ch[] as $t | select($ad | index($t)) | "FAIL: \($t) is declared both changed and added"),
-                          ($ch[] as $t | select($baseh | has($t) | not) | "FAIL: changed title \($t) is not a base title"),
-                          ($ad[] as $t | select($baseh | has($t)) | "FAIL: added title \($t) equals a base title and must not hide it"),
-                          ($ad[] as $t | select($closed | index($t)) | "FAIL: added title \($t) is also a declared #650 addition"),
+                          (range(0; ($recs | length)) as $i
+                            | $recs[$i] as $rec
+                            | [$recs[:$i][].added[]] as $earlier
+                            | (
+                                ($rec.changed | group_by(.)[] | select(length > 1) | .[0] | "FAIL: record \($i + 1): changed title \(.) is declared more than once"),
+                                ($rec.added | group_by(.)[] | select(length > 1) | .[0] | "FAIL: record \($i + 1): added title \(.) is declared more than once"),
+                                ($rec.changed[] as $t | select($rec.added | index($t)) | "FAIL: record \($i + 1): \($t) is declared both changed and added"),
+                                ($rec.changed[] as $t | select(($baseh | has($t) | not) and ($earlier | index($t) | not)) | "FAIL: record \($i + 1): changed title \($t) is neither a base title nor added by an earlier record")
+                              )),
+                          ($recs | map(.added | unique) | add // [] | group_by(.)[] | select(length > 1) | .[0] | "FAIL: added title \(.) is added by more than one record"),
+                          ($adall[] as $t | select($baseh | has($t)) | "FAIL: added title \($t) equals a base title and must not hide it"),
+                          ($adall[] as $t | select($closed | index($t)) | "FAIL: added title \($t) is also a declared #650 addition"),
                           ($closed[] as $t | select(($ah[$t] // null) == null) | "FAIL: declared #650 title \($t) has no hash in the application manifest"),
-                          (($ch + $ad)[] as $t | select(($mh[$t] // null) == null) | "FAIL: declared title \($t) has no hash in the identity manifests"),
-                          ($ch[] as $t | select($baseh | has($t)) | select(($builth[$t] // null) == $baseh[$t]) | "FAIL: changed title \($t) is over-declared: its built hash still equals the base hash")
+                          (($chu + $adall)[] as $t | select(($mh[$t] // null) == null) | "FAIL: declared title \($t) has no hash in the identity manifests"),
+                          ($chu[] as $t | select($baseh | has($t)) | select(($builth[$t] // null) == $baseh[$t]) | "FAIL: changed title \($t) is over-declared: its built hash still equals the base hash")
                         )
                     ')" || return 2
                     if [ -n "$problems" ]; then
@@ -1453,8 +1469,8 @@
                       | $h[0] as $mh
                       | $a[0] as $ah
                       | $c[0].titles as $closed
-                      | $r[0].changed as $ch
-                      | $r[0].added as $ad
+                      | ([$r[0][].changed[]] | unique) as $ch
+                      | ([$r[0][].added[]] | unique) as $ad
                       | {validators: (
                           [$bv[] | . as $v | {title: $v.title, hash: (if ($ch | index($v.title)) != null then $mh[$v.title] else $v.hash end)}]
                           + [$closed[] | {title: ., hash: $ah[.]}]
@@ -1549,7 +1565,7 @@
                     cat "$work/live.log" >&2
                     exit 1
                   fi
-                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set (base $(jq '.validators | length' "$base"), of which $(jq -s '[.[].changed[]] | length' "''${declared_changes_records[@]}") declared changed and the rest at their base hash, + 3 declared #650 additions + $(jq -s '[.[].added[]] | length' "''${declared_changes_records[@]}") declared added = $(jq '.validators | length' "$work/expected.json"), compiler $base_compiler)"
+                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set (base $(jq '.validators | length' "$base"), of which $(jq -s '[.[].changed[]] | unique | length' "''${declared_changes_records[@]}") declared changed and the rest at their base hash, + 3 declared #650 additions + $(jq -s '[.[].added[]] | unique | length' "''${declared_changes_records[@]}") declared added = $(jq '.validators | length' "$work/expected.json"), compiler $base_compiler)"
                   jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$work/union.json"
                   jq '(.validators |= map(if .title == "state.state.spend" then .hash = "00000000000000000000000000000000000000000000000000000000" else . end))' "$work/union.json" >"$work/plant-changed.json"
                   jq -e '[.validators[] | select(.title == "state.state.spend" and .hash == "00000000000000000000000000000000000000000000000000000000")] | length == 1' "$work/plant-changed.json" >/dev/null || {
@@ -1738,8 +1754,60 @@
                   expect_declaration_refusal over-declared 'over-declared' 'staking\.staking\.withdraw' '{"changed": ["staking.staking.withdraw"], "added": []}'
                   # An added title that is a base title hides the base entry.
                   expect_declaration_refusal added-equals-base 'equals a base title' 'state\.state\.spend' '{"changed": [], "added": ["state.state.spend"]}'
-                  # A title in both lists.
-                  expect_declaration_refusal both-lists 'both changed and added' 'state\.state\.mint' '{"changed": [], "added": ["state.state.mint"]}'
+                  # A title in both lists of one record.
+                  expect_declaration_refusal both-lists 'both changed and added' 'state\.state\.mint' '{"changed": ["state.state.mint"], "added": ["state.state.mint"]}'
+                  # The ordered-records plants. Across records a changed title may
+                  # repeat: a second scratch record re-declaring state.state.spend
+                  # must build the same expected set, and the comparison must
+                  # still pass. Scratch records only; no second real record exists.
+                  printf '%s\n' '{"changed": ["state.state.spend"], "added": []}' >"$work/plant-repeat.json"
+                  expected_from_records "$work/plant-repeat-expected.json" "$work/union.json" "$work/manifest-hashes.json" "''${declared_changes_records[@]}" "$work/plant-repeat.json" 2>"$work/plant-repeat-build.log" || {
+                    echo "script-hash-comparison: a changed title repeated in a second record was refused:" >&2
+                    cat "$work/plant-repeat-build.log" >&2
+                    exit 1
+                  }
+                  [ "$(jq -S '.validators | sort_by(.title)' "$work/plant-repeat-expected.json")" = "$(jq -S '.validators | sort_by(.title)' "$work/expected.json")" ] || {
+                    echo "script-hash-comparison: a changed title repeated in a second record changed the expected set" >&2
+                    exit 1
+                  }
+                  compare "$work/plant-repeat-expected.json" "$work/union.json" >"$work/plant-repeat.log" 2>&1 || {
+                    echo "script-hash-comparison: the union no longer equals the expected set once state.state.spend is repeated:" >&2
+                    cat "$work/plant-repeat.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: repeated-changed-title plant accepted, as ruled" >&2
+                  # A later record may move a title an earlier record added.
+                  printf '%s\n' '{"changed": ["request.request.mint"], "added": []}' >"$work/plant-moved-added.json"
+                  expected_from_records "$work/plant-moved-added-expected.json" "$work/union.json" "$work/manifest-hashes.json" "''${declared_changes_records[@]}" "$work/plant-moved-added.json" 2>"$work/plant-moved-added-build.log" || {
+                    echo "script-hash-comparison: a later record could not move a title an earlier record added:" >&2
+                    cat "$work/plant-moved-added-build.log" >&2
+                    exit 1
+                  }
+                  compare "$work/plant-moved-added-expected.json" "$work/union.json" >"$work/plant-moved-added.log" 2>&1 || {
+                    echo "script-hash-comparison: the union no longer equals the expected set once request.request.mint is moved by a later record:" >&2
+                    cat "$work/plant-moved-added.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: moved-added-title plant accepted, as ruled" >&2
+                  # The same record listed BEFORE the record that adds the title is
+                  # refused: the order of the records is the order the slices landed.
+                  if expected_from_records "$work/plant-early-expected.json" "$work/union.json" "$work/manifest-hashes.json" "$work/plant-moved-added.json" "''${declared_changes_records[@]}" >"$work/plant-early.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the changed-before-added plant" >&2
+                    exit 1
+                  fi
+                  if ! grep -q 'neither a base title nor added by an earlier record' "$work/plant-early.log" || ! grep -q 'request\.request\.mint' "$work/plant-early.log"; then
+                    echo "script-hash-comparison: changed-before-added plant refused without its reason:" >&2
+                    cat "$work/plant-early.log" >&2
+                    exit 1
+                  fi
+                  echo "script-hash-comparison: changed-before-added plant refused" >&2
+                  # Within one record a duplicate is refused, by name.
+                  expect_declaration_refusal within-record-duplicate 'declared more than once' 'state\.state\.spend' '{"changed": ["state.state.spend", "state.state.spend"], "added": []}'
+                  # A changed title that is neither a base title nor added earlier
+                  # (a typo) is refused.
+                  expect_declaration_refusal unknown-changed 'neither a base title nor added by an earlier record' 'state\.state\.spnd' '{"changed": ["state.state.spnd"], "added": []}'
+                  # An added title added by a second record is refused.
+                  expect_declaration_refusal added-twice 'added by more than one record' 'request\.request\.mint' '{"changed": [], "added": ["request.request.mint"]}'
                   # S5.2: the deployment blueprint itself. Built in the
                   # application's onchain flake from the same two trees
                   # (jq merge, preamble from the registry's), it must equal
