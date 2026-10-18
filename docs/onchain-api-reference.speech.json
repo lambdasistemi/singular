@@ -97,6 +97,10 @@
       "pause": 300
     },
     {
+      "text": "booking — the two canonical tag names and the one judgement the request policy's mint handler enforces on a registration",
+      "pause": 300
+    },
+    {
       "text": "request — the request validator and its retraction refusal",
       "pause": 300
     },
@@ -137,6 +141,6 @@
   ],
   "_source": {
     "file": "onchain-api-reference.md",
-    "sha256": "388a4e7fb89c05e165daea979fff6ffc9b1791fdde34fea0a615c491aa0dad9e"
+    "sha256": "fba4c459e7220fef8d9b71d8f848f5006c0d90cc6b35e6cf6c07a5fa5185d654"
   }
 }
