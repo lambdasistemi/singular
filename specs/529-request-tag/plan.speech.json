@@ -1,84 +1,84 @@
 {
-  "story": [
+  "story-and-authority": [
     {
-      "text": "Story.",
+      "text": "Story and authority.",
       "pause": 500
     },
     {
-      "text": "As the reviewer of this change, I want each commit to state which usable path it adds and which later integration it still needs, so that a passing component check never becomes an unsupported lifecycle claim.",
+      "text": "As a registry user, I can submit an authenticated request, find it despite pollution at the request address, and use a lawful exit with the ruled payments. As a reviewer, I can distinguish a reviewed component from a completed lifecycle and see every failed or uncovered obligation.",
       "pause": 400
     },
     {
-      "text": "This changes on-chain behavior and public conformance claims. It uses the approved commit owner and persistent mute auditor, with no draft tool. The target is a running product with checks for the named invariants and real boundary journeys; it does not claim universal implementation equivalence.",
-      "pause": 400
-    },
-    {
-      "text": "The commits share one branch, integration/498-protected-rejection; there are no child pull requests. No merge occurs before the 22 October review, and this ticket owner never merges. At the first push the draft title is Protected rejection (1.0.0), with the repository PR template and the review hold stated explicitly.",
+      "text": "The acceptance items below were re-read from issue 529 on 18 October 2026. The constitution and the ruled Lean model are the behavioral authority. Singular's root model remains frozen at 4254a3073fe0457946eba0a68d974c999c930ebf, with Lean 4.27.0. The open-datum consumer amendment is a later, model-first chunk; no root Lean or simulator-law change is authorized by this plan.",
       "pause": 400
     }
   ],
-  "ordered-slices": [
+  "four-chunks-each-reviewed-and-pushed": [
     {
-      "text": "Ordered slices.",
+      "text": "Four chunks, each reviewed and pushed.",
       "pause": 500
     },
     {
-      "text": "Every slice is committed locally and reviewed through checkpoints. RED-before-GREEN records demonstrate the real behavioral failure, not missing symbols or setup errors. Final task stamps precede the final candidate's verification. Only reviewed candidates are pushed.",
+      "text": "The operator's 18 October cut replaces the earlier slice order. Each chunk has its own short story, acceptance mapping, exact fence, gate and audit checkpoints. Each reviewed chunk is pushed to the same branch, integration/498-protected-rejection. Paths below are the expected areas of work; a later chunk's intake census fixes its exact file list before its first code commit.",
+      "pause": 400
+    },
+    {
+      "text": "Receipt-derived conformance rows, exact model/artifact bindings and the command-recovery obligations of the affected commands travel with their behavior's chunk. Publish uncovered rows; do not type a passing state or promote harness evidence to product acceptance. The adversarial items from issue529 require an actual mint refusal or demonstrated exit, not a blanket claim from a successful build.",
+      "pause": 400
+    },
+    {
+      "text": "If hosted checks for chunk1 are red, their repair is the first item of chunk2, with the problem and evidence recorded in that chunk's plan. It does not retroactively turn the failed check into a pass or hold the reviewed chunk1 push.",
       "pause": 400
     }
   ],
-  "shared-boundary-with-the-following-ticket": [
+  "disagreements-with-the-historical-issue-text": [
     {
-      "text": "Shared boundary with the following ticket.",
+      "text": "Disagreements with the historical issue text.",
+      "pause": 500
+    }
+  ],
+  "shared-ownership-and-intake": [
+    {
+      "text": "Shared ownership and intake.",
       "pause": 500
     },
     {
-      "text": "The epic owner's 16 October answer assigns this ticket the minimum economic fold, settlement and state-validator changes its booking and existing journeys require. Registration burns both tags, donates cost and delivers its exact carrier; termination burns trie-ready and singular tags and donates held minus tip. Only folds spend the state. This ticket owns shared reference-state authentication and expiry, including tag burns, distinct consumption and summed refunds. Issue 495 owns mismatch proofs against that referenced root, any remaining per-member batch admission and state-validator work beyond this cut.",
+      "text": "Issue495 owns the mismatch proof against the authenticated referenced root, remaining per-member batch rejection admission not covered here, and state-validator work beyond the minimum cut above. Issue529 owns the shared reference-state helper and expiry ground. A legacy fold is not an economic fold merely because it has been renamed.",
       "pause": 400
     },
     {
-      "text": "A current legacy fold cannot be relabelled economic. New datum and tag changes can break its consumers; no expected result is weakened merely to keep CI green. The explicit shared ownership above covers the required fold changes. Any further expansion remains a question. Each push is lawful; local RED or incomplete intermediate slices are never pushed as green candidates. The first slice's exact touch list is reviewed before coding.",
+      "text": "Before a chunk's first code commit, perform one census of every validator/hash consumer: counts, title lists, source pins, goldens, identity manifests, declared-change records and journeys. Put every relevant hit in that chunk's fence at the start. A later-discovered mechanical consumer is an intake miss to repair within the chunk, not a new scope question. A semantic change, model conflict or change beyond the mechanical consequence remains a question. No expected result is weakened to make a check green.",
+      "pause": 400
+    },
+    {
+      "text": "The approved Sonnet commit owner writes implementation and the persistent Sol auditor independently inspects checkpoints without product execution. No extra implementation seats are authorized. For chunk4, the already-approved Codex gpt-6-astra high Lean writer works between Sonnet slices, one writer at a time, using the same persistent auditor. The custody decision formerly held as Q003 is settled by the operator's 17 October treasury ruling; its model amendment still precedes code acceptance.",
       "pause": 400
     }
   ],
-  "resources-and-execution": [
+  "verification-and-delivery": [
     {
-      "text": "Resources and execution.",
+      "text": "Verification and delivery.",
       "pause": 500
     },
     {
-      "text": "Every cabal build/test, nix build/run, aiken build/check and packaged control runs under this wrapper, with COMMAND replaced by the exact command:",
+      "text": "Every build, test and packaged control uses its exact command inside this wrapper:",
       "pause": 400
     },
     {
-      "text": "A command exceeding the cap stops for a question. Read loops have byte caps and deadlines; no unowned producer threads.",
+      "text": "There is no aggregate execution budget. A single cap hit is recorded and follows its explicit ruling or becomes a question. Use the narrowest real changed-behavior checks; preserve RED-before-GREEN evidence and distinguish setup failure, refusal, acceptance, local receipts and hosted execution. Record the candidate/tree, command, exit, duration and evidence hash. Do not replay hosted job lists locally.",
       "pause": 400
     },
     {
-      "text": "The inner loop uses the narrowest real test filter. Candidate checks target changed behavior. One local nix develop --quiet -c just ci precedes the first push; additionally run the listed affected consumers locally before that push. Hosted CI then supplies the exact-head net; do not rerun its job list locally. Every check records command, candidate/tree, exit, duration and evidence hash. Local planning checks are not hosted acceptance.",
-      "pause": 400
-    }
-  ],
-  "release-and-recovery": [
-    {
-      "text": "Release and recovery.",
-      "pause": 500
-    },
-    {
-      "text": "Rebase before a push, at least daily while live, and earlier when main touches changed paths or the draft conflicts. Inspect status and log after the rebase before any push. Refresh candidate-bound evidence after source or identity changes. Signed commits only, no attribution trailers; inspect the whole pushed range. Use gh run list and gh run view, never GitHub comments or gh pr checks.",
+      "text": "For chunk1, finish the in-flight comparison fixup and review-record corrections, obtain review012 approval, rebase once, inspect status and the log, run just ci once, then push and open the draft PR. Neither Demo1 nor the later economic fold holds this first push. The failed local archive attempt and the unexecuted deployment carrier remain explicit; hosted CI supplies their evidence. Later chunks repeat their own plan, audit and push cycle.",
       "pause": 400
     },
     {
-      "text": "The epic approved the initial plan at 063b3fe5; its later A-006 assigns the consumer-model amendment to this ticket. Planning source ceiling is revised to 64 KiB for that added slice, with 12 KiB per page; each child packet remains at most 20 KiB excluding source pointers. An oversized slice is split. Singular's accepted model remains frozen; unresolved consumer conflicts hold affected acceptance.",
-      "pause": 400
-    },
-    {
-      "text": "The consumer-model writer is Codex gpt-6-astra high, launched with codex --dangerously-bypass-approvals-and-sandbox -C WORKTREE -m gpt-6-astra -c model_reasoning_effort=high, with the existing Sol auditor. Schedule it between Sonnet slices: one writer at a time. Its fence is applications/open-datum/lean/ and generated consumer corpus/oracle outputs. Part one is the nonce-bearing registration name already ruled by the operator; part two, termination custody and deposit destination, remains held under Q-003. No root Lean or simulator-law edit is authorized. The same capped execution and checkpoint requirements apply.",
+      "text": "Only signed commits, with no attribution trailers, enter the pushed range. Use the repository PR template with model revision, implementation mapping and verification limits. The first draft title is Protected rejection (1.0.0). Keep it draft and held for the 22 October review; this owner never merges. No child PRs or GitHub comments; inspect CI through gh run list and gh run view, not gh pr checks.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a2f758bdbef27dd0c7f3e9ee4b9437f325ca221964646a36db3359c001cf8326"
+    "sha256": "a4ad07418d0497858dd5ca229ad16b3bfe6493db7d212699f225cfe5c007f0be"
   }
 }
