@@ -178,7 +178,7 @@ run() {
 start_devnet devnet-gina --fund "$work/gina.skey:1:200000000" \
   --fund-skey "$work/bob.skey" --fund-outputs 2 --fund-lovelace 2000000000
 gina_dir="$work/gina-actor"
-run gina-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run gina-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$gina_dir" --blueprint "$blueprint" "${node[@]}" "${gina[@]}"
 jq -e '.createRefusal == null' "$receipts/gina-preview.json" >/dev/null \
   || fail "gina's preview refuses a fundable one-output wallet: $(jq -r .createRefusal "$receipts/gina-preview.json")"
@@ -192,7 +192,7 @@ say "gina's preview names token $gina_token from seed $gina_seed"
 [ -z "$(managed_find "$gina_dir" journal.jsonl)" ] || fail "gina's preview wrote a journal"
 [ -z "$(managed_find "$gina_dir" registry.pending.json)" ] || fail "gina's preview wrote a pending identity"
 
-run gina-public-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run gina-public-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$work/gina-public" --blueprint "$blueprint" "${node[@]}" --wallet-address "$gina_addr"
 [ "$(field gina-public-preview .stateToken)" = "$gina_token" ] \
   || fail "gina's public preview names another token"
@@ -204,7 +204,7 @@ jq -e '.seedFrom == "publication-change"' "$receipts/gina-public-preview.json" >
   || fail "gina's public preview does not name a chained seed"
 say "gina's key and public previews agree"
 
-run gina-create success -- create --process-time 120000 --retract-time 30000 \
+run gina-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --state-dir "$gina_dir" --blueprint "$blueprint" "${node[@]}" "${gina[@]}"
 [ "$(field gina-create .stateToken)" = "$gina_token" ] \
   || fail "gina's create made another token: $(field gina-create .stateToken) vs $gina_token"
@@ -240,7 +240,7 @@ say "bob read gina's registry from the state token alone"
 # ------------------------------------------------------------------
 start_devnet devnet-pin --fund "$work/ginapin.skey:1:200000000"
 pin_dir="$work/ginapin-actor"
-run ginapin-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run ginapin-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$pin_dir" --blueprint "$blueprint" "${node[@]}" "${ginapin[@]}"
 jq -e '.createRefusal == null' "$receipts/ginapin-preview.json" >/dev/null \
   || fail "ginapin's preview refuses: $(jq -r .createRefusal "$receipts/ginapin-preview.json")"
@@ -250,7 +250,7 @@ ginapin_token="$(field ginapin-preview .stateToken)"
 ginapin_seed="$(field ginapin-preview .seed)"
 [ -n "$ginapin_token" ] && [ -n "$ginapin_seed" ] || fail "ginapin's preview names no token or seed"
 say "ginapin's preview names token $ginapin_token from seed $ginapin_seed"
-run ginapin-create success -- create --process-time 120000 --retract-time 30000 \
+run ginapin-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --seed "$ginapin_seed" --state-dir "$pin_dir" --blueprint "$blueprint" "${node[@]}" "${ginapin[@]}"
 [ "$(field ginapin-create .stateToken)" = "$ginapin_token" ] \
   || fail "ginapin's pinned create made another token"
@@ -267,7 +267,7 @@ pin_probe_before="$work/ginapin-final-before.json"
 jq -e --arg r "$pin_final_change" 'any(.live[]; . == $r)' "$pin_probe_before" >/dev/null \
   || fail "ginapin's final change $pin_final_change is not live after her create"
 pin_fresh="$work/ginapin-moved-actor"
-run ginapin-recreate client-refusal -- create --process-time 120000 --retract-time 30000 \
+run ginapin-recreate client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --seed "$ginapin_seed" --state-dir "$pin_fresh" --blueprint "$blueprint" "${node[@]}" "${ginapin[@]}"
 [ -z "$(managed_find "$pin_fresh" journal.jsonl)" ] || fail "the refused pin recreate wrote a journal"
 [ -z "$(managed_find "$pin_fresh" registry.pending.json)" ] || fail "the refused pin recreate wrote a pending identity"
@@ -286,7 +286,7 @@ start_devnet devnet-hank --fund "$work/hanka.skey:1:5000000" --fund "$work/hankb
 # placeholder, no funding judgement); create fails with client-refusal and
 # the same text before anything is written.
 hanka_dir="$work/hanka-actor"
-run hanka-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run hanka-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$hanka_dir" --blueprint "$blueprint" "${node[@]}" "${hanka[@]}"
 hanka_refusal="$(jq -r .createRefusal "$receipts/hanka-preview.json")"
 case "$hanka_refusal" in
@@ -296,21 +296,21 @@ esac
 jq -e '.seed == null and .stateToken == null and .seedFrom == null' "$receipts/hanka-preview.json" >/dev/null \
   || fail "hanka's preview names a seed for an unfundable first publication"
 hanka_addr="$(field hanka-preview .wallet)"
-run hanka-public-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run hanka-public-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$work/hanka-public2" --blueprint "$blueprint" "${node[@]}" --wallet-address "$hanka_addr"
 [ "$(field hanka-public-preview .createRefusal)" = "$hanka_refusal" ] \
   || fail "hanka's public preview differs"
 jq -e '.seed == null and .stateToken == null and .seedFrom == null' "$receipts/hanka-public-preview.json" >/dev/null \
   || fail "hanka's public preview names a seed for an unfundable first publication"
 say "hanka's key and public previews agree"
-run hanka-create client-refusal -- create --process-time 120000 --retract-time 30000 \
+run hanka-create client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --state-dir "$hanka_dir" --blueprint "$blueprint" "${node[@]}" "${hanka[@]}"
 [ "$(field hanka-create .reason)" = "$hanka_refusal" ] \
   || fail "hanka's create refusal differs from her preview"
 say "hanka refused with one verdict: $hanka_refusal"
 [ -z "$(managed_find "$hanka_dir" journal.jsonl)" ] || fail "the refused hanka create wrote a journal"
 [ -z "$(managed_find "$hanka_dir" registry.pending.json)" ] || fail "the refused hanka create wrote a pending identity"
-run hanka-preview2 success -- create --process-time 120000 --retract-time 30000 --preview \
+run hanka-preview2 success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$work/hanka-public3" --blueprint "$blueprint" "${node[@]}" --wallet-address "$hanka_addr"
 [ "$(jq -r .createRefusal "$receipts/hanka-preview2.json")" = "$hanka_refusal" ] \
   || fail "hanka's wallet changed under the refused create"
@@ -320,7 +320,7 @@ say "the refused create left hanka's wallet unchanged"
 # carrier). Preview names the chained seed with the whole-run refusal;
 # create fails with the same text.
 hankb_dir="$work/hankb-actor"
-run hankb-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run hankb-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$hankb_dir" --blueprint "$blueprint" "${node[@]}" "${hankb[@]}"
 hankb_refusal="$(jq -r .createRefusal "$receipts/hankb-preview.json")"
 case "$hankb_refusal" in
@@ -330,21 +330,21 @@ esac
 jq -e '.seedFrom == "publication-change"' "$receipts/hankb-preview.json" >/dev/null \
   || fail "hankb's preview does not name a chained seed"
 hankb_addr="$(field hankb-preview .wallet)"
-run hankb-public-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run hankb-public-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$work/hankb-public" --blueprint "$blueprint" "${node[@]}" --wallet-address "$hankb_addr"
 [ "$(field hankb-public-preview .createRefusal)" = "$hankb_refusal" ] \
   || fail "hankb's public preview differs"
 jq -e '.seedFrom == "publication-change"' "$receipts/hankb-public-preview.json" >/dev/null \
   || fail "hankb's public preview does not name a chained seed"
 say "hankb's key and public previews agree"
-run hankb-create client-refusal -- create --process-time 120000 --retract-time 30000 \
+run hankb-create client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --state-dir "$hankb_dir" --blueprint "$blueprint" "${node[@]}" "${hankb[@]}"
 [ "$(field hankb-create .reason)" = "$hankb_refusal" ] \
   || fail "hankb's create refusal differs from her preview"
 say "hankb refused with one verdict: $hankb_refusal"
 [ -z "$(managed_find "$hankb_dir" journal.jsonl)" ] || fail "the refused hankb create wrote a journal"
 [ -z "$(managed_find "$hankb_dir" registry.pending.json)" ] || fail "the refused hankb create wrote a pending identity"
-run hankb-preview2 success -- create --process-time 120000 --retract-time 30000 --preview \
+run hankb-preview2 success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$hankb_dir" --blueprint "$blueprint" "${node[@]}" "${hankb[@]}"
 [ "$(jq -r .createRefusal "$receipts/hankb-preview2.json")" = "$hankb_refusal" ] \
   || fail "hankb's wallet changed under the refused create"
