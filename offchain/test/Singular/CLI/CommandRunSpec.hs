@@ -5368,6 +5368,8 @@ stagedRejectRow =
                         { reProcessTime = 1
                         , reRetractTime = 1
                         , reTip = Coin 1_000_000
+                        , reRegistrationCost = Coin 0
+                        , reBookingWidth = 60_000
                         }
             (_, submitted) <-
                 plantRequest
@@ -5980,6 +5982,8 @@ journalWindows =
         { reProcessTime = 100_000
         , reRetractTime = 1_000
         , reTip = Coin 1_000_000
+        , reRegistrationCost = Coin 0
+        , reBookingWidth = 60_000
         }
 
 -- | A staged fold over the rig, as 'stageFoldWith' leaves it.
@@ -7126,6 +7130,8 @@ stagedNarrationRows = describe "staged narration" $ do
                         { reProcessTime = 1
                         , reRetractTime = 1
                         , reTip = Coin 1_000_000
+                        , reRegistrationCost = Coin 0
+                        , reBookingWidth = 60_000
                         }
             (_, submitted) <-
                 plantRequest
