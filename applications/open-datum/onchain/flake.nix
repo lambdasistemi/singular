@@ -280,11 +280,11 @@
                 }
               ' "$registryBlueprint" "$appBlueprint" > "$out"
               count="$(jq '.validators | length' "$out")"
-              [ "$count" = "17" ] || {
-                echo "open-datum-blueprint: expected 17 validators, built $count" >&2
+              [ "$count" = "18" ] || {
+                echo "open-datum-blueprint: expected 18 validators, built $count" >&2
                 exit 1
               }
-              echo "open-datum-blueprint: OK — 17 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
+              echo "open-datum-blueprint: OK — 18 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
             '';
 
         # #278: every hand-written and generated Aiken source is in the
