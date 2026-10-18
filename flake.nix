@@ -1294,10 +1294,19 @@
               # blueprint holds the whole contract: this app rebuilds the
               # registry blueprint and the application blueprint, unions
               # their validator sets, and requires the union to equal the
-              # base set recorded in base-hashes.json plus exactly the
-              # declared closed titles — every base hash byte-identical,
-              # each declared hash read from the application identity
-              # manifest (one place, tied to the build by the identity job).
+              # expected set: the base set recorded in base-hashes.json plus
+              # exactly the declared closed titles (#650), every base hash
+              # byte-identical unless a declared-changes record names its
+              # title (#529 onward). The claim: no validator hash moves
+              # unless the move is declared. A declaration names titles only;
+              # each hash is read from the committed identity manifests (tied
+              # to the build by the identity jobs), never typed. A declaration
+              # is honest both ways: a title declared changed whose built hash
+              # still equals its base hash is refused, and so is a title
+              # declared both changed and added, or an added title that is a
+              # base title. base-hashes.json and declared-additions.json are
+              # historical evidence and stay byte-identical; a later slice
+              # appends its own record to the list of records below.
               # Titles are compared modulo the module path
               # (the first segment), so a move that renames only the module
               # path is tolerated while a changed hash, a missing validator
@@ -1306,7 +1315,10 @@
               # every invocation: a changed base hash, a missing base
               # validator (both selected by title), a collision, an
               # undeclared extra validator, and a moved declared hash must
-              # each be refused, naming the validator — a comparison
+              # each be refused, naming the validator, as must each dishonest
+              # declaration (a manifest hash that differs from the build, an
+              # over-declared title, an added title equal to a base title, a
+              # title in both lists) — a comparison
               # that cannot fail guards nothing. Takes the repository root
               # (default: the working tree) and builds both blueprints
               # itself, so CI runs it with no other setup.
@@ -1348,12 +1360,27 @@
                   jq -s '{validators: (.[0].validators + .[1].validators)}' "$registry_bp" "$app_bp" >"$work/union.json"
                   declared="$root/specs/650-closed-datum/evidence/declared-additions.json"
                   manifest="$root/applications/open-datum/onchain/script-identity.json"
+                  registry_manifest="$root/onchain/script-identity.json"
+                  # Records of declared hash changes: one per slice that moves or
+                  # adds a validator hash after the #528 base. A later slice
+                  # appends its own path to this list and nothing else in this
+                  # check changes. A record names titles only, in two lists,
+                  # changed (base titles whose hash the slice moves) and added;
+                  # every hash is read from the committed identity manifests,
+                  # never typed into a record.
+                  declared_changes_records=(
+                    "$root/specs/529-request-tag/evidence/declared-changes.json"
+                  )
                   [ -f "$declared" ] || {
                     echo "script-hash-comparison: no declared-additions.json under $root" >&2
                     exit 2
                   }
                   [ -f "$manifest" ] || {
                     echo "script-hash-comparison: no application script-identity.json under $root" >&2
+                    exit 2
+                  }
+                  [ -f "$registry_manifest" ] || {
+                    echo "script-hash-comparison: no registry script-identity.json under $root" >&2
                     exit 2
                   }
                   jq -e '.titles | length == 3' "$declared" >/dev/null || {
@@ -1368,12 +1395,85 @@
                     echo "script-hash-comparison: a declared title equals a base title and must not hide it" >&2
                     exit 1
                   fi
-                  jq -n --slurpfile b "$base" --slurpfile d "$declared" --slurpfile m "$manifest" '($b[0]) as $bb | ($d[0].titles) as $dt | ($m[0].validators | map({key: .title, value: .hash}) | from_entries) as $mh | {validators: ($bb.validators + [$dt[] | {title: ., hash: $mh[.] | select(. != null)}])} | select(.validators | length == ($bb.validators | length) + 3) | .' >"$work/expected.json" || {
-                    echo "script-hash-comparison: could not build the expected set (a declared title has no hash in the identity manifest)" >&2
+                  jq '.validators | map({key: .title, value: .hash}) | from_entries' "$manifest" >"$work/app-hashes.json"
+                  jq -s '(.[0].validators + .[1].validators) | map({key: .title, value: .hash}) | from_entries' "$registry_manifest" "$manifest" >"$work/manifest-hashes.json"
+                  # expected_from_records OUT BUILT HASHES RECORD...: refuse a
+                  # dishonest declaration, else write the expected set to OUT.
+                  # Every base entry whose title no record declares changed keeps
+                  # its base hash; a changed title takes its hash from the
+                  # committed identity manifests (HASHES); the #650 additions
+                  # take theirs from the application manifest as before; an
+                  # added title takes its manifest hash. A declaration is honest
+                  # both ways: a changed title must be a base title whose BUILT
+                  # hash (BUILT, the union) really differs from its base hash, an
+                  # added title must not be a base title, no title is declared in
+                  # both lists or twice, and every declared title has a manifest
+                  # hash. Problems are printed one per line on stderr.
+                  expected_from_records() {
+                    local out="$1" built="$2" hashes="$3" merged problems rec
+                    shift 3
+                    for rec in "$@"; do
+                      [ -f "$rec" ] || {
+                        echo "FAIL: declared-changes record missing: $rec" >&2
+                        return 2
+                      }
+                    done
+                    jq -e -s 'all(.[]; type == "object" and (keys | sort) == ["added", "changed"] and (.changed | type == "array") and (.added | type == "array") and all((.changed + .added)[]; type == "string"))' "$@" >/dev/null || {
+                      echo "FAIL: a declared-changes record must be an object with exactly the lists changed and added, titles only" >&2
+                      return 1
+                    }
+                    merged="$(mktemp "$work/declared.XXXXXX")"
+                    jq -s '{changed: (map(.changed) | add), added: (map(.added) | add)}' "$@" >"$merged" || return 2
+                    problems="$(jq -r -n --slurpfile b "$base" --slurpfile u "$built" --slurpfile h "$hashes" --slurpfile a "$work/app-hashes.json" --slurpfile c "$declared" --slurpfile r "$merged" '
+                      ($b[0].validators | map({key: .title, value: .hash}) | from_entries) as $baseh
+                      | ($u[0].validators | map({key: .title, value: .hash}) | from_entries) as $builth
+                      | $h[0] as $mh
+                      | $a[0] as $ah
+                      | $c[0].titles as $closed
+                      | $r[0].changed as $ch
+                      | $r[0].added as $ad
+                      | (
+                          (if ($ch | length) != ($ch | unique | length) then "FAIL: a changed title is declared more than once" else empty end),
+                          (if ($ad | length) != ($ad | unique | length) then "FAIL: an added title is declared more than once" else empty end),
+                          ($ch[] as $t | select($ad | index($t)) | "FAIL: \($t) is declared both changed and added"),
+                          ($ch[] as $t | select($baseh | has($t) | not) | "FAIL: changed title \($t) is not a base title"),
+                          ($ad[] as $t | select($baseh | has($t)) | "FAIL: added title \($t) equals a base title and must not hide it"),
+                          ($ad[] as $t | select($closed | index($t)) | "FAIL: added title \($t) is also a declared #650 addition"),
+                          ($closed[] as $t | select(($ah[$t] // null) == null) | "FAIL: declared #650 title \($t) has no hash in the application manifest"),
+                          (($ch + $ad)[] as $t | select(($mh[$t] // null) == null) | "FAIL: declared title \($t) has no hash in the identity manifests"),
+                          ($ch[] as $t | select($baseh | has($t)) | select(($builth[$t] // null) == $baseh[$t]) | "FAIL: changed title \($t) is over-declared: its built hash still equals the base hash")
+                        )
+                    ')" || return 2
+                    if [ -n "$problems" ]; then
+                      printf '%s\n' "$problems" >&2
+                      return 1
+                    fi
+                    jq -n --slurpfile b "$base" --slurpfile h "$hashes" --slurpfile a "$work/app-hashes.json" --slurpfile c "$declared" --slurpfile r "$merged" '
+                      $b[0].validators as $bv
+                      | $h[0] as $mh
+                      | $a[0] as $ah
+                      | $c[0].titles as $closed
+                      | $r[0].changed as $ch
+                      | $r[0].added as $ad
+                      | {validators: (
+                          [$bv[] | . as $v | {title: $v.title, hash: (if ($ch | index($v.title)) != null then $mh[$v.title] else $v.hash end)}]
+                          + [$closed[] | {title: ., hash: $ah[.]}]
+                          + [$ad[] | {title: ., hash: $mh[.]}]
+                        )}
+                      | select(.validators | length == ($bv | length) + ($closed | length) + ($ad | length))
+                    ' >"$out" || return 2
+                    [ -s "$out" ] || {
+                      echo "FAIL: the expected set could not be built" >&2
+                      return 2
+                    }
+                  }
+                  expected_from_records "$work/expected.json" "$work/union.json" "$work/manifest-hashes.json" "''${declared_changes_records[@]}" 2>"$work/expected.log" || {
+                    echo "script-hash-comparison: could not build the expected set:" >&2
+                    cat "$work/expected.log" >&2
                     exit 1
                   }
-                  [ -f "$work/expected.json" ] || {
-                    echo "script-hash-comparison: expected set missing (a declared hash is absent from the manifest)" >&2
+                  [ -s "$work/expected.json" ] || {
+                    echo "script-hash-comparison: expected set missing (a declared hash is absent from the manifests)" >&2
                     exit 1
                   }
                   # S5-1d-r2: one-to-one title correspondence with pre-map
@@ -1449,7 +1549,7 @@
                     cat "$work/live.log" >&2
                     exit 1
                   fi
-                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set (base $(jq '.validators | length' "$base") + 3 declared = $(jq '.validators | length' "$work/expected.json"), compiler $base_compiler)"
+                  echo "script-hash-comparison: OK — $(jq '.validators | length' "$work/union.json") union validators equal the expected set (base $(jq '.validators | length' "$base"), of which $(jq -s '[.[].changed[]] | length' "''${declared_changes_records[@]}") declared changed and the rest at their base hash, + 3 declared #650 additions + $(jq -s '[.[].added[]] | length' "''${declared_changes_records[@]}") declared added = $(jq '.validators | length' "$work/expected.json"), compiler $base_compiler)"
                   jq -r '.validators | sort_by(.title) | .[] | "\(.title) \(.hash)"' "$work/union.json"
                   jq '(.validators |= map(if .title == "state.state.spend" then .hash = "00000000000000000000000000000000000000000000000000000000" else . end))' "$work/union.json" >"$work/plant-changed.json"
                   jq -e '[.validators[] | select(.title == "state.state.spend" and .hash == "00000000000000000000000000000000000000000000000000000000")] | length == 1' "$work/plant-changed.json" >/dev/null || {
@@ -1556,6 +1656,62 @@
                     exit 1
                   }
                   echo "script-hash-comparison: declared-moved plant refused" >&2
+                  # The declaration plants. The comparison above can fail on a
+                  # moved, missing or extra hash; these make the declarations
+                  # themselves able to fail, in each direction, so that "no
+                  # validator hash moves unless the move is declared" is not
+                  # satisfied by declaring everything.
+                  # A declared-changed title whose built hash differs from its
+                  # manifest hash: the manifest side is moved, the build is not.
+                  jq '.["witness.witness.mint"] = "00000000000000000000000000000000000000000000000000000000"' "$work/manifest-hashes.json" >"$work/plant-manifest-hashes.json"
+                  jq -e '.["witness.witness.mint"] == "00000000000000000000000000000000000000000000000000000000"' "$work/plant-manifest-hashes.json" >/dev/null || {
+                    echo "script-hash-comparison: manifest-moved plant did not apply to witness.witness.mint" >&2
+                    exit 2
+                  }
+                  expected_from_records "$work/plant-manifest-expected.json" "$work/union.json" "$work/plant-manifest-hashes.json" "''${declared_changes_records[@]}" 2>"$work/plant-manifest-build.log" || {
+                    echo "script-hash-comparison: manifest-moved plant could not build its expected set:" >&2
+                    cat "$work/plant-manifest-build.log" >&2
+                    exit 2
+                  }
+                  if compare "$work/plant-manifest-expected.json" "$work/union.json" >"$work/plant-manifest.log" 2>&1; then
+                    echo "script-hash-comparison: MISSED the manifest-moved plant" >&2
+                    exit 1
+                  fi
+                  grep -q 'moved' "$work/plant-manifest.log" || {
+                    echo "script-hash-comparison: manifest-moved plant refused without naming the moved validator:" >&2
+                    cat "$work/plant-manifest.log" >&2
+                    exit 1
+                  }
+                  grep -q 'witness\.witness\.mint\|witness\.mint' "$work/plant-manifest.log" || {
+                    echo "script-hash-comparison: manifest-moved plant refused without naming witness.witness.mint:" >&2
+                    cat "$work/plant-manifest.log" >&2
+                    exit 1
+                  }
+                  echo "script-hash-comparison: manifest-moved plant refused" >&2
+                  # expect_declaration_refusal NAME WANT TITLE RECORD: an extra
+                  # record of one dishonest declaration, listed after the real
+                  # ones, must make the expected set unbuildable, with WANT and
+                  # TITLE in the reason.
+                  expect_declaration_refusal() {
+                    local name="$1" want="$2" title="$3" record="$4"
+                    printf '%s\n' "$record" >"$work/plant-$name.json"
+                    if expected_from_records "$work/plant-$name-expected.json" "$work/union.json" "$work/manifest-hashes.json" "''${declared_changes_records[@]}" "$work/plant-$name.json" >"$work/plant-$name.log" 2>&1; then
+                      echo "script-hash-comparison: MISSED the $name plant" >&2
+                      exit 1
+                    fi
+                    if ! grep -q -- "$want" "$work/plant-$name.log" || ! grep -q -- "$title" "$work/plant-$name.log"; then
+                      echo "script-hash-comparison: $name plant refused without naming $title ($want):" >&2
+                      cat "$work/plant-$name.log" >&2
+                      exit 1
+                    fi
+                    echo "script-hash-comparison: $name plant refused" >&2
+                  }
+                  # An over-declared title: declared changed, its hash unchanged.
+                  expect_declaration_refusal over-declared 'over-declared' 'staking\.staking\.withdraw' '{"changed": ["staking.staking.withdraw"], "added": []}'
+                  # An added title that is a base title hides the base entry.
+                  expect_declaration_refusal added-equals-base 'equals a base title' 'state\.state\.spend' '{"changed": [], "added": ["state.state.spend"]}'
+                  # A title in both lists.
+                  expect_declaration_refusal both-lists 'both changed and added' 'state\.state\.mint' '{"changed": [], "added": ["state.state.mint"]}'
                   # S5.2: the deployment blueprint itself. Built in the
                   # application's onchain flake from the same two trees
                   # (jq merge, preamble from the registry's), it must equal
