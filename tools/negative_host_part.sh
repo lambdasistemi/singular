@@ -209,7 +209,7 @@ closed_flag=()
 if [ "$part" = closed-update ]; then
   closed_flag=(--closed)
 fi
-run_ok preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview "${closed_flag[@]}" \
+run_ok preview "$open_datum" open-datum create --registration-cost 0 --booking-width 60000 --process-time "$process_time" --retract-time "$retract_time" --preview "${closed_flag[@]}" \
   --state-dir "$work/preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create preview failed"
 seed="$(jq -er .seed "$receipts/preview.json")" || setup_fail "preview names no seed"
@@ -217,11 +217,11 @@ if [ "$part" = closed-update ]; then
   # The open pin of the same seed, previewed before anything is submitted:
   # once the create consumes the seed no preview can name it again, so the
   # comparison preview runs here, with the switch off.
-  run_ok open-preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview --seed "$seed" \
+  run_ok open-preview "$open_datum" open-datum create --registration-cost 0 --booking-width 60000 --process-time "$process_time" --retract-time "$retract_time" --preview --seed "$seed" \
     --state-dir "$work/preview-open" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
     || setup_fail "open preview of the same seed failed"
 fi
-run_ok create "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${closed_flag[@]}" \
+run_ok create "$open_datum" open-datum create --registration-cost 0 --booking-width 60000 --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${closed_flag[@]}" \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "create failed"
 state_token="$(jq -er .stateToken "$receipts/create.json")" || setup_fail "create names no state token"
@@ -784,7 +784,7 @@ if [ "$part" = stranger-registers-a-taken-key ]; then
     setup_fail "open-datum --help names reclaim (ordinary reclaim lives in singular only)"
   fi
   say "ordinary command: singular registry reclaim --request $reclaim_request (help agrees; open-datum has none)"
-  run_ok bob-preview "$open_datum" open-datum create --process-time "$process_time" --retract-time "$retract_time" --preview \
+  run_ok bob-preview "$open_datum" open-datum create --registration-cost 0 --booking-width 60000 --process-time "$process_time" --retract-time "$retract_time" --preview \
     --state-dir "$work/bob-preview" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/bob.skey" \
     || setup_fail "bob preview failed"
   bob_addr="$(jq -er .wallet "$receipts/bob-preview.json")" || setup_fail "bob preview names no wallet"
