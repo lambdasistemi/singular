@@ -115,9 +115,9 @@ BOOKING_WIDTH_MS = 60000
 # Singular.Registry.Wallet.loadWallet (Ed25519 seed, enterprise
 # Testnet address); the registry's minimum tip is read from the state
 # datum on the chain through the development network's Koios-shaped
-# provider. (Names such as fee_bound, "fee-bound" and stateMaxFee below keep
-# the wire name of that field for compatibility: it is a floor that bookings
-# declare at least, never a fee bound or ceiling.)
+# provider. (The receipt and some names below keep "fee-bound" / fee_bound for
+# compatibility; the field is a floor that bookings declare at least, never a
+# fee bound or ceiling. Its wire name is maxFee; the receipt key is minimumTip.)
 # ---------------------------------------------------------------
 
 _ED_Q = (1 << 255) - 19
@@ -575,11 +575,11 @@ def fetch_state_fee_bound(
                     if fee <= 0:
                         reasons.append("a state datum carries no positive minimum tip")
                         continue
-                    # The key keeps the wire name of the state's second field
-                    # (maxFee). Its value is the registry's minimum tip, a floor
-                    # that bookings declare at least, never a fee ceiling.
+                    # The state's second field keeps the wire name maxFee; its
+                    # value is the registry's minimum tip, a floor that bookings
+                    # declare at least, never a fee ceiling, so the key says so.
                     return {
-                        "stateMaxFee": fee,
+                        "minimumTip": fee,
                         "processTime": process,
                         "retractTime": retract,
                         "observedTx": f"{row.get('tx_hash')}#{row.get('tx_index')}",
@@ -643,7 +643,7 @@ RECORD_KEPT_FIELDS = (
     "retractEnds",
     "wallet",
     "topUp",
-    "stateMaxFee",
+    "minimumTip",
     "trieRefusal",
     "settled",
 )
@@ -1790,9 +1790,9 @@ class Journey:
         holding the state token carries the eleven-field state datum
         whose second field is the registry's minimum tip, a floor that
         bookings declare at least. Stored for the rows beside the command
-        receipts; the receipt keeps the names fee-bound and stateMaxFee,
-        the wire name of that field, for compatibility. A missing tip is
-        setup, never a row result.
+        receipts; the receipt keeps the name fee-bound for compatibility
+        and carries the value under minimumTip (the field's wire name is
+        maxFee). A missing tip is setup, never a row result.
         """
         policy, _, name = self.state_token.partition(".")
         setup_require(policy and name, "the state token names no asset")
@@ -1812,7 +1812,7 @@ class Journey:
         (self.receipts / "fee-bound.json").write_text(
             json.dumps(bound, indent=2) + "\n"
         )
-        print(f"two actors: minimum tip {bound['stateMaxFee']}", flush=True)
+        print(f"two actors: minimum tip {bound['minimumTip']}", flush=True)
         return bound
 
     def now_ms(self):
@@ -3339,9 +3339,9 @@ class Journey:
         # REJECT_ROW_SCOPE.
         tip = row.get("tip")
         fee_bound = self.load_receipt("fee-bound", receipts)
-        if fee_bound is None or not isinstance(fee_bound.get("stateMaxFee"), int):
+        if fee_bound is None or not isinstance(fee_bound.get("minimumTip"), int):
             return False, [], "the registry minimum tip"
-        minimum_tip = fee_bound["stateMaxFee"]
+        minimum_tip = fee_bound["minimumTip"]
         if minimum_tip <= 0:
             return False, [], "the registry minimum tip"
         if tip != minimum_tip:
