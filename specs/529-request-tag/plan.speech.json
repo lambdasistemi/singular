@@ -27,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "If hosted checks for chunk 1 are red, their repair is the first item of the next push to the pull request (chunk 3, the next chunk that changes product code), with the problem and evidence recorded in that chunk's plan. It does not retroactively turn the failed check into a pass or hold the reviewed chunk 1 push.",
+      "text": "If hosted checks for chunk 1 are red, they are repaired in the next combined repair push to the pull request, after the current hosted board is collected, with the problem and evidence recorded in the plan. The audited model of chunk 2 stays out of the integration branch until chunk 3's consumers, as set out below. A repair does not retroactively turn the failed check into a pass or hold the reviewed chunk 1 push.",
       "pause": 400
     }
   ],
@@ -109,6 +109,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "9c63c763343eb2b3fb87e72c5fc92423d7d6c5081d8aea6102e9a4aa902643e3"
+    "sha256": "a7bb86dd714bef3f736a0e0a2719361e2441491000ac4dbe94a55d91714e574b"
   }
 }
