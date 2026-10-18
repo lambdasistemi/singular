@@ -2772,16 +2772,16 @@ story_wait_until() {
 
 say "story 1. Preview the identity a seed gives, from Alice's address alone, then create the registry on it."
 # 1. Preview the identity a seed gives (the address alone), then create.
-run story-preview success -- create --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
+run story-preview success -- create --registration-cost 0 --booking-width 60000 --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
   "${scommon[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
-run story-bob-preview success -- create --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
+run story-bob-preview success -- create --registration-cost 0 --booking-width 60000 --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
   --state-dir "$story/bob-preview" --blueprint "$blueprint" "${node[@]}" --wallet-address "$vault_bob_addr"
 [ ! -e "$s_reg" ] && [ ! -e "$story/bob-preview" ] || fail "a story preview created its target"
 s_alicekey="$(field story-preview .walletKeyHash)"
 s_bobkey="$(field story-bob-preview .walletKeyHash)"
 [ "$(field story-preview .wallet)" = "$vault_alice_addr" ] || fail "the story preview names another wallet than Alice's vault address"
 # Alice creates in one command from her vault.
-story_vault story-create alice -- create --seed "$(field story-preview .seed)" \
+story_vault story-create alice -- create --registration-cost 0 --booking-width 60000 --seed "$(field story-preview .seed)" \
   --process-time "$s_window_process" --retract-time "$s_window_retract" "${scommon[@]}" "${node[@]}"
 # The state script is the same for every registry of a release: Alice's story
 # create found the live carrier of it by hash and published none.
