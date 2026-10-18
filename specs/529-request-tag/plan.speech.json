@@ -9,17 +9,17 @@
       "pause": 400
     },
     {
-      "text": "The acceptance items below were re-read from issue 529 on 18 October 2026. The constitution and the ruled Lean model are the behavioral authority. Singular's root model remains frozen at 4254a3073fe0457946eba0a68d974c999c930ebf, with Lean 4.27.0. The open-datum consumer amendment is a later, model-first chunk; no root Lean or simulator-law change is authorized by this plan.",
+      "text": "The acceptance items below were re-read from issue 529 on 18 October 2026. The constitution and the ruled Lean model are the behavioral authority. Singular's root model remains frozen at 4254a3073fe0457946eba0a68d974c999c930ebf, with Lean 4.27.0. The open-datum consumer amendment is the second chunk and is model-first: it is written, audited and recorded before any consumer is built on it. No root Lean or simulator-law change is authorized by this plan.",
       "pause": 400
     }
   ],
-  "four-chunks-each-reviewed-and-pushed": [
+  "five-chunks-each-reviewed-and-pushed": [
     {
-      "text": "Four chunks, each reviewed and pushed.",
+      "text": "Five chunks, each reviewed and pushed.",
       "pause": 500
     },
     {
-      "text": "The operator's 18 October cut replaces the earlier slice order. Each chunk has its own short story, acceptance mapping, exact fence, gate and audit checkpoints. Each reviewed chunk is pushed to the same branch, integration/498-protected-rejection. Paths below are the expected areas of work; a later chunk's intake census fixes its exact file list before its first code commit.",
+      "text": "The owner's 18 October order replaces the earlier slice order, and moves the open-datum consumer model ahead of the economic fold. Each chunk has its own short story, acceptance mapping, exact fence, gate and audit checkpoints. Each reviewed chunk is pushed to the same branch, integration/498-protected-rejection, except that the model of chunk 2 travels with chunk 3 as set out after the table. Paths below are the expected areas of work; a later chunk's intake census fixes its exact file list before its first code commit.",
       "pause": 400
     },
     {
@@ -27,8 +27,38 @@
       "pause": 400
     },
     {
-      "text": "If hosted checks for chunk1 are red, their repair is the first item of chunk2, with the problem and evidence recorded in that chunk's plan. It does not retroactively turn the failed check into a pass or hold the reviewed chunk1 push.",
+      "text": "If hosted checks for chunk 1 are red, their repair is the first item of the next push to the pull request (chunk 3, the next chunk that changes product code), with the problem and evidence recorded in that chunk's plan. It does not retroactively turn the failed check into a pass or hold the reviewed chunk 1 push.",
       "pause": 400
+    }
+  ],
+  "order-the-model-and-the-pushes": [
+    {
+      "text": "Order, the model and the pushes.",
+      "pause": 500
+    },
+    {
+      "text": "The model comes first. The reviewed model of chunk 2, at an exact revision, is what the producers, bindings and fold of chunk 3 are written against. No consumer is accepted against a model that has not passed its own audit, and each push states the model revision it was built against.",
+      "pause": 300
+    },
+    {
+      "text": "One writer at a time. The model writer and the implementation writer never edit at the same time: the implementation writer stays at a committed boundary while the model is written, or finishes first.",
+      "pause": 300
+    },
+    {
+      "text": "The model is its own checkpoint. It is signed, audited on its own, and then pushed once to a backup branch on the remote, preserve/529-open-datum-model, so it does not live only on one disk; that branch triggers no workflow. The model reaches the integration branch only together with chunk 3's consumer migration, and the backup branch is deleted after that push.",
+      "pause": 300
+    },
+    {
+      "text": "Chunk 3 pushes once, green. It is cut into reviewed checkpoints (producers, conformance bindings, fold). No checkpoint is pushed with a conformance row knowingly red, and no legacy behavior is repinned to the new law.",
+      "pause": 300
+    },
+    {
+      "text": "The bindings follow the model's output. The statement header digests in Controls.hs are set from the amended model's own output, and replace the old ones only where the product evidence then shows the new law; no check is disabled to make that happen.",
+      "pause": 300
+    },
+    {
+      "text": "Every implementation push has its affected journeys green. Chunks 3 and 4 each name the journeys their changes can affect, and the push is accepted only when those journeys are green.",
+      "pause": 300
     }
   ],
   "disagreements-with-the-historical-issue-text": [
@@ -51,7 +81,7 @@
       "pause": 400
     },
     {
-      "text": "The approved Sonnet commit owner writes implementation and the persistent Sol auditor independently inspects checkpoints without product execution. No extra implementation seats are authorized. For chunk4, the already-approved Codex gpt-6-astra high Lean writer works between Sonnet slices, one writer at a time, using the same persistent auditor. The custody decision formerly held as Q003 is settled by the operator's 17 October treasury ruling; its model amendment still precedes code acceptance.",
+      "text": "The approved Sonnet commit owner writes implementation and the persistent Sol auditor independently inspects checkpoints without product execution. No extra implementation seats are authorized. For chunk 2, the already-approved Codex gpt-6-astra high Lean writer works between Sonnet slices, one writer at a time, using the same persistent auditor. The custody decision formerly held as Q003 is settled by the operator's 17 October treasury ruling; its model amendment still precedes code acceptance.",
       "pause": 400
     }
   ],
@@ -79,6 +109,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "a4ad07418d0497858dd5ca229ad16b3bfe6493db7d212699f225cfe5c007f0be"
+    "sha256": "9c63c763343eb2b3fb87e72c5fc92423d7d6c5081d8aea6102e9a4aa902643e3"
   }
 }
