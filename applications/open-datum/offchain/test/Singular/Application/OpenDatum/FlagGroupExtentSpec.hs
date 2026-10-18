@@ -63,7 +63,12 @@ createFollowsRegistry = describe "create follows the registry's create" $ do
     it
         "answers the external-signer create lines as the registry's create does"
         $ do
-            let node = ["--koios-url", "u", "--network-magic", "1"]
+            let
+                -- The booking values every create requires, so that each line reaches the
+                -- signer checks being compared: a create without them is refused for the
+                -- missing value first, by both parsers alike.
+                bookingValues = ["--registration-cost", "0", "--booking-width", "60000"]
+                node = ["--koios-url", "u", "--network-magic", "1"] <> bookingValues
                 registryCreate extra =
                     parseCommand
                         (["registry", "create", "--blueprint", "b"] <> node <> extra)
@@ -99,6 +104,27 @@ createFollowsRegistry = describe "create follows the registry's create" $ do
                 ["--wallet-skey", "k", "--wallet-address", anAddress, "--bundle", "b"]
             -- a preview refuses the bundle file in both binaries
             sameAs ["--preview", "--wallet-address", anAddress, "--bundle", "b"]
+            -- The comparison above also holds when both sides answer Nothing, which is
+            -- what an unrelated missing flag gives too (it is not a BadValue). Two
+            -- anchors keep it from holding for that reason: the external-signer line
+            -- is accepted outright by both creates, and the preview line is refused by
+            -- name and reason.
+            isRight
+                (registryCreate ["--wallet-address", anAddress, "--bundle", "b"])
+                `shouldBe` True
+            isRight
+                (siblingCreate ["--wallet-address", anAddress, "--bundle", "b"])
+                `shouldBe` True
+            either
+                normalize
+                (const Nothing)
+                ( registryCreate
+                    ["--preview", "--wallet-address", anAddress, "--bundle", "b"]
+                )
+                `shouldBe` Just
+                    ( "--bundle"
+                    , "cannot be used with --preview: a preview signs and writes nothing"
+                    )
 
 -- | A bech32 payment-key address, produced from a key hash, never typed.
 anAddress :: String
