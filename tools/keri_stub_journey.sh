@@ -238,12 +238,12 @@ jq -n --arg h "$payload_hex" '{bytes: $h}' >"$work/payload.json"
 # ------------------------------------------------------------------
 # 1. create: a preview names the seed, the create boots the registry
 # ------------------------------------------------------------------
-run create-preview success -- create --process-time 120000 --retract-time 60000 --preview \
+run create-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 60000 --preview \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 [ ! -e "$reg/registry.json" ] || fail "a preview created the target"
 seed="$(field create-preview .seed)"
 [ -n "$seed" ] || fail "the preview printed no seed"
-run create success -- create --process-time 120000 --retract-time 60000 --seed "$seed" \
+run create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 60000 --seed "$seed" \
   "${common[@]}" "${node[@]}" "${alice[@]}"
 state_token="$(field create .stateToken)"
 [ -n "$state_token" ] || fail "create printed no state token"
