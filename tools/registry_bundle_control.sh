@@ -167,7 +167,7 @@ say "bob is $bob_addr, alice is $alice_addr, both from their vaults"
 # because open-datum's own writes take only a key file (issue 642).
 bob_dir="$work/bob"
 policy="$(printf '07%.0s' {1..28})"
-create_line=(registry create --process-time 120000 --retract-time 30000 --application-policy "$policy"
+create_line=(registry create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --application-policy "$policy"
   --state-dir "$bob_dir" --blueprint "$blueprint" "${node[@]}" --wallet-address "$bob_addr")
 run bob-create waiting-for-signatures "$singular" -- "${create_line[@]}" --bundle "$work/create.bundle"
 [ -s "$work/create.bundle" ] || fail "bob's create wrote no bundle file"
@@ -200,7 +200,7 @@ say "on bob's neutral registry: he signed elsewhere, sent the bundle, and the re
 # ------------------------------------------------------------------
 # 2. and 3. Carol creates and books; Alice folds from her vault
 # ------------------------------------------------------------------
-run carol-create success "$open_datum" -- create --process-time 120000 --retract-time 30000 \
+run carol-create success "$open_datum" -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --state-dir "$work/carol" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$work/carol.skey"
 token="$(field carol-create .stateToken)"
 say "carol created the open-datum registry $token with her key file"
