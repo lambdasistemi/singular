@@ -39,7 +39,7 @@
       "pause": 400
     },
     {
-      "text": "An integrator with their own node wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. Run against your own preprod node covers the release download, the node and wallet setup, the funding diagnostic and each journey end to end.",
+      "text": "An integrator with their own node wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. Run against your own preprod node covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine.",
       "pause": 400
     }
   ],
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "a216b37e808f141d44e9dd6076c680e43b12dad5c767f171070a1e1341620085"
+    "sha256": "d437fdb74cf6d18fa369cfa666b93184640e6bfa4cca2f759e5e065a00b1d8d3"
   }
 }

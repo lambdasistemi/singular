@@ -13,7 +13,7 @@
   ],
   "signer-per-command": [
     {
-      "text": "Each open-datum write takes exactly one signer: the external signer, the vault, or the key file until the last pull request removes it. Create follows the registry create. Inspect is read only and refuses the bundle file and the vault.",
+      "text": "Each open-datum write takes exactly one signer: the external signer, the vault, or the key file until issue 672 removes it. Create follows the registry create. Inspect is read only and refuses the bundle file and the vault.",
       "pause": 500
     }
   ],
@@ -37,6 +37,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "c2ffb535a87343cea0b04bdb49d1c4852a21724a1533f8313d58db4fc002739b"
+    "sha256": "f067c83fca89829339509cf02d72a256a852c13efd887346d1e221c77599e94b"
   }
 }

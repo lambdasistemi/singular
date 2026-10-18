@@ -22,14 +22,14 @@ Base: issue 641's vault checkpoint (its slice 5). Rows: the same commands with t
 
 Keeps behaviour. One writer, one review before the push. The Demo 1 journey and its run page move once, for both binaries (the registry's reject and reclaim steps included), to wallets from `singular wallet create` signed from the vault or externally; the closed-datum journey and the preprod walk-through follow. The devnet harness gains funding of a given address, so the pages need no devnet key. The sixteen numbered items of the run page keep their positions.
 
-## Pull request 3: the guides; open-datum retires the key file
+## Pull request 3: the guides
 
-Keeps behaviour for every documented line. open-datum's usage drops the key-file flag; the command reference drops its row; the negative-host page, the integrator guide and the release archive's read-me move to the vault or the external signer. The documented-flags check stops finding the write commands by the key-file flag on their usage lines, unless an earlier change has done so.
+Keeps behaviour for every documented line. The negative-host page, the integrator guide and the release archive's read-me move to the vault or the external signer. Retiring open-datum's key-file flag moved to issue 672 (decision of 2026-10-17).
 
 ## Neighbours and order
 
 - Issue 641 slices 2b, 3 and 5 gate this pull request's slices 2 and 3. Issue 491's booking preparation lands before slice 2.
-- Issue 672 retires the key-file flag from the registry commands and rebases on pull requests 2 and 3. Whichever change first drops the key-file flag from a binary's help updates the documented-flags check.
+- Issue 672 retires the key-file flag from the registry commands and from open-datum, in one harness migration, and rebases on pull requests 2 and 3. It updates the documented-flags check when it drops the flag from a binary's help.
 - keri-stub is not this ticket's.
 
 ## Gate and budget

@@ -35,15 +35,15 @@
       "pause": 500
     }
   ],
-  "pull-request-3-the-guides-open-datum-retires-the-key-file": [
+  "pull-request-3-the-guides": [
     {
-      "text": "The third pull request removes the key file from open-datum and moves the remaining guides to the vault.",
+      "text": "The third pull request moves the remaining guides to the vault; retiring open-datum's key file moved to issue 672.",
       "pause": 500
     }
   ],
   "neighbours-and-order": [
     {
-      "text": "Issue 641 gates slices two and three; issue 672 retires the key file from the registry and rebases on the second and third pull requests.",
+      "text": "Issue 641 gates slices two and three; issue 672 retires the key file from the registry and from open-datum, and rebases on the second and third pull requests.",
       "pause": 500
     }
   ],
@@ -55,6 +55,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "c8e47e4d47e19697412f81255790f0382b51a209e60610e4bd61275f5806e74d"
+    "sha256": "c91cc090535aba550a11fa0d99a5cf72b0e67422b063e382cc820ec4e9464110"
   }
 }

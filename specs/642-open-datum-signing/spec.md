@@ -12,7 +12,7 @@ The open-datum writes are create, insert, update, terminate and fold; insert and
 
 - the external signer: the address and the new file the bundle is written to. insert, update, terminate and fold take it from this ticket's first slice; create takes it once the registry's create stages its chain (issue 641), because open-datum's create is the registry's.
 - the vault: the vault file and, for scripts, the passphrase descriptor. All five writes take it once the registry's vault mode lands (issue 641).
-- the key file, unchanged until this ticket's last pull request removes it from open-datum's usage.
+- the key file, unchanged; issue 672 removes it from open-datum's usage together with the registry's.
 
 inspect is read only: it takes the address to locate a journal, and refuses the bundle file and the vault.
 
@@ -33,8 +33,8 @@ inspect is read only: it takes the address to locate a journal, and refuses the 
 - vault-lands-the-same-bundle: with the vault, the same commands build the bundle the external mode writes for the vault's address, sign it with one passphrase, send it, and state the receipt as fact once the whole bundle is found on chain.
 - usage-names-every-signer: each write's usage names the signers it accepts; documented flags equal what each command's help prints.
 - guides-use-the-vault: the Demo 1 run page, the preprod walk-through, the integrator guide, the command reference and the negative-host page show the vault or the external signer, with wallets from `singular wallet create`, and no `cardano-cli` key generation; the sixteen numbered items of the Demo 1 run page keep their positions.
-- key-file-retired-from-open-datum: the last pull request removes the key-file flag from open-datum's usage and its row from the settings table.
-- existing-commands-unchanged: every command line accepted before behaves as before until the last pull request, and a refused one changes only its text where this page says so.
+- key-file-retired-from-open-datum: moved to issue 672 (decision of 2026-10-17), which removes the key-file flag from open-datum's usage and its row from the settings table together with the registry's.
+- existing-commands-unchanged: every command line accepted before behaves as before, and a refused one changes only its text where this page says so.
 - committed-controls-bounded: every run command of a committed control is bounded in time and memory.
 
 ## Refusals

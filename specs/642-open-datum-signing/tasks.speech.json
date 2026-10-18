@@ -31,12 +31,12 @@
   ],
   "pull-request-3-the-guides": [
     {
-      "text": "The guides, and open-datum without the key file.",
+      "text": "The guides; retiring open-datum's key file moved to issue 672.",
       "pause": 500
     }
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "7d066956c5e0823c46879c5c52a8386da2a6fd1bd00fa4b19bde7511899a8f33"
+    "sha256": "c20e04de6f43183241c7fbf94869f54dcd123a07d0f1a5c2e9aa234dbefb1a38"
   }
 }

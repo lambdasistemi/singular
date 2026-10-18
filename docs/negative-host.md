@@ -31,7 +31,7 @@ both executables.
 To the ordinary client:
 
 ```bash
-open-datum update --key alice-1 --payload new.json --wallet-skey bob.skey
+open-datum update --key alice-1 --payload new.json --vault bob.vault
 ```
 
 The client reads the key's envelope, sees that its controller is not
@@ -44,6 +44,14 @@ To the negative host, the same move:
 ```bash
 singular-negative registry update --key alice-1 --payload new.json --wallet-skey bob.skey
 ```
+
+The negative host's parts keep key files as harness controls: it signs
+with whatever key file you name and opens no vault, so its command lines
+on this page name `--wallet-skey`, and only they do. Every `open-datum`
+line a reader types here signs from a vault (`--vault FILE`, the
+passphrase typed once at the prompt, or read from `--passphrase-fd FD`
+in a script) or names an address and a bundle file for a signer
+elsewhere.
 
 The host builds the update, signs it as Bob, and submits it
 unevaluated. The application's spending contract refuses it, the
@@ -174,20 +182,20 @@ post-split ordinary spellings.
 
 | Forbidden command under `singular-negative` | Refused by | The ordinary command it mirrors | What the ordinary command does instead | The accepting control |
 |---|---|---|---|---|
-| `registry update --key alice-1 --payload new.json --wallet-skey bob.skey` — a stranger's update (`stranger-updates-the-key`) | the application's spending contract | `open-datum update --key alice-1 --payload new.json --wallet-skey bob.skey` | refuses before submitting: the envelope names its controller, and this signer is not it | the controller's own update of the same key |
-| the controller's update `--tamper controller` (`controller-tamper-controller`) | the application's spending contract | `open-datum update --key alice-1 --payload new.json --wallet-skey alice.skey` | rebuilds the holding with the same address, the same value, the same recorded control and only the payload changed; no ordinary flag rewrites a protected field | the controller's update with no tamper flag |
+| `registry update --key alice-1 --payload new.json --wallet-skey bob.skey` — a stranger's update (`stranger-updates-the-key`) | the application's spending contract | `open-datum update --key alice-1 --payload new.json --vault bob.vault` | refuses before submitting: the envelope names its controller, and this signer is not it | the controller's own update of the same key |
+| the controller's update `--tamper controller` (`controller-tamper-controller`) | the application's spending contract | `open-datum update --key alice-1 --payload new.json --vault alice.vault` | rebuilds the holding with the same address, the same value, the same recorded control and only the payload changed; no ordinary flag rewrites a protected field | the controller's update with no tamper flag |
 | the controller's update `--tamper deposit` (`controller-tamper-deposit`) | the application's spending contract | the same `open-datum update` | the same: the recorded deposit is protected, not an input | the controller's update with no tamper flag |
 | the controller's update `--tamper token` (`controller-tamper-token`) | the application's spending contract | the same `open-datum update` | the same: the key's token stays with the holding, not an input | the controller's update with no tamper flag |
 | the controller's update `--tamper address` (`controller-tamper-address`) | the application's spending contract | the same `open-datum update` | the same: the holding's address is protected, not an input | the controller's update with no tamper flag |
 | the controller's update `--tamper datum` (`controller-tamper-datum`) | the application's spending contract | the same `open-datum update` | the same: the recorded control travels with the holding, not an input | the controller's update with no tamper flag |
-| `registry terminate --key alice-1 --wallet-skey bob.skey` — a stranger's termination booking (`stranger-terminates-the-key`) | the application's spending contract, at the booking | `open-datum terminate --key alice-1 --wallet-skey bob.skey` | refuses before submitting: the termination booking is the controller's | the controller's own termination booking |
+| `registry terminate --key alice-1 --wallet-skey bob.skey` — a stranger's termination booking (`stranger-terminates-the-key`) | the application's spending contract, at the booking | `open-datum terminate --key alice-1 --vault bob.vault` | refuses before submitting: the termination booking is the controller's | the controller's own termination booking |
 | `registry withdraw --key alice-1 --wallet-skey alice.skey` (`controller-withdraws-outside-a-fold`) | the application's spending contract | none: no ordinary command releases a holding outside a fold | books the termination (`open-datum terminate`) and folds it (`open-datum fold`); the release happens inside the fold | the same release inside the honest fold of the booked termination |
-| `registry insert --key alice-1 --payload new.json --wallet-skey bob.skey`, the key already active (`stranger-registers-a-taken-key`) | the registry's state validator, at the fold | `open-datum insert --key alice-1 --payload new.json --wallet-skey bob.skey` | refuses before submitting: the key is already registered | the same insertion of a fresh key the registry never held, from the same registry state |
+| `registry insert --key alice-1 --payload new.json --wallet-skey bob.skey`, the key already active (`stranger-registers-a-taken-key`) | the registry's state validator, at the fold | `open-datum insert --key alice-1 --payload new.json --vault bob.vault` | refuses before submitting: the key is already registered | the same insertion of a fresh key the registry never held, from the same registry state |
 | the same insertion signed by the key's owner (`owner-registers-a-taken-key-again`) | the registry's state validator, at the fold | the same `open-datum insert` | the same refusal: ownership of the key does not reopen it | the same fresh-key insertion from the same state |
 | `registry insert --key alice-1 --payload new.json --wallet-skey alice.skey`, the key terminal (`owner-revives-a-terminated-key`) | the registry's state validator | the same `open-datum insert` | refuses before submitting: the key is already retired, permanently | the same fresh-key insertion from the same terminal state |
 | the same revival signed by a stranger (`stranger-revives-a-terminated-key`) | the registry's state validator | the same `open-datum insert` | the same refusal: a terminated key stays terminal for everyone | the same fresh-key insertion from the same terminal state |
-| `registry fold --pay-short 1 --wallet-skey bob.skey` over the pending termination of `alice-2` (`short-fold-of-a-booked-termination`) | the application's spending contract, at the fold | `open-datum fold --wallet-skey bob.skey` | builds the fold from the public view and pays the controller exactly what the booking owes; no ordinary flag pays less | the honest fold of the same request |
-| `registry update --key alice-1 --payload new.json --wallet-skey alice.skey` on a registry created with `open-datum create --closed` (`closed-update`) | the closed application's spending contract | `open-datum update --key alice-1 --payload new.json --wallet-skey alice.skey` | refuses before submitting: the registry is closed, a payload is written once and an update is refused | the termination of the same key, booked and folded |
+| `registry fold --pay-short 1 --wallet-skey bob.skey` over the pending termination of `alice-2` (`short-fold-of-a-booked-termination`) | the application's spending contract, at the fold | `open-datum fold --vault bob.vault` | builds the fold from the public view and pays the controller exactly what the booking owes; no ordinary flag pays less | the honest fold of the same request |
+| `registry update --key alice-1 --payload new.json --wallet-skey alice.skey` on a registry created with `open-datum create --closed` (`closed-update`) | the closed application's spending contract | `open-datum update --key alice-1 --payload new.json --vault alice.vault` | refuses before submitting: the registry is closed, a payload is written once and an update is refused | the termination of the same key, booked and folded |
 
 Read the four insertion rows together, because their timing is the
 subtle part: an insertion is only a request. Under the host, the
@@ -272,7 +280,7 @@ deposit. The owner takes it back with the ordinary command:
 ```bash
 singular registry reclaim --request TRANSACTION#INDEX --blueprint plutus.json \
   --state-token POLICY.NAME --koios-url URL --network-magic N \
-  --wallet-skey owner.skey
+  --vault owner.vault
 ```
 
 The reclaim is governed by time, and the timing matters. A booking's
