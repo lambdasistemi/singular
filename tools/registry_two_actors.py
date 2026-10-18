@@ -93,6 +93,9 @@ WAITING_ON = {
 
 PROCESS_TIME_MS = 120000
 RETRACT_TIME_MS = 120000
+# Fixed for the life of a registry; create has no default for either.
+REGISTRATION_COST_LOVELACE = 0
+BOOKING_WIDTH_MS = 60000
 
 
 # ---------------------------------------------------------------
@@ -1440,6 +1443,10 @@ class Journey:
             "preview",
             [
                 "create",
+                "--registration-cost",
+                str(REGISTRATION_COST_LOVELACE),
+                "--booking-width",
+                str(BOOKING_WIDTH_MS),
                 "--process-time",
                 str(PROCESS_TIME_MS),
                 "--retract-time",
@@ -1463,6 +1470,10 @@ class Journey:
             "create",
             [
                 "create",
+                "--registration-cost",
+                str(REGISTRATION_COST_LOVELACE),
+                "--booking-width",
+                str(BOOKING_WIDTH_MS),
                 "--process-time",
                 str(PROCESS_TIME_MS),
                 "--retract-time",
