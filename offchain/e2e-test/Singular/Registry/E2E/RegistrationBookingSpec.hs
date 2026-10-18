@@ -19,7 +19,8 @@ What the row shows, and what it does not:
 * the same booking, with one thing changed after it was built and signed
   again, is refused by the node: one lovelace less in the request output, the
   upper end of the interval one slot later, the lower end far enough back to
-  make the interval wider than the registry's widest. Each refused
+  make the interval wider than the registry's widest (set to three seconds
+  for this row, so that the devnet need not be old to reach it). Each refused
   submission leaves the funding output unspent, and the unchanged booking is
   submitted last and accepted, so the change, and nothing else, is what the
   node refused: the earlier submissions happened inside the same validity
@@ -127,7 +128,7 @@ bookingSpec :: SBS.ShortByteString -> SBS.ShortByteString -> Spec
 bookingSpec stateBytes requestBytes =
     it
         "is accepted by the compiled validators, and refused by the node once its money or its clock is changed"
-        $ withBootedCage id stateBytes requestBytes
+        $ withBootedCage widthOfThirtySlots stateBytes requestBytes
         $ \cfg prov submit _tm reg -> do
             codes <- loadRegistryCodesFromEnv
             let tokenId = Driver.registryTokenId reg
@@ -164,8 +165,11 @@ bookingSpec stateBytes requestBytes =
                 -- Each is made to the finished booking and signed again;
                 -- none spends anything, because the node refuses it. The
                 -- interval's upper end moves one slot, still inside the
-                -- horizon, and its lower end back past the registry's
-                -- widest interval (100 slots).
+                -- horizon and the registry's widest interval, and its lower
+                -- end back ten slots, which makes the interval 3.7 seconds
+                -- against the registry's widest, 3 seconds. The lower end is
+                -- moved a few slots only: the devnet is seconds old, and a
+                -- lower end cannot go before slot zero.
                 refusals =
                     [
                         ( "one lovelace less in the request output"
@@ -177,7 +181,7 @@ bookingSpec stateBytes requestBytes =
                         )
                     ,
                         ( "the interval's lower end back past the registry's widest interval"
-                        , moveLowerEnd (-100)
+                        , moveLowerEnd (-10)
                         )
                     ]
                 -- The unchanged booking is submitted last. If it is accepted
@@ -229,6 +233,14 @@ bookingSpec stateBytes requestBytes =
                         "the accepted booking left no output at the request address"
                         >> fail "unreachable"
             readBack cfg upperMs out
+
+{- | The registry's widest interval for this row: three seconds, thirty
+slots of the devnet. The booking's own interval is 2.7 seconds, inside it; a
+lower end moved back ten slots makes it 3.7, outside it, on a devnet that is
+only seconds old.
+-}
+widthOfThirtySlots :: CageConfig -> CageConfig
+widthOfThirtySlots c = c{defaultBookingWidth = 3_000}
 
 -- | The booking the row makes: its registry, key, destination and clock.
 booking :: NamingCodes -> SlotNo -> SlotNo -> RegistrationBooking
