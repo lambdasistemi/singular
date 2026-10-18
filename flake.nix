@@ -1485,7 +1485,7 @@
                     exit 1
                   fi
                   # S5-1d-r2: the missing row fails pre-map on raw-count
-                  # equality (16 vs 17) before any map exists; that count
+                  # equality (17 vs 18) before any map exists; that count
                   # mismatch is its reason.
                   grep -q 'count mismatch' "$work/plant-missing.log" || {
                     echo "script-hash-comparison: missing-validator plant refused without its count reason:" >&2
@@ -1497,7 +1497,7 @@
                   # that normalises onto an existing title but carries another
                   # hash must fail (ambiguous normalised key and count
                   # mismatch) — the class the changed/missing plants do not
-                  # exercise on the current 17-row subject.
+                  # exercise on the current 18-row subject.
                   jq '.validators += [{"title": "alternate.open_datum.mint", "hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "compiledCode": "00"}]' "$work/union.json" >"$work/plant-collision.json"
                   [ "$(jq '.validators | length' "$work/plant-collision.json")" = "$(($(jq '.validators | length' "$work/union.json") + 1))" ] || {
                     echo "script-hash-comparison: collision plant did not apply" >&2
@@ -1560,7 +1560,7 @@
                   # application's onchain flake from the same two trees
                   # (jq merge, preamble from the registry's), it must equal
                   # the expected set exactly and carry byte-identical
-                  # compiledCode for all 17 validators — the pairing
+                  # compiledCode for all 18 validators — the pairing
                   # guarantee every executable's --blueprint relies on.
                   merged_bp="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/onchain#open-datum-blueprint")"
                   [ -f "$merged_bp" ] || {

@@ -134,7 +134,7 @@ def assemble(
     # repository version file beside the blueprint it describes.
     shutil.copyfile(root / "version.txt", farm / "onchain" / "version.txt")
     # S5.2: the archive's onchain/plutus.json is the merged deployment
-    # document (17 validators), so its script-identity.json is the merged
+    # document (18 validators), so its script-identity.json is the merged
     # manifest (union of the two committed manifests, same schema/compiler).
     # The farm already carries the registry manifest via tracked partitions;
     # overwrite it with the union so verify-identities.sh passes from the
@@ -158,8 +158,8 @@ def assemble(
         _reg_man["validators"] + _app_man["validators"],
         key=lambda v: v["title"],
     )
-    assert len(_merged_validators) == 17, (
-        f"merged manifest has {len(_merged_validators)} validators, not 17"
+    assert len(_merged_validators) == 18, (
+        f"merged manifest has {len(_merged_validators)} validators, not 18"
     )
     (farm / "onchain" / "script-identity.json").write_text(
         _json.dumps(
