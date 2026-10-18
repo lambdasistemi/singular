@@ -759,7 +759,7 @@ openDatumUsage =
         , "create takes positive integer windows in milliseconds. Its processing window"
         , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
         , "for the life of the registry; create and inspect report them from the state datum."
-        , "create requires --registration-cost (lovelace, zero or more) and --booking-width"
+        , "create requires the registration cost (lovelace, zero or more) and the booking width"
         , "(milliseconds, at least one): neither has a default, and both are fixed for the life of the registry."
         , "Create takes the closed switch to boot a closed-datum registry whose payload"
         , "is written once; every later command follows the registry's mode with no"
