@@ -34,6 +34,13 @@
 # failures (no node, no socket) are reported as setup, never as a result.
 #
 # The genesis-only wallet remains an explicit coverage refusal control.
+#
+# The sections up to 7e and section 8 are harness controls of the key-file path:
+# their wallets hold key files so that a writer which signs and sends can be
+# watched, killed and recovered. The guide's flow is section 7f: Alice and Bob,
+# with wallets made by `singular wallet create`, run the run page's sixteen
+# steps on a registry of their own, each write staged in a bundle (exit 19),
+# signed with `singular wallet sign --vault` and sent with `singular submit`.
 set -euo pipefail
 
 [ "$#" -ge 5 ] && [ "$#" -le 6 ] || {
@@ -136,11 +143,38 @@ hexkey >"$work/erin.skey"  # fragmented outputs below the largest remaining need
 hexkey >"$work/frank.skey" # same size, one output short of the whole run
 hexkey >"$work/grace.skey" # one 200 tADA output, state carrier reused after Alice
 
+# The key-file wallets above are the harness's: the controls that watch the
+# key-file path itself (the writer's journal phases, a process held and killed
+# after its submission, lock holders, races, key relocation) need a writer that
+# signs and sends. The story's Alice and Bob (section 7f) make their wallets
+# with `singular wallet create`, each in a directory of their own that stands
+# for their own machine, name their passphrase through an inherited descriptor,
+# and are funded by the address `singular wallet address` prints: no key file
+# of theirs exists.
+story="$work/story"
+mkdir -p "$story/alice" "$story/bob" "$story/bundles"
+alice_pass="alice's demo passphrase"
+bob_pass="bob's demo passphrase"
+for who in alice bob; do
+  pass_var="${who}_pass"
+  "$singular" wallet create --vault "$story/$who/$who.vault" --network-magic 42 --passphrase-fd 3 \
+    3<<<"${!pass_var}" >"$story/$who/create.out" 2>"$story/$who/create.err" \
+    || setup_fail "singular wallet create failed for $who: $(tail -n 3 "$story/$who/create.err" | tr '\n' ' ')"
+done
+vault_alice_addr="$("$singular" wallet address --vault "$story/alice/alice.vault" --network-magic 42 --passphrase-fd 3 3<<<"$alice_pass")"
+vault_bob_addr="$("$singular" wallet address --vault "$story/bob/bob.vault" --network-magic 42 --passphrase-fd 3 3<<<"$bob_pass")"
+case "$vault_alice_addr$vault_bob_addr" in
+  addr_test1*addr_test1*) ;;
+  *) setup_fail "singular wallet address printed no test-network addresses: $vault_alice_addr $vault_bob_addr" ;;
+esac
+[ "$vault_alice_addr" != "$vault_bob_addr" ] || setup_fail "Alice and Bob made the same wallet"
+
 export TMPDIR="$work"
 
 # ------------------------------------------------------------------
 # 0. coverage: a genesis-only wallet is refused on the Koios path
 # ------------------------------------------------------------------
+say "harness control of the key-file path: the sections up to the story (7f) run wallets that hold key files, to watch what a writer that signs and sends leaves behind; they are not the guide's flow"
 # These actual initial allocations have no transaction carried by a full
 # block. The private actor leaves them untouched for this control; the
 # node/genesis/epoch/slot/time parameters are the normal fixture's.
@@ -194,6 +228,7 @@ say "a genesis-only wallet: coverage-incomplete/12, nothing written"
   --fund "$work/dave.skey:1:5000000" --fund "$work/dave.skey:24:4000000" \
   --fund "$work/erin.skey:5:30000000" --fund "$work/frank.skey:4:30000000" \
   --fund "$work/grace.skey:1:200000000" \
+  --fund-address "$vault_alice_addr:6:2000000000" --fund-address "$vault_bob_addr:6:2000000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 # The per-wallet funding group is parsed before any node starts: a
@@ -205,6 +240,23 @@ bad_status=0
 grep -q '^devnet: --fund expects FILE:N:LOVELACE' "$bad_fund" \
   || fail "the malformed funding group was not refused by name: $(head -n 1 "$bad_fund")"
 say "the devnet refuses a malformed per-wallet funding group by name"
+# A wallet made elsewhere is funded from its public address alone
+# (--fund-address ADDRESS:N:LOVELACE); the same parse-first rule holds: a
+# group that is not three parts, a spelling that is no address and an address
+# of the main network are each refused by name before any node starts.
+# Bounded: a harness that took one would start a node and wait for ever.
+refuses_fund_address() {
+  local group="$1" expected="$2" out="$work/bad-fund-address.out" code=0
+  timeout 60 "$devnet" --fund-address "$group" >"$out" 2>&1 || code=$?
+  [ "$code" -ne 0 ] && [ "$code" -ne 124 ] \
+    || fail "the devnet did not refuse the funding group $group (exit $code)"
+  grep -q "^devnet: --fund-address $expected" "$out" \
+    || fail "the funding group $group was not refused by name: $(head -n 1 "$out")"
+}
+refuses_fund_address 'addr_test1vq6aahffs2sreuu70h8q8jpen98lmmpwc6cy788j6s8xrgc64xuck:two:4000000' 'expects ADDRESS:N:LOVELACE'
+refuses_fund_address 'not-an-address:1:4000000' '"not-an-address" is not a bech32 address'
+refuses_fund_address 'addr1vy6aahffs2sreuu70h8q8jpen98lmmpwc6cy788j6s8xrgcpajqhn:1:4000000' '"addr1vy6aahffs2sreuu70h8q8jpen98lmmpwc6cy788j6s8xrgcpajqhn" is a mainnet address'
+say "the devnet refuses a malformed funding address by name"
 # The node is the devnet runner's child: reap both, so no node of this
 # run outlives it holding the development network's ports.
 trap release_work EXIT
@@ -262,7 +314,12 @@ exit_of() {
 trace_disagreements() {
   local receipt="$1" trace="$2" key="${3:-}"
   jq -s -c --slurpfile r "$receipt" --arg invoked "$key" '
-    $r[0] as $r
+    # A staged run (outcome waiting-for-signatures) states its own facts under
+    # expected, because nothing has landed: the narration is compared with that
+    # statement, and its transactions are the bundle'"'"'s, staged and never sent.
+    $r[0] as $r0
+    | ($r0 | if .outcome == "waiting-for-signatures" then . + .expected else . end) as $r
+    | [$r0.bundle.transactions[]? | {step, tx: .identity}] as $staged
     | . as $ev
     | ([$r | if .command == "fold" then (.settled // [])[].key else .key end] | map(select(. != null))) as $rk
     | ((if ($rk | length) > 0 then $rk elif $invoked == "" then [] else [$invoked] end)) as $receiptKeys
@@ -272,10 +329,16 @@ trace_disagreements() {
        + [$r | .. | objects | select(has("pendingRequest")) | {request: .pendingRequest}]
        + [$r | select(.booking != null) | {request: (((.booking | if type == "object" then .txId else . end) // "") + "#0"), key}]) as $facts
     | (($facts | length == 0) and ($r.outcome != "success")) as $bare_refusal
-    | [$r.submissions[]? | {step, tx, case, observed}] as $subs
-    | [$r.references[]? | {step: ("publish-" + .role), tx: (.output | split("#")[0])}
-       | select(.tx as $t | $subs | map(.tx) | index($t) | not)] as $reused
-    | (first($ev[] | select(.event == "root") | .before) // $r.root) as $before
+    | (if ($staged | length) > 0 then [] else [$r.submissions[]? | {step, tx, case, observed}] end) as $subs
+    | (if ($staged | length) > 0 then [] else
+       [$r.references[]? | {step: ("publish-" + .role), tx: (.output | split("#")[0])}
+        | select(.tx as $t | $subs | map(.tx) | index($t) | not)] end) as $reused
+    # The root a command read before it wrote: the root event'"'"'s own, else the
+    # receipt'"'"'s root. A staged run narrates no root as seen and states its
+    # root as the one its bundle expects, after the write, so it has no root
+    # to compare the registry event with.
+    | (first($ev[] | select(.event == "root") | .before)
+        // (if ($staged | length) > 0 then null else $r.root end)) as $before
     | def keys_of: (if .event == "key" or .event == "folded" or .event == "updated" then .key else empty end),
         (.scope[]? | .key? // empty);
       def requests_of: (if .event == "request" or .event == "booked" or .event == "reclaimed" then .request else empty end),
@@ -326,9 +389,18 @@ trace_disagreements() {
                         and .pending != ($r.pendingRequests | length)) | "pending \(.pending)"),
         ($ev[] | select(.event == "registry" and $before != null and .root != $before) | "registry root \(.root)"),
         ($ev[] | select(.tx != null) | . as $e | {step, tx} as $t
-         | select($subs | map({step, tx}) | index($t) | not)
+         | select(($subs | map({step, tx}) | index($t) | not) and ($staged | index($t) | not))
          | select(($e.event == "tx-observed" and ($reused | index($t))) | not)
          | "transaction \($t) not among the submissions of the receipt"),
+        ($staged[] as $t
+         | select(([$ev[] | select(.event == "tx-staged" and .step == $t.step and .tx == $t.tx)] | length) != 1)
+         | "staged transaction \($t) has not exactly one staged event"),
+        (if ($staged | length) > 0 then
+           (if ([$ev[] | select(.event == "tx-built")] | length) != ($staged | length)
+            then "built events against \($staged | length) staged transactions" else empty end),
+           ($ev[] | select(.event | IN("tx-signed", "tx-submitted", "tx-confirmed", "tx-observed"))
+            | "a staged run narrates \(.event)")
+         else empty end),
         ($reused[] as $t
          | select(([$ev[] | select(.event == "tx-observed" and .step == $t.step and .tx == $t.tx)] | length) != 1)
          | "reference \($t) not read back once"),
@@ -2556,8 +2628,421 @@ jq -e --slurpfile correct "$receipts/inspect-after-reclaim-fold.json" \
 # the lineage source refusal control in the owner evidence bundle.
 
 # ------------------------------------------------------------------
+# 7f. the story, with wallets made by `singular wallet create` (#642)
+# ------------------------------------------------------------------
+# Alice and Bob run the run page's sixteen steps, in page order, on a registry
+# of their own, with wallets they made with `singular wallet create` and the
+# devnet funded by address: no key file of either exists, and no `cardano-cli`
+# ran. The page shows both ways to sign, and so does the leg. Alice signs in one
+# command: `--vault FILE --passphrase-fd FD` opens her vault, builds the run's
+# one bundle, signs it, sends it and lands it, and the receipt states the
+# command's own fields as fact. Bob signs the external way: his write names
+# his address and a new bundle file where the key-file legs above name a key
+# file, builds its whole run as one bundle, signs and sends nothing and exits
+# 19; `singular wallet sign --vault` signs the bundle and `singular submit`
+# sends it. Bob's own fields (the request, the envelope, the fold, the root)
+# are `expected` until his transactions are found on chain: only after
+# `singular submit` reports every transaction of the bundle on chain does the
+# leg read them as facts, as the landed view of the receipt. Each step then
+# checks what its key-file counterpart above checks (the booking's request and
+# deadline, the fold's settled request and margin, the readback of the key,
+# the root) against reads of the chain. Alice's steps are the vault's, Bob's
+# the external flow's, so that both ways run for both binaries: `open-datum`
+# (Alice's insert, update, terminate and fold; Bob's folds, insert and
+# terminate with the fold) and `singular registry` (Bob's reject; Alice's
+# reclaim).
+say "the story: Alice and Bob keep no signing key on disk. Alice signs from her vault: her command opens the vault, builds its whole run as one bundle, signs it, sends it and lands it in one step. Bob signs the external way: his write names the wallet's address and a new bundle file, builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures; he then signs the bundle from his vault with singular wallet sign and sends it with singular submit."
+s_reg="$story/reg"
+scommon=(--state-dir "$s_reg" --blueprint "$blueprint")
+s_window_process=120000
+s_window_retract=60000
+payload "$story/payload.json"
+jq -n '{constructor:3, fields:[{bytes:"626f62"},{int:123456789012345678901234567890}]}' >"$story/payload-update.json"
+
+# story_who WHO FIELD: a story wallet's passphrase or address.
+story_who() {
+  case "$1/$2" in
+    alice/pass) printf '%s' "$alice_pass" ;;
+    bob/pass) printf '%s' "$bob_pass" ;;
+    alice/addr) printf '%s' "$vault_alice_addr" ;;
+    bob/addr) printf '%s' "$vault_bob_addr" ;;
+    *) fail "no story wallet $1/$2" ;;
+  esac
+}
+# story_stage NAME WHO -- ARGS: one write of WHO's in the external flow. The
+# receipt is NAME-staged: exit 19, the bundle file written, WHO's address its
+# only signer, the write's own fields under `expected`, no submission.
+story_stage() {
+  local name="$1" who="$2" bundle="$story/bundles/$1.bundle" addr
+  shift 3
+  addr="$(story_who "$who" addr)"
+  run "$name-staged" waiting-for-signatures -- "$@" --wallet-address "$addr" --bundle "$bundle"
+  [ -s "$bundle" ] || fail "$name: the staged run wrote no bundle file"
+  jq -e --arg a "$addr" --arg w "$bundle" '
+      .bundle.signers == [$a] and .bundle.written == $w
+      and (.bundle.transactions | length > 0)
+      and (.expected | type == "object") and (has("submissions") | not)' \
+    "$receipts/$name-staged.json" >/dev/null \
+    || fail "$name: the staged receipt does not name the bundle, its only signer and its own fields under expected"
+}
+# story_settle NAME WHO: WHO signs the bundle with the vault (one witness per
+# transaction, the passphrase through an inherited descriptor) and sends it;
+# the submission must find every transaction of the bundle on chain. The
+# receipt NAME is then the landed view: the staged `expected` fields, stated
+# as facts, beside the chain points `singular submit` read.
+story_settle() {
+  local name="$1" who="$2" bundle="$story/bundles/$1.bundle" witnesses="$story/witnesses/$1" n status=0
+  n="$(jq '.bundle.transactions | length' "$receipts/$name-staged.json")"
+  "$singular" wallet sign --vault "$story/$who/$who.vault" --passphrase-fd 3 --out "$witnesses" "$bundle" \
+    3<<<"$(story_who "$who" pass)" >"$receipts/$name.signed" 2>"$receipts/$name.sign.err" \
+    || fail "$name: $who's wallet sign failed: $(tail -n 3 "$receipts/$name.sign.err" | tr '\n' ' ')"
+  [ "$(wc -l <"$receipts/$name.signed")" -eq "$n" ] && [ "$(find "$witnesses" -name '*.witness' | wc -l)" -eq "$n" ] \
+    || fail "$name: the signing step did not write one witness per transaction ($n)"
+  "$singular" submit --witnesses "$witnesses" "${node[@]}" --receipt "$receipts/$name.submitted.json" "$bundle" \
+    >"$receipts/$name.submit.out" 2>"$receipts/$name.submit.err" || status=$?
+  [ "$status" -eq 0 ] || fail "$name: singular submit exited $status: $(tail -n 3 "$receipts/$name.submit.err" | tr '\n' ' ')"
+  jq -e --slurpfile s "$receipts/$name-staged.json" '
+      .command == "submit" and .outcome == "success"
+      and .bundleHash == $s[0].bundle.hash
+      and ([.submissions[].identity] == [$s[0].bundle.transactions[].identity])
+      and all(.submissions[]; (.chainPoint.slot | type == "number") and .how == "sent")' \
+    "$receipts/$name.submitted.json" >/dev/null \
+    || fail "$name: the submission did not find every transaction of the bundle on chain, in the bundle's order"
+  jq --slurpfile u "$receipts/$name.submitted.json" \
+    '{command, outcome: "success",
+      landed: {bundle: .bundle.hash, transactions: [$u[0].submissions[] | {identity, chainPoint, confirmations}]}}
+     + .expected' "$receipts/$name-staged.json" >"$receipts/$name.json"
+  say "$name: $who signed the bundle with the vault and sent it; $n transaction(s) on chain"
+}
+# story_vault NAME WHO -- ARGS: one write of WHO's in the one-command vault mode.
+# The command opens WHO's vault (the passphrase through an inherited descriptor),
+# builds the same bundle the external flow writes for the vault's address, signs
+# it, sends it and lands it in one step: the receipt is the command's own, stated
+# as fact, with nothing under `expected`, the bundle's transactions and the
+# submit core's per-transaction chain facts.
+story_vault() {
+  local name="$1" who="$2" addr n
+  shift 3
+  addr="$(story_who "$who" addr)"
+  run "$name" success -- "$@" --vault "$story/$who/$who.vault" --passphrase-fd 3 \
+    3<<<"$(story_who "$who" pass)"
+  jq -e --arg a "$addr" '
+      .bundle.signers == [$a] and (.bundle.transactions | length > 0)
+      and (has("expected") | not)
+      and ([.submissions[].identity] == [.bundle.transactions[].identity])
+      and all(.submissions[]; (.chainPoint.slot | type == "number") and .how == "sent")' \
+    "$receipts/$name.json" >/dev/null \
+    || fail "$name: the vault run did not sign and send every transaction of its bundle, in order, with its fields stated as fact"
+  n="$(jq '.bundle.transactions | length' "$receipts/$name.json")"
+  say "$name: $who signed from the vault and sent the bundle in one command; $n transaction(s) on chain"
+}
+# story_envelope_ok NAME CONTROLLER KEY PAYLOAD_FILE: the landed envelope is the
+# datum the story registry, the key, the controller and the payload make.
+story_envelope_ok() {
+  jq -e --arg s "$s_state" --arg t "$s_token" --arg a "$s_active" --arg k "$(hexof "$3")" \
+    --arg c "$2" --slurpfile p "$4" '.envelope == {constructor:0, fields:[
+      {constructor:0, fields:[{int:1},{constructor:0,fields:[{bytes:$s},{bytes:$t}]},
+        {bytes:$a},{bytes:$k},{bytes:$c},{int:2000000}]}, $p[0]]}' \
+    "$receipts/$1.json" >/dev/null
+}
+# story_fold_ok NAME BOOKING EDGE: the landed fold settles the booking's one
+# request on the edge, with a wallet other than the booker's, before the
+# deadline and with the margin the key-file fold above keeps.
+story_fold_ok() {
+  jq -e --slurpfile b "$receipts/$2.json" '
+      (.settled | length == 1)
+      and .settled[0].request == $b[0].request and .foldDeadline.posixMs == $b[0].foldDeadline.posixMs
+      and .folder != $b[0].requester and .settled[0].edge == "'"$3"'"
+      and (.fold | test("^[0-9a-f]{64}$"))
+      and (.fold as $f | ((.landed.transactions // .submissions) | map(.identity) | index($f)) != null)
+      and (.validUntilSlot | type == "number")
+      and (if .foldDeadline.slot != null then .validUntilSlot <= .foldDeadline.slot else true end)
+      and (.hostClockMs + 30000 < .foldDeadline.posixMs)
+      and (.remainingMs | type == "number" and . > 30000)' "$receipts/$1.json" >/dev/null \
+    || fail "$1: the fold does not name the booking's request and deadline, or the booker folded, or it left no margin"
+}
+# story_wait_until MS WHAT: sleep until the epoch millisecond MS plus 3 s.
+story_wait_until() {
+  local wait_ms=$(($1 + 3000 - $(date +%s%3N)))
+  if [ "$wait_ms" -gt 0 ]; then
+    say "waiting $((wait_ms / 1000 + 1)) s for $2"
+    sleep $((wait_ms / 1000 + 1))
+  fi
+}
+
+say "story 1. Preview the identity a seed gives, from Alice's address alone, then create the registry on it."
+# 1. Preview the identity a seed gives (the address alone), then create.
+run story-preview success -- create --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
+  "${scommon[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
+run story-bob-preview success -- create --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
+  --state-dir "$story/bob-preview" --blueprint "$blueprint" "${node[@]}" --wallet-address "$vault_bob_addr"
+[ ! -e "$s_reg" ] && [ ! -e "$story/bob-preview" ] || fail "a story preview created its target"
+s_alicekey="$(field story-preview .walletKeyHash)"
+s_bobkey="$(field story-bob-preview .walletKeyHash)"
+[ "$(field story-preview .wallet)" = "$vault_alice_addr" ] || fail "the story preview names another wallet than Alice's vault address"
+# Alice creates in one command from her vault.
+story_vault story-create alice -- create --seed "$(field story-preview .seed)" \
+  --process-time "$s_window_process" --retract-time "$s_window_retract" "${scommon[@]}" "${node[@]}"
+# The state script is the same for every registry of a release: Alice's story
+# create found the live carrier of it by hash and published none.
+jq -e --slurpfile m "$receipts/create.json" '
+    [.references[] | select(.role == "state") | .output]
+      == [$m[0].references[] | select(.role == "state") | .output]
+    and (.bundle.transactions | map(.step) | index("publish-state") | not)
+    and (.references | map(.role) | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"])
+    and .processTime == '"$s_window_process"' and .retractTime == '"$s_window_retract"'
+    and .walletKeyHash == "'"$s_alicekey"'" and .wallet == "'"$vault_alice_addr"'"' \
+  "$receipts/story-create.json" >/dev/null \
+  || fail "the story create does not boot from the live state carrier with six references and Alice's windows"
+s_state_token="$(field story-create .stateToken)"
+s_state="$(field story-create .pins.pinState)"
+s_token="$(field story-create .token)"
+s_active="$(field story-create .pins.pinActive)"
+[ "$s_state_token" = "$s_state.$s_token" ] || fail "the story create did not print the state token $s_state.$s_token"
+scommon+=(--state-token "$s_state_token")
+
+say "story 2. Read the registry page with the command the create receipt printed."
+# 2. The registry page, with the command the create receipt printed.
+if [ "$page_steps_run" = 1 ]; then
+  s_describe_cmd="$(field story-create .describeCommand)"
+  [ "$s_describe_cmd" != "null" ] && [ -n "$s_describe_cmd" ] || fail "the story create printed no describe command"
+  path_before="$PATH"
+  PATH="$work/archive-bin:$PATH"
+  describe_status=0
+  eval "$s_describe_cmd --json" >"$receipts/story-describe-after-create.json" 2>"$receipts/story-describe-after-create.err" || describe_status=$?
+  PATH="$path_before"
+  [ "$describe_status" -eq 0 ] || fail "the story's printed describe command failed: $(tail -n 3 "$receipts/story-describe-after-create.err" | tr '\n' ' ')"
+  run story-inspect-empty success -- inspect --key alice "${scommon[@]}" "${node[@]}"
+  [ "$(field story-inspect-empty .leaf)" = unknown ] || fail "the story registry holds a key before any insertion"
+  page_agrees "$receipts/story-describe-after-create.json" "$receipts/story-inspect-empty.json" "" 0 0 0 \
+    || fail "the story's page after create differs from its readback"
+  say "the story's registry page reads after create from the receipt's command"
+fi
+
+say "story 3. Book an insertion of a key with its first payload; Alice's wallet is its controller."
+# 3. Alice books an insertion from her vault; the request stays pending.
+story_vault story-insert alice -- insert --key alice --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+booked story-insert
+[ "$(field story-insert .requester)" = "$s_alicekey" ] || fail "the story booking's requester is not Alice's key"
+story_envelope_ok story-insert "$s_alicekey" alice "$story/payload.json" \
+  || fail "the story booking's envelope is not the one the registry, the key, Alice and the payload make"
+run story-inspect-pending success -- inspect --key alice "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-pending .leaf)" = unknown ] || fail "inspect after a landed booking alone does not read the key unknown"
+jq -e --argjson p "$s_window_process" --argjson r "$s_window_retract" --slurpfile b "$receipts/story-insert.json" '
+  .processTime == $p and .retractTime == $r
+  and ([.pendingRequests[] | select(.request == $b[0].request)] | length == 1)
+  and ([.pendingRequests[] | select(.request == $b[0].request)][0].submittedAt + .processTime == $b[0].foldDeadline.posixMs)' \
+  "$receipts/story-inspect-pending.json" >/dev/null \
+  || fail "inspect did not read the story's windows, or the booking deadline differs from its live submission time plus the processing window"
+
+say "story 4. Fold it, before that deadline. Any wallet may fold: here, Bob's."
+# 4. Bob folds it before that deadline, with his own wallet, the external way:
+# his command builds the bundle and exits 19, his vault signs it, submit sends it.
+story_stage story-fold bob -- fold "${scommon[@]}" "${node[@]}"
+story_settle story-fold bob
+story_fold_ok story-fold story-insert insertActive
+[ "$(field story-fold .folder)" = "$s_bobkey" ] || fail "Alice's story request was not folded with Bob's key"
+jq -e --slurpfile e "$receipts/story-insert.json" --arg k "$(hexof alice)" '.settled[0].key == $k
+  and .settled[0].settlement.envelope == $e[0].envelope
+  and (.settled[0].settlement.liveOutput | test("#"))' "$receipts/story-fold.json" >/dev/null \
+  || fail "the story fold does not deliver Alice's envelope at her key"
+# A landed bundle sends nothing the second time: its transactions are found.
+status=0
+"$singular" submit --witnesses "$story/witnesses/story-fold" "${node[@]}" --receipt "$receipts/story-fold.again.json" \
+  "$story/bundles/story-fold.bundle" >/dev/null 2>"$receipts/story-fold.again.err" || status=$?
+[ "$status" -eq 0 ] || fail "submitting the landed fold bundle again failed"
+jq -e 'all(.submissions[]; .how == "found")' "$receipts/story-fold.again.json" >/dev/null \
+  || fail "submitting the landed fold bundle again sent a transaction instead of finding it"
+say "story fold: submitting its landed bundle again finds every transaction and sends none"
+
+say "story 5. Read it back: no signing key, nothing submitted."
+# 5. Read it back: no signing key, nothing submitted.
+run story-inspect-1 success -- inspect --key alice "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-1 .leaf)" = active ] || fail "inspect after the story insert is not active"
+[ "$(field story-inspect-1 .root)" = "$(field story-fold .root)" ] || fail "inspect root differs from the story fold's"
+[ "$(field story-inspect-1 .root)" != "$(field story-inspect-pending .root)" ] || fail "the story fold did not move the root"
+jq -e --slurpfile i "$receipts/story-insert.json" '.applicationOutput.envelope == $i[0].envelope' \
+  "$receipts/story-inspect-1.json" >/dev/null \
+  || fail "the story holding's envelope is not the one the insert receipt reports"
+
+say "story 6. Replace the payload."
+# 6. Alice replaces the payload from her vault.
+story_vault story-update alice -- update --key alice --payload "$story/payload-update.json" "${scommon[@]}" "${node[@]}"
+[ "$(field story-update .root)" = "$(field story-inspect-1 .root)" ] \
+  || fail "the story update does not leave the root where it is"
+
+say "story 7. Read it back."
+# 7. Read it back.
+run story-inspect-2 success -- inspect --key alice "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-2 .leaf)" = active ] || fail "inspect after the story update is not active"
+[ "$(field story-inspect-2 .root)" = "$(field story-fold .root)" ] || fail "the story update moved the root"
+jq -e --slurpfile p "$story/payload-update.json" '.applicationOutput.payload == $p[0]' \
+  "$receipts/story-inspect-2.json" >/dev/null || fail "the story holding does not carry the new payload"
+
+say "story 8. Book the termination of the key."
+# 8. Alice books the termination of the key from her vault.
+story_vault story-terminate alice -- terminate --key alice "${scommon[@]}" "${node[@]}"
+booked story-terminate
+jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
+  "$receipts/story-terminate.json" >/dev/null \
+  || fail "the story termination booking does not name the live output its fold will release"
+run story-inspect-booked success -- inspect --key alice "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-booked .leaf)" = active ] || fail "the story key is not still active after a termination booking alone"
+
+say "story 9. Fold it: the fold burns the token and releases the deposit."
+# 9. Bob folds it, the external way: the fold burns the token and releases the deposit.
+story_stage story-terminate-fold bob -- fold --request "$(field story-terminate .request)" "${scommon[@]}" "${node[@]}"
+story_settle story-terminate-fold bob
+story_fold_ok story-terminate-fold story-terminate updateTerminal
+[ "$(field story-terminate-fold .settled[0].settlement.released)" = "$(field story-terminate .released)" ] \
+  || fail "the story fold released another output than the booking named"
+
+say "story 10. Read it back."
+# 10. Read it back.
+run story-inspect-3 success -- inspect --key alice "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-3 .leaf)" = terminal ] || fail "the story key is not terminal"
+jq -e '.applicationOutput.absent' "$receipts/story-inspect-3.json" >/dev/null || fail "the story holding is still live"
+[ "$(field story-inspect-3 .root)" = "$(field story-terminate-fold .root)" ] || fail "inspect root differs from the termination fold's"
+
+say "story 11. A request nobody folded or took back stays pending past both its windows and blocks the registry's fold. Reject it; any wallet may: here, Bob's."
+# 11. A request nobody folded or took back stays pending past both its windows
+# and blocks the registry's fold: Alice books one from her vault and nobody
+# folds it. Bob's reject is refused while a window is open (no bundle is
+# written), then he rejects it, the external way.
+story_vault story-late alice -- insert --key late --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+booked story-late
+s_late_deadline="$(field story-late .foldDeadline.posixMs)"
+s_late_retract_ends=$((s_late_deadline + s_window_retract))
+[ "$(($(date +%s%3N) + 5000))" -lt "$s_late_retract_ends" ] || setup_fail "the story's late request has no open window left for the early reject"
+run story-reject-early client-refusal -- registry reject "${scommon[@]}" "${node[@]}" \
+  --wallet-address "$vault_bob_addr" --bundle "$story/bundles/story-reject-early.bundle"
+[ ! -e "$story/bundles/story-reject-early.bundle" ] || fail "a refused reject wrote a bundle"
+jq -e --slurpfile l "$receipts/story-late.json" '.reason | contains($l[0].request) and contains("window")' \
+  "$receipts/story-reject-early.json" >/dev/null || fail "the early story reject does not name the request and its open window"
+story_wait_until "$s_late_retract_ends" "the late request's retract window to close"
+run story-inspect-late success -- inspect --key late "${scommon[@]}" "${node[@]}"
+s_root_before_reject="$(field story-inspect-late .root)"
+story_stage story-reject bob -- registry reject "${scommon[@]}" "${node[@]}"
+jq -e --slurpfile l "$receipts/story-late.json" --arg owner "$s_alicekey" --arg addr "$vault_alice_addr" --arg bob "$s_bobkey" --arg root "$s_root_before_reject" '
+    (.expected.reject | test("^[0-9a-f]{64}$")) and .expected.rejector == $bob and .expected.root == $root
+    and (.expected.rejected | length == 1)
+    and .expected.rejected[0].request == $l[0].request and .expected.rejected[0].owner == $owner
+    and .expected.rejected[0].returned.recipient == $addr' "$receipts/story-reject-staged.json" >/dev/null \
+  || fail "the staged story reject does not return the late request to its owner's address with the root unmoved"
+story_settle story-reject bob
+run story-inspect-rejected success -- inspect --key late "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-rejected .root)" = "$s_root_before_reject" ] || fail "the story reject moved the root"
+[ "$(jq '.pendingRequests | length' "$receipts/story-inspect-rejected.json")" = 0 ] \
+  || fail "the story reject left a request pending"
+jq -e --arg r "$(field story-reject .reject)" '
+    [.submissions[] | select(.identity == $r) | .outputs[] | select(.unspent)] | length > 0' \
+  "$receipts/story-reject.submitted.json" >/dev/null || fail "the story reject's outputs are not on chain"
+
+say "story 12. The registry takes requests again: book a new insertion."
+# 12. The registry takes requests again: Bob books an insertion of his own, the
+# external way.
+story_stage story-bob-insert bob -- insert --key bob --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+# Nothing was sent: the staged request is not on chain.
+run story-inspect-unsent success -- inspect --key bob "${scommon[@]}" "${node[@]}"
+[ "$(jq '.pendingRequests | length' "$receipts/story-inspect-unsent.json")" = 0 ] \
+  || fail "a staged booking is pending on chain before its bundle was sent"
+# While the bundle waits for its signatures, Bob's next write stops before it
+# builds anything: the same outcome and status, no second bundle, nothing
+# journalled of its own.
+s_bob_journal="$(managed_journal "$s_reg" "$s_state_token" "$s_bobkey")"
+s_nonlanded() { jq -s '[.[] | select(.journalEvent != "landed")] | length' "$1"; }
+s_journal_before="$(s_nonlanded "$s_bob_journal")"
+run story-insert-while-waiting waiting-for-signatures -- insert --key bobTwo --payload "$story/payload.json" \
+  "${scommon[@]}" "${node[@]}" --wallet-address "$vault_bob_addr" --bundle "$story/bundles/story-insert-while-waiting.bundle"
+[ ! -e "$story/bundles/story-insert-while-waiting.bundle" ] && [ "$(s_nonlanded "$s_bob_journal")" = "$s_journal_before" ] \
+  || fail "a write stopped by a waiting bundle wrote a bundle or journalled something"
+# Alice cannot sign Bob's bundle: her vault's address is not among its signers.
+status=0
+"$singular" wallet sign --vault "$story/alice/alice.vault" --passphrase-fd 3 --out "$story/witnesses/stranger" \
+  "$story/bundles/story-bob-insert.bundle" 3<<<"$alice_pass" >"$receipts/story-stranger.out" 2>"$receipts/story-stranger.err" || status=$?
+[ "$status" -ne 0 ] && [ ! -s "$receipts/story-stranger.out" ] && [ -z "$(find "$story/witnesses/stranger" -name '*.witness' 2>/dev/null)" ] \
+  || fail "Alice's vault signed Bob's bundle (exit $status)"
+say "Alice's vault is refused Bob's bundle: its address is not among the signers"
+story_settle story-bob-insert bob
+booked story-bob-insert
+[ "$(field story-bob-insert .requester)" = "$s_bobkey" ] || fail "the booking's requester is not Bob's key"
+story_envelope_ok story-bob-insert "$s_bobkey" bob "$story/payload.json" \
+  || fail "Bob's story insert did not book his own key hash as controller"
+
+say "story 13. Fold it."
+# 13. Alice folds it from her vault.
+story_vault story-bob-fold alice -- fold "${scommon[@]}" "${node[@]}"
+story_fold_ok story-bob-fold story-bob-insert insertActive
+[ "$(field story-bob-fold .folder)" = "$s_alicekey" ] || fail "Bob's story request was not folded with Alice's key"
+run story-inspect-bob success -- inspect --key bob "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-bob .leaf)" = active ] || fail "Bob's story key is not active"
+
+say "story 14. Book a different insertion and keep its request reference from the receipt. Let its processing deadline pass, then reclaim during its retract window."
+# 14. Alice books a different insertion from her vault, keeps its request
+# reference from the receipt, lets its processing deadline pass and reclaims it
+# in the retract window, from her vault.
+story_vault story-carol alice -- insert --key carol --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+booked story-carol
+s_carol_deadline="$(field story-carol .foldDeadline.posixMs)"
+story_wait_until "$s_carol_deadline" "the carol request's processing deadline to pass"
+run story-inspect-before-reclaim success -- inspect --key carol "${scommon[@]}" "${node[@]}"
+story_vault story-reclaim alice -- registry reclaim --request "$(field story-carol .request)" "${scommon[@]}" "${node[@]}"
+jq -e --slurpfile c "$receipts/story-carol.json" --arg owner "$s_alicekey" --arg addr "$vault_alice_addr" --arg root "$(field story-inspect-before-reclaim .root)" '
+    .request == $c[0].request and .owner == $owner
+    and .returned.recipient == $addr and .root == $root' \
+  "$receipts/story-reclaim.json" >/dev/null \
+  || fail "the story reclaim does not return the request to its owner's address with the root unmoved"
+run story-inspect-reclaimed success -- inspect --key carol "${scommon[@]}" "${node[@]}"
+[ "$(jq '.pendingRequests | length' "$receipts/story-inspect-reclaimed.json")" = 0 ] \
+  || fail "the story reclaim left a request pending"
+[ "$(field story-inspect-reclaimed .leaf)" = unknown ] || fail "the reclaimed story key is known to the registry"
+[ "$(field story-inspect-reclaimed .root)" = "$(field story-inspect-before-reclaim .root)" ] || fail "the story reclaim moved the root"
+
+say "story 15. The reclaimed request no longer blocks the next insertion."
+# 15. The reclaimed request no longer blocks the next insertion.
+story_vault story-dave alice -- insert --key dave --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+booked story-dave
+
+say "story 16. Fold it with Bob's wallet."
+# 16. Bob folds it, the external way.
+story_stage story-dave-fold bob -- fold "${scommon[@]}" "${node[@]}"
+story_settle story-dave-fold bob
+story_fold_ok story-dave-fold story-dave insertActive
+run story-inspect-dave success -- inspect --key dave "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-dave .leaf)" = active ] || fail "the story key dave is not active"
+[ "$(field story-inspect-dave .root)" = "$(field story-dave-fold .root)" ] || fail "inspect root differs from the last story fold's"
+
+# The combined forms. Alice inserts and folds in one command from her vault: the
+# bundle holds the booking and the fold, signed and sent together. Bob
+# terminates and folds in one command the external way: one bundle, signed once.
+story_vault story-insert-fold alice -- insert --fold --key erin --payload "$story/payload.json" "${scommon[@]}" "${node[@]}"
+jq -e '(.bundle.transactions | map(.step) == ["book", "fold"])
+    and (.booking | test("^[0-9a-f]{64}$")) and (.fold | test("^[0-9a-f]{64}$"))
+    and .booking != .fold and (.settled | length == 1)' \
+  "$receipts/story-insert-fold.json" >/dev/null \
+  || fail "the story insert --fold does not hold exactly its booking and its fold"
+run story-inspect-erin success -- inspect --key erin "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-erin .leaf)" = active ] || fail "insert --fold left the key erin not active"
+story_stage story-terminate-fold-bob bob -- terminate --fold --key bob "${scommon[@]}" "${node[@]}"
+jq -e '(.bundle.transactions | map(.step) == ["book", "fold"]) and (.expected.settled | length == 1)
+    and .expected.settled[0].edge == "updateTerminal"' "$receipts/story-terminate-fold-bob-staged.json" >/dev/null \
+  || fail "the staged story terminate --fold does not hold exactly its booking and its fold"
+story_settle story-terminate-fold-bob bob
+run story-inspect-bob-terminal success -- inspect --key bob "${scommon[@]}" "${node[@]}"
+[ "$(field story-inspect-bob-terminal .leaf)" = terminal ] || fail "terminate --fold left Bob's key not terminal"
+[ "$(jq '.pendingRequests | length' "$receipts/story-inspect-bob-terminal.json")" = 0 ] \
+  || fail "the story ends with a request still pending"
+
+# Alice and Bob made no key file: the story directory holds the two vaults and
+# no signing key outside them.
+[ -z "$(find "$story" -name '*.skey')" ] && [ "$(find "$story" -name '*.vault' | wc -l)" -eq 2 ] \
+  || fail "the story directory holds a key file, or other than the two vaults"
+say "the story: Alice and Bob ran the page's sixteen steps and the combined forms with wallets made by singular wallet create; Alice's writes were signed and sent in one command from her vault, Bob's exited 19, were signed from his vault and sent by singular submit"
+
+# ------------------------------------------------------------------
 # 8. the node lost after an accepted submission (last: the node dies)
 # ------------------------------------------------------------------
+say "harness control of the key-file path: the node-lost control below runs a key-file wallet; it is not the guide's flow"
 # A held update and a dying node are concurrent only for this recovery
 # assertion. The controller joins the update before leaving this block.
 if [ "$mode" = test-harness ]; then

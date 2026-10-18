@@ -5,9 +5,15 @@
 # usage: demo1_closed_journey.sh SINGULAR OPEN_DATUM DEVNET BLUEPRINT WORKDIR [ordinary|test-harness]
 #
 # SINGULAR, OPEN_DATUM and DEVNET are executables; BLUEPRINT is the registry
-# partition's plutus.json. ONE development node is started once, funding two
-# generated wallets (alice, bob), and every registry command is a separate
-# process against it:
+# partition's plutus.json. ONE development node is started once, funding by
+# address two wallets made with `singular wallet create` (alice, bob), and every
+# registry command is a separate process against it. Alice signs in one command:
+# `--vault FILE --passphrase-fd FD` opens her vault, builds the run's bundle,
+# signs it, sends it and lands it. Bob signs the external way: his write names
+# his address and a new bundle file instead of a key file, builds its whole run
+# as one bundle, signs and sends nothing and exits 19; he signs the bundle with
+# `singular wallet sign --vault` and sends it with `singular submit`. Each step
+# then checks what it always checked over the landed receipt and the chain reads:
 #
 #   create --closed -> page read -> insert -> fold -> inspect
 #       -> chain reads -> refused update -> same chain reads
@@ -15,8 +21,8 @@
 #
 # An insert or a terminate books and leaves its request pending; `open-datum
 # fold` folds it, signed by a wallet other than the booking's. The update on
-# the closed registry is refused by the executable before anything is signed,
-# and two chain reads taken before and after it must be equal: the
+# the closed registry is refused by the executable before anything is signed
+# and before any bundle is written, and two chain reads taken before and after it must be equal: the
 # controller's wallet outputs and the name's own output. The controller read
 # taken after the termination booking must differ, which shows it can see a
 # submission; the fold settles the termination and the controller's
@@ -90,7 +96,7 @@ read_fn() {
     printing { print }
   ' "$open_journey"
 }
-helpers="exit_of trace_disagreements trace_agrees run journal_lines refused field hexof holds_envelope release_work require_archive_layout booked booking_only journal_count local_files payload"
+helpers="exit_of trace_disagreements trace_agrees run journal_lines refused field hexof holds_envelope release_work require_archive_layout booked booking_only journal_count local_files payload story_who story_stage story_settle story_vault story_fold_ok"
 for helper in $helpers; do
   code="$(read_fn "$helper")"
   [ -n "$code" ] || fail "the open journey names no helper $helper"
@@ -102,17 +108,36 @@ done
 say "helpers ${helpers} read from the open journey"
 
 hexkey() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
-hexkey >"$work/alice.skey"
-hexkey >"$work/bob.skey"
 hexkey >"$work/dave.skey" # named only by the malformed funding control below
+
+# Alice and Bob make their wallets with `singular wallet create`, each in a
+# directory of their own that stands for their own machine, name their
+# passphrase through an inherited descriptor, and are funded by the address
+# `singular wallet address` prints: no key file of theirs exists.
+story="$work/story"
+mkdir -p "$story/alice" "$story/bob" "$story/bundles"
+alice_pass="alice's demo passphrase"
+bob_pass="bob's demo passphrase"
+for who in alice bob; do
+  pass_var="${who}_pass"
+  "$singular" wallet create --vault "$story/$who/$who.vault" --network-magic 42 --passphrase-fd 3 \
+    3<<<"${!pass_var}" >"$story/$who/create.out" 2>"$story/$who/create.err" \
+    || setup_fail "singular wallet create failed for $who: $(tail -n 3 "$story/$who/create.err" | tr '\n' ' ')"
+done
+vault_alice_addr="$("$singular" wallet address --vault "$story/alice/alice.vault" --network-magic 42 --passphrase-fd 3 3<<<"$alice_pass")"
+vault_bob_addr="$("$singular" wallet address --vault "$story/bob/bob.vault" --network-magic 42 --passphrase-fd 3 3<<<"$bob_pass")"
+case "$vault_alice_addr$vault_bob_addr" in
+  addr_test1*addr_test1*) ;;
+  *) setup_fail "singular wallet address printed no test-network addresses: $vault_alice_addr $vault_bob_addr" ;;
+esac
+[ "$vault_alice_addr" != "$vault_bob_addr" ] || setup_fail "Alice and Bob made the same wallet"
 
 export TMPDIR="$work"
 
 # ------------------------------------------------------------------
-# One persistent development node, funding two wallets
+# One persistent development node, funding two wallets by address
 # ------------------------------------------------------------------
-"$devnet" --fund-skey "$work/alice.skey" --fund-skey "$work/bob.skey" \
-  --fund-outputs 6 --fund-lovelace 2000000000 \
+"$devnet" --fund-address "$vault_alice_addr:6:2000000000" --fund-address "$vault_bob_addr:6:2000000000" \
   >"$work/devnet.out" 2>"$work/devnet.err" &
 devnet_pid=$!
 # The per-wallet funding group is parsed before any node starts: a
@@ -149,16 +174,15 @@ say "one private development source at $provider_url"
 
 node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic "$network_magic")
 common=(--state-dir "$reg" --blueprint "$blueprint")
-alice=(--wallet-skey "$work/alice.skey")
-bob=(--wallet-skey "$work/bob.skey")
+say "the closed-datum story: Alice and Bob keep no signing key on disk. Alice signs from her vault: her command opens the vault, builds its whole run as one bundle, signs it, sends it and lands it in one step. Bob signs the external way: his write names the wallet's address and a new bundle file, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures; he then signs the bundle from his vault with singular wallet sign and sends it with singular submit."
 
 # ------------------------------------------------------------------
 # 1. the closed and open previews of one seed derive different hashes
 # ------------------------------------------------------------------
-run closed-preview success -- create --process-time 120000 --retract-time 30000 --preview --closed "${common[@]}" "${node[@]}" "${alice[@]}"
+run closed-preview success -- create --process-time 120000 --retract-time 30000 --preview --closed "${common[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
 [ ! -e "$reg" ] || fail "a closed preview created the target $reg"
 seed="$(field closed-preview .seed)"
-run open-preview success -- create --process-time 120000 --retract-time 30000 --preview --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+run open-preview success -- create --process-time 120000 --retract-time 30000 --preview --seed "$seed" "${common[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
 [ ! -e "$reg" ] || fail "an open preview created the target $reg"
 [ "$(field open-preview .seed)" = "$seed" ] || fail "the open preview names another seed than the closed one"
 closed_hash="$(field closed-preview .pins.pinApplication)"
@@ -168,9 +192,9 @@ open_hash="$(field open-preview .pins.pinApplication)"
 [ "$closed_hash" != "$open_hash" ] || fail "the closed and open previews derive the same application hash"
 say "the closed and open previews of one seed derive different application hashes"
 
-# Bob's preview names his key without writing; his fold signs the bookings.
+# Bob's preview names his key hash without writing; his folds are signed by his vault.
 run bob-preview success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/bob-preview" \
-  --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
+  --blueprint "$blueprint" "${node[@]}" --wallet-address "$vault_bob_addr"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
 
@@ -179,7 +203,7 @@ bobkey="$(field bob-preview .walletKeyHash)"
 # ------------------------------------------------------------------
 process_time=120000
 retract_time=60000
-run create success -- create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" --closed "${common[@]}" "${node[@]}" "${alice[@]}"
+story_vault create alice -- create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" --closed "${common[@]}" "${node[@]}"
 [ "$(field create .application)" = "open_datum.closed_datum" ] \
   || fail "create names $(field create .application), not the closed application"
 state="$(field create .pins.pinState)"
@@ -188,6 +212,7 @@ token="$(field create .token)"
 active="$(field create .pins.pinActive)"
 alicekey="$(field create .walletKeyHash)"
 alice_addr="$(field create .wallet)"
+[ "$alice_addr" = "$vault_alice_addr" ] || fail "create names another wallet than Alice's vault address"
 [ "$(field create .seed)" = "$seed" ] || fail "create booted from another seed"
 state_token="$(field create .stateToken)"
 [ "$state_token" = "$state.$token" ] || fail "create did not print the state token $state.$token"
@@ -257,15 +282,24 @@ payload "$work/closed-payload.json"
 insert_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
 insert_before="$(journal_count "$insert_journal")"
 files_before="$(local_files)"
-run insert success -- insert --key "$key" --payload "$work/closed-payload.json" \
-  "${common[@]}" "${node[@]}" "${alice[@]}"
+story_vault insert alice -- insert --key "$key" --payload "$work/closed-payload.json" \
+  "${common[@]}" "${node[@]}"
+# Alice's vault booking leaves, for its own transaction, one waiting-for-signatures
+# line and the landed line after it, beside the landed lines that record an
+# earlier bundle's transactions found on chain, and no retired trie file: the
+# key-file booking's four phases belong to a writer that signs and sends.
+tail -n +"$((insert_before + 1))" "$insert_journal" \
+  | jq -s -e '[.[] | select(.journalStep == "book") | .journalEvent] == ["waiting-for-signatures", "landed"] and all(.[]; .journalEvent | IN("waiting-for-signatures", "landed"))' >/dev/null \
+  || fail "the vault booking did not leave exactly its waiting-for-signatures and landed lines"
+[ "$(local_files)" = "$files_before" ] || fail "a vault booking created retired trie files"
 booked insert
-booking_only insert "$insert_journal" "$insert_before" "$files_before"
 [ "$(field insert .requester)" = "$alicekey" ] || fail "the booking's requester is not alice's key"
 holds_envelope insert .envelope "$alicekey" "$key" "$work/closed-payload.json" \
   || fail "the insert receipt's envelope is not the one the sources make"
-run fold success -- fold --request "$(field insert .request)" \
-  "${common[@]}" "${node[@]}" "${bob[@]}"
+story_stage fold bob -- fold --request "$(field insert .request)" \
+  "${common[@]}" "${node[@]}"
+story_settle fold bob
+story_fold_ok fold insert insertActive
 [ "$(field fold .folder)" = "$bobkey" ] || fail "alice's request was not folded with bob's key"
 jq -e --slurpfile b "$receipts/insert.json" \
   '(.settled | length == 1) and .settled[0].request == $b[0].request and .settled[0].edge == "insertActive"
@@ -330,7 +364,8 @@ say "two chain reads: the controller's wallet and the name's output"
 # ------------------------------------------------------------------
 jq -n '{constructor:3, fields:[{bytes:"626f62"},{int:123456789012345678901234567890}]}' >"$work/payload-update.json"
 refused update-refused client-refusal -- update --key "$key" \
-  --payload "$work/payload-update.json" "${common[@]}" "${node[@]}" "${alice[@]}"
+  --payload "$work/payload-update.json" "${common[@]}" "${node[@]}" \
+  --vault "$story/alice/alice.vault" --passphrase-fd 3 3<<<"$alice_pass"
 jq -e --arg t "$state_token" '.reason | contains($t) and contains("is closed") and contains("written once")' \
   "$receipts/update-refused.json" >/dev/null \
   || fail "the refusal does not name the closed registry: $(field update-refused .reason)"
@@ -348,9 +383,12 @@ say "the refused update submitted nothing: the two chain reads are equal"
 term_journal="$(managed_journal "$reg" "$state_token" "$alicekey")"
 term_before="$(journal_count "$term_journal")"
 files_before="$(local_files)"
-run terminate success -- terminate --key "$key" "${common[@]}" "${node[@]}" "${alice[@]}"
+story_vault terminate alice -- terminate --key "$key" "${common[@]}" "${node[@]}"
+tail -n +"$((term_before + 1))" "$term_journal" \
+  | jq -s -e '[.[] | select(.journalStep == "book") | .journalEvent] == ["waiting-for-signatures", "landed"] and all(.[]; .journalEvent | IN("waiting-for-signatures", "landed"))' >/dev/null \
+  || fail "the vault termination did not leave exactly its waiting-for-signatures and landed lines"
+[ "$(local_files)" = "$files_before" ] || fail "a vault termination created retired trie files"
 booked terminate
-booking_only terminate "$term_journal" "$term_before" "$files_before"
 jq -e '(.released | test("^[0-9a-f]{64}#[0-9]+$")) and (.deposit | type == "number" and . > 0)' \
   "$receipts/terminate.json" >/dev/null \
   || fail "the termination booking does not name the live output and its deposit"
@@ -362,8 +400,10 @@ say "the controller read sees the booking"
 # ------------------------------------------------------------------
 # 8. the fold settles it; inspect reads terminal and the deposit is back
 # ------------------------------------------------------------------
-run terminate-fold success -- fold --request "$(field terminate .request)" \
-  "${common[@]}" "${node[@]}" "${bob[@]}"
+story_stage terminate-fold bob -- fold --request "$(field terminate .request)" \
+  "${common[@]}" "${node[@]}"
+story_settle terminate-fold bob
+story_fold_ok terminate-fold terminate updateTerminal
 [ "$(field terminate-fold .folder)" = "$bobkey" ] || fail "the termination was not folded with bob's key"
 jq -e --slurpfile b "$receipts/terminate.json" \
   '(.settled | length == 1) and .settled[0].request == $b[0].request and .settled[0].edge == "updateTerminal"
@@ -384,7 +424,7 @@ say "the name is terminal and the fold's output pays the controller at least the
 # ------------------------------------------------------------------
 # 9. every step leaves a receipt
 # ------------------------------------------------------------------
-steps="closed-preview open-preview bob-preview create insert fold inspect-active chain-controller-before chain-key-before update-refused chain-controller-after chain-key-after terminate chain-controller-booked terminate-fold inspect-terminal"
+steps="closed-preview open-preview bob-preview create insert fold-staged fold inspect-active chain-controller-before chain-key-before update-refused chain-controller-after chain-key-after terminate chain-controller-booked terminate-fold-staged terminate-fold inspect-terminal"
 for step in $steps; do
   [ -f "$receipts/$step.json" ] || fail "$step left no receipt"
   printf 'receipt %s: %s\n' "$step" "$(jq -r .outcome "$receipts/$step.json")"
