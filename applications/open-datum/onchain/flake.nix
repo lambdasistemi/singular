@@ -224,7 +224,7 @@
         # witnesses come from one build. Chosen by test over composing both
         # validators directories into one project and running `aiken build`
         # once: the merge copies both blueprints' `compiledCode` bytes
-        # verbatim, so the 17 hashes are byte-identical by construction
+        # verbatim, so the 18 hashes are byte-identical by construction
         # (manual jq merge tested 14/14 equal base-hashes.json, 26
         # definitions, preamble from the registry's); a single rebuild
         # would recompile, reintroduce the single-project layout the split
