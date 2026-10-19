@@ -17,6 +17,119 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# With no argument the whole check runs: the blueprints, the naming identity,
+# a devnet and a deployment made on it. With --router-only it builds the
+# deployment command alone and runs the checks that need no node and no
+# blueprint: the verb router and the flags deploy reads.
+mode=full
+case "${1:-}" in
+  '') ;;
+  --router-only) mode=router ;;
+  *)
+    echo 'usage: deployment-identity-check.sh [--router-only]' >&2
+    exit 2
+    ;;
+esac
+
+# Sets $deployment to the command of the build output named in $1: the same
+# wrapped command `nix run .#deployment` launches, invoked directly for the
+# checks below so they add no Nix start.
+locate_deployment() {
+  deployment="$(printf '%s\n' "$1" | grep -E -- '-deployment$')/bin/deployment"
+  if [ ! -x "$deployment" ]; then
+    echo 'SETUP-FAIL: the build produced no deployment command' >&2
+    exit 1
+  fi
+}
+
+# Runs the deployment command and requires a non-zero exit whose output says
+# $1; the output stays in $work/refusal.out for refusal_omits.
+expect_refusal() {
+  local want="$1"
+  shift
+  set +e
+  "$deployment" "$@" >"$work/refusal.out" 2>&1
+  local rc=$?
+  set -e
+  if [ "$rc" -eq 0 ] || ! grep -F -- "$want" "$work/refusal.out" >/dev/null; then
+    echo "FAIL: deployment $* exited $rc without: $want" >&2
+    cat "$work/refusal.out" >&2
+    exit 1
+  fi
+}
+
+# The last refusal must not mention $1.
+refusal_omits() {
+  if grep -F -- "$1" "$work/refusal.out" >/dev/null; then
+    echo "FAIL: the refusal mentioned $1 although that field was valid" >&2
+    cat "$work/refusal.out" >&2
+    exit 1
+  fi
+}
+
+# The first argument that is not a flag selects one of the four verbs;
+# anything else is the usage refusal, and each verb refuses its missing
+# required flag by name. Deploy needs both the registration cost and the
+# booking width: each is refused by name when missing, a value that is not
+# plain digits is refused (0x10 and a leading space were once taken as
+# numbers), and a valid pair is refused for neither field, only for the
+# blueprint this run does not have. It runs in a subshell with no blueprint in
+# its environment, so a refusal naming the blueprint is the command reaching
+# past its flags.
+router_checks() (
+  unset REGISTRY_BLUEPRINT NAMING_BLUEPRINT
+  local usage='usage: deployment deploy --out MANIFEST'
+  local out="$work/unwritten.json"
+  local cost_refusal='--registration-cost needs a non-negative number of lovelace'
+  local width_refusal='--booking-width needs a positive number of milliseconds'
+  local bad
+  expect_refusal "$usage"
+  expect_refusal "$usage" --out stray count
+  expect_refusal "$usage --registration-cost LOVELACE --booking-width MS"
+  expect_refusal 'deploy needs --out MANIFEST' deploy
+  expect_refusal 'verify needs --deployment MANIFEST' verify
+  expect_refusal 'count needs --deployment MANIFEST' count
+  expect_refusal 'count needs --what state|reference' count --deployment "$work/unread.json"
+  expect_refusal 'genesis-skey needs --out FILE' genesis-skey
+
+  expect_refusal 'deploy needs --registration-cost LOVELACE' \
+    deploy --out "$out" --booking-width 20000
+  expect_refusal 'deploy needs --registration-cost LOVELACE' deploy --out "$out"
+  expect_refusal 'deploy needs --booking-width MS' \
+    deploy --out "$out" --registration-cost 3000000
+  for bad in 0x10 ' 5' '5 ' -1 +5 1.5 1e3 0o7 abc ''; do
+    expect_refusal "$cost_refusal" \
+      deploy --out "$out" --registration-cost "$bad" --booking-width 60000
+  done
+  expect_refusal "$cost_refusal" \
+    deploy --out "$out" --registration-cost=0x10 --booking-width=60000
+  for bad in 0x10 ' 60000' '60000 ' 0 -1 +5 1.5 1e3 0o7 abc ''; do
+    expect_refusal "$width_refusal" \
+      deploy --out "$out" --registration-cost 0 --booking-width "$bad"
+  done
+  expect_refusal "$width_refusal" \
+    deploy --out "$out" --registration-cost=0 --booking-width=0x10
+
+  # A valid pair is read: it gets past both flags and is refused only for the
+  # missing blueprint, naming neither field. Both values the slice uses, both
+  # spellings, either order.
+  expect_refusal 'REGISTRY_BLUEPRINT is not set' \
+    deploy --out "$out" --registration-cost 0 --booking-width 60000
+  refusal_omits --registration-cost
+  refusal_omits --booking-width
+  expect_refusal 'REGISTRY_BLUEPRINT is not set' \
+    deploy --booking-width=20000 --out "$out" --registration-cost=3000000
+  refusal_omits --registration-cost
+  refusal_omits --booking-width
+)
+
+if [ "$mode" = router ]; then
+  locate_deployment "$(nix build --quiet --no-link --print-out-paths "$offchain#deployment")"
+  router_checks
+  echo 'PASS (router only): verb router refusals held; deploy refused each missing or malformed registration cost and booking width by name and read a valid pair'
+  exit 0
+fi
+
 registry="$(nix build --quiet --no-link --print-out-paths "$repo/onchain#plutus-blueprint")"
 naming="$(nix build --quiet --no-link --print-out-paths "$repo/naming-onchain#plutus-blueprint")"
 export REGISTRY_BLUEPRINT="$registry" NAMING_BLUEPRINT="$naming"
@@ -66,38 +179,8 @@ fi
 echo "naming identity: OK — the application and the retirement custody carry state $(jq -r '.validators[] | select(.title == "state.state.spend") | .hash' "$registry"); the application carries retirement custody $(jq -r '.validators[] | select(.title == "retirement_custody.retirement_custody.spend") | .hash' "$naming")"
 
 built="$(nix build --quiet --no-link --print-out-paths "$offchain#devnet" "$offchain#deployment")"
-# The same wrapped command `nix run .#deployment` launches, invoked directly
-# for the checks below so they add no Nix start.
-deployment="$(printf '%s\n' "$built" | grep -E -- '-deployment$')/bin/deployment"
-if [ ! -x "$deployment" ]; then
-  echo 'SETUP-FAIL: the build produced no deployment command' >&2
-  exit 1
-fi
-
-# The verb router needs no node. The first argument that is not a flag
-# selects one of the four verbs; anything else is the usage refusal, and
-# each verb refuses its missing required flag by name.
-expect_refusal() {
-  local want="$1"
-  shift
-  set +e
-  "$deployment" "$@" >"$work/refusal.out" 2>&1
-  local rc=$?
-  set -e
-  if [ "$rc" -eq 0 ] || ! grep -F -- "$want" "$work/refusal.out" >/dev/null; then
-    echo "FAIL: deployment $* exited $rc without: $want" >&2
-    cat "$work/refusal.out" >&2
-    exit 1
-  fi
-}
-usage='usage: deployment deploy --out MANIFEST'
-expect_refusal "$usage"
-expect_refusal "$usage" --out stray count
-expect_refusal 'deploy needs --out MANIFEST' deploy
-expect_refusal 'verify needs --deployment MANIFEST' verify
-expect_refusal 'count needs --deployment MANIFEST' count
-expect_refusal 'count needs --what state|reference' count --deployment "$work/unread.json"
-expect_refusal 'genesis-skey needs --out FILE' genesis-skey
+locate_deployment "$built"
+router_checks
 
 export TMPDIR="$work"
 nix run --quiet "$offchain#devnet" >"$work/devnet.out" 2>"$work/devnet.err" &
@@ -129,7 +212,36 @@ cmp -s "$joiner" "$work/joiner-equals.skey" || {
   exit 1
 }
 external=(--koios-url "$provider_url" --network-magic "$network_magic" --network-time "$time_directory" --wallet-skey "$joiner")
-nix run --quiet "$offchain#deployment" -- deploy "${external[@]}" --out "$manifest" --release identity-check >"$work/deploy.out"
+registration_cost=3000000
+booking_width=20000
+nix run --quiet "$offchain#deployment" -- deploy "${external[@]}" --out "$manifest" --release identity-check \
+  --registration-cost "$registration_cost" --booking-width "$booking_width" >"$work/deploy.out"
+
+# The two values deploy was given are the values its manifest records. The
+# comparison is shown able to refuse: a manifest with either value changed
+# must be reported before the real one is trusted.
+manifest_economics_problems() {
+  jq -r --argjson cost "$registration_cost" --argjson width "$booking_width" '
+    (if .depRegistrationCost == $cost then empty else "depRegistrationCost is \(.depRegistrationCost), not \($cost)" end),
+    (if .depBookingWidth == $width then empty else "depBookingWidth is \(.depBookingWidth), not \($width)" end)
+  ' "$1"
+}
+jq '.depRegistrationCost += 1' "$manifest" >"$work/other-cost.json"
+jq '.depBookingWidth += 1' "$manifest" >"$work/other-width.json"
+for other in other-cost other-width; do
+  if [ -z "$(manifest_economics_problems "$work/$other.json")" ]; then
+    echo "FAIL: manifest economics: the comparison accepted a manifest with a changed value ($other)" >&2
+    exit 1
+  fi
+done
+if ! problems="$(manifest_economics_problems "$manifest")"; then
+  echo 'FAIL: manifest economics: the manifest could not be read' >&2
+  exit 1
+fi
+if [ -n "$problems" ]; then
+  while IFS= read -r p; do echo "FAIL: manifest economics: $p" >&2; done <<<"$problems"
+  exit 1
+fi
 nix run --quiet "$offchain#deployment" -- verify "${external[@]}" --deployment "$manifest" >"$work/verify.out"
 grep -F 'deployment complete:' "$work/verify.out" >/dev/null || {
   echo 'FAIL: intact manifest did not reach completed node verification' >&2
@@ -173,4 +285,4 @@ grep -F "this release's registry-bound active policy differs from the deployment
   exit 1
 }
 
-echo "PASS: verb router refusals held; intact node verification reached completion; count found $states registry output and $references of $recorded recorded reference outputs; changed representative policy exited $rc with identity diagnostic"
+echo "PASS: verb router refusals held; the manifest recorded registration cost $registration_cost and booking width $booking_width; intact node verification reached completion; count found $states registry output and $references of $recorded recorded reference outputs; changed representative policy exited $rc with identity diagnostic"

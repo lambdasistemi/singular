@@ -66,7 +66,7 @@ node=(--koios-url "$provider_url" --network-time "$time_directory" --network-mag
 # seed it succeeds only while that seed is an unspent output of the wallet.
 preview() {
   local name="$1" skey="$2" seed="${3:-}"
-  local args=(create --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
+  local args=(create --registration-cost 0 --booking-width 60000 --process-time 45000 --retract-time 15000 --preview --state-dir "$work/probe-$name" --blueprint "$blueprint"
     "${node[@]}" --wallet-skey "$skey")
   [ -z "$seed" ] || args+=(--seed "$seed")
   local status=0
@@ -95,7 +95,7 @@ seed_first="$(jq -r .seed "$receipts/preview-first.json")"
 # (asserted below) after validating the seed and before the first create
 # consumed it, so the race is real.
 
-SINGULAR_HARNESS_HOLD_BEFORE_LOCK="$work/go" "$open_datum" create --process-time 45000 --retract-time 15000 --seed "$seed_first" \
+SINGULAR_HARNESS_HOLD_BEFORE_LOCK="$work/go" "$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 45000 --retract-time 15000 --seed "$seed_first" \
   --state-dir "$target" --blueprint "$blueprint" "${node[@]}" --wallet-skey "$first_key" \
   >"$receipts/create-late.json" 2>"$receipts/create-late.err" &
 late=$!
@@ -106,7 +106,7 @@ done
 [ -e "$work/go.waiting" ] || setup_fail "the late create never reached its hold point"
 
 status=0
-"$open_datum" create --process-time 45000 --retract-time 15000 --seed "$seed_first" --state-dir "$target" --blueprint "$blueprint" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 45000 --retract-time 15000 --seed "$seed_first" --state-dir "$target" --blueprint "$blueprint" \
   "${node[@]}" --wallet-skey "$first_key" >"$receipts/create-first.json" 2>"$receipts/create-first.err" \
   || status=$?
 [ "$status" -eq 0 ] && [ "$(jq -r .outcome "$receipts/create-first.json")" = success ] \

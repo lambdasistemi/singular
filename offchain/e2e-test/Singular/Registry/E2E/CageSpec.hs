@@ -115,6 +115,7 @@ import Singular.Registry.TxBuilder.Internal
     , mkInlineDatum
     , policyIdFromPin
     , requestAddrFromCfg
+    , requestPolicyPin
     , scriptFromBytes
     , scriptHashBytes
     , toPlcData
@@ -1008,10 +1009,15 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
+            , defaultRegistrationCost = Coin 2_000_000
+            , defaultBookingWidth = 10_000
             , cfgApplicationPolicy = appPin
             , cfgAbsentPolicy = absentPin
             , cfgActivePolicy = activePin
             , cfgTerminalPolicy = terminalPin
+            , -- The request validator applied to this registry's state hash
+              -- and token, by the one shared derivation.
+              cfgRequestPolicy = requestPolicyPin stateBytes requestBytes seed
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

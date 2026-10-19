@@ -53,6 +53,7 @@ import Cardano.Ledger.Api.Tx.Body
 import Cardano.Ledger.Api.Tx.Out
     ( coinTxOutL
     , datumTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
     , referenceScriptTxOutL
     , valueTxOutL
@@ -227,41 +228,8 @@ bootFrom cfg pp utxos stateRef view addr = do
         allInputUtxos = case rest of
             [] -> [seedUtxo]
             (u : _) -> [seedUtxo, u]
-        assetNameBs =
-            deriveAssetName seedRefOnChain
-        assetName =
-            AssetName
-                (SBS.toShort assetNameBs)
-    let policyId =
-            cagePolicyIdFromCfg cfg
-        mintMA =
-            MultiAsset
-                $ Map.singleton
-                    policyId
-                $ Map.singleton
-                    assetName
-                    1
-    -- Ownerless registry (ruling NOTE-028/A-003): the state datum carries
-    -- no owner and no stake script. Issue #77 E-001 repair: it carries the
-    -- expected representative policy from the cage configuration (honest
-    -- applied hash for naming cages, zeros for registry-only cages).
-    let stateDatum = StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))
-        datumData = toPlcData stateDatum
-    let scriptAddr =
-            cageAddrFromCfg
-                cfg
-                (network cfg)
-        outValue =
-            MaryValue
-                (Coin bootStateLovelace)
-                mintMA
-        txOut =
-            mkBasicTxOut
-                scriptAddr
-                outValue
-                & datumTxOutL
-                    .~ mkInlineDatum
-                        datumData
+    let mintMA = bootMint cfg
+        txOut = bootStateOutput pp cfg
     let redeemer = Minting seedRefOnChain
         mintPurpose =
             ConwayMinting (AsIx 0)
@@ -317,21 +285,65 @@ bootFrom cfg pp utxos stateRef view addr = do
             (payForReferenceScripts pp (SBS.length (cageScriptBytes cfg)) balanced)
         )
 
--- | The lovelace a boot locks in the state output it creates.
-bootStateLovelace :: Integer
-bootStateLovelace = 2_000_000
+{- | The least lovelace a boot locks in the state output, whatever the ledger's
+minimum for that output is.
+-}
+bootStateFloor :: Integer
+bootStateFloor = 2_000_000
+
+-- | What a boot mints: the one registry token, named by the seed.
+bootMint :: CageConfig -> MultiAsset
+bootMint cfg =
+    MultiAsset $
+        Map.singleton (cagePolicyIdFromCfg cfg) $
+            Map.singleton
+                (AssetName (SBS.toShort (deriveAssetName (cageSeed cfg))))
+                1
+
+{- | The state output a boot creates: at the state address, holding the
+registry token, with the eleven-field state as its inline datum. Ownerless
+registry (ruling NOTE-028/A-003): the datum carries no owner and no stake
+script, and the pins the configuration derived.
+
+It locks the ledger's minimum for the output as it is, never less than
+'bootStateFloor'. The minimum depends on the output's encoded size, the
+lovelace's own encoding included, so the amount is settled against the
+minimum of the output that carries it: if the minimum of the output at one
+amount is more, the output is built again at that minimum and judged again.
+Nothing is assumed about the size of the datum's integers.
+-}
+bootStateOutput :: PParams ConwayEra -> CageConfig -> TxOut ConwayEra
+bootStateOutput pp cfg = settle bootStateFloor
+  where
+    datumData =
+        toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot)))
+    outputAt lovelace =
+        mkBasicTxOut
+            (cageAddrFromCfg cfg (network cfg))
+            (MaryValue (Coin lovelace) (bootMint cfg))
+            & datumTxOutL .~ mkInlineDatum datumData
+    settle lovelace =
+        let Coin needed = getMinCoinTxOut pp (outputAt lovelace)
+        in  if needed <= lovelace
+                then outputAt lovelace
+                else settle needed
 
 {- | The most a boot takes from the payer's spending inputs: the lovelace its
 state output locks, and a fee allowance for one maximum-size transaction at
 the execution limit referencing this state carrier ('protocolFeeReserve').
 A create checks its publications against what the boot leaves with it,
-before anything is submitted.
+before anything is submitted. The output is the one the boot builds, so the
+reserve covers what is really locked.
 -}
 bootCostBound
-    :: PParams ConwayEra -> (TxIn, TxOut ConwayEra) -> Integer
-bootCostBound pp carrier =
-    let Coin allowance = protocolFeeReserve pp [carrier]
-    in  bootStateLovelace + allowance
+    :: PParams ConwayEra
+    -> CageConfig
+    -> (TxIn, TxOut ConwayEra)
+    -> Integer
+bootCostBound pp cfg carrier =
+    let Coin locked = bootStateOutput pp cfg ^. coinTxOutL
+        Coin allowance = protocolFeeReserve pp [carrier]
+    in  locked + allowance
 
 {- | Pay for the reference script the boot now resolves through (#177
 A-003).

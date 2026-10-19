@@ -27,6 +27,7 @@ module Deployment.Options
     , genesisKeyPath
     ) where
 
+import Data.Char (digitToInt, isDigit)
 import Data.List (isPrefixOf)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -38,7 +39,8 @@ import Singular.Registry.Deployment (deploymentPathFromArgs)
 -- | The refusal for a missing or unknown verb.
 usage :: String
 usage =
-    "usage: deployment deploy --out MANIFEST [--release TAG] \
+    "usage: deployment deploy --out MANIFEST \
+    \--registration-cost LOVELACE --booking-width MS [--release TAG] \
     \[--koios-url URL --network-magic N --wallet-skey F --network-time DIR]\n\
     \       deployment verify --deployment MANIFEST \
     \[--koios-url URL --network-magic N --wallet-skey F --network-time DIR]"
@@ -73,9 +75,15 @@ data DeployOptions = DeployOptions
     -- ^ @--process-time@ in milliseconds, 120000 when absent
     , deployRetractTime :: Integer
     -- ^ @--retract-time@ in milliseconds, 30000 when absent
+    , deployRegistrationCost :: Integer
+    -- ^ @--registration-cost@ in lovelace, required
+    , deployBookingWidth :: Integer
+    -- ^ @--booking-width@ in milliseconds, required
     }
 
--- | Read @deploy@'s flags, refusing a missing @--out@ or a bad window.
+{- | Read @deploy@'s flags, refusing a missing @--out@, a bad window, or a
+missing or bad registration cost or booking width.
+-}
 deployOptions :: [String] -> IO DeployOptions
 deployOptions args = do
     out <- case flagValue "--out" args of
@@ -93,7 +101,40 @@ deployOptions args = do
         Just ms -> case reads ms of
             [(n :: Integer, "")] | n > 0 -> pure n
             _ -> failWith "--retract-time needs a positive number of milliseconds"
-    pure (DeployOptions out release leanRev processTime retractTime)
+    registrationCost <- case flagValue "--registration-cost" args of
+        Nothing -> failWith "deploy needs --registration-cost LOVELACE"
+        Just n -> case plainNumber n of
+            Just c -> pure c
+            Nothing ->
+                failWith "--registration-cost needs a non-negative number of lovelace"
+    bookingWidth <- case flagValue "--booking-width" args of
+        Nothing -> failWith "deploy needs --booking-width MS"
+        Just ms -> case plainNumber ms of
+            Just n | n > 0 -> pure n
+            _ -> failWith "--booking-width needs a positive number of milliseconds"
+    pure
+        ( DeployOptions
+            out
+            release
+            leanRev
+            processTime
+            retractTime
+            registrationCost
+            bookingWidth
+        )
+
+{- | A whole number written as plain decimal digits, nothing else: no sign,
+no space, no base prefix. The registration cost and the booking width are
+recorded in the registry's state and pin the request script, so the text
+that names them is read exactly. @reads@ would take @0x10@ and a leading
+space as numbers.
+-}
+plainNumber :: String -> Maybe Integer
+plainNumber s
+    | not (null s) && all isDigit s = Just (foldl' step 0 s)
+    | otherwise = Nothing
+  where
+    step n c = n * 10 + toInteger (digitToInt c)
 
 -- | The manifest @verify@ checks.
 verifyManifest :: [String] -> IO FilePath

@@ -147,6 +147,12 @@ reg = createReg <> ["--state-token", T.unpack tokenSpelling]
 createReg :: [String]
 createReg = ["--state-dir", "/srv/reg", "--blueprint", "/srv/plutus.json"]
 
+{- | The registration cost and booking width every create is given: neither
+has a default, and both are fixed for the life of the registry.
+-}
+createValues :: [String]
+createValues = ["--registration-cost", "3000000", "--booking-width", "20000"]
+
 -- | The state token as a person copies it from the registry's page.
 tokenSpelling :: T.Text
 tokenSpelling =
@@ -187,6 +193,7 @@ commandLine = describe "the command line" $ do
         parseOpenDatumCommand
             ( ["open-datum", "create", "--seed", seedText]
                 <> createReg
+                <> createValues
                 <> provider
                 <> wallet
             )
@@ -202,8 +209,74 @@ commandLine = describe "the command line" $ do
                         , createReceipt = Nothing
                         , createProcessTime = 600_000
                         , createRetractTime = 300_000
+                        , createRegistrationCost = 3_000_000
+                        , createBookingWidth = 20_000
                         }
                 )
+    describe "the registration cost and the booking width" $ do
+        let create extra =
+                parseOpenDatumCommand
+                    ( ["open-datum", "create", "--seed", seedText]
+                        <> createReg
+                        <> provider
+                        <> wallet
+                        <> extra
+                    )
+            valuesOf =
+                fmap
+                    ( \case
+                        OpenCreate _ a -> Just (createRegistrationCost a, createBookingWidth a)
+                        _ -> Nothing
+                    )
+        it "retains the values it is given" $
+            valuesOf (create createValues)
+                `shouldBe` Right (Just (3_000_000, 20_000))
+        it "takes a zero cost and a width of one millisecond" $
+            valuesOf (create ["--registration-cost", "0", "--booking-width", "1"])
+                `shouldBe` Right (Just (0, 1))
+        it "refuses a create without the registration cost, naming it" $
+            create ["--booking-width", "20000"]
+                `shouldBe` Left (MissingFlag "--registration-cost")
+        it "refuses a create without the booking width, naming it" $
+            create ["--registration-cost", "3000000"]
+                `shouldBe` Left (MissingFlag "--booking-width")
+        it "refuses a cost that is negative, fractional or not a number" $
+            forM_ ["-1", "1.5", "lots", "", "0x10"] $ \value ->
+                create ["--registration-cost", value, "--booking-width", "20000"]
+                    `shouldBe` Left
+                        ( BadValue
+                            "--registration-cost"
+                            "needs a non-negative integer number of lovelace"
+                        )
+        it
+            "refuses a width that is zero, negative, fractional or not a number"
+            $ forM_ ["0", "-5", "1.5", "lots", "", "1e3"]
+            $ \value ->
+                create ["--registration-cost", "3000000", "--booking-width", value]
+                    `shouldBe` Left
+                        ( BadValue
+                            "--booking-width"
+                            "needs a positive integer number of milliseconds"
+                        )
+        it "refuses both flags on later commands instead of ignoring them"
+            $ forM_
+                ["insert", "update", "terminate", "fold", "inspect"]
+            $ \command ->
+                forM_
+                    [ ("--registration-cost", "the registration cost")
+                    , ("--booking-width", "the widest booking interval")
+                    ]
+                    $ \(flag, what) ->
+                        parseOpenDatumCommand
+                            (["open-datum", command, flag, "1"] <> reg <> provider <> wallet)
+                            `shouldBe` Left
+                                ( BadValue
+                                    flag
+                                    ( "is an open-datum create flag: "
+                                        <> what
+                                        <> " is fixed for the life of a registry"
+                                    )
+                                )
     describe "registry creation windows" $ do
         it "accepts positive integer windows in milliseconds" $
             forM_ [("1", "1"), ("120000", "30000"), ("600000", "300000")] $
@@ -212,6 +285,7 @@ commandLine = describe "the command line" $ do
                         ( ["open-datum", "create", "--seed", seedText]
                             <> ["--process-time", processing, "--retract-time", retracting]
                             <> createReg
+                            <> createValues
                             <> provider
                             <> wallet
                         )
@@ -226,6 +300,7 @@ commandLine = describe "the command line" $ do
                         ( parseOpenDatumCommand
                             ( ["open-datum", "create", "--seed", seedText]
                                 <> createReg
+                                <> createValues
                                 <> provider
                                 <> wallet
                                 <> extra
@@ -264,6 +339,7 @@ commandLine = describe "the command line" $ do
                     parseOpenDatumCommand
                         ( ["open-datum", "create", "--seed", seedText, flag, argument]
                             <> createReg
+                            <> createValues
                             <> provider
                             <> wallet
                         )
@@ -273,6 +349,7 @@ commandLine = describe "the command line" $ do
                 parseOpenDatumCommand
                     ( ["open-datum", "create", "--seed", seedText]
                         <> createReg
+                        <> createValues
                         <> provider
                         <> wallet
                         <> [flag]
@@ -615,6 +692,7 @@ commandLine = describe "the command line" $ do
     commands =
         [ ["open-datum", "create", "--seed", seedText]
             <> createReg
+            <> createValues
             <> provider
             <> wallet
         , ["open-datum", "insert", "--key", "key", "--payload", "/p.json"]
@@ -803,6 +881,7 @@ externalSignerRows = describe "the external signer" $ do
               , "--blueprint"
               , "/srv/plutus.json"
               ]
+                <> createValues
                 <> previewNode
                 <> named
                 <> bundle
@@ -830,6 +909,7 @@ externalSignerRows = describe "the external signer" $ do
                           , "--blueprint"
                           , "/srv/plutus.json"
                           ]
+                            <> createValues
                             <> provider
                             <> extra
                         )
@@ -919,6 +999,7 @@ vaultSignerRows = describe "the vault signer" $ do
             , "--blueprint"
             , "/srv/plutus.json"
             ]
+                <> createValues
                 <> provider
         writes =
             [ entryBase "insert" ["--payload", "/p.json"]
@@ -947,6 +1028,7 @@ vaultSignerRows = describe "the vault signer" $ do
               , "--blueprint"
               , "/srv/plutus.json"
               ]
+                <> createValues
                 <> previewNode
             ]
         withArgs base extra = parseOpenDatumCommand (base <> extra)
@@ -1725,6 +1807,7 @@ previewRows = describe "--preview" $ do
                 parseOpenDatumCommand
                     ( ["open-datum", "create", "--preview"]
                         <> createReg
+                        <> createValues
                         <> previewNode "1"
                         <> extra
                     )
@@ -1763,6 +1846,7 @@ previewRows = describe "--preview" $ do
                     parseOpenDatumCommand
                         ( ["open-datum", "create", "--seed", funded]
                             <> createReg
+                            <> createValues
                             <> provider
                             <> wallet
                             <> extra
@@ -2027,6 +2111,7 @@ outputsAtRows = describe "reading the outputs at an address with inspect" $ do
         others =
             [ ["open-datum", "create", "--seed", seedText]
                 <> createReg
+                <> createValues
                 <> provider
                 <> wallet
             , ["open-datum", "insert", "--key", "key", "--payload", "/p.json"]

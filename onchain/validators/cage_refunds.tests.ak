@@ -10,10 +10,10 @@ use cage_fixtures.{
   modifyRedeemerData, noDestination, output, owner_fuzzer, phase1Range,
   phase2Range, phase3Range, rawStateDatum, refundOutput, rejectedActionData,
   rejectedStateOutput, request, state, stateDatum, stateSpendRedeemerData,
-  testAbsentPolicy, testAppPolicy, testProcessTime, testRepPolicy,
-  testRequestRef, testRetractTime, testScriptAddress, testSeed, testStakeScript,
-  testStateRef, testTerminalPolicy, testToken, testValue, update,
-  updateActionData, zfDelivery,
+  testAbsentPolicy, testAppPolicy, testBookingWidth, testProcessTime,
+  testRegistrationCost, testRepPolicy, testRequestPolicy, testRequestRef,
+  testRetractTime, testScriptAddress, testSeed, testStakeScript, testStateRef,
+  testTerminalPolicy, testToken, testValue, update, updateActionData, zfDelivery,
 }
 use cardano/address.{from_script}
 use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
@@ -232,6 +232,9 @@ test modify_zero_fee() {
       active_policy: testRepPolicy,
       absent_policy: testAbsentPolicy,
       terminal_policy: testTerminalPolicy,
+      registration_cost: testRegistrationCost,
+      booking_width: testBookingWidth,
+      request_policy: testRequestPolicy,
     }
   let zf_request =
     RequestDatum(
@@ -280,6 +283,9 @@ test modify_zero_fee() {
             active_policy: testRepPolicy,
             absent_policy: testAbsentPolicy,
             terminal_policy: testTerminalPolicy,
+            registration_cost: testRegistrationCost,
+            booking_width: testBookingWidth,
+            request_policy: testRequestPolicy,
           },
         ),
       ),

@@ -69,6 +69,9 @@ fn pins() -> State {
     active_policy: activePolicy,
     absent_policy: absentPolicy,
     terminal_policy: terminalPolicy,
+    registration_cost: 0,
+    booking_width: 0,
+    request_policy: #"d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0",
   }
 }
 

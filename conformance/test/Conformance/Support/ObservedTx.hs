@@ -172,10 +172,13 @@ fixtureCfg =
         , defaultProcessTime = 30_000
         , defaultRetractTime = 30_000
         , defaultTip = Coin 1_000_000
+        , defaultRegistrationCost = Coin 2_000_000
+        , defaultBookingWidth = 10_000
         , cfgApplicationPolicy = pin 0x14
         , cfgActivePolicy = pin 0x15
         , cfgAbsentPolicy = pin 0x16
         , cfgTerminalPolicy = pin 0x17
+        , cfgRequestPolicy = pin 0x19
         , cfgConsumerScript = pin 0x18
         , network = Testnet
         }
@@ -226,6 +229,9 @@ tokenState =
         , stateActivePolicy = statePolicy 0x15
         , stateAbsentPolicy = statePolicy 0x16
         , stateTerminalPolicy = statePolicy 0x17
+        , stateRegistrationCost = 2_000_000
+        , stateBookingWidth = 10_000
+        , stateRequestPolicy = statePolicy 0x19
         }
 
 keyBytes :: ByteString

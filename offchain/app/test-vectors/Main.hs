@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 {- | Generate test vectors for the registry validator.
 
 Supports two output formats:
@@ -65,7 +67,11 @@ import MPF.Hashes
     )
 import MPF.Insertion (inserting)
 import MPF.Proof.Insertion (MPFProof, mkMPFInclusionProof)
+import PlutusCore qualified as PLC
 import PlutusCore.Data (Data (..))
+import PlutusCore.Evaluation.Machine.ExBudgetingDefaults
+    ( defaultCekParametersForTesting
+    )
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
     , BuiltinData (..)
@@ -75,6 +81,16 @@ import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Proof (serializeProof, toProofSteps)
 import Singular.Registry.Types
 import System.Environment (getArgs)
+import UntypedPlutusCore qualified as UPLC
+import UntypedPlutusCore.Evaluation.Machine.Cek
+    ( CekReport (..)
+    , counting
+    , logEmitter
+    , runCekDeBruijn
+    )
+import UntypedPlutusCore.Evaluation.Machine.Cek.Internal
+    ( CekResult (..)
+    )
 
 -- -----------------------------------------------------------
 -- MPF backend helpers
@@ -284,9 +300,153 @@ rawAssetNameVectors =
             $ deriveAssetName ref
     ]
 
+{- | A registration whose two tag names are fixed by the model's preimage
+lists. The expected names are evaluated here, by the Plutus machine, from
+the field-by-field lists below; neither the Haskell wire module nor the
+Aiken helper under test produces them.
+-}
+data TagVec = TagVec
+    { tvDesc :: Text
+    , tvKey :: ByteString
+    , tvRefund :: ByteString
+    , tvDestination :: ByteString
+    , tvCost :: Integer
+    , tvTip :: Integer
+    , tvCarrier :: Integer
+    , tvNonce :: Integer
+    , tvDatum :: Maybe Integer
+    -- ^ A delivered datum, an integer here; neither name commits to it
+    }
+
+{- | The Lean preimage of an application tag name: domain 0, the
+@insertActive@ ordinal, then key, refund address, destination and nonce.
+-}
+applicationPreimage :: TagVec -> Data
+applicationPreimage v =
+    List
+        [ I 0
+        , I 1
+        , B (tvKey v)
+        , B (tvRefund v)
+        , B (tvDestination v)
+        , I (tvNonce v)
+        ]
+
+{- | The Lean preimage of a registration's trie-ready tag name: domain 1,
+operation 0, then key, refund address, destination, cost, tip, carrier and
+nonce.
+-}
+trieReadyPreimage :: TagVec -> Data
+trieReadyPreimage v =
+    List
+        [ I 1
+        , I 0
+        , B (tvKey v)
+        , B (tvRefund v)
+        , B (tvDestination v)
+        , I (tvCost v)
+        , I (tvTip v)
+        , I (tvCarrier v)
+        , I (tvNonce v)
+        ]
+
+{- | @blake2b_256 (serialise_data d)@ as the Plutus CEK machine computes
+it: the two builtins applied to the constant, nothing else.
+-}
+evaluatedName :: Data -> ByteString
+evaluatedName d =
+    case _cekReportResult report of
+        CekSuccessConstant constant -> byteString constant
+        _ -> error "evaluatedName: the machine did not return a constant"
+  where
+    byteString :: PLC.Some (PLC.ValueOf PLC.DefaultUni) -> ByteString
+    byteString (PLC.Some (PLC.ValueOf PLC.DefaultUniByteString bytes)) = bytes
+    byteString _ = error "evaluatedName: the constant is not a byte string"
+    report =
+        runCekDeBruijn
+            defaultCekParametersForTesting
+            counting
+            logEmitter
+            ( UPLC.Apply
+                ()
+                (UPLC.Builtin () PLC.Blake2b_256)
+                ( UPLC.Apply
+                    ()
+                    (UPLC.Builtin () PLC.SerialiseData)
+                    (UPLC.Constant () (PLC.Some (PLC.ValueOf PLC.DefaultUniData d)))
+                )
+            )
+
+-- | The application tag name the machine computes for a vector.
+expectedApplicationTag :: TagVec -> ByteString
+expectedApplicationTag = evaluatedName . applicationPreimage
+
+-- | The trie-ready tag name the machine computes for a vector.
+expectedTrieReadyTag :: TagVec -> ByteString
+expectedTrieReadyTag = evaluatedName . trieReadyPreimage
+
+{- | Three distinct registrations. The same field values build the
+transactions of @registration_booking.tests.ak@, whose handler rows would
+fail if a name ignored any of them.
+-}
+rawTagVectors :: [TagVec]
+rawTagVectors =
+    [ TagVec
+        { tvDesc = "registration booking request one"
+        , tvKey = "keyA"
+        , tvRefund = BS.replicate 28 0xd1
+        , tvDestination = BS.cons 0x60 (BS.replicate 28 0xd1)
+        , tvCost = 2_000_000
+        , tvTip = 1_000_000
+        , tvCarrier = 1_500_000
+        , tvNonce = 1
+        , tvDatum = Nothing
+        }
+    , TagVec
+        { tvDesc = "registration booking request two"
+        , tvKey = "keyB"
+        , tvRefund = BS.replicate 28 0xd2
+        , tvDestination = BS.cons 0x60 (BS.replicate 28 0xd2)
+        , tvCost = 2_000_000
+        , tvTip = 1_500_000
+        , tvCarrier = 1_200_000
+        , tvNonce = 2
+        , tvDatum = Just 42
+        }
+    , TagVec
+        { tvDesc = "registration booking request three"
+        , tvKey = "keyC"
+        , tvRefund = BS.replicate 28 0xd3
+        , tvDestination = BS.cons 0x70 (BS.replicate 28 0xd4)
+        , tvCost = 2_000_000
+        , tvTip = 3_000_000
+        , tvCarrier = 2_000_000
+        , tvNonce = 1_000_000_000_000
+        , tvDatum = Nothing
+        }
+    ]
+
 -- -----------------------------------------------------------
 -- JSON rendering
 -- -----------------------------------------------------------
+
+-- | Render a registration tag vector as JSON.
+tagVecToJson :: TagVec -> Aeson.Value
+tagVecToJson v =
+    Aeson.object
+        [ "description" .= tvDesc v
+        , "key" .= toHex (tvKey v)
+        , "refundAddress" .= toHex (tvRefund v)
+        , "destination" .= toHex (tvDestination v)
+        , "registrationCost" .= tvCost v
+        , "declaredTip" .= tvTip v
+        , "carrierAda" .= tvCarrier v
+        , "nonce" .= tvNonce v
+        , "applicationPreimage" .= dataToJson (applicationPreimage v)
+        , "trieReadyPreimage" .= dataToJson (trieReadyPreimage v)
+        , "expectedApplicationTag" .= toHex (expectedApplicationTag v)
+        , "expectedTrieReadyTag" .= toHex (expectedTrieReadyTag v)
+        ]
 
 -- | Render a proof vector as JSON.
 proofVecToJson :: ProofVec -> Aeson.Value
@@ -331,6 +491,10 @@ datumEncodingVectors =
                     BuiltinByteString $ BS.replicate 28 0xb0
                 , stateTerminalPolicy =
                     BuiltinByteString $ BS.replicate 28 0xc0
+                , stateRegistrationCost = 2000000
+                , stateBookingWidth = 10000
+                , stateRequestPolicy =
+                    BuiltinByteString $ BS.replicate 28 0xe0
                 }
       in  Aeson.object
             [ "description" .= txt "StateDatum encoding"
@@ -464,6 +628,7 @@ allJsonVectors :: [Aeson.Value]
 allJsonVectors =
     map proofVecToJson rawProofVectors
         ++ map assetNameVecToJson rawAssetNameVectors
+        ++ map tagVecToJson rawTagVectors
         ++ datumEncodingVectors
 
 -- -----------------------------------------------------------
@@ -546,6 +711,49 @@ assetNameVecToAiken AssetNameVec{..} =
             pure $ call "assetName" [ref] .== hex anvExpected
     in  Test name $ runBody body
 
+{- | Render a registration tag vector as two Aiken tests: each production
+helper must return what the machine computed. The booked time, the registry
+and the delivered datum differ from the transaction rows on purpose: the
+model's names commit to none of them.
+-}
+tagVecToAiken :: TagVec -> [Def]
+tagVecToAiken v =
+    [ Test (descToTestName (tvDesc v <> " application tag")) application
+    , Test (descToTestName (tvDesc v <> " trie ready tag")) trieReady
+    ]
+  where
+    application =
+        call
+            "applicationTagName"
+            [ hex (tvKey v)
+            , hex (tvRefund v)
+            , hex (tvDestination v)
+            , int (tvNonce v)
+            ]
+            .== hex (expectedApplicationTag v)
+    trieReady = runBody $ do
+        request <- bind "request" $ record "RegistrationRequest" $ do
+            field "registry" $
+                record "TokenId" $
+                    field "assetName" $
+                        hex "another registry"
+            field "key" $ hex (tvKey v)
+            field "refund_address" $ hex (tvRefund v)
+            field "destination" $ hex (tvDestination v)
+            field "datum" $
+                var $
+                    maybe
+                        "None"
+                        (\n -> "Some(builtin.i_data(" <> show n <> "))")
+                        (tvDatum v)
+            field "submitted_at" $ int 777
+            field "registration_cost" $ int (tvCost v)
+            field "declared_tip" $ int (tvTip v)
+            field "carrier_ada" $ int (tvCarrier v)
+            field "nonce" $ int (tvNonce v)
+        pure $
+            call "trieReadyTagName" [request] .== hex (expectedTrieReadyTag v)
+
 -- | Generate complete Aiken module.
 aikenModule :: ModuleM ()
 aikenModule = do
@@ -561,9 +769,13 @@ aikenModule = do
     emit $ useAs "aiken/merkle_patricia_forestry" "mpf"
     emit $ useFrom "cardano/transaction" ["OutputReference"]
     emit $ useFrom "lib" ["assetName"]
+    emit $ useAs "aiken/builtin" "builtin"
+    emit $ useFrom "booking" ["applicationTagName", "trieReadyTagName"]
+    emit $ useFrom "types" ["RegistrationRequest", "TokenId"]
     emit Blank
     mapM_ (emit . proofVecToAiken) rawProofVectors
     mapM_ (emit . assetNameVecToAiken) rawAssetNameVectors
+    mapM_ (mapM_ emit . tagVecToAiken) rawTagVectors
 
 -- -----------------------------------------------------------
 -- Main

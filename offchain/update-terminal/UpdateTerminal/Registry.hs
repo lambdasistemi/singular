@@ -90,6 +90,7 @@ import Singular.Registry.TxBuilder.Internal
     , computeScriptHash
     , extractCageDatum
     , findStateUtxo
+    , requestPolicyPin
     , scriptFromBytes
     , scriptHashBytes
     , txInToRef
@@ -357,10 +358,17 @@ cageCfg stateBytes requestBytes codes seed =
             , defaultProcessTime = 30_000
             , defaultRetractTime = 30_000
             , defaultTip = Coin 1_000_000
+            , -- The scenario's own registration economics, stated here and
+              -- pinned in the state it boots.
+              defaultRegistrationCost = Coin 2_000_000
+            , defaultBookingWidth = 10_000
             , cfgApplicationPolicy = appPin
             , cfgActivePolicy = activePin
             , cfgAbsentPolicy = absentPin
             , cfgTerminalPolicy = terminalPin
+            , -- The request validator applied to this registry's state hash
+              -- and token, by the one shared derivation.
+              cfgRequestPolicy = requestPolicyPin stateBytes requestBytes seed
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

@@ -19,6 +19,6 @@ knownScripts :: [(Text, Text)]
 knownScripts =
     [
         ( "open_datum.open_datum"
-        , "cdc67586fd5391249e862338e88120ec5921d3fc9f4cd84b8cce7c33"
+        , "a02174f57a8a51968ec658058399c84b7f467f15dfc6903973cf50b7"
         )
     ]

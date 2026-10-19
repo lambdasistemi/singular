@@ -38,14 +38,23 @@ import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
-import Cardano.Ledger.Api.PParams (ppProtocolVersionL)
+import Cardano.Ledger.Api.PParams
+    ( CoinPerByte (..)
+    , PParams
+    , ppCoinsPerUTxOByteL
+    , ppProtocolVersionL
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( inputsTxBodyL
+    , outputsTxBodyL
     , referenceInputsTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
+    , coinTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
     , referenceScriptTxOutL
     )
@@ -56,6 +65,7 @@ import Cardano.Ledger.BaseTypes
     , StrictMaybe (..)
     )
 import Cardano.Ledger.Binary (mkVersion)
+import Cardano.Ledger.Coin (CompactForm (CompactCoin))
 import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Ledger (ConwayTx)
@@ -73,9 +83,11 @@ import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (LedgerProvider)
 import Singular.Registry.LedgerProvider qualified as LedgerProvider
+import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.StubSession
 import Singular.Registry.TxBuilder.Boot
     ( BootRefusal (..)
+    , bootCostBound
     , bootTokenImpl
     )
 import Singular.Registry.TxBuilder.Edges
@@ -85,6 +97,7 @@ import Singular.Registry.TxBuilder.Edges
     )
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
+    , cageAddrFromCfg
     , computeScriptHash
     , scriptFromBytes
     , txInToRef
@@ -131,6 +144,66 @@ bootsByReference = describe "a registry boots only by reference" $ do
             tx <- boot [seedUtxo, fundUtxo, (refIn, publication stateProgram)]
             tx ^. bodyTxL . referenceInputsTxBodyL `shouldBe` Set.singleton refIn
             Map.keys (tx ^. witsTxL . scriptTxWitsL) `shouldBe` []
+
+    describe "the lovelace its state output locks" $ do
+        it
+            "meets the ledger's minimum for the output it builds, under the preprod parameters"
+            $ do
+                (locked, needed) <- lockedUnder preprodParams realCfg
+                locked `shouldSatisfy` (>= needed)
+        it "locks the least that meets it, above the two-million floor" $ do
+            tx <- bootUnder preprodParams realCfg
+            out <- bootedState realCfg tx
+            let Coin locked = out ^. coinTxOutL
+                Coin neededOneLess =
+                    getMinCoinTxOut preprodParams (out & coinTxOutL .~ Coin (locked - 1))
+            locked `shouldSatisfy` (>= 2_000_000)
+            (locked == 2_000_000 || neededOneLess > locked - 1) `shouldBe` True
+        it
+            "follows the ledger's parameters: dearer storage locks more and still meets the minimum"
+            $ do
+                (base, _) <- lockedUnder preprodParams realCfg
+                (dearer, needed) <- lockedUnder (storagePrice 8_620) realCfg
+                dearer `shouldSatisfy` (> base)
+                dearer `shouldSatisfy` (>= needed)
+        it "keeps the two-million floor when the ledger's minimum is lower" $ do
+            (locked, needed) <- lockedUnder (storagePrice 100) realCfg
+            needed `shouldSatisfy` (< 2_000_000)
+            locked `shouldBe` 2_000_000
+        it
+            "follows the datum: a registration cost needing a longer encoding locks more, by the extra bytes at the ledger's price"
+            $ do
+                (small, _) <- lockedUnder preprodParams realCfg
+                (big, _) <-
+                    lockedUnder
+                        preprodParams
+                        realCfg{defaultRegistrationCost = Coin (2 ^ (40 :: Int))}
+                big - small `shouldBe` 4 * 4_310
+        it
+            "meets the minimum when the lovelace itself needs a longer encoding"
+            $ do
+                (locked, needed) <- lockedUnder (storagePrice 10_000_000) realCfg
+                locked `shouldSatisfy` (> 4_294_967_295)
+                locked `shouldSatisfy` (>= needed)
+        it
+            "is reserved by a create, with the boot's fee allowance, from the same output"
+            $ do
+                tx <- bootUnder preprodParams realCfg
+                out <- bootedState realCfg tx
+                let Coin locked = out ^. coinTxOutL
+                    Coin needed = getMinCoinTxOut preprodParams out
+                    Coin allowance = protocolFeeReserve preprodParams [carrier]
+                    reserve = bootCostBound preprodParams realCfg carrier
+                reserve `shouldBe` locked + allowance
+                reserve `shouldSatisfy` (>= needed + allowance)
+        it "reserves more when the parameters make the output dearer" $ do
+            let dear = storagePrice 10_000_000
+            tx <- bootUnder dear realCfg
+            out <- bootedState realCfg tx
+            let Coin needed = getMinCoinTxOut dear out
+                Coin allowance = protocolFeeReserve dear [carrier]
+            bootCostBound dear realCfg carrier
+                `shouldSatisfy` (>= needed + allowance)
 
 {- | The reference publication a create makes before its boot (#299). The
 create chooses its seed first — the output the boot will consume, the
@@ -271,10 +344,13 @@ cfg =
         , defaultProcessTime = 30_000
         , defaultRetractTime = 30_000
         , defaultTip = Coin 1_000_000
+        , defaultRegistrationCost = Coin 2_000_000
+        , defaultBookingWidth = 10_000
         , cfgApplicationPolicy = SBS.empty
         , cfgActivePolicy = SBS.empty
         , cfgAbsentPolicy = SBS.empty
         , cfgTerminalPolicy = SBS.empty
+        , cfgRequestPolicy = SBS.empty
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -304,3 +380,75 @@ publication :: SBS.ShortByteString -> TxOut ConwayEra
 publication bytes =
     adaAt 20_000_000
         & referenceScriptTxOutL .~ SJust (scriptFromBytes "published" bytes)
+
+-- | A configuration whose pins have the length a real registry's have.
+realCfg :: CageConfig
+realCfg =
+    cfg
+        { cfgApplicationPolicy = pin 0x11
+        , cfgActivePolicy = pin 0x12
+        , cfgAbsentPolicy = pin 0x13
+        , cfgTerminalPolicy = pin 0x14
+        , cfgRequestPolicy = pin 0x15
+        }
+  where
+    pin = SBS.pack . replicate 28
+
+-- | The published state validator the boot references, as a carrier.
+carrier :: (TxIn, TxOut ConwayEra)
+carrier = (refIn, publication stateProgram)
+
+-- | The parameters with this price per byte of stored output.
+storagePrice :: Word -> PParams ConwayEra
+storagePrice n =
+    preprodParams
+        & ppCoinsPerUTxOByteL .~ CoinPerByte (CompactCoin (fromIntegral n))
+
+{- | A boot against a wallet rich enough for any minimum, under these
+parameters.
+-}
+bootUnder :: PParams ConwayEra -> CageConfig -> IO ConwayTx
+bootUnder params c =
+    let wallet =
+            [ seedUtxo
+            , (fundIn, adaAt 10_000_000_000_000)
+            , carrier
+            ]
+        provider =
+            withAddressOutputs (\_ -> pure wallet) $
+                withParameters (withSyntheticCosts params) $
+                    withTime (pure syntheticTime) $
+                        withResolvedOutputs
+                            ( \wanted ->
+                                pure
+                                    [ (reference, output)
+                                    | (reference, output) <- wallet
+                                    , reference `Set.member` wanted
+                                    ]
+                            )
+                            stubSession
+    in  bootTokenImpl c provider payer
+
+-- | The state output a boot built: the one at the state address.
+bootedState :: CageConfig -> ConwayTx -> IO (TxOut ConwayEra)
+bootedState c tx =
+    case [ o
+         | o <- toList (tx ^. bodyTxL . outputsTxBodyL)
+         , o ^. addrTxOutL == cageAddrFromCfg c Testnet
+         ] of
+        [o] -> pure o
+        other ->
+            expectationFailure
+                ("expected one state output, found " <> show (length other))
+                >> fail "unreachable"
+
+{- | The lovelace a boot locks in the state output, and the ledger's minimum
+for that output as built.
+-}
+lockedUnder
+    :: PParams ConwayEra -> CageConfig -> IO (Integer, Integer)
+lockedUnder params c = do
+    out <- bootUnder params c >>= bootedState c
+    let Coin locked = out ^. coinTxOutL
+        Coin needed = getMinCoinTxOut params out
+    pure (locked, needed)

@@ -1,0 +1,24 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a maintainer, I want booking, spending, discovery and evidence to have explicit owners, so that a check cannot silently move from the validator into a cooperating client.",
+      "pause": 400
+    },
+    {
+      "text": "The application's rule authorizes registration or releases custody; Singular validates the resulting tag and request contents. The library builds transactions and never replaces a policy condition. The provider selects tagged outputs. Conformance reads the ledger's result independently.",
+      "pause": 400
+    },
+    {
+      "text": "The application model is not promoted into Singular. Shared representation belongs upstream of its consumers; identical commitment logic must have correspondence checks rather than unrelated encoders with matching names.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "cb390f76dd3615eef6cf1dc635e226476fb623775976a465fa83e0548b3d7685"
+  }
+}

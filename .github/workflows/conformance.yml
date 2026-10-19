@@ -99,7 +99,7 @@ jobs:
   evaluation-cleanup-controls:
     name: Evaluation cleanup controls
     runs-on: nixos
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -118,8 +118,8 @@ jobs:
       # conformance/coverage/evaluation under the pinned toolchain the
       # conformance flake resolves. The app owns its scratch copy and the
       # cabal download cache lives under this runner's XDG_CACHE_HOME; the
-      # pass criterion is exit 0 with `1 of 1 test suites passed`. Five
-      # minutes from the measured 89 seconds plus a cold cache.
+      # pass criterion is exit 0 with `1 of 1 test suites passed`. Twenty
+      # minutes from the measured 89 seconds plus an uncached build.
       - run: nix run --quiet ./conformance#evaluation-cleanup-controls
   publication-boundary:
     name: Publication boundary controls

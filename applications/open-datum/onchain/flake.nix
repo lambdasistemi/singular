@@ -224,7 +224,7 @@
         # witnesses come from one build. Chosen by test over composing both
         # validators directories into one project and running `aiken build`
         # once: the merge copies both blueprints' `compiledCode` bytes
-        # verbatim, so the 17 hashes are byte-identical by construction
+        # verbatim, so the 18 hashes are byte-identical by construction
         # (manual jq merge tested 14/14 equal base-hashes.json, 26
         # definitions, preamble from the registry's); a single rebuild
         # would recompile, reintroduce the single-project layout the split
@@ -280,11 +280,11 @@
                 }
               ' "$registryBlueprint" "$appBlueprint" > "$out"
               count="$(jq '.validators | length' "$out")"
-              [ "$count" = "17" ] || {
-                echo "open-datum-blueprint: expected 17 validators, built $count" >&2
+              [ "$count" = "18" ] || {
+                echo "open-datum-blueprint: expected 18 validators, built $count" >&2
                 exit 1
               }
-              echo "open-datum-blueprint: OK — 17 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
+              echo "open-datum-blueprint: OK — 18 validators, preamble $(jq -r '.preamble.title' "$out"), $(jq '.definitions | keys | length' "$out") definitions" >&2
             '';
 
         # #278: every hand-written and generated Aiken source is in the
@@ -454,8 +454,8 @@
               cp ${appSrc}/validators/open_datum.tests.ak "$work/mutant/validators/open_datum.tests.ak"
               cp ${appSrc}/validators/application/envelope.ak "$work/mutant/validators/application/envelope.ak"
               chmod -R u+w "$work/mutant"
-              sed -i 's|01b7ede24bf581093ac9d44e5ba3bf8f24e2dab51114dc4a25961817970f9e38|01b7ede24bf581093ac9d44e5ba3bf8f24e2dab51114dc4a25961817970f9e39|' "$work/mutant/validators/open_datum.tests.ak"
-              grep -q 'f9e39' "$work/mutant/validators/open_datum.tests.ak" || {
+              sed -i 's|40e7150ae36e109ad3f52076776ba6b459dabf249c0ea3fbac1177a5ad1b1fe7|40e7150ae36e109ad3f52076776ba6b459dabf249c0ea3fbac1177a5ad1b1fe8|' "$work/mutant/validators/open_datum.tests.ak"
+              grep -q '40e7150ae36e109ad3f52076776ba6b459dabf249c0ea3fbac1177a5ad1b1fe8' "$work/mutant/validators/open_datum.tests.ak" || {
                 echo "FAIL: the mutant plant did not apply" >&2
                 exit 2
               }

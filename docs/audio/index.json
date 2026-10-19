@@ -3186,8 +3186,8 @@
     "index": 1,
     "name": "docs-demo1-devnet/what-you-should-see-01",
     "pause_ms": 300,
-    "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
-    "v": "b19c97049a61"
+    "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds; the runs on this page pass 0 and 60 000, and the registry fixes both for its life. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+    "v": "fb4f40072f2f"
    },
    {
     "index": 2,
@@ -3514,8 +3514,15 @@
     "index": 2,
     "name": "docs-demo1-on-preprod/step-1-alice-creates-the-registry-02",
     "pause_ms": 400,
+    "text": "create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds. The commands below pass 0 and 60 000, the values the development-node page passes, and the registry fixes both for its life. The table at the top says what has been played on preprod: the 18 October run joined an existing registry and did not run this step.",
+    "v": "658d5f03eee9"
+   },
+   {
+    "index": 3,
+    "name": "docs-demo1-on-preprod/step-1-alice-creates-the-registry-03",
+    "pause_ms": 400,
     "text": "The receipt's stateToken is the registry's name: the policy and the asset name in hex, joined by a dot. Every later command takes it as --state-token. If someone gave you a state token instead, skip this step and set token to it: token=(--state-token POLICY.NAME). The directory reg only keeps your own journal; nothing in it names the registry.",
-    "v": "eb787ff426c2"
+    "v": "d00a77693d1c"
    }
   ],
   "step-10-read-it-back": [
@@ -6890,15 +6897,15 @@
     "index": 2,
     "name": "docs-offchain-api-reference/what-this-reference-contains-02",
     "pause_ms": 400,
-    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 73 modules in three kinds: 56 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the five wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof and .Redeemer — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
-    "v": "a57b6758814b"
+    "text": "The module extent is the public library of the off-chain Cabal file — every exposed module, every internal module, and every module the library re-exports under its own name. That complete extent is 75 modules in three kinds: 57 explicitly exposed modules and 4 re-exported modules are what a caller imports; the two trie capability owners behind the TrieState facade (Singular.Registry.TrieState.Core and .Types), the three fold owners behind the Update facade — Singular.Registry.TxBuilder.Update.Build, .Context and .Duties — the six wire owners behind the Types facade — Singular.Registry.Wire.Primitive, .Request, .State, .Proof, .Redeemer and .Booking — and the three deployment owners behind the Deployment facade — Singular.Registry.Deployment.Manifest, .Mirror and .Attach — are package-internal other-modules with generated pages here for the contributor reading the facades' implementations, but no caller import path: a caller compiles against the facades' exports, not against these modules. Singular.Registry.Ledger, Singular.Registry.LedgerProvider, Singular.Registry.Evidence and Singular.Registry.Signing are the re-exports: their implementations are owned by the public local-services component (offchain/local-services/) and the main library exposes their stable import paths. The generic provider interface and evidence types let a caller supply capabilities without selecting a node runtime; the Koios constructor supplies unbound, unverified HTTP facts through that interface. The runtime service modules outside this extent — the terminal composition and its transport in koios-http, and the remaining service modules of local-services — are documented with source links in Runtime service ownership. The extent below is the complete documented module surface — exposed, re-exported and package-internal alike; the site check fails until it and this list agree.",
+    "v": "04d0f176d830"
    },
    {
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-    "v": "154e936e463b"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.RegistrationBooking — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Booking — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+    "v": "211fe829f9e5"
    },
    {
     "index": 4,
@@ -8520,43 +8527,50 @@
     "index": 18,
     "name": "docs-onchain-api-reference/what-this-reference-contains-18",
     "pause_ms": 300,
-    "text": "request — the request validator and its retraction refusal",
-    "v": "1a73cad088d1"
+    "text": "booking — the two canonical tag names and the one judgement the request policy's mint handler enforces on a registration",
+    "v": "acf3862db227"
    },
    {
     "index": 19,
     "name": "docs-onchain-api-reference/what-this-reference-contains-19",
     "pause_ms": 300,
-    "text": "registry_pin — the pinned state hash shared by the witness and the open-datum application",
-    "v": "31959208bfe8"
+    "text": "request — the request validator and its retraction refusal",
+    "v": "e81bc9ae80cd"
    },
    {
     "index": 20,
     "name": "docs-onchain-api-reference/what-this-reference-contains-20",
     "pause_ms": 300,
-    "text": "cage — the phase predicates the property tests use",
-    "v": "0f9fde43d2a6"
+    "text": "registry_pin — the pinned state hash shared by the witness and the open-datum application",
+    "v": "f14b7a521da1"
    },
    {
     "index": 21,
     "name": "docs-onchain-api-reference/what-this-reference-contains-21",
-    "pause_ms": 400,
-    "text": "Test support, documented because it is public to the test modules:",
-    "v": "b81c56d064d9"
+    "pause_ms": 300,
+    "text": "cage — the phase predicates the property tests use",
+    "v": "e83196570da9"
    },
    {
     "index": 22,
     "name": "docs-onchain-api-reference/what-this-reference-contains-22",
-    "pause_ms": 300,
-    "text": "cage_fixtures",
-    "v": "8ef0608a062a"
+    "pause_ms": 400,
+    "text": "Test support, documented because it is public to the test modules:",
+    "v": "a51820214500"
    },
    {
     "index": 23,
     "name": "docs-onchain-api-reference/what-this-reference-contains-23",
     "pause_ms": 300,
+    "text": "cage_fixtures",
+    "v": "bc8db15e5418"
+   },
+   {
+    "index": 24,
+    "name": "docs-onchain-api-reference/what-this-reference-contains-24",
+    "pause_ms": 300,
     "text": "registry_fixtures",
-    "v": "2325b4bae6de"
+    "v": "80227d003c41"
    }
   ]
  },

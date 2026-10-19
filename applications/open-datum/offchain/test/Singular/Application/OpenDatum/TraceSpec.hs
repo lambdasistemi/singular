@@ -120,10 +120,22 @@ the provider with it.
 spelledToken :: String
 spelledToken = replicate 56 'a' <> "." <> replicate 64 'b'
 
+{- | The registration cost and booking width a create is given: neither has
+a default, and both are fixed for the life of the registry.
+-}
+createValues :: [String]
+createValues = ["--registration-cost", "3000000", "--booking-width", "20000"]
+
 -- | Each of the six commands, spelled with what it needs to parse.
 commands :: [(String, [String])]
 commands =
-    [ ("create", ["open-datum", "create", "--seed", seed] <> base <> wallet)
+    [
+        ( "create"
+        , ["open-datum", "create", "--seed", seed]
+            <> base
+            <> createValues
+            <> wallet
+        )
     ,
         ( "insert"
         , ["open-datum", "insert", "--key", "alice-1", "--payload", "/p.json"]

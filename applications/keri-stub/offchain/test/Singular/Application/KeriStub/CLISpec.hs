@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -46,6 +47,12 @@ wallet = ["--wallet-skey", "/keys/payment.skey"]
 
 createReg :: [String]
 createReg = ["--state-dir", "/srv/reg", "--blueprint", "/srv/plutus.json"]
+
+{- | The registration cost and booking width every create is given: neither
+has a default, and both are fixed for the life of the registry.
+-}
+createValues :: [String]
+createValues = ["--registration-cost", "3000000", "--booking-width", "20000"]
 
 tokenSpelling :: String
 tokenSpelling = replicate 56 '0' <> "." <> replicate 64 '0'
@@ -103,6 +110,7 @@ commandLine = describe "the command line" $ do
         case parseKeriStubCommand
             ( ["keri-stub", "create", "--seed", seedText]
                 <> createReg
+                <> createValues
                 <> provider
                 <> wallet
             ) of
@@ -110,11 +118,85 @@ commandLine = describe "the command line" $ do
                 show (createSeed a) `shouldBe` show (Just seedText)
                 createBlueprint a `shouldBe` "/srv/plutus.json"
                 createPreview a `shouldBe` False
+                createRegistrationCost a `shouldBe` 3_000_000
+                createBookingWidth a `shouldBe` 20_000
             other ->
                 expectationFailure ("create did not parse: " <> show other)
+    describe "the registration cost and the booking width" $ do
+        let create extra =
+                parseKeriStubCommand
+                    ( ["keri-stub", "create", "--seed", seedText]
+                        <> createReg
+                        <> provider
+                        <> wallet
+                        <> extra
+                    )
+            valuesOf =
+                fmap
+                    ( \case
+                        KeriCreate a -> Just (createRegistrationCost a, createBookingWidth a)
+                        _ -> Nothing
+                    )
+        it "retains the values it is given" $
+            valuesOf (create createValues)
+                `shouldBe` Right (Just (3_000_000, 20_000))
+        it "takes a zero cost and a width of one millisecond" $
+            valuesOf (create ["--registration-cost", "0", "--booking-width", "1"])
+                `shouldBe` Right (Just (0, 1))
+        it "refuses a create without the registration cost, naming it" $
+            create ["--booking-width", "20000"]
+                `shouldBe` Left (MissingFlag "--registration-cost")
+        it "refuses a create without the booking width, naming it" $
+            create ["--registration-cost", "3000000"]
+                `shouldBe` Left (MissingFlag "--booking-width")
+        it "refuses a cost that is negative, fractional or not a number" $
+            mapM_
+                ( \value ->
+                    create ["--registration-cost", value, "--booking-width", "20000"]
+                        `shouldBe` Left
+                            ( BadValue
+                                "--registration-cost"
+                                "needs a non-negative integer number of lovelace"
+                            )
+                )
+                ["-1", "1.5", "lots", "", "0x10"]
+        it
+            "refuses a width that is zero, negative, fractional or not a number"
+            $ mapM_
+                ( \value ->
+                    create ["--registration-cost", "3000000", "--booking-width", value]
+                        `shouldBe` Left
+                            ( BadValue
+                                "--booking-width"
+                                "needs a positive integer number of milliseconds"
+                            )
+                )
+                ["0", "-5", "1.5", "lots", "", "1e3"]
+        it "refuses both flags on later commands instead of ignoring them" $
+            mapM_
+                ( \(flag, what) ->
+                    parseKeriStubCommand
+                        (["keri-stub", "fold", flag, "1"] <> reg <> provider <> wallet)
+                        `shouldBe` Left
+                            ( BadValue
+                                flag
+                                ( "is a keri-stub create flag: "
+                                    <> what
+                                    <> " is fixed for the life of a registry"
+                                )
+                            )
+                )
+                [ ("--registration-cost", "the registration cost")
+                , ("--booking-width", "the widest booking interval")
+                ]
     it "refuses a create without its seed" $
         parseKeriStubCommand
-            (["keri-stub", "create"] <> createReg <> provider <> wallet)
+            ( ["keri-stub", "create"]
+                <> createReg
+                <> createValues
+                <> provider
+                <> wallet
+            )
             `shouldSatisfy` isLeft
     it "reads a fold with its token, wallet and provider" $
         parseKeriStubCommand
@@ -139,6 +221,7 @@ commandLine = describe "the command line" $ do
         parseKeriStubCommand
             ( ["keri-stub", "create", "--seed", seedText, "--deposit", "5"]
                 <> createReg
+                <> createValues
                 <> provider
                 <> wallet
             )

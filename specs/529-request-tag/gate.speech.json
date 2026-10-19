@@ -1,0 +1,48 @@
+{
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "As a reviewer, I want to know which executable command tests each promise, which existing command merely carries future cases, and which evidence is still missing.",
+      "pause": 400
+    },
+    {
+      "text": "This is a proposed check set, not a frozen or passing gate. Commands below are read from the workflows at 45cd8a75; working directories matter. The previous plan at 662663f9 is historical discovery only: its bond/forfeit cases, Lean slice, old workflow lines and former ownership order are not acceptance authority. No additional gate-author seat is commissioned by this document. The approved compact team has the ticket owner prepare this table and the persistent auditor inspect the bound checkpoints.",
+      "pause": 400
+    },
+    {
+      "text": "All executions use the memory, swap and timeout wrapper in the plan. Every row expects exit zero unless explicitly stated. Existing job success proves only the cases actually executed. New product assertions require an executable hosted step in the same diff. Candidate checks are selected by each slice's changed inputs; final affected-consumer checks run locally before the first push, then hosted failures are repaired without locally replaying the hosted matrix.",
+      "pause": 400
+    }
+  ],
+  "product-cases-requiring-new-hosted-execution": [
+    {
+      "text": "Product cases requiring new hosted execution.",
+      "pause": 500
+    },
+    {
+      "text": "No existing executed case has been identified for the complete born-tagged mint, unrelated-wallet junk sweep, ordinary-funded economic retraction, stranger expiry or indexed-discovery pollution stories. These are required CI changes in this ticket, not optional local checks. Before freezing a slice, name the description-language row, executable runner and exact workflow invocation. Until then its gate is incomplete. A real behavioral RED and matching GREEN must be retained for each new boundary; setup failures do not fill that column.",
+      "pause": 400
+    },
+    {
+      "text": "The full required hosted-check inventory is refreshed at push from the workflows and runs, including affected release artifacts and journeys. No exact-head hosted run exists for this branch yet. The reporting-only coverage completion command may exit one for declared debt; that is neither a failed implementation test nor a completeness proof.",
+      "pause": 400
+    }
+  ],
+  "budget-and-freeze": [
+    {
+      "text": "Budget and freeze.",
+      "pause": 500
+    },
+    {
+      "text": "Each focused candidate set has a 30-minute wall budget and every individual invocation has the 900-second cap. The first-push consumer pass is scheduled once; an over-cap command is escalated, not granted a larger timeout by the writer. The runtime manifest will bind exact membership, directory, command, base, source fence, expected exit and evidence paths after the representation and shared-boundary decisions. This page does not authorize execution against an unfinished contract.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "gate.md",
+    "sha256": "9cc1e8752489a89db6350612b76e56e3358700604a214acf9b502ac3ee393b8d"
+  }
+}

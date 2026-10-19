@@ -91,9 +91,8 @@ import Singular.CLI.Key
     , maxKeyBytes
     , readKey
     )
-import Singular.CLI.Registry (economics)
+import Singular.CLI.Registry (shippedProcessTime, shippedRetractTime)
 import Singular.CLI.Trace (TraceRequest (..))
-import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
@@ -197,14 +196,22 @@ parseKeriStubWithGroup group environment args = do
                 _ -> Left (UnknownCommand words')
   where
     refuseWindows words' flags =
-        unless (words' == ["keri-stub", "create"]) $
-            forM_ ["--process-time", "--retract-time"] $ \flag ->
+        unless (words' == ["keri-stub", "create"])
+            $ forM_
+                [ ("--process-time", "windows are fixed for the life of a registry")
+                , ("--retract-time", "windows are fixed for the life of a registry")
+                ,
+                    ( "--registration-cost"
+                    , "the registration cost is fixed for the life of a registry"
+                    )
+                ,
+                    ( "--booking-width"
+                    , "the widest booking interval is fixed for the life of a registry"
+                    )
+                ]
+            $ \(flag, why) ->
                 when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is a keri-stub create flag: windows are fixed for the life of a registry"
-                        )
+                    Left (BadValue flag ("is a keri-stub create flag: " <> why))
     refuseSpendingFlags command flags =
         forM_ ["--fund-input", "--max-outlay"] $ \flag ->
             when (isJust (lookup flag flags)) $
@@ -362,9 +369,11 @@ parseKeriStubWithGroup group environment args = do
                     "is refused by keri-stub create, which makes one"
                 )
         processing <-
-            windowFrom "--process-time" (reProcessTime economics) flags
+            windowFrom "--process-time" shippedProcessTime flags
         retracting <-
-            windowFrom "--retract-time" (reRetractTime economics) flags
+            windowFrom "--retract-time" shippedRetractTime flags
+        cost <- registrationCostFrom flags
+        width <- bookingWidthFrom flags
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
@@ -399,7 +408,29 @@ parseKeriStubWithGroup group environment args = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
+                , createRegistrationCost = cost
+                , createBookingWidth = width
                 }
+    registrationCostFrom flags = case optional "--registration-cost" flags of
+        Nothing -> Left (MissingFlag "--registration-cost")
+        Just value -> case readMaybe value of
+            Just n | n >= 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--registration-cost"
+                        "needs a non-negative integer number of lovelace"
+                    )
+    bookingWidthFrom flags = case optional "--booking-width" flags of
+        Nothing -> Left (MissingFlag "--booking-width")
+        Just value -> case readMaybe value of
+            Just n | n > 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--booking-width"
+                        "needs a positive integer number of milliseconds"
+                    )
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
         Just value -> case readMaybe value of
@@ -551,7 +582,7 @@ stays in the stub; every other command-specific spelling is refused by
 name above.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = ["--evidence"]
+extraValuedFlags = ["--evidence", "--registration-cost", "--booking-width"]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
@@ -592,9 +623,11 @@ keriStubUsage =
         [ "usage:"
         , "  keri-stub create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      (--seed TXID#IX | --preview) [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  keri-stub create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "  keri-stub register [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"

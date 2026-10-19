@@ -197,7 +197,7 @@ done
   || setup_fail "the genesis-only source never printed usable provider/time settings"
 printf '%s' e2e-genesis-utxo-key-seed-000001 | od -An -tx1 | tr -d ' \n' >"$work/genesis.skey"
 status=0
-"$open_datum" create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/genesis-indexer" --blueprint "$blueprint" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --state-dir "$work/genesis-indexer" --blueprint "$blueprint" \
   --koios-url "$bare_provider" --network-time "$bare_time" --network-magic "$bare_magic" \
   --wallet-skey "$work/genesis.skey" >"$receipts/genesis-indexer.json" 2>"$receipts/genesis-indexer.err" || status=$?
 [ "$(jq -r .outcome "$receipts/genesis-indexer.json")" = node-unavailable ] && [ "$status" -eq 12 ] \
@@ -719,10 +719,10 @@ say "both helps name the eight commands; a signing key on inspect is refused"
 # ------------------------------------------------------------------
 # 1. create
 # ------------------------------------------------------------------
-run preview success -- create --process-time 120000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 [ ! -e "$reg" ] || fail "preview created the target $reg"
 seed="$(field preview .seed)"
-run bob-preview success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/bob-preview" \
+run bob-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --state-dir "$work/bob-preview" \
   --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -731,7 +731,7 @@ bob_addr="$(field bob-preview .wallet)"
 
 # The same preview for a public address alone: no key, no write, and the
 # identity it names is the one the key-holding preview named.
-run preview-public success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/public-preview" \
+run preview-public success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --state-dir "$work/public-preview" \
   --blueprint "$blueprint" "${node[@]}" --wallet-address "$alice_addr"
 [ ! -e "$work/public-preview" ] || fail "a public preview created its target"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins and .walletKeyHash == $k[0].walletKeyHash' \
@@ -745,11 +745,11 @@ for preview_receipt in preview bob-preview preview-public; do
     || fail "$preview_receipt lacks its Unbound session and Unverified facts"
 done
 status=0
-"$open_datum" create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/public-preview" --blueprint "$blueprint" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --state-dir "$work/public-preview" --blueprint "$blueprint" \
   "${node[@]}" --wallet-address "$alice_addr" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "a preview accepted a signing key beside a public address (exit $status)"
 
-run create-seed-not-owned client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed" \
+run create-seed-not-owned client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --seed "$seed" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 [ ! -e "$reg/registry.json" ] || fail "a refused create saved a registry"
 
@@ -760,7 +760,7 @@ run create-seed-not-owned client-refusal -- create --process-time 120000 --retra
 # reject: a booking and a fold of a fresh request happen there (#518).
 process_time=120000
 retract_time=60000
-run create success -- create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+run create success -- create --registration-cost 0 --booking-width 60000 --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 state="$(field create .pins.pinState)"
 token="$(field create .token)"
 active="$(field create .pins.pinActive)"
@@ -768,7 +768,7 @@ alicekey="$(field create .walletKeyHash)"
 [ "$(field create .seed)" = "$seed" ] || fail "create booted from another seed"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
   "$receipts/create.json" >/dev/null || fail "create did not publish the six references"
-refused create-again client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
+refused create-again client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --seed "$seed" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e --argjson p "$process_time" --argjson r "$retract_time" \
   '.processTime == $p and .retractTime == $r' "$receipts/create.json" >/dev/null \
   || fail "create did not report the chosen processing and retract windows"
@@ -935,10 +935,10 @@ fi
 # Bob's early preview named a chained seed with no carrier; Alice has since
 # published the carrier, so that pin is stale. Re-preview Bob with the carrier
 # (largest output, as today) and boot from the fresh pin.
-run bob-preview2 success -- create --process-time 120000 --retract-time 30000 --preview \
+run bob-preview2 success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$work/bob-preview2" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 [ ! -e "$work/bob-preview2" ] || fail "bob's second preview created its target"
-run create-defaults success -- create --seed "$(field bob-preview2 .seed)" \
+run create-defaults success -- create --registration-cost 0 --booking-width 60000 --seed "$(field bob-preview2 .seed)" \
   --state-dir "$work/default-registry" --blueprint "$blueprint" "${node[@]}" "${bob[@]}"
 run inspect-defaults success -- inspect --key default-window-key \
   --state-dir "$work/default-registry" --blueprint "$blueprint" \
@@ -1154,9 +1154,9 @@ two_alice="$two/alice"
 two_bob="$two/bob"
 mkdir -p "$two"
 trap release_work EXIT
-run two-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run two-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
-run two-create success -- create --process-time 120000 --retract-time 30000 \
+run two-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --seed "$(field two-preview .seed)" --state-dir "$two_alice" --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
 two_token="$(field two-create .stateToken)"
 two_key=keyT
@@ -1342,10 +1342,10 @@ say "two actors booked at once and one fold settled both, each payout to its own
 # and his seed stays an unspent output.
 two_dave="$work/underfunded-actor"
 dave=(--wallet-skey "$work/dave.skey")
-run dave-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run dave-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
 dave_seed="$(field dave-preview .seed)"
-run dave-create client-refusal -- create --process-time 120000 --retract-time 30000 \
+run dave-create client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --seed "$dave_seed" --state-dir "$two_dave" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
 jq -e '.reason | startswith("publication-unfunded")' "$receipts/dave-create.json" >/dev/null \
   || fail "dave's underfunded create was refused for another reason: $(jq -r .reason "$receipts/dave-create.json")"
@@ -1364,27 +1364,28 @@ say "the refused create left dave's seed unspent"
 # Erin holds five 30 tADA ada-only outputs and nothing else: the seed stays
 # withheld from the publications, so four outputs fund them. Each output is
 # strictly below the largest remaining single publication need (the
-# application, needs 46966310 as the journey prints; state 11557 bytes is
-# already live and reused, so no state publication remains), but the four
-# permitted outputs cover the whole run (run need 109950687 as the refusals
-# print; the seed is withheld from the publications). Her preview reports no
+# application, as the journey prints; the state script is already live and
+# reused, so no state publication remains), but the four permitted outputs
+# cover the whole run (the run need the refusals print; the seed is withheld
+# from the publications). Her preview reports no
 # refusal and her create completes;
 # every reference is live carrying its script; at least one publication spent
 # two or more inputs (read from her journal, never typed); Bob reads the
 # registry from the token alone.
-# Frank holds four 30 tADA outputs (seed withheld, so three fund them): the run's
-# lowest total need 109950687 exceeds his total, short by less than one 30 tADA
-# output. His preview and his create give one
+# Frank holds four 30 tADA outputs, one fewer than Erin, whose five equal
+# outputs complete just before him: the whole run's lowest total need, which
+# his refusal prints, exceeds the ada-only outputs he holds on the chain, and
+# by less than one 30 tADA output. His preview and his create give one
 # verdict, naming totals from the refusal itself, never typed; nothing is
 # submitted and every wallet output stays live.
 two_erin="$work/erin-actor"
 erin=(--wallet-skey "$work/erin.skey")
-run erin-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run erin-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_erin" --blueprint "$blueprint" "${node[@]}" "${erin[@]}"
 jq -e '.createRefusal == null' "$receipts/erin-preview.json" >/dev/null \
   || fail "erin's preview refuses a fundable wallet: $(jq -r .createRefusal "$receipts/erin-preview.json")"
 erin_seed="$(field erin-preview .seed)"
-run erin-create success -- create --process-time 120000 --retract-time 30000 \
+run erin-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --seed "$erin_seed" --state-dir "$two_erin" --blueprint "$blueprint" "${node[@]}" "${erin[@]}"
 jq -e '[.references[] | .role] | sort == ["application","request","state","witness-absent","witness-active","witness-terminal"]' \
   "$receipts/erin-create.json" >/dev/null || fail "erin's create did not publish the six references"
@@ -1413,39 +1414,62 @@ say "bob read erin's registry from the state token alone"
 
 two_frank="$work/frank-actor"
 frank=(--wallet-skey "$work/frank.skey")
-run frank-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run frank-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
 jq -e '(.createRefusal // "") | startswith("publication-unfunded")' "$receipts/frank-preview.json" >/dev/null \
   || fail "frank's preview does not refuse funding: $(jq -r .createRefusal "$receipts/frank-preview.json")"
 frank_seed="$(field frank-preview .seed)"
 frank_refusal="$(field frank-preview .createRefusal)"
 frank_addr="$(field frank-preview .wallet)"
-run frank-pub-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run frank-pub-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" --wallet-address "$frank_addr"
 [ "$(field frank-pub-preview .createRefusal)" = "$frank_refusal" ] \
   || fail "frank's public preview differs from his key preview: $(field frank-pub-preview .createRefusal) vs $frank_refusal"
 say "frank's key and public previews agree"
-run frank-create client-refusal -- create --process-time 120000 --retract-time 30000 \
+run frank-create client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --seed "$frank_seed" --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
 [ "$(field frank-create .reason)" = "$frank_refusal" ] \
   || fail "frank's create refusal differs from his preview: $(field frank-create .reason) vs $frank_refusal"
-# From the refusal's own numbers, never typed: the shortfall is positive and
-# less than one 30 tADA output.
+# The refusal names the short publication step, what that step needs and what
+# the wallet holds at that step. Those two numbers say only that the step is
+# short; they are the gap at whichever step runs out first, after the
+# simulated earlier steps have consumed outputs, so the gap depends on the
+# path and moves whenever a reference script grows. They are checked for
+# direction and nothing more.
 read -r frank_needed frank_held <<<"$(printf '%s' "$frank_refusal" | grep -oE '[0-9]+' | head -n 2 | tr '\n' ' ')"
 [ -n "${frank_needed:-}" ] && [ -n "${frank_held:-}" ] \
   || fail "frank's refusal carries no numbers: $frank_refusal"
 [ "$frank_needed" -gt "$frank_held" ] \
   || fail "frank's needed $frank_needed does not exceed held $frank_held"
-[ "$((frank_needed - frank_held))" -le 30000000 ] \
-  || fail "frank's shortfall exceeds one 30 tADA output: needed $frank_needed held $frank_held"
-say "frank refused with one verdict: needed $frank_needed held $frank_held"
+# What "one output short" means is a statement about the whole run: Erin, with
+# one more equal output, completes just before him, so a wallet one output
+# larger would cover the run. Measured from two readings, neither typed nor
+# recomputed here: the whole run's lowest total need, parsed from the refusal's
+# own sentence, and the ada-only lovelace Frank holds on the chain, read back
+# with inspect. The shortage must be positive and at most one 30 tADA output.
+frank_minimum="$(printf '%s' "$frank_refusal" | sed -nE 's/.*the whole run needs at least ([0-9]+) lovelace.*/\1/p')"
+[[ "$frank_minimum" =~ ^[0-9]+$ ]] \
+  || fail "frank's refusal carries no whole-run minimum: $frank_refusal"
+frank_reads="$work/frank-holdings"
+mkdir -p "$frank_reads"
+run frank-holdings success -- inspect --key keyEmpty --state-token "$erin_token" \
+  --state-dir "$frank_reads" --blueprint "$blueprint" --outputs-at "$frank_addr" "${node[@]}"
+[ "$(field frank-holdings .outputsAt.address)" = "$frank_addr" ] \
+  || fail "frank's holdings were read at another address: $(field frank-holdings .outputsAt.address) vs $frank_addr"
+frank_total="$(jq -r '[.outputsAt.outputs[] | select((.locked.assets | length) == 0) | .locked.lovelace] | if length == 0 then "none" else add end' "$receipts/frank-holdings.json")"
+[[ "$frank_total" =~ ^[0-9]+$ ]] \
+  || fail "frank holds no ada-only output on the chain ($frank_total)"
+frank_shortage=$((frank_minimum - frank_total))
+{ [ "$frank_shortage" -gt 0 ] && [ "$frank_shortage" -le 30000000 ]; } \
+  || fail "frank's whole-run shortage is not within one 30 tADA output: the run needs at least $frank_minimum, his ada-only outputs hold $frank_total, shortage $frank_shortage"
+say "frank refused with one verdict: step needed $frank_needed held $frank_held; whole run needs at least $frank_minimum, his ada-only outputs hold $frank_total, short by $frank_shortage"
 [ -z "$(managed_find "$two_frank" journal.jsonl)" ] || fail "the refused frank create wrote a journal"
 [ -z "$(managed_find "$two_frank" registry.pending.json)" ] || fail "the refused frank create wrote a pending identity"
 frank_probe="$work/frank-seed-probe.json"
 "$devnet" probe --node-socket "$sock" --network-magic 42 --tx-in "$frank_seed" >"$frank_probe"
 jq -e --arg s "$frank_seed" 'any(.live[]; . == $s)' "$frank_probe" >/dev/null \
   || fail "frank's seed was spent by the refused create"
-run frank-preview2 success -- create --process-time 120000 --retract-time 30000 --preview \
+run frank-preview2 success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_frank" --blueprint "$blueprint" "${node[@]}" "${frank[@]}"
 [ "$(field frank-preview2 .createRefusal)" = "$frank_refusal" ] \
   || fail "frank's wallet changed under the refused create"
@@ -1464,7 +1488,7 @@ say "the refused frank create left every wallet output unchanged"
 # create is refused before anything is submitted.
 two_grace="$work/grace-actor"
 grace=(--wallet-skey "$work/grace.skey")
-run grace-preview success -- create --process-time 120000 --retract-time 30000 --preview \
+run grace-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview \
   --state-dir "$two_grace" --blueprint "$blueprint" "${node[@]}" "${grace[@]}"
 jq -e '.createRefusal == null' "$receipts/grace-preview.json" >/dev/null \
   || fail "grace's preview refuses a fundable one-output wallet: $(jq -r .createRefusal "$receipts/grace-preview.json")"
@@ -1479,7 +1503,7 @@ grace_seed_probe="$work/grace-seed-probe.json"
 jq -e --arg s "$grace_seed" 'any(.live[]; . == $s)' "$grace_seed_probe" >/dev/null \
   || fail "grace's previewed seed $grace_seed is not live before her create"
 # The story is the command with no seed flag: it boots from her sole output.
-run grace-create success -- create --process-time 120000 --retract-time 30000 \
+run grace-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 \
   --state-dir "$two_grace" --blueprint "$blueprint" "${node[@]}" "${grace[@]}"
 [ "$(field grace-create .stateToken)" = "$grace_token_preview" ] \
   || fail "grace's create made another token: $(field grace-create .stateToken) vs $grace_token_preview"
@@ -1982,12 +2006,12 @@ if [ "$mode" = test-harness ]; then
   # A create killed after its first accepted submission: a new create is
   # refused, and inspect reads the incomplete create from its journal.
   inter="$work/interrupted"
-  run preview-inter success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$inter" \
+  run preview-inter success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --state-dir "$inter" \
     --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
   seed_i="$(field preview-inter .seed)"
   rm -f "$work/create.go" "$work/create.go.waiting"
   SINGULAR_HARNESS_HOLD_AFTER_SUBMIT="$work/create.go" SINGULAR_HARNESS_HOLD_STEP=boot \
-    "$open_datum" create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" --blueprint "$blueprint" \
+    "$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" --blueprint "$blueprint" \
     "${node[@]}" "${alice[@]}" >"$receipts/create-killed.json" 2>&1 &
   victim=$!
   for _ in $(seq 1 1200); do
@@ -2006,7 +2030,7 @@ if [ "$mode" = test-harness ]; then
   first_tx="$(jq -r 'select(.journalEvent == "submitted") | .journalTxId' "$inter_journal")"
   first_tx="${first_tx%%$'\n'*}"
   inter_lines="$(journal_lines "$inter")"
-  run create-after-kill client-refusal -- create --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" \
+  run create-after-kill client-refusal -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --seed "$seed_i" --state-dir "$inter" \
     --blueprint "$blueprint" "${node[@]}" "${alice[@]}"
   [ "$(journal_lines "$inter")" = "$inter_lines" ] || fail "a create after the kill submitted something"
   for _ in $(seq 1 60); do
@@ -2772,16 +2796,16 @@ story_wait_until() {
 
 say "story 1. Preview the identity a seed gives, from Alice's address alone, then create the registry on it."
 # 1. Preview the identity a seed gives (the address alone), then create.
-run story-preview success -- create --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
+run story-preview success -- create --registration-cost 0 --booking-width 60000 --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
   "${scommon[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
-run story-bob-preview success -- create --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
+run story-bob-preview success -- create --registration-cost 0 --booking-width 60000 --preview --process-time "$s_window_process" --retract-time "$s_window_retract" \
   --state-dir "$story/bob-preview" --blueprint "$blueprint" "${node[@]}" --wallet-address "$vault_bob_addr"
 [ ! -e "$s_reg" ] && [ ! -e "$story/bob-preview" ] || fail "a story preview created its target"
 s_alicekey="$(field story-preview .walletKeyHash)"
 s_bobkey="$(field story-bob-preview .walletKeyHash)"
 [ "$(field story-preview .wallet)" = "$vault_alice_addr" ] || fail "the story preview names another wallet than Alice's vault address"
 # Alice creates in one command from her vault.
-story_vault story-create alice -- create --seed "$(field story-preview .seed)" \
+story_vault story-create alice -- create --registration-cost 0 --booking-width 60000 --seed "$(field story-preview .seed)" \
   --process-time "$s_window_process" --retract-time "$s_window_retract" "${scommon[@]}" "${node[@]}"
 # The state script is the same for every registry of a release: Alice's story
 # create found the live carrier of it by hash and published none.

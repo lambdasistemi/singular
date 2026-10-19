@@ -21,6 +21,7 @@ module Singular.Registry.Wire.Request
     , edgeWitnessTerminal
     , edgeName
     , OnChainRequest (..)
+    , OnChainRegistrationRequest (..)
     , RequestDestination
 
       -- * Request phase
@@ -143,6 +144,34 @@ data OnChainRequest = OnChainRequest
     }
     deriving stock (Show, Eq)
 
+{- | On-chain registration request: the datum a booked registration carries
+at the request address. Matches Aiken @types/RegistrationRequest@, field for
+field. The delivered datum is carried but neither tag name commits to it.
+-}
+data OnChainRegistrationRequest = OnChainRegistrationRequest
+    { regRegistry :: !OnChainTokenId
+    -- ^ The registry this request is for, by its state token name
+    , regKey :: !ByteString
+    -- ^ The registry key being registered
+    , regRefundAddress :: !BuiltinByteString
+    -- ^ Payment key hash that may retract and is refunded (28 bytes)
+    , regDestination :: !ByteString
+    -- ^ Binary address bytes of the output that will receive the token
+    , regDatum :: !(Maybe Data)
+    -- ^ The datum the delivered output must carry, or none
+    , regSubmittedAt :: !Integer
+    -- ^ The booked time: the upper end of the booking's validity interval
+    , regRegistrationCost :: !Integer
+    -- ^ The registration cost, equal to the registry's pin
+    , regDeclaredTip :: !Integer
+    -- ^ The declared tip, at least the registry's minimum tip
+    , regCarrierAda :: !Integer
+    -- ^ The declared carrier lovelace
+    , regNonce :: !Integer
+    -- ^ The one nonce both tags commit to
+    }
+    deriving stock (Show, Eq)
+
 -- ---------------------------------------------------------
 -- Request phase (A-002): a resuming client's choice of exit
 -- ---------------------------------------------------------
@@ -249,3 +278,80 @@ carriedDatum option = case option of
     Constr 0 [datum] -> Just (Just datum)
     Constr 1 [] -> Just Nothing
     _ -> Nothing
+
+instance ToData OnChainRegistrationRequest where
+    toBuiltinData OnChainRegistrationRequest{..} =
+        mkD $
+            Constr
+                0
+                [ unD (toBuiltinData regRegistry)
+                , bsToD regKey
+                , bbsToD regRefundAddress
+                , bsToD regDestination
+                , maybe (Constr 1 []) (Constr 0 . pure) regDatum
+                , I regSubmittedAt
+                , I regRegistrationCost
+                , I regDeclaredTip
+                , I regCarrierAda
+                , I regNonce
+                ]
+
+instance FromData OnChainRegistrationRequest where
+    fromBuiltinData bd = case unD bd of
+        Constr
+            0
+            [ reg
+                , k
+                , refund
+                , dest
+                , carried
+                , I sub
+                , I cost
+                , I tip
+                , I carrier
+                , I nonce
+                ] -> do
+                regRegistry <- fromBuiltinData (mkD reg)
+                regKey <- bsFromD k
+                regRefundAddress <- bbsFromD refund
+                regDestination <- bsFromD dest
+                regDatum <- carriedDatum carried
+                let regSubmittedAt = sub
+                    regRegistrationCost = cost
+                    regDeclaredTip = tip
+                    regCarrierAda = carrier
+                    regNonce = nonce
+                Just OnChainRegistrationRequest{..}
+        _ -> Nothing
+
+instance UnsafeFromData OnChainRegistrationRequest where
+    unsafeFromBuiltinData bd = case unD bd of
+        Constr
+            0
+            [ reg
+                , B k
+                , B refund
+                , B dest
+                , carried
+                , I sub
+                , I cost
+                , I tip
+                , I carrier
+                , I nonce
+                ]
+                | Just datum <- carriedDatum carried ->
+                    OnChainRegistrationRequest
+                        { regRegistry = unsafeFromBuiltinData (mkD reg)
+                        , regKey = k
+                        , regRefundAddress = BuiltinByteString refund
+                        , regDestination = dest
+                        , regDatum = datum
+                        , regSubmittedAt = sub
+                        , regRegistrationCost = cost
+                        , regDeclaredTip = tip
+                        , regCarrierAda = carrier
+                        , regNonce = nonce
+                        }
+        _ ->
+            error
+                "unsafeFromBuiltinData: OnChainRegistrationRequest"

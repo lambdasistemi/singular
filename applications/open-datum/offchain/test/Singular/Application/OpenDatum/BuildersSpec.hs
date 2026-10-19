@@ -350,7 +350,13 @@ seedRef :: TxIn
 seedRef = ref '9' 0
 
 economics :: RegistryEconomics
-economics = RegistryEconomics 30_000 30_000 (Coin 1_000_000)
+economics =
+    RegistryEconomics
+        30_000
+        30_000
+        (Coin 1_000_000)
+        (Coin 2_000_000)
+        10_000
 
 bootWith :: ApplicationPin -> TxIn -> (CageConfig, NamingCodes)
 bootWith pin seed =

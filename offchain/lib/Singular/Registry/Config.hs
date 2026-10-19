@@ -60,6 +60,14 @@ data CageConfig = CageConfig
     -- ^ Phase 2 window (ms) for requester retract
     , defaultTip :: !Coin
     -- ^ Default oracle tip for newly booted tokens
+    , defaultRegistrationCost :: !Coin
+    {- ^ The registration cost (lovelace) a booking declares and a booted
+    registry pins; a registry that joins reads it from the state datum.
+    -}
+    , defaultBookingWidth :: !Integer
+    {- ^ The widest booking validity interval (ms) a booted registry pins;
+    a registry that joins reads it from the state datum.
+    -}
     , cfgApplicationPolicy :: !ShortByteString
     {- ^ The application policy the registry pins (28 raw bytes, #157 tree-edge-admission-by-approval,
     genesis-policy-pins): the hash of the application script the registry was booted
@@ -81,6 +89,11 @@ data CageConfig = CageConfig
     {- ^ The terminal-token policy (28 raw bytes, genesis-policy-pins): the applied hash
     of `witness(2, registry)`. Derived, never a literal.
     -}
+    , cfgRequestPolicy :: !ShortByteString
+    {- ^ The applied request validator hash (28 raw bytes): the one policy
+    that may book a registration for this registry. Derived from the request
+    script, the state policy and the registry token, never a literal.
+    -}
     , cfgConsumerScript :: !ShortByteString
     {- ^ Applied consumer script bytes (the witness every consuming
     `Modify` attaches for its hook withdrawal). Builders refuse to
@@ -92,7 +105,7 @@ data CageConfig = CageConfig
 
 {- | Initial `State` datum from a cage configuration (#157 state-datum-fields, genesis-policy-pins):
 empty trie root, configured economics, and the four pinned policies the
-eight-field datum carries. Each of the four comes from the config, which
+eleven-field datum carries. Each of the four comes from the config, which
 derives it from the two partitions' `script-identity.json` for the registry
 identity this boot is about to create — the application policy from the
 naming application script, the three witness policies from
@@ -120,4 +133,9 @@ bootStateFromCfg cfg root =
             BuiltinByteString (SBS.fromShort (cfgAbsentPolicy cfg))
         , stateTerminalPolicy =
             BuiltinByteString (SBS.fromShort (cfgTerminalPolicy cfg))
+        , stateRegistrationCost =
+            let Coin c = defaultRegistrationCost cfg in c
+        , stateBookingWidth = defaultBookingWidth cfg
+        , stateRequestPolicy =
+            BuiltinByteString (SBS.fromShort (cfgRequestPolicy cfg))
         }

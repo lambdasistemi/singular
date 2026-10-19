@@ -115,7 +115,7 @@ import Singular.CLI.Passphrase
     , readPassphrase
     , renderPassphraseRefusal
     )
-import Singular.CLI.Registry (economics)
+import Singular.CLI.Registry (shippedProcessTime, shippedRetractTime)
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Vault
@@ -126,7 +126,6 @@ import Singular.CLI.Vault
     , sealVault
     , vaultWorkFactor
     )
-import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -194,6 +193,10 @@ data CreateArgs = CreateArgs
     -- ^ Positive processing window in milliseconds, fixed at creation
     , createRetractTime :: Integer
     -- ^ Positive retract window in milliseconds, fixed at creation
+    , createRegistrationCost :: Integer
+    -- ^ Registration cost in lovelace, at least zero, fixed at creation
+    , createBookingWidth :: Integer
+    -- ^ Widest booking interval in milliseconds, positive, fixed at creation
     }
     deriving stock (Eq, Show)
 
@@ -511,14 +514,22 @@ parseWithGroup group environment args = do
                     "is a registry describe flag: only describe prints the page as JSON"
                 )
     refuseWindows words' flags =
-        unless (words' == ["registry", "create"]) $
-            forM_ ["--process-time", "--retract-time"] $ \flag ->
+        unless (words' == ["registry", "create"])
+            $ forM_
+                [ ("--process-time", "windows are fixed for the life of a registry")
+                , ("--retract-time", "windows are fixed for the life of a registry")
+                ,
+                    ( "--registration-cost"
+                    , "the registration cost is fixed for the life of a registry"
+                    )
+                ,
+                    ( "--booking-width"
+                    , "the widest booking interval is fixed for the life of a registry"
+                    )
+                ]
+            $ \(flag, why) ->
                 when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is a registry create flag: windows are fixed for the life of a registry"
-                        )
+                    Left (BadValue flag ("is a registry create flag: " <> why))
     -- @--bundle@ is where a write's run goes for signing elsewhere; a
     -- command that writes nothing refuses it by name rather than ignore it.
     refuseBundle command flags =
@@ -654,9 +665,11 @@ parseWithGroup group environment args = do
                     "is refused by registry create, which makes one"
                 )
         processing <-
-            windowFrom "--process-time" (reProcessTime economics) flags
+            windowFrom "--process-time" shippedProcessTime flags
         retracting <-
-            windowFrom "--retract-time" (reRetractTime economics) flags
+            windowFrom "--retract-time" shippedRetractTime flags
+        cost <- registrationCostFrom flags
+        width <- bookingWidthFrom flags
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
@@ -689,6 +702,8 @@ parseWithGroup group environment args = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
+                , createRegistrationCost = cost
+                , createBookingWidth = width
                 }
     applicationPolicyFrom flags = case optional "--application-policy" flags of
         Nothing -> Right Nothing
@@ -706,6 +721,26 @@ parseWithGroup group environment args = do
                     ( "is "
                         <> show (BS.length bytes)
                         <> " bytes, not 28: give 56 hex characters (a 28-byte policy hash)"
+                    )
+    registrationCostFrom flags = case optional "--registration-cost" flags of
+        Nothing -> Left (MissingFlag "--registration-cost")
+        Just value -> case readMaybe value of
+            Just n | n >= 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--registration-cost"
+                        "needs a non-negative integer number of lovelace"
+                    )
+    bookingWidthFrom flags = case optional "--booking-width" flags of
+        Nothing -> Left (MissingFlag "--booking-width")
+        Just value -> case readMaybe value of
+            Just n | n > 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--booking-width"
+                        "needs a positive integer number of milliseconds"
                     )
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
@@ -1009,7 +1044,12 @@ The one valued flag this binary owns beyond the common group: create
 pins an application policy, and no other command reads it.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = ["--application-policy", "--out"]
+extraValuedFlags =
+    [ "--application-policy"
+    , "--out"
+    , "--registration-cost"
+    , "--booking-width"
+    ]
 
 {- | Split the @--json@ switch off a command line: describe reads it, no
 other command takes it. Only the exact switch is taken; anything else
@@ -1083,15 +1123,19 @@ usage =
         [ "usage:"
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--preview] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
         , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      --state-token POLICY.NAME"

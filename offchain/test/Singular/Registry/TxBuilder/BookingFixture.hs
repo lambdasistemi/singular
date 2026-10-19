@@ -13,11 +13,13 @@ these, never read from a builder's output.
 -}
 module Singular.Registry.TxBuilder.BookingFixture
     ( program
+    , requestProgram
     , codes
     , cfg
     , fundIn
     , applicationPolicy
     , applicationScript
+    , requestPin
     , payer
     , tokenId
     , keys
@@ -71,8 +73,11 @@ import Singular.Registry.TxBuilder.Edges
 import Singular.Registry.TxBuilder.Internal
     ( addrFromKeyHashBytes
     , computeScriptHash
+    , onChainTokenId
     , policyIdFromPin
+    , requestPolicyHash
     , scriptFromBytes
+    , scriptHashBytes
     , txInToRef
     )
 import Singular.Registry.Types
@@ -91,15 +96,29 @@ fee-dependent hash; these are synthetic application witnesses, not
 implementations of registry admission.
 -}
 program :: SBS.ShortByteString
-program = serialiseUPLC (UPLC.Program () plcVersion110 term)
+program = toyProgram 1
+
+{- | The same toy program for a script that takes two parameters before the
+context, as the request validator does (state policy, registry token): the
+registration booking runs it as a mint, so it must be a function of the
+context once both parameters are applied.
+-}
+requestProgram :: SBS.ShortByteString
+requestProgram = toyProgram 2
+
+{- | A toy program that takes the given number of parameters, then the
+actual V3 script context. It extracts txInfoFee and hashes fee/100 bytes of
+the first parameter, which must be a byte string. This changes real
+execution cost when the final body acquires its fee.
+-}
+toyProgram :: Int -> SBS.ShortByteString
+toyProgram parameters =
+    serialiseUPLC (UPLC.Program () plcVersion110 term)
   where
-    -- Applied byte parameter, then the actual V3 script context.
-    -- Extract txInfoFee and hash fee/100 bytes of the parameter. This
-    -- changes real execution cost when the final body acquires its fee.
     term =
-        UPLC.LamAbs () (UPLC.DeBruijn 0) $
-            UPLC.LamAbs () (UPLC.DeBruijn 0) $
-                app (UPLC.LamAbs () (UPLC.DeBruijn 0) (mkConstant () ())) digest
+        lambdas (parameters + 1) $
+            app (UPLC.LamAbs () (UPLC.DeBruijn 0) (mkConstant () ())) digest
+    lambdas n t = iterate (UPLC.LamAbs () (UPLC.DeBruijn 0)) t !! n
     app = UPLC.Apply ()
     builtin = UPLC.Builtin ()
     headOf = app (UPLC.Force () (builtin HeadList))
@@ -120,7 +139,10 @@ program = serialiseUPLC (UPLC.Program () plcVersion110 term)
                 (app (builtin SliceByteString) (mkConstant () (0 :: Integer)))
                 count
             )
-            (app (builtin UnBData) (UPLC.Var () (UPLC.DeBruijn 2)))
+            ( app
+                (builtin UnBData)
+                (UPLC.Var () (UPLC.DeBruijn (fromIntegral (parameters + 1))))
+            )
     digest = app (builtin Sha2_256) bytes
 
 codes :: NamingCodes
@@ -139,16 +161,19 @@ unpinned :: CageConfig
 unpinned =
     CageConfig
         { cageScriptBytes = program
-        , requestScriptBytes = program
+        , requestScriptBytes = requestProgram
         , cfgScriptHash = computeScriptHash program
         , cageSeed = seedRef
         , defaultProcessTime = 30_000
         , defaultRetractTime = 30_000
         , defaultTip = Coin 1_000_000
+        , defaultRegistrationCost = Coin 2_000_000
+        , defaultBookingWidth = 10_000
         , cfgApplicationPolicy = SBS.empty
         , cfgActivePolicy = SBS.empty
         , cfgAbsentPolicy = SBS.empty
         , cfgTerminalPolicy = SBS.empty
+        , cfgRequestPolicy = SBS.empty
         , cfgConsumerScript = SBS.empty
         , network = Testnet
         }
@@ -179,7 +204,20 @@ cfg =
         , cfgAbsentPolicy = absentPin
         , cfgActivePolicy = activePin
         , cfgTerminalPolicy = terminalPin
+        , cfgRequestPolicy = requestPin
         }
+
+{- | The request policy this registry pins: the request program applied to
+the state hash and the registry token, by the one shared derivation.
+-}
+requestPin :: SBS.ShortByteString
+requestPin =
+    SBS.toShort $
+        scriptHashBytes $
+            requestPolicyHash
+                (cfgScriptHash unpinned)
+                requestProgram
+                (onChainTokenId tokenId)
 
 applicationPin
     , absentPin

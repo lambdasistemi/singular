@@ -163,14 +163,14 @@ receipts="$work/receipts"
 mkdir -p "$receipts"
 
 # The registry, created once by the ordinary commands.
-"$open_datum" create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" \
   >"$receipts/preview.json"
 address="$(jq -r .wallet "$receipts/preview.json")"
-"$open_datum" create --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 90000 --retract-time 30000 --preview "${common[@]}" "${node[@]}" --wallet-address "$address" \
   >"$receipts/preview-public.json"
 jq -e --slurpfile k "$receipts/preview.json" '.seed == $k[0].seed and .pins == $k[0].pins' \
   "$receipts/preview-public.json" >/dev/null || setup_fail "the public preview names another registry"
-"$open_datum" create --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 90000 --retract-time 30000 --seed "$(jq -r .seed "$receipts/preview.json")" \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/wallet.skey" >"$receipts/create.json"
 jq -e '.outcome == "success"' "$receipts/create.json" >/dev/null || setup_fail "the registry was not created"
 # Every later command names the registry by the state token create printed;

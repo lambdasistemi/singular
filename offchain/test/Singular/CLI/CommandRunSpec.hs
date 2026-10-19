@@ -244,8 +244,7 @@ import Singular.CLI.Receipt
     )
 import Singular.CLI.ReceiptBody (boundBody)
 import Singular.CLI.Registry
-    ( economics
-    , hexT
+    ( hexT
     , loadRelease
     , loadReleaseCodes
     , pendingPath
@@ -400,6 +399,7 @@ spec =
         >> stagedNarrationRows
         >> vaultBookkeepingRows
         >> vaultUnreadJournalRows
+        >> economicsFlagRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -1697,6 +1697,8 @@ prepareFundingRows = describe
                             { reProcessTime = 1
                             , reRetractTime = 1
                             , reTip = Coin 1_000_000
+                            , reRegistrationCost = Coin 0
+                            , reBookingWidth = 60_000
                             }
                     keyA = TE.encodeUtf8 "carol-a"
                     keyB = TE.encodeUtf8 "carol-b"
@@ -1801,6 +1803,8 @@ prepareFundingRows = describe
                             { reProcessTime = 1
                             , reRetractTime = 1
                             , reTip = Coin 1_000_000
+                            , reRegistrationCost = Coin 0
+                            , reBookingWidth = 60_000
                             }
                     keyA = TE.encodeUtf8 "carol-a"
                 (reqA, subA) <- plantRequest rig t1 seed shortEcon keyA
@@ -2803,6 +2807,8 @@ lifecycle rig = do
                 { reProcessTime = 1
                 , reRetractTime = 1
                 , reTip = Coin 1_000_000
+                , reRegistrationCost = Coin 0
+                , reBookingWidth = 60_000
                 }
     (_, sub3) <-
         plantRequest rig t2 seed2 shortEcon (TE.encodeUtf8 "alice-3")
@@ -3082,11 +3088,34 @@ commandLine rig registry args
 -- --application-policy (#528)
 -- ---------------------------------------------------------
 
+{- | What every create here is given: the application policy and the economics
+flags. The cost and the width are explicit values the command now requires.
+-}
+policyArgs :: [String]
+policyArgs = applicationArgs <> economicsArgs
+
 {- | The policy the switched creates pin, through the parser: 28 0x07
 bytes as hex, computed here at run time and never typed.
 -}
-policyArgs :: [String]
-policyArgs = ["--application-policy", T.unpack (hexText (BS.replicate 28 7))]
+applicationArgs :: [String]
+applicationArgs = ["--application-policy", T.unpack (hexText (BS.replicate 28 7))]
+
+-- | The registration cost and booking width flags every create is given.
+economicsArgs :: [String]
+economicsArgs = ["--registration-cost", "0", "--booking-width", "60000"]
+
+{- | The windows, tip, cost and width the registries created here are booted
+with: the shipped windows and tip, and the values of 'economicsArgs'.
+-}
+economics :: RegistryEconomics
+economics =
+    RegistryEconomics
+        { reProcessTime = 600_000
+        , reRetractTime = 300_000
+        , reTip = Coin 1_000_000
+        , reRegistrationCost = Coin 0
+        , reBookingWidth = 60_000
+        }
 
 -- | The refusal reason a receipt names.
 receiptReason :: Run -> Maybe Text
@@ -3125,6 +3154,10 @@ pinsPolicy rig registry seed policyBytes = do
             , seed
             , "--application-policy"
             , policyHex
+            , "--registration-cost"
+            , "0"
+            , "--booking-width"
+            , "60000"
             ]
     outcomeOf (runReceipt r) `shouldBe` Just "success"
     -- the receipt's pins name the hash
@@ -3188,7 +3221,7 @@ applicationPolicyRows =
                             neutralApplication
                             "registry"
                             "create without policy"
-                            ["registry", "create", "--seed", seed]
+                            (["registry", "create", "--seed", seed] <> economicsArgs)
                     outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
                     receiptReason r
                         `shouldSatisfy` maybe False (T.isInfixOf "--application-policy")
@@ -3231,6 +3264,10 @@ applicationPolicyRows =
                     , "payment.skey"
                     , "--application-policy"
                     , "not hex at all"
+                    , "--registration-cost"
+                    , "0"
+                    , "--booking-width"
+                    , "60000"
                     ] of
                     Left err ->
                         renderCLIError err
@@ -3255,6 +3292,10 @@ applicationPolicyRows =
                     , "payment.skey"
                     , "--application-policy"
                     , "abcd"
+                    , "--registration-cost"
+                    , "0"
+                    , "--booking-width"
+                    , "60000"
                     ] of
                     Left err ->
                         renderCLIError err
@@ -3271,12 +3312,123 @@ applicationPolicyRows =
                     , ["registry", "inspect"]
                     ]
                 $ \words' ->
-                    case parseCommand (words' <> policyArgs) of
+                    case parseCommand (words' <> applicationArgs) of
                         Left (BadValue "--application-policy" why)
                             | "create" `isInfixOf` why -> pure ()
                         other ->
                             expectationFailure
                                 ("the policy flag survived off create: " <> show other)
+
+-- ---------------------------------------------------------
+-- The registration cost and the booking width
+-- ---------------------------------------------------------
+
+{- | A registry's cost and widest booking interval are fixed at create and
+have no default: create takes both, and nothing else does.
+-}
+economicsFlagRows :: Spec
+economicsFlagRows =
+    describe "the registration cost and the booking width" $ do
+        let createWords flags =
+                [ "registry"
+                , "create"
+                , "--seed"
+                , replicate 64 'f' <> "#1"
+                , "--blueprint"
+                , "plutus.json"
+                , "--koios-url"
+                , "http://fixture.invalid"
+                , "--network-magic"
+                , "42"
+                , "--wallet-skey"
+                , "payment.skey"
+                ]
+                    <> applicationArgs
+                    <> flags
+            parsed flags = parseCommand (createWords flags)
+            refusedValue flag values =
+                forM_ values $ \value ->
+                    case parsed (flagsWith flag value) of
+                        Left (BadValue named why)
+                            | named == flag && "integer" `isInfixOf` why -> pure ()
+                        other ->
+                            expectationFailure
+                                ( flag
+                                    <> " "
+                                    <> show value
+                                    <> " was not refused by name: "
+                                    <> show other
+                                )
+            flagsWith flag value
+                | flag == "--registration-cost" =
+                    ["--registration-cost", value, "--booking-width", "1"]
+                | otherwise =
+                    ["--registration-cost", "0", "--booking-width", value]
+        it "takes a zero cost and a width of one millisecond" $
+            parsed ["--registration-cost", "0", "--booking-width", "1"]
+                `shouldSatisfy` isRight
+        it "takes a large cost and a large width" $
+            parsed
+                [ "--registration-cost"
+                , "1000000000000"
+                , "--booking-width"
+                , "86400000"
+                ]
+                `shouldSatisfy` isRight
+        it "refuses a create without the registration cost, by name" $
+            parsed ["--booking-width", "60000"]
+                `shouldBe` Left (MissingFlag "--registration-cost")
+        it "refuses a create without the booking width, by name" $
+            parsed ["--registration-cost", "0"]
+                `shouldBe` Left (MissingFlag "--booking-width")
+        it "refuses a cost that is negative, fractional or not a number" $
+            refusedValue "--registration-cost" ["-1", "1.5", "ten", "", "0x10"]
+        it
+            "refuses a width that is zero, negative, fractional or not a number"
+            $ refusedValue "--booking-width" ["0", "-5", "1.5", "ten", "", "1e3"]
+        it "refuses both flags on commands that do not create"
+            $ forM_
+                [ ["registry", "fold"]
+                , ["registry", "reject"]
+                , ["registry", "reclaim"]
+                , ["registry", "inspect"]
+                ]
+            $ \words' -> forM_
+                [ ("--registration-cost", "1")
+                , ("--booking-width", "1")
+                ]
+                $ \(flag, value) ->
+                    case parseCommand (words' <> applicationArgs <> [flag, value]) of
+                        Left (BadValue named why)
+                            | named == flag && "create" `isInfixOf` why -> pure ()
+                        other ->
+                            expectationFailure
+                                ( flag
+                                    <> " survived off create: "
+                                    <> show other
+                                )
+        it
+            "boots the registry with the cost and the width it is given, and reports them"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                create <-
+                    run
+                        rig
+                        "create"
+                        ( ["registry", "create", "--seed", seed]
+                            <> applicationArgs
+                            <> [ "--registration-cost"
+                               , "3000000"
+                               , "--booking-width"
+                               , "20000"
+                               ]
+                        )
+                runExit create `shouldBe` ExitSuccess
+                valueAt "registrationCost" (runReceipt create)
+                    `shouldBe` Just (Aeson.Number 3_000_000)
+                valueAt "bookingWidth" (runReceipt create)
+                    `shouldBe` Just (Aeson.Number 20_000)
 
 -- ---------------------------------------------------------
 -- The comparison
@@ -5216,6 +5368,8 @@ stagedRejectRow =
                         { reProcessTime = 1
                         , reRetractTime = 1
                         , reTip = Coin 1_000_000
+                        , reRegistrationCost = Coin 0
+                        , reBookingWidth = 60_000
                         }
             (_, submitted) <-
                 plantRequest
@@ -5765,6 +5919,7 @@ createSignerLineRows =
             let line extra =
                     parseCommand
                         ( ["registry", "create"]
+                            <> economicsArgs
                             <> extra
                             <> [ "--blueprint"
                                , "blueprint.json"
@@ -5828,6 +5983,8 @@ journalWindows =
         { reProcessTime = 100_000
         , reRetractTime = 1_000
         , reTip = Coin 1_000_000
+        , reRegistrationCost = Coin 0
+        , reBookingWidth = 60_000
         }
 
 -- | A staged fold over the rig, as 'stageFoldWith' leaves it.
@@ -6974,6 +7131,8 @@ stagedNarrationRows = describe "staged narration" $ do
                         { reProcessTime = 1
                         , reRetractTime = 1
                         , reTip = Coin 1_000_000
+                        , reRegistrationCost = Coin 0
+                        , reBookingWidth = 60_000
                         }
             (_, submitted) <-
                 plantRequest

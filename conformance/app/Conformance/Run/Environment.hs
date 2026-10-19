@@ -75,6 +75,7 @@ import Cardano.Node.Client.E2E.Setup
     )
 import Conformance.Run.Actor (Actor (..))
 import PlutusCore.Data qualified as PLC
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
     ( NamingCodes (..)
@@ -101,9 +102,13 @@ import Singular.Registry.Trie (TrieManager (..))
 import Singular.Registry.TxBuilder.Internal
     ( cagePolicyIdFromCfg
     , computeScriptHash
+    , requestPolicyHash
     , scriptHashBytes
     )
-import Singular.Registry.Types (OnChainTxOutRef (..))
+import Singular.Registry.Types
+    ( OnChainTokenId (..)
+    , OnChainTxOutRef (..)
+    )
 import Singular.Registry.Wallet (Wallet (..))
 
 import Conformance.Mirror
@@ -423,6 +428,8 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
             , defaultProcessTime = processMs
             , defaultRetractTime = retractMs
             , defaultTip = Coin 1_000_000
+            , defaultRegistrationCost = Coin 2_000_000
+            , defaultBookingWidth = 10_000
             , -- Ownerless registry (NOTE-028/A-003, NOTE-046): the
               -- representative policy is 28 zero bytes on registry-only
               -- cages (no naming validator reads it here; enforced
@@ -437,6 +444,17 @@ cageCfgWith stateBytes requestBytes namingCodes seed processMs retractMs =
             , cfgAbsentPolicy = witnessPolicy 0
             , cfgActivePolicy = witnessPolicy 1
             , cfgTerminalPolicy = witnessPolicy 2
+            , -- The one shared derivation: the request script applied to the
+              -- state policy and the registry token the seed determines.
+              cfgRequestPolicy =
+                SBS.toShort
+                    ( scriptHashBytes
+                        ( requestPolicyHash
+                            cfgScriptHashValue
+                            requestBytes
+                            (OnChainTokenId (BuiltinByteString (deriveAssetName seed)))
+                        )
+                    )
             , cfgConsumerScript = SBS.empty
             , network = Testnet
             }

@@ -1,5 +1,6 @@
+use aiken/builtin
 use cardano/address
-use cardano/assets.{add, zero}
+use cardano/assets.{PolicyId, add, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Spend,
 }
@@ -507,5 +508,153 @@ test completion_burning_another_token_refuses() fail {
       add(zero, rep_policy, #"6e6f742d7468652d6b6579", -1),
       modify_singleton(),
     ),
+  )
+}
+
+// ----------------------------------------------------------------------------
+// The registry state as the registry's wire carries it
+// ----------------------------------------------------------------------------
+//
+// The registry State now has eleven fields: the eight this consumer has always
+// read, then the registration cost, the widest booking interval and the request
+// policy. The rows below hand the real completion path states built field by
+// field from data in the registry's own order, never through the mirror type or
+// its construction helper, so a mirror that drifted from the wire cannot agree
+// with itself. The consumer reads the root and the active policy; every other
+// field carries a distinct value so a read from the wrong position is seen.
+
+const wire_absent_policy = "wire_absent_policy"
+
+const wire_terminal_policy = "wire_terminal_policy"
+
+const wire_request_policy = "wire_request_policy"
+
+fn wire_state(
+  root: ByteArray,
+  tip: Int,
+  application: PolicyId,
+  active: PolicyId,
+  absent: PolicyId,
+  terminal: PolicyId,
+) -> Data {
+  builtin.constr_data(
+    1,
+    [
+      builtin.constr_data(
+        0,
+        [
+          builtin.b_data(root),
+          builtin.i_data(tip),
+          builtin.i_data(600_000),
+          builtin.i_data(300_000),
+          builtin.b_data(application),
+          builtin.b_data(active),
+          builtin.b_data(absent),
+          builtin.b_data(terminal),
+          builtin.i_data(2_000_000),
+          builtin.i_data(10_000),
+          builtin.b_data(wire_request_policy),
+        ],
+      ),
+    ],
+  )
+}
+
+/// A registry state with the representative policy where it belongs.
+fn honest_wire_state(root: ByteArray, tip: Int) -> Data {
+  wire_state(
+    root,
+    tip,
+    app_policy,
+    rep_policy,
+    wire_absent_policy,
+    wire_terminal_policy,
+  )
+}
+
+fn state_input_holding(datum: Data) -> Input {
+  let base = state_input()
+  Input { ..base, output: Output { ..base.output, datum: InlineDatum(datum) } }
+}
+
+fn state_output_holding(datum: Data) -> Output {
+  let base = state_output_new()
+  Output { ..base, datum: InlineDatum(datum) }
+}
+
+fn complete_with(spent: Data, continued: Data) -> Bool {
+  retirement_custody.retirement_custody.spend(
+    None,
+    #"00",
+    self_ref,
+    custody_completion_tx(
+      [custody_input(held_value()), state_input_holding(spent), request_input()],
+      [state_output_holding(continued)],
+      burn_held(),
+      modify_singleton(),
+    ),
+  )
+}
+
+/// The completion rides a genuine transition between two eleven-field
+/// states: the root changes, the representative policy is the held token's.
+test retirement_custody_wire_state_completion_accepts() {
+  complete_with(
+    honest_wire_state(#"00", 1_000_000),
+    honest_wire_state(#"01", 1_000_000),
+  )
+}
+
+/// Authority is kept: a state whose active policy is not the held token's
+/// policy refuses, whatever the other fields say.
+test retirement_custody_wire_state_foreign_active_policy_refuses() fail {
+  complete_with(
+    wire_state(
+      #"00",
+      1_000_000,
+      app_policy,
+      "foreign_policy",
+      wire_absent_policy,
+      wire_terminal_policy,
+    ),
+    wire_state(
+      #"01",
+      1_000_000,
+      app_policy,
+      "foreign_policy",
+      wire_absent_policy,
+      wire_terminal_policy,
+    ),
+  )
+}
+
+/// The representative policy sitting in every other policy position does not
+/// stand in for the active policy.
+test retirement_custody_wire_state_representative_policy_in_other_fields_refuses() fail {
+  complete_with(
+    wire_state(
+      #"00",
+      1_000_000,
+      rep_policy,
+      "foreign_policy",
+      rep_policy,
+      rep_policy,
+    ),
+    wire_state(
+      #"01",
+      1_000_000,
+      rep_policy,
+      "foreign_policy",
+      rep_policy,
+      rep_policy,
+    ),
+  )
+}
+
+/// A preserved root is not a completion, even when another field changed.
+test retirement_custody_wire_state_changed_tip_with_preserved_root_refuses() fail {
+  complete_with(
+    honest_wire_state(#"00", 1_000_000),
+    honest_wire_state(#"00", 2_000_000),
   )
 }

@@ -25,15 +25,15 @@ viewing.
 
 The module extent is the public library of the off-chain Cabal file — every
 exposed module, every internal module, and every module the library
-re-exports under its own name. That complete extent is 73 modules in
-three kinds: 56 explicitly exposed modules and 4 re-exported modules
+re-exports under its own name. That complete extent is 75 modules in
+three kinds: 57 explicitly exposed modules and 4 re-exported modules
 are what a caller imports; the two trie capability owners behind the
 `TrieState` facade (`Singular.Registry.TrieState.Core` and `.Types`),
 the three fold owners behind the `Update`
 facade — `Singular.Registry.TxBuilder.Update.Build`, `.Context` and
-`.Duties` — the five wire owners behind the `Types` facade —
-`Singular.Registry.Wire.Primitive`, `.Request`, `.State`, `.Proof` and
-`.Redeemer` — and the three deployment owners behind the `Deployment`
+`.Duties` — the six wire owners behind the `Types` facade —
+`Singular.Registry.Wire.Primitive`, `.Request`, `.State`, `.Proof`,
+`.Redeemer` and `.Booking` — and the three deployment owners behind the `Deployment`
 facade — `Singular.Registry.Deployment.Manifest`, `.Mirror` and
 `.Attach` — are package-internal `other-modules` with generated pages
 here for the contributor reading the facades' implementations, but no
@@ -115,6 +115,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="module">Singular.Registry.TxBuilder.Internal.Lookup</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Internal/Lookup.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="module">Singular.Registry.TxBuilder.Prepare</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Prepare.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Register.hs" data-api="module">Singular.Registry.TxBuilder.Register</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Register.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/TxBuilder/RegistrationBooking.hs" data-api="module">Singular.Registry.TxBuilder.RegistrationBooking</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/RegistrationBooking.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="module">Singular.Registry.TxBuilder.Reject</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Reject.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="module">Singular.Registry.TxBuilder.Request</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Request.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Retract.hs" data-api="module">Singular.Registry.TxBuilder.Retract</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Retract.hs" data-api="source">source</a>
@@ -124,6 +125,7 @@ Run: mkdocs serve
 - <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="module">Singular.Registry.TxBuilder.Update.Duties</a> — <a href="../offchain/lib/Singular/Registry/TxBuilder/Update/Duties.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="module">Singular.Registry.Types</a> — <a href="../offchain/lib/Singular/Registry/Types.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="module">Singular.Registry.Wait</a> — <a href="../offchain/lib/Singular/Registry/Wait.hs" data-api="source">source</a>
+- <a href="../offchain/lib/Singular/Registry/Wire/Booking.hs" data-api="module">Singular.Registry.Wire.Booking</a> — <a href="../offchain/lib/Singular/Registry/Wire/Booking.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="module">Singular.Registry.Wire.Primitive</a> — <a href="../offchain/lib/Singular/Registry/Wire/Primitive.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Proof.hs" data-api="module">Singular.Registry.Wire.Proof</a> — <a href="../offchain/lib/Singular/Registry/Wire/Proof.hs" data-api="source">source</a>
 - <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="module">Singular.Registry.Wire.Redeemer</a> — <a href="../offchain/lib/Singular/Registry/Wire/Redeemer.hs" data-api="source">source</a>

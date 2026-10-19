@@ -454,6 +454,22 @@ test altered_terminal_policy_refuses() fail {
   foldAltering(types.State { ..nextState(), terminal_policy: fx.foreignPolicy })
 }
 
+test altered_registration_cost_refuses() fail {
+  foldAltering(
+    types.State { ..nextState(), registration_cost: fx.registrationCost + 1 },
+  )
+}
+
+test altered_booking_width_refuses() fail {
+  foldAltering(
+    types.State { ..nextState(), booking_width: fx.bookingWidth + 1 },
+  )
+}
+
+test altered_request_policy_refuses() fail {
+  foldAltering(types.State { ..nextState(), request_policy: fx.foreignPolicy })
+}
+
 test all_seven_preserved_accepts() {
   foldAltering(nextState())
 }

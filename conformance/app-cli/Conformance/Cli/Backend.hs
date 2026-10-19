@@ -1499,6 +1499,24 @@ developmentWindows =
     , show developmentRetractMs
     ]
 
+{- | The registration cost and the booking width of the throwaway CLI
+registries: create has no default for either, and both are fixed for the
+life of the registry.
+-}
+developmentRegistrationCost :: Integer
+developmentRegistrationCost = 0
+
+developmentBookingWidthMs :: Integer
+developmentBookingWidthMs = 60_000
+
+developmentEconomics :: [String]
+developmentEconomics =
+    [ "--registration-cost"
+    , show developmentRegistrationCost
+    , "--booking-width"
+    , show developmentBookingWidthMs
+    ]
+
 -- | The arguments of one ordinary command, writing the files it reads.
 commandArgs
     :: Env -> Command -> Target -> String -> Receipt -> IO [String]
@@ -1533,6 +1551,7 @@ commandArgsFor env c actor registry key r = do
                 ( commandPrefix Create
                     <> ["--seed", seed]
                     <> developmentWindows
+                    <> developmentEconomics
                     <> common
                     <> node
                     <> wallet
@@ -1638,6 +1657,7 @@ previewSeed env r label skey dir seed = do
                    , optBlueprint o
                    ]
                 <> developmentWindows
+                <> developmentEconomics
                 <> providerArgs o
                 <> ["--wallet-skey", skey]
                 <> maybe [] (\s -> ["--seed", s]) seed
@@ -1879,6 +1899,7 @@ provoke env p target key r = do
                            , first
                            ]
                         <> developmentWindows
+                        <> developmentEconomics
                     )
             when
                 ( spentStatus == ExitSuccess
@@ -1991,6 +2012,7 @@ provoke env p target key r = do
                            , seedPoor
                            ]
                         <> developmentWindows
+                        <> developmentEconomics
                     )
             unless
                 (printedField "outcome" probePrinted == Just (String "success"))
@@ -2061,6 +2083,7 @@ provoke env p target key r = do
                    , "120"
                    ]
                 <> developmentWindows
+                <> developmentEconomics
     snapshot copyDir = do
         createDirectoryIfMissing True copyDir
         found <- managedFiles (targetDir env target)

@@ -135,6 +135,7 @@ library
     Singular.Registry.TxBuilder.Internal.Lookup
     Singular.Registry.TxBuilder.Prepare
     Singular.Registry.TxBuilder.Register
+    Singular.Registry.TxBuilder.RegistrationBooking
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
     Singular.Registry.TxBuilder.Retract
@@ -161,6 +162,7 @@ library
     Singular.Registry.TxBuilder.Update.Build
     Singular.Registry.TxBuilder.Update.Context
     Singular.Registry.TxBuilder.Update.Duties
+    Singular.Registry.Wire.Booking
     Singular.Registry.Wire.Primitive
     Singular.Registry.Wire.Proof
     Singular.Registry.Wire.Redeemer
@@ -828,6 +830,7 @@ executable devnet
   hs-source-dirs:   devnet private-facade
   main-is:          Main.hs
   other-modules:
+    Devnet.Carry
     Devnet.Probe
     Singular.Registry.Private.Archive
     Singular.Registry.Private.EpochParameters
@@ -850,6 +853,7 @@ executable devnet
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-ledger-read
+    , cardano-ledger-shelley
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting
@@ -1032,6 +1036,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.PublicationFundingSpec
+    Singular.Registry.TxBuilder.RegistrationBookingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
@@ -1193,6 +1198,7 @@ test-suite e2e-tests
     Singular.Registry.E2E.MixedFold
     Singular.Registry.E2E.NodeSpec
     Singular.Registry.E2E.OpenBootSpec
+    Singular.Registry.E2E.RegistrationBookingSpec
     Singular.Registry.E2E.ReplayHistory
     Singular.Registry.E2E.ReplaySpec
     Singular.Registry.E2E.SubmitSpec
@@ -1242,6 +1248,7 @@ test-suite e2e-tests
     , ouroboros-consensus:protocol
     , ouroboros-network:api
     , ouroboros-network:framework
+    , plutus-core
     , plutus-tx
     , process
     , random

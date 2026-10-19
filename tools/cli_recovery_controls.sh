@@ -588,9 +588,9 @@ insert_of() { args=(insert --fold --key-hex "$1" --payload "$work/insert-payload
 # and building on shared runners plus the CLI's unchanged 30-second signing
 # margin; the former 45-second window left only 15 seconds for that work.
 # ------------------------------------------------------------------
-run preview create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+run preview create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
 outcome_is preview success || setup_fail "create --preview did not succeed"
-run create create --process-time 120000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+run create create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 15000 --seed "$(field preview .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
 jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create.json" >/dev/null \
   || setup_fail "the recovery registry did not read back the CI recovery windows"
 outcome_is create success || setup_fail "create did not succeed"
@@ -652,7 +652,7 @@ signers_of() {
     decode | .[1] | mapget(0) | (if type == \"object\" then .value else . end) | .[][0]" \
     "$(prepared_of "$1" | jq -r .journalBody)")
 }
-run bob-preview create --process-time 120000 --retract-time 15000 --preview --state-dir "$work/bob-preview" --blueprint "$blueprint" \
+run bob-preview create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 15000 --preview --state-dir "$work/bob-preview" --blueprint "$blueprint" \
   "${node[@]}" "${bob[@]}"
 outcome_is bob-preview success || setup_fail "the folder wallet's preview did not succeed"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -1561,9 +1561,9 @@ ENDPOINT
 
   reg="$work/registry-rolled-back"
   common=(--state-dir "$reg" --blueprint "$blueprint")
-  run preview-rb create --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
+  run preview-rb create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 15000 --preview "${common[@]}" "${node[@]}" "${alice[@]}"
   outcome_is preview-rb success || setup_fail "the second create --preview did not succeed"
-  run create-rb create --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
+  run create-rb create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 15000 --seed "$(field preview-rb .seed)" "${common[@]}" "${node[@]}" "${alice[@]}"
   jq -e '.processTime == 120000 and .retractTime == 15000' "$receipts/create-rb.json" >/dev/null \
     || setup_fail "the rollback registry did not read back the CI recovery windows"
   outcome_is create-rb success || setup_fail "the second create did not succeed"

@@ -98,9 +98,8 @@ import Singular.CLI.Key
     , maxKeyBytes
     , readKey
     )
-import Singular.CLI.Registry (economics)
+import Singular.CLI.Registry (shippedProcessTime, shippedRetractTime)
 import Singular.CLI.Trace (TraceRequest (..))
-import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.StateToken
@@ -244,14 +243,22 @@ parseOpenDatumWithGroup group environment args = do
                         _ -> Left (UnknownCommand words')
   where
     refuseWindows words' flags =
-        unless (words' == ["open-datum", "create"]) $
-            forM_ ["--process-time", "--retract-time"] $ \flag ->
+        unless (words' == ["open-datum", "create"])
+            $ forM_
+                [ ("--process-time", "windows are fixed for the life of a registry")
+                , ("--retract-time", "windows are fixed for the life of a registry")
+                ,
+                    ( "--registration-cost"
+                    , "the registration cost is fixed for the life of a registry"
+                    )
+                ,
+                    ( "--booking-width"
+                    , "the widest booking interval is fixed for the life of a registry"
+                    )
+                ]
+            $ \(flag, why) ->
                 when (isJust (lookup flag flags)) $
-                    Left
-                        ( BadValue
-                            flag
-                            "is an open-datum create flag: windows are fixed for the life of a registry"
-                        )
+                    Left (BadValue flag ("is an open-datum create flag: " <> why))
     -- The constraints on a write's spending belong to insert, update and
     -- terminate. A command that does not enforce one refuses it by name rather
     -- than discard what the caller stated.
@@ -295,9 +302,11 @@ parseOpenDatumWithGroup group environment args = do
                     "is refused by open-datum create, which makes one"
                 )
         processing <-
-            windowFrom "--process-time" (reProcessTime economics) flags
+            windowFrom "--process-time" shippedProcessTime flags
         retracting <-
-            windowFrom "--retract-time" (reRetractTime economics) flags
+            windowFrom "--retract-time" shippedRetractTime flags
+        cost <- registrationCostFrom flags
+        width <- bookingWidthFrom flags
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         let preview = isJust (lookup "--preview" flags)
@@ -330,7 +339,29 @@ parseOpenDatumWithGroup group environment args = do
                 , createReceipt = optional "--receipt" flags
                 , createProcessTime = processing
                 , createRetractTime = retracting
+                , createRegistrationCost = cost
+                , createBookingWidth = width
                 }
+    registrationCostFrom flags = case optional "--registration-cost" flags of
+        Nothing -> Left (MissingFlag "--registration-cost")
+        Just value -> case readMaybe value of
+            Just n | n >= 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--registration-cost"
+                        "needs a non-negative integer number of lovelace"
+                    )
+    bookingWidthFrom flags = case optional "--booking-width" flags of
+        Nothing -> Left (MissingFlag "--booking-width")
+        Just value -> case readMaybe value of
+            Just n | n > 0 && all isDigit value -> Right n
+            _ ->
+                Left
+                    ( BadValue
+                        "--booking-width"
+                        "needs a positive integer number of milliseconds"
+                    )
     windowFrom name fallback flags = case optional name flags of
         Nothing -> Right fallback
         Just value -> case readMaybe value of
@@ -574,7 +605,7 @@ group, called with the extras below; this parser keeps none of its own.
 This binary owns no valued flag beyond the common group.
 -}
 extraValuedFlags :: [String]
-extraValuedFlags = []
+extraValuedFlags = ["--registration-cost", "--booking-width"]
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
@@ -623,15 +654,19 @@ openDatumUsage =
         [ "usage:"
         , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--preview] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
         , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
         , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
         , "  open-datum create --preview [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
         , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
+        , "      --registration-cost LOVELACE --booking-width MS"
         , "      --koios-url URL --network-magic N --wallet-address ADDR"
         , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
@@ -724,6 +759,8 @@ openDatumUsage =
         , "create takes positive integer windows in milliseconds. Its processing window"
         , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
         , "for the life of the registry; create and inspect report them from the state datum."
+        , "create requires the registration cost (lovelace, zero or more) and the booking width"
+        , "(milliseconds, at least one): neither has a default, and both are fixed for the life of the registry."
         , "Create takes the closed switch to boot a closed-datum registry whose payload"
         , "is written once; every later command follows the registry's mode with no"
         , "further flag, and an update on a closed registry stops before anything is"

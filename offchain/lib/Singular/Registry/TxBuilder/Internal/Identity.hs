@@ -28,6 +28,8 @@ module Singular.Registry.TxBuilder.Internal.Identity
     , cageAddrFromCfg
     , requestAddrFromCfg
     , onChainTokenId
+    , requestPolicyHash
+    , requestPolicyPin
 
       -- * Datum helpers
     , mkRequestDatum
@@ -109,6 +111,7 @@ import PlutusTx.IsData.Class
     ( FromData (..)
     , ToData (..)
     )
+import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint.Params (applyRequestParams)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Ledger
@@ -207,10 +210,55 @@ requestAddrFromCfg cfg tid net =
     Addr
         net
         ( ScriptHashObj $
-            computeScriptHash
-                (requestScriptBytesFromCfg cfg tid)
+            requestPolicyHash
+                (cfgScriptHash cfg)
+                (requestScriptBytes cfg)
+                (onChainTokenId tid)
         )
         StakeRefNull
+
+{- | The applied hash of the request validator for one registry: the
+unapplied request script after @(state policy, registry token)@. This is the
+one derivation of a registry's request policy. The configuration pin, the
+deployment attachment and the request address all call it, so the pin the
+state carries, the policy the booking mints under and the address the
+request sits at are one value. The unapplied blueprint hash is the same for
+every registry and is never the pin.
+-}
+requestPolicyHash
+    :: ScriptHash
+    -- ^ The state policy (the state script hash)
+    -> SBS.ShortByteString
+    -- ^ The unapplied request script bytes
+    -> OnChainTokenId
+    -- ^ The registry token
+    -> ScriptHash
+requestPolicyHash stateHash requestBytes token =
+    computeScriptHash $
+        applyRequestParams (scriptHashBytes stateHash) token requestBytes
+
+{- | The request policy pin a registry's state carries: the hash of the
+request validator applied to the state policy and to the registry token that
+the boot seed names, from the two validators' bytes and the seed. Every tool
+that boots a registry takes its pin from here.
+-}
+requestPolicyPin
+    :: SBS.ShortByteString
+    -- ^ The state validator bytes
+    -> SBS.ShortByteString
+    -- ^ The unapplied request validator bytes
+    -> OnChainTxOutRef
+    -- ^ The seed the boot consumes
+    -> SBS.ShortByteString
+requestPolicyPin stateBytes requestBytes seed =
+    SBS.toShort $
+        scriptHashBytes $
+            requestPolicyHash
+                (computeScriptHash stateBytes)
+                requestBytes
+                ( OnChainTokenId $
+                    BuiltinByteString (deriveAssetName seed)
+                )
 
 -- | Convert a ledger token id to its on-chain token id.
 onChainTokenId :: TokenId -> OnChainTokenId

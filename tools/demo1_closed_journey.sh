@@ -179,10 +179,10 @@ say "the closed-datum story: Alice and Bob keep no signing key on disk. Alice si
 # ------------------------------------------------------------------
 # 1. the closed and open previews of one seed derive different hashes
 # ------------------------------------------------------------------
-run closed-preview success -- create --process-time 120000 --retract-time 30000 --preview --closed "${common[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
+run closed-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --closed "${common[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
 [ ! -e "$reg" ] || fail "a closed preview created the target $reg"
 seed="$(field closed-preview .seed)"
-run open-preview success -- create --process-time 120000 --retract-time 30000 --preview --seed "$seed" "${common[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
+run open-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --seed "$seed" "${common[@]}" "${node[@]}" --wallet-address "$vault_alice_addr"
 [ ! -e "$reg" ] || fail "an open preview created the target $reg"
 [ "$(field open-preview .seed)" = "$seed" ] || fail "the open preview names another seed than the closed one"
 closed_hash="$(field closed-preview .pins.pinApplication)"
@@ -193,7 +193,7 @@ open_hash="$(field open-preview .pins.pinApplication)"
 say "the closed and open previews of one seed derive different application hashes"
 
 # Bob's preview names his key hash without writing; his folds are signed by his vault.
-run bob-preview success -- create --process-time 120000 --retract-time 30000 --preview --state-dir "$work/bob-preview" \
+run bob-preview success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 30000 --preview --state-dir "$work/bob-preview" \
   --blueprint "$blueprint" "${node[@]}" --wallet-address "$vault_bob_addr"
 [ ! -e "$work/bob-preview" ] || fail "bob's preview created its target"
 bobkey="$(field bob-preview .walletKeyHash)"
@@ -203,7 +203,7 @@ bobkey="$(field bob-preview .walletKeyHash)"
 # ------------------------------------------------------------------
 process_time=120000
 retract_time=60000
-story_vault create alice -- create --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" --closed "${common[@]}" "${node[@]}"
+story_vault create alice -- create --registration-cost 0 --booking-width 60000 --process-time "$process_time" --retract-time "$retract_time" --seed "$seed" --closed "${common[@]}" "${node[@]}"
 [ "$(field create .application)" = "open_datum.closed_datum" ] \
   || fail "create names $(field create .application), not the closed application"
 state="$(field create .pins.pinState)"

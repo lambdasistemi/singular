@@ -184,6 +184,20 @@ resolution = describe "resolving the state token" $ do
                 defaultProcessTime (resolvedConfig r) `shouldBe` 912_000
                 defaultRetractTime (resolvedConfig r) `shouldBe` 456_000
                 defaultTip (resolvedConfig r) `shouldBe` Coin 4_500_000
+    it
+        "reads the registration cost and the booking width from the datum, not from a default"
+        $ do
+            let st =
+                    bootState
+                        { stateRegistrationCost = 4_200_000
+                        , stateBookingWidth = 33_000
+                        }
+            (result, _) <- resolveOn (withState st honestChain) token
+            case result of
+                Left refusal -> expectationFailure (show refusal)
+                Right r -> do
+                    defaultRegistrationCost (resolvedConfig r) `shouldBe` Coin 4_200_000
+                    defaultBookingWidth (resolvedConfig r) `shouldBe` 33_000
 
 -- ---------------------------------------------------------------------------
 -- The seven refusals
@@ -214,6 +228,8 @@ faults =
         c{chainOutputs = Map.delete stateIn (chainOutputs c)}
     , Fault "registry-pin-mismatch application" $
         first (withState bootState{stateAppPolicy = otherPin})
+    , Fault "registry-pin-mismatch request" $
+        first (withState bootState{stateRequestPolicy = otherPin})
     , Fault "network-mismatch" $ first $ \c ->
         c{chainNetwork = LP.Network 764_824_073}
     ]
@@ -240,7 +256,7 @@ refusals = describe "the identity refusals" $ do
             | i <- [0 .. length faults - 1]
             , j <- [i + 1 .. length faults - 1]
             ]
-    it "name the pin that differs, for each of the four" $
+    it "name the pin that differs, for each of the five" $
         mapM_
             ( \(field, st) -> do
                 (result, _) <- resolveOn (withState st honestChain) token
@@ -251,6 +267,7 @@ refusals = describe "the identity refusals" $ do
             , (PinActive, bootState{stateActivePolicy = otherPin})
             , (PinAbsent, bootState{stateAbsentPolicy = otherPin})
             , (PinTerminal, bootState{stateTerminalPolicy = otherPin})
+            , (PinRequest, bootState{stateRequestPolicy = otherPin})
             ]
     it "refuse a foreign release before the provider is asked anything" $ do
         foreignFault <- case faults of
@@ -341,6 +358,7 @@ refusals = describe "the identity refusals" $ do
             , (RegistryPinMismatch PinActive, "registry-pin-mismatch active")
             , (RegistryPinMismatch PinAbsent, "registry-pin-mismatch absent")
             , (RegistryPinMismatch PinTerminal, "registry-pin-mismatch terminal")
+            , (RegistryPinMismatch PinRequest, "registry-pin-mismatch request")
             , (NetworkMismatch (LP.Network 764_824_073), "network-mismatch")
             ]
 
@@ -657,6 +675,7 @@ refusalName = \case
     RegistryPinMismatch PinActive -> "registry-pin-mismatch active"
     RegistryPinMismatch PinAbsent -> "registry-pin-mismatch absent"
     RegistryPinMismatch PinTerminal -> "registry-pin-mismatch terminal"
+    RegistryPinMismatch PinRequest -> "registry-pin-mismatch request"
     NetworkMismatch _ -> "network-mismatch"
     IdentityUnreadable _ -> "unreadable"
 
@@ -666,6 +685,7 @@ pins c =
     , cfgActivePolicy c
     , cfgAbsentPolicy c
     , cfgTerminalPolicy c
+    , cfgRequestPolicy c
     ]
 
 otherScript :: Script ConwayEra

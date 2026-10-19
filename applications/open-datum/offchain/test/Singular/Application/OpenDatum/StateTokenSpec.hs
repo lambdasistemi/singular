@@ -112,6 +112,12 @@ wallet = ["--wallet-skey", "/keys/payment.skey"]
 dirAndRelease :: [String]
 dirAndRelease = ["--state-dir", "/srv/actor", "--blueprint", "/srv/plutus.json"]
 
+{- | The registration cost and booking width every create is given: neither
+has a default, and both are fixed for the life of the registry.
+-}
+createValues :: [String]
+createValues = ["--registration-cost", "3000000", "--booking-width", "20000"]
+
 -- | The token as a person copies it from the registry's page.
 spelled :: LP.Asset -> String
 spelled (PolicyID policy, AssetName name) =
@@ -199,6 +205,7 @@ tokenOnEveryCommand = describe "the state token" $ do
         parseOpenDatumCommand
             ( ["open-datum", "create", "--seed", request]
                 <> dirAndRelease
+                <> createValues
                 <> provider
                 <> wallet
                 <> tokenFlag
@@ -236,6 +243,7 @@ tokenOnEveryCommand = describe "the state token" $ do
     createLine =
         ["open-datum", "create", "--seed", request]
             <> dirAndRelease
+            <> createValues
             <> provider
             <> wallet
     tokenFlagFor line
@@ -278,6 +286,7 @@ rolesPerCommand = describe "the reference roles each command's transactions run"
             ( parseOpenDatumCommand
                 ( ["open-datum", "create", "--seed", request]
                     <> dirAndRelease
+                    <> createValues
                     <> provider
                     <> wallet
                 )
@@ -301,7 +310,7 @@ funding = describe "a create's publication funding" $ do
             publicationFunding
                 preprodParams
                 seedIn
-                (bootCostBound preprodParams reusedCarrier)
+                (bootCostBound preprodParams bootCfg reusedCarrier)
     it "is accepted when the real create can fund every publication" $ do
         let funded = walletOf [400_000_000]
         createAll Nothing beforeBoot laterScripts funded

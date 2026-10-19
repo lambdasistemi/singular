@@ -402,7 +402,7 @@ def _reject_valid_base(tmp):
         "command": "fee-bound",
         "outcome": "success",
         "stateToken": "policy.name",
-        "stateMaxFee": 1000000,
+        "minimumTip": 1000000,
         "processTime": 120000,
         "retractTime": 120000,
         "observedTx": "statetx#0",
@@ -965,7 +965,16 @@ def _cbor_tag(number, item):
     return bytes([216, number]) + item
 
 
-def _synthetic_state_fields(fee=1000000, process=120000, retract=120000):
+def _synthetic_state_fields(
+    fee=1000000, process=120000, retract=120000, cost=0, width=60000
+):
+    """The eleven fields of the state datum, in the order of onchain/lib/types.ak.
+
+    Root, minimum tip (the registry's `tip`, kept under the wire name
+    maxFee), process time, retract time, the application, active, absent
+    and terminal policies, the registration cost, the booking width and
+    the request policy. Field 1 is a floor, not a fee ceiling.
+    """
     return [
         _cbor_bstr(bytes(range(32))),
         _cbor_uint(fee),
@@ -975,7 +984,20 @@ def _synthetic_state_fields(fee=1000000, process=120000, retract=120000):
         _cbor_bstr(bytes([2]) * 28),
         _cbor_bstr(bytes([3]) * 28),
         _cbor_bstr(bytes([4]) * 28),
+        _cbor_uint(cost),
+        _cbor_uint(width),
+        _cbor_bstr(bytes([5]) * 28),
     ]
+
+
+def _synthetic_eight_field_state_fields(fee=1000000, process=120000, retract=120000):
+    """The state datum before the registration cost, width and request policy."""
+    return _synthetic_state_fields(fee, process, retract)[0:8]
+
+
+def _state_datum_hex_of(fields):
+    inner = _cbor_tag(121, _cbor_array(fields))
+    return (_cbor_tag(122, _cbor_array([inner]))).hex()
 
 
 def _synthetic_state_datum_hex(fee=1000000, process=120000, retract=120000):
@@ -1009,16 +1031,22 @@ def test_cbor_decoder_synthetic(mod, tmp):
         and len(datum[2]) == 1
         and isinstance(datum[2][0], tuple)
         and datum[2][0][1] == 0
+        and len(datum[2][0][2]) == 11
         and datum[2][0][2][1] == 1000000
         and datum[2][0][2][2] == 120000
         and datum[2][0][2][3] == 120000
+        and datum[2][0][2][8] == 0
+        and datum[2][0][2][9] == 60000
     )
     check("cbor-decoder-synthetic", ok, "a hand-built state datum misdecoded")
     bare = decode(_synthetic_bare_state_datum_hex())
     check(
         "cbor-decoder-bare-state",
-        isinstance(bare, tuple) and bare[0] == "constr" and bare[1] == 0,
-        "a bare eight-field state datum misdecoded",
+        isinstance(bare, tuple)
+        and bare[0] == "constr"
+        and bare[1] == 0
+        and len(bare[2]) == 11,
+        "a bare eleven-field state datum misdecoded",
     )
     try:
         indefinite = decode(_synthetic_state_datum_indefinite_hex())
@@ -1107,7 +1135,7 @@ def test_fee_bound_fetch_mocked(mod, tmp):
         bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
     check(
         "fee-bound-fetch-inline",
-        bound["stateMaxFee"] == 1000000 and bound["observedTx"] == f"{'aa' * 32}#1",
+        bound["minimumTip"] == 1000000 and bound["observedTx"] == f"{'aa' * 32}#1",
         f"the inline datum gave {bound}",
     )
     hashed_row = {
@@ -1127,7 +1155,7 @@ def test_fee_bound_fetch_mocked(mod, tmp):
         bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
     check(
         "fee-bound-fetch-by-hash",
-        bound["stateMaxFee"] == 1000000,
+        bound["minimumTip"] == 1000000,
         f"the datum_info fallback gave {bound}",
     )
     other_row = {
@@ -1159,6 +1187,55 @@ def test_fee_bound_fetch_mocked(mod, tmp):
                 "no rows" in str(error),
                 f"unexpected error: {error}",
             )
+
+    def refused(name, fields, needle):
+        row = {
+            "tx_hash": "ee" * 32,
+            "tx_index": 0,
+            "inline_datum": {"bytes": _state_datum_hex_of(fields)},
+        }
+        with _mock.patch.object(mod, "_koios_post", return_value=[row]):
+            try:
+                fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
+                check(name, False, "a datum of the wrong shape was accepted")
+            except RuntimeError as error:
+                check(
+                    name,
+                    needle in str(error),
+                    f"the refusal does not say {needle!r}: {error}",
+                )
+
+    # The state datum has eleven fields; the eight-field record is gone.
+    refused(
+        "min-tip-refuses-eight-field-datum",
+        _synthetic_eight_field_state_fields(),
+        "eleven-field",
+    )
+    typed = _synthetic_state_fields()
+    typed[8] = _cbor_bstr(bytes([9]) * 28)
+    refused("min-tip-types-registration-cost", typed, "field 8")
+    typed = _synthetic_state_fields()
+    typed[9] = _cbor_bstr(bytes([9]) * 28)
+    refused("min-tip-types-booking-width", typed, "field 9")
+    typed = _synthetic_state_fields()
+    typed[10] = _cbor_uint(7)
+    refused("min-tip-types-request-policy", typed, "field 10")
+    typed = _synthetic_state_fields()
+    typed[4] = _cbor_uint(7)
+    refused("min-tip-types-application-policy", typed, "field 4")
+    # Positions 0 to 3 are unchanged: the tip is still the second field.
+    row = {
+        "tx_hash": "ff" * 32,
+        "tx_index": 2,
+        "inline_datum": {"bytes": _synthetic_state_datum_hex(fee=1500000)},
+    }
+    with _mock.patch.object(mod, "_koios_post", return_value=[row]):
+        bound = fetch("http://localhost:9/api/v1", "pp", "nn", 120000, 120000)
+    check(
+        "min-tip-read-from-field-one",
+        bound["minimumTip"] == 1500000,
+        f"the second field gave {bound}",
+    )
 
 
 def test_nonzero_topup_survives_trim(mod, tmp):
@@ -2335,6 +2412,117 @@ def test_report_lists_marked_appendix_after_rows(mod, tmp):
         list(stored.keys()) == ["requirements", "harnessAppendix"]
         and stored["harnessAppendix"] == journey.appendix,
         "journey.json carries no appendix after the product rows",
+    )
+
+
+REJECT_ROW = "Bob rejects Alice's expired request"
+
+
+def test_reject_row_names_the_registry_minimum_tip(mod, tmp):
+    """The tip the reject row compares against is the registry's minimum tip.
+
+    The state's second field is a floor (a booking declares at least it),
+    never a fee ceiling or bound; the row's reasons say so.
+    """
+    import json as _json
+
+    journey = bare(mod, tmp)
+    legs, receipts = _reject_valid_base(tmp)
+    raw = Path(tmp, "reject-late.json").read_text()
+    off = _json.loads(raw)
+    off["rejected"][0]["returned"] = dict(off["rejected"][0]["returned"])
+    off["rejected"][0]["returned"]["lovelace"] += 1
+    _write_receipt(tmp, "reject-late", off)
+    passed, _, waiting = journey.reject_agreement(legs, receipts)
+    check(
+        "reject-refund-names-minimum-tip",
+        (not passed)
+        and "registry minimum tip" in waiting
+        and "fee" not in waiting.lower(),
+        f"the refund reason is {waiting!r}",
+    )
+    Path(tmp, "reject-late.json").write_text(raw)
+    Path(tmp, "fee-bound.json").unlink()
+    passed, _, waiting = journey.reject_agreement(legs, receipts)
+    check(
+        "reject-absent-tip-names-minimum-tip",
+        (not passed)
+        and "registry minimum tip" in waiting
+        and "fee" not in waiting.lower(),
+        f"the absent-tip reason is {waiting!r}",
+    )
+    # The receipts are shared by the cases that follow: put them back.
+    _reject_valid_base(tmp)
+
+
+def test_report_states_what_the_reject_row_observes(mod, tmp):
+    """Where the reject row is published, its scope is stated.
+
+    The leg observes the legacy state-spending rejection, which refunds the
+    held value minus the registry's minimum tip. The ruled behaviour (held
+    minus the declared tip, with the state read by reference) is not
+    covered by it, and a reader must not take the row for that law.
+    """
+    import contextlib as _contextlib
+    import io as _io
+    import json as _json
+
+    def row(name):
+        return {
+            "requirement": name,
+            "state": "passed",
+            "receipts": [],
+            "dependencies": [],
+            "waitingOn": "",
+        }
+
+    journey = bare(mod, tmp)
+    journey.appendix = [{"fixture": "development-network-and-registry"}]
+    out = _io.StringIO()
+    with _contextlib.redirect_stdout(out):
+        journey.report([row("R1"), row(REJECT_ROW)])
+    lines = out.getvalue().splitlines()
+    scope = [
+        i for i, line in enumerate(lines) if "legacy state-spending rejection" in line
+    ]
+    rows = [i for i, line in enumerate(lines) if line.endswith(": passed")]
+    appendix = [i for i, line in enumerate(lines) if "harness evidence" in line]
+    check(
+        "report-reject-scope-stated-once",
+        len(scope) == 1
+        and REJECT_ROW in lines[scope[0]]
+        and "held value minus the registry's minimum tip" in lines[scope[0]]
+        and "declared tip" in lines[scope[0]]
+        and "not covered" in lines[scope[0]],
+        f"the scope lines are {[lines[i] for i in scope]}",
+    )
+    check(
+        "report-reject-scope-between-rows-and-appendix",
+        bool(scope)
+        and bool(rows)
+        and bool(appendix)
+        and max(rows) < scope[0] < min(appendix),
+        "the scope line is not after the rows and before the appendix",
+    )
+    stored = _json.loads(Path(tmp, "journey.json").read_text())
+    notes = stored.get("scopeNotes")
+    check(
+        "report-reject-scope-stored",
+        list(stored.keys()) == ["requirements", "scopeNotes", "harnessAppendix"]
+        and isinstance(notes, list)
+        and len(notes) == 1
+        and notes[0].get("requirement") == REJECT_ROW
+        and "declared tip" in notes[0].get("scope", ""),
+        f"journey.json is {list(stored.keys())} with {notes}",
+    )
+    out = _io.StringIO()
+    with _contextlib.redirect_stdout(out):
+        journey.report([row("R1")])
+    check(
+        "report-no-scope-without-the-row",
+        "legacy" not in out.getvalue()
+        and "scopeNotes" not in _json.loads(Path(tmp, "journey.json").read_text()),
+        "a scope note appeared for a report without the reject row",
     )
 
 
@@ -4210,6 +4398,8 @@ def main():
         test_runtime_removal_failure_is_setup,
         test_runtime_removal_failure_flows,
         test_report_lists_marked_appendix_after_rows,
+        test_reject_row_names_the_registry_minimum_tip,
+        test_report_states_what_the_reject_row_observes,
         test_replay_fault_control_passes,
         test_replay_fault_control_accepted_is_row_failure,
         test_replay_fault_control_needs_unpatched,
