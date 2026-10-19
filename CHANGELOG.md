@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.13.0](https://github.com/lambdasistemi/singular/compare/v0.12.0...v0.13.0) (2026-10-19)
+
+
+### Features
+
+* describe each command once; help, usage, refusals, completion and --version follow ([e882a35](https://github.com/lambdasistemi/singular/commit/e882a3531ea49ac5b576ca26c0ddedb25a69c83a))
+* help a Cardano user can read for singular and open-datum ([bd5f9c8](https://github.com/lambdasistemi/singular/commit/bd5f9c80a7406d44b87ae1004a08fcb156eb1515))
+* Linux and macOS executables in every release ([a051f2d](https://github.com/lambdasistemi/singular/commit/a051f2d208c9819cace8c8ea1c16786d00c05aec))
+* release bundles for Linux and macOS ([55ea42e](https://github.com/lambdasistemi/singular/commit/55ea42e38b6d8bcbdb281df715be601170c8988a))
+* singular and open-datum print their release and commit ([82bb781](https://github.com/lambdasistemi/singular/commit/82bb7818266517194a8acc076b1bc2dc3746d3f4))
+* the chain, contract and registry settings come from the environment and a JSON file ([51204d3](https://github.com/lambdasistemi/singular/commit/51204d34ffa5d695b1f640de2c0bca113bd70d20))
+* the chain, contract and registry settings come from the environment and a JSON file ([581ceec](https://github.com/lambdasistemi/singular/commit/581ceeca007e63008a0eecaf8bff53a641bb6f34))
+
+
+### Fixes
+
+* a staged release is verified without bundles, said explicitly ([1fe1569](https://github.com/lambdasistemi/singular/commit/1fe1569ef8cc7047fc9f1cffa98f85d4042bcda2))
+* a staged release is verified without bundles, said explicitly ([1bc7fac](https://github.com/lambdasistemi/singular/commit/1bc7fac680bff83578a46b40b78e51e4e4f2b1dd))
+* an empty wallet is asked for one funded output, not a self-payment, by update too ([0894ff0](https://github.com/lambdasistemi/singular/commit/0894ff080dfe56bb3bd965f2c25a4289c6219070))
+* the Cabal version controls do not name a release ([8c1fd1f](https://github.com/lambdasistemi/singular/commit/8c1fd1f772302336e157b7a2b778f7d6c08eb79a))
+* the describe command a create prints keeps the Koios token file ([1a28d5e](https://github.com/lambdasistemi/singular/commit/1a28d5e43bb4c8884be00d868dd6906092757933))
+* the registry rename gate reads text files only ([5d8fb38](https://github.com/lambdasistemi/singular/commit/5d8fb38de19e5fa38d58a819b2bcd53fec570171))
+
+
+### Documentation
+
+* Demo 1 a Cardano user can follow literally on preprod ([85572a7](https://github.com/lambdasistemi/singular/commit/85572a7840f4331b32e6f42995afd2b6e7ebbb66))
+* install the commands without Nix ([39523c2](https://github.com/lambdasistemi/singular/commit/39523c28c513e3219c232b2fb27946874b9bb50e))
+* link the Demo 1 shell repository as the first way to get the programs ([8dc71f8](https://github.com/lambdasistemi/singular/commit/8dc71f859821d0b510f5ed4c585d4d0d6b964f71))
+* link the Demo 1 shell repository as the first way to get the programs ([368e4ff](https://github.com/lambdasistemi/singular/commit/368e4ffa54ddce6ea2ecf138eb97cb9f60ed0226))
+* narration clips for the install page ([735f1c6](https://github.com/lambdasistemi/singular/commit/735f1c60d025ec86772c1588ea1744aac5a65fb4))
+* narration for the changed pages ([ef8ba11](https://github.com/lambdasistemi/singular/commit/ef8ba1134151cbbd5b594cf36421e978faa3485b))
+* one funded output, Koios only, vault first, current tags and paths ([7dff65c](https://github.com/lambdasistemi/singular/commit/7dff65c17567079e5bb8a7dfcd0762f484ea4526))
+* one title for the entry page, narrow flowcharts, a glossary pointer on the command reference ([05e992d](https://github.com/lambdasistemi/singular/commit/05e992dfa2f50439ce6b995b8862b44527546c45))
+* preprod runbook, run page published on the site, nav and home page ([680342f](https://github.com/lambdasistemi/singular/commit/680342fde2bfd99f5a76ceb0109ca8ee490c0a47))
+* say that a binary install without Nix is coming ([b55fee9](https://github.com/lambdasistemi/singular/commit/b55fee9146f4d35eadb4fca4b2a68833b381f8db))
+* say what a write's outlay allowance is for and what the booking measured on preprod ([2fa9da3](https://github.com/lambdasistemi/singular/commit/2fa9da31ae2c5538c6d9ab06c84a2cf344571d17))
+* the archive run page builds, runs and waits as written, and the guide starts with Demo 1 ([1f8d7a2](https://github.com/lambdasistemi/singular/commit/1f8d7a2dfa14dafafdc03e6ee26db81949397ae6))
+* the command reference quotes the programs' help, held to what they print ([00e007d](https://github.com/lambdasistemi/singular/commit/00e007d22eb15c0da3de53c1eeaff55d26f359b4))
+* the six settings and the config file in the command reference ([813c3f8](https://github.com/lambdasistemi/singular/commit/813c3f888539a124f4a3280327bf07f8d6b606b2))
+
 ## [0.12.0](https://github.com/lambdasistemi/singular/compare/v0.11.0...v0.12.0) (2026-10-18)
 
 
