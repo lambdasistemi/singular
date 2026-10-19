@@ -99,7 +99,7 @@ jobs:
   evaluation-cleanup-controls:
     name: Evaluation cleanup controls
     runs-on: nixos
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - name: Reuse this runner's Nix cache
         run: |
