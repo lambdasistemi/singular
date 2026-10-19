@@ -57,8 +57,11 @@ import Singular.CLI (runCommand)
 import Singular.CLI.Command
     ( parseInvocation
     , renderCLIError
-    , usage
+    , singularHint
+    , singularVersion
     )
+import Singular.CLI.Help (singularProgram)
+import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Session (Env, koiosEnv)
 import Singular.CLI.Trace (Trace, withTracing)
 import Singular.Registry.Application (Application)
@@ -81,25 +84,27 @@ runSingularVia
     -> [String]
     -> IO ExitCode
 runSingularVia provider app errors environment args =
-    case parseInvocation environment args of
-        Left err -> do
-            case errors of
-                Just h -> do
-                    quietly (hPutStrLn h ("singular: " <> renderCLIError err))
-                    quietly (hPutStrLn h usage)
-                Nothing -> pure ()
-            pure (ExitFailure 2)
-        Right (command, request) -> do
-            terminal <- case errors of
-                Nothing -> pure False
-                Just h ->
-                    fromRight False <$> attempt (hIsTerminalDevice h)
-            withTracing
-                errors
-                terminal
-                (phaseLog environment)
-                request
-                (\tracer -> runCommand app (provider tracer) command)
+    builtinCommand (singularProgram singularVersion) args >>= \case
+        Just code -> pure code
+        Nothing -> case parseInvocation environment args of
+            Left err -> do
+                case errors of
+                    Just h -> do
+                        quietly (hPutStrLn h ("singular: " <> renderCLIError err))
+                        mapM_ (quietly . hPutStrLn h) (singularHint args)
+                    Nothing -> pure ()
+                pure (ExitFailure 2)
+            Right (command, request) -> do
+                terminal <- case errors of
+                    Nothing -> pure False
+                    Just h ->
+                        fromRight False <$> attempt (hIsTerminalDevice h)
+                withTracing
+                    errors
+                    terminal
+                    (phaseLog environment)
+                    request
+                    (\tracer -> runCommand app (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path

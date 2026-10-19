@@ -72,7 +72,7 @@ import Singular.Application.OpenDatum.Command
     , OpenDatumCommand (..)
     , ProviderSettings (..)
     , closedSwitch
-    , openDatumUsage
+    , openDatumHelp
     , parseOpenDatumCommand
     )
 import Singular.Application.OpenDatum.Run
@@ -269,11 +269,13 @@ switchAtCreateOnly = describe "the closed switch at create only" $ do
             Left (RegistryCLI.BadValue "--closed" why) ->
                 why `shouldSatisfy` isInfixOf "is not a flag singular reads"
             other -> expectationFailure ("singular accepted --closed: " <> show other)
-    it "names --closed on the create usage lines only" $ do
-        let ls = lines openDatumUsage
-            withClosed = [l | l <- ls, "--closed" `isInfixOf` l]
-        withClosed `shouldSatisfy` (not . null)
-        mapM_ (`shouldSatisfy` isInfixOf "create") withClosed
+    it "names --closed on the create help only" $ do
+        openDatumHelp ["create"] `shouldSatisfy` isInfixOf "--closed"
+        mapM_
+            ( \verb ->
+                openDatumHelp [verb] `shouldNotSatisfy` isInfixOf "--closed"
+            )
+            ["insert", "update", "terminate", "fold", "inspect"]
 
 createPinsMode :: Spec
 createPinsMode = describe "create pins the mode it names" $ do

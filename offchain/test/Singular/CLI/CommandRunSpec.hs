@@ -880,7 +880,7 @@ commandNames =
 -- | The constructor a parsed command is.
 constructorOf :: Command -> String
 constructorOf = \case
-    Help -> "Help"
+    Help _ -> "Help"
     Create _ _ -> "Create"
     Describe _ -> "Describe"
     Fold _ -> "Fold"

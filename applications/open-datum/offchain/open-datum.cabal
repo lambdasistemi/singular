@@ -40,6 +40,7 @@ library
     Singular.Application.OpenDatum.Command
     Singular.Application.OpenDatum.Entry
     Singular.Application.OpenDatum.Envelope
+    Singular.Application.OpenDatum.Help
     Singular.Application.OpenDatum.InsertEnvelope
     Singular.Application.OpenDatum.Permanent
     Singular.Application.OpenDatum.Plan
@@ -50,6 +51,9 @@ library
     Singular.Application.OpenDatum.Script
     Singular.Application.OpenDatum.Update
     Singular.Application.OpenDatum.Value
+
+  autogen-modules: Paths_open_datum
+  other-modules: Paths_open_datum
 
   build-depends:
     , aeson                              >=2.1  && <2.3
@@ -97,6 +101,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.CommandRunSpec
     Singular.Application.OpenDatum.FlagGroupExtentSpec
     Singular.Application.OpenDatum.FoldSpec
+    Singular.Application.OpenDatum.HelpSnapshotSpec
     Singular.Application.OpenDatum.IndependentActorsSpec
     Singular.Application.OpenDatum.InsertEnvelopeSpec
     Singular.Application.OpenDatum.ManagedStateSpec

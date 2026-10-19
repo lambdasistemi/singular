@@ -13,6 +13,7 @@ set -euo pipefail
 
 repo=${1:-.}
 check="$repo/tools/cli_flags_check.sh"
+controls=0
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
@@ -44,32 +45,45 @@ fresh() {
   binary_od="$real_od"
 }
 
-# stand-in SED: a singular whose help is the real singular help passed through SED.
+# stand_in_singular WORDS SED: a singular whose help for the command line
+# WORDS (empty for the overview) is the real help passed through SED; every
+# other command line goes to the real binary.
 stand_in_singular() {
   cat >"$scratch/singular" <<EOF
 #!/usr/bin/env bash
-"$real_singular" "\$@" | sed -e '$1'
-exit "\${PIPESTATUS[0]}"
+if [ "\$*" = "$1${1:+ }--help" ]; then
+  "$real_singular" "\$@" | sed -e '$2'
+  exit "\${PIPESTATUS[0]}"
+fi
+exec "$real_singular" "\$@"
 EOF
   chmod +x "$scratch/singular"
   binary_singular="$scratch/singular"
 }
 
-# stand-in SED: an open-datum whose help is the real open-datum help passed through SED.
+# stand_in_od WORDS SED: the same for open-datum.
 stand_in_od() {
   cat >"$scratch/open-datum" <<EOF
 #!/usr/bin/env bash
-"$real_od" "\$@" | sed -e '$1'
-exit "\${PIPESTATUS[0]}"
+if [ "\$*" = "$1${1:+ }--help" ]; then
+  "$real_od" "\$@" | sed -e '$2'
+  exit "\${PIPESTATUS[0]}"
+fi
+exec "$real_od" "\$@"
 EOF
   chmod +x "$scratch/open-datum"
   binary_od="$scratch/open-datum"
 }
 
+# A settings entry the help of a command never listed, planted after the help
+# switch.
+plant() { printf 's/^  switch: -h|--help$/&\\n\\n  Planted.\\n  option: %s X/' "$1"; }
+
 # expect NAME STATUS PATTERN: the check on the scratch tree exits STATUS
 # and its output matches PATTERN.
 expect() {
   local name="$1" want="$2" pattern="$3" got=0
+  controls=$((controls + 1))
   SINGULAR="$binary_singular" OPEN_DATUM="$binary_od" bash "$check" "$scratch/t" >"$scratch/out" 2>&1 || got=$?
   if [ "$got" -ne "$want" ] || ! grep -qE -- "$pattern" "$scratch/out"; then
     cat "$scratch/out" >&2
@@ -86,18 +100,18 @@ expect clean-tree 0 '^PASS cli-flags'
 
 # The singular binary takes a flag the documentation never mentions.
 fresh
-stand_in_singular 's/^\(  singular registry create .*\)$/\1 --planted-flag X/'
+stand_in_singular 'registry create' "$(plant --planted-flag)"
 expect undocumented-flag 1 '^undocumented: singular registry create takes --planted-flag'
 
 # The submit verb takes a flag the documentation never mentions: the
 # check reads submit's own usage line, not only the registry group.
 fresh
-stand_in_singular 's/^\(  singular submit .*\)$/\1 --planted-flag X/'
+stand_in_singular 'submit' "$(plant --planted-flag)"
 expect undocumented-flag-submit 1 '^undocumented: singular submit takes --planted-flag'
 
 # The open-datum binary takes a flag the documentation never mentions.
 fresh
-stand_in_od 's/^\(  open-datum insert .*\)$/\1 --planted-flag X/'
+stand_in_od 'insert' "$(plant --planted-flag)"
 expect undocumented-flag-od 1 '^undocumented: open-datum insert takes --planted-flag'
 
 # The documentation names a flag neither binary takes (singular side).
@@ -178,52 +192,35 @@ printf '\n```sh\n./bin/open-datum insert --state-dir reg \\\n  --path-form-flag 
   >>"$scratch/t/onchain-release/DEMO1.md"
 expect run-page-path-od 1 'onchain-release/DEMO1.md:[0-9]+: open-datum insert --path-form-flag'
 
-# A singular subcommand's own --help disagrees with the top-level help.
+# A command the overview names has no help of its own: its --help fails.
 fresh
 cat >"$scratch/singular" <<EOF
 #!/usr/bin/env bash
-if [ "\$1" = registry ] && [ "\$2" = fold ]; then
-  "$real_singular" "\$@" | sed -e 's/--request TXID#IX/--request TXID#IX --sub-only X/'
-  exit "\${PIPESTATUS[0]}"
-fi
+if [ "\$*" = "registry fold --help" ]; then exit 3; fi
 exec "$real_singular" "\$@"
 EOF
 chmod +x "$scratch/singular"
 binary_singular="$scratch/singular"
-expect subcommand-disagrees 1 '^singular registry fold --help disagrees with singular --help about fold'
+expect command-help-fails 1 '^singular registry fold --help exited non-zero'
 
-# An open-datum subcommand's own --help disagrees with the top-level help.
 fresh
 cat >"$scratch/open-datum" <<EOF
 #!/usr/bin/env bash
-if [ "\$1" = update ]; then
-  "$real_od" "\$@" | sed -e 's/--payload DATUM_JSON/--payload DATUM_JSON --sub-only X/'
-  exit "\${PIPESTATUS[0]}"
-fi
+if [ "\$*" = "update --help" ]; then exit 3; fi
 exec "$real_od" "\$@"
 EOF
 chmod +x "$scratch/open-datum"
 binary_od="$scratch/open-datum"
-expect subcommand-disagrees-od 1 '^open-datum update --help disagrees with open-datum --help about update'
+expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
 
-# A flag in the singular help's prose that no command takes.
+# An empty side is a setup failure, never a pass. The overview's table of
+# commands goes, wallet verbs and submit included.
 fresh
-stand_in_singular 's/^Each command prints one JSON receipt/Each command (--stray) prints one JSON receipt/'
-expect unattributed-flag 1 '^--help prints a flag no command takes: --stray'
-
-# A flag in the open-datum help's prose that no command takes.
-fresh
-stand_in_od 's/^Each command prints one JSON receipt/Each command (--stray) prints one JSON receipt/'
-expect unattributed-flag-od 1 '^open-datum --help prints a flag no command takes: --stray'
-
-# An empty side is a setup failure, never a pass. Every verb line goes:
-# the wallet lines are commands too (#638), and so is submit.
-fresh
-stand_in_singular 's/^  singular registry /  other /; s/^  singular wallet /  other wallet /; s/^  singular submit/  other submit/'
+stand_in_singular '' 's/^All commands:$/Other commands:/'
 expect empty-help 2 '^EMPTY EXTENT: singular --help names no registry command'
 
 fresh
-stand_in_od 's/^  open-datum /  other /'
+stand_in_od '' 's/^All commands:$/Other commands:/'
 expect empty-help-od 2 '^EMPTY EXTENT: open-datum --help names no command'
 
 fresh
@@ -289,6 +286,7 @@ for verb in insert update terminate; do
     echo "FAIL cli-flags control 'removed-$verb': exit $got, expected unknown-command refusal for registry $verb" >&2
     exit 1
   fi
+  controls=$((controls + 1))
   echo "control removed-$verb: exit $got, refused as unknown"
 done
 
@@ -296,7 +294,7 @@ done
 # print that the settings table never mentions, and a table row giving a
 # flag the wallet commands' --help does not print.
 fresh
-stand_in_singular 's/^  singular wallet create --vault FILE/  singular wallet create --vault FILE --planted-wallet X/'
+stand_in_singular 'wallet create' "$(plant --planted-wallet)"
 expect undocumented-wallet-flag 1 '^undocumented: singular wallet create takes --planted-wallet'
 
 fresh
@@ -307,4 +305,4 @@ grep -q 'ghost-wallet-flag' "$table" || {
 }
 expect documented-missing-wallet 1 '^documented, not in --help: the settings table gives --ghost-wallet-flag to singular wallet create'
 
-echo "PASS cli-flags-controls: 34 controls over ${#pages[@]} pages"
+echo "PASS cli-flags-controls: $controls controls over ${#pages[@]} pages"

@@ -5,14 +5,13 @@
 #
 # Two sides, from two sources:
 #
-#   * the binaries: `singular --help`, and `singular registry COMMAND --help`
-#     (`singular submit --help` for the submit verb, `singular wallet VERB
-#     --help` for a wallet verb) for every command the help names; `open-datum --help`, and
-#     `open-datum COMMAND --help` for every command it names. A command's
-#     flags are those on its usage lines, plus those a note gives to
-#     "every command" or to the "write commands" (the commands whose usage
-#     takes --wallet-skey). A flag the help prints anywhere else belongs to
-#     no command and is refused.
+#   * the binaries: the commands `singular --help` and `open-datum --help`
+#     name in their "All commands" table, and for each the settings its own
+#     help lists (`singular registry COMMAND --help`, `singular submit
+#     --help`, `singular wallet VERB --help`; `open-datum COMMAND --help`).
+#     A command's flags are the `option:` and `switch:` entries of its
+#     "Available settings"; the help and version switches belong to no
+#     command. The write commands are those whose help lists --wallet-skey.
 #   * the documentation: the settings table of docs/singular-node.md, one
 #     row per flag naming the commands that take it, and every
 #     `singular registry WORD ...` and every `open-datum WORD ...`
@@ -39,8 +38,8 @@
 # Refused, each by name: a (binary, flag, command) triple --help prints and
 # the table does not, or the table states and --help does not; an invocation
 # whose word is not a verb its binary's --help lists; an invocation
-# using a flag its command's --help does not print; a subcommand whose own
-# --help disagrees with the top-level help about that command. An empty side —
+# using a flag its command's --help does not print; a command the overview
+# names whose own --help fails. An empty side —
 # no command in either help, no row in the table — is a setup failure, never
 # a pass.
 #
@@ -79,81 +78,46 @@ if [ -z "$open_datum" ]; then
   open_datum="$(nix build --quiet --no-link --print-out-paths "$root/applications/open-datum/offchain#open-datum")/bin/open-datum"
 fi
 
-# command flag lines ("CMD FLAG"), one per pair, from one singular help text.
-# Wallet verbs are commands of their own group, named "wallet VERB", so
-# the table can name them and refuse them apart from the registry group.
-singular_pairs() {
+# The commands a program's overview names, one per line: the "All commands:"
+# table lists `PROGRAM WORDS  summary` rows. singular's registry commands are
+# named plainly (`create`), its wallet verbs `wallet VERB`, and `submit` as
+# itself, so the settings table can name them; open-datum's are its verbs.
+overview_commands() {
+  awk -v prog="$1" '
+    /^All commands:/ { t = 1; next }
+    t && /^$/ { exit }
+    t && $1 == prog {
+      if (prog == "singular" && $2 == "registry") print $3
+      else if (prog == "singular" && $2 == "wallet") print "wallet " $3
+      else print $2
+    }
+  '
+}
+
+# The flags one command's help lists among its settings, one per line: the
+# `option: --flag ...` and `switch: --flag` entries of its "Available
+# settings". The help and version switches belong to no command.
+page_flags() {
   awk '
-    /^  singular registry [a-z]+/ { cmd = $3; usage = 1 }
-    /^  singular submit( |$)/ { cmd = "submit"; usage = 1 }
-    /^  singular wallet [a-z]+/ { cmd = "wallet " $3; usage = 1 }
-    usage && /^  singular ((registry|wallet) [a-z]+|submit( |$))/ || usage && /^      / {
-      line = $0
-      while (match(line, /--[a-z][a-z-]*/)) {
-        flags[cmd] = flags[cmd] " " substr(line, RSTART, RLENGTH)
-        line = substr(line, RSTART + RLENGTH)
-      }
-      if ($0 ~ /--wallet-skey/) writes[cmd] = 1
-      cmds[cmd] = 1
-      next
-    }
-    /^$/ { usage = 0 }
-    !usage {
-      line = $0
-      scope = ""
-      if (line ~ /Every command also takes/) scope = "every"
-      else if (line ~ /Every registry command also takes/) scope = "registry"
-      else if (line ~ /Write commands also take/) scope = "writes"
-      while (match(line, /--[a-z][a-z-]*/)) {
-        f = substr(line, RSTART, RLENGTH)
-        line = substr(line, RSTART + RLENGTH)
-        if (scope == "") { print "UNATTRIBUTED " f; continue }
-        notes[scope] = notes[scope] " " f
-      }
-    }
-    END {
-      for (c in cmds) {
-        n = split(flags[c] " " notes["every"] (writes[c] ? " " notes["writes"] : "") (c !~ /^wallet / ? " " notes["registry"] : ""), fs, " ")
-        for (i = 1; i <= n; i++) if (fs[i] != "") print c, fs[i]
+    /^Available settings:/ { t = 1; next }
+    t && /^[A-Za-z]/ { exit }
+    t && /^  (option|switch): / {
+      if (match($0, /--[a-z][a-z-]*/)) {
+        f = substr($0, RSTART, RLENGTH)
+        if (f != "--help" && f != "--version") print f
       }
     }
   ' | sort -u
 }
 
-# command flag lines ("CMD FLAG") from one open-datum help text.
-opendatum_pairs() {
-  awk '
-    /^  open-datum [a-z]+/ { cmd = $2; usage = 1 }
-    usage && /^  open-datum [a-z]+/ || usage && /^      / {
-      line = $0
-      while (match(line, /--[a-z][a-z-]*/)) {
-        flags[cmd] = flags[cmd] " " substr(line, RSTART, RLENGTH)
-        line = substr(line, RSTART + RLENGTH)
-      }
-      if ($0 ~ /--wallet-skey/) writes[cmd] = 1
-      cmds[cmd] = 1
-      next
-    }
-    /^$/ { usage = 0 }
-    !usage {
-      line = $0
-      scope = ""
-      if (line ~ /Every command also takes/) scope = "every"
-      else if (line ~ /Write commands also take/) scope = "writes"
-      while (match(line, /--[a-z][a-z-]*/)) {
-        f = substr(line, RSTART, RLENGTH)
-        line = substr(line, RSTART + RLENGTH)
-        if (scope == "") { print "UNATTRIBUTED " f; continue }
-        notes[scope] = notes[scope] " " f
-      }
-    }
-    END {
-      for (c in cmds) {
-        n = split(flags[c] " " notes["every"] (writes[c] ? " " notes["writes"] : ""), fs, " ")
-        for (i = 1; i <= n; i++) if (fs[i] != "") print c, fs[i]
-      }
-    }
-  ' | sort -u
+# Print the command-line words that reach one command's own help.
+help_words() { # help_words PROGRAM COMMAND
+  case "$1:$2" in
+    singular:"wallet "*) echo "${2}" ;;
+    singular:submit) echo submit ;;
+    singular:*) echo "registry $2" ;;
+    *) echo "$2" ;;
+  esac
 }
 
 status=0
@@ -162,32 +126,43 @@ status=0
   echo "SETUP-FAIL: '$singular --help' exited non-zero" >&2
   exit 2
 }
-singular_pairs <"$scratch/help.singular" >"$scratch/singular.pairs"
-if grep '^UNATTRIBUTED ' "$scratch/singular.pairs" | sed 's/^UNATTRIBUTED /--help prints a flag no command takes: /' >&2; then
-  status=1
-fi
-sed -i '/^UNATTRIBUTED /d' "$scratch/singular.pairs"
-mapfile -t singular_commands < <(awk '{ if ($1 == "wallet") print $1 " " $2; else print $1 }' "$scratch/singular.pairs" | sort -u)
+mapfile -t singular_commands < <(overview_commands singular <"$scratch/help.singular")
 if [ ${#singular_commands[@]} -eq 0 ]; then
   echo "EMPTY EXTENT: singular --help names no registry command" >&2
   exit 2
 fi
+: >"$scratch/singular.pairs"
+for c in "${singular_commands[@]}"; do
+  read -r -a words <<<"$(help_words singular "$c")"
+  if "$singular" "${words[@]}" --help >"$scratch/help.singular.$c" 2>&1; then
+    page_flags <"$scratch/help.singular.$c" | sed "s/^/$c /" >>"$scratch/singular.pairs"
+  else
+    echo "singular ${words[*]} --help exited non-zero" >&2
+    status=1
+  fi
+done
+sort -u -o "$scratch/singular.pairs" "$scratch/singular.pairs"
 mapfile -t singular_writes < <(grep ' --wallet-skey$' "$scratch/singular.pairs" | cut -d' ' -f1 | sort -u)
 
 "$open_datum" --help >"$scratch/help.opendatum" 2>&1 || {
   echo "SETUP-FAIL: '$open_datum --help' exited non-zero" >&2
   exit 2
 }
-opendatum_pairs <"$scratch/help.opendatum" >"$scratch/opendatum.pairs"
-if grep '^UNATTRIBUTED ' "$scratch/opendatum.pairs" | sed 's/^UNATTRIBUTED /open-datum --help prints a flag no command takes: /' >&2; then
-  status=1
-fi
-sed -i '/^UNATTRIBUTED /d' "$scratch/opendatum.pairs"
-mapfile -t od_commands < <(cut -d' ' -f1 "$scratch/opendatum.pairs" | sort -u)
+mapfile -t od_commands < <(overview_commands open-datum <"$scratch/help.opendatum")
 if [ ${#od_commands[@]} -eq 0 ]; then
   echo "EMPTY EXTENT: open-datum --help names no command" >&2
   exit 2
 fi
+: >"$scratch/opendatum.pairs"
+for c in "${od_commands[@]}"; do
+  if "$open_datum" "$c" --help >"$scratch/help.opendatum.$c" 2>&1; then
+    page_flags <"$scratch/help.opendatum.$c" | sed "s/^/$c /" >>"$scratch/opendatum.pairs"
+  else
+    echo "open-datum $c --help exited non-zero" >&2
+    status=1
+  fi
+done
+sort -u -o "$scratch/opendatum.pairs" "$scratch/opendatum.pairs"
 mapfile -t od_writes < <(grep ' --wallet-skey$' "$scratch/opendatum.pairs" | cut -d' ' -f1 | sort -u)
 
 # Namespaced triples "BIN CMD FLAG" for the comparison.
@@ -195,51 +170,6 @@ mapfile -t od_writes < <(grep ' --wallet-skey$' "$scratch/opendatum.pairs" | cut
 sed 's/^/singular /' "$scratch/singular.pairs" >>"$scratch/help.pairs"
 while read -r c f; do echo "open-datum $c $f"; done <"$scratch/opendatum.pairs" >>"$scratch/help.pairs"
 sort -u -o "$scratch/help.pairs" "$scratch/help.pairs"
-
-# Each command's own --help agrees with the top-level help about it.
-for c in "${singular_commands[@]}"; do
-  case $c in
-    "wallet "*)
-      # "wallet VERB" is one command name of two words: split it so the
-      # expansion stays quoted.
-      read -r -a c_words <<<"$c"
-      "$singular" "${c_words[@]}" --help >"$scratch/help.singular.$c" 2>&1 || {
-        echo "singular $c --help exited non-zero" >&2
-        status=1
-        continue
-      }
-      ;;
-    submit) "$singular" submit --help >"$scratch/help.singular.$c" 2>&1 || {
-      echo "singular submit --help exited non-zero" >&2
-      status=1
-      continue
-    } ;;
-    *) "$singular" registry "$c" --help >"$scratch/help.singular.$c" 2>&1 || {
-      echo "singular registry $c --help exited non-zero" >&2
-      status=1
-      continue
-    } ;;
-  esac
-  if ! diff <(grep "^$c " "$scratch/singular.pairs") \
-    <(singular_pairs <"$scratch/help.singular.$c" | grep "^$c ") >"$scratch/diff.singular.$c"; then
-    echo "singular registry $c --help disagrees with singular --help about $c:" >&2
-    sed 's/^/  /' "$scratch/diff.singular.$c" >&2
-    status=1
-  fi
-done
-for c in "${od_commands[@]}"; do
-  "$open_datum" "$c" --help >"$scratch/help.opendatum.$c" 2>&1 || {
-    echo "open-datum $c --help exited non-zero" >&2
-    status=1
-    continue
-  }
-  if ! diff <(grep "^$c " "$scratch/opendatum.pairs") \
-    <(opendatum_pairs <"$scratch/help.opendatum.$c" | grep "^$c ") >"$scratch/diff.opendatum.$c"; then
-    echo "open-datum $c --help disagrees with open-datum --help about $c:" >&2
-    sed 's/^/  /' "$scratch/diff.opendatum.$c" >&2
-    status=1
-  fi
-done
 
 # The settings table: "| `--flag ...` [or `--flag`] | COMMANDS | why |".
 [ -f "$table_doc" ] || {

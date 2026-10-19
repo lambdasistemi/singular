@@ -1,0 +1,89 @@
+singular VERSION (commit unknown)
+
+Usage: singular registry inspect [--state-dir DIR] --blueprint FILE
+       --state-token POLICY.NAME [--key KEY | --key-hex HEX] --koios-url URL
+       --network-magic N [--koios-token-file FILE] [--network-time DIR]
+       [--outputs-at ADDR] [--wallet-address ADDR] [--receipt FILE] [--trace
+       LEVEL] [--trace-to SINK] [--trace-format FORMAT]
+
+Read the registry and a key back
+
+Reads the registry and one key back: the key's state, the pending requests
+with what each actually locks, and the registry's root. It reads only: it
+takes no signing key and submits nothing.
+
+With --wallet-address it reconciles that wallet's managed journal as a write
+would; without it the read is stateless and creates no state.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  Keep the journal and submissions under DIR.
+  option: --state-dir DIR
+  default: the per-user state directory
+
+  The compiled validators (plutus.json) of the release.
+  option: --blueprint FILE
+
+  The registry to act on: its state token, policy and name in hex, as create
+  prints it.
+  option: --state-token POLICY.NAME
+  env: SINGULAR_STATE_TOKEN POLICY.NAME
+
+  The registry key as text, its UTF-8 bytes (1 to 32); give this or --key-hex.
+  option: --key KEY
+
+  The registry key as base16 bytes (1 to 32), for a key that is not text; give
+  this or --key.
+  option: --key-hex HEX
+
+  Base URL of the Koios API used to read the chain and to submit.
+  option: --koios-url URL
+
+  The network: 1 for preprod, 42 for the generated development network.
+  option: --network-magic N
+
+  File holding a Koios bearer token; its contents are never printed.
+  option: --koios-token-file FILE
+
+  Directory with the pinned time-manifest.json, shelley-genesis.json and
+  era-history.cbor.
+  option: --network-time DIR
+  default: the preprod recording packaged with the program
+
+  Also list the outputs at this public address, read from the provider.
+  option: --outputs-at ADDR
+
+  Your public address: reconcile that wallet's journal as a write would.
+  Without it the read is stateless.
+  option: --wallet-address ADDR
+
+  Also write the JSON receipt to FILE.
+  option: --receipt FILE
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  default: text on standard error, json in a file
+
+Environment:
+  SINGULAR_LOG    A file the protocol phases are appended to, one line each.
+  XDG_STATE_HOME  Where the per-user state directory lives (else
+                  $HOME/.local/state), under singular/.
+
+Output and exit status:
+  Prints one JSON receipt on standard output (--receipt also writes it).
+  Exit status 0 on success, 2 for a command line it refused, otherwise the
+  outcome class the receipt names: 10 refused before anything was sent,
+  11 refused by the ledger, 12 node unavailable, 13 timeout, 14 stale state,
+  15 partial, 16 another writer, 17 proof missing, 18 proof inconsistent,
+  19 waiting for signatures.

@@ -1,0 +1,55 @@
+singular VERSION (commit unknown)
+
+Usage: singular wallet sign --vault FILE [--passphrase-fd N] [--out DIR]
+       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT] BUNDLE
+
+Sign a bundle of transactions offline
+
+Witnesses a bundle of unsigned transactions from the vault, offline: one
+witness file per transaction, named by the transaction's identity and created
+exclusively. The network comes from the bundle. A bundle whose identities,
+deadlines or signers disagree with its transactions, or whose signers do not
+include this vault's address, is refused by name and nothing is written. No
+provider setting is read.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  The vault to open.
+  option: --vault FILE
+
+  Read the vault passphrase, one line, from this inherited file descriptor.
+  option: --passphrase-fd N
+  default: ask on the terminal with the echo off
+
+  Directory the witness files are written to.
+  option: --out DIR
+  default: the bundle's directory
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  default: text on standard error, json in a file
+
+  The bundle of unsigned transactions a write with --bundle wrote.
+  argument: BUNDLE
+
+Environment:
+  SINGULAR_LOG  A file the protocol phases are appended to, one line each.
+
+Example:
+  singular wallet sign bundle.json --vault alice.vault --out witnesses
+
+Output and exit status:
+  Writes one .witness file per transaction; prints nothing on standard output.
+  Exit status 0 on success, 1 when the bundle was refused, 2 for a command
+  line it refused.

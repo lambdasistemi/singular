@@ -35,7 +35,7 @@ import Data.Data
     , toConstr
     )
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
-import Data.List (isPrefixOf, nub, sort)
+import Data.List (isInfixOf, isPrefixOf, nub, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust, mapMaybe)
 import Data.Set qualified as Set
@@ -224,7 +224,9 @@ controls = describe "the tracing controls on every command" $ do
         fmap
             fst
             (parseOpenDatumInvocation [] ["open-datum", "--help", "--trace", "how"])
-            `shouldBe` Right OpenHelp
+            `shouldSatisfy` \case
+                Right (OpenHelp page) -> "Usage: open-datum" `isInfixOf` page
+                _ -> False
 
 defaults :: Spec
 defaults = describe "the tracing defaults" $ do

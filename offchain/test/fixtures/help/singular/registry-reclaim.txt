@@ -1,0 +1,118 @@
+singular VERSION (commit unknown)
+
+Usage: singular registry reclaim [--state-dir DIR] --blueprint FILE
+       --state-token POLICY.NAME --request TXID#IX --koios-url URL
+       --network-magic N [--koios-token-file FILE] [--network-time DIR]
+       [--vault FILE [--passphrase-fd N] | --wallet-address ADDR --bundle FILE
+       | --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
+       [--fund-input TXID#IX] [--max-outlay LOVELACE] [--trace LEVEL]
+       [--trace-to SINK] [--trace-format FORMAT]
+
+Take back your own pending request
+
+Takes back the named pending insertion or terminal-witness request of this
+wallet, inside its retract window. The locked lovelace returns to the owner in
+one output; the registry's root does not move. An early refusal names when the
+window opens; once closed, registry reject clears the request.
+
+A write is signed by exactly one signer: --vault (the normal route),
+--wallet-address with --bundle (written for an external signer, ending as
+waiting-for-signatures), or --wallet-skey (a key file, legacy). Naming two is
+refused.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  Keep the journal and submissions under DIR.
+  option: --state-dir DIR
+  default: the per-user state directory
+
+  The compiled validators (plutus.json) of the release.
+  option: --blueprint FILE
+
+  The registry to act on: its state token, policy and name in hex, as create
+  prints it.
+  option: --state-token POLICY.NAME
+  env: SINGULAR_STATE_TOKEN POLICY.NAME
+
+  The pending request to take back.
+  option: --request TXID#IX
+
+  Base URL of the Koios API used to read the chain and to submit.
+  option: --koios-url URL
+
+  The network: 1 for preprod, 42 for the generated development network.
+  option: --network-magic N
+
+  File holding a Koios bearer token; its contents are never printed.
+  option: --koios-token-file FILE
+
+  Directory with the pinned time-manifest.json, shelley-genesis.json and
+  era-history.cbor.
+  option: --network-time DIR
+  default: the preprod recording packaged with the program
+
+  Signer, normal route: sign from this encrypted wallet vault.
+  option: --vault FILE
+
+  Read the vault passphrase, one line, from this inherited file descriptor.
+  option: --passphrase-fd N
+  default: ask on the terminal with the echo off
+
+  Signer, external route: stage the run for a signer at this address; goes
+  with --bundle.
+  option: --wallet-address ADDR
+
+  Signer, external route: the new file the unsigned transactions are written
+  to; goes with --wallet-address.
+  option: --bundle FILE
+
+  Signer, legacy route: sign with this payment key file. Prefer the vault.
+  option: --wallet-skey FILE
+
+  How long each submission may take to confirm; past it the command stops,
+  journalled, and never resubmits.
+  option: --confirm-timeout SECONDS
+  default: 600
+
+  Also write the JSON receipt to FILE.
+  option: --receipt FILE
+
+  The wallet output that funds and collateralises the transaction.
+  option: --fund-input TXID#IX
+
+  The most the command may spend from the wallet; past it nothing is signed.
+  option: --max-outlay LOVELACE
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  default: text on standard error, json in a file
+
+Environment:
+  SINGULAR_LOG    A file the protocol phases are appended to, one line each.
+  XDG_STATE_HOME  Where the per-user state directory lives (else
+                  $HOME/.local/state), under singular/.
+
+Example:
+  singular registry reclaim --blueprint plutus.json \
+      --state-token <policy>.<name> --request <txid>#<ix> \
+      --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
+      --vault alice.vault
+
+Output and exit status:
+  Prints one JSON receipt on standard output (--receipt also writes it).
+  Exit status 0 on success, 2 for a command line it refused, otherwise the
+  outcome class the receipt names: 10 refused before anything was sent,
+  11 refused by the ledger, 12 node unavailable, 13 timeout, 14 stale state,
+  15 partial, 16 another writer, 17 proof missing, 18 proof inconsistent,
+  19 waiting for signatures.

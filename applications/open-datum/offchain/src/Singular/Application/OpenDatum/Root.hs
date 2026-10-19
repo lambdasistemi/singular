@@ -41,11 +41,14 @@ import System.IO
 import Control.Tracer (Tracer)
 
 import Singular.Application.OpenDatum.Command
-    ( openDatumUsage
+    ( openDatumHint
+    , openDatumVersion
     , parseOpenDatumInvocation
     , renderCLIError
     )
+import Singular.Application.OpenDatum.Help (openDatumProgram)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
+import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Root (standardError)
 import Singular.CLI.Session (Env, koiosEnv)
 import Singular.CLI.Trace (Trace, withTracing)
@@ -69,25 +72,27 @@ runOpenDatumSingularVia
     -> [String]
     -> IO ExitCode
 runOpenDatumSingularVia provider _app errors environment args =
-    case parseOpenDatumInvocation environment args of
-        Left err -> do
-            case errors of
-                Just h -> do
-                    quietly (hPutStrLn h ("open-datum: " <> renderCLIError err))
-                    quietly (hPutStrLn h openDatumUsage)
-                Nothing -> pure ()
-            pure (ExitFailure 2)
-        Right (command, request) -> do
-            terminal <- case errors of
-                Nothing -> pure False
-                Just h ->
-                    fromRight False <$> attempt (hIsTerminalDevice h)
-            withTracing
-                errors
-                terminal
-                (phaseLog environment)
-                request
-                (\tracer -> runOpenDatum (provider tracer) command)
+    builtinCommand (openDatumProgram openDatumVersion) args >>= \case
+        Just code -> pure code
+        Nothing -> case parseOpenDatumInvocation environment args of
+            Left err -> do
+                case errors of
+                    Just h -> do
+                        quietly (hPutStrLn h ("open-datum: " <> renderCLIError err))
+                        mapM_ (quietly . hPutStrLn h) (openDatumHint args)
+                    Nothing -> pure ()
+                pure (ExitFailure 2)
+            Right (command, request) -> do
+                terminal <- case errors of
+                    Nothing -> pure False
+                    Just h ->
+                        fromRight False <$> attempt (hIsTerminalDevice h)
+                withTracing
+                    errors
+                    terminal
+                    (phaseLog environment)
+                    request
+                    (\tracer -> runOpenDatum (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path

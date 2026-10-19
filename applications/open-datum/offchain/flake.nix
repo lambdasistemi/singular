@@ -65,11 +65,11 @@
           cp -r ${appSrc}/app $out/open-datum/app
           if [ -d ${appSrc}/test ]; then cp -r ${appSrc}/test $out/open-datum/test; fi
           # The Koios fixtures live once, in the registry tree; stage them
-          # where the application tests expect them.
-          rm -rf $out/open-datum/test/fixtures
-          mkdir -p $out/open-datum/test
-          chmod u+w $out/open-datum/test
-          cp -R ${registrySrc}/test/fixtures $out/open-datum/test/fixtures
+          # beside the application's own fixtures (its command-line corpus
+          # and its help snapshots), where the application tests expect them.
+          mkdir -p $out/open-datum/test/fixtures
+          chmod -R u+w $out/open-datum/test
+          cp -R ${registrySrc}/test/fixtures/. $out/open-datum/test/fixtures/
           chmod -R u+w $out/open-datum/test/fixtures
           if [ -d ${appSrc}/test-tags ]; then cp -r ${appSrc}/test-tags $out/open-datum/test-tags; fi
           cp ${appSrc}/open-datum.cabal $out/open-datum/open-datum.cabal
@@ -130,8 +130,9 @@
         };
 
         # The Koios fixtures live once, in the registry tree; the test
-        # runner stages them where the tests expect them, since the
-        # repository holds no second copy under the application tree.
+        # runner stages them where the tests expect them, beside the
+        # application's own fixtures, since the repository holds no second
+        # copy of the Koios ones under the application tree.
         openDatumTestsWithFixtures = pkgs.writeShellApplication {
           name = "open-datum-tests";
           runtimeInputs = [ pkgs.coreutils ];
@@ -140,6 +141,8 @@
             trap 'rm -rf "$fixture_dir"' EXIT
             mkdir -p "$fixture_dir/test"
             cp -R ${registrySrc}/test/fixtures "$fixture_dir/test/fixtures"
+            chmod -R u+w "$fixture_dir/test/fixtures"
+            cp -R ${appSrc}/test/fixtures/. "$fixture_dir/test/fixtures/"
             chmod -R u+w "$fixture_dir/test/fixtures"
             cd "$fixture_dir"
             ${pkgs.lib.getExe openDatumComponents.tests.open-datum-tests} "$@"

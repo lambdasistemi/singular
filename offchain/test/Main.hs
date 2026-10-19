@@ -10,6 +10,7 @@ import Singular.CLI.CreateFundingSpec qualified
 import Singular.CLI.DescribeSpec qualified
 import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
+import Singular.CLI.HelpSnapshotSpec qualified
 import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.OneOutputCreateSpec qualified
 import Singular.CLI.ParserCorpusSpec qualified
@@ -226,6 +227,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.ParserCorpus" [Cli])
         Singular.CLI.ParserCorpusSpec.spec
+    describe
+        (tagged "Singular.CLI.HelpSnapshot" [Cli])
+        Singular.CLI.HelpSnapshotSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec

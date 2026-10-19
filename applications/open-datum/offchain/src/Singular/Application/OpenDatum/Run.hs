@@ -40,7 +40,6 @@ import System.Exit (ExitCode (..))
 
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
-    , openDatumUsage
     )
 import Singular.Application.OpenDatum.Entry
     ( runInsert
@@ -200,7 +199,7 @@ closedUpdateRefusal token =
 -- | Run one open-datum command in the environment the entry point composed.
 runOpenDatum :: Env -> OpenDatumCommand -> IO ExitCode
 runOpenDatum env = \case
-    OpenHelp -> putStr openDatumUsage >> pure ExitSuccess
+    OpenHelp text -> putStr text >> pure ExitSuccess
     OpenCreate mode a ->
         finish
             (envTracer env)

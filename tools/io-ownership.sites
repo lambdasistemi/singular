@@ -260,6 +260,7 @@ conformance/test/Conformance/Support/Withhold.hs withForwarder newIORef 1
 conformance/test/fold-budget/Conformance/FoldFixture.hs <decl> IORef 1
 conformance/test/fold-budget/Conformance/FoldFixture.hs newFixture newIORef 1
 conformance/test/fold-budget/Conformance/FoldFixture.hs prepare atomicModifyIORef' 1
+offchain/cli/src/Singular/CLI/Options.hs readLine unsafePerformIO 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader modifyIORef' 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader newIORef 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader readIORef 1

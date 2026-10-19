@@ -9,6 +9,7 @@
 # timeout) and #343 (release-hook exclusion).
 
 # ---- production: libraries shipped in release builds ----
+offchain/cli/src/Singular/CLI/Options.hs: unsafe — owner=the command-line reader of one parse; lifetime=single readLine call; serial on the calling thread; the library parser runs with no configuration source, no environment map and no terminal, so it reads nothing and is a function of its arguments; kept pure so the pure parse entry points keep their types
 offchain/cli/src/Singular/CLI/Session.hs: ioref — owner=the CLI session of one command; lifetime=single command run; serial on the calling thread; connection flag and blueprint-progress refs threaded through the session, and a staged run's transactions, effect lines and state token collected by that one command and read once when it ends in the bundle, never shared between commands
 offchain/cli/src/Singular/CLI/Reconcile.hs: ioref — owner=one reconcile view-cache lookup; lifetime=single liveReader call; serial on the calling thread; the fresh per-call cache sits beside the implementation
 offchain/koios-http/src/Singular/Provider/Koios/Recorder.hs: ioref — owner=one fixture-recording run; lifetime=single recorder command; serial; accumulates recorded exchanges before writing them as fixtures

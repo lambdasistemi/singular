@@ -43,12 +43,15 @@ module Singular.Application.OpenDatum.Command
       -- * Parsing
     , CLIError (..)
     , closedSwitch
+    , openDatumVersion
+    , openDatumHint
     , parseOpenDatumCommand
     , parseOpenDatumCommandWithEnvironment
     , parseOpenDatumInvocation
     , parseOpenDatumWithGroup
     , renderCLIError
     , openDatumUsage
+    , openDatumHelp
     , maxKeyBytes
     , keyFlags
     ) where
@@ -60,18 +63,22 @@ import Data.Char
     , generalCategory
     , isDigit
     )
+import Data.List (partition)
 import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Version (Version)
 import GHC.Generics (Generic)
 import Text.Read (readMaybe)
 
+import Paths_open_datum qualified as Paths
 import Singular.Application.OpenDatum.Build
     ( DepositRefusal (..)
     , minimumDeposit
     , readDeposit
     )
+import Singular.Application.OpenDatum.Help (openDatumProgram)
 import Singular.Application.OpenDatum.Value (Mode (..))
 import Singular.CLI.Command
     ( CreateArgs (..)
@@ -86,10 +93,11 @@ import Singular.CLI.Command
 import Singular.CLI.FlagGroup
     ( Signer (..)
     , commonFlagGroup
+    , commonSwitches
     , parseFlagGroup
     , readProviderSettings
-    , splitTracingFor
-    , tokenizeWith
+    , traceFlags
+    , traceRequestFrom
     )
 import Singular.CLI.Key
     ( KeyEncoding (..)
@@ -97,6 +105,16 @@ import Singular.CLI.Key
     , keyFlags
     , maxKeyBytes
     , readKey
+    )
+import Singular.CLI.Options
+    ( Accepted (..)
+    , Raw (..)
+    , helpText
+    , hintLines
+    , identityLine
+    , readLine
+    , refusalAs
+    , resolvePath
     )
 import Singular.CLI.Registry (economics)
 import Singular.CLI.Trace (TraceRequest (..))
@@ -110,7 +128,10 @@ import Singular.Registry.StateToken
 
 -- | One parsed open-datum command line.
 data OpenDatumCommand
-    = OpenHelp
+    = {- | A help page or the version line, to print as it stands: the command
+      line asked for it, so nothing else runs
+      -}
+      OpenHelp String
     | OpenCreate Mode CreateArgs
     | OpenInsert EntryArgs
     | OpenUpdate EntryArgs
@@ -151,25 +172,6 @@ parseOpenDatumWith = parseOpenDatumWithGroup (commonFlagGroup <> extraValuedFlag
 closedSwitch :: String
 closedSwitch = "--closed"
 
-{- | Split the closed switch out before the shared tokenizer, skipping the
-value of a valued flag so a key whose text is the switch stays a key.
--}
-splitClosed :: [String] -> [String] -> ([String], Bool)
-splitClosed valued = go [] False
-  where
-    go kept closed [] = (reverse kept, closed)
-    go kept closed (a : rest)
-        | isValuedNoEquals a = case rest of
-            (v : rest') -> go (v : a : kept) closed rest'
-            [] -> go (a : kept) closed []
-        | name == "--closed" = go kept True rest
-        | otherwise = go (a : kept) closed rest
-      where
-        (name, _) = break (== '=') a
-        isValuedNoEquals tok =
-            let (n, i) = break (== '=') tok
-            in  null i && n `elem` valued
-
 {- | Parse a command line with its environment over an explicit flag group:
 the tokenizer reads exactly these valued flags. The exported parser applies
 this to the common group (this binary owns no valued flag beyond it).
@@ -179,10 +181,47 @@ parseOpenDatumWithGroup
     -> [(String, String)]
     -> [String]
     -> Either CLIError OpenDatumCommand
-parseOpenDatumWithGroup group environment args = do
-    let (argsNoClosed, hasClosed) = splitClosed group args
-    (words', flags) <-
-        tokenizeWith RemovedSetting BadValue group argsNoClosed
+parseOpenDatumWithGroup group environment args =
+    readFlags group args >>= commandFrom environment
+
+{- | Read a command line over the valued flags this binary owns, with the
+switches every binary reads and the closed switch. The reading is the
+library's; what a flag means, and which command refuses it, is the command's.
+-}
+readFlags :: [String] -> [String] -> Either CLIError Raw
+readFlags group =
+    first (refusalAs RemovedSetting BadValue "singular")
+        . readLine
+            Accepted
+                { acceptedValued = group
+                , acceptedEarly = []
+                , acceptedSwitches = commonSwitches <> [closedSwitch, "--version"]
+                }
+
+{- | What a command line read flat asks for. The switches are taken out of
+the flags, which keep their first occurrence first, as the commands read them.
+-}
+commandFrom
+    :: [(String, String)] -> Raw -> Either CLIError OpenDatumCommand
+commandFrom environment (Raw ws allFlags) = do
+    let hasClosed = any ((== closedSwitch) . fst) allFlags
+        flags =
+            [ flag
+            | flag@(name, _) <- allFlags
+            , name `notElem` [closedSwitch, "--version"]
+            ]
+        askedFor =
+            OpenHelp
+                ( helpText
+                    (openDatumProgram openDatumVersion)
+                    environment
+                    ( fst
+                        ( resolvePath
+                            (openDatumProgram openDatumVersion)
+                            (dropWhile (== "open-datum") ws)
+                        )
+                    )
+                )
     -- #528 slice 4: the packaged `open-datum` binary is invoked as
     -- `open-datum create|insert|...` (program plus a bare verb, as its
     -- usage, DEMO1.md and the journey all spell it). Accept that bare
@@ -190,58 +229,65 @@ parseOpenDatumWithGroup group environment args = do
     -- shared parser also recognises, normalising before every check so
     -- the create-only windows and the inspect-only `--outputs-at` keep
     -- their exact scope on both spellings.
-    let words'' = case words' of
+    let words'' = case ws of
             ["create"] -> ["open-datum", "create"]
             ["insert"] -> ["open-datum", "insert"]
             ["update"] -> ["open-datum", "update"]
             ["terminate"] -> ["open-datum", "terminate"]
             ["fold"] -> ["open-datum", "fold"]
             ["inspect"] -> ["open-datum", "inspect"]
-            _ -> words'
-    if "--help" `elem` map fst flags || "-h" `elem` map fst flags
-        then Right OpenHelp
+            _ -> ws
+    if "--help" `elem` map fst flags
+        then Right askedFor
         else
-            if hasClosed
-                then case words'' of
-                    ["open-datum", "create"] ->
-                        refuseWindows words'' flags
-                            >> refuseOutputsAt words'' flags
-                            >> refuseSpendingFlags "create" flags
-                            >> refuseRequest flags
-                            >> refuseFold flags
-                            >> (OpenCreate Closed <$> createArgs flags)
-                    _ ->
-                        Left
-                            ( BadValue
-                                "--closed"
-                                "is an open-datum create flag: a registry's mode is chosen at create and read from the chain by every later command"
-                            )
+            if any ((== "--version") . fst) allFlags
+                then
+                    Right
+                        ( OpenHelp
+                            (identityLine (openDatumProgram openDatumVersion) environment <> "\n")
+                        )
                 else
-                    refuseWindows words'' flags >> refuseOutputsAt words'' flags >> case words'' of
-                        [] -> Right OpenHelp
-                        ["open-datum"] -> Right OpenHelp
-                        ["open-datum", "create"] ->
-                            refuseSpendingFlags "create" flags
-                                >> refuseRequest flags
-                                >> refuseFold flags
-                                >> (OpenCreate Open <$> createArgs flags)
-                        ["open-datum", "insert"] ->
-                            refuseRequest flags >> (OpenInsert <$> insertArgs environment flags)
-                        ["open-datum", "update"] ->
-                            refuseRequest flags
-                                >> refuseDeposit flags
-                                >> (OpenUpdate <$> entryArgs False (Just "--payload") environment flags)
-                        ["open-datum", "terminate"] ->
-                            refuseRequest flags
-                                >> refuseDeposit flags
-                                >> (OpenTerminate <$> entryArgs True Nothing environment flags)
-                        ["open-datum", "fold"] -> OpenFold <$> foldArgs environment flags
-                        ["open-datum", "inspect"] ->
-                            refuseSpendingFlags "inspect" flags
-                                >> refuseRequest flags
-                                >> refuseFold flags
-                                >> (OpenInspect <$> inspectArgs environment flags)
-                        _ -> Left (UnknownCommand words')
+                    if hasClosed
+                        then case words'' of
+                            ["open-datum", "create"] ->
+                                refuseWindows words'' flags
+                                    >> refuseOutputsAt words'' flags
+                                    >> refuseSpendingFlags "create" flags
+                                    >> refuseRequest flags
+                                    >> refuseFold flags
+                                    >> (OpenCreate Closed <$> createArgs flags)
+                            _ ->
+                                Left
+                                    ( BadValue
+                                        "--closed"
+                                        "is an open-datum create flag: a registry's mode is chosen at create and read from the chain by every later command"
+                                    )
+                        else
+                            refuseWindows words'' flags >> refuseOutputsAt words'' flags >> case words'' of
+                                [] -> Right askedFor
+                                ["open-datum"] -> Right askedFor
+                                ["open-datum", "create"] ->
+                                    refuseSpendingFlags "create" flags
+                                        >> refuseRequest flags
+                                        >> refuseFold flags
+                                        >> (OpenCreate Open <$> createArgs flags)
+                                ["open-datum", "insert"] ->
+                                    refuseRequest flags >> (OpenInsert <$> insertArgs environment flags)
+                                ["open-datum", "update"] ->
+                                    refuseRequest flags
+                                        >> refuseDeposit flags
+                                        >> (OpenUpdate <$> entryArgs False (Just "--payload") environment flags)
+                                ["open-datum", "terminate"] ->
+                                    refuseRequest flags
+                                        >> refuseDeposit flags
+                                        >> (OpenTerminate <$> entryArgs True Nothing environment flags)
+                                ["open-datum", "fold"] -> OpenFold <$> foldArgs environment flags
+                                ["open-datum", "inspect"] ->
+                                    refuseSpendingFlags "inspect" flags
+                                        >> refuseRequest flags
+                                        >> refuseFold flags
+                                        >> (OpenInspect <$> inspectArgs environment flags)
+                                _ -> Left (UnknownCommand ws)
   where
     refuseWindows words' flags =
         unless (words' == ["open-datum", "create"]) $
@@ -552,10 +598,14 @@ before any token/key file is read or any provider effect is run.
 -}
 parseOpenDatumCommandWithEnvironment
     :: [(String, String)] -> [String] -> Either CLIError OpenDatumCommand
-parseOpenDatumCommandWithEnvironment environment args = do
+parseOpenDatumCommandWithEnvironment environment args =
+    refuseObsoleteEnvironment environment
+        >> parseOpenDatumWith environment args
+
+refuseObsoleteEnvironment :: [(String, String)] -> Either CLIError ()
+refuseObsoleteEnvironment environment =
     when (isJust (lookup "SINGULAR_NODE_SOCKET" environment)) $
         Left (RemovedSetting "SINGULAR_NODE_SOCKET")
-    parseOpenDatumWith environment args
 
 {- | A whole command line: the command, and the tracing it asks for with
 @--trace@, @--trace-to@ and @--trace-format@. Every command takes the three.
@@ -565,14 +615,17 @@ parseOpenDatumInvocation
     -> [String]
     -> Either CLIError (OpenDatumCommand, TraceRequest)
 parseOpenDatumInvocation environment args = do
-    (rest, request) <- splitTracingFor BadValue extraValuedFlags args
-    command <- parseOpenDatumCommandWithEnvironment environment rest
+    raw <-
+        readFlags (commonFlagGroup <> extraValuedFlags <> traceFlags) args
+    let (tracing, rest) =
+            partition ((`elem` traceFlags) . fst) (rawFlags raw)
+    request <-
+        traceRequestFrom BadValue [(name, v) | (name, Just v) <- tracing]
+    refuseObsoleteEnvironment environment
+    command <- commandFrom environment raw{rawFlags = rest}
     pure (command, request)
 
-{- | The tokenizing, tracing and settings readers live in the shared flag
-group, called with the extras below; this parser keeps none of its own.
-This binary owns no valued flag beyond the common group.
--}
+-- | The valued flags this binary owns beyond the common group: none.
 extraValuedFlags :: [String]
 extraValuedFlags = []
 
@@ -616,153 +669,24 @@ renderCLIError = \case
             <> command
             <> "`: only insert, update, terminate and fold enforce it, and a constraint the command does not enforce is refused, never ignored"
 
--- | The supported commands.
+-- | The overview of the supported commands: the page `open-datum --help` prints.
 openDatumUsage :: String
-openDatumUsage =
-    unlines
-        [ "usage:"
-        , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--preview] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "  open-datum create [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "  open-datum create --preview [--closed] [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  open-datum insert [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  open-datum insert --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON [--deposit LOVELACE]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum update [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --payload DATUM_JSON"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum update --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      (--key KEY | --key-hex HEX) --payload DATUM_JSON"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  open-datum terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  open-datum terminate [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE] [--fold]"
-        , "  open-datum terminate --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      (--key KEY | --key-hex HEX)"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  open-datum inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
-        , "      [--wallet-address ADDR]"
-        , ""
-        , "Every command but create names its registry by the state token POLICY.NAME,"
-        , "the policy and the name in hex, which create prints; when the flag is absent"
-        , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry."
-        , "No command takes a per-registry directory. Each command keeps its own"
-        , "journal and submissions under a managed state directory it resolves itself:"
-        , "the platform per-user state location (XDG_STATE_HOME, falling back to"
-        , "$HOME/.local/state, namespace singular), partitioned by network, complete"
-        , "state token and the caller's stable wallet payment identity. The same"
-        , "identity reuses its journal and lock across invocations and key-file"
-        , "relocation; different wallets and tokens never share one. A configured"
-        , "root overrides only the default root, with the same partitioning."
-        , "A command finds"
-        , "the reference scripts its transactions run by hash, from the provider and then"
-        , "its own wallet."
-        , "create takes positive integer windows in milliseconds. Its processing window"
-        , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
-        , "for the life of the registry; create and inspect report them from the state datum."
-        , "Create takes the closed switch to boot a closed-datum registry whose payload"
-        , "is written once; every later command follows the registry's mode with no"
-        , "further flag, and an update on a closed registry stops before anything is"
-        , "built or signed."
-        , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
-        , "the command stops with its submission journalled and never resubmits."
-        , "Every command uses Koios; former backend selectors and socket settings are refused."
-        , "Every command also takes --koios-token-file FILE for a bearer credential;"
-        , "the shared HTTP client reads it without exposing a command-line token."
-        , "Every command also takes --network-time DIR for pinned time-manifest.json,"
-        , "shelley-genesis.json and era-history.cbor; preprod uses the package when omitted."
-        , "Every command also takes --trace off|what|how, --trace-to stderr|file:PATH and --trace-format text|json:"
-        , "it narrates its protocol steps, and at how their mechanics, to each sink named, the"
-        , "option repeated per sink, or to standard error. With no level named it narrates what"
-        , "on a terminal and nothing otherwise; text goes to standard error and JSON lines to a"
-        , "file unless a format is named. Standard output carries the receipt alone."
-        , "insert and terminate book the request and leave it pending: the application's"
-        , "fold is its own command, open-datum fold, run by whichever wallet folds, before"
-        , "the processing deadline the booking's receipt names. Given the fold switch,"
-        , "either also folds, in the same command, once its booking confirms."
-        , "insert, update, terminate and fold fund and collateralise from the funding"
-        , "input named, and hold to the maximum outlay stated: a booking, update or"
-        , "fold past it is not signed, and a combined insert or terminate whose fold,"
-        , "built after its booking confirms, costs more than the booking left of it stops"
-        , "partial, its request pending, with the fold unsigned. create and inspect"
-        , "refuse both settings: they enforce neither."
-        , "The preview forms name the caller by a public wallet address instead of a"
-        , "signing key: they build and measure what they would submit, print it, and"
-        , "sign, submit and journal nothing."
-        , "A registry key is 1 to 32 bytes: KEY is read as text, its UTF-8 bytes, and HEX as"
-        , "base16. A key is named once, by one of the two."
-        , "inspect also lists the registry's pending requests with what each actually locks,"
-        , "and the outputs at a public address it is given: reads apart from any write."
-        , "Each command prints one JSON receipt on standard output. inspect reads"
-        , "only: it takes no signing key and submits nothing. Given a wallet address"
-        , "it reconciles that caller's managed journal, as a write would; without one"
-        , "it is a stateless chain read that checks no wallet journal and creates"
-        , "no state."
-        ]
+openDatumUsage = helpText (openDatumProgram openDatumVersion) [] []
+
+-- | The help page of a command, for no environment: the overview for no path.
+openDatumHelp :: [String] -> String
+openDatumHelp = helpText (openDatumProgram openDatumVersion) []
+
+-- | The version the program was built as.
+openDatumVersion :: Version
+openDatumVersion = Paths.version
+
+{- | What a refused command line adds below the refusal: the nearest command
+when a word was mistyped, the usage of the command it was heading for and
+where its help is.
+-}
+openDatumHint :: [String] -> [String]
+openDatumHint = hintLines (openDatumProgram openDatumVersion)
 
 {- | The reference roles a command's transactions run, and so the only
 references it looks up.
@@ -779,6 +703,6 @@ neededRoles = \case
         | otherwise -> Set.singleton RoleApplication
     OpenFold _ -> everything
     OpenInspect _ -> Set.empty
-    OpenHelp -> Set.empty
+    OpenHelp _ -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]

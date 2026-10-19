@@ -1,0 +1,21 @@
+singular VERSION (commit unknown)
+
+Usage: singular registry COMMAND
+
+Create a registry and act on it
+
+The registry commands name a registry by its state token, which create prints;
+every command but create takes it from --state-token or from
+SINGULAR_STATE_TOKEN.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+Available commands:
+  create     Boot a registry, or preview its identity      
+  fold       Fold the pending requests into the registry   
+  reject     Reject all pending requests past their windows
+  reclaim    Take back your own pending request            
+  inspect    Read the registry and a key back              
+  describe   Print the registry page                       

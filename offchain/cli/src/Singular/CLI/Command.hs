@@ -56,6 +56,8 @@ module Singular.CLI.Command
     , parseWithGroup
     , renderCLIError
     , usage
+    , singularVersion
+    , singularHint
     , maxKeyBytes
     , keyFlags
 
@@ -80,12 +82,13 @@ import Data.Char
     , generalCategory
     , isDigit
     )
-import Data.List (stripPrefix)
+import Data.List (partition)
 import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Version (Version)
 import Data.Word (Word32)
 import GHC.Generics (Generic)
 import System.Exit (ExitCode (..))
@@ -94,20 +97,32 @@ import Text.Read (readMaybe)
 
 import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Ledger.TxIn (TxIn)
+import Paths_singular_registry qualified as Paths
 import Singular.CLI.FlagGroup
     ( Signer (..)
     , commonFlagGroup
+    , commonSwitches
     , parseFlagGroup
     , readProviderSettings
-    , splitTracingFor
-    , tokenizeWith
+    , traceFlags
+    , traceRequestFrom
     )
+import Singular.CLI.Help (singularHelp, singularProgram)
 import Singular.CLI.Key
     ( KeyEncoding (..)
     , KeyRefusal (..)
     , keyFlags
     , maxKeyBytes
     , readKey
+    )
+import Singular.CLI.Options
+    ( Accepted (..)
+    , Raw (..)
+    , hintLines
+    , identityLine
+    , readLine
+    , refusalAs
+    , resolvePath
     )
 import Singular.CLI.Passphrase
     ( Confirmation (..)
@@ -385,7 +400,10 @@ data SubmitArgs = SubmitArgs
 
 -- | One parsed command line.
 data Command
-    = Help
+    = {- | A help page or the version line, to print as it stands: the command
+      line asked for it, so nothing else runs
+      -}
+      Help String
     | Create CreateArgs (Maybe ApplicationPolicy)
     | Describe DescribeArgs
     | Fold FoldArgs
@@ -430,69 +448,109 @@ parseWith :: [(String, String)] -> [String] -> Either CLIError Command
 parseWith = parseWithGroup (commonFlagGroup <> extraValuedFlags)
 
 {- | Parse a command line with its environment over an explicit flag group:
-the tokenizer reads exactly these valued flags. The exported parser applies
-this to the common group plus this binary's extras.
+the command line is read over exactly these valued flags. The exported
+parser applies this to the common group plus this binary's extras.
 -}
 parseWithGroup
     :: [String] -> [(String, String)] -> [String] -> Either CLIError Command
-parseWithGroup group environment args = do
-    let (jsonSwitch, unswitched) = splitJson args
-    (witnesses, plainArgs) <- splitWitnesses group unswitched
-    (words', flags) <-
-        tokenizeWith RemovedSetting BadValue group plainArgs
-    if "--help" `elem` map fst flags || "-h" `elem` map fst flags
-        then Right Help
+parseWithGroup group environment args =
+    readFlags group args >>= commandFrom environment
+
+{- | Read a command line over the valued flags a binary owns, with the
+switches every binary reads. The reading is the library's; what a flag
+means, and which command refuses it, is the command's.
+-}
+readFlags :: [String] -> [String] -> Either CLIError Raw
+readFlags group =
+    first (refusalAs RemovedSetting BadValue "singular")
+        . readLine
+            Accepted
+                { acceptedValued = group <> ["--witnesses"]
+                , acceptedEarly = ["--json"]
+                , acceptedSwitches = commonSwitches <> ["--version"]
+                }
+
+{- | What a command line read flat asks for. The switches and the repeated
+@--witnesses@ are taken out of the flags, which keep their first occurrence
+first, as the commands read them.
+-}
+commandFrom :: [(String, String)] -> Raw -> Either CLIError Command
+commandFrom environment (Raw ws allFlags) = do
+    let jsonSwitch = any ((== "--json") . fst) allFlags
+        witnesses = [v | ("--witnesses", Just v) <- allFlags]
+        flags =
+            [ flag
+            | flag@(name, _) <- allFlags
+            , name `notElem` ["--json", "--witnesses", "--version"]
+            ]
+        helpAsked = "--help" `elem` map fst flags
+        askedFor =
+            Help
+                ( singularHelp
+                    singularVersion
+                    environment
+                    (fst (resolvePath (singularProgram singularVersion) ws))
+                )
+    if helpAsked
+        then Right askedFor
         else
-            refuseWindows words' flags
-                >> refuseOutputsAt words' flags
-                >> refuseJson words' jsonSwitch
-                >> refuseWitnesses words' witnesses
-                >> refuseWalletSettings words' flags
-                >> case words' of
-                    [] -> Right Help
-                    ["registry"] -> Right Help
-                    ["wallet"] -> Right Help
-                    ["wallet", "create"] ->
-                        refuseWalletCommandSettings "wallet create" flags
-                            >> (WalletCreate <$> walletArgs flags)
-                    ["wallet", "address"] ->
-                        refuseWalletCommandSettings "wallet address" flags
-                            >> (WalletAddress <$> walletArgs flags)
-                    ["wallet", "sign", bundle] ->
-                        refuseWalletCommandSettings "wallet sign" flags
-                            >> (WalletSign <$> signArgs bundle flags)
-                    ["wallet", "sign"] ->
-                        Left (MissingFlag "BUNDLE")
-                    ["submit", bundle] ->
-                        SubmitBundle <$> submitArgs bundle witnesses flags
-                    ["submit"] ->
-                        Left (MissingFlag "BUNDLE")
-                    ["registry", "create"] ->
-                        refuseSpendingFlags "create" flags
-                            >> refuseRequest flags
-                            >> refuseFold flags
-                            >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
-                    ["registry", "fold"] ->
-                        refuseApplicationPolicy flags
-                            >> (Fold <$> foldArgs environment flags)
-                    ["registry", "reject"] ->
-                        refuseApplicationPolicy flags
-                            >> (Reject <$> rejectArgs environment flags)
-                    ["registry", "reclaim"] ->
-                        refuseApplicationPolicy flags
-                            >> (Reclaim <$> reclaimArgs environment flags)
-                    ["registry", "inspect"] ->
-                        refuseApplicationPolicy flags
-                            >> refuseSpendingFlags "inspect" flags
-                            >> refuseBundle "registry inspect" flags
-                            >> refuseRequest flags
-                            >> refuseFold flags
-                            >> (Inspect <$> inspectArgs environment flags)
-                    ["registry", "describe"] ->
-                        refuseApplicationPolicy flags
-                            >> refuseDescribeSettings flags
-                            >> (Describe <$> describeArgs environment flags jsonSwitch)
-                    _ -> Left (UnknownCommand words')
+            if any ((== "--version") . fst) allFlags
+                then
+                    Right
+                        ( Help
+                            (identityLine (singularProgram singularVersion) environment <> "\n")
+                        )
+                else
+                    refuseWindows ws flags
+                        >> refuseOutputsAt ws flags
+                        >> refuseJson ws jsonSwitch
+                        >> refuseWitnesses ws witnesses
+                        >> refuseWalletSettings ws flags
+                        >> case ws of
+                            [] -> Right askedFor
+                            ["registry"] -> Right askedFor
+                            ["wallet"] -> Right askedFor
+                            ["wallet", "create"] ->
+                                refuseWalletCommandSettings "wallet create" flags
+                                    >> (WalletCreate <$> walletArgs flags)
+                            ["wallet", "address"] ->
+                                refuseWalletCommandSettings "wallet address" flags
+                                    >> (WalletAddress <$> walletArgs flags)
+                            ["wallet", "sign", bundle] ->
+                                refuseWalletCommandSettings "wallet sign" flags
+                                    >> (WalletSign <$> signArgs bundle flags)
+                            ["wallet", "sign"] ->
+                                Left (MissingFlag "BUNDLE")
+                            ["submit", bundle] ->
+                                SubmitBundle <$> submitArgs bundle witnesses flags
+                            ["submit"] ->
+                                Left (MissingFlag "BUNDLE")
+                            ["registry", "create"] ->
+                                refuseSpendingFlags "create" flags
+                                    >> refuseRequest flags
+                                    >> refuseFold flags
+                                    >> (Create <$> createArgs flags <*> applicationPolicyFrom flags)
+                            ["registry", "fold"] ->
+                                refuseApplicationPolicy flags
+                                    >> (Fold <$> foldArgs environment flags)
+                            ["registry", "reject"] ->
+                                refuseApplicationPolicy flags
+                                    >> (Reject <$> rejectArgs environment flags)
+                            ["registry", "reclaim"] ->
+                                refuseApplicationPolicy flags
+                                    >> (Reclaim <$> reclaimArgs environment flags)
+                            ["registry", "inspect"] ->
+                                refuseApplicationPolicy flags
+                                    >> refuseSpendingFlags "inspect" flags
+                                    >> refuseBundle "registry inspect" flags
+                                    >> refuseRequest flags
+                                    >> refuseFold flags
+                                    >> (Inspect <$> inspectArgs environment flags)
+                            ["registry", "describe"] ->
+                                refuseApplicationPolicy flags
+                                    >> refuseDescribeSettings flags
+                                    >> (Describe <$> describeArgs environment flags jsonSwitch)
+                            _ -> Left (UnknownCommand ws)
   where
     -- @--witnesses@ names what @submit@ sends; any other command refuses
     -- it by name rather than ignore it.
@@ -986,10 +1044,13 @@ before any token/key file is read or any provider effect is run.
 -}
 parseCommandWithEnvironment
     :: [(String, String)] -> [String] -> Either CLIError Command
-parseCommandWithEnvironment environment args = do
+parseCommandWithEnvironment environment args =
+    refuseObsoleteEnvironment environment >> parseWith environment args
+
+refuseObsoleteEnvironment :: [(String, String)] -> Either CLIError ()
+refuseObsoleteEnvironment environment =
     when (isJust (lookup "SINGULAR_NODE_SOCKET" environment)) $
         Left (RemovedSetting "SINGULAR_NODE_SOCKET")
-    parseWith environment args
 
 {- | A whole command line: the command, and the tracing it asks for with
 @--trace@, @--trace-to@ and @--trace-format@. Every command takes the three.
@@ -999,47 +1060,21 @@ parseInvocation
     -> [String]
     -> Either CLIError (Command, TraceRequest)
 parseInvocation environment args = do
-    (rest, request) <- splitTracingFor BadValue extraValuedFlags args
-    command <- parseCommandWithEnvironment environment rest
+    raw <-
+        readFlags (commonFlagGroup <> extraValuedFlags <> traceFlags) args
+    let (tracing, rest) =
+            partition ((`elem` traceFlags) . fst) (rawFlags raw)
+    request <-
+        traceRequestFrom BadValue [(name, v) | (name, Just v) <- tracing]
+    refuseObsoleteEnvironment environment
+    command <- commandFrom environment raw{rawFlags = rest}
     pure (command, request)
 
-{- | The tokenizing, tracing and settings readers live in the shared flag
-group, called with the extras below; this parser keeps none of its own.
-The one valued flag this binary owns beyond the common group: create
-pins an application policy, and no other command reads it.
+{- | The valued flags this binary owns beyond the common group: create pins
+an application policy, and the wallet commands name an output directory.
 -}
 extraValuedFlags :: [String]
 extraValuedFlags = ["--application-policy", "--out"]
-
-{- | Split the @--json@ switch off a command line: describe reads it, no
-other command takes it. Only the exact switch is taken; anything else
-spells a value or is refused by the tokenizer. A @--key@ value spelled
-exactly @--json@ is taken as the switch: spell those bytes with
-@--key-hex@.
--}
-splitJson :: [String] -> (Bool, [String])
-splitJson args = ("--json" `elem` args, filter (/= "--json") args)
-
-{- | Split the repeated @--witnesses@ values off a command line, in the
-order given: submit reads them all, no other command takes one. A
-valued flag of the group keeps its next token, so a value spelled like
-the flag stays a value.
--}
-splitWitnesses
-    :: [String] -> [String] -> Either CLIError ([FilePath], [String])
-splitWitnesses group = go [] []
-  where
-    go found kept = \case
-        [] -> Right (reverse found, reverse kept)
-        a : rest
-            | a == "--witnesses" -> case rest of
-                v : rest' -> go (v : found) kept rest'
-                [] -> Left (BadValue "--witnesses" "needs a value")
-            | Just v <- stripPrefix "--witnesses=" a -> go (v : found) kept rest
-            | a `elem` group
-            , v : rest' <- rest ->
-                go found (v : a : kept) rest'
-            | otherwise -> go found (a : kept) rest
 
 -- | One line naming the refusal.
 renderCLIError :: CLIError -> String
@@ -1076,164 +1111,20 @@ renderCLIError = \case
         flag
             <> " is not accepted by `registry describe`: describe reads the public registry and writes nothing"
 
--- | The supported commands.
+-- | The overview of the supported commands: the page `singular --help` prints.
 usage :: String
-usage =
-    unlines
-        [ "usage:"
-        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--preview] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "  singular registry create [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "  singular registry create --preview [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      [--seed TXID#IX] [--application-policy HEX] [--process-time MS] [--retract-time MS]"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR"
-        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "  singular registry fold [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "      [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "  singular registry reclaim [--state-dir ROOT] --blueprint PLUTUS_JSON --request TXID#IX"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --wallet-address ADDR --bundle FILE"
-        , "  singular registry reject [--state-dir ROOT] --blueprint PLUTUS_JSON"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N --vault FILE [--passphrase-fd FD] [--receipt FILE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
-        , "  singular registry inspect [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
-        , "      --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N [--receipt FILE] [--outputs-at ADDR]"
-        , "      [--wallet-address ADDR]"
-        , "  singular registry describe --blueprint PLUTUS_JSON --state-token POLICY.NAME"
-        , "      --koios-url URL --network-magic N [--json]"
-        , "  singular wallet create --vault FILE --network-magic N [--passphrase-fd FD]"
-        , "  singular wallet address --vault FILE --network-magic N [--passphrase-fd FD]"
-        , "  singular wallet sign --vault FILE [--passphrase-fd FD] [--out DIR] BUNDLE"
-        , "  singular submit --witnesses FILE [--witnesses FILE ...] BUNDLE"
-        , "      --koios-url URL --network-magic N [--koios-token-file FILE]"
-        , "      [--network-time DIR] [--receipt FILE]"
-        , ""
-        , "Every command but create names its registry by the state token POLICY.NAME,"
-        , "the policy and the name in hex, which create prints; when the flag is absent"
-        , "it is read from SINGULAR_STATE_TOKEN. Nothing else names a registry."
-        , "No command takes a per-registry directory. Each command keeps its own"
-        , "journal and submissions under a managed state directory it resolves itself:"
-        , "the platform per-user state location (XDG_STATE_HOME, falling back to"
-        , "$HOME/.local/state, namespace singular), partitioned by network, complete"
-        , "state token and the caller's stable wallet payment identity. The same"
-        , "identity reuses its journal and lock across invocations and key-file"
-        , "relocation; different wallets and tokens never share one. A configured"
-        , "root overrides only the default root, with the same partitioning."
-        , "A command finds"
-        , "the reference scripts its transactions run by hash, from the provider and then"
-        , "its own wallet."
-        , "create takes positive integer windows in milliseconds. Its processing window"
-        , "defaults to 600000 (ten minutes), its retract window to 300000 (five minutes). Both are fixed"
-        , "for the life of the registry; create and inspect report them from the state datum."
-        , "Write commands also take --confirm-timeout SECONDS (default 600): past it"
-        , "the command stops with its submission journalled and never resubmits."
-        , "Every command uses Koios; former backend selectors and socket settings are refused."
-        , "The wallet commands are local: they take no provider, blueprint or registry"
-        , "setting, and refuse each by name. A wallet command draws a fresh payment"
-        , "signing key from the operating system's entropy, seals it into the vault"
-        , "path with the passphrase, and prints the enterprise address of the key for"
-        , "the network named; opening the same vault with the same passphrase prints"
-        , "the same address. The passphrase is read from the terminal with the echo"
-        , "off, twice on a creation, or as one line from an inherited descriptor. It"
-        , "is never taken as an argument, and no output, refusal or trace names it."
-        , "wallet sign witnesses a bundle of unsigned transactions offline: the"
-        , "bundle file is its one argument, the network comes from the bundle, and"
-        , "one witness file per transaction is written next to the bundle — or under"
-        , "the output directory the command names — each file named by its"
-        , "transaction's identity and created exclusively; a bundle whose recorded"
-        , "identities, deadlines or signers disagree with its transactions, or whose"
-        , "signers do not include this vault's address, is refused by name and"
-        , "nothing is written. No provider setting is read."
-        , "submit sends a bundle its signers witnessed. Each witness file, or each"
-        , ".witness file of a directory, is matched to a transaction by its signature,"
-        , "and every check runs before the first send: a witness for no transaction or"
-        , "for a key no transaction needs, a missing witness, an input found nowhere and"
-        , "a body the tip has expired (rebuild the bundle) are refused by name. The"
-        , "transactions the chain does not hold are sent in the bundle's order, each"
-        , "confirmed before the next; an uncertain answer stops the run as partial and"
-        , "nothing is sent again, so running it again sends only the rest. The receipt"
-        , "is read back from the chain. It takes no wallet key and no vault, and keeps"
-        , "no state."
-        , "Every registry command also takes --koios-token-file FILE for a bearer credential;"
-        , "the shared HTTP client reads it without exposing a command-line token."
-        , "Every registry command also takes --network-time DIR for pinned time-manifest.json,"
-        , "shelley-genesis.json and era-history.cbor; preprod uses the package when omitted."
-        , "Every command also takes --trace off|what|how, --trace-to stderr|file:PATH and --trace-format text|json:"
-        , "it narrates its protocol steps, and at how their mechanics, to each sink named, the"
-        , "option repeated per sink, or to standard error. With no level named it narrates what"
-        , "on a terminal and nothing otherwise; text goes to standard error and JSON lines to a"
-        , "file unless a format is named. Standard output carries the receipt alone."
-        , "reclaim takes back the owner's pending insertion or terminal-witness request,"
-        , "inside its retract window: the view's tip must reach the converted processing"
-        , "deadline; a converted retract deadline must still be ahead of the tip. An"
-        , "unconverted retract deadline stays open; an unconverted processing deadline"
-        , "does not prove opening. No host clock decides the window. The locked lovelace"
-        , "returns to the owner in one request-bound output; the root does not move."
-        , "An early refusal names when it opens; once closed, registry reject clears it."
-        , "reject clears the registry's pending requests, all or none: it is built only"
-        , "once every pending request is past both its windows, the processing window and"
-        , "the retract window after it, and until then it is refused, naming each request"
-        , "and when its retract window closes. Each owner is refunded the request's value"
-        , "less the tip in the one output designated for it; the wallet that runs it keeps"
-        , "the tip, and the registry's root does not move."
-        , "fold, reclaim and reject fund and collateralise from the funding"
-        , "input named, and hold to the maximum outlay stated: a reclaim, reject or"
-        , "fold past it is not signed. create and inspect"
-        , "refuse both settings: they enforce neither."
-        , "The preview forms name the caller by a public wallet address instead of a"
-        , "signing key: they build and measure what they would submit, print it, and"
-        , "sign, submit and journal nothing."
-        , "A registry key is 1 to 32 bytes: KEY is read as text, its UTF-8 bytes, and HEX as"
-        , "base16. A key is named once, by one of the two."
-        , "inspect also lists the registry's pending requests with what each actually locks,"
-        , "and the outputs at a public address it is given: reads apart from any write."
-        , "describe reads the registry page from the chain alone: which registry this is,"
-        , "which release it runs, what its rules are and what it holds now. It takes no"
-        , "wallet, key, state directory or other actor file: every such setting is refused"
-        , "by name before anything is read. With the json switch it prints the page as JSON,"
-        , "otherwise as text; a success prints the page alone and writes no file. The version"
-        , "label comes from the version file beside the blueprint and is refused by name when"
-        , "missing, unreadable or malformed."
-        , "Each command prints one JSON receipt on standard output. inspect reads"
-        , "only: it takes no signing key and submits nothing. Given a wallet address"
-        , "it reconciles that caller's managed journal, as a write would; without one"
-        , "it is a stateless chain read that checks no wallet journal and creates"
-        , "no state."
-        ]
+usage = singularHelp singularVersion [] []
+
+-- | The version the program was built as.
+singularVersion :: Version
+singularVersion = Paths.version
+
+{- | What a refused command line adds below the refusal: the nearest command
+when a word was mistyped, the usage of the command it was heading for and
+where its help is.
+-}
+singularHint :: [String] -> [String]
+singularHint = hintLines (singularProgram singularVersion)
 
 {- | The reference roles a command's transactions run, and so the only
 references it looks up.
@@ -1250,7 +1141,7 @@ neededRoles = \case
     WalletAddress _ -> Set.empty
     WalletSign _ -> Set.empty
     SubmitBundle _ -> Set.empty
-    Help -> Set.empty
+    Help _ -> Set.empty
   where
     everything = Set.fromList [minBound .. maxBound]
 

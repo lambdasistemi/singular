@@ -1,0 +1,29 @@
+open-datum VERSION (commit unknown)
+
+Usage: open-datum COMMAND
+
+Keep payloads under keys in an open-datum registry on Cardano: create the
+registry, insert, update and terminate keys, fold the pending requests, and
+read a key back.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  Output version information: VERSION
+  switch: --version
+
+All commands:
+  open-datum create           Boot a registry, or preview its identity
+  open-datum insert           Book a new key with its payload
+  open-datum update           Replace the payload of a key
+  open-datum terminate        Book the termination of a key
+  open-datum fold             Fold the pending requests into the registry
+  open-datum inspect          Read a key back, with its payload
+
+Help on one command: open-datum COMMAND --help
+Shell completion (bash): source <(open-datum --bash-completion-script "$(which open-datum)")
+  zsh and fish: --zsh-completion-script and --fish-completion-script instead.
+
+Every command takes --trace, --trace-to and --trace-format to narrate
+what it does; standard output carries the receipt alone.

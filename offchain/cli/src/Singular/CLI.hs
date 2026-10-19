@@ -29,7 +29,6 @@ import Singular.CLI.Command
     , ReclaimArgs (..)
     , RejectArgs (..)
     , SubmitArgs (..)
-    , usage
     , walletAddressCommand
     , walletCreateCommand
     , walletSignCommand
@@ -52,7 +51,7 @@ runCommand = runRegistryCommand
 -- | Run one registry command (was runCommand): create, fold, reject, reclaim, inspect, help; no insert, update or terminate.
 runRegistryCommand :: Application -> Env -> Command -> IO ExitCode
 runRegistryCommand app env = \case
-    Help -> putStr usage >> pure ExitSuccess
+    Help text -> putStr text >> pure ExitSuccess
     Create a policy ->
         finish
             (envTracer env)

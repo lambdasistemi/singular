@@ -10,6 +10,7 @@ import Singular.Application.OpenDatum.CommandRunSpec qualified
 import Singular.Application.OpenDatum.EnvelopeSpec qualified
 import Singular.Application.OpenDatum.FlagGroupExtentSpec qualified
 import Singular.Application.OpenDatum.FoldSpec qualified
+import Singular.Application.OpenDatum.HelpSnapshotSpec qualified
 import Singular.Application.OpenDatum.IndependentActorsSpec qualified
 import Singular.Application.OpenDatum.InsertEnvelopeSpec qualified
 import Singular.Application.OpenDatum.ManagedStateSpec qualified
@@ -70,6 +71,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.ParserCorpus" [Cli])
         Singular.Application.OpenDatum.ParserCorpusSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.HelpSnapshot" [Cli])
+        Singular.Application.OpenDatum.HelpSnapshotSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec
