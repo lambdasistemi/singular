@@ -10,7 +10,8 @@ use cardano/assets.{
   Value, from_asset, from_lovelace, lovelace_of, merge, tokens, zero,
 }
 use cardano/transaction.{
-  InlineDatum, Input, NoDatum, Output, OutputReference, Spend, Transaction,
+  Datum, InlineDatum, Input, NoDatum, Output, OutputReference, Spend,
+  Transaction,
 }
 use lib
 use open as open_policy
@@ -681,6 +682,70 @@ test tagged_fold_registration_refuses_a_carrier_with_another_datum() {
     },
     @"fold-destination-mismatch",
   )
+}
+
+// ---- a registration that carries a datum -------------------------------------
+//
+// The booked datum D rides in the request's inline datum; the carrier must hold
+// exactly `InlineDatum(D)` (`foldCarrierRefusal` compares the booked datum and
+// its datum form). The request below is one request: its input datum, its
+// trie-ready tag and its application tag are all derived from it, and its
+// destination is a script address. The accepting control is the real state
+// fold and the real request spend; each refusal changes only the carrier's
+// datum. The rows with no carried datum are `tagged_fold_state_folds_a_registration_inside_its_window`
+// (None, delivered with `NoDatum`) and
+// `tagged_fold_registration_refuses_a_carrier_with_another_datum` (None,
+// delivered with an unexpected inline datum). All of these are preservation
+// tests of a correct check and pass at once.
+
+fn carriedRequest() -> RegistrationRequest {
+  RegistrationRequest {
+    ..regRequest(),
+    destination: fx.recordAddress,
+    datum: Some(fx.recordDatum()),
+  }
+}
+
+fn carriedCaseDelivering(delivered: Datum) -> Case {
+  let r = carriedRequest()
+  Case {
+    ..regCase(),
+    members: [regMember(r, 0)],
+    outputs: [
+      fx.deliveryOutput(
+        fx.activePolicy,
+        r.key,
+        r.destination,
+        delivered,
+        r.carrier_ada,
+      ),
+      change(10_000_000 + r.declared_tip),
+    ],
+    mint: singular(r.key, 1)
+      |> merge(regTrieTag(r, -1))
+      |> merge(regApplicationTag(r, -1)),
+    donation: Some(r.registration_cost),
+  }
+}
+
+test tagged_fold_state_folds_a_registration_carrying_a_datum() {
+  stateFolds(carriedCaseDelivering(InlineDatum(fx.recordDatum())))
+}
+
+test tagged_fold_request_spend_contributes_a_registration_carrying_a_datum() {
+  let c = carriedCaseDelivering(InlineDatum(fx.recordDatum()))
+  contributes(c, onlyMember(c))
+}
+
+test tagged_fold_registration_refuses_a_carried_datum_delivered_as_another_datum() {
+  refusedAs(
+    carriedCaseDelivering(InlineDatum(fx.otherDatum())),
+    @"fold-destination-mismatch",
+  )
+}
+
+test tagged_fold_registration_refuses_a_carried_datum_delivered_with_none() {
+  refusedAs(carriedCaseDelivering(NoDatum), @"fold-destination-mismatch")
 }
 
 test tagged_fold_registration_refuses_a_missing_carrier() {

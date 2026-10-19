@@ -20,12 +20,23 @@
 ////   `fold-foreign-asset`);
 //// - `active_token_at_another_address_refuses`,
 ////   `active_token_with_another_datum_refuses`,
-////   `active_token_in_two_outputs_refuses`, the four carried-datum rows,
+////   `active_token_in_two_outputs_refuses`,
 ////   `destination_carrying_the_residual_accepts`,
 ////   `folder_keeping_the_residual_refuses`, `underfunded_destination_refuses`,
 ////   `carrier_at_another_address_refuses`, `funded_carrier_has_no_refusal`: the
 ////   carrier rows (`fold-destination-mismatch`, `destination-carrier-mismatch`)
 ////   and the gross allocation rows (`fold-unbalanced`, the funded fee);
+//// - the four carried-datum rows (`active_token_with_the_carried_datum_accepts`,
+////   `active_token_with_another_than_the_carried_datum_refuses`,
+////   `active_token_with_a_datum_where_none_is_carried_refuses`,
+////   `active_token_without_the_carried_datum_refuses`): the registration that
+////   carries a datum in `tagged_fold.tests.ak`
+////   (`tagged_fold_state_folds_a_registration_carrying_a_datum`,
+////   `tagged_fold_request_spend_contributes_a_registration_carrying_a_datum`,
+////   `tagged_fold_registration_refuses_a_carried_datum_delivered_as_another_datum`,
+////   `tagged_fold_registration_refuses_a_carried_datum_delivered_with_none`) and,
+////   for a request that carries none,
+////   `tagged_fold_registration_refuses_a_carrier_with_another_datum`;
 //// - the approval rows (`*_without_approval_refuses`, `wrong_*_approval_refuses`,
 ////   `foreign_policy_approval_refuses`) and `request_below_its_tip_refuses`,
 ////   `an_unadmitted_tag_never_walks_the_trie`: retired with the approval
