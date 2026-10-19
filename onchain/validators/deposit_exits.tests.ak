@@ -442,3 +442,44 @@ test early_reject_refund_to_a_script_in_the_retraction_window_refuses_by_name() 
 test early_reject_refund_missing_in_the_retraction_window_refuses_by_name() {
   refusesDepositReturned(rejectIn(fx.phase2(), []))
 }
+
+// ----------------------------------------------------------------------------
+// CP2 RED: the retired routes are refused as folds
+// ----------------------------------------------------------------------------
+//
+// The accepted fold has no state-spending rejection and no deposit returned
+// to the controller (`Economics/Fold.lean`): a legacy edge-only request is no
+// pending request, so a fold that holds only legacy requests has no member
+// and the state refuses it as `empty-fold`. Each fixture below is an
+// accepting row of this file, unchanged; the old expectation stays until the
+// GREEN retires it. The same state spend runs, and the reason is the one the
+// handler traces. The authentic tagged requests refused for `Rejected` are in
+// `tagged_fold.tests.ak`.
+
+fn refusesAsEmptyFold(s: Scenario) -> Bool {
+  !spend(s) && refusalOf(s) == Some(@"empty-fold")
+}
+
+test tagged_fold_retires_the_legacy_rejection_after_the_windows() {
+  refusesAsEmptyFold(reject([paid(fx.bookerAddress, fx.deposit)]))
+}
+
+test tagged_fold_retires_the_legacy_early_rejection_in_the_processing_window() {
+  refusesAsEmptyFold(
+    rejectIn(fx.phase1(), [paid(fx.bookerAddress, fx.deposit)]),
+  )
+}
+
+test tagged_fold_retires_the_legacy_early_rejection_in_the_retraction_window() {
+  refusesAsEmptyFold(
+    rejectIn(fx.phase2(), [paid(fx.bookerAddress, fx.deposit)]),
+  )
+}
+
+test tagged_fold_retires_the_controller_refund_termination() {
+  refusesAsEmptyFold(updateTerminal([paid(fx.bookerAddress, fx.deposit)]))
+}
+
+test tagged_fold_retires_two_controller_refund_terminations_in_one_fold() {
+  refusesAsEmptyFold(retireTwoActive([paid(fx.bookerAddress, fx.deposit * 2)]))
+}

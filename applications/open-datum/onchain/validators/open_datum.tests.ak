@@ -2005,3 +2005,47 @@ test closed_datum_termination_approval_is_retired() {
     ),
   ) == False
 }
+
+// ----------------------------------------------------------------------------
+// CP2 RED: the old Release route is refused
+// ----------------------------------------------------------------------------
+//
+// The accepted fold has no state-spending rejection, no deposit returned to
+// the controller and no approval-admitted request (`Economics/Fold.lean`).
+// The valid old release (`honestRelease`: a legacy terminate request, the live
+// output and the burn, folded together) is accepted today by both the state
+// spend and the `Release` arm. The old expectation
+// (`release_control_accepts_with_the_registry`) stays until the GREEN retires
+// it. Each row runs the real handler of its own boundary on that unchanged
+// transaction.
+
+/// The registry's fold: a legacy request is no pending request, so the fold
+/// has no member.
+test tagged_fold_retires_the_legacy_release_fold() {
+  let tx = honestRelease()
+  registryFolds(tx) == False && state.modifyRefusal(
+    theState(),
+    [UpdateAction([])],
+    stateInput(),
+    tx,
+  ) == Some(@"empty-fold")
+}
+
+/// The application's `Release` arm refuses the old route whatever the state
+/// does with it.
+test tagged_fold_retires_the_legacy_release_arm() {
+  release(honestRelease()) == False
+}
+
+/// The old split payments to the controller refuse the same way.
+test tagged_fold_retires_the_legacy_release_with_split_payments() {
+  let tx =
+    releaseTx(
+      theState(),
+      terminateRequest(controller, fx.keyA),
+      UpdateAction([]),
+      [payController(fx.deposit), payController(appDeposit)],
+      theBurn(),
+    )
+  registryFolds(tx) == False && release(tx) == False
+}
