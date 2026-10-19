@@ -16,6 +16,9 @@
 # folds, naming the preparation in its receipt and journal. On base it exits
 # 10 with the "no ada-only UTxO" refusal. Short-wallet and allowance legs land
 # in phase 2 with the judgement.
+# Dave's leg (the booking's own legs, below) gets its wallet shape from a
+# harness setup step, `devnet carry`: setup only, never booking evidence;
+# every product command that leg then runs is asserted as before.
 # Every assertion reads receipts, the target directory's own journal and files,
 # and the chain probe or the provider — never a typed value.
 #
@@ -524,9 +527,10 @@ say "the journal is unchanged across eve's refused folds"
 # ------------------------------------------------------------------
 
 # Dave reaches the rehearsal shape in his own registry: he creates from
-# his single funded output, Bob books two insertions, Dave rejects both,
-# and his change carries the approvals beside his ada with no ada-only
-# output left. His registry keeps Carol's untouched.
+# his single funded output, then a harness setup step leaves his wallet
+# with no ada-only output and two unrelated asset kinds. The setup is
+# the harness's, not a product command, and is never booking evidence.
+# His registry keeps Carol's untouched.
 orun dave-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 60000 \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
 dave_token="$(field dave-create .stateToken)"
@@ -535,23 +539,16 @@ dave_addr="$(field dave-create .wallet)"
 davekey="$(field dave-create .walletKeyHash)"
 say "dave's one-output create made registry $dave_token"
 davecommon=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$dave_token")
-orun dave-bob-insert-k success -- insert --key keyPrepareK --payload "$work/payload-insert.json" \
-  "${davecommon[@]}" "${node[@]}" "${bob[@]}"
-orun dave-bob-insert-l success -- insert --key keyPrepareL --payload "$work/payload-insert.json" \
-  "${davecommon[@]}" "${node[@]}" "${bob[@]}"
-say "bob booked keyPrepareK and keyPrepareL in dave's registry"
-deadline_k_ms="$(jq -er .foldDeadline.posixMs "$receipts/dave-bob-insert-k.json")"
-deadline_l_ms="$(jq -er .foldDeadline.posixMs "$receipts/dave-bob-insert-l.json")"
-[ "$deadline_l_ms" -gt "$deadline_k_ms" ] && deadline_k_ms="$deadline_l_ms"
-dave_retract_ms="$(jq -er .retractTime "$receipts/dave-create.json")"
-dave_retract_ends=$((deadline_k_ms + dave_retract_ms))
-dave_wait_ms=$((dave_retract_ends + 3000 - $(date +%s%3N)))
-if [ "$dave_wait_ms" -gt 0 ]; then
-  say "waiting $((dave_wait_ms / 1000 + 1)) s for dave's retract window to close"
-  sleep $((dave_wait_ms / 1000 + 1))
-fi
-srun dave-reject success -- registry reject "${davecommon[@]}" "${node[@]}" "${dave[@]}"
-say "dave rejected: $(field dave-reject .reject)"
+# SETUP, not a booking: the harness spends dave's ada-only outputs, mints
+# one unit of each of two asset kinds under a policy only dave's key can
+# satisfy, and pays two outputs back to him, neither ada-only. Its receipt
+# says harness-mint; no booking receipt below counts it.
+"$devnet" carry "${node[@]}" --wallet-skey "$work/dave.skey" \
+  --receipt "$receipts/dave-carry.json" 2>"$receipts/dave-carry.err" \
+  || setup_fail "the harness setup step failed for dave: $(head -n 3 "$receipts/dave-carry.err" || true)"
+jq -e '.setup == "harness-mint" and (.kinds | length) == 2' "$receipts/dave-carry.json" >/dev/null \
+  || setup_fail "dave's setup receipt is not a two-kind harness-mint: $(cat "$receipts/dave-carry.json")"
+say "setup, not a booking: the harness minted dave's two asset kinds in $(jq -r .transaction "$receipts/dave-carry.json")"
 wallet_utxos "$dave_addr" "$work/dave-utxos.json" >"$work/dave-utxo-lines.txt"
 dave_ada_only="$(awk '$3 == 0 && $4 == "none"' "$work/dave-utxo-lines.txt" | wc -l)"
 [ "$dave_ada_only" -eq 0 ] || fail "dave's wallet holds $dave_ada_only ada-only outputs, expected none: $(cat "$work/dave-utxo-lines.txt")"
@@ -560,8 +557,8 @@ jq -e --arg a "$dave_addr" '[.[] | select(.address == $a)] | (length > 0) and al
   || fail "the provider's answer for dave names no assets on some output: $(jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | {output: "\(.tx_hash)#\(.tx_index)", assets: .asset_list}]' "$work/dave-utxos.json")"
 jq -e --arg a "$dave_addr" '[.[] | select(.address == $a) | .asset_list[] | "\(.policy_id).\(.asset_name)"] | unique | length > 1' \
   "$work/dave-utxos.json" >/dev/null \
-  || fail "dave's wallet does not hold both approval kinds: $(jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | {output: "\(.tx_hash)#\(.tx_index)", assets: [.asset_list[] | "\(.policy_id).\(.asset_name)x\(.quantity)"]}]' "$work/dave-utxos.json")"
-say "dave's wallet is token-only, holding both approval kinds"
+  || fail "dave's wallet does not hold both setup asset kinds: $(jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | {output: "\(.tx_hash)#\(.tx_index)", assets: [.asset_list[] | "\(.policy_id).\(.asset_name)x\(.quantity)"]}]' "$work/dave-utxos.json")"
+say "dave's wallet is token-only, holding both setup asset kinds"
 
 # The booking preview from the token-only wallet: it plans the
 # preparation without submitting anything; the journal and the wallet

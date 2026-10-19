@@ -804,6 +804,8 @@ jobs:
       # actor, reject) and fold the termination. Fails on base with the
       # exit-10 "no ada-only UTxO" refusal; passes with one preparation
       # transaction, tokens exact after, references live, journalled.
+      # Dave's wallet shape comes from the harness setup step `devnet
+      # carry` (setup only, never booking evidence), not from a reject.
       - name: Run the prepare-funding rehearsal on its own fresh devnet
         run: nix run --quiet .#demo1-cli-prepare-funding
   demo1-two-actor-control:
