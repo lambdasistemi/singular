@@ -1,42 +1,10 @@
-import Singular.Model
+import Singular.Economics.World
 
-/-! # The open-datum application
-
-An application pinned by a registry as its application policy. One script is
-both the approval policy the registry reads and the spending contract that holds
-each active token it certifies:
-
-* insertion: the controller authorizes, at booking, one approval binding the
-  registry key, itself as owner, and a destination that names this contract and
-  the hash of a control envelope with an arbitrary payload; the permissionless
-  registry fold then delivers the active token and the insertion deposit to that
-  destination, where they stay;
-* update: the controller changes the payload; protected control, token and
-  deposit floor are preserved at the same contract;
-* termination: the controller authorizes, at booking, an `updateTerminal`
-  approval for the same key while the token stays locked; the registry fold of
-  that request burns the token, commits Terminal, and only in that same
-  transaction releases the protected deposit, paid additively with what the
-  registry itself owes the controller.
-
-The generic registry law is imported unchanged: every registry effect below is
-`Singular.exitStep` or `Singular.foldBatch` of the unchanged model, every
-registry payment is `Singular.obligations`, and settlement is the unchanged
-`Singular.settle` over the concatenated payments.
-
-Representation choices, stated rather than hidden:
-
-* `PlutusData` is an abstract executable data type with the five Plutus
-  constructors; its serialization and `envelopeHash` stand in for CBOR and
-  blake2b-256 and claim no byte agreement with either;
-* `PlutusData` equality is the total structural `PlutusData.beq`, proved to
-  be exactly propositional equality (`PlutusData.beq_iff_eq`); the derived
-  equality of a nested type would be an opaque `partial` function;
-* the contract's address and policy are one identity, `App.policy`, as one
-  script is both;
-* the registry model names a request's destination by one number; the
-  application encodes its (address, envelope hash) pair into it by
-  `destinationOf`, injective while the hash is below `2^64`. -/
+/-! Open-datum custody composed with the frozen root economic world.
+The root holding is a registration snapshot, not the current application UTxO.
+Signed payload updates retain that snapshot while changing the actual output.
+Termination booking consumes the actual output; the root booking moves its
+abstract holding into pending custody. No second economic admission is used. -/
 
 namespace OpenDatumApplication
 
@@ -294,15 +262,18 @@ structure AppOutput where
   lovelace : Nat
   assets : List (Asset × Int)
   envelope : Envelope
+  /-- Registration snapshot linking the current output to the root abstract holding.
+  Updates change the current payload and reference, not this snapshot. -/
+  registered : Envelope
   deriving Repr, BEq
 
 instance : LawfulBEq AppOutput where
   eq_of_beq {a b} h := by
-    obtain ⟨r, ad, l, as, e⟩ := a
-    obtain ⟨r', ad', l', as', e'⟩ := b
+    obtain ⟨r, ad, l, as, e, origin⟩ := a
+    obtain ⟨r', ad', l', as', e', origin'⟩ := b
     simp only [reduceBEq, Bool.and_eq_true, beq_iff_eq] at h
-    obtain ⟨h1, h2, h3, h4, h5⟩ := h
-    subst h1 h2 h3 h4 h5
+    obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+    subst h1 h2 h3 h4 h5 h6
     rfl
   rfl {a} := by
     obtain ⟨r, ad, l, as, e⟩ := a
@@ -320,135 +291,113 @@ structure Successor where
 def carriesKey (assets : List (Asset × Int)) (key : Key) : Bool :=
   assets.any fun a => a.1 == (TokenKind.active, key) && a.2 == 1
 
-/-- A booked request, and for an insertion the envelope its destination binds. -/
+/-- Metadata only: the economic request lives solely in the root world. -/
 structure Pending where
-  request : Request
-  envelope : Option Envelope
+  reference : OutRef
+  envelope : Envelope
   deriving BEq
 
-/-- The world the application runs in: the application, the registry, the
-state asset its state UTxO actually carries, the live application outputs, the
-booked requests, the next output reference, and the mint of the last accepted
-fold (empty before any). -/
 structure World where
   app : App
-  registry : RegistryState
+  economic : Singular.World
   registryAsset : StateAsset
   outputs : List AppOutput
   pending : List Pending
   nextRef : Nat
-  lastMint : List (Asset × Int)
   deriving BEq
 
-/-- An empty registry under a configuration and an actual state asset. -/
+def World.registry (w : World) : RegistryState := w.economic.registry
+
 def genesis (app : App) (c : Config) (asset : StateAsset) : World :=
-  { app := app
-  , registry := { config := { c with root := rootOf [] }, trie := [], custody := []
-                , held := [] }
-  , registryAsset := asset, outputs := [], pending := [], nextRef := 0, lastMint := [] }
+  { app, economic := { registry := { config := { c with root := rootOf [] }, trie := [], custody := [], held := [] } }, registryAsset := asset, outputs := [], pending := [], nextRef := 0 }
 
-/-- The approval this application mints for a request, certified by the
-signatures on the booking. -/
-def mintApproval (app : App) (r : Request) (signatures : List Nat) : Approval :=
-  { policy := app.policy, edge := r.edge, key := r.key, owner := r.owner
-  , destination := requestDestination r
-  , assetName := approvalAssetName r.edge r.key r.owner (requestDestination r)
-  , signatures := [signatures] }
-
-/-- The booked request: the minted approval attached and the edge's delta
-claimed. -/
-def booked (app : App) (r : Request) (signatures : List Nat) : Request :=
-  { r with approval := some (mintApproval app r signatures), claimed := delta r.edge }
-
-/-- The law's guards that the definition mutants of the driver switch off.
-`standard` is the law; every statement is about it. -/
+/-- Each switch removes one application guard, for finite fault controls only. -/
 structure Law where
   checkUpdateSigner : Bool := true
   checkRegistryAsset : Bool := true
-  additiveSettlement : Bool := true
+  checkTransferredValue : Bool := true
+  checkBookingSigner : Bool := true
+  checkUpdateControl : Bool := true
+  checkUpdateAddress : Bool := true
+  checkUpdateFloor : Bool := true
+  preserveSnapshot : Bool := true
+  removeBookedCustody : Bool := true
   deriving Repr
 
 def Law.standard : Law := {}
 
-/-- One action on the world. A `fold` folds a selection of booked requests in
-one transaction; `reject` turns one booked request away; `bookOther` is a booking
-of an edge this application does not certify; `withdraw` is every spend of an
-application output that is neither an update nor a fold. -/
+/-- Booking observations are supplied, including the actual held contents and
+mint. Optional ordinary additions are a value contribution, not evidence of
+funding availability or a ledger fee/minimum check. Folds and rejections supply
+complete root economic observations. There is no application retraction action. -/
 inductive AppAction where
-  | bookInsert (request : Request) (envelope : Envelope) (signatures : List Nat)
-  | bookTerminate (request : Request) (ref : Nat) (signatures : List Nat)
+  | bookInsert (booking : RegistrationBooking) (envelope : Envelope) (signatures : List Nat)
+  | bookTerminate (booking : TerminationBooking) (ref ordinaryAdded : Nat) (signatures : List Nat)
   | bookOther (request : Request) (signatures : List Nat)
   | update (ref : Nat) (successors : List Successor) (signatures : List Nat)
-  | fold (selected : List (Edge × Key)) (outputs : List TxOutput)
-  | reject (edge : Edge) (key : Key) (outputs : List TxOutput)
+  | fold (unspent : EconomicUtxo) (transaction : EconomicTransaction)
+  | reject (unspent : EconomicUtxo) (transaction : Rejection)
   | withdraw (ref : Nat) (outputs : List TxOutput)
 
-/-- Refuse with a reason unless the condition holds. -/
 def ensure (condition : Bool) (why : String) : Except String Unit :=
   if condition then .ok () else .error why
 
-/-- The live output at a reference. -/
-def outputAt (w : World) (ref : Nat) : Option AppOutput :=
-  w.outputs.find? (·.ref == ref)
-
-/-- The live output holding a key's active token at this contract. -/
+def outputAt (w : World) (ref : Nat) : Option AppOutput := w.outputs.find? (·.ref == ref)
 def outputOfKey (w : World) (key : Key) : Option AppOutput :=
   w.outputs.find? fun o => o.address == appAddress w.app && carriesKey o.assets key
 
-/-- The booked request of an edge at a key. -/
-def pendingOf (w : World) (edge : Edge) (key : Key) : Option Pending :=
-  w.pending.find? fun p => p.request.edge == edge && p.request.key == key
+def pendingOf (w : World) (reference : OutRef) : Option Pending :=
+  w.pending.find? (·.reference == reference)
 
-/-- Booking an insertion: the application mints its approval only when the
-application serves the registry whose state asset the world actually carries,
-the envelope names that full state asset, the registry's active policy, the key
-and the controller as owner, the controller signs, the destination is this
-contract with this envelope's hash, the request carries that envelope as its
-datum — so the delivered output carries the envelope inline — and the protected
-deposit is the
-request's. Whether the key may be inserted is the fold's question, not the
-application's. -/
-def bookInsertStep (law : Law) (w : World) (r : Request) (e : Envelope)
+/-- The immutable registry projection of an actual application output. -/
+def rootHolding (w : World) (o : AppOutput) : Holding :=
+  { key := o.registered.control.key, kind := .active,     output := destinationOf w.app o.registered, datum := some (envelopeHash o.registered) }
+
+/-- The full state asset observed by the application is the root economic
+registry's state token, including its reserved name. -/
+def registryAssetMatches (w : World) : Bool :=
+  w.registryAsset.policy == w.registry.config.stateToken.policy &&
+    w.registryAsset.assetName == w.registry.config.stateToken.name
+
+/-- Whole-envelope registration binding, independent of any hash injectivity. -/
+def insertionBinding (law : Law) (w : World) (r : RegistrationRequest) (e : Envelope) : Bool :=
+  w.registry.config.applicationPolicy == w.app.policy &&
+  (!law.checkRegistryAsset || (w.app.registry == w.registryAsset && e.control.registry == w.registryAsset && registryAssetMatches w)) &&
+  e.control.version == envelopeVersion && e.control.activePolicy == w.registry.config.activePolicy &&
+  e.control.key == r.key && e.control.controller == r.refundAddress &&
+  r.destination == destinationOf w.app e && r.datum == some (envelopeHash e) &&
+  e.control.deposit == r.carrierAda
+
+def bookInsertStep (law : Law) (w : World) (b : RegistrationBooking) (e : Envelope)
     (signatures : List Nat) : Except String World := do
-  ensure (r.edge == .insertActive) "app-insert-edge"
-  ensure (w.registry.config.applicationPolicy == w.app.policy) "app-not-pinned"
-  ensure (!law.checkRegistryAsset || w.app.registry == w.registryAsset) "app-registry-asset"
-  ensure (e.control.version == envelopeVersion) "app-envelope-version"
-  ensure (!law.checkRegistryAsset || e.control.registry == w.registryAsset) "app-registry"
-  ensure (e.control.activePolicy == w.registry.config.activePolicy) "app-active-policy"
-  ensure (e.control.key == r.key) "app-key"
-  ensure (e.control.controller == r.owner) "app-owner"
-  ensure (signatures.contains e.control.controller) "app-controller-signature"
-  ensure (r.output == destinationOf w.app e) "app-destination"
-  ensure (r.datum == some (envelopeHash e)) "app-envelope-datum"
-  ensure (e.control.deposit == r.deposit) "app-deposit"
-  pure { w with pending := w.pending ++ [{ request := booked w.app r signatures
-                                          , envelope := some e }] }
+  ensure (insertionBinding law w b.request e) "app-registration-binding"
+  ensure (!law.checkBookingSigner || signatures.contains e.control.controller) "app-controller-signature"
+  let economic ← Singular.book w.economic b
+  pure { w with economic, pending := ⟨b.request.reference, e⟩ :: w.pending }
 
-/-- Booking a termination: the controller signs an `updateTerminal` approval
-for the key its live output holds, naming no destination. The output, its token
-and its deposit stay locked. -/
-def bookTerminateStep (w : World) (r : Request) (ref : Nat) (signatures : List Nat) :
-    Except String World := do
-  ensure (r.edge == .updateTerminal) "app-terminate-edge"
-  ensure (w.registry.config.applicationPolicy == w.app.policy) "app-not-pinned"
+/-- Actual custody is consumed now. H = V + A, and the root separately checks
+H = T + C and genuine pending tags. No amount of V is allocated to a refund;
+ordinary additions may be zero. Root custody is a snapshot, never a purported
+observation of the current output's lovelace or payload. -/
+def bookTerminateStep (law : Law) (w : World) (b : TerminationBooking) (ref ordinaryAdded : Nat)
+    (signatures : List Nat) : Except String World := do
   let some o := outputAt w ref | .error "no-application-output"
   let c := o.envelope.control
-  ensure (o.address == appAddress w.app && carriesKey o.assets r.key) "app-terminate-token"
-  ensure (c.key == r.key && c.registry == w.registryAsset) "app-terminate-binding"
-  ensure (r.owner == c.controller) "app-owner"
-  ensure (signatures.contains c.controller) "app-controller-signature"
-  ensure (r.output == 0) "app-terminate-destination"
-  pure { w with pending := w.pending ++ [{ request := booked w.app r signatures
-                                          , envelope := none }] }
+  ensure (w.registry.config.applicationPolicy == w.app.policy) "app-not-pinned"
+  ensure (registryAssetMatches w) "app-registry-asset"
+  ensure (o.address == appAddress w.app && o.assets == [((.active, b.request.key), 1)]) "app-terminate-token"
+  ensure (c.key == b.request.key && c.registry == w.registryAsset &&
+    c.activePolicy == w.registry.config.activePolicy && c == o.registered.control) "app-terminate-binding"
+  ensure (!law.checkBookingSigner || signatures.contains c.controller) "app-controller-signature"
+  ensure (b.request.destination == 0) "app-terminate-destination"
+  ensure (b.custodyInputs == [rootHolding w o]) "app-custody-snapshot"
+  ensure (!law.checkTransferredValue || b.request.contents.lovelace == o.lovelace + ordinaryAdded)
+    "app-termination-value"
+  let economic ← Singular.bookTermination w.economic b
+  pure { w with economic, outputs := if law.removeBookedCustody then w.outputs.erase o else w.outputs }
 
-/-- The application certifies only insertions and terminations. -/
-def bookOtherStep (_r : Request) : Except String World :=
-  .error "app-edge-not-certified"
+def bookOtherStep (_r : Request) : Except String World := .error "app-edge-not-certified"
 
-/-- An update: the controller signs, exactly one proposed output carries the
-token, and it stays at this contract with the same control, the same assets and
-at least the protected deposit. The payload is free. -/
 def updateStep (law : Law) (w : World) (ref : Nat) (successors : List Successor)
     (signatures : List Nat) : Except String World := do
   let some o := outputAt w ref | .error "no-application-output"
@@ -456,179 +405,106 @@ def updateStep (law : Law) (w : World) (ref : Nat) (successors : List Successor)
   ensure (!law.checkUpdateSigner || signatures.contains c.controller) "update-controller-signature"
   let carrying := successors.filter fun s => carriesKey s.assets c.key
   let some s := (match carrying with | [s] => some s | _ => none) | .error "update-token"
-  ensure (s.address == appAddress w.app) "update-escape"
-  ensure (s.envelope.control == c) "update-control"
+  ensure (!law.checkUpdateAddress || s.address == appAddress w.app) "update-escape"
+  ensure (!law.checkUpdateControl || s.envelope.control == c) "update-control"
   ensure (s.assets == o.assets) "update-assets"
-  ensure (c.deposit ≤ s.lovelace) "update-deposit"
+  ensure (!law.checkUpdateFloor || c.deposit ≤ s.lovelace) "update-deposit"
   let next : AppOutput :=
-    { ref := w.nextRef, address := s.address, lovelace := s.lovelace, assets := s.assets
-    , envelope := s.envelope }
-  pure { w with outputs := (w.outputs.erase o) ++ [next], nextRef := w.nextRef + 1 }
+    { ref := w.nextRef, address := s.address, lovelace := s.lovelace, assets := s.assets,       envelope := s.envelope, registered := if law.preserveSnapshot then o.registered else s.envelope }
+  pure { w with outputs := w.outputs.erase o ++ [next], nextRef := w.nextRef + 1 }
 
-/-- One selected request of a fold, and the application output a termination
-spends. -/
 structure FoldRow where
-  pending : Pending
-  spent : Option AppOutput
+  member : FoldMember
+  envelope : Option Envelope
   deriving BEq
 
-/-- Select one booked request for a fold. An insertion's envelope is bound
-again to its request, which must carry that envelope as its datum so the fold
-delivers the envelope inline, and to the actual registry; a termination spends its key's
-live output, whose controller must own the request and whose envelope must name
-the actual registry. -/
-def selectRow (law : Law) (w : World) (sel : Edge × Key) : Except String FoldRow := do
-  let some p := pendingOf w sel.1 sel.2 | .error "no-pending-request"
-  match sel.1 with
-  | .insertActive =>
-    let some e := p.envelope | .error "no-pending-request"
-    ensure (p.request.output == destinationOf w.app e && e.control.deposit == p.request.deposit)
-      "fold-envelope-binding"
-    ensure (p.request.datum == some (envelopeHash e)) "fold-envelope-datum"
-    ensure (!law.checkRegistryAsset || e.control.registry == w.registryAsset) "fold-registry"
-    pure { pending := p, spent := none }
-  | .updateTerminal =>
-    let some o := outputOfKey w sel.2 | .error "no-application-output"
-    ensure (p.request.owner == o.envelope.control.controller) "release-controller"
-    ensure (!law.checkRegistryAsset || o.envelope.control.registry == w.registryAsset)
-      "release-registry"
-    pure { pending := p, spent := some o }
-  | _ => .error "fold-edge-not-certified"
+/-- Select by actual pending reference, not edge/key. Terminations have no
+application metadata, output, signature, clock or application tag to select. -/
+def selectRow (law : Law) (w : World) (reference : OutRef) : Except String FoldRow := do
+  let some member := foldMemberAt w.economic reference | .error "no-pending-request"
+  match member with
+  | .registration b =>
+    let some p := pendingOf w reference | .error "no-registration-envelope"
+    ensure (insertionBinding law w b.request p.envelope) "app-registration-binding"
+    pure ⟨member, some p.envelope⟩
+  | .termination _ => pure ⟨member, none⟩
 
-/-- The outputs a fold's insertions create at this contract, one per selected
-insertion in order, with fresh references from `ref`. -/
-def createdOutputs (app : App) : Nat → List FoldRow → List AppOutput
-  | _, [] => []
-  | ref, row :: rows =>
-    match row.pending.request.edge, row.pending.envelope with
-    | .insertActive, some e =>
-      { ref := ref, address := appAddress app, lovelace := row.pending.request.deposit
-      , assets := [((.active, row.pending.request.key), 1)], envelope := e } ::
-        createdOutputs app (ref + 1) rows
-    | _, _ => createdOutputs app ref rows
+def selectedReferences (w : World) (tx : EconomicTransaction) : List OutRef :=
+  tx.transaction.inputs.filterMap fun i => i.ref.filter (fun r => (foldMemberAt w.economic r).isSome)
 
-/-- A created output as the transaction presents it: the destination output
-carrying the delivered token and the insertion deposit. -/
-def deliveryOf (app : App) (o : AppOutput) : TxOutput :=
-  { role := .destination, datum := .inline, address := some (destinationOf app o.envelope)
-  , stateTokens := 0, config := none, commitment := some (envelopeHash o.envelope)
-  , assets := o.assets, lovelace := o.lovelace, datumValue := some (envelopeHash o.envelope) }
+def createdOutputs (app : App) (first : Nat) (rows : List FoldRow) : List AppOutput :=
+  ((rows.filterMap fun row => match row.member, row.envelope with
+    | .registration b, some e => some (b, e)
+    | _, _ => none).zipIdx).map fun ((b, e), i) =>
+      { ref := first + i, address := appAddress app, lovelace := b.request.carrierAda,         assets := [((.active, b.request.key), 1)], envelope := e, registered := e }
 
-/-- What the application releases for one spent output: its protected deposit,
-to its controller's key. -/
-def releaseOf (o : AppOutput) : Payment :=
-  { recipient := .owner o.envelope.control.controller, atLeast := o.envelope.control.deposit }
+/-- All economic admission and accounting is the frozen root fold. The local
+projection adds only newly delivered registration outputs. Termination custody
+was already removed at booking; it is never spent a second time here. -/
+def foldEffect (law : Law) (w : World) (u : EconomicUtxo) (tx : EconomicTransaction) : Except String World := do
+  let rows ← (selectedReferences w tx).mapM (selectRow law w)
+  let economic ← Singular.foldAccepted w.economic u tx
+  let created := createdOutputs w.app w.nextRef rows
+  pure { w with economic, outputs := w.outputs ++ created,         pending := w.pending.filter (fun p => !inputsContainReference tx.transaction.inputs p.reference),         nextRef := w.nextRef + created.length }
 
-/-- The registry's own payments for every selected request, each by its edge. -/
-def registryPayments (rows : List FoldRow) : List Payment :=
-  rows.flatMap fun row => obligations (.fold row.pending.request.edge) row.pending.request
+/-- Lawful registration rejection only, with the frozen root judgement. -/
+def rejectStep (w : World) (u : EconomicUtxo) (r : Rejection) : Except String World := do
+  let economic ← rejectionAccepted w.economic u r
+  pure { w with economic,     pending := w.pending.filter fun p => !(r.members.any fun m => m.1 == p.reference) }
 
-/-- The deposits the fold releases: one per spent application output. -/
-def releases (rows : List FoldRow) : List Payment :=
-  (rows.filterMap (·.spent)).map releaseOf
-
-/-- The fold's whole payment duty: the registry's and the releases, together,
-so one output is never counted for two floors owed to the same recipient. -/
-def foldPayments (rows : List FoldRow) : List Payment :=
-  registryPayments rows ++ releases rows
-
-/-- Judge a fold's outputs. The law judges the concatenated payments with the
-unchanged `Singular.settle`; the non-additive definition mutant judges the two
-halves separately. -/
-def settleFold (law : Law) (rows : List FoldRow) (outputs : List TxOutput) : Option String :=
-  if law.additiveSettlement then settle (foldPayments rows) outputs
-  else (settle (registryPayments rows) outputs).orElse fun _ => settle (releases rows) outputs
-
-/-- One fold: the selected booked requests, folded by the registry's own
-`foldBatch` in one transaction. Insertions create this contract's outputs;
-terminations spend their keys' outputs and release their deposits; the whole
-payment duty settles against the transaction's outputs, the created deliveries
-included. The world keeps the fold's mint. -/
-def foldEffect (law : Law) (w : World) (selected : List (Edge × Key))
-    (outputs : List TxOutput) : Except String (World × Result) := do
-  let rows ← selected.mapM (selectRow law w)
-  let t ← foldBatch w.registry (rows.map (·.pending.request))
-  let fresh := createdOutputs w.app w.nextRef rows
-  let spent := rows.filterMap (·.spent)
-  match settleFold law rows (outputs ++ fresh.map (deliveryOf w.app)) with
-  | some why => .error why
-  | none =>
-    pure ({ w with registry := t.state
-                 , outputs := (w.outputs.filter fun o => !spent.contains o) ++ fresh
-                 , pending := w.pending.filter fun p => !(rows.map (·.pending)).contains p
-                 , nextRef := w.nextRef + fresh.length
-                 , lastMint := t.mint }, t)
-
-/-- A reject: the registry turns one booked request away and refunds its
-deposit to its owner. No application output is spent or released. -/
-def rejectStep (w : World) (edge : Edge) (key : Key) (outputs : List TxOutput) :
-    Except String World := do
-  let some p := pendingOf w edge key | .error "no-pending-request"
-  let t ← exitStep w.registry .reject p.request
-  match settle (obligations .reject p.request) outputs with
-  | some why => .error why
-  | none => pure { w with registry := t.state, pending := w.pending.erase p, lastMint := t.mint }
-
-/-- The contract has exactly two spending paths, update and fold; anything else
-is refused. -/
-def withdrawStep (w : World) (ref : Nat) (_outputs : List TxOutput) :
-    Except String World := do
+def withdrawStep (w : World) (ref : Nat) (_outputs : List TxOutput) : Except String World := do
   let some _ := outputAt w ref | .error "no-application-output"
   .error "no-withdrawal-path"
 
-/-- The application law under a law variant. -/
 def appStepWith (law : Law) (w : World) : AppAction → Except String World
-  | .bookInsert r e sigs => bookInsertStep law w r e sigs
-  | .bookTerminate r ref sigs => bookTerminateStep w r ref sigs
+  | .bookInsert b e sigs => bookInsertStep law w b e sigs
+  | .bookTerminate b ref added sigs => bookTerminateStep law w b ref added sigs
   | .bookOther r _ => bookOtherStep r
-  | .update ref succs sigs => updateStep law w ref succs sigs
-  | .fold selected outs => (foldEffect law w selected outs).map (·.1)
-  | .reject edge key outs => rejectStep w edge key outs
-  | .withdraw ref outs => withdrawStep w ref outs
+  | .update ref successors sigs => updateStep law w ref successors sigs
+  | .fold u tx => foldEffect law w u tx
+  | .reject u tx => rejectStep w u tx
+  | .withdraw ref outputs => withdrawStep w ref outputs
 
-/-- The application law. -/
 def appStep : World → AppAction → Except String World := appStepWith Law.standard
 
-/-- Worlds reached from a genesis by accepted actions. -/
 inductive Reachable : World → Prop where
-  | start (app : App) (c : Config) (asset : StateAsset) :
-      Reachable (genesis app c asset)
+  | initial (app : App) (c : Config) (asset : StateAsset) : Reachable (genesis app c asset)
   | next {w w' : World} {a : AppAction} : Reachable w → appStep w a = .ok w' → Reachable w'
 
-/-- The consistency every reached world is required to keep, stated for review
-and to be proved preserved (`OpenDatumApplication.Statements`): the registry is
-consistent; every live output sits at this contract holding exactly its key's
-active token, under an envelope naming the actual registry, with at least its
-protected deposit, while the registry's leaf for that key is Active; the
-inventory holds each output occurrence once — its references are pairwise
-distinct, so no output, identical copies included, appears twice — and no two
-live outputs share a key, every reference being below `nextRef`; every booked
-insertion is bound to its envelope and the actual registry, and every booked
-termination carries none. -/
+/-- The executable correspondence clauses are independent of reachability.
+Root abstract holdings match actual outputs by their registration snapshots.
+Supply includes pending termination tags, not only live application outputs. -/
+def CustodyCorrespondence (w : World) : Prop :=
+  (∀ o ∈ w.outputs, rootHolding w o ∈ w.registry.held) ∧
+  (∀ h ∈ w.registry.held, ∃ o ∈ w.outputs, rootHolding w o = h)
+
 def AppConsistent (w : World) : Prop :=
-  Singular.Consistent w.registry ∧
+  Singular.Consistent (foldProjectedRegistry w.economic) ∧
   (w.outputs.map (·.ref)).Nodup ∧
   (∀ o ∈ w.outputs, o.address = appAddress w.app ∧
     o.assets = [((.active, o.envelope.control.key), 1)] ∧
+    o.envelope.control = o.registered.control ∧
     o.envelope.control.registry = w.registryAsset ∧
-    o.envelope.control.deposit ≤ o.lovelace ∧
-    trieGet w.registry.trie o.envelope.control.key = .known .active ∧
-    o.ref < w.nextRef) ∧
-  (∀ o₁ ∈ w.outputs, ∀ o₂ ∈ w.outputs,
-    o₁.envelope.control.key = o₂.envelope.control.key ∨ o₁.ref = o₂.ref → o₁ = o₂) ∧
-  (∀ p ∈ w.pending, (p.request.edge = .insertActive ∧ ∃ e, p.envelope = some e ∧
-      p.request.output = destinationOf w.app e ∧ e.control.deposit = p.request.deposit ∧
-      e.control.key = p.request.key ∧ e.control.registry = w.registryAsset) ∨
-    (p.request.edge = .updateTerminal ∧ p.envelope = none))
+    o.envelope.control.deposit ≤ o.lovelace ∧ o.ref < w.nextRef) ∧
+  (∀ a ∈ w.outputs, ∀ b ∈ w.outputs,
+    a.envelope.control.key = b.envelope.control.key ∨ a.ref = b.ref → a = b) ∧
+  CustodyCorrespondence w ∧
+  (w.pending.map (·.reference)).Nodup ∧
+  ((w.economic.pending.map (·.request.reference)) ++
+    w.economic.terminations.map (·.request.reference)).Nodup ∧
+  (∀ p ∈ w.pending, ∃ b ∈ w.economic.pending,
+    b.request.reference = p.reference ∧ insertionBinding Law.standard w b.request p.envelope = true) ∧
+  (∀ b ∈ w.economic.pending, ∃ p ∈ w.pending, p.reference = b.request.reference) ∧
+  (∀ b ∈ w.economic.pending, registrationBookingRefusal w.registry.config b = none) ∧
+  (∀ b ∈ w.economic.terminations,
+    terminationExactContents w.registry.config b.request = true ∧
+    b.custodyInputs.length = 1 ∧
+    ∀ h ∈ b.custodyInputs, h.key = b.request.key ∧ h.kind = .active)
 
-/-- Run a list of actions under a law, reporting each outcome and the world
-after each accepted action. -/
-def runActionsWith (law : Law) (w : World) :
-    List AppAction → List (Except String World)
+def runActionsWith (law : Law) (w : World) : List AppAction → List (Except String World)
   | [] => []
   | a :: rest =>
-    match appStepWith law w a with
-    | .ok w' => .ok w' :: runActionsWith law w' rest
-    | .error why => .error why :: runActionsWith law w rest
+    let result := appStepWith law w a
+    result :: runActionsWith law (result.toOption.getD w) rest
 
 end OpenDatumApplication

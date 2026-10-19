@@ -63,8 +63,7 @@ def envelopeToJson (e : Envelope) : Json :=
   Json.mkObj [("control", toJson e.control), ("payload", dataToJson e.payload)]
 
 def envelopeFromJson (j : Json) : Except String Envelope := do
-  pure { control := ← j.getObjValAs? Control "control"
-       , payload := ← dataFromJson (← j.getObjVal? "payload") }
+  pure { control := ← j.getObjValAs? Control "control"        , payload := ← dataFromJson (← j.getObjVal? "payload") }
 
 def assetsToJson (assets : List (Asset × Int)) : Json :=
   Json.arr (assets.map fun a =>
@@ -76,107 +75,48 @@ def assetsFromJson (j : Json) : Except String (List (Asset × Int)) := do
       ← a.getObjValAs? Int "quantity")
 
 def successorFromJson (j : Json) : Except String Successor := do
-  pure { address := ← j.getObjValAs? Nat "address", lovelace := ← j.getObjValAs? Nat "lovelace"
-       , assets := ← assetsFromJson (← j.getObjVal? "assets")
-       , envelope := ← envelopeFromJson (← j.getObjVal? "envelope") }
+  pure { address := ← j.getObjValAs? Nat "address", lovelace := ← j.getObjValAs? Nat "lovelace"        , assets := ← assetsFromJson (← j.getObjVal? "assets")        , envelope := ← envelopeFromJson (← j.getObjVal? "envelope") }
 
 def successorToJson (s : Successor) : Json :=
   Json.mkObj [("address", toJson s.address), ("lovelace", toJson s.lovelace)
     , ("assets", assetsToJson s.assets), ("envelope", envelopeToJson s.envelope)]
 
-def optNat (j : Json) (field : String) : Nat :=
-  (j.getObjValAs? Nat field).toOption.getD 0
 
-/-- A request as a scenario states it: no approval and no claim, which the
-application's booking supplies. The datum it carries is read as written; a
-request that does not say carries none, the root model's default, and a datum
-that is not a value is refused. -/
-def requestFromJson (j : Json) : Except String Request := do
-  let datum ← datumOfJson j "datum"
-  pure { edge := ← j.getObjValAs? Edge "edge", key := ← j.getObjValAs? Nat "key"
-       , owner := optNat j "owner", refundAddress := optNat j "refundAddress"
-       , deposit := optNat j "deposit", output := optNat j "output", tip := optNat j "tip"
-       , datum }
+instance : ToJson Envelope := ⟨envelopeToJson⟩
+instance : FromJson Envelope := ⟨envelopeFromJson⟩
+instance : ToJson Successor := ⟨successorToJson⟩
+instance : FromJson Successor := ⟨successorFromJson⟩
 
-def requestToJson (r : Request) : Json :=
-  Json.mkObj [("edge", toJson r.edge), ("key", toJson r.key), ("owner", toJson r.owner)
-    , ("refundAddress", toJson r.refundAddress), ("deposit", toJson r.deposit)
-    , ("output", toJson r.output), ("tip", toJson r.tip), ("datum", datumJson r.datum)]
+deriving instance ToJson, FromJson for TxRole
+ deriving instance ToJson, FromJson for TxInput
+ deriving instance ToJson, FromJson for TxOutput
+ deriving instance ToJson, FromJson for Tx
+ deriving instance ToJson, FromJson for EconomicRequest
+ deriving instance ToJson, FromJson for EconomicOutput
+ deriving instance ToJson, FromJson for EconomicTransaction
+ deriving instance ToJson, FromJson for Rejection
+ instance : FromJson Request where
+  fromJson? j := do
+    let claimed ← (← j.getObjValAs? (List Json) "claimed").mapM fun d => do
+      pure (← d.getObjValAs? TokenKind "kind", ← d.getObjValAs? Int "quantity")
+    pure { edge := ← j.getObjValAs? Edge "edge", key := ← j.getObjValAs? Nat "key", owner := ← j.getObjValAs? Nat "owner", refundAddress := ← j.getObjValAs? Nat "refundAddress", deposit := ← j.getObjValAs? Nat "deposit", output := ← j.getObjValAs? Nat "output", tip := ← j.getObjValAs? Nat "tip", reference := ← j.getObjValAs? Nat "reference", submittedAt := ← j.getObjValAs? Nat "submittedAt", registryId := ← j.getObjValAs? Nat "registryId", approval := ← j.getObjValAs? (Option Approval) "approval", datum := ← datumOfJson j "datum", claimed }
 
-/-- A payment output at a key, the only output kind a release is judged on. -/
-def ownerOutput (key lovelace : Nat) : TxOutput :=
-  { role := .owner, datum := .none, address := some key, stateTokens := 0, config := none
-  , commitment := none, assets := [], lovelace := lovelace }
+deriving instance ToJson, FromJson for AppAction
 
-def paymentsFromJson (j : Json) : Except String (List TxOutput) := do
-  (← j.getArr?).toList.mapM fun o => do
-    pure (ownerOutput (← o.getObjValAs? Nat "owner") (← o.getObjValAs? Nat "lovelace"))
-
-def paymentsToJson (outs : List TxOutput) : Json :=
-  Json.arr (outs.map fun o =>
-    Json.mkObj [("owner", toJson (o.address.getD 0)), ("lovelace", toJson o.lovelace)]).toArray
-
-def selectionToJson (sel : List (Edge × Key)) : Json :=
-  Json.arr (sel.map fun s => Json.mkObj [("edge", toJson s.1), ("key", toJson s.2)]).toArray
-
-def selectionFromJson (j : Json) : Except String (List (Edge × Key)) := do
-  (← j.getArr?).toList.mapM fun s => do
-    pure (← s.getObjValAs? Edge "edge", ← s.getObjValAs? Nat "key")
-
-def actionToJson : AppAction → Json
-  | .bookInsert r e sigs => Json.mkObj [("action", "bookInsert"), ("request", requestToJson r)
-      , ("envelope", envelopeToJson e), ("signatures", toJson sigs)]
-  | .bookTerminate r ref sigs => Json.mkObj [("action", "bookTerminate")
-      , ("request", requestToJson r), ("ref", toJson ref), ("signatures", toJson sigs)]
-  | .bookOther r sigs => Json.mkObj [("action", "bookOther"), ("request", requestToJson r)
-      , ("signatures", toJson sigs)]
-  | .update ref succs sigs => Json.mkObj [("action", "update"), ("ref", toJson ref)
-      , ("successors", Json.arr (succs.map successorToJson).toArray), ("signatures", toJson sigs)]
-  | .fold sel outs => Json.mkObj [("action", "fold"), ("selected", selectionToJson sel)
-      , ("outputs", paymentsToJson outs)]
-  | .reject edge key outs => Json.mkObj [("action", "reject"), ("edge", toJson edge)
-      , ("key", toJson key), ("outputs", paymentsToJson outs)]
-  | .withdraw ref outs => Json.mkObj [("action", "withdraw"), ("ref", toJson ref)
-      , ("outputs", paymentsToJson outs)]
-
-def actionFromJson (j : Json) : Except String AppAction := do
-  match ← j.getObjValAs? String "action" with
-  | "bookInsert" => pure (.bookInsert (← requestFromJson (← j.getObjVal? "request"))
-      (← envelopeFromJson (← j.getObjVal? "envelope")) (← j.getObjValAs? (List Nat) "signatures"))
-  | "bookTerminate" => pure (.bookTerminate (← requestFromJson (← j.getObjVal? "request"))
-      (← j.getObjValAs? Nat "ref") (← j.getObjValAs? (List Nat) "signatures"))
-  | "bookOther" => pure (.bookOther (← requestFromJson (← j.getObjVal? "request"))
-      (← j.getObjValAs? (List Nat) "signatures"))
-  | "update" => pure (.update (← j.getObjValAs? Nat "ref")
-      (← (← j.getObjValAs? (Array Json) "successors").toList.mapM successorFromJson)
-      (← j.getObjValAs? (List Nat) "signatures"))
-  | "fold" => pure (.fold (← selectionFromJson (← j.getObjVal? "selected"))
-      (← paymentsFromJson (← j.getObjVal? "outputs")))
-  | "reject" => pure (.reject (← j.getObjValAs? Edge "edge") (← j.getObjValAs? Nat "key")
-      (← paymentsFromJson (← j.getObjVal? "outputs")))
-  | "withdraw" => pure (.withdraw (← j.getObjValAs? Nat "ref")
-      (← paymentsFromJson (← j.getObjVal? "outputs")))
-  | other => throw s!"unknown action: {other}"
+def actionToJson : AppAction → Json := toJson
+ def actionFromJson : Json → Except String AppAction := fromJson?
 
 def outputToJson (o : AppOutput) : Json :=
-  Json.mkObj [("ref", toJson o.ref), ("address", toJson o.address), ("lovelace", toJson o.lovelace)
-    , ("assets", assetsToJson o.assets), ("envelope", envelopeToJson o.envelope)
-    , ("envelopeHash", toJson (envelopeHash o.envelope))]
+  Json.mkObj [("ref", toJson o.ref), ("address", toJson o.address), ("lovelace", toJson o.lovelace),
+    ("assets", assetsToJson o.assets), ("envelope", envelopeToJson o.envelope),
+    ("registrationSnapshot", envelopeToJson o.registered)]
 
-/-- A world as each step publishes it: the registry, the live outputs, the
-booked requests with the signers the registry requires of each, and the last
-fold's mint. -/
 def worldToJson (w : World) : Json :=
-  Json.mkObj [("registry", toJson w.registry)
-    , ("registryAsset", toJson w.registryAsset)
-    , ("outputs", Json.arr (w.outputs.map outputToJson).toArray)
-    , ("pending", Json.arr (w.pending.map fun p =>
-        Json.mkObj [("request", requestToJson p.request)
-          , ("requiredSigners", toJson (requiredSigners p.request))]).toArray)
-    , ("nextRef", toJson w.nextRef)
-    , ("lastMint", assetsToJson w.lastMint)]
-
-/-! ## Scenarios and the runner -/
+  Json.mkObj [("registry", toJson w.registry), ("registryAsset", toJson w.registryAsset),
+    ("outputs", toJson (w.outputs.map outputToJson)), ("nextRef", toJson w.nextRef),
+    ("registrations", toJson w.economic.pending), ("terminations", toJson w.economic.terminations),
+    ("treasury", toJson w.economic.treasury), ("envelopes", toJson (w.pending.map fun p =>
+      Json.mkObj [("reference", toJson p.reference), ("envelope", toJson p.envelope)]))]
 
 structure Scenario where
   name : String
@@ -193,250 +133,204 @@ def scenarioToJson (s : Scenario) : Json :=
     , ("asset", toJson s.asset), ("actions", Json.arr (s.actions.map actionToJson).toArray)]
 
 def scenarioFromJson (j : Json) : Except String Scenario := do
-  pure { name := ← j.getObjValAs? String "name", kind := ← j.getObjValAs? String "kind"
-       , statements := ← j.getObjValAs? (List String) "statements"
-       , app := ← j.getObjValAs? App "app", config := ← j.getObjValAs? Config "config"
-       , asset := ← j.getObjValAs? StateAsset "asset"
-       , actions := ← (← j.getObjValAs? (Array Json) "actions").toList.mapM actionFromJson }
+  pure { name := ← j.getObjValAs? String "name", kind := ← j.getObjValAs? String "kind"        , statements := ← j.getObjValAs? (List String) "statements"        , app := ← j.getObjValAs? App "app", config := ← j.getObjValAs? Config "config"        , asset := ← j.getObjValAs? StateAsset "asset"        , actions := ← (← j.getObjValAs? (Array Json) "actions").toList.mapM actionFromJson }
 
-/-- The executable observation of `AppConsistent` at the invariant boundary,
-conjunct by conjunct: the registry through the root driver's own finite
-`Singular.Driver.consistentB`, then the output, occurrence, key and booking
-clauses. Its correspondence with `AppConsistent` is a stated obligation
-(`appConsistentB_iff`), not an assumption. `checkOccurrences := false` is the
-weakened observation the check's control uses to show the occurrence clause is
-what excludes a duplicated inventory. -/
+/-- Executable observation of each independent invariant clause. No reachability
+flag is used to manufacture consistency. The occurrence switch isolates the
+historical duplicated-output counterexample. -/
 def appConsistentBWith (checkOccurrences : Bool) (w : World) : Bool :=
-  Singular.Driver.consistentB w.registry &&
-  (!checkOccurrences ||
-    (w.outputs.map (·.ref)).eraseDups.length == w.outputs.length) &&
-  w.outputs.all (fun o =>
-    o.address == appAddress w.app &&
+  Singular.Driver.consistentB (foldProjectedRegistry w.economic) &&
+  (!checkOccurrences || decide (w.outputs.map (·.ref)).Nodup) &&
+  w.outputs.all (fun o => o.address == appAddress w.app &&
     o.assets == [((.active, o.envelope.control.key), 1)] &&
-    o.envelope.control.registry == w.registryAsset &&
-    decide (o.envelope.control.deposit ≤ o.lovelace) &&
-    trieGet w.registry.trie o.envelope.control.key == .known .active &&
-    decide (o.ref < w.nextRef)) &&
-  w.outputs.all (fun o₁ => w.outputs.all fun o₂ =>
-    !(o₁.envelope.control.key == o₂.envelope.control.key || o₁.ref == o₂.ref) || o₁ == o₂) &&
-  w.pending.all (fun p =>
-    match p.request.edge, p.envelope with
-    | .insertActive, some e =>
-      p.request.output == destinationOf w.app e && e.control.deposit == p.request.deposit &&
-        e.control.key == p.request.key && e.control.registry == w.registryAsset
-    | .updateTerminal, none => true
-    | _, _ => false)
+    o.envelope.control == o.registered.control && o.envelope.control.registry == w.registryAsset &&
+    decide (o.envelope.control.deposit ≤ o.lovelace ∧ o.ref < w.nextRef)) &&
+  w.outputs.all (fun a => w.outputs.all fun b =>
+    !(a.envelope.control.key == b.envelope.control.key || a.ref == b.ref) || a == b) &&
+  w.outputs.all (fun o => w.registry.held.contains (rootHolding w o)) &&
+  w.registry.held.all (fun h => w.outputs.any (fun o => rootHolding w o == h)) &&
+  decide (w.pending.map (·.reference)).Nodup &&
+  decide ((w.economic.pending.map (·.request.reference)) ++
+    w.economic.terminations.map (·.request.reference)).Nodup &&
+  w.pending.all (fun p => w.economic.pending.any (fun b =>
+    b.request.reference == p.reference && insertionBinding Law.standard w b.request p.envelope)) &&
+  w.economic.pending.all (fun b => w.pending.any (fun p => p.reference == b.request.reference)) &&
+  w.economic.pending.all (fun b => (registrationBookingRefusal w.registry.config b).isNone) &&
+  w.economic.terminations.all (fun b => terminationExactContents w.registry.config b.request &&
+    b.custodyInputs.length == 1 && b.custodyInputs.all (fun h => h.key == b.request.key && h.kind == .active))
 
-/-- The invariant observation itself. -/
 def appConsistentB : World → Bool := appConsistentBWith true
 
 def stepToJson : Except String World → Json
-  | .ok w => Json.mkObj [("outcome", "accepted"), ("consistent", toJson (appConsistentB w))
-      , ("world", worldToJson w)]
+  | .ok w => Json.mkObj [("outcome", "accepted"), ("consistent", toJson (appConsistentB w)), ("world", worldToJson w)]
   | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)]
 
-/-- The one surface: run a scenario's actions through the law from genesis,
-publishing every step's outcome and, for an accepted step, the world it reached. -/
 def runScenarioWith (law : Law) (s : Scenario) : Json :=
-  Json.mkObj [("scenario", scenarioToJson s)
-    , ("genesisConsistent", toJson (appConsistentB (genesis s.app s.config s.asset)))
-    , ("steps", Json.arr ((runActionsWith law (genesis s.app s.config s.asset) s.actions).map
-        stepToJson).toArray)]
+  Json.mkObj [("scenario", scenarioToJson s),
+    ("genesisConsistent", toJson (appConsistentB (genesis s.app s.config s.asset))),
+    ("steps", toJson ((runActionsWith law (genesis s.app s.config s.asset) s.actions).map stepToJson))]
 
 def runScenario : Scenario → Json := runScenarioWith Law.standard
 
-/-! ## The corpus -/
-
-def app0 : App := { registry := { policy := 50, assetName := 51 }, policy := 7 }
-
+/-! Fixtures provide observations, never acceptance results. Folds are assembled
+from selected pending requests with ordinary fee funding and separate carriers.
+The generic runner serializes these actions and recomputes every outcome. -/
+def app0 : App := { registry := { policy := 50, assetName := 0 }, policy := 7 }
 def cfg0 : Config :=
-  { root := rootOf [], minimumTip := 0, processTime := 0, retractTime := 0
-  , applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
-
+  { root := rootOf [], minimumTip := 1, processTime := 10, retractTime := 10,     bookingWidth := 5, registrationCost := 1000000, registryId := 50,     applicationPolicy := 7, activePolicy := 8, absentPolicy := 9, terminalPolicy := 10 }
 def controller : Nat := 42
 def stranger : Nat := 43
-
-def payload0 : PlutusData :=
-  .constr 0 [.int 1, .bytes [0xca, 0xfe], .map [(.bytes [1], .list [.int (-3), .int 7])]]
-
+def payload0 : PlutusData := .constr 0 [.int 1, .bytes [0xca, 0xfe], .map [(.bytes [1], .list [.int (-3), .int 7])]]
 def payload1 : PlutusData := .list [.bytes [0xbe, 0xef], .int 2]
-
 def payload2 : PlutusData := .map [(.int 0, .constr 3 []), (.bytes [], .bytes [0xff])]
-
 def insertDeposit : Nat := 3000000
-def terminateDeposit : Nat := 2000000
 
 def envelopeFor (key : Key) (payload : PlutusData) : Envelope :=
-  { control := { version := envelopeVersion, registry := app0.registry, activePolicy := 8
-               , key := key, controller := controller, deposit := insertDeposit }
-  , payload := payload }
+  { control := { version := envelopeVersion, registry := app0.registry, activePolicy := 8,       key, controller, deposit := insertDeposit }, payload }
 
-/-- A valid insertion request: its destination is this contract with the
-envelope's hash, and it carries that envelope as its datum, so the delivery
-carries the envelope inline. -/
-def insertRequest (key : Key) (e : Envelope) : Request :=
-  { edge := .insertActive, key := key, owner := controller, deposit := insertDeposit
-  , output := destinationOf app0 e, datum := some (envelopeHash e) }
+def registration (key nonce : Nat) (e : Envelope) : RegistrationBooking := Id.run do
+  let r : RegistrationRequest :=
+    { reference := ⟨10 + nonce, key⟩, registryId := cfg0.registryId, key, refundAddress := controller,       destination := destinationOf app0 e, submittedAt := 1, registrationCost := cfg0.registrationCost,       declaredTip := 2000000, carrierAda := e.control.deposit, datum := some (envelopeHash e), nonce,       contents := { lovelace := cfg0.registrationCost + 2000000 + e.control.deposit,         applicationTags := [], trieReadyTags := [] } }
+  let tag : Approval := { policy := app0.policy, edge := .insertActive, key,     owner := r.refundAddress, destination := r.destination,     assetName := applicationTagAssetName key r.refundAddress r.destination nonce }
+  let r := { r with contents := { r.contents with applicationTags := [tag], trieReadyTags := [r.trieReadyTag cfg0] } }
+  return { request := r, interval := ⟨0, 1⟩, trieReadyTagsMinted := r.contents.trieReadyTags,     applicationTagsMinted := r.contents.applicationTags }
 
-def terminateRequest (key : Key) : Request :=
-  { edge := .updateTerminal, key := key, owner := controller, deposit := terminateDeposit }
-
-def bookInsertKey (key : Key) : AppAction :=
+def bookInsertKey (key : Nat) (nonce : Nat := 0) : AppAction :=
   let e := envelopeFor key payload0
-  .bookInsert (insertRequest key e) e [controller]
-
-def insertKey (key : Key) : List AppAction :=
-  [bookInsertKey key, .fold [(.insertActive, key)] []]
+  .bookInsert (registration key nonce e) e [controller]
 
 def successorOf (key : Key) (payload : PlutusData) (lovelace : Nat) : Successor :=
-  { address := appAddress app0, lovelace := lovelace, assets := [((.active, key), 1)]
-  , envelope := envelopeFor key payload }
+  { address := appAddress app0, lovelace, assets := [((.active, key), 1)], envelope := envelopeFor key payload }
 
-/-- A payment output at the controller's key. -/
-def paid (amount : Nat) : List TxOutput := [ownerOutput controller amount]
+def reachWorld (actions : List AppAction) : World :=
+  actions.foldl (fun w a => (appStep w a).toOption.getD w) (genesis app0 cfg0 app0.registry)
+
+/-- No statement uses this fixture's fallback as evidence: witness checks require
+all prerequisite actions to succeed, and the generic run publishes refusals. -/
+def termination (w : World) (key ref added tip : Nat) : TerminationBooking :=
+  let o := (outputAt w ref).getD { ref, address := appAddress app0, lovelace := 0,     assets := [], envelope := envelopeFor key payload0, registered := envelopeFor key payload0 }
+  let r : TerminationRequest :=
+    { reference := ⟨100 + ref, key⟩, registryId := cfg0.registryId, key, destination := 0,       declaredTip := tip, carrierAda := o.lovelace + added - tip,       singularTags := [cfg0.singularTag key], contents := { lovelace := o.lovelace + added,         applicationTags := [], trieReadyTags := [] } }
+  let r := { r with contents := { r.contents with trieReadyTags := [r.trieReadyTag cfg0] } }
+  { request := r, custodyInputs := [rootHolding w o], trieReadyTagsMinted := r.contents.trieReadyTags }
+
+def bare (amount : Nat) (address : Nat := controller) : EconomicOutput :=
+  { output := { role := .owner, datum := .none, address := some address, stateTokens := 0,       config := none, commitment := none, assets := [], lovelace := amount },     contents := { lovelace := amount, applicationTags := [], trieReadyTags := [] } }
+
+def stateObservation (c : Config) : EconomicOutput :=
+  { bare 3000000 with output := { (bare 3000000).output with role := .state,       datum := .inline, address := none, stateTokens := 1, stateToken := some c.stateToken, config := some c } }
+
+def registrationObservation (b : RegistrationBooking) : EconomicOutput :=
+  { output := { (bare b.request.contents.lovelace).output with role := .request, datum := .inline },     contents := b.request.contents, request := some (.registration b.request) }
+
+def terminationObservation (b : TerminationBooking) : EconomicOutput :=
+  { output := { (bare b.request.contents.lovelace).output with role := .request, datum := .inline },     contents := b.request.contents, singularTags := b.request.singularTags, request := some (.termination b.request) }
+
+def observations (w : World) : EconomicUtxo :=
+  [(⟨1000, 0⟩, stateObservation w.registry.config), (⟨1001, 0⟩, bare 1000000)] ++
+    w.economic.pending.map (fun b => (b.request.reference, registrationObservation b)) ++
+    w.economic.terminations.map (fun b => (b.request.reference, terminationObservation b))
+
+def input (reference : OutRef) : TxInput :=
+  { ref := some reference, role := .request, datum := .inline, stateTokens := 0, approvals := 0, lovelace := 0 }
+
+def foldTransaction (w : World) (refs : List OutRef) (interval : Interval := ⟨1, 2⟩) : EconomicTransaction := Id.run do
+  let members := refs.filterMap (foldMemberAt w.economic)
+  let result := foldBatch (foldProjectedRegistry w.economic) (members.map (foldLegacyRequest w.registry.config))
+  let c := (result.toOption.map (·.state.config)).getD w.registry.config
+  let carriers := members.filterMap fun m => match m with
+    | .registration b => some { bare b.request.carrierAda b.request.destination with         output := { (bare b.request.carrierAda b.request.destination).output with           role := .destination, datum := datumFormOf b.request.datum, datumValue := b.request.datum },         singularTags := [w.registry.config.singularTag b.request.key] }
+    | .termination _ => none
+  let outs := [stateObservation c] ++ carriers ++ [bare (1000000 + (foldObligations members).tips - 100000)]
+  let spent := refs.filterMap (economicLookup (observations w))
+  return { transaction := { inputs := ((([⟨1000, 0⟩, ⟨1001, 0⟩] : List OutRef)) ++ refs).map input,       outputs := outs.map (·.output), mint := [], signers := [], refunds := [], validity := some interval,       fee := 100000, donation := (foldObligations members).donation },     identity := 2000, outputs := outs,     trieReadyMint := (spent.flatMap (·.contents.trieReadyTags)).map (·, -1),     applicationMint := ((spent.flatMap (·.contents.applicationTags)).map applicationTagIdentity).map (·, -1),     singularMint := foldMint w.registry.config members }
+
+def foldAction (actions : List AppAction) (refs : List OutRef) (interval : Interval := ⟨1, 2⟩) : AppAction :=
+  let w := reachWorld actions
+  .fold (observations w) (foldTransaction w refs interval)
+
+/-- Coincident addresses do not merge a carrier with an ordinary output. -/
+def coincidentFold (actions : List AppAction) (refs : List OutRef) : AppAction :=
+  let w := reachWorld actions
+  let tx := foldTransaction w refs
+  let address := (tx.outputs.find? (fun o => !o.singularTags.isEmpty)).bind (·.output.address)
+  let outputs := tx.outputs.map fun o => if foldOrdinary o then
+    { o with output := { o.output with address } } else o
+  .fold (observations w) { tx with outputs, transaction := { tx.transaction with outputs := outputs.map (·.output) } }
+
+def insertKey (key : Key) (nonce : Nat := 0) : List AppAction :=
+  let actions := [bookInsertKey key nonce]
+  actions ++ [foldAction actions [⟨10 + nonce, key⟩]]
+
+def rejectAction (actions : List AppAction) (refs : List OutRef) : AppAction := Id.run do
+  let w := reachWorld actions
+  let u := observations w
+  let spent := refs.filterMap (economicLookup u)
+  let outs := (refundObligations (rejectedRequests w.economic (refs.map (·, .expired))) false).map
+    fun (address, amount) => bare amount address
+  let tx : EconomicTransaction := { transaction := { inputs := refs.map input, outputs := outs.map (·.output),       referenceInputs := [input ⟨1000, 0⟩], validity := some ⟨21, 22⟩, mint := [], signers := [], refunds := [] },     identity := 2000, outputs := outs, trieReadyMint := (spent.flatMap (·.contents.trieReadyTags)).map (·, -1),     applicationMint := ((spent.flatMap (·.contents.applicationTags)).map applicationTagIdentity).map (·, -1) }
+  return .reject u { transaction := tx, stateReference := ⟨1000, 0⟩, members := refs.map (·, .expired) }
 
 def scenario (name kind : String) (statements : List String) (actions : List AppAction)
     (asset : StateAsset := app0.registry) : Scenario :=
   { name, kind, statements, app := app0, config := cfg0, asset, actions }
 
-/-- An envelope naming a registry other than the one the world carries. -/
-def otherRegistryEnvelope : Envelope :=
-  { envelopeFor 5 payload0 with
-    control := { (envelopeFor 5 payload0).control with registry := { policy := 50, assetName := 52 } } }
+def updatedActions : List AppAction := insertKey 5 ++ [.update 0 [successorOf 5 payload1 4000000] [controller]]
+def bookedTerminationActions (added : Nat) : List AppAction :=
+  updatedActions ++ [.bookTerminate (termination (reachWorld updatedActions) 5 1 added 2000000) 1 added [controller]]
+def lifecycleActions (added : Nat) : List AppAction :=
+  let as := bookedTerminationActions added
+  as ++ [foldAction as [⟨101, 5⟩] ⟨1000000, 1000001⟩]
 
-/-- A booking identical to a valid insertion of key 5 except that its request
-carries no datum: the delivered output would carry no envelope. -/
 def bookingNoDatum : AppAction :=
-  .bookInsert { insertRequest 5 (envelopeFor 5 payload0) with datum := none }
-    (envelopeFor 5 payload0) [controller]
+  let e := envelopeFor 5 payload0
+  let b := registration 5 0 e
+  .bookInsert { b with request := { b.request with datum := none } } e [controller]
 
-/-- Book and fold the termination of key 5, whose output reference is `ref`. -/
-def terminate5 (ref : Nat) (outs : List TxOutput) : List AppAction :=
-  [.bookTerminate (terminateRequest 5) ref [controller], .fold [(.updateTerminal, 5)] outs]
-
-def corpus : List Scenario :=
-  [ scenario "lifecycle" "witness"
-      [ "bookInsert_inversion", "fold_inversion", "appStep_fold", "insertion_binds_envelope"
-      , "insertion_requires_registry_identity", "update_inversion", "update_keeps_registry"
-      , "update_preserves_custody", "bookTerminate_inversion", "bookTerminate_keeps_locked"
-      , "release_burns_atomically", "fold_settles_additively", "fold_spent_disappears"
-      , "selectRow_requires_named_datum", "insertion_holding_inline"
-      , "fold_signers_unchanged", "genesis_consistent", "appStep_preserves_consistent", "reachable_consistent"
-      , "consistent_occurrences_distinct", "bookInsert_preserves_consistent"
-      , "fold_preserves_consistent", "update_preserves_consistent"
-      , "bookTerminate_preserves_consistent" ]
-      (insertKey 5 ++ [.update 0 [successorOf 5 payload1 insertDeposit] [controller]] ++
-        terminate5 1 (paid (insertDeposit + terminateDeposit)))
-  , scenario "update-payload-a" "witness" ["update_payload_free"]
-      (insertKey 5 ++ [.update 0 [successorOf 5 payload1 insertDeposit] [controller]])
-  , scenario "update-payload-b" "witness" ["update_payload_free"]
-      (insertKey 5 ++ [.update 0 [successorOf 5 payload2 insertDeposit] [controller]])
-  , scenario "update-between-booking-and-fold" "witness"
-      ["fold_settles_additively", "fold_spent_disappears", "update_preserves_custody"
-      , "release_burns_atomically"]
-      (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller],
-        .update 0 [successorOf 5 payload1 insertDeposit] [controller],
-        .fold [(.updateTerminal, 5)] (paid (insertDeposit + terminateDeposit))])
-  , scenario "mixed-batch-one-controller" "witness"
-      ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"
-      , "insertion_binds_envelope", "insertion_holding_inline", "fold_preserves_consistent"]
-      (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller], bookInsertKey 6,
-        .fold [(.updateTerminal, 5), (.insertActive, 6)] (paid (insertDeposit + terminateDeposit))])
-  , scenario "mixed-batch-short-by-one" "adverse-input" ["fold_settles_additively"]
-      (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller], bookInsertKey 6,
-        .fold [(.updateTerminal, 5), (.insertActive, 6)]
-          (paid (insertDeposit + terminateDeposit - 1))])
-  , scenario "two-releases-one-controller" "witness"
-      ["fold_settles_additively", "fold_spent_disappears", "release_burns_atomically"
-      , "insertion_holding_inline"]
-      (insertKey 5 ++ insertKey 6 ++
-        [.bookTerminate (terminateRequest 5) 0 [controller],
-         .bookTerminate (terminateRequest 6) 1 [controller],
-         .fold [(.updateTerminal, 5), (.updateTerminal, 6)]
-           (paid (2 * (insertDeposit + terminateDeposit)))])
-  , scenario "two-releases-short-by-one" "adverse-input" ["fold_settles_additively"]
-      (insertKey 5 ++ insertKey 6 ++
-        [.bookTerminate (terminateRequest 5) 0 [controller],
-         .bookTerminate (terminateRequest 6) 1 [controller],
-         .fold [(.updateTerminal, 5), (.updateTerminal, 6)]
-           (paid (2 * (insertDeposit + terminateDeposit) - 1))])
-  , scenario "release-each-floor-not-sum" "adverse-input" ["fold_settles_additively"]
-      (insertKey 5 ++ terminate5 0 (paid insertDeposit))
-  , scenario "update-unsigned" "adverse-input" ["update_requires_controller", "update_inversion"]
-      (insertKey 5 ++ [.update 0 [successorOf 5 payload1 insertDeposit] [stranger]])
-  , scenario "update-alters-control" "adverse-input" ["update_preserves_custody", "update_inversion"]
-      (insertKey 5 ++ [.update 0 [{ successorOf 5 payload1 insertDeposit with
-        envelope := { envelopeFor 5 payload1 with
-          control := { (envelopeFor 5 payload1).control with deposit := 1 } } }] [controller]])
-  , scenario "update-token-escape" "adverse-input" ["update_preserves_custody", "update_inversion"]
-      (insertKey 5 ++ [.update 0 [{ successorOf 5 payload1 insertDeposit with address := stranger }]
-        [controller]])
-  , scenario "update-short-deposit" "adverse-input" ["update_preserves_custody", "update_inversion"]
-      (insertKey 5 ++ [.update 0 [successorOf 5 payload1 (insertDeposit - 1)] [controller]])
-  , scenario "update-drops-token" "adverse-input" ["update_preserves_custody", "update_inversion"]
-      (insertKey 5 ++ [.update 0 [{ successorOf 5 payload1 insertDeposit with assets := [] }]
-        [controller]])
-  , scenario "early-withdrawal" "adverse-input" ["withdraw_inversion", "only_fold_releases"]
-      (insertKey 5 ++ [.withdraw 0 (paid insertDeposit)])
-  , scenario "reject-keeps-locked" "witness"
-      ["reject_inversion", "only_fold_releases", "withdraw_inversion", "reject_preserves_consistent"]
-      (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller],
-        .reject .updateTerminal 5 (paid terminateDeposit), .withdraw 0 (paid insertDeposit)])
-  , scenario "book-deleteActive" "adverse-input" ["bookOther_refused"]
-      (insertKey 5 ++ [.bookOther { terminateRequest 5 with edge := .deleteActive } [controller]])
-  , scenario "release-without-booking" "adverse-input" ["fold_inversion"]
-      (insertKey 5 ++ [.fold [(.updateTerminal, 5)] (paid (insertDeposit + terminateDeposit))])
-  , scenario "registry-asset-other-name" "adverse-input" ["insertion_requires_registry_identity"]
-      (insertKey 5) { policy := 50, assetName := 52 }
-  , scenario "registry-asset-other-policy" "adverse-input" ["insertion_requires_registry_identity"]
-      (insertKey 5) { policy := 60, assetName := 51 }
-  , scenario "envelope-names-other-registry" "adverse-input" ["insertion_requires_registry_identity"]
-      [.bookInsert (insertRequest 5 otherRegistryEnvelope) otherRegistryEnvelope [controller]]
-  , scenario "booking-unsigned" "adverse-input" ["bookInsert_inversion"]
-      [.bookInsert (insertRequest 5 (envelopeFor 5 payload0)) (envelopeFor 5 payload0) [stranger]]
-  , scenario "booking-other-destination" "adverse-input" ["bookInsert_inversion"]
-      [.bookInsert { insertRequest 5 (envelopeFor 5 payload0) with output := 99 }
-        (envelopeFor 5 payload0) [controller]]
-  , scenario "booking-deposit-mismatch" "adverse-input" ["bookInsert_inversion"]
-      [.bookInsert { insertRequest 5 (envelopeFor 5 payload0) with deposit := insertDeposit + 1 }
-        (envelopeFor 5 payload0) [controller]]
-  , scenario "booking-no-datum" "adverse-input" ["bookInsert_inversion"]
-      [bookingNoDatum]
-  , scenario "terminate-booking-by-stranger" "adverse-input" ["bookTerminate_inversion"]
-      (insertKey 5 ++ [.bookTerminate { terminateRequest 5 with owner := stranger } 0 [stranger]])
-  , scenario "duplicate-insertion" "adverse-input" ["duplicate_refused_by_registry"]
-      (insertKey 5 ++ insertKey 5)
-  , scenario "resurrection" "adverse-input" ["resurrection_refused_by_registry"]
-      (insertKey 5 ++ terminate5 0 (paid (insertDeposit + terminateDeposit)) ++ insertKey 5)
-  ]
-
-/-! ## The invariant boundary
-
-The occurrence clause of `AppConsistent` excludes an inventory holding one
-output twice. The two worlds below exhibit it: the ordinary world reached by
-inserting key 5, and the same world with its one output occurrence duplicated —
-a world no action reaches, which the previous invariant admitted. On each the
-boundary publishes the invariant observation and the outcome of the same signed
-update: on the duplicate the update is accepted and leaves two different outputs
-of one key, the old counterexample, now outside the preservation domain because
-its starting world is not consistent. -/
-
-/-- The world reached by these actions from this corpus's genesis, keeping the
-world through a refused action. -/
-def reachWorld (actions : List AppAction) : World :=
-  actions.foldl (fun w a => match appStep w a with
-    | .ok w' => w'
-    | .error _ => w) (genesis app0 cfg0 app0.registry)
+def corpus : List Scenario := Id.run do
+  let term := bookedTerminationActions 0
+  let mixed0 := insertKey 5 ++ [bookInsertKey 6]
+  let mixed1 := mixed0 ++ [foldAction mixed0 [⟨10, 6⟩]]
+  let mixed2 := mixed1 ++ [.bookTerminate (termination (reachWorld mixed1) 5 0 0 2000000) 0 0 [controller]]
+  let mixed3 := mixed2 ++ [.bookTerminate (termination (reachWorld mixed2) 6 1 0 2000000) 1 0 [controller], bookInsertKey 7]
+  let reg := [bookInsertKey 5]
+  let rejectBesideTermination := term ++ [bookInsertKey 6]
+  let dup := insertKey 5 ++ [bookInsertKey 5 1]
+  let resurrect := lifecycleActions 0 ++ [bookInsertKey 5 1]
+  let b := registration 5 0 (envelopeFor 5 payload0)
+  let short := termination (reachWorld updatedActions) 5 1 0 2000000
+  let short := { short with request := { short.request with carrierAda := 1000000,     contents := { short.request.contents with lovelace := 3000000 } } }
+  return [
+    scenario "lifecycle-tip-from-held" "witness" ["update_requires_controller","bookInsert_inversion","bookTerminate_inversion","update_inversion","fold_inversion","appStep_fold","selectRow_inversion","genesis_consistent","appStep_preserves_consistent","reachable_consistent","bookInsert_preserves_consistent","bookTerminate_preserves_consistent","update_preserves_consistent","fold_preserves_consistent","update_keeps_registry","update_preserves_custody","insertion_requires_registry_identity","insertion_binds_envelope","insertion_holding_inline","bookTerminate_transfers_custody","termination_fold_burns_atomically","only_termination_booking_transfers_custody","fold_routes_economics","fold_consumed_requests_disappear","fold_requires_no_application_signature","registration_tag_binds_nonce","termination_has_no_application_tag_or_clock","termination_booking_has_no_controller_payout","termination_booking_value_transfer","application_root_world_correspondence","application_supply_spans_custody_and_pending","termination_fold_donates_held_minus_tip","termination_has_no_expiry","selected_request_refs_distinct","registration_allocations_are_distinct"] (lifecycleActions 0),
+    scenario "lifecycle-optional-addition" "witness" ["termination_booking_value_transfer", "termination_fold_donates_held_minus_tip"] (lifecycleActions 1000000),
+    scenario "two-terminations-and-registration" "witness" ["fold_routes_economics", "selected_request_refs_distinct"] (mixed3 ++ [coincidentFold mixed3 [⟨100, 5⟩, ⟨101, 6⟩, ⟨10, 7⟩]]),
+    scenario "payload-b" "witness" ["update_payload_free"] (insertKey 5 ++ [.update 0 [successorOf 5 payload2 insertDeposit] [controller]]),
+    scenario "update-unsigned" "adverse-input" ["update_requires_controller"] (insertKey 5 ++ [.update 0 [successorOf 5 payload1 insertDeposit] [stranger]]),
+    scenario "update-control" "adverse-input" ["update_preserves_custody"] (insertKey 5 ++ [.update 0
+      [{ successorOf 5 payload1 insertDeposit with envelope := { envelopeFor 5 payload1 with control := { (envelopeFor 5 payload1).control with controller := stranger } } }] [controller]]),
+    scenario "update-escape" "adverse-input" ["update_preserves_custody"] (insertKey 5 ++ [.update 0
+      [{ successorOf 5 payload1 insertDeposit with address := stranger }] [controller]]),
+    scenario "update-floor" "adverse-input" ["update_preserves_custody"] (insertKey 5 ++ [.update 0 [successorOf 5 payload1 1] [controller]]),
+    scenario "update-drops-token" "adverse-input" ["update_preserves_custody"] (insertKey 5 ++ [.update 0 [{ successorOf 5 payload1 insertDeposit with assets := [] }] [controller]]),
+    scenario "withdraw" "adverse-input" ["withdraw_inversion"] (insertKey 5 ++ [.withdraw 0 []]),
+    scenario "pending-cannot-update" "adverse-input" ["pending_termination_cannot_be_rebooked_or_updated"] (term ++ [.update 1 [successorOf 5 payload2 insertDeposit] [controller]]),
+    scenario "pending-cannot-rebook" "adverse-input" ["pending_termination_cannot_be_rebooked_or_updated"] (term ++ [.bookTerminate (termination (reachWorld updatedActions) 5 1 0 2000000) 1 0 [controller]]),
+    scenario "termination-rejection-refused" "adverse-input" ["termination_has_no_expiry"] (term ++ [rejectAction term [⟨101, 5⟩]]),
+    scenario "registration-rejection-beside-pending-termination" "witness" ["rejection_preserves_pending_terminations", "reject_preserves_consistent"] (rejectBesideTermination ++ [rejectAction rejectBesideTermination [⟨10, 6⟩]]),
+    scenario "registration-expired-rejection" "witness" ["reject_inversion", "reject_preserves_consistent", "rejection_preserves_pending_terminations"] (reg ++ [rejectAction reg [⟨10, 5⟩]]),
+    scenario "duplicate-insertion" "adverse-input" ["duplicate_refused_by_registry"] (dup ++ [foldAction dup [⟨11, 5⟩]]),
+    scenario "resurrection" "adverse-input" ["resurrection_refused_by_registry"] (resurrect ++ [foldAction resurrect [⟨11, 5⟩]]),
+    scenario "registry-asset-other-name" "adverse-input" ["insertion_requires_registry_identity"] reg { policy := 50, assetName := 52 },
+    scenario "registry-asset-other-policy" "adverse-input" ["insertion_requires_registry_identity"] reg { policy := 60, assetName := 51 },
+    scenario "booking-no-datum" "adverse-input" ["insertion_binds_envelope"] [bookingNoDatum],
+    scenario "booking-unsigned" "adverse-input" ["bookInsert_inversion"] [.bookInsert b (envelopeFor 5 payload0) [stranger]],
+    scenario "termination-unsigned" "adverse-input" ["bookTerminate_inversion"] (updatedActions ++ [.bookTerminate (termination (reachWorld updatedActions) 5 1 0 2000000) 1 0 [stranger]]),
+    scenario "termination-diverts-surplus" "adverse-input" ["termination_booking_value_transfer"] (updatedActions ++ [.bookTerminate short 1 0 [controller]]),
+    scenario "other-edge" "adverse-input" ["bookOther_refused"] [.bookOther { edge := .deleteActive, key := 5 } [controller]] ]
 
 def ordinaryWorld : World := reachWorld (insertKey 5)
-
-def duplicatedWorld : World :=
-  { ordinaryWorld with outputs := ordinaryWorld.outputs ++ ordinaryWorld.outputs }
-
+def duplicatedWorld : World := { ordinaryWorld with outputs := ordinaryWorld.outputs ++ ordinaryWorld.outputs }
 def boundaryUpdate : AppAction := .update 0 [successorOf 5 payload1 insertDeposit] [controller]
-
-/-- One boundary world: whether actions reach it, its invariant observation,
-the weakened observation without the occurrence clause, and the update. -/
 structure BoundaryWorld where
   name : String
   reached : Bool
@@ -444,29 +338,12 @@ structure BoundaryWorld where
   world : World
 
 def boundaryWorlds : List BoundaryWorld :=
-  [ { name := "ordinary-after-insert", reached := true, world := ordinaryWorld
-    , statements := ["consistent_occurrences_distinct", "appConsistentB_iff", "update_preserves_consistent"] }
-  , { name := "identical-duplicate-occurrence", reached := false, world := duplicatedWorld
-    , statements := ["duplicate_occurrence_outside_invariant", "appConsistentB_iff"] } ]
-
-/-! ## The selection boundary
-
-A pending insertion reaches a fold only through a booking, which requires it to
-carry its envelope as its datum. The fold's selection re-checks it anyway, so a
-world no action reaches — the booked insertion of key 5 with its datum cleared —
-cannot turn into
-an envelope the registry never delivers: the same fold that accepts the reached
-booking refuses it at selection. -/
+  [⟨"ordinary-after-insert", true, ["consistent_occurrences_distinct", "appConsistentB_iff"], ordinaryWorld⟩,
+   ⟨"identical-duplicate-occurrence", false, ["duplicate_occurrence_outside_invariant"], duplicatedWorld⟩]
 
 def bookedWorld : World := reachWorld [bookInsertKey 5]
-
-def unnamedPendingWorld : World :=
-  { bookedWorld with pending := bookedWorld.pending.map fun p =>
-      { p with request := { p.request with datum := none } } }
-
-def selectionFold : AppAction := .fold [(.insertActive, 5)] []
-
-/-- One selection-boundary world and the outcome of the same fold on it. -/
+def unnamedPendingWorld : World := { bookedWorld with economic := { bookedWorld.economic with   pending := bookedWorld.economic.pending.map fun b => { b with request := { b.request with datum := none } } } }
+def selectionFold : AppAction := foldAction [bookInsertKey 5] [⟨10, 5⟩]
 structure SelectionWorld where
   name : String
   reached : Bool
@@ -474,38 +351,23 @@ structure SelectionWorld where
   world : World
 
 def selectionWorlds : List SelectionWorld :=
-  [ { name := "booked-insertion-names-datum", reached := true, world := bookedWorld
-    , statements := ["selectRow_requires_named_datum"] }
-  , { name := "pending-insertion-names-no-datum", reached := false, world := unnamedPendingWorld
-    , statements := ["selectRow_requires_named_datum"] } ]
+  [⟨"booked-insertion-names-datum", true, ["selectRow_requires_named_datum"], bookedWorld⟩,
+   ⟨"pending-insertion-names-no-datum", false, ["selectRow_requires_named_datum"], unnamedPendingWorld⟩]
 
 def selectionWorldToJson (s : SelectionWorld) : Json :=
-  Json.mkObj [("name", toJson s.name), ("reached", toJson s.reached)
-    , ("statements", toJson s.statements), ("world", worldToJson s.world)
-    , ("fold", match appStep s.world selectionFold with
-        | .ok w' => Json.mkObj [("outcome", "accepted"), ("world", worldToJson w')]
-        | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)])]
-
-def boundaryUpdateJson (w : World) : Json :=
-  match appStep w boundaryUpdate with
-  | .ok w' => Json.mkObj [("outcome", "accepted"), ("consistentAfter", toJson (appConsistentB w'))
-      , ("world", worldToJson w')]
-  | .error why => Json.mkObj [("outcome", "refused"), ("reason", toJson why)]
-
+  Json.mkObj [("name", toJson s.name), ("reached", toJson s.reached), ("statements", toJson s.statements),
+    ("world", worldToJson s.world), ("fold", stepToJson (appStep s.world selectionFold))]
 def boundaryToJson (b : BoundaryWorld) : Json :=
-  Json.mkObj [("name", toJson b.name), ("reached", toJson b.reached)
-    , ("statements", toJson b.statements)
-    , ("consistent", toJson (appConsistentB b.world))
-    , ("consistentWithoutOccurrenceClause", toJson (appConsistentBWith false b.world))
-    , ("world", worldToJson b.world), ("update", boundaryUpdateJson b.world)]
+  Json.mkObj [("name", toJson b.name), ("reached", toJson b.reached), ("statements", toJson b.statements),
+    ("world", worldToJson b.world), ("consistent", toJson (appConsistentB b.world)),
+    ("consistentWithoutOccurrenceClause", toJson (appConsistentBWith false b.world)),
+    ("update", stepToJson (appStep b.world boundaryUpdate))]
 
 def corpusWith (law : Law) : Json :=
-  Json.mkObj [("scenarios", Json.arr (corpus.map (runScenarioWith law)).toArray)
-    , ("invariantBoundary", Json.arr (boundaryWorlds.map boundaryToJson).toArray)
-    , ("selectionBoundary", Json.arr (selectionWorlds.map selectionWorldToJson).toArray)]
-
+  Json.mkObj [("scenarios", toJson (corpus.map (runScenarioWith law))),
+    ("invariantBoundary", toJson (boundaryWorlds.map boundaryToJson)),
+    ("selectionBoundary", toJson (selectionWorlds.map selectionWorldToJson))]
 def corpusJson : Json := corpusWith Law.standard
-
 /-! ## SHA-256
 
 FIPS 180-4, over bytes. It binds each ledger row to the exact text of its
@@ -598,25 +460,54 @@ which published cases exhibit it, not that any product claim was executed. The
 semantic atoms remain creator claims for review. -/
 
 def statementNames : List (String × String) :=
-  [ ("bookInsert_inversion", "inversion"), ("bookTerminate_inversion", "inversion")
-  , ("bookOther_refused", "inversion"), ("update_inversion", "inversion")
-  , ("fold_inversion", "inversion"), ("appStep_fold", "inversion")
-  , ("reject_inversion", "inversion"), ("withdraw_inversion", "inversion")
-  , ("genesis_consistent", "invariant"), ("appStep_preserves_consistent", "invariant")
-  , ("reachable_consistent", "invariant"), ("consistent_occurrences_distinct", "invariant")
-  , ("duplicate_occurrence_outside_invariant", "invariant"), ("appConsistentB_iff", "invariant")
-  , ("bookInsert_preserves_consistent", "invariant"), ("bookTerminate_preserves_consistent", "invariant")
-  , ("update_preserves_consistent", "invariant"), ("fold_preserves_consistent", "invariant")
+  [ ("bookInsert_inversion", "inversion")
+  , ("bookTerminate_inversion", "inversion")
+  , ("bookOther_refused", "inversion")
+  , ("update_inversion", "inversion")
+  , ("selectRow_inversion", "inversion")
+  , ("fold_inversion", "inversion")
+  , ("appStep_fold", "inversion")
+  , ("reject_inversion", "inversion")
+  , ("withdraw_inversion", "inversion")
+  , ("genesis_consistent", "invariant")
+  , ("appStep_preserves_consistent", "invariant")
+  , ("reachable_consistent", "invariant")
+  , ("consistent_occurrences_distinct", "invariant")
+  , ("duplicate_occurrence_outside_invariant", "invariant")
+  , ("appConsistentB_iff", "requirement")
+  , ("bookInsert_preserves_consistent", "invariant")
+  , ("bookTerminate_preserves_consistent", "invariant")
+  , ("update_preserves_consistent", "invariant")
+  , ("fold_preserves_consistent", "invariant")
   , ("reject_preserves_consistent", "invariant")
-  , ("update_requires_controller", "authorization"), ("update_preserves_custody", "custody")
-  , ("update_payload_free", "payload"), ("update_keeps_registry", "composition")
-  , ("insertion_requires_registry_identity", "evidence-binding")
-  , ("insertion_binds_envelope", "evidence-binding"), ("bookTerminate_keeps_locked", "custody")
-  , ("release_burns_atomically", "terminality"), ("only_fold_releases", "refusal")
-  , ("fold_settles_additively", "value"), ("fold_spent_disappears", "custody")
-  , ("selectRow_requires_named_datum", "evidence-binding"), ("insertion_holding_inline", "evidence-binding")
-  , ("duplicate_refused_by_registry", "refusal")
-  , ("resurrection_refused_by_registry", "terminality"), ("fold_signers_unchanged", "authorization") ]
+  , ("update_requires_controller", "requirement")
+  , ("update_preserves_custody", "requirement")
+  , ("update_payload_free", "requirement")
+  , ("update_keeps_registry", "requirement")
+  , ("insertion_requires_registry_identity", "requirement")
+  , ("insertion_binds_envelope", "requirement")
+  , ("selectRow_requires_named_datum", "requirement")
+  , ("insertion_holding_inline", "requirement")
+  , ("bookTerminate_transfers_custody", "requirement")
+  , ("termination_fold_burns_atomically", "requirement")
+  , ("only_termination_booking_transfers_custody", "requirement")
+  , ("fold_routes_economics", "requirement")
+  , ("fold_consumed_requests_disappear", "requirement")
+  , ("duplicate_refused_by_registry", "requirement")
+  , ("resurrection_refused_by_registry", "requirement")
+  , ("fold_requires_no_application_signature", "requirement")
+  , ("registration_tag_binds_nonce", "requirement")
+  , ("termination_has_no_application_tag_or_clock", "requirement")
+  , ("termination_booking_has_no_controller_payout", "requirement")
+  , ("termination_booking_value_transfer", "requirement")
+  , ("pending_termination_cannot_be_rebooked_or_updated", "requirement")
+  , ("application_root_world_correspondence", "requirement")
+  , ("application_supply_spans_custody_and_pending", "requirement")
+  , ("termination_fold_donates_held_minus_tip", "requirement")
+  , ("termination_has_no_expiry", "requirement")
+  , ("selected_request_refs_distinct", "requirement")
+  , ("rejection_preserves_pending_terminations", "requirement")
+  , ("registration_allocations_are_distinct", "requirement") ]
 
 /-- A statement's qualified name. -/
 def qualified (name : String) : String := s!"OpenDatumApplication.Statements.{name}"
@@ -672,16 +563,18 @@ def theoremLedgerOf (rows : List StatementStatus) : Json :=
           (selectionWorlds.filter (·.statements.contains name)).map (·.name)))]).toArray
 
 def atoms : List (String × String × String) :=
-  [ ("A1", "authorization", "only the controller's signature admits an update or a booking")
-  , ("A2", "evidence-binding", "the insertion approval's destination binds this contract and the envelope hash; the envelope and the application name the actual registry state asset")
-  , ("A3", "value", "the protected deposit equals the insertion request's deposit and is never below it at the contract")
-  , ("A4", "custody", "the token stays at the contract through updates, termination booking and rejects")
-  , ("A5", "refusal", "no spend other than update and fold is accepted, and no uncertified edge is booked")
-  , ("A6", "terminality", "a release happens only in the registry's accepted fold of the same key's updateTerminal, whose own mint burns exactly that key's active token")
-  , ("A7", "value", "each recipient receives the sum of every selected request's registry payment and every released deposit owed to it")
-  , ("A8", "composition", "duplicate insertion and resurrection are refused by the registry fold, not the application")
-  , ("A9", "composition", "payload updates leave the registry and the bookings unchanged")
-  , ("A10", "custody", "the inventory holds each output occurrence once: references are pairwise distinct and no key has two live outputs") ]
+  [ ("A1", "authorization", "the controller signs each booking and payload update")
+  , ("A2", "binding", "registration binds the whole envelope, registry identity and nonce-bound root application tag")
+  , ("A3", "value", "registration carrier equals the protected floor; live updates preserve at least that floor")
+  , ("A4", "custody", "termination booking consumes the actual output and transfers its genuine singular tag and all actual value")
+  , ("A5", "refusal", "arbitrary withdrawal and uncertified booking edges are refused")
+  , ("A6", "terminality", "the root fold burns a pending termination's singular and trie-ready tags and makes its leaf Terminal")
+  , ("A7", "value", "held equals actual output value plus optional additions equals tip plus carrier; donation is held minus tip, without a protected-floor minimum")
+  , ("A8", "composition", "the frozen root fold refuses duplicate registration and resurrection")
+  , ("A9", "payload", "arbitrary payload updates preserve control, assets, snapshot and root economic world")
+  , ("A10", "custody", "references and live keys are unique; supply spans application custody and pending termination")
+  , ("A11", "value", "root fold routes costs and termination donations to treasury, carriers separately and tips to exact gross ordinary allocation with ordinary-funded fees")
+  , ("A12", "refusal", "root registration rejection is available; pending termination has no expiry, rejection or application retraction action") ]
 
 def atomLedger : Json :=
   Json.arr (atoms.map fun (id, cls, text) =>
@@ -717,7 +610,13 @@ def alterFirstOutcome (recorded : Json) : Except String Json := do
 def mutants : List (String × Law) :=
   [ ("no-update-signer", { checkUpdateSigner := false })
   , ("no-registry-asset", { checkRegistryAsset := false })
-  , ("per-floor-settlement", { additiveSettlement := false }) ]
+  , ("divert-application-value", { checkTransferredValue := false })
+  , ("no-booking-signer", { checkBookingSigner := false })
+  , ("change-update-control", { checkUpdateControl := false })
+  , ("escape-update-address", { checkUpdateAddress := false })
+  , ("drop-update-floor", { checkUpdateFloor := false })
+  , ("rewrite-registration-snapshot", { preserveSnapshot := false })
+  , ("keep-booked-custody", { removeBookedCustody := false }) ]
 
 /-- The scenarios a law runs differently from the recorded corpus. -/
 def differingUnder (law : Law) (recorded : Json) : Except String (List String) := do
