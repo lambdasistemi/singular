@@ -1,0 +1,73 @@
+singular VERSION (commit unknown)
+
+Usage: singular registry describe --blueprint FILE --state-token POLICY.NAME
+       --koios-url URL --network-magic N [--koios-token-file FILE]
+       [--network-time DIR] [--json] [--trace LEVEL] [--trace-to SINK]
+       [--trace-format FORMAT]
+
+Print the registry page
+
+Reads the registry page from the chain alone: which registry this is, which
+release it runs, what its rules are and what it holds now. It takes no wallet,
+key, state directory or other actor file: each such setting is refused by name
+before anything is read.
+
+The version label comes from the version file beside the blueprint; it is
+refused by name when missing, unreadable or malformed.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  The compiled validators (plutus.json) of the release.
+  option: --blueprint FILE
+
+  The registry to act on: its state token, policy and name in hex, as create
+  prints it.
+  option: --state-token POLICY.NAME
+  env: SINGULAR_STATE_TOKEN POLICY.NAME
+
+  Base URL of the Koios API used to read the chain and to submit.
+  option: --koios-url URL
+
+  The network: 1 for preprod, 42 for the generated development network.
+  option: --network-magic N
+
+  File holding a Koios bearer token; its contents are never printed.
+  option: --koios-token-file FILE
+
+  Directory with the pinned time-manifest.json, shelley-genesis.json and
+  era-history.cbor.
+  option: --network-time DIR
+  default: the preprod recording packaged with the program
+
+  Print the page as JSON for a program to read.
+  switch: --json
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  default: text on standard error, json in a file
+
+Environment:
+  SINGULAR_LOG  A file the protocol phases are appended to, one line each.
+
+Example:
+  singular registry describe --blueprint plutus.json \
+      --state-token <policy>.<name> --koios-url https://preprod.koios.rest/api/v1 --network-magic 1
+
+Output and exit status:
+  Prints the page alone, as text or with --json as JSON, and writes no file.
+  Exit status 0 on success, 2 for a command line it refused, otherwise the
+  outcome class the receipt names: 10 refused before anything was sent,
+  11 refused by the ledger, 12 node unavailable, 13 timeout, 14 stale state,
+  15 partial, 16 another writer, 17 proof missing, 18 proof inconsistent,
+  19 waiting for signatures.

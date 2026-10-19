@@ -36,7 +36,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
 import Data.Either (fromLeft)
-import Data.List (isInfixOf, isPrefixOf)
+import Data.List (findIndex, isInfixOf, isPrefixOf, tails)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust)
 import Data.Set qualified as Set
@@ -163,11 +163,12 @@ access = RegistryAccess{accessToken = token}
 
 commandLine :: Spec
 commandLine = describe "the command line" $ do
-    it "answers help at the top and under registry" $ do
-        parseOpenDatumCommand ["--help"] `shouldBe` Right OpenHelp
-        parseOpenDatumCommand ["open-datum", "--help"]
-            `shouldBe` Right OpenHelp
-        parseOpenDatumCommand [] `shouldBe` Right OpenHelp
+    it "answers help at the top and under the program name" $
+        forM_ [["--help"], ["open-datum", "--help"], []] $ \args ->
+            case parseOpenDatumCommand args of
+                Right (OpenHelp page) ->
+                    page `shouldSatisfy` isInfixOf "Usage: open-datum"
+                other -> expectationFailure ("not help: " <> show other)
     it "names the six commands and only them in its openDatumUsage" $ do
         forM5
             [ "create"
@@ -847,48 +848,12 @@ externalSignerRows = describe "the external signer" $ do
                         )
                     )
     it
-        "names the external signer beside the key file on each write's usage"
-        $ do
-            let ls = lines openDatumUsage
-                startsWith prefix l = prefix `isPrefixOf` l
-                blockStarts verb =
-                    [ i
-                    | (i, l) <- zip [0 :: Int ..] ls
-                    , startsWith ("  open-datum " <> verb <> " ") l
-                        || startsWith ("  open-datum " <> verb <> "[") l
-                    , not ("--preview" `isInfixOf` l)
-                    ]
-                blockAt start =
-                    takeWhile
-                        (\l -> not (startsWith "  open-datum" l || null l))
-                        (drop (start + 1) ls)
-                keySigner l = "--wallet-skey FILE" `isInfixOf` l
-                withoutPreview = T.unpack . T.replace "[--preview] " "" . T.pack
-                extSigner l = "--wallet-address ADDR --bundle FILE" `isInfixOf` l
-            forM_ ["create", "insert", "update", "terminate", "fold"] $ \verb -> do
-                case blockStarts verb of
-                    [first, second, _vaultBlock] -> do
-                        let firstBlock = blockAt first
-                            secondBlock = blockAt second
-                        (any keySigner firstBlock, any extSigner firstBlock)
-                            `shouldBe` (True, False)
-                        (any keySigner secondBlock, any extSigner secondBlock)
-                            `shouldBe` (False, True)
-                        -- the external shape carries the same optional flags as
-                        -- the key-file shape: only the signer line differs
-                        -- (create's key-file shape also lists the preview switch, which an
-                        -- external run refuses)
-                        map
-                            (\l -> if keySigner l then "SIGNER" else withoutPreview l)
-                            firstBlock
-                            `shouldBe` map (\l -> if extSigner l then "SIGNER" else l) secondBlock
-                    other ->
-                        expectationFailure
-                            ( "the usage does not carry exactly the key-file, external and vault shapes for "
-                                <> verb
-                                <> ": "
-                                <> show other
-                            )
+        "groups the vault, the external signer and the key file, in that order, on each write's usage"
+        $ forM_ ["create", "insert", "update", "terminate", "fold"]
+        $ \verb ->
+            usageOf verb
+                `shouldSatisfy` isInfixOf
+                    "--vault FILE [--passphrase-fd N] | --wallet-address ADDR --bundle FILE | --wallet-skey FILE"
 
 {- | The vault signer (#642 slice 3): the vault file, with the descriptor its
 passphrase is read from, names the signer of each of the five writes, read
@@ -1018,36 +983,12 @@ vaultSignerRows = describe "the vault signer" $ do
                     )
                 )
     it
-        "names the vault beside the key file and the external signer on each write's usage"
-        $ do
-            let ls = lines openDatumUsage
-                startsWith prefix l = prefix `isPrefixOf` l
-                blockStarts verb =
-                    [ i
-                    | (i, l) <- zip [0 :: Int ..] ls
-                    , startsWith ("  open-datum " <> verb <> " ") l
-                        || startsWith ("  open-datum " <> verb <> "[") l
-                    , not ("--preview" `isInfixOf` l)
-                    ]
-                blockAt start =
-                    takeWhile
-                        (\l -> not (startsWith "  open-datum" l || null l))
-                        (drop (start + 1) ls)
-                vaultLine l = "--vault FILE [--passphrase-fd FD]" `isInfixOf` l
-            forM_ ["create", "insert", "update", "terminate", "fold"] $ \verb ->
-                case blockStarts verb of
-                    [_, _, third] ->
-                        ( any vaultLine (blockAt third)
-                        , any ("--wallet-skey" `isInfixOf`) (blockAt third)
-                        )
-                            `shouldBe` (True, False)
-                    other ->
-                        expectationFailure
-                            ( "the usage does not carry the key-file, external and vault shapes for "
-                                <> verb
-                                <> ": "
-                                <> show other
-                            )
+        "lists the vault route before the key file on each write's usage"
+        $ forM_ ["create", "insert", "update", "terminate", "fold"]
+        $ \verb ->
+            let usage = usageOf verb
+                at needle = findIndex (isPrefixOf needle) (tails usage)
+            in  ((<) <$> at "--vault" <*> at "--wallet-skey") `shouldBe` Just True
 
 -- ---------------------------------------------------------
 -- A creator's seed and directory
@@ -1979,11 +1920,10 @@ foldCommandRows = describe "booking and folding as separate commands" $ do
                 `shouldSatisfy` refusesNaming "--request" "open-datum fold"
             terminateWith ["--request", replicate 64 'a' <> "#0"]
                 `shouldSatisfy` refusesNaming "--request" "open-datum fold"
-    it "describes fold and --fold in its openDatumUsage" $ do
-        openDatumUsage
-            `shouldSatisfy` isInfixOf "open-datum fold [--state-dir ROOT]"
-        openDatumUsage `shouldSatisfy` isInfixOf "--request TXID#IX"
-        openDatumUsage `shouldSatisfy` isInfixOf "[--fold]"
+    it "describes fold, its --request and --fold in the help" $ do
+        openDatumUsage `shouldSatisfy` isInfixOf "open-datum fold"
+        usageOf "fold" `shouldSatisfy` isInfixOf "[--request TXID#IX]"
+        usageOf "insert" `shouldSatisfy` isInfixOf "[--fold]"
   where
     entryFoldOf = \case
         OpenInsert e -> entryFold e
@@ -2053,5 +1993,15 @@ outputsAtRows = describe "reading the outputs at an address with inspect" $ do
                 `shouldSatisfy` \case
                     Left (BadValue "--outputs-at" why) -> "open-datum inspect" `isInfixOf` why
                     _ -> False
-    it "is described in the openDatumUsage" $
-        openDatumUsage `shouldSatisfy` isInfixOf "[--outputs-at ADDR]"
+    it "is described on the inspect usage" $
+        usageOf "inspect" `shouldSatisfy` isInfixOf "[--outputs-at ADDR]"
+
+-- | The usage lines of one command's help page, on one line.
+usageOf :: String -> String
+usageOf verb =
+    unwords
+        . concatMap words
+        . takeWhile (not . null)
+        . dropWhile (not . isPrefixOf "Usage:")
+        . lines
+        $ openDatumHelp [verb]

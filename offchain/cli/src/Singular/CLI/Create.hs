@@ -1180,6 +1180,10 @@ previewIdentity app submitting a rel addr utxos pp mustPublish = do
             , "--network-magic"
             , show (providerMagic providerFromCreate)
             ]
+                <> maybe
+                    []
+                    (\file -> ["--koios-token-file", file])
+                    (providerTokenFile providerFromCreate)
                 <> case providerTimeDirectory providerFromCreate of
                     Nothing -> []
                     Just dir -> ["--network-time", dir]

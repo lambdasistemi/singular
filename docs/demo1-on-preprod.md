@@ -147,9 +147,9 @@ build` command line or, if your user is not trusted by the Nix daemon, as
 ```
 
 The flakes also name the Cardano build cache `https://cache.iog.io`; Nix asks
-once whether to accept it. There is no `singular --version` yet (it is planned in
-[issue 348](https://github.com/lambdasistemi/singular/issues/348)), so the printed
-store path is the only evidence of which build you hold. The blueprint is
+once whether to accept it. `singular --version` prints the program, its version and
+the commit it was built from; a build that carries no commit says `commit
+unknown`, and the printed store path then tells which build you hold. The blueprint is
 `onchain/plutus.json`, beside the `version.txt` that names the release.
 
 ## Make Alice's and Bob's wallets

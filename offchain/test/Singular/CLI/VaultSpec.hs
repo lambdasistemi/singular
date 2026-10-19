@@ -587,7 +587,10 @@ walletVerbs = describe "the wallet verbs on the command line" $ do
                 writeSigner (foldWrite a) `shouldBe` SignerVault "x" (Just 3)
             other -> expectationFailure ("the vault was not taken: " <> show other)
     it "takes a bare wallet word as help" $
-        parseCommand ["wallet"] `shouldBe` Right Help
+        case parseCommand ["wallet"] of
+            Right (Help page) ->
+                page `shouldSatisfy` isInfixOf "Usage: singular wallet COMMAND"
+            other -> expectationFailure ("not help: " <> show other)
 
 -- | A registry fold line complete but for its signer.
 registryFoldLine :: [String]

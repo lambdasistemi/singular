@@ -1,0 +1,75 @@
+singular VERSION (commit unknown)
+
+Usage: singular submit --witnesses FILE --koios-url URL --network-magic N
+       [--koios-token-file FILE] [--network-time DIR] [--receipt FILE]
+       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT] BUNDLE
+
+Send a signed bundle, print its receipt
+
+Sends a bundle its signers witnessed. Each witness file, or each .witness file
+of a directory, is matched to a transaction by its signature, and every check
+runs before the first send: a witness for no transaction or for a key no
+transaction needs, a missing witness, an input found nowhere and a body the
+tip has expired (rebuild the bundle) are refused by name.
+
+The transactions the chain does not hold are sent in the bundle's order, each
+confirmed before the next; an uncertain answer stops the run as partial and
+nothing is sent again, so running it again sends only the rest. It takes no
+wallet key and no vault, and keeps no state.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  A witness file from wallet sign, or a directory of them; give it once for
+  each.
+  option: --witnesses FILE
+
+  Base URL of the Koios API used to read the chain and to submit.
+  option: --koios-url URL
+
+  The network: 1 for preprod, 42 for the generated development network.
+  option: --network-magic N
+
+  File holding a Koios bearer token; its contents are never printed.
+  option: --koios-token-file FILE
+
+  Directory with the pinned time-manifest.json, shelley-genesis.json and
+  era-history.cbor.
+  option: --network-time DIR
+  default: the preprod recording packaged with the program
+
+  Also write the JSON receipt to FILE.
+  option: --receipt FILE
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  default: text on standard error, json in a file
+
+  The bundle of unsigned transactions.
+  argument: BUNDLE
+
+Environment:
+  SINGULAR_LOG  A file the protocol phases are appended to, one line each.
+
+Example:
+  singular submit bundle.json --witnesses witnesses \
+      --koios-url https://preprod.koios.rest/api/v1 --network-magic 1
+
+Output and exit status:
+  The receipt is read back from the chain and printed as JSON on standard
+  output.
+  Exit status 0 on success, 2 for a command line it refused, otherwise the
+  outcome class the receipt names: 10 refused before anything was sent,
+  11 refused by the ledger, 12 node unavailable, 13 timeout, 14 stale state,
+  15 partial, 16 another writer, 17 proof missing, 18 proof inconsistent,
+  19 waiting for signatures.

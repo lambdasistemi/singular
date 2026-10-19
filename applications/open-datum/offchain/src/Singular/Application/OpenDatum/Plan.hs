@@ -36,7 +36,6 @@ module Singular.Application.OpenDatum.Plan
     , refuseOver
     , refuseUnderfunded
     , emptyFields
-    , faucetStep
     , retainedFaucetStep
     , resolveFunding
     , outlayReport
@@ -82,7 +81,6 @@ import Singular.CLI.Command (EntryArgs (..), Key (..))
 import Singular.CLI.Live
 import Singular.CLI.Plan
     ( emptyFields
-    , faucetStep
     , outlayReport
     , readJson
     , refuseOver
@@ -307,6 +305,6 @@ buildUpdate v live addr chosen holding payload = do
         >>= either (failWith ClientRefusal) pure
 
 -- Generic planning (readJson, refuseOver, refuseUnderfunded,
--- faucetStep, resolveFunding, outlayReport) comes from
+-- retainedFaucetStep, resolveFunding, outlayReport) comes from
 -- Singular.CLI.Plan, the one module both binaries plan through, and is
 -- re-exported here so existing callers keep importing this module.

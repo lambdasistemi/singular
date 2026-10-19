@@ -711,6 +711,17 @@ done
 for c in create insert update terminate fold inspect; do
   grep -q "open-datum $c" "$work/help-open-datum.txt" || fail "open-datum help does not name $c"
 done
+# Each packaged program says what it is: --version prints its name, version
+# and commit, and the first line of its help is the same line.
+check_identity() { # check_identity PROGRAM BINARY HELP-FILE
+  local name="$1" identity
+  identity="$("$2" --version)" || fail "$name --version failed"
+  printf '%s\n' "$identity" | grep -Eq "^$name [0-9][0-9.]* \(commit [0-9a-zA-Z]+\)$" \
+    || fail "$name --version does not name the program, its version and its commit: $identity"
+  [ "$(head -n 1 "$3")" = "$identity" ] || fail "$name help does not open with its identity line"
+}
+check_identity singular "$singular" "$work/help.txt"
+check_identity open-datum "$open_datum" "$work/help-open-datum.txt"
 status=0
 "$open_datum" inspect --key-hex 00 "${common[@]}" "${node[@]}" "${alice[@]}" >/dev/null 2>&1 || status=$?
 [ "$status" -eq 2 ] || fail "inspect accepted a signing key (exit $status)"

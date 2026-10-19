@@ -49,7 +49,7 @@ The negative host's parts keep key files as harness controls: it signs
 with whatever key file you name and opens no vault, so its command lines
 on this page name `--wallet-skey`, and only they do. Every `open-datum`
 line a reader types here signs from a vault (`--vault FILE`, the
-passphrase typed once at the prompt, or read from `--passphrase-fd FD`
+passphrase typed once at the prompt, or read from `--passphrase-fd N`
 in a script) or names an address and a bundle file for a signer
 elsewhere.
 

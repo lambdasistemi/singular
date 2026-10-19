@@ -1,0 +1,49 @@
+singular VERSION (commit unknown)
+
+Usage: singular wallet create --vault FILE --network-magic N [--passphrase-fd
+       N] [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
+
+Create a vault with a fresh key
+
+Draws a fresh payment signing key from the operating system's entropy, seals
+it into a new vault file under the passphrase, and prints the key's enterprise
+address for the network. It refuses a path that exists and leaves its bytes
+untouched; a failed write removes what it made. The passphrase is asked twice.
+
+Available settings:
+  Show this help text
+  switch: -h|--help
+
+  The new vault file to create; an existing path is refused.
+  option: --vault FILE
+
+  The network the address is built for.
+  option: --network-magic N
+
+  Read the vault passphrase, one line, from this inherited file descriptor.
+  option: --passphrase-fd N
+  default: ask on the terminal with the echo off
+
+  How much to narrate: off, what (protocol steps) or how (also their
+  mechanics).
+  option: --trace LEVEL
+  default: what on a terminal, otherwise off
+
+  Where the narration goes: stderr or file:PATH; repeat for several.
+  option: --trace-to SINK
+  default: stderr
+
+  The format of the narration: text for a person, json for a program.
+  option: --trace-format FORMAT
+  default: text on standard error, json in a file
+
+Environment:
+  SINGULAR_LOG  A file the protocol phases are appended to, one line each.
+
+Example:
+  singular wallet create --vault alice.vault --network-magic 1
+
+Output and exit status:
+  Prints the address on one line of standard output.
+  Exit status 0 on success, 1 when the vault could not be made, 2 for a
+  command line it refused.

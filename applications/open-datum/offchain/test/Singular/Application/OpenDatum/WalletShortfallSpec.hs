@@ -95,8 +95,7 @@ import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.CLI.Live (txInText)
 import Singular.CLI.Outlay (walletShortfall)
 import Singular.CLI.Plan
-    ( faucetStep
-    , refuseUnderfunded
+    ( refuseUnderfunded
     , retainedFaucetStep
     )
 import Singular.CLI.Receipt
@@ -371,7 +370,9 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         reasonOf emptyUpdate
             `shouldSatisfy` isInfixOf "(client policy)"
         reasonOf emptyUpdate
-            `shouldSatisfy` isInfixOf faucetStep
+            `shouldSatisfy` isInfixOf retainedFaucetStep
+        reasonOf emptyUpdate
+            `shouldSatisfy` (not . isInfixOf "send one self-payment")
         policyOfRun emptyUpdate `shouldBe` Just "client"
         walletOfRun emptyUpdate `shouldBe` Just (T.pack (previewAddr rig))
         countOfRun emptyUpdate `shouldSatisfy` isJust
@@ -406,8 +407,6 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         runCode foreignInsert `shouldBe` ExitFailure 10
         reasonOf foreignInsert
             `shouldBe` (foreignMsg <> " for wallet " <> previewAddr rig <> " (client policy)")
-        reasonOf foreignInsert
-            `shouldSatisfy` (not . isInfixOf faucetStep)
         reasonOf foreignInsert
             `shouldSatisfy` (not . isInfixOf retainedFaucetStep)
         policyOfRun foreignInsert `shouldBe` Just "client"

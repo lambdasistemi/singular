@@ -87,7 +87,7 @@ runNegative env = \case
             (entryReceipt args)
             (runNegativeTerminate env args)
     Ordinary cmd@(OpenInspect _) -> runOpenDatum env cmd
-    Ordinary cmd@OpenHelp -> runOpenDatum env cmd
+    Ordinary cmd@(OpenHelp _) -> runOpenDatum env cmd
     Ordinary _ ->
         failWith
             ClientRefusal

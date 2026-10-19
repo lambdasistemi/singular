@@ -28,10 +28,12 @@ import Singular.CLI.Command
     , DescribeArgs (..)
     , parseCommand
     , renderCLIError
+    , singularVersion
     , usage
     )
 import Singular.CLI.Describe (readVersionLabel, runDescribe)
 import Singular.CLI.FlagGroup (commonFlagGroup, commonSwitches)
+import Singular.CLI.Help (singularHelp)
 import Singular.CLI.Session (CommandFailure, Env (..))
 import Singular.Registry.Application (neutralApplication)
 import Singular.Registry.Page
@@ -80,9 +82,10 @@ spec = describe "Singular.CLI.Describe" $ do
         parseCommand argsWithoutToken
             `shouldBe` Left (MissingFlag "--state-token")
         parseCommand validArgs `shouldSatisfy` (not . isLeft)
-    it "names describe in its usage" $ do
+    it "names describe in its overview and describes it in its own help" $ do
         usage `shouldSatisfy` isInfixOf "registry describe"
-        usage `shouldSatisfy` isInfixOf "--json"
+        singularHelp singularVersion [] ["registry", "describe"]
+            `shouldSatisfy` isInfixOf "--json"
     it "names the refused setting and describe" $ do
         renderCLIError (RefusedSetting "--wallet-skey")
             `shouldSatisfy` isInfixOf "--wallet-skey"

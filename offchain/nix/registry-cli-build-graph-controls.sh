@@ -132,7 +132,7 @@ echo "registry-cli-build-graph-controls: planted suite module caught" >&2
 # whole extent would hide this demotion and miss the plant.
 copy_tree plant-src-demotion
 sed -i '/^    Singular.CLI.Root$/d' "$work/plant-src-demotion/singular-registry.cabal"
-sed -i 's|^  other-modules: Singular.CLI.Harness$|  other-modules: Singular.CLI.Harness\n    Singular.CLI.Root|' "$work/plant-src-demotion/singular-registry.cabal"
+sed -i 's|^    Singular.CLI.Harness$|    Singular.CLI.Harness\n    Singular.CLI.Root|' "$work/plant-src-demotion/singular-registry.cabal"
 # Verify the move: Root present in other-modules, absent from exposed-modules.
 exposed_has=$(awk '
     /^library[ \t]+registry-cli([ \t]|$)/ { inlib = 1; next }

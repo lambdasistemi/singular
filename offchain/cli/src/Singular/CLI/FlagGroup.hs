@@ -31,12 +31,14 @@ module Singular.CLI.FlagGroup
     , tokenizeWith
     , tokenizeFor
     , splitTracingFor
+    , traceFlags
+    , traceRequestFrom
     , readProviderSettings
     , parseFlagGroup
     ) where
 
 import Control.Applicative ((<|>))
-import Control.Monad (forM_, when)
+import Control.Monad (foldM, forM_, when)
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf)
 import Data.Maybe (fromMaybe, isJust, isNothing)
@@ -222,10 +224,10 @@ splitTracingFor bad extra = go [] noTraceRequest
             Right
                 (reverse kept, asked{requestSinks = reverse (requestSinks asked)})
         a : rest
-            | name `elem` ["--trace", "--trace-to", "--trace-format"] ->
+            | name `elem` traceFlags ->
                 case (inline, rest) of
-                    ('=' : v, _) -> withValue name v asked >>= \r -> go kept r rest
-                    (_, v : rest') -> withValue name v asked >>= \r -> go kept r rest'
+                    ('=' : v, _) -> withValue bad name v asked >>= \r -> go kept r rest
+                    (_, v : rest') -> withValue bad name v asked >>= \r -> go kept r rest'
                     (_, []) -> Left (bad name "needs a value")
             | name `elem` full
             , null inline
@@ -234,24 +236,54 @@ splitTracingFor bad extra = go [] noTraceRequest
             | otherwise -> go (a : kept) asked rest
           where
             (name, inline) = break (== '=') a
-    withValue name v asked = case name of
-        "--trace" -> case v of
-            "off" -> level TraceOff
-            "what" -> level TraceWhat
-            "how" -> level TraceHow
-            _ -> Left (bad name "is off, what or how")
-        "--trace-to" -> case v of
-            "stderr" -> sink ToStderr
-            'f' : 'i' : 'l' : 'e' : ':' : path@(_ : _) -> sink (ToFile path)
-            _ -> Left (bad name "is stderr or file:PATH")
-        _ -> case v of
-            "text" -> format TextFormat
-            "json" -> format JsonFormat
-            _ -> Left (bad name "is text or json")
-      where
-        level l = Right asked{requestLevel = requestLevel asked <|> Just l}
-        sink s = Right asked{requestSinks = s : requestSinks asked}
-        format f = Right asked{requestFormat = requestFormat asked <|> Just f}
+
+-- | The valued tracing flags.
+traceFlags :: [String]
+traceFlags = ["--trace", "--trace-to", "--trace-format"]
+
+{- | The tracing a command line asks for, from the tracing flags it carried
+in the order given, each value read and refused: the first @--trace@ and
+@--trace-format@ win, every @--trace-to@ is a sink.
+-}
+traceRequestFrom
+    :: (String -> String -> e)
+    -- ^ the bad-value refusal
+    -> [(String, String)]
+    -- ^ each tracing flag with its value
+    -> Either e TraceRequest
+traceRequestFrom bad entries = do
+    asked <-
+        foldM
+            (\request (name, v) -> withValue bad name v request)
+            noTraceRequest
+            entries
+    pure asked{requestSinks = reverse (requestSinks asked)}
+
+-- | Read one tracing flag's value into the request so far.
+withValue
+    :: (String -> String -> e)
+    -> String
+    -> String
+    -> TraceRequest
+    -> Either e TraceRequest
+withValue bad name v asked = case name of
+    "--trace" -> case v of
+        "off" -> level TraceOff
+        "what" -> level TraceWhat
+        "how" -> level TraceHow
+        _ -> Left (bad name "is off, what or how")
+    "--trace-to" -> case v of
+        "stderr" -> sink ToStderr
+        'f' : 'i' : 'l' : 'e' : ':' : path@(_ : _) -> sink (ToFile path)
+        _ -> Left (bad name "is stderr or file:PATH")
+    _ -> case v of
+        "text" -> format TextFormat
+        "json" -> format JsonFormat
+        _ -> Left (bad name "is text or json")
+  where
+    level l = Right asked{requestLevel = requestLevel asked <|> Just l}
+    sink s = Right asked{requestSinks = s : requestSinks asked}
+    format f = Right asked{requestFormat = requestFormat asked <|> Just f}
 
 -- | How reading the node settings can fail, before a binary names it.
 data ProviderRead

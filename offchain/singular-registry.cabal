@@ -197,16 +197,19 @@ library registry-cli
     Singular.CLI.Booking
     Singular.CLI.Command
     Singular.CLI.Create
+    Singular.CLI.Declared
     Singular.CLI.Describe
     Singular.CLI.Failure
     Singular.CLI.Finish
     Singular.CLI.FlagGroup
     Singular.CLI.Fold
     Singular.CLI.FoldRules
+    Singular.CLI.Help
     Singular.CLI.Inspect
     Singular.CLI.Key
     Singular.CLI.Live
     Singular.CLI.ManagedState
+    Singular.CLI.Options
     Singular.CLI.Outlay
     Singular.CLI.Passphrase
     Singular.CLI.Permanent
@@ -232,7 +235,10 @@ library registry-cli
     Singular.CLI.TrieTrace
     Singular.CLI.Vault
 
-  other-modules: Singular.CLI.Harness
+  autogen-modules: Paths_singular_registry
+  other-modules:
+    Paths_singular_registry
+    Singular.CLI.Harness
 
   build-depends:
     , aeson
@@ -258,7 +264,10 @@ library registry-cli
     , memory
     , microlens
     , mts:mpf-write
+    , opt-env-conf                      ^>=0.13
+    , path
     , plutus-core
+    , safe-coloured-text
     , singular-registry
     , singular-registry:koios-http
     , singular-registry:local-services
@@ -982,6 +991,8 @@ test-suite cage-tests
     Singular.CLI.OneOutputCreateSpec
     Singular.CLI.PrepareSpec
     Singular.CLI.FlagGroupSpec
+    Singular.CLI.HelpSnapshotSpec
+    Singular.CLI.ParserCorpusSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
     Singular.CLI.ReclaimSpec

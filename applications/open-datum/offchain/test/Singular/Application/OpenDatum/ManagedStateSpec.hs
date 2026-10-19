@@ -49,7 +49,7 @@ import Singular.Application.OpenDatum.Command
     , RegistryAccess (..)
     , Signer (..)
     , WriteSettings (..)
-    , openDatumUsage
+    , openDatumHelp
     , parseOpenDatumCommand
     )
 import Singular.Application.OpenDatum.Entry
@@ -478,7 +478,7 @@ directoryOptional = describe "every command works without --state-dir" $ do
             )
             `shouldSatisfy` isRight
     it "usage documents the managed default state location" $
-        openDatumUsage `shouldSatisfy` isInfixOf "XDG_STATE_HOME"
+        openDatumHelp ["insert"] `shouldSatisfy` isInfixOf "XDG_STATE_HOME"
 
 rootOverride :: Spec
 rootOverride = describe "an explicit --state-dir stays a root override" $ do

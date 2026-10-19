@@ -2594,8 +2594,8 @@
     "index": 1,
     "name": "docs-consumer-onboarding/make-a-wallet-and-fund-it-01",
     "pause_ms": 400,
-    "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd FD supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
-    "v": "56ba0dbedb9c"
+    "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd N supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
+    "v": "4a78b70aa689"
    },
    {
     "index": 2,
@@ -2624,8 +2624,8 @@
     "index": 2,
     "name": "docs-consumer-onboarding/sign-each-write-02",
     "pause_ms": 300,
-    "text": "From your vault: add --vault FILE, and --passphrase-fd FD in a script. The command opens the vault once, builds the run, signs it in memory and sends it.",
-    "v": "e9e65ddae6a5"
+    "text": "From your vault: add --vault FILE, and --passphrase-fd N in a script. The command opens the vault once, builds the run, signs it in memory and sends it.",
+    "v": "04f5cdcea2a3"
    },
    {
     "index": 3,
@@ -2893,8 +2893,8 @@
     "index": 6,
     "name": "docs-demo1-devnet/build-the-commands-06",
     "pause_ms": 400,
-    "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries, and singular --version does not exist yet (both are planned in issue 348), so the path the build prints is the only version evidence a binary gives.",
-    "v": "47b20835f3d6"
+    "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries (that is planned in issue 348). singular --version prints the program, its version and the commit it was built from; a build that carries no commit says commit unknown, and the path the build prints then tells which build you hold.",
+    "v": "bb83afe60525"
    }
   ],
   "demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive": [
@@ -3404,8 +3404,8 @@
     "index": 6,
     "name": "docs-demo1-on-preprod/build-the-two-commands-06",
     "pause_ms": 400,
-    "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. There is no singular --version yet (it is planned in issue 348), so the printed store path is the only evidence of which build you hold. The blueprint is onchain/plutus.json, beside the version.txt that names the release.",
-    "v": "fec65b6d51c0"
+    "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. singular --version prints the program, its version and the commit it was built from; a build that carries no commit says commit unknown, and the printed store path then tells which build you hold. The blueprint is onchain/plutus.json, beside the version.txt that names the release.",
+    "v": "9910a8e8b66f"
    }
   ],
   "download-and-check-the-release": [
@@ -6741,8 +6741,8 @@
     "index": 7,
     "name": "docs-negative-host/who-this-is-for-07",
     "pause_ms": 400,
-    "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd FD in a script) or names an address and a bundle file for a signer elsewhere.",
-    "v": "dc4eb40040f2"
+    "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd N in a script) or names an address and a bundle file for a signer elsewhere.",
+    "v": "9dd70e62d0b0"
    },
    {
     "index": 8,
@@ -10087,6 +10087,36 @@
   ]
  },
  "docs/singular-node.md": {
+  "asking-the-program-for-help": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/asking-the-program-for-help-00",
+    "pause_ms": 500,
+    "text": "Asking the program for help.",
+    "v": "b8ce02cd01c7"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/asking-the-program-for-help-01",
+    "pause_ms": 400,
+    "text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.",
+    "v": "3b69ff452cdb"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/asking-the-program-for-help-02",
+    "pause_ms": 400,
+    "text": "A mistyped command or flag prints what is wrong in one line, the usage of the command you were heading for and where its help is, and exits with status 2. A mistyped command also names the nearest command. Both programs complete commands and flags in your shell: source <(singular --bash-completion-script \"$(which singular)\") for bash, with --zsh-completion-script and --fish-completion-script for the other shells.",
+    "v": "48d83e7937a7"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/asking-the-program-for-help-03",
+    "pause_ms": 400,
+    "text": "The overview of each program follows, quoted from the program itself. The first line of every help page names the version and the commit; it is left out here, and VERSION stands for the version of the build. The documentation check runs the programs and fails when a quotation, or the settings table below, disagrees with what they print.",
+    "v": "e1767de0afa6"
+   }
+  ],
   "booking-and-folding": [
    {
     "index": 0,
@@ -10183,8 +10213,8 @@
     "index": 13,
     "name": "docs-singular-node/booking-and-folding-13",
     "pause_ms": 400,
-    "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change. update alone still prints an older sentence after the faucet link, telling you to send one self-payment so the wallet also holds an ada-only output to spend as collateral; that sentence is a leftover of the text the other commands dropped, and following it is harmless but not needed. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
-    "v": "a22c6a64e224"
+    "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
+    "v": "493f5e993af7"
    },
    {
     "index": 14,
