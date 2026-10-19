@@ -472,6 +472,31 @@ createDescribeCommandRows = describe "Create prints the describe command" $ do
         runPrinted rig previewedToken previewedLine
         runPrinted rig firstToken firstLine
         runPrinted rig secondToken secondLine
+    it "keeps the Koios token file in the printed describe line" $ withRig $ \rig -> do
+        seed <- fundSeed rig
+        let tokenFile = rigDir rig <> "/koios.token"
+        writeFile tokenFile "token\n"
+        previewed <-
+            run
+                rig
+                "preview with a token file"
+                ( [ "registry"
+                  , "create"
+                  , "--preview"
+                  , "--seed"
+                  , seed
+                  , "--koios-token-file"
+                  , tokenFile
+                  ]
+                    <> policyArgs
+                )
+        outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+        case valueAt "describeCommand" (runReceipt previewed) of
+            Just (Aeson.String line) ->
+                line
+                    `shouldSatisfy` T.isInfixOf (T.pack ("--koios-token-file " <> tokenFile))
+            other ->
+                expectationFailure ("no describe line: " <> show other)
   where
     allowedFlags =
         [ "--blueprint"
