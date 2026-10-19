@@ -14,7 +14,7 @@ of your play are on preprod for anyone to look up. The steps take about seventy
 minutes on preprod, mostly waiting for two windows to pass.
 
 ```mermaid
-flowchart LR
+flowchart TB
   Get[Download and check the release] --> Build[Build singular and open-datum]
   Build --> Wallets[Make Alice's and Bob's vaults]
   Wallets --> Faucet[Fund both from the faucet]

@@ -3906,111 +3906,121 @@
    ]
   },
   "README/how-the-parts-fit-16": {
-   "audio_sha256": "5d43707d1a0e05272e681462e20c81fc18bf077cfc967897b99a4ea03facbc51",
-   "characters": 89,
-   "cost": 8.811e-05,
-   "duration": 5.825,
+   "audio_sha256": "c072e0217a53cebf586c6488c1695559c52355249440b5db5af50247a104db50",
+   "characters": 96,
+   "cost": 9.503999999999998e-05,
+   "duration": 7.1,
    "index": 16,
-   "key": "e6c84718a0bb9548d64afa71358e82e955ba60f50078adc5a8cbf566f55da1a8",
+   "key": "99644c0613d1d2a05d7ae966ddf7b87a6618c6f4151df011211339c213d94c9e",
    "page": "README.md",
    "pause_ms": 300,
    "section": "how-the-parts-fit",
-   "sent_text": "Start here, with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
-   "text": "Start here, with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
+   "sent_text": "Start here: Demo 1 with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
+   "text": "Start here: Demo 1 with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
    "words": [
     {
-     "end": 0.475,
+     "end": 0.488,
      "start": 0.2,
      "text": "Start"
     },
     {
-     "end": 0.7,
-     "start": 0.475,
+     "end": 1.05,
+     "start": 0.488,
      "text": "here"
     },
     {
-     "end": 0.738,
-     "start": 0.7,
-     "text": ","
-    },
-    {
-     "end": 0.863,
-     "start": 0.738,
-     "text": "with"
-    },
-    {
-     "end": 1.025,
-     "start": 0.863,
-     "text": "your"
-    },
-    {
      "end": 1.275,
-     "start": 1.025,
-     "text": "own"
+     "start": 1.05,
+     "text": ":"
     },
     {
-     "end": 1.625,
-     "start": 1.275,
-     "text": "wallet"
-    },
-    {
-     "end": 1.763,
-     "start": 1.625,
-     "text": "and"
-    },
-    {
-     "end": 2.375,
-     "start": 1.763,
-     "text": "Koios"
-    },
-    {
-     "end": 2.475,
-     "start": 2.375,
-     "text": ","
-    },
-    {
-     "end": 2.713,
-     "start": 2.475,
-     "text": "Play"
-    },
-    {
-     "end": 3.1,
-     "start": 2.713,
+     "end": 1.812,
+     "start": 1.475,
      "text": "Demo"
     },
     {
-     "end": 3.325,
-     "start": 3.1,
+     "end": 2.05,
+     "start": 1.812,
      "text": "1"
     },
     {
-     "end": 3.5,
-     "start": 3.325,
-     "text": "on"
+     "end": 2.188,
+     "start": 2.05,
+     "text": "with"
     },
     {
-     "end": 4.125,
-     "start": 3.5,
-     "text": "preprod"
+     "end": 2.325,
+     "start": 2.188,
+     "text": "your"
     },
     {
-     "end": 4.238,
-     "start": 4.125,
+     "end": 2.575,
+     "start": 2.325,
+     "text": "own"
+    },
+    {
+     "end": 2.95,
+     "start": 2.575,
+     "text": "wallet"
+    },
+    {
+     "end": 3.088,
+     "start": 2.95,
      "text": "and"
     },
     {
-     "end": 4.325,
-     "start": 4.238,
-     "text": "the"
+     "end": 3.65,
+     "start": 3.088,
+     "text": "Koios"
     },
     {
-     "end": 4.8,
-     "start": 4.325,
+     "end": 3.763,
+     "start": 3.65,
+     "text": ","
+    },
+    {
+     "end": 4.025,
+     "start": 3.763,
+     "text": "Play"
+    },
+    {
+     "end": 4.375,
+     "start": 4.025,
+     "text": "Demo"
+    },
+    {
+     "end": 4.6,
+     "start": 4.375,
+     "text": "1"
+    },
+    {
+     "end": 4.775,
+     "start": 4.6,
+     "text": "on"
+    },
+    {
+     "end": 5.4,
+     "start": 4.775,
      "text": "preprod"
     },
     {
-     "end": 5.825,
-     "start": 4.8,
+     "end": 5.512,
+     "start": 5.4,
+     "text": "and"
+    },
+    {
+     "end": 5.6,
+     "start": 5.512,
+     "text": "the"
+    },
+    {
+     "end": 6.075,
+     "start": 5.6,
+     "text": "preprod"
+    },
+    {
+     "end": 7.1,
+     "start": 6.075,
      "text": "record"
     }
    ]
@@ -4171,17 +4181,17 @@
    ]
   },
   "README/start-here-play-demo-1-01": {
-   "audio_sha256": "e3e1d47cbd13506cbc2203939b99dce16be5fb9421e15cbf191e989b4d37e0b8",
-   "characters": 468,
-   "cost": 0.00046332,
-   "duration": 30.925,
+   "audio_sha256": "c307e5d098e00e94bcb914ed62dda94c24e40717b9dfaeb6c975e840206b874f",
+   "characters": 475,
+   "cost": 0.00047024999999999996,
+   "duration": 31.625,
    "index": 1,
-   "key": "01a1b2f1680b21c95018d3ce793cf308fdffcf2018df77b8fcd7e8bdbdf899b9",
+   "key": "998025e5e546ea6877b135b8a9f38fd2280ebb5ca6d710420ca0cd39f5a30e8c",
    "page": "README.md",
    "pause_ms": 400,
    "section": "start-here-play-demo-1",
-   "sent_text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here, with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
-   "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here, with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+   "sent_text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+   "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
    "words": [
     {
      "end": 0.387,
@@ -4394,273 +4404,283 @@
      "text": "."
     },
     {
-     "end": 14.625,
+     "end": 14.637,
      "start": 14.35,
      "text": "Start"
     },
     {
      "end": 14.875,
-     "start": 14.625,
+     "start": 14.637,
      "text": "here"
     },
     {
-     "end": 14.925,
+     "end": 14.95,
      "start": 14.875,
-     "text": ","
+     "text": ":"
     },
     {
-     "end": 15.062,
-     "start": 14.925,
+     "end": 15.3,
+     "start": 14.95,
+     "text": "Demo"
+    },
+    {
+     "end": 15.525,
+     "start": 15.3,
+     "text": "1"
+    },
+    {
+     "end": 15.663,
+     "start": 15.525,
      "text": "with"
     },
     {
-     "end": 15.2,
-     "start": 15.062,
+     "end": 15.775,
+     "start": 15.663,
      "text": "your"
     },
     {
-     "end": 15.425,
-     "start": 15.2,
+     "end": 16.0,
+     "start": 15.775,
      "text": "own"
     },
     {
-     "end": 15.8,
-     "start": 15.425,
+     "end": 16.4,
+     "start": 16.0,
      "text": "wallet"
     },
     {
-     "end": 15.925,
-     "start": 15.8,
+     "end": 16.538,
+     "start": 16.4,
      "text": "and"
     },
     {
-     "end": 16.35,
-     "start": 15.925,
+     "end": 17.0,
+     "start": 16.538,
      "text": "Koios"
     },
     {
-     "end": 16.612,
-     "start": 16.35,
+     "end": 17.263,
+     "start": 17.0,
      "text": "gives"
     },
     {
-     "end": 16.725,
-     "start": 16.612,
+     "end": 17.375,
+     "start": 17.263,
      "text": "the"
     },
     {
-     "end": 17.5,
-     "start": 16.725,
+     "end": 18.2,
+     "start": 17.375,
      "text": "route"
     },
     {
-     "end": 17.7,
-     "start": 17.5,
+     "end": 18.4,
+     "start": 18.2,
      "text": "."
     },
     {
-     "end": 18.138,
-     "start": 17.9,
+     "end": 18.837,
+     "start": 18.6,
      "text": "Play"
     },
     {
-     "end": 18.562,
-     "start": 18.138,
+     "end": 19.263,
+     "start": 18.837,
      "text": "Demo"
     },
     {
-     "end": 18.925,
-     "start": 18.562,
+     "end": 19.625,
+     "start": 19.263,
      "text": "1"
     },
     {
-     "end": 19.1,
-     "start": 18.925,
+     "end": 19.8,
+     "start": 19.625,
      "text": "on"
     },
     {
-     "end": 19.712,
-     "start": 19.1,
+     "end": 20.413,
+     "start": 19.8,
      "text": "preprod"
     },
     {
-     "end": 20.0,
-     "start": 19.712,
+     "end": 20.7,
+     "start": 20.413,
      "text": "takes"
     },
     {
-     "end": 20.15,
-     "start": 20.0,
+     "end": 20.85,
+     "start": 20.7,
      "text": "you"
     },
     {
-     "end": 20.312,
-     "start": 20.15,
+     "end": 21.013,
+     "start": 20.85,
      "text": "from"
     },
     {
-     "end": 20.4,
-     "start": 20.312,
+     "end": 21.1,
+     "start": 21.013,
      "text": "the"
     },
     {
-     "end": 21.025,
-     "start": 20.4,
+     "end": 21.725,
+     "start": 21.1,
      "text": "download"
     },
     {
-     "end": 21.112,
-     "start": 21.025,
+     "end": 21.812,
+     "start": 21.725,
      "text": "to"
     },
     {
-     "end": 21.237,
-     "start": 21.112,
+     "end": 21.938,
+     "start": 21.812,
      "text": "the"
     },
     {
-     "end": 21.75,
-     "start": 21.237,
+     "end": 22.45,
+     "start": 21.938,
      "text": "sixteenth"
     },
     {
-     "end": 22.1,
-     "start": 21.75,
+     "end": 22.8,
+     "start": 22.45,
      "text": "step"
     },
     {
-     "end": 22.288,
-     "start": 22.1,
+     "end": 22.987,
+     "start": 22.8,
      "text": "with"
     },
     {
-     "end": 22.663,
-     "start": 22.288,
+     "end": 23.362,
+     "start": 22.987,
      "text": "test"
     },
     {
-     "end": 22.95,
-     "start": 22.663,
+     "end": 23.65,
+     "start": 23.362,
      "text": "ada"
     },
     {
-     "end": 23.087,
-     "start": 22.95,
+     "end": 23.788,
+     "start": 23.65,
      "text": "from"
     },
     {
-     "end": 23.188,
-     "start": 23.087,
+     "end": 23.888,
+     "start": 23.788,
      "text": "the"
     },
     {
-     "end": 24.275,
-     "start": 23.188,
+     "end": 24.975,
+     "start": 23.888,
      "text": "faucet"
     },
     {
-     "end": 24.5,
-     "start": 24.275,
+     "end": 25.2,
+     "start": 24.975,
      "text": "."
     },
     {
-     "end": 25.087,
-     "start": 24.7,
+     "end": 25.788,
+     "start": 25.4,
      "text": "Demo"
     },
     {
-     "end": 25.45,
-     "start": 25.087,
+     "end": 26.15,
+     "start": 25.788,
      "text": "1"
     },
     {
-     "end": 25.562,
-     "start": 25.45,
+     "end": 26.263,
+     "start": 26.15,
      "text": "on"
     },
     {
-     "end": 25.625,
-     "start": 25.562,
+     "end": 26.325,
+     "start": 26.263,
      "text": "a"
     },
     {
-     "end": 26.175,
-     "start": 25.625,
+     "end": 26.875,
+     "start": 26.325,
      "text": "development"
     },
     {
-     "end": 26.587,
-     "start": 26.175,
+     "end": 27.288,
+     "start": 26.875,
      "text": "node"
     },
     {
-     "end": 26.925,
-     "start": 26.587,
+     "end": 27.625,
+     "start": 27.288,
      "text": "runs"
     },
     {
-     "end": 27.062,
-     "start": 26.925,
+     "end": 27.763,
+     "start": 27.625,
      "text": "the"
     },
     {
-     "end": 27.413,
-     "start": 27.062,
+     "end": 28.112,
+     "start": 27.763,
      "text": "same"
     },
     {
-     "end": 27.812,
-     "start": 27.413,
+     "end": 28.513,
+     "start": 28.112,
      "text": "steps"
     },
     {
-     "end": 27.913,
-     "start": 27.812,
+     "end": 28.612,
+     "start": 28.513,
      "text": "on"
     },
     {
-     "end": 27.975,
-     "start": 27.913,
+     "end": 28.675,
+     "start": 28.612,
      "text": "a"
     },
     {
-     "end": 28.362,
-     "start": 27.975,
+     "end": 29.062,
+     "start": 28.675,
      "text": "private"
     },
     {
-     "end": 28.712,
-     "start": 28.362,
+     "end": 29.413,
+     "start": 29.062,
      "text": "chain"
     },
     {
-     "end": 29.2,
-     "start": 28.712,
+     "end": 29.9,
+     "start": 29.413,
      "text": "first"
     },
     {
-     "end": 29.275,
-     "start": 29.2,
+     "end": 29.975,
+     "start": 29.9,
      "text": ","
     },
     {
-     "end": 29.45,
-     "start": 29.275,
+     "end": 30.15,
+     "start": 29.975,
      "text": "with"
     },
     {
-     "end": 29.638,
-     "start": 29.45,
+     "end": 30.337,
+     "start": 30.15,
      "text": "no"
     },
     {
-     "end": 30.725,
-     "start": 29.638,
+     "end": 31.425,
+     "start": 30.337,
      "text": "faucet"
     },
     {
-     "end": 30.925,
-     "start": 30.725,
+     "end": 31.625,
+     "start": 31.425,
      "text": "."
     }
    ]
@@ -6956,17 +6976,17 @@
    ]
   },
   "README/who-this-is-for-06": {
-   "audio_sha256": "3c5ce1b5cf048d3b1af854e9a329984f0e6bf3eeea1baa41b283b4c1f404638d",
-   "characters": 444,
-   "cost": 0.00043955999999999997,
-   "duration": 28.375,
+   "audio_sha256": "b78770925cf8539b76ded172f412c57bd0e9a4c06996b37e9d265bbaebb1303c",
+   "characters": 451,
+   "cost": 0.00044648999999999996,
+   "duration": 29.725,
    "index": 6,
-   "key": "52dcc716c0179d257ce1ecaa5e7152adb9af6a03753aea97dcef7c1b29a09599",
+   "key": "a86a3a885848f0da179b3a16034bcb51a589106469319c4c497825b72bc81137",
    "page": "README.md",
    "pause_ms": 400,
    "section": "who-this-is-for",
-   "sent_text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here, with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
-   "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here, with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
+   "sent_text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here: Demo 1 with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
+   "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here: Demo 1 with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
    "words": [
     {
      "end": 0.325,
@@ -7169,248 +7189,258 @@
      "text": "."
     },
     {
-     "end": 12.85,
+     "end": 12.863,
      "start": 12.575,
      "text": "Start"
     },
     {
-     "end": 13.1,
-     "start": 12.85,
+     "end": 13.425,
+     "start": 12.863,
      "text": "here"
     },
     {
-     "end": 13.15,
-     "start": 13.1,
-     "text": ","
-    },
-    {
-     "end": 13.288,
-     "start": 13.15,
-     "text": "with"
-    },
-    {
-     "end": 13.425,
-     "start": 13.288,
-     "text": "your"
-    },
-    {
-     "end": 13.675,
+     "end": 13.65,
      "start": 13.425,
-     "text": "own"
-    },
-    {
-     "end": 14.05,
-     "start": 13.675,
-     "text": "wallet"
+     "text": ":"
     },
     {
      "end": 14.188,
-     "start": 14.05,
-     "text": "and"
-    },
-    {
-     "end": 14.688,
-     "start": 14.188,
-     "text": "Koios"
-    },
-    {
-     "end": 15.087,
-     "start": 14.688,
-     "text": "covers"
-    },
-    {
-     "end": 15.175,
-     "start": 15.087,
-     "text": "the"
-    },
-    {
-     "end": 15.55,
-     "start": 15.175,
-     "text": "release"
-    },
-    {
-     "end": 16.575,
-     "start": 15.55,
-     "text": "download"
-    },
-    {
-     "end": 16.8,
-     "start": 16.575,
-     "text": ","
-    },
-    {
-     "end": 17.05,
-     "start": 16.975,
-     "text": "the"
-    },
-    {
-     "end": 17.65,
-     "start": 17.05,
-     "text": "provider"
-    },
-    {
-     "end": 17.775,
-     "start": 17.65,
-     "text": "and"
-    },
-    {
-     "end": 18.175,
-     "start": 17.775,
-     "text": "network"
-    },
-    {
-     "end": 18.725,
-     "start": 18.175,
-     "text": "settings"
-    },
-    {
-     "end": 18.837,
-     "start": 18.725,
-     "text": ","
-    },
-    {
-     "end": 19.3,
-     "start": 18.837,
-     "text": "making"
-    },
-    {
-     "end": 19.438,
-     "start": 19.3,
-     "text": "and"
-    },
-    {
-     "end": 19.825,
-     "start": 19.438,
-     "text": "funding"
-    },
-    {
-     "end": 19.9,
-     "start": 19.825,
-     "text": "a"
-    },
-    {
-     "end": 20.2,
-     "start": 19.9,
-     "text": "vault"
-    },
-    {
-     "end": 21.1,
-     "start": 20.2,
-     "text": "wallet"
-    },
-    {
-     "end": 21.325,
-     "start": 21.1,
-     "text": ","
-    },
-    {
-     "end": 21.625,
-     "start": 21.525,
-     "text": "and"
-    },
-    {
-     "end": 22.0,
-     "start": 21.625,
-     "text": "signing"
-    },
-    {
-     "end": 22.225,
-     "start": 22.0,
-     "text": "each"
-    },
-    {
-     "end": 22.45,
-     "start": 22.225,
-     "text": "write"
-    },
-    {
-     "end": 22.587,
-     "start": 22.45,
-     "text": "from"
-    },
-    {
-     "end": 22.675,
-     "start": 22.587,
-     "text": "the"
-    },
-    {
-     "end": 23.087,
-     "start": 22.675,
-     "text": "vault"
-    },
-    {
-     "end": 23.25,
-     "start": 23.087,
-     "text": "or"
-    },
-    {
-     "end": 23.388,
-     "start": 23.25,
-     "text": "on"
-    },
-    {
-     "end": 23.712,
-     "start": 23.388,
-     "text": "another"
-    },
-    {
-     "end": 24.675,
-     "start": 23.712,
-     "text": "machine"
-    },
-    {
-     "end": 24.875,
-     "start": 24.675,
-     "text": ";"
-    },
-    {
-     "end": 25.25,
-     "start": 25.05,
-     "text": "Play"
-    },
-    {
-     "end": 25.575,
-     "start": 25.25,
+     "start": 13.85,
      "text": "Demo"
     },
     {
-     "end": 25.737,
-     "start": 25.575,
+     "end": 14.45,
+     "start": 14.188,
      "text": "1"
     },
     {
-     "end": 25.875,
-     "start": 25.737,
-     "text": "on"
+     "end": 14.587,
+     "start": 14.45,
+     "text": "with"
     },
     {
-     "end": 26.487,
-     "start": 25.875,
-     "text": "preprod"
+     "end": 14.725,
+     "start": 14.587,
+     "text": "your"
     },
     {
-     "end": 26.638,
-     "start": 26.487,
-     "text": "is"
+     "end": 14.95,
+     "start": 14.725,
+     "text": "own"
     },
     {
-     "end": 26.75,
-     "start": 26.638,
+     "end": 15.438,
+     "start": 14.95,
+     "text": "wallet"
+    },
+    {
+     "end": 15.587,
+     "start": 15.438,
+     "text": "and"
+    },
+    {
+     "end": 16.05,
+     "start": 15.587,
+     "text": "Koios"
+    },
+    {
+     "end": 16.438,
+     "start": 16.05,
+     "text": "covers"
+    },
+    {
+     "end": 16.525,
+     "start": 16.438,
      "text": "the"
     },
     {
-     "end": 27.1,
-     "start": 26.75,
-     "text": "literal"
+     "end": 16.9,
+     "start": 16.525,
+     "text": "release"
+    },
+    {
+     "end": 17.925,
+     "start": 16.9,
+     "text": "download"
+    },
+    {
+     "end": 18.15,
+     "start": 17.925,
+     "text": ","
+    },
+    {
+     "end": 18.4,
+     "start": 18.325,
+     "text": "the"
+    },
+    {
+     "end": 19.0,
+     "start": 18.4,
+     "text": "provider"
+    },
+    {
+     "end": 19.125,
+     "start": 19.0,
+     "text": "and"
+    },
+    {
+     "end": 19.525,
+     "start": 19.125,
+     "text": "network"
+    },
+    {
+     "end": 20.075,
+     "start": 19.525,
+     "text": "settings"
+    },
+    {
+     "end": 20.188,
+     "start": 20.075,
+     "text": ","
+    },
+    {
+     "end": 20.65,
+     "start": 20.188,
+     "text": "making"
+    },
+    {
+     "end": 20.788,
+     "start": 20.65,
+     "text": "and"
+    },
+    {
+     "end": 21.175,
+     "start": 20.788,
+     "text": "funding"
+    },
+    {
+     "end": 21.25,
+     "start": 21.175,
+     "text": "a"
+    },
+    {
+     "end": 21.55,
+     "start": 21.25,
+     "text": "vault"
+    },
+    {
+     "end": 22.45,
+     "start": 21.55,
+     "text": "wallet"
+    },
+    {
+     "end": 22.675,
+     "start": 22.45,
+     "text": ","
+    },
+    {
+     "end": 22.975,
+     "start": 22.875,
+     "text": "and"
+    },
+    {
+     "end": 23.35,
+     "start": 22.975,
+     "text": "signing"
+    },
+    {
+     "end": 23.575,
+     "start": 23.35,
+     "text": "each"
+    },
+    {
+     "end": 23.8,
+     "start": 23.575,
+     "text": "write"
+    },
+    {
+     "end": 23.938,
+     "start": 23.8,
+     "text": "from"
+    },
+    {
+     "end": 24.025,
+     "start": 23.938,
+     "text": "the"
+    },
+    {
+     "end": 24.438,
+     "start": 24.025,
+     "text": "vault"
+    },
+    {
+     "end": 24.6,
+     "start": 24.438,
+     "text": "or"
+    },
+    {
+     "end": 24.737,
+     "start": 24.6,
+     "text": "on"
+    },
+    {
+     "end": 25.062,
+     "start": 24.737,
+     "text": "another"
+    },
+    {
+     "end": 26.025,
+     "start": 25.062,
+     "text": "machine"
+    },
+    {
+     "end": 26.225,
+     "start": 26.025,
+     "text": ";"
+    },
+    {
+     "end": 26.6,
+     "start": 26.4,
+     "text": "Play"
+    },
+    {
+     "end": 26.925,
+     "start": 26.6,
+     "text": "Demo"
+    },
+    {
+     "end": 27.087,
+     "start": 26.925,
+     "text": "1"
+    },
+    {
+     "end": 27.225,
+     "start": 27.087,
+     "text": "on"
+    },
+    {
+     "end": 27.837,
+     "start": 27.225,
+     "text": "preprod"
+    },
+    {
+     "end": 27.987,
+     "start": 27.837,
+     "text": "is"
     },
     {
      "end": 28.1,
-     "start": 27.1,
+     "start": 27.987,
+     "text": "the"
+    },
+    {
+     "end": 28.45,
+     "start": 28.1,
+     "text": "literal"
+    },
+    {
+     "end": 29.45,
+     "start": 28.45,
      "text": "walk-through"
     },
     {
-     "end": 28.375,
-     "start": 28.1,
+     "end": 29.725,
+     "start": 29.45,
      "text": "."
     }
    ]
@@ -90876,17 +90906,17 @@
    ]
   },
   "docs-consumer-onboarding/choose-the-network-and-api-03": {
-   "audio_sha256": "686c0da1d17d57db2848446975214d805f1b7395046feaf5b1321de882b156ad",
-   "characters": 179,
-   "cost": 0.00017721000000000002,
-   "duration": 11.8,
+   "audio_sha256": "fd291e20ba1cf1ba8922596297c3e38742d76804aff1465c96be699cb06df620",
+   "characters": 198,
+   "cost": 0.00019601999999999998,
+   "duration": 13.0,
    "index": 3,
-   "key": "df044670673cce8f15e1d77a39887ce2c235b27d0a4c17dcc6af2bebc4a3709d",
+   "key": "379a5182ffe16385f9f9d57cf664f94466e1a5df4964feec2528bec6f2fc7677",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "choose-the-network-and-api",
-   "sent_text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a test-harness setting, not an ordinary provider route.",
-   "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a test-harness setting, not an ordinary provider route.",
+   "sent_text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a setting of the project's own test tools, not an ordinary provider route.",
+   "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a setting of the project's own test tools, not an ordinary provider route.",
    "words": [
     {
      "end": 0.3,
@@ -90949,98 +90979,123 @@
      "text": "."
     },
     {
-     "end": 5.088,
-     "start": 5.0,
+     "end": 5.113,
+     "start": 5.025,
      "text": "A"
     },
     {
-     "end": 5.5,
-     "start": 5.088,
+     "end": 5.525,
+     "start": 5.113,
      "text": "socket"
     },
     {
-     "end": 6.025,
-     "start": 5.5,
+     "end": 6.05,
+     "start": 5.525,
      "text": "accepted"
     },
     {
-     "end": 6.2,
-     "start": 6.025,
+     "end": 6.25,
+     "start": 6.05,
      "text": "by"
     },
     {
-     "end": 6.312,
-     "start": 6.2,
+     "end": 6.363,
+     "start": 6.25,
      "text": "a"
     },
     {
-     "end": 6.725,
-     "start": 6.312,
+     "end": 6.775,
+     "start": 6.363,
      "text": "separate"
     },
     {
-     "end": 7.1,
-     "start": 6.725,
+     "end": 7.15,
+     "start": 6.775,
      "text": "private"
     },
     {
-     "end": 7.562,
-     "start": 7.1,
+     "end": 7.613,
+     "start": 7.15,
      "text": "probe"
     },
     {
-     "end": 7.725,
-     "start": 7.562,
+     "end": 7.75,
+     "start": 7.613,
      "text": "is"
     },
     {
-     "end": 7.838,
-     "start": 7.725,
+     "end": 7.875,
+     "start": 7.75,
      "text": "a"
     },
     {
-     "end": 8.512,
-     "start": 7.838,
-     "text": "test-harness"
-    },
-    {
-     "end": 9.05,
-     "start": 8.512,
+     "end": 8.238,
+     "start": 7.875,
      "text": "setting"
     },
     {
-     "end": 9.15,
+     "end": 8.312,
+     "start": 8.238,
+     "text": "of"
+    },
+    {
+     "end": 8.413,
+     "start": 8.312,
+     "text": "the"
+    },
+    {
+     "end": 9.05,
+     "start": 8.413,
+     "text": "project's"
+    },
+    {
+     "end": 9.288,
      "start": 9.05,
+     "text": "own"
+    },
+    {
+     "end": 9.625,
+     "start": 9.288,
+     "text": "test"
+    },
+    {
+     "end": 10.225,
+     "start": 9.625,
+     "text": "tools"
+    },
+    {
+     "end": 10.325,
+     "start": 10.225,
      "text": ","
     },
     {
-     "end": 9.363,
-     "start": 9.15,
+     "end": 10.55,
+     "start": 10.325,
      "text": "not"
     },
     {
-     "end": 9.512,
-     "start": 9.363,
+     "end": 10.712,
+     "start": 10.55,
      "text": "an"
     },
     {
-     "end": 10.1,
-     "start": 9.512,
+     "end": 11.3,
+     "start": 10.712,
      "text": "ordinary"
     },
     {
-     "end": 10.637,
-     "start": 10.1,
+     "end": 11.825,
+     "start": 11.3,
      "text": "provider"
     },
     {
-     "end": 11.575,
-     "start": 10.637,
+     "end": 12.775,
+     "start": 11.825,
      "text": "route"
     },
     {
-     "end": 11.8,
-     "start": 11.575,
+     "end": 13.0,
+     "start": 12.775,
      "text": "."
     }
    ]
@@ -358821,11 +358876,156 @@
    ]
   },
   "docs-singular-node/connecting-singular-to-a-ledger-provider-03": {
-   "audio_sha256": "f086ea8cafeae0fcc711f29b978a482efc877de15b8b9afdebd31a1af8f6013c",
+   "audio_sha256": "82468d494ee4f802648a52ffe6973a618a2e565026225564c1661a0ffb8fc258",
+   "characters": 118,
+   "cost": 0.00011682,
+   "duration": 8.4,
+   "index": 3,
+   "key": "2b871179cd1e6b32c642a084378338fd75f32bd78d6c2ffd91974c45070f5794",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "connecting-singular-to-a-ledger-provider",
+   "sent_text": "Words such as registry, state token, request, fold, window, vault and bundle are explained in Words used on this page.",
+   "text": "Words such as registry, state token, request, fold, window, vault and bundle are explained in Words used on this page.",
+   "words": [
+    {
+     "end": 0.525,
+     "start": 0.225,
+     "text": "Words"
+    },
+    {
+     "end": 0.75,
+     "start": 0.525,
+     "text": "such"
+    },
+    {
+     "end": 0.913,
+     "start": 0.75,
+     "text": "as"
+    },
+    {
+     "end": 1.575,
+     "start": 0.913,
+     "text": "registry"
+    },
+    {
+     "end": 1.688,
+     "start": 1.575,
+     "text": ","
+    },
+    {
+     "end": 2.037,
+     "start": 1.688,
+     "text": "state"
+    },
+    {
+     "end": 2.5,
+     "start": 2.037,
+     "text": "token"
+    },
+    {
+     "end": 2.575,
+     "start": 2.5,
+     "text": ","
+    },
+    {
+     "end": 3.175,
+     "start": 2.575,
+     "text": "request"
+    },
+    {
+     "end": 3.263,
+     "start": 3.175,
+     "text": ","
+    },
+    {
+     "end": 3.75,
+     "start": 3.263,
+     "text": "fold"
+    },
+    {
+     "end": 3.838,
+     "start": 3.75,
+     "text": ","
+    },
+    {
+     "end": 4.325,
+     "start": 3.838,
+     "text": "window"
+    },
+    {
+     "end": 4.412,
+     "start": 4.325,
+     "text": ","
+    },
+    {
+     "end": 4.775,
+     "start": 4.412,
+     "text": "vault"
+    },
+    {
+     "end": 4.9,
+     "start": 4.775,
+     "text": "and"
+    },
+    {
+     "end": 5.363,
+     "start": 4.9,
+     "text": "bundle"
+    },
+    {
+     "end": 5.5,
+     "start": 5.363,
+     "text": "are"
+    },
+    {
+     "end": 6.075,
+     "start": 5.5,
+     "text": "explained"
+    },
+    {
+     "end": 6.225,
+     "start": 6.075,
+     "text": "in"
+    },
+    {
+     "end": 6.55,
+     "start": 6.225,
+     "text": "Words"
+    },
+    {
+     "end": 6.812,
+     "start": 6.55,
+     "text": "used"
+    },
+    {
+     "end": 6.938,
+     "start": 6.812,
+     "text": "on"
+    },
+    {
+     "end": 7.1,
+     "start": 6.938,
+     "text": "this"
+    },
+    {
+     "end": 8.175,
+     "start": 7.1,
+     "text": "page"
+    },
+    {
+     "end": 8.4,
+     "start": 8.175,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/connecting-singular-to-a-ledger-provider-04": {
+   "audio_sha256": "163e410dba98be74509ccb2bca2520098566e1afc24ea7866f03914b2a07efb6",
    "characters": 217,
    "cost": 0.00021482999999999997,
    "duration": 15.2,
-   "index": 3,
+   "index": 4,
    "key": "485577f96ee0bfcb8906b01c8b38616e5e6f8757fc4c8374e3f079b118620e72",
    "page": "docs/singular-node.md",
    "pause_ms": 400,

@@ -154,8 +154,8 @@
     "index": 16,
     "name": "README/how-the-parts-fit-16",
     "pause_ms": 300,
-    "text": "Start here, with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
-    "v": "5d43707d1a0e"
+    "text": "Start here: Demo 1 with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
+    "v": "c072e0217a53"
    }
   ],
   "singular": [
@@ -186,8 +186,8 @@
     "index": 1,
     "name": "README/start-here-play-demo-1-01",
     "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here, with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
-    "v": "e3e1d47cbd13"
+    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+    "v": "c307e5d098e0"
    },
    {
     "index": 2,
@@ -244,8 +244,8 @@
     "index": 6,
     "name": "README/who-this-is-for-06",
     "pause_ms": 400,
-    "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here, with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
-    "v": "3c5ce1b5cf04"
+    "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here: Demo 1 with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
+    "v": "b78770925cf8"
    }
   ]
  },
@@ -2532,8 +2532,8 @@
     "index": 3,
     "name": "docs-consumer-onboarding/choose-the-network-and-api-03",
     "pause_ms": 400,
-    "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a test-harness setting, not an ordinary provider route.",
-    "v": "686c0da1d17d"
+    "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a setting of the project's own test tools, not an ordinary provider route.",
+    "v": "fd291e20ba1c"
    }
   ],
   "download-and-check-the-release": [
@@ -10238,8 +10238,15 @@
     "index": 3,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-03",
     "pause_ms": 400,
+    "text": "Words such as registry, state token, request, fold, window, vault and bundle are explained in Words used on this page.",
+    "v": "82468d494ee4"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-04",
+    "pause_ms": 400,
     "text": "The ordinary provider is Koios. Old backend and socket settings are refused before acquisition or registry effects. The current provider session promises no coherent chain snapshot and carries no verification witness.",
-    "v": "f086ea8cafea"
+    "v": "163e410dba98"
    }
   ],
   "following-what-a-command-does": [

@@ -49,7 +49,7 @@ sign:
   receipt says so under `expected`.
 
 ```mermaid
-flowchart LR
+flowchart TB
   Create[create] --> Insert[insert: booked, pending]
   Insert --> Fold1[fold]
   Fold1 --> Inspect1[inspect: active]

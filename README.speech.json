@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here, with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
       "pause": 400
     },
     {
@@ -49,7 +49,7 @@
       "pause": 400
     },
     {
-      "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here, with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
+      "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here: Demo 1 with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
       "pause": 400
     }
   ],
@@ -119,7 +119,7 @@
       "pause": 300
     },
     {
-      "text": "Start here, with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
+      "text": "Start here: Demo 1 with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
       "pause": 300
     }
   ],
@@ -147,6 +147,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "c9265cd889a1a312e848e559b3768acd8c1ddada7082f23c0572d9851751c595"
+    "sha256": "c1c73be43d00a20c6a7f1964be33084dbfa3416440d05aef14f05d9e86a80550"
   }
 }

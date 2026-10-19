@@ -13,7 +13,7 @@ Two pages carry you from the first command to the last, and both can be copied
 as they stand:
 
 ```mermaid
-flowchart LR
+flowchart TB
   Start[You are here] --> Dev[Demo 1 on a private development node]
   Start --> Pre[Demo 1 on preprod]
   Dev -->|same commands, other settings| Pre
@@ -73,8 +73,8 @@ Unsupported time networks refuse rather than borrowing another recording. Writes
 refuse mainnet.
 
 The old `--backend` and `--node-socket` settings are refused on every command. A
-socket accepted by a separate private probe is a test-harness setting, not an
-ordinary provider route.
+socket accepted by a separate private probe is a setting of the project's own test
+tools, not an ordinary provider route.
 
 ## Make a wallet and fund it
 

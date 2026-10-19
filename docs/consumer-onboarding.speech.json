@@ -45,7 +45,7 @@
       "pause": 400
     },
     {
-      "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a test-harness setting, not an ordinary provider route.",
+      "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a setting of the project's own test tools, not an ordinary provider route.",
       "pause": 400
     }
   ],
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "0624676635d9c88b35a572313e1385cf97116df89520b5a18049bdaa5c9e8ee8"
+    "sha256": "894bf1aeceb4d8b2ff24322ea3bdf0292f620b9039652dbd1f35fb5a14fdd106"
   }
 }
