@@ -382,7 +382,7 @@ jobs:
     needs: build-gate
     name: Registry CLI build graph
     runs-on: nixos
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - name: Reuse this runner's Nix cache
         run: |

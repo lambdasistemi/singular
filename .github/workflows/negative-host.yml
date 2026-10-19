@@ -170,7 +170,7 @@ jobs:
   negative-host-node-free-controls:
     name: Negative host parser, dispatch and handler controls
     runs-on: nixos
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - name: Reuse this runner's Nix cache
         run: |
@@ -193,8 +193,9 @@ jobs:
       # and insert handler receipts with exit 10 against an unreachable
       # provider. The host build, plain discovery, the ordinary check and
       # the lint check keep their sole carriers in this workflow's other
-      # jobs; the whole composite is not re-run beside them. Five minutes
-      # from the measured 48 seconds plus the setup build.
+      # jobs; the whole composite is not re-run beside them. Twenty
+      # minutes: the measured 48 seconds plus the setup build, which runs
+      # uncached after a rebase onto a moved main.
       - name: Run the node-free parser, dispatch and handler controls
         run: nix run --quiet .#negative-host-node-free-controls
   negative-host-mutant-self-check:
