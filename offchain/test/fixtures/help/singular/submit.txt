@@ -1,8 +1,9 @@
 singular VERSION (commit unknown)
 
-Usage: singular submit --witnesses FILE --koios-url URL --network-magic N
-       [--koios-token-file FILE] [--network-time DIR] [--receipt FILE]
-       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT] BUNDLE
+Usage: singular submit [--config FILE] --witnesses FILE --koios-url URL
+       --network-magic N [--koios-token-file FILE] [--network-time DIR]
+       [--receipt FILE] [--trace LEVEL] [--trace-to SINK] [--trace-format
+       FORMAT] BUNDLE
 
 Send a signed bundle, print its receipt
 
@@ -21,15 +22,29 @@ Available settings:
   Show this help text
   switch: -h|--help
 
+  A JSON file giving the settings the command line and the environment leave
+  out.
+  option: --config FILE
+  env: SINGULAR_CONFIG FILE
+  default: singular.json in the working directory, if there is one
+
   A witness file from wallet sign, or a directory of them; give it once for
   each.
   option: --witnesses FILE
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL
+  env: SINGULAR_KOIOS_URL URL
+  config:
+    koios-url: # or null
+      <string>
 
   The network: 1 for preprod, 42 for the generated development network.
   option: --network-magic N
+  env: SINGULAR_NETWORK_MAGIC N
+  config:
+    network-magic: # or null
+      <string>
 
   File holding a Koios bearer token; its contents are never printed.
   option: --koios-token-file FILE
@@ -37,6 +52,10 @@ Available settings:
   Directory with the pinned time-manifest.json, shelley-genesis.json and
   era-history.cbor.
   option: --network-time DIR
+  env: SINGULAR_NETWORK_TIME DIR
+  config:
+    network-time: # or null
+      <string>
   default: the preprod recording packaged with the program
 
   Also write the JSON receipt to FILE.
@@ -58,12 +77,30 @@ Available settings:
   The bundle of unsigned transactions.
   argument: BUNDLE
 
+Where settings come from:
+  A setting with an env and a config line above is given in any of three ways,
+  and the first that is present wins: the flag, then the variable, then the
+  key in the config file, then the default.
+
+  The file is one JSON object whose keys are the setting names without their
+  dashes, text or numbers, for example
+
+    {"koios-url": "https://preprod.koios.rest/api/v1", "network-magic": 1}
+
+  It is singular.json in the working directory, or the file named by --config
+  or SINGULAR_CONFIG. A path in it means what it means on the command line,
+  from where the command runs. A passphrase is never read from the file or the
+  environment: it stays on the prompt or --passphrase-fd.
+
 Environment:
   SINGULAR_LOG  A file the protocol phases are appended to, one line each.
 
 Example:
   singular submit bundle.json --witnesses witnesses \
       --koios-url https://preprod.koios.rest/api/v1 --network-magic 1
+
+  With those settings in singular.json instead:
+  singular submit bundle.json --witnesses witnesses
 
 Output and exit status:
   The receipt is read back from the chain and printed as JSON on standard

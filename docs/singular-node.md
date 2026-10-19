@@ -96,17 +96,18 @@ what it does; standard output carries the receipt alone.
 
 | Setting | Commands | What it is |
 | --- | --- | --- |
-| `--koios-url URL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. |
+| `--koios-url URL` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | The Koios API base URL used for raw reads and signed submission. There is one ordinary provider path. When the flag is absent, `SINGULAR_KOIOS_URL` or the key `koios-url` of the config file gives it; see [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
 | `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
-| `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
-| `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. |
+| `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. When the flag is absent, `SINGULAR_NETWORK_TIME` or the key `network-time` of the config file gives it. |
+| `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. When the flag is absent, `SINGULAR_NETWORK_MAGIC` or the key `network-magic` of the config file gives it. |
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--application-policy HEX` | `singular create` | The application policy pinned at creation, as hex, for an application whose script does not depend on the registry identity. `open-datum create` carries its own from its application value and refuses this flag. |
 | `--confirm-timeout SECONDS` | the four singular writes and the five open-datum writes | How long each submission may take to appear on chain; ten minutes when not given. Past it the command stops with the submission journalled as unconfirmed and never resubmits it. |
-| `--state-dir DIR` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. |
-| `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect`, `describe` | The registry, by its state token: the policy and the name in hex, as `create` prints it. Read from `SINGULAR_STATE_TOKEN` when the flag is absent; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
-| `--blueprint FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. |
+| `--state-dir DIR` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Optional state root override. Absent, each command resolves its own managed state directory under the platform per-user state location (`XDG_STATE_HOME`, falling back to `$HOME/.local/state`, namespace `singular`), partitioned by network, complete state token and the caller's stable wallet payment identity: the same identity reuses its journal and lock across invocations and key-file relocation, and different wallets and tokens never share one. A configured root keeps the same partitioning; it is never a per-registry directory. The journal of your submissions, their saved bodies and, while `create` runs, its pending identity live under that partition. When the flag is absent, `SINGULAR_STATE_DIR` or the key `state-dir` of the config file gives it. |
+| `--state-token POLICY.NAME` | `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject`, `inspect`, `describe` | The registry, by its state token: the policy and the name in hex, as `create` prints it. When the flag is absent, `SINGULAR_STATE_TOKEN` or the key `state-token` of the config file gives it; the flag wins. The command derives everything else from the token, the blueprint and the chain before it builds anything, and refuses by name when they disagree. `create` refuses it: it makes one. |
+| `--config FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `singular wallet sign`, `insert`, `update`, `terminate` | The JSON file that gives the six settings above when neither the command line nor the environment does; the variable `SINGULAR_CONFIG` names it too. When neither is given the file is `singular.json` in the folder the command runs from, if there is one. See [the three forms](#giving-the-chain-the-contracts-and-the-registry-once). |
+| `--blueprint FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `insert`, `update`, `terminate` | The registry partition's compiled blueprint, the `onchain/plutus.json` a release archive carries. When the flag is absent, `SINGULAR_BLUEPRINT` or the key `blueprint` of the config file gives it. |
 | `--wallet-address ADDR` | `create`, `insert`, `update`, `terminate`, `inspect`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | Your wallet's public address, in place of the signing key on a preview: the command reads that wallet and prints what it would submit, and signs, submits and journals nothing. On `inspect` it locates the managed journal that address's wallet reconciles, with the same lock-or-skip semantics as a write; without it `inspect` is a stateless chain read that checks no wallet journal and creates no state. On `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` it names an external signer in place of the signing key, together with `--bundle`: the address must be bech32 and pay a key, so a script or bootstrap address is refused, naming it, and so is `--wallet-skey` beside it, because a write takes exactly one signer. Such a run builds its whole chain as one bundle and ends with the outcome `waiting-for-signatures`, exit status 19, as `--bundle` describes. |
 | `--bundle FILE` | `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | The new file an external signer's run is written to: one bundle of unsigned transactions for `singular wallet sign`. It goes with `--wallet-address`: either one alone is refused, a preview refuses it, and an existing path is refused with its bytes untouched. The command builds its whole run as that one bundle in build order, signs and sends nothing, saves the bundle and each unsigned body beside the journal with one `waiting-for-signatures` line per transaction, and ends with the outcome `waiting-for-signatures`, exit status 19. The bundle holds, on `singular create` and `open-datum create`, its whole chain in the order it builds it (the state publication when no carrier is live, the boot, the request, the witness publications and the pinned application publication); on `singular fold`, `singular reclaim` and `singular reject`, the preparation when the funding needs one and then the command's own transaction spending it; on `open-datum insert` and `open-datum terminate`, the preparation when needed and then the booking, and with `--fold` also the fold's preparation when needed and the fold; on `open-datum update`, the preparation when needed and then the update; on `open-datum fold`, the preparation when needed and then the fold. Its receipt names the bundle (its hash, the written and saved paths, the signer, and per transaction its step, identity, deadline and effects) and states the command's own fields under `expected`, because nothing has landed yet: for the open-datum writes these are the booking, the request, the fold deadline, the live output and the root. For a bundle file, open-datum's own booked, updated and root-seen lines, and the root a fold reads, are not narrated: a staged run narrates each of its transactions as built and staged, and with the vault those lines are narrated once the bundle has landed. A create bundle names no state token and carries no deadline, and create keeps its pending identity recorded, so the token the bundle will mint is never lost. While a bundle of the wallet is waiting for signatures, the next `open-datum insert`, `open-datum update`, `open-datum terminate` or `open-datum fold` of that registry by the same wallet, by the key file or by an external signer, stops before building anything with the outcome `waiting-for-signatures` and exit status 19, naming the bundle (its hash and saved path) and the members awaited with their deadlines, builds nothing, writes no bundle file and journals nothing of its own, while the earlier bundle's members found on chain are recorded as landed; a second `open-datum create` is stopped the same way by an earlier create's waiting bundle, not by another write's. A bundle that has landed or died never blocks, and the next write's receipt reports it under `reconciled`. A pending bundle stops the next write of the same registry by the same wallet only. A write in another registry, a create of a new registry included, is not stopped, and it may spend a wallet output that the pending bundle needs. A bundle whose transactions carry a deadline then dies by expiry, and running the command again rebuilds it. A bundle signed elsewhere whose transactions carry none, an `open-datum insert`, `update` or `terminate` without `--fold` and a create, never expires: if it can never land, it keeps stopping the next write of that registry by that wallet at status 19. The way out today is, for a create, a create that names another output with `--seed`, as [When a bundle waits for signatures](cli-recovery.md#when-a-bundle-waits-for-signatures) says; for the others, `--state-dir` naming another state directory, which starts a fresh journal for that registry and wallet. |
 | `--seed TXID#IX` or `--preview` | `create` | The output the new registry is booted from, which fixes its identity: your wallet's largest ada-only output when a live state carrier exists, or the first publication's change when the state script must be published (preview names it before anything is submitted). An explicit `--seed` names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused — omit `--seed` and the first publication's change becomes the seed. |
@@ -135,10 +136,12 @@ what it does; standard output carries the receipt alone.
 The URL, network magic and one signer (the signing key, the vault, or on `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` an address with its bundle file) travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
-chain that dies with the process could not be attached to again. The
-connection settings are read from the command line only.
-[Public environment configuration](#public-environment-configuration) supplies
-the optional registry-token fallback and phase-log path.
+chain that dies with the process could not be attached to again. The six
+settings that do not change from one command to the next can be given once,
+as [the next section](#giving-the-chain-the-contracts-and-the-registry-once)
+says; the signer and everything else a command does are typed on the command.
+[Public environment configuration](#public-environment-configuration) lists the
+variables and the phase-log path.
 
 ```sh
 open-datum insert --state-dir ./work --blueprint plutus.json \
@@ -146,6 +149,42 @@ open-datum insert --state-dir ./work --blueprint plutus.json \
   --koios-url "$koios_url" --network-magic 1 \
   --vault ~/keys/alice.vault
 ```
+
+## Giving the chain, the contracts and the registry once
+
+As a registry operator, you type the same six settings on nearly every command: the Koios address, the network magic and the pinned time directory (the chain), the blueprint (the compiled contracts), and the state directory and the state token (the registry). You can write them once. Each has three forms, and the first one that is present wins.
+
+| Order | Where it is given | Written as, for the Koios address |
+| --- | --- | --- |
+| first | the command line | `--koios-url https://preprod.koios.rest/api/v1` |
+| second | the environment | `SINGULAR_KOIOS_URL=https://preprod.koios.rest/api/v1` |
+| third | the config file | `"koios-url": "https://preprod.koios.rest/api/v1"` |
+| last | the default | what `--help` says for the setting, when it has one |
+
+The variable is `SINGULAR_` followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six are `--koios-url`, `--network-time`, `--network-magic`, `--blueprint`, `--state-dir` and `--state-token`. The `--help` of every command lists the three forms of each of them that the command takes, and says where the config file is.
+
+The config file is one JSON object. Both programs read the same file: it is `singular.json` in the folder you run the command from, or the file named by `--config FILE` or by the variable `SINGULAR_CONFIG`. With a file like this in your demo folder, `open-datum insert --key alice --payload payload.json --vault alice.vault` is a whole command, and it does exactly what the same command with the six flags does:
+
+```json
+{
+  "koios-url": "https://preprod.koios.rest/api/v1",
+  "network-time": "time",
+  "network-magic": 1,
+  "blueprint": "contracts/plutus.json",
+  "state-dir": "reg",
+  "state-token": "POLICY.NAME"
+}
+```
+
+What you see when something is wrong:
+
+- A missing setting is refused in the usual line, `missing --koios-url`, and below it one line names the flag, the variable and the key that would give it.
+- A file that does not exist when you named it, that is not JSON, that is not one object, or that holds a key the program does not read is refused in one sentence naming the file. A key that is nearly a setting's name says which one it nearly is. A default `singular.json` that is not there is no file; one that is there and broken is refused. A problem with the file never stops `--help` or `--version`.
+- A path in the file means what the same path means on the command line: it is read from the folder the command runs from.
+- A value is text or a number, as `network-magic` above; an empty text or `null` is no setting.
+- Nothing else can come from the file or the environment. The signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor `--passphrase-fd` names.
+
+A line that carries every flag it needs means what it meant before. An environment variable or a file only fills in what the line leaves out, so a flag you type is never overruled.
 
 ## Keeping your signing key in an encrypted vault
 
@@ -814,9 +853,9 @@ refusal and must not become an empty registry.
 
 ## Public environment configuration
 
-As an operator, I can supply `SINGULAR_STATE_TOKEN` when I omit
-`--state-token`; an explicit command-line token takes precedence. The token
-names the registry, and never selects a provider. `SINGULAR_LOG=PATH` appends
+As an operator, I can supply each of the six settings of [the section above](#giving-the-chain-the-contracts-and-the-registry-once) as a variable, for example `SINGULAR_STATE_TOKEN` when I omit
+`--state-token`; an explicit command-line value takes precedence, and the config file comes after the variable. The token
+names the registry, and never selects a provider. `SINGULAR_CONFIG` names the config file. `SINGULAR_LOG=PATH` appends
 phase events to a file alongside the narration sinks selected by `--trace`,
 `--trace-to` and `--trace-format`. It does not replace those sinks or change
 their command-line precedence. An empty phase-log path disables that sink.

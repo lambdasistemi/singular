@@ -20,6 +20,7 @@ import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
+import Singular.Application.OpenDatum.SourcesSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
 import Singular.Application.OpenDatum.TraceSpec qualified
 import Singular.Application.OpenDatum.WalletShortfallSpec qualified
@@ -74,6 +75,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.HelpSnapshot" [Cli])
         Singular.Application.OpenDatum.HelpSnapshotSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.Sources" [Cli])
+        Singular.Application.OpenDatum.SourcesSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec

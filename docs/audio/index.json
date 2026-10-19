@@ -10567,6 +10567,85 @@
     "v": "caf9b5f26add"
    }
   ],
+  "giving-the-chain-the-contracts-and-the-registry-once": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-00",
+    "pause_ms": 500,
+    "text": "Giving the chain, the contracts and the registry once.",
+    "v": "72d5c7e27055"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-01",
+    "pause_ms": 400,
+    "text": "As a registry operator, you type the same six settings on nearly every command: the Koios address, the network magic and the pinned time directory (the chain), the blueprint (the compiled contracts), and the state directory and the state token (the registry). You can write them once. Each has three forms, and the first one that is present wins.",
+    "v": "50852ceb3f2a"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-02",
+    "pause_ms": 400,
+    "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
+    "v": "fe246b51a16e"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-03",
+    "pause_ms": 400,
+    "text": "The config file is one JSON object. Both programs read the same file: it is singular.json in the folder you run the command from, or the file named by --config FILE or by the variable SINGULAR_CONFIG. With a file like this in your demo folder, open-datum insert --key alice --payload payload.json --vault alice.vault is a whole command, and it does exactly what the same command with the six flags does:",
+    "v": "c2d0447da3ad"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-04",
+    "pause_ms": 400,
+    "text": "What you see when something is wrong:",
+    "v": "57b2d52e0974"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-05",
+    "pause_ms": 300,
+    "text": "A missing setting is refused in the usual line, missing --koios-url, and below it one line names the flag, the variable and the key that would give it.",
+    "v": "823dedb93ee2"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-06",
+    "pause_ms": 300,
+    "text": "A file that does not exist when you named it, that is not JSON, that is not one object, or that holds a key the program does not read is refused in one sentence naming the file. A key that is nearly a setting's name says which one it nearly is. A default singular.json that is not there is no file; one that is there and broken is refused. A problem with the file never stops --help or --version.",
+    "v": "9e741aa529e3"
+   },
+   {
+    "index": 7,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-07",
+    "pause_ms": 300,
+    "text": "A path in the file means what the same path means on the command line: it is read from the folder the command runs from.",
+    "v": "434b0aa5a414"
+   },
+   {
+    "index": 8,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-08",
+    "pause_ms": 300,
+    "text": "A value is text or a number, as network-magic above; an empty text or null is no setting.",
+    "v": "232ed14fc568"
+   },
+   {
+    "index": 9,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-09",
+    "pause_ms": 300,
+    "text": "Nothing else can come from the file or the environment. The signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
+    "v": "3c1e1336b558"
+   },
+   {
+    "index": 10,
+    "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-10",
+    "pause_ms": 400,
+    "text": "A line that carries every flag it needs means what it meant before. An environment variable or a file only fills in what the line leaves out, so a flag you type is never overruled.",
+    "v": "0e7d9d4fe510"
+   }
+  ],
   "harness-appendix-test-hooks": [
    {
     "index": 0,
@@ -10706,8 +10785,8 @@
     "index": 1,
     "name": "docs-singular-node/public-environment-configuration-01",
     "pause_ms": 400,
-    "text": "As an operator, I can supply SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line token takes precedence. The token names the registry, and never selects a provider. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
-    "v": "45ca10cfe8ab"
+    "text": "As an operator, I can supply each of the six settings of the section above as a variable, for example SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line value takes precedence, and the config file comes after the variable. The token names the registry, and never selects a provider. SINGULAR_CONFIG names the config file. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
+    "v": "5ec9602a7705"
    }
   ],
   "reading-through-an-index": [
@@ -10930,8 +11009,8 @@
     "index": 1,
     "name": "docs-singular-node/the-settings-you-give-01",
     "pause_ms": 400,
-    "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The connection settings are read from the command line only. Public environment configuration supplies the optional registry-token fallback and phase-log path.",
-    "v": "235254947f32"
+    "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The six settings that do not change from one command to the next can be given once, as the next section says; the signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
+    "v": "9ae027843fd0"
    }
   ],
   "what-a-write-records": [

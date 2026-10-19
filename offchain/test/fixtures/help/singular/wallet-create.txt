@@ -1,7 +1,8 @@
 singular VERSION (commit unknown)
 
-Usage: singular wallet create --vault FILE --network-magic N [--passphrase-fd
-       N] [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
+Usage: singular wallet create [--config FILE] --vault FILE --network-magic N
+       [--passphrase-fd N] [--trace LEVEL] [--trace-to SINK] [--trace-format
+       FORMAT]
 
 Create a vault with a fresh key
 
@@ -13,6 +14,12 @@ untouched; a failed write removes what it made. The passphrase is asked twice.
 Available settings:
   Show this help text
   switch: -h|--help
+
+  A JSON file giving the settings the command line and the environment leave
+  out.
+  option: --config FILE
+  env: SINGULAR_CONFIG FILE
+  default: singular.json in the working directory, if there is one
 
   The new vault file to create; an existing path is refused.
   option: --vault FILE

@@ -1,7 +1,8 @@
 singular VERSION (commit unknown)
 
-Usage: singular wallet sign --vault FILE [--passphrase-fd N] [--out DIR]
-       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT] BUNDLE
+Usage: singular wallet sign [--config FILE] --vault FILE [--passphrase-fd N]
+       [--out DIR] [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
+       BUNDLE
 
 Sign a bundle of transactions offline
 
@@ -15,6 +16,12 @@ provider setting is read.
 Available settings:
   Show this help text
   switch: -h|--help
+
+  A JSON file giving the settings the command line and the environment leave
+  out.
+  option: --config FILE
+  env: SINGULAR_CONFIG FILE
+  default: singular.json in the working directory, if there is one
 
   The vault to open.
   option: --vault FILE
