@@ -16,6 +16,7 @@ import Singular.Application.OpenDatum.ManagedStateSpec qualified
 import Singular.Application.OpenDatum.NegativeParseSpec qualified
 import Singular.Application.OpenDatum.NeutralValueSpec qualified
 import Singular.Application.OpenDatum.OutlaySpec qualified
+import Singular.Application.OpenDatum.ParserCorpusSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
 import Singular.Application.OpenDatum.StateTokenSpec qualified
@@ -66,6 +67,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.CLI" [Cli])
         Singular.Application.OpenDatum.CLISpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.ParserCorpus" [Cli])
+        Singular.Application.OpenDatum.ParserCorpusSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Fold" [Cli])
         Singular.Application.OpenDatum.FoldSpec.spec

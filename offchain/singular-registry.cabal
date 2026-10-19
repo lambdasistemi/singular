@@ -982,6 +982,7 @@ test-suite cage-tests
     Singular.CLI.OneOutputCreateSpec
     Singular.CLI.PrepareSpec
     Singular.CLI.FlagGroupSpec
+    Singular.CLI.ParserCorpusSpec
     Singular.CLI.FoldRulesSpec
     Singular.CLI.JournalTransitionsSpec
     Singular.CLI.ReclaimSpec
