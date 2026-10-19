@@ -32,6 +32,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       flake-utils,
       haskellNix,
@@ -96,6 +97,24 @@
         harnessRegistryComponents = harnessProject.project.hsPkgs.singular-registry.components;
 
         openDatumComponents = project.project.hsPkgs.open-datum.components;
+
+        # The commit this tree stands at, for `open-datum --version`: the one a
+        # release archive states in RELEASE-COMMIT beside this flake (a file
+        # here is outside the source the executable is built from, so the
+        # cached build stays valid), else the revision of the git checkout
+        # (marked dirty when it is), else unknown. The stamping helper is the
+        # registry tree's, the one definition.
+        commit =
+          if builtins.pathExists ./RELEASE-COMMIT then
+            pkgs.lib.removeSuffix "\n" (builtins.readFile ./RELEASE-COMMIT)
+          else
+            self.rev or (self.dirtyRev or "unknown");
+        stamp = import ../../../offchain/nix/stamp-commit.nix { inherit pkgs; };
+        open-datum = stamp {
+          exe = openDatumComponents.exes.open-datum;
+          program = "open-datum";
+          inherit commit;
+        };
         negativeComponents = project.project.hsPkgs.singular-negative.components;
         registryComponents = project.project.hsPkgs.singular-registry.components;
 
@@ -105,6 +124,9 @@
             inherit (openDatumComponents) library;
             exes = {
               inherit (openDatumComponents.exes) open-datum;
+              # The same executable before the commit is stamped into a copy of
+              # it: the cached Haskell build, for consumers that stamp their own.
+              open-datum-unstamped = openDatumComponents.exes.open-datum;
               inherit (negativeComponents.exes) singular-negative;
             };
             tests = {
@@ -185,7 +207,10 @@
       {
         packages = {
           component-build = componentBuild;
-          inherit (openDatumComponents.exes) open-datum;
+          inherit open-datum;
+          # The same executable before the commit is stamped into a copy of
+          # it: the cached Haskell build, for consumers that stamp their own.
+          open-datum-unstamped = openDatumComponents.exes.open-datum;
           open-datum-test-harness = harnessOpenDatumComponents.exes.open-datum;
           singular-test-harness = harnessRegistryComponents.exes.singular;
           inherit (negativeComponents.exes) singular-negative;
@@ -198,7 +223,7 @@
         apps = haskellApps // {
           open-datum = {
             type = "app";
-            program = pkgs.lib.getExe openDatumComponents.exes.open-datum;
+            program = pkgs.lib.getExe open-datum;
           };
           singular-negative = {
             type = "app";

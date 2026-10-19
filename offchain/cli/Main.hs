@@ -14,10 +14,11 @@ import System.Environment (getArgs, getEnvironment)
 import System.Exit (exitWith)
 
 import Singular.CLI.Root (runPackaged)
+import Singular.CLI.Version (builtCommit, stampedEnvironment)
 import Singular.Registry.Application (neutralApplication)
 
 main :: IO ()
 main = do
     args <- getArgs
-    environment <- getEnvironment
+    environment <- stampedEnvironment builtCommit <$> getEnvironment
     runPackaged neutralApplication args environment >>= exitWith

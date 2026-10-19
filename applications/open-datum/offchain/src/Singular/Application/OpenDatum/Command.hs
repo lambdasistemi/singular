@@ -118,6 +118,7 @@ import Singular.CLI.Options
     )
 import Singular.CLI.Registry (economics)
 import Singular.CLI.Trace (TraceRequest (..))
+import Singular.CLI.Version (releaseVersion)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
@@ -679,7 +680,7 @@ openDatumHelp = helpText (openDatumProgram openDatumVersion) []
 
 -- | The version the program was built as.
 openDatumVersion :: Version
-openDatumVersion = Paths.version
+openDatumVersion = releaseVersion Paths.version
 
 {- | What a refused command line adds below the refusal: the nearest command
 when a word was mistyped, the usage of the command it was heading for and

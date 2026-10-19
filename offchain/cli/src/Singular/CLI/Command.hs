@@ -141,6 +141,7 @@ import Singular.CLI.Vault
     , sealVault
     , vaultWorkFactor
     )
+import Singular.CLI.Version (releaseVersion)
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.LedgerProvider (Asset)
@@ -1117,7 +1118,7 @@ usage = singularHelp singularVersion [] []
 
 -- | The version the program was built as.
 singularVersion :: Version
-singularVersion = Paths.version
+singularVersion = releaseVersion Paths.version
 
 {- | What a refused command line adds below the refusal: the nearest command
 when a word was mistyped, the usage of the command it was heading for and

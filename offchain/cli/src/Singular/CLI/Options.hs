@@ -42,6 +42,7 @@ module Singular.CLI.Options
 
       -- * What a person sees
     , identityLine
+    , releaseCommitVariable
     , helpText
     , usageText
     , hintLines

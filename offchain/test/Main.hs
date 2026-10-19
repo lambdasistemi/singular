@@ -21,6 +21,7 @@ import Singular.CLI.SignSpec qualified
 import Singular.CLI.SubmitSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.VaultSpec qualified
+import Singular.CLI.VersionSpec qualified
 import Singular.Provider.Koios.ClientSpec qualified
 import Singular.Provider.Koios.HttpSpec qualified
 import Singular.Provider.Koios.ProviderSpec qualified
@@ -239,6 +240,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Vault" [Cli, Wallet])
         Singular.CLI.VaultSpec.spec
+    describe
+        (tagged "Singular.CLI.Version" [Cli])
+        Singular.CLI.VersionSpec.spec
     describe
         (tagged "Singular.Provider.Koios.Client" [Provider])
         Singular.Provider.Koios.ClientSpec.spec

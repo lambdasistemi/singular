@@ -1,6 +1,6 @@
 cabal-version: 3.4
 name:          singular-registry
-version:       0.1.0.0
+version:       0.12.0.0
 synopsis:      Registry validator types, tx builders, and E2E tests
 description:
   PlutusData types matching the Aiken cage validator,
@@ -234,6 +234,7 @@ library registry-cli
     Singular.CLI.TrieHistory
     Singular.CLI.TrieTrace
     Singular.CLI.Vault
+    Singular.CLI.Version
 
   autogen-modules: Paths_singular_registry
   other-modules:
@@ -1001,6 +1002,7 @@ test-suite cage-tests
     Singular.CLI.SubmitSpec
     Singular.CLI.TrieRefusalSpec
     Singular.CLI.VaultSpec
+    Singular.CLI.VersionSpec
     Singular.PhaseLogFixture
     Singular.Provider.Koios.ClientSpec
     Singular.Provider.Koios.FakeServer
