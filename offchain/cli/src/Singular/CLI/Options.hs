@@ -33,6 +33,10 @@ module Singular.CLI.Options
     , Accepted (..)
     , valued
     , switch'
+    , standing
+    , configFlag
+    , defaultConfigFile
+    , settingPrefix
 
       -- * Reading a command line
     , Raw (..)
@@ -49,6 +53,10 @@ module Singular.CLI.Options
     , commandPaths
     , nearestCommand
     , commandsBelow
+    , leafAt
+    , programLeaves
+    , shapeFlags
+    , shortenedExample
     , docParser
     , lintDeclaration
 
@@ -58,10 +66,11 @@ module Singular.CLI.Options
     ) where
 
 import Control.Monad (void)
+import Data.Char (toUpper)
 import Data.Foldable (traverse_)
-import Data.List (isPrefixOf, sortOn)
+import Data.List (isPrefixOf, nub, sortOn)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (fromMaybe, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Text qualified as T
 import Data.Version (Version, showVersion)
 import System.Exit (ExitCode (..))
@@ -74,6 +83,7 @@ import OptEnvConf
     , choice
     , command
     , commands
+    , conf
     , env
     , help
     , hidden
@@ -88,6 +98,7 @@ import OptEnvConf
     , str
     , switch
     , valueWithShown
+    , withoutConfig
     )
 import OptEnvConf.Args (parseArgs)
 import OptEnvConf.Capability (allCapabilities)
@@ -137,16 +148,78 @@ data Flag = Flag
     -- ^ What is used when the flag is absent, as a person reads it
     , flagEnvironment :: Maybe String
     -- ^ The variable that supplies the setting when the flag is absent
+    , flagConfig :: Maybe String
+    -- ^ The key of the configuration file that supplies it when neither is given
     }
     deriving stock (Eq, Show)
 
--- | A flag that takes a value.
+-- | A flag that takes a value, given on the command line only.
 valued :: String -> String -> String -> Flag
-valued name meta text = Flag name (Just meta) text Nothing Nothing
+valued name meta text =
+    Flag
+        { flagName = name
+        , flagMetavar = Just meta
+        , flagHelp = text
+        , flagDefault = Nothing
+        , flagEnvironment = Nothing
+        , flagConfig = Nothing
+        }
 
--- | A flag that takes none.
+{- | A flag that takes none. A switch changes what a command does, so it is
+typed on the command it changes and has no other form.
+-}
 switch' :: String -> String -> Flag
-switch' name text = Flag name Nothing text Nothing Nothing
+switch' name text =
+    Flag
+        { flagName = name
+        , flagMetavar = Nothing
+        , flagHelp = text
+        , flagDefault = Nothing
+        , flagEnvironment = Nothing
+        , flagConfig = Nothing
+        }
+
+{- | A standing setting: it has three forms, declared here once. The flag
+@--koios-url@ is also the environment variable @SINGULAR_KOIOS_URL@ and the
+key @koios-url@ of the configuration file. What a command line leaves out the
+environment gives, and what both leave out the file gives.
+-}
+standing :: Flag -> Flag
+standing flag =
+    flag
+        { flagEnvironment = Just (settingPrefix <> map shout name)
+        , flagConfig = Just name
+        }
+  where
+    name = drop 2 (flagName flag)
+    shout = \case
+        '-' -> '_'
+        c -> toUpper c
+
+-- | The start of every environment variable that names a setting.
+settingPrefix :: String
+settingPrefix = "SINGULAR_"
+
+{- | The flag that names the configuration file, and the variable that does.
+The file cannot name itself.
+-}
+configFlag :: Flag
+configFlag =
+    ( standing
+        ( valued
+            "--config"
+            "FILE"
+            "A JSON file giving the settings the command line and the environment leave out."
+        )
+    )
+        { flagConfig = Nothing
+        , flagDefault =
+            Just "singular.json in the working directory, if there is one"
+        }
+
+-- | The configuration file a command reads when none is named.
+defaultConfigFile :: FilePath
+defaultConfigFile = "singular.json"
 
 {- | How a command's settings fit together, as the usage line shows them:
 required, optional, all of a few, or exactly one of several.
@@ -387,7 +460,7 @@ classify accepted ws fs = go ws []
 as the usage line shows them. It is only ever rendered, never run.
 -}
 docParser :: Program -> Parser ()
-docParser program = commands (map node (programNodes program))
+docParser program = withoutConfig (commands (map node (programNodes program)))
   where
     node = \case
         Group name summary _ kids ->
@@ -396,7 +469,7 @@ docParser program = commands (map node (programNodes program))
             command
                 (leafName leaf)
                 (leafSummary leaf)
-                ( shape (leafShape leaf)
+                ( shape (Each [Takes configFlag, leafShape leaf])
                     *> maybe
                         (pure ())
                         ( \(meta, what) ->
@@ -412,19 +485,24 @@ docParser program = commands (map node (programNodes program))
     one f = case flagMetavar f of
         Nothing -> void $ setting (common f <> [switch ()])
         Just meta ->
-            void $ setting (common f <> [option, reader string, metavar meta])
+            void $
+                setting
+                    (common f <> inFile f <> [option, reader string, metavar meta])
     optional' f = case flagDefault f of
         Just shown
             | Just meta <- flagMetavar f ->
                 void $
                     setting
                         ( common f
+                            <> inFile f
                             <> [option, reader string, metavar meta, valueWithShown (const shown) ""]
                         )
         _ -> void (optional (one f))
     common f =
         [help (flagHelp f), long (drop 2 (flagName f))]
             <> maybe [] (\v -> [env v]) (flagEnvironment f)
+    -- The key of the file shows beside the flag and the variable.
+    inFile f = maybe [] (\k -> [conf k]) (flagConfig f)
 
 -- | Whether the declaration is a well-formed parser for the library.
 lintDeclaration :: Program -> Bool
@@ -667,15 +745,41 @@ overview program =
 leafExtras :: Leaf -> [String]
 leafExtras leaf =
     concat
-        [ section
+        [ section "Where settings come from" settingSources
+        , section
             "Environment"
             (concatMap environmentLines (leafEnvironment leaf))
-        , section "Example" (map ("  " <>) (leafExamples leaf))
+        , section
+            "Example"
+            ( map ("  " <>) (leafExamples leaf)
+                <> shortExample standings (leafExamples leaf)
+            )
         , section
             "Output and exit status"
             (concatMap (wrapText 78 0 . ("  " <>)) (leafNotes leaf))
         ]
   where
+    standings =
+        [ f | f <- nub (shapeFlags (leafShape leaf)), isJust (flagEnvironment f)
+        ]
+    settingSources
+        | null standings = []
+        | otherwise =
+            paragraph
+                "A setting with an env and a config line above is given in any of three ways, and the first that is present wins: the flag, then the variable, then the key in the config file, then the default."
+                <> paragraph
+                    "The file is one JSON object whose keys are the setting names without their dashes, text or numbers, for example"
+                <> [ "    {\"koios-url\": \"https://preprod.koios.rest/api/v1\", \"network-magic\": 1}"
+                   , ""
+                   ]
+                <> paragraph
+                    ( "It is "
+                        <> defaultConfigFile
+                        <> " in the working directory, or the file named by --config or "
+                        <> fromMaybe "SINGULAR_CONFIG" (flagEnvironment configFlag)
+                        <> ". A path in it means what it means on the command line, from where the command runs. A passphrase is never read from the file or the environment: it stays on the prompt or --passphrase-fd."
+                    )
+    paragraph text = wrapText 78 0 ("  " <> text) <> [""]
     section title body
         | null body = []
         | otherwise = "" : (title <> ":") : body
@@ -685,6 +789,49 @@ leafExtras leaf =
             ("  " <> name <> replicate (width - length name) ' ' <> first)
                 : map (replicate (2 + width) ' ' <>) rest
         [] -> ["  " <> name]
+
+{- | An example command again with the standing settings it names left to the
+config file: the same words with those flags and their values taken out, laid
+out afresh. Nothing when the example names none.
+-}
+shortExample :: [Flag] -> [String] -> [String]
+shortExample standings example = case shortenedExample standings example of
+    Nothing -> []
+    Just shortLines ->
+        ""
+            : ("  With those settings in " <> defaultConfigFile <> " instead:")
+            : map ("  " <>) shortLines
+
+{- | The lines of an example without the standing settings it names, or
+nothing when it names none.
+-}
+shortenedExample :: [Flag] -> [String] -> Maybe [String]
+shortenedExample standings example
+    | null example || length kept == length tokens = Nothing
+    | otherwise = Just (layout kept)
+  where
+    tokens = filter (/= "\\") (words (unwords example))
+    names = map flagName standings
+    kept = dropSettings tokens
+    dropSettings = \case
+        token : _ : rest | token `elem` names -> dropSettings rest
+        token : rest -> token : dropSettings rest
+        [] -> []
+    layout = fill "" . pairUp
+    -- A flag stays on the line with its value.
+    pairUp = \case
+        flag : value : rest
+            | "--" `isPrefixOf` flag && not ("--" `isPrefixOf` value) ->
+                (flag <> " " <> value) : pairUp rest
+        token : rest -> token : pairUp rest
+        [] -> []
+    fill current = \case
+        [] -> [current | not (null current)]
+        w : ws
+            | null current -> fill w ws
+            | length current + 1 + length w > 68 ->
+                (current <> " \\") : fill ("    " <> w) ws
+            | otherwise -> fill (current <> " " <> w) ws
 
 -- ---------------------------------------------------------------------------
 -- Completion
@@ -733,3 +880,28 @@ builtinCommand program = \case
     words' = \case
         "--completion-word" : w : rest -> w : words' rest
         _ -> []
+
+-- ---------------------------------------------------------------------------
+-- Looking into a declaration
+
+-- | The command a path names, when it is one that runs.
+leafAt :: Program -> [String] -> Maybe Leaf
+leafAt program path = case nodeAt program path of
+    Just (Runs leaf) -> Just leaf
+    _ -> Nothing
+
+-- | Every command of a program that runs.
+programLeaves :: Program -> [Leaf]
+programLeaves program = concatMap below (programNodes program)
+  where
+    below = \case
+        Runs leaf -> [leaf]
+        Group _ _ _ kids -> concatMap below kids
+
+-- | Every flag a shape names, in the order it names them.
+shapeFlags :: Shape -> [Flag]
+shapeFlags = \case
+    Needs f -> [f]
+    Takes f -> [f]
+    Each ss -> concatMap shapeFlags ss
+    OneOf ss -> concatMap shapeFlags ss

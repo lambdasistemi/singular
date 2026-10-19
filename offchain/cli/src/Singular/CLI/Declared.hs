@@ -61,6 +61,7 @@ module Singular.CLI.Declared
 import Singular.CLI.Options
     ( Flag (..)
     , Shape (..)
+    , standing
     , switch'
     , valued
     )
@@ -71,44 +72,50 @@ stateTokenVariable = "SINGULAR_STATE_TOKEN"
 
 stateDir :: Flag
 stateDir =
-    ( valued
-        "--state-dir"
-        "DIR"
-        "Keep the journal and submissions under DIR."
-    )
-        { flagDefault = Just "the per-user state directory"
-        }
+    standing
+        ( valued
+            "--state-dir"
+            "DIR"
+            "Keep the journal and submissions under DIR."
+        )
+            { flagDefault = Just "the per-user state directory"
+            }
 
 blueprint :: Flag
 blueprint =
-    valued
-        "--blueprint"
-        "FILE"
-        "The compiled validators (plutus.json) of the release."
+    standing
+        ( valued
+            "--blueprint"
+            "FILE"
+            "The compiled validators (plutus.json) of the release."
+        )
 
 stateToken :: Flag
 stateToken =
-    ( valued
-        "--state-token"
-        "POLICY.NAME"
-        "The registry to act on: its state token, policy and name in hex, as create prints it."
-    )
-        { flagEnvironment = Just stateTokenVariable
-        }
+    standing
+        ( valued
+            "--state-token"
+            "POLICY.NAME"
+            "The registry to act on: its state token, policy and name in hex, as create prints it."
+        )
 
 koiosUrl :: Flag
 koiosUrl =
-    valued
-        "--koios-url"
-        "URL"
-        "Base URL of the Koios API used to read the chain and to submit."
+    standing
+        ( valued
+            "--koios-url"
+            "URL"
+            "Base URL of the Koios API used to read the chain and to submit."
+        )
 
 networkMagic :: Flag
 networkMagic =
-    valued
-        "--network-magic"
-        "N"
-        "The network: 1 for preprod, 42 for the generated development network."
+    standing
+        ( valued
+            "--network-magic"
+            "N"
+            "The network: 1 for preprod, 42 for the generated development network."
+        )
 
 koiosTokenFile :: Flag
 koiosTokenFile =
@@ -119,13 +126,14 @@ koiosTokenFile =
 
 networkTime :: Flag
 networkTime =
-    ( valued
-        "--network-time"
-        "DIR"
-        "Directory with the pinned time-manifest.json, shelley-genesis.json and era-history.cbor."
-    )
-        { flagDefault = Just "the preprod recording packaged with the program"
-        }
+    standing
+        ( valued
+            "--network-time"
+            "DIR"
+            "Directory with the pinned time-manifest.json, shelley-genesis.json and era-history.cbor."
+        )
+            { flagDefault = Just "the preprod recording packaged with the program"
+            }
 
 vault :: Flag
 vault =

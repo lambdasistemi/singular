@@ -45,9 +45,12 @@ module Singular.Application.OpenDatum.Command
     , closedSwitch
     , openDatumVersion
     , openDatumHint
+    , openDatumRefusalHint
     , parseOpenDatumCommand
     , parseOpenDatumCommandWithEnvironment
     , parseOpenDatumInvocation
+    , parseOpenDatumInvocationFrom
+    , loadOpenDatumSources
     , parseOpenDatumWithGroup
     , renderCLIError
     , openDatumUsage
@@ -117,6 +120,13 @@ import Singular.CLI.Options
     , resolvePath
     )
 import Singular.CLI.Registry (economics)
+import Singular.CLI.Sources
+    ( Sources (..)
+    , applySources
+    , loadSources
+    , missingHint
+    , noSources
+    )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
@@ -157,6 +167,8 @@ data CLIError
       its name and the command, before any key is read or anything written
       -}
       UnsupportedFlag String String
+    | -- | the config file cannot be used, said in one sentence
+      ConfigRefused String
     deriving stock (Eq, Show)
 
 -- | Parse a command line.
@@ -182,7 +194,11 @@ parseOpenDatumWithGroup
     -> [String]
     -> Either CLIError OpenDatumCommand
 parseOpenDatumWithGroup group environment args =
-    readFlags group args >>= commandFrom environment
+    readFlags group args
+        >>= commandFrom environment
+            . applySources
+                (openDatumProgram openDatumVersion)
+                (noSources environment)
 
 {- | Read a command line over the valued flags this binary owns, with the
 switches every binary reads and the closed switch. The reading is the
@@ -193,7 +209,7 @@ readFlags group =
     first (refusalAs RemovedSetting BadValue "singular")
         . readLine
             Accepted
-                { acceptedValued = group
+                { acceptedValued = group <> ["--config"]
                 , acceptedEarly = []
                 , acceptedSwitches = commonSwitches <> [closedSwitch, "--version"]
                 }
@@ -208,7 +224,7 @@ commandFrom environment (Raw ws allFlags) = do
         flags =
             [ flag
             | flag@(name, _) <- allFlags
-            , name `notElem` [closedSwitch, "--version"]
+            , name `notElem` [closedSwitch, "--version", "--config"]
             ]
         askedFor =
             OpenHelp
@@ -614,16 +630,44 @@ parseOpenDatumInvocation
     :: [(String, String)]
     -> [String]
     -> Either CLIError (OpenDatumCommand, TraceRequest)
-parseOpenDatumInvocation environment args = do
-    raw <-
-        readFlags (commonFlagGroup <> extraValuedFlags <> traceFlags) args
-    let (tracing, rest) =
-            partition ((`elem` traceFlags) . fst) (rawFlags raw)
+parseOpenDatumInvocation = parseOpenDatumInvocationFrom . noSources
+
+{- | The same over the settings the environment and the config file give: a
+setting the command line leaves out is read from the environment, then from
+the file. A file that cannot be used is refused for a command that runs, and
+ignored for a request for help.
+-}
+parseOpenDatumInvocationFrom
+    :: Sources
+    -> [String]
+    -> Either CLIError (OpenDatumCommand, TraceRequest)
+parseOpenDatumInvocationFrom sources args = do
+    raw <- readFlags invocationFlags args
+    let environment = sourceEnvironment sources
+        filled = applySources (openDatumProgram openDatumVersion) sources raw
+        (tracing, rest) =
+            partition ((`elem` traceFlags) . fst) (rawFlags filled)
     request <-
         traceRequestFrom BadValue [(name, v) | (name, Just v) <- tracing]
     refuseObsoleteEnvironment environment
-    command <- commandFrom environment raw{rawFlags = rest}
+    command <- case ( commandFrom environment filled{rawFlags = rest}
+                    , sourceConfig sources
+                    ) of
+        (Right help@(OpenHelp _), _) -> Right help
+        (_, Left why) -> Left (ConfigRefused why)
+        (result, Right _) -> result
     pure (command, request)
+
+-- | The settings the environment and the config file give for a command line.
+loadOpenDatumSources :: [(String, String)] -> [String] -> IO Sources
+loadOpenDatumSources environment args =
+    case readFlags invocationFlags args of
+        Right raw -> loadSources (openDatumProgram openDatumVersion) environment raw
+        Left _ -> pure (noSources environment)
+
+-- | The valued flags a whole command line carries.
+invocationFlags :: [String]
+invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 
 -- | The valued flags this binary owns beyond the common group: none.
 extraValuedFlags :: [String]
@@ -663,6 +707,7 @@ renderCLIError = \case
         "inspect takes no signing key: it reads, and never funds or submits"
     PreviewTakesNoKey ->
         "--preview takes no signing key: name the caller with --wallet-address; a preview reads, and never signs or submits"
+    ConfigRefused why -> why
     UnsupportedFlag flag command ->
         flag
             <> " is not accepted by `open-datum "
@@ -686,7 +731,18 @@ when a word was mistyped, the usage of the command it was heading for and
 where its help is.
 -}
 openDatumHint :: [String] -> [String]
-openDatumHint = hintLines (openDatumProgram openDatumVersion)
+openDatumHint line =
+    hintLines
+        (openDatumProgram openDatumVersion)
+        (either (const line) rawWords (readFlags invocationFlags line))
+
+{- | What a refusal says below its line: for a missing standing setting, the
+three ways to give it.
+-}
+openDatumRefusalHint :: CLIError -> [String]
+openDatumRefusalHint = \case
+    MissingFlag name -> missingHint (openDatumProgram openDatumVersion) name
+    _ -> []
 
 {- | The reference roles a command's transactions run, and so the only
 references it looks up.

@@ -55,7 +55,9 @@ import Control.Tracer (Tracer)
 
 import Singular.CLI (runCommand)
 import Singular.CLI.Command
-    ( parseInvocation
+    ( loadInvocationSources
+    , parseInvocationFrom
+    , refusalHint
     , renderCLIError
     , singularHint
     , singularVersion
@@ -86,25 +88,26 @@ runSingularVia
 runSingularVia provider app errors environment args =
     builtinCommand (singularProgram singularVersion) args >>= \case
         Just code -> pure code
-        Nothing -> case parseInvocation environment args of
-            Left err -> do
-                case errors of
-                    Just h -> do
-                        quietly (hPutStrLn h ("singular: " <> renderCLIError err))
-                        mapM_ (quietly . hPutStrLn h) (singularHint args)
-                    Nothing -> pure ()
-                pure (ExitFailure 2)
-            Right (command, request) -> do
-                terminal <- case errors of
-                    Nothing -> pure False
-                    Just h ->
-                        fromRight False <$> attempt (hIsTerminalDevice h)
-                withTracing
-                    errors
-                    terminal
-                    (phaseLog environment)
-                    request
-                    (\tracer -> runCommand app (provider tracer) command)
+        Nothing ->
+            loadInvocationSources environment args >>= \sources -> case parseInvocationFrom sources args of
+                Left err -> do
+                    case errors of
+                        Just h -> do
+                            quietly (hPutStrLn h ("singular: " <> renderCLIError err))
+                            mapM_ (quietly . hPutStrLn h) (refusalHint err <> singularHint args)
+                        Nothing -> pure ()
+                    pure (ExitFailure 2)
+                Right (command, request) -> do
+                    terminal <- case errors of
+                        Nothing -> pure False
+                        Just h ->
+                            fromRight False <$> attempt (hIsTerminalDevice h)
+                    withTracing
+                        errors
+                        terminal
+                        (phaseLog environment)
+                        request
+                        (\tracer -> runCommand app (provider tracer) command)
   where
     phaseLog env = case lookup "SINGULAR_LOG" env of
         Just path | not (null path) -> Just path

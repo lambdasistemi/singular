@@ -18,6 +18,7 @@ import Singular.CLI.PrepareSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.SignSpec qualified
+import Singular.CLI.SourcesSpec qualified
 import Singular.CLI.SubmitSpec qualified
 import Singular.CLI.TrieRefusalSpec qualified
 import Singular.CLI.VaultSpec qualified
@@ -230,6 +231,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.HelpSnapshot" [Cli])
         Singular.CLI.HelpSnapshotSpec.spec
+    describe
+        (tagged "Singular.CLI.Sources" [Cli])
+        Singular.CLI.SourcesSpec.spec
     describe
         (tagged "Singular.CLI.Sign" [Cli, Wallet])
         Singular.CLI.SignSpec.spec

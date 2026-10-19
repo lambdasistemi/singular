@@ -1,12 +1,12 @@
 singular VERSION (commit unknown)
 
-Usage: singular registry fold [--state-dir DIR] --blueprint FILE --state-token
-       POLICY.NAME --koios-url URL --network-magic N [--koios-token-file FILE]
-       [--network-time DIR] [--vault FILE [--passphrase-fd N] |
-       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
-       [--confirm-timeout SECONDS] [--receipt FILE] [--request TXID#IX]
-       [--fund-input TXID#IX] [--max-outlay LOVELACE] [--trace LEVEL]
-       [--trace-to SINK] [--trace-format FORMAT]
+Usage: singular registry fold [--config FILE] [--state-dir DIR] --blueprint
+       FILE --state-token POLICY.NAME --koios-url URL --network-magic N
+       [--koios-token-file FILE] [--network-time DIR] [--vault FILE
+       [--passphrase-fd N] | --wallet-address ADDR --bundle FILE |
+       --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
+       [--request TXID#IX] [--fund-input TXID#IX] [--max-outlay LOVELACE]
+       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
 
 Fold the pending requests into the registry
 
@@ -23,23 +23,48 @@ Available settings:
   Show this help text
   switch: -h|--help
 
+  A JSON file giving the settings the command line and the environment leave
+  out.
+  option: --config FILE
+  env: SINGULAR_CONFIG FILE
+  default: singular.json in the working directory, if there is one
+
   Keep the journal and submissions under DIR.
   option: --state-dir DIR
+  env: SINGULAR_STATE_DIR DIR
+  config:
+    state-dir: # or null
+      <string>
   default: the per-user state directory
 
   The compiled validators (plutus.json) of the release.
   option: --blueprint FILE
+  env: SINGULAR_BLUEPRINT FILE
+  config:
+    blueprint: # or null
+      <string>
 
   The registry to act on: its state token, policy and name in hex, as create
   prints it.
   option: --state-token POLICY.NAME
   env: SINGULAR_STATE_TOKEN POLICY.NAME
+  config:
+    state-token: # or null
+      <string>
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL
+  env: SINGULAR_KOIOS_URL URL
+  config:
+    koios-url: # or null
+      <string>
 
   The network: 1 for preprod, 42 for the generated development network.
   option: --network-magic N
+  env: SINGULAR_NETWORK_MAGIC N
+  config:
+    network-magic: # or null
+      <string>
 
   File holding a Koios bearer token; its contents are never printed.
   option: --koios-token-file FILE
@@ -47,6 +72,10 @@ Available settings:
   Directory with the pinned time-manifest.json, shelley-genesis.json and
   era-history.cbor.
   option: --network-time DIR
+  env: SINGULAR_NETWORK_TIME DIR
+  config:
+    network-time: # or null
+      <string>
   default: the preprod recording packaged with the program
 
   Signer, normal route: sign from this encrypted wallet vault.
@@ -98,6 +127,21 @@ Available settings:
   option: --trace-format FORMAT
   default: text on standard error, json in a file
 
+Where settings come from:
+  A setting with an env and a config line above is given in any of three ways,
+  and the first that is present wins: the flag, then the variable, then the
+  key in the config file, then the default.
+
+  The file is one JSON object whose keys are the setting names without their
+  dashes, text or numbers, for example
+
+    {"koios-url": "https://preprod.koios.rest/api/v1", "network-magic": 1}
+
+  It is singular.json in the working directory, or the file named by --config
+  or SINGULAR_CONFIG. A path in it means what it means on the command line,
+  from where the command runs. A passphrase is never read from the file or the
+  environment: it stays on the prompt or --passphrase-fd.
+
 Environment:
   SINGULAR_LOG    A file the protocol phases are appended to, one line each.
   XDG_STATE_HOME  Where the per-user state directory lives (else
@@ -108,6 +152,9 @@ Example:
       --state-token <policy>.<name> \
       --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
       --vault alice.vault
+
+  With those settings in singular.json instead:
+  singular registry fold --vault alice.vault
 
 Output and exit status:
   Prints one JSON receipt on standard output (--receipt also writes it).

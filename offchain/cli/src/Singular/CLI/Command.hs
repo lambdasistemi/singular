@@ -53,11 +53,14 @@ module Singular.CLI.Command
     , parseCommand
     , parseCommandWithEnvironment
     , parseInvocation
+    , parseInvocationFrom
+    , loadInvocationSources
     , parseWithGroup
     , renderCLIError
     , usage
     , singularVersion
     , singularHint
+    , refusalHint
     , maxKeyBytes
     , keyFlags
 
@@ -132,6 +135,13 @@ import Singular.CLI.Passphrase
     )
 import Singular.CLI.Registry (economics)
 import Singular.CLI.Sign (signBundle)
+import Singular.CLI.Sources
+    ( Sources (..)
+    , applySources
+    , loadSources
+    , missingHint
+    , noSources
+    )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Vault
     ( createVaultFile
@@ -437,6 +447,8 @@ data CLIError
       other actor file.
       -}
       RefusedSetting String
+    | -- | the config file cannot be used, said in one sentence
+      ConfigRefused String
     deriving stock (Eq, Show)
 
 -- | Parse a command line.
@@ -454,7 +466,11 @@ parser applies this to the common group plus this binary's extras.
 parseWithGroup
     :: [String] -> [(String, String)] -> [String] -> Either CLIError Command
 parseWithGroup group environment args =
-    readFlags group args >>= commandFrom environment
+    readFlags group args
+        >>= commandFrom environment
+            . applySources
+                (singularProgram singularVersion)
+                (noSources environment)
 
 {- | Read a command line over the valued flags a binary owns, with the
 switches every binary reads. The reading is the library's; what a flag
@@ -465,7 +481,7 @@ readFlags group =
     first (refusalAs RemovedSetting BadValue "singular")
         . readLine
             Accepted
-                { acceptedValued = group <> ["--witnesses"]
+                { acceptedValued = group <> ["--witnesses", "--config"]
                 , acceptedEarly = ["--json"]
                 , acceptedSwitches = commonSwitches <> ["--version"]
                 }
@@ -481,7 +497,7 @@ commandFrom environment (Raw ws allFlags) = do
         flags =
             [ flag
             | flag@(name, _) <- allFlags
-            , name `notElem` ["--json", "--witnesses", "--version"]
+            , name `notElem` ["--json", "--witnesses", "--version", "--config"]
             ]
         helpAsked = "--help" `elem` map fst flags
         askedFor =
@@ -1059,16 +1075,44 @@ parseInvocation
     :: [(String, String)]
     -> [String]
     -> Either CLIError (Command, TraceRequest)
-parseInvocation environment args = do
-    raw <-
-        readFlags (commonFlagGroup <> extraValuedFlags <> traceFlags) args
-    let (tracing, rest) =
-            partition ((`elem` traceFlags) . fst) (rawFlags raw)
+parseInvocation = parseInvocationFrom . noSources
+
+{- | The same over the settings the environment and the config file give: a
+setting the command line leaves out is read from the environment, then from
+the file. A file that cannot be used is refused for a command that runs, and
+ignored for a request for help.
+-}
+parseInvocationFrom
+    :: Sources
+    -> [String]
+    -> Either CLIError (Command, TraceRequest)
+parseInvocationFrom sources args = do
+    raw <- readFlags invocationFlags args
+    let environment = sourceEnvironment sources
+        filled = applySources (singularProgram singularVersion) sources raw
+        (tracing, rest) =
+            partition ((`elem` traceFlags) . fst) (rawFlags filled)
     request <-
         traceRequestFrom BadValue [(name, v) | (name, Just v) <- tracing]
     refuseObsoleteEnvironment environment
-    command <- commandFrom environment raw{rawFlags = rest}
+    command <- case ( commandFrom environment filled{rawFlags = rest}
+                    , sourceConfig sources
+                    ) of
+        (Right help@(Help _), _) -> Right help
+        (_, Left why) -> Left (ConfigRefused why)
+        (result, Right _) -> result
     pure (command, request)
+
+-- | The settings the environment and the config file give for a command line.
+loadInvocationSources :: [(String, String)] -> [String] -> IO Sources
+loadInvocationSources environment args =
+    case readFlags invocationFlags args of
+        Right raw -> loadSources (singularProgram singularVersion) environment raw
+        Left _ -> pure (noSources environment)
+
+-- | The valued flags a whole command line carries.
+invocationFlags :: [String]
+invocationFlags = commonFlagGroup <> extraValuedFlags <> traceFlags
 
 {- | The valued flags this binary owns beyond the common group: create pins
 an application policy, and the wallet commands name an output directory.
@@ -1107,6 +1151,7 @@ renderCLIError = \case
             <> " is not accepted by `registry "
             <> command
             <> "`: only fold, reclaim and reject enforce it, and a constraint the command does not enforce is refused, never ignored"
+    ConfigRefused why -> why
     RefusedSetting flag ->
         flag
             <> " is not accepted by `registry describe`: describe reads the public registry and writes nothing"
@@ -1124,7 +1169,18 @@ when a word was mistyped, the usage of the command it was heading for and
 where its help is.
 -}
 singularHint :: [String] -> [String]
-singularHint = hintLines (singularProgram singularVersion)
+singularHint line =
+    hintLines
+        (singularProgram singularVersion)
+        (either (const line) rawWords (readFlags invocationFlags line))
+
+{- | What a refusal says below its line: for a missing standing setting, the
+three ways to give it.
+-}
+refusalHint :: CLIError -> [String]
+refusalHint = \case
+    MissingFlag name -> missingHint (singularProgram singularVersion) name
+    _ -> []
 
 {- | The reference roles a command's transactions run, and so the only
 references it looks up.

@@ -111,6 +111,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.WriteSpec
     Singular.Application.OpenDatum.CLISpec
     Singular.Application.OpenDatum.ParserCorpusSpec
+    Singular.Application.OpenDatum.SourcesSpec
     Singular.Application.OpenDatum.ClosedModeSpec
     Singular.Application.OpenDatum.ApplicationSpec
     Singular.Application.OpenDatum.NeutralValueSpec
