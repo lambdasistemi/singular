@@ -65,7 +65,9 @@ release_dir="$scratch/release"
 mkdir -p "$release_dir"
 (cd "$root" && nix run --quiet .#release-artifacts -- "$release_dir")
 version="$(cat "$root/version.txt")"
-"$verify" --assets "$release_dir" --work "$scratch/verify" "v$version"
+# The bundles are built and run by their own workflow, so the release staged
+# here carries none: the verifier is told so, and then refuses any it finds.
+"$verify" --assets "$release_dir" --without-bundles --work "$scratch/verify" "v$version"
 extracted="$scratch/verify/extracted"
 # The archive itself carries no git checkout: assert on the tarball's member
 # list, not on the extraction directory. The listing goes to a file first so a
