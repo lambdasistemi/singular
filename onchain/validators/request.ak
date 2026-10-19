@@ -1,6 +1,9 @@
 use aiken/collection/list.{has}
 use aiken/collection/pairs
-use booking.{pureBurn, registrationBookingRefusal}
+use booking.{
+  carriesTermination, pureBurn, registrationBookingRefusal,
+  terminationBookingRefusal,
+}
 use cardano/address.{VerificationKey}
 use cardano/assets.{AssetName, PolicyId, lovelace_of, policies, tokens}
 use cardano/transaction.{
@@ -60,20 +63,22 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
 
   // The booking policy: its own applied hash is the request address's
   // payment credential. A pure burn is accepted without reading the
-  // redeemer, a state or an output; anything else is a registration
-  // booking and is judged by `booking.registrationBookingRefusal`.
+  // redeemer, a state or an output; anything else is a booking: a
+  // termination (a tagged request output stating a `TerminationDatum`) is
+  // judged by `booking.terminationBookingRefusal` and every other one by
+  // `booking.registrationBookingRefusal`.
   mint(_redeemer: Data, policy_id: PolicyId, tx: Transaction) {
     if pureBurn(tokens(tx.mint, policy_id)) {
       True
     } else {
-      when
-        registrationBookingRefusal(
-          statePolicyId,
-          TokenId { assetName: cageTokenName },
-          policy_id,
-          tx,
-        )
-      is {
+      let cageToken = TokenId { assetName: cageTokenName }
+      let refusal =
+        if carriesTermination(policy_id, tx.outputs) {
+          terminationBookingRefusal(statePolicyId, cageToken, policy_id, tx)
+        } else {
+          registrationBookingRefusal(statePolicyId, cageToken, policy_id, tx)
+        }
+      when refusal is {
         None -> True
         Some(reason) -> traceFalse(reason)
       }

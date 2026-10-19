@@ -78,10 +78,6 @@ test open_admits_update_active() {
   admits_edge(2)
 }
 
-test open_admits_update_terminal() {
-  admits_edge(3)
-}
-
 test open_admits_delete_absent() {
   admits_edge(4)
 }

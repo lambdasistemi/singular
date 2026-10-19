@@ -2,7 +2,7 @@ use aiken/collection/dict.{Dict, get, keys}
 use booking.{applicationTagName, pureBurn}
 use cardano/assets.{PolicyId, tokens}
 use cardano/transaction.{Transaction}
-use lib.{approvalName}
+use lib.{approvalName, edgeUpdateTerminal}
 use types.{Approve, ApproveRegistration, OpenRedeemer}
 
 /// The open application (#173 I1, A-001 row 1).
@@ -40,7 +40,13 @@ validator open {
       expect typed: OpenRedeemer = redeemer
       when typed is {
         Approve { edge, key, owner, destination } ->
-          if !isTreeEdge(edge) {
+          if edge == edgeUpdateTerminal {
+            // The model has no application approval for a termination: the
+            // booking is the application's spend plus the request policy's
+            // mint, so this policy certifies no termination.
+            trace @"approval-termination-retired"
+            False
+          } else if !isTreeEdge(edge) {
             // `witnessTerminal` (edge 6) needs no approval at all — the
             // model admits it unconditionally — so minting one would be a
             // token that certifies nothing. Edge 7 is not an edge.

@@ -475,7 +475,33 @@ test insert_booking_two_approvals_refuses() {
 }
 
 // ----------------------------------------------------------------------------
-// Booking a termination
+// Booking a termination: the retired mint certification
+// ----------------------------------------------------------------------------
+//
+// The model has no application approval for a termination: the booking is the
+// application's `BookTermination` spend plus the request policy's mint, and
+// the legacy `BookTerminate` mint arm certifies nothing (the success
+// expectations `terminate_booking_control_accepts` and
+// `closed_booking_accepts_termination` are retired with it; the valid booking
+// is `open_datum_termination_booking_valid_witness_is_accepted_by_the_spend`
+// and its closed twin). The refusals below stay as executable controls of the
+// retired arm, and each observation they made now lives at the spend:
+//
+// - no live output: the spent output is the input of the spend itself
+//   (`..._without_the_spent_output_refuses`);
+// - live output without the token: `..._refuses_a_custody_without_the_token`;
+// - live output elsewhere: a spend handler only runs for an input at its own
+//   script address, so the ledger carries it;
+// - envelope of another registry, key or active policy: the three
+//   `..._refuses_an_envelope_...` rows (`app-terminate-binding`);
+// - a non-controller or unsigned booking: `..._refuses_an_unsigned_booking`
+//   and `..._a_booking_signed_by_another_party` (`app-controller-signature`;
+//   the approval's `owner` has no counterpart because no approval is minted);
+// - a named destination: `..._refuses_a_named_destination`
+//   (`app-terminate-destination`).
+
+// ----------------------------------------------------------------------------
+// Booking a termination (the retired mint arm)
 // ----------------------------------------------------------------------------
 
 fn terminateName(owner: ByteArray) -> ByteArray {
@@ -518,17 +544,6 @@ fn liveWith(e: Envelope, value: Value, at: Address) -> Input {
 
 fn heldValue() -> Value {
   from_lovelace(appDeposit) |> merge(from_asset(fx.activePolicy, fx.keyA, 1))
-}
-
-test terminate_booking_control_accepts() {
-  bookTerminateAs(
-    controller,
-    terminateTx(
-      [stateInput(), holding()],
-      [controller],
-      terminateName(controller),
-    ),
-  )
 }
 
 test terminate_booking_without_live_output_refuses() {
@@ -1563,17 +1578,6 @@ test closed_booking_accepts_insertion() {
   closedBookInsert(envelopeA(), honestInsertTx(envelopeA()))
 }
 
-test closed_booking_accepts_termination() {
-  closedBookTerminateAs(
-    controller,
-    terminateTx(
-      [stateInput(), holding()],
-      [controller],
-      terminateName(controller),
-    ),
-  )
-}
-
 test closed_booking_refuses_wrong_version_where_open_refuses() {
   let e = envelopeOf(Control { ..control(), version: 2 }, payloadA())
   let tx = honestInsertTx(e)
@@ -1879,6 +1883,46 @@ test open_datum_termination_booking_refuses_a_named_destination() {
       request: TerminationRequest { ..tbCase().request, destination: #"01" },
     },
     @"app-terminate-destination",
+  )
+}
+
+test open_datum_termination_booking_refuses_a_custody_without_the_token() {
+  tbRefusedAs(
+    Case { ..tbCase(), held: from_lovelace(tbValue) },
+    @"app-terminate-token",
+  )
+}
+
+test open_datum_termination_booking_refuses_an_envelope_of_another_key() {
+  let other = Control { ..control(), key: fx.keyB }
+  tbRefusedAs(
+    Case { ..tbCase(), envelope: envelopeOf(other, payloadA()) },
+    @"app-terminate-binding",
+  )
+}
+
+test open_datum_termination_booking_refuses_an_envelope_of_another_active_policy() {
+  let other = Control { ..control(), activePolicy: fx.foreignPolicy }
+  tbRefusedAs(
+    Case { ..tbCase(), envelope: envelopeOf(other, payloadA()) },
+    @"app-terminate-binding",
+  )
+}
+
+test open_datum_termination_booking_refuses_a_booking_signed_by_another_party() {
+  tbRefusedAs(
+    Case { ..tbCase(), signers: [fx.inserterKey] },
+    @"app-controller-signature",
+  )
+}
+
+test open_datum_termination_booking_without_the_spent_output_refuses() fail {
+  open_datum.open_datum.spend(
+    registry(),
+    Some(tbCase().envelope |> as_data_envelope),
+    tbRedeemer(tbCase()),
+    holdingRef,
+    Transaction { ..tbTx(tbCase()), inputs: [tbOrdinary()] },
   )
 }
 

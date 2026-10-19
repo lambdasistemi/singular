@@ -11,7 +11,8 @@ use application/envelope.{
 }
 use cardano/address.{Address, Script, VerificationKey}
 use cardano/assets.{
-  PolicyId, Value, lovelace_of, quantity_of, tokens, without_lovelace,
+  PolicyId, Value, from_asset, lovelace_of, quantity_of, tokens,
+  without_lovelace,
 }
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Spend, Transaction, find_input,
@@ -26,7 +27,7 @@ use registry/settlement.{payeeOwed, settlesOf}
 use registry_pin.{registryStateHash}
 use types.{
   CageDatum, Modify, Rejected, Request, RequestAction, RequestDatum, State,
-  StateDatum, UpdateAction, UpdateRedeemer,
+  StateDatum, TerminationDatum, TerminationRequest, UpdateAction, UpdateRedeemer,
 }
 
 /// The open-datum application (#299, #310): a key's live value is an
@@ -67,24 +68,100 @@ use types.{
 ///   one state token (`registry/modify` `state-token`), so no other fold's
 ///   obligations or any other instance's releases can share the payment.
 /// Why this spend is not a lawful termination booking of the live output, or
-/// `None` when it is: Lean `bookTerminateStep` (`app-not-pinned`,
-/// `app-registry-asset`, `app-terminate-token`, `app-terminate-binding`,
-/// `app-controller-signature`, `app-terminate-destination`,
-/// `app-custody-snapshot`, `app-termination-value`). The spent output is the
-/// custody; the request output must hold exactly its lovelace plus
-/// `ordinary_added` and the singular token.
-///
-/// RED checkpoint: the judgement is absent. This stub names that absence
-/// instead of answering, so every row that expects the model's answer fails
-/// for the missing behaviour.
+/// `None` when it is: Lean `bookTerminateStep`, in the model's order where
+/// the observation allows it (`app-registry-asset`, `app-not-pinned`,
+/// `app-terminate-token`, `app-terminate-binding`, `app-controller-signature`,
+/// `app-terminate-destination`, `app-termination-value`; `app-custody-snapshot`
+/// is the representation invariant that the spent output is the registered
+/// holding). The spent output is the custody: nothing but lovelace and the
+/// key's one active token. The transaction carries one termination request
+/// output holding exactly the custody's lovelace plus `ordinary_added`, a
+/// natural number (the model's `ordinaryAdded`), so all of the custody enters
+/// the request and none of it is refunded; other ordinary outputs, such as a
+/// payment to the controller funded from ordinary inputs, are not read. The
+/// request policy's mint judges the request itself and its tag, so the
+/// booking must mint under that policy for that judgement to run: without a
+/// minted tag the model's `trieReadyTagsMinted` is not the request's tag
+/// (`forged-trie-ready-tag`).
 pub fn bookTerminationRefusal(
-  _registry: ByteArray,
-  _control: Control,
-  _custody: Input,
-  _ordinary_added: Int,
-  _tx: Transaction,
+  registry: ByteArray,
+  control: Control,
+  custody: Input,
+  ordinary_added: Int,
+  tx: Transaction,
 ) -> Option<String> {
-  Some(@"book-termination-judgement-absent")
+  when actualState(registry, tx.reference_inputs) is {
+    None -> Some(@"app-registry-asset")
+    Some(state) -> {
+      let Output { address, value, .. } = custody.output
+      when address.payment_credential is {
+        Script(own) ->
+          if state.application_policy != own {
+            Some(@"app-not-pinned")
+          } else {
+            when bookedTermination(tx.outputs, state.request_policy) is {
+              None -> Some(@"app-termination-value")
+              Some((requested, request)) ->
+                if without_lovelace(value) != from_asset(
+                  state.active_policy,
+                  request.key,
+                  1,
+                ) {
+                  Some(@"app-terminate-token")
+                } else if control.key != request.key || registryBytes(
+                  control.registry,
+                ) != registry || control.activePolicy != state.active_policy {
+                  Some(@"app-terminate-binding")
+                } else if !list.has(tx.extra_signatories, control.controller) {
+                  Some(@"app-controller-signature")
+                } else if request.destination != #"" {
+                  Some(@"app-terminate-destination")
+                } else if ordinary_added < 0 || lovelace_of(requested.value) != lovelace_of(
+                  value,
+                ) + ordinary_added {
+                  Some(@"app-termination-value")
+                } else if !mintsUnder(tx.mint, state.request_policy) {
+                  Some(@"forged-trie-ready-tag")
+                } else {
+                  None
+                }
+            }
+          }
+        _ -> Some(@"app-terminate-token")
+      }
+    }
+  }
+}
+
+/// The one request output of a termination booking: the only output holding
+/// a tag of the request policy, under an inline `TerminationDatum`.
+fn bookedTermination(
+  outputs: List<Output>,
+  requestPolicy: PolicyId,
+) -> Option<(Output, TerminationRequest)> {
+  when
+    list.filter(
+      outputs,
+      fn(out) { !dict.is_empty(tokens(out.value, requestPolicy)) },
+    )
+  is {
+    [carrier] ->
+      when carrier.datum is {
+        InlineDatum(inline) ->
+          if inline is TerminationDatum(request): CageDatum {
+            Some((carrier, request))
+          } else {
+            None
+          }
+        _ -> None
+      }
+    _ -> None
+  }
+}
+
+/// Some quantity of this policy is minted.
+fn mintsUnder(mint: Value, policy: PolicyId) -> Bool {
+  list.any(dict.values(tokens(mint, policy)), fn(quantity) { quantity > 0 })
 }
 
 validator open_datum(registry: ByteArray) {
@@ -119,17 +196,11 @@ validator open_datum(registry: ByteArray) {
                         envelope,
                         tx,
                       )
-                    BookTerminate { key, owner, holding } ->
-                      bookTerminate(
-                        registry,
-                        policy_id,
-                        state,
-                        name,
-                        key,
-                        owner,
-                        holding,
-                        tx,
-                      )
+                    // The model has no application approval for a termination:
+                    // the booking is this script's `BookTermination` spend plus
+                    // the request policy's mint, so no approval is certified.
+                    BookTerminate { .. } ->
+                      traceFalse(@"app-terminate-approval-retired")
                   }
                 }
             }
@@ -282,60 +353,7 @@ fn bookInsert(
   }
 }
 
-/// `bookTerminateStep`: the live output for the key is read as a
-/// reference input and bound to this registry, the actual state's active
-/// policy, the key and its controller; the request names no destination.
-fn bookTerminate(
-  registry: ByteArray,
-  policy_id: PolicyId,
-  state: State,
-  name: ByteArray,
-  key: ByteArray,
-  owner: ByteArray,
-  holding: OutputReference,
-  tx: Transaction,
-) -> Bool {
-  when find_input(tx.reference_inputs, holding) is {
-    None -> traceFalse(@"no-application-output")
-    Some(live) -> {
-      let Output { address, value, datum, .. } = live.output
-      if address.payment_credential != Script(policy_id) || quantity_of(
-        value,
-        state.active_policy,
-        key,
-      ) != 1 {
-        traceFalse(@"app-terminate-token")
-      } else {
-        when liveControl(datum) is {
-          None -> traceFalse(@"app-terminate-binding")
-          Some(control) ->
-            if control.key != key || registryBytes(control.registry) != registry || control.activePolicy != state.active_policy {
-              traceFalse(@"app-terminate-binding")
-            } else if owner != control.controller {
-              traceFalse(@"app-owner")
-            } else if !list.has(tx.extra_signatories, control.controller) {
-              traceFalse(@"app-controller-signature")
-            } else if name != approvalName(
-              edgeUpdateTerminal,
-              key,
-              owner,
-              noDestination,
-            ) {
-              // The name binds the empty destination, so a request that
-              // names any destination cannot fold with this approval.
-              traceFalse(@"app-terminate-destination")
-            } else {
-              True
-            }
-        }
-      }
-    }
-  }
-}
-
-/// A termination delivers nothing: the model's `r.output = 0`.
-const noDestination: (ByteArray, ByteArray) = (#"", #"")
-
+/// The control of a live output's inline envelope, when it states one.
 fn liveControl(datum) -> Option<Control> {
   when datum is {
     InlineDatum(inline) ->

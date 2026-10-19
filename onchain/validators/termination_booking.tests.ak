@@ -423,3 +423,83 @@ test termination_booking_refuses_a_negative_nonce() {
     @"dirty-request",
   )
 }
+
+// ----------------------------------------------------------------------------
+// The universal custody layer at the real request mint (A-033)
+// ----------------------------------------------------------------------------
+//
+// Generic open, wallet-held and keri-stub custody have no application guard,
+// so the request policy's mint is the only place that binds the spent custody
+// to the request: the singleton spent input carries exactly one genuine
+// singular tag, and its whole value transfers, H = V + A with A at least zero
+// (nothing the request cannot carry may stay behind in the custody input, and
+// no lovelace of it may leave). The application's own address, envelope and
+// controller checks are not applied here.
+
+fn custodyInputWith(value: Value) -> Input {
+  Input {
+    output_reference: OutputReference {
+      transaction_id: #"43555354",
+      output_index: 0,
+    },
+    output: Output {
+      address: applicationAddress(),
+      value,
+      datum: NoDatum,
+      reference_script: None,
+    },
+  }
+}
+
+fn withCustody(p: Plan, value: Value) -> Plan {
+  Plan { ..p, inputs: [custodyInputWith(value), ordinaryInput()] }
+}
+
+/// A request that declares and holds `lovelace`, tip at the minimum.
+fn holding(p: Plan, lovelace: Int) -> Plan {
+  let r =
+    TerminationRequest {
+      ..p.request,
+      carrier_ada: lovelace - p.request.declared_tip,
+    }
+  Plan {
+    ..restated(p, r),
+    outputs: [
+      requestOutput(
+        r,
+        from_lovelace(lovelace)
+          |> merge(singular(r.key))
+          |> merge(trieTag(r)),
+      ),
+    ],
+  }
+}
+
+test termination_booking_refuses_a_request_holding_less_than_the_custody() {
+  // Custody V = 4 ADA, request H = 3 ADA declared consistently as tip plus
+  // carrier: one input holds the tag, yet 1 ADA of the custody is not moved.
+  refusedAs(holding(plan(), 3_000_000), @"custody-value-not-transferred")
+}
+
+test termination_booking_refuses_a_custody_holding_the_singular_tag_twice() {
+  let p = plan()
+  let value =
+    from_lovelace(custodyLovelace)
+      |> merge(from_asset(fx.activePolicy, p.request.key, 2))
+  refusedAs(withCustody(p, value), @"forged-singular-tag")
+}
+
+test termination_booking_refuses_a_custody_holding_another_asset() {
+  let p = plan()
+  let value =
+    from_lovelace(custodyLovelace)
+      |> merge(singular(p.request.key))
+      |> merge(from_asset(fx.foreignPolicy, "extra", 1))
+  refusedAs(withCustody(p, value), @"custody-value-not-transferred")
+}
+
+test termination_booking_accepts_an_ordinary_addition_to_the_whole_custody() {
+  // V = 4 ADA and A = 1 ADA: the request holds all of V and 1 ADA more.
+  let p = holding(plan(), custodyLovelace + 1_000_000)
+  handler(p) && reason(p) == None
+}
