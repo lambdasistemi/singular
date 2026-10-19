@@ -20,10 +20,11 @@ flowchart LR
 
 ## Read it
 
-From the release directory, with the state token:
+From the extracted release archive, whose blueprint is `onchain/plutus.json` with
+the `version.txt` beside it, and with the state token:
 
 ```sh
-singular registry describe --blueprint plutus.json \
+singular registry describe --blueprint onchain/plutus.json \
   --state-token "$state_token" \
   --koios-url "$koios_url" --network-magic 1
 ```
@@ -31,7 +32,7 @@ singular registry describe --blueprint plutus.json \
 A program reads the same facts with the json switch:
 
 ```sh
-singular registry describe --blueprint plutus.json \
+singular registry describe --blueprint onchain/plutus.json \
   --state-token "$state_token" \
   --koios-url "$koios_url" --network-magic 1 --json
 ```
@@ -62,7 +63,8 @@ fixed order. The text and the JSON carry the same fields.
 ## A page from the two-actor run
 
 Alice's page after her own fold, on the development network, exactly as
-the command printed it:
+the command printed it. The page names the release it runs; this one ran
+version 0.10.1, and a later release prints its own label:
 
 ```text
 command: describe

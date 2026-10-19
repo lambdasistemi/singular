@@ -9,14 +9,17 @@ three, from the downloaded bytes alone, and either passes or refuses by name.
 
 ## What you run
 
-You need [Nix](https://nixos.org/download) with flakes enabled. Nothing else:
-no checkout, no credentials, no running node.
+You need [Nix](https://nixos.org/download) with flakes enabled, on Linux: the
+verifier is built for `x86_64-linux` and `aarch64-linux` only, and it does not
+run on macOS. Nothing else: no checkout, no credentials, no running node.
 
 ```sh
-nix run github:lambdasistemi/singular/v0.8.0#verify-release -- v0.8.0
+nix run github:lambdasistemi/singular/v0.12.0#verify-release -- v0.12.0
 ```
 
-Name the release you are checking twice: once to choose the verifier that
+The example names v0.12.0; the newest release is always at
+https://github.com/lambdasistemi/singular/releases/latest, and its tag goes in both
+places. Name the release you are checking twice: once to choose the verifier that
 release ships, once as the release to download. The verifier downloads the
 release's three published assets from its GitHub release page without
 logging in:
@@ -93,7 +96,7 @@ If you downloaded the three assets yourself, point the verifier at their
 directory; every check after the download is the same:
 
 ```sh
-nix run github:lambdasistemi/singular/v0.8.0#verify-release -- --assets ./downloads v0.8.0
+nix run github:lambdasistemi/singular/v0.12.0#verify-release -- --assets ./downloads v0.12.0
 ```
 
 From v0.8.0 on, every release is verified this way by the release workflow
