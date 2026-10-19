@@ -186,8 +186,8 @@
     "index": 1,
     "name": "README/start-here-play-demo-1-01",
     "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
-    "v": "c307e5d098e0"
+    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of singular-demo, which holds singular, open-datum and the development node for release v0.12.0, on x86_64 Linux with Nix.",
+    "v": "14543159067d"
    },
    {
     "index": 2,
@@ -2555,8 +2555,15 @@
     "index": 2,
     "name": "docs-consumer-onboarding/download-and-check-the-release-02",
     "pause_ms": 400,
-    "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
-    "v": "5e3493f1758f"
+    "text": "The quickest way to the programs is the Nix shell of singular-demo. nix develop github:lambdasistemi/singular-demo --accept-flake-config opens a shell with singular, open-datum, the development node devnet and jq already built by the project's CI, and fetches about 190 MiB from the public caches instead of compiling anything. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time. On a multi-user Nix install a user who is not in trusted-users cannot take the caches from a flake; that repository's README says what to change. You still need the archive, for the run page, the blueprint and the readback script. The shell's own $blueprint holds the same bytes as the archive's onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, which singular registry describe refuses without, so name the archive's file as the blueprint.",
+    "v": "faa4d71e3230"
+   },
+   {
+    "index": 3,
+    "name": "docs-consumer-onboarding/download-and-check-the-release-03",
+    "pause_ms": 400,
+    "text": "The second route builds the two commands from the archive itself. It suits another release or another system. It compiles a large Haskell stack unless the project's public binary cache serves it, and the runbook says how. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+    "v": "b2b67c623ba0"
    }
   ],
   "how-a-write-is-confirmed": [
@@ -2851,22 +2858,43 @@
     "index": 1,
     "name": "docs-demo1-devnet/build-the-commands-01",
     "pause_ms": 400,
-    "text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
-    "v": "2a5b561544af"
+    "text": "The quick way: the shell. From the extracted archive's directory,",
+    "v": "cbd5c62d3b9b"
    },
    {
     "index": 2,
     "name": "docs-demo1-devnet/build-the-commands-02",
     "pause_ms": 400,
-    "text": "The project's public binary cache holds both executables for x86_64-linux, so a build that finds them downloads about 100 MiB each instead of compiling. Add the cache before the first build, either with the two settings below on the command line, or in /etc/nix/nix.conf as extra-substituters and extra-trusted-public-keys if your user is not trusted by the Nix daemon:",
-    "v": "b2618ff17732"
+    "text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this and skip the build below; everything after it runs as written:",
+    "v": "4729369b01af"
    },
    {
     "index": 3,
     "name": "docs-demo1-devnet/build-the-commands-03",
     "pause_ms": 400,
+    "text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, the archive's file, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
+    "v": "66fe4dd55579"
+   },
+   {
+    "index": 4,
+    "name": "docs-demo1-devnet/build-the-commands-04",
+    "pause_ms": 400,
+    "text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
+    "v": "7caa89b33b2c"
+   },
+   {
+    "index": 5,
+    "name": "docs-demo1-devnet/build-the-commands-05",
+    "pause_ms": 400,
+    "text": "The project's public binary cache holds both executables for x86_64-linux, so a build that finds them downloads about 100 MiB each instead of compiling. Add the cache before the first build, either with the two settings below on the command line, or in /etc/nix/nix.conf as extra-substituters and extra-trusted-public-keys if your user is not trusted by the Nix daemon:",
+    "v": "197d3dd71292"
+   },
+   {
+    "index": 6,
+    "name": "docs-demo1-devnet/build-the-commands-06",
+    "pause_ms": 400,
     "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries, and singular --version does not exist yet (both are planned in issue 348), so the path the build prints is the only version evidence a binary gives.",
-    "v": "f74307a54106"
+    "v": "47b20835f3d6"
    }
   ],
   "demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive": [
@@ -3156,8 +3184,8 @@
     "index": 1,
     "name": "docs-demo1-devnet/what-you-need-01",
     "pause_ms": 300,
-    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl.",
-    "v": "4626bdeb968e"
+    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The quickest way to the programs is the Nix shell of singular-demo, described in the next section; it needs only Nix and curl.",
+    "v": "280bf47a01c9"
    },
    {
     "index": 2,
@@ -3341,22 +3369,43 @@
     "index": 1,
     "name": "docs-demo1-on-preprod/build-the-two-commands-01",
     "pause_ms": 400,
-    "text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
-    "v": "a65dc8c802ac"
+    "text": "The quick way: the shell. From the extracted archive's directory,",
+    "v": "e412d05810f3"
    },
    {
     "index": 2,
     "name": "docs-demo1-on-preprod/build-the-two-commands-02",
     "pause_ms": 400,
-    "text": "Compiling both commands from source builds a large Haskell stack and takes a long time. The project's public binary cache holds both for x86_64-linux, about 100 MiB each. Add it before the first build, with these two settings on the nix build command line or, if your user is not trusted by the Nix daemon, as extra-substituters and extra-trusted-public-keys in /etc/nix/nix.conf:",
-    "v": "e71e7730208b"
+    "text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this, skip the build below, and carry on in the same shell:",
+    "v": "02ba8219f372"
    },
    {
     "index": 3,
     "name": "docs-demo1-on-preprod/build-the-two-commands-03",
     "pause_ms": 400,
+    "text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
+    "v": "680f3a6b5168"
+   },
+   {
+    "index": 4,
+    "name": "docs-demo1-on-preprod/build-the-two-commands-04",
+    "pause_ms": 400,
+    "text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
+    "v": "c189e39eff85"
+   },
+   {
+    "index": 5,
+    "name": "docs-demo1-on-preprod/build-the-two-commands-05",
+    "pause_ms": 400,
+    "text": "Compiling both commands from source builds a large Haskell stack and takes a long time. The project's public binary cache holds both for x86_64-linux, about 100 MiB each. Add it before the first build, with these two settings on the nix build command line or, if your user is not trusted by the Nix daemon, as extra-substituters and extra-trusted-public-keys in /etc/nix/nix.conf:",
+    "v": "99d10ca18c18"
+   },
+   {
+    "index": 6,
+    "name": "docs-demo1-on-preprod/build-the-two-commands-06",
+    "pause_ms": 400,
     "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. There is no singular --version yet (it is planned in issue 348), so the printed store path is the only evidence of which build you hold. The blueprint is onchain/plutus.json, beside the version.txt that names the release.",
-    "v": "6aca735a9531"
+    "v": "fec65b6d51c0"
    }
   ],
   "download-and-check-the-release": [
@@ -3881,8 +3930,8 @@
     "index": 1,
     "name": "docs-demo1-on-preprod/what-you-need-01",
     "pause_ms": 300,
-    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
-    "v": "9934aa87994d"
+    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The Nix shell of singular-demo gives you the programs without a build. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+    "v": "1dd774a664aa"
    },
    {
     "index": 2,

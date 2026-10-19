@@ -88,7 +88,9 @@ flowchart TB
 ## What you need
 
 - A Linux machine with [Nix](https://nixos.org/download) and flakes enabled, plus
-  `git`, `jq` and `curl`.
+  `git`, `jq` and `curl`. The quickest way to the programs is the Nix shell of
+  [singular-demo](https://github.com/lambdasistemi/singular-demo), described in the next section; it needs
+  only Nix and `curl`.
 - This archive, downloaded, checked and extracted. The
   [onboarding page](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
   gives the download, the checksum check and the extraction commands. Every
@@ -99,7 +101,37 @@ flowchart TB
 
 ## Build the commands
 
-Nix reads a flake from a Git tree, and the application's flake reaches the
+**The quick way: the shell.** From the extracted archive's directory,
+
+```sh
+nix develop github:lambdasistemi/singular-demo --accept-flake-config
+```
+
+opens a shell with `singular`, `open-datum`, the development node `devnet` and
+`jq` on the path, all built by the project's CI. With the caches accepted it
+builds only the shell itself and fetches about 190 MiB instead of compiling the
+Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64
+Linux only, it needs Nix, and it keeps the development node's files in one directory per
+user, so run one node at a time (on a multi-user Nix install a user outside
+`trusted-users` cannot take the caches from a flake; the
+[shell's README](https://github.com/lambdasistemi/singular-demo) says what to change). In that shell, name the
+programs like this and skip the build below; everything after it runs as written:
+
+```sh
+root="$PWD"
+singular="$(command -v singular)"
+open_datum="$(command -v open-datum)"
+devnet="$(command -v devnet)"
+blueprint="$root/onchain/plutus.json"
+```
+
+The shell's own `$blueprint` holds the same bytes as `onchain/plutus.json`, the
+archive's file, but it sits in the Nix store with no `version.txt` beside it, and
+`singular registry describe` (step 2) refuses a blueprint without one, so keep the
+archive's file as `blueprint`.
+
+**The other way: build from the archive.** This suits another release or another
+system. Nix reads a flake from a Git tree, and the application's flake reaches the
 registry's sources one directory up, so the extracted archive must be made into
 a Git tree first. This commits nothing and contacts nothing. Nix then warns
 that the tree is dirty; that is expected.

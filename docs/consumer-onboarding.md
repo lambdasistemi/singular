@@ -41,9 +41,26 @@ Demo 1) and `SHA256SUMS` for both. The file names carry the version without a
 directory of its own. The exact commands, with the checks, are on
 [Play Demo 1 on preprod](demo1-on-preprod.md#download-and-check-the-release).
 
-Building the two commands compiles a large Haskell stack unless the project's
-public binary cache serves it; the same page says how to use the cache. No
-release ships ready-built binaries yet. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
+The quickest way to the programs is the Nix shell of
+[singular-demo](https://github.com/lambdasistemi/singular-demo). `nix develop github:lambdasistemi/singular-demo --accept-flake-config`
+opens a shell with `singular`, `open-datum`, the development node `devnet` and
+`jq` already built by the project's CI, and fetches about 190 MiB from the public
+caches instead of compiling anything. Its limits: it is pinned to release v0.12.0,
+it is built for x86_64 Linux only, it needs Nix, and it keeps the development
+node's files in one directory per user, so run one node at a time. On a multi-user
+Nix install a user who is not in `trusted-users` cannot take the caches from a flake; that
+repository's README says what to change. You still need the archive, for the run
+page, the blueprint and the readback script. The shell's own `$blueprint` holds the
+same bytes as the archive's `onchain/plutus.json`, but it sits in the Nix store with
+no `version.txt` beside it, which `singular registry describe` refuses without, so
+name the archive's file as the blueprint.
+
+The second route builds the two commands from the archive itself. It suits another
+release or another system. It compiles a large Haskell stack unless the project's
+public binary cache serves it, and the
+[runbook](demo1-on-preprod.md#build-the-two-commands) says how. No release ships
+ready-built binaries yet. A binary install that needs no Nix is coming in
+[issue 695](https://github.com/lambdasistemi/singular/issues/695).
 
 ## Choose the network and API
 
