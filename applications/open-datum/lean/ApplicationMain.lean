@@ -70,64 +70,32 @@ def refusedFor (reason : String) : Except String (List StatementStatus) → Bool
 def flipFirstStatus (ledgers : Json) : Json :=
   match ledgers.getObjVal? "theorems", ledgers.getObjVal? "atoms" with
   | .ok (.arr rows), .ok atoms =>
-    let flipped := rows.modify 0 fun row => row.setObjVal! "status" (toJson "STATED")
+    let flipped := rows.modify 0 fun row => row.setObjVal! "status" (toJson (if (row.getObjValAs? String "status").toOption == some "STATED" then "PROVED" else "STATED"))
     Json.mkObj [("theorems", Json.arr flipped), ("atoms", atoms)]
   | _, _ => Json.null
 
-/-- The inserted envelope, observed: the request codec, the booking and
-selection refusals, the registry holding and the root transaction a fold builds.
-Every value is computed by the model or the root; none is typed. -/
+/-- Law-specific datum fixtures, through the same codecs and executable law. -/
 def datumChecks : IO Nat := do
   let mut failed := 0
-  let valid := insertRequest 5 (envelopeFor 5 payload0)
-  let roundTrips := fun (r : Request) => (requestFromJson (requestToJson r)).toOption == some r
-  failed := failed + (← report (roundTrips valid && roundTrips { valid with datum := none })
-    "codec: a request carrying its datum and one carrying none each round-trip exactly")
-  let unflagged := Json.mkObj [("edge", toJson Edge.insertActive), ("key", toJson (5 : Nat))]
-  failed := failed + (← report
-    ((requestFromJson unflagged).toOption.map (·.datum) == some none)
-    "codec: a request that does not say carries no datum, the root default")
-  let badFlag := Json.mkObj [("edge", toJson Edge.insertActive), ("key", toJson (5 : Nat))
-    , ("datum", toJson "yes")]
-  failed := failed + (← report (requestFromJson badFlag).toOption.isNone
-    "codec: a datum that is not a value is refused")
-  let g := genesis app0 cfg0 app0.registry
-  let refusedNoDatum := match appStep g bookingNoDatum with
-    | .error why => why == "app-envelope-datum"
-    | .ok _ => false
-  failed := failed + (← report (refusedNoDatum && (appStep g (bookInsertKey 5)).toOption.isSome)
-    "booking: the valid insertion is accepted, and the same booking carrying no datum is refused app-envelope-datum")
-  let selected := (appStep bookedWorld selectionFold).toOption.isSome
-  let unselected := match appStep unnamedPendingWorld selectionFold with
-    | .error why => why == "fold-envelope-datum"
-    | .ok _ => false
-  failed := failed + (← report (selected && unselected)
-    "selection: the fold accepts the booked insertion, and refuses fold-envelope-datum when its pending request carries no datum")
-  let envelope := some (envelopeHash (envelopeFor 5 payload0))
-  let inlineHeld := ordinaryWorld.registry.held.any fun h =>
-    h.key == 5 && h.kind == .active && h.datum == envelope
-  failed := failed + (← report inlineHeld
-    "delivery: after the insertion fold the registry holds key 5's active token with its envelope as its datum")
-  let insertion? := bookedWorld.pending.head?.map (·.request)
-  let destinations := match insertion? with
-    | some r => match Singular.txOf bookedWorld.registry r (r.deposit + r.tip) with
-      | .ok tx => (tx.outputs.filter (·.role == .destination)).map fun o => (o.datum, o.datumValue)
-      | .error _ => []
-    | none => []
-  failed := failed + (← report (destinations == [(.inline, envelope)])
-    "delivery: the transaction the root builds for that insertion has one destination output, carrying the envelope inline")
-  let terminating := reachWorld (insertKey 5 ++ [.bookTerminate (terminateRequest 5) 0 [controller]])
-  let termination? := (terminating.pending.find? (·.request.edge == .updateTerminal)).map (·.request)
-  let termOk := match termination? with
-    | some r => match Singular.txOf terminating.registry r (r.deposit + r.tip) with
-      | .ok tx =>
-        !(tx.outputs.any (·.role == .destination)) &&
-          (tx.inputs.filter (·.role == .witness)).map (fun i => (i.datum, i.datumValue))
-            == [(.inline, envelope)]
-      | .error _ => false
-    | none => false
-  failed := failed + (← report termOk
-    "termination: the root transaction has no destination output, and the witness it burns is spent with the envelope its insertion delivered, inline")
+  let b := registration 5 0 (envelopeFor 5 payload0)
+  failed := failed + (← report ((fromJson? (toJson b) : Except String RegistrationBooking).toOption == some b)
+    "codec: registration booking round-trips all fields, including nonce and datum")
+  failed := failed + (← report ((appStep (genesis app0 cfg0 app0.registry) bookingNoDatum).isOk == false)
+    "booking refuses an unnamed envelope")
+  failed := failed + (← report ((appStep bookedWorld selectionFold).isOk && !(appStep unnamedPendingWorld selectionFold).isOk)
+    "selection accepts reached named datum and refuses the malformed unnamed boundary")
+  failed := failed + (← report (ordinaryWorld.registry.held.any fun h => h.datum == some (envelopeHash (envelopeFor 5 payload0)))
+    "reached insertion root holding retains the original inline envelope datum")
+  for s in corpus.filter (·.kind == "witness") do
+    failed := failed + (← report ((runActionsWith Law.standard (genesis s.app s.config s.asset) s.actions).all (·.isOk))
+      s!"witness prerequisites and every step accepted: {s.name}")
+  let pending := reachWorld (bookedTerminationActions 0)
+  let finished := reachWorld (lifecycleActions 0)
+  failed := failed + (← report (pending.outputs.isEmpty && pending.economic.terminations.length == 1 &&
+      (pending.economic.terminations.head?.map (·.request.contents.lovelace)) == some 4000000 &&
+      finished.economic.treasury - pending.economic.treasury == 2000000 &&
+      finished.economic.terminations.isEmpty && trieGet finished.registry.trie 5 == .known .terminal)
+    "actual surplus transfers at booking; tip comes from held value; later unsigned fold donates below the former protected floor")
   pure failed
 
 def check (dir : String) : IO UInt32 := do
@@ -181,10 +149,13 @@ def check (dir : String) : IO UInt32 := do
       "control: a statement depending on a custom axiom is refused")
     failed := failed + (← report (refusedFor "missing-report" (reconcileStatements []))
       "control: an empty report is refused")
-    let sorried := (reconcileStatements ((name, axioms ++ ["sorryAx"], header) :: rest)).toOption
+    let withoutSorry := axioms.filter (· != "sorryAx")
+    let provedControl := (reconcileStatements ((name, withoutSorry, header) :: rest)).toOption
+    let sorried := (reconcileStatements ((name, withoutSorry ++ ["sorryAx"], header) :: rest)).toOption
     failed := failed + (← report (sorried.any fun rs =>
-        (rs.find? (·.name == name)).any (·.status == "STATED") && ledgersJsonOf rs != ledgers)
-      "control: a statement depending on sorryAx is computed STATED, and the ledger calling it proved notices")
+        (rs.find? (·.name == name)).any (·.status == "STATED") &&
+        provedControl.any (fun ps => (ps.find? (·.name == name)).any (·.status == "PROVED") && ledgersJsonOf rs != ledgersJsonOf ps))
+      "control: adding sorryAx changes the computed status from PROVED to STATED and changes the ledger, in either checkpoint phase")
     let rehashed := (reconcileStatements ((name, axioms, header ++ " ") :: rest)).toOption
     failed := failed + (← report (rehashed.any fun rs => ledgersJsonOf rs != ledgers)
       "control: a declaration header changed by one byte changes its row's hash, and the ledger comparison notices")
