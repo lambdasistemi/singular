@@ -1,11 +1,15 @@
 {
-  "singular-registry-and-open-datum-alices-open-datum-story-from-this-archive": [
+  "demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive": [
     {
-      "text": "singular registry and open-datum — Alice's open-datum story, from this archive.",
+      "text": "Demo 1 on a development node: Alice and Bob run a registry from the release archive.",
       "pause": 500
     },
     {
-      "text": "You have the extracted archive and no checkout. The accepted Lean model governs behavior; this page describes what the ordinary singular registry and open-datum commands do, what to run, what you should see, and what they do not claim.",
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but has never used Singular, you want to see the whole of Demo 1 work before you spend test ada: a registry is created, a key is inserted, changed, terminated and taken over by a new owner of the name, and every refusal appears where the page says it will. This page does that on a private development node that the archive starts for you. Every command is copied as it stands; nothing in it needs a faucet, an account or a checkout.",
+      "pause": 400
+    },
+    {
+      "text": "When it works, you have read sixteen receipts, each the one JSON document a singular registry or open-datum command prints, and you have seen two wallets sign in the two ways Singular offers. The same steps on the public preprod network, with the faucet and Koios, are on the preprod runbook. Read this page first if you want to see it run for nothing; read the runbook when you are ready to spend test ada.",
       "pause": 400
     }
   ],
@@ -15,20 +19,48 @@
       "pause": 500
     },
     {
-      "text": "Alice boots a registry whose application is open datum: a key's live value is an output at the application's script, holding the key's one active token under an inline envelope. The envelope has a protected control — this registry, its active policy, the key, the controller and a protected deposit — and a free payload. Only the controller may replace the payload; the deposit is released only when the registry terminates the key.",
+      "text": "Alice boots a registry whose application is open datum: a key's live value is an output at the application's script, holding the key's one active token under an inline envelope. The envelope has a protected part (this registry, its active policy, the key, the controller and a protected deposit) and a free payload. Only the controller may replace the payload. The deposit is released only when the registry terminates the key.",
       "pause": 400
     },
     {
-      "text": "The Demo 1 journey runs on the Koios path only; its former node/indexer backend comparison is retired. A private generated node supplies the harness API and independent probes. Each step below is a separate process, and each prints one JSON receipt. Your saved state directory carries the identity from one process to the next.",
+      "text": "An insert or a terminate books and stops: its request waits at the registry, and its receipt names the request and the deadline by which it must be folded. The fold is its own command, open-datum fold, run by whichever wallet folds. Each step below is a separate process and prints one JSON receipt. The saved state directory carries the identity from one process to the next.",
       "pause": 400
     },
     {
-      "text": "An insert or a terminate books and stops: its request waits at the registry, and its receipt names the request and the deadline by which it must be folded. The fold is its own command, open-datum fold, run with whichever wallet folds.",
+      "text": "Alice and Bob keep no signing key on disk, and the story shows both ways to sign:",
       "pause": 400
     },
     {
-      "text": "Alice and Bob keep no signing key on disk, and the story shows both ways to sign. Alice signs from her vault in one command: she names the vault file and the descriptor her passphrase is read from where a key file used to go, and the command builds the run's one bundle, signs it from the vault, sends it and prints its receipt once every transaction has landed. Bob signs the external way: his write names his wallet's address and a new bundle file, and the command builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures. He then signs the bundle from his vault with singular wallet sign and sends it with singular submit. Until submit finds the bundle's transactions on chain, the command's own fields (the request, the fold, the root) are only what the bundle expects, and the receipt says so under expected.",
-      "pause": 400
+      "text": "Alice signs from her vault, in one command. She names the vault file and the descriptor her passphrase is read from. The command builds the run's one bundle of transactions, signs it from the vault, sends it and prints its receipt once every transaction has landed.",
+      "pause": 300
+    },
+    {
+      "text": "Bob signs the external way. His write names his wallet's address and a new bundle file. The command builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures. He then signs the bundle from his vault with singular wallet sign and sends it with singular submit. Until submit finds the bundle's transactions on chain, the command's own fields (the request, the fold, the root) are only what the bundle expects, and the receipt says so under expected.",
+      "pause": 300
+    }
+  ],
+  "words-used-on-this-page": [
+    {
+      "text": "Words used on this page.",
+      "pause": 500
+    }
+  ],
+  "what-you-need": [
+    {
+      "text": "What you need.",
+      "pause": 500
+    },
+    {
+      "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl.",
+      "pause": 300
+    },
+    {
+      "text": "This archive, downloaded, checked and extracted. The onboarding page gives the download, the checksum check and the extraction commands. Every command below runs from the extracted directory, the one that holds DEMO1.md and onchain/.",
+      "pause": 300
+    },
+    {
+      "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section.",
+      "pause": 300
     }
   ],
   "build-the-commands": [
@@ -37,7 +69,15 @@
       "pause": 500
     },
     {
-      "text": "From the extracted archive:",
+      "text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
+      "pause": 400
+    },
+    {
+      "text": "The project's public binary cache holds both executables for x86_64-linux, so a build that finds them downloads about 100 MiB each instead of compiling. Add the cache before the first build, either with the two settings below on the command line, or in /etc/nix/nix.conf as extra-substituters and extra-trusted-public-keys if your user is not trusted by the Nix daemon:",
+      "pause": 400
+    },
+    {
+      "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries, and singular --version does not exist yet (both are planned in issue 348), so the path the build prints is the only version evidence a binary gives.",
       "pause": 400
     }
   ],
@@ -47,7 +87,11 @@
       "pause": 500
     },
     {
-      "text": "The development node is private and generated: a fresh chain whose genesis funds the addresses you name. Alice and Bob each make a wallet with singular wallet create: a vault, a file that holds the wallet's signing key sealed by a passphrase, which a script supplies on an inherited file descriptor (typed at a prompt when you run it by hand). The devnet is given the printed addresses and never sees a key; it funds nothing outside this node. Alice books, and Bob folds.",
+      "text": "The development node is private and generated: a fresh chain whose genesis funds the addresses you name. Alice and Bob each make a wallet with singular wallet create: a vault, a file that holds the wallet's signing key sealed by a passphrase, which a script supplies on an inherited file descriptor (typed at a prompt when you run it by hand). The node is given the printed addresses and never sees a key, and it funds nothing outside itself. Alice books, and Bob folds. Each wallet is funded with one output, and nothing is split.",
+      "pause": 400
+    },
+    {
+      "text": "The node is a Koios-shaped HTTP endpoint at providerUrl. The same commands run against the preprod Koios on the runbook page with only these three settings changed.",
       "pause": 400
     }
   ],
@@ -57,11 +101,19 @@
       "pause": 500
     },
     {
+      "text": "First the two payloads the story uses and the helpers the later steps call. A payload is Plutus data in the detailed JSON schema; these two are a one-entry map from the bytes of name to the bytes of alice and of bob.",
+      "pause": 400
+    },
+    {
+      "text": "When you are done, stop the node with kill \"$devnet_pid\".",
+      "pause": 400
+    },
+    {
       "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by open-datum, naming the deadline, before anything is signed. Giving open-datum insert or open-datum terminate the --fold switch books and folds in one command, with one wallet: with the external signer the one bundle then holds the booking and the fold, and one signing covers both; with the vault the one command signs and sends both.",
       "pause": 400
     },
     {
-      "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read; a vault run whose answer is lost leaves its bundle pending, its fields under expected, and the next write of that wallet stops on it like any waiting bundle.",
+      "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read. A vault run whose answer is lost leaves its bundle pending, its fields under expected, and the next write of that wallet stops on it like any waiting bundle.",
       "pause": 400
     },
     {
@@ -69,7 +121,7 @@
       "pause": 400
     },
     {
-      "text": "The payload is Plutus data in the detailed JSON schema, any datum, the same form update --payload takes. insert builds the key's envelope around it: constructor 0 over the control and the payload, the control being constructor 0 over the version 1, the registry's state asset (its state policy and token name, as the create receipt prints them in pins.pinState and token), the active policy (pins.pinActive), the key, the controller's payment key hash (the signing wallet's, which the create receipt prints as walletKeyHash) and the protected deposit in lovelace. The deposit is 2 000 000 when --deposit is not given; --deposit LOVELACE names another amount, and one below 2 000 000 is refused. That minimum is the client's own policy: the chain checks only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. The insert receipt and the preview receipt print the envelope it built.",
+      "text": "insert builds the key's envelope around the payload: constructor 0 over the control and the payload, the control being constructor 0 over the version 1, the registry's state asset (its state policy and token name, as the create receipt prints them in pins.pinState and token), the active policy (pins.pinActive), the key, the controller's payment key hash (the signing wallet's, which the create receipt prints as walletKeyHash) and the protected deposit in lovelace. The deposit is 2 000 000 when --deposit is not given; --deposit LOVELACE names another amount, and one below 2 000 000 is refused. That minimum is the client's own policy: the chain checks only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. The insert receipt and the preview receipt print the envelope it built.",
       "pause": 400
     }
   ],
@@ -79,23 +131,23 @@
       "pause": 500
     },
     {
-      "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins — the applied open-datum script, the state script and the three witness policies — and the published reference outputs. It writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+      "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
       "pause": 300
     },
     {
-      "text": "singular registry describe reads the registry page with the command the create receipt printed (describeCommand, run as printed): which registry this is, which release it runs, what its rules are and what it holds now. The page shows the public history of the state token from create to the live state output, read through the named provider whose answers are unverified claims; the release label is the archive's own claim, and the page is unsigned.",
+      "text": "singular registry describe reads the registry page with the command the create receipt printed (describeCommand, run as printed): which registry this is, which release it runs, what its rules are and what it holds now. The page shows the public history of the state token from create to the live state output, read through the named provider, whose answers nothing here verifies; the release label is the archive's own claim, and the page is unsigned.",
       "pause": 300
     },
     {
-      "text": "open-datum insert books the insertion through the application: its receipt names the pending request, the booking's transaction, the envelope kept for the fold and foldDeadline, the time (and, where pinned time converts it, the slot) by which the fold must happen. Nothing is folded, and the registry's root and your saved state do not move.",
+      "text": "open-datum insert books the insertion through the application: its receipt names the pending request (request), the booking's transaction, the envelope kept for the fold and foldDeadline, the time and the slot by which the fold must happen. Nothing is folded, and the registry's root and your saved state do not move.",
       "pause": 300
     },
     {
-      "text": "open-datum fold stages the fold of the pending requests with the wallet whose address it is given, which need not be the wallet that booked: it settles every request that passes, up to nine, each settled key's one active token landing in an output at the application, carrying its envelope inline. Its receipt names, under expected, each settled request, its key, its edge and the output it delivered in the settled list, beside the fold's transaction, the new root, the host clock at which it was decided and how many milliseconds remained before the deadline, and lists the requests it left in excluded.",
+      "text": "open-datum fold stages the fold of the pending requests with the wallet whose address it is given, which need not be the wallet that booked. It settles every request that passes, up to nine, each settled key's one active token landing in an output at the application, carrying its envelope inline. Its receipt names, under expected, each settled request, its key, its edge and the output it delivered in the settled list, beside the fold's transaction, the new root and how many milliseconds remained before the deadline, and lists the requests it left out in excluded.",
       "pause": 300
     },
     {
-      "text": "open-datum inspect reads the key active, with the holding, its envelope and payload, the registry's root and its separately observed tip. Its Unbound facts do not prove a common chain point for the reads used to prepare a write.",
+      "text": "open-datum inspect reads the key active, with the holding, its envelope and payload, the registry's root and its separately observed tip. The reads behind a write are not guaranteed to come from one chain state.",
       "pause": 300
     },
     {
@@ -111,7 +163,7 @@
       "pause": 300
     },
     {
-      "text": "open-datum fold stages and, once sent, lands its fold: the token is burned and the protected deposit is paid back to the controller together with everything else the fold owes you.",
+      "text": "open-datum fold stages and, once sent, lands its fold: the token is burned and the protected deposit is paid back to the controller together with everything else the fold owes.",
       "pause": 300
     },
     {
@@ -119,7 +171,7 @@
       "pause": 300
     },
     {
-      "text": "singular registry reject clears a request that is past both its windows: its processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. It is refused, naming each request and when its retract window closes, while any pending request is still inside a window, and when nothing is pending. The windows are judged from the ledger's tip, not the host's clock. Its receipt names, under expected, every request rejected, the value it actually locked (its lovelace and any other assets, nothing it never held), the tip the rejecting wallet keeps, and the refund: the designated output, its recipient and its amount. The registry's root does not move. The refund is the whole owed amount in one output to the request's owner, the one shape the chain accepts: a refund split across several outputs to the same owner is accepted by the model and refused by the chain (issue 361), so a successful reject is that shape on this chain, not general reject-refund conformance.",
+      "text": "singular registry reject clears a request that is past both its windows: its processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. It is refused, naming each request and when its retract window closes, while any pending request is still inside a window, and when nothing is pending. The windows are judged from the ledger's tip, not the host's clock. Its receipt names, under expected, every request rejected, the value it actually locked, the tip the rejecting wallet keeps, and the refund: the designated output, its recipient and its amount. The registry's root does not move. The refund is the whole owed amount in one output to the request's owner, the one shape the chain accepts.",
       "pause": 300
     },
     {
@@ -131,7 +183,7 @@
       "pause": 300
     },
     {
-      "text": "singular registry reclaim takes back a new pending insertion that nobody folded, inside its retract window. An earlier attempt is refused, naming when it opens; another wallet is refused as not the request's owner. The owner's successful receipt names the request, retract transaction, actual locked value, recipient and returned output, with the request reference as its inline datum. The journey reads the pending request before and the return after through the provider separately, and checks them against the receipt and saved signed bodies. Edits to those amounts, recipient, output reference or binding fail the checks. The tip slot against the converted deadline slots decides the window, never the host clock. Opening requires a converted processing deadline that the tip has reached. An unconverted retract deadline counts as still open, exactly as reject reads it, while a known reached deadline proves closure. The built interval must fit the window; a build failure fails the success check. The pinned final era permits conversion beyond the recording's former end. A separate moving ledger horizon caps the selected upper bound. A nonempty registry-limited interval with fewer than ten seconds of usable slots refuses WindowTooShort before signing; only a horizon-limited otherwise longer interval may wait once, bounded by slots and 20 seconds. A stalled wait refuses HorizonWaitTimedOut. No build failure proves a reclaim. After the window closes the refusal names registry reject. Updates and deletions cannot be retracted; Lean allows insertions and terminal witnesses. The root, mirror and state.json stay where they were.",
+      "text": "singular registry reclaim takes back a new pending insertion that nobody folded, inside its retract window. An earlier attempt is refused, naming when it opens; another wallet is refused as not the request's owner. The owner's successful receipt names the request, the retract transaction, the value that was locked, the recipient and the returned output. The tip slot against the deadline slots decides the window, never the host clock. After the window closes the refusal names registry reject. Updates and deletions cannot be retracted; insertions and terminal witnesses can. The root stays where it was.",
       "pause": 300
     },
     {
@@ -143,15 +195,17 @@
       "pause": 300
     },
     {
-      "text": "A closed registry is booted with open-datum create --closed ..., which pins the closed-datum application whose payload is written once. Every later command follows the registry's mode with no further flag, and open-datum update on a closed registry stops before anything is built or signed, saying the registry is closed.",
+      "text": "A closed registry is booted with open-datum create --closed ..., which pins the closed-datum application whose payload is written once. Every later command follows the registry's mode with no further flag, and open-datum update on a closed registry stops before anything is built or signed, saying the registry is closed. The project rehearses that scene on a development node on every change, in the hosted job \"Closed-datum journey from the release archive\".",
       "pause": 400
+    }
+  ],
+  "when-a-command-stops": [
+    {
+      "text": "When a command stops.",
+      "pause": 500
     },
     {
-      "text": "The closed scene is rehearsed the way every other scene is: the hosted job \"Closed-datum journey from the release archive\" runs nix run --quiet .#demo1-closed-check, which verifies the release archive and runs the closed journey from it — create with the closed switch, the page reading, insert, fold, inspect, the refused update, terminate, fold, inspect and the deposit read — on a devnet on every change.",
-      "pause": 400
-    },
-    {
-      "text": "A command that stops prints why, in one outcome class with its own exit status: client-refusal (nothing submitted), ledger-refusal, node-unavailable, timeout, stale-state, partial, concurrent-writer, proof-missing or proof-inconsistent.",
+      "text": "A command that stops prints why, in one outcome class with its own exit status. Status 2 is a mistake on the command line.",
       "pause": 400
     }
   ],
@@ -187,55 +241,41 @@
       "pause": 500
     },
     {
-      "text": "The same ordinary commands use a Koios API on the requested test network. Set koios_url to that network's API base URL. Set token to the registry's state token, token=(--state-token POLICY.NAME), as its create printed it. Preprod uses the reviewed packaged time recording unless --network-time DIR supplies another validated recording. No ordinary command accepts a node socket or backend selector. Nothing on this page has been run there; receipts from such a run are published separately, and this page only says how to make one and what stops it.",
+      "text": "The same ordinary commands use a Koios API on the requested test network. Three settings change: the Koios base URL, the network magic and the optional token file. The preprod runbook gives the faucet funding, the amounts, the waits and every step with real values, and says which parts of it have run on preprod and which have not.",
       "pause": 400
     },
     {
-      "text": "Fund the wallet with two ada-only outputs. The registry's first publication is paid from an ada-only output other than the seed while the seed stays unspent, so a wallet whose only output is the seed cannot create: create and create --preview refuse it before anything is submitted and name the missing output. A single funded output is first split by an ordinary wallet transaction into a seed and a funding output.",
+      "text": "A preview shows what a write would cost before you sign anything. It names the caller by an enterprise address instead of a signing key, reads through a connection that cannot sign or send, and writes nothing: your state directory is byte for byte the same afterwards.",
       "pause": 400
     },
     {
-      "text": "Preview with a public address, then write. A preview names the caller by an enterprise address instead of a signing key, reads through a connection that cannot sign or send, and writes nothing: your state directory is byte for byte the same afterwards.",
+      "text": "The preview receipt names the wallet outputs it selects, each body's fee, the execution units the local evaluator measured for each script, the total collateral each states and the collateral it returns, a digest of the protocol parameters it was built under, and the outlay: the fee, the value the booking locks and a bound on the fold that follows. An insertion or a termination is two transactions, and the fold exists only once its booking has confirmed, so the preview bounds the fold from the network's parameters. A preview is not a confirmation: its bodies are built for one moment.",
       "pause": 400
     },
     {
-      "text": "The preview receipt names the wallet outputs it selects, each body's fee, the execution units the local evaluator measured for each script using the raw protocol parameters and resolved inputs consumed through the session, the total collateral each states and the collateral it returns, a digest of the protocol parameters it was built under, and the outlay: the fee, the bond the booking locks and a bound on the fold that follows. An insertion or a termination is two transactions and the fold exists only once its booking has confirmed, so the preview bounds the fold from the network's parameters; the writing command measures it after the booking confirms and before it submits it. A preview is not a confirmation: its bodies are built for one moment.",
+      "text": "insert, update, terminate and fold take --fund-input TXID#IX, the wallet output that funds and collateralises the write, and --max-outlay LOVELACE. A booking, an update or a fold past the outlay is not signed. Without --fund-input, a write spends the wallet's largest ada-only output and returns the change. A fee is never declared: the booking's units are measured on the body that will be submitted. A funding output that cannot leave a return of at least its minimum ada is refused before anything is submitted.",
+      "pause": 400
+    }
+  ],
+  "what-the-project-runs-on-its-own": [
+    {
+      "text": "What the project runs on its own.",
+      "pause": 500
+    },
+    {
+      "text": "Two further tools ship in this archive, and they are not part of the path above. They are run by the project against a registry that already exists, and they need things an ordinary user does not have, so no step here uses them.",
       "pause": 400
     },
     {
-      "text": "insert, update, terminate and fold take --fund-input TXID#IX, the wallet output that funds and collateralises the write, and --max-outlay LOVELACE. A booking, an update or a fold past it is not signed. An insert or terminate given --fold also folds after its booking confirms, and its fold, built then, is signed only if it costs no more than the booking left of the allowance; past that, the command stops partial, naming its pending request, and nothing more is signed or sent. create and inspect enforce neither flag, so they refuse both by name, before any key is read, rather than ignore them. Each transaction uses the protocol parameters consumed for that build: the booking's build, measurement and allowance decision share those consumed parameters, and the preview's digest names them; the fold, which cannot exist until the booking confirms, consumes its own build parameters. The Koios session is Unbound: its several reads need not belong to one chain state, and its facts remain Unverified with no configured witness. A fee is never declared: the booking's units are measured on the body that will be submitted, and its total collateral is stated and the rest of its funding output returned. A funding output that cannot leave a return of at least its minimum ada is refused before anything is submitted, never collateralised whole.",
-      "pause": 400
+      "text": "cli-controls (built from conformance#cli-controls) attaches to an existing registry with a fresh key and rehearses four refusals, each beside the ordinary command that does the same thing legitimately: an update another wallet's signature stands for, a release outside any fold, a second insertion of an active key and an insertion of a terminal key. It also requires --node-socket for a separate independent probe of the chain, and it keeps key files. That socket is never given to singular or open-datum.",
+      "pause": 300
     },
     {
-      "text": "The four refusals on a registry that already exists. cli-controls takes an existing registry by its state token, a state directory for its journal and a fresh key, through the supplied Koios API, and never creates a registry or starts, stops or resets a node. This test executable also requires --node-socket for its separate independent LSQ probe; that socket is never sent to ordinary singular or open-datum. Its attach behavior is a harness surface, not another provider, and it keeps key files (the wallet and stranger key files named below) for now:",
-      "pause": 400
+      "text": "tools/demo1_readback.sh reads one key's token output back from Koios by policy id and asset name alone, and compares the output reference, the inline datum bytes and their hash with an open-datum inspect receipt. It exits 0 only when the indexer finds exactly one output holding the token and agrees with the inspect, within --max-lag slots of its tip. Run it from the extracted archive with --provider koios; it is the check the preprod runbook uses after steps 5 and 7.",
+      "pause": 300
     },
     {
-      "text": "It builds from this archive: make a scratch copy of the extracted tree, git init and git add it there (Nix reads a flake from a Git tree), then nix build ./conformance#cli-controls. The take inserts the key, refuses an update another wallet's signature stands for beside the controller's own update, refuses a release outside any fold beside the terminate that releases the same holding inside one, and refuses a second insertion of the Active key and an insertion of the Terminal key, each booked and then refused at its fold. Every insertion refusal leaves its request pending, and a registry's fold judges each pending request on its own and settles every request that passes, up to nine, so the refused one stays pending, named with its reason in the receipt's excluded list, and the take retracts each one as its owner inside the request's retract window. The take reads both windows from the attached registry's state datum and waits for the booked request's actual deadline. New registries default to a processing window of 600 000 milliseconds and a retract window of 300 000 milliseconds (ten and five minutes); open-datum create --process-time MS --retract-time MS chooses positive integer millisecond values instead. The windows are fixed for the life of the registry, so attaching to an existing preprod registry does not change them. The refusal controls create their throwaway registry with 120 000 and 15 000 milliseconds, leaving the client's thirty-second fold guard plus ninety seconds for preparation. The retraction returns the bond and costs its fee; the verdict requires the wallet to hold exactly that. A refusal's submission is refused by the node and its receipt says so; whether a node could ever collect collateral for one is not claimed, so every node-judged transaction of the take states its total collateral within --collateral-allowance and returns the rest of its funding output — read from the body the receipt retained. The allowance is required: a take without one is refused before it writes anything, and a transaction that states no total, a total over it or no return is not signed.",
-      "pause": 400
-    },
-    {
-      "text": "The take reads its key from two public indexers while the key is Active: after the controller's own update and the fresh inspect that follows it, before any refusal of a release or the termination, it runs tools/demo1_readback.sh for Koios and for Blockfrost from the policy id and asset name that inspect names, and compares the output reference and the inline datum's bytes and hash with that inspect. It measures lag against inspect's separately observed tip; the output read and that tip are not a coherent snapshot. The take keeps the script's record, digested, and judges it from the facts it keeps, never from the summary it states: the provider's own answers counted into the outputs holding the token, the reported output, datum bytes and tip, each checked against those answers, the datum's hash computed again from its bytes, and the lag measured from the inspect's observed tip against the maximum lag the take was run with. A record whose stated verdict its facts contradict does not hold. An indexer that is missing, unreachable, behind the node or in disagreement is never a confirmation, and the take stops before its next write. The record's digest proves that the bytes judged are the bytes kept; it does not prove that the provider answered honestly, which no check here can. --readback and --blockfrost-credential-file are required before anything is written, and --koios-base-url, --blockfrost-base-url and --max-lag override the public services and the lag allowed; the credential file is a reference the script reads, never the take. On a development node there is no public indexer, so tools/demo1_cli_attach.sh points the take at tools/demo1_mock_indexer.py, a stand-in that answers in the services' shapes from the inspect receipt the take has just written, and shows it disagree and go unreachable.",
-      "pause": 400
-    },
-    {
-      "text": "Fund the wallet for the whole take. A write spends the wallet's largest ada-only output, and an approval a booking mints returns to the wallet when its request is folded or retracted and rides in the change output from then on: the retraction of a refused insertion's request has the request's bond as one output and the change, carrying the approval asset, as the other. That output is no longer ada-only, and the next write needs another. A refusal states its collateral from the largest ada-only output, and the balancer takes a whole output as collateral, with no return, when what is left of it cannot carry one. The take therefore refuses, before it writes anything, a wallet that does not hold one ada-only output for every insert, terminate and retraction of its story and one more, each at least the larger of the collateral allowance and the outlay bound plus the ledger's minimum output.",
-      "pause": 400
-    },
-    {
-      "text": "The take goes on only from the outcome each step names. A booking's partial stop, a refusal the node returns for the script that owns the rule, and the ordinary commands' success advance the take, and only when the receipt predicates of that step hold; a client error, an unknown or unconfirmed submission, a timeout, a lost node, a concurrent writer or any requirement that does not hold stops the take before its next action, with its receipts kept. The retraction names the request the take's own insertion left pending, and spends it only while the registry still reads as the readback that saw it pending did: a missing, replaced or another owner's request is refused and no other is substituted.",
-      "pause": 400
-    },
-    {
-      "text": "Read the key back from two public indexers. tools/demo1_readback.sh starts from the policy id and asset name alone:",
-      "pause": 400
-    },
-    {
-      "text": "It records each request and the complete response, the output the indexer says holds the asset, its inline datum, that datum's hash recomputed here, the indexer's own tip and inspect's separately observed tip, and the lag between them; it succeeds only when the indexer finds exactly one output holding exactly one of the asset and its output reference, datum bytes and datum hash are the inspect's, within --max-lag slots. A provider that needs a key reads it from the file named, hands it to curl on standard input, and never puts it in an argument, the environment, a log, a receipt or a recording.",
-      "pause": 400
-    },
-    {
-      "text": "Stopping. Any outcome other than the one a step names, with its receipt predicates holding, stops the take: the ordinary commands' success, the booking's partial stop and the node's refusal at the script that owns the rule are the only outcomes a step advances on. Inspect only, record the outcome as it is — a timeout is not a refusal and a budget overrun is not a script's refusal — reconcile what is locked, and continue only on a separately approved decision. Nothing resubmits, reboots or retries by itself, and a reclaim retracts only a request the take itself observed pending.",
+      "text": "Both are described in the reviewer's map.",
       "pause": 400
     }
   ],
@@ -245,12 +285,12 @@
       "pause": 500
     },
     {
-      "text": "The open-datum application protects the payload and the deposit, nothing more; it is a demonstration of the registry's mechanics. This page and its receipts are evidence of behaviour on a private development node only. Public-network receipts, when they exist, are published separately and are not claimed here; nor is any release or complete conformance.",
+      "text": "The open-datum application protects the payload and the deposit, nothing more; it is a demonstration of the registry's mechanics. This page and its receipts are evidence of behaviour on a private development node only. Public-network receipts are on the preprod runbook, with their limits; nor is any complete conformance claimed here.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "3fc175b5ca09d1e21f588d7460f870b02c2da3f5599f09d48ee22cf046462f1b"
+    "sha256": "c542a6792ed77845b20aa63c5219da6db479ebf2499fbf14e013234efab2942b"
   }
 }
