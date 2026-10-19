@@ -10,9 +10,9 @@ use cage_fixtures.{
   modifyRedeemerData, noDestination, output, owner_fuzzer, phase1Range,
   phase2Range, phase3Range, rawStateDatum, rejectedActionData, request, state,
   stateDatum, stateSpendRedeemerData, testAbsentPolicy, testAppPolicy,
-  testProcessTime, testRepPolicy, testRequestRef, testRetractTime,
-  testScriptAddress, testSeed, testStakeScript, testStateRef, testTerminalPolicy,
-  testToken, testValue, update, updateActionData, zfDelivery,
+  testProcessTime, testRepPolicy, testRequestPolicy, testRequestRef,
+  testRetractTime, testScriptAddress, testSeed, testStakeScript, testStateRef,
+  testTerminalPolicy, testToken, testValue, update, updateActionData, zfDelivery,
 }
 use cardano/address.{from_script}
 use cardano/assets.{PolicyId, from_asset, from_lovelace, merge, zero}
@@ -325,8 +325,10 @@ test contribute_with_state_end_rejected() fail {
 // refuses the spend: `Contribute` only inside a state `Modify`, `Retract`
 // only for the legacy `RequestDatum`. The input below is the genuine pending
 // output, its datum, value and reference in agreement: a `TerminationDatum`
-// at the request reference, holding the declared lovelace, the key's singular
-// tag under the active policy and the trie-ready tag the datum commits to.
+// at the request reference and at the request address of the state context
+// (`update`, whose `request_policy` is `testRequestPolicy`), holding the
+// declared lovelace, the key's singular tag under the active policy and the
+// trie-ready tag the datum commits to, minted under that same request policy.
 //
 // These rows pin the refusals that exist today, which come from the datum's
 // shape (`expect Some(RequestDatum(..))` fails), so they are guards and not
@@ -372,10 +374,10 @@ fn pendingInput() -> Input {
   Input {
     output_reference: testRequestRef,
     output: Output {
-      address: testScriptAddress,
+      address: from_script(testRequestPolicy),
       value: from_lovelace(r.declared_tip + r.carrier_ada)
         |> merge(from_asset(testRepPolicy, r.key, 1))
-        |> merge(from_asset("policy_id", pendingTrieName(r), 1)),
+        |> merge(from_asset(testRequestPolicy, pendingTrieName(r), 1)),
       datum: InlineDatum(pendingTermination()),
       reference_script: None,
     },
