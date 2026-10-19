@@ -22,7 +22,7 @@ play -p 6 $'Shorthand used below: the blueprint, the node with its network time,
 play -p 5 "A directory for the commands' local state. No command has run yet, so it is empty." \
   'mkdir state && find state'
 play -t -p 4 $'She creates a registry from her vault: one command builds the bundle that publishes its scripts\nand boots its state, signs it, sends it, and prints the receipt once all of it has landed.' \
-  'open-datum create --state-dir state $BLUEPRINT $NODE $VAULT 3< ../vault-pass/alice > create.json'
+  'open-datum create --registration-cost 0 --booking-width 60000 --state-dir state $BLUEPRINT $NODE $VAULT 3< ../vault-pass/alice > create.json'
 # Bob is given only the state token (it is public); the later scenes read it from here.
 # WORKAROUND: the state token is exported to the run's token.env between frames, and later commands say $TOKEN -> a user following the guide pastes the token from the create receipt into each command.
 printf 'export TOKEN="--state-token %s"\n' "$(jq -r .stateToken create.json)" >"$RUN/token.env"

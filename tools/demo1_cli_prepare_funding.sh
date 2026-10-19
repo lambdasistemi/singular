@@ -527,7 +527,7 @@ say "the journal is unchanged across eve's refused folds"
 # his single funded output, Bob books two insertions, Dave rejects both,
 # and his change carries the approvals beside his ada with no ada-only
 # output left. His registry keeps Carol's untouched.
-orun dave-create success -- create --process-time 120000 --retract-time 60000 \
+orun dave-create success -- create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 60000 \
   --state-dir "$reg" --blueprint "$blueprint" "${node[@]}" "${dave[@]}"
 dave_token="$(field dave-create .stateToken)"
 [ -n "$dave_token" ] && [ "$dave_token" != null ] || fail "dave's create named no token"
