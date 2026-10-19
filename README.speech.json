@@ -7,6 +7,16 @@
     {
       "text": "A permissionless registry on Cardano for unique identities and independent application state.",
       "pause": 400
+    }
+  ],
+  "start-here-play-demo-1": [
+    {
+      "text": "Start here: play Demo 1.",
+      "pause": 500
+    },
+    {
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here, with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+      "pause": 400
     },
     {
       "text": "Try the simulation — register a name, terminate it permanently, and inspect refusals for the five historical edge encodings. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The simulation guide says what the page establishes and what it does not.",
@@ -39,7 +49,7 @@
       "pause": 400
     },
     {
-      "text": "An integrator with their own node wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. Run against your own preprod node covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine.",
+      "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here, with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
       "pause": 400
     }
   ],
@@ -109,7 +119,7 @@
       "pause": 300
     },
     {
-      "text": "Run against your own preprod node and the preprod record",
+      "text": "Start here, with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
       "pause": 300
     }
   ],
@@ -137,6 +147,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "d437fdb74cf6d18fa369cfa666b93184640e6bfa4cca2f759e5e065a00b1d8d3"
+    "sha256": "c9265cd889a1a312e848e559b3768acd8c1ddada7082f23c0572d9851751c595"
   }
 }

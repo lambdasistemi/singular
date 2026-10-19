@@ -2,6 +2,10 @@
 
 A permissionless registry on Cardano for unique identities and independent application state.
 
+## Start here: play Demo 1
+
+As a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. [Start here, with your own wallet and Koios](docs/consumer-onboarding.md) gives the route. [Play Demo 1 on preprod](docs/demo1-on-preprod.md) takes you from the download to the sixteenth step with test ada from the faucet. [Demo 1 on a development node](docs/demo1-devnet.md) runs the same steps on a private chain first, with no faucet.
+
 <a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — register a name, terminate it permanently, and inspect refusals for the five historical edge encodings. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The [simulation guide](docs/simulation.md) says what the page establishes and what it does not.
 
 ## Who this is for
@@ -16,7 +20,7 @@ A permissionless registry on Cardano for unique identities and independent appli
 
 **A resolver** wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.
 
-**An integrator with their own node** wants to run the whole thing on a public test network, funded by a wallet whose key never leaves their machine. [Run against your own preprod node](docs/consumer-onboarding.md) covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine.
+**A Cardano developer who wants to try it** runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. [Start here, with your own wallet and Koios](docs/consumer-onboarding.md) covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; [Play Demo 1 on preprod](docs/demo1-on-preprod.md) is the literal walk-through.
 
 ## How the parts fit
 
@@ -67,7 +71,7 @@ Read the design in order. The first three pages and the protocol specification r
 7. [Play and reproduce the simulation](docs/simulation.md)
 8. [Prior art and reuse candidates](docs/prior-art.md)
 9. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
-10. [Run against your own preprod node](docs/consumer-onboarding.md) and [the preprod record](docs/preprod.md)
+10. [Start here, with your own wallet and Koios](docs/consumer-onboarding.md), [Play Demo 1 on preprod](docs/demo1-on-preprod.md) and [the preprod record](docs/preprod.md)
 
 ## Design status
 
