@@ -5018,6 +5018,201 @@
    }
   ]
  },
+ "docs/install.md": {
+  "how-a-release-gets-its-bundles": [
+   {
+    "index": 0,
+    "name": "docs-install/how-a-release-gets-its-bundles-00",
+    "pause_ms": 500,
+    "text": "How a release gets its bundles.",
+    "v": "e6e99b0eaced"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/how-a-release-gets-its-bundles-01",
+    "pause_ms": 400,
+    "text": "As a maintainer, you want a release to publish only bundles that were already built and run on their own platform, so that a broken platform is found in a pull request and never after the tag.",
+    "v": "8565f5b54c91"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/how-a-release-gets-its-bundles-02",
+    "pause_ms": 400,
+    "text": "The Linux bundle is built on the self-hosted runner and the macOS bundle on a GitHub-hosted Apple Silicon runner, each from the release-bundle output of the repository's flake. A bundle failing on either platform fails the release before anything is published, and the publisher refuses a release that lacks a bundle for any platform listed in tools/release_bundles.sh. Nothing in a pull request publishes: the built tarballs are kept as workflow artifacts for a week.",
+    "v": "a623efcb3bfc"
+   }
+  ],
+  "install-on-linux": [
+   {
+    "index": 0,
+    "name": "docs-install/install-on-linux-00",
+    "pause_ms": 500,
+    "text": "Install on Linux.",
+    "v": "ff5779a97dd5"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/install-on-linux-01",
+    "pause_ms": 400,
+    "text": "You need curl, tar and sha256sum, which every distribution carries. The programs bring their own C library and do not use the distribution's.",
+    "v": "e74fccb8a5ef"
+   }
+  ],
+  "install-on-macos": [
+   {
+    "index": 0,
+    "name": "docs-install/install-on-macos-00",
+    "pause_ms": 500,
+    "text": "Install on macOS.",
+    "v": "148c9ad40849"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/install-on-macos-01",
+    "pause_ms": 400,
+    "text": "macOS ships curl, tar and shasum. The command is the same with the platform and the checksum tool changed.",
+    "v": "bb6dedf6b4d9"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/install-on-macos-02",
+    "pause_ms": 400,
+    "text": "The programs are signed ad hoc, which Apple Silicon requires of any program, and are not signed with an Apple developer certificate or notarised. A file downloaded with curl and unpacked with tar is not quarantined and runs. A file downloaded with a browser is quarantined, and macOS may refuse to open the programs inside it with a message that the developer cannot be verified. After you have checked the checksum, remove the quarantine mark once:",
+    "v": "d4affffca78a"
+   }
+  ],
+  "install-the-commands-without-nix": [
+   {
+    "index": 0,
+    "name": "docs-install/install-the-commands-without-nix-00",
+    "pause_ms": 500,
+    "text": "Install the commands without Nix.",
+    "v": "28eb755504fe"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/install-the-commands-without-nix-01",
+    "pause_ms": 400,
+    "text": "You develop for Cardano on Linux or on an Apple Silicon Mac and you want to play the first demo without installing Nix or compiling the Haskell stack. You download the file for your platform from a release, check it against the release's checksums, unpack it, run singular --version and see the release and the commit the program was built from, and then run the commands of the first demo.",
+    "v": "000b7d465bfe"
+   }
+  ],
+  "other-platforms-and-the-nix-route": [
+   {
+    "index": 0,
+    "name": "docs-install/other-platforms-and-the-nix-route-00",
+    "pause_ms": 500,
+    "text": "Other platforms and the Nix route.",
+    "v": "554a192e49fb"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/other-platforms-and-the-nix-route-01",
+    "pause_ms": 400,
+    "text": "Releases carry bundles for Linux on x86_64 and macOS on Apple Silicon only. Linux on aarch64 and macOS on Intel have no bundle yet. On those, and for anyone who prefers it, the Nix route stays as it was: with Nix and flakes enabled, run a command straight from the release.",
+    "v": "4c4317c0447d"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/other-platforms-and-the-nix-route-02",
+    "pause_ms": 400,
+    "text": "Both print the same release and commit line as the bundle's commands do.",
+    "v": "f079d2ebc289"
+   },
+   {
+    "index": 3,
+    "name": "docs-install/other-platforms-and-the-nix-route-03",
+    "pause_ms": 400,
+    "text": "To check a release end to end, including the commands built from its archive, follow Download and verify a release. That verifier also checks each bundle against the commit the release tag names.",
+    "v": "3f72bf82b9bc"
+   }
+  ],
+  "what-is-inside-the-tarball": [
+   {
+    "index": 0,
+    "name": "docs-install/what-is-inside-the-tarball-00",
+    "pause_ms": 500,
+    "text": "What is inside the tarball.",
+    "v": "2b1d3eff4223"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/what-is-inside-the-tarball-01",
+    "pause_ms": 400,
+    "text": "The folder bin holds the two commands you run. Each is a short launcher that points the real program at the libraries and data files in the same folder and starts it, so nothing is read from outside the folder, and moving the folder moves the installation.",
+    "v": "346ba412f887"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/what-is-inside-the-tarball-02",
+    "pause_ms": 400,
+    "text": "On Linux the folder lib also holds the C library and its loader, and the launcher starts the program through that loader, which is why the programs do not depend on the distribution's libraries. On macOS the programs load only the libraries macOS itself provides and the ones in lib.",
+    "v": "8dd0c9b9176a"
+   }
+  ],
+  "what-you-download": [
+   {
+    "index": 0,
+    "name": "docs-install/what-you-download-00",
+    "pause_ms": 500,
+    "text": "What you download.",
+    "v": "7cea55e5bd84"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/what-you-download-01",
+    "pause_ms": 400,
+    "text": "Every release after 0.12.0 carries one tarball per platform beside the documentation and on-chain archives, and one SHA256SUMS that lists all of them. A tarball holds both commands, singular and open-datum, with every library and data file they need.",
+    "v": "8467cbba2db2"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/what-you-download-02",
+    "pause_ms": 400,
+    "text": "Replace X.Y.Z with the release you want. The releases are listed at https://github.com/lambdasistemi/singular/releases.",
+    "v": "c81027b88fb7"
+   }
+  ],
+  "what-you-see-when-it-works": [
+   {
+    "index": 0,
+    "name": "docs-install/what-you-see-when-it-works-00",
+    "pause_ms": 500,
+    "text": "What you see when it works.",
+    "v": "485591c4f7a9"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/what-you-see-when-it-works-01",
+    "pause_ms": 400,
+    "text": "Each command prints its name, the release and the commit it was built from, and exits with status 0. The commit is the one the release's tag names.",
+    "v": "c41a1a899b71"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/what-you-see-when-it-works-02",
+    "pause_ms": 400,
+    "text": "The wallet commands run offline, so they are the quickest check that the programs work on your machine. Choose a passphrase; the program reads it from the standard input here and never takes it as an argument.",
+    "v": "20db75e70546"
+   },
+   {
+    "index": 3,
+    "name": "docs-install/what-you-see-when-it-works-03",
+    "pause_ms": 400,
+    "text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the first demo.",
+    "v": "2f24d93bbfbf"
+   }
+  ],
+  "when-it-does-not-work": [
+   {
+    "index": 0,
+    "name": "docs-install/when-it-does-not-work-00",
+    "pause_ms": 500,
+    "text": "When it does not work.",
+    "v": "c0e257118c2a"
+   }
+  ]
+ },
  "docs/io-ownership.md": {
   "decisions-this-design-took": [
    {
