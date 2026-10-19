@@ -6,8 +6,8 @@ use aiken/collection/list
 use aiken/collection/pairs
 use aiken/primitive/bytearray
 use application/envelope.{
-  BookInsert, BookTerminate, Control, Envelope, OpenDatumMint, OpenDatumSpend,
-  Release, Update, envelopeHash, envelopeVersion, registryBytes,
+  BookInsert, BookTerminate, BookTermination, Control, Envelope, OpenDatumMint,
+  OpenDatumSpend, Release, Update, envelopeHash, envelopeVersion, registryBytes,
 }
 use cardano/address.{Address, Script, VerificationKey}
 use cardano/assets.{
@@ -66,6 +66,27 @@ use types.{
 ///   continuation is the transaction's first output, which holds exactly
 ///   one state token (`registry/modify` `state-token`), so no other fold's
 ///   obligations or any other instance's releases can share the payment.
+/// Why this spend is not a lawful termination booking of the live output, or
+/// `None` when it is: Lean `bookTerminateStep` (`app-not-pinned`,
+/// `app-registry-asset`, `app-terminate-token`, `app-terminate-binding`,
+/// `app-controller-signature`, `app-terminate-destination`,
+/// `app-custody-snapshot`, `app-termination-value`). The spent output is the
+/// custody; the request output must hold exactly its lovelace plus
+/// `ordinary_added` and the singular token.
+///
+/// RED checkpoint: the judgement is absent. This stub names that absence
+/// instead of answering, so every row that expects the model's answer fails
+/// for the missing behaviour.
+pub fn bookTerminationRefusal(
+  _registry: ByteArray,
+  _control: Control,
+  _custody: Input,
+  _ordinary_added: Int,
+  _tx: Transaction,
+) -> Option<String> {
+  Some(@"book-termination-judgement-absent")
+}
+
 validator open_datum(registry: ByteArray) {
   mint(redeemer: OpenDatumMint, policy_id: PolicyId, tx: Transaction) {
     let moved = tokens(tx.mint, policy_id)
@@ -131,6 +152,13 @@ validator open_datum(registry: ByteArray) {
     when redeemer is {
       Update -> validUpdate(control, self.output, tx)
       Release -> validRelease(registry, control, self.output, tx)
+      BookTermination { ordinary_added } ->
+        when
+          bookTerminationRefusal(registry, control, self, ordinary_added, tx)
+        is {
+          None -> True
+          Some(reason) -> traceFalse(reason)
+        }
     }
   }
 
@@ -720,6 +748,14 @@ validator closed_datum(registry: ByteArray) {
     when redeemer is {
       Update -> traceFalse(@"closed-datum-update")
       Release -> open_datum.spend(registry, datum, Release, own, tx)
+      BookTermination { ordinary_added } ->
+        open_datum.spend(
+          registry,
+          datum,
+          BookTermination { ordinary_added },
+          own,
+          tx,
+        )
     }
   }
 

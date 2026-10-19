@@ -25,7 +25,8 @@ use state as state_validator
 use types.{
   Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
   Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
-  Sweep, TokenId, UpdateAction, UpdateRedeemer,
+  Sweep, TerminationDatum, TerminationRequest, TokenId, UpdateAction,
+  UpdateRedeemer,
 }
 
 fn spend(
@@ -308,6 +309,59 @@ test contribute_with_state_end_rejected() fail {
       validity_range: phase1Range,
       inputs: [update, request],
       redeemers: [stateSpendRedeemerData(endRedeemerData())],
+    },
+  )
+}
+
+// ============================================================================
+// A pending termination request is not custody (CP1)
+// ============================================================================
+//
+// Alice's booked termination holds the genuine singular tag while the trie
+// still says the key is active. The root model's custody excludes a tag a
+// pending request carries, so a second booking must not be able to spend
+// that request as its custody input. The real `request.spend` is what
+// refuses the spend: `Contribute` only inside a state `Modify`, `Retract`
+// only for the legacy `RequestDatum`. These rows pin the refusals that exist
+// today by the shape of the datum; a fold that does spend the request burns
+// its tag (CP2), which the CP2 rows carry.
+
+fn pendingTermination() -> CageDatum {
+  TerminationDatum(
+    TerminationRequest {
+      registry: testToken,
+      key: "42",
+      destination: "",
+      declared_tip: 1_000_000,
+      carrier_ada: 3_000_000,
+      nonce: 1,
+    },
+  )
+}
+
+test pending_termination_is_refused_as_custody_without_a_fold() fail {
+  spend(
+    Some(pendingTermination()),
+    Contribute(testStateRef),
+    testRequestRef,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: phase1Range,
+      inputs: [request],
+      reference_inputs: [update],
+    },
+  )
+}
+
+test pending_termination_is_refused_as_custody_by_a_retract() fail {
+  spend(
+    Some(pendingTermination()),
+    Retract(testStateRef),
+    testRequestRef,
+    Transaction {
+      ..transaction.placeholder,
+      validity_range: phase2Range,
+      inputs: [request, update],
     },
   )
 }

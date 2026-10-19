@@ -34,7 +34,8 @@ use cardano/assets.{PolicyId, Value, lovelace_of, policies, tokens}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use shared.{carriesStateToken}
 use types.{
-  CageDatum, RegistrationDatum, RegistrationRequest, State, StateDatum, TokenId,
+  CageDatum, RegistrationDatum, RegistrationRequest, State, StateDatum,
+  TerminationRequest, TokenId,
 }
 
 /// The name a list of data fields hashes to: `blake2b_256` of the data
@@ -82,6 +83,39 @@ pub fn trieReadyTagName(request: RegistrationRequest) -> ByteArray {
       builtin.i_data(request.nonce),
     ],
   )
+}
+
+/// The trie-ready tag name of a termination: the hash of the list
+/// `[1, 1, key, destination, nonce]` (`trieReadyTagAssetName` of a
+/// termination operation). A representation function, not a judgement.
+pub fn terminationTrieReadyTagName(request: TerminationRequest) -> ByteArray {
+  nameOf(
+    [
+      builtin.i_data(1),
+      builtin.i_data(1),
+      builtin.b_data(request.key),
+      builtin.b_data(request.destination),
+      builtin.i_data(request.nonce),
+    ],
+  )
+}
+
+/// Why this transaction is not an authenticated termination booking, or
+/// `None` when it is: Lean `terminationBookingRefusal`, in the model's order
+/// (`dirty-request`, `hidden-surplus`, `forged-singular-tag`,
+/// `forged-trie-ready-tag`, `singular-tag-not-in-custody`, then
+/// `forged-singular-tag` again for the custody equality).
+///
+/// RED checkpoint: the judgement is absent. This stub names that absence
+/// instead of answering, so every row that expects the model's answer fails
+/// for the missing behaviour.
+pub fn terminationBookingRefusal(
+  _statePolicyId: PolicyId,
+  _cageToken: TokenId,
+  _policyId: PolicyId,
+  _tx: Transaction,
+) -> Option<String> {
+  Some(@"termination-booking-judgement-absent")
 }
 
 /// Every movement under one policy is a burn, and there is at least one. A

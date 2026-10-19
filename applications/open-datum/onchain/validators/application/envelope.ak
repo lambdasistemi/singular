@@ -70,11 +70,17 @@ pub type OpenDatumMint {
   BookTerminate { key: ByteArray, owner: ByteArray, holding: OutputReference }
 }
 
-/// The spend redeemer: an update of the payload, or the release of the
-/// output inside the fold that terminates its key.
+/// The spend redeemer: an update of the payload, the release of the output
+/// inside the fold that terminates its key, or the booking of that
+/// termination (appended at index 2, so `Update` 0 and `Release` 1 never
+/// move). `BookTermination` spends the live output now and moves its whole
+/// value into one termination request; `ordinary_added` is the lovelace the
+/// booker adds from ordinary inputs (the model's `ordinaryAdded`), so the
+/// request holds exactly the spent lovelace plus it.
 pub type OpenDatumSpend {
   Update
   Release
+  BookTermination { ordinary_added: Int }
 }
 
 /// The registry identity bytes an envelope names: state policy followed

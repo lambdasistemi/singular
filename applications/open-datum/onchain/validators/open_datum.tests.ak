@@ -6,15 +6,17 @@
 //// release is a fold the registry accepts too, and a refused one is
 //// refused by the application while the registry alone would accept it.
 
+use aiken/builtin
 use aiken/cbor
 use aiken/collection/dict
 use aiken/collection/list
+use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/primitive/string
 use application/envelope.{
-  BookInsert, BookTerminate, Control, Envelope, OpenDatumMint, Release,
-  StateAsset, Update, envelopeHash, envelopeVersion,
+  BookInsert, BookTerminate, BookTermination, Control, Envelope, OpenDatumMint,
+  Release, StateAsset, Update, envelopeHash, envelopeVersion,
 }
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
@@ -29,7 +31,7 @@ use registry_pin.{registryStateHash}
 use state as state
 use types.{
   Modify, Rejected, Request, RequestAction, RequestDatum, State, StateDatum,
-  TokenId, UpdateAction,
+  TerminationDatum, TerminationRequest, TokenId, UpdateAction,
 }
 
 // ----------------------------------------------------------------------------
@@ -1605,4 +1607,251 @@ test closed_release_without_fold_refuses_where_open_refuses() {
 
 test closed_else_refuses() fail {
   open_datum.closed_datum.else(#"", #"")
+}
+
+// ============================================================================
+// CP1 RED: the termination booking is the application's spend plus the
+// request policy's mint (no approval is minted)
+// ============================================================================
+//
+// One valid whole-transfer booking: Alice's 4 ADA live output (singular tag,
+// deposit and surplus) is spent now and every lovelace of it moves into one
+// termination request, H = V + A, A the booker's declared ordinary addition.
+// The subject is the real typed `spend` of `open_datum` and `closed_datum`
+// with the new `BookTermination` redeemer, and the named reason of the same
+// judgement (`bookTerminationRefusal`, Lean `bookTerminateStep`), one
+// independent field changed at a time.
+//
+// RED: the judgement is absent, so every row that expects the model's answer
+// fails for that absence; the legacy termination approval, which the model
+// does not have, is still certified and a row below expects it refused.
+
+const tbValue: Int = 4_000_000
+
+/// The Lean preimage `bookingCommitment 1 ([1, key, destination] ++ [nonce])`.
+fn tbTrieName(key: ByteArray, destination: ByteArray, n: Int) -> ByteArray {
+  blake2b_256(
+    builtin.serialise_data(
+      builtin.list_data(
+        [
+          builtin.i_data(1),
+          builtin.i_data(1),
+          builtin.b_data(key),
+          builtin.b_data(destination),
+          builtin.i_data(n),
+        ],
+      ),
+    ),
+  )
+}
+
+fn tbRequest(added: Int) -> TerminationRequest {
+  TerminationRequest {
+    registry: fx.cageToken,
+    key: fx.keyA,
+    destination: #"",
+    declared_tip: fx.tip,
+    carrier_ada: tbValue + added - fx.tip,
+    nonce: 1,
+  }
+}
+
+fn tbCustody() -> Input {
+  liveWith(
+    envelopeA(),
+    from_lovelace(tbValue) |> merge(from_asset(fx.activePolicy, fx.keyA, 1)),
+    appAddr(),
+  )
+}
+
+fn tbOrdinary() -> Input {
+  Input {
+    output_reference: OutputReference {
+      transaction_id: #"4f524449",
+      output_index: 0,
+    },
+    output: Output {
+      address: address.from_verification_key(controller),
+      value: from_lovelace(10_000_000),
+      datum: NoDatum,
+      reference_script: None,
+    },
+  }
+}
+
+fn tbTag(r: TerminationRequest) -> Value {
+  from_asset(
+    fx.bookingRequestPolicy,
+    tbTrieName(r.key, r.destination, r.nonce),
+    1,
+  )
+}
+
+fn tbRequestOutput(r: TerminationRequest, lovelace: Int) -> Output {
+  Output {
+    address: address.from_script(fx.bookingRequestPolicy),
+    value: from_lovelace(lovelace)
+      |> merge(from_asset(fx.activePolicy, r.key, 1))
+      |> merge(tbTag(r)),
+    datum: InlineDatum(TerminationDatum(r)),
+    reference_script: None,
+  }
+}
+
+fn tbTx(
+  r: TerminationRequest,
+  lovelace: Int,
+  references: List<Input>,
+) -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    inputs: [tbCustody(), tbOrdinary()],
+    reference_inputs: references,
+    outputs: [tbRequestOutput(r, lovelace)],
+    mint: tbTag(r),
+    extra_signatories: [controller],
+  }
+}
+
+fn tbValid() -> Transaction {
+  tbTx(tbRequest(0), tbValue, [stateInput()])
+}
+
+fn tbSpend(tx: Transaction, added: Int) -> Bool {
+  open_datum.open_datum.spend(
+    registry(),
+    Some(envelopeA() |> as_data_envelope),
+    BookTermination { ordinary_added: added },
+    holdingRef,
+    tx,
+  )
+}
+
+fn tbClosedSpend(tx: Transaction, added: Int) -> Bool {
+  open_datum.closed_datum.spend(
+    registry(),
+    Some(envelopeA() |> as_data_envelope),
+    BookTermination { ordinary_added: added },
+    holdingRef,
+    tx,
+  )
+}
+
+fn tbReason(c: Control, tx: Transaction, added: Int) -> Option<String> {
+  open_datum.bookTerminationRefusal(registry(), c, tbCustody(), added, tx)
+}
+
+test open_datum_termination_booking_valid_witness_is_accepted_by_the_spend() {
+  tbSpend(tbValid(), 0)
+}
+
+test closed_datum_termination_booking_valid_witness_is_accepted_by_the_spend() {
+  tbClosedSpend(tbValid(), 0)
+}
+
+test open_datum_termination_booking_valid_witness_names_no_refusal() {
+  tbReason(control(), tbValid(), 0) == None
+}
+
+test open_datum_termination_booking_accepts_a_declared_ordinary_addition() {
+  let added = 1_000_000
+  let tx = tbTx(tbRequest(added), tbValue + added, [stateInput()])
+  tbSpend(tx, added) && tbReason(control(), tx, added) == None
+}
+
+test open_datum_termination_booking_allows_an_unrelated_payment_to_the_controller() {
+  let tx =
+    Transaction {
+      ..tbValid(),
+      outputs: [
+        tbRequestOutput(tbRequest(0), tbValue),
+        fx.paymentOutput(controllerAddress, 5_000_000),
+      ],
+    }
+  tbSpend(tx, 0) && tbReason(control(), tx, 0) == None
+}
+
+test open_datum_termination_booking_refuses_an_unpinned_application() {
+  let foreign = State { ..theState(), application_policy: fx.foreignPolicy }
+  let tx = tbTx(tbRequest(0), tbValue, [stateInputWith(foreign)])
+  tbReason(control(), tx, 0) == Some(@"app-not-pinned")
+}
+
+test open_datum_termination_booking_refuses_a_missing_registry_state() {
+  let tx = tbTx(tbRequest(0), tbValue, [])
+  tbReason(control(), tx, 0) == Some(@"app-registry-asset")
+}
+
+test open_datum_termination_booking_refuses_a_second_asset_in_the_custody() {
+  let tx =
+    Transaction {
+      ..tbValid(),
+      inputs: [
+        liveWith(
+          envelopeA(),
+          from_lovelace(tbValue)
+            |> merge(from_asset(fx.activePolicy, fx.keyA, 1))
+            |> merge(from_asset(fx.foreignPolicy, "extra", 1)),
+          appAddr(),
+        ),
+        tbOrdinary(),
+      ],
+    }
+  tbReason(control(), tx, 0) == Some(@"app-terminate-token")
+}
+
+test open_datum_termination_booking_refuses_an_envelope_for_another_registry() {
+  let other =
+    Control {
+      ..control(),
+      registry: StateAsset { statePolicy: #"6f74686572", stateName },
+    }
+  tbReason(other, tbValid(), 0) == Some(@"app-terminate-binding")
+}
+
+test open_datum_termination_booking_refuses_an_unsigned_booking() {
+  let tx = Transaction { ..tbValid(), extra_signatories: [] }
+  tbReason(control(), tx, 0) == Some(@"app-controller-signature")
+}
+
+test open_datum_termination_booking_refuses_a_named_destination() {
+  let r = TerminationRequest { ..tbRequest(0), destination: #"01" }
+  let tx = Transaction { ..tbValid(), outputs: [tbRequestOutput(r, tbValue)] }
+  tbReason(control(), tx, 0) == Some(@"app-terminate-destination")
+}
+
+test open_datum_termination_booking_refuses_a_diverted_part_of_the_value() {
+  let tx = tbTx(tbRequest(0), tbValue - 1, [stateInput()])
+  tbReason(control(), tx, 0) == Some(@"app-termination-value")
+}
+
+test open_datum_termination_booking_refuses_an_undeclared_addition() {
+  let tx = tbTx(tbRequest(0), tbValue + 1, [stateInput()])
+  tbReason(control(), tx, 0) == Some(@"app-termination-value")
+}
+
+// The model has no application approval for a termination: the booking is
+// the application's spend plus the request policy's mint. The legacy mint
+// certification is retired.
+
+test open_datum_termination_approval_is_retired() {
+  bookTerminateAs(
+    controller,
+    terminateTx(
+      [stateInput(), holding()],
+      [controller],
+      terminateName(controller),
+    ),
+  ) == False
+}
+
+test closed_datum_termination_approval_is_retired() {
+  closedBookTerminateAs(
+    controller,
+    terminateTx(
+      [stateInput(), holding()],
+      [controller],
+      terminateName(controller),
+    ),
+  ) == False
 }

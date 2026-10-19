@@ -443,6 +443,30 @@ pub type CageDatum {
   /// historical constructors never move). The old `RequestDatum` stays
   /// distinct and decodable while the booking is transitional.
   RegistrationDatum(RegistrationRequest)
+  /// A termination booked with its trie-ready tag (appended at index 4, so
+  /// indices 0 to 3 never move). The request holds the genuine singular tag
+  /// and the whole custody value.
+  TerminationDatum(TerminationRequest)
+}
+
+/// A termination request as the booking policy authenticates it (Lean
+/// `TerminationRequest`). It has no refund address, clock, delivered datum,
+/// registration cost or application tag: the model admits none. The held
+/// assets and the output reference come from the transaction, never from
+/// this datum. `destination` is the model's 0 as empty bytes.
+pub type TerminationRequest {
+  /// The registry this request is for, by its state token name.
+  registry: TokenId,
+  /// The registry key being terminated.
+  key: ByteArray,
+  /// The model's destination 0: empty bytes.
+  destination: ByteArray,
+  /// The declared tip, at least the registry's minimum tip.
+  declared_tip: Int,
+  /// The declared carrier lovelace: the held value less the tip.
+  carrier_ada: Int,
+  /// The nonce the trie-ready tag commits to.
+  nonce: Int,
 }
 
 /// A registration request as the booking policy authenticates it (Lean

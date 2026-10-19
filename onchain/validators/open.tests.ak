@@ -153,3 +153,10 @@ test open_refuses_mint_beside_burn() {
 test open_refuses_empty_mint() {
   !open.open.mint(approve(1), openPolicy, mint_tx([]))
 }
+
+/// The model has no application approval for a termination: the booking is
+/// the application's spend plus the request policy's mint. The generic open
+/// policy stays mint-only and no longer certifies the `updateTerminal` edge.
+test open_refuses_the_termination_approval() {
+  admits_edge(3) == False
+}
