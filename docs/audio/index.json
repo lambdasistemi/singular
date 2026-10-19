@@ -2555,8 +2555,8 @@
     "index": 2,
     "name": "docs-consumer-onboarding/download-and-check-the-release-02",
     "pause_ms": 400,
-    "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet.",
-    "v": "07efe8e52c6d"
+    "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+    "v": "5e3493f1758f"
    }
   ],
   "how-a-write-is-confirmed": [
@@ -3170,8 +3170,8 @@
     "index": 3,
     "name": "docs-demo1-devnet/what-you-need-03",
     "pause_ms": 300,
-    "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section.",
-    "v": "3e719978a34e"
+    "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section. A binary install that needs no Nix is coming in issue 695.",
+    "v": "315f366d2dce"
    }
   ],
   "what-you-should-see": [
@@ -3881,8 +3881,8 @@
     "index": 1,
     "name": "docs-demo1-on-preprod/what-you-need-01",
     "pause_ms": 300,
-    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet.",
-    "v": "7df5cbcc84dd"
+    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+    "v": "9934aa87994d"
    },
    {
     "index": 2,

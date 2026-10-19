@@ -95,7 +95,7 @@ flowchart LR
   command below runs from the extracted directory, the one that holds
   `DEMO1.md` and `onchain/`.
 - Time. Building from source compiles a large Haskell stack unless the public
-  binary cache serves it; see the next section.
+  binary cache serves it; see the next section. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
 
 ## Build the commands
 

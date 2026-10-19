@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet.",
+      "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
       "pause": 300
     },
     {
@@ -363,6 +363,6 @@
   ],
   "_source": {
     "file": "demo1-on-preprod.md",
-    "sha256": "b11278469a32cb0f9910fdc2726461114a81d7f8becfaf70cd59402015db715f"
+    "sha256": "ab8eef63f6b15ce4b55ebe42ed45c894033a006eba37de892624de5fdede4ff2"
   }
 }

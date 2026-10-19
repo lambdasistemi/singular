@@ -27,7 +27,7 @@
       "pause": 400
     },
     {
-      "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet.",
+      "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
       "pause": 400
     }
   ],
@@ -129,6 +129,6 @@
   ],
   "_source": {
     "file": "consumer-onboarding.md",
-    "sha256": "38e265061a9d191b673835fa3fc6c1227c7c166d854ac23dabb4ccb5bf439306"
+    "sha256": "0624676635d9c88b35a572313e1385cf97116df89520b5a18049bdaa5c9e8ee8"
   }
 }

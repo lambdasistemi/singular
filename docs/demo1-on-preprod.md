@@ -41,7 +41,7 @@ been played on preprod and how much has not.
 ## What you need
 
 - A Linux machine with [Nix](https://nixos.org/download) and flakes enabled, plus
-  `git`, `jq` and `curl`. The release ships no ready-built binaries yet.
+  `git`, `jq` and `curl`. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
 - About ninety minutes with a terminal open the whole time, and enough preprod
   test ada (written tADA) for both wallets; the funding step says how much.
 - A Koios token file is optional and described below.

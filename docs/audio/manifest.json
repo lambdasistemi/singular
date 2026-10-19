@@ -91626,17 +91626,17 @@
    ]
   },
   "docs-consumer-onboarding/download-and-check-the-release-02": {
-   "audio_sha256": "07efe8e52c6ddf2653afe9a2dfb72de0b3a7cbdd5f9d352bf119fa137f3eabfe",
-   "characters": 192,
-   "cost": 0.00019007999999999997,
-   "duration": 12.575,
+   "audio_sha256": "5e3493f1758f67db2653b2b4e44065f640c4936be16b856c7b38c272d140835e",
+   "characters": 251,
+   "cost": 0.00024849,
+   "duration": 18.05,
    "index": 2,
-   "key": "90b6c4036746558e2b1fa02b36b1078f023fec4e998d31072e293171066bdc23",
+   "key": "8c2bf009db8df5fc5e69d010a5fd8fd61cffd78c8517401845456f0285f0657a",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "download-and-check-the-release",
-   "sent_text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet.",
-   "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet.",
+   "sent_text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
    "words": [
     {
      "end": 0.525,
@@ -91811,6 +91811,71 @@
     {
      "end": 12.575,
      "start": 12.35,
+     "text": "."
+    },
+    {
+     "end": 12.85,
+     "start": 12.775,
+     "text": "A"
+    },
+    {
+     "end": 13.3,
+     "start": 12.85,
+     "text": "binary"
+    },
+    {
+     "end": 13.85,
+     "start": 13.3,
+     "text": "install"
+    },
+    {
+     "end": 14.0,
+     "start": 13.85,
+     "text": "that"
+    },
+    {
+     "end": 14.312,
+     "start": 14.0,
+     "text": "needs"
+    },
+    {
+     "end": 14.575,
+     "start": 14.312,
+     "text": "no"
+    },
+    {
+     "end": 14.85,
+     "start": 14.575,
+     "text": "Nix"
+    },
+    {
+     "end": 15.0,
+     "start": 14.85,
+     "text": "is"
+    },
+    {
+     "end": 15.325,
+     "start": 15.0,
+     "text": "coming"
+    },
+    {
+     "end": 15.45,
+     "start": 15.325,
+     "text": "in"
+    },
+    {
+     "end": 15.938,
+     "start": 15.45,
+     "text": "issue"
+    },
+    {
+     "end": 17.825,
+     "start": 15.938,
+     "text": "695"
+    },
+    {
+     "end": 18.05,
+     "start": 17.825,
      "text": "."
     }
    ]
@@ -113066,17 +113131,17 @@
    ]
   },
   "docs-demo1-devnet/what-you-need-03": {
-   "audio_sha256": "3e719978a34e077597f31a73f1a6d75d3785365d9b96e1586e5fe8a21ac41970",
-   "characters": 121,
-   "cost": 0.00011979,
-   "duration": 9.0,
+   "audio_sha256": "315f366d2dce76e815370a0545f14c5b26c922d98bd30979bfd13ee701c02038",
+   "characters": 180,
+   "cost": 0.0001782,
+   "duration": 14.125,
    "index": 3,
-   "key": "6c9950c85e2649ebb8ca544b81a2a0b426107d1f2c7fd452b8065ecb9e1d4fe4",
+   "key": "a87c2b244970e9901e896a600526c98ae8ffbe189376f5bace39c385a1026e94",
    "page": "docs/demo1-devnet.md",
    "pause_ms": 300,
    "section": "what-you-need",
-   "sent_text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section.",
-   "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section.",
+   "sent_text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section. A binary install that needs no Nix is coming in issue 695.",
+   "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section. A binary install that needs no Nix is coming in issue 695.",
    "words": [
     {
      "end": 0.85,
@@ -113169,28 +113234,93 @@
      "text": ";"
     },
     {
-     "end": 7.588,
-     "start": 7.475,
+     "end": 7.7,
+     "start": 7.525,
      "text": "see"
     },
     {
-     "end": 7.662,
-     "start": 7.588,
+     "end": 7.8,
+     "start": 7.7,
      "text": "the"
     },
     {
-     "end": 7.925,
-     "start": 7.662,
+     "end": 8.075,
+     "start": 7.8,
      "text": "next"
     },
     {
-     "end": 8.8,
-     "start": 7.925,
+     "end": 8.65,
+     "start": 8.075,
      "text": "section"
     },
     {
-     "end": 9.0,
-     "start": 8.8,
+     "end": 8.725,
+     "start": 8.65,
+     "text": "."
+    },
+    {
+     "end": 8.825,
+     "start": 8.725,
+     "text": "A"
+    },
+    {
+     "end": 9.275,
+     "start": 8.825,
+     "text": "binary"
+    },
+    {
+     "end": 9.825,
+     "start": 9.275,
+     "text": "install"
+    },
+    {
+     "end": 9.975,
+     "start": 9.825,
+     "text": "that"
+    },
+    {
+     "end": 10.288,
+     "start": 9.975,
+     "text": "needs"
+    },
+    {
+     "end": 10.562,
+     "start": 10.288,
+     "text": "no"
+    },
+    {
+     "end": 10.875,
+     "start": 10.562,
+     "text": "Nix"
+    },
+    {
+     "end": 11.025,
+     "start": 10.875,
+     "text": "is"
+    },
+    {
+     "end": 11.35,
+     "start": 11.025,
+     "text": "coming"
+    },
+    {
+     "end": 11.5,
+     "start": 11.35,
+     "text": "in"
+    },
+    {
+     "end": 11.913,
+     "start": 11.5,
+     "text": "issue"
+    },
+    {
+     "end": 13.9,
+     "start": 11.913,
+     "text": "695"
+    },
+    {
+     "end": 14.125,
+     "start": 13.9,
      "text": "."
     }
    ]
@@ -132231,17 +132361,17 @@
    ]
   },
   "docs-demo1-on-preprod/what-you-need-01": {
-   "audio_sha256": "7df5cbcc84dd159cbbd9f6baca49d41fe7c7c6990c483e1edddbd842ef9660ba",
-   "characters": 114,
-   "cost": 0.00011285999999999999,
-   "duration": 7.975,
+   "audio_sha256": "9934aa87994d08ee62503031542e6e0690eea97efb92f3cdabbd18bf542134a3",
+   "characters": 173,
+   "cost": 0.00017127,
+   "duration": 13.725,
    "index": 1,
-   "key": "ddae96cc1d6d7127ff4fcd828d6c66696d59b77a9e3e802fe43bcc1a20667ac1",
+   "key": "73583284bea2cd13f8a37eb748a35d2e9d523ee1ea4b1b76b3d5a2620d6ed218",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 300,
    "section": "what-you-need",
-   "sent_text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet.",
-   "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet.",
+   "sent_text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
    "words": [
     {
      "end": 0.275,
@@ -132324,43 +132454,108 @@
      "text": "."
     },
     {
-     "end": 5.275,
-     "start": 5.2,
+     "end": 5.325,
+     "start": 5.225,
      "text": "The"
     },
     {
-     "end": 5.6,
-     "start": 5.275,
+     "end": 5.8,
+     "start": 5.325,
      "text": "release"
     },
     {
-     "end": 5.875,
-     "start": 5.6,
+     "end": 6.2,
+     "start": 5.8,
      "text": "ships"
     },
     {
-     "end": 6.1,
-     "start": 5.875,
+     "end": 6.537,
+     "start": 6.2,
      "text": "no"
     },
     {
-     "end": 6.55,
-     "start": 6.1,
+     "end": 7.1,
+     "start": 6.537,
      "text": "ready-built"
     },
     {
-     "end": 7.075,
-     "start": 6.55,
+     "end": 7.65,
+     "start": 7.1,
      "text": "binaries"
     },
     {
-     "end": 7.775,
-     "start": 7.075,
+     "end": 8.1,
+     "start": 7.65,
      "text": "yet"
     },
     {
-     "end": 7.975,
-     "start": 7.775,
+     "end": 8.212,
+     "start": 8.1,
+     "text": "."
+    },
+    {
+     "end": 8.325,
+     "start": 8.212,
+     "text": "A"
+    },
+    {
+     "end": 8.8,
+     "start": 8.325,
+     "text": "binary"
+    },
+    {
+     "end": 9.35,
+     "start": 8.8,
+     "text": "install"
+    },
+    {
+     "end": 9.525,
+     "start": 9.35,
+     "text": "that"
+    },
+    {
+     "end": 9.837,
+     "start": 9.525,
+     "text": "needs"
+    },
+    {
+     "end": 10.113,
+     "start": 9.837,
+     "text": "no"
+    },
+    {
+     "end": 10.425,
+     "start": 10.113,
+     "text": "Nix"
+    },
+    {
+     "end": 10.575,
+     "start": 10.425,
+     "text": "is"
+    },
+    {
+     "end": 10.925,
+     "start": 10.575,
+     "text": "coming"
+    },
+    {
+     "end": 11.075,
+     "start": 10.925,
+     "text": "in"
+    },
+    {
+     "end": 11.488,
+     "start": 11.075,
+     "text": "issue"
+    },
+    {
+     "end": 13.475,
+     "start": 11.488,
+     "text": "695"
+    },
+    {
+     "end": 13.725,
+     "start": 13.475,
      "text": "."
     }
    ]

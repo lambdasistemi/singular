@@ -43,7 +43,7 @@ directory of its own. The exact commands, with the checks, are on
 
 Building the two commands compiles a large Haskell stack unless the project's
 public binary cache serves it; the same page says how to use the cache. No
-release ships ready-built binaries yet.
+release ships ready-built binaries yet. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
 
 ## Choose the network and API
 

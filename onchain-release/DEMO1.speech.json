@@ -59,7 +59,7 @@
       "pause": 300
     },
     {
-      "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section.",
+      "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section. A binary install that needs no Nix is coming in issue 695.",
       "pause": 300
     }
   ],
@@ -291,6 +291,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "c542a6792ed77845b20aa63c5219da6db479ebf2499fbf14e013234efab2942b"
+    "sha256": "708e9d1c847310e4d5c7d5fd28133226a3a722adc97add549e5730aaf78eb271"
   }
 }
