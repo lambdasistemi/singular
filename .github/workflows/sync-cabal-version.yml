@@ -1,0 +1,48 @@
+name: Sync Cabal versions
+# Release-please bumps the release manifest on its pull request; the Cabal
+# version of each shipped program follows it (release 0.12.0 is Cabal version
+# 0.12.0.0), so that `singular --version` and `open-datum --version` print the
+# release. The commit is pushed with the repository's automation token so the
+# pull request's checks run again on it.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+concurrency:
+  group: sync-cabal-versions-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  sync:
+    name: Cabal versions follow the release manifest
+    if: >-
+      startsWith(github.head_ref, 'release-please--') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mint repository-scoped automation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          owner: lambdasistemi
+          repositories: singular
+          permission-contents: write
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.app-token.outputs.token }}
+      - name: Set the Cabal versions from the manifest
+        run: bash tools/cabal_versions.sh sync .
+      - name: Commit the change to the release branch
+        env:
+          CI_APP_ID: ${{ vars.CI_APP_ID }}
+        run: |
+          if git diff --quiet; then
+            echo "The Cabal versions already follow the manifest"
+            exit 0
+          fi
+          git config user.name "lambdasistemi-ci[bot]"
+          git config user.email "${CI_APP_ID}+lambdasistemi-ci[bot]@users.noreply.github.com"
+          git commit --all --message "chore: sync Cabal versions to the release manifest"
+          git push

@@ -183,6 +183,13 @@ def assemble(
     # without either stays honest instead of inventing a commit.
     release_commit = os.environ.get("RELEASE_COMMIT", "").strip() or "unknown-dirty"
     (farm / "RELEASE-COMMIT").write_text(release_commit + "\n", encoding="utf-8")
+    # #695: the application's flake reads the same commit from its own
+    # directory (a file there is outside the source its executable is built
+    # from, so a build of the archive still finds the cached build), for
+    # `open-datum --version`.
+    (farm / "applications" / "open-datum" / "offchain" / "RELEASE-COMMIT").write_text(
+        release_commit + "\n", encoding="utf-8"
+    )
     # #326: the application model revision the release maps to, from the one
     # file the conformance evidence is compiled against.
     shutil.copyfile(root / "conformance" / "model-revision", farm / "MODEL-REVISION")

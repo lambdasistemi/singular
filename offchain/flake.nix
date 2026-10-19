@@ -35,6 +35,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       flake-utils,
       haskellNix,
@@ -62,6 +63,24 @@
 
         project = import ./nix/project.nix {
           inherit CHaP pkgs;
+        };
+
+        # The commit this tree stands at, for `singular --version`: the one a
+        # release archive states at its root (RELEASE-COMMIT, beside this
+        # flake's directory: a file inside it would change the Haskell source
+        # and miss the binary cache), else the revision of the git checkout
+        # (marked dirty when it is), else unknown. Read only when a stamped
+        # executable is built.
+        commit =
+          if builtins.pathExists ../RELEASE-COMMIT then
+            pkgs.lib.removeSuffix "\n" (builtins.readFile ../RELEASE-COMMIT)
+          else
+            self.rev or (self.dirtyRev or "unknown");
+        stamp = import ./nix/stamp-commit.nix { inherit pkgs; };
+        singular = stamp {
+          exe = components.exes.singular;
+          program = "singular";
+          inherit commit;
         };
 
         inherit (project.project.hsPkgs.singular-registry) components;
@@ -659,7 +678,10 @@
           # #299: the packaged `singular registry` commands. It reaches a
           # node through the socket its caller names and spawns none, so it
           # needs no cardano-node on its PATH.
-          inherit (components.exes) singular;
+          inherit singular;
+          # The same executable before the commit is stamped into a copy of
+          # it: the cached Haskell build, for consumers that stamp their own.
+          singular-unstamped = components.exes.singular;
           # #641: a test-harness tool the packaged bundle control seals its
           # devnet keys with; never evidence of anything.
           inherit (components.exes) vault-seal;
@@ -697,7 +719,7 @@
           # #299.
           singular = {
             type = "app";
-            program = pkgs.lib.getExe components.exes.singular;
+            program = pkgs.lib.getExe singular;
           };
           # #173 A173-COMMAND.
           update-terminal = {

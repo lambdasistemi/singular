@@ -33,6 +33,15 @@ pr="$(gh pr list --repo lambdasistemi/singular --state merged --base main --limi
   '[.[] | select(.mergeCommit.oid == $sha and (.headRefName | startswith("release-please--")))
     | select(any(.labels[]; .name == "autorelease: pending" or .name == "autorelease: tagged"))]
    | if length == 1 then .[0].number else error("tag must match one merged release PR") end')"
+# #695: the platform bundles join the archives and the one SHA256SUMS; a
+# release that ships bundles is not published without every platform's. The
+# publisher names the merge step; the release workflow always names the
+# bundle directory (check_release.py holds it to that). A bare run of this
+# script, as the publisher's own boundary check makes, names neither and
+# skips the merge.
+if [ -n "${BUNDLES_MERGE:-}" ] && [ -n "${BUNDLES_DIR+x}" ]; then
+  bash "$BUNDLES_MERGE" "$BUNDLES_CONF" "$DOCS_ARCHIVE" "${BUNDLES_DIR:-}" "$DOCS_VERSION"
+fi
 if ! gh release view "$tag" --repo lambdasistemi/singular >/dev/null 2>&1; then
   gh release create "$tag" --repo lambdasistemi/singular --verify-tag \
     --title "Singular documentation and on-chain release $DOCS_VERSION" \
@@ -42,6 +51,7 @@ gh release upload "$tag" "$DOCS_ARCHIVE"/* --repo lambdasistemi/singular --clobb
 gh release download "$tag" --repo lambdasistemi/singular --dir "$download" \
   --pattern "singular-docs-$DOCS_VERSION.tar.gz" \
   --pattern "singular-onchain-$DOCS_VERSION.tar.gz" \
+  --pattern "singular-$DOCS_VERSION-*.tar.gz" \
   --pattern SHA256SUMS
 cmp "$DOCS_ARCHIVE/SHA256SUMS" "$download/SHA256SUMS"
 (cd "$download" && sha256sum --check SHA256SUMS)

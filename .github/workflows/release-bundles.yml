@@ -1,0 +1,142 @@
+name: Release bundles
+# The relocatable singular and open-datum bundles of every platform (#695),
+# built from the flake's release-bundle output and smoke-tested on their own
+# platform from the extracted tarball. Nothing here publishes: pull requests
+# that touch the release workflows or the Nix packaging and every push to main
+# build and test the bundles; the tag run of the release workflow calls this
+# one and publishes what it uploaded.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-bundles-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  changes:
+    name: Release bundle scope
+    runs-on: ubuntu-24.04
+    outputs:
+      bundles: ${{ steps.scope.outputs.bundles }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Decide whether the bundles are built
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" != pull_request ]; then
+            echo "Every non-pull-request run builds the bundles"
+            echo "bundles=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files="$(git diff --name-only "origin/${BASE}...HEAD")"
+          printf 'Changed files:\n%s\n' "$files"
+          pattern='^(\.github/workflows/(release|release-bundles|sync-cabal-version)\.yml|flake\.(nix|lock)|nix/|version\.txt|tools/(release_bundle|verify_release_bundles|cabal_versions)|offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal)|applications/open-datum/offchain/(flake\.(nix|lock)|nix/|[^/]*\.cabal))'
+          if printf '%s\n' "$files" | grep -Eq "$pattern"; then
+            echo "bundles=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No release or packaging file changed: the bundles are not built"
+            echo "bundles=false" >> "$GITHUB_OUTPUT"
+          fi
+  bundle:
+    needs: changes
+    if: needs.changes.outputs.bundles == 'true'
+    name: Release bundle (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: nixos
+          - system: aarch64-darwin
+            runner: macos-14
+    env:
+      SYSTEM: ${{ matrix.system }}
+    steps:
+      - name: Isolate Nix cache
+        if: runner.os == 'Linux'
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-bundle"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - name: Free runner disk
+        if: runner.os == 'macOS'
+        run: |
+          df -h /
+          sudo rm -rf /Library/Developer/CoreSimulator /Users/runner/Library/Android 2>/dev/null || true
+          df -h /
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      # The self-hosted runner carries Nix and reads and writes the cache; a
+      # GitHub-hosted macOS machine gets both from the shared setup action,
+      # which pushes what it builds so the next run starts warm.
+      - uses: cachix/cachix-action@v17
+        if: runner.os == 'Linux'
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - uses: paolino/dev-assets/setup-nix@a9d7371c1118de4026ba6ee3a9c3b54614924b82
+        if: runner.os == 'macOS'
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build the bundle
+        run: nix build --quiet --print-out-paths --out-link bundle .#release-bundle
+      - name: Print the release and commit through the Nix route
+        run: |
+          version="$(cat version.txt)"
+          commit="$(git rev-parse HEAD)"
+          singular_line="$(nix run --quiet .#singular -- --version)"
+          open_datum_line="$(nix run --quiet .#open-datum -- --version)"
+          printf '%s\n' "$singular_line" "$open_datum_line"
+          [ "$singular_line" = "singular ${version} (commit ${commit})" ]
+          [ "$open_datum_line" = "open-datum ${version} (commit ${commit})" ]
+      - name: Smoke-test the bundle on this platform
+        run: |
+          version="$(cat version.txt)"
+          commit="$(git rev-parse HEAD)"
+          mkdir -p dist
+          cp -L "bundle/singular-${version}-${SYSTEM}.tar.gz" dist/
+          tarball="dist/singular-${version}-${SYSTEM}.tar.gz"
+          # the platform smoke, its controls and the controls of the check a
+          # published release's bundles pass, with the tools they need carried
+          # by the app, not read from the runner
+          nix run --quiet .#release-bundle-checks -- "$tarball" "$version" "$commit"
+      - name: Keep the bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-bundle-${{ matrix.system }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+  bundles:
+    name: Release bundles
+    needs: [changes, bundle]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Every bundle was built and tested, or none was needed
+        env:
+          SCOPE: ${{ needs.changes.result }}
+          BUNDLES: ${{ needs.bundle.result }}
+        run: |
+          echo "scope=$SCOPE bundles=$BUNDLES"
+          [ "$SCOPE" = success ] || { echo "the scope decision did not succeed"; exit 1; }
+          case "$BUNDLES" in
+            success) echo "every bundle was built and smoke-tested" ;;
+            skipped) echo "no release or packaging file changed" ;;
+            *) echo "a bundle did not pass: $BUNDLES"; exit 1 ;;
+          esac

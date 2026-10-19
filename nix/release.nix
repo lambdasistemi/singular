@@ -203,6 +203,9 @@ let
       python
       pkgs.actionlint
       pkgs.bash
+      pkgs.findutils
+      pkgs.gnugrep
+      pkgs.gnused
       pkgs.jq
       pkgs.coreutils
       pkgs.diffutils
@@ -211,6 +214,14 @@ let
       python3 ${src}/tools/stage_release.py --selftest
       python3 ${src}/tools/check_release.py ${src} ${archive}
       python3 ${src}/tools/check_publish.py ${src}/tools/publish_docs.sh
+      # #695: where each workflow job may run, with the check shown to refuse
+      python3 ${src}/tools/check_workflow_runners.py --selftest
+      python3 ${src}/tools/check_workflow_runners.py ${src}
+      # #695: the programs' Cabal versions follow the release manifest, and the
+      # check is shown to refuse each way they can drift
+      bash ${src}/tools/cabal_versions.sh check ${src}
+      bash ${src}/tools/cabal_versions.test.sh ${src}/tools/cabal_versions.sh ${src}
+      bash ${src}/tools/merge_release_bundles.test.sh ${src}/tools/merge_release_bundles.sh ${src}/tools/release_bundles.sh
       actionlint -ignore 'label "nixos" is unknown' ${src}/.github/workflows/*.yml
     '';
   };
@@ -220,6 +231,9 @@ let
     runtimeInputs = [
       pkgs.gh
       pkgs.git
+      pkgs.findutils
+      pkgs.gnugrep
+      pkgs.gnused
       pkgs.jq
       pkgs.coreutils
       pkgs.diffutils
@@ -227,6 +241,9 @@ let
     text = ''
       export DOCS_VERSION=${version}
       export RELEASE_NOTES=${src}/onchain-release/RELEASE.md
+      # #695: the step that adds the platform bundles to the release
+      export BUNDLES_MERGE=${src}/tools/merge_release_bundles.sh
+      export BUNDLES_CONF=${src}/tools/release_bundles.sh
       # Coverage release boundary (issue #80 slice t80c): enforced exactly
       # when the candidate opts in by carrying
       # conformance/coverage/release-required. Candidate-owned

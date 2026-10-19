@@ -173220,6 +173220,4151 @@
     }
    ]
   },
+  "docs-install/how-a-release-gets-its-bundles-00": {
+   "audio_sha256": "e6e99b0eaced1ca3a5d998e432e2ec1a8a89474ec612c0405177a8b47650d07c",
+   "characters": 31,
+   "cost": 3.069e-05,
+   "duration": 2.175,
+   "index": 0,
+   "key": "3ca8a614c6458a460ac78e45568576b68bc53e9de2ce70ed5dcc0a9b5fa8bfa8",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "how-a-release-gets-its-bundles",
+   "sent_text": "How a release gets its bundles.",
+   "text": "How a release gets its bundles.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.175,
+     "text": "How"
+    },
+    {
+     "end": 0.375,
+     "start": 0.312,
+     "text": "a"
+    },
+    {
+     "end": 0.725,
+     "start": 0.375,
+     "text": "release"
+    },
+    {
+     "end": 0.938,
+     "start": 0.725,
+     "text": "gets"
+    },
+    {
+     "end": 1.075,
+     "start": 0.938,
+     "text": "its"
+    },
+    {
+     "end": 1.975,
+     "start": 1.075,
+     "text": "bundles"
+    },
+    {
+     "end": 2.175,
+     "start": 1.975,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/how-a-release-gets-its-bundles-01": {
+   "audio_sha256": "8565f5b54c918cd53916ede9e3fabc6363fec474a7e214169c4c80abdb062228",
+   "characters": 192,
+   "cost": 0.00019007999999999997,
+   "duration": 11.75,
+   "index": 1,
+   "key": "e2d7c17b5501c2c37a8565d6b31152a744db9805a918a4672634f65fee4e0abc",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "how-a-release-gets-its-bundles",
+   "sent_text": "As a maintainer, you want a release to publish only bundles that were already built and run on their own platform, so that a broken platform is found in a pull request and never after the tag.",
+   "text": "As a maintainer, you want a release to publish only bundles that were already built and run on their own platform, so that a broken platform is found in a pull request and never after the tag.",
+   "words": [
+    {
+     "end": 0.387,
+     "start": 0.25,
+     "text": "As"
+    },
+    {
+     "end": 0.45,
+     "start": 0.387,
+     "text": "a"
+    },
+    {
+     "end": 1.125,
+     "start": 0.45,
+     "text": "maintainer"
+    },
+    {
+     "end": 1.2,
+     "start": 1.125,
+     "text": ","
+    },
+    {
+     "end": 1.35,
+     "start": 1.2,
+     "text": "you"
+    },
+    {
+     "end": 1.538,
+     "start": 1.35,
+     "text": "want"
+    },
+    {
+     "end": 1.6,
+     "start": 1.538,
+     "text": "a"
+    },
+    {
+     "end": 2.025,
+     "start": 1.6,
+     "text": "release"
+    },
+    {
+     "end": 2.15,
+     "start": 2.025,
+     "text": "to"
+    },
+    {
+     "end": 2.588,
+     "start": 2.15,
+     "text": "publish"
+    },
+    {
+     "end": 2.938,
+     "start": 2.588,
+     "text": "only"
+    },
+    {
+     "end": 3.45,
+     "start": 2.938,
+     "text": "bundles"
+    },
+    {
+     "end": 3.588,
+     "start": 3.45,
+     "text": "that"
+    },
+    {
+     "end": 3.725,
+     "start": 3.588,
+     "text": "were"
+    },
+    {
+     "end": 4.137,
+     "start": 3.725,
+     "text": "already"
+    },
+    {
+     "end": 4.512,
+     "start": 4.137,
+     "text": "built"
+    },
+    {
+     "end": 4.713,
+     "start": 4.512,
+     "text": "and"
+    },
+    {
+     "end": 5.025,
+     "start": 4.713,
+     "text": "run"
+    },
+    {
+     "end": 5.162,
+     "start": 5.025,
+     "text": "on"
+    },
+    {
+     "end": 5.325,
+     "start": 5.162,
+     "text": "their"
+    },
+    {
+     "end": 5.575,
+     "start": 5.325,
+     "text": "own"
+    },
+    {
+     "end": 6.275,
+     "start": 5.575,
+     "text": "platform"
+    },
+    {
+     "end": 6.35,
+     "start": 6.275,
+     "text": ","
+    },
+    {
+     "end": 6.525,
+     "start": 6.35,
+     "text": "so"
+    },
+    {
+     "end": 6.662,
+     "start": 6.525,
+     "text": "that"
+    },
+    {
+     "end": 6.762,
+     "start": 6.662,
+     "text": "a"
+    },
+    {
+     "end": 7.175,
+     "start": 6.762,
+     "text": "broken"
+    },
+    {
+     "end": 7.825,
+     "start": 7.175,
+     "text": "platform"
+    },
+    {
+     "end": 7.988,
+     "start": 7.825,
+     "text": "is"
+    },
+    {
+     "end": 8.375,
+     "start": 7.988,
+     "text": "found"
+    },
+    {
+     "end": 8.462,
+     "start": 8.375,
+     "text": "in"
+    },
+    {
+     "end": 8.562,
+     "start": 8.462,
+     "text": "a"
+    },
+    {
+     "end": 8.85,
+     "start": 8.562,
+     "text": "pull"
+    },
+    {
+     "end": 9.538,
+     "start": 8.85,
+     "text": "request"
+    },
+    {
+     "end": 9.688,
+     "start": 9.538,
+     "text": "and"
+    },
+    {
+     "end": 10.038,
+     "start": 9.688,
+     "text": "never"
+    },
+    {
+     "end": 10.337,
+     "start": 10.038,
+     "text": "after"
+    },
+    {
+     "end": 10.425,
+     "start": 10.337,
+     "text": "the"
+    },
+    {
+     "end": 11.525,
+     "start": 10.425,
+     "text": "tag"
+    },
+    {
+     "end": 11.75,
+     "start": 11.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/how-a-release-gets-its-bundles-02": {
+   "audio_sha256": "a623efcb3bfcfc6ea69823325f9eaf5605ac816733393fdc4720a6260af826ab",
+   "characters": 468,
+   "cost": 0.00046332,
+   "duration": 31.8,
+   "index": 2,
+   "key": "b4428b199d67dd61c8f7c7b651492012df861bbb04d95b9da4050240c6d2365f",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "how-a-release-gets-its-bundles",
+   "sent_text": "The Linux bundle is built on the self-hosted runner and the macOS bundle on a GitHub-hosted Apple Silicon runner, each from the release-bundle output of the repository's flake. A bundle failing on either platform fails the release before anything is published, and the publisher refuses a release that lacks a bundle for any platform listed in tools/release_bundles.sh. Nothing in a pull request publishes: the built tarballs are kept as workflow artifacts for a week.",
+   "text": "The Linux bundle is built on the self-hosted runner and the macOS bundle on a GitHub-hosted Apple Silicon runner, each from the release-bundle output of the repository's flake. A bundle failing on either platform fails the release before anything is published, and the publisher refuses a release that lacks a bundle for any platform listed in tools/release_bundles.sh. Nothing in a pull request publishes: the built tarballs are kept as workflow artifacts for a week.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.675,
+     "start": 0.325,
+     "text": "Linux"
+    },
+    {
+     "end": 1.05,
+     "start": 0.675,
+     "text": "bundle"
+    },
+    {
+     "end": 1.212,
+     "start": 1.05,
+     "text": "is"
+    },
+    {
+     "end": 1.55,
+     "start": 1.212,
+     "text": "built"
+    },
+    {
+     "end": 1.688,
+     "start": 1.55,
+     "text": "on"
+    },
+    {
+     "end": 1.788,
+     "start": 1.688,
+     "text": "the"
+    },
+    {
+     "end": 2.525,
+     "start": 1.788,
+     "text": "self-hosted"
+    },
+    {
+     "end": 2.963,
+     "start": 2.525,
+     "text": "runner"
+    },
+    {
+     "end": 3.088,
+     "start": 2.963,
+     "text": "and"
+    },
+    {
+     "end": 3.175,
+     "start": 3.088,
+     "text": "the"
+    },
+    {
+     "end": 3.888,
+     "start": 3.175,
+     "text": "macOS"
+    },
+    {
+     "end": 4.35,
+     "start": 3.888,
+     "text": "bundle"
+    },
+    {
+     "end": 4.5,
+     "start": 4.35,
+     "text": "on"
+    },
+    {
+     "end": 4.613,
+     "start": 4.5,
+     "text": "a"
+    },
+    {
+     "end": 5.537,
+     "start": 4.613,
+     "text": "GitHub-hosted"
+    },
+    {
+     "end": 5.887,
+     "start": 5.537,
+     "text": "Apple"
+    },
+    {
+     "end": 6.45,
+     "start": 5.887,
+     "text": "Silicon"
+    },
+    {
+     "end": 6.925,
+     "start": 6.45,
+     "text": "runner"
+    },
+    {
+     "end": 7.062,
+     "start": 6.925,
+     "text": ","
+    },
+    {
+     "end": 7.4,
+     "start": 7.062,
+     "text": "each"
+    },
+    {
+     "end": 7.575,
+     "start": 7.4,
+     "text": "from"
+    },
+    {
+     "end": 7.675,
+     "start": 7.575,
+     "text": "the"
+    },
+    {
+     "end": 8.525,
+     "start": 7.675,
+     "text": "release-bundle"
+    },
+    {
+     "end": 9.075,
+     "start": 8.525,
+     "text": "output"
+    },
+    {
+     "end": 9.163,
+     "start": 9.075,
+     "text": "of"
+    },
+    {
+     "end": 9.25,
+     "start": 9.163,
+     "text": "the"
+    },
+    {
+     "end": 10.137,
+     "start": 9.25,
+     "text": "repository's"
+    },
+    {
+     "end": 11.225,
+     "start": 10.137,
+     "text": "flake"
+    },
+    {
+     "end": 11.45,
+     "start": 11.225,
+     "text": "."
+    },
+    {
+     "end": 11.738,
+     "start": 11.65,
+     "text": "A"
+    },
+    {
+     "end": 12.163,
+     "start": 11.738,
+     "text": "bundle"
+    },
+    {
+     "end": 12.562,
+     "start": 12.163,
+     "text": "failing"
+    },
+    {
+     "end": 12.675,
+     "start": 12.562,
+     "text": "on"
+    },
+    {
+     "end": 12.95,
+     "start": 12.675,
+     "text": "either"
+    },
+    {
+     "end": 13.625,
+     "start": 12.95,
+     "text": "platform"
+    },
+    {
+     "end": 14.025,
+     "start": 13.625,
+     "text": "fails"
+    },
+    {
+     "end": 14.125,
+     "start": 14.025,
+     "text": "the"
+    },
+    {
+     "end": 14.55,
+     "start": 14.125,
+     "text": "release"
+    },
+    {
+     "end": 14.938,
+     "start": 14.55,
+     "text": "before"
+    },
+    {
+     "end": 15.4,
+     "start": 14.938,
+     "text": "anything"
+    },
+    {
+     "end": 15.55,
+     "start": 15.4,
+     "text": "is"
+    },
+    {
+     "end": 16.575,
+     "start": 15.55,
+     "text": "published"
+    },
+    {
+     "end": 16.775,
+     "start": 16.575,
+     "text": ","
+    },
+    {
+     "end": 17.087,
+     "start": 17.0,
+     "text": "and"
+    },
+    {
+     "end": 17.175,
+     "start": 17.087,
+     "text": "the"
+    },
+    {
+     "end": 17.7,
+     "start": 17.175,
+     "text": "publisher"
+    },
+    {
+     "end": 18.3,
+     "start": 17.7,
+     "text": "refuses"
+    },
+    {
+     "end": 18.4,
+     "start": 18.3,
+     "text": "a"
+    },
+    {
+     "end": 18.9,
+     "start": 18.4,
+     "text": "release"
+    },
+    {
+     "end": 19.112,
+     "start": 18.9,
+     "text": "that"
+    },
+    {
+     "end": 19.438,
+     "start": 19.112,
+     "text": "lacks"
+    },
+    {
+     "end": 19.538,
+     "start": 19.438,
+     "text": "a"
+    },
+    {
+     "end": 19.95,
+     "start": 19.538,
+     "text": "bundle"
+    },
+    {
+     "end": 20.112,
+     "start": 19.95,
+     "text": "for"
+    },
+    {
+     "end": 20.4,
+     "start": 20.112,
+     "text": "any"
+    },
+    {
+     "end": 20.975,
+     "start": 20.4,
+     "text": "platform"
+    },
+    {
+     "end": 21.325,
+     "start": 20.975,
+     "text": "listed"
+    },
+    {
+     "end": 21.513,
+     "start": 21.325,
+     "text": "in"
+    },
+    {
+     "end": 24.95,
+     "start": 21.513,
+     "text": "tools/release_bundles.sh"
+    },
+    {
+     "end": 25.275,
+     "start": 24.95,
+     "text": "."
+    },
+    {
+     "end": 25.925,
+     "start": 25.525,
+     "text": "Nothing"
+    },
+    {
+     "end": 26.013,
+     "start": 25.925,
+     "text": "in"
+    },
+    {
+     "end": 26.112,
+     "start": 26.013,
+     "text": "a"
+    },
+    {
+     "end": 26.375,
+     "start": 26.112,
+     "text": "pull"
+    },
+    {
+     "end": 26.825,
+     "start": 26.375,
+     "text": "request"
+    },
+    {
+     "end": 27.575,
+     "start": 26.825,
+     "text": "publishes"
+    },
+    {
+     "end": 27.675,
+     "start": 27.575,
+     "text": ":"
+    },
+    {
+     "end": 27.775,
+     "start": 27.675,
+     "text": "the"
+    },
+    {
+     "end": 28.05,
+     "start": 27.775,
+     "text": "built"
+    },
+    {
+     "end": 28.625,
+     "start": 28.05,
+     "text": "tarballs"
+    },
+    {
+     "end": 28.763,
+     "start": 28.625,
+     "text": "are"
+    },
+    {
+     "end": 29.075,
+     "start": 28.763,
+     "text": "kept"
+    },
+    {
+     "end": 29.237,
+     "start": 29.075,
+     "text": "as"
+    },
+    {
+     "end": 29.775,
+     "start": 29.237,
+     "text": "workflow"
+    },
+    {
+     "end": 30.425,
+     "start": 29.775,
+     "text": "artifacts"
+    },
+    {
+     "end": 30.55,
+     "start": 30.425,
+     "text": "for"
+    },
+    {
+     "end": 30.65,
+     "start": 30.55,
+     "text": "a"
+    },
+    {
+     "end": 31.575,
+     "start": 30.65,
+     "text": "week"
+    },
+    {
+     "end": 31.8,
+     "start": 31.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/install-on-linux-00": {
+   "audio_sha256": "ff5779a97dd5fb3e8928d939c01fc73c84fc449e8cae783cde75054b8479d9ac",
+   "characters": 17,
+   "cost": 1.683e-05,
+   "duration": 1.65,
+   "index": 0,
+   "key": "f1dcf8f541a3a4e347fd9b92eef9a9cf87bf13fd3c7359c53cf7e517a39fee07",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "install-on-linux",
+   "sent_text": "Install on Linux.",
+   "text": "Install on Linux.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.2,
+     "text": "Install"
+    },
+    {
+     "end": 0.688,
+     "start": 0.562,
+     "text": "on"
+    },
+    {
+     "end": 1.45,
+     "start": 0.688,
+     "text": "Linux"
+    },
+    {
+     "end": 1.65,
+     "start": 1.45,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/install-on-linux-01": {
+   "audio_sha256": "e74fccb8a5ef363316bbebc46371e71eed5fc68ff581405aa9d10c581ab2b2f9",
+   "characters": 141,
+   "cost": 0.00013958999999999998,
+   "duration": 10.775,
+   "index": 1,
+   "key": "92982ca045676f84ca501090c24e8be3ed789521f4100ba29089cb2b8b11b27a",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "install-on-linux",
+   "sent_text": "You need curl, tar and sha256sum, which every distribution carries. The programs bring their own C library and do not use the distribution's.",
+   "text": "You need curl, tar and sha256sum, which every distribution carries. The programs bring their own C library and do not use the distribution's.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.2,
+     "text": "You"
+    },
+    {
+     "end": 0.538,
+     "start": 0.3,
+     "text": "need"
+    },
+    {
+     "end": 0.95,
+     "start": 0.538,
+     "text": "curl"
+    },
+    {
+     "end": 1.038,
+     "start": 0.95,
+     "text": ","
+    },
+    {
+     "end": 1.425,
+     "start": 1.038,
+     "text": "tar"
+    },
+    {
+     "end": 1.562,
+     "start": 1.425,
+     "text": "and"
+    },
+    {
+     "end": 3.25,
+     "start": 1.562,
+     "text": "sha256sum"
+    },
+    {
+     "end": 3.325,
+     "start": 3.25,
+     "text": ","
+    },
+    {
+     "end": 3.562,
+     "start": 3.325,
+     "text": "which"
+    },
+    {
+     "end": 3.9,
+     "start": 3.562,
+     "text": "every"
+    },
+    {
+     "end": 4.55,
+     "start": 3.9,
+     "text": "distribution"
+    },
+    {
+     "end": 5.65,
+     "start": 4.55,
+     "text": "carries"
+    },
+    {
+     "end": 5.85,
+     "start": 5.65,
+     "text": "."
+    },
+    {
+     "end": 6.1,
+     "start": 6.025,
+     "text": "The"
+    },
+    {
+     "end": 6.688,
+     "start": 6.1,
+     "text": "programs"
+    },
+    {
+     "end": 6.975,
+     "start": 6.688,
+     "text": "bring"
+    },
+    {
+     "end": 7.175,
+     "start": 6.975,
+     "text": "their"
+    },
+    {
+     "end": 7.438,
+     "start": 7.175,
+     "text": "own"
+    },
+    {
+     "end": 7.65,
+     "start": 7.438,
+     "text": "C"
+    },
+    {
+     "end": 8.4,
+     "start": 7.65,
+     "text": "library"
+    },
+    {
+     "end": 8.538,
+     "start": 8.4,
+     "text": "and"
+    },
+    {
+     "end": 8.65,
+     "start": 8.538,
+     "text": "do"
+    },
+    {
+     "end": 8.9,
+     "start": 8.65,
+     "text": "not"
+    },
+    {
+     "end": 9.137,
+     "start": 8.9,
+     "text": "use"
+    },
+    {
+     "end": 9.225,
+     "start": 9.137,
+     "text": "the"
+    },
+    {
+     "end": 10.575,
+     "start": 9.225,
+     "text": "distribution's"
+    },
+    {
+     "end": 10.775,
+     "start": 10.575,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/install-on-macos-00": {
+   "audio_sha256": "148c9ad408495521ecdf1156245b346cddef9449f01be2c58c879daca8cbee3f",
+   "characters": 17,
+   "cost": 1.683e-05,
+   "duration": 1.85,
+   "index": 0,
+   "key": "194866a6c6247b00bc0f46fb86be1b7d663f68b3e7bf45baded2c5ce92b7bed9",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "install-on-macos",
+   "sent_text": "Install on macOS.",
+   "text": "Install on macOS.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.2,
+     "text": "Install"
+    },
+    {
+     "end": 0.663,
+     "start": 0.562,
+     "text": "on"
+    },
+    {
+     "end": 1.65,
+     "start": 0.663,
+     "text": "macOS"
+    },
+    {
+     "end": 1.85,
+     "start": 1.65,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/install-on-macos-01": {
+   "audio_sha256": "bb6dedf6b4d964f2cdb7a0774c8506c7ffbd8ab6a00b6b8b72bbc56bd9bf0e1f",
+   "characters": 106,
+   "cost": 0.00010494,
+   "duration": 7.075,
+   "index": 1,
+   "key": "97cd5a9eb0ef4fdcc09a79866f105bb43bc0fd51f0148ba8a6fec16dc6a46fc9",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "install-on-macos",
+   "sent_text": "macOS ships curl, tar and shasum. The command is the same with the platform and the checksum tool changed.",
+   "text": "macOS ships curl, tar and shasum. The command is the same with the platform and the checksum tool changed.",
+   "words": [
+    {
+     "end": 0.6,
+     "start": 0.175,
+     "text": "macOS"
+    },
+    {
+     "end": 0.85,
+     "start": 0.6,
+     "text": "ships"
+    },
+    {
+     "end": 1.1,
+     "start": 0.85,
+     "text": "curl"
+    },
+    {
+     "end": 1.15,
+     "start": 1.1,
+     "text": ","
+    },
+    {
+     "end": 1.413,
+     "start": 1.15,
+     "text": "tar"
+    },
+    {
+     "end": 1.538,
+     "start": 1.413,
+     "text": "and"
+    },
+    {
+     "end": 2.5,
+     "start": 1.538,
+     "text": "shasum"
+    },
+    {
+     "end": 2.7,
+     "start": 2.5,
+     "text": "."
+    },
+    {
+     "end": 2.95,
+     "start": 2.875,
+     "text": "The"
+    },
+    {
+     "end": 3.45,
+     "start": 2.95,
+     "text": "command"
+    },
+    {
+     "end": 3.588,
+     "start": 3.45,
+     "text": "is"
+    },
+    {
+     "end": 3.713,
+     "start": 3.588,
+     "text": "the"
+    },
+    {
+     "end": 3.987,
+     "start": 3.713,
+     "text": "same"
+    },
+    {
+     "end": 4.113,
+     "start": 3.987,
+     "text": "with"
+    },
+    {
+     "end": 4.2,
+     "start": 4.113,
+     "text": "the"
+    },
+    {
+     "end": 4.838,
+     "start": 4.2,
+     "text": "platform"
+    },
+    {
+     "end": 4.963,
+     "start": 4.838,
+     "text": "and"
+    },
+    {
+     "end": 5.062,
+     "start": 4.963,
+     "text": "the"
+    },
+    {
+     "end": 5.525,
+     "start": 5.062,
+     "text": "checksum"
+    },
+    {
+     "end": 5.812,
+     "start": 5.525,
+     "text": "tool"
+    },
+    {
+     "end": 6.85,
+     "start": 5.812,
+     "text": "changed"
+    },
+    {
+     "end": 7.075,
+     "start": 6.85,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/install-on-macos-02": {
+   "audio_sha256": "d4affffca78a22a7cba70a3e0f9defc2db7acbfe2308f7ef07e6a96e815656c2",
+   "characters": 449,
+   "cost": 0.00044450999999999996,
+   "duration": 29.95,
+   "index": 2,
+   "key": "b9f2b2faf6c0c705ef2caa284218539948fa01c48653d46701a2cb071aa33866",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "install-on-macos",
+   "sent_text": "The programs are signed ad hoc, which Apple Silicon requires of any program, and are not signed with an Apple developer certificate or notarised. A file downloaded with curl and unpacked with tar is not quarantined and runs. A file downloaded with a browser is quarantined, and macOS may refuse to open the programs inside it with a message that the developer cannot be verified. After you have checked the checksum, remove the quarantine mark once:",
+   "text": "The programs are signed ad hoc, which Apple Silicon requires of any program, and are not signed with an Apple developer certificate or notarised. A file downloaded with curl and unpacked with tar is not quarantined and runs. A file downloaded with a browser is quarantined, and macOS may refuse to open the programs inside it with a message that the developer cannot be verified. After you have checked the checksum, remove the quarantine mark once:",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.975,
+     "start": 0.3,
+     "text": "programs"
+    },
+    {
+     "end": 1.112,
+     "start": 0.975,
+     "text": "are"
+    },
+    {
+     "end": 1.55,
+     "start": 1.112,
+     "text": "signed"
+    },
+    {
+     "end": 1.875,
+     "start": 1.55,
+     "text": "ad"
+    },
+    {
+     "end": 2.2,
+     "start": 1.875,
+     "text": "hoc"
+    },
+    {
+     "end": 2.25,
+     "start": 2.2,
+     "text": ","
+    },
+    {
+     "end": 2.5,
+     "start": 2.25,
+     "text": "which"
+    },
+    {
+     "end": 2.862,
+     "start": 2.5,
+     "text": "Apple"
+    },
+    {
+     "end": 3.425,
+     "start": 2.862,
+     "text": "Silicon"
+    },
+    {
+     "end": 4.075,
+     "start": 3.425,
+     "text": "requires"
+    },
+    {
+     "end": 4.2,
+     "start": 4.075,
+     "text": "of"
+    },
+    {
+     "end": 4.425,
+     "start": 4.2,
+     "text": "any"
+    },
+    {
+     "end": 5.1,
+     "start": 4.425,
+     "text": "program"
+    },
+    {
+     "end": 5.175,
+     "start": 5.1,
+     "text": ","
+    },
+    {
+     "end": 5.287,
+     "start": 5.175,
+     "text": "and"
+    },
+    {
+     "end": 5.375,
+     "start": 5.287,
+     "text": "are"
+    },
+    {
+     "end": 5.637,
+     "start": 5.375,
+     "text": "not"
+    },
+    {
+     "end": 6.05,
+     "start": 5.637,
+     "text": "signed"
+    },
+    {
+     "end": 6.188,
+     "start": 6.05,
+     "text": "with"
+    },
+    {
+     "end": 6.325,
+     "start": 6.188,
+     "text": "an"
+    },
+    {
+     "end": 6.675,
+     "start": 6.325,
+     "text": "Apple"
+    },
+    {
+     "end": 7.2,
+     "start": 6.675,
+     "text": "developer"
+    },
+    {
+     "end": 7.95,
+     "start": 7.2,
+     "text": "certificate"
+    },
+    {
+     "end": 8.163,
+     "start": 7.95,
+     "text": "or"
+    },
+    {
+     "end": 9.575,
+     "start": 8.163,
+     "text": "notarised"
+    },
+    {
+     "end": 9.825,
+     "start": 9.575,
+     "text": "."
+    },
+    {
+     "end": 10.113,
+     "start": 10.025,
+     "text": "A"
+    },
+    {
+     "end": 10.425,
+     "start": 10.113,
+     "text": "file"
+    },
+    {
+     "end": 10.962,
+     "start": 10.425,
+     "text": "downloaded"
+    },
+    {
+     "end": 11.137,
+     "start": 10.962,
+     "text": "with"
+    },
+    {
+     "end": 11.525,
+     "start": 11.137,
+     "text": "curl"
+    },
+    {
+     "end": 11.65,
+     "start": 11.525,
+     "text": "and"
+    },
+    {
+     "end": 12.188,
+     "start": 11.65,
+     "text": "unpacked"
+    },
+    {
+     "end": 12.363,
+     "start": 12.188,
+     "text": "with"
+    },
+    {
+     "end": 12.863,
+     "start": 12.363,
+     "text": "tar"
+    },
+    {
+     "end": 13.025,
+     "start": 12.863,
+     "text": "is"
+    },
+    {
+     "end": 13.25,
+     "start": 13.025,
+     "text": "not"
+    },
+    {
+     "end": 13.975,
+     "start": 13.25,
+     "text": "quarantined"
+    },
+    {
+     "end": 14.1,
+     "start": 13.975,
+     "text": "and"
+    },
+    {
+     "end": 15.1,
+     "start": 14.1,
+     "text": "runs"
+    },
+    {
+     "end": 15.3,
+     "start": 15.1,
+     "text": "."
+    },
+    {
+     "end": 15.55,
+     "start": 15.475,
+     "text": "A"
+    },
+    {
+     "end": 15.85,
+     "start": 15.55,
+     "text": "file"
+    },
+    {
+     "end": 16.388,
+     "start": 15.85,
+     "text": "downloaded"
+    },
+    {
+     "end": 16.513,
+     "start": 16.388,
+     "text": "with"
+    },
+    {
+     "end": 16.575,
+     "start": 16.513,
+     "text": "a"
+    },
+    {
+     "end": 17.025,
+     "start": 16.575,
+     "text": "browser"
+    },
+    {
+     "end": 17.175,
+     "start": 17.025,
+     "text": "is"
+    },
+    {
+     "end": 18.35,
+     "start": 17.175,
+     "text": "quarantined"
+    },
+    {
+     "end": 18.55,
+     "start": 18.35,
+     "text": ","
+    },
+    {
+     "end": 18.875,
+     "start": 18.775,
+     "text": "and"
+    },
+    {
+     "end": 19.587,
+     "start": 18.875,
+     "text": "macOS"
+    },
+    {
+     "end": 19.8,
+     "start": 19.587,
+     "text": "may"
+    },
+    {
+     "end": 20.35,
+     "start": 19.8,
+     "text": "refuse"
+    },
+    {
+     "end": 20.487,
+     "start": 20.35,
+     "text": "to"
+    },
+    {
+     "end": 20.788,
+     "start": 20.487,
+     "text": "open"
+    },
+    {
+     "end": 20.875,
+     "start": 20.788,
+     "text": "the"
+    },
+    {
+     "end": 21.487,
+     "start": 20.875,
+     "text": "programs"
+    },
+    {
+     "end": 22.05,
+     "start": 21.487,
+     "text": "inside"
+    },
+    {
+     "end": 22.2,
+     "start": 22.05,
+     "text": "it"
+    },
+    {
+     "end": 22.337,
+     "start": 22.2,
+     "text": "with"
+    },
+    {
+     "end": 22.438,
+     "start": 22.337,
+     "text": "a"
+    },
+    {
+     "end": 22.975,
+     "start": 22.438,
+     "text": "message"
+    },
+    {
+     "end": 23.15,
+     "start": 22.975,
+     "text": "that"
+    },
+    {
+     "end": 23.25,
+     "start": 23.15,
+     "text": "the"
+    },
+    {
+     "end": 23.788,
+     "start": 23.25,
+     "text": "developer"
+    },
+    {
+     "end": 24.2,
+     "start": 23.788,
+     "text": "cannot"
+    },
+    {
+     "end": 24.35,
+     "start": 24.2,
+     "text": "be"
+    },
+    {
+     "end": 25.6,
+     "start": 24.35,
+     "text": "verified"
+    },
+    {
+     "end": 25.825,
+     "start": 25.6,
+     "text": "."
+    },
+    {
+     "end": 26.3,
+     "start": 26.025,
+     "text": "After"
+    },
+    {
+     "end": 26.388,
+     "start": 26.3,
+     "text": "you"
+    },
+    {
+     "end": 26.538,
+     "start": 26.388,
+     "text": "have"
+    },
+    {
+     "end": 26.812,
+     "start": 26.538,
+     "text": "checked"
+    },
+    {
+     "end": 26.913,
+     "start": 26.812,
+     "text": "the"
+    },
+    {
+     "end": 27.5,
+     "start": 26.913,
+     "text": "checksum"
+    },
+    {
+     "end": 27.575,
+     "start": 27.5,
+     "text": ","
+    },
+    {
+     "end": 27.987,
+     "start": 27.575,
+     "text": "remove"
+    },
+    {
+     "end": 28.075,
+     "start": 27.987,
+     "text": "the"
+    },
+    {
+     "end": 28.6,
+     "start": 28.075,
+     "text": "quarantine"
+    },
+    {
+     "end": 28.875,
+     "start": 28.6,
+     "text": "mark"
+    },
+    {
+     "end": 29.75,
+     "start": 28.875,
+     "text": "once"
+    },
+    {
+     "end": 29.95,
+     "start": 29.75,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-install/install-the-commands-without-nix-00": {
+   "audio_sha256": "28eb755504fe9716339bf2424e5c555ecdd349ce2b72e6a519c8bff6b49a8f4c",
+   "characters": 33,
+   "cost": 3.267e-05,
+   "duration": 2.325,
+   "index": 0,
+   "key": "d9b00dea142d354c83e0e4dc9a66903cf7fe97618882d7887d0e04ee5cd1d5ba",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "install-the-commands-without-nix",
+   "sent_text": "Install the commands without Nix.",
+   "text": "Install the commands without Nix.",
+   "words": [
+    {
+     "end": 0.562,
+     "start": 0.2,
+     "text": "Install"
+    },
+    {
+     "end": 0.65,
+     "start": 0.562,
+     "text": "the"
+    },
+    {
+     "end": 1.038,
+     "start": 0.65,
+     "text": "commands"
+    },
+    {
+     "end": 1.35,
+     "start": 1.038,
+     "text": "without"
+    },
+    {
+     "end": 2.125,
+     "start": 1.35,
+     "text": "Nix"
+    },
+    {
+     "end": 2.325,
+     "start": 2.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/install-the-commands-without-nix-01": {
+   "audio_sha256": "000b7d465bfe5b7a3f19eb4f154763e5ce9b7a6f3c69dfed1ce86d712f6aa33b",
+   "characters": 390,
+   "cost": 0.0003861,
+   "duration": 24.325,
+   "index": 1,
+   "key": "4a3d9d2bad274c6dc1ef3a05d9f06fb15f982953e380eb786b36ed5a00a5969b",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "install-the-commands-without-nix",
+   "sent_text": "You develop for Cardano on Linux or on an Apple Silicon Mac and you want to play the first demo without installing Nix or compiling the Haskell stack. You download the file for your platform from a release, check it against the release's checksums, unpack it, run singular --version and see the release and the commit the program was built from, and then run the commands of the first demo.",
+   "text": "You develop for Cardano on Linux or on an Apple Silicon Mac and you want to play the first demo without installing Nix or compiling the Haskell stack. You download the file for your platform from a release, check it against the release's checksums, unpack it, run singular --version and see the release and the commit the program was built from, and then run the commands of the first demo.",
+   "words": [
+    {
+     "end": 0.325,
+     "start": 0.225,
+     "text": "You"
+    },
+    {
+     "end": 0.725,
+     "start": 0.325,
+     "text": "develop"
+    },
+    {
+     "end": 0.85,
+     "start": 0.725,
+     "text": "for"
+    },
+    {
+     "end": 1.475,
+     "start": 0.85,
+     "text": "Cardano"
+    },
+    {
+     "end": 1.675,
+     "start": 1.475,
+     "text": "on"
+    },
+    {
+     "end": 2.138,
+     "start": 1.675,
+     "text": "Linux"
+    },
+    {
+     "end": 2.375,
+     "start": 2.138,
+     "text": "or"
+    },
+    {
+     "end": 2.537,
+     "start": 2.375,
+     "text": "on"
+    },
+    {
+     "end": 2.675,
+     "start": 2.537,
+     "text": "an"
+    },
+    {
+     "end": 3.062,
+     "start": 2.675,
+     "text": "Apple"
+    },
+    {
+     "end": 3.65,
+     "start": 3.062,
+     "text": "Silicon"
+    },
+    {
+     "end": 4.113,
+     "start": 3.65,
+     "text": "Mac"
+    },
+    {
+     "end": 4.238,
+     "start": 4.113,
+     "text": "and"
+    },
+    {
+     "end": 4.35,
+     "start": 4.238,
+     "text": "you"
+    },
+    {
+     "end": 4.537,
+     "start": 4.35,
+     "text": "want"
+    },
+    {
+     "end": 4.625,
+     "start": 4.537,
+     "text": "to"
+    },
+    {
+     "end": 4.85,
+     "start": 4.625,
+     "text": "play"
+    },
+    {
+     "end": 4.988,
+     "start": 4.85,
+     "text": "the"
+    },
+    {
+     "end": 5.338,
+     "start": 4.988,
+     "text": "first"
+    },
+    {
+     "end": 5.75,
+     "start": 5.338,
+     "text": "demo"
+    },
+    {
+     "end": 6.1,
+     "start": 5.75,
+     "text": "without"
+    },
+    {
+     "end": 6.762,
+     "start": 6.1,
+     "text": "installing"
+    },
+    {
+     "end": 7.188,
+     "start": 6.762,
+     "text": "Nix"
+    },
+    {
+     "end": 7.325,
+     "start": 7.188,
+     "text": "or"
+    },
+    {
+     "end": 7.925,
+     "start": 7.325,
+     "text": "compiling"
+    },
+    {
+     "end": 8.025,
+     "start": 7.925,
+     "text": "the"
+    },
+    {
+     "end": 8.562,
+     "start": 8.025,
+     "text": "Haskell"
+    },
+    {
+     "end": 9.65,
+     "start": 8.562,
+     "text": "stack"
+    },
+    {
+     "end": 9.9,
+     "start": 9.65,
+     "text": "."
+    },
+    {
+     "end": 10.175,
+     "start": 10.075,
+     "text": "You"
+    },
+    {
+     "end": 10.587,
+     "start": 10.175,
+     "text": "download"
+    },
+    {
+     "end": 10.688,
+     "start": 10.587,
+     "text": "the"
+    },
+    {
+     "end": 11.025,
+     "start": 10.688,
+     "text": "file"
+    },
+    {
+     "end": 11.137,
+     "start": 11.025,
+     "text": "for"
+    },
+    {
+     "end": 11.25,
+     "start": 11.137,
+     "text": "your"
+    },
+    {
+     "end": 11.825,
+     "start": 11.25,
+     "text": "platform"
+    },
+    {
+     "end": 11.962,
+     "start": 11.825,
+     "text": "from"
+    },
+    {
+     "end": 12.025,
+     "start": 11.962,
+     "text": "a"
+    },
+    {
+     "end": 12.975,
+     "start": 12.025,
+     "text": "release"
+    },
+    {
+     "end": 13.175,
+     "start": 12.975,
+     "text": ","
+    },
+    {
+     "end": 13.562,
+     "start": 13.375,
+     "text": "check"
+    },
+    {
+     "end": 13.637,
+     "start": 13.562,
+     "text": "it"
+    },
+    {
+     "end": 13.938,
+     "start": 13.637,
+     "text": "against"
+    },
+    {
+     "end": 14.012,
+     "start": 13.938,
+     "text": "the"
+    },
+    {
+     "end": 14.538,
+     "start": 14.012,
+     "text": "release's"
+    },
+    {
+     "end": 15.075,
+     "start": 14.538,
+     "text": "checksums"
+    },
+    {
+     "end": 15.125,
+     "start": 15.075,
+     "text": ","
+    },
+    {
+     "end": 15.663,
+     "start": 15.125,
+     "text": "unpack"
+    },
+    {
+     "end": 16.25,
+     "start": 15.663,
+     "text": "it"
+    },
+    {
+     "end": 16.45,
+     "start": 16.25,
+     "text": ","
+    },
+    {
+     "end": 16.987,
+     "start": 16.675,
+     "text": "run"
+    },
+    {
+     "end": 17.5,
+     "start": 16.987,
+     "text": "singular"
+    },
+    {
+     "end": 17.987,
+     "start": 17.5,
+     "text": "version"
+    },
+    {
+     "end": 18.138,
+     "start": 17.987,
+     "text": "and"
+    },
+    {
+     "end": 18.35,
+     "start": 18.138,
+     "text": "see"
+    },
+    {
+     "end": 18.45,
+     "start": 18.35,
+     "text": "the"
+    },
+    {
+     "end": 19.038,
+     "start": 18.45,
+     "text": "release"
+    },
+    {
+     "end": 19.163,
+     "start": 19.038,
+     "text": "and"
+    },
+    {
+     "end": 19.25,
+     "start": 19.163,
+     "text": "the"
+    },
+    {
+     "end": 19.625,
+     "start": 19.25,
+     "text": "commit"
+    },
+    {
+     "end": 19.725,
+     "start": 19.625,
+     "text": "the"
+    },
+    {
+     "end": 20.2,
+     "start": 19.725,
+     "text": "program"
+    },
+    {
+     "end": 20.375,
+     "start": 20.2,
+     "text": "was"
+    },
+    {
+     "end": 20.65,
+     "start": 20.375,
+     "text": "built"
+    },
+    {
+     "end": 21.45,
+     "start": 20.65,
+     "text": "from"
+    },
+    {
+     "end": 21.675,
+     "start": 21.45,
+     "text": ","
+    },
+    {
+     "end": 21.962,
+     "start": 21.875,
+     "text": "and"
+    },
+    {
+     "end": 22.125,
+     "start": 21.962,
+     "text": "then"
+    },
+    {
+     "end": 22.312,
+     "start": 22.125,
+     "text": "run"
+    },
+    {
+     "end": 22.4,
+     "start": 22.312,
+     "text": "the"
+    },
+    {
+     "end": 22.812,
+     "start": 22.4,
+     "text": "commands"
+    },
+    {
+     "end": 22.888,
+     "start": 22.812,
+     "text": "of"
+    },
+    {
+     "end": 22.975,
+     "start": 22.888,
+     "text": "the"
+    },
+    {
+     "end": 23.275,
+     "start": 22.975,
+     "text": "first"
+    },
+    {
+     "end": 24.1,
+     "start": 23.275,
+     "text": "demo"
+    },
+    {
+     "end": 24.325,
+     "start": 24.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/other-platforms-and-the-nix-route-00": {
+   "audio_sha256": "554a192e49fb449e64e930da668fb852769b20c24d9e5b13b4b9016c07b0a757",
+   "characters": 34,
+   "cost": 3.366e-05,
+   "duration": 2.35,
+   "index": 0,
+   "key": "3b5fa9d8eacac2ae9065d5b9c15979a1f3440f9f9d153e1276e88235919ad5c3",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "other-platforms-and-the-nix-route",
+   "sent_text": "Other platforms and the Nix route.",
+   "text": "Other platforms and the Nix route.",
+   "words": [
+    {
+     "end": 0.375,
+     "start": 0.175,
+     "text": "Other"
+    },
+    {
+     "end": 0.975,
+     "start": 0.375,
+     "text": "platforms"
+    },
+    {
+     "end": 1.087,
+     "start": 0.975,
+     "text": "and"
+    },
+    {
+     "end": 1.175,
+     "start": 1.087,
+     "text": "the"
+    },
+    {
+     "end": 1.425,
+     "start": 1.175,
+     "text": "Nix"
+    },
+    {
+     "end": 2.15,
+     "start": 1.425,
+     "text": "route"
+    },
+    {
+     "end": 2.35,
+     "start": 2.15,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/other-platforms-and-the-nix-route-01": {
+   "audio_sha256": "4c4317c0447d70244d6fe9e615e20c0a28e117cfb0cc5c0fe6ffdd94c3f749a6",
+   "characters": 273,
+   "cost": 0.00027026999999999997,
+   "duration": 21.575,
+   "index": 1,
+   "key": "788f0cfbe743b72559313aa4206b2865cfad7cd9a4f5b41a9de7062053d197d0",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "other-platforms-and-the-nix-route",
+   "sent_text": "Releases carry bundles for Linux on x86_64 and macOS on Apple Silicon only. Linux on aarch64 and macOS on Intel have no bundle yet. On those, and for anyone who prefers it, the Nix route stays as it was: with Nix and flakes enabled, run a command straight from the release.",
+   "text": "Releases carry bundles for Linux on x86_64 and macOS on Apple Silicon only. Linux on aarch64 and macOS on Intel have no bundle yet. On those, and for anyone who prefers it, the Nix route stays as it was: with Nix and flakes enabled, run a command straight from the release.",
+   "words": [
+    {
+     "end": 0.712,
+     "start": 0.2,
+     "text": "Releases"
+    },
+    {
+     "end": 1.05,
+     "start": 0.712,
+     "text": "carry"
+    },
+    {
+     "end": 1.525,
+     "start": 1.05,
+     "text": "bundles"
+    },
+    {
+     "end": 1.675,
+     "start": 1.525,
+     "text": "for"
+    },
+    {
+     "end": 2.075,
+     "start": 1.675,
+     "text": "Linux"
+    },
+    {
+     "end": 2.287,
+     "start": 2.075,
+     "text": "on"
+    },
+    {
+     "end": 4.2,
+     "start": 2.287,
+     "text": "x86_64"
+    },
+    {
+     "end": 4.35,
+     "start": 4.2,
+     "text": "and"
+    },
+    {
+     "end": 5.075,
+     "start": 4.35,
+     "text": "macOS"
+    },
+    {
+     "end": 5.287,
+     "start": 5.075,
+     "text": "on"
+    },
+    {
+     "end": 5.637,
+     "start": 5.287,
+     "text": "Apple"
+    },
+    {
+     "end": 6.188,
+     "start": 5.637,
+     "text": "Silicon"
+    },
+    {
+     "end": 7.25,
+     "start": 6.188,
+     "text": "only"
+    },
+    {
+     "end": 7.475,
+     "start": 7.25,
+     "text": "."
+    },
+    {
+     "end": 8.025,
+     "start": 7.7,
+     "text": "Linux"
+    },
+    {
+     "end": 8.2,
+     "start": 8.025,
+     "text": "on"
+    },
+    {
+     "end": 9.363,
+     "start": 8.2,
+     "text": "aarch64"
+    },
+    {
+     "end": 9.5,
+     "start": 9.363,
+     "text": "and"
+    },
+    {
+     "end": 10.125,
+     "start": 9.5,
+     "text": "macOS"
+    },
+    {
+     "end": 10.325,
+     "start": 10.125,
+     "text": "on"
+    },
+    {
+     "end": 10.8,
+     "start": 10.325,
+     "text": "Intel"
+    },
+    {
+     "end": 11.025,
+     "start": 10.8,
+     "text": "have"
+    },
+    {
+     "end": 11.225,
+     "start": 11.025,
+     "text": "no"
+    },
+    {
+     "end": 11.625,
+     "start": 11.225,
+     "text": "bundle"
+    },
+    {
+     "end": 12.425,
+     "start": 11.625,
+     "text": "yet"
+    },
+    {
+     "end": 12.625,
+     "start": 12.425,
+     "text": "."
+    },
+    {
+     "end": 13.038,
+     "start": 12.825,
+     "text": "On"
+    },
+    {
+     "end": 13.45,
+     "start": 13.038,
+     "text": "those"
+    },
+    {
+     "end": 13.5,
+     "start": 13.45,
+     "text": ","
+    },
+    {
+     "end": 13.625,
+     "start": 13.5,
+     "text": "and"
+    },
+    {
+     "end": 13.775,
+     "start": 13.625,
+     "text": "for"
+    },
+    {
+     "end": 14.137,
+     "start": 13.775,
+     "text": "anyone"
+    },
+    {
+     "end": 14.25,
+     "start": 14.137,
+     "text": "who"
+    },
+    {
+     "end": 14.762,
+     "start": 14.25,
+     "text": "prefers"
+    },
+    {
+     "end": 14.95,
+     "start": 14.762,
+     "text": "it"
+    },
+    {
+     "end": 15.025,
+     "start": 14.95,
+     "text": ","
+    },
+    {
+     "end": 15.15,
+     "start": 15.025,
+     "text": "the"
+    },
+    {
+     "end": 15.425,
+     "start": 15.15,
+     "text": "Nix"
+    },
+    {
+     "end": 15.675,
+     "start": 15.425,
+     "text": "route"
+    },
+    {
+     "end": 16.075,
+     "start": 15.675,
+     "text": "stays"
+    },
+    {
+     "end": 16.2,
+     "start": 16.075,
+     "text": "as"
+    },
+    {
+     "end": 16.3,
+     "start": 16.2,
+     "text": "it"
+    },
+    {
+     "end": 17.2,
+     "start": 16.3,
+     "text": "was"
+    },
+    {
+     "end": 17.4,
+     "start": 17.2,
+     "text": ":"
+    },
+    {
+     "end": 17.763,
+     "start": 17.575,
+     "text": "with"
+    },
+    {
+     "end": 18.038,
+     "start": 17.763,
+     "text": "Nix"
+    },
+    {
+     "end": 18.15,
+     "start": 18.038,
+     "text": "and"
+    },
+    {
+     "end": 18.5,
+     "start": 18.15,
+     "text": "flakes"
+    },
+    {
+     "end": 19.075,
+     "start": 18.5,
+     "text": "enabled"
+    },
+    {
+     "end": 19.175,
+     "start": 19.075,
+     "text": ","
+    },
+    {
+     "end": 19.388,
+     "start": 19.175,
+     "text": "run"
+    },
+    {
+     "end": 19.45,
+     "start": 19.388,
+     "text": "a"
+    },
+    {
+     "end": 19.85,
+     "start": 19.45,
+     "text": "command"
+    },
+    {
+     "end": 20.15,
+     "start": 19.85,
+     "text": "straight"
+    },
+    {
+     "end": 20.288,
+     "start": 20.15,
+     "text": "from"
+    },
+    {
+     "end": 20.375,
+     "start": 20.288,
+     "text": "the"
+    },
+    {
+     "end": 21.375,
+     "start": 20.375,
+     "text": "release"
+    },
+    {
+     "end": 21.575,
+     "start": 21.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/other-platforms-and-the-nix-route-02": {
+   "audio_sha256": "f079d2ebc2894e0ce80a053e8c0ea796122ec252ea9ec23272699d60e3e3ace9",
+   "characters": 72,
+   "cost": 7.128e-05,
+   "duration": 4.575,
+   "index": 2,
+   "key": "d21544944e4623b74d62dc87510b0f54d19fddafd2a4ba7137d6acc0d0d329d3",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "other-platforms-and-the-nix-route",
+   "sent_text": "Both print the same release and commit line as the bundle's commands do.",
+   "text": "Both print the same release and commit line as the bundle's commands do.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.175,
+     "text": "Both"
+    },
+    {
+     "end": 0.637,
+     "start": 0.45,
+     "text": "print"
+    },
+    {
+     "end": 0.738,
+     "start": 0.637,
+     "text": "the"
+    },
+    {
+     "end": 1.0,
+     "start": 0.738,
+     "text": "same"
+    },
+    {
+     "end": 1.5,
+     "start": 1.0,
+     "text": "release"
+    },
+    {
+     "end": 1.625,
+     "start": 1.5,
+     "text": "and"
+    },
+    {
+     "end": 1.975,
+     "start": 1.625,
+     "text": "commit"
+    },
+    {
+     "end": 2.412,
+     "start": 1.975,
+     "text": "line"
+    },
+    {
+     "end": 2.562,
+     "start": 2.412,
+     "text": "as"
+    },
+    {
+     "end": 2.65,
+     "start": 2.562,
+     "text": "the"
+    },
+    {
+     "end": 3.1,
+     "start": 2.65,
+     "text": "bundle's"
+    },
+    {
+     "end": 3.575,
+     "start": 3.1,
+     "text": "commands"
+    },
+    {
+     "end": 4.325,
+     "start": 3.575,
+     "text": "do"
+    },
+    {
+     "end": 4.575,
+     "start": 4.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/other-platforms-and-the-nix-route-03": {
+   "audio_sha256": "3f72bf82b9bc1de520a9d8f2f67ad664e983060e2fe361522305cac535f328bc",
+   "characters": 195,
+   "cost": 0.00019305,
+   "duration": 12.525,
+   "index": 3,
+   "key": "9a212403ba5fa83e539895bad21615691c8bac699b2ac528ff5dcc3eb28e1cfc",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "other-platforms-and-the-nix-route",
+   "sent_text": "To check a release end to end, including the commands built from its archive, follow Download and verify a release. That verifier also checks each bundle against the commit the release tag names.",
+   "text": "To check a release end to end, including the commands built from its archive, follow Download and verify a release. That verifier also checks each bundle against the commit the release tag names.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "To"
+    },
+    {
+     "end": 0.587,
+     "start": 0.338,
+     "text": "check"
+    },
+    {
+     "end": 0.65,
+     "start": 0.587,
+     "text": "a"
+    },
+    {
+     "end": 1.075,
+     "start": 0.65,
+     "text": "release"
+    },
+    {
+     "end": 1.3,
+     "start": 1.075,
+     "text": "end"
+    },
+    {
+     "end": 1.438,
+     "start": 1.3,
+     "text": "to"
+    },
+    {
+     "end": 1.8,
+     "start": 1.438,
+     "text": "end"
+    },
+    {
+     "end": 1.875,
+     "start": 1.8,
+     "text": ","
+    },
+    {
+     "end": 2.338,
+     "start": 1.875,
+     "text": "including"
+    },
+    {
+     "end": 2.425,
+     "start": 2.338,
+     "text": "the"
+    },
+    {
+     "end": 2.95,
+     "start": 2.425,
+     "text": "commands"
+    },
+    {
+     "end": 3.2,
+     "start": 2.95,
+     "text": "built"
+    },
+    {
+     "end": 3.338,
+     "start": 3.2,
+     "text": "from"
+    },
+    {
+     "end": 3.475,
+     "start": 3.338,
+     "text": "its"
+    },
+    {
+     "end": 4.1,
+     "start": 3.475,
+     "text": "archive"
+    },
+    {
+     "end": 4.213,
+     "start": 4.1,
+     "text": ","
+    },
+    {
+     "end": 4.588,
+     "start": 4.213,
+     "text": "follow"
+    },
+    {
+     "end": 5.225,
+     "start": 4.588,
+     "text": "Download"
+    },
+    {
+     "end": 5.35,
+     "start": 5.225,
+     "text": "and"
+    },
+    {
+     "end": 5.988,
+     "start": 5.35,
+     "text": "verify"
+    },
+    {
+     "end": 6.1,
+     "start": 5.988,
+     "text": "a"
+    },
+    {
+     "end": 7.275,
+     "start": 6.1,
+     "text": "release"
+    },
+    {
+     "end": 7.475,
+     "start": 7.275,
+     "text": "."
+    },
+    {
+     "end": 7.825,
+     "start": 7.65,
+     "text": "That"
+    },
+    {
+     "end": 8.4,
+     "start": 7.825,
+     "text": "verifier"
+    },
+    {
+     "end": 8.788,
+     "start": 8.4,
+     "text": "also"
+    },
+    {
+     "end": 9.1,
+     "start": 8.788,
+     "text": "checks"
+    },
+    {
+     "end": 9.35,
+     "start": 9.1,
+     "text": "each"
+    },
+    {
+     "end": 9.75,
+     "start": 9.35,
+     "text": "bundle"
+    },
+    {
+     "end": 10.087,
+     "start": 9.75,
+     "text": "against"
+    },
+    {
+     "end": 10.175,
+     "start": 10.087,
+     "text": "the"
+    },
+    {
+     "end": 10.575,
+     "start": 10.175,
+     "text": "commit"
+    },
+    {
+     "end": 10.675,
+     "start": 10.575,
+     "text": "the"
+    },
+    {
+     "end": 11.075,
+     "start": 10.675,
+     "text": "release"
+    },
+    {
+     "end": 11.375,
+     "start": 11.075,
+     "text": "tag"
+    },
+    {
+     "end": 12.325,
+     "start": 11.375,
+     "text": "names"
+    },
+    {
+     "end": 12.525,
+     "start": 12.325,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-is-inside-the-tarball-00": {
+   "audio_sha256": "2b1d3eff4223bc2d0d96940e9d8189b311b04d2bf5edafe1681a0b4801bf7361",
+   "characters": 27,
+   "cost": 2.673e-05,
+   "duration": 1.95,
+   "index": 0,
+   "key": "9c5f54389c77df992601d40bfa19ff433524e4b8f251d927294f10e1a0709149",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "what-is-inside-the-tarball",
+   "sent_text": "What is inside the tarball.",
+   "text": "What is inside the tarball.",
+   "words": [
+    {
+     "end": 0.3,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.412,
+     "start": 0.3,
+     "text": "is"
+    },
+    {
+     "end": 0.762,
+     "start": 0.412,
+     "text": "inside"
+    },
+    {
+     "end": 0.85,
+     "start": 0.762,
+     "text": "the"
+    },
+    {
+     "end": 1.75,
+     "start": 0.85,
+     "text": "tarball"
+    },
+    {
+     "end": 1.95,
+     "start": 1.75,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-is-inside-the-tarball-01": {
+   "audio_sha256": "346ba412f887cfbbf78a3fbae89bac92ac395a67bbbecbd206628abe717daf26",
+   "characters": 256,
+   "cost": 0.00025343999999999996,
+   "duration": 15.975,
+   "index": 1,
+   "key": "2af13b0de62933feb3729ae9cfc38b38377975cc36371fa161c2f7d32e2c7ee2",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-is-inside-the-tarball",
+   "sent_text": "The folder bin holds the two commands you run. Each is a short launcher that points the real program at the libraries and data files in the same folder and starts it, so nothing is read from outside the folder, and moving the folder moves the installation.",
+   "text": "The folder bin holds the two commands you run. Each is a short launcher that points the real program at the libraries and data files in the same folder and starts it, so nothing is read from outside the folder, and moving the folder moves the installation.",
+   "words": [
+    {
+     "end": 0.275,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.675,
+     "start": 0.275,
+     "text": "folder"
+    },
+    {
+     "end": 0.95,
+     "start": 0.675,
+     "text": "bin"
+    },
+    {
+     "end": 1.263,
+     "start": 0.95,
+     "text": "holds"
+    },
+    {
+     "end": 1.35,
+     "start": 1.263,
+     "text": "the"
+    },
+    {
+     "end": 1.55,
+     "start": 1.35,
+     "text": "two"
+    },
+    {
+     "end": 1.95,
+     "start": 1.55,
+     "text": "commands"
+    },
+    {
+     "end": 2.1,
+     "start": 1.95,
+     "text": "you"
+    },
+    {
+     "end": 2.875,
+     "start": 2.1,
+     "text": "run"
+    },
+    {
+     "end": 3.075,
+     "start": 2.875,
+     "text": "."
+    },
+    {
+     "end": 3.612,
+     "start": 3.3,
+     "text": "Each"
+    },
+    {
+     "end": 3.75,
+     "start": 3.612,
+     "text": "is"
+    },
+    {
+     "end": 3.875,
+     "start": 3.75,
+     "text": "a"
+    },
+    {
+     "end": 4.2,
+     "start": 3.875,
+     "text": "short"
+    },
+    {
+     "end": 4.675,
+     "start": 4.2,
+     "text": "launcher"
+    },
+    {
+     "end": 4.863,
+     "start": 4.675,
+     "text": "that"
+    },
+    {
+     "end": 5.25,
+     "start": 4.863,
+     "text": "points"
+    },
+    {
+     "end": 5.375,
+     "start": 5.25,
+     "text": "the"
+    },
+    {
+     "end": 5.65,
+     "start": 5.375,
+     "text": "real"
+    },
+    {
+     "end": 6.2,
+     "start": 5.65,
+     "text": "program"
+    },
+    {
+     "end": 6.287,
+     "start": 6.2,
+     "text": "at"
+    },
+    {
+     "end": 6.4,
+     "start": 6.287,
+     "text": "the"
+    },
+    {
+     "end": 7.075,
+     "start": 6.4,
+     "text": "libraries"
+    },
+    {
+     "end": 7.2,
+     "start": 7.075,
+     "text": "and"
+    },
+    {
+     "end": 7.537,
+     "start": 7.2,
+     "text": "data"
+    },
+    {
+     "end": 8.0,
+     "start": 7.537,
+     "text": "files"
+    },
+    {
+     "end": 8.087,
+     "start": 8.0,
+     "text": "in"
+    },
+    {
+     "end": 8.188,
+     "start": 8.087,
+     "text": "the"
+    },
+    {
+     "end": 8.538,
+     "start": 8.188,
+     "text": "same"
+    },
+    {
+     "end": 8.975,
+     "start": 8.538,
+     "text": "folder"
+    },
+    {
+     "end": 9.1,
+     "start": 8.975,
+     "text": "and"
+    },
+    {
+     "end": 9.5,
+     "start": 9.1,
+     "text": "starts"
+    },
+    {
+     "end": 10.275,
+     "start": 9.5,
+     "text": "it"
+    },
+    {
+     "end": 10.525,
+     "start": 10.275,
+     "text": ","
+    },
+    {
+     "end": 10.825,
+     "start": 10.725,
+     "text": "so"
+    },
+    {
+     "end": 11.15,
+     "start": 10.825,
+     "text": "nothing"
+    },
+    {
+     "end": 11.3,
+     "start": 11.15,
+     "text": "is"
+    },
+    {
+     "end": 11.55,
+     "start": 11.3,
+     "text": "read"
+    },
+    {
+     "end": 11.688,
+     "start": 11.55,
+     "text": "from"
+    },
+    {
+     "end": 12.062,
+     "start": 11.688,
+     "text": "outside"
+    },
+    {
+     "end": 12.163,
+     "start": 12.062,
+     "text": "the"
+    },
+    {
+     "end": 13.0,
+     "start": 12.163,
+     "text": "folder"
+    },
+    {
+     "end": 13.225,
+     "start": 13.0,
+     "text": ","
+    },
+    {
+     "end": 13.5,
+     "start": 13.4,
+     "text": "and"
+    },
+    {
+     "end": 13.788,
+     "start": 13.5,
+     "text": "moving"
+    },
+    {
+     "end": 13.875,
+     "start": 13.788,
+     "text": "the"
+    },
+    {
+     "end": 14.275,
+     "start": 13.875,
+     "text": "folder"
+    },
+    {
+     "end": 14.538,
+     "start": 14.275,
+     "text": "moves"
+    },
+    {
+     "end": 14.613,
+     "start": 14.538,
+     "text": "the"
+    },
+    {
+     "end": 15.8,
+     "start": 14.613,
+     "text": "installation"
+    },
+    {
+     "end": 15.975,
+     "start": 15.8,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-is-inside-the-tarball-02": {
+   "audio_sha256": "8dd0c9b9176ad9e5e7c7b23fb5aea6709ff8f727bd54144bc53ca2b32502bd60",
+   "characters": 283,
+   "cost": 0.00028016999999999994,
+   "duration": 18.575,
+   "index": 2,
+   "key": "0b369deed1abec627e4c01f1f28d146c15a32db8d28218aebf670da3c5b4afd9",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-is-inside-the-tarball",
+   "sent_text": "On Linux the folder lib also holds the C library and its loader, and the launcher starts the program through that loader, which is why the programs do not depend on the distribution's libraries. On macOS the programs load only the libraries macOS itself provides and the ones in lib.",
+   "text": "On Linux the folder lib also holds the C library and its loader, and the launcher starts the program through that loader, which is why the programs do not depend on the distribution's libraries. On macOS the programs load only the libraries macOS itself provides and the ones in lib.",
+   "words": [
+    {
+     "end": 0.45,
+     "start": 0.275,
+     "text": "On"
+    },
+    {
+     "end": 0.875,
+     "start": 0.45,
+     "text": "Linux"
+    },
+    {
+     "end": 1.013,
+     "start": 0.875,
+     "text": "the"
+    },
+    {
+     "end": 1.425,
+     "start": 1.013,
+     "text": "folder"
+    },
+    {
+     "end": 1.663,
+     "start": 1.425,
+     "text": "lib"
+    },
+    {
+     "end": 2.05,
+     "start": 1.663,
+     "text": "also"
+    },
+    {
+     "end": 2.425,
+     "start": 2.05,
+     "text": "holds"
+    },
+    {
+     "end": 2.575,
+     "start": 2.425,
+     "text": "the"
+    },
+    {
+     "end": 2.85,
+     "start": 2.575,
+     "text": "C"
+    },
+    {
+     "end": 3.487,
+     "start": 2.85,
+     "text": "library"
+    },
+    {
+     "end": 3.612,
+     "start": 3.487,
+     "text": "and"
+    },
+    {
+     "end": 3.812,
+     "start": 3.612,
+     "text": "its"
+    },
+    {
+     "end": 4.325,
+     "start": 3.812,
+     "text": "loader"
+    },
+    {
+     "end": 4.4,
+     "start": 4.325,
+     "text": ","
+    },
+    {
+     "end": 4.512,
+     "start": 4.4,
+     "text": "and"
+    },
+    {
+     "end": 4.6,
+     "start": 4.512,
+     "text": "the"
+    },
+    {
+     "end": 5.05,
+     "start": 4.6,
+     "text": "launcher"
+    },
+    {
+     "end": 5.425,
+     "start": 5.05,
+     "text": "starts"
+    },
+    {
+     "end": 5.525,
+     "start": 5.425,
+     "text": "the"
+    },
+    {
+     "end": 6.075,
+     "start": 5.525,
+     "text": "program"
+    },
+    {
+     "end": 6.275,
+     "start": 6.075,
+     "text": "through"
+    },
+    {
+     "end": 6.55,
+     "start": 6.275,
+     "text": "that"
+    },
+    {
+     "end": 7.0,
+     "start": 6.55,
+     "text": "loader"
+    },
+    {
+     "end": 7.075,
+     "start": 7.0,
+     "text": ","
+    },
+    {
+     "end": 7.275,
+     "start": 7.075,
+     "text": "which"
+    },
+    {
+     "end": 7.425,
+     "start": 7.275,
+     "text": "is"
+    },
+    {
+     "end": 7.625,
+     "start": 7.425,
+     "text": "why"
+    },
+    {
+     "end": 7.725,
+     "start": 7.625,
+     "text": "the"
+    },
+    {
+     "end": 8.413,
+     "start": 7.725,
+     "text": "programs"
+    },
+    {
+     "end": 8.6,
+     "start": 8.413,
+     "text": "do"
+    },
+    {
+     "end": 8.825,
+     "start": 8.6,
+     "text": "not"
+    },
+    {
+     "end": 9.238,
+     "start": 8.825,
+     "text": "depend"
+    },
+    {
+     "end": 9.337,
+     "start": 9.238,
+     "text": "on"
+    },
+    {
+     "end": 9.425,
+     "start": 9.337,
+     "text": "the"
+    },
+    {
+     "end": 10.2,
+     "start": 9.425,
+     "text": "distribution's"
+    },
+    {
+     "end": 11.6,
+     "start": 10.2,
+     "text": "libraries"
+    },
+    {
+     "end": 11.825,
+     "start": 11.6,
+     "text": "."
+    },
+    {
+     "end": 12.175,
+     "start": 12.025,
+     "text": "On"
+    },
+    {
+     "end": 12.875,
+     "start": 12.175,
+     "text": "macOS"
+    },
+    {
+     "end": 12.975,
+     "start": 12.875,
+     "text": "the"
+    },
+    {
+     "end": 13.575,
+     "start": 12.975,
+     "text": "programs"
+    },
+    {
+     "end": 13.863,
+     "start": 13.575,
+     "text": "load"
+    },
+    {
+     "end": 14.225,
+     "start": 13.863,
+     "text": "only"
+    },
+    {
+     "end": 14.35,
+     "start": 14.225,
+     "text": "the"
+    },
+    {
+     "end": 14.975,
+     "start": 14.35,
+     "text": "libraries"
+    },
+    {
+     "end": 15.55,
+     "start": 14.975,
+     "text": "macOS"
+    },
+    {
+     "end": 15.95,
+     "start": 15.55,
+     "text": "itself"
+    },
+    {
+     "end": 16.75,
+     "start": 15.95,
+     "text": "provides"
+    },
+    {
+     "end": 16.888,
+     "start": 16.75,
+     "text": "and"
+    },
+    {
+     "end": 16.975,
+     "start": 16.888,
+     "text": "the"
+    },
+    {
+     "end": 17.3,
+     "start": 16.975,
+     "text": "ones"
+    },
+    {
+     "end": 17.45,
+     "start": 17.3,
+     "text": "in"
+    },
+    {
+     "end": 18.3,
+     "start": 17.45,
+     "text": "lib"
+    },
+    {
+     "end": 18.575,
+     "start": 18.3,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-download-00": {
+   "audio_sha256": "7cea55e5bd84fc5acf301029fe5506ab2baf8c1d7e4b4d8e143e1328a61536f5",
+   "characters": 18,
+   "cost": 1.782e-05,
+   "duration": 1.4,
+   "index": 0,
+   "key": "7c1013d04c27eebc201b732fda7c90ed829d5343569ccf7fa5adaf655e73b966",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "what-you-download",
+   "sent_text": "What you download.",
+   "text": "What you download.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "you"
+    },
+    {
+     "end": 1.2,
+     "start": 0.375,
+     "text": "download"
+    },
+    {
+     "end": 1.4,
+     "start": 1.2,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-download-01": {
+   "audio_sha256": "8467cbba2db25a1689f43f39ae7e2422d9835db2b74fd47de4dfb2d9f9e9df4a",
+   "characters": 250,
+   "cost": 0.0002475,
+   "duration": 19.6,
+   "index": 1,
+   "key": "04504521ebae078324ba75dd38d3acf2eeeae7f4d90a6c33fb666b6cf3d85b7f",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-you-download",
+   "sent_text": "Every release after 0.12.0 carries one tarball per platform beside the documentation and on-chain archives, and one SHA256SUMS that lists all of them. A tarball holds both commands, singular and open-datum, with every library and data file they need.",
+   "text": "Every release after 0.12.0 carries one tarball per platform beside the documentation and on-chain archives, and one SHA256SUMS that lists all of them. A tarball holds both commands, singular and open-datum, with every library and data file they need.",
+   "words": [
+    {
+     "end": 0.55,
+     "start": 0.25,
+     "text": "Every"
+    },
+    {
+     "end": 1.0,
+     "start": 0.55,
+     "text": "release"
+    },
+    {
+     "end": 1.362,
+     "start": 1.0,
+     "text": "after"
+    },
+    {
+     "end": 2.588,
+     "start": 1.362,
+     "text": "0.12.0"
+    },
+    {
+     "end": 3.013,
+     "start": 2.588,
+     "text": "carries"
+    },
+    {
+     "end": 3.287,
+     "start": 3.013,
+     "text": "one"
+    },
+    {
+     "end": 3.8,
+     "start": 3.287,
+     "text": "tarball"
+    },
+    {
+     "end": 3.95,
+     "start": 3.8,
+     "text": "per"
+    },
+    {
+     "end": 4.6,
+     "start": 3.95,
+     "text": "platform"
+    },
+    {
+     "end": 4.988,
+     "start": 4.6,
+     "text": "beside"
+    },
+    {
+     "end": 5.075,
+     "start": 4.988,
+     "text": "the"
+    },
+    {
+     "end": 6.075,
+     "start": 5.075,
+     "text": "documentation"
+    },
+    {
+     "end": 6.213,
+     "start": 6.075,
+     "text": "and"
+    },
+    {
+     "end": 6.775,
+     "start": 6.213,
+     "text": "on-chain"
+    },
+    {
+     "end": 7.6,
+     "start": 6.775,
+     "text": "archives"
+    },
+    {
+     "end": 7.7,
+     "start": 7.6,
+     "text": ","
+    },
+    {
+     "end": 7.838,
+     "start": 7.7,
+     "text": "and"
+    },
+    {
+     "end": 8.238,
+     "start": 7.838,
+     "text": "one"
+    },
+    {
+     "end": 10.5,
+     "start": 8.238,
+     "text": "SHA256SUMS"
+    },
+    {
+     "end": 10.7,
+     "start": 10.5,
+     "text": "that"
+    },
+    {
+     "end": 11.038,
+     "start": 10.7,
+     "text": "lists"
+    },
+    {
+     "end": 11.3,
+     "start": 11.038,
+     "text": "all"
+    },
+    {
+     "end": 11.425,
+     "start": 11.3,
+     "text": "of"
+    },
+    {
+     "end": 12.4,
+     "start": 11.425,
+     "text": "them"
+    },
+    {
+     "end": 12.65,
+     "start": 12.4,
+     "text": "."
+    },
+    {
+     "end": 12.925,
+     "start": 12.85,
+     "text": "A"
+    },
+    {
+     "end": 13.375,
+     "start": 12.925,
+     "text": "tarball"
+    },
+    {
+     "end": 13.7,
+     "start": 13.375,
+     "text": "holds"
+    },
+    {
+     "end": 14.0,
+     "start": 13.7,
+     "text": "both"
+    },
+    {
+     "end": 14.7,
+     "start": 14.0,
+     "text": "commands"
+    },
+    {
+     "end": 14.8,
+     "start": 14.7,
+     "text": ","
+    },
+    {
+     "end": 15.413,
+     "start": 14.8,
+     "text": "singular"
+    },
+    {
+     "end": 15.55,
+     "start": 15.413,
+     "text": "and"
+    },
+    {
+     "end": 16.325,
+     "start": 15.55,
+     "text": "open-datum"
+    },
+    {
+     "end": 16.4,
+     "start": 16.325,
+     "text": ","
+    },
+    {
+     "end": 16.587,
+     "start": 16.4,
+     "text": "with"
+    },
+    {
+     "end": 16.925,
+     "start": 16.587,
+     "text": "every"
+    },
+    {
+     "end": 17.5,
+     "start": 16.925,
+     "text": "library"
+    },
+    {
+     "end": 17.625,
+     "start": 17.5,
+     "text": "and"
+    },
+    {
+     "end": 17.938,
+     "start": 17.625,
+     "text": "data"
+    },
+    {
+     "end": 18.25,
+     "start": 17.938,
+     "text": "file"
+    },
+    {
+     "end": 18.4,
+     "start": 18.25,
+     "text": "they"
+    },
+    {
+     "end": 19.375,
+     "start": 18.4,
+     "text": "need"
+    },
+    {
+     "end": 19.6,
+     "start": 19.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-download-02": {
+   "audio_sha256": "c81027b88fb7696f982bfc342900f421ec9494c4ac0324021f2da4cb4661a266",
+   "characters": 119,
+   "cost": 0.00011781,
+   "duration": 11.4,
+   "index": 2,
+   "key": "b646a163a9d2833f3826750df45dc75e19ce482038184f0f9d355f052cb8ffdd",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-you-download",
+   "sent_text": "Replace X.Y.Z with the release you want. The releases are listed at https://github.com/lambdasistemi/singular/releases.",
+   "text": "Replace X.Y.Z with the release you want. The releases are listed at https://github.com/lambdasistemi/singular/releases.",
+   "words": [
+    {
+     "end": 0.525,
+     "start": 0.175,
+     "text": "Replace"
+    },
+    {
+     "end": 1.138,
+     "start": 0.525,
+     "text": "X.Y.Z"
+    },
+    {
+     "end": 1.237,
+     "start": 1.138,
+     "text": "with"
+    },
+    {
+     "end": 1.325,
+     "start": 1.237,
+     "text": "the"
+    },
+    {
+     "end": 1.675,
+     "start": 1.325,
+     "text": "release"
+    },
+    {
+     "end": 1.825,
+     "start": 1.675,
+     "text": "you"
+    },
+    {
+     "end": 2.575,
+     "start": 1.825,
+     "text": "want"
+    },
+    {
+     "end": 2.775,
+     "start": 2.575,
+     "text": "."
+    },
+    {
+     "end": 3.05,
+     "start": 2.975,
+     "text": "The"
+    },
+    {
+     "end": 3.575,
+     "start": 3.05,
+     "text": "releases"
+    },
+    {
+     "end": 3.725,
+     "start": 3.575,
+     "text": "are"
+    },
+    {
+     "end": 4.137,
+     "start": 3.725,
+     "text": "listed"
+    },
+    {
+     "end": 4.3,
+     "start": 4.137,
+     "text": "at"
+    },
+    {
+     "end": 11.2,
+     "start": 4.3,
+     "text": "https://github.com/lambdasistemi/singular/releases"
+    },
+    {
+     "end": 11.4,
+     "start": 11.2,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-see-when-it-works-00": {
+   "audio_sha256": "485591c4f7a9a6c78d5308143bb505338371f12a8d9a55c04a05ccbcd2f0cd8f",
+   "characters": 27,
+   "cost": 2.673e-05,
+   "duration": 1.7,
+   "index": 0,
+   "key": "3362f00357d1c9b413c7c0d1754e8618259c064c1ac012dd9312a3401a3c1a5a",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "what-you-see-when-it-works",
+   "sent_text": "What you see when it works.",
+   "text": "What you see when it works.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "What"
+    },
+    {
+     "end": 0.4,
+     "start": 0.287,
+     "text": "you"
+    },
+    {
+     "end": 0.562,
+     "start": 0.4,
+     "text": "see"
+    },
+    {
+     "end": 0.688,
+     "start": 0.562,
+     "text": "when"
+    },
+    {
+     "end": 0.775,
+     "start": 0.688,
+     "text": "it"
+    },
+    {
+     "end": 1.5,
+     "start": 0.775,
+     "text": "works"
+    },
+    {
+     "end": 1.7,
+     "start": 1.5,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-see-when-it-works-01": {
+   "audio_sha256": "c41a1a899b71e1685a1237463532eb65d64a6e1ccf65e4727238bd52ba9d7d20",
+   "characters": 147,
+   "cost": 0.00014553,
+   "duration": 9.55,
+   "index": 1,
+   "key": "c5ddf42431e505bd320b1d1c75b4472c9706bcddc9fde439729629f2a3febf3c",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-you-see-when-it-works",
+   "sent_text": "Each command prints its name, the release and the commit it was built from, and exits with status 0. The commit is the one the release's tag names.",
+   "text": "Each command prints its name, the release and the commit it was built from, and exits with status 0. The commit is the one the release's tag names.",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.2,
+     "text": "Each"
+    },
+    {
+     "end": 0.962,
+     "start": 0.425,
+     "text": "command"
+    },
+    {
+     "end": 1.275,
+     "start": 0.962,
+     "text": "prints"
+    },
+    {
+     "end": 1.475,
+     "start": 1.275,
+     "text": "its"
+    },
+    {
+     "end": 1.9,
+     "start": 1.475,
+     "text": "name"
+    },
+    {
+     "end": 1.975,
+     "start": 1.9,
+     "text": ","
+    },
+    {
+     "end": 2.075,
+     "start": 1.975,
+     "text": "the"
+    },
+    {
+     "end": 2.55,
+     "start": 2.075,
+     "text": "release"
+    },
+    {
+     "end": 2.662,
+     "start": 2.55,
+     "text": "and"
+    },
+    {
+     "end": 2.75,
+     "start": 2.662,
+     "text": "the"
+    },
+    {
+     "end": 3.125,
+     "start": 2.75,
+     "text": "commit"
+    },
+    {
+     "end": 3.213,
+     "start": 3.125,
+     "text": "it"
+    },
+    {
+     "end": 3.388,
+     "start": 3.213,
+     "text": "was"
+    },
+    {
+     "end": 3.675,
+     "start": 3.388,
+     "text": "built"
+    },
+    {
+     "end": 3.975,
+     "start": 3.675,
+     "text": "from"
+    },
+    {
+     "end": 4.05,
+     "start": 3.975,
+     "text": ","
+    },
+    {
+     "end": 4.213,
+     "start": 4.05,
+     "text": "and"
+    },
+    {
+     "end": 4.675,
+     "start": 4.213,
+     "text": "exits"
+    },
+    {
+     "end": 4.85,
+     "start": 4.675,
+     "text": "with"
+    },
+    {
+     "end": 5.312,
+     "start": 4.85,
+     "text": "status"
+    },
+    {
+     "end": 6.425,
+     "start": 5.312,
+     "text": "0"
+    },
+    {
+     "end": 6.625,
+     "start": 6.425,
+     "text": "."
+    },
+    {
+     "end": 6.875,
+     "start": 6.8,
+     "text": "The"
+    },
+    {
+     "end": 7.25,
+     "start": 6.875,
+     "text": "commit"
+    },
+    {
+     "end": 7.387,
+     "start": 7.25,
+     "text": "is"
+    },
+    {
+     "end": 7.475,
+     "start": 7.387,
+     "text": "the"
+    },
+    {
+     "end": 7.662,
+     "start": 7.475,
+     "text": "one"
+    },
+    {
+     "end": 7.75,
+     "start": 7.662,
+     "text": "the"
+    },
+    {
+     "end": 8.25,
+     "start": 7.75,
+     "text": "release's"
+    },
+    {
+     "end": 8.55,
+     "start": 8.25,
+     "text": "tag"
+    },
+    {
+     "end": 9.35,
+     "start": 8.55,
+     "text": "names"
+    },
+    {
+     "end": 9.55,
+     "start": 9.35,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-see-when-it-works-02": {
+   "audio_sha256": "20db75e70546ccccbe781aaa7fd2aeeee32e571f2a35dfb8e40824abbda29075",
+   "characters": 209,
+   "cost": 0.00020690999999999998,
+   "duration": 12.75,
+   "index": 2,
+   "key": "fd7cab01953879a50b4b46c78b69c725eec88c57a999a07301ebb5184ee0ea42",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-you-see-when-it-works",
+   "sent_text": "The wallet commands run offline, so they are the quickest check that the programs work on your machine. Choose a passphrase; the program reads it from the standard input here and never takes it as an argument.",
+   "text": "The wallet commands run offline, so they are the quickest check that the programs work on your machine. Choose a passphrase; the program reads it from the standard input here and never takes it as an argument.",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.7,
+     "start": 0.312,
+     "text": "wallet"
+    },
+    {
+     "end": 1.163,
+     "start": 0.7,
+     "text": "commands"
+    },
+    {
+     "end": 1.45,
+     "start": 1.163,
+     "text": "run"
+    },
+    {
+     "end": 2.1,
+     "start": 1.45,
+     "text": "offline"
+    },
+    {
+     "end": 2.2,
+     "start": 2.1,
+     "text": ","
+    },
+    {
+     "end": 2.375,
+     "start": 2.2,
+     "text": "so"
+    },
+    {
+     "end": 2.525,
+     "start": 2.375,
+     "text": "they"
+    },
+    {
+     "end": 2.638,
+     "start": 2.525,
+     "text": "are"
+    },
+    {
+     "end": 2.763,
+     "start": 2.638,
+     "text": "the"
+    },
+    {
+     "end": 3.237,
+     "start": 2.763,
+     "text": "quickest"
+    },
+    {
+     "end": 3.55,
+     "start": 3.237,
+     "text": "check"
+    },
+    {
+     "end": 3.662,
+     "start": 3.55,
+     "text": "that"
+    },
+    {
+     "end": 3.75,
+     "start": 3.662,
+     "text": "the"
+    },
+    {
+     "end": 4.325,
+     "start": 3.75,
+     "text": "programs"
+    },
+    {
+     "end": 4.562,
+     "start": 4.325,
+     "text": "work"
+    },
+    {
+     "end": 4.688,
+     "start": 4.562,
+     "text": "on"
+    },
+    {
+     "end": 4.787,
+     "start": 4.688,
+     "text": "your"
+    },
+    {
+     "end": 5.9,
+     "start": 4.787,
+     "text": "machine"
+    },
+    {
+     "end": 6.1,
+     "start": 5.9,
+     "text": "."
+    },
+    {
+     "end": 6.562,
+     "start": 6.325,
+     "text": "Choose"
+    },
+    {
+     "end": 6.637,
+     "start": 6.562,
+     "text": "a"
+    },
+    {
+     "end": 7.425,
+     "start": 6.637,
+     "text": "passphrase"
+    },
+    {
+     "end": 7.463,
+     "start": 7.425,
+     "text": ";"
+    },
+    {
+     "end": 7.55,
+     "start": 7.463,
+     "text": "the"
+    },
+    {
+     "end": 8.087,
+     "start": 7.55,
+     "text": "program"
+    },
+    {
+     "end": 8.425,
+     "start": 8.087,
+     "text": "reads"
+    },
+    {
+     "end": 8.55,
+     "start": 8.425,
+     "text": "it"
+    },
+    {
+     "end": 8.712,
+     "start": 8.55,
+     "text": "from"
+    },
+    {
+     "end": 8.812,
+     "start": 8.712,
+     "text": "the"
+    },
+    {
+     "end": 9.375,
+     "start": 8.812,
+     "text": "standard"
+    },
+    {
+     "end": 9.825,
+     "start": 9.375,
+     "text": "input"
+    },
+    {
+     "end": 10.188,
+     "start": 9.825,
+     "text": "here"
+    },
+    {
+     "end": 10.325,
+     "start": 10.188,
+     "text": "and"
+    },
+    {
+     "end": 10.65,
+     "start": 10.325,
+     "text": "never"
+    },
+    {
+     "end": 11.0,
+     "start": 10.65,
+     "text": "takes"
+    },
+    {
+     "end": 11.163,
+     "start": 11.0,
+     "text": "it"
+    },
+    {
+     "end": 11.288,
+     "start": 11.163,
+     "text": "as"
+    },
+    {
+     "end": 11.4,
+     "start": 11.288,
+     "text": "an"
+    },
+    {
+     "end": 12.525,
+     "start": 11.4,
+     "text": "argument"
+    },
+    {
+     "end": 12.75,
+     "start": 12.525,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-you-see-when-it-works-03": {
+   "audio_sha256": "2f24d93bbfbfbd14a01ffa396ef7872cac8820b81dd6c34b6f8992107ddafce7",
+   "characters": 145,
+   "cost": 0.00014355,
+   "duration": 9.275,
+   "index": 3,
+   "key": "fce970e28372ddb4134657b31b2b6ef0c46b9abaaecf6f5d0a861e1c692cc5e1",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-you-see-when-it-works",
+   "sent_text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the first demo.",
+   "text": "Both commands print the same address, which begins with addr_test1 on the preprod network. From here the commands are the ones of the first demo.",
+   "words": [
+    {
+     "end": 0.475,
+     "start": 0.2,
+     "text": "Both"
+    },
+    {
+     "end": 0.962,
+     "start": 0.475,
+     "text": "commands"
+    },
+    {
+     "end": 1.188,
+     "start": 0.962,
+     "text": "print"
+    },
+    {
+     "end": 1.312,
+     "start": 1.188,
+     "text": "the"
+    },
+    {
+     "end": 1.6,
+     "start": 1.312,
+     "text": "same"
+    },
+    {
+     "end": 2.15,
+     "start": 1.6,
+     "text": "address"
+    },
+    {
+     "end": 2.225,
+     "start": 2.15,
+     "text": ","
+    },
+    {
+     "end": 2.425,
+     "start": 2.225,
+     "text": "which"
+    },
+    {
+     "end": 2.9,
+     "start": 2.425,
+     "text": "begins"
+    },
+    {
+     "end": 3.05,
+     "start": 2.9,
+     "text": "with"
+    },
+    {
+     "end": 4.075,
+     "start": 3.05,
+     "text": "addr_test1"
+    },
+    {
+     "end": 4.213,
+     "start": 4.075,
+     "text": "on"
+    },
+    {
+     "end": 4.3,
+     "start": 4.213,
+     "text": "the"
+    },
+    {
+     "end": 4.8,
+     "start": 4.3,
+     "text": "preprod"
+    },
+    {
+     "end": 5.8,
+     "start": 4.8,
+     "text": "network"
+    },
+    {
+     "end": 6.025,
+     "start": 5.8,
+     "text": "."
+    },
+    {
+     "end": 6.35,
+     "start": 6.2,
+     "text": "From"
+    },
+    {
+     "end": 6.575,
+     "start": 6.35,
+     "text": "here"
+    },
+    {
+     "end": 6.675,
+     "start": 6.575,
+     "text": "the"
+    },
+    {
+     "end": 7.25,
+     "start": 6.675,
+     "text": "commands"
+    },
+    {
+     "end": 7.338,
+     "start": 7.25,
+     "text": "are"
+    },
+    {
+     "end": 7.425,
+     "start": 7.338,
+     "text": "the"
+    },
+    {
+     "end": 7.688,
+     "start": 7.425,
+     "text": "ones"
+    },
+    {
+     "end": 7.762,
+     "start": 7.688,
+     "text": "of"
+    },
+    {
+     "end": 7.863,
+     "start": 7.762,
+     "text": "the"
+    },
+    {
+     "end": 8.2,
+     "start": 7.863,
+     "text": "first"
+    },
+    {
+     "end": 9.05,
+     "start": 8.2,
+     "text": "demo"
+    },
+    {
+     "end": 9.275,
+     "start": 9.05,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/when-it-does-not-work-00": {
+   "audio_sha256": "c0e257118c2a489f714f5903efe5e562c28f1aebc5b6eb7bdb277d4d0e0ed7c0",
+   "characters": 22,
+   "cost": 2.1779999999999998e-05,
+   "duration": 1.575,
+   "index": 0,
+   "key": "be318fb24e38f729590af17db289c3499e4cc3895c0871b0ae609b78f611e5cb",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "when-it-does-not-work",
+   "sent_text": "When it does not work.",
+   "text": "When it does not work.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "When"
+    },
+    {
+     "end": 0.363,
+     "start": 0.287,
+     "text": "it"
+    },
+    {
+     "end": 0.488,
+     "start": 0.363,
+     "text": "does"
+    },
+    {
+     "end": 0.7,
+     "start": 0.488,
+     "text": "not"
+    },
+    {
+     "end": 1.375,
+     "start": 0.7,
+     "text": "work"
+    },
+    {
+     "end": 1.575,
+     "start": 1.375,
+     "text": "."
+    }
+   ]
+  },
   "docs-io-ownership/decisions-this-design-took-00": {
    "audio_sha256": "ab142bf5e0e3624b1276e67745f6a5a94bb9fa5210f7f60833c1d8f8417cb370",
    "characters": 27,

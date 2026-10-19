@@ -13,6 +13,7 @@ nav:
       - "Start here: Demo 1 with your own wallet and Koios": docs/consumer-onboarding.md
       - Play Demo 1 on preprod: docs/demo1-on-preprod.md
       - Demo 1 on a development node: docs/demo1-devnet.md
+      - Install the commands without Nix: docs/install.md
       - Download and verify a release: docs/verify-release.md
       - What a reviewer checks on preprod: docs/demo1-preprod.md
   - Dated demos:
