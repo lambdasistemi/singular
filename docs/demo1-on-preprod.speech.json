@@ -163,6 +163,10 @@
       "pause": 400
     },
     {
+      "text": "create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds. The commands below pass 0 and 60 000, the values the development-node page passes, and the registry fixes both for its life. The table at the top says what has been played on preprod: the 18 October run joined an existing registry and did not run this step.",
+      "pause": 400
+    },
+    {
       "text": "The receipt's stateToken is the registry's name: the policy and the asset name in hex, joined by a dot. Every later command takes it as --state-token. If someone gave you a state token instead, skip this step and set token to it: token=(--state-token POLICY.NAME). The directory reg only keeps your own journal; nothing in it names the registry.",
       "pause": 400
     }
@@ -375,6 +379,6 @@
   ],
   "_source": {
     "file": "demo1-on-preprod.md",
-    "sha256": "656ad3d7ff79d5ce219d74aabb352ed4d54dcab2a154d95a3469bb6ca20a0980"
+    "sha256": "df41360eadb78f25b86d299bc6eded350fa5b4e5208982ecf3afc72b6c708b0b"
   }
 }

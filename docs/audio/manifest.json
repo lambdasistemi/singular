@@ -128466,11 +128466,531 @@
    ]
   },
   "docs-demo1-on-preprod/step-1-alice-creates-the-registry-02": {
-   "audio_sha256": "eb787ff426c2aea940a74c9a287966423b1bc8bf3e220708c3962934a7b04a24",
+   "audio_sha256": "658d5f03eee93c6566c4901ff21b8dd82d2d2ec989492c0ba00ddfdd99f0bd4d",
+   "characters": 535,
+   "cost": 0.00052965,
+   "duration": 37.9,
+   "index": 2,
+   "key": "0b12f5327a3866973c3ec731a868dbcca2ac5081637b22e0fc54bf592be0e58a",
+   "page": "docs/demo1-on-preprod.md",
+   "pause_ms": 400,
+   "section": "step-1-alice-creates-the-registry",
+   "sent_text": "create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds. The commands below pass 0 and 60 000, the values the development-node page passes, and the registry fixes both for its life. The table at the top says what has been played on preprod: the 18 October run joined an existing registry and did not run this step.",
+   "text": "create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds. The commands below pass 0 and 60 000, the values the development-node page passes, and the registry fixes both for its life. The table at the top says what has been played on preprod: the 18 October run joined an existing registry and did not run this step.",
+   "words": [
+    {
+     "end": 0.5,
+     "start": 0.2,
+     "text": "create"
+    },
+    {
+     "end": 0.812,
+     "start": 0.5,
+     "text": "also"
+    },
+    {
+     "end": 1.087,
+     "start": 0.812,
+     "text": "needs"
+    },
+    {
+     "end": 1.3,
+     "start": 1.087,
+     "text": "two"
+    },
+    {
+     "end": 1.763,
+     "start": 1.3,
+     "text": "values"
+    },
+    {
+     "end": 1.862,
+     "start": 1.763,
+     "text": "that"
+    },
+    {
+     "end": 2.05,
+     "start": 1.862,
+     "text": "have"
+    },
+    {
+     "end": 2.225,
+     "start": 2.05,
+     "text": "no"
+    },
+    {
+     "end": 3.2,
+     "start": 2.225,
+     "text": "default"
+    },
+    {
+     "end": 3.4,
+     "start": 3.2,
+     "text": ":"
+    },
+    {
+     "end": 4.738,
+     "start": 3.6,
+     "text": "registration-cost"
+    },
+    {
+     "end": 6.15,
+     "start": 4.738,
+     "text": "LOVELACE"
+    },
+    {
+     "end": 6.25,
+     "start": 6.15,
+     "text": ","
+    },
+    {
+     "end": 6.387,
+     "start": 6.25,
+     "text": "the"
+    },
+    {
+     "end": 6.775,
+     "start": 6.387,
+     "text": "cost"
+    },
+    {
+     "end": 7.025,
+     "start": 6.775,
+     "text": "each"
+    },
+    {
+     "end": 7.738,
+     "start": 7.025,
+     "text": "registration"
+    },
+    {
+     "end": 7.812,
+     "start": 7.738,
+     "text": "of"
+    },
+    {
+     "end": 7.9,
+     "start": 7.812,
+     "text": "the"
+    },
+    {
+     "end": 8.4,
+     "start": 7.9,
+     "text": "registry"
+    },
+    {
+     "end": 9.425,
+     "start": 8.4,
+     "text": "pays"
+    },
+    {
+     "end": 9.625,
+     "start": 9.425,
+     "text": ","
+    },
+    {
+     "end": 9.925,
+     "start": 9.825,
+     "text": "in"
+    },
+    {
+     "end": 10.35,
+     "start": 9.925,
+     "text": "lovelace"
+    },
+    {
+     "end": 10.4,
+     "start": 10.35,
+     "text": ","
+    },
+    {
+     "end": 10.725,
+     "start": 10.4,
+     "text": "zero"
+    },
+    {
+     "end": 10.85,
+     "start": 10.725,
+     "text": "or"
+    },
+    {
+     "end": 11.125,
+     "start": 10.85,
+     "text": "more"
+    },
+    {
+     "end": 11.175,
+     "start": 11.125,
+     "text": ","
+    },
+    {
+     "end": 11.3,
+     "start": 11.175,
+     "text": "and"
+    },
+    {
+     "end": 11.775,
+     "start": 11.3,
+     "text": "--booking-width"
+    },
+    {
+     "end": 12.675,
+     "start": 11.775,
+     "text": "MS"
+    },
+    {
+     "end": 12.875,
+     "start": 12.675,
+     "text": ","
+    },
+    {
+     "end": 13.163,
+     "start": 13.05,
+     "text": "the"
+    },
+    {
+     "end": 13.575,
+     "start": 13.163,
+     "text": "widest"
+    },
+    {
+     "end": 14.212,
+     "start": 13.575,
+     "text": "validity"
+    },
+    {
+     "end": 14.625,
+     "start": 14.212,
+     "text": "interval"
+    },
+    {
+     "end": 14.725,
+     "start": 14.625,
+     "text": "a"
+    },
+    {
+     "end": 15.525,
+     "start": 14.725,
+     "text": "registration"
+    },
+    {
+     "end": 15.875,
+     "start": 15.525,
+     "text": "booking"
+    },
+    {
+     "end": 16.05,
+     "start": 15.875,
+     "text": "may"
+    },
+    {
+     "end": 16.9,
+     "start": 16.05,
+     "text": "carry"
+    },
+    {
+     "end": 17.125,
+     "start": 16.9,
+     "text": ","
+    },
+    {
+     "end": 17.45,
+     "start": 17.325,
+     "text": "in"
+    },
+    {
+     "end": 17.95,
+     "start": 17.45,
+     "text": "positive"
+    },
+    {
+     "end": 18.275,
+     "start": 17.95,
+     "text": "integer"
+    },
+    {
+     "end": 19.425,
+     "start": 18.275,
+     "text": "milliseconds"
+    },
+    {
+     "end": 19.625,
+     "start": 19.425,
+     "text": "."
+    },
+    {
+     "end": 19.9,
+     "start": 19.825,
+     "text": "The"
+    },
+    {
+     "end": 20.425,
+     "start": 19.9,
+     "text": "commands"
+    },
+    {
+     "end": 20.788,
+     "start": 20.425,
+     "text": "below"
+    },
+    {
+     "end": 21.163,
+     "start": 20.788,
+     "text": "pass"
+    },
+    {
+     "end": 21.688,
+     "start": 21.163,
+     "text": "0"
+    },
+    {
+     "end": 21.862,
+     "start": 21.688,
+     "text": "and"
+    },
+    {
+     "end": 22.288,
+     "start": 21.862,
+     "text": "60"
+    },
+    {
+     "end": 22.775,
+     "start": 22.288,
+     "text": "000"
+    },
+    {
+     "end": 22.875,
+     "start": 22.775,
+     "text": ","
+    },
+    {
+     "end": 23.013,
+     "start": 22.875,
+     "text": "the"
+    },
+    {
+     "end": 23.525,
+     "start": 23.013,
+     "text": "values"
+    },
+    {
+     "end": 23.625,
+     "start": 23.525,
+     "text": "the"
+    },
+    {
+     "end": 24.413,
+     "start": 23.625,
+     "text": "development-node"
+    },
+    {
+     "end": 24.812,
+     "start": 24.413,
+     "text": "page"
+    },
+    {
+     "end": 25.525,
+     "start": 24.812,
+     "text": "passes"
+    },
+    {
+     "end": 25.6,
+     "start": 25.525,
+     "text": ","
+    },
+    {
+     "end": 25.712,
+     "start": 25.6,
+     "text": "and"
+    },
+    {
+     "end": 25.8,
+     "start": 25.712,
+     "text": "the"
+    },
+    {
+     "end": 26.312,
+     "start": 25.8,
+     "text": "registry"
+    },
+    {
+     "end": 26.788,
+     "start": 26.312,
+     "text": "fixes"
+    },
+    {
+     "end": 27.15,
+     "start": 26.788,
+     "text": "both"
+    },
+    {
+     "end": 27.3,
+     "start": 27.15,
+     "text": "for"
+    },
+    {
+     "end": 27.5,
+     "start": 27.3,
+     "text": "its"
+    },
+    {
+     "end": 28.575,
+     "start": 27.5,
+     "text": "life"
+    },
+    {
+     "end": 28.8,
+     "start": 28.575,
+     "text": "."
+    },
+    {
+     "end": 29.05,
+     "start": 28.975,
+     "text": "The"
+    },
+    {
+     "end": 29.388,
+     "start": 29.05,
+     "text": "table"
+    },
+    {
+     "end": 29.462,
+     "start": 29.388,
+     "text": "at"
+    },
+    {
+     "end": 29.562,
+     "start": 29.462,
+     "text": "the"
+    },
+    {
+     "end": 29.987,
+     "start": 29.562,
+     "text": "top"
+    },
+    {
+     "end": 30.25,
+     "start": 29.987,
+     "text": "says"
+    },
+    {
+     "end": 30.388,
+     "start": 30.25,
+     "text": "what"
+    },
+    {
+     "end": 30.5,
+     "start": 30.388,
+     "text": "has"
+    },
+    {
+     "end": 30.7,
+     "start": 30.5,
+     "text": "been"
+    },
+    {
+     "end": 30.987,
+     "start": 30.7,
+     "text": "played"
+    },
+    {
+     "end": 31.125,
+     "start": 30.987,
+     "text": "on"
+    },
+    {
+     "end": 32.15,
+     "start": 31.125,
+     "text": "preprod"
+    },
+    {
+     "end": 32.35,
+     "start": 32.15,
+     "text": ":"
+    },
+    {
+     "end": 32.662,
+     "start": 32.525,
+     "text": "the"
+    },
+    {
+     "end": 33.162,
+     "start": 32.662,
+     "text": "18"
+    },
+    {
+     "end": 33.737,
+     "start": 33.162,
+     "text": "October"
+    },
+    {
+     "end": 34.062,
+     "start": 33.737,
+     "text": "run"
+    },
+    {
+     "end": 34.438,
+     "start": 34.062,
+     "text": "joined"
+    },
+    {
+     "end": 34.525,
+     "start": 34.438,
+     "text": "an"
+    },
+    {
+     "end": 35.075,
+     "start": 34.525,
+     "text": "existing"
+    },
+    {
+     "end": 35.875,
+     "start": 35.075,
+     "text": "registry"
+    },
+    {
+     "end": 36.013,
+     "start": 35.875,
+     "text": "and"
+    },
+    {
+     "end": 36.138,
+     "start": 36.013,
+     "text": "did"
+    },
+    {
+     "end": 36.375,
+     "start": 36.138,
+     "text": "not"
+    },
+    {
+     "end": 36.625,
+     "start": 36.375,
+     "text": "run"
+    },
+    {
+     "end": 36.8,
+     "start": 36.625,
+     "text": "this"
+    },
+    {
+     "end": 37.675,
+     "start": 36.8,
+     "text": "step"
+    },
+    {
+     "end": 37.9,
+     "start": 37.675,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-on-preprod/step-1-alice-creates-the-registry-03": {
+   "audio_sha256": "d00a77693d1c5c8c6dbd7d45de009b0ece20901fc96341fb70014b7b3d06933d",
    "characters": 345,
    "cost": 0.00034155,
    "duration": 22.775,
-   "index": 2,
+   "index": 3,
    "key": "175232d9da0c1fadbe852b8d65d2ff5d11fe4b962ecda9baa84ec92ff313052b",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 400,
