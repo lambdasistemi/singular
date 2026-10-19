@@ -196,22 +196,6 @@ fn anyValidityRange() -> Fuzzer<Interval<Int>> {
   )
 }
 
-/// The state purpose admits a one-request reject refunding its owner, whatever
-/// the transaction's validity range.
-test prop_reject_admitted_for_every_validity_range(range via anyValidityRange()) {
-  state.state.spend(
-    feeStateDatum,
-    Modify([Rejected]),
-    testStateRef,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: range,
-      outputs: [rejectedStateOutput, refundOutput],
-      inputs: [feeStateInput, feeRequestInput],
-    },
-  )
-}
-
 /// A validity range that does not lie entirely in the processing window of
 /// the `update` state and the requests below (`submitted_at` 0, processing
 /// time 10_000).
@@ -313,45 +297,4 @@ fn pairingCase() -> Fuzzer<(List<Data>, Int, List<Input>, Interval<Int>)> {
       ),
     )
   (actions, rejected, inputs, range)
-}
-
-/// Outside the processing window the request purpose admits the request its
-/// state's fold pairs with `Rejected`, wherever it sits among the requests,
-/// whatever the other requests' actions (data model D-02). The refusing side,
-/// a request paired with an update, is the `fail` tests of
-/// `cage_contribute.tests.ak`.
-test prop_request_admits_the_request_its_fold_rejects(case via pairingCase()) {
-  let (actions, rejected, inputs, range) = case
-  fuzz.label(
-    if list.length(actions) == 1 {
-      @"one request"
-    } else {
-      @"several requests"
-    },
-  )
-  request_validator.request.spend(
-    "policy_id",
-    testToken.assetName,
-    Some(
-      RequestDatum(
-        Request {
-          requestToken: testToken,
-          requestKey: "42",
-          edge: 1,
-          requestOwner: "owner",
-          deposit: 0,
-          submitted_at: 0,
-          destination: noDestination,
-        },
-      ),
-    ),
-    Contribute(testStateRef),
-    pendingRequest(rejected).output_reference,
-    Transaction {
-      ..transaction.placeholder,
-      validity_range: range,
-      inputs,
-      redeemers: [stateSpendRedeemerData(modifyRedeemerData(actions))],
-    },
-  )
 }

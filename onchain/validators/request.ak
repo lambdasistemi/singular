@@ -12,12 +12,11 @@ use cardano/transaction.{
 use lib.{edgeInsertAbsent, edgeInsertActive, edgeWitnessTerminal}
 use registry/refusal.{traceFalse}
 use shared.{
-  carriesStateToken, in_phase1, in_phase2, inputByRef, inputOrReferenceByRef,
-  readState,
+  carriesStateToken, in_phase2, inputByRef, inputOrReferenceByRef, readState,
 }
 use types.{
-  CageDatum, Contribute, Modify, Rejected, Request, RequestAction, RequestDatum,
-  Retract, State, Sweep, TokenId, UpdateRedeemer,
+  CageDatum, Contribute, Modify, RegistrationDatum, Request, RequestAction,
+  RequestDatum, Retract, State, Sweep, TerminationDatum, TokenId, UpdateRedeemer,
 }
 
 validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
@@ -29,17 +28,31 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
   ) {
     let cageToken = TokenId { assetName: cageTokenName }
     when redeemer is {
-      Contribute(stateRef) -> {
-        expect Some(RequestDatum(request)) = maybeDatum
-        validateContribute(
-          statePolicyId,
-          cageToken,
-          request,
-          self,
-          stateRef,
-          tx,
-        )
-      }
+      // A pending request is spendable only inside a fold of the registry it
+      // names: its state is spent in this transaction with `Modify`, which
+      // judges every input, this one among them. The legacy edge-only request
+      // is no member of the fold and is not spent here: no compatibility
+      // route survives (it can only be retracted).
+      Contribute(stateRef) ->
+        when maybeDatum is {
+          Some(RegistrationDatum(booked)) ->
+            validateContribute(
+              statePolicyId,
+              cageToken,
+              booked.registry,
+              stateRef,
+              tx,
+            )
+          Some(TerminationDatum(booked)) ->
+            validateContribute(
+              statePolicyId,
+              cageToken,
+              booked.registry,
+              stateRef,
+              tx,
+            )
+          _ -> fail
+        }
       Retract(stateRef) -> {
         expect Some(RequestDatum(request)) = maybeDatum
         when
@@ -90,33 +103,22 @@ validator request(statePolicyId: PolicyId, cageTokenName: AssetName) {
   }
 }
 
-/// A request spent by `Contribute` is admitted inside its processing window,
-/// whatever its action, as before; or in any window when the state's fold
-/// pairs it with `Rejected`: a reject carries no admission (Lean
-/// `exitAdmission .reject = none`, #320). Outside the processing window, a
-/// request the fold pairs with an update, or with no action, is refused.
+/// A pending request spent by `Contribute` is consumed by a fold of its own
+/// registry: the request is for this cage token, the state input holds that
+/// token, and the state is spent with `Modify`. The state validator judges the
+/// whole fold, every input, the request itself, and the timing of a
+/// registration among them.
 fn validateContribute(
   statePolicyId: PolicyId,
   cageToken: TokenId,
-  request: Request,
-  self: OutputReference,
+  registry: TokenId,
   stateRef: OutputReference,
   tx: Transaction,
 ) {
-  let Request { requestToken, submitted_at, .. } = request
-  expect requestToken == cageToken
+  expect registry == cageToken
   let stateInput = inputByRef(stateRef, tx)
   expect carriesStateToken(statePolicyId, cageToken, stateInput)
-  expect Some(actions) = foldActions(stateRef, tx)
-  let State { process_time, .. } = readState(stateInput)
-  let Transaction { validity_range, inputs, .. } = tx
-  expect
-    in_phase1(validity_range, submitted_at, process_time) || when
-      matchingAction(cageToken, self, inputs, actions)
-    is {
-      Some(Rejected) -> True
-      _ -> False
-    }
+  expect Some(_) = foldActions(stateRef, tx)
   True
 }
 
@@ -135,52 +137,6 @@ fn foldActions(
       }
     }
     None -> None
-  }
-}
-
-/// The action the state's fold pairs with the input `self`. The fold
-/// (`registry/fold` `mkAction`) pops one action for each input, in
-/// transaction input order, that carries an inline request datum for this
-/// cage token. `None` when `self` is not such an input, or the actions run
-/// out before it.
-fn matchingAction(
-  cageToken: TokenId,
-  self: OutputReference,
-  inputs: List<Input>,
-  actions: List<RequestAction>,
-) -> Option<RequestAction> {
-  when inputs is {
-    [] -> None
-    [input, ..rest] ->
-      if folded(cageToken, input) {
-        when actions is {
-          [] -> None
-          [action, ..tail] ->
-            if input.output_reference == self {
-              Some(action)
-            } else {
-              matchingAction(cageToken, self, rest, tail)
-            }
-        }
-      } else if input.output_reference == self {
-        None
-      } else {
-        matchingAction(cageToken, self, rest, actions)
-      }
-  }
-}
-
-/// Whether the fold pairs this input with an action: the same test as
-/// `registry/fold` `mkAction`.
-fn folded(cageToken: TokenId, input: Input) -> Bool {
-  when input.output.datum is {
-    InlineDatum(datum) ->
-      if datum is RequestDatum(pending): CageDatum {
-        pending.requestToken == cageToken
-      } else {
-        False
-      }
-    _ -> False
   }
 }
 

@@ -1,33 +1,27 @@
 //// Open-datum application bound to the permanent state identity.
-//// Booking, payload update and release retain the existing application law.
+//// Booking and payload update retain the existing application law; release is retired with the state-spending rejection.
 
 use aiken/collection/dict.{get, keys}
 use aiken/collection/list
-use aiken/collection/pairs
 use aiken/primitive/bytearray
 use application/envelope.{
   BookInsert, BookTerminate, BookTermination, Control, Envelope, OpenDatumMint,
   OpenDatumSpend, Release, Update, envelopeHash, envelopeVersion, registryBytes,
 }
-use cardano/address.{Address, Script, VerificationKey}
+use cardano/address.{Address, Script}
 use cardano/assets.{
   PolicyId, Value, from_asset, lovelace_of, quantity_of, tokens,
   without_lovelace,
 }
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Spend, Transaction, find_input,
+  InlineDatum, Input, Output, OutputReference, Transaction, find_input,
 }
-use lib.{
-  approvalName, decodeAddress, destinationDatumHash, edgeInsertActive,
-  edgeUpdateTerminal, edgeWitnessTerminal,
-}
-use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
+use lib.{approvalName, decodeAddress, destinationDatumHash, edgeInsertActive}
 use registry/refusal.{traceFalse}
-use registry/settlement.{payeeOwed, settlesOf}
 use registry_pin.{registryStateHash}
 use types.{
-  CageDatum, Modify, Rejected, Request, RequestAction, RequestDatum, State,
-  StateDatum, TerminationDatum, TerminationRequest, UpdateAction, UpdateRedeemer,
+  CageDatum, Request, RequestDatum, State, StateDatum, TerminationDatum,
+  TerminationRequest,
 }
 
 /// The open-datum application (#299, #310): a key's live value is an
@@ -58,15 +52,12 @@ use types.{
 /// - `Update`: the controller signs; exactly one output carries the key's
 ///   token, at this same address, with the same control and non-ada
 ///   assets and at least the protected deposit. The payload is free.
-/// - `Release`: inside the fold of this registry that terminates this key
-///   for its controller and burns exactly this token, with the controller
-///   paid, on the summed lovelace of the outputs at their key, every
-///   obligation of this registry's fold to them plus every deposit this
-///   instance releases to them (the model's additive `settleFold`). A
-///   second registry cannot fold in the same transaction: every fold's
-///   continuation is the transaction's first output, which holds exactly
-///   one state token (`registry/modify` `state-token`), so no other fold's
-///   obligations or any other instance's releases can share the payment.
+/// - `BookTermination`: the live output is the custody of a termination
+///   booking (below).
+///
+/// `Release`, the old fold-side retirement paying the controller, is retired
+/// with the state-spending rejection and the deposit returned to the
+/// controller: it is refused for every transaction.
 /// Why this spend is not a lawful termination booking of the live output, or
 /// `None` when it is: Lean `bookTerminateStep`, in the model's order where
 /// the observation allows it (`app-registry-asset`, `app-not-pinned`,
@@ -222,7 +213,11 @@ validator open_datum(registry: ByteArray) {
     let control = envelope.control
     when redeemer is {
       Update -> validUpdate(control, self.output, tx)
-      Release -> validRelease(registry, control, self.output, tx)
+      // The old release folded the live output away in the registry's fold,
+      // paying its controller; the accepted model has no such route. A key
+      // is terminated by booking (`BookTermination`) and a permissionless fold
+      // of the pending request. The constructor stays for the wire shape.
+      Release -> traceFalse(@"release-retired")
       BookTermination { ordinary_added } ->
         when
           bookTerminationRefusal(registry, control, self, ordinary_added, tx)
@@ -440,301 +435,6 @@ fn validUpdate(control: Control, self: Output, tx: Transaction) -> Bool {
 }
 
 // ---------------------------------------------------------------------
-// Release
-// ---------------------------------------------------------------------
-
-/// The fold's requests paired with their actions, in input order, exactly
-/// as the registry pairs them: every input carrying a request for this
-/// registry's token takes the next action.
-fn foldRows(
-  state_name: ByteArray,
-  inputs: List<Input>,
-  actions: List<RequestAction>,
-) -> List<(Request, Int, RequestAction)> {
-  when inputs is {
-    [] -> []
-    [input, ..rest] ->
-      when requestOf(state_name, input) is {
-        Some(request) ->
-          when actions is {
-            [action, ..tail] ->
-              [
-                (request, lovelace_of(input.output.value), action),
-                ..foldRows(state_name, rest, tail)
-              ]
-            [] -> []
-          }
-        None -> foldRows(state_name, rest, actions)
-      }
-  }
-}
-
-fn requestOf(state_name: ByteArray, input: Input) -> Option<Request> {
-  when input.output.datum is {
-    InlineDatum(inline) ->
-      if inline is RequestDatum(request): CageDatum {
-        if request.requestToken.assetName == state_name {
-          Some(request)
-        } else {
-          None
-        }
-      } else {
-        None
-      }
-    _ -> None
-  }
-}
-
-/// The duties the registry's own fold owes for these rows (`registry/fold`
-/// `stepRequest`): a rejected row its refund, a processed row its edge's
-/// duties. Read with the registry's own `dutiesOf`, so the two scripts
-/// sum the same obligations.
-fn rowDuties(
-  state: State,
-  rows: List<(Request, Int, RequestAction)>,
-) -> List<Duty> {
-  list.foldl(
-    rows,
-    [],
-    fn(row, duties) {
-      let (request, held, action) = row
-      let floor = held - state.tip
-      when action is {
-        Rejected ->
-          pushDuty(duties, ReturnDeposit { owner: request.requestOwner, floor })
-        UpdateAction(_) ->
-          if request.edge < 0 || request.edge > edgeWitnessTerminal {
-            duties
-          } else {
-            pushDuties(
-              duties,
-              dutiesOf(
-                state,
-                request.edge,
-                request.requestOwner,
-                request.requestKey,
-                request.destination,
-                floor,
-              ),
-            )
-          }
-      }
-    },
-  )
-}
-
-/// Any registry's state as an input presents it: at the state script's
-/// address, holding exactly one state token (whichever registry's), under
-/// an inline state datum. Returns that registry's state token name.
-fn anyStateOf(input: Input) -> Option<(ByteArray, State)> {
-  let Output { address, value, datum, .. } = input.output
-  if address.payment_credential != Script(registryStateHash) {
-    None
-  } else {
-    let held = tokens(value, registryStateHash)
-    when keys(held) is {
-      [name] ->
-        if get(held, name) != Some(1) {
-          None
-        } else {
-          when datum is {
-            InlineDatum(inline) ->
-              if inline is StateDatum(state): CageDatum {
-                Some((name, state))
-              } else {
-                None
-              }
-            _ -> None
-          }
-        }
-      _ -> None
-    }
-  }
-}
-
-/// Every registry fold in the transaction, whichever registry: a state
-/// spent with `Modify`, with its token name, state and actions.
-fn foldsIn(
-  tx: Transaction,
-) -> List<(Input, ByteArray, State, List<RequestAction>)> {
-  list.filter_map(
-    tx.inputs,
-    fn(input) {
-      when anyStateOf(input) is {
-        Some((name, state)) ->
-          when pairs.get_first(tx.redeemers, Spend(input.output_reference)) is {
-            Some(raw) ->
-              if raw is Modify(actions): UpdateRedeemer {
-                Some((input, name, state, actions))
-              } else {
-                None
-              }
-            None -> None
-          }
-        None -> None
-      }
-    },
-  )
-}
-
-/// This instance's registry among the folds: exactly one.
-fn ownFold(
-  registry: ByteArray,
-  folds: List<(Input, ByteArray, State, List<RequestAction>)>,
-) -> Option<(Input, ByteArray, State, List<RequestAction>)> {
-  when
-    list.filter(
-      folds,
-      fn(fold) {
-        let (_, name, _, _) = fold
-        bytearray.concat(registryStateHash, name) == registry
-      },
-    )
-  is {
-    [fold] -> Some(fold)
-    _ -> None
-  }
-}
-
-/// What the given registry folds owe one payee, summed, and the duties
-/// they create together (#253, DM-seven-admitted-edges):
-/// each fold's termination deposits and reject refunds to that key,
-/// read with the registry's own `dutiesOf` and `payeeOwed`.
-fn registryOwed(
-  folds: List<(Input, ByteArray, State, List<RequestAction>)>,
-  payee: address.PaymentCredential,
-  tx: Transaction,
-) -> Option<(Int, List<Duty>)> {
-  list.foldl(
-    folds,
-    Some((0, [])),
-    fn(fold, acc) {
-      when acc is {
-        None -> None
-        Some((owed, allDuties)) -> {
-          let (input, name, state, actions) = fold
-          let duties = rowDuties(state, foldRows(name, tx.inputs, actions))
-          let floor =
-            when pairs.get_first(payeeOwed(duties), payee) is {
-              Some(amount) -> amount
-              None -> 0
-            }
-          Some((owed + floor, list.concat(allDuties, duties)))
-        }
-      }
-    },
-  )
-}
-
-/// What the transaction releases to one controller at this instance: the
-/// protected deposit of every output at this script spent with `Release`
-/// whose control names that controller.
-fn releasedTo(script: ByteArray, controller: ByteArray, tx: Transaction) -> Int {
-  list.foldl(
-    tx.inputs,
-    0,
-    fn(input, total) {
-      if input.output.address.payment_credential != Script(script) {
-        total
-      } else {
-        when pairs.get_first(tx.redeemers, Spend(input.output_reference)) is {
-          Some(raw) ->
-            if raw is Release: OpenDatumSpend {
-              when liveControl(input.output.datum) is {
-                Some(control) ->
-                  if control.controller == controller {
-                    total + control.deposit
-                  } else {
-                    total
-                  }
-                None -> total
-              }
-            } else {
-              total
-            }
-          None -> total
-        }
-      }
-    },
-  )
-}
-
-/// The fold of this registry terminates this key for its controller and
-/// burns exactly this token; the controller's key is paid, on the summed
-/// lovelace of the outputs at that key, every obligation of this registry's
-/// fold to it plus every deposit this instance releases to it.
-fn validRelease(
-  registry: ByteArray,
-  control: Control,
-  self: Output,
-  tx: Transaction,
-) -> Bool {
-  expect Script(script) = self.address.payment_credential
-  if !holdsItsToken(control, self) {
-    traceFalse(@"release-holding-token")
-  } else if registryBytes(control.registry) != registry {
-    traceFalse(@"release-registry")
-  } else {
-    when ownFold(registry, foldsIn(tx)) is {
-      None -> traceFalse(@"release-no-fold")
-      Some(fold) -> {
-        let (_, name, state, actions) = fold
-        let terminating =
-          list.filter(
-            foldRows(name, tx.inputs, actions),
-            fn(row) {
-              let (request, _, action) = row
-              action != Rejected && request.edge == edgeUpdateTerminal && request.requestKey == control.key
-            },
-          )
-        if state.application_policy != script {
-          traceFalse(@"release-not-pinned")
-        } else if control.activePolicy != state.active_policy {
-          traceFalse(@"release-active-policy")
-        } else {
-          when terminating is {
-            [(request, _, _)] ->
-              if request.requestOwner != control.controller {
-                traceFalse(@"release-controller")
-              } else if quantity_of(tx.mint, control.activePolicy, control.key) != -1 {
-                traceFalse(@"release-burn")
-              } else {
-                let payee = VerificationKey(control.controller)
-                when registryOwed([fold], payee, tx) is {
-                  None -> traceFalse(@"release-settlement")
-                  Some((owed, duties)) -> {
-                    let settles = settlesOf(Script(registryStateHash), duties)
-                    let paid =
-                      list.foldl(
-                        tx.outputs,
-                        0,
-                        fn(out, total) {
-                          if out.address.payment_credential == payee && settles(
-                            out,
-                          ) {
-                            total + lovelace_of(out.value)
-                          } else {
-                            total
-                          }
-                        },
-                      )
-                    if paid < owed + releasedTo(script, control.controller, tx) {
-                      traceFalse(@"release-additive")
-                    } else {
-                      True
-                    }
-                  }
-                }
-              }
-            _ -> traceFalse(@"release-no-termination")
-          }
-        }
-      }
-    }
-  }
-}
-
-// ---------------------------------------------------------------------
 // Burns
 // ---------------------------------------------------------------------
 
@@ -765,7 +465,7 @@ validator closed_datum(registry: ByteArray) {
   ) {
     when redeemer is {
       Update -> traceFalse(@"closed-datum-update")
-      Release -> open_datum.spend(registry, datum, Release, own, tx)
+      Release -> traceFalse(@"release-retired")
       BookTermination { ordinary_added } ->
         open_datum.spend(
           registry,

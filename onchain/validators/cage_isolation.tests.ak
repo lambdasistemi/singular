@@ -24,8 +24,9 @@ use request as request_validator
 use state as state_validator
 use types.{
   Burning, CageDatum, Contribute, End, Migrating, Migration, MintRedeemer,
-  Minting, Modify, Rejected, Request, RequestDatum, Retract, State, StateDatum,
-  Sweep, TokenId, UpdateAction, UpdateRedeemer,
+  Minting, Modify, RegistrationDatum, RegistrationRequest, Rejected, Request,
+  RequestDatum, Retract, State, StateDatum, Sweep, TokenId, UpdateAction,
+  UpdateRedeemer,
 }
 
 fn mint(redeemer: MintRedeemer, policyId: PolicyId, tx: Transaction) -> Bool {
@@ -48,24 +49,51 @@ test two_seeds_distinct_tokens() {
   assetName(seed1) != assetName(seed2)
 }
 
-/// A request validator instance parameterized by a different cage token must
-/// reject a request for this cage.
-test wrong_request_parameter_rejects_this_cage_token() fail {
+/// A pending registration of this cage, spent beside the state's `Modify`:
+/// the accepting control of the row below.
+fn isolationRegistration() -> CageDatum {
+  RegistrationDatum(
+    RegistrationRequest {
+      registry: testToken,
+      key: "42",
+      refund_address: #"d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+      destination: #"60d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1",
+      datum: None,
+      submitted_at: 0,
+      registration_cost: 2_000_000,
+      declared_tip: 1_000_000,
+      carrier_ada: 1_500_000,
+      nonce: 1,
+    },
+  )
+}
+
+fn spendRegistrationAs(cageTokenName: ByteArray) -> Bool {
   request_validator.request.spend(
     "policy_id",
-    "different_asset",
-    Some(aRequest),
+    cageTokenName,
+    Some(isolationRegistration()),
     Contribute(testStateRef),
     testRequestRef,
     Transaction {
       ..transaction.placeholder,
       validity_range: phase1Range,
-      inputs: [update, request],
+      inputs: [update],
       redeemers: [
         stateSpendRedeemerData(modifyRedeemerData([updateActionData()])),
       ],
     },
   )
+}
+
+test request_parameter_of_this_cage_token_accepts() {
+  spendRegistrationAs(testToken.assetName)
+}
+
+/// A request validator instance parameterized by a different cage token must
+/// reject a request for this cage.
+test wrong_request_parameter_rejects_this_cage_token() fail {
+  spendRegistrationAs("different_asset")
 }
 
 // ===========================================================================

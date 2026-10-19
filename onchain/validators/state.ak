@@ -1,6 +1,5 @@
 //// ## Responsibility
 //// Boot an ownerless registry and admit only registration and permanent termination.
-//// Rejects retain their original exit.
 ////
 //// ## Dependencies
 //// `registry/genesis` validates creation; `registry/admission` and `registry/modify`

@@ -1,25 +1,32 @@
 use aiken/builtin
+use aiken/collection/dict
 use aiken/collection/list
 use aiken/crypto.{blake2b_256}
 use aiken/interval.{Interval}
+use aiken/primitive/bytearray
 use booking.{applicationTagName, trieReadyTagName}
 use cardano/address
-use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
+use cardano/assets.{
+  Value, from_asset, from_lovelace, lovelace_of, merge, tokens, zero,
+}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Spend, Transaction,
 }
 use lib
+use open as open_policy
 use registry_fixtures as fx
+use registry_pin.{registryStateHash}
 use request as request_validator
 use state
 use types.{
-  CageDatum, Contribute, Modify, RegistrationDatum, RegistrationRequest,
+  CageDatum, Contribute, End, Modify, RegistrationDatum, RegistrationRequest,
   Rejected, RequestAction, Retract, StateDatum, TerminationDatum,
   TerminationRequest, UpdateAction,
 }
+use witness
 
 // ============================================================================
-// CP2 RED: the fold of tagged requests (the accepted root fold)
+// The fold of tagged requests (the accepted root fold, CP2)
 // ============================================================================
 //
 // The accepted fold (`Economics/Fold.lean`, `FoldRouting.lean`,
@@ -48,24 +55,28 @@ use types.{
 // (`state-drain`, `root`, `empty-fold`, `lib.occupiedRefusal`, the trie
 // faults).
 //
-// How each row relates to the cage as it stands (the handoff classifies every
-// row by execution):
-//
-// - RED: the valid folds and the named refusals. A tagged registration or
-//   termination is no member of the legacy fold, so the state refuses it as
-//   `empty-fold`; `request.spend` stops at `expect Some(RequestDatum(_))`.
-// - Guards: each refusal row also asserts the handler's own False. That holds
-//   today because the fold refuses every tagged request; it is a guard
-//   against an accepting GREEN, not RED evidence. The `fail` rows of the
-//   request boundary pass today because the datum shape is not a
-//   `RequestDatum`; at GREEN they are the witnesses that a correct state
-//   with an unconditional `request.spend` cannot hide.
-// - Preserved: the last section holds today and must keep holding.
+// How the rows were established (CP2). The valid folds, the named refusals and
+// the retirement rows were written before the implementation and failed on it
+// for its absence: the state refused every tagged request as `empty-fold`,
+// `request.spend` stopped at `expect Some(RequestDatum(_))`, and the legacy
+// folds were accepted. The rows of the section on the registry's own
+// invariants (pins, continuation, actions, window, interval, strangers, End,
+// the batches that mix and repeat the kinds) were added with the
+// implementation; they are preservation tests of checks that are correct and
+// pass at once, each one fact from a valid fold, and are not RED evidence.
+// Each refusal row also asserts the handler's own False beside the named
+// reason, and the `fail` rows of the request boundary are the witnesses that a
+// correct state beside an unconditional `request.spend` cannot hide.
 //
 // Limits: Aiken evaluation of constructed transactions. The mint handlers of
-// the active, request and application policies are not run here (the active
-// policy is bound to the compiled state identity, derived once after the
-// accepted GREEN), and nothing says a ledger accepts the transactions.
+// the request, active and generic application policies are run on the fold's
+// transaction in the composition section, with the state moved to the compiled
+// state identity the witness policy is bound to; the deployment's compiled
+// hashes and identities are derived once after the accepted GREEN, and nothing
+// says a ledger accepts the transactions. The ledger's own guarantees (distinct
+// inputs, reference inputs disjoint from spent inputs, conservation of every
+// asset, fresh transaction identity) are assumed, not re-judged: the fold
+// judges the lovelace allocation and the assets it moves.
 
 // ----------------------------------------------------------------------------
 // The case: one complete fold
@@ -872,6 +883,45 @@ test tagged_fold_termination_refuses_a_singular_tag_that_survives() {
   )
 }
 
+/// The pending request holds another key's singular tag instead of its own
+/// (the old wrong-key witness): the output does not hold what the datum
+/// declares, so it is no member.
+test tagged_fold_refuses_a_termination_holding_another_keys_singular_tag() {
+  let t = termRequest()
+  let input = termInput(t, 0)
+  let wrong =
+    Input {
+      ..input,
+      output: Output {
+        ..input.output,
+        value: from_lovelace(termHeld(t))
+          |> merge(singular(fx.keyB, 1))
+          |> merge(termTrieTag(t, 1)),
+      },
+    }
+  refusedAs(
+    Case {
+      ..termCase(),
+      members: [Member { input: wrong, datum: TerminationDatum(t) }],
+      mint: singular(fx.keyB, -1) |> merge(termTrieTag(t, -1)),
+    },
+    @"request-observation-mismatch",
+  )
+}
+
+/// The burn names another key's singular tag: the request's own is not burned
+/// and the mint holds a unit the members do not owe.
+test tagged_fold_termination_refuses_a_burn_of_another_keys_singular_tag() {
+  let t = termRequest()
+  refusedAs(
+    Case {
+      ..termCase(),
+      mint: singular(fx.keyB, -1) |> merge(termTrieTag(t, -1)),
+    },
+    @"fold-singular-mismatch",
+  )
+}
+
 test tagged_fold_termination_refuses_a_key_the_trie_does_not_bind() {
   let t = termRequest()
   refusedAs(
@@ -1248,18 +1298,604 @@ test tagged_fold_retires_rejected_with_a_terminations_custody_return() {
 }
 
 // ----------------------------------------------------------------------------
+// The registry's own invariants, one fact from the valid fold
+// ----------------------------------------------------------------------------
+//
+// These rows keep the checks that do not depend on the kind of request: the
+// ten registry pins, the continuing state's address, token, datum and value,
+// the pairing of proofs with members, the processing window of a registration,
+// the fold interval, the strangers around a fold, the absence of an owner and
+// the refusal of `End`. Each starts from a fold the state accepts
+// (`tagged_fold_state_folds_*`) and changes exactly one fact, so the refusal
+// belongs to that fact and not to the absence of a member.
+
+fn withContinuation(c: Case, continuation: Output) -> Transaction {
+  let tx = txOf(c)
+  expect [_, ..rest] = tx.outputs
+  Transaction { ..tx, outputs: [continuation, ..rest] }
+}
+
+fn withPins(c: Case, altered: types.State) -> Transaction {
+  withContinuation(c, fx.stateOutputOf(altered))
+}
+
+fn nextPins(c: Case) -> types.State {
+  fx.stateOf(c.next)
+}
+
+test tagged_fold_pins_all_preserved_folds() {
+  let c = termCase()
+  foldSpendTx(c, withPins(c, nextPins(c))) && foldReasonTx(
+    c,
+    withPins(c, nextPins(c)),
+  ) == None
+}
+
+test tagged_fold_pins_altered_tip_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(c, types.State { ..nextPins(c), tip: fx.tip + 1 }),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_process_time_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(c, types.State { ..nextPins(c), process_time: fx.processTime + 1 }),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_retract_time_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(c, types.State { ..nextPins(c), retract_time: fx.retractTime + 1 }),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_application_policy_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(
+      c,
+      types.State { ..nextPins(c), application_policy: fx.foreignPolicy },
+    ),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_active_policy_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(c, types.State { ..nextPins(c), active_policy: fx.foreignPolicy }),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_absent_policy_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(c, types.State { ..nextPins(c), absent_policy: fx.foreignPolicy }),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_terminal_policy_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(
+      c,
+      types.State { ..nextPins(c), terminal_policy: fx.foreignPolicy },
+    ),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_registration_cost_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(
+      c,
+      types.State { ..nextPins(c), registration_cost: fx.registrationCost + 1 },
+    ),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_booking_width_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(
+      c,
+      types.State { ..nextPins(c), booking_width: fx.bookingWidth + 1 },
+    ),
+    @"pins-altered",
+  )
+}
+
+test tagged_fold_pins_altered_request_policy_refuses() {
+  let c = termCase()
+  refusedTxAs(
+    c,
+    withPins(c, types.State { ..nextPins(c), request_policy: fx.foreignPolicy }),
+    @"pins-altered",
+  )
+}
+
+/// The continuation is the cage's own UTxO, at the cage's own address.
+test tagged_fold_refuses_a_continuation_at_another_address() {
+  let c = termCase()
+  let moved =
+    Output {
+      ..fx.stateOutput(c.next),
+      address: address.from_script(fx.foreignPolicy),
+    }
+  refusedTxAs(c, withContinuation(c, moved), @"continuation-address")
+}
+
+/// The state token leaves the continuation for a wallet.
+test tagged_fold_refuses_a_continuation_without_the_state_token() {
+  let c = termCase()
+  let tokenless =
+    Output { ..fx.stateOutput(c.next), value: from_lovelace(fx.stateLovelace) }
+  let tx = withContinuation(c, tokenless)
+  let wallet =
+    Output {
+      address: address.from_verification_key(fx.inserterKey),
+      value: fx.stateOutput(c.next).value,
+      datum: NoDatum,
+      reference_script: None,
+    }
+  refusedTxAs(
+    c,
+    Transaction { ..tx, outputs: list.concat(tx.outputs, [wallet]) },
+    @"state-token",
+  )
+}
+
+/// The continuation carries an asset besides the state token.
+test tagged_fold_refuses_a_continuation_that_carries_another_asset() {
+  let c = termCase()
+  let carrying =
+    Output {
+      ..fx.stateOutput(c.next),
+      value: fx.stateOutput(c.next).value
+        |> merge(from_asset(fx.foreignPolicy, "extra", 1)),
+    }
+  refusedTxAs(c, withContinuation(c, carrying), @"fold-state-mismatch")
+}
+
+/// Another output holds a state-policy token: there is one continuing state.
+test tagged_fold_refuses_a_second_output_holding_a_state_token() {
+  let c = termCase()
+  let tx = txOf(c)
+  let second =
+    Output {
+      address: address.from_verification_key(fx.inserterKey),
+      value: from_asset(fx.cagePolicy, fx.foreignCageToken.assetName, 1),
+      datum: NoDatum,
+      reference_script: None,
+    }
+  refusedTxAs(
+    c,
+    Transaction { ..tx, outputs: list.concat(tx.outputs, [second]) },
+    @"fold-state-mismatch",
+  )
+}
+
+/// The continuation states no inline datum: the fold has no state to read.
+test tagged_fold_refuses_a_continuation_without_a_datum() fail {
+  let c = termCase()
+  let bare = Output { ..fx.stateOutput(c.next), datum: NoDatum }
+  foldSpendTx(c, withContinuation(c, bare))
+}
+
+/// A second input holds a state token (another registry's): a fold spends one
+/// state.
+test tagged_fold_refuses_a_second_input_holding_a_state_token() {
+  let c = termCase()
+  let other = fx.foreignStateInput(c.root)
+  refusedAs(
+    Case { ..c, extra_inputs: [ordinaryInput(), other] },
+    @"fold-state-missing",
+  )
+}
+
+/// A fold with no owner and no signer lands; with any signer it lands too: the
+/// fold is permissionless.
+test tagged_fold_is_permissionless() {
+  let c = termCase()
+  let signed = Transaction { ..txOf(c), extra_signatories: [fx.inserterKey] }
+  foldSpendTx(c, signed) && foldReasonTx(c, signed) == None
+}
+
+/// `End` is refused for every party, beside a fold that lands.
+test tagged_fold_end_stays_refused() fail {
+  let c = termCase()
+  state.state.spend(
+    Some(StateDatum(fx.stateOf(c.root))),
+    End,
+    fx.stateRef,
+    txOf(c),
+  )
+}
+
+/// Each member needs its proof: too few actions.
+test tagged_fold_refuses_a_missing_action() {
+  refusedAs(Case { ..termCase(), actions: [] }, @"missing-action")
+}
+
+/// And each action needs its member: too many actions.
+test tagged_fold_refuses_a_surplus_action() {
+  refusedAs(
+    Case { ..termCase(), actions: [UpdateAction([]), UpdateAction([])] },
+    @"surplus-actions",
+  )
+}
+
+/// Two members, one action.
+test tagged_fold_refuses_a_batch_with_too_few_actions() {
+  let c = batchCase()
+  refusedAs(
+    Case {
+      ..c,
+      actions: [UpdateAction(fx.siblingProof(fx.keyB, fx.activeLeaf, fx.keyA))],
+    },
+    @"missing-action",
+  )
+}
+
+/// A registration is folded in the processing window only: the retraction
+/// window is not it.
+test tagged_fold_registration_refuses_in_the_retraction_window() {
+  refusedAs(Case { ..regCase(), range: fx.phase2() }, @"not-phase1")
+}
+
+/// A registration's window bound belongs to the registration, not to the
+/// batch: a termination beside it does not rescue it.
+test tagged_fold_registration_refuses_after_its_window_beside_a_termination() {
+  let c = mixedCase()
+  refusedAs(Case { ..c, range: fx.phase3() }, @"not-phase1")
+}
+
+/// The fold interval is empty.
+test tagged_fold_refuses_an_empty_fold_interval() {
+  refusedAs(
+    Case { ..termCase(), range: interval.between(5_000, 5_000) },
+    @"fold-interval-empty",
+  )
+}
+
+/// A request of another registry beside a member: it holds this registry's
+/// request tag but states no request of this registry, so it is no member and
+/// no ordinary value.
+test tagged_fold_refuses_a_request_of_another_registry_beside_a_member() {
+  let t =
+    TerminationRequest {
+      ..termRequestFor(fx.keyB),
+      registry: fx.foreignCageToken,
+    }
+  let foreign = termInput(t, 5)
+  let c = termCase()
+  refusedAs(
+    Case {
+      ..c,
+      extra_inputs: [ordinaryInput(), foreign],
+      outputs: [change(10_000_000 + fx.tip + termHeld(t))],
+      mint: c.mint |> merge(singular(t.key, -1)) |> merge(termTrieTag(t, -1)),
+    },
+    @"fold-unrecognized-input",
+  )
+}
+
+/// A legacy edge-only request beside a valid member is no member and no
+/// ordinary value: it carries an approval of the application policy.
+test tagged_fold_refuses_a_legacy_request_beside_a_tagged_member() {
+  let legacy = legacyRegistrationCase()
+  expect [legacyMember] = legacy.members
+  let c = termCase()
+  refusedAs(
+    Case { ..c, extra_inputs: [ordinaryInput(), legacyMember.input] },
+    @"fold-unrecognized-input",
+  )
+}
+
+// ---- batches that mix and repeat the two kinds -------------------------------
+
+fn regRequestFor(key: ByteArray, nonce: Int) -> RegistrationRequest {
+  RegistrationRequest { ..regRequest(), key, nonce }
+}
+
+/// Two registrations in one fold: the donation is twice the cost, each key is
+/// delivered once, both tags of each are burned.
+fn twoRegistrationsCase() -> Case {
+  let a = regRequestFor(fx.keyA, 1)
+  let b = regRequestFor(fx.keyB, 2)
+  Case {
+    root: fx.emptyRoot(),
+    next: fx.twoLeaves(fx.keyA, fx.activeLeaf, fx.keyB, fx.activeLeaf),
+    members: [regMember(a, 0), regMember(b, 1)],
+    extra_inputs: [ordinaryInput()],
+    outputs: [
+      carrierOf(a),
+      carrierOf(b),
+      change(10_000_000 + a.declared_tip + b.declared_tip),
+    ],
+    mint: singular(a.key, 1)
+      |> merge(singular(b.key, 1))
+      |> merge(regTrieTag(a, -1))
+      |> merge(regTrieTag(b, -1))
+      |> merge(regApplicationTag(a, -1))
+      |> merge(regApplicationTag(b, -1)),
+    actions: [
+      UpdateAction([]),
+      UpdateAction(fx.siblingProof(fx.keyA, fx.activeLeaf, fx.keyB)),
+    ],
+    range: fx.phase1(),
+    donation: Some(a.registration_cost + b.registration_cost),
+    fee: 0,
+  }
+}
+
+/// A registration and a termination in one fold: `keyB` is booked and `keyA`
+/// retired, so the singular mint is +1 for one key and -1 for the other.
+fn mixedCase() -> Case {
+  let r = regRequestFor(fx.keyB, 2)
+  let t = termRequestFor(fx.keyA)
+  Case {
+    root: fx.oneLeaf(fx.keyA, fx.activeLeaf),
+    next: fx.twoLeaves(fx.keyA, fx.terminalLeaf, fx.keyB, fx.activeLeaf),
+    members: [regMember(r, 0), termMember(t, 1)],
+    extra_inputs: [ordinaryInput()],
+    outputs: [
+      carrierOf(r),
+      change(10_000_000 + r.declared_tip + t.declared_tip),
+    ],
+    mint: singular(r.key, 1)
+      |> merge(singular(t.key, -1))
+      |> merge(regTrieTag(r, -1))
+      |> merge(regApplicationTag(r, -1))
+      |> merge(termTrieTag(t, -1)),
+    actions: [
+      UpdateAction([fx.leafStep(fx.keyA, fx.activeLeaf, fx.keyB)]),
+      UpdateAction(fx.siblingProof(fx.keyB, fx.activeLeaf, fx.keyA)),
+    ],
+    range: fx.phase1(),
+    donation: Some(r.registration_cost + termHeld(t) - t.declared_tip),
+    fee: 0,
+  }
+}
+
+test tagged_fold_state_folds_two_registrations() {
+  stateFolds(twoRegistrationsCase())
+}
+
+test tagged_fold_request_spend_contributes_both_registrations_of_a_batch() {
+  let c = twoRegistrationsCase()
+  list.all(c.members, fn(m) { contributes(c, m) })
+}
+
+test tagged_fold_state_folds_a_registration_and_a_termination_together() {
+  stateFolds(mixedCase())
+}
+
+test tagged_fold_request_spend_contributes_a_registration_and_a_termination_together() {
+  let c = mixedCase()
+  list.all(c.members, fn(m) { contributes(c, m) })
+}
+
+/// The right keyed distribution is accepted above; here one key's tag is
+/// minted twice and the other's not at all, with both carriers going to the
+/// first key: equal per kind, wrong per key.
+test tagged_fold_refuses_a_wrong_singular_distribution_over_two_registrations() {
+  let c = twoRegistrationsCase()
+  let a = regRequestFor(fx.keyA, 1)
+  let b = regRequestFor(fx.keyB, 2)
+  refusedAs(
+    Case {
+      ..c,
+      outputs: [
+        carrierOf(a),
+        fx.deliveryOutput(
+          fx.activePolicy,
+          fx.keyA,
+          b.destination,
+          NoDatum,
+          b.carrier_ada,
+        ),
+        change(10_000_000 + a.declared_tip + b.declared_tip),
+      ],
+      mint: singular(a.key, 2)
+        |> merge(regTrieTag(a, -1))
+        |> merge(regTrieTag(b, -1))
+        |> merge(regApplicationTag(a, -1))
+        |> merge(regApplicationTag(b, -1)),
+    },
+    @"fold-destination-mismatch",
+  )
+}
+
+/// A mixed fold's singular tags must be the members': burning the termination's
+/// tag is not a substitute for minting the registration's.
+test tagged_fold_refuses_a_mixed_fold_that_nets_the_singular_mint_to_zero() {
+  let c = mixedCase()
+  let r = regRequestFor(fx.keyB, 2)
+  let t = termRequestFor(fx.keyA)
+  refusedAs(
+    Case {
+      ..c,
+      mint: regTrieTag(r, -1)
+        |> merge(regApplicationTag(r, -1))
+        |> merge(termTrieTag(t, -1)),
+    },
+    @"fold-singular-mismatch",
+  )
+}
+
+// ----------------------------------------------------------------------------
+// Composition with the mint policies
+// ----------------------------------------------------------------------------
+//
+// The fold's transaction mints and burns under three policies: the request
+// policy (the trie-ready tags), the application policy (a registration's
+// application tag) and the registry's active policy (the singular tags). The
+// rows below run the REAL mint handlers of those policies on the same
+// transaction the state and request spends accept, with the state moved to the
+// compiled state identity because the witness policy is bound to it
+// (`registry_pin.registryStateHash`):
+//
+// - `request.mint` accepts the burn of the trie-ready tags (a pure burn is
+//   accepted without reading the redeemer, a state or an output);
+// - `open.mint`, the generic application policy, accepts the burn of an
+//   application tag (an approval is evidence, never a consumable);
+// - `witness.mint` of kind active accepts the singular mint of a registration
+//   and the singular burn of a termination, because the registry's state is
+//   spent in the transaction with `Modify`, which is the fold that judges them.
+//
+// Not claimed: the compiled hashes of the three policies are the deployment's
+// (`registry_pin`), not these fixtures'; the application policy of a
+// deployment is the application's own validator (`open_datum`, whose pure
+// burn is run in the application's `open_datum.tests.ak`); and a ledger is not
+// run.
+
+fn holdsState(value: Value) -> Bool {
+  !dict.is_empty(tokens(value, fx.cagePolicy))
+}
+
+/// Move the state input and its continuation to the compiled state identity.
+fn rebound(output: Output) -> Output {
+  if holdsState(output.value) {
+    Output {
+      ..output,
+      address: address.from_script(registryStateHash),
+      value: from_asset(registryStateHash, fx.cageToken.assetName, 1)
+        |> merge(from_lovelace(lovelace_of(output.value))),
+    }
+  } else {
+    output
+  }
+}
+
+fn pinned(c: Case) -> Transaction {
+  let tx = txOf(c)
+  Transaction {
+    ..tx,
+    inputs: list.map(
+      tx.inputs,
+      fn(i) { Input { ..i, output: rebound(i.output) } },
+    ),
+    outputs: list.map(tx.outputs, rebound),
+  }
+}
+
+fn registryOf() -> ByteArray {
+  bytearray.concat(registryStateHash, fx.cageToken.assetName)
+}
+
+fn burnsRequestTags(c: Case) -> Bool {
+  request_validator.request.mint(
+    registryStateHash,
+    fx.cageToken.assetName,
+    #"",
+    fx.bookingRequestPolicy,
+    pinned(c),
+  )
+}
+
+fn movesSingularTags(c: Case) -> Bool {
+  witness.witness.mint(1, registryOf(), #"", fx.activePolicy, pinned(c))
+}
+
+fn burnsApplicationTags(c: Case) -> Bool {
+  open_policy.open.mint(#"", fx.appPolicy, pinned(c))
+}
+
+/// The state itself still folds the rebound transaction: the composition rows
+/// run on a transaction that lands, not on one the state would refuse.
+fn stillFolds(c: Case) -> Bool {
+  let tx = pinned(c)
+  expect [pinnedState, ..] = tx.inputs
+  foldSpendTx(c, tx) && state.modifyRefusal(
+    fx.stateOf(c.root),
+    c.actions,
+    pinnedState,
+    tx,
+  ) == None
+}
+
+test tagged_fold_composition_registration_still_folds_when_pinned() {
+  stillFolds(regCase())
+}
+
+test tagged_fold_composition_request_policy_accepts_the_burn_of_a_registration() {
+  burnsRequestTags(regCase())
+}
+
+test tagged_fold_composition_application_policy_accepts_the_burn_of_a_registration() {
+  burnsApplicationTags(regCase())
+}
+
+test tagged_fold_composition_active_policy_accepts_the_mint_of_a_registration() {
+  movesSingularTags(regCase())
+}
+
+test tagged_fold_composition_termination_still_folds_when_pinned() {
+  stillFolds(termCase())
+}
+
+test tagged_fold_composition_request_policy_accepts_the_burn_of_a_termination() {
+  burnsRequestTags(termCase())
+}
+
+test tagged_fold_composition_active_policy_accepts_the_burn_of_a_termination() {
+  movesSingularTags(termCase())
+}
+
+test tagged_fold_composition_mixed_batch_runs_the_request_application_and_active_policies() {
+  let c = mixedCase()
+  stillFolds(c) && burnsRequestTags(c) && burnsApplicationTags(c) && movesSingularTags(
+    c,
+  )
+}
+
+/// The active policy mints and burns only inside a fold: the same registration
+/// mint without the state's `Modify` is refused by the witness policy itself.
+test tagged_fold_composition_active_policy_refuses_a_mint_outside_the_fold() {
+  let c = regCase()
+  let tx = pinned(c)
+  witness.witness.mint(
+    1,
+    registryOf(),
+    #"",
+    fx.activePolicy,
+    Transaction { ..tx, redeemers: [] },
+  ) == False
+}
+
+// ----------------------------------------------------------------------------
 // The retired approval-admitted registration, refused as a fold
 // ----------------------------------------------------------------------------
 //
 // The model has no approval-admitted request: a legacy edge-only request is
 // not a pending request, so a fold that holds only legacy requests has no
-// member (`empty-fold`). The fixture is the accepting row of the existing
-// insert (`insert_active_places_one_active_token_at_the_named_output`) and
-// folds today; its member is the legacy request together with the legacy
-// datum that same output carries. The retired legacy `Rejected` fold and the
-// retired controller-refund termination are refused in
+// member (`empty-fold`). The fixture is the accepting row of the retired
+// insert (`insert_active_places_one_active_token_at_the_named_output`, which
+// the cage accepted before CP2); its member is the legacy request together with
+// the legacy datum that same output carries. The retired legacy `Rejected` fold
+// and the retired controller-refund termination are refused in
 // `deposit_exits.tests.ak`, and the old `Release` in the application's
-// `open_datum.tests.ak`, each on its own accepting fixture.
+// `open_datum.tests.ak`, each on the fixture the cage accepted before CP2.
 
 fn legacyRegistrationCase() -> Case {
   let destination = fx.bookingDestination()
@@ -1303,7 +1939,7 @@ test tagged_fold_retires_the_approval_admitted_registration() {
 }
 
 // ----------------------------------------------------------------------------
-// Preserved: refusals that hold today and must keep holding
+// Preserved: refusals that held before CP2 and still hold
 // ----------------------------------------------------------------------------
 
 /// A fold with no member at all is refused before anything else.

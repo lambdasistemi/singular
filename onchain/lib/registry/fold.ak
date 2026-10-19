@@ -1,246 +1,275 @@
 //// ## Responsibility
-//// Fold permanent M1 registration and termination requests in input order.
+//// Fold the pending requests a booking left behind, whatever their kind: sort
+//// the transaction's inputs into authenticated pending requests, ordinary
+//// value and strangers, and carry the trie through the registrations and
+//// terminations in input order.
 ////
 //// ## Dependencies
-//// Reuses the original approval binding, trie fault, duty and refund owners.
+//// `booking` for the canonical tag names, `registry/trie` for the trie faults,
+//// `lib` for the leaves and the occupied-key reason, `types` for the wire.
 //// Imported by registry/modify, the single active fold implementation.
 ////
 //// ## Assumptions
-//// The caller checks state continuation, fixed pins, net mint and settlement.
-//// Requests carry their own public datum and per-request proof.
+//// The caller checks the continuation, the pins, the routing and the
+//// settlement. The pending requests are those the request policy authenticated
+//// at booking: an output at the request address holding exactly the declared
+//// lovelace and the tags its datum commits to.
 ////
 //// ## Invariants
-//// Only insertActive and updateTerminal advance the trie; no dispatch exists
-//// for the excluded edges. Rejected requests retain original refund obligations.
-//// The first refusal latches and successful actions advance the intermediate root.
+//// A pending request is a member only when its output holds exactly what its
+//// datum declares (lovelace, trie-ready tag, and the application tag of a
+//// registration or the key's singular tag of a termination) at the request
+//// address; an input whose datum states a request but whose output does not
+//// match is a mismatch, never ordinary value. An input holding any tag or
+//// state token that is not a member is a stranger. Only registration and
+//// termination advance the trie, one per member, in input order; the first
+//// refusal stops the walk.
 
 use aiken/collection/dict
-use aiken/collection/list.{foldl}
-use aiken/crypto.{VerificationKeyHash}
+use aiken/collection/list
 use aiken/merkle_patricia_forestry.{MerklePatriciaForestry}
 use aiken/merkle_patricia_forestry as mpf
-use cardano/assets.{PolicyId, Value, from_asset, lovelace_of}
-use cardano/transaction.{InlineDatum, Input}
-use lib.{
-  approvalDestination, approvalName, edgeInsertActive, edgeUpdateTerminal,
-  leafActive, leafTerminal,
+use booking.{applicationTagName, terminationTrieReadyTagName, trieReadyTagName}
+use cardano/address.{Script}
+use cardano/assets.{
+  PolicyId, Value, flatten, lovelace_of, quantity_of, tokens, without_lovelace,
 }
-use registry/duty.{Duty, ReturnDeposit, dutiesOf, pushDuties, pushDuty}
+use cardano/transaction.{InlineDatum, Input}
+use lib.{leafActive, leafTerminal}
 use registry/trie.{terminalFault}
-use shared.{in_phase1}
 use types.{
-  CageDatum, Rejected, Request, RequestAction, RequestDatum, State, TokenId,
-  UpdateAction,
+  CageDatum, RegistrationDatum, RegistrationRequest, Rejected, RequestAction,
+  State, TerminationDatum, TerminationRequest, TokenId, UpdateAction,
 }
 
-/// The fold's accumulator. `refusal` latches the first refusal's reason
-/// and every later step is skipped, so exactly one reason is reported
-/// however many later rules the same transaction would also break.
-pub type Fold {
+/// What a member asks of the registry.
+pub type Pending {
+  Registering(RegistrationRequest)
+  Terminating(TerminationRequest)
+}
+
+/// A pending request together with the output it rides in.
+pub type Member {
+  input: Input,
+  pending: Pending,
+}
+
+/// The transaction's inputs, sorted. `members` is in input order.
+pub type Sorted {
+  /// An input states a request of this registry but does not hold what the
+  /// request declares.
+  mismatched: Bool,
+  /// An input that is neither a member, nor the state, nor ordinary value.
+  stranger: Bool,
+  /// Inputs holding a state token (the spent state itself among them).
+  holders: Int,
+  members: List<Member>,
+  ordinary: List<Input>,
+}
+
+/// Sort the inputs. The state input is `stateRef`; every other input is a
+/// member, a mismatch, a stranger, another state-token holder or ordinary
+/// value, decided by what its output holds and states, never by its address
+/// alone.
+pub fn sortInputs(
+  pins: State,
+  statePolicyId: PolicyId,
+  tokenId: TokenId,
+  inputs: List<Input>,
+) -> Sorted {
+  let sorted =
+    list.foldl(
+      inputs,
+      Sorted {
+        mismatched: False,
+        stranger: False,
+        holders: 0,
+        members: [],
+        ordinary: [],
+      },
+      fn(input, acc) { sortOne(pins, statePolicyId, tokenId, input, acc) },
+    )
+  Sorted {
+    ..sorted,
+    members: list.reverse(sorted.members),
+    ordinary: list.reverse(sorted.ordinary),
+  }
+}
+
+fn sortOne(
+  pins: State,
+  statePolicyId: PolicyId,
+  tokenId: TokenId,
+  input: Input,
+  acc: Sorted,
+) -> Sorted {
+  let value = input.output.value
+  if holds(value, statePolicyId) {
+    Sorted { ..acc, holders: acc.holders + 1 }
+  } else {
+    when statedRequest(tokenId, input) is {
+      Some(pending) ->
+        if observes(pins, input, pending) {
+          Sorted { ..acc, members: [Member { input, pending }, ..acc.members] }
+        } else {
+          Sorted { ..acc, mismatched: True }
+        }
+      None ->
+        if holds(value, pins.request_policy) || holds(
+          value,
+          pins.application_policy,
+        ) || holds(value, pins.active_policy) {
+          Sorted { ..acc, stranger: True }
+        } else {
+          Sorted { ..acc, ordinary: [input, ..acc.ordinary] }
+        }
+    }
+  }
+}
+
+fn holds(value: Value, policyId: PolicyId) -> Bool {
+  !dict.is_empty(tokens(value, policyId))
+}
+
+/// The request an input's inline datum states for this registry, if any.
+fn statedRequest(tokenId: TokenId, input: Input) -> Option<Pending> {
+  when input.output.datum is {
+    InlineDatum(datum) ->
+      if datum is RegistrationDatum(request): CageDatum {
+        if request.registry == tokenId {
+          Some(Registering(request))
+        } else {
+          None
+        }
+      } else if datum is TerminationDatum(request): CageDatum {
+        if request.registry == tokenId {
+          Some(Terminating(request))
+        } else {
+          None
+        }
+      } else {
+        None
+      }
+    _ -> None
+  }
+}
+
+/// The output holds exactly what its request declares, at the request
+/// address: the declared lovelace and the tags the booking minted into it, and
+/// nothing else. The value is read from the output, never from the datum.
+fn observes(pins: State, input: Input, pending: Pending) -> Bool {
+  let value = input.output.value
+  input.output.address.payment_credential == Script(pins.request_policy) && when
+    pending
+  is {
+    Registering(r) ->
+      lovelace_of(value) == r.registration_cost + r.declared_tip + r.carrier_ada && exactly(
+        value,
+        [
+          (pins.request_policy, trieReadyTagName(r)),
+          (
+            pins.application_policy,
+            applicationTagName(r.key, r.refund_address, r.destination, r.nonce),
+          ),
+        ],
+      )
+    Terminating(t) ->
+      lovelace_of(value) == t.declared_tip + t.carrier_ada && exactly(
+        value,
+        [
+          (pins.request_policy, terminationTrieReadyTagName(t)),
+          (pins.active_policy, t.key),
+        ],
+      )
+  }
+}
+
+/// Besides lovelace the value is exactly these assets, one unit each.
+pub fn exactly(value: Value, assets: List<(PolicyId, ByteArray)>) -> Bool {
+  list.length(flatten(without_lovelace(value))) == list.length(assets) && list.all(
+    assets,
+    fn((policyId, name)) { quantity_of(value, policyId, name) == 1 },
+  )
+}
+
+// ----------------------------------------------------------------------------
+// The trie
+// ----------------------------------------------------------------------------
+
+/// The trie after the walk, or the first refusal.
+pub type Evolved {
   refusal: Option<String>,
   trie: MerklePatriciaForestry,
+}
+
+/// Whether any action is the retired state-spending rejection.
+pub fn rejects(actions: List<RequestAction>) -> Bool {
+  list.any(
+    actions,
+    fn(action) {
+      when action is {
+        Rejected -> True
+        _ -> False
+      }
+    },
+  )
+}
+
+/// Carry the trie through the members in input order, one action each: a
+/// registration inserts its key as active, a termination moves its key from
+/// active to terminal. A missing action, a surplus action and a retired
+/// rejection each refuse.
+pub fn evolve(
+  trie: MerklePatriciaForestry,
   actions: List<RequestAction>,
-  consumed: Int,
-  minted: Value,
-  duties: List<Duty>,
-  refunds: List<Pair<VerificationKeyHash, Int>>,
-}
-
-/// Latch the fold closed on this refusal's reason.
-fn halt(acc: Fold, reason: String) -> Fold {
-  Fold { ..acc, refusal: Some(reason) }
-}
-
-/// Admission by approval (#157 tree-edge-admission-by-approval, approval-asset-binding): the request's UTxO must
-/// carry exactly one asset under the pins's application policy, at
-/// quantity 1, whose asset name is the approval binding of THIS request.
-/// The cage recomputes the name; a folder cannot substitute another
-/// owner's, another key's, another edge's or another destination's
-/// approval. The approval is not burned — no application script runs
-/// here — and leaves with the request's residual value.
-fn admitted(
-  acc: Fold,
-  pins: State,
-  edge: Int,
-  request: Request,
-  value: Value,
-) -> Fold {
-  let carried = assets.tokens(value, pins.application_policy)
-  when dict.keys(carried) is {
-    [name] ->
-      if dict.get(carried, name) != Some(1) {
-        halt(acc, @"no-approval")
-      } else if name != approvalName(
-        edge,
-        request.requestKey,
-        request.requestOwner,
-        approvalDestination(request.destination),
-      ) {
-        halt(acc, @"approval-binding")
+  members: List<Member>,
+) -> Evolved {
+  when members is {
+    [] ->
+      if list.is_empty(actions) {
+        Evolved { refusal: None, trie }
       } else {
-        acc
+        Evolved { refusal: Some(@"surplus-actions"), trie }
       }
-    _ -> halt(acc, @"no-approval")
-  }
-}
-
-/// One step of the fold, over the transaction's own inputs in order.
-pub fn mkAction(pins: State, tokenId: TokenId, validity_range) {
-  fn(input: Input, acc: Fold) -> Fold {
-    if acc.refusal != None {
-      acc
-    } else {
-      when input.output.datum is {
-        InlineDatum(datum) ->
-          if datum is RequestDatum(request): CageDatum {
-            // #183 slice b: the edge-only request is the only request.
-            // The dual-codec checkpoint stands in history (reviews 002–005).
-            if request.requestToken == tokenId {
-              stepRequest(acc, pins, request, input, validity_range)
-            } else {
-              // A request for another cage token is not ours to fold.
-              acc
-            }
+    [member, ..rest] ->
+      when actions is {
+        [] -> Evolved { refusal: Some(@"missing-action"), trie }
+        [Rejected, ..] -> Evolved { refusal: Some(@"rejected-retired"), trie }
+        [UpdateAction(proof), ..tail] -> {
+          let stepped = step(trie, member.pending, proof)
+          if stepped.refusal == None {
+            evolve(stepped.trie, tail, rest)
           } else {
-            acc
+            stepped
           }
-        _ -> acc
-      }
-    }
-  }
-}
-
-/// One step of the fold over an edge-only request (#183 slice b, Lean
-/// `Request.edge`). The tag IS the edge: only tags 1 and 3 pass before approval
-/// and before any proof, then the same admission and MPF walk every edge
-/// takes. No `tip` field (`tip-mismatch` retired): `held >= state.tip`
-/// (`tip-coverage`) plus `deposit == held - state.tip` (`deposit-mismatch`).
-fn stepRequest(
-  acc: Fold,
-  pins: State,
-  request: Request,
-  input: Input,
-  validity_range,
-) -> Fold {
-  let Request {
-    requestOwner,
-    requestKey,
-    edge: tag,
-    submitted_at,
-    destination,
-    deposit,
-    ..
-  } = request
-  let held = lovelace_of(input.output.value)
-  if held < pins.tip {
-    // request-covers-tip (was the pinned consumer's R1): the cage checks carriage now.
-    // Costless fabricated requests would otherwise fold for free —
-    // trie spam at zero price.
-    halt(acc, @"tip-coverage")
-  } else if deposit != held - pins.tip {
-    halt(acc, @"deposit-mismatch")
-  } else {
-    when acc.actions is {
-      [] -> halt(acc, @"missing-action")
-      [action, ..tail] -> {
-        let popped = Fold { ..acc, actions: tail, consumed: acc.consumed + 1 }
-        when action is {
-          // A reject carries no admission, in any window (Lean
-          // `exitAdmission .reject = none`, #320): it reads no time.
-          // Refund rows (NOTE-014 item A2 as corrected by NOTE-017): only
-          // REJECTED rows are owed refunds, at `input − tip`. Each is owed
-          // twice over: positionally (`refundFault`), and with every other
-          // obligation to the owner's key (`payeeFault`), so a refund output
-          // cannot also pay a deposit or a custody refund of the same payee
-          // (#253).
-          Rejected ->
-            Fold {
-              ..popped,
-              refunds: [Pair(requestOwner, held - pins.tip), ..popped.refunds],
-              duties: pushDuty(
-                popped.duties,
-                ReturnDeposit { owner: requestOwner, floor: held - pins.tip },
-              ),
-            }
-          // An update is folded in the processing window only: current
-          // validator behaviour, with no counterpart in Lean.
-          UpdateAction(proof) ->
-            if !in_phase1(validity_range, submitted_at, pins.process_time) {
-              halt(popped, @"not-phase1")
-            } else if tag != edgeInsertActive && tag != edgeUpdateTerminal {
-              // A fixed admission set: only registration and termination.
-              halt(popped, @"edge-inadmissible")
-            } else {
-              let checked =
-                admitted(popped, pins, tag, request, input.output.value)
-              if checked.refusal != None {
-                checked
-              } else {
-                applyEdge(
-                  checked,
-                  pins,
-                  tag,
-                  requestOwner,
-                  requestKey,
-                  destination,
-                  held - pins.tip,
-                  proof,
-                )
-              }
-            }
         }
       }
-    }
   }
 }
 
-/// Apply only the two M1 trie transitions. No absent, delete or read code is
-/// reachable through this dispatch, even after a caller supplies arbitrary tags.
-fn applyEdge(
-  acc: Fold,
-  pins: State,
-  edge: Int,
-  owner: VerificationKeyHash,
-  key: ByteArray,
-  destination: (ByteArray, Option<Data>),
-  floor: Int,
+fn step(
+  trie: MerklePatriciaForestry,
+  pending: Pending,
   proof: mpf.Proof,
-) -> Fold {
-  let inserting = edge == edgeInsertActive
-  let fault =
-    if inserting && !mpf.miss(acc.trie, key, proof) {
-      lib.occupiedRefusal()
-    } else if !inserting {
-      terminalFault(acc.trie, key, proof)
-    } else {
-      None
-    }
-  when fault is {
-    Some(reason) -> halt(acc, reason)
-    None ->
-      Fold {
-        ..acc,
-        trie: if inserting {
-          mpf.insert(acc.trie, key, leafActive, proof)
-        } else {
-          mpf.update(acc.trie, key, proof, leafActive, leafTerminal)
-        },
-        minted: assets.merge(
-          acc.minted,
-          from_asset(
-            pins.active_policy,
-            key,
-            if inserting {
-              1
-            } else {
-              -1
-            },
-          ),
-        ),
-        duties: pushDuties(
-          acc.duties,
-          dutiesOf(pins, edge, owner, key, destination, floor),
-        ),
+) -> Evolved {
+  when pending is {
+    Registering(r) ->
+      if mpf.miss(trie, r.key, proof) {
+        Evolved {
+          refusal: None,
+          trie: mpf.insert(trie, r.key, leafActive, proof),
+        }
+      } else {
+        Evolved { refusal: lib.occupiedRefusal(), trie }
+      }
+    Terminating(t) ->
+      when terminalFault(trie, t.key, proof) is {
+        None ->
+          Evolved {
+            refusal: None,
+            trie: mpf.update(trie, t.key, proof, leafActive, leafTerminal),
+          }
+        fault -> Evolved { refusal: fault, trie }
       }
   }
 }

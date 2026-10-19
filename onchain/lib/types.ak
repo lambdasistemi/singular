@@ -126,10 +126,13 @@ pub type MintRedeemer {
 
 /// Per-request action in a `Modify` redeemer.
 ///
-/// Each action corresponds to one request input in the transaction:
+/// Each action corresponds to one pending request (a registration or a
+/// termination) the transaction spends, in input order:
 /// - `Update(proof)`: verify the Merkle proof and apply the MPF operation
-/// - `Rejected`: refund the owner `held − tip`, in any window (a reject
-///   carries no admission, #320) and skip proof verification
+/// - `Rejected`: retired. The state-spending rejection (a refund of `held − tip`
+///   to the owner) has no counterpart in the accepted fold; every fold that
+///   carries it is refused `rejected-retired`. The constructor stays for the
+///   wire shape.
 ///
 /// ## On-chain encoding
 /// - `Update(proof)` → Constr 0 [proof]
@@ -137,7 +140,7 @@ pub type MintRedeemer {
 pub type RequestAction {
   /// Apply the request's operation to the MPF using this proof.
   UpdateAction(Proof)
-  /// Reject the request, in any window, refunding its owner.
+  /// Retired: the fold refuses it (`rejected-retired`). Kept for the wire shape.
   Rejected
 }
 
@@ -172,11 +175,11 @@ pub type UpdateRedeemer {
   End
   /// Validate that a Request UTxO targets the correct caged token.
   Contribute(OutputReference)
-  /// Process requests with mixed update/reject actions. Requires State datum.
-  /// The `List<RequestAction>` must contain exactly one action per request
-  /// being processed, in the same order as the request inputs appear in
-  /// the transaction's input list. `Update(proof)` applies the MPF operation;
-  /// `Rejected` skips the proof and books the owner's refund instead.
+  /// Fold the pending requests the transaction spends. Requires State datum.
+  /// The `List<RequestAction>` must contain exactly one action per pending
+  /// request, in the same order as the request inputs appear in the
+  /// transaction's input list. `Update(proof)` applies the MPF operation;
+  /// `Rejected` is retired and refused.
   Modify(List<RequestAction>)
   /// Allow the request owner to reclaim their Request UTxO.
   Retract(OutputReference)

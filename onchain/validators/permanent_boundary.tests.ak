@@ -1,26 +1,15 @@
-use aiken/cbor
-use aiken/collection/list
 use aiken/fuzz
-use aiken/primitive/bytearray
-use aiken/primitive/int
-use aiken/primitive/string
-use cardano/address
-use cardano/assets.{from_asset, from_lovelace, merge, zero}
-use cardano/script_context.{Minting, ScriptContext, Spending}
-use cardano/transaction.{
-  InlineDatum, Input, NoDatum, Output, Spend, Transaction,
-}
+use cardano/assets.{merge, zero}
+use cardano/transaction.{InlineDatum, NoDatum, Transaction}
 use registry_fixtures as fx
-use registry_pin.{registryStateHash}
-use request
 use state as m1
-use types.{Contribute, End, Modify, Rejected, StateDatum, UpdateAction}
-use witness
+use types.{End, Modify, StateDatum, UpdateAction}
 
-/// Independently constructed complete folds, including a valid approval for
-/// every tree-changing edge. Absent and terminal roots are component fixtures,
-/// not evidence that M1 can reach those states. Allowed registration and
-/// termination controls must succeed beside the excluded-edge refusals.
+/// Independently constructed complete legacy folds, including a valid approval
+/// for every tree-changing edge. Absent and terminal roots are component
+/// fixtures, not evidence that the registry can reach those states. The two
+/// edges the old fold admitted were accepted by it; since CP2 each of the seven
+/// is refused as a fold with no member.
 fn edgeTransaction(edge: Int) -> (ByteArray, Transaction) {
   let root =
     if edge == 0 || edge == 1 {
@@ -136,89 +125,51 @@ fn edgeTransaction(edge: Int) -> (ByteArray, Transaction) {
   (root, fx.foldTx(root, next, requests, inputs, outputs, mint))
 }
 
-test permanent_boundary(edge via fuzz.int_between(0, 6)) {
+// ----------------------------------------------------------------------------
+// No legacy edge folds any more
+// ----------------------------------------------------------------------------
+//
+// CP2: the registry admits the registrations and terminations its pending
+// requests (`RegistrationDatum`, `TerminationDatum`) carry, nothing else. The
+// seven-edge request of the old fold, with its approval, is no member of the
+// fold for any edge: the two edges the old fold admitted (insert active, update
+// terminal) are refused with the five it never admitted, each as a fold with
+// no member (`empty-fold`). Their accepting controls and the edge-inadmissible
+// reason are retired with the route: the tagged folds are in
+// `tagged_fold.tests.ak`.
+//
+// Retired with the seven-edge boundary:
+//
+// - `permanent_boundary` (edges 1 and 3 accepted, the rest refused) and
+//   `excluded_reason_before_approval_or_proof` (`edge-inadmissible`) are
+//   `permanent_boundary_no_legacy_edge_folds` below;
+// - `excluded_request_can_still_be_rejected` is
+//   `tagged_fold_retires_rejected_*` and the legacy rows of
+//   `deposit_exits.tests.ak`;
+// - `mixed_batch_refuses_the_excluded_member` stays, as a legacy batch with no
+//   member, and its tagged counterpart is
+//   `tagged_fold_refuses_a_legacy_request_beside_a_tagged_member`;
+// - the three context exports for the external checker
+//   (`export_compiled_contexts`, `export_mixed_and_malformed_contexts`,
+//   `export_request_and_mint_routes`) described the legacy edges; the contexts
+//   of the tagged folds are exported with the compiled identities, once, after
+//   the accepted GREEN.
+
+test permanent_boundary_no_legacy_edge_folds(edge via fuzz.int_between(0, 6)) {
   let (root, tx) = edgeTransaction(edge)
   let actions = [UpdateAction([])]
   let datum = Some(StateDatum(fx.stateOf(root)))
-  m1.state.spend(datum, Modify(actions), fx.stateRef, tx) == (
-    edge == 1 || edge == 3
-  )
-}
-
-test excluded_reason_before_approval_or_proof(edge via fuzz.int_between(0, 6)) {
-  let (root, tx) = edgeTransaction(edge)
-  if edge == 1 || edge == 3 {
-    True
-  } else {
-    m1.modifyRefusal(
-      fx.stateOf(root),
-      [UpdateAction([])],
-      fx.stateInput(root),
-      tx,
-    ) == Some(@"edge-inadmissible")
-  }
+  m1.state.spend(datum, Modify(actions), fx.stateRef, tx) == False && m1.modifyRefusal(
+    fx.stateOf(root),
+    actions,
+    fx.stateInput(root),
+    tx,
+  ) == Some(@"empty-fold")
 }
 
 test ownerless_end_stays_refused() fail {
   let (root, tx) = edgeTransaction(1)
   m1.state.spend(Some(StateDatum(fx.stateOf(root))), End, fx.stateRef, tx)
-}
-
-test excluded_request_can_still_be_rejected() {
-  let root = fx.emptyRoot()
-  let request =
-    fx.requestInput(
-      0,
-      fx.keyA,
-      6,
-      fx.bookerKey,
-      fx.readDestination(),
-      zero,
-      fx.requestLovelace,
-    )
-  let tx =
-    fx.foldTx(
-      root,
-      root,
-      [request],
-      [],
-      [fx.paymentOutput(fx.bookerAddress, fx.deposit)],
-      zero,
-    )
-  m1.state.spend(
-    Some(StateDatum(fx.stateOf(root))),
-    Modify([Rejected]),
-    fx.stateRef,
-    tx,
-  )
-}
-
-/// Fixture export only: the checker evaluates these contexts against the
-/// blueprint's actual compiled bytes, separately from Aiken unit evaluation.
-test export_compiled_contexts() {
-  list.all(
-    list.range(0, 6),
-    fn(edge) {
-      let (root, tx) = edgeTransaction(edge)
-      let datum: Data = StateDatum(fx.stateOf(root))
-      let redeemer: Data = Modify([UpdateAction([])])
-      let context: Data =
-        ScriptContext {
-          transaction: tx,
-          redeemer,
-          info: Spending { output: fx.stateRef, datum: Some(datum) },
-        }
-      trace string.join(
-        [
-          @"M1-CONTEXT",
-          int.to_string(edge),
-          bytearray.to_hex(cbor.serialise(context)),
-        ],
-        @":",
-      )
-      True
-    },
-  )
 }
 
 fn mixedTransaction() -> (ByteArray, Transaction) {
@@ -289,180 +240,4 @@ test mixed_batch_refuses_the_excluded_member() {
   let (root, tx) = mixedTransaction()
   let datum = Some(StateDatum(fx.stateOf(root)))
   !m1.state.spend(datum, Modify(mixedActions()), fx.stateRef, tx)
-}
-
-fn exportExtra(label: Int, root: ByteArray, tx: Transaction, redeemer: Data) {
-  let datum: Data = StateDatum(fx.stateOf(root))
-  let context: Data =
-    ScriptContext {
-      transaction: tx,
-      redeemer,
-      info: Spending { output: fx.stateRef, datum: Some(datum) },
-    }
-  trace string.join(
-    [
-      @"M1-EXTRA",
-      int.to_string(label),
-      bytearray.to_hex(cbor.serialise(context)),
-    ],
-    @":",
-  )
-  True
-}
-
-test export_mixed_and_malformed_contexts() {
-  let (mixedRoot, mixed) = mixedTransaction()
-  let (root, tx) = edgeTransaction(1)
-  let mixedRedeemer: Data = Modify(mixedActions())
-  let unknown: Data = 7
-  let alternate: Data = Contribute(fx.stateRef)
-  let end: Data = End
-  let missing: Data = Modify([])
-  let unknownEdge: Data = Modify([UpdateAction([])])
-  let (unknownRoot, unknownTx) = edgeTransaction(7)
-  let (negativeRoot, negativeTx) = edgeTransaction(-1)
-  and {
-    exportExtra(0, mixedRoot, mixed, mixedRedeemer),
-    exportExtra(1, root, tx, unknown),
-    exportExtra(2, root, tx, alternate),
-    exportExtra(3, root, tx, end),
-    exportExtra(4, root, tx, missing),
-    exportExtra(5, unknownRoot, unknownTx, unknownEdge),
-    exportExtra(6, negativeRoot, negativeTx, unknownEdge),
-  }
-}
-
-/// Request and witness components are subordinate to the state's decision.
-/// They intentionally admit co-present folds; the state must still refuse every
-/// excluded edge. Policy IDs below are fixture pins, not a ledger claim.
-test export_request_and_mint_routes() {
-  list.all(
-    list.range(0, 6),
-    fn(edge) {
-      let (root, original) = edgeTransaction(edge)
-      let pin = registryStateHash
-      let state = fx.stateInput(root)
-      let value =
-        merge(
-          from_lovelace(fx.stateLovelace),
-          from_asset(pin, fx.cageTokenName(), 1),
-        )
-      let bound =
-        Input {
-          ..state,
-          output: Output {
-            ..state.output,
-            address: address.from_script(pin),
-            value,
-          },
-        }
-      expect [_, ..others] = original.inputs
-      expect [continuation, ..outputs] = original.outputs
-      let modify: Data = Modify([UpdateAction([])])
-      let tx =
-        Transaction {
-          ..original,
-          inputs: [bound, ..others],
-          outputs: [
-            Output { ..continuation, address: address.from_script(pin), value },
-            ..outputs
-          ],
-          redeemers: [Pair(Spend(fx.stateRef), modify)],
-        }
-      expect [pending, ..] = others
-      expect InlineDatum(datum) = pending.output.datum
-      expect requestDatum: types.CageDatum = datum
-      let contribute: Data = Contribute(fx.stateRef)
-      let context: Data =
-        ScriptContext {
-          transaction: tx,
-          redeemer: contribute,
-          info: Spending { output: fx.requestRef(0), datum: Some(datum) },
-        }
-      let statePolicy: Data = pin
-      let token: Data = fx.cageTokenName()
-      let requestBundle: Data = [statePolicy, token, context]
-      trace string.join(
-        [
-          @"M1-REQUEST",
-          int.to_string(edge),
-          bytearray.to_hex(cbor.serialise(requestBundle)),
-        ],
-        @":",
-      )
-      let kind =
-        if edge == 0 || edge == 2 || edge == 4 {
-          0
-        } else if edge == 6 {
-          2
-        } else {
-          1
-        }
-      let policy =
-        if kind == 0 {
-          fx.absentPolicy
-        } else if kind == 1 {
-          fx.activePolicy
-        } else {
-          fx.terminalPolicy
-        }
-      let mintRedeemer: Data = #""
-      let mintContext: Data =
-        ScriptContext {
-          transaction: tx,
-          redeemer: mintRedeemer,
-          info: Minting(policy),
-        }
-      let kindData: Data = kind
-      let registryData: Data = bytearray.concat(pin, fx.cageTokenName())
-      let mintBundle: Data = [kindData, registryData, mintContext]
-      trace string.join(
-        [
-          @"M1-MINT",
-          int.to_string(edge),
-          bytearray.to_hex(cbor.serialise(mintBundle)),
-        ],
-        @":",
-      )
-      // Complete state-spend component on the same transaction.
-      let stateDatum: Data = StateDatum(fx.stateOf(root))
-      let stateContext: Data =
-        ScriptContext {
-          transaction: tx,
-          redeemer: modify,
-          info: Spending { output: fx.stateRef, datum: Some(stateDatum) },
-        }
-      trace string.join(
-        [
-          @"M1-JOINED",
-          int.to_string(edge),
-          bytearray.to_hex(cbor.serialise(stateContext)),
-        ],
-        @":",
-      )
-      and {
-        request.request.spend(
-          pin,
-          fx.cageTokenName(),
-          Some(requestDatum),
-          Contribute(fx.stateRef),
-          fx.requestRef(0),
-          tx,
-        ),
-        witness.witness.mint(
-          kind,
-          bytearray.concat(pin, fx.cageTokenName()),
-          mintRedeemer,
-          policy,
-          tx,
-        ),
-        m1.state.spend(
-          Some(StateDatum(fx.stateOf(root))),
-          Modify([UpdateAction([])]),
-          fx.stateRef,
-          tx,
-        ) == ( edge == 1 || edge == 3 ),
-      }
-    },
-  )
 }

@@ -911,518 +911,6 @@ fn honestRelease() -> Transaction {
   )
 }
 
-test release_control_accepts_with_the_registry() {
-  let tx = honestRelease()
-  registryFolds(tx) && release(tx)
-}
-
-test release_split_payments_to_the_controller_accept() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit), payController(appDeposit)],
-      theBurn(),
-    )
-  registryFolds(tx) && release(tx)
-}
-
-test release_non_additive_payment_refuses_where_the_registry_accepts() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit + appDeposit - 1)],
-      theBurn(),
-    )
-  registryFolds(tx) && release(tx) == False
-}
-
-test release_one_output_for_both_floors_refuses() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit)],
-      theBurn(),
-    )
-  registryFolds(tx) && release(tx) == False
-}
-
-/// The same fold spending a holding whose token count is wrong. With two
-/// units, one is burned and the registry would still fold; the other
-/// would be released with the deposit. With none, the burned unit comes
-/// from another input.
-test release_of_a_holding_with_two_tokens_refuses() {
-  release(
-    releaseTxFrom(
-      holdingCarrying(2),
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit + appDeposit)],
-      theBurn(),
-    ),
-  ) == False
-}
-
-test release_of_a_holding_without_its_token_refuses() {
-  let tx =
-    releaseTxFrom(
-      holdingCarrying(0),
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit + appDeposit)],
-      theBurn(),
-    )
-  release(
-    Transaction {
-      ..tx,
-      inputs: list.concat(
-        tx.inputs,
-        [fx.tokenInput(0, fx.activePolicy, fx.keyA)],
-      ),
-    },
-  ) == False
-}
-
-test release_without_fold_refuses() {
-  let tx =
-    Transaction {
-      ..transaction.placeholder,
-      inputs: [holding()],
-      outputs: [payController(appDeposit)],
-      extra_signatories: [controller],
-      redeemers: [Pair(Spend(holdingRef), Release |> as_data_spend)],
-    }
-  release(tx) == False
-}
-
-test release_with_state_not_folding_refuses() {
-  let tx = honestRelease()
-  release(
-    Transaction {
-      ..tx,
-      redeemers: [Pair(Spend(holdingRef), Release |> as_data_spend)],
-    },
-  ) == False
-}
-
-test release_of_another_registry_refuses() {
-  let tx = honestRelease()
-  let s = stateInput()
-  let foreign =
-    Input {
-      ..s,
-      output: Output {
-        ..s.output,
-        value: from_asset(registryStateHash, #"6f74686572", 1)
-          |> merge(from_lovelace(5_000_000)),
-      },
-    }
-  expect [_, ..rest] = tx.inputs
-  release(Transaction { ..tx, inputs: [foreign, ..rest] }) == False
-}
-
-test release_terminating_another_key_refuses() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(controller, fx.keyB),
-      UpdateAction([]),
-      [payController(fx.deposit + appDeposit)],
-      theBurn(),
-    )
-  release(tx) == False
-}
-
-test release_for_a_request_by_another_owner_refuses() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(fx.inserterKey, fx.keyA),
-      UpdateAction([]),
-      [
-        fx.paymentOutput(fx.inserterAddress, fx.deposit),
-        payController(appDeposit),
-      ],
-      theBurn(),
-    )
-  release(tx) == False
-}
-
-test release_without_the_burn_refuses() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit + appDeposit)],
-      zero,
-    )
-  release(tx) == False
-}
-
-test release_when_the_termination_is_rejected_refuses() {
-  let tx =
-    releaseTx(
-      theState(),
-      terminateRequest(controller, fx.keyA),
-      Rejected,
-      [payController(fx.deposit + appDeposit)],
-      theBurn(),
-    )
-  release(tx) == False
-}
-
-test release_under_a_state_pinning_another_application_refuses() {
-  let tx =
-    releaseTx(
-      State { ..theState(), application_policy: fx.foreignPolicy },
-      terminateRequest(controller, fx.keyA),
-      UpdateAction([]),
-      [payController(fx.deposit + appDeposit)],
-      theBurn(),
-    )
-  release(tx) == False
-}
-
-// Two releases to one controller in one fold of one registry, both keys
-// Active: the registry retires both and the application releases both,
-// on the same transaction. Every registry deposit and every released
-// deposit to that key is owed as one sum.
-
-const holdingRefB: OutputReference =
-  OutputReference { transaction_id: #"484f4c44", output_index: 1 }
-
-const requestRefB: OutputReference =
-  OutputReference { transaction_id: #"52455155455354", output_index: 1 }
-
-fn envelopeB() -> Envelope {
-  envelopeOf(Control { ..control(), key: fx.keyB }, payloadB())
-}
-
-fn bothActive() -> State {
-  fx.stateOf(fx.twoLeaves(fx.keyA, fx.activeLeaf, fx.keyB, fx.activeLeaf))
-}
-
-/// keyA against the two-leaf trie, then keyB against the trie keyA left.
-fn bothRetired() -> List<RequestAction> {
-  [
-    UpdateAction(fx.siblingProof(fx.keyB, fx.activeLeaf, fx.keyA)),
-    UpdateAction(fx.siblingProof(fx.keyA, fx.terminalLeaf, fx.keyB)),
-  ]
-}
-
-fn twoReleases(paid: List<Output>) -> Transaction {
-  let holdingB =
-    Input {
-      output_reference: holdingRefB,
-      output: holdingOutput(envelopeB(), appDeposit, zero),
-    }
-  let requestB =
-    Input {
-      ..terminateRequest(controller, fx.keyB),
-      output_reference: requestRefB,
-    }
-  Transaction {
-    ..transaction.placeholder,
-    validity_range: fx.phase1(),
-    inputs: [
-      stateInputWith(bothActive()),
-      terminateRequest(controller, fx.keyA),
-      requestB,
-      holding(),
-      holdingB,
-    ],
-    outputs: [
-      stateOutputAt(
-        fx.twoLeaves(fx.keyA, fx.terminalLeaf, fx.keyB, fx.terminalLeaf),
-        bothActive(),
-      ),
-      ..paid
-    ],
-    mint: theBurn() |> merge(from_asset(fx.activePolicy, fx.keyB, -1)),
-    redeemers: [
-      Pair(Spend(stateRef), Modify(bothRetired()) |> as_data_modify),
-      Pair(Spend(holdingRef), Release |> as_data_spend),
-      Pair(Spend(holdingRefB), Release |> as_data_spend),
-    ],
-  }
-}
-
-fn registryRetiresBoth(tx: Transaction) -> Bool {
-  state.state.spend(
-    Some(StateDatum(bothActive())),
-    Modify(bothRetired()),
-    stateRef,
-    tx,
-  )
-}
-
-fn releaseB(tx: Transaction) -> Bool {
-  open_datum.open_datum.spend(
-    registry(),
-    Some(envelopeB() |> as_data_envelope),
-    Release,
-    holdingRefB,
-    tx,
-  )
-}
-
-test two_releases_to_one_controller_paid_in_full_accept_with_the_registry() {
-  let tx = twoReleases([payController(2 * fx.deposit + 2 * appDeposit)])
-  registryRetiresBoth(tx) && release(tx) && releaseB(tx)
-}
-
-test two_releases_paid_one_short_refuse_where_the_registry_accepts() {
-  let tx = twoReleases([payController(2 * fx.deposit + 2 * appDeposit - 1)])
-  registryRetiresBoth(tx) && release(tx) == False && releaseB(tx) == False
-}
-
-test two_releases_paid_for_one_refuse_where_the_registry_accepts() {
-  let tx = twoReleases([payController(fx.deposit + appDeposit)])
-  registryRetiresBoth(tx) && release(tx) == False && releaseB(tx) == False
-}
-
-// Two registries in one transaction cannot both fold. Every fold's
-// continuation is the transaction's first output, which must hold exactly
-// one state token, this registry's (`registry/modify` `state-token`). Both
-// registries share the one state policy, so whichever registry's token
-// the first output carries, the other registry's own validator refuses.
-// The application's release therefore never has a second fold's
-// obligations, or a second instance's releases, to add to its own.
-// Each registry folds and releases alone, below.
-
-const stateNameTwo: ByteArray = #"636167652d74776f"
-
-const appTwo: ByteArray =
-  #"a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8"
-
-const activeTwo: ByteArray =
-  #"abababababababababababababababababababababababababababab"
-
-const stateRefTwo: OutputReference =
-  OutputReference { transaction_id: #"5354415445", output_index: 1 }
-
-const holdingRefTwo: OutputReference =
-  OutputReference { transaction_id: #"484f4c44", output_index: 2 }
-
-const requestRefTwo: OutputReference =
-  OutputReference { transaction_id: #"52455155455354", output_index: 2 }
-
-fn registryTwo() -> ByteArray {
-  bytearray.concat(registryStateHash, stateNameTwo)
-}
-
-fn stateTwo() -> State {
-  State { ..theState(), application_policy: appTwo, active_policy: activeTwo }
-}
-
-fn stateValueTwo() -> Value {
-  from_asset(registryStateHash, stateNameTwo, 1)
-    |> merge(from_lovelace(5_000_000))
-}
-
-fn stateInputTwo() -> Input {
-  Input {
-    output_reference: stateRefTwo,
-    output: Output {
-      address: address.from_script(registryStateHash),
-      value: stateValueTwo(),
-      datum: InlineDatum(StateDatum(stateTwo())),
-      reference_script: None,
-    },
-  }
-}
-
-fn continuationTwo() -> Output {
-  Output {
-    address: address.from_script(registryStateHash),
-    value: stateValueTwo(),
-    datum: InlineDatum(
-      StateDatum(
-        State { ..stateTwo(), root: fx.oneLeaf(fx.keyA, fx.terminalLeaf) },
-      ),
-    ),
-    reference_script: None,
-  }
-}
-
-fn envelopeTwo() -> Envelope {
-  envelopeOf(
-    Control {
-      ..control(),
-      registry: StateAsset {
-        statePolicy: registryStateHash,
-        stateName: stateNameTwo,
-      },
-      activePolicy: activeTwo,
-    },
-    payloadB(),
-  )
-}
-
-fn holdingTwo() -> Input {
-  Input {
-    output_reference: holdingRefTwo,
-    output: Output {
-      address: address.from_script(appTwo),
-      value: from_lovelace(appDeposit)
-        |> merge(from_asset(activeTwo, fx.keyA, 1)),
-      datum: InlineDatum(envelopeTwo()),
-      reference_script: None,
-    },
-  }
-}
-
-fn requestTwo() -> Input {
-  Input {
-    output_reference: requestRefTwo,
-    output: Output {
-      address: address.from_script(registryStateHash),
-      value: from_lovelace(fx.tip + fx.deposit)
-        |> merge(
-            from_asset(
-              appTwo,
-              approvalName(3, fx.keyA, controller, (#"", #"")),
-              1,
-            ),
-          ),
-      datum: InlineDatum(
-        RequestDatum(
-          Request {
-            requestToken: TokenId { assetName: stateNameTwo },
-            requestOwner: controller,
-            requestKey: fx.keyA,
-            edge: 3,
-            submitted_at: 0,
-            destination: (#"", None),
-            deposit: fx.deposit,
-          },
-        ),
-      ),
-      reference_script: None,
-    },
-  }
-}
-
-fn burnTwo() -> Value {
-  from_asset(activeTwo, fx.keyA, -1)
-}
-
-/// Registry two's own retirement of keyA, releasing instance two's
-/// holding.
-fn registryTwoAlone(paid: List<Output>) -> Transaction {
-  Transaction {
-    ..transaction.placeholder,
-    validity_range: fx.phase1(),
-    inputs: [stateInputTwo(), requestTwo(), holdingTwo()],
-    outputs: [continuationTwo(), ..paid],
-    mint: burnTwo(),
-    redeemers: [
-      Pair(Spend(stateRefTwo), Modify([UpdateAction([])]) |> as_data_modify),
-      Pair(Spend(holdingRefTwo), Release |> as_data_spend),
-    ],
-  }
-}
-
-/// Both registries' retirements and both releases in one transaction,
-/// registry one's continuation first.
-fn twoRegistries(paid: List<Output>) -> Transaction {
-  Transaction {
-    ..transaction.placeholder,
-    validity_range: fx.phase1(),
-    inputs: [
-      stateInput(),
-      stateInputTwo(),
-      terminateRequest(controller, fx.keyA),
-      requestTwo(),
-      holding(),
-      holdingTwo(),
-    ],
-    outputs: [
-      stateOutputAt(fx.oneLeaf(fx.keyA, fx.terminalLeaf), theState()),
-      continuationTwo(),
-      ..paid
-    ],
-    mint: theBurn() |> merge(burnTwo()),
-    redeemers: [
-      Pair(Spend(stateRef), Modify([UpdateAction([])]) |> as_data_modify),
-      Pair(Spend(stateRefTwo), Modify([UpdateAction([])]) |> as_data_modify),
-      Pair(Spend(holdingRef), Release |> as_data_spend),
-      Pair(Spend(holdingRefTwo), Release |> as_data_spend),
-    ],
-  }
-}
-
-fn releaseTwo(tx: Transaction) -> Bool {
-  open_datum.open_datum.spend(
-    registryTwo(),
-    Some(envelopeTwo() |> as_data_envelope),
-    Release,
-    holdingRefTwo,
-    tx,
-  )
-}
-
-fn registryTwoFolds(tx: Transaction) -> Bool {
-  state.state.spend(
-    Some(StateDatum(stateTwo())),
-    Modify([UpdateAction([])]),
-    stateRefTwo,
-    tx,
-  )
-}
-
-test registry_one_alone_folds_and_releases() {
-  let tx = honestRelease()
-  registryFolds(tx) && release(tx)
-}
-
-test registry_two_alone_folds_and_releases() {
-  let tx = registryTwoAlone([payController(fx.deposit + appDeposit)])
-  registryTwoFolds(tx) && releaseTwo(tx)
-}
-
-test registry_two_alone_paid_one_short_refuses_where_the_registry_accepts() {
-  let tx = registryTwoAlone([payController(fx.deposit + appDeposit - 1)])
-  registryTwoFolds(tx) && releaseTwo(tx) == False
-}
-
-/// The same transaction with both folds: registry one's continuation is
-/// first, so registry one folds and registry two's own validator refuses
-/// at `state-token` — read from the registry's own refusal function.
-test two_registries_in_one_transaction_the_second_refuses_state_token() {
-  let tx = twoRegistries([payController(2 * fx.deposit + 2 * appDeposit)])
-  and {
-    registryFolds(tx),
-    state.modifyRefusal(stateTwo(), [UpdateAction([])], stateInputTwo(), tx) == Some(
-      @"state-token",
-    ),
-    registryTwoFolds(tx) == False,
-  }
-}
-
-/// With registry two's continuation first instead, registry one refuses
-/// at `state-token`: neither order folds both.
-test two_registries_in_either_order_the_other_refuses_state_token() {
-  let tx = twoRegistries([payController(2 * fx.deposit + 2 * appDeposit)])
-  expect [first, second, ..rest] = tx.outputs
-  let swapped = Transaction { ..tx, outputs: [second, first, ..rest] }
-  and {
-    registryTwoFolds(swapped),
-    state.modifyRefusal(theState(), [UpdateAction([])], stateInput(), swapped) == Some(
-      @"state-token",
-    ),
-    registryFolds(swapped) == False,
-  }
-}
-
 // ----------------------------------------------------------------------------
 // No other spending path
 // ----------------------------------------------------------------------------
@@ -1590,23 +1078,6 @@ test closed_booking_refuses_termination_without_live_output_where_open_refuses()
     controller,
     tx,
   ) == False
-}
-
-test closed_release_accepts_with_the_registry() {
-  let tx = honestRelease()
-  registryFolds(tx) && closedRelease(tx)
-}
-
-test closed_release_without_fold_refuses_where_open_refuses() {
-  let tx =
-    Transaction {
-      ..transaction.placeholder,
-      inputs: [holding()],
-      outputs: [payController(appDeposit)],
-      extra_signatories: [controller],
-      redeemers: [Pair(Spend(holdingRef), Release |> as_data_spend)],
-    }
-  release(tx) == False && closedRelease(tx) == False
 }
 
 test closed_else_refuses() fail {
@@ -2007,17 +1478,40 @@ test closed_datum_termination_approval_is_retired() {
 }
 
 // ----------------------------------------------------------------------------
-// CP2 RED: the old Release route is refused
+// The old Release route is refused (CP2)
 // ----------------------------------------------------------------------------
 //
 // The accepted fold has no state-spending rejection, no deposit returned to
-// the controller and no approval-admitted request (`Economics/Fold.lean`).
-// The valid old release (`honestRelease`: a legacy terminate request, the live
-// output and the burn, folded together) is accepted today by both the state
-// spend and the `Release` arm. The old expectation
-// (`release_control_accepts_with_the_registry`) stays until the GREEN retires
-// it. Each row runs the real handler of its own boundary on that unchanged
-// transaction.
+// the controller and no approval-admitted request (`Economics/Fold.lean`). The
+// valid old release (`honestRelease`: a legacy terminate request, the live
+// output and the burn, folded together) was accepted by both the state spend
+// and the `Release` arm before CP2 (the RED run shows each accepted). A key
+// is terminated by booking and a permissionless fold of the pending request
+// (`tagged_fold.tests.ak`), so `Release` is refused for every transaction and
+// the registry no longer folds the old request. The `Release` constructor
+// stays for the wire shape.
+//
+// Old to new map of the retired rows. The rows that asserted the old release
+// is accepted with the registry (`release_control_accepts_with_the_registry`,
+// `release_split_payments_to_the_controller_accept`,
+// `two_releases_to_one_controller_paid_in_full_accept_with_the_registry`,
+// `registry_one_alone_folds_and_releases`,
+// `registry_two_alone_folds_and_releases`, `closed_release_accepts_with_the_registry`)
+// are the valid tagged folds in `tagged_fold.tests.ak`. The rows that refused one
+// fact of the old release (additive payment, one output for both floors,
+// a holding with two tokens or none, no fold, a state not folding, another
+// registry, another key, another owner, no burn, a rejected termination, a state
+// pinning another application, two releases paid short, two registries in one
+// transaction) guarded obligations of the old fold that the model does not
+// have: no deposit is returned to a controller, the burn belongs to the fold of
+// the pending termination, and the pending request holds the custody the live
+// output booked. They are retired with the route, not kept as guards: against
+// a blanket refusal they would each pass for the same reason. What they
+// protected survives where the model keeps it: the custody of a booking is
+// judged by `BookTermination` (the `open_datum_termination_*` rows), the burn
+// and the tags by the tagged fold (`fold-singular-mismatch`,
+// `fold-tag-not-burned`), and a second state in one transaction by
+// `tagged_fold_refuses_a_second_input_holding_a_state_token` and `..._output_...`.
 
 /// The registry's fold: a legacy request is no pending request, so the fold
 /// has no member.
@@ -2048,4 +1542,72 @@ test tagged_fold_retires_the_legacy_release_with_split_payments() {
       theBurn(),
     )
   registryFolds(tx) == False && release(tx) == False
+}
+
+/// The closed instance forwards `Release` to the same refusal.
+test closed_datum_retires_the_release_arm() {
+  closedRelease(honestRelease()) == False
+}
+
+/// `Release` is refused for a transaction that has nothing to do with the old
+/// fold: no state, no request, only the live output and a payment. The refusal
+/// is the arm's own, not a side effect of a fold that did not land.
+test tagged_fold_release_is_refused_without_any_fold() {
+  let tx =
+    Transaction {
+      ..transaction.placeholder,
+      inputs: [holding()],
+      outputs: [payController(appDeposit)],
+      extra_signatories: [controller],
+      redeemers: [Pair(Spend(holdingRef), Release |> as_data_spend)],
+    }
+  release(tx) == False && closedRelease(tx) == False
+}
+
+// ----------------------------------------------------------------------
+// Composition with the fold: the application tag is burned by the fold
+// ----------------------------------------------------------------------
+//
+// A registration's fold burns its application tag under the application
+// policy. These rows run the real mint handlers of this application, open and
+// closed, on a transaction that only burns an application tag, as the fold
+// does (`tagged_fold.tests.ak` runs the generic `open` policy on the whole
+// fold transaction): a pure burn is evidence destroyed and costs the registry
+// nothing, so it is accepted without a redeemer's content and without a state.
+// They are preservation tests of a correct guard and pass at once.
+
+fn applicationBurn() -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    mint: from_asset(app, #"6170706c69636174696f6e2d746167", -1),
+  }
+}
+
+test open_datum_accepts_the_burn_of_an_application_tag() {
+  let redeemer: OpenDatumMint =
+    BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
+  open_datum.open_datum.mint(registry(), redeemer, app, applicationBurn())
+}
+
+test closed_datum_accepts_the_burn_of_an_application_tag() {
+  let redeemer: OpenDatumMint =
+    BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
+  open_datum.closed_datum.mint(registry(), redeemer, app, applicationBurn())
+}
+
+/// A mint beside the burn is not a pure burn: the fold's transaction cannot
+/// use the application policy to mint.
+test open_datum_refuses_a_mint_beside_a_burn_of_application_tags() {
+  let tx = applicationBurn()
+  let redeemer: OpenDatumMint =
+    BookTerminate { key: fx.keyA, owner: controller, holding: holdingRef }
+  open_datum.open_datum.mint(
+    registry(),
+    redeemer,
+    app,
+    Transaction {
+      ..tx,
+      mint: tx.mint |> merge(from_asset(app, #"6f74686572", 1)),
+    },
+  ) == False
 }
