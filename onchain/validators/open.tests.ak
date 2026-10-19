@@ -1,9 +1,10 @@
+use booking.{applicationTagName}
 use cardano/assets.{PolicyId, Value, from_asset, merge, zero}
 use cardano/transaction.{Transaction}
 use cardano/transaction as tx_mod
 use lib.{approvalName}
 use open
-use types.{Approve, OpenRedeemer}
+use types.{Approve, ApproveRegistration, OpenRedeemer}
 
 // ============================================================================
 // #173 A173-APPROVAL — the open application's admission rule
@@ -155,4 +156,104 @@ test open_refuses_empty_mint() {
 /// policy stays mint-only and no longer certifies the `updateTerminal` edge.
 test open_refuses_the_termination_approval() {
   admits_edge(3) == False
+}
+
+// ============================================================================
+// The generic open policy after the registration booking (A-035)
+// ============================================================================
+//
+// The model's registration booking binds the booking to the request's own
+// application tag (`applicationTagName`: key, refund address, destination and
+// nonce); the edge-numbered approval of the old fold admitted a legacy
+// edge-only request that nothing folds any more. `Approve` is retired for
+// every edge and its constructor index stays; `ApproveRegistration` is the one
+// lawful approval, and a pure burn stays lawful.
+//
+// Classes of rows (`tagged_registration_*`): the refusals of the five legacy
+// tree edges the policy admits today are RED (the existing `open_admits_*`
+// rows stay unchanged and are retired by the GREEN). The registration
+// positive, its canonical-binding, quantity, empty, multiple and mixed-mint
+// guards and the pure burn exist already and pass at once: preservation
+// evidence, not RED. No generic application consent, script spending
+// protection or cross-registry separation is claimed.
+
+fn refuses_legacy_edge(edge: Int) -> Bool {
+  open.open.mint(approve(edge), openPolicy, mint_tx([(bound_name(edge), 1)])) == False
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_insert_absent() {
+  refuses_legacy_edge(0)
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_insert_active() {
+  refuses_legacy_edge(1)
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_update_active() {
+  refuses_legacy_edge(2)
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_delete_absent() {
+  refuses_legacy_edge(4)
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_delete_active() {
+  refuses_legacy_edge(5)
+}
+
+fn register(nonce: Int) -> OpenRedeemer {
+  ApproveRegistration {
+    key: testKey,
+    refund_address: testOwner,
+    destination: testAddress,
+    nonce,
+  }
+}
+
+fn registration_name(nonce: Int) -> ByteArray {
+  applicationTagName(testKey, testOwner, testAddress, nonce)
+}
+
+test tagged_registration_open_admits_the_registration_approval() {
+  open.open.mint(register(1), openPolicy, mint_tx([(registration_name(1), 1)]))
+}
+
+/// The name is the binding: the tag of another nonce is refused.
+test tagged_registration_open_refuses_the_name_of_another_nonce() {
+  open.open.mint(register(1), openPolicy, mint_tx([(registration_name(2), 1)])) == False
+}
+
+/// And the tag of another key.
+test tagged_registration_open_refuses_the_name_of_another_key() {
+  let other = applicationTagName(#"6f74686572", testOwner, testAddress, 1)
+  open.open.mint(register(1), openPolicy, mint_tx([(other, 1)])) == False
+}
+
+test tagged_registration_open_refuses_a_widened_quantity() {
+  open.open.mint(register(1), openPolicy, mint_tx([(registration_name(1), 2)])) == False
+}
+
+test tagged_registration_open_refuses_two_registration_names() {
+  open.open.mint(
+    register(1),
+    openPolicy,
+    mint_tx([(registration_name(1), 1), (registration_name(2), 1)]),
+  ) == False
+}
+
+test tagged_registration_open_refuses_a_registration_mint_beside_a_burn() {
+  open.open.mint(
+    register(1),
+    openPolicy,
+    mint_tx([(registration_name(1), 1), (registration_name(2), -1)]),
+  ) == False
+}
+
+test tagged_registration_open_refuses_an_empty_registration_mint() {
+  open.open.mint(register(1), openPolicy, mint_tx([])) == False
+}
+
+/// A pure burn of a registration approval stays lawful under any redeemer.
+test tagged_registration_open_admits_a_pure_burn_of_a_registration_approval() {
+  open.open.mint(register(1), openPolicy, mint_tx([(registration_name(1), -1)]))
 }
