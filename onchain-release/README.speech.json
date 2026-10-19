@@ -1,29 +1,33 @@
 {
-  "singular-on-chain-release-how-to-use-this-archive": [
+  "singular-release-archive-start-with-demo-1": [
     {
-      "text": "Singular on-chain release — how to use this archive.",
+      "text": "Singular release archive: start with Demo 1.",
       "pause": 500
     },
     {
-      "text": "You are an integrator who received a tagged release and wants to run what this release verifiably carries: the bounded registry journey — boot a registry, fold a request, apply it and read the state back — plus the identity and contract-fixture checks, all re-derived from the artifact itself. You need none of the repository to do it. Sections 1–4 run from this directory alone; section 5 documents retained commands that are history, not runnable instructions. The only external requirement is Nix for the runnable parts (the identity verification also runs without it, with just jq).",
-      "pause": 400
-    },
-    {
-      "text": "The archive also carries the naming-lifecycle row runners of earlier releases (claim, recovery, retirement and their independent reader). They are retained legacy commands: kept so the archive stays faithful to its history, but not currently buildable and verified against this release's source — see the retained legacy commands before relying on any name documented here. Release instructions are corrected forward: a future correction changes the current source and the archives built from it; already published archives are never rewritten, so an older archive can still carry the previous instructions that presented every row runner as runnable.",
-      "pause": 400
-    },
-    {
-      "text": "A zero exit is the verified journey's claim: it exits non-zero on any mismatch, and the identity and fixture checks re-derive every binding from retained bytes rather than trusting anyone's word.",
+      "text": "You are a Cardano developer who knows cardano-cli, wallets, faucets and Koios, and you have received a tagged Singular release. You want to play Demo 1 from it without guessing a value: create a registry, put keys in it, change and end them, and see each refusal appear where the page says it will. This archive carries what you need, and DEMO1.md in this directory is the page that does it. You need none of the repository. The only external requirement is Nix with flakes (the identity verification also runs without it, with just jq), plus git, jq and curl.",
       "pause": 400
     }
   ],
-  "the-naming-lifecycle-the-retained-rows-exercise": [
+  "start-here-play-demo-1": [
     {
-      "text": "The naming lifecycle the retained rows exercise.",
+      "text": "Start here: play Demo 1.",
       "pause": 500
     },
     {
-      "text": "Claiming writes the name, recovery rotates its control without moving its representative, retirement moves the representative into completion-only custody, and completion burns it while folding the retirement's own pending registry update. The key stays occupied forever afterwards: re-registering it is refused, which is what \"Over\" means on chain. The row runners that exercised this lifecycle end to end are the retained legacy commands of section 5; the verified journey covers the registry protocol (boot, request, apply, read back), not yet this naming lifecycle.",
+      "text": "Check this archive (section 1) and its compiled validators (section 2).",
+      "pause": 300
+    },
+    {
+      "text": "Follow DEMO1.md, in this directory. It builds singular and open-datum, starts a private development node, makes Alice's and Bob's vault wallets and runs the sixteen steps, with every value taken from the previous receipt.",
+      "pause": 300
+    },
+    {
+      "text": "When you are ready to spend test ada, follow the preprod runbook: the same steps against the public preprod network, with the faucet, the Koios address and the amounts.",
+      "pause": 300
+    },
+    {
+      "text": "The rest of this file is reference for the archive itself: what it carries, how to verify it, the signers, the bounded registry journey, and, kept last because it is history, the naming lifecycle of earlier releases.",
       "pause": 400
     }
   ],
@@ -43,17 +47,21 @@
       "pause": 500
     },
     {
-      "text": "From the directory you extracted this archive into (the release's SHA256SUMS, published next to the archive file, covers the archive itself):",
+      "text": "The archive's own SHA256SUMS lists every file in it. Extract the archive into a directory of its own (it has no top-level directory), then, from that directory:",
       "pause": 400
     },
     {
-      "text": "To check a published release end to end without a checkout — the sums, the stated model revision, and the ordinary commands run from this archive on a development network — run nix run github:lambdasistemi/singular/vX.Y.Z#verify-release -- vX.Y.Z; the documentation page \"Download and verify a release\" explains each refusal.",
+      "text": "The release's SHA256SUMS, published next to the archive file, covers the archive itself and the documentation archive; check the file you downloaded with sha256sum --check --ignore-missing SHA256SUMS before you extract it, and keep it apart from the inner file of the same name.",
+      "pause": 400
+    },
+    {
+      "text": "To check a published release end to end without a checkout (the sums, the stated model revision, and the ordinary commands run from this archive on a development network), run nix run github:lambdasistemi/singular/vX.Y.Z#verify-release -- vX.Y.Z with the release's tag on Linux; the documentation page \"Download and verify a release\" explains each refusal.",
       "pause": 400
     }
   ],
-  "2-verify-the-identities-from-this-artifact": [
+  "2-verify-the-identities-from-this-archive": [
     {
-      "text": "2. Verify the identities from this artifact.",
+      "text": "2. Verify the identities from this archive.",
       "pause": 500
     },
     {
@@ -75,9 +83,9 @@
       "pause": 400
     }
   ],
-  "4-the-runnable-journey": [
+  "4-the-signers-and-the-bounded-registry-journey": [
     {
-      "text": "4. The runnable journey.",
+      "text": "4. The signers and the bounded registry journey.",
       "pause": 500
     },
     {
@@ -85,11 +93,11 @@
       "pause": 400
     },
     {
-      "text": "The packaged journey defaults to a private generated devnet behind the Koios HTTP facade. The journey is a harness and keeps a key file: to use a test-network API and your own wallet, pass --koios-url URL --network-magic N --wallet-skey FILE; the matching environment variables are SINGULAR_KOIOS_URL, SINGULAR_NETWORK_MAGIC and SINGULAR_WALLET_SKEY. --network-time DIR (or SINGULAR_NETWORK_TIME) supplies pinned genesis/history material; preprod otherwise uses the reviewed packaged recording. The launcher checks configuration before spawning its private fixture. Old ordinary socket and backend settings refuse before provider acquisition. This route remains an obligation of the unchanged journey gate; its command description alone is not a current release or hosted pass. The onboarding runbook explains the API, time and wallet settings. The legacy naming commands below retain their stated unverified status.",
+      "text": "The packaged journey defaults to a private generated devnet behind the Koios HTTP facade. The journey is a harness and keeps a key file: to point it at a test-network API and a wallet of your own, pass --koios-url URL --network-magic N --wallet-skey FILE; the matching environment variables are SINGULAR_KOIOS_URL, SINGULAR_NETWORK_MAGIC and SINGULAR_WALLET_SKEY. Demo 1 itself does not use it: DEMO1.md does. --network-time DIR (or SINGULAR_NETWORK_TIME) supplies pinned genesis/history material; preprod otherwise uses the reviewed packaged recording. The launcher checks configuration before spawning its private fixture. Old ordinary socket and backend settings refuse before provider acquisition. This route remains an obligation of the unchanged journey gate; its command description alone is not a current release or hosted pass. The onboarding runbook explains the API, time and wallet settings. The legacy naming commands below retain their stated unverified status.",
       "pause": 400
     },
     {
-      "text": "The write commands (singular registry create, fold, reject and reclaim, and open-datum create, insert, update, terminate and fold) take exactly one signer, which is one of three: a key file, --wallet-skey FILE; an address with a bundle file, --wallet-address ADDR --bundle FILE, where the command builds its whole run as that bundle, signs and sends nothing and exits with status 19, singular wallet sign --vault FILE signs the bundle and singular submit sends it; or a vault, --vault FILE (with --passphrase-fd FD for a script, otherwise the passphrase is typed once), where the command signs, sends and lands its run in one step. singular wallet create makes a vault and prints its address. The Demo 1 run page, DEMO1.md in this archive, shows the vault and the external way from the first command to the last.",
+      "text": "The write commands (singular registry create, fold, reject and reclaim, and open-datum create, insert, update, terminate and fold) take exactly one signer, which is one of three. The first two are the ones to use. A vault, --vault FILE (with --passphrase-fd FD for a script, otherwise the passphrase is typed at a prompt), makes the command sign, send and land its run in one step. An address with a bundle file, --wallet-address ADDR --bundle FILE, makes the command build its whole run as that bundle, sign and send nothing and exit with status 19; singular wallet sign --vault FILE signs the bundle and singular submit sends it. The third, a key file, --wallet-skey FILE, is being retired (issue 672) and is not a way to start. singular wallet create makes a vault and prints its address; it asks for the passphrase twice, and every later command that opens the vault asks once. The Demo 1 run page, DEMO1.md in this archive, shows the vault and the external way from the first command to the last.",
       "pause": 400
     },
     {
@@ -105,9 +113,33 @@
       "pause": 400
     }
   ],
-  "5-the-retained-legacy-commands": [
+  "appendix-the-retained-naming-lifecycle-material": [
     {
-      "text": "5. The retained legacy commands.",
+      "text": "Appendix: the retained naming-lifecycle material.",
+      "pause": 500
+    },
+    {
+      "text": "Everything below is history. It describes the naming application of earlier releases, and none of it is part of Demo 1.",
+      "pause": 400
+    },
+    {
+      "text": "The archive also carries the naming-lifecycle row runners of earlier releases (claim, recovery, retirement and their independent reader). They are retained legacy commands: kept so the archive stays faithful to its history, but not currently buildable and verified against this release's source. Release instructions are corrected forward: a future correction changes the current source and the archives built from it; already published archives are never rewritten, so an older archive can still carry the previous instructions that presented every row runner as runnable. A zero exit is the verified journey's claim: it exits non-zero on any mismatch, and the identity and fixture checks re-derive every binding from retained bytes rather than trusting anyone's word.",
+      "pause": 400
+    }
+  ],
+  "the-naming-lifecycle-the-retained-rows-exercise": [
+    {
+      "text": "The naming lifecycle the retained rows exercise.",
+      "pause": 500
+    },
+    {
+      "text": "Claiming writes the name, recovery rotates its control without moving its representative, retirement moves the representative into completion-only custody, and completion burns it while folding the retirement's own pending registry update. The key stays occupied forever afterwards: re-registering it is refused, which is what \"Over\" means on chain. The row runners that exercised this lifecycle end to end are the retained legacy commands of section 5; the verified journey covers the registry protocol (boot, request, apply, read back), not yet this naming lifecycle.",
+      "pause": 400
+    }
+  ],
+  "the-retained-legacy-commands": [
+    {
+      "text": "The retained legacy commands.",
       "pause": 500
     },
     {
@@ -123,9 +155,9 @@
       "pause": 400
     }
   ],
-  "6-ordinary-user-completion-what-permissionless-means": [
+  "ordinary-user-completion-what-permissionless-means": [
     {
-      "text": "6. Ordinary-user completion (what permissionless means).",
+      "text": "Ordinary-user completion (what permissionless means).",
       "pause": 500
     },
     {
@@ -133,9 +165,9 @@
       "pause": 400
     }
   ],
-  "7-how-refusals-are-attributed": [
+  "how-refusals-are-attributed": [
     {
-      "text": "7. How refusals are attributed.",
+      "text": "How refusals are attributed.",
       "pause": 500
     },
     {
@@ -155,6 +187,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "379babff0c08ad115cf9b872d6afeee28a16a3095c0200dbb0064061e5ae93f9"
+    "sha256": "b0cb243f0bf364886886076f9dfbdaaa3ce022de6167f6789e9272f4c3edb999"
   }
 }

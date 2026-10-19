@@ -1,27 +1,55 @@
-# Use the registry with your own provider and wallet
+# Start here: Demo 1 with your own wallet and Koios
 
-As a Cardano KERI integrator, you want to run registry and open-datum writes on
-a test network using an API you choose and a wallet whose signing key stays
-sealed in your vault or on the machine that signs. The current ordinary path
-uses Koios for raw reads and signed submission, pinned genesis/history for time,
-and local construction and evaluation. It does not require an ordinary node
+As a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios but
+has never used Singular, you want to run Demo 1 yourself: create a registry, put
+keys in it, change them, end them, and see every refusal appear where the
+documentation says it will. You use a Koios API you choose and a wallet whose
+signing key stays sealed in a vault on your machine, or on the machine that
+signs. Commands read and submit through Koios, take their time from a pinned
+recording, and build and evaluate everything locally. They do not need a node
 socket.
 
-This page describes the current source's configuration. A candidate's local
-checks, hosted gates, release archive and public-network results are separate
-receipts; these instructions do not claim that a new release or connected
-preprod run has been accepted.
+Two pages carry you from the first command to the last, and both can be copied
+as they stand:
 
-The bounded registry journey and the `deployment` tool are run by the project
-for now. They will take a vault with
-[issue 672](https://github.com/lambdasistemi/singular/issues/672), and this page
-does not teach them until then.
+```mermaid
+flowchart TB
+  Start[You are here] --> Dev[Demo 1 on a private development node]
+  Start --> Pre[Demo 1 on preprod]
+  Dev -->|same commands, other settings| Pre
+  Pre --> Faucet[Faucet funding, Koios, thirteen registry transactions]
+```
+
+| You want to | Read | What it costs you |
+| --- | --- | --- |
+| see all of Demo 1 run first, with nothing at stake | [Demo 1 on a development node](demo1-devnet.md), the run page of the release archive | no test ada, no faucet, a few minutes |
+| play Demo 1 on the public preprod network | [Play Demo 1 on preprod](demo1-on-preprod.md) | test ada from the faucet and about an hour |
+| check that a release is what it says it is | [Download and verify a release](verify-release.md) | one command and the downloads |
+
+The rest of this page explains the settings, the signing choices and the limits
+of what a command's answers prove.
+
+## Download and check the release
+
+Releases are listed at https://github.com/lambdasistemi/singular/releases, and
+the newest is at https://github.com/lambdasistemi/singular/releases/latest. A
+release carries three files: the on-chain archive `singular-onchain-X.Y.Z.tar.gz`
+(the compiled validators, the sources of both commands and the run page), the
+documentation archive `singular-docs-X.Y.Z.tar.gz` (220 MB, not needed to play
+Demo 1) and `SHA256SUMS` for both. The file names carry the version without a
+`v`, and the archive extracts into the current directory, so extract it into a
+directory of its own. The exact commands, with the checks, are on
+[Play Demo 1 on preprod](demo1-on-preprod.md#download-and-check-the-release).
+
+Building the two commands compiles a large Haskell stack unless the project's
+public binary cache serves it; the same page says how to use the cache. No
+release ships ready-built binaries yet. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
 
 ## Choose the network and API
 
 Your commands read the chain and send signed transactions through the API you
-choose. The project's own private development chain sits behind an HTTP facade;
-your commands name your API instead.
+choose. The project's own private development chain sits behind an HTTP facade
+that speaks the same dialect as Koios; your commands name your API instead.
 
 ```mermaid
 flowchart TB
@@ -30,46 +58,23 @@ flowchart TB
     W -->|reads and signed submission| P[Koios API]
 ```
 
-| You supply | Flag |
-| --- | --- |
-| API base URL | `--koios-url URL` |
-| Network magic | `--network-magic N` |
-| Pinned time directory, when needed | `--network-time DIR` |
-| Optional API token file | `--koios-token-file FILE` |
+| You supply | Flag | Preprod value |
+| --- | --- | --- |
+| API base URL | `--koios-url URL` | `https://preprod.koios.rest/api/v1` |
+| Network magic | `--network-magic N` | `1` |
+| Pinned time directory, when needed | `--network-time DIR` | none: preprod uses the reviewed recording that ships inside the commands |
+| Optional API token file | `--koios-token-file FILE` | a file holding a Koios bearer token and nothing else |
 
-Preprod magic is `1`, and the reviewed packaged preprod recording is the default
-time source there. The generated network's magic is `42`, and its launcher
-supplies its exact published time directory. A supplied directory contains
+The generated development network's magic is `42`, and its launcher supplies its
+exact published time directory. A supplied directory contains
 `time-manifest.json`, `shelley-genesis.json` and `era-history.cbor`; their raw
 identities, network, system start and protocol-major pin are validated.
-Unsupported time networks refuse rather than borrowing another recording.
-Writes refuse mainnet.
+Unsupported time networks refuse rather than borrowing another recording. Writes
+refuse mainnet.
 
 The old `--backend` and `--node-socket` settings are refused on every command. A
-socket accepted by a separate private probe is a test-harness setting, not an
-ordinary provider route.
-
-## Check the archive and build its commands
-
-For an existing published archive, verify the bytes and validator identities
-before using it:
-
-```sh
-tar xzf singular-onchain-release-<tag>.tar.gz
-cd singular-onchain-release-<tag>
-sha256sum --check SHA256SUMS
-bash verify-identities.sh
-```
-
-The archive's command interface depends on its revision. An older node-backed
-archive does not acquire this interface from reading this page. The
-[archive guide](https://github.com/lambdasistemi/singular/blob/main/onchain-release/README.md)
-records its runnable components and unverified legacy surfaces. Build the
-registry and naming blueprints from that tree and export `REGISTRY_BLUEPRINT`
-and `NAMING_BLUEPRINT` as the guide specifies. The extracted archive's own
-`singular` reads the registry page from its blueprint and the adjacent
-version file; the Demo 1 run page reads the page right after create with
-the command the create receipt printed.
+socket accepted by a separate private probe is a setting of the project's own test
+tools, not an ordinary provider route.
 
 ## Make a wallet and fund it
 
@@ -80,12 +85,18 @@ confirmation, and refuses a confirmation that differs; in a script,
 `--passphrase-fd FD` supplies it as one line read once. `singular wallet address`
 asks once, and prints the same address again from the vault.
 
-Fund that address from the preprod faucet so that it holds ordinary outputs,
-including an ada-only collateral output. A funded balance alone is insufficient
-when the transaction needs distinct seed, funding and collateral outputs. The
-Demo 1 run page in the release archive (`DEMO1.md`) shows the shape the first
-publication needs and the refusal that names a missing output. A key's bytes do
-not belong in command output or receipts.
+Fund that address from the
+[preprod faucet](https://docs.cardano.org/cardano-testnets/tools/faucet). One
+ada-only output is enough: nothing is split and no self-payment is needed, because
+every write spends the wallet's largest ada-only output and returns its change.
+What a play costs, as measured on preprod on 18 October 2026: thirteen registry
+transactions came to 6.92 tADA in fees; each waiting request holds 3 tADA (the
+key's 2 tADA deposit and a 1 tADA folder's fee); each active key keeps its 2 tADA
+deposit until it is terminated; and creating a registry needs at least 162.65
+tADA when no script of the release is on chain yet, a figure measured on a
+development node. The [runbook](demo1-on-preprod.md#fund-both-wallets-from-the-faucet)
+has the table. A command that finds the wallet short refuses before it submits,
+naming the shortfall. A key's bytes do not belong in command output or receipts.
 
 ## Sign each write
 
@@ -100,8 +111,10 @@ registry` commands sign in one of two ways.
   `singular wallet sign --vault FILE` and send it with `singular submit`.
 
 The settings table in the [command reference](singular-node.md) lists the flags
-of each way, and the Demo 1 run page in the release archive (`DEMO1.md`) shows
-both ways from the first command to the last.
+of each way, and the [development-node page](demo1-devnet.md) shows both ways
+from the first command to the last. Key files are not a way to start: they
+remain on a few harness commands until the project retires them
+([issue 672](https://github.com/lambdasistemi/singular/issues/672)).
 
 ## How a write is confirmed
 
@@ -128,13 +141,14 @@ Latest-block observation can establish expiry. A refusal, unavailable answer,
 timeout or mismatching proof stops the run; it is never counted as its intended
 accepting step.
 
-## Understand the provider boundary
+## What a provider's answers do and do not prove
 
-The logical session is `Unbound`. Its multiple reads may observe different
-chain states. Facts are `Unverified` with no configured witness. Raw-source
-receipts identify what was consumed, but they do not prove the API answered
-honestly or that all reads were a coherent snapshot. Ledger acceptance remains
-an independent boundary.
+A command reads several facts through one logical session. The session is called
+unbound: its reads may observe different chain states, so nothing promises one
+coherent snapshot. Facts are called unverified: no configured witness checks
+that the API answered honestly. Raw-source receipts identify what was consumed;
+they do not prove the API answered honestly or that all reads were a coherent
+snapshot. Ledger acceptance remains an independent boundary.
 
 Before construction, the builder selects an interval with at least ten seconds
 of usable slots at its observed tip. The moving ledger horizon can shorten the
@@ -145,18 +159,31 @@ and 20 seconds of wall time. A stalled wait refuses `HorizonWaitTimedOut` before
 signing. Build duration can consume the selected interval; this rule is not a
 guarantee of eventual ledger acceptance.
 
-## Deployment and naming availability
+## What is delivered and what is not
 
-No required hosted workflow currently exercises the legacy deployment-attach
-script. A compiler or scoped deployment pass does not establish that attached
-naming is runnable. The retained `register-rows`, `recovery-rows` and
+Demo 1 has two users, Alice and Bob, who start with empty homes. Neither creates
+the registry for the other or receives its creation files. Each joins with the
+registry's state token, their own wallet and a Koios URL, with no shared
+directory: every command carries `--state-token` and no directory option, and
+neither user opens the other's files. Each can also read the
+[registry page generated from the chain](registry-page.md): which registry this
+is, which release it runs, what its rules are and what it holds, from the token
+and the packaged release alone. Joining by a copied identity file is superseded.
+
+Not delivered: a block anchor for the last fold, documentation links checked
+against a published asset, and the independently derived action identity in the
+public report. Public replay reconstructs the registry's trie; missing history
+or a root that does not chain remains a named refusal. Historical deployment and
+naming receipts remain evidence of their recorded revision and public chain, not
+a pass for this provider candidate.
+
+The bounded registry journey and the `deployment` tool are run by the project
+for now. They keep key files until [issue 672](https://github.com/lambdasistemi/singular/issues/672)
+gives them a vault, and this page does not teach them. No required hosted
+workflow currently exercises the legacy deployment-attach script, so attached
+naming is not claimed runnable. The retained `register-rows`, `recovery-rows` and
 `retirement-rows` commands remain unverified under
 [#172](https://github.com/lambdasistemi/singular/issues/172) and
 [#283](https://github.com/lambdasistemi/singular/issues/283). The
 [recovery and retirement guide](recovery-retirement.md) documents that design,
 and the [preprod record](preprod.md) preserves its historical executed values.
-This page does not present those naming commands as a current accepted runbook.
-
-Demo 1 has two users, Alice and Bob, starting with empty homes. Neither creates the registry or receives its creation files. Joining by state token is delivered: each joins with the state token, its own wallet and a Koios URL, with no shared directory — every command carries `--state-token` and no directory option, and neither actor opens the other's files. Joining by reading the registry page generated from the chain is delivered: each reads which registry this is, which release it runs, what its rules are and what it holds, from the token and the packaged release alone, as the [registry page](registry-page.md) describes. Joining by a copied identity file is superseded. Not delivered: a block anchor for the last fold, documentation links checked against a published asset, and the independently derived action identity in the public report. Public replay reconstructs the trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming
-receipts remain evidence of their recorded revision and public chain, not a
-pass for this provider candidate.

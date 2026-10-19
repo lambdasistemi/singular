@@ -1,56 +1,34 @@
-# Singular on-chain release — how to use this archive
+# Singular release archive: start with Demo 1
 
-You are an integrator who received a tagged release and wants to run
-what this release verifiably carries: the bounded registry journey —
-boot a registry, fold a request, apply it and read the state back —
-plus the identity and contract-fixture checks, all re-derived from the
-artifact itself. You need none of the repository to do it. Sections 1–4
-run from this directory alone; section 5 documents retained commands
-that are history, not runnable instructions. The only external
-requirement is
-[Nix](https://nixos.org) for the runnable parts (the identity
-verification also runs without it, with just `jq`).
+You are a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios,
+and you have received a tagged Singular release. You want to play Demo 1 from it
+without guessing a value: create a registry, put keys in it, change and end them,
+and see each refusal appear where the page says it will. This archive carries
+what you need, and `DEMO1.md` in this directory is the page that does it. You
+need none of the repository. The only external requirement is
+[Nix](https://nixos.org) with flakes (the identity verification also runs without
+it, with just `jq`), plus `git`, `jq` and `curl`.
 
-The archive also carries the naming-lifecycle row runners of earlier
-releases (claim, recovery, retirement and their independent reader).
-They are retained legacy commands: kept so the archive stays faithful
-to its history, but not currently buildable and verified against this
-release's source — see [the retained legacy commands](#5-the-retained-legacy-commands)
-before relying on any name documented here. Release instructions are
-corrected forward: a future correction changes the current source and
-the archives built from it; already published archives are never rewritten, so an
-older archive can still carry the previous instructions that presented
-every row runner as runnable.
+## Start here: play Demo 1
 
-A zero exit is the verified journey's claim: it exits non-zero on any
-mismatch, and the identity and fixture checks re-derive every binding
-from retained bytes rather than trusting anyone's word.
+1. Check this archive (section 1) and its compiled validators (section 2).
+2. Follow `DEMO1.md`, in this directory. It builds `singular` and `open-datum`,
+   starts a private development node, makes Alice's and Bob's vault wallets and
+   runs the sixteen steps, with every value taken from the previous receipt.
+3. When you are ready to spend test ada, follow the
+   [preprod runbook](https://lambdasistemi.github.io/singular/docs/demo1-on-preprod/):
+   the same steps against the public preprod network, with the faucet, the Koios
+   address and the amounts.
 
-## The naming lifecycle the retained rows exercise
-
-```mermaid
-stateDiagram-v2
-    [*] --> Active: connected insert fold
-    Active --> Retired: controller or quorum retire (representative to custody)
-    Retired --> Over: permissionless completion (Update fold plus burn)
-    Over --> [*]: reuse refused (key stays occupied)
-    Active --> Active: recovery rotates control (representative preserved)
-```
-
-Claiming writes the name, recovery rotates its control without
-moving its representative, retirement moves the representative into
-completion-only custody, and completion burns it while folding the
-retirement's own pending registry update. The key stays occupied
-forever afterwards: re-registering it is refused, which is what
-"Over" means on chain. The row runners that exercised this lifecycle
-end to end are the retained legacy commands of section 5; the verified
-journey covers the registry protocol (boot, request, apply, read
-back), not yet this naming lifecycle.
+The rest of this file is reference for the archive itself: what it carries, how
+to verify it, the signers, the bounded registry journey, and, kept last because
+it is history, the naming lifecycle of earlier releases.
 
 ## What the archive carries
 
 | path | contents |
 |---|---|
+| `DEMO1.md` | the run page of the ordinary `singular registry` and `open-datum` commands: Demo 1 as sixteen separate processes on one private development node, started from this directory |
 | `onchain/` | the imported registry partition: Aiken validators, its own `flake.nix`/`flake.lock`, and `plutus.json` — the **compiled** blueprint |
 | `naming-onchain/` | Singular's own naming partition: the same shape, with its compiled `plutus.json` |
 | `onchain/script-identity.json`, `naming-onchain/script-identity.json` | the **pinned unapplied identities**: every validator's compiled hash and parameter count, plus the compiler string |
@@ -60,7 +38,6 @@ back), not yet this naming lifecycle.
 | `RELEASE-COMMIT` | the commit this archive publishes; the row runners read it as their candidate revision when no git checkout is present |
 | `MODEL-REVISION` | the application model commit this release maps to: the revision of the formal model the conformance evidence reads its statements at |
 | `verify-identities.sh` | the identity check of this archive, needing only `bash` and `jq` |
-| `DEMO1.md` | the run page of the ordinary `singular registry` and `open-datum` commands: Alice's open-datum story as separate processes on one development node |
 | `SHA256SUMS` | the checksum manifest of every file in this archive |
 
 The pinned identities are the *unapplied* hashes — the stable,
@@ -71,20 +48,25 @@ on every run.
 
 ## 1. Verify the archive
 
-From the directory you extracted this archive into (the release's
-`SHA256SUMS`, published next to the archive file, covers the archive
-itself):
+The archive's own `SHA256SUMS` lists every file in it. Extract the archive into a
+directory of its own (it has no top-level directory), then, from that directory:
 
 ```sh
 sha256sum --check SHA256SUMS
 ```
 
-To check a published release end to end without a checkout — the sums,
-the stated model revision, and the ordinary commands run from this archive
-on a development network — run `nix run github:lambdasistemi/singular/vX.Y.Z#verify-release -- vX.Y.Z`;
-the documentation page "Download and verify a release" explains each refusal.
+The release's `SHA256SUMS`, published next to the archive file, covers the archive
+itself and the documentation archive; check the file you downloaded with
+`sha256sum --check --ignore-missing SHA256SUMS` before you extract it, and keep it
+apart from the inner file of the same name.
 
-## 2. Verify the identities from this artifact
+To check a published release end to end without a checkout (the sums, the stated
+model revision, and the ordinary commands run from this archive on a development
+network), run `nix run github:lambdasistemi/singular/vX.Y.Z#verify-release -- vX.Y.Z`
+with the release's tag on Linux; the documentation page "Download and verify a
+release" explains each refusal.
+
+## 2. Verify the identities from this archive
 
 The hashes CI enforces, checked against the compiled blueprints this
 archive carries — not against any repository:
@@ -110,7 +92,7 @@ against them runs with:
 nix develop ./offchain --quiet --command bash offchain/naming/run-suite.sh
 ```
 
-## 4. The runnable journey
+## 4. The signers and the bounded registry journey
 
 The one lifecycle command this archive ships verified is the bounded
 registry journey: the release pipeline runs it against a real devnet on
@@ -120,10 +102,10 @@ covers the registry protocol, not the naming lifecycle of the retained
 rows below.
 
 The packaged journey defaults to a private generated devnet behind the Koios
-HTTP facade. The journey is a harness and keeps a key file: to use a test-network
-API and your own wallet, pass `--koios-url URL --network-magic N --wallet-skey FILE`;
+HTTP facade. The journey is a harness and keeps a key file: to point it at a test-network
+API and a wallet of your own, pass `--koios-url URL --network-magic N --wallet-skey FILE`;
 the matching environment variables are `SINGULAR_KOIOS_URL`, `SINGULAR_NETWORK_MAGIC` and
-`SINGULAR_WALLET_SKEY`. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
+`SINGULAR_WALLET_SKEY`. Demo 1 itself does not use it: `DEMO1.md` does. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
 pinned genesis/history material; preprod otherwise uses the reviewed packaged
 recording. The launcher checks configuration before spawning its private
 fixture. Old ordinary socket and backend settings refuse before provider
@@ -135,15 +117,18 @@ retain their stated unverified status.
 
 The write commands (`singular registry create`, `fold`, `reject` and `reclaim`,
 and `open-datum create`, `insert`, `update`, `terminate` and `fold`) take exactly
-one signer, which is one of three: a key file, `--wallet-skey FILE`; an address
-with a bundle file, `--wallet-address ADDR --bundle FILE`, where the command
-builds its whole run as that bundle, signs and sends nothing and exits with
-status 19, `singular wallet sign --vault FILE` signs the bundle and `singular
-submit` sends it; or a vault, `--vault FILE` (with `--passphrase-fd FD` for a
-script, otherwise the passphrase is typed once), where the command signs,
-sends and lands its run in one step. `singular wallet create` makes a vault and
-prints its address. The Demo 1 run page, `DEMO1.md` in this archive, shows the
-vault and the external way from the first command to the last.
+one signer, which is one of three. The first two are the ones to use. A vault,
+`--vault FILE` (with `--passphrase-fd FD` for a script, otherwise the passphrase is
+typed at a prompt), makes the command sign, send and land its run in one step. An
+address with a bundle file, `--wallet-address ADDR --bundle FILE`, makes the
+command build its whole run as that bundle, sign and send nothing and exit with
+status 19; `singular wallet sign --vault FILE` signs the bundle and `singular
+submit` sends it. The third, a key file, `--wallet-skey FILE`, is being retired
+([issue 672](https://github.com/lambdasistemi/singular/issues/672)) and is not a way
+to start. `singular wallet create` makes a vault and prints its address; it asks for the
+passphrase twice, and every later command that opens the vault asks once. The
+Demo 1 run page, `DEMO1.md` in this archive, shows the vault and the external way
+from the first command to the last.
 
 Build the two compiled blueprints from this archive's own flakes, then run
 the journey from `offchain/` (it reads the pinned identity manifests from
@@ -153,7 +138,7 @@ the journey from `offchain/` (it reads the pinned identity manifests from
 ```sh
 blueprint="$(nix build --no-link --print-out-paths ./onchain#plutus-blueprint)"
 naming="$(nix build --no-link --print-out-paths ./naming-onchain#plutus-blueprint)"
-export TMPDIR=/tmp/s77-exhibit REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming"
+export TMPDIR=/tmp/singular-journey REGISTRY_BLUEPRINT="$blueprint" NAMING_BLUEPRINT="$naming"
 ```
 
 Then, from `offchain/`:
@@ -169,7 +154,44 @@ claim. What each step does is documented in `offchain/journey/README.md`.
 It retains every submitted transaction (`S77_EVIDENCE_DIR` overrides the
 default evidence directory).
 
-## 5. The retained legacy commands
+## Appendix: the retained naming-lifecycle material
+
+Everything below is history. It describes the naming application of earlier
+releases, and none of it is part of Demo 1.
+
+The archive also carries the naming-lifecycle row runners of earlier
+releases (claim, recovery, retirement and their independent reader). They are
+retained legacy commands: kept so the archive stays faithful to its history, but
+not currently buildable and verified against this release's source. Release
+instructions are corrected forward: a future correction changes the current source
+and the archives built from it; already published archives are never rewritten, so
+an older archive can still carry the previous instructions that presented every
+row runner as runnable. A zero exit is the verified journey's claim: it exits
+non-zero on any mismatch, and the identity and fixture checks re-derive every
+binding from retained bytes rather than trusting anyone's word.
+
+### The naming lifecycle the retained rows exercise
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active: connected insert fold
+    Active --> Retired: controller or quorum retire (representative to custody)
+    Retired --> Over: permissionless completion (Update fold plus burn)
+    Over --> [*]: reuse refused (key stays occupied)
+    Active --> Active: recovery rotates control (representative preserved)
+```
+
+Claiming writes the name, recovery rotates its control without
+moving its representative, retirement moves the representative into
+completion-only custody, and completion burns it while folding the
+retirement's own pending registry update. The key stays occupied
+forever afterwards: re-registering it is refused, which is what
+"Over" means on chain. The row runners that exercised this lifecycle
+end to end are the retained legacy commands of section 5; the verified
+journey covers the registry protocol (boot, request, apply, read
+back), not yet this naming lifecycle.
+
+### The retained legacy commands
 
 The archive also carries the row runners and the independent reader of
 the earlier naming design. They stay declared and shipped so the
@@ -257,7 +279,7 @@ nix run .#retirement-verify -- --evidence-dir <exhibit-dir> \
   --naming-manifest ../naming-onchain/script-identity.json
 ```
 
-## 6. Ordinary-user completion (what permissionless means)
+### Ordinary-user completion (what permissionless means)
 
 In the retained design, completion needs no controller or quorum
 approval: the spending transaction carries empty required signers. It
@@ -270,7 +292,7 @@ and the burn check no signature. Calling this an empty witness set
 or "no signature of any kind" would be inaccurate; calling it
 operator-free is exact.
 
-## 7. How refusals are attributed
+### How refusals are attributed
 
 In the retained rows, some refusals surface before submission, when
 the builder locally

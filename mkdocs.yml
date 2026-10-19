@@ -9,6 +9,12 @@ exclude_docs: |
 site_dir: site
 nav:
   - Home: index.md
+  - Demo 1:
+      - "Start here: Demo 1 with your own wallet and Koios": docs/consumer-onboarding.md
+      - Play Demo 1 on preprod: docs/demo1-on-preprod.md
+      - Demo 1 on a development node: docs/demo1-devnet.md
+      - Download and verify a release: docs/verify-release.md
+      - What a reviewer checks on preprod: docs/demo1-preprod.md
   - Dated demos:
       - Index: docs/demos/index.md
       - 23 October — Maintain and recover a name: docs/demos/d02-naming.md
@@ -22,15 +28,12 @@ nav:
   - Ending a name: docs/retirement.md
   - Recovery and retirement: docs/recovery-retirement.md
   - Keep recovery and retirement available: docs/record-value.md
-  - Run with your own provider and wallet: docs/consumer-onboarding.md
   - Read the registry page generated from the chain: docs/registry-page.md
   - Connecting singular to a ledger provider: docs/singular-node.md
-  - Download and verify a release: docs/verify-release.md
   - Conformance evidence: docs/conformance-evidence.md
   - Consumer conformance record: docs/consumer-conformance.md
   - What singular-negative shows: docs/negative-host.md
   - The preprod record: docs/preprod.md
-  - Demo 1 on preprod, what a reviewer checks: docs/demo1-preprod.md
   - Executable candidate:
       - Review guide: docs/design.md
       - Play the simulation: docs/simulation.md

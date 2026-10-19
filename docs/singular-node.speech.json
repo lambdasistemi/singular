@@ -9,7 +9,11 @@
       "pause": 400
     },
     {
-      "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; writes also use your local payment signing key. Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "text": "As a registry operator, you want to use create, fold, reclaim, reject, inspect and describe through singular registry, and create, insert, update, terminate, fold and inspect through open-datum, with a Koios API on your chosen network. You supply the API settings and pinned time material; each write is signed from your vault, or by a signer elsewhere through a bundle file (see Signing a write elsewhere, or from your vault). Commands read raw facts through one logical session, build and evaluate locally, submit signed transactions, and preserve recovery evidence in the registry journal.",
+      "pause": 400
+    },
+    {
+      "text": "Words such as registry, state token, request, fold, window, vault and bundle are explained in Words used on this page.",
       "pause": 400
     },
     {
@@ -119,7 +123,7 @@
       "pause": 400
     },
     {
-      "text": "The address must pay a key: a script address is refused, naming it. A key file, an address and a vault are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
+      "text": "The address must pay a key: a script address is refused, naming it. A vault, an address and a key file are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.",
       "pause": 400
     }
   ],
@@ -129,7 +133,7 @@
       "pause": 500
     },
     {
-      "text": "A key file: the receipt it has always printed.",
+      "text": "Your vault: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under submissions. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under expected. When the node refuses a transaction, the run ends as a ledger refusal, and wentThrough names the transactions that landed before it.",
       "pause": 300
     },
     {
@@ -137,7 +141,7 @@
       "pause": 300
     },
     {
-      "text": "Your vault: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under submissions. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under expected. When the node refuses a transaction, the run ends as a ledger refusal, and wentThrough names the transactions that landed before it.",
+      "text": "A key file (being retired): the receipt it has always printed.",
       "pause": 300
     },
     {
@@ -261,7 +265,7 @@
       "pause": 400
     },
     {
-      "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. It pays a single output; send one self-payment afterwards so the wallet also holds an ada-only output to spend as collateral — while the foreign funding choice does not. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
+      "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change. update alone still prints an older sentence after the faucet link, telling you to send one self-payment so the wallet also holds an ada-only output to spend as collateral; that sentence is a leftover of the text the other commands dropped, and following it is harmless but not needed. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
       "pause": 400
     },
     {
@@ -421,6 +425,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "2c3771663647fe745652f41beaaeb4d92eb82403b2a669bccf9c5e130192f911"
+    "sha256": "1c29d0df5fdc5753516a653c98c18d1f991b9d2c26c59014988bb4b8135f740a"
   }
 }

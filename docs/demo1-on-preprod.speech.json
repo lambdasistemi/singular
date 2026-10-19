@@ -1,0 +1,368 @@
+{
+  "play-demo-1-on-preprod": [
+    {
+      "text": "Play Demo 1 on preprod.",
+      "pause": 500
+    },
+    {
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but has never used Singular, you want to play Demo 1 yourself on the public preprod network, from the latest release, copying the commands as they stand. You download the release, check it, build two commands, make two wallets (Alice's and Bob's), fund them from the faucet and run sixteen steps. Every step either succeeds or is refused with the refusal this page says it will give.",
+      "pause": 400
+    },
+    {
+      "text": "When it works, a registry you created holds keys that Alice inserted, changed and terminated, that Bob folded for her, and that a new owner of the name took over; you have read every receipt and seen the refusals; and the transactions of your play are on preprod for anyone to look up. The steps take about seventy minutes on preprod, mostly waiting for two windows to pass.",
+      "pause": 400
+    }
+  ],
+  "what-has-run-where": [
+    {
+      "text": "What has run where.",
+      "pause": 500
+    },
+    {
+      "text": "Read this before you spend anything, because it says how much of this page has been played on preprod and how much has not.",
+      "pause": 400
+    }
+  ],
+  "what-you-need": [
+    {
+      "text": "What you need.",
+      "pause": 500
+    },
+    {
+      "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+      "pause": 300
+    },
+    {
+      "text": "About ninety minutes with a terminal open the whole time, and enough preprod test ada (written tADA) for both wallets; the funding step says how much.",
+      "pause": 300
+    },
+    {
+      "text": "A Koios token file is optional and described below.",
+      "pause": 300
+    },
+    {
+      "text": "The words used here are the ones on the development-node page: a registry, its state token, requests that wait to be folded, the processing window and the retract window, a vault and a bundle.",
+      "pause": 400
+    }
+  ],
+  "download-and-check-the-release": [
+    {
+      "text": "Download and check the release.",
+      "pause": 500
+    },
+    {
+      "text": "Choose the release. This page was written against v0.12.0; the latest release is always listed at https://github.com/lambdasistemi/singular/releases/latest and a newer archive's own DEMO1.md is the authority for that release. The release carries two archives and one checksum file. You need the on-chain archive, which holds the compiled validators, the sources of both commands and the run page; the documentation archive is 220 MB and not needed here.",
+      "pause": 400
+    },
+    {
+      "text": "Expect one line, singular-onchain-0.12.0.tar.gz: OK. Extract the archive into a directory of its own; it has no top-level directory, and it carries its own SHA256SUMS that would overwrite the one you downloaded. Then check every file inside it and the compiled validators' identities, which needs only bash and jq.",
+      "pause": 400
+    },
+    {
+      "text": "The last line reads identity verification: PASS (both partitions, from this archive alone). To check the release end to end, including a run of the same journey on a private node, use the download and verify page. Every command below runs from this extracted directory, the one that holds DEMO1.md and onchain/.",
+      "pause": 400
+    }
+  ],
+  "build-the-two-commands": [
+    {
+      "text": "Build the two commands.",
+      "pause": 500
+    },
+    {
+      "text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
+      "pause": 400
+    },
+    {
+      "text": "Compiling both commands from source builds a large Haskell stack and takes a long time. The project's public binary cache holds both for x86_64-linux, about 100 MiB each. Add it before the first build, with these two settings on the nix build command line or, if your user is not trusted by the Nix daemon, as extra-substituters and extra-trusted-public-keys in /etc/nix/nix.conf:",
+      "pause": 400
+    },
+    {
+      "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. There is no singular --version yet (it is planned in issue 348), so the printed store path is the only evidence of which build you hold. The blueprint is onchain/plutus.json, beside the version.txt that names the release.",
+      "pause": 400
+    }
+  ],
+  "make-alices-and-bobs-wallets": [
+    {
+      "text": "Make Alice's and Bob's wallets.",
+      "pause": 500
+    },
+    {
+      "text": "Each wallet is a vault: a file that holds a fresh signing key sealed by a passphrase. The key never leaves the file, no command prints it, and neither wallet needs cardano-cli. A script supplies the passphrase as one line on an inherited file descriptor, --passphrase-fd 3 with 3< file; typed at a prompt, the command asks twice when it creates a vault and once when it opens one. Keep the files private, and use these wallets for test ada only.",
+      "pause": 400
+    },
+    {
+      "text": "Each wallet create prints the wallet's address, an addr_test1… enterprise address; wallet address prints the same one again. Creating over an existing vault is refused with vault already exists.",
+      "pause": 400
+    }
+  ],
+  "fund-both-wallets-from-the-faucet": [
+    {
+      "text": "Fund both wallets from the faucet.",
+      "pause": 500
+    },
+    {
+      "text": "Open the Cardano testnet faucet, choose preprod, and request test ada once for each printed address. Singular has no payment command, and this page needs no other tool: the faucet's single output is enough, nothing is split and no self-payment is needed. Every write spends the wallet's largest ada-only output and returns its change to the wallet, and a command that finds the wallet short refuses before it submits, naming the shortfall.",
+      "pause": 400
+    },
+    {
+      "text": "What the 18 October play measured, so you can judge how much to ask for:",
+      "pause": 400
+    },
+    {
+      "text": "In that play Alice's balance fell by 7.34 tADA and Bob's by 3.58 tADA, the fees plus what is still locked or spent as a folder's fee at the end; the run did not reconcile each term. So Alice needs the creation amount and about 10 tADA more, and Bob about 10 tADA. Check what arrived with Koios, which you will use for everything else too:",
+      "pause": 400
+    },
+    {
+      "text": "Both balances should be above zero before you go on. A faucet request can take a minute to land.",
+      "pause": 400
+    }
+  ],
+  "tell-the-commands-where-koios-is": [
+    {
+      "text": "Tell the commands where Koios is.",
+      "pause": 500
+    },
+    {
+      "text": "Every command reads and submits through one Koios API. Preprod's base URL is https://preprod.koios.rest/api/v1 and its network magic is 1. Preprod uses a reviewed time recording that ships inside the commands, so you pass no time directory. A token file is optional: put a Koios bearer token alone in a file and pass it with --koios-token-file; the commands read it without putting the token in an argument, and no receipt or log shows it. Every command replays the registry's history through Koios, so a long play makes many requests. The 18 October play used a token; how far the public tier without one gets was not measured.",
+      "pause": 400
+    }
+  ],
+  "helpers-for-the-steps": [
+    {
+      "text": "Helpers for the steps.",
+      "pause": 500
+    },
+    {
+      "text": "Alice signs from her vault and Bob signs externally, exactly as on the development-node page. The helper waits_for_signatures expects the exit status 19 that an external write ends with. wait_for_slot waits for the ledger's tip slot to pass a slot a receipt names, because the windows are judged from the ledger's tip and never from your clock.",
+      "pause": 400
+    },
+    {
+      "text": "The two payloads are Plutus data in the detailed JSON schema: a one-entry map from the bytes of name to the bytes of alice and of bob.",
+      "pause": 400
+    }
+  ],
+  "step-1-alice-creates-the-registry": [
+    {
+      "text": "Step 1: Alice creates the registry.",
+      "pause": 500
+    },
+    {
+      "text": "A preview builds what the create would submit, from Alice's address alone, and signs, submits and writes nothing. It names the registry's state token and its seed before anything is spent, and it refuses with the missing amount if Alice's wallet holds too little. The create then publishes the scripts the chain does not yet hold and boots the registry. Alice's wallet holds one output, so no seed is given: the registry boots from the change of the first publication. The windows are the defaults, ten minutes to fold a request and five minutes after that to take it back.",
+      "pause": 400
+    },
+    {
+      "text": "The receipt's stateToken is the registry's name: the policy and the asset name in hex, joined by a dot. Every later command takes it as --state-token. If someone gave you a state token instead, skip this step and set token to it: token=(--state-token POLICY.NAME). The directory reg only keeps your own journal; nothing in it names the registry.",
+      "pause": 400
+    }
+  ],
+  "step-2-read-the-registry-page": [
+    {
+      "text": "Step 2: read the registry page.",
+      "pause": 500
+    },
+    {
+      "text": "The create receipt prints the command that reads the registry page, as describeCommand. Run it as printed, with this release's singular first on the path.",
+      "pause": 400
+    },
+    {
+      "text": "The page says which registry this is, which release it runs, what its rules are and what it holds now. It is read through Koios, whose answers nothing here verifies, and it is unsigned.",
+      "pause": 400
+    }
+  ],
+  "step-3-alice-books-the-insertion-of-her-key": [
+    {
+      "text": "Step 3: Alice books the insertion of her key.",
+      "pause": 500
+    },
+    {
+      "text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet: a write whose measured outlay passes it is refused before anything is signed, and its receipt names the total and its parts under outlay. On preprod the booking measured 6.16 tADA on 18 October: its 0.39 tADA fee, the 3 tADA it locks and a 2.77 tADA bound on the fold that follows. The 8 tADA allowance below covers it. If the network's parameters have moved and a write is refused for its outlay, read that receipt and raise the allowance to cover the total.",
+      "pause": 400
+    },
+    {
+      "text": "Expect success. request is the booking's transaction and an output number, TXID#0; the deadline is about nine minutes after the booking, as a time and as a slot. The booking cost 0.39 tADA in fees on 18 October.",
+      "pause": 400
+    }
+  ],
+  "step-4-bob-folds-it-signing-externally": [
+    {
+      "text": "Step 4: Bob folds it, signing externally.",
+      "pause": 500
+    },
+    {
+      "text": "Bob has to fold before the deadline. Any wallet may fold. Bob's write names his address and a new bundle file, builds its whole run as that bundle and exits 19, the outcome waiting-for-signatures, having signed and sent nothing. His vault then signs the bundle and the signed bundle is sent. Until submit finds the transactions on chain, the receipt's own fields are only what the bundle expects, under expected.",
+      "pause": 400
+    },
+    {
+      "text": "The fold cost 0.81 tADA in fees. If the deadline passes first, the fold is refused naming it, before anything is signed, and the request stays pending.",
+      "pause": 400
+    }
+  ],
+  "step-5-read-the-key-back": [
+    {
+      "text": "Step 5: read the key back.",
+      "pause": 500
+    },
+    {
+      "text": "An inspect reads the key with no signing key and submits nothing. Its receipt on preprod is about 13 MB because it carries the session's evidence, so keep it in a file and read the fields you want. The key reads active.",
+      "pause": 400
+    },
+    {
+      "text": "You can also ask Koios, on its own, whether it finds the same output. The readback needs the active policy and the key's name, which the receipt's envelope holds, and it compares the output, the inline datum's bytes and their hash with the receipt.",
+      "pause": 400
+    },
+    {
+      "text": "It exits 0 and prints readback: PASS only when Koios finds exactly one output holding the token, with the receipt's datum, within 600 slots of the node's tip.",
+      "pause": 400
+    }
+  ],
+  "step-6-alice-replaces-the-payload": [
+    {
+      "text": "Step 6: Alice replaces the payload.",
+      "pause": 500
+    },
+    {
+      "text": "Only the controller may change the payload. The root does not move.",
+      "pause": 400
+    }
+  ],
+  "step-7-read-it-back": [
+    {
+      "text": "Step 7: read it back.",
+      "pause": 500
+    },
+    {
+      "text": "The key is still active, the root is the one from step 5 and the payload is the new one. The readback of step 5 works on this receipt too.",
+      "pause": 400
+    }
+  ],
+  "step-8-alice-books-the-termination-of-her-key": [
+    {
+      "text": "Step 8: Alice books the termination of her key.",
+      "pause": 500
+    }
+  ],
+  "step-9-bob-folds-the-termination": [
+    {
+      "text": "Step 9: Bob folds the termination.",
+      "pause": 500
+    },
+    {
+      "text": "The fold burns the key's token and pays the deposit back to Alice. Naming the request makes the fold an expectation: it is refused unless that request is among the ones it settles.",
+      "pause": 400
+    }
+  ],
+  "step-10-read-it-back": [
+    {
+      "text": "Step 10: read it back.",
+      "pause": 500
+    },
+    {
+      "text": "The key reads terminal, and the receipt says no live output holds it.",
+      "pause": 400
+    }
+  ],
+  "step-11-reject-a-request-nobody-folded": [
+    {
+      "text": "Step 11: reject a request nobody folded.",
+      "pause": 500
+    },
+    {
+      "text": "A request that nobody folded and its owner did not take back stays pending past both its windows and blocks the registry's fold. Alice books one and nobody folds it. While either window is open a reject is refused and writes no bundle. That refusal is the first expected one: exit 10, the outcome client-refusal, and a receipt that names the slot where the retract window closes. When the ledger's tip passes that slot, any wallet may reject; here, Bob's, the external way.",
+      "pause": 400
+    },
+    {
+      "text": "The reason reads \"1 pending request is still inside a window, and a reject takes every pending request, so none is built\", and names the request, when its processing window ends and when its retract window closes. Nothing is written or submitted. Wait for the closing slot, about fifteen minutes after the booking, then reject; the bundle expires about two minutes after it is built, so sign and send it at once.",
+      "pause": 400
+    },
+    {
+      "text": "The reject cost 0.51 tADA. Alice's request returns to her less the 1 tADA folder's fee, which stays with Bob's wallet, and the registry's root does not move.",
+      "pause": 400
+    }
+  ],
+  "step-12-bob-books-a-new-insertion": [
+    {
+      "text": "Step 12: Bob books a new insertion.",
+      "pause": 500
+    },
+    {
+      "text": "The cleared registry takes requests again. Bob books the key bob, signing externally; his own address is the controller.",
+      "pause": 400
+    },
+    {
+      "text": "While Bob's bundle waits for its signatures, two further refusals are worth seeing; both change nothing on chain. A second write of Bob's in the same registry stops with exit 19 and the outcome waiting-for-signatures, naming the waiting bundle and building nothing. And a vault signs only a bundle that lists its address: Alice's vault is refused on Bob's bundle with exit 1, the message that the vault's address is not among the bundle's signers, and no witness file.",
+      "pause": 400
+    },
+    {
+      "text": "Now Bob signs and sends. Running singular submit a second time on the same bundle finds the transactions on chain and sends nothing.",
+      "pause": 400
+    }
+  ],
+  "step-13-alice-folds-it": [
+    {
+      "text": "Step 13: Alice folds it.",
+      "pause": 500
+    },
+    {
+      "text": "The key bob reads active. Alice folded Bob's request with her own wallet.",
+      "pause": 400
+    }
+  ],
+  "step-14-alice-takes-a-request-back": [
+    {
+      "text": "Step 14: Alice takes a request back.",
+      "pause": 500
+    },
+    {
+      "text": "Alice books a different insertion, carol, and keeps its request reference from the receipt. When the ledger's tip passes the processing deadline the request may be taken back by its owner, inside its retract window. Before that, reclaim is refused, naming when it opens. Reclaim returns the whole locked 3 tADA to Alice; the root does not move.",
+      "pause": 400
+    },
+    {
+      "text": "The key carol reads unknown, with no pending request. The wait is about nine minutes.",
+      "pause": 400
+    }
+  ],
+  "step-15-alice-books-another-insertion": [
+    {
+      "text": "Step 15: Alice books another insertion.",
+      "pause": 500
+    },
+    {
+      "text": "The reclaimed request no longer blocks the registry.",
+      "pause": 400
+    }
+  ],
+  "step-16-bob-folds-it": [
+    {
+      "text": "Step 16: Bob folds it.",
+      "pause": 500
+    },
+    {
+      "text": "The key dave reads active. The registry now holds bob and dave active and alice terminal, with late and carol unknown, and no request pending.",
+      "pause": 400
+    }
+  ],
+  "when-something-stops": [
+    {
+      "text": "When something stops.",
+      "pause": 500
+    },
+    {
+      "text": "Every command that stops prints why, as one outcome with its own exit status. The table on the development-node page lists them. A command never resubmits on its own. After a timeout or a partial outcome, run inspect on the key: it reads the journal, checks each unresolved submission against the chain and moves the saved state only as far as the chain shows. Recovering a registry command follows a bundle from there. A bundle whose transactions carry a deadline dies by expiry, and running the command again rebuilds it.",
+      "pause": 400
+    }
+  ],
+  "what-this-does-not-claim": [
+    {
+      "text": "What this does not claim.",
+      "pause": 500
+    },
+    {
+      "text": "The open-datum application protects the payload and the deposit, nothing more; it is a demonstration of the registry's mechanics. Koios answers are unverified claims, and the several reads behind one command need not come from one chain state. The play above is one run of one registry on one network. It does not show every compiled validator, every ledger transaction or a registry created by this release on preprod. The reviewer's map lists what is established and what is still waiting.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "demo1-on-preprod.md",
+    "sha256": "abb4781e96140da588f67499a653c3854b76bd7f828e7b6b1a233fbb04c1e290"
+  }
+}

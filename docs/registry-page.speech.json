@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "From the release directory, with the state token:",
+      "text": "From the extracted release archive, whose blueprint is onchain/plutus.json with the version.txt beside it, and with the state token:",
       "pause": 400
     },
     {
@@ -37,7 +37,7 @@
       "pause": 500
     },
     {
-      "text": "Alice's page after her own fold, on the development network, exactly as the command printed it:",
+      "text": "Alice's page after her own fold, on the development network, exactly as the command printed it. The page names the release it runs; this one ran version 0.10.1, and a later release prints its own label:",
       "pause": 400
     },
     {
@@ -77,6 +77,6 @@
   ],
   "_source": {
     "file": "registry-page.md",
-    "sha256": "64ae86b667c2f58e015fd93bf3f72039ad9c57f358909ff9bf1699d2ca430f5f"
+    "sha256": "54202be275a511ace5fc1588ca87c61c60fb4351ebba03b69b6b28ea55537a6f"
   }
 }

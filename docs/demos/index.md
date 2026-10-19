@@ -8,7 +8,7 @@ For Cardano KERI identity actions, the planned source is its local follower inde
 
 | Target | Story and play | Current boundary |
 | --- | --- | --- |
-| 8 October 2026 | [Registry handoff](../first-demo.md) | The merged registry handoff page contains the preprod play plan; no connected Singular cast yet. |
+| 8 October 2026, planned | [Registry handoff](../first-demo.md) | Superseded for the registry half by Demo 1, which is playable today: [play it on preprod](../demo1-on-preprod.md). The page still holds the plan for joining a `kli` identity; no connected Singular cast yet. |
 | 23 October 2026 | [Maintain and recover a name](d02-naming.md) | Preprod `kli` + `ckeri` + Singular play plan; connected naming release and mapping remain open. |
 | 30 October 2026 | [Name Your Address preprod stretch](d03-escrow.md) | Not yet playable as the connected preprod journey. |
 
@@ -16,9 +16,11 @@ The Cardano KERI [consumer mapping](https://github.com/lambdasistemi/cardano-ker
 
 ## Planned major release tags
 
-| Singular milestone | Plays | Planned tag | Gate |
+Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest, and v0.12.0 is the one the runbook was written against. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.
+
+| Singular milestone | Plays | Drafted tag | Gate |
 | --- | --- | --- | --- |
-| Registry handoff | 8 October | `v1.0.0` | Released archive and connected preprod registry replay. |
+| Registry handoff with a `kli` identity | planned for 8 October | `v1.0.0` | Released archive and connected preprod registry replay. |
 | Naming and escrow | 23 and 30 October | `v2.0.0` | 30 October connected preprod acceptance. |
 
-These tags are release targets, not published artifacts. Candidate demos cite their actual build and manifest until the relevant milestone release is cut.
+Candidate demos cite their actual build and manifest until the relevant milestone release is cut.

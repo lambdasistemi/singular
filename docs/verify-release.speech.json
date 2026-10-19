@@ -15,11 +15,11 @@
       "pause": 500
     },
     {
-      "text": "You need Nix with flakes enabled. Nothing else: no checkout, no credentials, no running node.",
+      "text": "You need Nix with flakes enabled, on Linux: the verifier is built for x86_64-linux and aarch64-linux only, and it does not run on macOS. Nothing else: no checkout, no credentials, no running node.",
       "pause": 400
     },
     {
-      "text": "Name the release you are checking twice: once to choose the verifier that release ships, once as the release to download. The verifier downloads the release's three published assets from its GitHub release page without logging in:",
+      "text": "The example names v0.12.0; the newest release is always at https://github.com/lambdasistemi/singular/releases/latest, and its tag goes in both places. Name the release you are checking twice: once to choose the verifier that release ships, once as the release to download. The verifier downloads the release's three published assets from its GitHub release page without logging in:",
       "pause": 400
     },
     {
@@ -79,6 +79,6 @@
   ],
   "_source": {
     "file": "verify-release.md",
-    "sha256": "fcfcd7894be2ecbc0fc8fb714a2c22e02dd2700d1e220f6651c394ea92558b7a"
+    "sha256": "89ad7068d8825219cd978d422b3db89ef597a2ff41c24a7ce7021165dd0480dd"
   }
 }

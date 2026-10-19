@@ -5,10 +5,15 @@ Dated qualification, 2026-10-15: rejection after the window, rejection before th
 As a registry operator, you want to use `create`, `fold`, `reclaim`, `reject`, `inspect` and `describe`
 through `singular registry`, and `create`, `insert`, `update`, `terminate`, `fold` and `inspect`
 through `open-datum`, with a Koios API on your chosen network.
-You supply the API settings and pinned time material; writes also use your local
-payment signing key. Commands read raw facts through one logical session, build
+You supply the API settings and pinned time material; each write is signed from
+your vault, or by a signer elsewhere through a bundle file (see
+[Signing a write elsewhere, or from your vault](#signing-a-write-elsewhere-or-from-your-vault)).
+Commands read raw facts through one logical session, build
 and evaluate locally, submit signed transactions, and preserve recovery evidence
 in the registry journal.
+
+Words such as registry, state token, request, fold, window, vault and bundle are
+explained in [Words used on this page](demo1-devnet.md#words-used-on-this-page).
 
 The ordinary provider is Koios. Old backend and socket settings are refused
 before acquisition or registry effects. The current provider session promises
@@ -22,7 +27,6 @@ no coherent chain snapshot and carries no verification witness.
 | `--koios-token-file FILE` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | An optional authentication token read from this file. Keep its contents private; receipts and logs redact it. |
 | `--network-time DIR` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `insert`, `update`, `terminate` | Pinned time-manifest.json, shelley-genesis.json and era-history.cbor. Preprod can use the reviewed packaged recording; generated network 42 requires its exact published directory. |
 | `--network-magic N` | `create`, `fold`, `reclaim`, `reject`, `inspect`, `describe`, `singular submit`, `singular wallet create`, `singular wallet address`, `insert`, `update`, `terminate` | The requested network: 1 for preprod or 42 for the generated development network. Time material and provider answers must agree with it; unsupported time networks refuse. Mainnet's magic is refused for writes. The wallet commands take it alone, with no provider: it selects the network the address is built for. |
-| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. The five open-datum writes still accept the key file, until it is retired; the registry's `singular` commands, the negative host, the bounded journey and the deployment tool keep key files for now (issue 672 retires the registry's), and the last three are harnesses. |
 | `--process-time MS` | `create` | How long a booked request may wait for its fold, in positive integer milliseconds: 600 000 (ten minutes) when omitted. Fixed for the life of the registry. |
 | `--retract-time MS` | `create` | How long the owner may reclaim a request after its processing deadline, in positive integer milliseconds: 300 000 (five minutes) when omitted. Fixed for the life of the registry. |
 | `--application-policy HEX` | `singular create` | The application policy pinned at creation, as hex, for an application whose script does not depend on the registry identity. `open-datum create` carries its own from its application value and refuses this flag. |
@@ -47,6 +51,7 @@ no coherent chain snapshot and carries no verification witness.
 | `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `singular submit`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
 | `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. On `singular create`, `singular fold`, `singular reclaim`, `singular reject` and the five open-datum writes (`open-datum create`, with or without `--closed`, `insert` and `terminate`, alone and with `--fold`, `update` and `fold`) it names the signer in place of the signing key: the command opens the vault once, before anything else is read, builds the same bundle an external signer's run writes for the vault's address, signs every transaction from the vault and sends them in order as `singular submit` does. When every one has landed, each is journalled landed and the receipt states the command's fields as fact. When the node refuses one, the bundle is journalled dead and the run ends as a ledger refusal naming what went through. An uncertain answer ends the run partial, and the next run settles the bundle by identity. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read, and so is `--wallet-skey` or `--wallet-address` beside it, because a write takes exactly one signer. Every `open-datum` preview and `open-datum inspect` refuses `--vault` by name. |
 | `--passphrase-fd FD` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. |
+| `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Being retired ([issue 672](https://github.com/lambdasistemi/singular/issues/672)): not a way to start. Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. The five open-datum writes still accept the key file, until it is retired; the registry's `singular` commands, the negative host, the bounded journey and the deployment tool keep key files for now (issue 672 retires the registry's), and the last three are harnesses. |
 | `--out DIR` | `singular wallet sign` | Where the witness files go: one file per transaction of the bundle, each named by its transaction's identity with `.witness` appended and created exclusively — an existing file is refused with its bytes untouched. The directory is made when absent; the bundle's own directory when not given. |
 | `--witnesses FILE` | `singular submit` | A witness file `singular wallet sign` wrote, or a directory standing for the `.witness` files it holds; give it once per file or directory. Each witness is matched to its transaction by its signature, never by its file name. |
 | `--json` | `singular describe` | Print the registry page as JSON for a program to read; without it the page prints as text for a person. A success prints the page alone and writes no file. |
@@ -269,9 +274,9 @@ A write takes exactly one signer:
 
 | signer | the flags | what the command does | how it ends |
 |---|---|---|---|
-| a key file | `--wallet-skey FILE` | signs and sends each transaction as it builds it | the command's own outcome |
-| an address, signing elsewhere | `--wallet-address ADDR --bundle FILE` | builds the run as one bundle, writes the file and saves it beside the journal | `waiting-for-signatures`, status 19 |
 | your vault | `--vault FILE`, and `--passphrase-fd FD` in a script | builds the same bundle, signs it from the vault in memory and sends it through the core of `singular submit` | the submission's outcome |
+| an address, signing elsewhere | `--wallet-address ADDR --bundle FILE` | builds the run as one bundle, writes the file and saves it beside the journal | `waiting-for-signatures`, status 19 |
+| a key file, being retired ([issue 672](https://github.com/lambdasistemi/singular/issues/672)) | `--wallet-skey FILE` | signs and sends each transaction as it builds it | the command's own outcome |
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 120, 'wrap': true, 'mirrorActors': false}}}%%
@@ -291,13 +296,13 @@ sequenceDiagram
     W-->>A: Every member journalled landed, the receipt read from the chain
 ```
 
-The address must pay a key: a script address is refused, naming it. A key file, an address and a vault are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.
+The address must pay a key: a script address is refused, naming it. A vault, an address and a key file are three signers, and naming two of them is refused. A passphrase descriptor without a vault is refused too. A wrong passphrase or an unreadable vault is refused, naming the vault, before anything else is read or written. No receipt, journal line, trace or error carries the passphrase or a key byte.
 
 ### What each receipt says
 
-- **A key file**: the receipt it has always printed.
-- **Signing elsewhere**: the outcome `waiting-for-signatures` and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under `expected`, because nothing has landed yet.
 - **Your vault**: the outcome of the submission, the bundle, and per transaction the submit core's chain facts under `submissions`. When every transaction has landed, the command's fields are stated as fact. Otherwise they stay under `expected`. When the node refuses a transaction, the run ends as a ledger refusal, and `wentThrough` names the transactions that landed before it.
+- **Signing elsewhere**: the outcome `waiting-for-signatures` and the bundle. That is its hash, the written and the saved path, the signer, and per transaction its step, identity, deadline and effect lines. The command's own fields sit under `expected`, because nothing has landed yet.
+- **A key file** (being retired): the receipt it has always printed.
 
 Status 19 also ends any write that a pending bundle stops before it builds anything. Its receipt names that bundle under `pendingBundle`: its hash, its saved path, and the transactions still awaited with their deadlines. [Recovering a registry command](cli-recovery.md) follows a bundle from there.
 
@@ -494,7 +499,7 @@ The receipt no longer carries the single-request fields it once printed at the t
 
 Before anything is signed the command still refuses the outlay past `--max-outlay` and a funding output that is not the wallet's.
 
-A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with `--fund-input` not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is `client-refusal`, its reason ends `(client policy)`, carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as `client-refusal` with `(client policy)`, carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. It pays a single output; send one self-payment afterwards so the wallet also holds an ada-only output to spend as collateral — while the foreign funding choice does not. Preview and write judge the same wallet at the same points in the same order. `update` gets only the empty check; `reject`, `reclaim`, `fold` and `create` get no measured judgement: a build that succeeds proves the wallet pays the fee.
+A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with `--fund-input` not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is `client-refusal`, its reason ends `(client policy)`, carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as `client-refusal` with `(client policy)`, carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change. `update` alone still prints an older sentence after the faucet link, telling you to send one self-payment so the wallet also holds an ada-only output to spend as collateral; that sentence is a leftover of the text the other commands dropped, and following it is harmless but not needed. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. `update` gets only the empty check; `reject`, `reclaim`, `fold` and `create` get no measured judgement: a build that succeeds proves the wallet pays the fee.
 
 That check is the fast refusal, not the proof. After the fold is built and
 before it is signed, its validity upper bound is judged again from the built
@@ -518,8 +523,9 @@ to another wallet, or names an update or deletion edge that Lean cannot retract.
 
 ```bash
 singular registry reclaim --state-dir reg --blueprint onchain/plutus.json \
-  --request TXID#IX --koios-url "$koios_url" --network-time "$time_dir" --network-magic 42 \
-  --wallet-skey alice.skey --receipt reclaim.json
+  --state-token "$state_token" --request TXID#IX \
+  --koios-url "$koios_url" --network-time "$time_dir" --network-magic 42 \
+  --vault alice.vault --passphrase-fd 3 --receipt reclaim.json 3< alice.passphrase
 ```
 
 The command judges the window from the actual tip observed through its session and converted
@@ -692,10 +698,10 @@ base16, and no event carries a signing key or the text of a failure: a failure
 names only its type.
 
 ```sh
-singular registry fold --state-dir ./reg --blueprint plutus.json \
-  --koios-url "$koios_url" --network-magic 1 \
-  --wallet-skey ~/keys/payment.skey \
-  --trace how --trace-to stderr --trace-to file:fold.trace.jsonl
+singular registry fold --state-dir ./reg --blueprint onchain/plutus.json \
+  --state-token "$state_token" --koios-url "$koios_url" --network-magic 1 \
+  --vault alice.vault --passphrase-fd 3 \
+  --trace how --trace-to stderr --trace-to file:fold.trace.jsonl 3< alice.passphrase
 ```
 
 A sink that cannot be written, a closed standard error or a full disk loses

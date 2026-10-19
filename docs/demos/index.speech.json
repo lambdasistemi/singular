@@ -29,12 +29,16 @@
       "pause": 500
     },
     {
-      "text": "These tags are release targets, not published artifacts. Candidate demos cite their actual build and manifest until the relevant milestone release is cut.",
+      "text": "Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest, and v0.12.0 is the one the runbook was written against. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.",
+      "pause": 400
+    },
+    {
+      "text": "Candidate demos cite their actual build and manifest until the relevant milestone release is cut.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "index.md",
-    "sha256": "1f60115886d58f146db6c2ec332347ad3567b5a2ecf9c2dc87c584e169d32455"
+    "sha256": "7b88df49faf702acb7de9281edb134c74252bcca5297d421a5251c1fa89036fd"
   }
 }
