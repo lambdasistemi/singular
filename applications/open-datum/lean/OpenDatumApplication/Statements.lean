@@ -68,6 +68,7 @@ theorem fold_inversion (w w' : World) (u : EconomicUtxo) (tx : EconomicTransacti
     foldEffect Law.standard w u tx = .ok w' ↔
       ∃ rows economic, (selectedReferences w tx).mapM (selectRow Law.standard w) = .ok rows ∧
         Singular.foldAccepted w.economic u tx = .ok economic ∧
+        applicationFoldTimingRefusal w.economic tx = none ∧
         w' = { w with economic, outputs := w.outputs ++ createdOutputs w.app w.nextRef rows,           pending := w.pending.filter (fun p => !inputsContainReference tx.transaction.inputs p.reference),           nextRef := w.nextRef + (createdOutputs w.app w.nextRef rows).length } := by
   sorry
 
@@ -311,7 +312,28 @@ theorem termination_fold_donates_held_minus_tip (w w' : World) (u : EconomicUtxo
 /-- No expiry predicate for a termination at fold, and no expiry rejection. -/
 theorem termination_has_no_expiry (w : World) (b : TerminationBooking) (interval : Interval) :
     foldMemberRefusal w.registry.config interval (.termination b) = none ∧
-      terminationRejectionGround w.economic b.request .expired = some "reject-termination-no-expiry" := by
+      terminationRejectionGround w.economic b.request .expired = some "reject-termination-no-expiry" ∧
+      terminationFoldTiming w.economic interval b = none ∧
+      (∀ u tx after, Singular.foldAccepted w.economic u tx = .ok after →
+        applicationFoldDecision w.economic u tx = .ok after) ∧
+      (∀ u rejection, Singular.rejectionAccepted w.economic u rejection = .error "reject-termination-no-expiry" →
+        applicationRejectionDecision w.economic u rejection = .error "reject-termination-no-expiry") := by
+  sorry
+
+theorem termination_fold_timing_equivalent_root (world : Singular.World) (interval : Interval)
+    (booking : TerminationBooking) :
+    terminationFoldTiming world interval booking =
+      Singular.foldMemberRefusal world.registry.config interval (.termination booking) := by
+  sorry
+
+theorem application_fold_decision_equivalent_root (world : Singular.World) (u : EconomicUtxo)
+    (tx : EconomicTransaction) :
+    applicationFoldDecision world u tx = Singular.foldAccepted world u tx := by
+  sorry
+
+theorem application_rejection_decision_equivalent_root (world : Singular.World) (u : EconomicUtxo)
+    (rejection : Rejection) :
+    applicationRejectionDecision world u rejection = Singular.rejectionAccepted world u rejection := by
   sorry
 
 theorem selected_request_refs_distinct (w w' : World) (u : EconomicUtxo) (tx : EconomicTransaction)

@@ -569,7 +569,9 @@
      "termination_fold_donates_held_minus_tip",
      "termination_has_no_expiry",
      "selected_request_refs_distinct",
-     "registration_allocations_are_distinct"],
+     "registration_allocations_are_distinct",
+     "termination_fold_timing_equivalent_root",
+     "application_fold_decision_equivalent_root"],
     "name": "lifecycle-tip-from-held",
     "kind": "witness",
     "config":
@@ -9393,7 +9395,9 @@
      "consistent": true},
     {"reason": "reject-termination-no-expiry", "outcome": "refused"}],
    "scenario":
-   {"statements": ["termination_has_no_expiry"],
+   {"statements":
+    ["termination_has_no_expiry",
+     "application_rejection_decision_equivalent_root"],
     "name": "termination-rejection-refused",
     "kind": "adverse-input",
     "config":
