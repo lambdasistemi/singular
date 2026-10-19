@@ -3214,8 +3214,8 @@
     "index": 1,
     "name": "docs-demo1-devnet/what-you-should-see-01",
     "pause_ms": 300,
-    "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
-    "v": "b19c97049a61"
+    "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds; the runs on this page pass 0 and 60 000, and the registry fixes both for its life. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+    "v": "fb4f40072f2f"
    },
    {
     "index": 2,
