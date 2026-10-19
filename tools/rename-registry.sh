@@ -301,7 +301,9 @@ step6b_identifier_sweep() {
 
 step7_gate() {
   echo "step 7: final gate"
-  residual="$(git grep -iw mpfs -- \
+  # -I: text only. A narration clip is audio, and four of its bytes can spell
+  # the word by accident (docs/audio/clips/docs-install, 2026-10-19).
+  residual="$(git grep -Iiw mpfs -- \
     ':!PROVENANCE.md' ':!docs/prior-art.md' ':!docs/prior-art.speech.json' \
     ':!docs/audio/manifest.json' ':!docs/audio/index.json' \
     ':!CHANGELOG.md' ':!site' ':!.docs-source' \

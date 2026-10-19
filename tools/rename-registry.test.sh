@@ -21,7 +21,10 @@
 #      (cardano-foundation/cardano-mpfs-onchain) loses its owner, so the
 #      citation allowance cannot admit a bare repository name;
 #   6. the gate alone FAILS when a stray MPFS_BLUEPRINT line is planted in
-#      a tracked .sh file — the kind of stray the pre-#108 scan missed.
+#      a tracked .sh file — the kind of stray the pre-#108 scan missed;
+#   7. the gate alone PASSES when a tracked binary file holds the word as
+#      bytes, which a plain search finds, so the pass is not for want of a
+#      match.
 #
 # The rename tool and this test are exempt from the scan and the gate: they
 # must keep naming the product they rename.
@@ -164,6 +167,24 @@ set -e
 echo "$unq_out" | grep -q 'specs/419-public-fold-inputs/ruling.md' \
   || fail "gate failure does not name the unqualified citation's file"
 cp "$workdir/ruling.md.orig" "$unqualified"
+
+echo "control: the word inside a tracked binary file must not fail the gate"
+binary="$scratch/docs/audio/clips/binary-control.mp3"
+printf 'ID3\000 mpfs \000' >"$binary"
+git -C "$scratch" add -- "$binary"
+git -C "$scratch" grep -qiw mpfs -- "$binary" \
+  || fail "binary setup: a plain search does not find the bytes"
+git -C "$scratch" grep -Iqiw mpfs -- "$binary" \
+  && fail "binary setup: the text-only search finds the bytes" || true
+set +e
+bin_out="$(run_rename --gate-only 2>&1)"
+bin_rc=$?
+set -e
+[ "$bin_rc" -eq 0 ] || {
+  echo "$bin_out" >&2
+  fail "gate failed on a tracked binary file"
+}
+git -C "$scratch" rm -q -f -- "$binary"
 
 echo "control: stray MPFS_BLUEPRINT in a .sh must fail the gate"
 planted="$scratch/offchain/naming/run-suite.sh"
