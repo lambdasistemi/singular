@@ -21,7 +21,7 @@ use application/envelope.{
 }
 use booking.{applicationTagName, trieReadyTagName}
 use cardano/address.{Address, Script}
-use cardano/assets.{Value, from_asset, from_lovelace, merge, zero}
+use cardano/assets.{Value, from_asset, from_lovelace, lovelace_of, merge, zero}
 use cardano/script_context.{Minting, ScriptContext, ScriptInfo, Spending}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Spend, Transaction,
@@ -160,7 +160,39 @@ test envelope_a_hashes_to_the_shared_digest() {
 }
 
 // ----------------------------------------------------------------------------
-// Booking an insertion
+// The legacy insertion witness (retired)
+// ----------------------------------------------------------------------------
+//
+// The fixtures below build the legacy booking the application accepted before
+// the registration migration: an edge-1 `RequestDatum` carrying an approval
+// named by `approvalName`. They stay as the refusal witness of the retired route
+// (`tagged_registration_*_refuses_the_legacy_request_witness`). The tagged
+// registration booking is at the end of this file.
+//
+// Old to new map of the retired `insert_booking_*` and `closed_booking_*` rows
+// (each started from the legacy witness, whose accepting control is now a
+// refusal, so none can stay as an individual guard):
+//
+// - `insert_booking_control_accepts`, `closed_booking_accepts_insertion`:
+//   `tagged_registration_open_datum_mint_accepts_the_booking`,
+//   `..._closed_datum_mint_...`;
+// - `insert_booking_admits_any_payload`:
+//   `tagged_registration_open_datum_mint_admits_any_payload` (all seven
+//   payload shapes complete);
+// - `insert_booking_wrong_version_refuses`, `..._wrong_registry_refuses`,
+//   `..._wrong_active_policy_refuses`, `..._other_key_refuses`,
+//   `..._other_owner_refuses`, `..._unsigned_refuses`,
+//   `..._other_destination_refuses`, `..._without_state_refuses`,
+//   `..._state_elsewhere_refuses`, `..._state_of_other_application_refuses`,
+//   `..._two_approvals_refuses`, and `closed_booking_refuses_wrong_version_where_open_refuses`:
+//   the same-named `tagged_registration_*` rows, each one fact from the
+//   accepting tagged witness;
+// - `insert_booking_short_request_deposit_refuses`: `tagged_registration_short_carrier_refuses`;
+// - `insert_booking_naming_no_datum_refuses`:
+//   `tagged_registration_request_carrying_no_datum_refuses` and
+//   `..._another_envelope_refuses`;
+// - `insert_booking_other_edge_refuses`: retired with the edge number; the minted
+//   name binds the nonce instead (`tagged_registration_application_tag_of_another_nonce_refuses`).
 // ----------------------------------------------------------------------------
 
 /// An insertion's request destination: this script, carrying the
@@ -257,20 +289,6 @@ fn honestInsertTx(e: Envelope) -> Transaction {
   insertTx(e, [stateInput()], [controller], e.control.deposit, insertName(e))
 }
 
-test insert_booking_control_accepts() {
-  bookInsert(envelopeA(), honestInsertTx(envelopeA()))
-}
-
-test insert_booking_admits_any_payload() {
-  list_all(
-    payloads(),
-    fn(p) {
-      let e = envelopeOf(control(), p)
-      bookInsert(e, honestInsertTx(e))
-    },
-  )
-}
-
 /// Payloads of every Plutus Data shape: bytes, a signed integer, empty
 /// bytes, a constructor, a map and nested lists.
 fn payloads() -> List<Data> {
@@ -287,195 +305,6 @@ fn list_all(items: List<Data>, predicate: fn(Data) -> Bool) -> Bool {
     [] -> True
     [x, ..rest] -> predicate(x) && list_all(rest, predicate)
   }
-}
-
-test insert_booking_wrong_version_refuses() {
-  let e = envelopeOf(Control { ..control(), version: 2 }, payloadA())
-  bookInsert(e, honestInsertTx(e)) == False
-}
-
-test insert_booking_wrong_registry_refuses() {
-  let e =
-    envelopeOf(
-      Control {
-        ..control(),
-        registry: StateAsset {
-          statePolicy: registryStateHash,
-          stateName: #"6f74686572",
-        },
-      },
-      payloadA(),
-    )
-  bookInsert(e, honestInsertTx(e)) == False
-}
-
-test insert_booking_wrong_active_policy_refuses() {
-  let e =
-    envelopeOf(
-      Control { ..control(), activePolicy: fx.foreignPolicy },
-      payloadA(),
-    )
-  bookInsert(e, honestInsertTx(e)) == False
-}
-
-test insert_booking_other_key_refuses() {
-  let e = envelopeA()
-  bookInsertWith(e, fx.keyB, controller, appAddress(), honestInsertTx(e)) == False
-}
-
-test insert_booking_other_owner_refuses() {
-  let e = envelopeA()
-  bookInsertWith(
-    e,
-    e.control.key,
-    fx.inserterKey,
-    appAddress(),
-    honestInsertTx(e),
-  ) == False
-}
-
-test insert_booking_unsigned_refuses() {
-  let e = envelopeA()
-  bookInsert(
-    e,
-    insertTx(
-      e,
-      [stateInput()],
-      [fx.inserterKey],
-      e.control.deposit,
-      insertName(e),
-    ),
-  ) == False
-}
-
-test insert_booking_other_destination_refuses() {
-  let e = envelopeA()
-  let elsewhere = bytearray.concat(#"70", fx.foreignPolicy)
-  let name =
-    approvalName(1, e.control.key, controller, (elsewhere, envelopeHash(e)))
-  bookInsertWith(
-    e,
-    e.control.key,
-    controller,
-    elsewhere,
-    insertTx(e, [stateInput()], [controller], e.control.deposit, name),
-  ) == False
-}
-
-test insert_booking_short_request_deposit_refuses() {
-  let e = envelopeA()
-  bookInsert(
-    e,
-    insertTx(
-      e,
-      [stateInput()],
-      [controller],
-      e.control.deposit - 1,
-      insertName(e),
-    ),
-  ) == False
-}
-
-/// A request that carries no datum: its destination is this script with
-/// none, and the minted name binds exactly that request, so nothing but
-/// the missing datum is wrong. The mint refuses at `app-envelope-datum`;
-/// `insert_booking_control_accepts` is the same booking carrying the
-/// envelope.
-test insert_booking_naming_no_datum_refuses() {
-  let e = envelopeA()
-  let bare = (appAddress(), None)
-  bookInsert(
-    e,
-    insertTxTo(
-      e,
-      bare,
-      approvalName(1, e.control.key, controller, approvalDestination(bare)),
-    ),
-  ) == False
-}
-
-/// The honest booking with the request naming `destination` and the
-/// approval named `name`.
-fn insertTxTo(
-  e: Envelope,
-  destination: (ByteArray, Option<Data>),
-  name: ByteArray,
-) -> Transaction {
-  Transaction {
-    ..transaction.placeholder,
-    reference_inputs: [stateInput()],
-    outputs: [
-      requestOutput(
-        1,
-        e.control.key,
-        controller,
-        destination,
-        e.control.deposit,
-        name,
-      ),
-    ],
-    extra_signatories: [controller],
-    mint: from_asset(app, name, 1),
-  }
-}
-
-test insert_booking_other_edge_refuses() {
-  let e = envelopeA()
-  let updateActive =
-    approvalName(
-      2,
-      e.control.key,
-      controller,
-      approvalDestination(insertDestination(e)),
-    )
-  bookInsert(
-    e,
-    insertTx(e, [stateInput()], [controller], e.control.deposit, updateActive),
-  ) == False
-}
-
-test insert_booking_without_state_refuses() {
-  let e = envelopeA()
-  bookInsert(e, insertTx(e, [], [controller], e.control.deposit, insertName(e))) == False
-}
-
-test insert_booking_state_elsewhere_refuses() {
-  let e = envelopeA()
-  let s = stateInput()
-  let displaced =
-    Input {
-      ..s,
-      output: Output {
-        ..s.output,
-        address: address.from_script(fx.foreignPolicy),
-      },
-    }
-  bookInsert(
-    e,
-    insertTx(e, [displaced], [controller], e.control.deposit, insertName(e)),
-  ) == False
-}
-
-test insert_booking_state_of_other_application_refuses() {
-  let e = envelopeA()
-  let other =
-    stateInputWith(State { ..theState(), application_policy: fx.foreignPolicy })
-  bookInsert(
-    e,
-    insertTx(e, [other], [controller], e.control.deposit, insertName(e)),
-  ) == False
-}
-
-test insert_booking_two_approvals_refuses() {
-  let e = envelopeA()
-  let tx = honestInsertTx(e)
-  bookInsert(
-    e,
-    Transaction {
-      ..tx,
-      mint: merge(tx.mint, from_asset(app, #"6f74686572", 1)),
-    },
-  ) == False
 }
 
 // ----------------------------------------------------------------------------
@@ -971,7 +800,7 @@ test export_application_contexts() {
   let release: Data = Release
   let datum: Data = e
   and {
-    exportApplication(0, honestInsertTx(e), insert, Minting(app)),
+    exportApplication(0, honestTagged(openInstance(), e), insert, Minting(app)),
     exportApplication(
       1,
       terminateTx(
@@ -1064,16 +893,6 @@ test closed_update_refusal_is_the_closed_rule() {
       closedUpdate(tx) == False && update(tx)
     },
   )
-}
-
-test closed_booking_accepts_insertion() {
-  closedBookInsert(envelopeA(), honestInsertTx(envelopeA()))
-}
-
-test closed_booking_refuses_wrong_version_where_open_refuses() {
-  let e = envelopeOf(Control { ..control(), version: 2 }, payloadA())
-  let tx = honestInsertTx(e)
-  bookInsert(e, tx) == False && closedBookInsert(e, tx) == False
 }
 
 test closed_booking_refuses_termination_without_live_output_where_open_refuses() {
@@ -1642,11 +1461,17 @@ test open_datum_refuses_a_mint_beside_a_burn_of_application_tags() {
 // transactions, not a compiled identity and not a ledger run.
 //
 // Classes of rows (`tagged_registration_*`): the accepting witnesses and the
-// refusal of the formerly accepted legacy witness are RED (absent behavior);
-// the one-fact refusals below refuse today only because the legacy
-// `RequestDatum` is expected and absent (`app-request`), an incidental pass
-// that establishes no sensitivity until the positive control accepts; the
-// request-policy rows exist already and are preservation evidence.
+// refusal of the formerly accepted legacy witness were RED (absent behavior)
+// and are the GREEN of this continuation. At RED the one-fact refusals below
+// gave no sensitivity: thirteen reached an application guard that already
+// existed (version, registry, active policy, key, owner, signature,
+// destination, state, a second tag) and six stopped at `app-request` because
+// the legacy request was expected and absent. With the positive control
+// accepting they are one fact from a witness that lands. The request-policy rows
+// existed already and are preservation evidence. The rows of the last two
+// sections (one registry, the request's tags) were added with the implementation
+// and passed at once: preservation tests of checks traced in the source, with
+// no failing control observed.
 
 /// A second application instance, the closed one, with its own policy hash:
 /// the registry state pins it, the destination is its address and the tags are
@@ -2132,4 +1957,190 @@ test tagged_registration_closed_unsigned_refuses() {
       applicationTagOf(r),
     ),
   )
+}
+
+// ---- one registry: the application, the request and the state agree ----------
+//
+// An application instance serves one registry and consults that registry's
+// state (the one reference input that holds its full state asset). The request
+// it certifies must be that registry's: the request's own `registry` names the
+// registry's token, the output sits at the request policy that state pins, and
+// that policy's trie-ready tag is minted in the same booking, so the pinned
+// request policy, which consults the same state, judges the same booking. A
+// request of another registry, or one judged under another request policy, is
+// not authenticated by this instance's state.
+
+/// The booking of `r` with the request output at `address` and its trie-ready
+/// tag under `tagPolicy`, minted when `minted`.
+fn taggedTxAt(
+  i: Instance,
+  r: RegistrationRequest,
+  address: Address,
+  tagPolicy: ByteArray,
+  minted: Bool,
+) -> Transaction {
+  let name = applicationTagOf(r)
+  let tag = trieReadyTagName(r)
+  Transaction {
+    ..transaction.placeholder,
+    validity_range: interval.between(1_000, 5_000),
+    reference_inputs: [stateInputWith(i.state)],
+    outputs: [
+      Output {
+        address,
+        value: from_lovelace(
+          r.registration_cost + r.declared_tip + r.carrier_ada,
+        )
+          |> merge(from_asset(tagPolicy, tag, 1))
+          |> merge(from_asset(i.policy, name, 1)),
+        datum: InlineDatum(RegistrationDatum(r)),
+        reference_script: None,
+      },
+    ],
+    extra_signatories: [r.refund_address],
+    mint: from_asset(i.policy, name, 1)
+      |> merge(
+          if minted {
+            from_asset(tagPolicy, tag, 1)
+          } else {
+            zero
+          },
+        ),
+  }
+}
+
+/// A request of another registry: its wire `registry` names another token.
+/// The root's request policy refuses it too (`dirty-request`), so the two
+/// handlers agree on one registry.
+test tagged_registration_request_of_another_registry_refuses() {
+  let i = openInstance()
+  let e = envelopeA()
+  let r =
+    RegistrationRequest {
+      ..taggedRequest(i, e, 1),
+      registry: TokenId { assetName: #"6f74686572" },
+    }
+  let tx =
+    taggedTxAt(
+      i,
+      r,
+      address.from_script(i.state.request_policy),
+      i.state.request_policy,
+      True,
+    )
+  refusesTagged(i, e, tx) && requestMints(i, tx) == False
+}
+
+/// The request sits at, and its trie-ready tag is minted under, another request
+/// policy than the one this registry's state pins: a request policy of another
+/// registry would consult that registry's state, not this one.
+test tagged_registration_request_under_another_request_policy_refuses() {
+  let i = openInstance()
+  let e = envelopeA()
+  let r = taggedRequest(i, e, 1)
+  refusesTagged(
+    i,
+    e,
+    taggedTxAt(
+      i,
+      r,
+      address.from_script(fx.foreignPolicy),
+      fx.foreignPolicy,
+      True,
+    ),
+  )
+}
+
+/// The request output holds its trie-ready tag, but the tag is not minted in
+/// this booking: the pinned request policy does not run and nothing judges the
+/// request.
+test tagged_registration_trie_ready_tag_not_minted_refuses() {
+  let i = openInstance()
+  let e = envelopeA()
+  let r = taggedRequest(i, e, 1)
+  refusesTagged(
+    i,
+    e,
+    taggedTxAt(
+      i,
+      r,
+      address.from_script(i.state.request_policy),
+      i.state.request_policy,
+      False,
+    ),
+  )
+}
+
+/// The request output at the pinned request address does not hold the
+/// request's trie-ready tag at all (another tag name is minted and held).
+test tagged_registration_request_without_its_trie_ready_tag_refuses() {
+  let i = openInstance()
+  let e = envelopeA()
+  let r = taggedRequest(i, e, 1)
+  let tx = honestTagged(i, e)
+  let other = trieReadyTagName(RegistrationRequest { ..r, nonce: 2 })
+  expect [out] = tx.outputs
+  refusesTagged(
+    i,
+    e,
+    Transaction {
+      ..tx,
+      outputs: [
+        Output {
+          ..out,
+          value: from_lovelace(lovelace_of(out.value))
+            |> merge(from_asset(i.policy, applicationTagOf(r), 1))
+            |> merge(from_asset(i.state.request_policy, other, 1)),
+        },
+      ],
+      mint: from_asset(i.policy, applicationTagOf(r), 1)
+        |> merge(from_asset(i.state.request_policy, other, 1)),
+    },
+  )
+}
+
+/// Another registry's state beside this one in the same transaction is
+/// ignored by both consumers: the application takes the one reference input
+/// that is its own registry's state, and the request policy takes the one that
+/// holds its own token. The booking lands for both, and each consulted the same
+/// state.
+test tagged_registration_another_registrys_state_beside_this_one_is_ignored() {
+  let i = openInstance()
+  let e = envelopeA()
+  let tx = honestTagged(i, e)
+  let other =
+    Input {
+      output_reference: OutputReference {
+        transaction_id: #"4f54484552",
+        output_index: 0,
+      },
+      output: Output {
+        address: address.from_script(registryStateHash),
+        value: from_asset(registryStateHash, #"6f74686572", 1)
+          |> merge(from_lovelace(5_000_000)),
+        datum: InlineDatum(StateDatum(i.state)),
+        reference_script: None,
+      },
+    }
+  let both =
+    Transaction { ..tx, reference_inputs: [other, ..tx.reference_inputs] }
+  bookTagged(i, e, both) && requestMints(i, both)
+}
+
+/// And a state of another registry alone does not authenticate the booking.
+test tagged_registration_another_registrys_state_alone_refuses() {
+  let i = openInstance()
+  let e = envelopeA()
+  let tx = honestTagged(i, e)
+  let s = stateInputWith(i.state)
+  let other =
+    Input {
+      ..s,
+      output: Output {
+        ..s.output,
+        value: from_asset(registryStateHash, #"6f74686572", 1)
+          |> merge(from_lovelace(5_000_000)),
+      },
+    }
+  refusesTagged(i, e, Transaction { ..tx, reference_inputs: [other] })
 }

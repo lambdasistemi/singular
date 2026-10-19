@@ -7,24 +7,38 @@ use open
 use types.{Approve, ApproveRegistration, OpenRedeemer}
 
 // ============================================================================
-// #173 A173-APPROVAL — the open application's admission rule
+// The open application's admission rule
 // ============================================================================
 //
-// The open policy mints one approval token per scoping tuple
-// `(edge, key, owner, destination)`, for the six TREE edges 0..5. Its
-// asset name IS the binding: `lib.approvalName` over the whole tuple, the
-// same function the cage recomputes at fold time (approval-asset-binding), so an
-// approval cannot be pointed at a request it was not minted for.
+// The open policy mints one application tag per registration booking. Its asset
+// name IS the binding: `booking.applicationTagName` over the request's key,
+// refund address, destination and nonce, the same function the request
+// policy's booking judgement recomputes, so a tag cannot be pointed at a
+// request it was not minted for. Quantity is part of the binding: exactly one
+// asset name, exactly `+1`. Widening it would let one mint certify a batch.
 //
-// `witnessTerminal` (edge 6) needs no approval at all in the model
-// (`admitsFor` admits it unconditionally), so minting one is refused
-// rather than silently useful; edge 7 is not an edge.
+// A PURE burn accepts under any redeemer: a tag is evidence, never a
+// consumable, and the fold burns the tag of every registration it folds.
 //
-// Quantity is part of the binding: exactly one asset name, exactly `+1`.
-// Widening it would let one mint certify a batch.
-//
-// A PURE burn accepts under any redeemer: an approval is evidence, never
-// a consumable, so destroying your own copy costs the registry nothing.
+// The edge-numbered `Approve` of the old fold is retired for every edge (its
+// constructor stays for the wire shape); `ApproveRegistration` is the one
+// lawful approval. Old to new map of the retired rows, each of which started
+// from an `Approve` mint that is now refused for every edge (so none can stay
+// as an individual guard of the binding): `open_admits_insert_absent`,
+// `open_admits_insert_active`, `open_admits_update_active`,
+// `open_admits_delete_absent`, `open_admits_delete_active` are the
+// `tagged_registration_open_refuses_the_legacy_approval_of_*` rows below and
+// the lawful `tagged_registration_open_admits_the_registration_approval`;
+// `open_refuses_wrong_binding` and `open_refuses_foreign_name` are the names of
+// another nonce and of another key; `open_refuses_widened_quantity`,
+// `open_refuses_two_assets`, `open_refuses_mint_beside_burn` and
+// `open_refuses_empty_mint` are the same-shaped `ApproveRegistration` rows;
+// `open_refuses_edge_six` and `open_refuses_edge_seven` are the two
+// `..._of_edge_six` and `..._of_edge_seven` rows. `open_admits_pure_burn` and
+// `open_refuses_the_termination_approval` stay: the burn is lawful under any
+// redeemer, and the termination approval is retired under its own name.
+// No generic application consent, script spending protection or cross-registry
+// separation is claimed.
 
 const openPolicy: PolicyId = "open_policy_id__________________"
 
@@ -67,88 +81,11 @@ fn admits_edge(edge: Int) -> Bool {
   open.open.mint(approve(edge), openPolicy, mint_tx([(bound_name(edge), 1)]))
 }
 
-test open_admits_insert_absent() {
-  admits_edge(0)
-}
-
-test open_admits_insert_active() {
-  admits_edge(1)
-}
-
-test open_admits_update_active() {
-  admits_edge(2)
-}
-
-test open_admits_delete_absent() {
-  admits_edge(4)
-}
-
-test open_admits_delete_active() {
-  admits_edge(5)
-}
-
 /// A PURE burn is the holder's own business (evidence, not a
 /// consumable). Every movement under the policy is negative and there is
 /// at least one.
 test open_admits_pure_burn() {
   open.open.mint(approve(1), openPolicy, mint_tx([(bound_name(1), -1)]))
-}
-
-/// The name is the binding: an asset name that is not this tuple's
-/// `approvalName` is refused, however well-formed the redeemer.
-test open_refuses_wrong_binding() {
-  !open.open.mint(approve(1), openPolicy, mint_tx([(bound_name(2), 1)]))
-}
-
-/// A single wrong byte in the name is enough — the whole tuple is
-/// committed, so this is the control that the check is not comparing
-/// lengths or prefixes.
-test open_refuses_foreign_name() {
-  !open.open.mint(approve(1), openPolicy, mint_tx([(#"00", 1)]))
-}
-
-/// `witnessTerminal` needs no approval in the model, so minting one
-/// under the open policy is refused rather than left meaningfully
-/// mintable.
-test open_refuses_edge_six() {
-  !open.open.mint(approve(6), openPolicy, mint_tx([(bound_name(6), 1)]))
-}
-
-/// Edge 7 is not an edge at all.
-test open_refuses_edge_seven() {
-  !open.open.mint(approve(7), openPolicy, mint_tx([(bound_name(7), 1)]))
-}
-
-/// Quantity widening: two of the bound asset in one mint would let a
-/// single approval certify more than the one request it names.
-test open_refuses_widened_quantity() {
-  !open.open.mint(approve(1), openPolicy, mint_tx([(bound_name(1), 2)]))
-}
-
-/// Two distinct approval names in one mint is the same widening by
-/// another route: one redeemer cannot bind two tuples.
-test open_refuses_two_assets() {
-  !open.open.mint(
-    approve(1),
-    openPolicy,
-    mint_tx([(bound_name(1), 1), (bound_name(2), 1)]),
-  )
-}
-
-/// A mint hiding beside a burn is not a pure burn and is held to the
-/// binding rule like any other mint.
-test open_refuses_mint_beside_burn() {
-  !open.open.mint(
-    approve(1),
-    openPolicy,
-    mint_tx([(bound_name(1), 1), (bound_name(2), -1)]),
-  )
-}
-
-/// Nothing moves under the policy at all: there is no approval to admit
-/// and no burn to allow.
-test open_refuses_empty_mint() {
-  !open.open.mint(approve(1), openPolicy, mint_tx([]))
 }
 
 /// The model has no application approval for a termination: the booking is
@@ -159,23 +96,15 @@ test open_refuses_the_termination_approval() {
 }
 
 // ============================================================================
-// The generic open policy after the registration booking (A-035)
+// The registration approval and the retired edge approvals (A-035)
 // ============================================================================
 //
-// The model's registration booking binds the booking to the request's own
-// application tag (`applicationTagName`: key, refund address, destination and
-// nonce); the edge-numbered approval of the old fold admitted a legacy
-// edge-only request that nothing folds any more. `Approve` is retired for
-// every edge and its constructor index stays; `ApproveRegistration` is the one
-// lawful approval, and a pure burn stays lawful.
-//
-// Classes of rows (`tagged_registration_*`): the refusals of the five legacy
-// tree edges the policy admits today are RED (the existing `open_admits_*`
-// rows stay unchanged and are retired by the GREEN). The registration
-// positive, its canonical-binding, quantity, empty, multiple and mixed-mint
-// guards and the pure burn exist already and pass at once: preservation
-// evidence, not RED. No generic application consent, script spending
-// protection or cross-registry separation is claimed.
+// Classes of rows (`tagged_registration_*`): the refusals of the legacy tree
+// edges were RED (the old policy admitted five of them) and are the GREEN of
+// this continuation. A retired-arm refusal is one reason for every edge and is
+// not individual guard coverage. The registration positive, its canonical
+// binding, quantity, empty, multiple and mixed-mint guards and the pure burn
+// existed already and passed at once: preservation evidence, never RED.
 
 fn refuses_legacy_edge(edge: Int) -> Bool {
   open.open.mint(approve(edge), openPolicy, mint_tx([(bound_name(edge), 1)])) == False
@@ -256,4 +185,12 @@ test tagged_registration_open_refuses_an_empty_registration_mint() {
 /// A pure burn of a registration approval stays lawful under any redeemer.
 test tagged_registration_open_admits_a_pure_burn_of_a_registration_approval() {
   open.open.mint(register(1), openPolicy, mint_tx([(registration_name(1), -1)]))
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_edge_six() {
+  refuses_legacy_edge(6)
+}
+
+test tagged_registration_open_refuses_the_legacy_approval_of_edge_seven() {
+  refuses_legacy_edge(7)
 }

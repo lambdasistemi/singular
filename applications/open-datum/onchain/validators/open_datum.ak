@@ -6,8 +6,9 @@ use aiken/collection/list
 use aiken/primitive/bytearray
 use application/envelope.{
   BookInsert, BookTerminate, BookTermination, Control, Envelope, OpenDatumMint,
-  OpenDatumSpend, Release, Update, envelopeHash, envelopeVersion, registryBytes,
+  OpenDatumSpend, Release, Update, envelopeVersion, registryBytes,
 }
+use booking.{applicationTagName, trieReadyTagName}
 use cardano/address.{Address, Script}
 use cardano/assets.{
   PolicyId, Value, from_asset, lovelace_of, quantity_of, tokens,
@@ -20,8 +21,8 @@ use lib.{approvalName, decodeAddress, destinationDatumHash, edgeInsertActive}
 use registry/refusal.{traceFalse}
 use registry_pin.{registryStateHash}
 use types.{
-  CageDatum, Request, RequestDatum, State, StateDatum, TerminationDatum,
-  TerminationRequest,
+  CageDatum, RegistrationDatum, RegistrationRequest, State, StateDatum,
+  TerminationDatum, TerminationRequest, TokenId,
 }
 
 /// The open-datum application (#299, #310): a key's live value is an
@@ -33,19 +34,28 @@ use types.{
 /// compiled hash is the approval policy the registry pins and the
 /// address the live outputs sit at.
 ///
-/// **Mint** certifies exactly two bookings, each the model's booking
-/// guards in the model's order (`OpenDatumApplication.Model`
-/// `bookInsertStep`, `bookTerminateStep`), read against the actual
-/// registry state presented as a reference input:
+/// **Mint** certifies one booking, the registration, read against the actual
+/// registry state presented as a reference input (`OpenDatumApplication.Model`
+/// `insertionBinding`, `bookInsertStep`, composed with the root registration
+/// booking): the mint creates the application tag of one registration request.
 ///
-/// - `insertActive`: the envelope names this registry, its active policy,
-///   the key and the controller as owner; the controller signs; the
-///   request's destination is this script with this envelope's hash; the
-///   protected deposit is the request's.
-/// - `updateTerminal`: the live output for the key, read as a reference
-///   input, sits here with the key's one active token and an envelope
-///   bound to this registry and key; its controller owns the request and
-///   signs it; the request names no destination.
+/// - The state is this registry's (the full state asset), and pins this script
+///   as its application policy; the envelope is of the current version and
+///   names this registry, its active policy, the key and the controller, and
+///   the controller signs.
+/// - The tagged request output is the one holding the minted tag. It is at the
+///   request policy the state pins, holds that request's trie-ready tag, minted
+///   in the same booking, so the pinned request policy judges the same booking;
+///   its `RegistrationDatum` is for this registry, names the key, the
+///   controller as refund address, this script as destination and the
+///   complete envelope as the carried datum, and its carrier lovelace is the
+///   envelope's deposit. The payload is not read.
+/// - The minted name is `applicationTagName` over the key, the refund address,
+///   the destination and the nonce the request carries, at quantity one: the
+///   redeemer has no nonce field, the request is the only source of it.
+///
+/// The termination is booked by `BookTermination` (below) and the request
+/// policy's mint; `BookTerminate` is a kept constructor that certifies nothing.
 ///
 /// **Spend** has two paths and refuses everything else:
 ///
@@ -283,8 +293,10 @@ fn actualState(registry: ByteArray, references: List<Input>) -> Option<State> {
 // Booking
 // ---------------------------------------------------------------------
 
-/// `bookInsertStep`: every guard, in the model's order, then the binding
-/// of the minted name to the request the approval certifies.
+/// `bookInsertStep`: every guard, in the model's order, then the binding of
+/// the minted name to the tagged request it certifies. The booked request is
+/// the one output holding the minted application tag, under an inline
+/// `RegistrationDatum`; the nonce comes from it.
 fn bookInsert(
   registry: ByteArray,
   policy_id: PolicyId,
@@ -297,8 +309,6 @@ fn bookInsert(
   tx: Transaction,
 ) -> Bool {
   let control = envelope.control
-  let datumHash = envelopeHash(envelope)
-  let destination = (address, datumHash)
   if control.version != envelopeVersion {
     traceFalse(@"app-envelope-version")
   } else if registryBytes(control.registry) != registry {
@@ -318,27 +328,32 @@ fn bookInsert(
   } else {
     when bookedRequest(tx.outputs, policy_id, name) is {
       None -> traceFalse(@"app-request")
-      Some(request) -> {
-        let (requestAddress, requestDatum) = request.destination
-        if request.edge != edgeInsertActive || request.requestKey != key || request.requestOwner != owner {
-          traceFalse(@"app-request")
-        } else if requestAddress != address {
-          traceFalse(@"app-destination")
-        } else if requestDatum == None {
-          // The request carries no datum, so the fold would deliver the
-          // token to an output carrying none: the model's
-          // `app-envelope-datum`.
-          traceFalse(@"app-envelope-datum")
-        } else if destinationDatumHash(requestDatum) != datumHash {
-          traceFalse(@"app-destination")
-        } else if request.deposit != control.deposit {
-          traceFalse(@"app-deposit")
-        } else if name != approvalName(
-          edgeInsertActive,
-          key,
-          owner,
-          destination,
+      Some((output, request)) -> {
+        let carried: Data = envelope
+        // The wire request.registry, the request's address at the request
+        // policy this state pins and the state this script consulted agree on
+        // one registry: a request of another registry names another token and
+        // sits under another request policy.
+        if request.registry != TokenId { assetName: registryName(registry) } || request.key != key || request.refund_address != owner || output.address.payment_credential != Script(
+          state.request_policy,
         ) {
+          traceFalse(@"app-request")
+        } else if request.destination != address {
+          traceFalse(@"app-destination")
+        } else if request.datum != Some(carried) {
+          traceFalse(@"app-envelope-datum")
+        } else if request.carrier_ada != control.deposit {
+          traceFalse(@"app-deposit")
+        } else if !holdsMintedTag(
+          output,
+          tx.mint,
+          state.request_policy,
+          request,
+        ) {
+          // The pinned request policy must judge this same booking: the
+          // request holds its trie-ready tag and the tag is minted now.
+          traceFalse(@"forged-trie-ready-tag")
+        } else if name != applicationTagName(key, owner, address, request.nonce) {
           traceFalse(@"approval-binding")
         } else {
           True
@@ -346,6 +361,28 @@ fn bookInsert(
       }
     }
   }
+}
+
+/// The registry's state token name: the registry identity is the state policy
+/// followed by it.
+fn registryName(registry: ByteArray) -> ByteArray {
+  bytearray.drop(registry, bytearray.length(registryStateHash))
+}
+
+/// The request output holds the request's own trie-ready tag under the pinned
+/// request policy, and exactly that tag is minted.
+fn holdsMintedTag(
+  output: Output,
+  mint: Value,
+  requestPolicy: PolicyId,
+  request: RegistrationRequest,
+) -> Bool {
+  let tag = trieReadyTagName(request)
+  quantity_of(output.value, requestPolicy, tag) == 1 && quantity_of(
+    mint,
+    requestPolicy,
+    tag,
+  ) == 1
 }
 
 /// The control of a live output's inline envelope, when it states one.
@@ -361,13 +398,13 @@ fn liveControl(datum) -> Option<Control> {
   }
 }
 
-/// The booked request: the one output carrying the minted approval, under
-/// an inline request datum.
+/// The booked request: the one output carrying the minted application tag,
+/// under an inline registration request.
 fn bookedRequest(
   outputs: List<Output>,
   policy_id: PolicyId,
   name: ByteArray,
-) -> Option<Request> {
+) -> Option<(Output, RegistrationRequest)> {
   when
     list.filter(
       outputs,
@@ -377,8 +414,8 @@ fn bookedRequest(
     [carrier] ->
       when carrier.datum is {
         InlineDatum(inline) ->
-          if inline is RequestDatum(request): CageDatum {
-            Some(request)
+          if inline is RegistrationDatum(request): CageDatum {
+            Some((carrier, request))
           } else {
             None
           }

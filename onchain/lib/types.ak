@@ -502,27 +502,28 @@ pub type RegistrationRequest {
 
 /// The open application's mint redeemer (#173 I1).
 ///
-/// It names the scoping tuple the approval is being minted for. The
-/// policy recomputes `lib.approvalName` over exactly these four
-/// components and requires the minted asset name to equal it, so the
-/// redeemer cannot point a token at a tuple it does not commit to.
-/// `destination` is the same pair the cage's `Request` carries: the
-/// binary address bytes and the BLAKE2b-256 hash of the receiving
-/// output's inline datum.
+/// `ApproveRegistration` is the one lawful approval: it names the key, refund
+/// address, destination and nonce of one registration booking, and the policy
+/// requires the minted asset name to equal `booking.applicationTagName` over
+/// exactly those four, so the redeemer cannot point a tag at a request it does
+/// not commit to.
+///
+/// `Approve` is retired: the edge-numbered approval admitted a legacy edge-only
+/// request that no fold consumes any more, and the policy refuses it for every
+/// edge. The constructor and its fields stay, so the wire indices do not move
+/// (`Approve` 0, `ApproveRegistration` 1). `destination` was the pair the old
+/// `Request` carried: the binary address bytes and the BLAKE2b-256 hash of the
+/// receiving output's inline datum.
 pub type OpenRedeemer {
+  /// Retired, refused for every edge. The fields are those of the old
+  /// edge-numbered approval: the edge ordinal (0 `insertAbsent`, 1
+  /// `insertActive`, 2 `updateActive`, 3 `updateTerminal`, 4 `deleteAbsent`,
+  /// 5 `deleteActive`, 6 `witnessTerminal`), the key, the owner, and the
+  /// destination pair.
   Approve {
-    /// The edge ordinal this approval certifies: 0 `insertAbsent`,
-    /// 1 `insertActive`, 2 `updateActive`, 3 `updateTerminal`,
-    /// 4 `deleteAbsent`, 5 `deleteActive`. Edge 6 (`witnessTerminal`)
-    /// needs no approval and is refused here.
     edge: Int,
-    /// The registry key the certified edge moves.
     key: ByteArray,
-    /// The controller (or, for the absent edges, the refund address)
-    /// the request acts for.
     owner: ByteArray,
-    /// Where the request's minted token goes, and the inline datum the
-    /// receiving output must carry.
     destination: (ByteArray, ByteArray),
   }
   /// Certify one registration booking: the application tag binds the key,

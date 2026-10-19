@@ -53,13 +53,19 @@ pub type Envelope {
   payload: Data,
 }
 
-/// The mint redeemer: which booking the minted approval certifies.
+/// The mint redeemer: which booking the minted application tag certifies.
 ///
-/// `BookInsert` certifies an `insertActive` request whose destination is
-/// this script's address at `address`, carrying this `envelope` inline.
-/// `BookTerminate` certifies an `updateTerminal` request for the live
-/// output at `holding`, which the transaction reads as a reference input.
-/// The edge is the constructor; a terminate names no destination.
+/// `BookInsert` certifies one registration: the tagged request output the
+/// transaction leaves holds the minted application tag, names this script's
+/// address `address` as its destination, carries this `envelope` inline as the
+/// datum the delivered output must hold, names `owner` as its refund address
+/// and `key` as its key. The request's nonce, which the tag's name commits to,
+/// is read from the request: the redeemer has no nonce field.
+///
+/// `BookTerminate` is retired and kept for the wire shape (index 1): the
+/// booking of a termination is the `BookTermination` spend of the live output
+/// plus the request policy's mint, so this mint certifies no termination and
+/// refuses it (`app-terminate-approval-retired`).
 pub type OpenDatumMint {
   BookInsert {
     key: ByteArray,
@@ -70,13 +76,14 @@ pub type OpenDatumMint {
   BookTerminate { key: ByteArray, owner: ByteArray, holding: OutputReference }
 }
 
-/// The spend redeemer: an update of the payload, the release of the output
-/// inside the fold that terminates its key, or the booking of that
-/// termination (appended at index 2, so `Update` 0 and `Release` 1 never
-/// move). `BookTermination` spends the live output now and moves its whole
-/// value into one termination request; `ordinary_added` is the lovelace the
-/// booker adds from ordinary inputs (the model's `ordinaryAdded`), so the
-/// request holds exactly the spent lovelace plus it.
+/// The spend redeemer: an update of the payload, the retired release of the
+/// output (kept at index 1 for the wire shape and refused for every
+/// transaction: `release-retired`), or the booking of a termination (appended
+/// at index 2, so `Update` 0 and `Release` 1 never move). `BookTermination`
+/// spends the live output now and moves its whole value into one termination
+/// request; `ordinary_added` is the lovelace the booker adds from ordinary
+/// inputs (the model's `ordinaryAdded`), so the request holds exactly the spent
+/// lovelace plus it.
 pub type OpenDatumSpend {
   Update
   Release
@@ -89,8 +96,9 @@ pub fn registryBytes(asset: StateAsset) -> ByteArray {
   bytearray.concat(asset.statePolicy, asset.stateName)
 }
 
-/// The BLAKE2b-256 of an envelope's serialised CBOR: the datum hash a
-/// request names for the output that will carry it inline.
+/// The BLAKE2b-256 of an envelope's serialised CBOR: the digest of the datum
+/// a registration's delivered output carries inline (the request carries the
+/// envelope itself).
 pub fn envelopeHash(envelope: Envelope) -> ByteArray {
   blake2b_256(cbor.serialise(envelope))
 }
