@@ -22,7 +22,12 @@ development node, then on the public preprod network with test ada.
    https://lambdasistemi.github.io/singular/docs/demo1-on-preprod/, which plays
    the same steps on preprod with the faucet, a Koios address and the amounts.
 
-This release ships no ready-built binaries. Building compiles a large Haskell
-stack unless the project's public binary cache serves it; the runbook says how to
-use the cache. The naming material in the archive's `README.md` is history and no
+Without installing Nix, download the ready-built commands for your platform
+instead: `singular-<version>-x86_64-linux.tar.gz` for Linux or
+`singular-<version>-aarch64-darwin.tar.gz` for an Apple Silicon Mac. Check the
+file against `SHA256SUMS`, unpack it and run `singular --version`; the
+[install page](https://lambdasistemi.github.io/singular/docs/install/) has the
+commands. Building the commands from the archive compiles a large Haskell stack
+unless the project's public binary cache serves it; the runbook says how to use
+the cache. The naming material in the archive's `README.md` is history and no
 part of Demo 1.
