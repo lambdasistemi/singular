@@ -128396,17 +128396,17 @@
    ]
   },
   "docs-demo1-on-preprod/step-3-alice-books-the-insertion-of-her-key-01": {
-   "audio_sha256": "b713e53fbcd27bd209dbaffc9825f9a4f6f8e4811e1b5996f002577b5008e335",
-   "characters": 271,
-   "cost": 0.00026828999999999997,
-   "duration": 17.2,
+   "audio_sha256": "e752c89104b14ff9e91dcde65fe37180df9c252fea56aa174039d8bc5004d6b8",
+   "characters": 715,
+   "cost": 0.00070785,
+   "duration": 49.7,
    "index": 1,
-   "key": "a7469e611c5f201d5cc8c6ba8dbe82888e4b8d6bd8122db7c56f169edd0c5de6",
+   "key": "4c1facd3ded7e1765708230b1028576c935e2d9b263f6274e5a7264ef65a75a2",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 400,
    "section": "step-3-alice-books-the-insertion-of-her-key",
-   "sent_text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet; a write past it is not signed.",
-   "text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet; a write past it is not signed.",
+   "sent_text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet: a write whose measured outlay passes it is refused before anything is signed, and its receipt names the total and its parts under outlay. On preprod the booking measured 6.16 tee ADA on 18 October: its 0.39 tee ADA fee, the 3 tee ADA it locks and a 2.77 tee ADA bound on the fold that follows. The 8 tee ADA allowance below covers it. If the network's parameters have moved and a write is refused for its outlay, read that receipt and raise the allowance to cover the total.",
+   "text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet: a write whose measured outlay passes it is refused before anything is signed, and its receipt names the total and its parts under outlay. On preprod the booking measured 6.16 tADA on 18 October: its 0.39 tADA fee, the 3 tADA it locks and a 2.77 tADA bound on the fold that follows. The 8 tADA allowance below covers it. If the network's parameters have moved and a write is refused for its outlay, read that receipt and raise the allowance to cover the total.",
    "words": [
     {
      "end": 0.237,
@@ -128589,103 +128589,553 @@
      "text": "."
     },
     {
-     "end": 12.488,
+     "end": 12.512,
      "start": 11.9,
      "text": "max-outlay"
     },
     {
-     "end": 12.812,
-     "start": 12.488,
+     "end": 12.837,
+     "start": 12.512,
      "text": "caps"
     },
     {
-     "end": 12.938,
-     "start": 12.812,
+     "end": 12.962,
+     "start": 12.837,
      "text": "what"
     },
     {
-     "end": 13.025,
-     "start": 12.938,
+     "end": 13.05,
+     "start": 12.962,
      "text": "the"
     },
     {
-     "end": 13.325,
-     "start": 13.025,
+     "end": 13.35,
+     "start": 13.05,
      "text": "write"
     },
     {
-     "end": 13.5,
-     "start": 13.325,
+     "end": 13.525,
+     "start": 13.35,
      "text": "may"
     },
     {
-     "end": 13.688,
-     "start": 13.5,
+     "end": 13.712,
+     "start": 13.525,
      "text": "put"
     },
     {
-     "end": 13.812,
-     "start": 13.688,
+     "end": 13.837,
+     "start": 13.712,
      "text": "out"
     },
     {
-     "end": 13.887,
-     "start": 13.812,
+     "end": 13.913,
+     "start": 13.837,
      "text": "of"
     },
     {
-     "end": 13.975,
-     "start": 13.887,
+     "end": 14.0,
+     "start": 13.913,
      "text": "the"
     },
     {
      "end": 14.85,
-     "start": 13.975,
+     "start": 14.0,
      "text": "wallet"
     },
     {
      "end": 15.05,
      "start": 14.85,
-     "text": ";"
+     "text": ":"
     },
     {
-     "end": 15.3,
-     "start": 15.225,
+     "end": 15.337,
+     "start": 15.25,
      "text": "a"
     },
     {
-     "end": 15.525,
-     "start": 15.3,
+     "end": 15.65,
+     "start": 15.337,
      "text": "write"
     },
     {
-     "end": 15.812,
-     "start": 15.525,
-     "text": "past"
+     "end": 15.887,
+     "start": 15.65,
+     "text": "whose"
     },
     {
-     "end": 15.887,
-     "start": 15.812,
+     "end": 16.3,
+     "start": 15.887,
+     "text": "measured"
+    },
+    {
+     "end": 16.712,
+     "start": 16.3,
+     "text": "outlay"
+    },
+    {
+     "end": 17.225,
+     "start": 16.712,
+     "text": "passes"
+    },
+    {
+     "end": 17.325,
+     "start": 17.225,
      "text": "it"
     },
     {
-     "end": 15.988,
-     "start": 15.887,
+     "end": 17.475,
+     "start": 17.325,
      "text": "is"
     },
     {
-     "end": 16.2,
-     "start": 15.988,
-     "text": "not"
+     "end": 18.075,
+     "start": 17.475,
+     "text": "refused"
     },
     {
-     "end": 17.0,
-     "start": 16.2,
+     "end": 18.45,
+     "start": 18.075,
+     "text": "before"
+    },
+    {
+     "end": 18.875,
+     "start": 18.45,
+     "text": "anything"
+    },
+    {
+     "end": 19.013,
+     "start": 18.875,
+     "text": "is"
+    },
+    {
+     "end": 19.95,
+     "start": 19.013,
      "text": "signed"
     },
     {
-     "end": 17.2,
-     "start": 17.0,
+     "end": 20.175,
+     "start": 19.95,
+     "text": ","
+    },
+    {
+     "end": 20.462,
+     "start": 20.375,
+     "text": "and"
+    },
+    {
+     "end": 20.575,
+     "start": 20.462,
+     "text": "its"
+    },
+    {
+     "end": 21.025,
+     "start": 20.575,
+     "text": "receipt"
+    },
+    {
+     "end": 21.288,
+     "start": 21.025,
+     "text": "names"
+    },
+    {
+     "end": 21.375,
+     "start": 21.288,
+     "text": "the"
+    },
+    {
+     "end": 21.85,
+     "start": 21.375,
+     "text": "total"
+    },
+    {
+     "end": 21.962,
+     "start": 21.85,
+     "text": "and"
+    },
+    {
+     "end": 22.1,
+     "start": 21.962,
+     "text": "its"
+    },
+    {
+     "end": 22.45,
+     "start": 22.1,
+     "text": "parts"
+    },
+    {
+     "end": 22.65,
+     "start": 22.45,
+     "text": "under"
+    },
+    {
+     "end": 23.525,
+     "start": 22.65,
+     "text": "outlay"
+    },
+    {
+     "end": 23.75,
+     "start": 23.525,
+     "text": "."
+    },
+    {
+     "end": 24.075,
+     "start": 23.925,
+     "text": "On"
+    },
+    {
+     "end": 24.538,
+     "start": 24.075,
+     "text": "preprod"
+    },
+    {
+     "end": 24.625,
+     "start": 24.538,
+     "text": "the"
+    },
+    {
+     "end": 24.975,
+     "start": 24.625,
+     "text": "booking"
+    },
+    {
+     "end": 25.362,
+     "start": 24.975,
+     "text": "measured"
+    },
+    {
+     "end": 26.475,
+     "start": 25.362,
+     "text": "6.16"
+    },
+    {
+     "end": 26.737,
+     "start": 26.475,
+     "text": "tee"
+    },
+    {
+     "end": 27.05,
+     "start": 26.737,
+     "text": "ADA"
+    },
+    {
+     "end": 27.225,
+     "start": 27.05,
+     "text": "on"
+    },
+    {
+     "end": 27.688,
+     "start": 27.225,
+     "text": "18"
+    },
+    {
+     "end": 28.775,
+     "start": 27.688,
+     "text": "October"
+    },
+    {
+     "end": 29.0,
+     "start": 28.775,
+     "text": ":"
+    },
+    {
+     "end": 29.375,
+     "start": 29.225,
+     "text": "its"
+    },
+    {
+     "end": 30.663,
+     "start": 29.375,
+     "text": "0.39"
+    },
+    {
+     "end": 30.938,
+     "start": 30.663,
+     "text": "tee"
+    },
+    {
+     "end": 31.275,
+     "start": 30.938,
+     "text": "ADA"
+    },
+    {
+     "end": 31.7,
+     "start": 31.275,
+     "text": "fee"
+    },
+    {
+     "end": 31.8,
+     "start": 31.7,
+     "text": ","
+    },
+    {
+     "end": 31.938,
+     "start": 31.8,
+     "text": "the"
+    },
+    {
+     "end": 32.237,
+     "start": 31.938,
+     "text": "3"
+    },
+    {
+     "end": 32.513,
+     "start": 32.237,
+     "text": "tee"
+    },
+    {
+     "end": 32.8,
+     "start": 32.513,
+     "text": "ADA"
+    },
+    {
+     "end": 32.95,
+     "start": 32.8,
+     "text": "it"
+    },
+    {
+     "end": 33.4,
+     "start": 32.95,
+     "text": "locks"
+    },
+    {
+     "end": 33.513,
+     "start": 33.4,
+     "text": "and"
+    },
+    {
+     "end": 33.588,
+     "start": 33.513,
+     "text": "a"
+    },
+    {
+     "end": 34.825,
+     "start": 33.588,
+     "text": "2.77"
+    },
+    {
+     "end": 35.088,
+     "start": 34.825,
+     "text": "tee"
+    },
+    {
+     "end": 35.412,
+     "start": 35.088,
+     "text": "ADA"
+    },
+    {
+     "end": 35.763,
+     "start": 35.412,
+     "text": "bound"
+    },
+    {
+     "end": 35.862,
+     "start": 35.763,
+     "text": "on"
+    },
+    {
+     "end": 35.987,
+     "start": 35.862,
+     "text": "the"
+    },
+    {
+     "end": 36.4,
+     "start": 35.987,
+     "text": "fold"
+    },
+    {
+     "end": 36.612,
+     "start": 36.4,
+     "text": "that"
+    },
+    {
+     "end": 37.875,
+     "start": 36.612,
+     "text": "follows"
+    },
+    {
+     "end": 38.1,
+     "start": 37.875,
+     "text": "."
+    },
+    {
+     "end": 38.4,
+     "start": 38.275,
+     "text": "The"
+    },
+    {
+     "end": 38.575,
+     "start": 38.4,
+     "text": "8"
+    },
+    {
+     "end": 38.775,
+     "start": 38.575,
+     "text": "tee"
+    },
+    {
+     "end": 39.025,
+     "start": 38.775,
+     "text": "ADA"
+    },
+    {
+     "end": 39.45,
+     "start": 39.025,
+     "text": "allowance"
+    },
+    {
+     "end": 39.75,
+     "start": 39.45,
+     "text": "below"
+    },
+    {
+     "end": 40.188,
+     "start": 39.75,
+     "text": "covers"
+    },
+    {
+     "end": 40.75,
+     "start": 40.188,
+     "text": "it"
+    },
+    {
+     "end": 40.95,
+     "start": 40.75,
+     "text": "."
+    },
+    {
+     "end": 41.3,
+     "start": 41.125,
+     "text": "If"
+    },
+    {
+     "end": 41.4,
+     "start": 41.3,
+     "text": "the"
+    },
+    {
+     "end": 41.85,
+     "start": 41.4,
+     "text": "network's"
+    },
+    {
+     "end": 42.438,
+     "start": 41.85,
+     "text": "parameters"
+    },
+    {
+     "end": 42.638,
+     "start": 42.438,
+     "text": "have"
+    },
+    {
+     "end": 43.225,
+     "start": 42.638,
+     "text": "moved"
+    },
+    {
+     "end": 43.362,
+     "start": 43.225,
+     "text": "and"
+    },
+    {
+     "end": 43.463,
+     "start": 43.362,
+     "text": "a"
+    },
+    {
+     "end": 43.775,
+     "start": 43.463,
+     "text": "write"
+    },
+    {
+     "end": 43.925,
+     "start": 43.775,
+     "text": "is"
+    },
+    {
+     "end": 44.5,
+     "start": 43.925,
+     "text": "refused"
+    },
+    {
+     "end": 44.612,
+     "start": 44.5,
+     "text": "for"
+    },
+    {
+     "end": 44.775,
+     "start": 44.612,
+     "text": "its"
+    },
+    {
+     "end": 45.7,
+     "start": 44.775,
+     "text": "outlay"
+    },
+    {
+     "end": 45.975,
+     "start": 45.7,
+     "text": ","
+    },
+    {
+     "end": 46.362,
+     "start": 46.175,
+     "text": "read"
+    },
+    {
+     "end": 46.55,
+     "start": 46.362,
+     "text": "that"
+    },
+    {
+     "end": 47.112,
+     "start": 46.55,
+     "text": "receipt"
+    },
+    {
+     "end": 47.25,
+     "start": 47.112,
+     "text": "and"
+    },
+    {
+     "end": 47.562,
+     "start": 47.25,
+     "text": "raise"
+    },
+    {
+     "end": 47.7,
+     "start": 47.562,
+     "text": "the"
+    },
+    {
+     "end": 48.175,
+     "start": 47.7,
+     "text": "allowance"
+    },
+    {
+     "end": 48.275,
+     "start": 48.175,
+     "text": "to"
+    },
+    {
+     "end": 48.562,
+     "start": 48.275,
+     "text": "cover"
+    },
+    {
+     "end": 48.65,
+     "start": 48.562,
+     "text": "the"
+    },
+    {
+     "end": 49.5,
+     "start": 48.65,
+     "text": "total"
+    },
+    {
+     "end": 49.7,
+     "start": 49.5,
      "text": "."
     }
    ]

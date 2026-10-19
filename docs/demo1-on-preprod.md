@@ -262,7 +262,12 @@ verifies, and it is unsigned.
 An insertion books and stops. Alice is the key's controller. The request stays
 pending until someone folds it, and the receipt names it and the deadline by
 which it must be folded. `--max-outlay` caps what the write may put out of the
-wallet; a write past it is not signed.
+wallet: a write whose measured outlay passes it is refused before anything is
+signed, and its receipt names the total and its parts under `outlay`. On preprod
+the booking measured 6.16 tADA on 18 October: its 0.39 tADA fee, the 3 tADA it
+locks and a 2.77 tADA bound on the fold that follows. The 8 tADA allowance below
+covers it. If the network's parameters have moved and a write is refused for its
+outlay, read that receipt and raise the allowance to cover the total.
 
 ```bash
 "$open_datum" insert --state-dir reg --blueprint "$blueprint" "${token[@]}" --key alice \

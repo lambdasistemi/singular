@@ -175,7 +175,7 @@
       "pause": 500
     },
     {
-      "text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet; a write past it is not signed.",
+      "text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet: a write whose measured outlay passes it is refused before anything is signed, and its receipt names the total and its parts under outlay. On preprod the booking measured 6.16 tADA on 18 October: its 0.39 tADA fee, the 3 tADA it locks and a 2.77 tADA bound on the fold that follows. The 8 tADA allowance below covers it. If the network's parameters have moved and a write is refused for its outlay, read that receipt and raise the allowance to cover the total.",
       "pause": 400
     },
     {
@@ -363,6 +363,6 @@
   ],
   "_source": {
     "file": "demo1-on-preprod.md",
-    "sha256": "dfd911067f336b236c9f26276a674c466fa7b13048989ca51c1a1b3276a772bc"
+    "sha256": "abb4781e96140da588f67499a653c3854b76bd7f828e7b6b1a233fbb04c1e290"
   }
 }
