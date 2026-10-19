@@ -113421,17 +113421,17 @@
    ]
   },
   "docs-demo1-devnet/what-you-should-see-01": {
-   "audio_sha256": "b19c97049a618e46c79fae1d75935f19dafc4b04b2c7bff2631a4f3ae7cb9b2b",
-   "characters": 733,
-   "cost": 0.0007256699999999999,
-   "duration": 47.2,
+   "audio_sha256": "fb4f40072f2f83efdb0f76f05a232d88ee7561c8a1b485148ee0448564d023af",
+   "characters": 1094,
+   "cost": 0.00108306,
+   "duration": 73.05,
    "index": 1,
-   "key": "e74efffb21f86392cabf8b8ea0515cea48e0bfb70849cdf63026f6bd694c0024",
+   "key": "523782e095491667287fb055f7884009d5216e3583d38b94222622b7bfa59f43",
    "page": "docs/demo1-devnet.md",
    "pause_ms": 300,
    "section": "what-you-should-see",
-   "sent_text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
-   "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+   "sent_text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds; the runs on this page pass 0 and 60 000, and the registry fixes both for its life. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
+   "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create also needs two values that have no default: --registration-cost LOVELACE, the cost each registration of the registry pays, in lovelace, zero or more, and --booking-width MS, the widest validity interval a registration booking may carry, in positive integer milliseconds; the runs on this page pass 0 and 60 000, and the registry fixes both for its life. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
    "words": [
     {
      "end": 0.962,
@@ -113809,283 +113809,623 @@
      "text": "."
     },
     {
-     "end": 24.788,
+     "end": 24.825,
      "start": 24.525,
      "text": "create"
     },
     {
-     "end": 25.025,
-     "start": 24.788,
-     "text": "writes"
+     "end": 25.138,
+     "start": 24.825,
+     "text": "also"
     },
     {
-     "end": 25.2,
-     "start": 25.025,
+     "end": 25.413,
+     "start": 25.138,
+     "text": "needs"
+    },
+    {
+     "end": 25.625,
+     "start": 25.413,
+     "text": "two"
+    },
+    {
+     "end": 26.087,
+     "start": 25.625,
+     "text": "values"
+    },
+    {
+     "end": 26.188,
+     "start": 26.087,
+     "text": "that"
+    },
+    {
+     "end": 26.375,
+     "start": 26.188,
+     "text": "have"
+    },
+    {
+     "end": 26.55,
+     "start": 26.375,
      "text": "no"
     },
     {
-     "end": 25.663,
-     "start": 25.2,
-     "text": "identity"
+     "end": 27.525,
+     "start": 26.55,
+     "text": "default"
     },
     {
-     "end": 26.425,
-     "start": 25.663,
-     "text": "file"
+     "end": 27.725,
+     "start": 27.525,
+     "text": ":"
     },
     {
-     "end": 26.625,
-     "start": 26.425,
-     "text": "."
+     "end": 29.062,
+     "start": 27.925,
+     "text": "registration-cost"
     },
     {
-     "end": 27.125,
-     "start": 26.825,
-     "text": "Every"
+     "end": 30.475,
+     "start": 29.062,
+     "text": "LOVELACE"
     },
     {
-     "end": 27.425,
-     "start": 27.125,
-     "text": "later"
+     "end": 30.575,
+     "start": 30.475,
+     "text": ","
     },
     {
-     "end": 27.95,
-     "start": 27.425,
-     "text": "command"
-    },
-    {
-     "end": 28.475,
-     "start": 27.95,
-     "text": "derives"
-    },
-    {
-     "end": 28.6,
-     "start": 28.475,
+     "end": 30.712,
+     "start": 30.575,
      "text": "the"
     },
     {
-     "end": 29.15,
-     "start": 28.6,
+     "end": 31.1,
+     "start": 30.712,
+     "text": "cost"
+    },
+    {
+     "end": 31.35,
+     "start": 31.1,
+     "text": "each"
+    },
+    {
+     "end": 32.062,
+     "start": 31.35,
+     "text": "registration"
+    },
+    {
+     "end": 32.138,
+     "start": 32.062,
+     "text": "of"
+    },
+    {
+     "end": 32.225,
+     "start": 32.138,
+     "text": "the"
+    },
+    {
+     "end": 32.725,
+     "start": 32.225,
      "text": "registry"
     },
     {
-     "end": 29.288,
-     "start": 29.15,
-     "text": "from"
-    },
-    {
-     "end": 29.375,
-     "start": 29.288,
-     "text": "the"
-    },
-    {
-     "end": 29.7,
-     "start": 29.375,
-     "text": "state"
-    },
-    {
-     "end": 30.3,
-     "start": 29.7,
-     "text": "token"
-    },
-    {
-     "end": 30.438,
-     "start": 30.3,
-     "text": "and"
-    },
-    {
-     "end": 30.625,
-     "start": 30.438,
-     "text": "this"
-    },
-    {
-     "end": 31.2,
-     "start": 30.625,
-     "text": "archive's"
-    },
-    {
-     "end": 32.325,
-     "start": 31.2,
-     "text": "blueprint"
-    },
-    {
-     "end": 32.525,
-     "start": 32.325,
-     "text": ","
-    },
-    {
-     "end": 32.987,
+     "end": 33.75,
      "start": 32.725,
-     "text": "checks"
+     "text": "pays"
     },
     {
-     "end": 33.062,
-     "start": 32.987,
-     "text": "it"
-    },
-    {
-     "end": 33.388,
-     "start": 33.062,
-     "text": "against"
-    },
-    {
-     "end": 33.513,
-     "start": 33.388,
-     "text": "the"
-    },
-    {
-     "end": 34.062,
-     "start": 33.513,
-     "text": "chain"
-    },
-    {
-     "end": 34.2,
-     "start": 34.062,
-     "text": "and"
-    },
-    {
-     "end": 34.85,
-     "start": 34.2,
-     "text": "refuses"
-    },
-    {
-     "end": 35.025,
-     "start": 34.85,
-     "text": "by"
-    },
-    {
-     "end": 35.287,
-     "start": 35.025,
-     "text": "name"
-    },
-    {
-     "end": 35.412,
-     "start": 35.287,
-     "text": "when"
-    },
-    {
-     "end": 35.55,
-     "start": 35.412,
-     "text": "they"
-    },
-    {
-     "end": 36.65,
-     "start": 35.55,
-     "text": "disagree"
-    },
-    {
-     "end": 36.875,
-     "start": 36.65,
+     "end": 33.95,
+     "start": 33.75,
      "text": ","
     },
     {
-     "end": 37.3,
-     "start": 37.075,
-     "text": "such"
+     "end": 34.25,
+     "start": 34.15,
+     "text": "in"
     },
     {
-     "end": 37.425,
-     "start": 37.3,
-     "text": "as"
+     "end": 34.675,
+     "start": 34.25,
+     "text": "lovelace"
     },
     {
-     "end": 38.775,
-     "start": 37.425,
-     "text": "state-token-not-found"
+     "end": 34.725,
+     "start": 34.675,
+     "text": ","
     },
     {
-     "end": 38.963,
-     "start": 38.775,
+     "end": 35.05,
+     "start": 34.725,
+     "text": "zero"
+    },
+    {
+     "end": 35.175,
+     "start": 35.05,
      "text": "or"
     },
     {
-     "end": 40.125,
-     "start": 38.963,
-     "text": "registry-pin-mismatch"
+     "end": 35.45,
+     "start": 35.175,
+     "text": "more"
     },
     {
-     "end": 41.35,
-     "start": 40.125,
-     "text": "application"
-    },
-    {
-     "end": 41.55,
-     "start": 41.35,
-     "text": "."
-    },
-    {
-     "end": 41.925,
-     "start": 41.725,
-     "text": "Its"
-    },
-    {
-     "end": 42.35,
-     "start": 41.925,
-     "text": "receipt"
-    },
-    {
-     "end": 42.75,
-     "start": 42.35,
-     "text": "carries"
-    },
-    {
-     "end": 42.85,
-     "start": 42.75,
-     "text": "the"
-    },
-    {
-     "end": 43.4,
-     "start": 42.85,
-     "text": "describe"
-    },
-    {
-     "end": 43.812,
-     "start": 43.4,
-     "text": "command"
-    },
-    {
-     "end": 43.9,
-     "start": 43.812,
-     "text": "the"
-    },
-    {
-     "end": 44.162,
-     "start": 43.9,
-     "text": "next"
-    },
-    {
-     "end": 44.45,
-     "start": 44.162,
-     "text": "step"
-    },
-    {
-     "end": 44.975,
-     "start": 44.45,
-     "text": "runs"
-    },
-    {
-     "end": 45.075,
-     "start": 44.975,
+     "end": 35.5,
+     "start": 35.45,
      "text": ","
     },
     {
-     "end": 45.463,
-     "start": 45.075,
-     "text": "printed"
+     "end": 35.625,
+     "start": 35.5,
+     "text": "and"
     },
     {
-     "end": 45.625,
-     "start": 45.463,
+     "end": 36.1,
+     "start": 35.625,
+     "text": "--booking-width"
+    },
+    {
+     "end": 37.0,
+     "start": 36.1,
+     "text": "MS"
+    },
+    {
+     "end": 37.2,
+     "start": 37.0,
+     "text": ","
+    },
+    {
+     "end": 37.487,
+     "start": 37.375,
+     "text": "the"
+    },
+    {
+     "end": 37.9,
+     "start": 37.487,
+     "text": "widest"
+    },
+    {
+     "end": 38.537,
+     "start": 37.9,
+     "text": "validity"
+    },
+    {
+     "end": 38.95,
+     "start": 38.537,
+     "text": "interval"
+    },
+    {
+     "end": 39.05,
+     "start": 38.95,
+     "text": "a"
+    },
+    {
+     "end": 39.85,
+     "start": 39.05,
+     "text": "registration"
+    },
+    {
+     "end": 40.2,
+     "start": 39.85,
+     "text": "booking"
+    },
+    {
+     "end": 40.375,
+     "start": 40.2,
+     "text": "may"
+    },
+    {
+     "end": 41.225,
+     "start": 40.375,
+     "text": "carry"
+    },
+    {
+     "end": 41.45,
+     "start": 41.225,
+     "text": ","
+    },
+    {
+     "end": 41.775,
+     "start": 41.65,
+     "text": "in"
+    },
+    {
+     "end": 42.237,
+     "start": 41.775,
+     "text": "positive"
+    },
+    {
+     "end": 42.55,
+     "start": 42.237,
+     "text": "integer"
+    },
+    {
+     "end": 43.675,
+     "start": 42.55,
+     "text": "milliseconds"
+    },
+    {
+     "end": 43.875,
+     "start": 43.675,
+     "text": ";"
+    },
+    {
+     "end": 44.175,
+     "start": 44.075,
+     "text": "the"
+    },
+    {
+     "end": 44.513,
+     "start": 44.175,
+     "text": "runs"
+    },
+    {
+     "end": 44.612,
+     "start": 44.513,
+     "text": "on"
+    },
+    {
+     "end": 44.775,
+     "start": 44.612,
+     "text": "this"
+    },
+    {
+     "end": 45.138,
+     "start": 44.775,
+     "text": "page"
+    },
+    {
+     "end": 45.513,
+     "start": 45.138,
+     "text": "pass"
+    },
+    {
+     "end": 45.987,
+     "start": 45.513,
+     "text": "0"
+    },
+    {
+     "end": 46.162,
+     "start": 45.987,
+     "text": "and"
+    },
+    {
+     "end": 46.537,
+     "start": 46.162,
+     "text": "60"
+    },
+    {
+     "end": 47.05,
+     "start": 46.537,
+     "text": "000"
+    },
+    {
+     "end": 47.15,
+     "start": 47.05,
+     "text": ","
+    },
+    {
+     "end": 47.263,
+     "start": 47.15,
+     "text": "and"
+    },
+    {
+     "end": 47.35,
+     "start": 47.263,
+     "text": "the"
+    },
+    {
+     "end": 47.862,
+     "start": 47.35,
+     "text": "registry"
+    },
+    {
+     "end": 48.312,
+     "start": 47.862,
+     "text": "fixes"
+    },
+    {
+     "end": 48.65,
+     "start": 48.312,
+     "text": "both"
+    },
+    {
+     "end": 48.8,
+     "start": 48.65,
+     "text": "for"
+    },
+    {
+     "end": 49.0,
+     "start": 48.8,
+     "text": "its"
+    },
+    {
+     "end": 49.975,
+     "start": 49.0,
+     "text": "life"
+    },
+    {
+     "end": 50.175,
+     "start": 49.975,
+     "text": "."
+    },
+    {
+     "end": 50.638,
+     "start": 50.375,
+     "text": "create"
+    },
+    {
+     "end": 50.875,
+     "start": 50.638,
+     "text": "writes"
+    },
+    {
+     "end": 51.05,
+     "start": 50.875,
+     "text": "no"
+    },
+    {
+     "end": 51.513,
+     "start": 51.05,
+     "text": "identity"
+    },
+    {
+     "end": 52.275,
+     "start": 51.513,
+     "text": "file"
+    },
+    {
+     "end": 52.475,
+     "start": 52.275,
+     "text": "."
+    },
+    {
+     "end": 52.975,
+     "start": 52.675,
+     "text": "Every"
+    },
+    {
+     "end": 53.275,
+     "start": 52.975,
+     "text": "later"
+    },
+    {
+     "end": 53.8,
+     "start": 53.275,
+     "text": "command"
+    },
+    {
+     "end": 54.325,
+     "start": 53.8,
+     "text": "derives"
+    },
+    {
+     "end": 54.45,
+     "start": 54.325,
+     "text": "the"
+    },
+    {
+     "end": 55.0,
+     "start": 54.45,
+     "text": "registry"
+    },
+    {
+     "end": 55.138,
+     "start": 55.0,
+     "text": "from"
+    },
+    {
+     "end": 55.225,
+     "start": 55.138,
+     "text": "the"
+    },
+    {
+     "end": 55.55,
+     "start": 55.225,
+     "text": "state"
+    },
+    {
+     "end": 56.15,
+     "start": 55.55,
+     "text": "token"
+    },
+    {
+     "end": 56.287,
+     "start": 56.15,
+     "text": "and"
+    },
+    {
+     "end": 56.475,
+     "start": 56.287,
+     "text": "this"
+    },
+    {
+     "end": 57.05,
+     "start": 56.475,
+     "text": "archive's"
+    },
+    {
+     "end": 58.175,
+     "start": 57.05,
+     "text": "blueprint"
+    },
+    {
+     "end": 58.375,
+     "start": 58.175,
+     "text": ","
+    },
+    {
+     "end": 58.838,
+     "start": 58.575,
+     "text": "checks"
+    },
+    {
+     "end": 58.912,
+     "start": 58.838,
+     "text": "it"
+    },
+    {
+     "end": 59.237,
+     "start": 58.912,
+     "text": "against"
+    },
+    {
+     "end": 59.362,
+     "start": 59.237,
+     "text": "the"
+    },
+    {
+     "end": 59.912,
+     "start": 59.362,
+     "text": "chain"
+    },
+    {
+     "end": 60.05,
+     "start": 59.912,
+     "text": "and"
+    },
+    {
+     "end": 60.7,
+     "start": 60.05,
+     "text": "refuses"
+    },
+    {
+     "end": 60.875,
+     "start": 60.7,
+     "text": "by"
+    },
+    {
+     "end": 61.138,
+     "start": 60.875,
+     "text": "name"
+    },
+    {
+     "end": 61.263,
+     "start": 61.138,
+     "text": "when"
+    },
+    {
+     "end": 61.4,
+     "start": 61.263,
+     "text": "they"
+    },
+    {
+     "end": 62.5,
+     "start": 61.4,
+     "text": "disagree"
+    },
+    {
+     "end": 62.725,
+     "start": 62.5,
+     "text": ","
+    },
+    {
+     "end": 63.15,
+     "start": 62.925,
+     "text": "such"
+    },
+    {
+     "end": 63.275,
+     "start": 63.15,
      "text": "as"
     },
     {
-     "end": 47.0,
-     "start": 45.625,
+     "end": 64.625,
+     "start": 63.275,
+     "text": "state-token-not-found"
+    },
+    {
+     "end": 64.812,
+     "start": 64.625,
+     "text": "or"
+    },
+    {
+     "end": 65.975,
+     "start": 64.812,
+     "text": "registry-pin-mismatch"
+    },
+    {
+     "end": 67.2,
+     "start": 65.975,
+     "text": "application"
+    },
+    {
+     "end": 67.4,
+     "start": 67.2,
+     "text": "."
+    },
+    {
+     "end": 67.775,
+     "start": 67.575,
+     "text": "Its"
+    },
+    {
+     "end": 68.2,
+     "start": 67.775,
+     "text": "receipt"
+    },
+    {
+     "end": 68.6,
+     "start": 68.2,
+     "text": "carries"
+    },
+    {
+     "end": 68.7,
+     "start": 68.6,
+     "text": "the"
+    },
+    {
+     "end": 69.25,
+     "start": 68.7,
+     "text": "describe"
+    },
+    {
+     "end": 69.662,
+     "start": 69.25,
+     "text": "command"
+    },
+    {
+     "end": 69.75,
+     "start": 69.662,
+     "text": "the"
+    },
+    {
+     "end": 70.012,
+     "start": 69.75,
+     "text": "next"
+    },
+    {
+     "end": 70.3,
+     "start": 70.012,
+     "text": "step"
+    },
+    {
+     "end": 70.825,
+     "start": 70.3,
+     "text": "runs"
+    },
+    {
+     "end": 70.925,
+     "start": 70.825,
+     "text": ","
+    },
+    {
+     "end": 71.312,
+     "start": 70.925,
+     "text": "printed"
+    },
+    {
+     "end": 71.475,
+     "start": 71.312,
+     "text": "as"
+    },
+    {
+     "end": 72.85,
+     "start": 71.475,
      "text": "describeCommand"
     },
     {
-     "end": 47.2,
-     "start": 47.0,
+     "end": 73.05,
+     "start": 72.85,
      "text": "."
     }
    ]
