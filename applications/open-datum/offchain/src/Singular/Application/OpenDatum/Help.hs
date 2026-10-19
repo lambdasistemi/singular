@@ -31,9 +31,9 @@ openDatumProgram version =
     Program
         { programName = "open-datum"
         , programSummary =
-            "Keep payloads under keys in an open-datum registry on Cardano: create \
-            \the registry, insert, update and terminate keys, fold the pending \
-            \requests, and read a key back."
+            "Keep payloads under keys in a registry on Cardano: create the registry, \
+            \insert, update and terminate keys, fold the pending requests, and read \
+            \a key back."
         , programVersion = version
         , programNodes =
             [ createLeaf

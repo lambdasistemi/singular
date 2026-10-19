@@ -151,8 +151,8 @@ expect wrong-command 1 '^documented, not in --help: the settings table gives --k
 
 # A flag documented for a command whose --help does not give it (open-datum side).
 fresh
-sed -i 's/^| `--payload DATUM_JSON` | `insert`, `update` |/| `--payload DATUM_JSON` | `insert`, `update`, `fold` |/' "$table"
-grep -q '^| `--payload DATUM_JSON` | `insert`, `update`, `fold`' "$table" || {
+sed -i 's/^| `--payload FILE` | `insert`, `update` |/| `--payload FILE` | `insert`, `update`, `fold` |/' "$table"
+grep -q '^| `--payload FILE` | `insert`, `update`, `fold`' "$table" || {
   echo "SETUP-FAIL: the payload row did not change" >&2
   exit 2
 }
@@ -212,6 +212,25 @@ EOF
 chmod +x "$scratch/open-datum"
 binary_od="$scratch/open-datum"
 expect command-help-fails-od 1 '^open-datum update --help exited non-zero'
+
+# A quotation of a program's help that the program no longer prints.
+fresh
+sed -i 's/^  singular registry describe  Print the registry page$/  singular registry describe  Print the register page/' "$table"
+grep -q 'Print the register page' "$table" || {
+  echo "SETUP-FAIL: the quotation did not change" >&2
+  exit 2
+}
+expect quotation-differs 1 'docs/singular-node.md:[0-9]+: the quoted help for .singular. differs from what the program prints'
+
+# A quotation naming a program that is neither binary.
+fresh
+sed -i 's/^<!-- quoted-help: open-datum -->$/<!-- quoted-help: frobnicate -->/' "$table"
+expect quotation-unknown-program 1 'docs/singular-node.md:[0-9]+: quoted help names a program that is not singular or open-datum: .frobnicate.'
+
+# No page quotes a program's help at all: the extent is empty, a setup failure.
+fresh
+sed -i '/^<!-- quoted-help: /d' "$table"
+expect no-quotation 2 '^EMPTY EXTENT: no page quotes a program'"'"'s help'
 
 # An empty side is a setup failure, never a pass. The overview's table of
 # commands goes, wallet verbs and submit included.

@@ -157,10 +157,11 @@ command line, or in `/etc/nix/nix.conf` as `extra-substituters` and
 ```
 
 The flakes also name the Cardano build cache `https://cache.iog.io`; Nix asks
-once whether to accept it. No release yet ships ready-built binaries, and
-`singular --version` does not exist yet (both are planned in
-[issue 348](https://github.com/lambdasistemi/singular/issues/348)), so the path the
-build prints is the only version evidence a binary gives.
+once whether to accept it. No release yet ships ready-built binaries (that is planned in
+[issue 348](https://github.com/lambdasistemi/singular/issues/348)). `singular --version` prints the
+program, its version and the commit it was built from; a build that carries no
+commit says `commit unknown`, and the path the build prints then tells which
+build you hold.
 
 ## Start one development node
 

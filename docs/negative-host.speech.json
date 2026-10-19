@@ -39,7 +39,7 @@
       "pause": 400
     },
     {
-      "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd FD in a script) or names an address and a bundle file for a signer elsewhere.",
+      "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd N in a script) or names an address and a bundle file for a signer elsewhere.",
       "pause": 400
     },
     {
@@ -225,6 +225,6 @@
   ],
   "_source": {
     "file": "negative-host.md",
-    "sha256": "08709bf31e60b05aea16523c8b2947454e0101558ca715827b8de001ce094c8f"
+    "sha256": "1c4a3b547cc7e8c95c8ede5c45b76d59f7f9c5b97c3a7bf470e757bf403f9da4"
   }
 }

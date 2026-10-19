@@ -99,7 +99,7 @@ Make a wallet with `singular wallet create`, giving `--network-magic 1` for
 preprod. It seals a fresh signing key in an encrypted vault and prints the
 wallet's address. At a terminal it asks for the passphrase twice, an entry and a
 confirmation, and refuses a confirmation that differs; in a script,
-`--passphrase-fd FD` supplies it as one line read once. `singular wallet address`
+`--passphrase-fd N` supplies it as one line read once. `singular wallet address`
 asks once, and prints the same address again from the vault.
 
 Fund that address from the
@@ -120,7 +120,7 @@ naming the shortfall. A key's bytes do not belong in command output or receipts.
 Each write takes exactly one signer. Your own `open-datum` and `singular
 registry` commands sign in one of two ways.
 
-- From your vault: add `--vault FILE`, and `--passphrase-fd FD` in a script. The
+- From your vault: add `--vault FILE`, and `--passphrase-fd N` in a script. The
   command opens the vault once, builds the run, signs it in memory and sends it.
 - Elsewhere: name the wallet's address with `--wallet-address ADDR` and a new
   bundle file with `--bundle FILE`. The command writes its transactions there

@@ -118,7 +118,7 @@ retain their stated unverified status.
 The write commands (`singular registry create`, `fold`, `reject` and `reclaim`,
 and `open-datum create`, `insert`, `update`, `terminate` and `fold`) take exactly
 one signer, which is one of three. The first two are the ones to use. A vault,
-`--vault FILE` (with `--passphrase-fd FD` for a script, otherwise the passphrase is
+`--vault FILE` (with `--passphrase-fd N` for a script, otherwise the passphrase is
 typed at a prompt), makes the command sign, send and land its run in one step. An
 address with a bundle file, `--wallet-address ADDR --bundle FILE`, makes the
 command build its whole run as that bundle, sign and send nothing and exit with

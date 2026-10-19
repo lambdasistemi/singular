@@ -493,8 +493,59 @@ for page in "${pages[@]}"; do
   })
 done
 
+# Every quotation of a program's help on a page is that help. A line
+# `<!-- quoted-help: PROGRAM WORDS -->` followed by a fenced block says the
+# block is what `PROGRAM WORDS --help` prints, without its first two lines
+# (the identity of the build) and with the version printed as VERSION. A page
+# quoting the program is never retyped, and none can drift from it.
+quotes=0
+mkdir -p "$scratch/quotes"
+for page in "${pages[@]}"; do
+  rel=${page#"$root"/}
+  tag=$(printf '%s' "$rel" | tr '/' '_')
+  while IFS=$'\t' read -r line words file; do
+    [ -n "$line" ] || continue
+    quotes=$((quotes + 1))
+    read -r -a w <<<"$words"
+    prog=${w[0]}
+    case $prog in
+      singular) bin=$singular ;;
+      open-datum) bin=$open_datum ;;
+      *)
+        echo "$rel:$line: quoted help names a program that is not singular or open-datum: '$prog'" >&2
+        status=1
+        continue
+        ;;
+    esac
+    if ! "$bin" "${w[@]:1}" --help >"$scratch/quote.actual" 2>&1; then
+      echo "$rel:$line: $prog ${w[*]:1} --help exited non-zero" >&2
+      status=1
+      continue
+    fi
+    version=$("$bin" --version | awk '{ print $2 }')
+    tail -n +3 "$scratch/quote.actual" | sed "s/${version//./\\.}/VERSION/g" >"$scratch/quote.expected"
+    if ! diff -u "$scratch/quote.expected" "$file" >"$scratch/quote.diff"; then
+      echo "$rel:$line: the quoted help for '$words' differs from what the program prints (- program, + page):" >&2
+      sed 's/^/  /' "$scratch/quote.diff" >&2
+      status=1
+    fi
+  done < <(awk -v out="$scratch/quotes" -v tag="$tag" '
+    /^<!-- quoted-help: .* -->[[:space:]]*$/ { w = $0; sub(/^<!-- quoted-help: /, "", w); sub(/ -->[[:space:]]*$/, "", w); want = NR; next }
+    want && /^```/ {
+      if (!inb) { inb = 1; k++; f = out "/" tag "." k; printf "" > f; print want "\t" w "\t" f; next }
+      inb = 0; want = 0; close(f); next
+    }
+    inb { print > f; next }
+    want && !/^[[:space:]]*$/ { want = 0 }
+  ' "$page")
+done
+if [ "$quotes" -eq 0 ]; then
+  echo "EMPTY EXTENT: no page quotes a program's help" >&2
+  exit 2
+fi
+
 if [ $status -ne 0 ]; then
   echo "FAIL cli-flags: see the lines above" >&2
   exit 1
 fi
-echo "PASS cli-flags: $(grep -c '^singular ' "$scratch/help.pairs") pairs over ${#singular_commands[@]} singular commands and $(grep -c '^open-datum ' "$scratch/help.pairs") pairs over ${#od_commands[@]} open-datum commands agree with docs/singular-node.md; $invocations documented invocations use only printed flags"
+echo "PASS cli-flags: $(grep -c '^singular ' "$scratch/help.pairs") pairs over ${#singular_commands[@]} singular commands and $(grep -c '^open-datum ' "$scratch/help.pairs") pairs over ${#od_commands[@]} open-datum commands agree with docs/singular-node.md; $invocations documented invocations use only printed flags; $quotes quotations of a program's help are what it prints"

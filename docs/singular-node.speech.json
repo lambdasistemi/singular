@@ -21,6 +21,24 @@
       "pause": 400
     }
   ],
+  "asking-the-program-for-help": [
+    {
+      "text": "Asking the program for help.",
+      "pause": 500
+    },
+    {
+      "text": "As a registry operator, you can ask either program what it does before you read this page or any other. singular --version and open-datum --version print the program's name, its version and the commit it was built from; a build that carries no commit says commit unknown. singular --help and open-datum --help print one screen: what the program is for, and every command with a line about it. Each command has its own --help that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.",
+      "pause": 400
+    },
+    {
+      "text": "A mistyped command or flag prints what is wrong in one line, the usage of the command you were heading for and where its help is, and exits with status 2. A mistyped command also names the nearest command. Both programs complete commands and flags in your shell: source <(singular --bash-completion-script \"$(which singular)\") for bash, with --zsh-completion-script and --fish-completion-script for the other shells.",
+      "pause": 400
+    },
+    {
+      "text": "The overview of each program follows, quoted from the program itself. The first line of every help page names the version and the commit; it is left out here, and VERSION stands for the version of the build. The documentation check runs the programs and fails when a quotation, or the settings table below, disagrees with what they print.",
+      "pause": 400
+    }
+  ],
   "the-settings-you-give": [
     {
       "text": "The settings you give.",
@@ -265,7 +283,7 @@
       "pause": 400
     },
     {
-      "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change. update alone still prints an older sentence after the faucet link, telling you to send one self-payment so the wallet also holds an ada-only output to spend as collateral; that sentence is a leftover of the text the other commands dropped, and following it is harmless but not needed. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
+      "text": "A booking wallet is judged on what the booking costs. Opening a write session applies no wallet threshold. Before anything is built, a wallet holding less than the fold reserve (from the network parameters and the reference scripts the fold reads) is refused, and a wallet with no ada-only output, or with --fund-input not among its ada-only outputs, is refused. After the booking is built and before it is signed, a wallet holding less than the measured outlay (its fee, the bond its request locks and the bound on the fold that follows) is refused. The shortfall refusal is client-refusal, its reason ends (client policy), carrying the wallet address, what it holds, what is required, the shortfall, the UTxO count, that the policy is the client's, and whether what is required is the fold reserve or the measured outlay. An empty wallet or a foreign funding output is refused as client-refusal with (client policy), carrying the wallet address, the UTxO count, what it holds and the client policy, and no required or shortfall. The empty-wallet refusal ends with the faucet step — Fund this address, then rerun. On preprod the faucet is https://docs.cardano.org/cardano-testnets/tools/faucet. One funded output is enough: nothing is split by hand, and every write spends the wallet's largest ada-only output and returns its change. The foreign funding choice does not end with the faucet step. Preview and write judge the same wallet at the same points in the same order. update gets only the empty check; reject, reclaim, fold and create get no measured judgement: a build that succeeds proves the wallet pays the fee.",
       "pause": 400
     },
     {
@@ -425,6 +443,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "1c29d0df5fdc5753516a653c98c18d1f991b9d2c26c59014988bb4b8135f740a"
+    "sha256": "7e24853f7e8244043429bdaf99d377ef22e45a286e19c295ce5aeba53e4db17f"
   }
 }

@@ -89,7 +89,7 @@
       "pause": 400
     },
     {
-      "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries, and singular --version does not exist yet (both are planned in issue 348), so the path the build prints is the only version evidence a binary gives.",
+      "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries (that is planned in issue 348). singular --version prints the program, its version and the commit it was built from; a build that carries no commit says commit unknown, and the path the build prints then tells which build you hold.",
       "pause": 400
     }
   ],
@@ -303,6 +303,6 @@
   ],
   "_source": {
     "file": "DEMO1.md",
-    "sha256": "e703966b48575552b529184bbfb88db36d42a0afadf324c4efaccfdd155aff84"
+    "sha256": "a8aeabc159d5c6f8f80dfef802c2fe86250270a781a9d60d8b1478e98a8da82f"
   }
 }

@@ -97,7 +97,7 @@
       "pause": 400
     },
     {
-      "text": "The write commands (singular registry create, fold, reject and reclaim, and open-datum create, insert, update, terminate and fold) take exactly one signer, which is one of three. The first two are the ones to use. A vault, --vault FILE (with --passphrase-fd FD for a script, otherwise the passphrase is typed at a prompt), makes the command sign, send and land its run in one step. An address with a bundle file, --wallet-address ADDR --bundle FILE, makes the command build its whole run as that bundle, sign and send nothing and exit with status 19; singular wallet sign --vault FILE signs the bundle and singular submit sends it. The third, a key file, --wallet-skey FILE, is being retired (issue 672) and is not a way to start. singular wallet create makes a vault and prints its address; it asks for the passphrase twice, and every later command that opens the vault asks once. The Demo 1 run page, DEMO1.md in this archive, shows the vault and the external way from the first command to the last.",
+      "text": "The write commands (singular registry create, fold, reject and reclaim, and open-datum create, insert, update, terminate and fold) take exactly one signer, which is one of three. The first two are the ones to use. A vault, --vault FILE (with --passphrase-fd N for a script, otherwise the passphrase is typed at a prompt), makes the command sign, send and land its run in one step. An address with a bundle file, --wallet-address ADDR --bundle FILE, makes the command build its whole run as that bundle, sign and send nothing and exit with status 19; singular wallet sign --vault FILE signs the bundle and singular submit sends it. The third, a key file, --wallet-skey FILE, is being retired (issue 672) and is not a way to start. singular wallet create makes a vault and prints its address; it asks for the passphrase twice, and every later command that opens the vault asks once. The Demo 1 run page, DEMO1.md in this archive, shows the vault and the external way from the first command to the last.",
       "pause": 400
     },
     {
@@ -187,6 +187,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "b0cb243f0bf364886886076f9dfbdaaa3ce022de6167f6789e9272f4c3edb999"
+    "sha256": "832c9a139d3493243920994b6e8c97699bfd60498b68f7ec8bba89db296fd491"
   }
 }
