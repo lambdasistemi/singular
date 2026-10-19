@@ -29,14 +29,25 @@
 #                            archive's compiled blueprint replaced by an
 #                            empty one, so the build passes and the first
 #                            `singular registry` command of the journey fails
+#   bundles, three ways      a release of a version that ships bundles, read
+#                            without them and not said to have none, refused as
+#                            download-failed naming the first bundle; the same
+#                            release said to have none (`--without-bundles`)
+#                            passing every check up to the archive build and
+#                            refused only there, at the identity of its version;
+#                            a release said to have none but carrying a bundle
+#                            refused as sum-mismatch. The flag without `--assets`
+#                            is a usage refusal (exit 2): a published release
+#                            is never read without its bundles
 #
 # Each variant is a copy of RELEASE-DIR, mutated, with the checksum
 # manifests recomputed so that only the intended check can refuse it, and
 # each must be refused only after every check before its own reported
 # PASS: the variants that pass up to the build or the journey are the
 # accepting control for every check before it. The variants are presented
-# to the verifier as its download input (`--assets`); only the published
-# control downloads. Exit 0 iff every control refuses by its own name.
+# to the verifier as its download input (`--assets`, with `--without-bundles`
+# because an assembled release carries none); only the published control
+# downloads. Exit 0 iff every control refuses by its own name.
 set -euo pipefail
 
 [ "$#" -eq 1 ] || {
@@ -65,6 +76,11 @@ fail() {
 }
 before="$(sha256sum "$release"/* | sha256sum)"
 
+# What the variants are read as: a release assembled and not published has no
+# bundles, so the verifier is told so; the bundle controls change these.
+staged_flags=(--without-bundles)
+staged_version="$version"
+
 # check LABEL NAME FRAGMENT PASSED NOT-PASSED — run the verifier over the
 # variant LABEL (`published` downloads instead); it must exit 1, refused by
 # NAME with FRAGMENT in its detail, after every stage in PASSED (a
@@ -75,7 +91,7 @@ check() {
   if [ "$label" = published ]; then
     "$verify" v0.7.0 >"$log" 2>&1 || status=$?
   else
-    "$verify" --assets "$scratch/$label" "v$version" >"$log" 2>&1 || status=$?
+    "$verify" --assets "$scratch/$label" ${staged_flags[@]+"${staged_flags[@]}"} "v$staged_version" >"$log" 2>&1 || status=$?
   fi
   [ "$status" -eq 1 ] \
     || fail "$label: the verifier exited $status, not 1: $(tail -n 3 "$log" | tr '\n' ' ')"
@@ -174,5 +190,29 @@ check empty-blueprint command-failed "the journey exited" "sums model_revision m
 variant test-build-enabled test_build_enabled
 check test-build-enabled harness-code-present "release-binary: REFUSED" "sums model_revision members build" "release_build journey"
 
+# the bundle rule, at a version that ships bundles whatever the current one is
+mkdir -p "$scratch/bundles-missing"
+cp "$release/$onchain" "$scratch/bundles-missing/singular-onchain-99.0.0.tar.gz"
+cp "$release/$docs" "$scratch/bundles-missing/singular-docs-99.0.0.tar.gz"
+(cd "$scratch/bundles-missing" && sha256sum singular-docs-99.0.0.tar.gz singular-onchain-99.0.0.tar.gz >SHA256SUMS)
+cp -r "$scratch/bundles-missing" "$scratch/bundles-waived"
+staged_version=99.0.0
+staged_flags=()
+check bundles-missing download-failed "singular-99.0.0-x86_64-linux.tar.gz" "" "sums"
+staged_flags=(--without-bundles)
+check bundles-waived command-failed "not [singular 99.0.0 (commit" "sums model_revision members build" "release_build journey"
+staged_version="$version"
+
+copy with-bundle
+printf 'x' >"$scratch/with-bundle/singular-$version-x86_64-linux.tar.gz"
+(cd "$scratch/with-bundle" && sha256sum "$docs" "$onchain" "singular-$version-x86_64-linux.tar.gz" >SHA256SUMS)
+check with-bundle sum-mismatch "singular-$version-x86_64-linux.tar.gz" "" "sums"
+
+status=0
+"$verify" --without-bundles "v$version" >"$scratch/flag-alone.log" 2>&1 || status=$?
+[ "$status" -eq 2 ] \
+  || fail "--without-bundles without --assets exited $status, not 2: $(tail -n 3 "$scratch/flag-alone.log" | tr '\n' ' ')"
+echo "control: flag-alone -> usage refusal (exit 2)"
+
 [ "$(sha256sum "$release"/* | sha256sum)" = "$before" ] || fail "the assembled release was modified"
-echo "verify-release-controls: PASS — the published v0.7.0 and eleven mutated copies of the v$version assets each refused by name, after every check before its own passed; the assembled release unmodified"
+echo "verify-release-controls: PASS — the published v0.7.0 and fourteen mutated copies of the v$version assets each refused by name, and the flag refused without --assets, after every check before its own passed; the assembled release unmodified"

@@ -42,16 +42,16 @@ bash "$script" check "$work/tree" >"$work/out"
   }
 echo "cabal-versions-controls: the committed tree passes, both files read"
 
-# a Cabal file left behind
+# a Cabal file left behind (no release is older than this)
 fresh
-sed -i -E 's/^version:.*/version:       0.11.0.0/' "$work/tree/offchain/singular-registry.cabal"
+sed -i -E 's/^version:.*/version:       0.0.1.0/' "$work/tree/offchain/singular-registry.cabal"
 must_fail "singular-registry behind the manifest" bash "$script" check "$work/tree"
 fresh
-sed -i -E 's/^version:.*/version:       0.11.0.0/' "$work/tree/applications/open-datum/offchain/open-datum.cabal"
+sed -i -E 's/^version:.*/version:       0.0.1.0/' "$work/tree/applications/open-datum/offchain/open-datum.cabal"
 must_fail "open-datum behind the manifest" bash "$script" check "$work/tree"
-# the manifest ahead of both
+# the manifest ahead of both (no release is as new as this)
 fresh
-printf '{".":"0.13.0"}\n' >"$work/tree/.release-please-manifest.json"
+printf '{".":"999.0.0"}\n' >"$work/tree/.release-please-manifest.json"
 must_fail "a manifest ahead of the Cabal files" bash "$script" check "$work/tree"
 # a version without the fourth component
 fresh
@@ -64,13 +64,13 @@ must_fail "a missing Cabal file" bash "$script" check "$work/tree"
 
 # sync repairs the drift the release manifest introduces
 fresh
-printf '{".":"0.13.0"}\n' >"$work/tree/.release-please-manifest.json"
+printf '{".":"999.0.0"}\n' >"$work/tree/.release-please-manifest.json"
 bash "$script" sync "$work/tree" >/dev/null
 bash "$script" check "$work/tree" >/dev/null
-grep -q '^version:       0.13.0.0$' "$work/tree/offchain/singular-registry.cabal" \
+grep -q '^version:       999.0.0.0$' "$work/tree/offchain/singular-registry.cabal" \
   || {
     echo "cabal-versions-controls: FAIL sync wrote the wrong version"
     exit 1
   }
-echo "cabal-versions-controls: sync moved both files to 0.13.0.0 and the check then passes"
+echo "cabal-versions-controls: sync moved both files to 999.0.0.0 and the check then passes"
 echo "cabal-versions-controls: PASS"

@@ -2,7 +2,7 @@
 # verify-release (#326): check a published Singular release from its
 # downloaded bytes alone.
 #
-# usage: verify-release [--assets DIR] [--work DIR] TAG
+# usage: verify-release [--assets DIR [--without-bundles]] [--work DIR] TAG
 #
 # TAG is a release tag, vX.Y.Z. The release's assets —
 # singular-docs-X.Y.Z.tar.gz, singular-onchain-X.Y.Z.tar.gz, SHA256SUMS and,
@@ -10,7 +10,13 @@
 # singular-X.Y.Z-SYSTEM.tar.gz bundle per platform —
 # are downloaded from the GitHub release without authentication, or, with
 # --assets DIR, read from DIR instead: that is the only step the option
-# changes. Then, in order, each check stopping the run on refusal:
+# changes. A release a pipeline step has only just assembled and not published
+# carries no bundles, because the bundles are built and run by their own
+# workflow: `--without-bundles`, accepted only with `--assets`, says so, and
+# then SHA256SUMS must list the two archives and nothing else. Without it a
+# release of a version that ships bundles is refused when one is missing,
+# however it is read, and a published tag can never be verified with it.
+# Then, in order, each check stopping the run on refusal:
 #
 #   sums            SHA256SUMS lists exactly the archives and bundles the release
 #                   ships and every one matches;
@@ -46,12 +52,13 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: verify-release [--assets DIR] [--work DIR] TAG" >&2
+  echo "usage: verify-release [--assets DIR [--without-bundles]] [--work DIR] TAG" >&2
   exit 2
 }
 assets=""
 work=""
 tag=""
+without_bundles=false
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --assets)
@@ -64,6 +71,10 @@ while [ "$#" -gt 0 ]; do
       work="$2"
       shift 2
       ;;
+    --without-bundles)
+      without_bundles=true
+      shift
+      ;;
     -*) usage ;;
     *)
       [ -z "$tag" ] || usage
@@ -73,6 +84,10 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 [[ "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || usage
+# a published release is never read without its bundles
+if $without_bundles && [ -z "$assets" ]; then
+  usage
+fi
 version="${BASH_REMATCH[1]}"
 repo="${VERIFY_RELEASE_REPOSITORY:-lambdasistemi/singular}"
 journey="${VERIFY_RELEASE_JOURNEY:?verify-release needs VERIFY_RELEASE_JOURNEY}"
@@ -114,7 +129,7 @@ docs="singular-docs-$version.tar.gz"
 onchain="singular-onchain-$version.tar.gz"
 # a release after the last one without bundles ships one per platform
 bundle_names=""
-if bundles_required "$version"; then
+if bundles_required "$version" && ! $without_bundles; then
   for system in $SYSTEMS; do bundle_names="$bundle_names singular-$version-$system.tar.gz"; done
 fi
 # shellcheck disable=SC2086
@@ -129,6 +144,9 @@ for name in SHA256SUMS "$docs" "$onchain" $bundle_names; do
   fi
 done
 echo "verify-release: $tag from ${assets:-github.com/$repo}"
+if $without_bundles; then
+  echo "verify-release: bundles: not part of this release (--without-bundles); SHA256SUMS must list the two archives only"
+fi
 
 # sums
 listed="$(cut -d' ' -f3- "$download/SHA256SUMS" | LC_ALL=C sort | tr '\n' ' ')"
@@ -212,7 +230,7 @@ pass build "singular and open-datum and the development node from the archive's 
 
 # #695: a build from the archive names the release and the commit the archive
 # states. Releases before the bundles predate `--version`.
-if [ -n "$bundle_names" ]; then
+if bundles_required "$version"; then
   archive_commit="$(cat "$extracted/RELEASE-COMMIT")"
   for program in singular open-datum; do
     case "$program" in
