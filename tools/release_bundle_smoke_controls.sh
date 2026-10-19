@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# The controls of release_bundle_smoke.sh (#695): each way a bundle can be
+# wrong is refused, and for the stated reason, so a green smoke run means the
+# checks can fail.
+#
+# usage: release_bundle_smoke_controls.sh TARBALL VERSION COMMIT
+#
+# Each control builds a wrong bundle from the given good one (or states the
+# wrong expectation), runs the smoke script on it and requires exit 1 with a
+# FAIL line naming the check that ought to refuse it.
+set -euo pipefail
+
+# a missing tool is a failed setup, never a pass
+for tool in tar gzip grep sed find basename tr wc cut head perl mktemp; do
+  command -v "$tool" >/dev/null 2>&1 || {
+    echo "release-bundle-controls: needs $tool on PATH" >&2
+    exit 2
+  }
+done
+
+[ "$#" -eq 3 ] || {
+  echo "usage: release_bundle_smoke_controls.sh TARBALL VERSION COMMIT" >&2
+  exit 2
+}
+tarball="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+version="$2"
+commit="$3"
+smoke="${RELEASE_BUNDLE_SMOKE:-$(cd "$(dirname "$0")" && pwd)/release_bundle_smoke.sh}"
+[ -f "$smoke" ] || {
+  echo "release-bundle-controls: no smoke script at $smoke" >&2
+  exit 2
+}
+command -v perl >/dev/null 2>&1 || {
+  echo "release-bundle-controls: perl is needed to stamp a wrong commit" >&2
+  exit 2
+}
+
+work="$(mktemp -d "${TMPDIR:-/tmp}/release-bundle-controls.XXXXXX")"
+trap 'chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"' EXIT
+
+# the good bundle passes: a control that cannot pass proves nothing
+bash "$smoke" "$tarball" "$version" "$commit" >"$work/good.out" 2>&1 \
+  || {
+    echo "release-bundle-controls: FAIL the good bundle is refused: $(grep FAIL "$work/good.out" | head -n 1)"
+    exit 1
+  }
+echo "release-bundle-controls: the good bundle passes"
+
+refused_for() {
+  label="$1"
+  check="$2"
+  shift 2
+  if "$@" >"$work/out" 2>&1; then
+    echo "release-bundle-controls: FAIL $label was accepted"
+    exit 1
+  fi
+  grep -Eq "FAIL ($check):" "$work/out" || {
+    echo "release-bundle-controls: FAIL $label was refused for another reason: $(grep FAIL "$work/out" | head -n 1)"
+    exit 1
+  }
+  echo "release-bundle-controls: $label refused at $check: $(grep -E "FAIL ($check):" "$work/out" | head -n 1 | cut -d: -f3- | cut -c1-110)"
+}
+
+other_commit() {
+  case "${1:0:1}" in
+    0) printf '1%s' "${1:1}" ;;
+    *) printf '0%s' "${1:1}" ;;
+  esac
+}
+other="$(other_commit "$commit")"
+
+# the wrong expectation
+refused_for "another commit expected" members bash "$smoke" "$tarball" "$version" "$other"
+refused_for "another version expected" members bash "$smoke" "$tarball" "0.0.0" "$commit"
+
+# a damaged tarball
+size="$(wc -c <"$tarball" | tr -d ' ')"
+head -c "$((size / 2))" "$tarball" >"$work/truncated.tar.gz"
+refused_for "a truncated tarball" members bash "$smoke" "$work/truncated.tar.gz" "$version" "$commit"
+
+# a member gone
+unpack() {
+  rm -rf "$work/tree"
+  mkdir -p "$work/tree"
+  tar -xzf "$tarball" -C "$work/tree"
+  chmod -R u+w "$work/tree"
+  top="$(ls "$work/tree")"
+}
+repack() {
+  tar -czf "$work/changed.tar.gz" -C "$work/tree" "$top"
+}
+unpack
+rm "$work/tree/$top/bin/open-datum"
+repack
+refused_for "a bundle without a launcher" members bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+unpack
+rm -rf "$work/tree/$top/share/singular-registry/data"
+repack
+refused_for "a bundle without the packaged data" members bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+
+# a library missing from the bundle, which the loader would find elsewhere
+# (in the Nix store, or nowhere): the bundle must not depend on the host
+if [ "$(uname -s)" = Linux ]; then
+  unpack
+  rm "$work/tree/$top/lib/libgmp.so.10"
+  repack
+  refused_for "a bundle without one of its libraries" 'identity|standalone' bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+fi
+
+# an executable that states another commit than the bundle does
+unpack
+OLD="$commit" NEW="$other" perl -0777 -i -pe '
+  $n += s/\Q$ENV{OLD}\E/$ENV{NEW}/g;
+  END { die "control: expected one stamp, replaced $n\n" unless $n == 1 }
+' "$work/tree/$top/libexec/singular"
+repack
+refused_for "an executable stamped with another commit" identity bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+
+# a machine without a tool the checks need is a failed setup, never a pass
+mkdir -p "$work/bin"
+for tool in tar gzip grep sed find basename tr wc cut head sort mktemp uname dirname cat rm ls chmod mkdir cp mv printf ld; do
+  if path="$(command -v "$tool" 2>/dev/null)"; then ln -sf "$path" "$work/bin/$tool"; fi
+done
+status=0
+env PATH="$work/bin" "$BASH" "$smoke" "$tarball" "$version" "$commit" >"$work/out" 2>&1 || status=$?
+if [ "$status" -ne 2 ] || ! grep -q "needs awk" "$work/out"; then
+  echo "release-bundle-controls: FAIL a run without awk ended with status $status: $(head -n 1 "$work/out")"
+  exit 1
+fi
+echo "release-bundle-controls: a run without awk is a failed setup (status 2): $(head -n 1 "$work/out")"
+
+echo "release-bundle-controls: PASS"

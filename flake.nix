@@ -25,6 +25,12 @@
     # `aiken docs` generates from this candidate's validators. Its
     # dependencies keep their own locked revisions.
     onchain.url = "path:./onchain";
+    # The open-datum application the same way, as the whole repository with its
+    # flake directory: its source copies the registry tree from a sibling path,
+    # which a bare subdirectory input could not reach. The release bundle takes
+    # the `open-datum` executable from it; its dependencies keep their own
+    # locked revisions.
+    open-datum.url = "path:./?dir=applications/open-datum/offchain";
     nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
     # The Lean compiler the model builds with. It is the version root
     # `lean-toolchain` names (Lean 4.27.0), pinned to the nixpkgs commit that
@@ -42,6 +48,7 @@
       offchain,
       conformance,
       onchain,
+      open-datum,
     }:
     let
       systems = [
@@ -49,6 +56,11 @@
         "aarch64-linux"
       ];
       each = nixpkgs.lib.genAttrs systems;
+      # The platforms that ship a release bundle (the darwin one only has this output).
+      bundleSystems = [
+        "x86_64-linux"
+        "aarch64-darwin"
+      ];
       project =
         system:
         import ./nix/docs.nix {
@@ -265,6 +277,151 @@
           in
           faultProject.hsPkgs.singular-registry.components.exes.singular;
       };
+      # #695: the relocatable `singular` and `open-datum` bundle of one
+      # platform (nix/release-bundle.nix). The release version is the one
+      # version.txt names; the commit is this flake's own revision, which a
+      # tag run reads from the tag's checkout.
+      # The sub-flakes enter this flake as path inputs, which carry no git
+      # revision, so their executables are stamped here, with this flake's
+      # own, from the unstamped cached build.
+      rootCommit = self.rev or (self.dirtyRev or "unknown-dirty");
+      stampedExe =
+        system: exe: program:
+        (import ./offchain/nix/stamp-commit.nix { pkgs = import nixpkgs { inherit system; }; }) {
+          inherit exe program;
+          commit = rootCommit;
+        };
+      stampedSingular =
+        system: stampedExe system offchain.packages.${system}.singular-unstamped "singular";
+      stampedOpenDatum =
+        system: stampedExe system open-datum.packages.${system}.open-datum-unstamped "open-datum";
+      releaseBundle =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        import ./nix/release-bundle.nix {
+          inherit pkgs;
+          version = pkgs.lib.removeSuffix "\n" (builtins.readFile ./version.txt);
+          commit = rootCommit;
+          singular = stampedSingular system;
+          openDatum = stampedOpenDatum system;
+        };
+      # What this flake offers on each platform that ships a bundle: the two
+      # programs, stamped with this flake's revision (`nix run .#singular --
+      # --version`), and the release bundle that carries both.
+      bundles = nixpkgs.lib.genAttrs bundleSystems (system: {
+        singular = stampedSingular system;
+        open-datum = stampedOpenDatum system;
+        release-bundle = releaseBundle system;
+      });
+      bundleApps = nixpkgs.lib.genAttrs bundleSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          singular = {
+            type = "app";
+            program = pkgs.lib.getExe (stampedSingular system);
+          };
+          open-datum = {
+            type = "app";
+            program = pkgs.lib.getExe (stampedOpenDatum system);
+          };
+          # #695: the bundles of a published release, downloaded without
+          # credentials and checked on this platform against the commit the tag
+          # names: `nix run .#verify-release-bundles -- vX.Y.Z COMMIT`. The
+          # variable names a directory of already downloaded assets instead.
+          verify-release-bundles = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "verify-release-bundles";
+                runtimeInputs =
+                  with pkgs;
+                  [
+                    bash
+                    coreutils
+                    curl
+                    findutils
+                    gawk
+                    gnugrep
+                    gnused
+                    gnutar
+                    gzip
+                    perl
+                  ]
+                  ++ pkgs.lib.optional pkgs.stdenv.isLinux bubblewrap;
+                text = ''
+                  [ "$#" -eq 2 ] || {
+                    echo "usage: verify-release-bundles TAG COMMIT" >&2
+                    exit 2
+                  }
+                  tag="$1"
+                  commit="$2"
+                  version="''${tag#v}"
+                  # shellcheck source=/dev/null
+                  . ${./tools/release_bundles.sh}
+                  download="$(mktemp -d)"
+                  trap 'rm -rf "$download"' EXIT
+                  names="SHA256SUMS"
+                  for system in $SYSTEMS; do names="$names singular-$version-$system.tar.gz"; done
+                  for name in $names; do
+                    if [ -n "''${VERIFY_RELEASE_BUNDLES_ASSETS:-}" ]; then
+                      cp "$VERIFY_RELEASE_BUNDLES_ASSETS/$name" "$download/$name"
+                    else
+                      curl -fsSL --retry 3 -o "$download/$name" \
+                        "https://github.com/lambdasistemi/singular/releases/download/$tag/$name"
+                    fi
+                  done
+                  export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                  bash ${./tools/verify_release_bundles.sh} ${./tools/release_bundles.sh} \
+                    ${./tools/release_bundle_smoke.sh} ${./tools/release_bundle_smoke_controls.sh} \
+                    "$download" "$version" "$commit"
+                '';
+              }
+            );
+          };
+          # #695: every check a built bundle passes on its own platform,
+          # with the tools they need carried here instead of read from the
+          # runner: `nix run .#release-bundle-checks -- TARBALL VERSION COMMIT`.
+          release-bundle-checks = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "release-bundle-checks";
+                runtimeInputs =
+                  with pkgs;
+                  [
+                    bash
+                    coreutils
+                    findutils
+                    gawk
+                    gnugrep
+                    gnused
+                    gnutar
+                    gzip
+                    perl
+                  ]
+                  ++ pkgs.lib.optional pkgs.stdenv.isLinux bubblewrap;
+                text = ''
+                  [ "$#" -eq 3 ] || {
+                    echo "usage: release-bundle-checks TARBALL VERSION COMMIT" >&2
+                    exit 2
+                  }
+                  export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                  bash ${./tools/release_bundle_smoke.sh} "$@"
+                  bash ${./tools/release_bundle_smoke_controls.sh} "$@"
+                  bash ${./tools/verify_release_bundles.test.sh} \
+                    ${./tools/verify_release_bundles.sh} ${./tools/release_bundles.sh} \
+                    ${./tools/release_bundle_smoke.sh} ${./tools/release_bundle_smoke_controls.sh} "$@"
+                '';
+              }
+            );
+          };
+        }
+      );
       buildGate =
         system:
         let
@@ -472,6 +629,10 @@
               runtimeInputs = with pkgs; [
                 bash
                 python3
+                # the bundle checks stamp a wrong commit with perl and, where
+                # the runner allows it, run the bundle alone in a sandbox
+                perl
+                bubblewrap
                 binutils
                 coreutils
                 curl
@@ -499,6 +660,12 @@
                 export VERIFY_RELEASE_BINARY_CHECK=${./tools/check_release_binary.py}
                 export DEMO1_CREATE_RACE=${managedScripts}/demo1_cli_create_race.sh
                 export VERIFY_RELEASE_MODEL_REVISION=${./conformance/model-revision}
+                # #695: the platform bundles of a release that ships them
+                export VERIFY_RELEASE_BUNDLE_CONF=${./tools/release_bundles.sh}
+                export VERIFY_RELEASE_BUNDLE_VERIFIER=${./tools/verify_release_bundles.sh}
+                export VERIFY_RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                export VERIFY_RELEASE_BUNDLE_CONTROLS=${./tools/release_bundle_smoke_controls.sh}
+                export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
                 bash ${./tools/verify_release.sh} "$@"
               '';
             };
@@ -713,7 +880,7 @@
                   # build; without it the leg is skipped and its row pending.
                   SINGULAR_REPLAY_FAULT=${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
                     python3 ${./tools/registry_two_actors.py} \
-                    ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    ${pkgs.lib.getExe (stampedSingular system)} \
                     "$open_datum" \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                     "$deployment_bp" "$work"
@@ -771,7 +938,7 @@
                   bash ${./tools/registry_two_actors_control.test.sh} ${./tools/registry_two_actors_control.sh}
                   bash ${./tools/registry_two_actors_control.sh} "$work" \
                     python3 ${./tools/registry_two_actors.py} \
-                    ${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                    ${pkgs.lib.getExe (stampedSingular system)} \
                     "$open_datum" \
                     ${pkgs.lib.getExe offchain.packages.${system}.devnet} \
                     "$deployment_bp"
@@ -1082,7 +1249,9 @@
         };
     in
     {
-      packages = each (system: packages system // { build-gate = buildGate system; });
+      packages = nixpkgs.lib.recursiveUpdate (each (
+        system: packages system // { build-gate = buildGate system; }
+      )) bundles;
       checks = each (system: {
         docs = (project system).check;
         release = (project system).releaseCheck;
@@ -1092,7 +1261,7 @@
         coverage = (coverage system).check;
         inventory = (inventory system).check;
       });
-      apps = each (
+      apps = nixpkgs.lib.recursiveUpdate (each (
         system:
         (
           (project system).apps
@@ -1162,7 +1331,7 @@
                         echo "registry-two-actors-replay-fault: no deployment blueprint" >&2
                         exit 3
                       }
-                      SINGULAR_UNFAULTED=${pkgs.lib.getExe offchain.packages.${system}.singular} \
+                      SINGULAR_UNFAULTED=${pkgs.lib.getExe (stampedSingular system)} \
                       SINGULAR_TWO_ACTOR_CONTROL=replay-fault \
                         python3 ${./tools/registry_two_actors.py} \
                         ${pkgs.lib.getExe self.packages.${system}.singular-replay-fault} \
@@ -1668,7 +1837,7 @@
             }
           )
         )
-      );
+      )) bundleApps;
       # #278 terminal-attestation-permanent: the root development shell carries the pinned house
       # formatter — the exact Fourmolu the off-chain lock resolves, exposed
       # by the offchain flake — so `just format`, `just format-check` and

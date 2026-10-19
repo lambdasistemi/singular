@@ -37,12 +37,18 @@ assert action["with"]["skip-github-release"] == "true", (
     "release-please would post release comments"
 )
 assert planner["needs"] == "build-gate", "release planning bypasses build gate"
-for name, workflow in workflows.items():
-    for job in workflow["jobs"].values():
-        assert job["runs-on"] == "nixos", name
-        assert all(
-            "dev-assets/setup-nix" not in s.get("uses", "") for s in job["steps"]
-        )
+# #695: the publisher merges the platform bundles only when told where they
+# are, so the tag run must wait for the bundle builds and always name the
+# directory it downloaded them into.
+publisher = workflows["release.yml"]["jobs"]["publish"]
+assert "bundles" in publisher["needs"], "publication does not wait for the bundles"
+assert any("BUNDLES_DIR" in step.get("env", {}) for step in publisher["steps"]), (
+    "publication does not name the bundle directory"
+)
+assert (
+    workflows["release.yml"]["jobs"]["bundles"]["uses"]
+    == "./.github/workflows/release-bundles.yml"
+), "the tag run does not call the bundle workflow"
 docs_name = f"singular-docs-{version}.tar.gz"
 onchain_name = f"singular-onchain-{version}.tar.gz"
 docs_digest = hashlib.sha256((archive / docs_name).read_bytes()).hexdigest()
@@ -219,6 +225,9 @@ if onchain_present:
             "applications/open-datum/offchain/flake.lock",
             "applications/open-datum/offchain/open-datum.cabal",
             "applications/open-datum/offchain/app/Main.hs",
+            # #695: the commit `open-datum --version` states in a build of
+            # this archive, the same one the archive's root states.
+            "applications/open-datum/offchain/RELEASE-COMMIT",
             "applications/open-datum/negative/singular-negative.cabal",
             "applications/open-datum/negative/app/Main.hs",
             # #300: the refusal controls and the indexer readback replay from
@@ -259,6 +268,13 @@ if onchain_present:
             "fixtures/README.md",
         ):
             assert required in names, f"on-chain release archive misses {required}"
+        root_commit = bundle.extractfile(members["RELEASE-COMMIT"]).read()
+        assert (
+            bundle.extractfile(
+                members["applications/open-datum/offchain/RELEASE-COMMIT"]
+            ).read()
+            == root_commit
+        ), "the application's release commit differs from the archive's"
         assert all(
             not m.name.startswith("/")
             and ".." not in Path(m.name).parts

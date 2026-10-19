@@ -4,19 +4,26 @@
 #
 # usage: verify-release [--assets DIR] [--work DIR] TAG
 #
-# TAG is a release tag, vX.Y.Z. The release's three assets —
-# singular-docs-X.Y.Z.tar.gz, singular-onchain-X.Y.Z.tar.gz and SHA256SUMS —
+# TAG is a release tag, vX.Y.Z. The release's assets —
+# singular-docs-X.Y.Z.tar.gz, singular-onchain-X.Y.Z.tar.gz, SHA256SUMS and,
+# for a release that ships them (tools/release_bundles.sh), one
+# singular-X.Y.Z-SYSTEM.tar.gz bundle per platform —
 # are downloaded from the GitHub release without authentication, or, with
 # --assets DIR, read from DIR instead: that is the only step the option
 # changes. Then, in order, each check stopping the run on refusal:
 #
-#   sums            SHA256SUMS lists exactly the two archives and both match;
+#   sums            SHA256SUMS lists exactly the archives and bundles the release
+#                   ships and every one matches;
 #                   the on-chain archive's own SHA256SUMS covers every file
 #                   it carries and every file matches
 #   model revision  the archive's MODEL-REVISION names the application model
 #                   commit the conformance evidence is compiled against
 #   members         the run page, both flakes, both commands' sources
 #                   and the compiled registry blueprint are present
+#   bundles         every platform's bundle extracts, names the release and the
+#                   tag's commit, and the one for this platform runs: `--version`
+#                   from the executable itself names that commit, and each way the
+#                   bundle can be wrong is refused (tools/verify_release_bundles.sh)
 #   build           `singular`, `open-datum` and the development node are built
 #                   from the archive's own flakes
 #   journey         create, insert, update, terminate and inspect run as
@@ -34,7 +41,8 @@
 # and one `verify-release: REFUSED <name>: <detail>` line when one refuses.
 # The names: download-failed, sum-mismatch, model-revision-missing,
 # model-revision-mismatch, member-missing, command-failed,
-# harness-code-present. Exit 2 on usage.
+# harness-code-present, bundle-missing, bundle-sum-mismatch, bundle-layout,
+# bundle-commit-mismatch, bundle-run-failed. Exit 2 on usage.
 set -euo pipefail
 
 usage() {
@@ -70,6 +78,12 @@ repo="${VERIFY_RELEASE_REPOSITORY:-lambdasistemi/singular}"
 journey="${VERIFY_RELEASE_JOURNEY:?verify-release needs VERIFY_RELEASE_JOURNEY}"
 binary_check="${VERIFY_RELEASE_BINARY_CHECK:?verify-release needs VERIFY_RELEASE_BINARY_CHECK}"
 expected_revision="$(cat "${VERIFY_RELEASE_MODEL_REVISION:?verify-release needs VERIFY_RELEASE_MODEL_REVISION}")"
+bundle_conf="${VERIFY_RELEASE_BUNDLE_CONF:?verify-release needs VERIFY_RELEASE_BUNDLE_CONF}"
+bundle_verifier="${VERIFY_RELEASE_BUNDLE_VERIFIER:?verify-release needs VERIFY_RELEASE_BUNDLE_VERIFIER}"
+bundle_smoke="${VERIFY_RELEASE_BUNDLE_SMOKE:?verify-release needs VERIFY_RELEASE_BUNDLE_SMOKE}"
+bundle_controls="${VERIFY_RELEASE_BUNDLE_CONTROLS:?verify-release needs VERIFY_RELEASE_BUNDLE_CONTROLS}"
+# shellcheck source=/dev/null
+. "$bundle_conf"
 
 refuse() {
   echo "verify-release: REFUSED $1: $2"
@@ -98,7 +112,13 @@ mkdir -p "$download" "$extracted"
 
 docs="singular-docs-$version.tar.gz"
 onchain="singular-onchain-$version.tar.gz"
-for name in SHA256SUMS "$docs" "$onchain"; do
+# a release after the last one without bundles ships one per platform
+bundle_names=""
+if bundles_required "$version"; then
+  for system in $SYSTEMS; do bundle_names="$bundle_names singular-$version-$system.tar.gz"; done
+fi
+# shellcheck disable=SC2086
+for name in SHA256SUMS "$docs" "$onchain" $bundle_names; do
   if [ -n "$assets" ]; then
     [ -f "$assets/$name" ] || refuse download-failed "$name is not in $assets"
     cp "$assets/$name" "$download/$name"
@@ -112,8 +132,10 @@ echo "verify-release: $tag from ${assets:-github.com/$repo}"
 
 # sums
 listed="$(cut -d' ' -f3- "$download/SHA256SUMS" | LC_ALL=C sort | tr '\n' ' ')"
-[ "$listed" = "$docs $onchain " ] \
-  || refuse sum-mismatch "SHA256SUMS lists [${listed% }], not exactly $docs and $onchain"
+# shellcheck disable=SC2086
+expected_listing="$(printf '%s\n' "$docs" "$onchain" $bundle_names | LC_ALL=C sort | tr '\n' ' ')"
+[ "$listed" = "$expected_listing" ] \
+  || refuse sum-mismatch "SHA256SUMS lists [${listed% }], not exactly ${expected_listing% }"
 (cd "$download" && sha256sum --check --strict --quiet SHA256SUMS) >"$work/sums.log" 2>&1 \
   || refuse sum-mismatch "$(tr '\n' ' ' <"$work/sums.log")"
 tar -xzf "$download/$onchain" -C "$extracted" \
@@ -141,6 +163,27 @@ for member in DEMO1.md offchain/flake.nix offchain/flake.lock offchain/cli/Main.
 done
 pass members
 
+# bundles (#695): the platform bundles of a release that ships them, against
+# the commit the tag itself names, which the on-chain archive must state too.
+if [ -n "$bundle_names" ]; then
+  tag_commit="${VERIFY_RELEASE_TAG_COMMIT:-}"
+  if [ -z "$tag_commit" ]; then
+    refs="$(git ls-remote "https://github.com/$repo.git" "refs/tags/$tag" "refs/tags/$tag^{}" 2>"$work/ls-remote.log")" \
+      || refuse download-failed "the commit $tag names on github.com/$repo: $(tail -n 1 "$work/ls-remote.log")"
+    tag_commit="$(printf '%s\n' "$refs" | awk '$2 ~ /\^\{\}$/ { print $1 }')"
+    [ -n "$tag_commit" ] || tag_commit="$(printf '%s\n' "$refs" | awk 'NR == 1 { print $1 }')"
+  fi
+  [[ "$tag_commit" =~ ^[0-9a-f]{40}$ ]] \
+    || refuse download-failed "the commit $tag names is [$tag_commit], not a commit"
+  [ "$(cat "$extracted/RELEASE-COMMIT" 2>/dev/null)" = "$tag_commit" ] \
+    || refuse bundle-commit-mismatch "$tag names $tag_commit, $onchain states $(cat "$extracted/RELEASE-COMMIT" 2>/dev/null || echo nothing)"
+  status=0
+  bash "$bundle_verifier" "$bundle_conf" "$bundle_smoke" "$bundle_controls" "$download" "$version" "$tag_commit" \
+    >"$work/bundles.out" 2>&1 || status=$?
+  cat "$work/bundles.out"
+  [ "$status" -eq 0 ] || exit 1
+fi
+
 # #528 slice 4: the application's flake reaches the registry via
 # ../../../offchain, which pure evaluation allows only inside a git worktree.
 # The archive carries no .git, so the extracted copy is made a temporary git
@@ -166,6 +209,23 @@ open_datum="$(nix build --quiet --no-link --print-out-paths .#open-datum 2>"$wor
 [ -x "$open_datum/bin/open-datum" ] \
   || refuse command-failed "open-datum binary missing from the archive build"
 pass build "singular and open-datum and the development node from the archive's own flakes"
+
+# #695: a build from the archive names the release and the commit the archive
+# states. Releases before the bundles predate `--version`.
+if [ -n "$bundle_names" ]; then
+  archive_commit="$(cat "$extracted/RELEASE-COMMIT")"
+  for program in singular open-datum; do
+    case "$program" in
+      singular) binary="$singular/bin/singular" ;;
+      *) binary="$open_datum/bin/open-datum" ;;
+    esac
+    printed="$("$binary" --version)" \
+      || refuse command-failed "$program --version from the archive build exited non-zero"
+    [ "$printed" = "$program $version (commit $archive_commit)" ] \
+      || refuse command-failed "$program --version from the archive build printed [$printed], not [$program $version (commit $archive_commit)]"
+  done
+  pass identity "the archive build names $version and $archive_commit"
+fi
 
 # The actual compiled bytes and resolved component configuration, checked
 # before any journey starts. Unset environment variables alone prove nothing.

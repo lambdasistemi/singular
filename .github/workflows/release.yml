@@ -92,9 +92,17 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           skip-github-release: true
-  publish:
+  # #695: the platform bundles, built and smoke-tested on their own platforms
+  # by the same workflow pull requests run; the publisher adds what they
+  # uploaded to the release.
+  bundles:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: build-gate
+    uses: ./.github/workflows/release-bundles.yml
+    secrets: inherit
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [build-gate, bundles]
     runs-on: nixos
     steps:
       - name: Isolate Nix cache
@@ -120,6 +128,12 @@ jobs:
           repositories: singular
           permission-contents: write
           permission-pull-requests: write
+      - name: Download the release bundles
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-bundle-*
+          path: ${{ runner.temp }}/release-bundles
+          merge-multiple: true
       - name: Upload the tagged documentation and on-chain release assets
         # The publish-docs app uploads, from the tag this workflow ran on:
         #   singular-docs-<version>.tar.gz      — the documentation release
@@ -132,6 +146,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_TAG: ${{ github.ref_name }}
           TAG_COMMIT: ${{ github.sha }}
+          BUNDLES_DIR: ${{ runner.temp }}/release-bundles
         run: nix run --quiet .#publish-docs -- "$RELEASE_TAG" "$TAG_COMMIT"
   verify-release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -162,3 +177,24 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: nix run --quiet .#verify-release -- "$RELEASE_TAG"
+  # #695: the macOS bundle as published, downloaded without credentials and
+  # run on the platform it is for; the Linux verifier above checks its sums
+  # and identity but cannot run it.
+  verify-macos-bundle:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: publish
+    name: Verify the published macOS bundle
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+      - uses: paolino/dev-assets/setup-nix@a9d7371c1118de4026ba6ee3a9c3b54614924b82
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Verify the tag's published bundles
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          TAG_COMMIT: ${{ github.sha }}
+        run: nix run --quiet .#verify-release-bundles -- "$RELEASE_TAG" "$TAG_COMMIT"
