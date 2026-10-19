@@ -1,4 +1,5 @@
 use aiken/builtin
+use aiken/crypto.{blake2b_256}
 use aiken/fuzz
 use aiken/interval.{Interval}
 use aiken/merkle_patricia_forestry.{empty, root}
@@ -14,7 +15,7 @@ use cage_fixtures.{
   testToken, testValue, update, updateActionData, zfDelivery,
 }
 use cardano/address.{from_script}
-use cardano/assets.{PolicyId, from_asset, from_lovelace, zero}
+use cardano/assets.{PolicyId, from_asset, from_lovelace, merge, zero}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, ScriptPurpose, Spend,
   Transaction,
@@ -322,21 +323,63 @@ test contribute_with_state_end_rejected() fail {
 // pending request carries, so a second booking must not be able to spend
 // that request as its custody input. The real `request.spend` is what
 // refuses the spend: `Contribute` only inside a state `Modify`, `Retract`
-// only for the legacy `RequestDatum`. These rows pin the refusals that exist
-// today by the shape of the datum; a fold that does spend the request burns
-// its tag (CP2), which the CP2 rows carry.
+// only for the legacy `RequestDatum`. The input below is the genuine pending
+// output, its datum, value and reference in agreement: a `TerminationDatum`
+// at the request reference, holding the declared lovelace, the key's singular
+// tag under the active policy and the trie-ready tag the datum commits to.
+//
+// These rows pin the refusals that exist today, which come from the datum's
+// shape (`expect Some(RequestDatum(..))` fails), so they are guards and not
+// RED evidence. A fold that does spend the request burns its tag (CP2); that
+// closure is not claimed here.
+
+const pendingKey: ByteArray = "42"
+
+fn pendingRequest() -> TerminationRequest {
+  TerminationRequest {
+    registry: testToken,
+    key: pendingKey,
+    destination: "",
+    declared_tip: 1_000_000,
+    carrier_ada: 3_000_000,
+    nonce: 1,
+  }
+}
 
 fn pendingTermination() -> CageDatum {
-  TerminationDatum(
-    TerminationRequest {
-      registry: testToken,
-      key: "42",
-      destination: "",
-      declared_tip: 1_000_000,
-      carrier_ada: 3_000_000,
-      nonce: 1,
-    },
+  TerminationDatum(pendingRequest())
+}
+
+/// The Lean preimage `bookingCommitment 1 ([1, key, destination] ++ [nonce])`.
+fn pendingTrieName(r: TerminationRequest) -> ByteArray {
+  blake2b_256(
+    builtin.serialise_data(
+      builtin.list_data(
+        [
+          builtin.i_data(1),
+          builtin.i_data(1),
+          builtin.b_data(r.key),
+          builtin.b_data(r.destination),
+          builtin.i_data(r.nonce),
+        ],
+      ),
+    ),
   )
+}
+
+fn pendingInput() -> Input {
+  let r = pendingRequest()
+  Input {
+    output_reference: testRequestRef,
+    output: Output {
+      address: testScriptAddress,
+      value: from_lovelace(r.declared_tip + r.carrier_ada)
+        |> merge(from_asset(testRepPolicy, r.key, 1))
+        |> merge(from_asset("policy_id", pendingTrieName(r), 1)),
+      datum: InlineDatum(pendingTermination()),
+      reference_script: None,
+    },
+  }
 }
 
 test pending_termination_is_refused_as_custody_without_a_fold() fail {
@@ -347,7 +390,7 @@ test pending_termination_is_refused_as_custody_without_a_fold() fail {
     Transaction {
       ..transaction.placeholder,
       validity_range: phase1Range,
-      inputs: [request],
+      inputs: [pendingInput()],
       reference_inputs: [update],
     },
   )
@@ -361,7 +404,7 @@ test pending_termination_is_refused_as_custody_by_a_retract() fail {
     Transaction {
       ..transaction.placeholder,
       validity_range: phase2Range,
-      inputs: [request, update],
+      inputs: [pendingInput(), update],
     },
   )
 }

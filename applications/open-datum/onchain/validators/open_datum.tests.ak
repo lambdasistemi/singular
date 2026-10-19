@@ -1616,15 +1616,24 @@ test closed_else_refuses() fail {
 //
 // One valid whole-transfer booking: Alice's 4 ADA live output (singular tag,
 // deposit and surplus) is spent now and every lovelace of it moves into one
-// termination request, H = V + A, A the booker's declared ordinary addition.
-// The subject is the real typed `spend` of `open_datum` and `closed_datum`
-// with the new `BookTermination` redeemer, and the named reason of the same
-// judgement (`bookTerminationRefusal`, Lean `bookTerminateStep`), one
-// independent field changed at a time.
+// termination request, H = V + A, A the booker's declared ordinary addition
+// (a natural number in the model).
 //
-// RED: the judgement is absent, so every row that expects the model's answer
-// fails for that absence; the legacy termination approval, which the model
-// does not have, is still certified and a row below expects it refused.
+// A `Case` is one complete booking: the actual spent custody output (its
+// inline envelope and value), the transaction around it, and the declared
+// addition. Every negative changes one field of the case; the real typed
+// `spend` of `open_datum` and the real forwarding of `closed_datum` are called
+// with that same case's envelope as the datum and its input as the spent
+// output, and the named judgement is read from that same input and control.
+// A helper that answers correctly cannot make a row pass while the handler
+// accepts: each negative asserts the handler refusal itself.
+//
+// RED: the judgement is absent. The valid positives fail because the arm
+// refuses everything; every row that expects the model's name fails for that
+// absence; the retired approvals are still certified. A negative's handler
+// refusal passes today only because the absent judgement refuses everything:
+// that conjunct is a guard against an accepting GREEN, not RED evidence, and
+// the reason conjunct beside it is the RED part.
 
 const tbValue: Int = 4_000_000
 
@@ -1645,37 +1654,15 @@ fn tbTrieName(key: ByteArray, destination: ByteArray, n: Int) -> ByteArray {
   )
 }
 
-fn tbRequest(added: Int) -> TerminationRequest {
+/// A request holding `lovelace` less the tip, declared consistently.
+fn tbRequestHolding(lovelace: Int) -> TerminationRequest {
   TerminationRequest {
     registry: fx.cageToken,
     key: fx.keyA,
     destination: #"",
     declared_tip: fx.tip,
-    carrier_ada: tbValue + added - fx.tip,
+    carrier_ada: lovelace - fx.tip,
     nonce: 1,
-  }
-}
-
-fn tbCustody() -> Input {
-  liveWith(
-    envelopeA(),
-    from_lovelace(tbValue) |> merge(from_asset(fx.activePolicy, fx.keyA, 1)),
-    appAddr(),
-  )
-}
-
-fn tbOrdinary() -> Input {
-  Input {
-    output_reference: OutputReference {
-      transaction_id: #"4f524449",
-      output_index: 0,
-    },
-    output: Output {
-      address: address.from_verification_key(controller),
-      value: from_lovelace(10_000_000),
-      datum: NoDatum,
-      reference_script: None,
-    },
   }
 }
 
@@ -1698,106 +1685,175 @@ fn tbRequestOutput(r: TerminationRequest, lovelace: Int) -> Output {
   }
 }
 
-fn tbTx(
-  r: TerminationRequest,
-  lovelace: Int,
-  references: List<Input>,
-) -> Transaction {
-  Transaction {
-    ..transaction.placeholder,
-    inputs: [tbCustody(), tbOrdinary()],
-    reference_inputs: references,
-    outputs: [tbRequestOutput(r, lovelace)],
-    mint: tbTag(r),
-    extra_signatories: [controller],
+fn tbOrdinary() -> Input {
+  Input {
+    output_reference: OutputReference {
+      transaction_id: #"4f524449",
+      output_index: 0,
+    },
+    output: Output {
+      address: address.from_verification_key(controller),
+      value: from_lovelace(10_000_000),
+      datum: NoDatum,
+      reference_script: None,
+    },
   }
 }
 
-fn tbValid() -> Transaction {
-  tbTx(tbRequest(0), tbValue, [stateInput()])
+fn tbHeld() -> Value {
+  from_lovelace(tbValue) |> merge(from_asset(fx.activePolicy, fx.keyA, 1))
 }
 
-fn tbSpend(tx: Transaction, added: Int) -> Bool {
+type Case {
+  /// The inline datum of the spent output and the datum handed to the spend.
+  envelope: Envelope,
+  /// The value of the spent output.
+  held: Value,
+  request: TerminationRequest,
+  request_lovelace: Int,
+  extra_outputs: List<Output>,
+  references: List<Input>,
+  signers: List<ByteArray>,
+  added: Int,
+}
+
+fn tbCase() -> Case {
+  Case {
+    envelope: envelopeA(),
+    held: tbHeld(),
+    request: tbRequestHolding(tbValue),
+    request_lovelace: tbValue,
+    extra_outputs: [],
+    references: [stateInput()],
+    signers: [controller],
+    added: 0,
+  }
+}
+
+/// The spent output, at the address, reference, value and inline envelope the
+/// case says.
+fn tbSpent(c: Case) -> Input {
+  liveWith(c.envelope, c.held, appAddr())
+}
+
+fn tbTx(c: Case) -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    inputs: [tbSpent(c), tbOrdinary()],
+    reference_inputs: c.references,
+    outputs: [tbRequestOutput(c.request, c.request_lovelace), ..c.extra_outputs],
+    mint: tbTag(c.request),
+    extra_signatories: c.signers,
+  }
+}
+
+fn tbRedeemer(c: Case) -> envelope.OpenDatumSpend {
+  BookTermination { ordinary_added: c.added }
+}
+
+/// The real typed spend of `open_datum`.
+fn tbSpend(c: Case) -> Bool {
   open_datum.open_datum.spend(
     registry(),
-    Some(envelopeA() |> as_data_envelope),
-    BookTermination { ordinary_added: added },
+    Some(c.envelope |> as_data_envelope),
+    tbRedeemer(c),
     holdingRef,
-    tx,
+    tbTx(c),
   )
 }
 
-fn tbClosedSpend(tx: Transaction, added: Int) -> Bool {
+/// The real typed spend of `closed_datum`, which forwards it.
+fn tbClosedSpend(c: Case) -> Bool {
   open_datum.closed_datum.spend(
     registry(),
-    Some(envelopeA() |> as_data_envelope),
-    BookTermination { ordinary_added: added },
+    Some(c.envelope |> as_data_envelope),
+    tbRedeemer(c),
     holdingRef,
-    tx,
+    tbTx(c),
   )
 }
 
-fn tbReason(c: Control, tx: Transaction, added: Int) -> Option<String> {
-  open_datum.bookTerminationRefusal(registry(), c, tbCustody(), added, tx)
+/// The named judgement, read from the same spent input and control.
+fn tbReason(c: Case) -> Option<String> {
+  open_datum.bookTerminationRefusal(
+    registry(),
+    c.envelope.control,
+    tbSpent(c),
+    c.added,
+    tbTx(c),
+  )
 }
 
+/// Both handlers refuse the case and the judgement names `why`.
+fn tbRefusedAs(c: Case, why: String) -> Bool {
+  tbSpend(c) == False && tbClosedSpend(c) == False && tbReason(c) == Some(why)
+}
+
+fn tbAccepted(c: Case) -> Bool {
+  tbSpend(c) && tbClosedSpend(c) && tbReason(c) == None
+}
+
+// ----------------------------------------------------------------------------
+// Positives: the valid whole transfer, the zero boundary, lawful funding
+// ----------------------------------------------------------------------------
+
 test open_datum_termination_booking_valid_witness_is_accepted_by_the_spend() {
-  tbSpend(tbValid(), 0)
+  tbSpend(tbCase())
 }
 
 test closed_datum_termination_booking_valid_witness_is_accepted_by_the_spend() {
-  tbClosedSpend(tbValid(), 0)
+  tbClosedSpend(tbCase())
 }
 
 test open_datum_termination_booking_valid_witness_names_no_refusal() {
-  tbReason(control(), tbValid(), 0) == None
+  tbReason(tbCase()) == None
 }
 
 test open_datum_termination_booking_accepts_a_declared_ordinary_addition() {
   let added = 1_000_000
-  let tx = tbTx(tbRequest(added), tbValue + added, [stateInput()])
-  tbSpend(tx, added) && tbReason(control(), tx, added) == None
+  tbAccepted(
+    Case {
+      ..tbCase(),
+      request: tbRequestHolding(tbValue + added),
+      request_lovelace: tbValue + added,
+      added,
+    },
+  )
 }
 
 test open_datum_termination_booking_allows_an_unrelated_payment_to_the_controller() {
-  let tx =
-    Transaction {
-      ..tbValid(),
-      outputs: [
-        tbRequestOutput(tbRequest(0), tbValue),
-        fx.paymentOutput(controllerAddress, 5_000_000),
-      ],
-    }
-  tbSpend(tx, 0) && tbReason(control(), tx, 0) == None
+  tbAccepted(
+    Case {
+      ..tbCase(),
+      extra_outputs: [fx.paymentOutput(controllerAddress, 5_000_000)],
+    },
+  )
 }
+
+// ----------------------------------------------------------------------------
+// Negatives: one field of the case each, refused by the actual spend
+// ----------------------------------------------------------------------------
 
 test open_datum_termination_booking_refuses_an_unpinned_application() {
   let foreign = State { ..theState(), application_policy: fx.foreignPolicy }
-  let tx = tbTx(tbRequest(0), tbValue, [stateInputWith(foreign)])
-  tbReason(control(), tx, 0) == Some(@"app-not-pinned")
+  tbRefusedAs(
+    Case { ..tbCase(), references: [stateInputWith(foreign)] },
+    @"app-not-pinned",
+  )
 }
 
 test open_datum_termination_booking_refuses_a_missing_registry_state() {
-  let tx = tbTx(tbRequest(0), tbValue, [])
-  tbReason(control(), tx, 0) == Some(@"app-registry-asset")
+  tbRefusedAs(Case { ..tbCase(), references: [] }, @"app-registry-asset")
 }
 
 test open_datum_termination_booking_refuses_a_second_asset_in_the_custody() {
-  let tx =
-    Transaction {
-      ..tbValid(),
-      inputs: [
-        liveWith(
-          envelopeA(),
-          from_lovelace(tbValue)
-            |> merge(from_asset(fx.activePolicy, fx.keyA, 1))
-            |> merge(from_asset(fx.foreignPolicy, "extra", 1)),
-          appAddr(),
-        ),
-        tbOrdinary(),
-      ],
-    }
-  tbReason(control(), tx, 0) == Some(@"app-terminate-token")
+  tbRefusedAs(
+    Case {
+      ..tbCase(),
+      held: tbHeld() |> merge(from_asset(fx.foreignPolicy, "extra", 1)),
+    },
+    @"app-terminate-token",
+  )
 }
 
 test open_datum_termination_booking_refuses_an_envelope_for_another_registry() {
@@ -1806,28 +1862,78 @@ test open_datum_termination_booking_refuses_an_envelope_for_another_registry() {
       ..control(),
       registry: StateAsset { statePolicy: #"6f74686572", stateName },
     }
-  tbReason(other, tbValid(), 0) == Some(@"app-terminate-binding")
+  tbRefusedAs(
+    Case { ..tbCase(), envelope: envelopeOf(other, payloadA()) },
+    @"app-terminate-binding",
+  )
 }
 
 test open_datum_termination_booking_refuses_an_unsigned_booking() {
-  let tx = Transaction { ..tbValid(), extra_signatories: [] }
-  tbReason(control(), tx, 0) == Some(@"app-controller-signature")
+  tbRefusedAs(Case { ..tbCase(), signers: [] }, @"app-controller-signature")
 }
 
 test open_datum_termination_booking_refuses_a_named_destination() {
-  let r = TerminationRequest { ..tbRequest(0), destination: #"01" }
-  let tx = Transaction { ..tbValid(), outputs: [tbRequestOutput(r, tbValue)] }
-  tbReason(control(), tx, 0) == Some(@"app-terminate-destination")
+  tbRefusedAs(
+    Case {
+      ..tbCase(),
+      request: TerminationRequest { ..tbCase().request, destination: #"01" },
+    },
+    @"app-terminate-destination",
+  )
 }
 
 test open_datum_termination_booking_refuses_a_diverted_part_of_the_value() {
-  let tx = tbTx(tbRequest(0), tbValue - 1, [stateInput()])
-  tbReason(control(), tx, 0) == Some(@"app-termination-value")
+  tbRefusedAs(
+    Case {
+      ..tbCase(),
+      request: tbRequestHolding(tbValue - 1),
+      request_lovelace: tbValue - 1,
+      extra_outputs: [fx.paymentOutput(controllerAddress, 1)],
+    },
+    @"app-termination-value",
+  )
 }
 
 test open_datum_termination_booking_refuses_an_undeclared_addition() {
-  let tx = tbTx(tbRequest(0), tbValue + 1, [stateInput()])
-  tbReason(control(), tx, 0) == Some(@"app-termination-value")
+  tbRefusedAs(
+    Case { ..tbCase(), request_lovelace: tbValue + 1 },
+    @"app-termination-value",
+  )
+}
+
+// ----------------------------------------------------------------------------
+// The natural-number domain of the declared addition (Lean `ordinaryAdded : Nat`)
+// ----------------------------------------------------------------------------
+
+/// Alice's custody is 4 ADA, the booking declares an addition of minus 1 ADA,
+/// the request is declared consistently at 3 ADA and the removed 1 ADA leaves
+/// as an ordinary output: an equality-only `H = V + A` would accept it.
+fn tbNegativeAddition() -> Case {
+  let added = 0 - 1_000_000
+  Case {
+    ..tbCase(),
+    request: tbRequestHolding(tbValue + added),
+    request_lovelace: tbValue + added,
+    extra_outputs: [fx.paymentOutput(controllerAddress, 1_000_000)],
+    added,
+  }
+}
+
+test open_datum_termination_booking_refuses_a_negative_declared_addition() {
+  tbRefusedAs(tbNegativeAddition(), @"app-termination-value")
+}
+
+test open_datum_termination_booking_refuses_a_negative_addition_of_one_lovelace() {
+  let added = 0 - 1
+  tbRefusedAs(
+    Case {
+      ..tbCase(),
+      request: tbRequestHolding(tbValue + added),
+      request_lovelace: tbValue + added,
+      added,
+    },
+    @"app-termination-value",
+  )
 }
 
 // The model has no application approval for a termination: the booking is

@@ -260,6 +260,18 @@ test termination_booking_valid_witness_names_no_refusal() {
 // ----------------------------------------------------------------------------
 // The six root branches, in the model's order, one independent field each
 // ----------------------------------------------------------------------------
+//
+// Every negative asserts the refusal of the real `request.mint` handler and,
+// beside it, the model's named reason: a correct helper cannot make a row
+// pass while the handler accepts. RED: the handler's refusal of a termination
+// holds today only because the absent judgement refuses everything (a guard
+// against an accepting GREEN, not RED evidence); the named reason is the RED
+// part and fails for the absence.
+
+/// The real handler refuses the plan and the judgement names `why`.
+fn refusedAs(p: Plan, why: String) -> Bool {
+  handler(p) == False && reason(p) == Some(why)
+}
 
 test termination_booking_refuses_a_tip_below_the_minimum_as_dirty() {
   let p = plan()
@@ -269,7 +281,7 @@ test termination_booking_refuses_a_tip_below_the_minimum_as_dirty() {
       declared_tip: fx.tip - 1,
       carrier_ada: p.request.carrier_ada + 1,
     }
-  reason(restated(p, r)) == Some(@"dirty-request")
+  refusedAs(restated(p, r), @"dirty-request")
 }
 
 test termination_booking_refuses_an_extra_asset_as_dirty() {
@@ -279,7 +291,7 @@ test termination_booking_refuses_an_extra_asset_as_dirty() {
       |> merge(singular(p.request.key))
       |> merge(trieTag(p.request))
       |> merge(from_asset(fx.foreignPolicy, "extra", 1))
-  reason(withValue(p, value)) == Some(@"dirty-request")
+  refusedAs(withValue(p, value), @"dirty-request")
 }
 
 test termination_booking_refuses_a_hidden_surplus() {
@@ -288,7 +300,7 @@ test termination_booking_refuses_a_hidden_surplus() {
     from_lovelace(declared(p.request) + 1)
       |> merge(singular(p.request.key))
       |> merge(trieTag(p.request))
-  reason(withValue(p, value)) == Some(@"hidden-surplus")
+  refusedAs(withValue(p, value), @"hidden-surplus")
 }
 
 test termination_booking_refuses_a_foreign_registry_as_forged_singular() {
@@ -298,7 +310,7 @@ test termination_booking_refuses_a_foreign_registry_as_forged_singular() {
       ..p.request,
       registry: TokenId { assetName: #"666f726569676e" },
     }
-  reason(restated(p, r)) == Some(@"forged-singular-tag")
+  refusedAs(restated(p, r), @"forged-singular-tag")
 }
 
 test termination_booking_refuses_another_keys_singular_tag() {
@@ -307,7 +319,7 @@ test termination_booking_refuses_another_keys_singular_tag() {
     from_lovelace(declared(p.request))
       |> merge(singular(fx.keyB))
       |> merge(trieTag(p.request))
-  reason(withValue(p, value)) == Some(@"forged-singular-tag")
+  refusedAs(withValue(p, value), @"forged-singular-tag")
 }
 
 test termination_booking_refuses_a_wrongly_named_trie_ready_tag() {
@@ -317,7 +329,8 @@ test termination_booking_refuses_a_wrongly_named_trie_ready_tag() {
     from_lovelace(declared(p.request))
       |> merge(singular(p.request.key))
       |> merge(wrong)
-  reason(Plan { ..withValue(p, value), mint: wrong }) == Some(
+  refusedAs(
+    Plan { ..withValue(p, value), mint: wrong },
     @"forged-trie-ready-tag",
   )
 }
@@ -330,19 +343,20 @@ test termination_booking_refuses_an_extra_minted_trie_ready_tag() {
       expectedTrieTag(p.request.key, p.request.destination, p.request.nonce),
       2,
     )
-  reason(Plan { ..p, mint: twice }) == Some(@"forged-trie-ready-tag")
+  refusedAs(Plan { ..p, mint: twice }, @"forged-trie-ready-tag")
 }
 
 test termination_booking_refuses_a_booking_with_no_custody_input() {
   let p = plan()
-  reason(Plan { ..p, inputs: [ordinaryInput()] }) == Some(
+  refusedAs(
+    Plan { ..p, inputs: [ordinaryInput()] },
     @"singular-tag-not-in-custody",
   )
 }
 
 test termination_booking_refuses_a_second_input_claiming_the_singular_tag() {
   let p = plan()
-  reason(
+  refusedAs(
     Plan {
       ..p,
       inputs: [
@@ -351,7 +365,8 @@ test termination_booking_refuses_a_second_input_claiming_the_singular_tag() {
         ordinaryInput(),
       ],
     },
-  ) == Some(@"forged-singular-tag")
+    @"forged-singular-tag",
+  )
 }
 
 test termination_booking_precedence_puts_dirty_before_hidden_surplus() {
@@ -366,7 +381,45 @@ test termination_booking_precedence_puts_dirty_before_hidden_surplus() {
     from_lovelace(declared(r) + 1)
       |> merge(singular(p.request.key))
       |> merge(trieTag(p.request))
-  reason(Plan { ..restated(p, r), outputs: [requestOutput(r, value)] }) == Some(
+  refusedAs(
+    Plan { ..restated(p, r), outputs: [requestOutput(r, value)] },
+    @"dirty-request",
+  )
+}
+
+// ----------------------------------------------------------------------------
+// The natural-number domain of the wire fields (Lean `carrierAda`, `nonce`)
+// ----------------------------------------------------------------------------
+//
+// The model's carrier and nonce are natural numbers, so a negative one has no
+// model inhabitant; the wire carries them as integers, and a request that
+// states one is malformed contents (`dirty-request`). Both requests are
+// otherwise consistent: the declared total equals the held lovelace, the tip
+// is at least the minimum, the tags are the ones the datum commits to.
+
+test termination_booking_refuses_a_negative_carrier() {
+  let p = plan()
+  let r =
+    TerminationRequest {
+      ..p.request,
+      declared_tip: declared(p.request) + 1,
+      carrier_ada: 0 - 1,
+    }
+  refusedAs(restated(p, r), @"dirty-request")
+}
+
+test termination_booking_refuses_a_negative_nonce() {
+  let p = plan()
+  let r = TerminationRequest { ..p.request, nonce: 0 - 1 }
+  let value =
+    from_lovelace(declared(r)) |> merge(singular(r.key)) |> merge(trieTag(r))
+  refusedAs(
+    Plan {
+      ..p,
+      request: r,
+      mint: trieTag(r),
+      outputs: [requestOutput(r, value)],
+    },
     @"dirty-request",
   )
 }
