@@ -229,9 +229,18 @@ given: the registry boots from the change of the first publication. The windows
 are the defaults, ten minutes to fold a request and five minutes after that to
 take it back.
 
+`create` also needs two values that have no default:
+`--registration-cost LOVELACE`, the cost each registration of the registry pays,
+in lovelace, zero or more, and `--booking-width MS`, the widest validity
+interval a registration booking may carry, in positive integer milliseconds. The
+commands below pass 0 and 60 000, the values the development-node page passes,
+and the registry fixes both for its life. The table at the top says what has
+been played on preprod: the 18 October run joined an existing registry and did
+not run this step.
+
 ```bash
-"$open_datum" create --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-address "$alice_addr"
-"$open_datum" create --state-dir reg --blueprint "$blueprint" "${provider[@]}" "${alice[@]}" 3< wallets/alice.passphrase > create.json
+"$open_datum" create --registration-cost 0 --booking-width 60000 --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-address "$alice_addr"
+"$open_datum" create --registration-cost 0 --booking-width 60000 --state-dir reg --blueprint "$blueprint" "${provider[@]}" "${alice[@]}" 3< wallets/alice.passphrase > create.json
 token=(--state-token "$(jq -r .stateToken create.json)")
 jq '{outcome, stateToken, seed, processTime, retractTime}' create.json
 ```
