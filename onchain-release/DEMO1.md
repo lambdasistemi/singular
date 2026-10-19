@@ -80,6 +80,8 @@ flowchart TB
 | deposit | 2 tADA (2 000 000 lovelace) a key's envelope protects, paid back when the key is terminated |
 | processing window | how long a request may wait for its fold |
 | retract window | how long after that the owner may take the request back |
+| registration cost | what each registration of a registry pays, in lovelace, zero or more; required, no default, fixed for the registry's life |
+| booking width | the widest validity interval a registration booking may carry, in milliseconds; required, no default, fixed for the registry's life |
 | vault | a file holding one wallet's signing key, sealed by a passphrase; made by `singular wallet create` |
 | bundle | the unsigned transactions of one command, written to a file for an external signer |
 | Koios | the public indexer API every command reads and submits through |
@@ -224,9 +226,11 @@ wait_for_slot() { until [ "$(curl -fsS "$koios_url/tip" | jq -r '.[0].abs_slot')
 
 # 1. Preview the identity the wallet's output gives, from Alice's address alone,
 #    then create the registry. The windows are short, so steps 11 and 14 wait
-#    minutes rather than the ten and five of the defaults.
-"$open_datum" create --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-address "$alice_addr"
-"$open_datum" create --process-time 120000 --retract-time 60000 \
+#    minutes rather than the ten and five of the defaults. The registration cost
+#    (in lovelace) and the booking width (in milliseconds) are required, have no
+#    default and stay fixed for the life of the registry.
+"$open_datum" create --registration-cost 0 --booking-width 60000 --preview --state-dir reg --blueprint "$blueprint" "${provider[@]}" --wallet-address "$alice_addr"
+"$open_datum" create --registration-cost 0 --booking-width 60000 --process-time 120000 --retract-time 60000 \
   --state-dir reg --blueprint "$blueprint" "${provider[@]}" "${alice[@]}" 3< alice.passphrase \
   > create.json
 # Every later command names the registry by the state token create printed.
@@ -364,7 +368,12 @@ print the envelope it built.
    three witness policies) and the published reference outputs. The preview
    names the token and the seed before anything is submitted. The wallet holds
    one output, so no seed is given: the registry boots from the change of its
-   first publication. `create` writes no identity file. Every later command
+   first publication. `create` also needs two values that have no default:
+   `--registration-cost LOVELACE`, the cost each registration of the registry
+   pays, in lovelace, zero or more, and `--booking-width MS`, the widest
+   validity interval a registration booking may carry, in positive integer
+   milliseconds; the runs on this page pass 0 and 60 000, and the registry
+   fixes both for its life. `create` writes no identity file. Every later command
    derives the registry from the state token and this archive's blueprint,
    checks it against the chain and refuses by name when they disagree, such as
    `state-token-not-found` or `registry-pin-mismatch application`. Its receipt
@@ -493,7 +502,7 @@ byte for byte the same afterwards.
 
 ```bash
 # The identity the wallet's output gives, and what each write would cost, from public facts alone.
-"$open_datum" create --preview --state-dir reg --blueprint "$blueprint" \
+"$open_datum" create --registration-cost 0 --booking-width 60000 --preview --state-dir reg --blueprint "$blueprint" \
   "${provider[@]}" --wallet-address "$alice_addr"
 "$open_datum" insert --preview --state-dir reg --blueprint "$blueprint" "${token[@]}" --key dave \
   --payload payload.json "${provider[@]}" --wallet-address "$alice_addr"
