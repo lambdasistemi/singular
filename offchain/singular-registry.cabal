@@ -841,6 +841,7 @@ executable devnet
   hs-source-dirs:   devnet private-facade
   main-is:          Main.hs
   other-modules:
+    Devnet.Carry
     Devnet.Probe
     Singular.Registry.Private.Archive
     Singular.Registry.Private.EpochParameters
@@ -863,6 +864,7 @@ executable devnet
     , cardano-ledger-core
     , cardano-ledger-mary
     , cardano-ledger-read
+    , cardano-ledger-shelley
     , cardano-node-clients
     , cardano-node-clients:devnet
     , cardano-slotting

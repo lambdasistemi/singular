@@ -48,6 +48,15 @@ unspent, and prints one JSON object,
 @{"tip":{"slot":N,"hash":HEX},"live":[...],"spent":[...]}@. A control
 that rolls a development node back reads the node's own answer through
 it, never the answer of the command under test.
+
+@devnet carry --koios-url URL --network-time DIR --network-magic N
+--wallet-skey FILE --receipt FILE@ is a harness-only setup step, never a
+product command and never booking evidence ("Devnet.Carry"): it spends
+the ada-only outputs of the key's wallet, mints one unit each of two
+asset kinds under a policy only that key can satisfy, pays two outputs
+back to the wallet so that none is ada-only, and writes a receipt that
+says it is setup. A journey uses it to give a wallet the shape that
+needs a preparation to book.
 -}
 module Main (main) where
 
@@ -111,6 +120,7 @@ import Cardano.Node.Client.E2E.Setup
     , rawSerialiseSignKeyDSIGN
     )
 import Control.Tracer (nullTracer)
+import Devnet.Carry (carryWallet)
 import Devnet.Probe qualified as Probe
 import Singular.Provider.Koios.Wire (parseAddress)
 import Singular.Registry.Private.Facade
@@ -181,6 +191,7 @@ dispatch = do
                     (flag "--evidence-dir" rest)
             runFacadeSmoke gDir output
         ("probe" : rest) -> probe rest
+        ("carry" : rest) -> carry rest
         _ -> spawn args
 
 -- | Spawn the private facade, fund through shared HTTP, print settings, wait.
@@ -435,6 +446,34 @@ probe args = do
         either (die . ("devnet probe: " <>)) pure $
             traverse (parseOutRef . T.pack) (every "--tx-in" args)
     Probe.probe sock magicWord txIns
+
+{- | Read the carry flags and run the harness-only setup step
+("Devnet.Carry") against the provider they name.
+-}
+carry :: [String] -> IO ()
+carry args = do
+    url <- required "--koios-url"
+    timeDirectory <- required "--network-time"
+    spelling <- required "--network-magic"
+    magic <-
+        maybe (die "devnet carry: --network-magic is not a number") pure $
+            readMaybe spelling
+    key <- required "--wallet-skey"
+    receipt <- required "--receipt"
+    wallet <- loadWallet magic key
+    let settings =
+            ProviderSettings
+                { providerUrl = url
+                , providerMagic = magic
+                , providerTokenFile = Nothing
+                , providerTimeDirectory = Just timeDirectory
+                }
+    withReads nullTracer nullTracer settings $ \caps ->
+        carryWallet caps wallet receipt
+  where
+    required name =
+        maybe (die ("devnet carry: " <> name <> " is required")) pure $
+            flag name args
 
 {- | Pay the requested outputs from the genesis key and wait for them,
 through the shipping shared HTTP constructor and exact-output confirmation.
