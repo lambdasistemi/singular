@@ -1544,6 +1544,7 @@
                   # never typed into a record.
                   declared_changes_records=(
                     "$root/specs/529-request-tag/evidence/declared-changes.json"
+                    "$root/specs/529-request-tag/evidence/declared-changes-fold.json"
                   )
                   [ -f "$declared" ] || {
                     echo "script-hash-comparison: no declared-additions.json under $root" >&2

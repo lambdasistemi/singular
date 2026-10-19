@@ -7,32 +7,32 @@
   "validators": [
     {
       "title": "open_datum.closed_datum.mint",
-      "hash": "a0ee515fa4d25df499e7854b5fb7f4dab54ef80b672e2c819b2638de",
+      "hash": "91614298d56a94f8206f479c756fb4b603ad3a69df40c1e60af5e2cb",
       "parameters": 1
     },
     {
       "title": "open_datum.closed_datum.spend",
-      "hash": "a0ee515fa4d25df499e7854b5fb7f4dab54ef80b672e2c819b2638de",
+      "hash": "91614298d56a94f8206f479c756fb4b603ad3a69df40c1e60af5e2cb",
       "parameters": 1
     },
     {
       "title": "open_datum.closed_datum.else",
-      "hash": "a0ee515fa4d25df499e7854b5fb7f4dab54ef80b672e2c819b2638de",
+      "hash": "91614298d56a94f8206f479c756fb4b603ad3a69df40c1e60af5e2cb",
       "parameters": 1
     },
     {
       "title": "open_datum.open_datum.mint",
-      "hash": "a02174f57a8a51968ec658058399c84b7f467f15dfc6903973cf50b7",
+      "hash": "ef19c3bb78be82f62b24e784a3ba7cae6ce234e0e7e0146097c9885c",
       "parameters": 1
     },
     {
       "title": "open_datum.open_datum.spend",
-      "hash": "a02174f57a8a51968ec658058399c84b7f467f15dfc6903973cf50b7",
+      "hash": "ef19c3bb78be82f62b24e784a3ba7cae6ce234e0e7e0146097c9885c",
       "parameters": 1
     },
     {
       "title": "open_datum.open_datum.else",
-      "hash": "a02174f57a8a51968ec658058399c84b7f467f15dfc6903973cf50b7",
+      "hash": "ef19c3bb78be82f62b24e784a3ba7cae6ce234e0e7e0146097c9885c",
       "parameters": 1
     }
   ]

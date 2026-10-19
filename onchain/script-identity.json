@@ -7,27 +7,27 @@
   "validators": [
     {
       "title": "open.open.mint",
-      "hash": "f21052bb5fb82d4df38b66b21fb0771b1c0366fec7d2d8ac5f043593",
+      "hash": "d31ccd4ea7cce47b5fe3a6012693539c1f708e9cbd2389aaf7ee2dd4",
       "parameters": 0
     },
     {
       "title": "open.open.else",
-      "hash": "f21052bb5fb82d4df38b66b21fb0771b1c0366fec7d2d8ac5f043593",
+      "hash": "d31ccd4ea7cce47b5fe3a6012693539c1f708e9cbd2389aaf7ee2dd4",
       "parameters": 0
     },
     {
       "title": "request.request.spend",
-      "hash": "56a422f4367ca86dbdaa66d8536ef7d2bde4d376e291add9f57094c8",
+      "hash": "ad1a19d2e12f6e2137005709244cb2dfa713e74974328c75789d0787",
       "parameters": 2
     },
     {
       "title": "request.request.mint",
-      "hash": "56a422f4367ca86dbdaa66d8536ef7d2bde4d376e291add9f57094c8",
+      "hash": "ad1a19d2e12f6e2137005709244cb2dfa713e74974328c75789d0787",
       "parameters": 2
     },
     {
       "title": "request.request.else",
-      "hash": "56a422f4367ca86dbdaa66d8536ef7d2bde4d376e291add9f57094c8",
+      "hash": "ad1a19d2e12f6e2137005709244cb2dfa713e74974328c75789d0787",
       "parameters": 2
     },
     {
@@ -42,27 +42,27 @@
     },
     {
       "title": "state.state.mint",
-      "hash": "21c303e0a3ddf43834d9050cf33ec57a9dfd75dcd606b48a38ec9fc1",
+      "hash": "4d9efebdde87e0b29a8fe1887022a6b802769172842f4dca4460c94f",
       "parameters": 0
     },
     {
       "title": "state.state.spend",
-      "hash": "21c303e0a3ddf43834d9050cf33ec57a9dfd75dcd606b48a38ec9fc1",
+      "hash": "4d9efebdde87e0b29a8fe1887022a6b802769172842f4dca4460c94f",
       "parameters": 0
     },
     {
       "title": "state.state.else",
-      "hash": "21c303e0a3ddf43834d9050cf33ec57a9dfd75dcd606b48a38ec9fc1",
+      "hash": "4d9efebdde87e0b29a8fe1887022a6b802769172842f4dca4460c94f",
       "parameters": 0
     },
     {
       "title": "witness.witness.mint",
-      "hash": "6716808cdb8f1281e314cded648842e2d18b775e63cbe7bdc6e091b2",
+      "hash": "468512fedc3ed33edb11b5f7d6e3bcdb8f50d31c41ae0743cd91690e",
       "parameters": 2
     },
     {
       "title": "witness.witness.else",
-      "hash": "6716808cdb8f1281e314cded648842e2d18b775e63cbe7bdc6e091b2",
+      "hash": "468512fedc3ed33edb11b5f7d6e3bcdb8f50d31c41ae0743cd91690e",
       "parameters": 2
     }
   ]

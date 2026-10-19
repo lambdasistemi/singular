@@ -1,0 +1,18 @@
+{
+  "changed": [
+    "open.open.mint",
+    "open.open.else",
+    "request.request.spend",
+    "request.request.mint",
+    "request.request.else",
+    "state.state.mint",
+    "state.state.spend",
+    "state.state.else",
+    "witness.witness.mint",
+    "witness.witness.else",
+    "open_datum.open_datum.mint",
+    "open_datum.open_datum.spend",
+    "open_datum.open_datum.else"
+  ],
+  "added": []
+}
