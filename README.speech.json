@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of singular-demo, which holds singular, open-datum and the development node for release v0.12.0, on x86_64 Linux with Nix.",
       "pause": 400
     },
     {
@@ -147,6 +147,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "c1c73be43d00a20c6a7f1964be33084dbfa3416440d05aef14f05d9e86a80550"
+    "sha256": "396d71dec151a9fab8a521b8369fcc01b160942bf679e81eac3daf82dc9c216d"
   }
 }

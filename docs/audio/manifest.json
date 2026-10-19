@@ -4181,17 +4181,17 @@
    ]
   },
   "README/start-here-play-demo-1-01": {
-   "audio_sha256": "c307e5d098e00e94bcb914ed62dda94c24e40717b9dfaeb6c975e840206b874f",
-   "characters": 475,
-   "cost": 0.00047024999999999996,
-   "duration": 31.625,
+   "audio_sha256": "14543159067d626d480853db81585fa5664aea472a6479eb4cd163148a115d6e",
+   "characters": 648,
+   "cost": 0.00064152,
+   "duration": 45.375,
    "index": 1,
-   "key": "998025e5e546ea6877b135b8a9f38fd2280ebb5ca6d710420ca0cd39f5a30e8c",
+   "key": "b0900612985eb65c0f9e6bea3ed78799ec63fdc81d743367f01d5f5bff12b3c4",
    "page": "README.md",
    "pause_ms": 400,
    "section": "start-here-play-demo-1",
-   "sent_text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
-   "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet.",
+   "sent_text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of singular-demo, which holds singular, open-datum and the development node for release v0.12.0, on x86_64 Linux with Nix.",
+   "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of singular-demo, which holds singular, open-datum and the development node for release v0.12.0, on x86_64 Linux with Nix.",
    "words": [
     {
      "end": 0.387,
@@ -4681,6 +4681,166 @@
     {
      "end": 31.625,
      "start": 31.425,
+     "text": "."
+    },
+    {
+     "end": 31.875,
+     "start": 31.8,
+     "text": "The"
+    },
+    {
+     "end": 32.25,
+     "start": 31.875,
+     "text": "quickest"
+    },
+    {
+     "end": 32.425,
+     "start": 32.25,
+     "text": "way"
+    },
+    {
+     "end": 32.513,
+     "start": 32.425,
+     "text": "to"
+    },
+    {
+     "end": 32.6,
+     "start": 32.513,
+     "text": "the"
+    },
+    {
+     "end": 33.375,
+     "start": 32.6,
+     "text": "programs"
+    },
+    {
+     "end": 33.55,
+     "start": 33.375,
+     "text": "is"
+    },
+    {
+     "end": 33.688,
+     "start": 33.55,
+     "text": "the"
+    },
+    {
+     "end": 33.963,
+     "start": 33.688,
+     "text": "Nix"
+    },
+    {
+     "end": 34.275,
+     "start": 33.963,
+     "text": "shell"
+    },
+    {
+     "end": 34.412,
+     "start": 34.275,
+     "text": "of"
+    },
+    {
+     "end": 35.675,
+     "start": 34.412,
+     "text": "singular-demo"
+    },
+    {
+     "end": 35.95,
+     "start": 35.675,
+     "text": ","
+    },
+    {
+     "end": 36.325,
+     "start": 36.15,
+     "text": "which"
+    },
+    {
+     "end": 36.638,
+     "start": 36.325,
+     "text": "holds"
+    },
+    {
+     "end": 37.225,
+     "start": 36.638,
+     "text": "singular"
+    },
+    {
+     "end": 37.3,
+     "start": 37.225,
+     "text": ","
+    },
+    {
+     "end": 38.138,
+     "start": 37.3,
+     "text": "open-datum"
+    },
+    {
+     "end": 38.263,
+     "start": 38.138,
+     "text": "and"
+    },
+    {
+     "end": 38.338,
+     "start": 38.263,
+     "text": "the"
+    },
+    {
+     "end": 38.9,
+     "start": 38.338,
+     "text": "development"
+    },
+    {
+     "end": 39.312,
+     "start": 38.9,
+     "text": "node"
+    },
+    {
+     "end": 39.45,
+     "start": 39.312,
+     "text": "for"
+    },
+    {
+     "end": 39.912,
+     "start": 39.45,
+     "text": "release"
+    },
+    {
+     "end": 41.85,
+     "start": 39.912,
+     "text": "v0.12.0"
+    },
+    {
+     "end": 42.15,
+     "start": 41.85,
+     "text": ","
+    },
+    {
+     "end": 42.45,
+     "start": 42.325,
+     "text": "on"
+    },
+    {
+     "end": 43.875,
+     "start": 42.45,
+     "text": "x86_64"
+    },
+    {
+     "end": 44.188,
+     "start": 43.875,
+     "text": "Linux"
+    },
+    {
+     "end": 44.35,
+     "start": 44.188,
+     "text": "with"
+    },
+    {
+     "end": 45.175,
+     "start": 44.35,
+     "text": "Nix"
+    },
+    {
+     "end": 45.375,
+     "start": 45.175,
      "text": "."
     }
    ]
@@ -91681,256 +91841,1266 @@
    ]
   },
   "docs-consumer-onboarding/download-and-check-the-release-02": {
-   "audio_sha256": "5e3493f1758f67db2653b2b4e44065f640c4936be16b856c7b38c272d140835e",
-   "characters": 251,
-   "cost": 0.00024849,
-   "duration": 18.05,
+   "audio_sha256": "faa4d71e3230859d10053c8baa7c8bca6e3312578d6238c5c4de66b83fc6e0dd",
+   "characters": 989,
+   "cost": 0.00097911,
+   "duration": 72.275,
    "index": 2,
-   "key": "8c2bf009db8df5fc5e69d010a5fd8fd61cffd78c8517401845456f0285f0657a",
+   "key": "c9b65cdac08265f53b9cc8c68fa53ecdd54297efe6f5965439c9197f16c732f7",
    "page": "docs/consumer-onboarding.md",
    "pause_ms": 400,
    "section": "download-and-check-the-release",
-   "sent_text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
-   "text": "Building the two commands compiles a large Haskell stack unless the project's public binary cache serves it; the same page says how to use the cache. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "sent_text": "The quickest way to the programs is the Nix shell of singular-demo. nix develop github:lambdasistemi/singular-demo --accept-flake-config opens a shell with singular, open-datum, the development node devnet and jq already built by the project's CI, and fetches about 190 MiB from the public caches instead of compiling anything. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time. On a multi-user Nix install a user who is not in trusted-users cannot take the caches from a flake; that repository's README says what to change. You still need the archive, for the run page, the blueprint and the readback script. The shell's own $blueprint holds the same bytes as the archive's onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, which singular registry describe refuses without, so name the archive's file as the blueprint.",
+   "text": "The quickest way to the programs is the Nix shell of singular-demo. nix develop github:lambdasistemi/singular-demo --accept-flake-config opens a shell with singular, open-datum, the development node devnet and jq already built by the project's CI, and fetches about 190 MiB from the public caches instead of compiling anything. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time. On a multi-user Nix install a user who is not in trusted-users cannot take the caches from a flake; that repository's README says what to change. You still need the archive, for the run page, the blueprint and the readback script. The shell's own $blueprint holds the same bytes as the archive's onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, which singular registry describe refuses without, so name the archive's file as the blueprint.",
    "words": [
     {
-     "end": 0.525,
-     "start": 0.2,
-     "text": "Building"
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
     },
     {
-     "end": 0.663,
-     "start": 0.525,
-     "text": "the"
+     "end": 0.625,
+     "start": 0.25,
+     "text": "quickest"
     },
     {
-     "end": 0.875,
-     "start": 0.663,
-     "text": "two"
+     "end": 0.8,
+     "start": 0.625,
+     "text": "way"
     },
     {
-     "end": 1.45,
-     "start": 0.875,
-     "text": "commands"
-    },
-    {
-     "end": 1.975,
-     "start": 1.45,
-     "text": "compiles"
-    },
-    {
-     "end": 2.088,
-     "start": 1.975,
-     "text": "a"
-    },
-    {
-     "end": 2.475,
-     "start": 2.088,
-     "text": "large"
-    },
-    {
-     "end": 3.025,
-     "start": 2.475,
-     "text": "Haskell"
-    },
-    {
-     "end": 3.463,
-     "start": 3.025,
-     "text": "stack"
-    },
-    {
-     "end": 3.8,
-     "start": 3.463,
-     "text": "unless"
-    },
-    {
-     "end": 3.9,
-     "start": 3.8,
-     "text": "the"
-    },
-    {
-     "end": 4.438,
-     "start": 3.9,
-     "text": "project's"
-    },
-    {
-     "end": 4.85,
-     "start": 4.438,
-     "text": "public"
-    },
-    {
-     "end": 5.287,
-     "start": 4.85,
-     "text": "binary"
-    },
-    {
-     "end": 5.675,
-     "start": 5.287,
-     "text": "cache"
-    },
-    {
-     "end": 6.062,
-     "start": 5.675,
-     "text": "serves"
-    },
-    {
-     "end": 6.825,
-     "start": 6.062,
-     "text": "it"
-    },
-    {
-     "end": 7.05,
-     "start": 6.825,
-     "text": ";"
-    },
-    {
-     "end": 7.338,
-     "start": 7.225,
-     "text": "the"
-    },
-    {
-     "end": 7.65,
-     "start": 7.338,
-     "text": "same"
-    },
-    {
-     "end": 8.0,
-     "start": 7.65,
-     "text": "page"
-    },
-    {
-     "end": 8.225,
-     "start": 8.0,
-     "text": "says"
-    },
-    {
-     "end": 8.4,
-     "start": 8.225,
-     "text": "how"
-    },
-    {
-     "end": 8.525,
-     "start": 8.4,
+     "end": 0.887,
+     "start": 0.8,
      "text": "to"
     },
     {
-     "end": 8.775,
-     "start": 8.525,
-     "text": "use"
-    },
-    {
-     "end": 8.875,
-     "start": 8.775,
+     "end": 0.975,
+     "start": 0.887,
      "text": "the"
     },
     {
-     "end": 9.45,
-     "start": 8.875,
-     "text": "cache"
+     "end": 1.75,
+     "start": 0.975,
+     "text": "programs"
     },
     {
-     "end": 9.587,
-     "start": 9.45,
-     "text": "."
-    },
-    {
-     "end": 9.825,
-     "start": 9.587,
-     "text": "No"
-    },
-    {
-     "end": 10.188,
-     "start": 9.825,
-     "text": "release"
-    },
-    {
-     "end": 10.5,
-     "start": 10.188,
-     "text": "ships"
-    },
-    {
-     "end": 11.0,
-     "start": 10.5,
-     "text": "ready-built"
-    },
-    {
-     "end": 11.525,
-     "start": 11.0,
-     "text": "binaries"
-    },
-    {
-     "end": 12.35,
-     "start": 11.525,
-     "text": "yet"
-    },
-    {
-     "end": 12.575,
-     "start": 12.35,
-     "text": "."
-    },
-    {
-     "end": 12.85,
-     "start": 12.775,
-     "text": "A"
-    },
-    {
-     "end": 13.3,
-     "start": 12.85,
-     "text": "binary"
-    },
-    {
-     "end": 13.85,
-     "start": 13.3,
-     "text": "install"
-    },
-    {
-     "end": 14.0,
-     "start": 13.85,
-     "text": "that"
-    },
-    {
-     "end": 14.312,
-     "start": 14.0,
-     "text": "needs"
-    },
-    {
-     "end": 14.575,
-     "start": 14.312,
-     "text": "no"
-    },
-    {
-     "end": 14.85,
-     "start": 14.575,
-     "text": "Nix"
-    },
-    {
-     "end": 15.0,
-     "start": 14.85,
+     "end": 1.925,
+     "start": 1.75,
      "text": "is"
     },
     {
-     "end": 15.325,
-     "start": 15.0,
-     "text": "coming"
+     "end": 2.062,
+     "start": 1.925,
+     "text": "the"
     },
     {
-     "end": 15.45,
-     "start": 15.325,
+     "end": 2.338,
+     "start": 2.062,
+     "text": "Nix"
+    },
+    {
+     "end": 2.675,
+     "start": 2.338,
+     "text": "shell"
+    },
+    {
+     "end": 2.838,
+     "start": 2.675,
+     "text": "of"
+    },
+    {
+     "end": 4.2,
+     "start": 2.838,
+     "text": "singular-demo"
+    },
+    {
+     "end": 4.4,
+     "start": 4.2,
+     "text": "."
+    },
+    {
+     "end": 4.9,
+     "start": 4.65,
+     "text": "nix"
+    },
+    {
+     "end": 5.325,
+     "start": 4.9,
+     "text": "develop"
+    },
+    {
+     "end": 5.775,
+     "start": 5.325,
+     "text": "github"
+    },
+    {
+     "end": 5.85,
+     "start": 5.775,
+     "text": ":"
+    },
+    {
+     "end": 8.188,
+     "start": 5.85,
+     "text": "lambdasistemi/singular-demo"
+    },
+    {
+     "end": 8.275,
+     "start": 8.188,
+     "text": "--"
+    },
+    {
+     "end": 9.438,
+     "start": 8.275,
+     "text": "accept-flake-config"
+    },
+    {
+     "end": 9.8,
+     "start": 9.438,
+     "text": "opens"
+    },
+    {
+     "end": 9.925,
+     "start": 9.8,
+     "text": "a"
+    },
+    {
+     "end": 10.25,
+     "start": 9.925,
+     "text": "shell"
+    },
+    {
+     "end": 10.438,
+     "start": 10.25,
+     "text": "with"
+    },
+    {
+     "end": 11.55,
+     "start": 10.438,
+     "text": "singular"
+    },
+    {
+     "end": 11.775,
+     "start": 11.55,
+     "text": ","
+    },
+    {
+     "end": 12.725,
+     "start": 11.975,
+     "text": "open-datum"
+    },
+    {
+     "end": 12.8,
+     "start": 12.725,
+     "text": ","
+    },
+    {
+     "end": 12.9,
+     "start": 12.8,
+     "text": "the"
+    },
+    {
+     "end": 13.475,
+     "start": 12.9,
+     "text": "development"
+    },
+    {
+     "end": 13.812,
+     "start": 13.475,
+     "text": "node"
+    },
+    {
+     "end": 14.3,
+     "start": 13.812,
+     "text": "devnet"
+    },
+    {
+     "end": 14.425,
+     "start": 14.3,
+     "text": "and"
+    },
+    {
+     "end": 15.05,
+     "start": 14.425,
+     "text": "jq"
+    },
+    {
+     "end": 15.475,
+     "start": 15.05,
+     "text": "already"
+    },
+    {
+     "end": 15.75,
+     "start": 15.475,
+     "text": "built"
+    },
+    {
+     "end": 15.887,
+     "start": 15.75,
+     "text": "by"
+    },
+    {
+     "end": 15.975,
+     "start": 15.887,
+     "text": "the"
+    },
+    {
+     "end": 16.513,
+     "start": 15.975,
+     "text": "project's"
+    },
+    {
+     "end": 17.575,
+     "start": 16.513,
+     "text": "CI"
+    },
+    {
+     "end": 17.8,
+     "start": 17.575,
+     "text": ","
+    },
+    {
+     "end": 18.138,
+     "start": 18.0,
+     "text": "and"
+    },
+    {
+     "end": 18.575,
+     "start": 18.138,
+     "text": "fetches"
+    },
+    {
+     "end": 18.9,
+     "start": 18.575,
+     "text": "about"
+    },
+    {
+     "end": 19.9,
+     "start": 18.9,
+     "text": "190"
+    },
+    {
+     "end": 20.425,
+     "start": 19.9,
+     "text": "MiB"
+    },
+    {
+     "end": 20.587,
+     "start": 20.425,
+     "text": "from"
+    },
+    {
+     "end": 20.675,
+     "start": 20.587,
+     "text": "the"
+    },
+    {
+     "end": 21.075,
+     "start": 20.675,
+     "text": "public"
+    },
+    {
+     "end": 21.737,
+     "start": 21.075,
+     "text": "caches"
+    },
+    {
+     "end": 22.138,
+     "start": 21.737,
+     "text": "instead"
+    },
+    {
+     "end": 22.225,
+     "start": 22.138,
+     "text": "of"
+    },
+    {
+     "end": 22.8,
+     "start": 22.225,
+     "text": "compiling"
+    },
+    {
+     "end": 23.925,
+     "start": 22.8,
+     "text": "anything"
+    },
+    {
+     "end": 24.125,
+     "start": 23.925,
+     "text": "."
+    },
+    {
+     "end": 24.525,
+     "start": 24.3,
+     "text": "Its"
+    },
+    {
+     "end": 25.225,
+     "start": 24.525,
+     "text": "limits"
+    },
+    {
+     "end": 25.45,
+     "start": 25.225,
+     "text": ":"
+    },
+    {
+     "end": 25.775,
+     "start": 25.675,
+     "text": "it"
+    },
+    {
+     "end": 25.938,
+     "start": 25.775,
+     "text": "is"
+    },
+    {
+     "end": 26.225,
+     "start": 25.938,
+     "text": "pinned"
+    },
+    {
+     "end": 26.325,
+     "start": 26.225,
+     "text": "to"
+    },
+    {
+     "end": 26.763,
+     "start": 26.325,
+     "text": "release"
+    },
+    {
+     "end": 28.275,
+     "start": 26.763,
+     "text": "v0.12.0"
+    },
+    {
+     "end": 28.388,
+     "start": 28.275,
+     "text": ","
+    },
+    {
+     "end": 28.525,
+     "start": 28.388,
+     "text": "it"
+    },
+    {
+     "end": 28.688,
+     "start": 28.525,
+     "text": "is"
+    },
+    {
+     "end": 28.975,
+     "start": 28.688,
+     "text": "built"
+    },
+    {
+     "end": 29.138,
+     "start": 28.975,
+     "text": "for"
+    },
+    {
+     "end": 30.7,
+     "start": 29.138,
+     "text": "x86_64"
+    },
+    {
+     "end": 31.025,
+     "start": 30.7,
+     "text": "Linux"
+    },
+    {
+     "end": 31.575,
+     "start": 31.025,
+     "text": "only"
+    },
+    {
+     "end": 31.712,
+     "start": 31.575,
+     "text": ","
+    },
+    {
+     "end": 31.85,
+     "start": 31.712,
+     "text": "it"
+    },
+    {
+     "end": 32.162,
+     "start": 31.85,
+     "text": "needs"
+    },
+    {
+     "end": 33.175,
+     "start": 32.162,
+     "text": "Nix"
+    },
+    {
+     "end": 33.4,
+     "start": 33.175,
+     "text": ","
+    },
+    {
+     "end": 33.688,
+     "start": 33.6,
+     "text": "and"
+    },
+    {
+     "end": 33.775,
+     "start": 33.688,
+     "text": "it"
+    },
+    {
+     "end": 34.075,
+     "start": 33.775,
+     "text": "keeps"
+    },
+    {
+     "end": 34.175,
+     "start": 34.075,
+     "text": "the"
+    },
+    {
+     "end": 34.725,
+     "start": 34.175,
+     "text": "development"
+    },
+    {
+     "end": 35.138,
+     "start": 34.725,
+     "text": "node's"
+    },
+    {
+     "end": 35.625,
+     "start": 35.138,
+     "text": "files"
+    },
+    {
+     "end": 35.787,
+     "start": 35.625,
      "text": "in"
     },
     {
-     "end": 15.938,
-     "start": 15.45,
+     "end": 36.05,
+     "start": 35.787,
+     "text": "one"
+    },
+    {
+     "end": 36.575,
+     "start": 36.05,
+     "text": "directory"
+    },
+    {
+     "end": 36.775,
+     "start": 36.575,
+     "text": "per"
+    },
+    {
+     "end": 37.7,
+     "start": 36.775,
+     "text": "user"
+    },
+    {
+     "end": 37.925,
+     "start": 37.7,
+     "text": ","
+    },
+    {
+     "end": 38.25,
+     "start": 38.125,
+     "text": "so"
+    },
+    {
+     "end": 38.475,
+     "start": 38.25,
+     "text": "run"
+    },
+    {
+     "end": 38.612,
+     "start": 38.475,
+     "text": "one"
+    },
+    {
+     "end": 38.838,
+     "start": 38.612,
+     "text": "node"
+    },
+    {
+     "end": 38.912,
+     "start": 38.838,
+     "text": "at"
+    },
+    {
+     "end": 38.975,
+     "start": 38.912,
+     "text": "a"
+    },
+    {
+     "end": 39.775,
+     "start": 38.975,
+     "text": "time"
+    },
+    {
+     "end": 39.975,
+     "start": 39.775,
+     "text": "."
+    },
+    {
+     "end": 40.312,
+     "start": 40.175,
+     "text": "On"
+    },
+    {
+     "end": 40.375,
+     "start": 40.312,
+     "text": "a"
+    },
+    {
+     "end": 41.112,
+     "start": 40.375,
+     "text": "multi-user"
+    },
+    {
+     "end": 41.475,
+     "start": 41.112,
+     "text": "Nix"
+    },
+    {
+     "end": 42.0,
+     "start": 41.475,
+     "text": "install"
+    },
+    {
+     "end": 42.112,
+     "start": 42.0,
+     "text": "a"
+    },
+    {
+     "end": 42.55,
+     "start": 42.112,
+     "text": "user"
+    },
+    {
+     "end": 42.7,
+     "start": 42.55,
+     "text": "who"
+    },
+    {
+     "end": 42.862,
+     "start": 42.7,
+     "text": "is"
+    },
+    {
+     "end": 43.125,
+     "start": 42.862,
+     "text": "not"
+    },
+    {
+     "end": 43.275,
+     "start": 43.125,
+     "text": "in"
+    },
+    {
+     "end": 44.188,
+     "start": 43.275,
+     "text": "trusted-users"
+    },
+    {
+     "end": 44.575,
+     "start": 44.188,
+     "text": "cannot"
+    },
+    {
+     "end": 44.825,
+     "start": 44.575,
+     "text": "take"
+    },
+    {
+     "end": 44.938,
+     "start": 44.825,
+     "text": "the"
+    },
+    {
+     "end": 45.45,
+     "start": 44.938,
+     "text": "caches"
+    },
+    {
+     "end": 45.588,
+     "start": 45.45,
+     "text": "from"
+    },
+    {
+     "end": 45.688,
+     "start": 45.588,
+     "text": "a"
+    },
+    {
+     "end": 46.7,
+     "start": 45.688,
+     "text": "flake"
+    },
+    {
+     "end": 46.925,
+     "start": 46.7,
+     "text": ";"
+    },
+    {
+     "end": 47.237,
+     "start": 47.1,
+     "text": "that"
+    },
+    {
+     "end": 47.963,
+     "start": 47.237,
+     "text": "repository's"
+    },
+    {
+     "end": 48.838,
+     "start": 47.963,
+     "text": "README"
+    },
+    {
+     "end": 49.1,
+     "start": 48.838,
+     "text": "says"
+    },
+    {
+     "end": 49.237,
+     "start": 49.1,
+     "text": "what"
+    },
+    {
+     "end": 49.362,
+     "start": 49.237,
+     "text": "to"
+    },
+    {
+     "end": 50.3,
+     "start": 49.362,
+     "text": "change"
+    },
+    {
+     "end": 50.525,
+     "start": 50.3,
+     "text": "."
+    },
+    {
+     "end": 50.85,
+     "start": 50.725,
+     "text": "You"
+    },
+    {
+     "end": 51.125,
+     "start": 50.85,
+     "text": "still"
+    },
+    {
+     "end": 51.312,
+     "start": 51.125,
+     "text": "need"
+    },
+    {
+     "end": 51.425,
+     "start": 51.312,
+     "text": "the"
+    },
+    {
+     "end": 51.975,
+     "start": 51.425,
+     "text": "archive"
+    },
+    {
+     "end": 52.025,
+     "start": 51.975,
+     "text": ","
+    },
+    {
+     "end": 52.138,
+     "start": 52.025,
+     "text": "for"
+    },
+    {
+     "end": 52.25,
+     "start": 52.138,
+     "text": "the"
+    },
+    {
+     "end": 52.513,
+     "start": 52.25,
+     "text": "run"
+    },
+    {
+     "end": 53.025,
+     "start": 52.513,
+     "text": "page"
+    },
+    {
+     "end": 53.1,
+     "start": 53.025,
+     "text": ","
+    },
+    {
+     "end": 53.2,
+     "start": 53.1,
+     "text": "the"
+    },
+    {
+     "end": 53.775,
+     "start": 53.2,
+     "text": "blueprint"
+    },
+    {
+     "end": 53.888,
+     "start": 53.775,
+     "text": "and"
+    },
+    {
+     "end": 53.975,
+     "start": 53.888,
+     "text": "the"
+    },
+    {
+     "end": 54.4,
+     "start": 53.975,
+     "text": "readback"
+    },
+    {
+     "end": 55.375,
+     "start": 54.4,
+     "text": "script"
+    },
+    {
+     "end": 55.575,
+     "start": 55.375,
+     "text": "."
+    },
+    {
+     "end": 55.862,
+     "start": 55.75,
+     "text": "The"
+    },
+    {
+     "end": 56.188,
+     "start": 55.862,
+     "text": "shell's"
+    },
+    {
+     "end": 56.375,
+     "start": 56.188,
+     "text": "own"
+    },
+    {
+     "end": 56.925,
+     "start": 56.375,
+     "text": "blueprint"
+    },
+    {
+     "end": 57.25,
+     "start": 56.925,
+     "text": "holds"
+    },
+    {
+     "end": 57.388,
+     "start": 57.25,
+     "text": "the"
+    },
+    {
+     "end": 57.7,
+     "start": 57.388,
+     "text": "same"
+    },
+    {
+     "end": 58.05,
+     "start": 57.7,
+     "text": "bytes"
+    },
+    {
+     "end": 58.188,
+     "start": 58.05,
+     "text": "as"
+    },
+    {
+     "end": 58.325,
+     "start": 58.188,
+     "text": "the"
+    },
+    {
+     "end": 58.9,
+     "start": 58.325,
+     "text": "archive's"
+    },
+    {
+     "end": 61.725,
+     "start": 58.9,
+     "text": "onchain/plutus.json"
+    },
+    {
+     "end": 61.95,
+     "start": 61.725,
+     "text": ","
+    },
+    {
+     "end": 62.237,
+     "start": 62.125,
+     "text": "but"
+    },
+    {
+     "end": 62.362,
+     "start": 62.237,
+     "text": "it"
+    },
+    {
+     "end": 62.662,
+     "start": 62.362,
+     "text": "sits"
+    },
+    {
+     "end": 62.737,
+     "start": 62.662,
+     "text": "in"
+    },
+    {
+     "end": 62.825,
+     "start": 62.737,
+     "text": "the"
+    },
+    {
+     "end": 63.075,
+     "start": 62.825,
+     "text": "Nix"
+    },
+    {
+     "end": 63.4,
+     "start": 63.075,
+     "text": "store"
+    },
+    {
+     "end": 63.575,
+     "start": 63.4,
+     "text": "with"
+    },
+    {
+     "end": 63.8,
+     "start": 63.575,
+     "text": "no"
+    },
+    {
+     "end": 64.95,
+     "start": 63.8,
+     "text": "version.txt"
+    },
+    {
+     "end": 65.375,
+     "start": 64.95,
+     "text": "beside"
+    },
+    {
+     "end": 66.0,
+     "start": 65.375,
+     "text": "it"
+    },
+    {
+     "end": 66.2,
+     "start": 66.0,
+     "text": ","
+    },
+    {
+     "end": 66.562,
+     "start": 66.375,
+     "text": "which"
+    },
+    {
+     "end": 67.025,
+     "start": 66.562,
+     "text": "singular"
+    },
+    {
+     "end": 67.525,
+     "start": 67.025,
+     "text": "registry"
+    },
+    {
+     "end": 68.0,
+     "start": 67.525,
+     "text": "describe"
+    },
+    {
+     "end": 68.525,
+     "start": 68.0,
+     "text": "refuses"
+    },
+    {
+     "end": 69.375,
+     "start": 68.525,
+     "text": "without"
+    },
+    {
+     "end": 69.575,
+     "start": 69.375,
+     "text": ","
+    },
+    {
+     "end": 69.838,
+     "start": 69.75,
+     "text": "so"
+    },
+    {
+     "end": 70.012,
+     "start": 69.838,
+     "text": "name"
+    },
+    {
+     "end": 70.1,
+     "start": 70.012,
+     "text": "the"
+    },
+    {
+     "end": 70.6,
+     "start": 70.1,
+     "text": "archive's"
+    },
+    {
+     "end": 70.887,
+     "start": 70.6,
+     "text": "file"
+    },
+    {
+     "end": 71.012,
+     "start": 70.887,
+     "text": "as"
+    },
+    {
+     "end": 71.1,
+     "start": 71.012,
+     "text": "the"
+    },
+    {
+     "end": 72.075,
+     "start": 71.1,
+     "text": "blueprint"
+    },
+    {
+     "end": 72.275,
+     "start": 72.075,
+     "text": "."
+    }
+   ]
+  },
+  "docs-consumer-onboarding/download-and-check-the-release-03": {
+   "audio_sha256": "b2b67c623ba0b975136c2feaaf3cfeb5d2d28b353e765fb6b48f12e49e2d5d87",
+   "characters": 323,
+   "cost": 0.00031977,
+   "duration": 23.0,
+   "index": 3,
+   "key": "8b3d8f31fa72cac7ba841540fcd26d91cb7f7c576863d88560164d351a30d8cc",
+   "page": "docs/consumer-onboarding.md",
+   "pause_ms": 400,
+   "section": "download-and-check-the-release",
+   "sent_text": "The second route builds the two commands from the archive itself. It suits another release or another system. It compiles a large Haskell stack unless the project's public binary cache serves it, and the runbook says how. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "text": "The second route builds the two commands from the archive itself. It suits another release or another system. It compiles a large Haskell stack unless the project's public binary cache serves it, and the runbook says how. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.625,
+     "start": 0.287,
+     "text": "second"
+    },
+    {
+     "end": 0.938,
+     "start": 0.625,
+     "text": "route"
+    },
+    {
+     "end": 1.275,
+     "start": 0.938,
+     "text": "builds"
+    },
+    {
+     "end": 1.413,
+     "start": 1.275,
+     "text": "the"
+    },
+    {
+     "end": 1.7,
+     "start": 1.413,
+     "text": "two"
+    },
+    {
+     "end": 2.125,
+     "start": 1.7,
+     "text": "commands"
+    },
+    {
+     "end": 2.263,
+     "start": 2.125,
+     "text": "from"
+    },
+    {
+     "end": 2.35,
+     "start": 2.263,
+     "text": "the"
+    },
+    {
+     "end": 2.8,
+     "start": 2.35,
+     "text": "archive"
+    },
+    {
+     "end": 3.825,
+     "start": 2.8,
+     "text": "itself"
+    },
+    {
+     "end": 4.025,
+     "start": 3.825,
+     "text": "."
+    },
+    {
+     "end": 4.325,
+     "start": 4.2,
+     "text": "It"
+    },
+    {
+     "end": 4.588,
+     "start": 4.325,
+     "text": "suits"
+    },
+    {
+     "end": 4.925,
+     "start": 4.588,
+     "text": "another"
+    },
+    {
+     "end": 5.387,
+     "start": 4.925,
+     "text": "release"
+    },
+    {
+     "end": 5.512,
+     "start": 5.387,
+     "text": "or"
+    },
+    {
+     "end": 5.875,
+     "start": 5.512,
+     "text": "another"
+    },
+    {
+     "end": 6.8,
+     "start": 5.875,
+     "text": "system"
+    },
+    {
+     "end": 7.0,
+     "start": 6.8,
+     "text": "."
+    },
+    {
+     "end": 7.325,
+     "start": 7.2,
+     "text": "It"
+    },
+    {
+     "end": 7.875,
+     "start": 7.325,
+     "text": "compiles"
+    },
+    {
+     "end": 7.988,
+     "start": 7.875,
+     "text": "a"
+    },
+    {
+     "end": 8.375,
+     "start": 7.988,
+     "text": "large"
+    },
+    {
+     "end": 8.938,
+     "start": 8.375,
+     "text": "Haskell"
+    },
+    {
+     "end": 9.387,
+     "start": 8.938,
+     "text": "stack"
+    },
+    {
+     "end": 9.725,
+     "start": 9.387,
+     "text": "unless"
+    },
+    {
+     "end": 9.825,
+     "start": 9.725,
+     "text": "the"
+    },
+    {
+     "end": 10.363,
+     "start": 9.825,
+     "text": "project's"
+    },
+    {
+     "end": 10.775,
+     "start": 10.363,
+     "text": "public"
+    },
+    {
+     "end": 11.212,
+     "start": 10.775,
+     "text": "binary"
+    },
+    {
+     "end": 11.613,
+     "start": 11.212,
+     "text": "cache"
+    },
+    {
+     "end": 11.988,
+     "start": 11.613,
+     "text": "serves"
+    },
+    {
+     "end": 12.225,
+     "start": 11.988,
+     "text": "it"
+    },
+    {
+     "end": 12.3,
+     "start": 12.225,
+     "text": ","
+    },
+    {
+     "end": 12.413,
+     "start": 12.3,
+     "text": "and"
+    },
+    {
+     "end": 12.5,
+     "start": 12.413,
+     "text": "the"
+    },
+    {
+     "end": 12.95,
+     "start": 12.5,
+     "text": "runbook"
+    },
+    {
+     "end": 13.25,
+     "start": 12.95,
+     "text": "says"
+    },
+    {
+     "end": 14.225,
+     "start": 13.25,
+     "text": "how"
+    },
+    {
+     "end": 14.5,
+     "start": 14.225,
+     "text": "."
+    },
+    {
+     "end": 15.012,
+     "start": 14.75,
+     "text": "No"
+    },
+    {
+     "end": 15.475,
+     "start": 15.012,
+     "text": "release"
+    },
+    {
+     "end": 15.812,
+     "start": 15.475,
+     "text": "ships"
+    },
+    {
+     "end": 16.375,
+     "start": 15.812,
+     "text": "ready-built"
+    },
+    {
+     "end": 16.925,
+     "start": 16.375,
+     "text": "binaries"
+    },
+    {
+     "end": 17.375,
+     "start": 16.925,
+     "text": "yet"
+    },
+    {
+     "end": 17.487,
+     "start": 17.375,
+     "text": "."
+    },
+    {
+     "end": 17.6,
+     "start": 17.487,
+     "text": "A"
+    },
+    {
+     "end": 18.075,
+     "start": 17.6,
+     "text": "binary"
+    },
+    {
+     "end": 18.625,
+     "start": 18.075,
+     "text": "install"
+    },
+    {
+     "end": 18.8,
+     "start": 18.625,
+     "text": "that"
+    },
+    {
+     "end": 19.087,
+     "start": 18.8,
+     "text": "needs"
+    },
+    {
+     "end": 19.362,
+     "start": 19.087,
+     "text": "no"
+    },
+    {
+     "end": 19.675,
+     "start": 19.362,
+     "text": "Nix"
+    },
+    {
+     "end": 19.825,
+     "start": 19.675,
+     "text": "is"
+    },
+    {
+     "end": 20.15,
+     "start": 19.825,
+     "text": "coming"
+    },
+    {
+     "end": 20.3,
+     "start": 20.15,
+     "text": "in"
+    },
+    {
+     "end": 20.737,
+     "start": 20.3,
      "text": "issue"
     },
     {
-     "end": 17.825,
-     "start": 15.938,
+     "end": 22.75,
+     "start": 20.737,
      "text": "695"
     },
     {
-     "end": 18.05,
-     "start": 17.825,
+     "end": 23.0,
+     "start": 22.75,
      "text": "."
     }
    ]
@@ -101061,296 +102231,1431 @@
    ]
   },
   "docs-demo1-devnet/build-the-commands-01": {
-   "audio_sha256": "2a5b561544af0b0597e48cf67c5b93bee0ae64440eb804779a9e87159502b85f",
-   "characters": 272,
-   "cost": 0.00026928,
-   "duration": 18.3,
+   "audio_sha256": "cbd5c62d3b9bca68e808f0281d14d524cd24de873cc38af7f51a188422479267",
+   "characters": 65,
+   "cost": 6.434999999999999e-05,
+   "duration": 4.625,
    "index": 1,
-   "key": "bfaac0d454fc612575e95be57b3395b22e167e4627af1c276108c2faa15b4c7e",
+   "key": "411d38e3d6081aa5c06f3cc56533d3293307dbe15af0b802ab7ee9a88fe7e345",
    "page": "docs/demo1-devnet.md",
    "pause_ms": 400,
    "section": "build-the-commands",
-   "sent_text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
-   "text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
+   "sent_text": "The quick way: the shell. From the extracted archive's directory,",
+   "text": "The quick way: the shell. From the extracted archive's directory,",
    "words": [
     {
-     "end": 0.625,
-     "start": 0.3,
-     "text": "Nix"
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
     },
     {
-     "end": 0.887,
-     "start": 0.625,
-     "text": "reads"
+     "end": 0.525,
+     "start": 0.25,
+     "text": "quick"
     },
     {
-     "end": 0.975,
-     "start": 0.887,
-     "text": "a"
+     "end": 1.1,
+     "start": 0.525,
+     "text": "way"
     },
     {
-     "end": 1.325,
-     "start": 0.975,
-     "text": "flake"
+     "end": 1.35,
+     "start": 1.1,
+     "text": ":"
     },
     {
-     "end": 1.462,
-     "start": 1.325,
-     "text": "from"
-    },
-    {
-     "end": 1.55,
-     "start": 1.462,
-     "text": "a"
-    },
-    {
-     "end": 1.788,
-     "start": 1.55,
-     "text": "Git"
-    },
-    {
-     "end": 2.25,
-     "start": 1.788,
-     "text": "tree"
-    },
-    {
-     "end": 2.35,
-     "start": 2.25,
-     "text": ","
-    },
-    {
-     "end": 2.463,
-     "start": 2.35,
-     "text": "and"
-    },
-    {
-     "end": 2.55,
-     "start": 2.463,
+     "end": 1.638,
+     "start": 1.525,
      "text": "the"
     },
     {
-     "end": 3.362,
-     "start": 2.55,
-     "text": "application's"
+     "end": 1.95,
+     "start": 1.638,
+     "text": "shell"
     },
     {
-     "end": 3.737,
-     "start": 3.362,
-     "text": "flake"
+     "end": 2.025,
+     "start": 1.95,
+     "text": "."
     },
     {
-     "end": 4.125,
-     "start": 3.737,
-     "text": "reaches"
+     "end": 2.188,
+     "start": 2.025,
+     "text": "From"
     },
     {
-     "end": 4.25,
-     "start": 4.125,
+     "end": 2.275,
+     "start": 2.188,
      "text": "the"
     },
     {
-     "end": 4.912,
-     "start": 4.25,
-     "text": "registry's"
-    },
-    {
-     "end": 5.412,
-     "start": 4.912,
-     "text": "sources"
-    },
-    {
-     "end": 5.65,
-     "start": 5.412,
-     "text": "one"
-    },
-    {
-     "end": 6.175,
-     "start": 5.65,
-     "text": "directory"
-    },
-    {
-     "end": 6.5,
-     "start": 6.175,
-     "text": "up"
-    },
-    {
-     "end": 6.6,
-     "start": 6.5,
-     "text": ","
-    },
-    {
-     "end": 6.762,
-     "start": 6.6,
-     "text": "so"
-    },
-    {
-     "end": 6.875,
-     "start": 6.762,
-     "text": "the"
-    },
-    {
-     "end": 7.525,
-     "start": 6.875,
+     "end": 2.875,
+     "start": 2.275,
      "text": "extracted"
     },
     {
-     "end": 8.075,
-     "start": 7.525,
-     "text": "archive"
+     "end": 3.375,
+     "start": 2.875,
+     "text": "archive's"
     },
     {
-     "end": 8.325,
-     "start": 8.075,
-     "text": "must"
+     "end": 4.4,
+     "start": 3.375,
+     "text": "directory"
     },
     {
-     "end": 8.488,
-     "start": 8.325,
-     "text": "be"
-    },
-    {
-     "end": 8.788,
-     "start": 8.488,
-     "text": "made"
-    },
-    {
-     "end": 9.05,
-     "start": 8.788,
-     "text": "into"
-    },
-    {
-     "end": 9.15,
-     "start": 9.05,
-     "text": "a"
-    },
-    {
-     "end": 9.387,
-     "start": 9.15,
-     "text": "Git"
-    },
-    {
-     "end": 9.675,
-     "start": 9.387,
-     "text": "tree"
-    },
-    {
-     "end": 10.85,
-     "start": 9.675,
-     "text": "first"
-    },
-    {
-     "end": 11.1,
-     "start": 10.85,
-     "text": "."
-    },
-    {
-     "end": 11.45,
-     "start": 11.275,
-     "text": "This"
-    },
-    {
-     "end": 11.863,
-     "start": 11.45,
-     "text": "commits"
-    },
-    {
-     "end": 12.325,
-     "start": 11.863,
-     "text": "nothing"
-    },
-    {
-     "end": 12.45,
-     "start": 12.325,
-     "text": "and"
-    },
-    {
-     "end": 13.1,
-     "start": 12.45,
-     "text": "contacts"
-    },
-    {
-     "end": 13.7,
-     "start": 13.1,
-     "text": "nothing"
-    },
-    {
-     "end": 13.837,
-     "start": 13.7,
-     "text": "."
-    },
-    {
-     "end": 14.125,
-     "start": 13.837,
-     "text": "Nix"
-    },
-    {
-     "end": 14.35,
-     "start": 14.125,
-     "text": "then"
-    },
-    {
-     "end": 14.8,
-     "start": 14.35,
-     "text": "warns"
-    },
-    {
-     "end": 14.938,
-     "start": 14.8,
-     "text": "that"
-    },
-    {
-     "end": 15.038,
-     "start": 14.938,
-     "text": "the"
-    },
-    {
-     "end": 15.35,
-     "start": 15.038,
-     "text": "tree"
-    },
-    {
-     "end": 15.512,
-     "start": 15.35,
-     "text": "is"
-    },
-    {
-     "end": 16.475,
-     "start": 15.512,
-     "text": "dirty"
-    },
-    {
-     "end": 16.725,
-     "start": 16.475,
-     "text": ";"
-    },
-    {
-     "end": 17.062,
-     "start": 16.9,
-     "text": "that"
-    },
-    {
-     "end": 17.163,
-     "start": 17.062,
-     "text": "is"
-    },
-    {
-     "end": 18.075,
-     "start": 17.163,
-     "text": "expected"
-    },
-    {
-     "end": 18.3,
-     "start": 18.075,
-     "text": "."
+     "end": 4.625,
+     "start": 4.4,
+     "text": ","
     }
    ]
   },
   "docs-demo1-devnet/build-the-commands-02": {
-   "audio_sha256": "b2618ff17732d80856c70827bcfd53bffa42c2dbced0eda7c401cae2620970da",
+   "audio_sha256": "4729369b01af09fc243cf108aa5f57df8bb726bc2fae9f6be0e3efe8bedb72e7",
+   "characters": 673,
+   "cost": 0.00066627,
+   "duration": 50.15,
+   "index": 2,
+   "key": "85f74d1e2075b25e75bf312202ceb3abdb2396d7268d0701bcd9ae880363b88b",
+   "page": "docs/demo1-devnet.md",
+   "pause_ms": 400,
+   "section": "build-the-commands",
+   "sent_text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this and skip the build below; everything after it runs as written:",
+   "text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this and skip the build below; everything after it runs as written:",
+   "words": [
+    {
+     "end": 0.6,
+     "start": 0.225,
+     "text": "opens"
+    },
+    {
+     "end": 0.725,
+     "start": 0.6,
+     "text": "a"
+    },
+    {
+     "end": 1.05,
+     "start": 0.725,
+     "text": "shell"
+    },
+    {
+     "end": 1.237,
+     "start": 1.05,
+     "text": "with"
+    },
+    {
+     "end": 1.85,
+     "start": 1.237,
+     "text": "singular"
+    },
+    {
+     "end": 1.925,
+     "start": 1.85,
+     "text": ","
+    },
+    {
+     "end": 2.7,
+     "start": 1.925,
+     "text": "open-datum"
+    },
+    {
+     "end": 2.775,
+     "start": 2.7,
+     "text": ","
+    },
+    {
+     "end": 2.875,
+     "start": 2.775,
+     "text": "the"
+    },
+    {
+     "end": 3.45,
+     "start": 2.875,
+     "text": "development"
+    },
+    {
+     "end": 3.787,
+     "start": 3.45,
+     "text": "node"
+    },
+    {
+     "end": 4.275,
+     "start": 3.787,
+     "text": "devnet"
+    },
+    {
+     "end": 4.4,
+     "start": 4.275,
+     "text": "and"
+    },
+    {
+     "end": 4.925,
+     "start": 4.4,
+     "text": "jq"
+    },
+    {
+     "end": 5.062,
+     "start": 4.925,
+     "text": "on"
+    },
+    {
+     "end": 5.162,
+     "start": 5.062,
+     "text": "the"
+    },
+    {
+     "end": 5.675,
+     "start": 5.162,
+     "text": "path"
+    },
+    {
+     "end": 5.812,
+     "start": 5.675,
+     "text": ","
+    },
+    {
+     "end": 6.075,
+     "start": 5.812,
+     "text": "all"
+    },
+    {
+     "end": 6.35,
+     "start": 6.075,
+     "text": "built"
+    },
+    {
+     "end": 6.488,
+     "start": 6.35,
+     "text": "by"
+    },
+    {
+     "end": 6.575,
+     "start": 6.488,
+     "text": "the"
+    },
+    {
+     "end": 7.113,
+     "start": 6.575,
+     "text": "project's"
+    },
+    {
+     "end": 8.275,
+     "start": 7.113,
+     "text": "CI"
+    },
+    {
+     "end": 8.525,
+     "start": 8.275,
+     "text": "."
+    },
+    {
+     "end": 8.9,
+     "start": 8.725,
+     "text": "With"
+    },
+    {
+     "end": 9.012,
+     "start": 8.9,
+     "text": "the"
+    },
+    {
+     "end": 9.525,
+     "start": 9.012,
+     "text": "caches"
+    },
+    {
+     "end": 10.025,
+     "start": 9.525,
+     "text": "accepted"
+    },
+    {
+     "end": 10.188,
+     "start": 10.025,
+     "text": "it"
+    },
+    {
+     "end": 10.587,
+     "start": 10.188,
+     "text": "builds"
+    },
+    {
+     "end": 10.925,
+     "start": 10.587,
+     "text": "only"
+    },
+    {
+     "end": 11.075,
+     "start": 10.925,
+     "text": "the"
+    },
+    {
+     "end": 11.35,
+     "start": 11.075,
+     "text": "shell"
+    },
+    {
+     "end": 11.925,
+     "start": 11.35,
+     "text": "itself"
+    },
+    {
+     "end": 12.1,
+     "start": 11.925,
+     "text": "and"
+    },
+    {
+     "end": 12.55,
+     "start": 12.1,
+     "text": "fetches"
+    },
+    {
+     "end": 12.875,
+     "start": 12.55,
+     "text": "about"
+    },
+    {
+     "end": 13.938,
+     "start": 12.875,
+     "text": "190"
+    },
+    {
+     "end": 14.6,
+     "start": 13.938,
+     "text": "MiB"
+    },
+    {
+     "end": 15.012,
+     "start": 14.6,
+     "text": "instead"
+    },
+    {
+     "end": 15.1,
+     "start": 15.012,
+     "text": "of"
+    },
+    {
+     "end": 15.7,
+     "start": 15.1,
+     "text": "compiling"
+    },
+    {
+     "end": 15.8,
+     "start": 15.7,
+     "text": "the"
+    },
+    {
+     "end": 16.337,
+     "start": 15.8,
+     "text": "Haskell"
+    },
+    {
+     "end": 17.425,
+     "start": 16.337,
+     "text": "stack"
+    },
+    {
+     "end": 17.675,
+     "start": 17.425,
+     "text": "."
+    },
+    {
+     "end": 18.075,
+     "start": 17.85,
+     "text": "Its"
+    },
+    {
+     "end": 18.775,
+     "start": 18.075,
+     "text": "limits"
+    },
+    {
+     "end": 19.0,
+     "start": 18.775,
+     "text": ":"
+    },
+    {
+     "end": 19.325,
+     "start": 19.225,
+     "text": "it"
+    },
+    {
+     "end": 19.487,
+     "start": 19.325,
+     "text": "is"
+    },
+    {
+     "end": 19.775,
+     "start": 19.487,
+     "text": "pinned"
+    },
+    {
+     "end": 19.875,
+     "start": 19.775,
+     "text": "to"
+    },
+    {
+     "end": 20.312,
+     "start": 19.875,
+     "text": "release"
+    },
+    {
+     "end": 21.825,
+     "start": 20.312,
+     "text": "v0.12.0"
+    },
+    {
+     "end": 21.938,
+     "start": 21.825,
+     "text": ","
+    },
+    {
+     "end": 22.075,
+     "start": 21.938,
+     "text": "it"
+    },
+    {
+     "end": 22.237,
+     "start": 22.075,
+     "text": "is"
+    },
+    {
+     "end": 22.525,
+     "start": 22.237,
+     "text": "built"
+    },
+    {
+     "end": 22.688,
+     "start": 22.525,
+     "text": "for"
+    },
+    {
+     "end": 24.25,
+     "start": 22.688,
+     "text": "x86_64"
+    },
+    {
+     "end": 24.575,
+     "start": 24.25,
+     "text": "Linux"
+    },
+    {
+     "end": 25.125,
+     "start": 24.575,
+     "text": "only"
+    },
+    {
+     "end": 25.263,
+     "start": 25.125,
+     "text": ","
+    },
+    {
+     "end": 25.4,
+     "start": 25.263,
+     "text": "it"
+    },
+    {
+     "end": 25.712,
+     "start": 25.4,
+     "text": "needs"
+    },
+    {
+     "end": 26.725,
+     "start": 25.712,
+     "text": "Nix"
+    },
+    {
+     "end": 26.95,
+     "start": 26.725,
+     "text": ","
+    },
+    {
+     "end": 27.237,
+     "start": 27.15,
+     "text": "and"
+    },
+    {
+     "end": 27.325,
+     "start": 27.237,
+     "text": "it"
+    },
+    {
+     "end": 27.625,
+     "start": 27.325,
+     "text": "keeps"
+    },
+    {
+     "end": 27.725,
+     "start": 27.625,
+     "text": "the"
+    },
+    {
+     "end": 28.275,
+     "start": 27.725,
+     "text": "development"
+    },
+    {
+     "end": 28.688,
+     "start": 28.275,
+     "text": "node's"
+    },
+    {
+     "end": 29.175,
+     "start": 28.688,
+     "text": "files"
+    },
+    {
+     "end": 29.337,
+     "start": 29.175,
+     "text": "in"
+    },
+    {
+     "end": 29.6,
+     "start": 29.337,
+     "text": "one"
+    },
+    {
+     "end": 30.125,
+     "start": 29.6,
+     "text": "directory"
+    },
+    {
+     "end": 30.325,
+     "start": 30.125,
+     "text": "per"
+    },
+    {
+     "end": 31.25,
+     "start": 30.325,
+     "text": "user"
+    },
+    {
+     "end": 31.475,
+     "start": 31.25,
+     "text": ","
+    },
+    {
+     "end": 31.913,
+     "start": 31.725,
+     "text": "so"
+    },
+    {
+     "end": 32.175,
+     "start": 31.913,
+     "text": "run"
+    },
+    {
+     "end": 32.4,
+     "start": 32.175,
+     "text": "one"
+    },
+    {
+     "end": 32.7,
+     "start": 32.4,
+     "text": "node"
+    },
+    {
+     "end": 32.787,
+     "start": 32.7,
+     "text": "at"
+    },
+    {
+     "end": 32.888,
+     "start": 32.787,
+     "text": "a"
+    },
+    {
+     "end": 33.375,
+     "start": 32.888,
+     "text": "time"
+    },
+    {
+     "end": 33.425,
+     "start": 33.375,
+     "text": "("
+    },
+    {
+     "end": 33.537,
+     "start": 33.425,
+     "text": "on"
+    },
+    {
+     "end": 33.625,
+     "start": 33.537,
+     "text": "a"
+    },
+    {
+     "end": 34.325,
+     "start": 33.625,
+     "text": "multi-user"
+    },
+    {
+     "end": 34.713,
+     "start": 34.325,
+     "text": "Nix"
+    },
+    {
+     "end": 35.3,
+     "start": 34.713,
+     "text": "install"
+    },
+    {
+     "end": 35.412,
+     "start": 35.3,
+     "text": "a"
+    },
+    {
+     "end": 35.8,
+     "start": 35.412,
+     "text": "user"
+    },
+    {
+     "end": 36.375,
+     "start": 35.8,
+     "text": "outside"
+    },
+    {
+     "end": 37.213,
+     "start": 36.375,
+     "text": "trusted-users"
+    },
+    {
+     "end": 37.6,
+     "start": 37.213,
+     "text": "cannot"
+    },
+    {
+     "end": 37.85,
+     "start": 37.6,
+     "text": "take"
+    },
+    {
+     "end": 37.963,
+     "start": 37.85,
+     "text": "the"
+    },
+    {
+     "end": 38.475,
+     "start": 37.963,
+     "text": "caches"
+    },
+    {
+     "end": 38.612,
+     "start": 38.475,
+     "text": "from"
+    },
+    {
+     "end": 38.713,
+     "start": 38.612,
+     "text": "a"
+    },
+    {
+     "end": 39.775,
+     "start": 38.713,
+     "text": "flake"
+    },
+    {
+     "end": 40.0,
+     "start": 39.775,
+     "text": ";"
+    },
+    {
+     "end": 40.312,
+     "start": 40.2,
+     "text": "the"
+    },
+    {
+     "end": 40.737,
+     "start": 40.312,
+     "text": "shell's"
+    },
+    {
+     "end": 42.0,
+     "start": 40.737,
+     "text": "README"
+    },
+    {
+     "end": 42.325,
+     "start": 42.0,
+     "text": "says"
+    },
+    {
+     "end": 42.475,
+     "start": 42.325,
+     "text": "what"
+    },
+    {
+     "end": 42.612,
+     "start": 42.475,
+     "text": "to"
+    },
+    {
+     "end": 43.2,
+     "start": 42.612,
+     "text": "change"
+    },
+    {
+     "end": 43.325,
+     "start": 43.2,
+     "text": ")"
+    },
+    {
+     "end": 43.412,
+     "start": 43.325,
+     "text": "."
+    },
+    {
+     "end": 43.55,
+     "start": 43.412,
+     "text": "In"
+    },
+    {
+     "end": 43.838,
+     "start": 43.55,
+     "text": "that"
+    },
+    {
+     "end": 44.125,
+     "start": 43.838,
+     "text": "shell"
+    },
+    {
+     "end": 44.175,
+     "start": 44.125,
+     "text": ","
+    },
+    {
+     "end": 44.388,
+     "start": 44.175,
+     "text": "name"
+    },
+    {
+     "end": 44.475,
+     "start": 44.388,
+     "text": "the"
+    },
+    {
+     "end": 45.075,
+     "start": 44.475,
+     "text": "programs"
+    },
+    {
+     "end": 45.3,
+     "start": 45.075,
+     "text": "like"
+    },
+    {
+     "end": 45.575,
+     "start": 45.3,
+     "text": "this"
+    },
+    {
+     "end": 45.713,
+     "start": 45.575,
+     "text": "and"
+    },
+    {
+     "end": 46.05,
+     "start": 45.713,
+     "text": "skip"
+    },
+    {
+     "end": 46.15,
+     "start": 46.05,
+     "text": "the"
+    },
+    {
+     "end": 46.425,
+     "start": 46.15,
+     "text": "build"
+    },
+    {
+     "end": 47.5,
+     "start": 46.425,
+     "text": "below"
+    },
+    {
+     "end": 47.8,
+     "start": 47.5,
+     "text": ";"
+    },
+    {
+     "end": 48.325,
+     "start": 47.975,
+     "text": "everything"
+    },
+    {
+     "end": 48.612,
+     "start": 48.325,
+     "text": "after"
+    },
+    {
+     "end": 48.7,
+     "start": 48.612,
+     "text": "it"
+    },
+    {
+     "end": 48.975,
+     "start": 48.7,
+     "text": "runs"
+    },
+    {
+     "end": 49.138,
+     "start": 48.975,
+     "text": "as"
+    },
+    {
+     "end": 49.925,
+     "start": 49.138,
+     "text": "written"
+    },
+    {
+     "end": 50.15,
+     "start": 49.925,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-demo1-devnet/build-the-commands-03": {
+   "audio_sha256": "66fe4dd55579460e556d667247e4bb519f765e6a77087aee83ffce3fc75718da",
+   "characters": 265,
+   "cost": 0.00026234999999999995,
+   "duration": 17.225,
+   "index": 3,
+   "key": "144ff3a51efc026535f749be50589fce36ce0282b9d91312a9732b1ae2b822f6",
+   "page": "docs/demo1-devnet.md",
+   "pause_ms": 400,
+   "section": "build-the-commands",
+   "sent_text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, the archive's file, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
+   "text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, the archive's file, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.688,
+     "start": 0.338,
+     "text": "shell's"
+    },
+    {
+     "end": 0.875,
+     "start": 0.688,
+     "text": "own"
+    },
+    {
+     "end": 1.4,
+     "start": 0.875,
+     "text": "blueprint"
+    },
+    {
+     "end": 1.725,
+     "start": 1.4,
+     "text": "holds"
+    },
+    {
+     "end": 1.862,
+     "start": 1.725,
+     "text": "the"
+    },
+    {
+     "end": 2.2,
+     "start": 1.862,
+     "text": "same"
+    },
+    {
+     "end": 2.575,
+     "start": 2.2,
+     "text": "bytes"
+    },
+    {
+     "end": 2.737,
+     "start": 2.575,
+     "text": "as"
+    },
+    {
+     "end": 5.075,
+     "start": 2.737,
+     "text": "onchain/plutus.json"
+    },
+    {
+     "end": 5.113,
+     "start": 5.075,
+     "text": ","
+    },
+    {
+     "end": 5.25,
+     "start": 5.113,
+     "text": "the"
+    },
+    {
+     "end": 5.838,
+     "start": 5.25,
+     "text": "archive's"
+    },
+    {
+     "end": 6.2,
+     "start": 5.838,
+     "text": "file"
+    },
+    {
+     "end": 6.238,
+     "start": 6.2,
+     "text": ","
+    },
+    {
+     "end": 6.363,
+     "start": 6.238,
+     "text": "but"
+    },
+    {
+     "end": 6.512,
+     "start": 6.363,
+     "text": "it"
+    },
+    {
+     "end": 6.825,
+     "start": 6.512,
+     "text": "sits"
+    },
+    {
+     "end": 6.912,
+     "start": 6.825,
+     "text": "in"
+    },
+    {
+     "end": 7.0,
+     "start": 6.912,
+     "text": "the"
+    },
+    {
+     "end": 7.25,
+     "start": 7.0,
+     "text": "Nix"
+    },
+    {
+     "end": 7.6,
+     "start": 7.25,
+     "text": "store"
+    },
+    {
+     "end": 7.775,
+     "start": 7.6,
+     "text": "with"
+    },
+    {
+     "end": 8.025,
+     "start": 7.775,
+     "text": "no"
+    },
+    {
+     "end": 9.25,
+     "start": 8.025,
+     "text": "version.txt"
+    },
+    {
+     "end": 9.675,
+     "start": 9.25,
+     "text": "beside"
+    },
+    {
+     "end": 9.8,
+     "start": 9.675,
+     "text": "it"
+    },
+    {
+     "end": 9.875,
+     "start": 9.8,
+     "text": ","
+    },
+    {
+     "end": 10.012,
+     "start": 9.875,
+     "text": "and"
+    },
+    {
+     "end": 10.5,
+     "start": 10.012,
+     "text": "singular"
+    },
+    {
+     "end": 10.975,
+     "start": 10.5,
+     "text": "registry"
+    },
+    {
+     "end": 11.6,
+     "start": 10.975,
+     "text": "describe"
+    },
+    {
+     "end": 11.675,
+     "start": 11.6,
+     "text": "("
+    },
+    {
+     "end": 12.012,
+     "start": 11.675,
+     "text": "step"
+    },
+    {
+     "end": 12.35,
+     "start": 12.012,
+     "text": "2"
+    },
+    {
+     "end": 12.45,
+     "start": 12.35,
+     "text": ")"
+    },
+    {
+     "end": 12.938,
+     "start": 12.45,
+     "text": "refuses"
+    },
+    {
+     "end": 13.0,
+     "start": 12.938,
+     "text": "a"
+    },
+    {
+     "end": 13.413,
+     "start": 13.0,
+     "text": "blueprint"
+    },
+    {
+     "end": 13.75,
+     "start": 13.413,
+     "text": "without"
+    },
+    {
+     "end": 14.05,
+     "start": 13.75,
+     "text": "one"
+    },
+    {
+     "end": 14.125,
+     "start": 14.05,
+     "text": ","
+    },
+    {
+     "end": 14.3,
+     "start": 14.125,
+     "text": "so"
+    },
+    {
+     "end": 14.488,
+     "start": 14.3,
+     "text": "keep"
+    },
+    {
+     "end": 14.6,
+     "start": 14.488,
+     "text": "the"
+    },
+    {
+     "end": 15.163,
+     "start": 14.6,
+     "text": "archive's"
+    },
+    {
+     "end": 15.55,
+     "start": 15.163,
+     "text": "file"
+    },
+    {
+     "end": 15.712,
+     "start": 15.55,
+     "text": "as"
+    },
+    {
+     "end": 17.0,
+     "start": 15.712,
+     "text": "blueprint"
+    },
+    {
+     "end": 17.225,
+     "start": 17.0,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-devnet/build-the-commands-04": {
+   "audio_sha256": "7caa89b33b2c4656bd8ef6f8e05086b3b5be75e985f51d55b18cb47c625a1958",
+   "characters": 357,
+   "cost": 0.00035343,
+   "duration": 24.35,
+   "index": 4,
+   "key": "00c8d576bd50163da8db7c0a70810d30f80276c029b146128380fc94446591a2",
+   "page": "docs/demo1-devnet.md",
+   "pause_ms": 400,
+   "section": "build-the-commands",
+   "sent_text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
+   "text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.55,
+     "start": 0.287,
+     "text": "other"
+    },
+    {
+     "end": 1.125,
+     "start": 0.55,
+     "text": "way"
+    },
+    {
+     "end": 1.375,
+     "start": 1.125,
+     "text": ":"
+    },
+    {
+     "end": 1.825,
+     "start": 1.575,
+     "text": "build"
+    },
+    {
+     "end": 1.962,
+     "start": 1.825,
+     "text": "from"
+    },
+    {
+     "end": 2.075,
+     "start": 1.962,
+     "text": "the"
+    },
+    {
+     "end": 2.65,
+     "start": 2.075,
+     "text": "archive"
+    },
+    {
+     "end": 2.725,
+     "start": 2.65,
+     "text": "."
+    },
+    {
+     "end": 2.9,
+     "start": 2.725,
+     "text": "This"
+    },
+    {
+     "end": 3.175,
+     "start": 2.9,
+     "text": "suits"
+    },
+    {
+     "end": 3.525,
+     "start": 3.175,
+     "text": "another"
+    },
+    {
+     "end": 4.062,
+     "start": 3.525,
+     "text": "release"
+    },
+    {
+     "end": 4.2,
+     "start": 4.062,
+     "text": "or"
+    },
+    {
+     "end": 4.575,
+     "start": 4.2,
+     "text": "another"
+    },
+    {
+     "end": 5.575,
+     "start": 4.575,
+     "text": "system"
+    },
+    {
+     "end": 5.775,
+     "start": 5.575,
+     "text": "."
+    },
+    {
+     "end": 6.225,
+     "start": 5.975,
+     "text": "Nix"
+    },
+    {
+     "end": 6.438,
+     "start": 6.225,
+     "text": "reads"
+    },
+    {
+     "end": 6.5,
+     "start": 6.438,
+     "text": "a"
+    },
+    {
+     "end": 6.8,
+     "start": 6.5,
+     "text": "flake"
+    },
+    {
+     "end": 6.938,
+     "start": 6.8,
+     "text": "from"
+    },
+    {
+     "end": 7.0,
+     "start": 6.938,
+     "text": "a"
+    },
+    {
+     "end": 7.2,
+     "start": 7.0,
+     "text": "Git"
+    },
+    {
+     "end": 7.95,
+     "start": 7.2,
+     "text": "tree"
+    },
+    {
+     "end": 8.15,
+     "start": 7.95,
+     "text": ","
+    },
+    {
+     "end": 8.438,
+     "start": 8.35,
+     "text": "and"
+    },
+    {
+     "end": 8.525,
+     "start": 8.438,
+     "text": "the"
+    },
+    {
+     "end": 9.288,
+     "start": 8.525,
+     "text": "application's"
+    },
+    {
+     "end": 9.712,
+     "start": 9.288,
+     "text": "flake"
+    },
+    {
+     "end": 10.1,
+     "start": 9.712,
+     "text": "reaches"
+    },
+    {
+     "end": 10.2,
+     "start": 10.1,
+     "text": "the"
+    },
+    {
+     "end": 10.85,
+     "start": 10.2,
+     "text": "registry's"
+    },
+    {
+     "end": 11.363,
+     "start": 10.85,
+     "text": "sources"
+    },
+    {
+     "end": 11.625,
+     "start": 11.363,
+     "text": "one"
+    },
+    {
+     "end": 12.175,
+     "start": 11.625,
+     "text": "directory"
+    },
+    {
+     "end": 12.875,
+     "start": 12.175,
+     "text": "up"
+    },
+    {
+     "end": 13.1,
+     "start": 12.875,
+     "text": ","
+    },
+    {
+     "end": 13.413,
+     "start": 13.3,
+     "text": "so"
+    },
+    {
+     "end": 13.525,
+     "start": 13.413,
+     "text": "the"
+    },
+    {
+     "end": 14.125,
+     "start": 13.525,
+     "text": "extracted"
+    },
+    {
+     "end": 14.675,
+     "start": 14.125,
+     "text": "archive"
+    },
+    {
+     "end": 14.875,
+     "start": 14.675,
+     "text": "must"
+    },
+    {
+     "end": 15.025,
+     "start": 14.875,
+     "text": "be"
+    },
+    {
+     "end": 15.262,
+     "start": 15.025,
+     "text": "made"
+    },
+    {
+     "end": 15.5,
+     "start": 15.262,
+     "text": "into"
+    },
+    {
+     "end": 15.6,
+     "start": 15.5,
+     "text": "a"
+    },
+    {
+     "end": 15.8,
+     "start": 15.6,
+     "text": "Git"
+    },
+    {
+     "end": 16.038,
+     "start": 15.8,
+     "text": "tree"
+    },
+    {
+     "end": 16.95,
+     "start": 16.038,
+     "text": "first"
+    },
+    {
+     "end": 17.15,
+     "start": 16.95,
+     "text": "."
+    },
+    {
+     "end": 17.5,
+     "start": 17.325,
+     "text": "This"
+    },
+    {
+     "end": 17.913,
+     "start": 17.5,
+     "text": "commits"
+    },
+    {
+     "end": 18.375,
+     "start": 17.913,
+     "text": "nothing"
+    },
+    {
+     "end": 18.5,
+     "start": 18.375,
+     "text": "and"
+    },
+    {
+     "end": 19.15,
+     "start": 18.5,
+     "text": "contacts"
+    },
+    {
+     "end": 19.75,
+     "start": 19.15,
+     "text": "nothing"
+    },
+    {
+     "end": 19.888,
+     "start": 19.75,
+     "text": "."
+    },
+    {
+     "end": 20.175,
+     "start": 19.888,
+     "text": "Nix"
+    },
+    {
+     "end": 20.4,
+     "start": 20.175,
+     "text": "then"
+    },
+    {
+     "end": 20.85,
+     "start": 20.4,
+     "text": "warns"
+    },
+    {
+     "end": 20.987,
+     "start": 20.85,
+     "text": "that"
+    },
+    {
+     "end": 21.087,
+     "start": 20.987,
+     "text": "the"
+    },
+    {
+     "end": 21.4,
+     "start": 21.087,
+     "text": "tree"
+    },
+    {
+     "end": 21.562,
+     "start": 21.4,
+     "text": "is"
+    },
+    {
+     "end": 22.525,
+     "start": 21.562,
+     "text": "dirty"
+    },
+    {
+     "end": 22.775,
+     "start": 22.525,
+     "text": ";"
+    },
+    {
+     "end": 23.112,
+     "start": 22.95,
+     "text": "that"
+    },
+    {
+     "end": 23.212,
+     "start": 23.112,
+     "text": "is"
+    },
+    {
+     "end": 24.125,
+     "start": 23.212,
+     "text": "expected"
+    },
+    {
+     "end": 24.35,
+     "start": 24.125,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-devnet/build-the-commands-05": {
+   "audio_sha256": "197d3dd71292049b8c780c8850c0c3f56e76c9acadac4b479c9d6653c65fa809",
    "characters": 369,
    "cost": 0.00036531,
    "duration": 26.525,
-   "index": 2,
+   "index": 5,
    "key": "ead6bf8c1c06d9fe702e1e07deea6b06ba65e50ae4136a67b63a0e96b24d595f",
    "page": "docs/demo1-devnet.md",
    "pause_ms": 400,
@@ -101675,12 +103980,12 @@
     }
    ]
   },
-  "docs-demo1-devnet/build-the-commands-03": {
-   "audio_sha256": "f74307a5410609c27fb667ef3a952f81ba69cda17e9defd6541997e6ef5737f3",
+  "docs-demo1-devnet/build-the-commands-06": {
+   "audio_sha256": "47b20835f3d68c3a18a733e5fc48bac48add04f2c4363fe79f9dcd5eb5f05149",
    "characters": 294,
    "cost": 0.00029106,
    "duration": 22.35,
-   "index": 3,
+   "index": 6,
    "key": "cfb3da88cc0d7dd3221d8844ed29d970ff142be6743e87881e987fc8813116e2",
    "page": "docs/demo1-devnet.md",
    "pause_ms": 400,
@@ -112876,17 +115181,17 @@
    ]
   },
   "docs-demo1-devnet/what-you-need-01": {
-   "audio_sha256": "4626bdeb968eda91280bf7a848f8dcfe8457082f3f0c17eb2f321f76e6dead7e",
-   "characters": 67,
-   "cost": 6.633e-05,
-   "duration": 5.025,
+   "audio_sha256": "280bf47a01c993fda9c44c2088b5f093acb984a257ef2fc7b80b6c53430ede3e",
+   "characters": 194,
+   "cost": 0.00019205999999999997,
+   "duration": 13.3,
    "index": 1,
-   "key": "558c90e2669bff1f5e04b299fd68bfd4a64624a25af96ec3fbcb7dadc4c2c2d9",
+   "key": "77165524786185f3805f4e25bc31aaa996471a558c38e59ae37e01942bb60b99",
    "page": "docs/demo1-devnet.md",
    "pause_ms": 300,
    "section": "what-you-need",
-   "sent_text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl.",
-   "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl.",
+   "sent_text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The quickest way to the programs is the Nix shell of singular-demo, described in the next section; it needs only Nix and curl.",
+   "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The quickest way to the programs is the Nix shell of singular-demo, described in the next section; it needs only Nix and curl.",
    "words": [
     {
      "end": 0.275,
@@ -112966,6 +115271,136 @@
     {
      "end": 5.025,
      "start": 4.825,
+     "text": "."
+    },
+    {
+     "end": 5.325,
+     "start": 5.225,
+     "text": "The"
+    },
+    {
+     "end": 5.7,
+     "start": 5.325,
+     "text": "quickest"
+    },
+    {
+     "end": 5.9,
+     "start": 5.7,
+     "text": "way"
+    },
+    {
+     "end": 5.988,
+     "start": 5.9,
+     "text": "to"
+    },
+    {
+     "end": 6.075,
+     "start": 5.988,
+     "text": "the"
+    },
+    {
+     "end": 6.787,
+     "start": 6.075,
+     "text": "programs"
+    },
+    {
+     "end": 6.95,
+     "start": 6.787,
+     "text": "is"
+    },
+    {
+     "end": 7.088,
+     "start": 6.95,
+     "text": "the"
+    },
+    {
+     "end": 7.387,
+     "start": 7.088,
+     "text": "Nix"
+    },
+    {
+     "end": 7.725,
+     "start": 7.387,
+     "text": "shell"
+    },
+    {
+     "end": 7.887,
+     "start": 7.725,
+     "text": "of"
+    },
+    {
+     "end": 8.825,
+     "start": 7.887,
+     "text": "singular-demo"
+    },
+    {
+     "end": 8.925,
+     "start": 8.825,
+     "text": ","
+    },
+    {
+     "end": 9.488,
+     "start": 8.925,
+     "text": "described"
+    },
+    {
+     "end": 9.562,
+     "start": 9.488,
+     "text": "in"
+    },
+    {
+     "end": 9.65,
+     "start": 9.562,
+     "text": "the"
+    },
+    {
+     "end": 9.925,
+     "start": 9.65,
+     "text": "next"
+    },
+    {
+     "end": 10.975,
+     "start": 9.925,
+     "text": "section"
+    },
+    {
+     "end": 11.175,
+     "start": 10.975,
+     "text": ";"
+    },
+    {
+     "end": 11.438,
+     "start": 11.375,
+     "text": "it"
+    },
+    {
+     "end": 11.663,
+     "start": 11.438,
+     "text": "needs"
+    },
+    {
+     "end": 11.95,
+     "start": 11.663,
+     "text": "only"
+    },
+    {
+     "end": 12.212,
+     "start": 11.95,
+     "text": "Nix"
+    },
+    {
+     "end": 12.325,
+     "start": 12.212,
+     "text": "and"
+    },
+    {
+     "end": 13.1,
+     "start": 12.325,
+     "text": "curl"
+    },
+    {
+     "end": 13.3,
+     "start": 13.1,
      "text": "."
     }
    ]
@@ -118581,276 +121016,1396 @@
    ]
   },
   "docs-demo1-on-preprod/build-the-two-commands-01": {
-   "audio_sha256": "a65dc8c802ac88ee61ddc78c519647810656ce9e57274208bb82ebcd455341d8",
-   "characters": 255,
-   "cost": 0.00025245,
-   "duration": 16.95,
+   "audio_sha256": "e412d05810f3ea99411e7eccaab042793f4e384568e3e50622dd645bd4308e89",
+   "characters": 65,
+   "cost": 6.434999999999999e-05,
+   "duration": 4.625,
    "index": 1,
-   "key": "fa7bb0c7c5d5eb215384e6208f014480940a79ad4810d744c97fea3924001952",
+   "key": "411d38e3d6081aa5c06f3cc56533d3293307dbe15af0b802ab7ee9a88fe7e345",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 400,
    "section": "build-the-two-commands",
-   "sent_text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
-   "text": "Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
+   "sent_text": "The quick way: the shell. From the extracted archive's directory,",
+   "text": "The quick way: the shell. From the extracted archive's directory,",
    "words": [
     {
-     "end": 0.6,
-     "start": 0.3,
-     "text": "Nix"
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
     },
     {
-     "end": 0.863,
-     "start": 0.6,
-     "text": "reads"
+     "end": 0.525,
+     "start": 0.25,
+     "text": "quick"
     },
     {
-     "end": 0.95,
-     "start": 0.863,
-     "text": "a"
+     "end": 1.1,
+     "start": 0.525,
+     "text": "way"
     },
     {
-     "end": 1.325,
-     "start": 0.95,
-     "text": "flake"
+     "end": 1.35,
+     "start": 1.1,
+     "text": ":"
     },
     {
-     "end": 1.462,
-     "start": 1.325,
-     "text": "from"
+     "end": 1.638,
+     "start": 1.525,
+     "text": "the"
     },
     {
-     "end": 1.562,
-     "start": 1.462,
-     "text": "a"
+     "end": 1.95,
+     "start": 1.638,
+     "text": "shell"
     },
     {
-     "end": 1.812,
-     "start": 1.562,
-     "text": "Git"
+     "end": 2.025,
+     "start": 1.95,
+     "text": "."
+    },
+    {
+     "end": 2.188,
+     "start": 2.025,
+     "text": "From"
     },
     {
      "end": 2.275,
-     "start": 1.812,
-     "text": "tree"
+     "start": 2.188,
+     "text": "the"
     },
     {
-     "end": 2.375,
+     "end": 2.875,
      "start": 2.275,
-     "text": ","
-    },
-    {
-     "end": 2.487,
-     "start": 2.375,
-     "text": "and"
-    },
-    {
-     "end": 2.575,
-     "start": 2.487,
-     "text": "the"
-    },
-    {
-     "end": 3.362,
-     "start": 2.575,
-     "text": "application's"
-    },
-    {
-     "end": 3.713,
-     "start": 3.362,
-     "text": "flake"
-    },
-    {
-     "end": 4.1,
-     "start": 3.713,
-     "text": "reaches"
-    },
-    {
-     "end": 4.225,
-     "start": 4.1,
-     "text": "the"
-    },
-    {
-     "end": 4.887,
-     "start": 4.225,
-     "text": "registry's"
-    },
-    {
-     "end": 5.387,
-     "start": 4.887,
-     "text": "sources"
-    },
-    {
-     "end": 5.625,
-     "start": 5.387,
-     "text": "one"
-    },
-    {
-     "end": 6.15,
-     "start": 5.625,
-     "text": "directory"
-    },
-    {
-     "end": 6.45,
-     "start": 6.15,
-     "text": "up"
-    },
-    {
-     "end": 6.55,
-     "start": 6.45,
-     "text": ","
-    },
-    {
-     "end": 6.725,
-     "start": 6.55,
-     "text": "so"
-    },
-    {
-     "end": 6.95,
-     "start": 6.725,
-     "text": "make"
-    },
-    {
-     "end": 7.1,
-     "start": 6.95,
-     "text": "the"
-    },
-    {
-     "end": 7.775,
-     "start": 7.1,
      "text": "extracted"
     },
     {
-     "end": 8.35,
-     "start": 7.775,
-     "text": "archive"
+     "end": 3.375,
+     "start": 2.875,
+     "text": "archive's"
     },
     {
-     "end": 8.462,
-     "start": 8.35,
-     "text": "a"
+     "end": 4.4,
+     "start": 3.375,
+     "text": "directory"
     },
     {
-     "end": 8.712,
-     "start": 8.462,
-     "text": "Git"
-    },
-    {
-     "end": 8.988,
-     "start": 8.712,
-     "text": "tree"
-    },
-    {
-     "end": 10.15,
-     "start": 8.988,
-     "text": "first"
-    },
-    {
-     "end": 10.4,
-     "start": 10.15,
-     "text": "."
-    },
-    {
-     "end": 10.775,
-     "start": 10.6,
-     "text": "This"
-    },
-    {
-     "end": 11.188,
-     "start": 10.775,
-     "text": "commits"
-    },
-    {
-     "end": 11.675,
-     "start": 11.188,
-     "text": "nothing"
-    },
-    {
-     "end": 11.8,
-     "start": 11.675,
-     "text": "and"
-    },
-    {
-     "end": 12.462,
-     "start": 11.8,
-     "text": "contacts"
-    },
-    {
-     "end": 13.05,
-     "start": 12.462,
-     "text": "nothing"
-    },
-    {
-     "end": 13.163,
-     "start": 13.05,
-     "text": ";"
-    },
-    {
-     "end": 13.462,
-     "start": 13.163,
-     "text": "Nix"
-    },
-    {
-     "end": 13.9,
-     "start": 13.462,
-     "text": "warns"
-    },
-    {
-     "end": 14.075,
-     "start": 13.9,
-     "text": "that"
-    },
-    {
-     "end": 14.188,
-     "start": 14.075,
-     "text": "the"
-    },
-    {
-     "end": 14.5,
-     "start": 14.188,
-     "text": "tree"
-    },
-    {
-     "end": 14.663,
-     "start": 14.5,
-     "text": "is"
-    },
-    {
-     "end": 15.075,
-     "start": 14.663,
-     "text": "dirty"
-    },
-    {
-     "end": 15.125,
-     "start": 15.075,
+     "end": 4.625,
+     "start": 4.4,
      "text": ","
-    },
-    {
-     "end": 15.325,
-     "start": 15.125,
-     "text": "which"
-    },
-    {
-     "end": 15.475,
-     "start": 15.325,
-     "text": "is"
-    },
-    {
-     "end": 16.725,
-     "start": 15.475,
-     "text": "expected"
-    },
-    {
-     "end": 16.95,
-     "start": 16.725,
-     "text": "."
     }
    ]
   },
   "docs-demo1-on-preprod/build-the-two-commands-02": {
-   "audio_sha256": "e71e7730208b58714c31dc9f4cbea02e727537ca55c14ecdcc52858ec39d09eb",
+   "audio_sha256": "02ba8219f37218432cc4dfad59ec2222b8aa0f512aaf05f15babed615af1b4c0",
+   "characters": 665,
+   "cost": 0.0006583499999999999,
+   "duration": 48.975,
+   "index": 2,
+   "key": "b9aa3b8be744d23dda4f5644561c7d7231e27438d5afecc13e13f85887864d51",
+   "page": "docs/demo1-on-preprod.md",
+   "pause_ms": 400,
+   "section": "build-the-two-commands",
+   "sent_text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this, skip the build below, and carry on in the same shell:",
+   "text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this, skip the build below, and carry on in the same shell:",
+   "words": [
+    {
+     "end": 0.6,
+     "start": 0.225,
+     "text": "opens"
+    },
+    {
+     "end": 0.725,
+     "start": 0.6,
+     "text": "a"
+    },
+    {
+     "end": 1.05,
+     "start": 0.725,
+     "text": "shell"
+    },
+    {
+     "end": 1.237,
+     "start": 1.05,
+     "text": "with"
+    },
+    {
+     "end": 1.85,
+     "start": 1.237,
+     "text": "singular"
+    },
+    {
+     "end": 1.925,
+     "start": 1.85,
+     "text": ","
+    },
+    {
+     "end": 2.7,
+     "start": 1.925,
+     "text": "open-datum"
+    },
+    {
+     "end": 2.775,
+     "start": 2.7,
+     "text": ","
+    },
+    {
+     "end": 2.875,
+     "start": 2.775,
+     "text": "the"
+    },
+    {
+     "end": 3.45,
+     "start": 2.875,
+     "text": "development"
+    },
+    {
+     "end": 3.787,
+     "start": 3.45,
+     "text": "node"
+    },
+    {
+     "end": 4.275,
+     "start": 3.787,
+     "text": "devnet"
+    },
+    {
+     "end": 4.4,
+     "start": 4.275,
+     "text": "and"
+    },
+    {
+     "end": 4.925,
+     "start": 4.4,
+     "text": "jq"
+    },
+    {
+     "end": 5.062,
+     "start": 4.925,
+     "text": "on"
+    },
+    {
+     "end": 5.162,
+     "start": 5.062,
+     "text": "the"
+    },
+    {
+     "end": 5.675,
+     "start": 5.162,
+     "text": "path"
+    },
+    {
+     "end": 5.812,
+     "start": 5.675,
+     "text": ","
+    },
+    {
+     "end": 6.075,
+     "start": 5.812,
+     "text": "all"
+    },
+    {
+     "end": 6.35,
+     "start": 6.075,
+     "text": "built"
+    },
+    {
+     "end": 6.488,
+     "start": 6.35,
+     "text": "by"
+    },
+    {
+     "end": 6.575,
+     "start": 6.488,
+     "text": "the"
+    },
+    {
+     "end": 7.113,
+     "start": 6.575,
+     "text": "project's"
+    },
+    {
+     "end": 8.275,
+     "start": 7.113,
+     "text": "CI"
+    },
+    {
+     "end": 8.525,
+     "start": 8.275,
+     "text": "."
+    },
+    {
+     "end": 8.9,
+     "start": 8.725,
+     "text": "With"
+    },
+    {
+     "end": 9.012,
+     "start": 8.9,
+     "text": "the"
+    },
+    {
+     "end": 9.525,
+     "start": 9.012,
+     "text": "caches"
+    },
+    {
+     "end": 10.025,
+     "start": 9.525,
+     "text": "accepted"
+    },
+    {
+     "end": 10.188,
+     "start": 10.025,
+     "text": "it"
+    },
+    {
+     "end": 10.587,
+     "start": 10.188,
+     "text": "builds"
+    },
+    {
+     "end": 10.925,
+     "start": 10.587,
+     "text": "only"
+    },
+    {
+     "end": 11.075,
+     "start": 10.925,
+     "text": "the"
+    },
+    {
+     "end": 11.35,
+     "start": 11.075,
+     "text": "shell"
+    },
+    {
+     "end": 11.925,
+     "start": 11.35,
+     "text": "itself"
+    },
+    {
+     "end": 12.1,
+     "start": 11.925,
+     "text": "and"
+    },
+    {
+     "end": 12.55,
+     "start": 12.1,
+     "text": "fetches"
+    },
+    {
+     "end": 12.875,
+     "start": 12.55,
+     "text": "about"
+    },
+    {
+     "end": 13.938,
+     "start": 12.875,
+     "text": "190"
+    },
+    {
+     "end": 14.6,
+     "start": 13.938,
+     "text": "MiB"
+    },
+    {
+     "end": 15.012,
+     "start": 14.6,
+     "text": "instead"
+    },
+    {
+     "end": 15.1,
+     "start": 15.012,
+     "text": "of"
+    },
+    {
+     "end": 15.7,
+     "start": 15.1,
+     "text": "compiling"
+    },
+    {
+     "end": 15.8,
+     "start": 15.7,
+     "text": "the"
+    },
+    {
+     "end": 16.337,
+     "start": 15.8,
+     "text": "Haskell"
+    },
+    {
+     "end": 17.425,
+     "start": 16.337,
+     "text": "stack"
+    },
+    {
+     "end": 17.675,
+     "start": 17.425,
+     "text": "."
+    },
+    {
+     "end": 18.075,
+     "start": 17.85,
+     "text": "Its"
+    },
+    {
+     "end": 18.775,
+     "start": 18.075,
+     "text": "limits"
+    },
+    {
+     "end": 19.0,
+     "start": 18.775,
+     "text": ":"
+    },
+    {
+     "end": 19.325,
+     "start": 19.225,
+     "text": "it"
+    },
+    {
+     "end": 19.487,
+     "start": 19.325,
+     "text": "is"
+    },
+    {
+     "end": 19.775,
+     "start": 19.487,
+     "text": "pinned"
+    },
+    {
+     "end": 19.875,
+     "start": 19.775,
+     "text": "to"
+    },
+    {
+     "end": 20.312,
+     "start": 19.875,
+     "text": "release"
+    },
+    {
+     "end": 21.825,
+     "start": 20.312,
+     "text": "v0.12.0"
+    },
+    {
+     "end": 21.938,
+     "start": 21.825,
+     "text": ","
+    },
+    {
+     "end": 22.075,
+     "start": 21.938,
+     "text": "it"
+    },
+    {
+     "end": 22.237,
+     "start": 22.075,
+     "text": "is"
+    },
+    {
+     "end": 22.525,
+     "start": 22.237,
+     "text": "built"
+    },
+    {
+     "end": 22.688,
+     "start": 22.525,
+     "text": "for"
+    },
+    {
+     "end": 24.25,
+     "start": 22.688,
+     "text": "x86_64"
+    },
+    {
+     "end": 24.575,
+     "start": 24.25,
+     "text": "Linux"
+    },
+    {
+     "end": 25.125,
+     "start": 24.575,
+     "text": "only"
+    },
+    {
+     "end": 25.263,
+     "start": 25.125,
+     "text": ","
+    },
+    {
+     "end": 25.4,
+     "start": 25.263,
+     "text": "it"
+    },
+    {
+     "end": 25.712,
+     "start": 25.4,
+     "text": "needs"
+    },
+    {
+     "end": 26.725,
+     "start": 25.712,
+     "text": "Nix"
+    },
+    {
+     "end": 26.95,
+     "start": 26.725,
+     "text": ","
+    },
+    {
+     "end": 27.237,
+     "start": 27.15,
+     "text": "and"
+    },
+    {
+     "end": 27.325,
+     "start": 27.237,
+     "text": "it"
+    },
+    {
+     "end": 27.625,
+     "start": 27.325,
+     "text": "keeps"
+    },
+    {
+     "end": 27.725,
+     "start": 27.625,
+     "text": "the"
+    },
+    {
+     "end": 28.275,
+     "start": 27.725,
+     "text": "development"
+    },
+    {
+     "end": 28.688,
+     "start": 28.275,
+     "text": "node's"
+    },
+    {
+     "end": 29.175,
+     "start": 28.688,
+     "text": "files"
+    },
+    {
+     "end": 29.337,
+     "start": 29.175,
+     "text": "in"
+    },
+    {
+     "end": 29.6,
+     "start": 29.337,
+     "text": "one"
+    },
+    {
+     "end": 30.125,
+     "start": 29.6,
+     "text": "directory"
+    },
+    {
+     "end": 30.325,
+     "start": 30.125,
+     "text": "per"
+    },
+    {
+     "end": 31.25,
+     "start": 30.325,
+     "text": "user"
+    },
+    {
+     "end": 31.475,
+     "start": 31.25,
+     "text": ","
+    },
+    {
+     "end": 31.913,
+     "start": 31.725,
+     "text": "so"
+    },
+    {
+     "end": 32.175,
+     "start": 31.913,
+     "text": "run"
+    },
+    {
+     "end": 32.4,
+     "start": 32.175,
+     "text": "one"
+    },
+    {
+     "end": 32.7,
+     "start": 32.4,
+     "text": "node"
+    },
+    {
+     "end": 32.787,
+     "start": 32.7,
+     "text": "at"
+    },
+    {
+     "end": 32.888,
+     "start": 32.787,
+     "text": "a"
+    },
+    {
+     "end": 33.375,
+     "start": 32.888,
+     "text": "time"
+    },
+    {
+     "end": 33.425,
+     "start": 33.375,
+     "text": "("
+    },
+    {
+     "end": 33.537,
+     "start": 33.425,
+     "text": "on"
+    },
+    {
+     "end": 33.625,
+     "start": 33.537,
+     "text": "a"
+    },
+    {
+     "end": 34.325,
+     "start": 33.625,
+     "text": "multi-user"
+    },
+    {
+     "end": 34.713,
+     "start": 34.325,
+     "text": "Nix"
+    },
+    {
+     "end": 35.3,
+     "start": 34.713,
+     "text": "install"
+    },
+    {
+     "end": 35.412,
+     "start": 35.3,
+     "text": "a"
+    },
+    {
+     "end": 35.8,
+     "start": 35.412,
+     "text": "user"
+    },
+    {
+     "end": 36.375,
+     "start": 35.8,
+     "text": "outside"
+    },
+    {
+     "end": 37.213,
+     "start": 36.375,
+     "text": "trusted-users"
+    },
+    {
+     "end": 37.6,
+     "start": 37.213,
+     "text": "cannot"
+    },
+    {
+     "end": 37.85,
+     "start": 37.6,
+     "text": "take"
+    },
+    {
+     "end": 37.963,
+     "start": 37.85,
+     "text": "the"
+    },
+    {
+     "end": 38.475,
+     "start": 37.963,
+     "text": "caches"
+    },
+    {
+     "end": 38.612,
+     "start": 38.475,
+     "text": "from"
+    },
+    {
+     "end": 38.713,
+     "start": 38.612,
+     "text": "a"
+    },
+    {
+     "end": 39.775,
+     "start": 38.713,
+     "text": "flake"
+    },
+    {
+     "end": 40.0,
+     "start": 39.775,
+     "text": ";"
+    },
+    {
+     "end": 40.287,
+     "start": 40.175,
+     "text": "the"
+    },
+    {
+     "end": 40.6,
+     "start": 40.287,
+     "text": "shell's"
+    },
+    {
+     "end": 41.375,
+     "start": 40.6,
+     "text": "README"
+    },
+    {
+     "end": 41.612,
+     "start": 41.375,
+     "text": "says"
+    },
+    {
+     "end": 41.737,
+     "start": 41.612,
+     "text": "what"
+    },
+    {
+     "end": 41.85,
+     "start": 41.737,
+     "text": "to"
+    },
+    {
+     "end": 42.85,
+     "start": 41.85,
+     "text": "change"
+    },
+    {
+     "end": 42.9,
+     "start": 42.85,
+     "text": ")"
+    },
+    {
+     "end": 42.95,
+     "start": 42.9,
+     "text": "."
+    },
+    {
+     "end": 43.275,
+     "start": 43.175,
+     "text": "In"
+    },
+    {
+     "end": 43.537,
+     "start": 43.275,
+     "text": "that"
+    },
+    {
+     "end": 43.825,
+     "start": 43.537,
+     "text": "shell"
+    },
+    {
+     "end": 43.875,
+     "start": 43.825,
+     "text": ","
+    },
+    {
+     "end": 44.088,
+     "start": 43.875,
+     "text": "name"
+    },
+    {
+     "end": 44.175,
+     "start": 44.088,
+     "text": "the"
+    },
+    {
+     "end": 44.75,
+     "start": 44.175,
+     "text": "programs"
+    },
+    {
+     "end": 44.975,
+     "start": 44.75,
+     "text": "like"
+    },
+    {
+     "end": 45.325,
+     "start": 44.975,
+     "text": "this"
+    },
+    {
+     "end": 45.438,
+     "start": 45.325,
+     "text": ","
+    },
+    {
+     "end": 45.775,
+     "start": 45.438,
+     "text": "skip"
+    },
+    {
+     "end": 45.875,
+     "start": 45.775,
+     "text": "the"
+    },
+    {
+     "end": 46.125,
+     "start": 45.875,
+     "text": "build"
+    },
+    {
+     "end": 46.6,
+     "start": 46.125,
+     "text": "below"
+    },
+    {
+     "end": 46.675,
+     "start": 46.6,
+     "text": ","
+    },
+    {
+     "end": 46.812,
+     "start": 46.675,
+     "text": "and"
+    },
+    {
+     "end": 47.15,
+     "start": 46.812,
+     "text": "carry"
+    },
+    {
+     "end": 47.362,
+     "start": 47.15,
+     "text": "on"
+    },
+    {
+     "end": 47.438,
+     "start": 47.362,
+     "text": "in"
+    },
+    {
+     "end": 47.537,
+     "start": 47.438,
+     "text": "the"
+    },
+    {
+     "end": 47.862,
+     "start": 47.537,
+     "text": "same"
+    },
+    {
+     "end": 48.775,
+     "start": 47.862,
+     "text": "shell"
+    },
+    {
+     "end": 48.975,
+     "start": 48.775,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-demo1-on-preprod/build-the-two-commands-03": {
+   "audio_sha256": "680f3a6b5168c3151752842acfbb9198c7bd6e9d4bff5e8750c3c6091efb0003",
+   "characters": 245,
+   "cost": 0.00024255,
+   "duration": 16.425,
+   "index": 3,
+   "key": "b1e3ceaf71d6fbacf5477b90a98d4ecf5d7b6d212bc84f5b245b51a7e58e257d",
+   "page": "docs/demo1-on-preprod.md",
+   "pause_ms": 400,
+   "section": "build-the-two-commands",
+   "sent_text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
+   "text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.712,
+     "start": 0.338,
+     "text": "shell's"
+    },
+    {
+     "end": 0.925,
+     "start": 0.712,
+     "text": "own"
+    },
+    {
+     "end": 1.425,
+     "start": 0.925,
+     "text": "blueprint"
+    },
+    {
+     "end": 1.75,
+     "start": 1.425,
+     "text": "holds"
+    },
+    {
+     "end": 1.888,
+     "start": 1.75,
+     "text": "the"
+    },
+    {
+     "end": 2.225,
+     "start": 1.888,
+     "text": "same"
+    },
+    {
+     "end": 2.625,
+     "start": 2.225,
+     "text": "bytes"
+    },
+    {
+     "end": 2.787,
+     "start": 2.625,
+     "text": "as"
+    },
+    {
+     "end": 5.2,
+     "start": 2.787,
+     "text": "onchain/plutus.json"
+    },
+    {
+     "end": 5.25,
+     "start": 5.2,
+     "text": ","
+    },
+    {
+     "end": 5.387,
+     "start": 5.25,
+     "text": "but"
+    },
+    {
+     "end": 5.537,
+     "start": 5.387,
+     "text": "it"
+    },
+    {
+     "end": 5.85,
+     "start": 5.537,
+     "text": "sits"
+    },
+    {
+     "end": 5.938,
+     "start": 5.85,
+     "text": "in"
+    },
+    {
+     "end": 6.025,
+     "start": 5.938,
+     "text": "the"
+    },
+    {
+     "end": 6.275,
+     "start": 6.025,
+     "text": "Nix"
+    },
+    {
+     "end": 6.625,
+     "start": 6.275,
+     "text": "store"
+    },
+    {
+     "end": 6.812,
+     "start": 6.625,
+     "text": "with"
+    },
+    {
+     "end": 7.075,
+     "start": 6.812,
+     "text": "no"
+    },
+    {
+     "end": 8.3,
+     "start": 7.075,
+     "text": "version.txt"
+    },
+    {
+     "end": 8.725,
+     "start": 8.3,
+     "text": "beside"
+    },
+    {
+     "end": 8.85,
+     "start": 8.725,
+     "text": "it"
+    },
+    {
+     "end": 8.925,
+     "start": 8.85,
+     "text": ","
+    },
+    {
+     "end": 9.062,
+     "start": 8.925,
+     "text": "and"
+    },
+    {
+     "end": 9.55,
+     "start": 9.062,
+     "text": "singular"
+    },
+    {
+     "end": 10.025,
+     "start": 9.55,
+     "text": "registry"
+    },
+    {
+     "end": 10.65,
+     "start": 10.025,
+     "text": "describe"
+    },
+    {
+     "end": 10.725,
+     "start": 10.65,
+     "text": "("
+    },
+    {
+     "end": 11.062,
+     "start": 10.725,
+     "text": "step"
+    },
+    {
+     "end": 11.425,
+     "start": 11.062,
+     "text": "2"
+    },
+    {
+     "end": 11.525,
+     "start": 11.425,
+     "text": ")"
+    },
+    {
+     "end": 12.075,
+     "start": 11.525,
+     "text": "refuses"
+    },
+    {
+     "end": 12.175,
+     "start": 12.075,
+     "text": "a"
+    },
+    {
+     "end": 12.587,
+     "start": 12.175,
+     "text": "blueprint"
+    },
+    {
+     "end": 12.925,
+     "start": 12.587,
+     "text": "without"
+    },
+    {
+     "end": 13.225,
+     "start": 12.925,
+     "text": "one"
+    },
+    {
+     "end": 13.3,
+     "start": 13.225,
+     "text": ","
+    },
+    {
+     "end": 13.475,
+     "start": 13.3,
+     "text": "so"
+    },
+    {
+     "end": 13.663,
+     "start": 13.475,
+     "text": "keep"
+    },
+    {
+     "end": 13.775,
+     "start": 13.663,
+     "text": "the"
+    },
+    {
+     "end": 14.363,
+     "start": 13.775,
+     "text": "archive's"
+    },
+    {
+     "end": 14.75,
+     "start": 14.363,
+     "text": "file"
+    },
+    {
+     "end": 14.9,
+     "start": 14.75,
+     "text": "as"
+    },
+    {
+     "end": 16.2,
+     "start": 14.9,
+     "text": "blueprint"
+    },
+    {
+     "end": 16.425,
+     "start": 16.2,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-on-preprod/build-the-two-commands-04": {
+   "audio_sha256": "c189e39eff85b381569b3d242c1c559545577a499031b23b413793fdc0d35b8b",
+   "characters": 340,
+   "cost": 0.00033659999999999994,
+   "duration": 22.95,
+   "index": 4,
+   "key": "6ab8b6fc4f9a034644eed089cb8e5b5a78227f5a46e29f284020f09b965dc36c",
+   "page": "docs/demo1-on-preprod.md",
+   "pause_ms": 400,
+   "section": "build-the-two-commands",
+   "sent_text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
+   "text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.55,
+     "start": 0.287,
+     "text": "other"
+    },
+    {
+     "end": 1.125,
+     "start": 0.55,
+     "text": "way"
+    },
+    {
+     "end": 1.375,
+     "start": 1.125,
+     "text": ":"
+    },
+    {
+     "end": 1.825,
+     "start": 1.575,
+     "text": "build"
+    },
+    {
+     "end": 1.962,
+     "start": 1.825,
+     "text": "from"
+    },
+    {
+     "end": 2.075,
+     "start": 1.962,
+     "text": "the"
+    },
+    {
+     "end": 2.65,
+     "start": 2.075,
+     "text": "archive"
+    },
+    {
+     "end": 2.725,
+     "start": 2.65,
+     "text": "."
+    },
+    {
+     "end": 2.9,
+     "start": 2.725,
+     "text": "This"
+    },
+    {
+     "end": 3.175,
+     "start": 2.9,
+     "text": "suits"
+    },
+    {
+     "end": 3.525,
+     "start": 3.175,
+     "text": "another"
+    },
+    {
+     "end": 4.062,
+     "start": 3.525,
+     "text": "release"
+    },
+    {
+     "end": 4.2,
+     "start": 4.062,
+     "text": "or"
+    },
+    {
+     "end": 4.575,
+     "start": 4.2,
+     "text": "another"
+    },
+    {
+     "end": 5.575,
+     "start": 4.575,
+     "text": "system"
+    },
+    {
+     "end": 5.775,
+     "start": 5.575,
+     "text": "."
+    },
+    {
+     "end": 6.225,
+     "start": 5.975,
+     "text": "Nix"
+    },
+    {
+     "end": 6.438,
+     "start": 6.225,
+     "text": "reads"
+    },
+    {
+     "end": 6.5,
+     "start": 6.438,
+     "text": "a"
+    },
+    {
+     "end": 6.8,
+     "start": 6.5,
+     "text": "flake"
+    },
+    {
+     "end": 6.938,
+     "start": 6.8,
+     "text": "from"
+    },
+    {
+     "end": 7.0,
+     "start": 6.938,
+     "text": "a"
+    },
+    {
+     "end": 7.2,
+     "start": 7.0,
+     "text": "Git"
+    },
+    {
+     "end": 7.95,
+     "start": 7.2,
+     "text": "tree"
+    },
+    {
+     "end": 8.15,
+     "start": 7.95,
+     "text": ","
+    },
+    {
+     "end": 8.438,
+     "start": 8.35,
+     "text": "and"
+    },
+    {
+     "end": 8.525,
+     "start": 8.438,
+     "text": "the"
+    },
+    {
+     "end": 9.288,
+     "start": 8.525,
+     "text": "application's"
+    },
+    {
+     "end": 9.712,
+     "start": 9.288,
+     "text": "flake"
+    },
+    {
+     "end": 10.1,
+     "start": 9.712,
+     "text": "reaches"
+    },
+    {
+     "end": 10.2,
+     "start": 10.1,
+     "text": "the"
+    },
+    {
+     "end": 10.85,
+     "start": 10.2,
+     "text": "registry's"
+    },
+    {
+     "end": 11.363,
+     "start": 10.85,
+     "text": "sources"
+    },
+    {
+     "end": 11.625,
+     "start": 11.363,
+     "text": "one"
+    },
+    {
+     "end": 12.175,
+     "start": 11.625,
+     "text": "directory"
+    },
+    {
+     "end": 12.875,
+     "start": 12.175,
+     "text": "up"
+    },
+    {
+     "end": 13.1,
+     "start": 12.875,
+     "text": ","
+    },
+    {
+     "end": 13.387,
+     "start": 13.3,
+     "text": "so"
+    },
+    {
+     "end": 13.538,
+     "start": 13.387,
+     "text": "make"
+    },
+    {
+     "end": 13.65,
+     "start": 13.538,
+     "text": "the"
+    },
+    {
+     "end": 14.25,
+     "start": 13.65,
+     "text": "extracted"
+    },
+    {
+     "end": 14.775,
+     "start": 14.25,
+     "text": "archive"
+    },
+    {
+     "end": 14.875,
+     "start": 14.775,
+     "text": "a"
+    },
+    {
+     "end": 15.1,
+     "start": 14.875,
+     "text": "Git"
+    },
+    {
+     "end": 15.337,
+     "start": 15.1,
+     "text": "tree"
+    },
+    {
+     "end": 16.2,
+     "start": 15.337,
+     "text": "first"
+    },
+    {
+     "end": 16.4,
+     "start": 16.2,
+     "text": "."
+    },
+    {
+     "end": 16.775,
+     "start": 16.6,
+     "text": "This"
+    },
+    {
+     "end": 17.188,
+     "start": 16.775,
+     "text": "commits"
+    },
+    {
+     "end": 17.675,
+     "start": 17.188,
+     "text": "nothing"
+    },
+    {
+     "end": 17.8,
+     "start": 17.675,
+     "text": "and"
+    },
+    {
+     "end": 18.462,
+     "start": 17.8,
+     "text": "contacts"
+    },
+    {
+     "end": 19.05,
+     "start": 18.462,
+     "text": "nothing"
+    },
+    {
+     "end": 19.163,
+     "start": 19.05,
+     "text": ";"
+    },
+    {
+     "end": 19.462,
+     "start": 19.163,
+     "text": "Nix"
+    },
+    {
+     "end": 19.9,
+     "start": 19.462,
+     "text": "warns"
+    },
+    {
+     "end": 20.075,
+     "start": 19.9,
+     "text": "that"
+    },
+    {
+     "end": 20.188,
+     "start": 20.075,
+     "text": "the"
+    },
+    {
+     "end": 20.5,
+     "start": 20.188,
+     "text": "tree"
+    },
+    {
+     "end": 20.663,
+     "start": 20.5,
+     "text": "is"
+    },
+    {
+     "end": 21.075,
+     "start": 20.663,
+     "text": "dirty"
+    },
+    {
+     "end": 21.125,
+     "start": 21.075,
+     "text": ","
+    },
+    {
+     "end": 21.325,
+     "start": 21.125,
+     "text": "which"
+    },
+    {
+     "end": 21.475,
+     "start": 21.325,
+     "text": "is"
+    },
+    {
+     "end": 22.725,
+     "start": 21.475,
+     "text": "expected"
+    },
+    {
+     "end": 22.95,
+     "start": 22.725,
+     "text": "."
+    }
+   ]
+  },
+  "docs-demo1-on-preprod/build-the-two-commands-05": {
+   "audio_sha256": "99d10ca18c1805c69acae3cc75be43aabd0bfe158e6f10a823bdc49a8a2a18e9",
    "characters": 380,
    "cost": 0.0003762,
    "duration": 27.525,
-   "index": 2,
+   "index": 5,
    "key": "4273a2661b7b948c91de7fa26b53993943c95c88018809a49623aefa1d5c0bff",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 400,
@@ -119200,12 +122755,12 @@
     }
    ]
   },
-  "docs-demo1-on-preprod/build-the-two-commands-03": {
-   "audio_sha256": "6aca735a953136ec3f28922341c9f0b6fccbccac2ba6235fd5c2acec8d2805bf",
+  "docs-demo1-on-preprod/build-the-two-commands-06": {
+   "audio_sha256": "fec65b6d51c028f1ab3efc511ac276cc5c76362d130a5601d9c814f1135f89d6",
    "characters": 324,
    "cost": 0.00032076,
    "duration": 25.1,
-   "index": 3,
+   "index": 6,
    "key": "8cf8067a98b454827e063998c3f2c8a5fb340a06d00a8e1a3667e35de4f2d7fc",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 400,
@@ -132866,17 +136421,17 @@
    ]
   },
   "docs-demo1-on-preprod/what-you-need-01": {
-   "audio_sha256": "9934aa87994d08ee62503031542e6e0690eea97efb92f3cdabbd18bf542134a3",
-   "characters": 173,
-   "cost": 0.00017127,
-   "duration": 13.725,
+   "audio_sha256": "1dd774a664aa95ca242a6e6f08da949fac22bb3ac89a4f5047955e24cfe9c22b",
+   "characters": 244,
+   "cost": 0.00024155999999999996,
+   "duration": 18.35,
    "index": 1,
-   "key": "73583284bea2cd13f8a37eb748a35d2e9d523ee1ea4b1b76b3d5a2620d6ed218",
+   "key": "68a1279f7463c1e36b303a2ce429c97cfc409cdae70d6122dca797bac7838671",
    "page": "docs/demo1-on-preprod.md",
    "pause_ms": 300,
    "section": "what-you-need",
-   "sent_text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
-   "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "sent_text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The Nix shell of singular-demo gives you the programs without a build. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
+   "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The Nix shell of singular-demo gives you the programs without a build. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
    "words": [
     {
      "end": 0.275,
@@ -132959,108 +136514,173 @@
      "text": "."
     },
     {
-     "end": 5.325,
-     "start": 5.225,
+     "end": 5.3,
+     "start": 5.2,
      "text": "The"
     },
     {
-     "end": 5.8,
-     "start": 5.325,
-     "text": "release"
-    },
-    {
-     "end": 6.2,
-     "start": 5.8,
-     "text": "ships"
-    },
-    {
-     "end": 6.537,
-     "start": 6.2,
-     "text": "no"
-    },
-    {
-     "end": 7.1,
-     "start": 6.537,
-     "text": "ready-built"
-    },
-    {
-     "end": 7.65,
-     "start": 7.1,
-     "text": "binaries"
-    },
-    {
-     "end": 8.1,
-     "start": 7.65,
-     "text": "yet"
-    },
-    {
-     "end": 8.212,
-     "start": 8.1,
-     "text": "."
-    },
-    {
-     "end": 8.325,
-     "start": 8.212,
-     "text": "A"
-    },
-    {
-     "end": 8.8,
-     "start": 8.325,
-     "text": "binary"
-    },
-    {
-     "end": 9.35,
-     "start": 8.8,
-     "text": "install"
-    },
-    {
-     "end": 9.525,
-     "start": 9.35,
-     "text": "that"
-    },
-    {
-     "end": 9.837,
-     "start": 9.525,
-     "text": "needs"
-    },
-    {
-     "end": 10.113,
-     "start": 9.837,
-     "text": "no"
-    },
-    {
-     "end": 10.425,
-     "start": 10.113,
+     "end": 5.562,
+     "start": 5.3,
      "text": "Nix"
     },
     {
-     "end": 10.575,
+     "end": 5.875,
+     "start": 5.562,
+     "text": "shell"
+    },
+    {
+     "end": 6.037,
+     "start": 5.875,
+     "text": "of"
+    },
+    {
+     "end": 7.1,
+     "start": 6.037,
+     "text": "singular-demo"
+    },
+    {
+     "end": 7.375,
+     "start": 7.1,
+     "text": "gives"
+    },
+    {
+     "end": 7.463,
+     "start": 7.375,
+     "text": "you"
+    },
+    {
+     "end": 7.55,
+     "start": 7.463,
+     "text": "the"
+    },
+    {
+     "end": 8.15,
+     "start": 7.55,
+     "text": "programs"
+    },
+    {
+     "end": 8.462,
+     "start": 8.15,
+     "text": "without"
+    },
+    {
+     "end": 8.525,
+     "start": 8.462,
+     "text": "a"
+    },
+    {
+     "end": 9.425,
+     "start": 8.525,
+     "text": "build"
+    },
+    {
+     "end": 9.65,
+     "start": 9.425,
+     "text": "."
+    },
+    {
+     "end": 9.95,
+     "start": 9.85,
+     "text": "The"
+    },
+    {
+     "end": 10.425,
+     "start": 9.95,
+     "text": "release"
+    },
+    {
+     "end": 10.825,
      "start": 10.425,
+     "text": "ships"
+    },
+    {
+     "end": 11.163,
+     "start": 10.825,
+     "text": "no"
+    },
+    {
+     "end": 11.725,
+     "start": 11.163,
+     "text": "ready-built"
+    },
+    {
+     "end": 12.275,
+     "start": 11.725,
+     "text": "binaries"
+    },
+    {
+     "end": 12.725,
+     "start": 12.275,
+     "text": "yet"
+    },
+    {
+     "end": 12.837,
+     "start": 12.725,
+     "text": "."
+    },
+    {
+     "end": 12.95,
+     "start": 12.837,
+     "text": "A"
+    },
+    {
+     "end": 13.425,
+     "start": 12.95,
+     "text": "binary"
+    },
+    {
+     "end": 13.975,
+     "start": 13.425,
+     "text": "install"
+    },
+    {
+     "end": 14.15,
+     "start": 13.975,
+     "text": "that"
+    },
+    {
+     "end": 14.462,
+     "start": 14.15,
+     "text": "needs"
+    },
+    {
+     "end": 14.738,
+     "start": 14.462,
+     "text": "no"
+    },
+    {
+     "end": 15.05,
+     "start": 14.738,
+     "text": "Nix"
+    },
+    {
+     "end": 15.2,
+     "start": 15.05,
      "text": "is"
     },
     {
-     "end": 10.925,
-     "start": 10.575,
+     "end": 15.55,
+     "start": 15.2,
      "text": "coming"
     },
     {
-     "end": 11.075,
-     "start": 10.925,
+     "end": 15.7,
+     "start": 15.55,
      "text": "in"
     },
     {
-     "end": 11.488,
-     "start": 11.075,
+     "end": 16.112,
+     "start": 15.7,
      "text": "issue"
     },
     {
-     "end": 13.475,
-     "start": 11.488,
+     "end": 18.1,
+     "start": 16.112,
      "text": "695"
     },
     {
-     "end": 13.725,
-     "start": 13.475,
+     "end": 18.35,
+     "start": 18.1,
      "text": "."
     }
    ]

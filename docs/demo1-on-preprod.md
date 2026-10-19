@@ -41,7 +41,8 @@ been played on preprod and how much has not.
 ## What you need
 
 - A Linux machine with [Nix](https://nixos.org/download) and flakes enabled, plus
-  `git`, `jq` and `curl`. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
+  `git`, `jq` and `curl`. The Nix shell of
+  [singular-demo](https://github.com/lambdasistemi/singular-demo) gives you the programs without a build. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in [issue 695](https://github.com/lambdasistemi/singular/issues/695).
 - About ninety minutes with a terminal open the whole time, and enough preprod
   test ada (written tADA) for both wallets; the funding step says how much.
 - A Koios token file is optional and described below.
@@ -92,7 +93,36 @@ extracted directory, the one that holds `DEMO1.md` and `onchain/`.
 
 ## Build the two commands
 
-Nix reads a flake from a Git tree, and the application's flake reaches the
+**The quick way: the shell.** From the extracted archive's directory,
+
+```sh
+nix develop github:lambdasistemi/singular-demo --accept-flake-config
+```
+
+opens a shell with `singular`, `open-datum`, the development node `devnet` and
+`jq` on the path, all built by the project's CI. With the caches accepted it
+builds only the shell itself and fetches about 190 MiB instead of compiling the
+Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64
+Linux only, it needs Nix, and it keeps the development node's files in one directory per
+user, so run one node at a time (on a multi-user Nix install a user outside
+`trusted-users` cannot take the caches from a flake; the
+[shell's README](https://github.com/lambdasistemi/singular-demo) says what to change). In that shell, name the
+programs like this, skip the build below, and carry on in the same shell:
+
+```sh
+root="$PWD"
+singular="$(command -v singular)"
+open_datum="$(command -v open-datum)"
+blueprint="$root/onchain/plutus.json"
+```
+
+The shell's own `$blueprint` holds the same bytes as `onchain/plutus.json`, but it
+sits in the Nix store with no `version.txt` beside it, and `singular registry
+describe` (step 2) refuses a blueprint without one, so keep the archive's file as
+`blueprint`.
+
+**The other way: build from the archive.** This suits another release or another
+system. Nix reads a flake from a Git tree, and the application's flake reaches the
 registry's sources one directory up, so make the extracted archive a Git tree
 first. This commits nothing and contacts nothing; Nix warns that the tree is
 dirty, which is expected.
