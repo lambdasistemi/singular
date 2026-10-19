@@ -190,6 +190,25 @@ fn onlyMember(c: Case) -> Member {
   m
 }
 
+/// The same pending output carrying another request datum. The output's
+/// inline datum and the member's datum are one value, so the handler sees
+/// the same datum whether it reads its argument or the actual spent input.
+fn withDatum(m: Member, d: CageDatum) -> Member {
+  Member {
+    input: Input {
+      ..m.input,
+      output: Output { ..m.input.output, datum: InlineDatum(d) },
+    },
+    datum: d,
+  }
+}
+
+/// The case with its only member replaced: the transaction holds the new
+/// input.
+fn withMember(c: Case, m: Member) -> Case {
+  Case { ..c, members: [m] }
+}
+
 // ----------------------------------------------------------------------------
 // The pending requests a booking leaves
 // ----------------------------------------------------------------------------
@@ -432,6 +451,21 @@ test tagged_fold_state_folds_two_terminations_with_aggregate_donation() {
   stateFolds(batchCase())
 }
 
+/// The folder pays the fee out of its ordinary value: ordinary output lovelace
+/// plus the fee equals ordinary input lovelace plus the tip, so one lovelace
+/// of fee leaves one lovelace less in the change. Donation, tags, roots and
+/// every other field are those of the zero-fee fold.
+test tagged_fold_state_folds_a_termination_with_a_funded_nonzero_fee() {
+  let t = termRequest()
+  stateFolds(
+    Case {
+      ..termCase(),
+      fee: 1,
+      outputs: [change(10_000_000 + t.declared_tip - 1)],
+    },
+  )
+}
+
 // ---- the request boundary: each member's own spend, executed apart ---------
 
 test tagged_fold_request_spend_contributes_a_registration() {
@@ -542,21 +576,15 @@ test tagged_fold_request_spend_refuses_a_termination_beside_another_registrys_st
 test tagged_fold_request_spend_refuses_a_registration_of_another_registry() fail {
   let c = regCase()
   let r = RegistrationRequest { ..regRequest(), registry: fx.foreignCageToken }
-  contributesAt(
-    Member { ..onlyMember(c), datum: RegistrationDatum(r) },
-    fx.stateRef,
-    txOf(c),
-  )
+  let m = withDatum(onlyMember(c), RegistrationDatum(r))
+  contributes(withMember(c, m), m)
 }
 
 test tagged_fold_request_spend_refuses_a_termination_of_another_registry() fail {
   let c = termCase()
   let t = TerminationRequest { ..termRequest(), registry: fx.foreignCageToken }
-  contributesAt(
-    Member { ..onlyMember(c), datum: TerminationDatum(t) },
-    fx.stateRef,
-    txOf(c),
-  )
+  let m = withDatum(onlyMember(c), TerminationDatum(t))
+  contributes(withMember(c, m), m)
 }
 
 // ----------------------------------------------------------------------------
