@@ -301,7 +301,7 @@ def corpus : List Scenario := Id.run do
   let short := termination (reachWorld updatedActions) 5 1 0 2000000
   let short := { short with request := { short.request with carrierAda := 1000000,     contents := { short.request.contents with lovelace := 3000000 } } }
   return [
-    scenario "lifecycle-tip-from-held" "witness" ["update_requires_controller","bookInsert_inversion","bookTerminate_inversion","update_inversion","fold_inversion","appStep_fold","selectRow_inversion","genesis_consistent","appStep_preserves_consistent","reachable_consistent","bookInsert_preserves_consistent","bookTerminate_preserves_consistent","update_preserves_consistent","fold_preserves_consistent","update_keeps_registry","update_preserves_custody","insertion_requires_registry_identity","insertion_binds_envelope","insertion_holding_inline","bookTerminate_transfers_custody","termination_fold_burns_atomically","only_termination_booking_transfers_custody","fold_routes_economics","fold_consumed_requests_disappear","fold_requires_no_application_signature","registration_tag_binds_nonce","termination_has_no_application_tag_or_clock","termination_booking_has_no_controller_payout","termination_booking_value_transfer","application_root_world_correspondence","application_supply_spans_custody_and_pending","termination_fold_donates_held_minus_tip","termination_has_no_expiry","selected_request_refs_distinct","registration_allocations_are_distinct","termination_fold_timing_equivalent_root","application_fold_decision_equivalent_root"] (lifecycleActions 0),
+    scenario "lifecycle-tip-from-held" "witness" ["appStepWith_bookInsert","appStepWith_bookTerminate","appStepWith_update","appStepWith_fold","update_requires_controller","bookInsert_inversion","bookTerminate_inversion","update_inversion","fold_inversion","appStep_fold","selectRow_inversion","genesis_consistent","appStep_preserves_consistent","reachable_consistent","bookInsert_preserves_consistent","bookTerminate_preserves_consistent","update_preserves_consistent","fold_preserves_consistent","update_keeps_registry","update_preserves_custody","insertion_requires_registry_identity","insertion_binds_envelope","insertion_holding_inline","bookTerminate_transfers_custody","termination_fold_burns_atomically","only_termination_booking_transfers_custody","fold_routes_economics","fold_consumed_requests_disappear","fold_requires_no_application_signature","registration_tag_binds_nonce","termination_has_no_application_tag_or_clock","termination_booking_has_no_controller_payout","termination_booking_value_transfer","application_root_world_correspondence","application_supply_spans_custody_and_pending","termination_fold_donates_held_minus_tip","termination_has_no_expiry","selected_request_refs_distinct","registration_allocations_are_distinct","termination_fold_timing_equivalent_root","application_fold_decision_equivalent_root"] (lifecycleActions 0),
     scenario "lifecycle-optional-addition" "witness" ["termination_booking_value_transfer", "termination_fold_donates_held_minus_tip"] (lifecycleActions 1000000),
     scenario "two-terminations-and-registration" "witness" ["fold_routes_economics", "selected_request_refs_distinct"] (mixed3 ++ [coincidentFold mixed3 [⟨100, 5⟩, ⟨101, 6⟩, ⟨10, 7⟩]]),
     scenario "payload-b" "witness" ["update_payload_free"] (insertKey 5 ++ [.update 0 [successorOf 5 payload2 insertDeposit] [controller]]),
@@ -312,12 +312,12 @@ def corpus : List Scenario := Id.run do
       [{ successorOf 5 payload1 insertDeposit with address := stranger }] [controller]]),
     scenario "update-floor" "adverse-input" ["update_preserves_custody"] (insertKey 5 ++ [.update 0 [successorOf 5 payload1 1] [controller]]),
     scenario "update-drops-token" "adverse-input" ["update_preserves_custody"] (insertKey 5 ++ [.update 0 [{ successorOf 5 payload1 insertDeposit with assets := [] }] [controller]]),
-    scenario "withdraw" "adverse-input" ["withdraw_inversion"] (insertKey 5 ++ [.withdraw 0 []]),
+    scenario "withdraw" "adverse-input" ["appStepWith_withdraw","withdraw_inversion"] (insertKey 5 ++ [.withdraw 0 []]),
     scenario "pending-cannot-update" "adverse-input" ["pending_termination_cannot_be_rebooked_or_updated"] (term ++ [.update 1 [successorOf 5 payload2 insertDeposit] [controller]]),
     scenario "pending-cannot-rebook" "adverse-input" ["pending_termination_cannot_be_rebooked_or_updated"] (term ++ [.bookTerminate (termination (reachWorld updatedActions) 5 1 0 2000000) 1 0 [controller]]),
     scenario "termination-rejection-refused" "adverse-input" ["termination_has_no_expiry","application_rejection_decision_equivalent_root"] (term ++ [rejectAction term [⟨101, 5⟩]]),
     scenario "registration-rejection-beside-pending-termination" "witness" ["rejection_preserves_pending_terminations", "reject_preserves_consistent"] (rejectBesideTermination ++ [rejectAction rejectBesideTermination [⟨10, 6⟩]]),
-    scenario "registration-expired-rejection" "witness" ["reject_inversion", "reject_preserves_consistent", "rejection_preserves_pending_terminations"] (reg ++ [rejectAction reg [⟨10, 5⟩]]),
+    scenario "registration-expired-rejection" "witness" ["appStepWith_reject","reject_inversion", "reject_preserves_consistent", "rejection_preserves_pending_terminations"] (reg ++ [rejectAction reg [⟨10, 5⟩]]),
     scenario "duplicate-insertion" "adverse-input" ["duplicate_refused_by_registry"] (dup ++ [foldAction dup [⟨11, 5⟩]]),
     scenario "resurrection" "adverse-input" ["resurrection_refused_by_registry"] (resurrect ++ [foldAction resurrect [⟨11, 5⟩]]),
     scenario "registry-asset-other-name" "adverse-input" ["insertion_requires_registry_identity"] reg { policy := 50, assetName := 52 },
@@ -326,7 +326,7 @@ def corpus : List Scenario := Id.run do
     scenario "booking-unsigned" "adverse-input" ["bookInsert_inversion"] [.bookInsert b (envelopeFor 5 payload0) [stranger]],
     scenario "termination-unsigned" "adverse-input" ["bookTerminate_inversion"] (updatedActions ++ [.bookTerminate (termination (reachWorld updatedActions) 5 1 0 2000000) 1 0 [stranger]]),
     scenario "termination-diverts-surplus" "adverse-input" ["termination_booking_value_transfer"] (updatedActions ++ [.bookTerminate short 1 0 [controller]]),
-    scenario "other-edge" "adverse-input" ["bookOther_refused"] [.bookOther { edge := .deleteActive, key := 5 } [controller]] ]
+    scenario "other-edge" "adverse-input" ["appStepWith_bookOther","bookOther_refused"] [.bookOther { edge := .deleteActive, key := 5 } [controller]] ]
 
 def ordinaryWorld : World := reachWorld (insertKey 5)
 def duplicatedWorld : World := { ordinaryWorld with outputs := ordinaryWorld.outputs ++ ordinaryWorld.outputs }
@@ -467,6 +467,13 @@ def statementNames : List (String × String) :=
   , ("selectRow_inversion", "inversion")
   , ("fold_inversion", "inversion")
   , ("appStep_fold", "inversion")
+  , ("appStepWith_bookInsert", "inversion")
+  , ("appStepWith_bookTerminate", "inversion")
+  , ("appStepWith_bookOther", "inversion")
+  , ("appStepWith_update", "inversion")
+  , ("appStepWith_fold", "inversion")
+  , ("appStepWith_reject", "inversion")
+  , ("appStepWith_withdraw", "inversion")
   , ("reject_inversion", "inversion")
   , ("withdraw_inversion", "inversion")
   , ("genesis_consistent", "invariant")

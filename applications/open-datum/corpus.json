@@ -535,7 +535,11 @@
      "consistent": true}],
    "scenario":
    {"statements":
-    ["update_requires_controller",
+    ["appStepWith_bookInsert",
+     "appStepWith_bookTerminate",
+     "appStepWith_update",
+     "appStepWith_fold",
+     "update_requires_controller",
      "bookInsert_inversion",
      "bookTerminate_inversion",
      "update_inversion",
@@ -7400,7 +7404,7 @@
      "consistent": true},
     {"reason": "no-withdrawal-path", "outcome": "refused"}],
    "scenario":
-   {"statements": ["withdraw_inversion"],
+   {"statements": ["appStepWith_withdraw", "withdraw_inversion"],
     "name": "withdraw",
     "kind": "adverse-input",
     "config":
@@ -11118,7 +11122,8 @@
      "consistent": true}],
    "scenario":
    {"statements":
-    ["reject_inversion",
+    ["appStepWith_reject",
+     "reject_inversion",
      "reject_preserves_consistent",
      "rejection_preserves_pending_terminations"],
     "name": "registration-expired-rejection",
@@ -15204,7 +15209,7 @@
    "genesisConsistent": true},
   {"steps": [{"reason": "app-edge-not-certified", "outcome": "refused"}],
    "scenario":
-   {"statements": ["bookOther_refused"],
+   {"statements": ["appStepWith_bookOther", "bookOther_refused"],
     "name": "other-edge",
     "kind": "adverse-input",
     "config":

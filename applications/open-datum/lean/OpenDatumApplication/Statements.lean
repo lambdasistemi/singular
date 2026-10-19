@@ -353,4 +353,38 @@ theorem registration_allocations_are_distinct (w w' : World) (b : RegistrationBo
       b.request.carrierAda = e.control.deposit ∧ w.registry.config.minimumTip ≤ b.request.declaredTip := by
   sorry
 
+
+/-- Exact dispatcher calls under the supplied law. These additive obligations
+remain STATED at this checkpoint; proofs require a separate release. -/
+theorem appStepWith_bookInsert (law : Law) (w : World) (b : RegistrationBooking)
+    (e : Envelope) (sigs : List Nat) :
+    appStepWith law w (.bookInsert b e sigs) = bookInsertStep law w b e sigs := by
+  sorry
+
+theorem appStepWith_bookTerminate (law : Law) (w : World) (b : TerminationBooking)
+    (ref added : Nat) (sigs : List Nat) :
+    appStepWith law w (.bookTerminate b ref added sigs) = bookTerminateStep law w b ref added sigs := by
+  sorry
+
+theorem appStepWith_bookOther (law : Law) (w : World) (r : Request) (sigs : List Nat) :
+    appStepWith law w (.bookOther r sigs) = bookOtherStep r := by
+  sorry
+
+theorem appStepWith_update (law : Law) (w : World) (ref : Nat)
+    (successors : List Successor) (sigs : List Nat) :
+    appStepWith law w (.update ref successors sigs) = updateStep law w ref successors sigs := by
+  sorry
+
+theorem appStepWith_fold (law : Law) (w : World) (u : EconomicUtxo) (tx : EconomicTransaction) :
+    appStepWith law w (.fold u tx) = foldEffect law w u tx := by
+  sorry
+
+theorem appStepWith_reject (law : Law) (w : World) (u : EconomicUtxo) (r : Rejection) :
+    appStepWith law w (.reject u r) = rejectStep w u r := by
+  sorry
+
+theorem appStepWith_withdraw (law : Law) (w : World) (ref : Nat) (outputs : List TxOutput) :
+    appStepWith law w (.withdraw ref outputs) = withdrawStep w ref outputs := by
+  sorry
+
 end OpenDatumApplication.Statements
