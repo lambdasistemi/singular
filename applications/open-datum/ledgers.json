@@ -41,7 +41,7 @@
    "axioms": ["Quot.sound", "propext", "sorryAx"]},
   {"status": "STATED",
    "statementSha256":
-   "c17af63d70558d34060269ab8e263bde0726b5afa192106d05a46b531bf778ca",
+   "4f7c7ddf35adc98a30e95f8105ca5bf822e084a2f65ac1163d8e24444d6d173b",
    "statement": "OpenDatumApplication.Statements.fold_inversion",
    "scenarios": ["lifecycle-tip-from-held"],
    "class": "inversion",
@@ -387,12 +387,12 @@
    "axioms": ["Classical.choice", "Quot.sound", "propext", "sorryAx"]},
   {"status": "STATED",
    "statementSha256":
-   "e4c780e9cda7f59465d65224163c343c93f60098880abb4ad7014c84618406e2",
+   "35f3257f245d6bbfc5df6d592dfecac2caa352af33d02a0da85284346f2ccf4e",
    "statement": "OpenDatumApplication.Statements.termination_has_no_expiry",
    "scenarios": ["lifecycle-tip-from-held", "termination-rejection-refused"],
    "class": "requirement",
    "boundary": [],
-   "axioms": ["propext", "sorryAx"]},
+   "axioms": ["Classical.choice", "Quot.sound", "propext", "sorryAx"]},
   {"status": "STATED",
    "statementSha256":
    "e22701912787128e2d88ce9d072f8d13a52a83fe358ef73ead43aa01aecc26e8",
@@ -420,6 +420,33 @@
    "statement":
    "OpenDatumApplication.Statements.registration_allocations_are_distinct",
    "scenarios": ["lifecycle-tip-from-held"],
+   "class": "requirement",
+   "boundary": [],
+   "axioms": ["Classical.choice", "Quot.sound", "propext", "sorryAx"]},
+  {"status": "STATED",
+   "statementSha256":
+   "0d296b99d5ff1b24a73abb3711577394efe90434c72de46e7ff99a9a36ed733a",
+   "statement":
+   "OpenDatumApplication.Statements.termination_fold_timing_equivalent_root",
+   "scenarios": ["lifecycle-tip-from-held"],
+   "class": "requirement",
+   "boundary": [],
+   "axioms": ["sorryAx"]},
+  {"status": "STATED",
+   "statementSha256":
+   "2bcb7943b9421a95fb54d9bd271f09e6553fd7d369b4aeae4fa363254c799c7e",
+   "statement":
+   "OpenDatumApplication.Statements.application_fold_decision_equivalent_root",
+   "scenarios": ["lifecycle-tip-from-held"],
+   "class": "requirement",
+   "boundary": [],
+   "axioms": ["Classical.choice", "Quot.sound", "propext", "sorryAx"]},
+  {"status": "STATED",
+   "statementSha256":
+   "c79377e00480a21cf6462d4ef0e00e53898873a54d5db21bafc5f0f86352f530",
+   "statement":
+   "OpenDatumApplication.Statements.application_rejection_decision_equivalent_root",
+   "scenarios": ["termination-rejection-refused"],
    "class": "requirement",
    "boundary": [],
    "axioms": ["Classical.choice", "Quot.sound", "propext", "sorryAx"]}],

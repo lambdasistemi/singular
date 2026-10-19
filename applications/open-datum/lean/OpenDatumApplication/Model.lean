@@ -438,18 +438,45 @@ def createdOutputs (app : App) (first : Nat) (rows : List FoldRow) : List AppOut
     | _, _ => none).zipIdx).map fun ((b, e), i) =>
       { ref := first + i, address := appAddress app, lovelace := b.request.carrierAda,         assets := [((.active, b.request.key), 1)], envelope := e, registered := e }
 
+/-- Operational timing port, delegated with the exact root arguments. -/
+def terminationFoldTiming (world : Singular.World) (interval : Interval)
+    (booking : TerminationBooking) : Option String :=
+  Singular.foldMemberRefusal world.registry.config interval (.termination booking)
+
+/-- Only queried after root admission, in the root's selected input order. -/
+def applicationFoldTimingRefusal (world : Singular.World) (tx : EconomicTransaction) : Option String :=
+  match tx.transaction.validity with
+  | none => none
+  | some interval => (foldMembers world tx).findSome? fun member =>
+    match member with
+    | .registration _ => none
+    | .termination booking => terminationFoldTiming world interval booking
+
+/-- Root errors retain precedence; no successor is committed before the port. -/
+def applicationFoldDecision (world : Singular.World) (u : EconomicUtxo)
+    (tx : EconomicTransaction) : Except String Singular.World := do
+  let after ← Singular.foldAccepted world u tx
+  match applicationFoldTimingRefusal world tx with
+  | some why => .error why
+  | none => .ok after
+
+/-- The root owns the entire rejection decision, including refusal precedence. -/
+def applicationRejectionDecision (world : Singular.World) (u : EconomicUtxo)
+    (rejection : Rejection) : Except String Singular.World :=
+  Singular.rejectionAccepted world u rejection
+
 /-- All economic admission and accounting is the frozen root fold. The local
 projection adds only newly delivered registration outputs. Termination custody
 was already removed at booking; it is never spent a second time here. -/
 def foldEffect (law : Law) (w : World) (u : EconomicUtxo) (tx : EconomicTransaction) : Except String World := do
   let rows ← (selectedReferences w tx).mapM (selectRow law w)
-  let economic ← Singular.foldAccepted w.economic u tx
+  let economic ← applicationFoldDecision w.economic u tx
   let created := createdOutputs w.app w.nextRef rows
   pure { w with economic, outputs := w.outputs ++ created,         pending := w.pending.filter (fun p => !inputsContainReference tx.transaction.inputs p.reference),         nextRef := w.nextRef + created.length }
 
 /-- Lawful registration rejection only, with the frozen root judgement. -/
 def rejectStep (w : World) (u : EconomicUtxo) (r : Rejection) : Except String World := do
-  let economic ← rejectionAccepted w.economic u r
+  let economic ← applicationRejectionDecision w.economic u r
   pure { w with economic,     pending := w.pending.filter fun p => !(r.members.any fun m => m.1 == p.reference) }
 
 def withdrawStep (w : World) (ref : Nat) (_outputs : List TxOutput) : Except String World := do
