@@ -24,7 +24,10 @@ Check the file against `SHA256SUMS`, unpack it and run `singular --version`,
 which prints the release and the commit the program was built from. Each file
 holds `singular`, `open-datum` and `devnet`, the program that starts a private
 development node, with the Cardano node it starts and everything they need: no
-Nix and no compiling. The
+Nix and no compiling. The tarballs, the DEB, the RPM and the Homebrew installation also
+hold the deployment blueprint the commands take as `--blueprint`, the same file as
+`onchain/plutus.json` in the on-chain archive, with the release's `version.txt`
+beside it (`share/` in a tarball, `/usr/share/singular/` from a package). The
 [install page](https://lambdasistemi.github.io/singular/docs/install/) has the
 commands for each platform.
 

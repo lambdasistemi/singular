@@ -64,6 +64,7 @@ node_loader="$group_loader"
 
 copy_data
 copy_genesis
+copy_blueprint
 write_launchers \
   "\"\$here/lib/$loader\" --library-path \"\$here/lib\"" \
   "\"\$here/lib-node/$node_loader\" --library-path \"\$here/lib-node\""

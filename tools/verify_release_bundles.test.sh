@@ -28,12 +28,25 @@ native="$(native_system)"
 # release the rule is read from requires it
 stand_in_programs="singular open-datum"
 if devnet_required "$version"; then stand_in_programs="$stand_in_programs devnet cardano-node"; fi
+# the blueprint the real bundle carries (#707), which the stand-ins and the
+# on-chain archive stand-in carry too; a placeholder for a bundle without one
+mkdir -p "$work/blueprint"
+tar -xzf "$tarball" -C "$work/blueprint" --wildcards '*/share/plutus.json' 2>/dev/null || true
+blueprint_file="$(find "$work/blueprint" -name plutus.json -type f | head -n 1)"
+if [ -z "$blueprint_file" ]; then
+  blueprint_file="$work/blueprint/plutus.json"
+  printf '{"validators":[]}\n' >"$blueprint_file"
+fi
 # a downloaded release: the real bundle for this platform, a structural
-# stand-in for every other platform (the other platform's own job runs it)
+# stand-in for every other platform (the other platform's own job runs it),
+# and the on-chain archive's blueprint
 download() {
   local system name top program
-  rm -rf "$work/download"
-  mkdir -p "$work/download"
+  rm -rf "$work/download" "$work/onchain-stand-in"
+  mkdir -p "$work/download" "$work/onchain-stand-in/onchain"
+  cp "$blueprint_file" "$work/onchain-stand-in/onchain/plutus.json"
+  printf '%s\n' "$version" >"$work/onchain-stand-in/onchain/version.txt"
+  tar -czf "$work/download/singular-onchain-$version.tar.gz" -C "$work/onchain-stand-in" .
   for system in $SYSTEMS; do
     name="singular-$version-$system.tar.gz"
     if [ "$system" = "$native" ]; then
@@ -51,6 +64,8 @@ download() {
       if devnet_required "$version"; then
         mkdir -p "$work/stand-in/$top/share/devnet/genesis"
         printf '{}' >"$work/stand-in/$top/share/devnet/genesis/node-config.json"
+        cp "$blueprint_file" "$work/stand-in/$top/share/plutus.json"
+        printf '%s\n' "$version" >"$work/stand-in/$top/share/version.txt"
       fi
       printf '%s\n' "$version" >"$work/stand-in/$top/VERSION"
       printf '%s\n' "$commit" >"$work/stand-in/$top/COMMIT"
@@ -154,7 +169,7 @@ if [[ "$listing" == */bin/devnet* ]]; then
   echo "verify-release-bundles-controls: a release whose bundles carry the development node passes"
   for system in $SYSTEMS; do
     [ "$system" != "$native" ] || continue
-    for missing in libexec/cardano-node bin/devnet share/devnet/genesis/node-config.json; do
+    for missing in libexec/cardano-node bin/devnet share/devnet/genesis/node-config.json share/plutus.json; do
       download
       name="singular-$version-$system.tar.gz"
       rm -rf "$work/open"
@@ -166,5 +181,14 @@ if [[ "$listing" == */bin/devnet* ]]; then
       must_refuse "the $system bundle without $missing in a release that requires the node" bundle-layout run_verify "$commit"
     done
   done
+  # the on-chain archive ships another blueprint than the bundles carry
+  download
+  rm -rf "$work/onchain-other"
+  mkdir -p "$work/onchain-other/onchain"
+  printf '{"validators":["another"]}\n' >"$work/onchain-other/onchain/plutus.json"
+  printf '%s\n' "$version" >"$work/onchain-other/onchain/version.txt"
+  tar -czf "$work/download/singular-onchain-$version.tar.gz" -C "$work/onchain-other" .
+  (cd "$work/download" && sha256sum ./*.tar.gz | sed 's|  \./|  |' >SHA256SUMS)
+  must_refuse "bundles whose blueprint is not the on-chain archive's" bundle-blueprint-mismatch run_verify "$commit"
 fi
 echo "verify-release-bundles-controls: PASS"

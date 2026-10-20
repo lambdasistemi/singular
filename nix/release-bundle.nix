@@ -2,9 +2,10 @@
 # development node for one platform: a tarball whose top directory holds
 # launchers in bin/, the real executables in libexec/, every non-system
 # library in lib/ (the registry's programs) and lib-node/ (cardano-node, built
-# against other libraries), and the packaged data and the node's genesis
-# files in share/. The assembly scripts live beside this file; the workflows
-# only build this output, run the smoke script on it and publish it.
+# against other libraries), and in share/ the packaged data, the node's genesis
+# files and the deployment blueprint with the release number beside it. The
+# assembly scripts live beside this file; the workflows only build this output,
+# run the smoke script on it and publish it.
 {
   pkgs,
   version,
@@ -16,6 +17,9 @@
   cardanoNode,
   # the directory of genesis files, keys and settings the node starts from
   devnetGenesis,
+  # the deployment blueprint (plutus.json) the release ships, the same for every
+  # platform: share/plutus.json, with the release number in share/version.txt
+  blueprint,
 }:
 let
   inherit (pkgs.stdenv.hostPlatform) system;
@@ -54,6 +58,7 @@ pkgs.runCommand "${name}-bundle"
       DEVNET_PKG = devnet;
       CARDANO_NODE_PKG = cardanoNode;
       DEVNET_GENESIS = devnetGenesis;
+      BLUEPRINT = blueprint;
       LAUNCHER = ./release-bundle/launcher.sh;
       DEVNET_PRELUDE = ./release-bundle/launcher-devnet.sh;
       COMMON = ./release-bundle/common.sh;

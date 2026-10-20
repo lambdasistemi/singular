@@ -177,8 +177,8 @@
     "index": 2,
     "name": "README/install-02",
     "pause_ms": 400,
-    "text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
-    "v": "3fa844c5567b"
+    "text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts, and, except the AppImages, the deployment blueprint the commands take as --blueprint. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
+    "v": "0b097fd7641b"
    }
   ],
   "singular": [
@@ -3781,8 +3781,15 @@
     "index": 2,
     "name": "docs-install/what-is-inside-the-tarball-02",
     "pause_ms": 400,
+    "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: singular registry describe reads its version label from that file and refuses a blueprint without one.",
+    "v": "35fc55cae9e2"
+   },
+   {
+    "index": 3,
+    "name": "docs-install/what-is-inside-the-tarball-03",
+    "pause_ms": 400,
     "text": "On Linux the folders lib and lib-node each also hold a C library and its loader, and the launcher starts the program through that loader, which is why the programs do not depend on the distribution's libraries. The Cardano node is built against another C library than the other three programs, which is why it has a folder of its own. On macOS the programs load only the libraries macOS itself provides and the ones in lib and lib-node.",
-    "v": "6731aee8fabf"
+    "v": "234c15933866"
    }
   ],
   "what-you-download": [
@@ -3866,6 +3873,29 @@
     "pause_ms": 500,
     "text": "When it does not work.",
     "v": "c0e257118c2a"
+   }
+  ],
+  "where-the-blueprint-is": [
+   {
+    "index": 0,
+    "name": "docs-install/where-the-blueprint-is-00",
+    "pause_ms": 500,
+    "text": "Where the blueprint is.",
+    "v": "3e9064ea74cb"
+   },
+   {
+    "index": 1,
+    "name": "docs-install/where-the-blueprint-is-01",
+    "pause_ms": 400,
+    "text": "Homebrew, the DEB, the RPM and the tarballs of a release after 0.13.1 bring the deployment blueprint the commands were released with, so Demo 1 needs no second download. It is the same file the on-chain archive ships as onchain/plutus.json, and verify-release checks that the two are identical. Each copy has the release's version.txt beside it.",
+    "v": "80c843927e30"
+   },
+   {
+    "index": 2,
+    "name": "docs-install/where-the-blueprint-is-02",
+    "pause_ms": 400,
+    "text": "Name it once and pass it to every command, for example blueprint=/usr/share/singular/plutus.json and then --blueprint \"$blueprint\".",
+    "v": "3c2fdf6ae501"
    }
   ]
  },

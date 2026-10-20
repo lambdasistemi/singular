@@ -6,7 +6,7 @@
 #
 # Expects in the environment: BUNDLE_NAME BUNDLE_VERSION BUNDLE_COMMIT
 # SINGULAR_PKG OPEN_DATUM_PKG DEVNET_PKG CARDANO_NODE_PKG DEVNET_GENESIS
-# LAUNCHER DEVNET_PRELUDE, and TMPDIR from the builder.
+# BLUEPRINT LAUNCHER DEVNET_PRELUDE, and TMPDIR from the builder.
 
 # The three programs built with the registry share one set of libraries; the
 # node is built against other libraries (another C library, other copies of
@@ -96,6 +96,19 @@ copy_genesis() {
     [ -f "$bundle/share/devnet/genesis/$member" ] \
       || fail "the genesis directory $DEVNET_GENESIS holds no $member"
   done
+}
+
+# The deployment blueprint the commands take as --blueprint, the same file the
+# on-chain archive ships as onchain/plutus.json, with the release number beside
+# it: `singular registry describe` reads its version label from version.txt
+# next to the blueprint and refuses a blueprint without one.
+copy_blueprint() {
+  [ -f "$BLUEPRINT" ] || fail "no blueprint at $BLUEPRINT"
+  grep -q '"validators"' "$BLUEPRINT" || fail "$BLUEPRINT names no validators"
+  mkdir -p "$bundle/share"
+  cp -L "$BLUEPRINT" "$bundle/share/plutus.json"
+  chmod u+w "$bundle/share/plutus.json"
+  printf '%s\n' "$BUNDLE_VERSION" >"$bundle/share/version.txt"
 }
 
 # bin/<program>: the launcher with this bundle's identity and loader filled in.

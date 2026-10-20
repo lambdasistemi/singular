@@ -31,11 +31,15 @@
     # the `open-datum` executable from it; its dependencies keep their own
     # locked revisions.
     open-datum.url = "path:./?dir=applications/open-datum/offchain";
+    # #707: the application's on-chain flake the same way, for the merged
+    # deployment blueprint the release archive ships as onchain/plutus.json;
+    # every release bundle and package carries the same file.
+    open-datum-onchain.url = "path:./?dir=applications/open-datum/onchain";
     nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
     # #707: the organisation's binary distribution helpers (AppImage, DEB, RPM,
     # Homebrew; the distribute-binaries standard) and the NixOS bundlers they drive.
     dev-assets = {
-      url = "github:paolino/dev-assets/6f017970a83f8da90e2cff0a391e71f6e8a85d15";
+      url = "github:paolino/dev-assets/ecc41cee5d4c18ac4a8a2527c07cf33cba300a11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # The Lean compiler the model builds with. It is the version root
@@ -56,6 +60,7 @@
       conformance,
       onchain,
       open-datum,
+      open-datum-onchain,
     }:
     let
       systems = [
@@ -318,6 +323,9 @@
           devnet = offchain.packages.${system}.devnet-unwrapped;
           cardanoNode = offchain.packages.${system}.cardano-node;
           devnetGenesis = ./offchain/e2e-test/genesis;
+          # the deployment blueprint the on-chain archive ships, with the
+          # release number beside it as the commands require
+          blueprint = open-datum-onchain.packages.${system}.open-datum-blueprint;
         };
       # #707: the releases at the organisation's binary distribution standard,
       # through the dev-assets helpers: AppImage, DEB and RPM for Linux, a
@@ -356,7 +364,19 @@
           export PATH="${offchain.packages.${system}.cardano-node}/bin''${PATH:+:$PATH}"
           exec ${offchain.packages.${system}.devnet-unwrapped}/bin/devnet "$@"
         '';
-      # the one product the Linux packages carry: its three commands
+      # the deployment blueprint the release ships, with the release number
+      # beside it, as the Linux packages put it: share/singular/
+      blueprintData =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.runCommand "singular-blueprint-${releaseVersion}" { } ''
+          mkdir -p "$out/share/singular"
+          cp ${open-datum-onchain.packages.${system}.open-datum-blueprint} "$out/share/singular/plutus.json"
+          printf '%s\n' '${releaseVersion}' > "$out/share/singular/version.txt"
+        '';
+      # the one product the Linux packages carry: its three commands and the blueprint
       linuxProduct =
         system:
         let
@@ -368,6 +388,7 @@
             (stampedSingular system)
             (stampedOpenDatum system)
             (devnetCommand system)
+            (blueprintData system)
           ];
           meta.mainProgram = "singular";
         };
@@ -385,6 +406,10 @@
             singular = stampedSingular system;
             open-datum = stampedOpenDatum system;
             devnet = devnetCommand system;
+          };
+          # the blueprint and its version.txt at a path users can name
+          packageLinks = {
+            "usr/share/singular" = "${blueprintData system}/share/singular";
           };
           version = releaseVersion;
           glibcPackage = linuxProduct system;
@@ -409,6 +434,8 @@
               "  assert_match \"#{program} ${releaseVersion} (commit \", shell_output(\"#{bin}/#{program} --version\")"
               "end"
               "assert_match \"cardano-node\", shell_output(\"#{libexec}/bin/cardano-node --version\")"
+              "assert_predicate libexec/\"share/plutus.json\", :exist?"
+              "assert_equal \"${releaseVersion}\", (libexec/\"share/version.txt\").read.strip"
             ];
           }
           // extra
@@ -468,6 +495,7 @@
                     bash
                     coreutils
                     curl
+                    diffutils
                     findutils
                     gawk
                     gnugrep
@@ -492,7 +520,8 @@
                   . ${./tools/release_bundles.sh}
                   download="$(mktemp -d)"
                   trap 'rm -rf "$download"' EXIT
-                  names="SHA256SUMS"
+                  # the on-chain archive too: the bundles' blueprint is checked against it
+                  names="SHA256SUMS singular-onchain-$version.tar.gz"
                   for system in $SYSTEMS; do names="$names singular-$version-$system.tar.gz"; done
                   for name in $names; do
                     if [ -n "''${VERIFY_RELEASE_BUNDLES_ASSETS:-}" ]; then
@@ -524,6 +553,7 @@
                   [
                     bash
                     coreutils
+                    diffutils
                     findutils
                     gawk
                     gnugrep
@@ -956,7 +986,7 @@
           # #707: the Demo 1 journey from the unpacked Linux release bundle
           # alone: `singular`, `open-datum` and the development node come out
           # of the tarball, on a PATH that holds ordinary tools and no Nix.
-          # Nix only builds the bundle and the registry blueprint beforehand.
+          # Nix only builds the bundle beforehand; the blueprint is the bundle's.
           # Run from the repository root: `nix run --quiet .#demo1-bundle-journey`.
           demo1-bundle-journey = {
             type = "app";
@@ -970,10 +1000,9 @@
                 text = ''
                   bundle="$(nix build --quiet --no-link --print-out-paths .#release-bundle)"
                   tarball="$(ls "$bundle"/singular-*-${system}.tar.gz)"
-                  blueprint="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/onchain#open-datum-blueprint)"
                   DEMO1_JOURNEY=${managedScripts}/demo1_cli_journey.sh \
                     DEMO1_BUNDLE_TOOLS=${bundleJourneyTools}/bin \
-                    bash ${./tools/demo1_bundle_journey.sh} "$tarball" "$blueprint"
+                    bash ${./tools/demo1_bundle_journey.sh} "$tarball"
                 '';
               }
             );

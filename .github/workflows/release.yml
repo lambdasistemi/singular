@@ -232,7 +232,7 @@ jobs:
           repositories: singular
           permission-contents: write
       - name: Build, smoke-test and publish the Linux packages
-        uses: paolino/dev-assets/linux-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/linux-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           mode: release
           tag: ${{ github.ref_name }}
@@ -275,7 +275,7 @@ jobs:
           repositories: homebrew-tap
           permission-contents: write
       - name: Build, check and publish the formula, then install it from the tap
-        uses: paolino/dev-assets/darwin-homebrew-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/darwin-homebrew-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           mode: release
           tag: ${{ github.ref_name }}

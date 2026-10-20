@@ -107,5 +107,6 @@ done
 
 copy_data
 copy_genesis
+copy_blueprint
 write_launchers "" ""
 write_tarball

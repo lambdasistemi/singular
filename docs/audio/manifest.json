@@ -4111,17 +4111,17 @@
    ]
   },
   "README/install-02": {
-   "audio_sha256": "3fa844c5567bac23d87a2cda838794428b8adaad8e80e750a46abf47acf84029",
-   "characters": 391,
-   "cost": 0.00038709,
-   "duration": 30.85,
+   "audio_sha256": "0b097fd7641bad3c1cbed3026a985dfaf886d81837392d8ff8cf3e98cb014cb4",
+   "characters": 477,
+   "cost": 0.0004722299999999999,
+   "duration": 35.825,
    "index": 2,
-   "key": "0cc730f4b1aefe1c956cdcd60ad56e6fd6f53b13d0973f594543bb70cf414dfd",
+   "key": "9e464d62f56da80ff1919c562fc849c1697d3b98f9f713f7ab444e9b3e124429",
    "page": "README.md",
    "pause_ms": 400,
    "section": "install",
-   "sent_text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
-   "text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
+   "sent_text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts, and, except the AppImages, the deployment blueprint the commands take as --blueprint. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
+   "text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts, and, except the AppImages, the deployment blueprint the commands take as --blueprint. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
    "words": [
     {
      "end": 0.375,
@@ -4269,193 +4269,268 @@
      "text": "."
     },
     {
-     "end": 18.062,
+     "end": 18.038,
      "start": 17.85,
      "text": "Each"
     },
     {
-     "end": 18.175,
-     "start": 18.062,
+     "end": 18.112,
+     "start": 18.038,
      "text": "of"
     },
     {
-     "end": 18.4,
-     "start": 18.175,
+     "end": 18.3,
+     "start": 18.112,
      "text": "them"
     },
     {
-     "end": 18.675,
-     "start": 18.4,
+     "end": 18.538,
+     "start": 18.3,
      "text": "gives"
     },
     {
-     "end": 19.275,
-     "start": 18.675,
+     "end": 19.1,
+     "start": 18.538,
      "text": "singular"
     },
     {
-     "end": 19.35,
-     "start": 19.275,
+     "end": 19.2,
+     "start": 19.1,
      "text": ","
     },
     {
-     "end": 20.125,
-     "start": 19.35,
+     "end": 19.85,
+     "start": 19.2,
      "text": "open-datum"
     },
     {
-     "end": 20.288,
-     "start": 20.125,
+     "end": 19.975,
+     "start": 19.85,
      "text": "and"
     },
     {
-     "end": 20.825,
-     "start": 20.288,
+     "end": 20.85,
+     "start": 19.975,
      "text": "devnet"
     },
     {
-     "end": 20.9,
-     "start": 20.825,
+     "end": 21.05,
+     "start": 20.85,
      "text": ","
     },
     {
-     "end": 21.0,
-     "start": 20.9,
+     "end": 21.3,
+     "start": 21.225,
      "text": "the"
     },
     {
-     "end": 21.375,
-     "start": 21.0,
+     "end": 21.675,
+     "start": 21.3,
      "text": "private"
     },
     {
-     "end": 21.975,
-     "start": 21.375,
+     "end": 22.25,
+     "start": 21.675,
      "text": "development"
     },
     {
-     "end": 22.337,
-     "start": 21.975,
+     "end": 22.575,
+     "start": 22.25,
      "text": "node"
     },
     {
-     "end": 22.7,
-     "start": 22.337,
+     "end": 22.95,
+     "start": 22.575,
      "text": "Demo"
     },
     {
-     "end": 22.938,
-     "start": 22.7,
+     "end": 23.212,
+     "start": 22.95,
      "text": "1"
     },
     {
-     "end": 24.025,
-     "start": 22.938,
+     "end": 23.7,
+     "start": 23.212,
      "text": "starts"
     },
     {
-     "end": 24.25,
-     "start": 24.025,
-     "text": "."
-    },
-    {
-     "end": 24.562,
-     "start": 24.425,
-     "text": "The"
-    },
-    {
-     "end": 25.1,
-     "start": 24.562,
-     "text": "install"
-    },
-    {
-     "end": 25.5,
-     "start": 25.1,
-     "text": "page"
-    },
-    {
-     "end": 25.75,
-     "start": 25.5,
-     "text": "has"
-    },
-    {
-     "end": 25.85,
-     "start": 25.75,
-     "text": "the"
-    },
-    {
-     "end": 26.575,
-     "start": 25.85,
-     "text": "commands"
-    },
-    {
-     "end": 26.65,
-     "start": 26.575,
+     "end": 23.788,
+     "start": 23.7,
      "text": ","
     },
     {
-     "end": 26.788,
-     "start": 26.65,
-     "text": "the"
-    },
-    {
-     "end": 27.425,
-     "start": 26.788,
-     "text": "checksums"
-    },
-    {
-     "end": 27.538,
-     "start": 27.425,
+     "end": 23.95,
+     "start": 23.788,
      "text": "and"
     },
     {
-     "end": 27.625,
-     "start": 27.538,
+     "end": 23.987,
+     "start": 23.95,
+     "text": ","
+    },
+    {
+     "end": 24.337,
+     "start": 23.987,
+     "text": "except"
+    },
+    {
+     "end": 24.475,
+     "start": 24.337,
      "text": "the"
     },
     {
-     "end": 28.225,
+     "end": 25.7,
+     "start": 24.475,
+     "text": "AppImages"
+    },
+    {
+     "end": 25.9,
+     "start": 25.7,
+     "text": ","
+    },
+    {
+     "end": 26.138,
+     "start": 26.075,
+     "text": "the"
+    },
+    {
+     "end": 26.625,
+     "start": 26.138,
+     "text": "deployment"
+    },
+    {
+     "end": 27.038,
+     "start": 26.625,
+     "text": "blueprint"
+    },
+    {
+     "end": 27.125,
+     "start": 27.038,
+     "text": "the"
+    },
+    {
+     "end": 27.625,
+     "start": 27.125,
+     "text": "commands"
+    },
+    {
+     "end": 27.85,
      "start": 27.625,
-     "text": "tarballs"
+     "text": "take"
     },
     {
-     "end": 28.375,
-     "start": 28.225,
-     "text": "that"
+     "end": 28.0,
+     "start": 27.85,
+     "text": "as"
     },
     {
-     "end": 28.65,
-     "start": 28.375,
-     "text": "hold"
-    },
-    {
-     "end": 28.9,
-     "start": 28.65,
-     "text": "all"
+     "end": 29.025,
+     "start": 28.0,
+     "text": "blueprint"
     },
     {
      "end": 29.225,
-     "start": 28.9,
+     "start": 29.025,
+     "text": "."
+    },
+    {
+     "end": 29.538,
+     "start": 29.4,
+     "text": "The"
+    },
+    {
+     "end": 30.075,
+     "start": 29.538,
+     "text": "install"
+    },
+    {
+     "end": 30.475,
+     "start": 30.075,
+     "text": "page"
+    },
+    {
+     "end": 30.725,
+     "start": 30.475,
+     "text": "has"
+    },
+    {
+     "end": 30.825,
+     "start": 30.725,
+     "text": "the"
+    },
+    {
+     "end": 31.55,
+     "start": 30.825,
+     "text": "commands"
+    },
+    {
+     "end": 31.625,
+     "start": 31.55,
+     "text": ","
+    },
+    {
+     "end": 31.763,
+     "start": 31.625,
+     "text": "the"
+    },
+    {
+     "end": 32.4,
+     "start": 31.763,
+     "text": "checksums"
+    },
+    {
+     "end": 32.513,
+     "start": 32.4,
+     "text": "and"
+    },
+    {
+     "end": 32.6,
+     "start": 32.513,
+     "text": "the"
+    },
+    {
+     "end": 33.2,
+     "start": 32.6,
+     "text": "tarballs"
+    },
+    {
+     "end": 33.35,
+     "start": 33.2,
+     "text": "that"
+    },
+    {
+     "end": 33.625,
+     "start": 33.35,
+     "text": "hold"
+    },
+    {
+     "end": 33.875,
+     "start": 33.625,
+     "text": "all"
+    },
+    {
+     "end": 34.2,
+     "start": 33.875,
      "text": "three"
     },
     {
-     "end": 29.375,
-     "start": 29.225,
+     "end": 34.35,
+     "start": 34.2,
      "text": "in"
     },
     {
-     "end": 29.612,
-     "start": 29.375,
+     "end": 34.588,
+     "start": 34.35,
      "text": "one"
     },
     {
-     "end": 30.625,
-     "start": 29.612,
+     "end": 35.6,
+     "start": 34.588,
      "text": "folder"
     },
     {
-     "end": 30.85,
-     "start": 30.625,
+     "end": 35.825,
+     "start": 35.6,
      "text": "."
     }
    ]
@@ -130036,11 +130111,241 @@
    ]
   },
   "docs-install/what-is-inside-the-tarball-02": {
-   "audio_sha256": "6731aee8fabf6ab32c82f40bda57b6bbd1f7e07bd77e6f9dccbf6e9e0c16aed4",
+   "audio_sha256": "35fc55cae9e23c2860e1ed05fee2743e1b6a2e66f2050c7564b8640f325b2928",
+   "characters": 255,
+   "cost": 0.00025245,
+   "duration": 17.825,
+   "index": 2,
+   "key": "a28ef4957ac3d937bd491c10cd4dce121b1be1f2da92ccfb4c2812cd8f47ff10",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "what-is-inside-the-tarball",
+   "sent_text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: singular registry describe reads its version label from that file and refuses a blueprint without one.",
+   "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: singular registry describe reads its version label from that file and refuses a blueprint without one.",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.225,
+     "text": "The"
+    },
+    {
+     "end": 0.75,
+     "start": 0.338,
+     "text": "folder"
+    },
+    {
+     "end": 1.075,
+     "start": 0.75,
+     "text": "share"
+    },
+    {
+     "end": 1.45,
+     "start": 1.075,
+     "text": "also"
+    },
+    {
+     "end": 1.825,
+     "start": 1.45,
+     "text": "holds"
+    },
+    {
+     "end": 1.925,
+     "start": 1.825,
+     "text": "the"
+    },
+    {
+     "end": 2.475,
+     "start": 1.925,
+     "text": "deployment"
+    },
+    {
+     "end": 3.025,
+     "start": 2.475,
+     "text": "blueprint"
+    },
+    {
+     "end": 3.075,
+     "start": 3.025,
+     "text": ","
+    },
+    {
+     "end": 4.55,
+     "start": 3.075,
+     "text": "plutus.json"
+    },
+    {
+     "end": 4.6,
+     "start": 4.55,
+     "text": ","
+    },
+    {
+     "end": 4.775,
+     "start": 4.6,
+     "text": "that"
+    },
+    {
+     "end": 4.875,
+     "start": 4.775,
+     "text": "the"
+    },
+    {
+     "end": 5.45,
+     "start": 4.875,
+     "text": "commands"
+    },
+    {
+     "end": 5.725,
+     "start": 5.45,
+     "text": "take"
+    },
+    {
+     "end": 5.887,
+     "start": 5.725,
+     "text": "as"
+    },
+    {
+     "end": 6.45,
+     "start": 5.887,
+     "text": "blueprint"
+    },
+    {
+     "end": 6.5,
+     "start": 6.45,
+     "text": ","
+    },
+    {
+     "end": 6.688,
+     "start": 6.5,
+     "text": "with"
+    },
+    {
+     "end": 7.95,
+     "start": 6.688,
+     "text": "version.txt"
+    },
+    {
+     "end": 8.375,
+     "start": 7.95,
+     "text": "beside"
+    },
+    {
+     "end": 8.538,
+     "start": 8.375,
+     "text": "it"
+    },
+    {
+     "end": 8.913,
+     "start": 8.538,
+     "text": "naming"
+    },
+    {
+     "end": 9.0,
+     "start": 8.913,
+     "text": "the"
+    },
+    {
+     "end": 10.225,
+     "start": 9.0,
+     "text": "release"
+    },
+    {
+     "end": 10.475,
+     "start": 10.225,
+     "text": ":"
+    },
+    {
+     "end": 11.225,
+     "start": 10.725,
+     "text": "singular"
+    },
+    {
+     "end": 11.85,
+     "start": 11.225,
+     "text": "registry"
+    },
+    {
+     "end": 12.462,
+     "start": 11.85,
+     "text": "describe"
+    },
+    {
+     "end": 12.788,
+     "start": 12.462,
+     "text": "reads"
+    },
+    {
+     "end": 12.988,
+     "start": 12.788,
+     "text": "its"
+    },
+    {
+     "end": 13.4,
+     "start": 12.988,
+     "text": "version"
+    },
+    {
+     "end": 13.8,
+     "start": 13.4,
+     "text": "label"
+    },
+    {
+     "end": 13.975,
+     "start": 13.8,
+     "text": "from"
+    },
+    {
+     "end": 14.238,
+     "start": 13.975,
+     "text": "that"
+    },
+    {
+     "end": 14.8,
+     "start": 14.238,
+     "text": "file"
+    },
+    {
+     "end": 14.95,
+     "start": 14.8,
+     "text": "and"
+    },
+    {
+     "end": 15.625,
+     "start": 14.95,
+     "text": "refuses"
+    },
+    {
+     "end": 15.738,
+     "start": 15.625,
+     "text": "a"
+    },
+    {
+     "end": 16.325,
+     "start": 15.738,
+     "text": "blueprint"
+    },
+    {
+     "end": 16.675,
+     "start": 16.325,
+     "text": "without"
+    },
+    {
+     "end": 17.6,
+     "start": 16.675,
+     "text": "one"
+    },
+    {
+     "end": 17.825,
+     "start": 17.6,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/what-is-inside-the-tarball-03": {
+   "audio_sha256": "234c15933866669a63c8405d91db1ee8af81e8cb9f33f854d6a22bfd3dd462d0",
    "characters": 436,
    "cost": 0.00043163999999999995,
    "duration": 28.75,
-   "index": 2,
+   "index": 3,
    "key": "cb865b9ef7dab8d76a2cf6861668e7ca7925b5fdaecc2728198288e37f88eca9",
    "page": "docs/install.md",
    "pause_ms": 400,
@@ -132326,6 +132631,491 @@
     {
      "end": 1.575,
      "start": 1.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/where-the-blueprint-is-00": {
+   "audio_sha256": "3e9064ea74cbb47b9e8660325559e978810ccfdcd3173a4d583d7c5698c92cae",
+   "characters": 23,
+   "cost": 2.277e-05,
+   "duration": 1.6,
+   "index": 0,
+   "key": "f416defa007a84ddbce39d52e93b5d8ca34e6dbe9011e2e2698ae6def169b9dc",
+   "page": "docs/install.md",
+   "pause_ms": 500,
+   "section": "where-the-blueprint-is",
+   "sent_text": "Where the blueprint is.",
+   "text": "Where the blueprint is.",
+   "words": [
+    {
+     "end": 0.287,
+     "start": 0.175,
+     "text": "Where"
+    },
+    {
+     "end": 0.375,
+     "start": 0.287,
+     "text": "the"
+    },
+    {
+     "end": 0.788,
+     "start": 0.375,
+     "text": "blueprint"
+    },
+    {
+     "end": 1.4,
+     "start": 0.788,
+     "text": "is"
+    },
+    {
+     "end": 1.6,
+     "start": 1.4,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/where-the-blueprint-is-01": {
+   "audio_sha256": "80c843927e30cbfc10b223101bcf55a9fd5936a9266dc24d2d4ce48dc54de23a",
+   "characters": 345,
+   "cost": 0.00034155,
+   "duration": 25.3,
+   "index": 1,
+   "key": "4ecb7cb6fd6bdbd3b4f0eb0845504ebcb0f2e8d13fb1bf8ba60162184aa2dbc4",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "where-the-blueprint-is",
+   "sent_text": "Homebrew, the DEB, the RPM and the tarballs of a release after 0.13.1 bring the deployment blueprint the commands were released with, so Demo 1 needs no second download. It is the same file the on-chain archive ships as onchain/plutus.json, and verify-release checks that the two are identical. Each copy has the release's version.txt beside it.",
+   "text": "Homebrew, the DEB, the RPM and the tarballs of a release after 0.13.1 bring the deployment blueprint the commands were released with, so Demo 1 needs no second download. It is the same file the on-chain archive ships as onchain/plutus.json, and verify-release checks that the two are identical. Each copy has the release's version.txt beside it.",
+   "words": [
+    {
+     "end": 0.75,
+     "start": 0.25,
+     "text": "Homebrew"
+    },
+    {
+     "end": 0.825,
+     "start": 0.75,
+     "text": ","
+    },
+    {
+     "end": 0.962,
+     "start": 0.825,
+     "text": "the"
+    },
+    {
+     "end": 1.3,
+     "start": 0.962,
+     "text": "DEB"
+    },
+    {
+     "end": 1.35,
+     "start": 1.3,
+     "text": ","
+    },
+    {
+     "end": 1.5,
+     "start": 1.35,
+     "text": "the"
+    },
+    {
+     "end": 2.25,
+     "start": 1.5,
+     "text": "RPM"
+    },
+    {
+     "end": 2.362,
+     "start": 2.25,
+     "text": "and"
+    },
+    {
+     "end": 2.463,
+     "start": 2.362,
+     "text": "the"
+    },
+    {
+     "end": 3.1,
+     "start": 2.463,
+     "text": "tarballs"
+    },
+    {
+     "end": 3.188,
+     "start": 3.1,
+     "text": "of"
+    },
+    {
+     "end": 3.275,
+     "start": 3.188,
+     "text": "a"
+    },
+    {
+     "end": 3.812,
+     "start": 3.275,
+     "text": "release"
+    },
+    {
+     "end": 4.188,
+     "start": 3.812,
+     "text": "after"
+    },
+    {
+     "end": 5.662,
+     "start": 4.188,
+     "text": "0.13.1"
+    },
+    {
+     "end": 5.912,
+     "start": 5.662,
+     "text": "bring"
+    },
+    {
+     "end": 6.0,
+     "start": 5.912,
+     "text": "the"
+    },
+    {
+     "end": 6.5,
+     "start": 6.0,
+     "text": "deployment"
+    },
+    {
+     "end": 7.0,
+     "start": 6.5,
+     "text": "blueprint"
+    },
+    {
+     "end": 7.1,
+     "start": 7.0,
+     "text": "the"
+    },
+    {
+     "end": 7.675,
+     "start": 7.1,
+     "text": "commands"
+    },
+    {
+     "end": 7.825,
+     "start": 7.675,
+     "text": "were"
+    },
+    {
+     "end": 8.3,
+     "start": 7.825,
+     "text": "released"
+    },
+    {
+     "end": 8.75,
+     "start": 8.3,
+     "text": "with"
+    },
+    {
+     "end": 8.85,
+     "start": 8.75,
+     "text": ","
+    },
+    {
+     "end": 9.038,
+     "start": 8.85,
+     "text": "so"
+    },
+    {
+     "end": 9.462,
+     "start": 9.038,
+     "text": "Demo"
+    },
+    {
+     "end": 9.7,
+     "start": 9.462,
+     "text": "1"
+    },
+    {
+     "end": 10.025,
+     "start": 9.7,
+     "text": "needs"
+    },
+    {
+     "end": 10.325,
+     "start": 10.025,
+     "text": "no"
+    },
+    {
+     "end": 10.7,
+     "start": 10.325,
+     "text": "second"
+    },
+    {
+     "end": 11.975,
+     "start": 10.7,
+     "text": "download"
+    },
+    {
+     "end": 12.225,
+     "start": 11.975,
+     "text": "."
+    },
+    {
+     "end": 12.55,
+     "start": 12.425,
+     "text": "It"
+    },
+    {
+     "end": 12.7,
+     "start": 12.55,
+     "text": "is"
+    },
+    {
+     "end": 12.837,
+     "start": 12.7,
+     "text": "the"
+    },
+    {
+     "end": 13.163,
+     "start": 12.837,
+     "text": "same"
+    },
+    {
+     "end": 13.55,
+     "start": 13.163,
+     "text": "file"
+    },
+    {
+     "end": 13.712,
+     "start": 13.55,
+     "text": "the"
+    },
+    {
+     "end": 14.325,
+     "start": 13.712,
+     "text": "on-chain"
+    },
+    {
+     "end": 14.9,
+     "start": 14.325,
+     "text": "archive"
+    },
+    {
+     "end": 15.288,
+     "start": 14.9,
+     "text": "ships"
+    },
+    {
+     "end": 15.462,
+     "start": 15.288,
+     "text": "as"
+    },
+    {
+     "end": 17.85,
+     "start": 15.462,
+     "text": "onchain/plutus.json"
+    },
+    {
+     "end": 17.9,
+     "start": 17.85,
+     "text": ","
+    },
+    {
+     "end": 18.025,
+     "start": 17.9,
+     "text": "and"
+    },
+    {
+     "end": 18.812,
+     "start": 18.025,
+     "text": "verify-release"
+    },
+    {
+     "end": 19.125,
+     "start": 18.812,
+     "text": "checks"
+    },
+    {
+     "end": 19.3,
+     "start": 19.125,
+     "text": "that"
+    },
+    {
+     "end": 19.438,
+     "start": 19.3,
+     "text": "the"
+    },
+    {
+     "end": 19.712,
+     "start": 19.438,
+     "text": "two"
+    },
+    {
+     "end": 19.888,
+     "start": 19.712,
+     "text": "are"
+    },
+    {
+     "end": 21.175,
+     "start": 19.888,
+     "text": "identical"
+    },
+    {
+     "end": 21.4,
+     "start": 21.175,
+     "text": "."
+    },
+    {
+     "end": 21.775,
+     "start": 21.575,
+     "text": "Each"
+    },
+    {
+     "end": 22.15,
+     "start": 21.775,
+     "text": "copy"
+    },
+    {
+     "end": 22.337,
+     "start": 22.15,
+     "text": "has"
+    },
+    {
+     "end": 22.425,
+     "start": 22.337,
+     "text": "the"
+    },
+    {
+     "end": 22.925,
+     "start": 22.425,
+     "text": "release's"
+    },
+    {
+     "end": 24.075,
+     "start": 22.925,
+     "text": "version.txt"
+    },
+    {
+     "end": 24.5,
+     "start": 24.075,
+     "text": "beside"
+    },
+    {
+     "end": 25.1,
+     "start": 24.5,
+     "text": "it"
+    },
+    {
+     "end": 25.3,
+     "start": 25.1,
+     "text": "."
+    }
+   ]
+  },
+  "docs-install/where-the-blueprint-is-02": {
+   "audio_sha256": "3c2fdf6ae50159a87e306ae6ca99f09f5fc323a10d5231b3ef2a41ab32bbd804",
+   "characters": 131,
+   "cost": 0.00012969,
+   "duration": 11.425,
+   "index": 2,
+   "key": "f6ebb382333b4b9283ecaf5a4328aa7071da117787f372a2116742fa172c8207",
+   "page": "docs/install.md",
+   "pause_ms": 400,
+   "section": "where-the-blueprint-is",
+   "sent_text": "Name it once and pass it to every command, for example blueprint=/usr/share/singular/plutus.json and then --blueprint \"$blueprint\".",
+   "text": "Name it once and pass it to every command, for example blueprint=/usr/share/singular/plutus.json and then --blueprint \"$blueprint\".",
+   "words": [
+    {
+     "end": 0.488,
+     "start": 0.275,
+     "text": "Name"
+    },
+    {
+     "end": 0.625,
+     "start": 0.488,
+     "text": "it"
+    },
+    {
+     "end": 0.938,
+     "start": 0.625,
+     "text": "once"
+    },
+    {
+     "end": 1.062,
+     "start": 0.938,
+     "text": "and"
+    },
+    {
+     "end": 1.4,
+     "start": 1.062,
+     "text": "pass"
+    },
+    {
+     "end": 1.525,
+     "start": 1.4,
+     "text": "it"
+    },
+    {
+     "end": 1.663,
+     "start": 1.525,
+     "text": "to"
+    },
+    {
+     "end": 2.0,
+     "start": 1.663,
+     "text": "every"
+    },
+    {
+     "end": 2.525,
+     "start": 2.0,
+     "text": "command"
+    },
+    {
+     "end": 2.575,
+     "start": 2.525,
+     "text": ","
+    },
+    {
+     "end": 2.75,
+     "start": 2.575,
+     "text": "for"
+    },
+    {
+     "end": 3.338,
+     "start": 2.75,
+     "text": "example"
+    },
+    {
+     "end": 8.925,
+     "start": 3.338,
+     "text": "blueprint=/usr/share/singular/plutus.json"
+    },
+    {
+     "end": 9.038,
+     "start": 8.925,
+     "text": "and"
+    },
+    {
+     "end": 9.262,
+     "start": 9.038,
+     "text": "then"
+    },
+    {
+     "end": 9.85,
+     "start": 9.262,
+     "text": "blueprint"
+    },
+    {
+     "end": 9.9,
+     "start": 9.85,
+     "text": "\""
+    },
+    {
+     "end": 11.125,
+     "start": 9.9,
+     "text": "blueprint"
+    },
+    {
+     "end": 11.375,
+     "start": 11.125,
+     "text": "\""
+    },
+    {
+     "end": 11.425,
+     "start": 11.375,
      "text": "."
     }
    ]

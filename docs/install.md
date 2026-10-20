@@ -188,9 +188,15 @@ flowchart TD
     L -->|loads| N["lib-node/<br/>every library cardano-node needs"]
     L -->|reads| D["share/singular-registry/data/<br/>the packaged time recordings and genesis files"]
     L -->|reads| G["share/devnet/genesis/<br/>the genesis files and keys of the development node"]
+    U["share/plutus.json and share/version.txt<br/>the deployment blueprint and its release"] -.->|given as --blueprint| B
     V["devnet"] -.->|starts by name| C["cardano-node"]
     I["VERSION and COMMIT<br/>the release and the commit"] -.->|state what the programs report| B
 ```
+
+The folder `share` also holds the deployment blueprint, `plutus.json`, that the
+commands take as `--blueprint`, with `version.txt` beside it naming the release:
+`singular registry describe` reads its version label from that file and refuses
+a blueprint without one.
 
 On Linux the folders `lib` and `lib-node` each also hold a C library and its loader,
 and the launcher starts the program through that loader, which is why the programs
@@ -198,6 +204,24 @@ do not depend on the distribution's libraries. The Cardano node is built against
 another C library than the other three programs, which is why it has a folder of
 its own. On macOS the programs load only the libraries macOS itself provides and
 the ones in `lib` and `lib-node`.
+
+## Where the blueprint is
+
+Homebrew, the DEB, the RPM and the tarballs of a release after 0.13.1 bring the deployment blueprint the
+commands were released with, so Demo 1 needs no second download. It is the same
+file the on-chain archive ships as `onchain/plutus.json`, and `verify-release`
+checks that the two are identical. Each copy has the release's `version.txt`
+beside it.
+
+| You installed with | The blueprint |
+| --- | --- |
+| Homebrew | `$(brew --prefix singular)/libexec/share/plutus.json` |
+| The DEB or the RPM | `/usr/share/singular/plutus.json` |
+| The tarball | `singular-X.Y.Z-<system>/share/plutus.json` |
+| The on-chain archive | `onchain/plutus.json`, checked by its `verify-identities.sh` |
+
+Name it once and pass it to every command, for example
+`blueprint=/usr/share/singular/plutus.json` and then `--blueprint "$blueprint"`.
 
 ## When it does not work
 

@@ -135,7 +135,7 @@ jobs:
       # install test below. A manual run publishes nothing here (see dev-channels).
       - name: Linux packages
         if: runner.os == 'Linux' && github.event_name != 'workflow_dispatch'
-        uses: paolino/dev-assets/linux-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/linux-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           mode: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'dev-linux' }}
           tag: ${{ env.RELEASE_TAG }}
@@ -154,7 +154,7 @@ jobs:
       # installed through a local tap pointing at it and tested with brew test.
       - name: Homebrew formula
         if: runner.os == 'macOS' && github.event_name != 'workflow_dispatch'
-        uses: paolino/dev-assets/darwin-homebrew-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/darwin-homebrew-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           mode: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'dev-homebrew' }}
           tag: ${{ env.RELEASE_TAG }}
@@ -213,7 +213,7 @@ jobs:
           name: ${{ steps.names.outputs.artifact }}
           path: ${{ runner.temp }}/packages
       - name: Install and run every package
-        uses: paolino/dev-assets/linux-install-test@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/linux-install-test@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           artifacts-dir: ${{ runner.temp }}/packages
           artifact-version: ${{ steps.names.outputs.version }}
@@ -221,10 +221,12 @@ jobs:
           commands: singular,open-datum,devnet
           smoke-args: --version
           usage-grep: "(commit "
+          # the blueprint and the release number beside it, where the packages put them
+          expect-files: /usr/share/singular/plutus.json /usr/share/singular/version.txt
   # #707: Demo 1 played from the unpacked Linux bundle alone. Nix builds the
-  # bundle and the registry blueprint beforehand; the journey then runs the
-  # bundle's `singular`, `open-datum` and development node on a PATH that holds
-  # ordinary tools and no Nix, as a user without Nix would.
+  # bundle beforehand; the journey then runs the bundle's `singular`,
+  # `open-datum` and development node with the bundle's blueprint, on a PATH
+  # that holds ordinary tools and no Nix, as a user without Nix would.
   journey:
     needs: changes
     if: needs.changes.outputs.bundles == 'true'
@@ -287,7 +289,7 @@ jobs:
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Publish the dev-linux assets
         if: runner.os == 'Linux'
-        uses: paolino/dev-assets/linux-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/linux-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           mode: dev-linux
           release-output: linux-release-artifacts
@@ -312,7 +314,7 @@ jobs:
           permission-contents: write
       - name: Publish the singular-dev formula
         if: runner.os == 'macOS'
-        uses: paolino/dev-assets/darwin-homebrew-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        uses: paolino/dev-assets/darwin-homebrew-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
         with:
           mode: dev-homebrew
           update-tap: "yes"

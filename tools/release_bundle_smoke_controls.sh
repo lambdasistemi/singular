@@ -127,6 +127,15 @@ if [[ "$listing" == */bin/devnet* ]]; then
   rm "$work/tree/$top/bin/devnet" "$work/tree/$top/libexec/devnet"
   repack
   refused_for "a bundle built from source without the development node" members env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  # the blueprint the release ships, and the release number beside it
+  unpack
+  rm "$work/tree/$top/share/plutus.json"
+  repack
+  refused_for "a bundle without the blueprint" members env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  unpack
+  printf '0.0.0\n' >"$work/tree/$top/share/version.txt"
+  repack
+  refused_for "a blueprint naming another release" members env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
   # a node that cannot start its chain: the settings are never printed
   unpack
   printf '{ not json' >"$work/tree/$top/share/devnet/genesis/node-config.json"

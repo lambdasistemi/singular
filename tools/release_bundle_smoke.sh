@@ -12,7 +12,8 @@
 #   members     the launchers and executables, the packaged time files,
 #               VERSION and COMMIT beside them, and, for a release that
 #               carries the development node (#707), `devnet`, `cardano-node`
-#               and the genesis files
+#               and the genesis files, and the deployment blueprint
+#               share/plutus.json with share/version.txt naming VERSION
 #   identity    `singular --version`, `open-datum --version` and
 #               `devnet --version` print `<program> VERSION (commit COMMIT)`
 #               and exit 0; `cardano-node --version` names its own release
@@ -137,9 +138,15 @@ if $with_devnet; then
     share/devnet/genesis/dijkstra-genesis.json \
     share/devnet/genesis/delegate-keys/delegate1.kes.skey \
     share/devnet/genesis/delegate-keys/delegate1.opcert \
-    share/devnet/genesis/delegate-keys/delegate1.vrf.skey; do
+    share/devnet/genesis/delegate-keys/delegate1.vrf.skey \
+    share/plutus.json share/version.txt; do
     [ -e "$bundle/$member" ] || fail members "$tarball carries no $member"
   done
+  # the blueprint names the release it belongs to, and holds validators
+  [ "$(cat "$bundle/share/version.txt")" = "$version" ] \
+    || fail members "share/version.txt says $(cat "$bundle/share/version.txt"), not $version"
+  grep -q '"validators"' "$bundle/share/plutus.json" \
+    || fail members "share/plutus.json names no validators"
 fi
 for program in $bundled_programs; do
   [ -x "$bundle/bin/$program" ] || fail members "bin/$program is not executable"

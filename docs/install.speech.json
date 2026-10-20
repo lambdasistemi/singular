@@ -115,7 +115,25 @@
       "pause": 400
     },
     {
+      "text": "The folder share also holds the deployment blueprint, plutus.json, that the commands take as --blueprint, with version.txt beside it naming the release: singular registry describe reads its version label from that file and refuses a blueprint without one.",
+      "pause": 400
+    },
+    {
       "text": "On Linux the folders lib and lib-node each also hold a C library and its loader, and the launcher starts the program through that loader, which is why the programs do not depend on the distribution's libraries. The Cardano node is built against another C library than the other three programs, which is why it has a folder of its own. On macOS the programs load only the libraries macOS itself provides and the ones in lib and lib-node.",
+      "pause": 400
+    }
+  ],
+  "where-the-blueprint-is": [
+    {
+      "text": "Where the blueprint is.",
+      "pause": 500
+    },
+    {
+      "text": "Homebrew, the DEB, the RPM and the tarballs of a release after 0.13.1 bring the deployment blueprint the commands were released with, so Demo 1 needs no second download. It is the same file the on-chain archive ships as onchain/plutus.json, and verify-release checks that the two are identical. Each copy has the release's version.txt beside it.",
+      "pause": 400
+    },
+    {
+      "text": "Name it once and pass it to every command, for example blueprint=/usr/share/singular/plutus.json and then --blueprint \"$blueprint\".",
       "pause": 400
     }
   ],
@@ -163,6 +181,6 @@
   ],
   "_source": {
     "file": "install.md",
-    "sha256": "48cfee103385b68f29558991d10362dce1b6cabc5305eea2870840ed24df03c9"
+    "sha256": "4c37bd8efb50ab86ba8eec307fae8f0a068935d10439e616c556dacb461879bc"
   }
 }
