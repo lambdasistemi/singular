@@ -25,6 +25,36 @@ if ! $has_changes; then
   echo "FAIL: missing or empty CHANGELOG.md section for $DOCS_VERSION" >&2
   exit 1
 fi
+# The repository writes the pull request title into each merge commit, so
+# release-please lists a change from the merge commit and again from the
+# feature commit. A bullet whose text, without its trailing commit link,
+# repeats an earlier bullet under the same heading is left out of the notes;
+# CHANGELOG.md keeps what release-please wrote.
+link_re='^(.*) \(\[[0-9a-f]+\]\([^)]*\)\)$'
+declare -A seen=()
+deduplicated=""
+dropping=false
+while IFS= read -r line; do
+  if [[ "$line" == "### "* ]]; then
+    seen=()
+    dropping=false
+  elif [[ "$line" == "* "* ]]; then
+    key="$line"
+    if [[ "$line" =~ $link_re ]]; then key="${BASH_REMATCH[1]}"; fi
+    if [[ -n "${seen[$key]+x}" ]]; then
+      dropping=true
+      continue
+    fi
+    seen[$key]=1
+    dropping=false
+  elif $dropping && [[ "$line" =~ ^[[:space:]]+[^[:space:]] ]]; then
+    continue
+  else
+    dropping=false
+  fi
+  deduplicated+="$line"$'\n'
+done <<<"$section"
+section="$deduplicated"
 while [[ "$section" == *$'\n' ]]; do section="${section%$'\n'}"; done
 printf '%s\n\n' "$section" >"$download/release-notes.md"
 cat "${RELEASE_NOTES:-onchain-release/RELEASE.md}" >>"$download/release-notes.md"
@@ -44,7 +74,7 @@ if [ -n "${BUNDLES_MERGE:-}" ] && [ -n "${BUNDLES_DIR+x}" ]; then
 fi
 if ! gh release view "$tag" --repo lambdasistemi/singular >/dev/null 2>&1; then
   gh release create "$tag" --repo lambdasistemi/singular --verify-tag \
-    --title "Singular documentation and on-chain release $DOCS_VERSION" \
+    --title "Singular $DOCS_VERSION" \
     --notes-file "$download/release-notes.md"
 fi
 gh release upload "$tag" "$DOCS_ARCHIVE"/* --repo lambdasistemi/singular --clobber
