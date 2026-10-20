@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of singular-demo, which holds singular, open-datum and the development node for release v0.12.0, on x86_64 Linux with Nix.",
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix.",
       "pause": 400
     },
     {
@@ -49,7 +49,7 @@
       "pause": 400
     },
     {
-      "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here: Demo 1 with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
+      "text": "A Cardano developer who wants to try it plays the whole thing on a private test chain from a page of steps to copy, signing with a vault wallet whose key stays sealed in a file on their machine, or signing on another machine. The Demo 1 page says what the play shows and links the steps.",
       "pause": 400
     }
   ],
@@ -119,7 +119,7 @@
       "pause": 300
     },
     {
-      "text": "Start here: Demo 1 with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
+      "text": "Demo 1: play a registry from creation to termination and the preprod record",
       "pause": 300
     }
   ],
@@ -147,6 +147,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "396d71dec151a9fab8a521b8369fcc01b160942bf679e81eac3daf82dc9c216d"
+    "sha256": "5d09b633983a2f68564e0194bdfbd7f8e790a8ab158c6ce550c2ac4524b9602d"
   }
 }

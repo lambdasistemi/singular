@@ -29,7 +29,7 @@
       "pause": 500
     },
     {
-      "text": "Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest, and v0.12.0 is the one the runbook was written against. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.",
+      "text": "Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.",
       "pause": 400
     },
     {
@@ -39,6 +39,6 @@
   ],
   "_source": {
     "file": "index.md",
-    "sha256": "7b88df49faf702acb7de9281edb134c74252bcca5297d421a5251c1fa89036fd"
+    "sha256": "35103c9aabd1285f18635643dbc9cf551f6d335d4812a7eee4937f371d8c9b52"
   }
 }

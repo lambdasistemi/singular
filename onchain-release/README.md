@@ -15,10 +15,10 @@ it, with just `jq`), plus `git`, `jq` and `curl`.
 2. Follow `DEMO1.md`, in this directory. It builds `singular` and `open-datum`,
    starts a private development node, makes Alice's and Bob's vault wallets and
    runs the sixteen steps, with every value taken from the previous receipt.
-3. When you are ready to spend test ada, follow the
-   [preprod runbook](https://lambdasistemi.github.io/singular/docs/demo1-on-preprod/):
-   the same steps against the public preprod network, with the faucet, the Koios
-   address and the amounts.
+3. The same steps as a page to paste from, one block at a time, are in
+   [singular-demo](https://lambdasistemi.github.io/singular-demo/). The section
+   "On a public network" of `DEMO1.md` names the three settings that change for a
+   public test network.
 
 The rest of this file is reference for the archive itself: what it carries, how
 to verify it, the signers, the bounded registry journey, and, kept last because
@@ -111,7 +111,7 @@ recording. The launcher checks configuration before spawning its private
 fixture. Old ordinary socket and backend settings refuse before provider
 acquisition. This route remains an obligation of the unchanged journey gate;
 its command description alone is not a current release or hosted pass. The
-[onboarding runbook](https://lambdasistemi.github.io/singular/docs/consumer-onboarding/)
+[command reference](https://lambdasistemi.github.io/singular/docs/singular-node/)
 explains the API, time and wallet settings. The legacy naming commands below
 retain their stated unverified status.
 

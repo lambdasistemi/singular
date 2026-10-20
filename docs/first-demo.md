@@ -2,7 +2,7 @@
 
 As a Cardano KERI integrator, I want to see a released Singular registry handle a real identity's registration, retirement and custody, so that I can evaluate the interface that Cardano KERI will consume.
 
-**Where this stands (October 2026).** The registry half of this play, called Demo 1, can be played today from release v0.12.0: the [preprod runbook](demo1-on-preprod.md) takes a Cardano developer from the download to every step on preprod, and the [development-node page](demo1-devnet.md) runs the same steps on a private node. The play below, which joins a `kli` identity and `ckeri`, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the `v1.0.0` tag this page once named is not the tag Demo 1 uses.
+**Where this stands (October 2026).** The registry half of this play, called Demo 1, can be played today on a private test chain: the [Demo 1 page](demo1.md) says what it shows and links the steps to play. The play below, which joins a `kli` identity and `ckeri`, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the `v1.0.0` tag this page once named is not the tag Demo 1 uses.
 
 **8 October 2026 was a target, not an observed result.** The [project story](https://github.com/orgs/lambdasistemi/projects/4/views/5?pane=issue&itemId=252955454) requires a connected Cardano preprod play. The accepted [Singular Lean model](../lean/Singular/Model.lean) defines expected transitions; the deployed script, released operator command and fresh node readbacks must establish each claimed outcome.
 
