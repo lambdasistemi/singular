@@ -77,8 +77,4 @@ project's own journeys submitted there, are recorded in
 
 The play runs a release of Singular. These pages are about the release itself,
 not about the steps: [install the commands without Nix](install.md) and
-[download and verify a release](verify-release.md). Each release archive also
-carries the same story as a run page, `DEMO1.md`
-([the page in the repository](https://github.com/lambdasistemi/singular/blob/main/onchain-release/DEMO1.md)),
-which builds the commands from the archive and which the project's hosted checks
-run against every change.
+[download and verify a release](verify-release.md).

@@ -61,12 +61,12 @@
       "pause": 500
     },
     {
-      "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release. Each release archive also carries the same story as a run page, DEMO1.md (the page in the repository), which builds the commands from the archive and which the project's hosted checks run against every change.",
+      "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "demo1.md",
-    "sha256": "0501f83d1ad0815cc1d6350d279d314c50a885f51389e233eb417efaba5d0d37"
+    "sha256": "7e4fdf61eda0b728891a61c84959cc3c8d05486446f9df03a2538d7c6165ab82"
   }
 }

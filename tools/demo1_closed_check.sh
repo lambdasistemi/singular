@@ -79,6 +79,5 @@ tar -tzf "$release_dir/singular-onchain-$version.tar.gz" >"$members" 2>"$scratch
 if grep -qE '(^|/)\.git($|/)' "$members"; then
   fail "the archive carries a git checkout"
 fi
-test -f "$extracted/DEMO1.md" || fail "the archive carries no DEMO1.md run page"
 
 echo "demo1-closed-check: PASS from $extracted — the release verified as published (sums, model revision, members, the closed-datum journey as separate processes on one node)"

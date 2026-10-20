@@ -176,7 +176,7 @@ stated="$(cat "$extracted/MODEL-REVISION")"
 pass "model revision" "$stated"
 
 # members
-for member in DEMO1.md offchain/flake.nix offchain/flake.lock offchain/cli/Main.hs applications/open-datum/offchain/flake.nix applications/open-datum/offchain/flake.lock applications/open-datum/offchain/app/Main.hs onchain/plutus.json; do
+for member in offchain/flake.nix offchain/flake.lock offchain/cli/Main.hs applications/open-datum/offchain/flake.nix applications/open-datum/offchain/flake.lock applications/open-datum/offchain/app/Main.hs onchain/plutus.json; do
   [ -f "$extracted/$member" ] || refuse member-missing "$onchain carries no $member"
 done
 pass members

@@ -682,15 +682,15 @@ jobs:
       # verify-release exactly as a published release is, the assembled
       # assets presented as its download input: sums, the stated model
       # revision, members, then the archive extracted OUTSIDE the checkout
-      # and its DEMO1.md journey run as separate `singular` processes —
+      # and its Demo 1 journey run as separate `singular` processes —
       # create, insert, inspect, update, inspect, terminate, inspect —
       # against ONE development node, asserting the receipts' identity
       # continuity and ledger reads and every refusal control at its
       # boundary; the retained insert-active and update-terminal archive
       # controls run from the same extraction.
       #
-      # Falsification: on any ancestor without the command or its page
-      # this step fails at the page check or at the first invocation.
+      # Falsification: on any ancestor without the command this step fails at
+      # the first invocation.
       - name: Run the Demo 1 singular journey from the extracted release archive
         run: nix run --quiet .#demo1-cli-check
       - name: Retain recovery, race and independent trie assertions on the explicit test build

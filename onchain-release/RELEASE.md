@@ -1,9 +1,8 @@
 Singular is a registry of unique keys on Cardano that applications can use with
 their own rules. This release carries ready-built commands for Linux and macOS,
-the compiled smart contracts and the run page for Demo 1: create a registry,
-insert a key, change it, terminate it, and see each refusal appear where the page
-says it will. Play it on a private development node; the run page also names the
-three settings that change for a public test network.
+the compiled smart contracts and the sources they are built from. Demo 1 creates
+a registry, inserts a key, changes it, terminates it and shows each refusal where
+it should appear; it is played from singular-demo, on a private development node.
 
 ## Get the commands
 
@@ -26,19 +25,18 @@ commands for each platform.
    `nix develop github:lambdasistemi/singular-demo --accept-flake-config` opens a
    shell with `singular`, `open-datum`, the development node and `jq`, all built
    by the project's CI. It needs Nix; its README says what it is pinned to.
-2. Download `singular-onchain-<version>.tar.gz` and `SHA256SUMS` from this
-   release. The documentation archive is 220 MB and Demo 1 does not need it.
+2. Open the step-by-step page, https://lambdasistemi.github.io/singular-demo/, and
+   follow it. It plays the sixteen steps on the private development node with no
+   faucet and no account.
+
+## Check this release
+
+1. Download `singular-onchain-<version>.tar.gz` and `SHA256SUMS` from this
+   release. The documentation archive is 220 MB and is not needed for the check.
    Check the download: `sha256sum --check --ignore-missing SHA256SUMS`. The file
    names carry the version without a `v`.
-3. Extract the archive into a directory of its own, because it has no top-level
+2. Extract the archive into a directory of its own, because it has no top-level
    directory and carries a `SHA256SUMS` of the same name:
    `mkdir singular && tar xzf singular-onchain-<version>.tar.gz -C singular`.
    Then, inside that directory, run `sha256sum --check --quiet SHA256SUMS` and
    `bash verify-identities.sh` to check every file and the compiled validators.
-4. Follow `DEMO1.md` in the extracted directory. It starts the private
-   development node, makes Alice's and Bob's vault wallets and runs Demo 1 with
-   no faucet and no account. If you did not take the shell in step 1, it also
-   shows how to build the commands; that compiles a large Haskell stack unless the
-   project's public binary cache serves it.
-5. The same steps as a page to paste from, one block at a time, are at
-   https://lambdasistemi.github.io/singular-demo/.

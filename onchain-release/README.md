@@ -1,24 +1,22 @@
-# Singular release archive: start with Demo 1
+# Singular release archive
 
 You are a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios,
-and you have received a tagged Singular release. You want to play Demo 1 from it
-without guessing a value: create a registry, put keys in it, change and end them,
-and see each refusal appear where the page says it will. This archive carries
-what you need, and `DEMO1.md` in this directory is the page that does it. You
-need none of the repository. The only external requirement is
-[Nix](https://nixos.org) with flakes (the identity verification also runs without
-it, with just `jq`), plus `git`, `jq` and `curl`.
+and you have received a tagged Singular release. You want to know what it holds,
+that it is what it says it is, and where to play Demo 1 with it: create a registry,
+put keys in it, change and end them, and see each refusal appear where it should.
+Demo 1 is played from [singular-demo](https://github.com/lambdasistemi/singular-demo).
+This archive carries the compiled validators, the sources the commands are built
+from and the checks that tie them to the release. You need none of the repository.
+The only external requirement is [Nix](https://nixos.org) with flakes (the identity
+verification also runs without it, with just `jq`), plus `git`, `jq` and `curl`.
 
-## Start here: play Demo 1
+## Play Demo 1
 
 1. Check this archive (section 1) and its compiled validators (section 2).
-2. Follow `DEMO1.md`, in this directory. It builds `singular` and `open-datum`,
-   starts a private development node, makes Alice's and Bob's vault wallets and
-   runs the sixteen steps, with every value taken from the previous receipt.
-3. The same steps as a page to paste from, one block at a time, are in
-   [singular-demo](https://lambdasistemi.github.io/singular-demo/). The section
-   "On a public network" of `DEMO1.md` names the three settings that change for a
-   public test network.
+2. Play Demo 1 from singular-demo. Its step-by-step page,
+   https://lambdasistemi.github.io/singular-demo/, gives the sixteen steps; its
+   Nix shell and Ubuntu kit provide `singular`, `open-datum` and a private
+   development node, and its README names the release they are built from.
 
 The rest of this file is reference for the archive itself: what it carries, how
 to verify it, the signers, the bounded registry journey, and, kept last because
@@ -28,7 +26,6 @@ it is history, the naming lifecycle of earlier releases.
 
 | path | contents |
 |---|---|
-| `DEMO1.md` | the run page of the ordinary `singular registry` and `open-datum` commands: Demo 1 as sixteen separate processes on one private development node, started from this directory |
 | `onchain/` | the imported registry partition: Aiken validators, its own `flake.nix`/`flake.lock`, and `plutus.json` — the **compiled** blueprint |
 | `naming-onchain/` | Singular's own naming partition: the same shape, with its compiled `plutus.json` |
 | `onchain/script-identity.json`, `naming-onchain/script-identity.json` | the **pinned unapplied identities**: every validator's compiled hash and parameter count, plus the compiler string |
@@ -105,7 +102,7 @@ The packaged journey defaults to a private generated devnet behind the Koios
 HTTP facade. The journey is a harness and keeps a key file: to point it at a test-network
 API and a wallet of your own, pass `--koios-url URL --network-magic N --wallet-skey FILE`;
 the matching environment variables are `SINGULAR_KOIOS_URL`, `SINGULAR_NETWORK_MAGIC` and
-`SINGULAR_WALLET_SKEY`. Demo 1 itself does not use it: `DEMO1.md` does. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
+`SINGULAR_WALLET_SKEY`. Demo 1 itself does not use it. `--network-time DIR` (or `SINGULAR_NETWORK_TIME`) supplies
 pinned genesis/history material; preprod otherwise uses the reviewed packaged
 recording. The launcher checks configuration before spawning its private
 fixture. Old ordinary socket and backend settings refuse before provider
@@ -127,8 +124,8 @@ submit` sends it. The third, a key file, `--wallet-skey FILE`, is being retired
 ([issue 672](https://github.com/lambdasistemi/singular/issues/672)) and is not a way
 to start. `singular wallet create` makes a vault and prints its address; it asks for the
 passphrase twice, and every later command that opens the vault asks once. The
-Demo 1 run page, `DEMO1.md` in this archive, shows the vault and the external way
-from the first command to the last.
+Demo 1 page of singular-demo shows the vault and the external way from the first
+command to the last.
 
 Build the two compiled blueprints from this archive's own flakes, then run
 the journey from `offchain/` (it reads the pinned identity manifests from

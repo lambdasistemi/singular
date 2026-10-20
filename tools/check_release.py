@@ -212,10 +212,8 @@ if onchain_present:
             # retirement command without the page that documents it.
             "UPDATE-TERMINAL.md",
             "offchain/update-terminal/Main.hs",
-            # #299: the ordinary commands' run page and their entry point.
-            # Required, so the archive cannot ship `singular registry`
-            # without the page that documents it.
-            "DEMO1.md",
+            # #299: the ordinary commands' entry point. Required, so the
+            # archive cannot ship `singular registry` without its source.
             "offchain/cli/Main.hs",
             # #528 slice 4: the release ships both executables. Required, so
             # the archive cannot ship `singular` without `open-datum`, nor
