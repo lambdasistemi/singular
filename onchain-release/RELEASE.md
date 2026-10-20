@@ -6,25 +6,36 @@ it should appear; it is played from singular-demo, on a private development node
 
 ## Get the commands
 
-Download the file for your machine and `SHA256SUMS` from this release:
+On a Mac with Apple Silicon: `brew install lambdasistemi/tap/singular`, and
+`brew upgrade` takes the next release.
+
+On Linux on x86_64: `singular-<version>-x86_64-linux.deb` or
+`singular-<version>-x86_64-linux.rpm` installs `singular`, `open-datum` and `devnet` into `/usr/bin`,
+and `singular-<version>-x86_64-linux.AppImage` (with `open-datum-…` and `devnet-…`)
+holds one command as one file. Their checksums are in
+`singular-<version>-x86_64-linux.SHA256SUMS`.
+
+Or download the tarball for your machine and `SHA256SUMS` from this release:
 
 - `singular-<version>-x86_64-linux.tar.gz` for Linux on x86_64;
 - `singular-<version>-aarch64-darwin.tar.gz` for a Mac with Apple Silicon.
 
 Check the file against `SHA256SUMS`, unpack it and run `singular --version`,
 which prints the release and the commit the program was built from. Each file
-holds `singular` and `open-datum` with everything they need: no Nix and no
-compiling. The
+holds `singular`, `open-datum` and `devnet`, the program that starts a private
+development node, with the Cardano node it starts and everything they need: no
+Nix and no compiling. The
 [install page](https://lambdasistemi.github.io/singular/docs/install/) has the
 commands for each platform.
 
 ## Play Demo 1
 
-1. Get the programs and a private development node from the Demo 1 shell,
-   https://github.com/lambdasistemi/singular-demo.
-   `nix develop github:lambdasistemi/singular-demo --accept-flake-config` opens a
-   shell with `singular`, `open-datum`, the development node and `jq`, all built
-   by the project's CI. It needs Nix; its README says what it is pinned to.
+1. Have the programs and a private development node. Every one of the files above
+   holds them, on Linux on x86_64 and on a Mac with Apple Silicon.
+   Anywhere else, the Demo 1 shell, https://github.com/lambdasistemi/singular-demo,
+   gives them with Nix: `nix develop github:lambdasistemi/singular-demo --accept-flake-config`
+   opens a shell with `singular`, `open-datum`, the development node and `jq`, all
+   built by the project's CI. It needs Nix; its README says what it is pinned to.
 2. Open the step-by-step page, https://lambdasistemi.github.io/singular-demo/, and
    follow it. It plays the sixteen steps on the private development node with no
    faucet and no account.

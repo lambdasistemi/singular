@@ -1,23 +1,35 @@
 # Install the commands without Nix
 
 You develop for Cardano on Linux or on an Apple Silicon Mac and you want to play
-the first demo without installing Nix or compiling the Haskell stack. You
-download the file for your platform from a release, check it against the
-release's checksums, unpack it, run `singular --version` and see the release and
-the commit the program was built from, and then run the commands of the first
-demo.
+the first demo without installing Nix or compiling the Haskell stack. On a Mac
+you install the commands with one Homebrew command; on Linux you install a DEB or
+an RPM, or run an AppImage; on either you can instead download the tarball for
+your platform, check it against the release's checksums and unpack it. You run
+`singular --version` and see the release and the commit the program was built
+from, and then run the commands of the first demo. From the release after 0.13.1
+every one of these also holds the private development node the first demo
+starts, so that node needs no `nix` command either.
 
 ## What you download
 
 Every release after 0.12.0 carries one tarball per platform beside the
 documentation and on-chain archives, and one `SHA256SUMS` that lists all of
 them. A tarball holds both commands, `singular` and `open-datum`, with every
-library and data file they need.
+library and data file they need. The tarballs of the releases after 0.13.1 also
+hold `devnet`, the program that starts a private development node, the Cardano
+node 10.7.0 it starts and the genesis files that node reads.
 
-| Your machine | The file to download |
-| --- | --- |
-| Linux on x86_64, any distribution | `singular-X.Y.Z-x86_64-linux.tar.gz` |
-| macOS on Apple Silicon | `singular-X.Y.Z-aarch64-darwin.tar.gz` |
+The releases after 0.13.1 also carry the Linux packages, with their own checksum
+file `singular-X.Y.Z-x86_64-linux.SHA256SUMS`, and a Homebrew formula for the
+Mac. The sizes are approximate.
+
+| Your machine | The file to download | Its size |
+| --- | --- | --- |
+| A Mac with Apple Silicon | `brew install lambdasistemi/tap/singular`, or `singular-X.Y.Z-aarch64-darwin.tar.gz` | about 200 MB |
+| Debian, Ubuntu and their relatives on x86_64 | `singular-X.Y.Z-x86_64-linux.deb` | about 215 MB |
+| Fedora, RHEL and their relatives on x86_64 | `singular-X.Y.Z-x86_64-linux.rpm` | about 215 MB |
+| Any Linux on x86_64, one command as one file | `singular-X.Y.Z-x86_64-linux.AppImage`, `open-datum-…`, `devnet-…` | about 42, 42 and 166 MB |
+| Any Linux on x86_64, all three in one folder | `singular-X.Y.Z-x86_64-linux.tar.gz` | about 75 MB |
 
 Replace `X.Y.Z` with the release you want. The releases are listed at
 <https://github.com/lambdasistemi/singular/releases>.
@@ -30,6 +42,50 @@ flowchart LR
     U -->|no Nix, no libraries to install| V[Run singular --version]
     V -->|release and commit| D[Run the first demo]
 ```
+
+## Install with Homebrew on a Mac
+
+For the releases after 0.13.1, a Mac with Apple Silicon and
+[Homebrew](https://brew.sh) installs the latest release with one command, and
+`brew upgrade` takes the next one:
+
+```sh
+brew install lambdasistemi/tap/singular
+singular --version
+open-datum --version
+devnet --version
+```
+
+Homebrew downloads the macOS tarball from the release, checks it against the
+checksum the formula carries and links `singular`, `open-datum` and `devnet` onto
+your path. The Cardano node stays inside the installation, where `devnet` finds
+it, so it never replaces a node you installed yourself. The formula's own test
+runs `--version` of the three commands.
+
+## Install the Linux packages
+
+For the releases after 0.13.1, a DEB or an RPM installs all three commands into
+`/usr/bin`, with everything they need, on any distribution of its family, and
+your package manager removes them again. An AppImage holds one command as one
+file you run where it lies.
+
+```sh
+version=X.Y.Z
+base="https://github.com/lambdasistemi/singular/releases/download/v${version}"
+curl -fsSLO "$base/singular-${version}-x86_64-linux.deb"
+curl -fsSLO "$base/singular-${version}-x86_64-linux.SHA256SUMS"
+grep " singular-${version}-x86_64-linux.deb\$" "singular-${version}-x86_64-linux.SHA256SUMS" | sha256sum --check
+sudo apt install "./singular-${version}-x86_64-linux.deb"
+singular --version
+```
+
+On Fedora and its relatives the RPM goes in the same way, with
+`sudo dnf install ./singular-${version}-x86_64-linux.rpm`. An AppImage, for example
+`singular-${version}-x86_64-linux.AppImage`, is made executable with `chmod +x` and
+run as `./singular-${version}-x86_64-linux.AppImage --version`; it needs FUSE and
+user namespaces, which desktop distributions allow. The packages put their files
+under `/nix/store` and the commands in `/usr/bin`; they do not need Nix and do not
+install it.
 
 ## Install on Linux
 
@@ -84,6 +140,7 @@ exits with status 0. The commit is the one the release's tag names.
 ```text
 singular X.Y.Z (commit <the 40 hexadecimal characters of the release commit>)
 open-datum X.Y.Z (commit <the 40 hexadecimal characters of the release commit>)
+devnet X.Y.Z (commit <the 40 hexadecimal characters of the release commit>)
 ```
 
 The wallet commands run offline, so they are the quickest check that the programs
@@ -100,25 +157,47 @@ Both commands print the same address, which begins with `addr_test1` on the
 preprod network. From here the commands are the ones of the
 [first demo](first-demo.md).
 
+The development node starts with `devnet` and prints one line of settings once
+its chain is up. It runs until you stop it, and stopping `devnet` stops the Cardano
+node it started.
+
+```sh
+devnet > devnet.out &
+until [ -s devnet.out ]; do sleep 1; done
+head -n 1 devnet.out
+kill %1
+```
+
+The line is a JSON document that names the node's `providerUrl` and
+`networkMagic`, which is 42. The Demo 1 runbook in the
+[singular-demo](https://github.com/lambdasistemi/singular-demo) repository funds
+wallets on such a node and plays the whole demo. The node keeps its files in one
+folder under your temporary directory, so run one development node at a time.
+
 ## What is inside the tarball
 
-The folder `bin` holds the two commands you run. Each is a short launcher that
-points the real program at the libraries and data files in the same folder and
-starts it, so nothing is read from outside the folder, and moving the folder
-moves the installation.
+The folder `bin` holds the commands you run: `singular`, `open-datum`, `devnet`
+and `cardano-node`. Each is a short launcher that points the real program at the
+libraries and data files in the same folder and starts it, so nothing is read from
+outside the folder, and moving the folder moves the installation.
 
 ```mermaid
 flowchart TD
-    B["bin/singular, bin/open-datum<br/>launchers you run"] -->|starts| L["libexec/singular, libexec/open-datum<br/>the programs"]
-    L -->|loads| Q["lib/<br/>every library the programs need"]
+    B["bin/singular, bin/open-datum, bin/devnet, bin/cardano-node<br/>launchers you run"] -->|starts| L["libexec/<br/>the programs"]
+    L -->|loads| Q["lib/<br/>every library singular, open-datum and devnet need"]
+    L -->|loads| N["lib-node/<br/>every library cardano-node needs"]
     L -->|reads| D["share/singular-registry/data/<br/>the packaged time recordings and genesis files"]
+    L -->|reads| G["share/devnet/genesis/<br/>the genesis files and keys of the development node"]
+    V["devnet"] -.->|starts by name| C["cardano-node"]
     I["VERSION and COMMIT<br/>the release and the commit"] -.->|state what the programs report| B
 ```
 
-On Linux the folder `lib` also holds the C library and its loader, and the launcher
-starts the program through that loader, which is why the programs do not depend on
-the distribution's libraries. On macOS the programs load only the libraries macOS
-itself provides and the ones in `lib`.
+On Linux the folders `lib` and `lib-node` each also hold a C library and its loader,
+and the launcher starts the program through that loader, which is why the programs
+do not depend on the distribution's libraries. The Cardano node is built against
+another C library than the other three programs, which is why it has a folder of
+its own. On macOS the programs load only the libraries macOS itself provides and
+the ones in `lib` and `lib-node`.
 
 ## When it does not work
 
@@ -128,6 +207,7 @@ itself provides and the ones in `lib`.
 | `cannot execute` or `Exec format error` on Linux | The machine is not x86_64. Run `uname -m`; the bundle is for `x86_64`. Use the Nix route below. |
 | macOS says the developer cannot be verified | The file was quarantined by a browser. Remove the mark as shown above. |
 | `--version` prints `commit unknown` | The program was not built by the release pipeline. Download the release file. |
+| `devnet` exits before it prints its settings | Another development node of yours may be running, because it keeps its files in one folder under your temporary directory. Stop it and start `devnet` again. |
 
 ## Other platforms and the Nix route
 
@@ -168,3 +248,17 @@ repository's flake. A bundle failing on either platform fails the release before
 anything is published, and the publisher refuses a release that lacks a bundle
 for any platform listed in `tools/release_bundles.sh`. Nothing in a pull request
 publishes: the built tarballs are kept as workflow artifacts for a week.
+
+The Linux packages and the Homebrew formula follow the organisation's shared
+release actions and Nix helpers
+([dev-assets](https://github.com/paolino/dev-assets)). A pull request builds the
+AppImages, the DEB and the RPM, runs every command from each one unpacked, and
+then installs the DEB on Ubuntu and the RPM on Fedora and runs each AppImage, on
+machines without Nix. It also builds the formula from the macOS tarball, installs
+it through a local tap that points at that tarball, and runs `brew test`. The
+release tag publishes the Linux packages once the release exists. The formula
+follows once `verify-release` has passed: it is pushed to the
+[organisation's tap](https://github.com/lambdasistemi/homebrew-tap) only if the
+release's macOS tarball is the one the formula names, then installed from the tap
+and tested. A manual run of the bundles workflow can publish the dev channels: the
+`dev-linux` packages and the `singular-dev` formula.
