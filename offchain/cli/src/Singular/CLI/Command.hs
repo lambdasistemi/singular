@@ -129,9 +129,10 @@ import Singular.CLI.Options
     )
 import Singular.CLI.Passphrase
     ( Confirmation (..)
-    , PassphraseSource (..)
+    , namedSource
     , readPassphrase
     , renderPassphraseRefusal
+    , sourceFor
     )
 import Singular.CLI.Registry (economics)
 import Singular.CLI.Sign (signBundle)
@@ -1211,10 +1212,6 @@ neededRoles = \case
 
 -- * The wallet verbs
 
--- | Where a wallet command's passphrase comes from.
-passphraseSource :: Maybe Int -> PassphraseSource
-passphraseSource = maybe PassphraseTerminal PassphraseDescriptor
-
 -- | The enterprise address of a key on a network, as one printed line.
 addressOf :: Word32 -> SignKeyDSIGN Ed25519DSIGN -> String
 addressOf magic key =
@@ -1222,9 +1219,10 @@ addressOf magic key =
 
 {- | @wallet create@: draw a fresh signing key, seal it into a new
 vault with the passphrase asked twice (echo off on a terminal, one
-line from a descriptor), and print the key's enterprise address on one
-standard output line. Every refusal names its cause on standard error,
-prints nothing on standard output, and removes any file this run made.
+line from a descriptor, or the variable on a development network), and
+print the key's enterprise address on one standard output line. Every
+refusal names its cause on standard error, prints nothing on standard
+output, and removes any file this run made.
 -}
 walletCreateCommand :: WalletArgs -> IO ExitCode
 walletCreateCommand WalletArgs{..} =
@@ -1232,19 +1230,22 @@ walletCreateCommand WalletArgs{..} =
         True ->
             walletRefused (renderVaultRefusal (VaultPathExists walletVaultPath))
         False ->
-            readPassphrase AskTwice (passphraseSource walletPassphraseFd) >>= \case
+            sourceFor walletNetworkMagic walletPassphraseFd >>= \case
                 Left refusal -> walletRefused (renderPassphraseRefusal refusal)
-                Right passphrase -> do
-                    key <- freshSignKey
-                    sealed <- sealVault vaultWorkFactor passphrase key
-                    case sealed of
-                        Left refusal -> walletRefused (renderVaultRefusal refusal)
-                        Right bytes ->
-                            createVaultFile walletVaultPath bytes >>= \case
+                Right source ->
+                    readPassphrase AskTwice source >>= \case
+                        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+                        Right passphrase -> do
+                            key <- freshSignKey
+                            sealed <- sealVault vaultWorkFactor passphrase key
+                            case sealed of
                                 Left refusal -> walletRefused (renderVaultRefusal refusal)
-                                Right () -> do
-                                    putStrLn (addressOf walletNetworkMagic key)
-                                    pure ExitSuccess
+                                Right bytes ->
+                                    createVaultFile walletVaultPath bytes >>= \case
+                                        Left refusal -> walletRefused (renderVaultRefusal refusal)
+                                        Right () -> do
+                                            putStrLn (addressOf walletNetworkMagic key)
+                                            pure ExitSuccess
 
 {- | @wallet address@: open the vault with the passphrase asked once,
 and print exactly the address @wallet create@ printed for the same
@@ -1252,33 +1253,33 @@ network.
 -}
 walletAddressCommand :: WalletArgs -> IO ExitCode
 walletAddressCommand WalletArgs{..} =
-    readVaultFile walletVaultPath >>= \case
-        Left refusal -> walletRefused (renderVaultRefusal refusal)
-        Right bytes ->
-            readPassphrase AskOnce (passphraseSource walletPassphraseFd) >>= \case
-                Left refusal -> walletRefused (renderPassphraseRefusal refusal)
-                Right passphrase -> case openVault passphrase bytes of
-                    Left _ ->
-                        walletRefused
-                            ( "cannot open vault "
-                                <> walletVaultPath
-                                <> ": wrong passphrase, corrupt file, or not a singular vault"
-                            )
-                    Right key -> do
-                        putStrLn (addressOf walletNetworkMagic key)
-                        pure ExitSuccess
+    sourceFor walletNetworkMagic walletPassphraseFd >>= \case
+        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+        Right source ->
+            readVaultFile walletVaultPath >>= \case
+                Left refusal -> walletRefused (renderVaultRefusal refusal)
+                Right bytes ->
+                    readPassphrase AskOnce source >>= \case
+                        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+                        Right passphrase -> case openVault passphrase bytes of
+                            Left _ ->
+                                walletRefused
+                                    ( "cannot open vault "
+                                        <> walletVaultPath
+                                        <> ": wrong passphrase, corrupt file, or not a singular vault"
+                                    )
+                            Right key -> do
+                                putStrLn (addressOf walletNetworkMagic key)
+                                pure ExitSuccess
 
 {- | @wallet sign@: witness a bundle of unsigned transactions from the
 vault, offline — one witness file per transaction, named by its
 identity and created exclusively. See "Singular.CLI.Sign".
 -}
 walletSignCommand :: SignArgs -> IO ExitCode
-walletSignCommand SignArgs{..} =
-    signBundle
-        signBundlePath
-        signVaultPath
-        (passphraseSource signPassphraseFd)
-        signOutputDir
+walletSignCommand SignArgs{..} = do
+    source <- namedSource signPassphraseFd
+    signBundle signBundlePath signVaultPath source signOutputDir
 
 {- | One line on standard error naming the cause, nothing on standard
 output, exit 1. No refusal names the passphrase or the key.

@@ -38,7 +38,11 @@ import Data.List (isInfixOf, sort)
 import Data.List.NonEmpty (NonEmpty ((:|)), toList)
 import Data.Text qualified as Text
 import GHC.IO.Handle (hDuplicate, hDuplicateTo)
-import System.Directory (doesFileExist, listDirectory)
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , listDirectory
+    )
 import System.Exit (ExitCode (..))
 import System.IO
     ( Handle
@@ -86,6 +90,7 @@ import Singular.CLI.FlagGroup (Signer (..), commonFlagGroup)
 import Singular.CLI.Passphrase
     ( PassphraseSource (..)
     , mkPassphrase
+    , publicNetworks
     )
 import Singular.CLI.Sign
 import Singular.CLI.Vault
@@ -337,6 +342,31 @@ theFileEffects = describe "the file effects" $ do
                 present <- doesFileExist path
                 present `shouldBe` True
 
+    it
+        "signs from the passphrase in the variable when the bundle names a development network"
+        $ withSystemTempDirectory "sign-variable"
+        $ \dir -> do
+            key <- freshSignKey
+            vault <- makeVault dir key
+            let bundle =
+                    (bundleWithSigners [Text.pack (vaultAddressOf key)])
+                        { bundleNetworkMagic = 42
+                        }
+                bundlePath = dir </> "bundle.json"
+            BS.writeFile bundlePath (encodeBundle bundle)
+            (exit, out, err) <-
+                withCapture dir $
+                    signBundle
+                        bundlePath
+                        vault
+                        (PassphraseVariable (BC.pack passphraseSpelling))
+                        Nothing
+            exit `shouldBe` ExitSuccess
+            length (lines out)
+                `shouldBe` length (toList (bundleTransactions bundle))
+            forM_ (lines out) $ \path -> doesFileExist path `shouldReturn` True
+            err `shouldNotSatisfy` (passphraseSpelling `isInfixOf`)
+
 -- * The refusals
 
 theRefusals :: Spec
@@ -430,6 +460,48 @@ theRefusals = describe "the refusals" $ do
             err `shouldSatisfy` ("is not the hash of its body" `isInfixOf`)
             witnesses <- filter (".witness" `isInfixOf`) <$> listDirectory dir
             witnesses `shouldBe` []
+
+    it
+        "refuses the variable when the bundle names a public network, before the vault is read"
+        $ forM_ publicNetworks
+        $ \(name, public) -> withSystemTempDirectory "sign-public" $ \dir -> do
+            key <- freshSignKey
+            let bundle =
+                    (bundleWithSigners [Text.pack (vaultAddressOf key)])
+                        { bundleNetworkMagic = public
+                        }
+                bundlePath = dir </> "bundle.json"
+                outDir = dir </> "witnesses"
+            BS.writeFile bundlePath (encodeBundle bundle)
+            (exit, out, err) <-
+                withCapture dir $
+                    signBundle
+                        bundlePath
+                        (dir </> "absent.vault")
+                        (PassphraseVariable (BC.pack passphraseSpelling))
+                        (Just outDir)
+            exit `shouldBe` ExitFailure 1
+            out `shouldBe` ""
+            forM_ ["SINGULAR_PASSPHRASE", name, show public] $ \word ->
+                err `shouldSatisfy` (word `isInfixOf`)
+            err `shouldNotSatisfy` ("absent.vault" `isInfixOf`)
+            err `shouldNotSatisfy` (passphraseSpelling `isInfixOf`)
+            doesDirectoryExist outDir `shouldReturn` False
+    it "refuses a variable that is set but empty, naming the variable" $
+        withSystemTempDirectory "sign-empty-variable" $ \dir -> do
+            key <- freshSignKey
+            vault <- makeVault dir key
+            let bundlePath = dir </> "bundle.json"
+            BS.writeFile
+                bundlePath
+                (encodeBundle (bundleWithSigners [Text.pack (vaultAddressOf key)]))
+            (exit, out, err) <-
+                withCapture dir $
+                    signBundle bundlePath vault (PassphraseVariable "") Nothing
+            exit `shouldBe` ExitFailure 1
+            out `shouldBe` ""
+            err
+                `shouldSatisfy` ("SINGULAR_PASSPHRASE is set but empty" `isInfixOf`)
 
 -- * Helpers
 

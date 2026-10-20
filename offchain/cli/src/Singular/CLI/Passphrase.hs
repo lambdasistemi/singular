@@ -9,15 +9,19 @@ A passphrase is a non-empty byte string held in memory for the length of
 one command. It has no textual rendering that shows its content: the
 'Show' instance prints a fixed marker, and no refusal names it.
 
-Two sources, one parser:
+Three sources, one parser:
 
 * a terminal prompt on @\/dev\/tty@ with echo disabled — a human typing;
 * an inherited file descriptor (@--passphrase-fd N@) reading one line —
   a script. The descriptor source never asks for a confirmation, so a
-  scripted creation reads the passphrase exactly once.
+  scripted creation reads the passphrase exactly once;
+* the environment variable @SINGULAR_PASSPHRASE@, for a development
+  network only — a tutorial's deliberately weak passphrase. A descriptor
+  wins over it, it is never taken on a public network ('publicNetworks'),
+  and one that is set but empty is refused.
 
-The passphrase is never accepted as a command-line argument, an
-environment variable or a file path; the command layer owns that
+The passphrase is never accepted as a command-line argument or a file
+path, and never from a configuration file; the command layer owns that
 boundary and passes a 'PassphraseSource' here.
 -}
 module Singular.CLI.Passphrase
@@ -29,6 +33,12 @@ module Singular.CLI.Passphrase
     , Confirmation (..)
     , PassphraseRefusal (..)
     , renderPassphraseRefusal
+    , passphraseVariable
+    , publicNetworks
+    , publicNetwork
+    , namedSource
+    , networkAllows
+    , sourceFor
     , readPassphrase
     , readHiddenLine
     , withHiddenEcho
@@ -43,6 +53,7 @@ import Control.Exception
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BC
 import Data.Functor ((<&>))
+import Data.Word (Word32)
 import System.IO
     ( BufferMode (NoBuffering)
     , Handle
@@ -51,6 +62,7 @@ import System.IO
     , hPutStr
     , hSetBuffering
     )
+import System.Posix.Env.ByteString (getEnv)
 import System.Posix.IO
     ( OpenMode (ReadWrite)
     , defaultFileFlags
@@ -101,12 +113,25 @@ confirmPassphrase first second
     | first /= second = Left PassphraseConfirmationDiffers
     | otherwise = mkPassphrase first
 
--- | Where a passphrase is read from: the terminal, or a descriptor.
+{- | Where a passphrase is read from: the terminal, a descriptor, or the
+variable's bytes as the environment holds them. It shows without them.
+-}
 data PassphraseSource
     = -- | @\/dev\/tty@, echo disabled, the human path
       PassphraseTerminal
     | -- | an inherited file descriptor, @--passphrase-fd N@, the script path
       PassphraseDescriptor Int
+    | {- | the value of @SINGULAR_PASSPHRASE@, exactly, for a development
+      network; 'networkAllows' decides whether the network may use it
+      -}
+      PassphraseVariable ByteString
+    deriving stock (Eq)
+
+instance Show PassphraseSource where
+    show = \case
+        PassphraseTerminal -> "PassphraseTerminal"
+        PassphraseDescriptor n -> "PassphraseDescriptor " <> show n
+        PassphraseVariable _ -> "PassphraseVariable <passphrase>"
 
 -- | Whether a terminal read asks for the passphrase twice.
 data Confirmation
@@ -125,6 +150,12 @@ data PassphraseRefusal
       PassphraseDescriptorUnreadable Int
     | -- | @\/dev\/tty@ could not be opened or read
       PassphraseTerminalUnavailable
+    | -- | the variable is set and holds nothing
+      PassphraseVariableEmpty
+    | {- | the variable is set while the command is on a public network,
+      naming the network and its magic
+      -}
+      PassphraseVariablePublic String Word32
     deriving stock (Eq, Show)
 
 -- | One line naming the refusal, carrying no secret.
@@ -135,11 +166,73 @@ renderPassphraseRefusal = \case
     PassphraseDescriptorUnreadable n ->
         "cannot read the passphrase from descriptor " <> show n
     PassphraseTerminalUnavailable -> "cannot read a passphrase from the terminal"
+    PassphraseVariableEmpty ->
+        passphraseVariable
+            <> " is set but empty: give it a passphrase, or unset it"
+    PassphraseVariablePublic name magic ->
+        passphraseVariable
+            <> " is set and the network is "
+            <> name
+            <> " (network magic "
+            <> show magic
+            <> "), but the variable is for development networks only: unset it and type the passphrase, or name --passphrase-fd"
+
+-- | The variable that supplies a passphrase on a development network.
+passphraseVariable :: String
+passphraseVariable = "SINGULAR_PASSPHRASE"
+
+{- | The networks the build names as public, by name and network magic. The
+variable is never taken on one, and any other magic is a development network.
+-}
+publicNetworks :: [(String, Word32)]
+publicNetworks =
+    [ ("mainnet", 764824073)
+    , ("preprod", 1)
+    , ("preview", 2)
+    ]
+
+-- | The public network a magic names, if it names one.
+publicNetwork :: Word32 -> Maybe String
+publicNetwork magic =
+    lookup magic [(m, name) | (name, m) <- publicNetworks]
+
+{- | Where a command reads its passphrase: the descriptor it names, else the
+variable when the environment holds it, else the terminal. The variable's
+bytes are taken as the environment holds them, with no encoding between.
+-}
+namedSource :: Maybe Int -> IO PassphraseSource
+namedSource = \case
+    Just n -> pure (PassphraseDescriptor n)
+    Nothing ->
+        maybe PassphraseTerminal PassphraseVariable
+            <$> getEnv (BC.pack passphraseVariable)
+
+{- | A source on a network: the variable is refused on a public one, and any
+other source stands. Pure.
+-}
+networkAllows
+    :: Word32
+    -> PassphraseSource
+    -> Either PassphraseRefusal PassphraseSource
+networkAllows magic = \case
+    PassphraseVariable _
+        | Just name <- publicNetwork magic ->
+            Left (PassphraseVariablePublic name magic)
+    source -> Right source
+
+{- | The source of a command whose network is known: the descriptor, else the
+variable on a development network, else the terminal. A variable on a public
+network is the refusal, before anything is read.
+-}
+sourceFor
+    :: Word32 -> Maybe Int -> IO (Either PassphraseRefusal PassphraseSource)
+sourceFor magic descriptor = networkAllows magic <$> namedSource descriptor
 
 {- | Read a passphrase from the source. A terminal source honours the
 confirmation; a descriptor source reads exactly one line whatever the
-confirmation asks, so a scripted creation is never asked twice. The one
-line read is trimmed of its line ending only.
+confirmation asks, so a scripted creation is never asked twice, and so
+does the variable, which is the passphrase for both asks. The one line
+read is trimmed of its line ending only; the variable is taken exactly.
 -}
 readPassphrase
     :: Confirmation
@@ -148,6 +241,9 @@ readPassphrase
 readPassphrase confirmation = \case
     PassphraseDescriptor n ->
         readDescriptorLine n <&> (>>= mkPassphrase . trimLine)
+    PassphraseVariable raw ->
+        pure
+            (either (const (Left PassphraseVariableEmpty)) Right (mkPassphrase raw))
     PassphraseTerminal -> case confirmation of
         AskOnce ->
             readTerminalLine "Vault passphrase: "

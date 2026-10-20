@@ -6,8 +6,9 @@ Keep a signing key in an encrypted vault
 
 The wallet commands are local: they take no provider, blueprint or registry
 setting, and refuse each by name. The passphrase is read from the terminal
-with the echo off, or as one line from --passphrase-fd; it is never an
-argument, and no output, refusal or trace names it.
+with the echo off, as one line from --passphrase-fd, or on a development
+network from the variable SINGULAR_PASSPHRASE; it is never an argument or a
+key of the config file, and no output, refusal or trace names it.
 
 Available settings:
   Show this help text

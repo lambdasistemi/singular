@@ -779,7 +779,7 @@ leafExtras leaf =
                         <> defaultConfigFile
                         <> " in the working directory, or the file named by --config or "
                         <> fromMaybe "SINGULAR_CONFIG" (flagEnvironment configFlag)
-                        <> ". A path in it means what it means on the command line, from where the command runs. A passphrase is never read from the file or the environment: it stays on the prompt or --passphrase-fd."
+                        <> ". A path in it means what it means on the command line, from where the command runs. A passphrase is never read from the file; the environment gives one only on a development network, as SINGULAR_PASSPHRASE."
                     )
     paragraph text = wrapText 78 0 ("  " <> text) <> [""]
     section title body

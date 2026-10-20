@@ -56,7 +56,10 @@ module Singular.CLI.Declared
     , preprodExample
     , environmentLog
     , environmentState
+    , environmentPassphrase
     ) where
+
+import Data.List (intercalate)
 
 import Singular.CLI.Options
     ( Flag (..)
@@ -65,6 +68,7 @@ import Singular.CLI.Options
     , switch'
     , valued
     )
+import Singular.CLI.Passphrase (passphraseVariable, publicNetworks)
 
 -- | The variable that names the registry when @--state-token@ is absent.
 stateTokenVariable :: String
@@ -151,9 +155,11 @@ passphraseFd =
     ( valued
         "--passphrase-fd"
         "N"
-        "Read the vault passphrase, one line, from this inherited file descriptor."
+        "Read the vault passphrase, one line, from this inherited file descriptor; it wins over SINGULAR_PASSPHRASE."
     )
-        { flagDefault = Just "ask on the terminal with the echo off"
+        { flagDefault =
+            Just
+                "SINGULAR_PASSPHRASE on a development network, else ask on the terminal with the echo off"
         }
 
 walletAddress :: Flag
@@ -388,3 +394,20 @@ environmentState =
     ( "XDG_STATE_HOME"
     , "Where the per-user state directory lives (else $HOME/.local/state), under singular/."
     )
+
+{- | The variable a vault's passphrase may come from, with the networks that
+refuse it, listed from the code that refuses them.
+-}
+environmentPassphrase :: (String, String)
+environmentPassphrase =
+    ( passphraseVariable
+    , "The vault passphrase, for a development network only: a command on "
+        <> named
+        <> " refuses it. --passphrase-fd wins over it, and a value that is empty is refused."
+    )
+  where
+    named = case reverse
+        [name <> " (" <> show magic <> ")" | (name, magic) <- publicNetworks] of
+        [] -> "no public network"
+        [one] -> one
+        final : before -> intercalate ", " (reverse before) <> " or " <> final

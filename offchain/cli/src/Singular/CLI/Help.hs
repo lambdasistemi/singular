@@ -79,8 +79,10 @@ walletGroup =
         "Keep a signing key in an encrypted vault"
         [ "The wallet commands are local: they take no provider, blueprint or \
           \registry setting, and refuse each by name. The passphrase is read from \
-          \the terminal with the echo off, or as one line from --passphrase-fd; it \
-          \is never an argument, and no output, refusal or trace names it."
+          \the terminal with the echo off, as one line from --passphrase-fd, or on a \
+          \development network from the variable SINGULAR_PASSPHRASE; it is never \
+          \an argument or a key of the config file, and no output, refusal or trace \
+          \names it."
         ]
         [walletCreateLeaf, walletAddressLeaf, walletSignLeaf]
 
@@ -117,7 +119,8 @@ createLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry create --blueprint plutus.json \\"
                 , "    " <> preprodExample <> " \\"
@@ -152,7 +155,7 @@ foldLeaf =
                     ]
             , leafWord = Nothing
             , leafEnvironment =
-                [environmentLog, environmentState]
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry fold --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> \\"
@@ -189,7 +192,7 @@ rejectLeaf =
                     ]
             , leafWord = Nothing
             , leafEnvironment =
-                [environmentLog, environmentState]
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry reject --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> \\"
@@ -226,7 +229,7 @@ reclaimLeaf =
                     ]
             , leafWord = Nothing
             , leafEnvironment =
-                [environmentLog, environmentState]
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "singular registry reclaim --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> --request <txid>#<ix> \\"
@@ -320,7 +323,9 @@ walletCreateLeaf =
                   \entropy, seals it into a new vault file under the passphrase, \
                   \and prints the key's enterprise address for the network. It \
                   \refuses a path that exists and leaves its bytes untouched; a \
-                  \failed write removes what it made. The passphrase is asked twice."
+                  \failed write removes what it made. The passphrase is asked twice at the terminal, or read from \
+                  \--passphrase-fd or, on a development network, from \
+                  \SINGULAR_PASSPHRASE."
                 ]
             , leafShape =
                 Each
@@ -330,7 +335,7 @@ walletCreateLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog]
+            , leafEnvironment = [environmentLog, environmentPassphrase]
             , leafExamples =
                 ["singular wallet create --vault alice.vault --network-magic 1"]
             , leafNotes =
@@ -347,7 +352,9 @@ walletAddressLeaf =
             , leafSummary = "Print the address of a vault's key"
             , leafDescription =
                 [ "Opens the vault and prints the same address wallet create \
-                  \printed for the same network. The passphrase is asked once."
+                  \printed for the same network. The passphrase is asked once at the terminal, or read from \
+                  \--passphrase-fd or, on a development network, from \
+                  \SINGULAR_PASSPHRASE."
                 ]
             , leafShape =
                 Each
@@ -357,7 +364,7 @@ walletAddressLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog]
+            , leafEnvironment = [environmentLog, environmentPassphrase]
             , leafExamples =
                 ["singular wallet address --vault alice.vault --network-magic 1"]
             , leafNotes =
@@ -393,7 +400,7 @@ walletSignLeaf =
                     ( "BUNDLE"
                     , "The bundle of unsigned transactions a write with --bundle wrote."
                     )
-            , leafEnvironment = [environmentLog]
+            , leafEnvironment = [environmentLog, environmentPassphrase]
             , leafExamples =
                 [ "singular wallet sign bundle.json --vault alice.vault --out witnesses"
                 ]

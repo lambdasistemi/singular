@@ -7,7 +7,8 @@ Usage: singular wallet address [--config FILE] --vault FILE --network-magic N
 Print the address of a vault's key
 
 Opens the vault and prints the same address wallet create printed for the same
-network. The passphrase is asked once.
+network. The passphrase is asked once at the terminal, or read from
+--passphrase-fd or, on a development network, from SINGULAR_PASSPHRASE.
 
 Available settings:
   Show this help text
@@ -29,9 +30,11 @@ Available settings:
   The network the address is built for.
   option: --network-magic N
 
-  Read the vault passphrase, one line, from this inherited file descriptor.
+  Read the vault passphrase, one line, from this inherited file descriptor; it
+  wins over SINGULAR_PASSPHRASE.
   option: --passphrase-fd N
-  default: ask on the terminal with the echo off
+  default: SINGULAR_PASSPHRASE on a development network, else ask on the
+  terminal with the echo off
 
   How much to narrate: off, what (protocol steps) or how (also their
   mechanics).
@@ -70,11 +73,16 @@ Where settings come from:
 
   It is singular.json in the working directory, or the file named by --config
   or SINGULAR_CONFIG. A path in it means what it means on the command line,
-  from where the command runs. A passphrase is never read from the file or the
-  environment: it stays on the prompt or --passphrase-fd.
+  from where the command runs. A passphrase is never read from the file; the
+  environment gives one only on a development network, as SINGULAR_PASSPHRASE.
 
 Environment:
-  SINGULAR_LOG  A file the protocol phases are appended to, one line each.
+  SINGULAR_LOG         A file the protocol phases are appended to, one line
+                       each.
+  SINGULAR_PASSPHRASE  The vault passphrase, for a development network only: a
+                       command on mainnet (764824073), preprod (1) or preview
+                       (2) refuses it. --passphrase-fd wins over it, and a
+                       value that is empty is refused.
 
 Example:
   singular wallet address --vault alice.vault --network-magic 1

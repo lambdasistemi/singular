@@ -80,6 +80,7 @@ import Singular.CLI.Passphrase
     ( Confirmation (AskOnce)
     , PassphraseRefusal
     , PassphraseSource
+    , networkAllows
     , readPassphrase
     , renderPassphraseRefusal
     )
@@ -234,7 +235,8 @@ vault, plan the witnesses and write them exclusively into the output
 directory — the bundle's own directory when none is named. The witness
 paths print on standard output, one per line, and the summary on
 standard error; a refusal prints one line on standard error, nothing
-on standard output, and exits 1.
+on standard output, and exits 1. A passphrase from the environment is
+refused when the bundle's network is a public one, before the vault is read.
 -}
 signBundle
     :: FilePath
@@ -257,16 +259,27 @@ signBundle bundlePath vaultPath source outputDirectory = do
         case bundle of
             Left (_ :: IOException) ->
                 refused (SignBundleUnreadable bundlePath)
-            Right bytes -> do
-                sealed <- try (BS.readFile vaultPath)
-                case sealed of
-                    Left (_ :: IOException) ->
-                        refused (SignVaultNotOpened vaultPath)
-                    Right vaultBytes -> case openVault passphrase vaultBytes of
-                        Left _ -> refused (SignVaultNotOpened vaultPath)
-                        Right key -> case witnessPlan bytes key of
-                            Left refusal -> refused refusal
-                            Right plan -> writePlan bundlePath outputDirectory plan
+            Right bytes -> case variableOnPublicNetwork bytes of
+                Just refusal -> refused (SignPassphrase refusal)
+                Nothing -> do
+                    sealed <- try (BS.readFile vaultPath)
+                    case sealed of
+                        Left (_ :: IOException) ->
+                            refused (SignVaultNotOpened vaultPath)
+                        Right vaultBytes -> case openVault passphrase vaultBytes of
+                            Left _ -> refused (SignVaultNotOpened vaultPath)
+                            Right key -> case witnessPlan bytes key of
+                                Left refusal -> refused refusal
+                                Right plan -> writePlan bundlePath outputDirectory plan
+    -- The network is the bundle's own, so the variable is judged once the
+    -- bundle is read, before the vault is. A bundle that does not decode is
+    -- left to the checks that name it.
+    variableOnPublicNetwork bytes =
+        case decodeBundle bytes of
+            Right bundle ->
+                either Just (const Nothing) $
+                    networkAllows (bundleNetworkMagic bundle) source
+            Left _ -> Nothing
 
 {- | Write the planned witnesses exclusively, print each path on
 standard output and its summary on standard error, and succeed.

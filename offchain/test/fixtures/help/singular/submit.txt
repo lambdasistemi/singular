@@ -105,8 +105,8 @@ Where settings come from:
 
   It is singular.json in the working directory, or the file named by --config
   or SINGULAR_CONFIG. A path in it means what it means on the command line,
-  from where the command runs. A passphrase is never read from the file or the
-  environment: it stays on the prompt or --passphrase-fd.
+  from where the command runs. A passphrase is never read from the file; the
+  environment gives one only on a development network, as SINGULAR_PASSPHRASE.
 
 Environment:
   SINGULAR_LOG  A file the protocol phases are appended to, one line each.
