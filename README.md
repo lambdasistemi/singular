@@ -4,7 +4,7 @@ A permissionless registry on Cardano for unique identities and independent appli
 
 ## Start here: play Demo 1
 
-As a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. [Start here: Demo 1 with your own wallet and Koios](docs/consumer-onboarding.md) gives the route. [Play Demo 1 on preprod](docs/demo1-on-preprod.md) takes you from the download to the sixteenth step with test ada from the faucet. [Demo 1 on a development node](docs/demo1-devnet.md) runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of [singular-demo](https://github.com/lambdasistemi/singular-demo), which holds `singular`, `open-datum` and the development node for release v0.12.0, on x86_64 Linux with Nix.
+As a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The [Demo 1 page](docs/demo1.md) says what the play shows and where to play it: the step-by-step page of [singular-demo](https://github.com/lambdasistemi/singular-demo), with a copy button on every block; its Nix shell, which holds `singular`, `open-datum` and a private development chain; and its Ubuntu kit for a machine without Nix.
 
 <a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — register a name, terminate it permanently, and inspect refusals for the five historical edge encodings. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The [simulation guide](docs/simulation.md) says what the page establishes and what it does not.
 
@@ -20,7 +20,7 @@ As a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios but n
 
 **A resolver** wants to know whether a key is active and where its application state currently lives. It authenticates the registry entry, finds the NFT, and reads the application's own output. A key that is retired or in a pending terminal request yields no live state.
 
-**A Cardano developer who wants to try it** runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. [Start here: Demo 1 with your own wallet and Koios](docs/consumer-onboarding.md) covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; [Play Demo 1 on preprod](docs/demo1-on-preprod.md) is the literal walk-through.
+**A Cardano developer who wants to try it** plays the whole thing on a private test chain from a page of steps to copy, signing with a vault wallet whose key stays sealed in a file on their machine, or signing on another machine. The [Demo 1 page](docs/demo1.md) says what the play shows and links the steps.
 
 ## How the parts fit
 
@@ -71,7 +71,7 @@ Read the design in order. The first three pages and the protocol specification r
 7. [Play and reproduce the simulation](docs/simulation.md)
 8. [Prior art and reuse candidates](docs/prior-art.md)
 9. [Draft protocol specification and acceptance scenarios](specs/protocol/spec.md)
-10. [Start here: Demo 1 with your own wallet and Koios](docs/consumer-onboarding.md), [Play Demo 1 on preprod](docs/demo1-on-preprod.md) and [the preprod record](docs/preprod.md)
+10. [Demo 1: play a registry from creation to termination](docs/demo1.md) and [the preprod record](docs/preprod.md)
 
 ## Design status
 

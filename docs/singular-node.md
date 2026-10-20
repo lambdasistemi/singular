@@ -13,7 +13,9 @@ and evaluate locally, submit signed transactions, and preserve recovery evidence
 in the registry journal.
 
 Words such as registry, state token, request, fold, window, vault and bundle are
-explained in [Words used on this page](demo1-devnet.md#words-used-on-this-page).
+explained as they first appear in the
+[step-by-step page of singular-demo](https://lambdasistemi.github.io/singular-demo/);
+the [Demo 1 page](demo1.md) tells the story in short.
 
 The ordinary provider is Koios. Old backend and socket settings are refused
 before acquisition or registry effects. The current provider session promises

@@ -152,8 +152,8 @@ jq -n --arg p "$policy_id" --arg n "$asset_name" \
 ## Reproduce it yourself
 
 The record above describes the historical node-backed tools. The current
-`deployment verify` uses a Koios API and your local wallet, as the
-[onboarding page](consumer-onboarding.md) describes. From the repository root:
+`deployment verify` uses a Koios API and your local wallet, with the settings the
+[command reference](singular-node.md) describes. From the repository root:
 
 ```sh
 nix run ./offchain#deployment -- verify \

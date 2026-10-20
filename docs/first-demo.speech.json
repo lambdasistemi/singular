@@ -9,7 +9,7 @@
       "pause": 400
     },
     {
-      "text": "Where this stands (October 2026). The registry half of this play, called Demo 1, can be played today from release v0.12.0: the preprod runbook takes a Cardano developer from the download to every step on preprod, and the development-node page runs the same steps on a private node. The play below, which joins a kli identity and ckeri, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the v1.0.0 tag this page once named is not the tag Demo 1 uses.",
+      "text": "Where this stands (October 2026). The registry half of this play, called Demo 1, can be played today on a private test chain: the Demo 1 page says what it shows and links the steps to play. The play below, which joins a kli identity and ckeri, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the v1.0.0 tag this page once named is not the tag Demo 1 uses.",
       "pause": 400
     },
     {
@@ -43,6 +43,6 @@
   ],
   "_source": {
     "file": "first-demo.md",
-    "sha256": "16fb7270e7f6f65a05e4ff5fc7bee209c0742f4d315bbd78c73a5b13157aee8c"
+    "sha256": "5a943cd61226e2401c998e088b868f51b667d5146bcf6ca7936b748612d5a8a0"
   }
 }

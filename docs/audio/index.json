@@ -154,8 +154,8 @@
     "index": 16,
     "name": "README/how-the-parts-fit-16",
     "pause_ms": 300,
-    "text": "Start here: Demo 1 with your own wallet and Koios, Play Demo 1 on preprod and the preprod record",
-    "v": "c072e0217a53"
+    "text": "Demo 1: play a registry from creation to termination and the preprod record",
+    "v": "60bcc6ab066d"
    }
   ],
   "singular": [
@@ -186,8 +186,8 @@
     "index": 1,
     "name": "README/start-here-play-demo-1-01",
     "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1 from the latest release and watch every step either succeed or be refused where the page says it will. Start here: Demo 1 with your own wallet and Koios gives the route. Play Demo 1 on preprod takes you from the download to the sixteenth step with test ada from the faucet. Demo 1 on a development node runs the same steps on a private chain first, with no faucet. The quickest way to the programs is the Nix shell of singular-demo, which holds singular, open-datum and the development node for release v0.12.0, on x86_64 Linux with Nix.",
-    "v": "14543159067d"
+    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix.",
+    "v": "c3e40b0e9bfe"
    },
    {
     "index": 2,
@@ -244,8 +244,8 @@
     "index": 6,
     "name": "README/who-this-is-for-06",
     "pause_ms": 400,
-    "text": "A Cardano developer who wants to try it runs the whole thing on a public test network, funded by a wallet whose key never leaves their machine, through a Koios API and no node of their own. Start here: Demo 1 with your own wallet and Koios covers the release download, the provider and network settings, making and funding a vault wallet, and signing each write from the vault or on another machine; Play Demo 1 on preprod is the literal walk-through.",
-    "v": "b78770925cf8"
+    "text": "A Cardano developer who wants to try it plays the whole thing on a private test chain from a page of steps to copy, signing with a vault wallet whose key stays sealed in a file on their machine, or signing on another machine. The Demo 1 page says what the play shows and links the steps.",
+    "v": "eb767ab62349"
    }
   ]
  },
@@ -2505,227 +2505,6 @@
    }
   ]
  },
- "docs/consumer-onboarding.md": {
-  "choose-the-network-and-api": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/choose-the-network-and-api-00",
-    "pause_ms": 500,
-    "text": "Choose the network and API.",
-    "v": "08ed3a00500a"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/choose-the-network-and-api-01",
-    "pause_ms": 400,
-    "text": "Your commands read the chain and send signed transactions through the API you choose. The project's own private development chain sits behind an HTTP facade that speaks the same dialect as Koios; your commands name your API instead.",
-    "v": "7d8b7a39555d"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/choose-the-network-and-api-02",
-    "pause_ms": 400,
-    "text": "The generated development network's magic is 42, and its launcher supplies its exact published time directory. A supplied directory contains time-manifest.json, shelley-genesis.json and era-history.cbor; their raw identities, network, system start and protocol-major pin are validated. Unsupported time networks refuse rather than borrowing another recording. Writes refuse mainnet.",
-    "v": "a7837a16e293"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/choose-the-network-and-api-03",
-    "pause_ms": 400,
-    "text": "The old --backend and --node-socket settings are refused on every command. A socket accepted by a separate private probe is a setting of the project's own test tools, not an ordinary provider route.",
-    "v": "fd291e20ba1c"
-   }
-  ],
-  "download-and-check-the-release": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/download-and-check-the-release-00",
-    "pause_ms": 500,
-    "text": "Download and check the release.",
-    "v": "566b3efeb15c"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/download-and-check-the-release-01",
-    "pause_ms": 400,
-    "text": "Releases are listed at https://github.com/lambdasistemi/singular/releases, and the newest is at https://github.com/lambdasistemi/singular/releases/latest. A release carries three files: the on-chain archive singular-onchain-X.Y.Z.tar.gz (the compiled validators, the sources of both commands and the run page), the documentation archive singular-docs-X.Y.Z.tar.gz (220 MB, not needed to play Demo 1) and SHA256SUMS for both. The file names carry the version without a v, and the archive extracts into the current directory, so extract it into a directory of its own. The exact commands, with the checks, are on Play Demo 1 on preprod.",
-    "v": "732e978df8d4"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/download-and-check-the-release-02",
-    "pause_ms": 400,
-    "text": "The quickest way to the programs is the Nix shell of singular-demo. nix develop github:lambdasistemi/singular-demo --accept-flake-config opens a shell with singular, open-datum, the development node devnet and jq already built by the project's CI, and fetches about 190 MiB from the public caches instead of compiling anything. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time. On a multi-user Nix install a user who is not in trusted-users cannot take the caches from a flake; that repository's README says what to change. You still need the archive, for the run page, the blueprint and the readback script. The shell's own $blueprint holds the same bytes as the archive's onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, which singular registry describe refuses without, so name the archive's file as the blueprint.",
-    "v": "faa4d71e3230"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/download-and-check-the-release-03",
-    "pause_ms": 400,
-    "text": "The second route builds the two commands from the archive itself. It suits another release or another system. It compiles a large Haskell stack unless the project's public binary cache serves it, and the runbook says how. No release ships ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
-    "v": "b2b67c623ba0"
-   }
-  ],
-  "how-a-write-is-confirmed": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/how-a-write-is-confirmed-00",
-    "pause_ms": 500,
-    "text": "How a write is confirmed.",
-    "v": "dea3bcc51fae"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/how-a-write-is-confirmed-01",
-    "pause_ms": 400,
-    "text": "A successful submission answer alone is not confirmation. Confirmation requires the exact output. With a validity upper bound the provider deadline is that slot's POSIX start plus 120 seconds; without one it is now plus 300 seconds. Latest-block observation can establish expiry. A refusal, unavailable answer, timeout or mismatching proof stops the run; it is never counted as its intended accepting step.",
-    "v": "425190b00959"
-   }
-  ],
-  "make-a-wallet-and-fund-it": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/make-a-wallet-and-fund-it-00",
-    "pause_ms": 500,
-    "text": "Make a wallet and fund it.",
-    "v": "955e9102056e"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/make-a-wallet-and-fund-it-01",
-    "pause_ms": 400,
-    "text": "Make a wallet with singular wallet create, giving --network-magic 1 for preprod. It seals a fresh signing key in an encrypted vault and prints the wallet's address. At a terminal it asks for the passphrase twice, an entry and a confirmation, and refuses a confirmation that differs; in a script, --passphrase-fd N supplies it as one line read once. singular wallet address asks once, and prints the same address again from the vault.",
-    "v": "4a78b70aa689"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/make-a-wallet-and-fund-it-02",
-    "pause_ms": 400,
-    "text": "Fund that address from the preprod faucet. One ada-only output is enough: nothing is split and no self-payment is needed, because every write spends the wallet's largest ada-only output and returns its change. What a play costs, as measured on preprod on 18 October 2026: thirteen registry transactions came to 6.92 tADA in fees; each waiting request holds 3 tADA (the key's 2 tADA deposit and a 1 tADA folder's fee); each active key keeps its 2 tADA deposit until it is terminated; and creating a registry needs at least 162.65 tADA when no script of the release is on chain yet, a figure measured on a development node. The runbook has the table. A command that finds the wallet short refuses before it submits, naming the shortfall. A key's bytes do not belong in command output or receipts.",
-    "v": "c54f06992544"
-   }
-  ],
-  "sign-each-write": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/sign-each-write-00",
-    "pause_ms": 500,
-    "text": "Sign each write.",
-    "v": "be3873ed6f85"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/sign-each-write-01",
-    "pause_ms": 400,
-    "text": "Each write takes exactly one signer. Your own open-datum and singular registry commands sign in one of two ways.",
-    "v": "8576c4c8f0a5"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/sign-each-write-02",
-    "pause_ms": 300,
-    "text": "From your vault: add --vault FILE, and --passphrase-fd N in a script. The command opens the vault once, builds the run, signs it in memory and sends it.",
-    "v": "04f5cdcea2a3"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/sign-each-write-03",
-    "pause_ms": 300,
-    "text": "Elsewhere: name the wallet's address with --wallet-address ADDR and a new bundle file with --bundle FILE. The command writes its transactions there and exits with status 19, waiting-for-signatures. Sign the bundle with singular wallet sign --vault FILE and send it with singular submit.",
-    "v": "552d69adf74f"
-   },
-   {
-    "index": 4,
-    "name": "docs-consumer-onboarding/sign-each-write-04",
-    "pause_ms": 400,
-    "text": "The settings table in the command reference lists the flags of each way, and the development-node page shows both ways from the first command to the last. Key files are not a way to start: they remain on a few harness commands until the project retires them (issue 672).",
-    "v": "f525b83c6a6c"
-   }
-  ],
-  "start-here-demo-1-with-your-own-wallet-and-koios": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/start-here-demo-1-with-your-own-wallet-and-koios-00",
-    "pause_ms": 500,
-    "text": "Start here: Demo 1 with your own wallet and Koios.",
-    "v": "7ed2e855d783"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/start-here-demo-1-with-your-own-wallet-and-koios-01",
-    "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but has never used Singular, you want to run Demo 1 yourself: create a registry, put keys in it, change them, end them, and see every refusal appear where the documentation says it will. You use a Koios API you choose and a wallet whose signing key stays sealed in a vault on your machine, or on the machine that signs. Commands read and submit through Koios, take their time from a pinned recording, and build and evaluate everything locally. They do not need a node socket.",
-    "v": "5ebbd0e8ab85"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/start-here-demo-1-with-your-own-wallet-and-koios-02",
-    "pause_ms": 400,
-    "text": "Two pages carry you from the first command to the last, and both can be copied as they stand:",
-    "v": "b8dd7a6c6d41"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/start-here-demo-1-with-your-own-wallet-and-koios-03",
-    "pause_ms": 400,
-    "text": "The rest of this page explains the settings, the signing choices and the limits of what a command's answers prove.",
-    "v": "88906e69ea76"
-   }
-  ],
-  "what-a-providers-answers-do-and-do-not-prove": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/what-a-providers-answers-do-and-do-not-prove-00",
-    "pause_ms": 500,
-    "text": "What a provider's answers do and do not prove.",
-    "v": "8a4622bb1cfa"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/what-a-providers-answers-do-and-do-not-prove-01",
-    "pause_ms": 400,
-    "text": "A command reads several facts through one logical session. The session is called unbound: its reads may observe different chain states, so nothing promises one coherent snapshot. Facts are called unverified: no configured witness checks that the API answered honestly. Raw-source receipts identify what was consumed; they do not prove the API answered honestly or that all reads were a coherent snapshot. Ledger acceptance remains an independent boundary.",
-    "v": "734a669e1274"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/what-a-providers-answers-do-and-do-not-prove-02",
-    "pause_ms": 400,
-    "text": "Before construction, the builder selects an interval with at least ten seconds of usable slots at its observed tip. The moving ledger horizon can shorten the upper bound. An empty interval refuses WindowPastLedgerHorizon; a nonempty registry-limited short interval refuses WindowTooShort. Only a horizon-limited otherwise longer window permits one wait for a later horizon, bounded by slots and 20 seconds of wall time. A stalled wait refuses HorizonWaitTimedOut before signing. Build duration can consume the selected interval; this rule is not a guarantee of eventual ledger acceptance.",
-    "v": "a05d31b4fa62"
-   }
-  ],
-  "what-is-delivered-and-what-is-not": [
-   {
-    "index": 0,
-    "name": "docs-consumer-onboarding/what-is-delivered-and-what-is-not-00",
-    "pause_ms": 500,
-    "text": "What is delivered and what is not.",
-    "v": "eaa374037df3"
-   },
-   {
-    "index": 1,
-    "name": "docs-consumer-onboarding/what-is-delivered-and-what-is-not-01",
-    "pause_ms": 400,
-    "text": "Demo 1 has two users, Alice and Bob, who start with empty homes. Neither creates the registry for the other or receives its creation files. Each joins with the registry's state token, their own wallet and a Koios URL, with no shared directory: every command carries --state-token and no directory option, and neither user opens the other's files. Each can also read the registry page generated from the chain: which registry this is, which release it runs, what its rules are and what it holds, from the token and the packaged release alone. Joining by a copied identity file is superseded.",
-    "v": "6a54375a30b7"
-   },
-   {
-    "index": 2,
-    "name": "docs-consumer-onboarding/what-is-delivered-and-what-is-not-02",
-    "pause_ms": 400,
-    "text": "Not delivered: a block anchor for the last fold, documentation links checked against a published asset, and the independently derived action identity in the public report. Public replay reconstructs the registry's trie; missing history or a root that does not chain remains a named refusal. Historical deployment and naming receipts remain evidence of their recorded revision and public chain, not a pass for this provider candidate.",
-    "v": "55ee5456c91a"
-   },
-   {
-    "index": 3,
-    "name": "docs-consumer-onboarding/what-is-delivered-and-what-is-not-03",
-    "pause_ms": 400,
-    "text": "The bounded registry journey and the deployment tool are run by the project for now. They keep key files until issue 672 gives them a vault, and this page does not teach them. No required hosted workflow currently exercises the legacy deployment-attach script, so attached naming is not claimed runnable. The retained register-rows, recovery-rows and retirement-rows commands remain unverified under #172 and #283. The recovery and retirement guide documents that design, and the preprod record preserves its historical executed values.",
-    "v": "f7567053a7f8"
-   }
-  ]
- },
  "docs/decisions.md": {
   "adopted-behavior": [
    {
@@ -2845,1333 +2624,113 @@
    }
   ]
  },
- "docs/demo1-devnet.md": {
-  "build-the-commands": [
+ "docs/demo1.md": {
+  "demo-1-play-a-registry-from-creation-to-termination": [
    {
     "index": 0,
-    "name": "docs-demo1-devnet/build-the-commands-00",
+    "name": "docs-demo1/demo-1-play-a-registry-from-creation-to-termination-00",
     "pause_ms": 500,
-    "text": "Build the commands.",
-    "v": "27f4efff78e7"
+    "text": "Demo 1: play a registry from creation to termination.",
+    "v": "b742089f0bc6"
    },
    {
     "index": 1,
-    "name": "docs-demo1-devnet/build-the-commands-01",
+    "name": "docs-demo1/demo-1-play-a-registry-from-creation-to-termination-01",
     "pause_ms": 400,
-    "text": "The quick way: the shell. From the extracted archive's directory,",
-    "v": "cbd5c62d3b9b"
+    "text": "As a Cardano developer who knows wallets, faucets and Koios but has never used Singular, you want to watch a registry work before you read how it is built: a registry is created, a key is put in it, changed and ended, the registry refuses what it must refuse, and two people sign their writes in two different ways. Demo 1 is that play, in sixteen steps. The steps, and the programs to run them, live in a repository of their own, singular-demo. This page says what the play shows and where to play it.",
+    "v": "7f9e1e715ccd"
+   }
+  ],
+  "the-release-behind-it": [
+   {
+    "index": 0,
+    "name": "docs-demo1/the-release-behind-it-00",
+    "pause_ms": 500,
+    "text": "The release behind it.",
+    "v": "2e7077e7d57b"
+   },
+   {
+    "index": 1,
+    "name": "docs-demo1/the-release-behind-it-01",
+    "pause_ms": 400,
+    "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release. Each release archive also carries the same story as a run page, DEMO1.md (the page in the repository), which builds the commands from the archive and which the project's hosted checks run against every change.",
+    "v": "8461241de34b"
+   }
+  ],
+  "what-it-does-not-claim": [
+   {
+    "index": 0,
+    "name": "docs-demo1/what-it-does-not-claim-00",
+    "pause_ms": 500,
+    "text": "What it does not claim.",
+    "v": "9c3ac2cbfed3"
+   },
+   {
+    "index": 1,
+    "name": "docs-demo1/what-it-does-not-claim-01",
+    "pause_ms": 400,
+    "text": "Everything the step-by-step page runs happens on a private test chain that it starts; nothing touches a public network. The open datum application protects the payload and the deposit and nothing more: it demonstrates the registry's mechanics. The receipts of a play are evidence of behaviour on a private chain only, and no complete conformance is claimed here. What the project does claim, and what it leaves open, is on the conformance evidence page. What is deployed on the public preprod network, and the transactions the project's own journeys submitted there, are recorded in the preprod record.",
+    "v": "d1950a5e08a0"
+   }
+  ],
+  "what-the-play-shows": [
+   {
+    "index": 0,
+    "name": "docs-demo1/what-the-play-shows-00",
+    "pause_ms": 500,
+    "text": "What the play shows.",
+    "v": "ae48649bbcb9"
+   },
+   {
+    "index": 1,
+    "name": "docs-demo1/what-the-play-shows-01",
+    "pause_ms": 400,
+    "text": "Two people, Alice and Bob, share one registry. Its application, open datum, lets a key carry a payload that only the key's controller may replace, and keeps a deposit of 2 tADA with the key until the key is terminated.",
+    "v": "500969924b5a"
    },
    {
     "index": 2,
-    "name": "docs-demo1-devnet/build-the-commands-02",
+    "name": "docs-demo1/what-the-play-shows-02",
     "pause_ms": 400,
-    "text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this and skip the build below; everything after it runs as written:",
-    "v": "4729369b01af"
+    "text": "The play creates the registry, books a key and folds it so that the key becomes active, updates its payload, books and folds the key's end, then rejects a request that nobody folded, reclaims a new one inside its retract window, and books and folds one more key.",
+    "v": "25d4af9ae9da"
    },
    {
     "index": 3,
-    "name": "docs-demo1-devnet/build-the-commands-03",
+    "name": "docs-demo1/what-the-play-shows-03",
     "pause_ms": 400,
-    "text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, the archive's file, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
-    "v": "66fe4dd55579"
+    "text": "A write does not change the registry at once. It books a request, which waits until someone folds it, and any wallet may fold. A request that nobody folds within its processing window can be rejected once a second window, the retract window, has also passed; inside that second window its owner can take it back. The play walks each of these, so that you see the refusals where they happen: a reject that comes too early is refused, and so is a reclaim that comes too early.",
+    "v": "24547faa6b2b"
    },
    {
     "index": 4,
-    "name": "docs-demo1-devnet/build-the-commands-04",
+    "name": "docs-demo1/what-the-play-shows-04",
     "pause_ms": 400,
-    "text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so the extracted archive must be made into a Git tree first. This commits nothing and contacts nothing. Nix then warns that the tree is dirty; that is expected.",
-    "v": "7caa89b33b2c"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-devnet/build-the-commands-05",
-    "pause_ms": 400,
-    "text": "The project's public binary cache holds both executables for x86_64-linux, so a build that finds them downloads about 100 MiB each instead of compiling. Add the cache before the first build, either with the two settings below on the command line, or in /etc/nix/nix.conf as extra-substituters and extra-trusted-public-keys if your user is not trusted by the Nix daemon:",
-    "v": "197d3dd71292"
-   },
-   {
-    "index": 6,
-    "name": "docs-demo1-devnet/build-the-commands-06",
-    "pause_ms": 400,
-    "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. No release yet ships ready-built binaries (that is planned in issue 348). singular --version prints the program, its version and the commit it was built from; a build that carries no commit says commit unknown, and the path the build prints then tells which build you hold.",
-    "v": "bb83afe60525"
+    "text": "The two people sign in the two ways Singular offers. Alice names her vault, a file holding her signing key sealed by a passphrase, and one command builds, signs and sends. Bob names only his wallet's address and a bundle file: the command builds the transactions into the file, signs nothing, and exits with status 19, which means it is waiting for signatures. Then Bob signs the bundle from his vault and sends it, so the machine that builds a write never needs to hold the key.",
+    "v": "e941fa303e9c"
    }
   ],
-  "demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive": [
+  "where-to-play-it": [
    {
     "index": 0,
-    "name": "docs-demo1-devnet/demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive-00",
+    "name": "docs-demo1/where-to-play-it-00",
     "pause_ms": 500,
-    "text": "Demo 1 on a development node: Alice and Bob run a registry from the release archive.",
-    "v": "090f0409afcb"
+    "text": "Where to play it.",
+    "v": "5c6b32677455"
    },
    {
     "index": 1,
-    "name": "docs-demo1-devnet/demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive-01",
+    "name": "docs-demo1/where-to-play-it-01",
     "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but has never used Singular, you want to see the whole of Demo 1 work before you spend test ada: a registry is created, a key is inserted, changed, terminated and taken over by a new owner of the name, and every refusal appears where the page says it will. This page does that on a private development node that the archive starts for you. Every command is copied as it stands; nothing in it needs a faucet, an account or a checkout.",
-    "v": "30da15a77be6"
+    "text": "Every way below plays the same sixteen steps. The table lists three: the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. Start with the step-by-step page.",
+    "v": "a76edcd9b592"
    },
    {
     "index": 2,
-    "name": "docs-demo1-devnet/demo-1-on-a-development-node-alice-and-bob-run-a-registry-from-the-release-archive-02",
+    "name": "docs-demo1/where-to-play-it-02",
     "pause_ms": 400,
-    "text": "When it works, you have read sixteen receipts, each the one JSON document a singular registry or open-datum command prints, and you have seen two wallets sign in the two ways Singular offers. The same steps on the public preprod network, with the faucet and Koios, are on the preprod runbook. Read this page first if you want to see it run for nothing; read the runbook when you are ready to spend test ada.",
-    "v": "459043eb3ed7"
-   }
-  ],
-  "on-a-public-network": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/on-a-public-network-00",
-    "pause_ms": 500,
-    "text": "On a public network.",
-    "v": "b87326a29fac"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/on-a-public-network-01",
-    "pause_ms": 400,
-    "text": "The same ordinary commands use a Koios API on the requested test network. Three settings change: the Koios base URL, the network magic and the optional token file. The preprod runbook gives the faucet funding, the amounts, the waits and every step with real values, and says which parts of it have run on preprod and which have not.",
-    "v": "6ee4407337d8"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/on-a-public-network-02",
-    "pause_ms": 400,
-    "text": "A preview shows what a write would cost before you sign anything. It names the caller by an enterprise address instead of a signing key, reads through a connection that cannot sign or send, and writes nothing: your state directory is byte for byte the same afterwards.",
-    "v": "43ae6c0d3ca0"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/on-a-public-network-03",
-    "pause_ms": 400,
-    "text": "The preview receipt names the wallet outputs it selects, each body's fee, the execution units the local evaluator measured for each script, the total collateral each states and the collateral it returns, a digest of the protocol parameters it was built under, and the outlay: the fee, the value the booking locks and a bound on the fold that follows. An insertion or a termination is two transactions, and the fold exists only once its booking has confirmed, so the preview bounds the fold from the network's parameters. A preview is not a confirmation: its bodies are built for one moment.",
-    "v": "345e735aba1d"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-devnet/on-a-public-network-04",
-    "pause_ms": 400,
-    "text": "insert, update, terminate and fold take --fund-input TXID#IX, the wallet output that funds and collateralises the write, and --max-outlay LOVELACE. A booking, an update or a fold past the outlay is not signed. Without --fund-input, a write spends the wallet's largest ada-only output and returns the change. A fee is never declared: the booking's units are measured on the body that will be submitted. A funding output that cannot leave a return of at least its minimum ada is refused before anything is submitted.",
-    "v": "2022155b610c"
-   }
-  ],
-  "partial-outcomes-and-recovery": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/partial-outcomes-and-recovery-00",
-    "pause_ms": 500,
-    "text": "Partial outcomes and recovery.",
-    "v": "702cc3ab1edf"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/partial-outcomes-and-recovery-01",
-    "pause_ms": 400,
-    "text": "Every submission is journalled in your state directory before it is sent, and its confirmation after. A command never resubmits, reboots or overwrites on its own:",
-    "v": "a639f67cce5c"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/partial-outcomes-and-recovery-02",
-    "pause_ms": 300,
-    "text": "partial names what was left behind. An insertion of a key the registry already holds is booked by the application and then cannot be folded: the receipt names the pending request, and its deposit stays locked in it. A fold that is asked for after its request's deadline, or that the registry cannot take, is a client-refusal that submitted nothing; the request stays pending.",
-    "v": "b9ede9d19c4d"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/partial-outcomes-and-recovery-03",
-    "pause_ms": 300,
-    "text": "timeout names the submitted transaction when its confirmation did not arrive within --confirm-timeout seconds (default 600). The entry stays unresolved, and every later write on that registry refuses until inspect resolves it from the chain.",
-    "v": "b9e8954d77c6"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-devnet/partial-outcomes-and-recovery-04",
-    "pause_ms": 300,
-    "text": "inspect is the recovery: it reads the journal, checks each unresolved submission against the chain, and advances the saved state only for what the chain shows.",
-    "v": "ef3ee09b49a7"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-devnet/partial-outcomes-and-recovery-05",
-    "pause_ms": 300,
-    "text": "A second create on the same directory is refused, including one that was held while another create finished.",
-    "v": "0647d90a48c5"
-   }
-  ],
-  "run-the-story": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/run-the-story-00",
-    "pause_ms": 500,
-    "text": "Run the story.",
-    "v": "a8629e971dd6"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/run-the-story-01",
-    "pause_ms": 400,
-    "text": "First the two payloads the story uses and the helpers the later steps call. A payload is Plutus data in the detailed JSON schema; these two are a one-entry map from the bytes of name to the bytes of alice and of bob.",
-    "v": "e910211a2086"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/run-the-story-02",
-    "pause_ms": 400,
-    "text": "When you are done, stop the node with kill \"$devnet_pid\".",
-    "v": "0bab883afba1"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/run-the-story-03",
-    "pause_ms": 400,
-    "text": "Run the fold of a request before the deadline its booking's receipt names (foldDeadline); a later fold is refused by open-datum, naming the deadline, before anything is signed. Giving open-datum insert or open-datum terminate the --fold switch books and folds in one command, with one wallet: with the external signer the one bundle then holds the booking and the fold, and one signing covers both; with the vault the one command signs and sends both.",
-    "v": "6d87e65b9cfc"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-devnet/run-the-story-04",
-    "pause_ms": 400,
-    "text": "A write that is refused before it builds anything (a reject while a window is open, a closed registry's update, a terminal key) writes no bundle. While a bundle waits for its signatures, the same wallet's next write of that registry stops with the same outcome, waiting-for-signatures, naming the waiting bundle, and builds nothing. singular wallet sign refuses a bundle whose signers do not include the vault's address, and singular submit sends only the transactions the chain does not hold, so it can be run again on a bundle that has landed. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read. A vault run whose answer is lost leaves its bundle pending, its fields under expected, and the next write of that wallet stops on it like any waiting bundle.",
-    "v": "b1f3e12ddd5c"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-devnet/run-the-story-05",
-    "pause_ms": 400,
-    "text": "--key is the key as text, its UTF-8 bytes (616c696365 is alice). --key-hex 616c696365 names that key too, which is how a key that is not printable text is given. A key is 1 to 32 bytes either way.",
-    "v": "918084163791"
-   },
-   {
-    "index": 6,
-    "name": "docs-demo1-devnet/run-the-story-06",
-    "pause_ms": 400,
-    "text": "insert builds the key's envelope around the payload: constructor 0 over the control and the payload, the control being constructor 0 over the version 1, the registry's state asset (its state policy and token name, as the create receipt prints them in pins.pinState and token), the active policy (pins.pinActive), the key, the controller's payment key hash (the signing wallet's, which the create receipt prints as walletKeyHash) and the protected deposit in lovelace. The deposit is 2 000 000 when --deposit is not given; --deposit LOVELACE names another amount, and one below 2 000 000 is refused. That minimum is the client's own policy: the chain checks only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. The insert receipt and the preview receipt print the envelope it built.",
-    "v": "b858b2c9af04"
-   }
-  ],
-  "start-one-development-node": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/start-one-development-node-00",
-    "pause_ms": 500,
-    "text": "Start one development node.",
-    "v": "0e09fe6ad427"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/start-one-development-node-01",
-    "pause_ms": 400,
-    "text": "The development node is private and generated: a fresh chain whose genesis funds the addresses you name. Alice and Bob each make a wallet with singular wallet create: a vault, a file that holds the wallet's signing key sealed by a passphrase, which a script supplies on an inherited file descriptor (typed at a prompt when you run it by hand). The node is given the printed addresses and never sees a key, and it funds nothing outside itself. Alice books, and Bob folds. Each wallet is funded with one output, and nothing is split.",
-    "v": "2c9e09af554d"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/start-one-development-node-02",
-    "pause_ms": 400,
-    "text": "The node is a Koios-shaped HTTP endpoint at providerUrl. The same commands run against the preprod Koios on the runbook page with only these three settings changed.",
-    "v": "fcd69f83cb01"
-   }
-  ],
-  "the-story": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/the-story-00",
-    "pause_ms": 500,
-    "text": "The story.",
-    "v": "40407a9f9aa6"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/the-story-01",
-    "pause_ms": 400,
-    "text": "Alice boots a registry whose application is open datum: a key's live value is an output at the application's script, holding the key's one active token under an inline envelope. The envelope has a protected part (this registry, its active policy, the key, the controller and a protected deposit) and a free payload. Only the controller may replace the payload. The deposit is released only when the registry terminates the key.",
-    "v": "16036afdabcd"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/the-story-02",
-    "pause_ms": 400,
-    "text": "An insert or a terminate books and stops: its request waits at the registry, and its receipt names the request and the deadline by which it must be folded. The fold is its own command, open-datum fold, run by whichever wallet folds. Each step below is a separate process and prints one JSON receipt. The saved state directory carries the identity from one process to the next.",
-    "v": "2bb3ce2867ce"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/the-story-03",
-    "pause_ms": 400,
-    "text": "Alice and Bob keep no signing key on disk, and the story shows both ways to sign:",
-    "v": "7eda9ea14206"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-devnet/the-story-04",
-    "pause_ms": 300,
-    "text": "Alice signs from her vault, in one command. She names the vault file and the descriptor her passphrase is read from. The command builds the run's one bundle of transactions, signs it from the vault, sends it and prints its receipt once every transaction has landed.",
-    "v": "f6e1b36cf686"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-devnet/the-story-05",
-    "pause_ms": 300,
-    "text": "Bob signs the external way. His write names his wallet's address and a new bundle file. The command builds its whole run as that one bundle, signs nothing, sends nothing and exits with status 19, the outcome waiting-for-signatures. He then signs the bundle from his vault with singular wallet sign and sends it with singular submit. Until submit finds the bundle's transactions on chain, the command's own fields (the request, the fold, the root) are only what the bundle expects, and the receipt says so under expected.",
-    "v": "b9dd6a2dfaa7"
-   }
-  ],
-  "what-the-project-runs-on-its-own": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/what-the-project-runs-on-its-own-00",
-    "pause_ms": 500,
-    "text": "What the project runs on its own.",
-    "v": "535fd65aa323"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/what-the-project-runs-on-its-own-01",
-    "pause_ms": 400,
-    "text": "Two further tools ship in this archive, and they are not part of the path above. They are run by the project against a registry that already exists, and they need things an ordinary user does not have, so no step here uses them.",
-    "v": "206053aafda1"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/what-the-project-runs-on-its-own-02",
-    "pause_ms": 300,
-    "text": "cli-controls (built from conformance#cli-controls) attaches to an existing registry with a fresh key and rehearses four refusals, each beside the ordinary command that does the same thing legitimately: an update another wallet's signature stands for, a release outside any fold, a second insertion of an active key and an insertion of a terminal key. It also requires --node-socket for a separate independent probe of the chain, and it keeps key files. That socket is never given to singular or open-datum.",
-    "v": "c42b249a27a7"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/what-the-project-runs-on-its-own-03",
-    "pause_ms": 300,
-    "text": "tools/demo1_readback.sh reads one key's token output back from Koios by policy id and asset name alone, and compares the output reference, the inline datum bytes and their hash with an open-datum inspect receipt. It exits 0 only when the indexer finds exactly one output holding the token and agrees with the inspect, within --max-lag slots of its tip. Run it from the extracted archive with --provider koios; it is the check the preprod runbook uses after steps 5 and 7.",
-    "v": "f32779f562f8"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-devnet/what-the-project-runs-on-its-own-04",
-    "pause_ms": 400,
-    "text": "Both are described in the reviewer's map.",
-    "v": "1a06df285e7e"
-   }
-  ],
-  "what-this-does-not-claim": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/what-this-does-not-claim-00",
-    "pause_ms": 500,
-    "text": "What this does not claim.",
-    "v": "ab475815e1c7"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/what-this-does-not-claim-01",
-    "pause_ms": 400,
-    "text": "The open-datum application protects the payload and the deposit, nothing more; it is a demonstration of the registry's mechanics. This page and its receipts are evidence of behaviour on a private development node only. Public-network receipts are on the preprod runbook, with their limits; nor is any complete conformance claimed here.",
-    "v": "8b42a3f145b0"
-   }
-  ],
-  "what-you-need": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/what-you-need-00",
-    "pause_ms": 500,
-    "text": "What you need.",
-    "v": "0db4cb854024"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/what-you-need-01",
-    "pause_ms": 300,
-    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The quickest way to the programs is the Nix shell of singular-demo, described in the next section; it needs only Nix and curl.",
-    "v": "280bf47a01c9"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/what-you-need-02",
-    "pause_ms": 300,
-    "text": "This archive, downloaded, checked and extracted. The onboarding page gives the download, the checksum check and the extraction commands. Every command below runs from the extracted directory, the one that holds DEMO1.md and onchain/.",
-    "v": "e8c7ad8d95c3"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/what-you-need-03",
-    "pause_ms": 300,
-    "text": "Time. Building from source compiles a large Haskell stack unless the public binary cache serves it; see the next section. A binary install that needs no Nix is coming in issue 695.",
-    "v": "315f366d2dce"
-   }
-  ],
-  "what-you-should-see": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/what-you-should-see-00",
-    "pause_ms": 500,
-    "text": "What you should see.",
-    "v": "1db37b22fec0"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/what-you-should-see-01",
-    "pause_ms": 300,
-    "text": "open-datum create prints the state token (stateToken), the seed, the token, the pins (the applied open-datum script, the state script and the three witness policies) and the published reference outputs. The preview names the token and the seed before anything is submitted. The wallet holds one output, so no seed is given: the registry boots from the change of its first publication. create writes no identity file. Every later command derives the registry from the state token and this archive's blueprint, checks it against the chain and refuses by name when they disagree, such as state-token-not-found or registry-pin-mismatch application. Its receipt carries the describe command the next step runs, printed as describeCommand.",
-    "v": "b19c97049a61"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-devnet/what-you-should-see-02",
-    "pause_ms": 300,
-    "text": "singular registry describe reads the registry page with the command the create receipt printed (describeCommand, run as printed): which registry this is, which release it runs, what its rules are and what it holds now. The page shows the public history of the state token from create to the live state output, read through the named provider, whose answers nothing here verifies; the release label is the archive's own claim, and the page is unsigned.",
-    "v": "ed364de4b83d"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-devnet/what-you-should-see-03",
-    "pause_ms": 300,
-    "text": "open-datum insert books the insertion through the application: its receipt names the pending request (request), the booking's transaction, the envelope kept for the fold and foldDeadline, the time and the slot by which the fold must happen. Nothing is folded, and the registry's root and your saved state do not move.",
-    "v": "5bf628958517"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-devnet/what-you-should-see-04",
-    "pause_ms": 300,
-    "text": "open-datum fold stages the fold of the pending requests with the wallet whose address it is given, which need not be the wallet that booked. It settles every request that passes, up to nine, each settled key's one active token landing in an output at the application, carrying its envelope inline. Its receipt names, under expected, each settled request, its key, its edge and the output it delivered in the settled list, beside the fold's transaction, the new root and how many milliseconds remained before the deadline, and lists the requests it left out in excluded.",
-    "v": "5b585f91952a"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-devnet/what-you-should-see-05",
-    "pause_ms": 300,
-    "text": "open-datum inspect reads the key active, with the holding, its envelope and payload, the registry's root and its separately observed tip. The reads behind a write are not guaranteed to come from one chain state.",
-    "v": "25a1dcf84ce6"
-   },
-   {
-    "index": 6,
-    "name": "docs-demo1-devnet/what-you-should-see-06",
-    "pause_ms": 300,
-    "text": "open-datum update replaces only the payload. The receipt's root equals the root before it.",
-    "v": "965cbbad9165"
-   },
-   {
-    "index": 7,
-    "name": "docs-demo1-devnet/what-you-should-see-07",
-    "pause_ms": 300,
-    "text": "open-datum inspect shows the new payload, the same control and deposit, and the same root.",
-    "v": "e66dc1e301e8"
-   },
-   {
-    "index": 8,
-    "name": "docs-demo1-devnet/what-you-should-see-08",
-    "pause_ms": 300,
-    "text": "open-datum terminate books the termination against the live holding: its receipt names the pending request, the live output the fold will release and the deposit.",
-    "v": "f88f4281a58c"
-   },
-   {
-    "index": 9,
-    "name": "docs-demo1-devnet/what-you-should-see-09",
-    "pause_ms": 300,
-    "text": "open-datum fold stages and, once sent, lands its fold: the token is burned and the protected deposit is paid back to the controller together with everything else the fold owes.",
-    "v": "67e783c90af0"
-   },
-   {
-    "index": 10,
-    "name": "docs-demo1-devnet/what-you-should-see-10",
-    "pause_ms": 300,
-    "text": "open-datum inspect reads the key terminal, with no holding.",
-    "v": "4dcdc02679ef"
-   },
-   {
-    "index": 11,
-    "name": "docs-demo1-devnet/what-you-should-see-11",
-    "pause_ms": 300,
-    "text": "singular registry reject clears a request that is past both its windows: its processing window, in which the registry's fold may take it, and the retract window after it, in which its owner may take it back. It is refused, naming each request and when its retract window closes, while any pending request is still inside a window, and when nothing is pending. The windows are judged from the ledger's tip, not the host's clock. Its receipt names, under expected, every request rejected, the value it actually locked, the tip the rejecting wallet keeps, and the refund: the designated output, its recipient and its amount. The registry's root does not move. The refund is the whole owed amount in one output to the request's owner, the one shape the chain accepts.",
-    "v": "e906ac40a8e2"
-   },
-   {
-    "index": 12,
-    "name": "docs-demo1-devnet/what-you-should-see-12",
-    "pause_ms": 300,
-    "text": "open-datum insert stages a new request, which the cleared registry now takes.",
-    "v": "b4401667623a"
-   },
-   {
-    "index": 13,
-    "name": "docs-demo1-devnet/what-you-should-see-13",
-    "pause_ms": 300,
-    "text": "open-datum fold folds it, and the key reads active.",
-    "v": "5337bfb3c065"
-   },
-   {
-    "index": 14,
-    "name": "docs-demo1-devnet/what-you-should-see-14",
-    "pause_ms": 300,
-    "text": "singular registry reclaim takes back a new pending insertion that nobody folded, inside its retract window. An earlier attempt is refused, naming when it opens; another wallet is refused as not the request's owner. The owner's successful receipt names the request, the retract transaction, the value that was locked, the recipient and the returned output. The tip slot against the deadline slots decides the window, never the host clock. After the window closes the refusal names registry reject. Updates and deletions cannot be retracted; insertions and terminal witnesses can. The root stays where it was.",
-    "v": "c752af681b34"
-   },
-   {
-    "index": 15,
-    "name": "docs-demo1-devnet/what-you-should-see-15",
-    "pause_ms": 300,
-    "text": "open-datum insert books a new request after reclaim.",
-    "v": "156d8b5280a1"
-   },
-   {
-    "index": 16,
-    "name": "docs-demo1-devnet/what-you-should-see-16",
-    "pause_ms": 300,
-    "text": "open-datum fold folds it, and an independent inspection reads active.",
-    "v": "1785ae03ec02"
-   },
-   {
-    "index": 17,
-    "name": "docs-demo1-devnet/what-you-should-see-17",
-    "pause_ms": 400,
-    "text": "A closed registry is booted with open-datum create --closed ..., which pins the closed-datum application whose payload is written once. Every later command follows the registry's mode with no further flag, and open-datum update on a closed registry stops before anything is built or signed, saying the registry is closed. The project rehearses that scene on a development node on every change, in the hosted job \"Closed-datum journey from the release archive\".",
-    "v": "f46e5b622ff7"
-   }
-  ],
-  "when-a-command-stops": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/when-a-command-stops-00",
-    "pause_ms": 500,
-    "text": "When a command stops.",
-    "v": "e4e02128c5e6"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-devnet/when-a-command-stops-01",
-    "pause_ms": 400,
-    "text": "A command that stops prints why, in one outcome class with its own exit status. Status 2 is a mistake on the command line.",
-    "v": "cee14e3751ae"
-   }
-  ],
-  "words-used-on-this-page": [
-   {
-    "index": 0,
-    "name": "docs-demo1-devnet/words-used-on-this-page-00",
-    "pause_ms": 500,
-    "text": "Words used on this page.",
-    "v": "6e1beefcd1c6"
-   }
-  ]
- },
- "docs/demo1-on-preprod.md": {
-  "build-the-two-commands": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-00",
-    "pause_ms": 500,
-    "text": "Build the two commands.",
-    "v": "a54bbfe3efa2"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-01",
-    "pause_ms": 400,
-    "text": "The quick way: the shell. From the extracted archive's directory,",
-    "v": "e412d05810f3"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-02",
-    "pause_ms": 400,
-    "text": "opens a shell with singular, open-datum, the development node devnet and jq on the path, all built by the project's CI. With the caches accepted it builds only the shell itself and fetches about 190 MiB instead of compiling the Haskell stack. Its limits: it is pinned to release v0.12.0, it is built for x86_64 Linux only, it needs Nix, and it keeps the development node's files in one directory per user, so run one node at a time (on a multi-user Nix install a user outside trusted-users cannot take the caches from a flake; the shell's README says what to change). In that shell, name the programs like this, skip the build below, and carry on in the same shell:",
-    "v": "02ba8219f372"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-03",
-    "pause_ms": 400,
-    "text": "The shell's own $blueprint holds the same bytes as onchain/plutus.json, but it sits in the Nix store with no version.txt beside it, and singular registry describe (step 2) refuses a blueprint without one, so keep the archive's file as blueprint.",
-    "v": "680f3a6b5168"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-04",
-    "pause_ms": 400,
-    "text": "The other way: build from the archive. This suits another release or another system. Nix reads a flake from a Git tree, and the application's flake reaches the registry's sources one directory up, so make the extracted archive a Git tree first. This commits nothing and contacts nothing; Nix warns that the tree is dirty, which is expected.",
-    "v": "c189e39eff85"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-05",
-    "pause_ms": 400,
-    "text": "Compiling both commands from source builds a large Haskell stack and takes a long time. The project's public binary cache holds both for x86_64-linux, about 100 MiB each. Add it before the first build, with these two settings on the nix build command line or, if your user is not trusted by the Nix daemon, as extra-substituters and extra-trusted-public-keys in /etc/nix/nix.conf:",
-    "v": "99d10ca18c18"
-   },
-   {
-    "index": 6,
-    "name": "docs-demo1-on-preprod/build-the-two-commands-06",
-    "pause_ms": 400,
-    "text": "The flakes also name the Cardano build cache https://cache.iog.io; Nix asks once whether to accept it. singular --version prints the program, its version and the commit it was built from; a build that carries no commit says commit unknown, and the printed store path then tells which build you hold. The blueprint is onchain/plutus.json, beside the version.txt that names the release.",
-    "v": "9910a8e8b66f"
-   }
-  ],
-  "download-and-check-the-release": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/download-and-check-the-release-00",
-    "pause_ms": 500,
-    "text": "Download and check the release.",
-    "v": "1e361f7a0839"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/download-and-check-the-release-01",
-    "pause_ms": 400,
-    "text": "Choose the release. This page was written against v0.12.0; the latest release is always listed at https://github.com/lambdasistemi/singular/releases/latest and a newer archive's own DEMO1.md is the authority for that release. The release carries two archives and one checksum file. You need the on-chain archive, which holds the compiled validators, the sources of both commands and the run page; the documentation archive is 220 MB and not needed here.",
-    "v": "35bbd2af4b3b"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/download-and-check-the-release-02",
-    "pause_ms": 400,
-    "text": "Expect one line, singular-onchain-0.12.0.tar.gz: OK. Extract the archive into a directory of its own; it has no top-level directory, and it carries its own SHA256SUMS that would overwrite the one you downloaded. Then check every file inside it and the compiled validators' identities, which needs only bash and jq.",
-    "v": "356718aca01d"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/download-and-check-the-release-03",
-    "pause_ms": 400,
-    "text": "The last line reads identity verification: PASS (both partitions, from this archive alone). To check the release end to end, including a run of the same journey on a private node, use the download and verify page. Every command below runs from this extracted directory, the one that holds DEMO1.md and onchain/.",
-    "v": "56406519b778"
-   }
-  ],
-  "fund-both-wallets-from-the-faucet": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/fund-both-wallets-from-the-faucet-00",
-    "pause_ms": 500,
-    "text": "Fund both wallets from the faucet.",
-    "v": "a386d10cf9c7"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/fund-both-wallets-from-the-faucet-01",
-    "pause_ms": 400,
-    "text": "Open the Cardano testnet faucet, choose preprod, and request test ada once for each printed address. Singular has no payment command, and this page needs no other tool: the faucet's single output is enough, nothing is split and no self-payment is needed. Every write spends the wallet's largest ada-only output and returns its change to the wallet, and a command that finds the wallet short refuses before it submits, naming the shortfall.",
-    "v": "47bc728614d2"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/fund-both-wallets-from-the-faucet-02",
-    "pause_ms": 400,
-    "text": "What the 18 October play measured, so you can judge how much to ask for:",
-    "v": "87e4bffdb2b7"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/fund-both-wallets-from-the-faucet-03",
-    "pause_ms": 400,
-    "text": "In that play Alice's balance fell by 7.34 tADA and Bob's by 3.58 tADA, the fees plus what is still locked or spent as a folder's fee at the end; the run did not reconcile each term. So Alice needs the creation amount and about 10 tADA more, and Bob about 10 tADA. Check what arrived with Koios, which you will use for everything else too:",
-    "v": "4068af0f89fc"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-on-preprod/fund-both-wallets-from-the-faucet-04",
-    "pause_ms": 400,
-    "text": "Both balances should be above zero before you go on. A faucet request can take a minute to land.",
-    "v": "9dbec457aa58"
-   }
-  ],
-  "helpers-for-the-steps": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/helpers-for-the-steps-00",
-    "pause_ms": 500,
-    "text": "Helpers for the steps.",
-    "v": "1f277200235d"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/helpers-for-the-steps-01",
-    "pause_ms": 400,
-    "text": "Alice signs from her vault and Bob signs externally, exactly as on the development-node page. The helper waits_for_signatures expects the exit status 19 that an external write ends with. wait_for_slot waits for the ledger's tip slot to pass a slot a receipt names, because the windows are judged from the ledger's tip and never from your clock.",
-    "v": "2bb42aa08b47"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/helpers-for-the-steps-02",
-    "pause_ms": 400,
-    "text": "The two payloads are Plutus data in the detailed JSON schema: a one-entry map from the bytes of name to the bytes of alice and of bob.",
-    "v": "d6c035452149"
-   }
-  ],
-  "make-alices-and-bobs-wallets": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/make-alices-and-bobs-wallets-00",
-    "pause_ms": 500,
-    "text": "Make Alice's and Bob's wallets.",
-    "v": "a19b7f0e3870"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/make-alices-and-bobs-wallets-01",
-    "pause_ms": 400,
-    "text": "Each wallet is a vault: a file that holds a fresh signing key sealed by a passphrase. The key never leaves the file, no command prints it, and neither wallet needs cardano-cli. A script supplies the passphrase as one line on an inherited file descriptor, --passphrase-fd 3 with 3< file; typed at a prompt, the command asks twice when it creates a vault and once when it opens one. Keep the files private, and use these wallets for test ada only.",
-    "v": "a2bbfe813926"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/make-alices-and-bobs-wallets-02",
-    "pause_ms": 400,
-    "text": "Each wallet create prints the wallet's address, an addr_test1… enterprise address; wallet address prints the same one again. Creating over an existing vault is refused with vault already exists.",
-    "v": "1e5a6cf0e642"
-   }
-  ],
-  "play-demo-1-on-preprod": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/play-demo-1-on-preprod-00",
-    "pause_ms": 500,
-    "text": "Play Demo 1 on preprod.",
-    "v": "f2acad6f5ba1"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/play-demo-1-on-preprod-01",
-    "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but has never used Singular, you want to play Demo 1 yourself on the public preprod network, from the latest release, copying the commands as they stand. You download the release, check it, build two commands, make two wallets (Alice's and Bob's), fund them from the faucet and run sixteen steps. Every step either succeeds or is refused with the refusal this page says it will give.",
-    "v": "6b254d6512e6"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/play-demo-1-on-preprod-02",
-    "pause_ms": 400,
-    "text": "When it works, a registry you created holds keys that Alice inserted, changed and terminated, that Bob folded for her, and that a new owner of the name took over; you have read every receipt and seen the refusals; and the transactions of your play are on preprod for anyone to look up. The steps take about seventy minutes on preprod, mostly waiting for two windows to pass.",
-    "v": "887430a279fe"
-   }
-  ],
-  "step-1-alice-creates-the-registry": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-1-alice-creates-the-registry-00",
-    "pause_ms": 500,
-    "text": "Step 1: Alice creates the registry.",
-    "v": "ea88a98e90d2"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-1-alice-creates-the-registry-01",
-    "pause_ms": 400,
-    "text": "A preview builds what the create would submit, from Alice's address alone, and signs, submits and writes nothing. It names the registry's state token and its seed before anything is spent, and it refuses with the missing amount if Alice's wallet holds too little. The create then publishes the scripts the chain does not yet hold and boots the registry. Alice's wallet holds one output, so no seed is given: the registry boots from the change of the first publication. The windows are the defaults, ten minutes to fold a request and five minutes after that to take it back.",
-    "v": "ef9ab1e27a58"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-1-alice-creates-the-registry-02",
-    "pause_ms": 400,
-    "text": "The receipt's stateToken is the registry's name: the policy and the asset name in hex, joined by a dot. Every later command takes it as --state-token. If someone gave you a state token instead, skip this step and set token to it: token=(--state-token POLICY.NAME). The directory reg only keeps your own journal; nothing in it names the registry.",
-    "v": "eb787ff426c2"
-   }
-  ],
-  "step-10-read-it-back": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-10-read-it-back-00",
-    "pause_ms": 500,
-    "text": "Step 10: read it back.",
-    "v": "3154155474b3"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-10-read-it-back-01",
-    "pause_ms": 400,
-    "text": "The key reads terminal, and the receipt says no live output holds it.",
-    "v": "8a45aa33a5f3"
-   }
-  ],
-  "step-11-reject-a-request-nobody-folded": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-11-reject-a-request-nobody-folded-00",
-    "pause_ms": 500,
-    "text": "Step 11: reject a request nobody folded.",
-    "v": "17a843e13954"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-11-reject-a-request-nobody-folded-01",
-    "pause_ms": 400,
-    "text": "A request that nobody folded and its owner did not take back stays pending past both its windows and blocks the registry's fold. Alice books one and nobody folds it. While either window is open a reject is refused and writes no bundle. That refusal is the first expected one: exit 10, the outcome client-refusal, and a receipt that names the slot where the retract window closes. When the ledger's tip passes that slot, any wallet may reject; here, Bob's, the external way.",
-    "v": "cde0999dcda1"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-11-reject-a-request-nobody-folded-02",
-    "pause_ms": 400,
-    "text": "The reason reads \"1 pending request is still inside a window, and a reject takes every pending request, so none is built\", and names the request, when its processing window ends and when its retract window closes. Nothing is written or submitted. Wait for the closing slot, about fifteen minutes after the booking, then reject; the bundle expires about two minutes after it is built, so sign and send it at once.",
-    "v": "0b2b35c17997"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/step-11-reject-a-request-nobody-folded-03",
-    "pause_ms": 400,
-    "text": "The reject cost 0.51 tADA. Alice's request returns to her less the 1 tADA folder's fee, which stays with Bob's wallet, and the registry's root does not move.",
-    "v": "e6430266a329"
-   }
-  ],
-  "step-12-bob-books-a-new-insertion": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-12-bob-books-a-new-insertion-00",
-    "pause_ms": 500,
-    "text": "Step 12: Bob books a new insertion.",
-    "v": "c63537c07e44"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-12-bob-books-a-new-insertion-01",
-    "pause_ms": 400,
-    "text": "The cleared registry takes requests again. Bob books the key bob, signing externally; his own address is the controller.",
-    "v": "4495e12d8809"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-12-bob-books-a-new-insertion-02",
-    "pause_ms": 400,
-    "text": "While Bob's bundle waits for its signatures, two further refusals are worth seeing; both change nothing on chain. A second write of Bob's in the same registry stops with exit 19 and the outcome waiting-for-signatures, naming the waiting bundle and building nothing. And a vault signs only a bundle that lists its address: Alice's vault is refused on Bob's bundle with exit 1, the message that the vault's address is not among the bundle's signers, and no witness file.",
-    "v": "051d5b926d1c"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/step-12-bob-books-a-new-insertion-03",
-    "pause_ms": 400,
-    "text": "Now Bob signs and sends. Running singular submit a second time on the same bundle finds the transactions on chain and sends nothing.",
-    "v": "1a006c315a45"
-   }
-  ],
-  "step-13-alice-folds-it": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-13-alice-folds-it-00",
-    "pause_ms": 500,
-    "text": "Step 13: Alice folds it.",
-    "v": "bde9dbff3673"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-13-alice-folds-it-01",
-    "pause_ms": 400,
-    "text": "The key bob reads active. Alice folded Bob's request with her own wallet.",
-    "v": "ed3799a82f3d"
-   }
-  ],
-  "step-14-alice-takes-a-request-back": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-14-alice-takes-a-request-back-00",
-    "pause_ms": 500,
-    "text": "Step 14: Alice takes a request back.",
-    "v": "59b6d1496fa6"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-14-alice-takes-a-request-back-01",
-    "pause_ms": 400,
-    "text": "Alice books a different insertion, carol, and keeps its request reference from the receipt. When the ledger's tip passes the processing deadline the request may be taken back by its owner, inside its retract window. Before that, reclaim is refused, naming when it opens. Reclaim returns the whole locked 3 tADA to Alice; the root does not move.",
-    "v": "c98fc55c4eec"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-14-alice-takes-a-request-back-02",
-    "pause_ms": 400,
-    "text": "The key carol reads unknown, with no pending request. The wait is about nine minutes.",
-    "v": "e7b453c41f33"
-   }
-  ],
-  "step-15-alice-books-another-insertion": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-15-alice-books-another-insertion-00",
-    "pause_ms": 500,
-    "text": "Step 15: Alice books another insertion.",
-    "v": "131239447a65"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-15-alice-books-another-insertion-01",
-    "pause_ms": 400,
-    "text": "The reclaimed request no longer blocks the registry.",
-    "v": "85c23b24409b"
-   }
-  ],
-  "step-16-bob-folds-it": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-16-bob-folds-it-00",
-    "pause_ms": 500,
-    "text": "Step 16: Bob folds it.",
-    "v": "b936945a88df"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-16-bob-folds-it-01",
-    "pause_ms": 400,
-    "text": "The key dave reads active. The registry now holds bob and dave active and alice terminal, with late and carol unknown, and no request pending.",
-    "v": "f40fdbb7125b"
-   }
-  ],
-  "step-2-read-the-registry-page": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-2-read-the-registry-page-00",
-    "pause_ms": 500,
-    "text": "Step 2: read the registry page.",
-    "v": "a7e28ecd1646"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-2-read-the-registry-page-01",
-    "pause_ms": 400,
-    "text": "The create receipt prints the command that reads the registry page, as describeCommand. Run it as printed, with this release's singular first on the path.",
-    "v": "d40f3c5a80bd"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-2-read-the-registry-page-02",
-    "pause_ms": 400,
-    "text": "The page says which registry this is, which release it runs, what its rules are and what it holds now. It is read through Koios, whose answers nothing here verifies, and it is unsigned.",
-    "v": "54477819b87d"
-   }
-  ],
-  "step-3-alice-books-the-insertion-of-her-key": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-3-alice-books-the-insertion-of-her-key-00",
-    "pause_ms": 500,
-    "text": "Step 3: Alice books the insertion of her key.",
-    "v": "9a2a68d16780"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-3-alice-books-the-insertion-of-her-key-01",
-    "pause_ms": 400,
-    "text": "An insertion books and stops. Alice is the key's controller. The request stays pending until someone folds it, and the receipt names it and the deadline by which it must be folded. --max-outlay caps what the write may put out of the wallet: a write whose measured outlay passes it is refused before anything is signed, and its receipt names the total and its parts under outlay. On preprod the booking measured 6.16 tADA on 18 October: its 0.39 tADA fee, the 3 tADA it locks and a 2.77 tADA bound on the fold that follows. The 8 tADA allowance below covers it. If the network's parameters have moved and a write is refused for its outlay, read that receipt and raise the allowance to cover the total.",
-    "v": "e752c89104b1"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-3-alice-books-the-insertion-of-her-key-02",
-    "pause_ms": 400,
-    "text": "Expect success. request is the booking's transaction and an output number, TXID#0; the deadline is about nine minutes after the booking, as a time and as a slot. The booking cost 0.39 tADA in fees on 18 October.",
-    "v": "fbe89ff83afc"
-   }
-  ],
-  "step-4-bob-folds-it-signing-externally": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-4-bob-folds-it-signing-externally-00",
-    "pause_ms": 500,
-    "text": "Step 4: Bob folds it, signing externally.",
-    "v": "1e27d406150a"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-4-bob-folds-it-signing-externally-01",
-    "pause_ms": 400,
-    "text": "Bob has to fold before the deadline. Any wallet may fold. Bob's write names his address and a new bundle file, builds its whole run as that bundle and exits 19, the outcome waiting-for-signatures, having signed and sent nothing. His vault then signs the bundle and the signed bundle is sent. Until submit finds the transactions on chain, the receipt's own fields are only what the bundle expects, under expected.",
-    "v": "d9c069e9af69"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-4-bob-folds-it-signing-externally-02",
-    "pause_ms": 400,
-    "text": "The fold cost 0.81 tADA in fees. If the deadline passes first, the fold is refused naming it, before anything is signed, and the request stays pending.",
-    "v": "c7f9d791badf"
-   }
-  ],
-  "step-5-read-the-key-back": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-5-read-the-key-back-00",
-    "pause_ms": 500,
-    "text": "Step 5: read the key back.",
-    "v": "054d36e027fc"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-5-read-the-key-back-01",
-    "pause_ms": 400,
-    "text": "An inspect reads the key with no signing key and submits nothing. Its receipt on preprod is about 13 MB because it carries the session's evidence, so keep it in a file and read the fields you want. The key reads active.",
-    "v": "110c68369e22"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/step-5-read-the-key-back-02",
-    "pause_ms": 400,
-    "text": "You can also ask Koios, on its own, whether it finds the same output. The readback needs the active policy and the key's name, which the receipt's envelope holds, and it compares the output, the inline datum's bytes and their hash with the receipt.",
-    "v": "47ff255e94ef"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/step-5-read-the-key-back-03",
-    "pause_ms": 400,
-    "text": "It exits 0 and prints readback: PASS only when Koios finds exactly one output holding the token, with the receipt's datum, within 600 slots of the node's tip.",
-    "v": "7f0a6e4f0be5"
-   }
-  ],
-  "step-6-alice-replaces-the-payload": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-6-alice-replaces-the-payload-00",
-    "pause_ms": 500,
-    "text": "Step 6: Alice replaces the payload.",
-    "v": "22d6e80fa887"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-6-alice-replaces-the-payload-01",
-    "pause_ms": 400,
-    "text": "Only the controller may change the payload. The root does not move.",
-    "v": "86abdbcf06e4"
-   }
-  ],
-  "step-7-read-it-back": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-7-read-it-back-00",
-    "pause_ms": 500,
-    "text": "Step 7: read it back.",
-    "v": "c7c4461c34d7"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-7-read-it-back-01",
-    "pause_ms": 400,
-    "text": "The key is still active, the root is the one from step 5 and the payload is the new one. The readback of step 5 works on this receipt too.",
-    "v": "adda734fe226"
-   }
-  ],
-  "step-8-alice-books-the-termination-of-her-key": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-8-alice-books-the-termination-of-her-key-00",
-    "pause_ms": 500,
-    "text": "Step 8: Alice books the termination of her key.",
-    "v": "a61d588012a6"
-   }
-  ],
-  "step-9-bob-folds-the-termination": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/step-9-bob-folds-the-termination-00",
-    "pause_ms": 500,
-    "text": "Step 9: Bob folds the termination.",
-    "v": "343eb63779e9"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/step-9-bob-folds-the-termination-01",
-    "pause_ms": 400,
-    "text": "The fold burns the key's token and pays the deposit back to Alice. Naming the request makes the fold an expectation: it is refused unless that request is among the ones it settles.",
-    "v": "023174986258"
-   }
-  ],
-  "tell-the-commands-where-koios-is": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/tell-the-commands-where-koios-is-00",
-    "pause_ms": 500,
-    "text": "Tell the commands where Koios is.",
-    "v": "730f8737816f"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/tell-the-commands-where-koios-is-01",
-    "pause_ms": 400,
-    "text": "Every command reads and submits through one Koios API. Preprod's base URL is https://preprod.koios.rest/api/v1 and its network magic is 1. Preprod uses a reviewed time recording that ships inside the commands, so you pass no time directory. A token file is optional: put a Koios bearer token alone in a file and pass it with --koios-token-file; the commands read it without putting the token in an argument, and no receipt or log shows it. Every command replays the registry's history through Koios, so a long play makes many requests. The 18 October play used a token; how far the public tier without one gets was not measured.",
-    "v": "51e33b3fb050"
-   }
-  ],
-  "what-has-run-where": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/what-has-run-where-00",
-    "pause_ms": 500,
-    "text": "What has run where.",
-    "v": "1b01f6300ccc"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/what-has-run-where-01",
-    "pause_ms": 400,
-    "text": "Read this before you spend anything, because it says how much of this page has been played on preprod and how much has not.",
-    "v": "0ab528d76cff"
-   }
-  ],
-  "what-this-does-not-claim": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/what-this-does-not-claim-00",
-    "pause_ms": 500,
-    "text": "What this does not claim.",
-    "v": "de8f4fdd7cda"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/what-this-does-not-claim-01",
-    "pause_ms": 400,
-    "text": "The open-datum application protects the payload and the deposit, nothing more; it is a demonstration of the registry's mechanics. Koios answers are unverified claims, and the several reads behind one command need not come from one chain state. The play above is one run of one registry on one network. It does not show every compiled validator, every ledger transaction or a registry created by this release on preprod. The reviewer's map lists what is established and what is still waiting.",
-    "v": "0b87ea0f9e0f"
-   }
-  ],
-  "what-you-need": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/what-you-need-00",
-    "pause_ms": 500,
-    "text": "What you need.",
-    "v": "75917d305c46"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/what-you-need-01",
-    "pause_ms": 300,
-    "text": "A Linux machine with Nix and flakes enabled, plus git, jq and curl. The Nix shell of singular-demo gives you the programs without a build. The release ships no ready-built binaries yet. A binary install that needs no Nix is coming in issue 695.",
-    "v": "1dd774a664aa"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-on-preprod/what-you-need-02",
-    "pause_ms": 300,
-    "text": "About ninety minutes with a terminal open the whole time, and enough preprod test ada (written tADA) for both wallets; the funding step says how much.",
-    "v": "2078eecd1a04"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-on-preprod/what-you-need-03",
-    "pause_ms": 300,
-    "text": "A Koios token file is optional and described below.",
-    "v": "49c1d9dbb92f"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-on-preprod/what-you-need-04",
-    "pause_ms": 400,
-    "text": "The words used here are the ones on the development-node page: a registry, its state token, requests that wait to be folded, the processing window and the retract window, a vault and a bundle.",
-    "v": "a671db84b38e"
-   }
-  ],
-  "when-something-stops": [
-   {
-    "index": 0,
-    "name": "docs-demo1-on-preprod/when-something-stops-00",
-    "pause_ms": 500,
-    "text": "When something stops.",
-    "v": "2ab70b83a7bc"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-on-preprod/when-something-stops-01",
-    "pause_ms": 400,
-    "text": "Every command that stops prints why, as one outcome with its own exit status. The table on the development-node page lists them. A command never resubmits on its own. After a timeout or a partial outcome, run inspect on the key: it reads the journal, checks each unresolved submission against the chain and moves the saved state only as far as the chain shows. Recovering a registry command follows a bundle from there. A bundle whose transactions carry a deadline dies by expiry, and running the command again rebuilds it.",
-    "v": "403a95a027c5"
-   }
-  ]
- },
- "docs/demo1-preprod.md": {
-  "funding-a-create-from-one-output": [
-   {
-    "index": 0,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-00",
-    "pause_ms": 500,
-    "text": "Funding a create from one output.",
-    "v": "1d8a55724907"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-01",
-    "pause_ms": 400,
-    "text": "As Carol, I fund a fresh wallet with one output and run create with no --seed flag. The preview tells me my registry's state token and its seed before anything is submitted. Then the create runs its seven transactions, each paid from the change of the one before, and the last change comes back to my wallet. I never split my wallet by hand.",
-    "v": "be0db9546ba2"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-02",
-    "pause_ms": 400,
-    "text": "As Carol, I funded Gina with one 200 tADA output on a fresh devnet with no state carrier anywhere: preview named the token with no refusal, create completed, the seed was the first publication's change, every reference is live, and Bob read the registry from the token alone. A 5 tADA one-output wallet is refused before anything is submitted with one publication-unfunded verdict in preview and in create (the state publication alone needs 53,698,530 lovelace); a 105 tADA one-output wallet covers the first publication but is refused at a later step with one verdict (the whole run needs at least 162,649,217 lovelace). With a live carrier (Grace, one 200 tADA output after Alice), the seed is her output and the boot is paid from it. An explicit --seed names a held output, or the previewed chained seed to pin the identity; a held sole output while the state must be published is refused with omit---seed. Reference-script outputs left by earlier creates do not count as funding. Built under the decision of 2026-10-12 (#491) as a chain from one output:",
-    "v": "fa442fa2a547"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-03",
-    "pause_ms": 300,
-    "text": "Why the seed can come second. The state script is the same for every registry and is not tied to any seed, so the seed does not have to exist before the first publication.",
-    "v": "20dede5a1f5f"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-04",
-    "pause_ms": 300,
-    "text": "The identity is still known at preview. The registry's token name is the SHA-256 of the seed's output reference. That reference is the first publication's transaction id and an output number, and the transaction id is computed from the body before submission.",
-    "v": "9c6daabdc938"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-05",
-    "pause_ms": 300,
-    "text": "A half-built create has one way forward. It always continues from the last transaction's change (#478).",
-    "v": "2c6b8e346d8c"
-   },
-   {
-    "index": 6,
-    "name": "docs-demo1-preprod/funding-a-create-from-one-output-06",
-    "pause_ms": 400,
-    "text": "Remaining limits: the wallet is read once and an output spent between steps still fails a later step with the wallet changed; there is no resume of a half-made run; the oversize check is an estimate.",
-    "v": "a912217694e1"
-   }
-  ],
-  "the-story": [
-   {
-    "index": 0,
-    "name": "docs-demo1-preprod/the-story-00",
-    "pause_ms": 500,
-    "text": "The story.",
-    "v": "3f3b27bb82b3"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-preprod/the-story-01",
-    "pause_ms": 400,
-    "text": "As a reviewer, I download the pinned archive and check one registry and its keys on the public preprod network. A key is inserted and its payload is changed by its controller. It is found again from its policy id and asset name alone, through the public Koios indexer. A request nobody folded is rejected and another is taken back by its owner. The key is terminated and its protected deposit comes back. Every claim rests on a confirmed transaction or a fresh read, never on local state.",
-    "v": "17e2e819fbcb"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-preprod/the-story-02",
-    "pause_ms": 400,
-    "text": "This page is the reviewer's map. It says what the archive lets you replay, what has been shown so far and on which chain, and what still waits. To play the steps yourself, use the preprod runbook; to see them run on a private node first, use the development-node page.",
-    "v": "4d150f991c48"
-   }
-  ],
-  "what-is-established-today": [
-   {
-    "index": 0,
-    "name": "docs-demo1-preprod/what-is-established-today-00",
-    "pause_ms": 500,
-    "text": "What is established today.",
-    "v": "a3ad776799d0"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-preprod/what-is-established-today-01",
-    "pause_ms": 400,
-    "text": "The 18 October play joined a registry created on 12 October by an earlier release, so it shows nothing about a registry created by v0.12.0 on preprod. The registry's windows were ten minutes to fold and five more to take a request back. Its thirteen registry transactions, in order, each of which anyone can look up in a preprod explorer:",
-    "v": "d547475dfa55"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-preprod/what-is-established-today-02",
-    "pause_ms": 400,
-    "text": "Nothing in the development-node rows is a preprod confirmation. A development node's evaluation is not preprod execution, and the live preprod cost models are read as public inputs only.",
-    "v": "8efff4609e61"
-   }
-  ],
-  "what-is-still-waiting": [
-   {
-    "index": 0,
-    "name": "docs-demo1-preprod/what-is-still-waiting-00",
-    "pause_ms": 500,
-    "text": "What is still waiting.",
-    "v": "b1f8db7a0f3c"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-preprod/what-is-still-waiting-01",
-    "pause_ms": 300,
-    "text": "A registry created by the latest release on preprod, and the cost of that create there.",
-    "v": "88e4e41b5d3f"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-preprod/what-is-still-waiting-02",
-    "pause_ms": 300,
-    "text": "The four refusals of the controls runner on preprod, with a completed gate.",
-    "v": "8831fa9a274d"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-preprod/what-is-still-waiting-03",
-    "pause_ms": 300,
-    "text": "A recording of the actual commands.",
-    "v": "13207ea5d30a"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-preprod/what-is-still-waiting-04",
-    "pause_ms": 300,
-    "text": "Binaries for Linux and macOS; today every user builds from source or from the public binary cache.",
-    "v": "e5539548c753"
-   }
-  ],
-  "what-this-does-not-show": [
-   {
-    "index": 0,
-    "name": "docs-demo1-preprod/what-this-does-not-show-00",
-    "pause_ms": 500,
-    "text": "What this does not show.",
-    "v": "e702c58423ad"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-preprod/what-this-does-not-show-01",
-    "pause_ms": 400,
-    "text": "One bounded run shows that the steps behave as described for those keys on that registry. It is not a universal statement about every compiled validator and ledger transaction, and an indexer that misses an output proves nothing either way. The duplicated token carrier case stays a model and validator test with its conditional argument, and is not run on a live chain.",
-    "v": "67eb335bb30c"
-   }
-  ],
-  "what-you-run": [
-   {
-    "index": 0,
-    "name": "docs-demo1-preprod/what-you-run-00",
-    "pause_ms": 500,
-    "text": "What you run.",
-    "v": "b44e52b51a47"
-   },
-   {
-    "index": 1,
-    "name": "docs-demo1-preprod/what-you-run-01",
-    "pause_ms": 400,
-    "text": "The ordinary singular registry and open-datum commands are the product path. Two more tools ship in the same archive: a controls runner that the project runs against a registry that already exists, and a readback that asks Koios.",
-    "v": "b15a5de21813"
-   },
-   {
-    "index": 2,
-    "name": "docs-demo1-preprod/what-you-run-02",
-    "pause_ms": 300,
-    "text": "Sign without a key file, in one command or in three. The reviewer's wallets come from singular wallet create: a vault sealed by a passphrase, whose printed address is all a development node needs to fund it. With --vault and the descriptor its passphrase is read from, a write opens the vault, builds its whole run as one bundle, signs every transaction in memory, sends them in order and prints its receipt once all of them have landed. With an address and a new bundle file instead, the write builds the same bundle, signs and sends nothing and exits with status 19; singular wallet sign --vault signs the bundle and singular submit sends it, and the command's own fields are only expected until submit finds the bundle on chain. The controls runner below is a test tool and keeps its key files.",
-    "v": "03813e95b510"
-   },
-   {
-    "index": 3,
-    "name": "docs-demo1-preprod/what-you-run-03",
-    "pause_ms": 300,
-    "text": "Measure before writing. A preview names the caller by a public address, builds what each command would submit and prints its fee, the execution units the local evaluator measured, the collateral it states and returns, and the outlay. The fold of an insertion or a termination is a command of its own, open-datum fold, run by any wallet once the booking confirms, so the preview bounds it from the network's parameters.",
-    "v": "4c3a2d9613d1"
-   },
-   {
-    "index": 4,
-    "name": "docs-demo1-preprod/what-you-run-04",
-    "pause_ms": 300,
-    "text": "Four refusals on one registry, run by the project. An update that needs another wallet's signature, a release outside any fold, a second insertion of the Active key and an insertion of the Terminal key are each refused by the node at the script that owns the rule, beside the ordinary command that does the same thing legitimately. The controls runner that rehearses them keeps key files and needs a node socket for its own independent probe of the chain, so it is not part of the path a user follows.",
-    "v": "dc785c2e0e23"
-   },
-   {
-    "index": 5,
-    "name": "docs-demo1-preprod/what-you-run-05",
-    "pause_ms": 300,
-    "text": "Reclaim what a refusal leaves. A refused insertion leaves its request pending, and a registry's fold judges each pending request on its own and settles every request that passes, up to nine, so the refused one stays pending, named with its reason in the receipt's excluded list. The owner retracts the one its own insertion left, inside its retract window, only while the registry still reads as the readback that saw it pending did; the verdict requires the retained body to spend that request and the wallet to hold exactly the bond released less the fee. The controls runner stops, with its receipts kept, at any outcome its step does not name and at any requirement that does not hold, and it is refused before it writes anything unless the operator states a collateral allowance.",
-    "v": "4d5e45d5f3f9"
-   },
-   {
-    "index": 6,
-    "name": "docs-demo1-preprod/what-you-run-06",
-    "pause_ms": 300,
-    "text": "Read the key back. tools/demo1_readback.sh --provider koios asks Koios for the asset by policy id and name alone, and records each request and response, the output Koios says holds the asset, its inline datum with its hash recomputed, Koios's tip and the node's chain point, and the lag between them. It succeeds only when the output reference and datum bytes are the receipt's, and the verdict is judged from the answers it keeps, never from the summary it states. A record's digest shows the bytes judged are the bytes kept, not that Koios answered honestly.",
-    "v": "f811aa682a7f"
+    "text": "The singular-demo repository describes the shell and the kit, what each is pinned to and what it was tested on.",
+    "v": "1f4cfcd2f5a1"
    }
   ]
  },
@@ -4373,8 +2932,8 @@
     "index": 1,
     "name": "docs-demos-index/planned-major-release-tags-01",
     "pause_ms": 400,
-    "text": "Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest, and v0.12.0 is the one the runbook was written against. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.",
-    "v": "3c74627aa5d3"
+    "text": "Demo 1 ships in the 0.x series; the latest release is listed at https://github.com/lambdasistemi/singular/releases/latest. The major tags below were drafted before that decision. They are targets for the later plays, not published artifacts.",
+    "v": "4a3863a0a9f3"
    },
    {
     "index": 2,
@@ -4967,8 +3526,8 @@
     "index": 2,
     "name": "docs-first-demo/first-demo-registry-handoff-on-preprod-02",
     "pause_ms": 400,
-    "text": "Where this stands (October 2026). The registry half of this play, called Demo 1, can be played today from release v0.12.0: the preprod runbook takes a Cardano developer from the download to every step on preprod, and the development-node page runs the same steps on a private node. The play below, which joins a kli identity and ckeri, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the v1.0.0 tag this page once named is not the tag Demo 1 uses.",
-    "v": "b40e5dbcd267"
+    "text": "Where this stands (October 2026). The registry half of this play, called Demo 1, can be played today on a private test chain: the Demo 1 page says what it shows and links the steps to play. The play below, which joins a kli identity and ckeri, is the later integration. It was planned before Demo 1 was cut, so its dates and its release tag are plans, not results: Demo 1 ships in the 0.x series, and the v1.0.0 tag this page once named is not the tag Demo 1 uses.",
+    "v": "25c88096b683"
    },
    {
     "index": 3,
@@ -8991,8 +7550,8 @@
     "index": 1,
     "name": "docs-preprod/reproduce-it-yourself-01",
     "pause_ms": 400,
-    "text": "The record above describes the historical node-backed tools. The current deployment verify uses a Koios API and your local wallet, as the onboarding page describes. From the repository root:",
-    "v": "66bc8b4ef0f9"
+    "text": "The record above describes the historical node-backed tools. The current deployment verify uses a Koios API and your local wallet, with the settings the command reference describes. From the repository root:",
+    "v": "74bb28b5e3bc"
    },
    {
     "index": 2,
@@ -10512,8 +9071,8 @@
     "index": 3,
     "name": "docs-singular-node/connecting-singular-to-a-ledger-provider-03",
     "pause_ms": 400,
-    "text": "Words such as registry, state token, request, fold, window, vault and bundle are explained in Words used on this page.",
-    "v": "82468d494ee4"
+    "text": "Words such as registry, state token, request, fold, window, vault and bundle are explained as they first appear in the step-by-step page of singular-demo; the Demo 1 page tells the story in short.",
+    "v": "c30771c050c2"
    },
    {
     "index": 4,

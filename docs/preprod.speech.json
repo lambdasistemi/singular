@@ -91,7 +91,7 @@
       "pause": 500
     },
     {
-      "text": "The record above describes the historical node-backed tools. The current deployment verify uses a Koios API and your local wallet, as the onboarding page describes. From the repository root:",
+      "text": "The record above describes the historical node-backed tools. The current deployment verify uses a Koios API and your local wallet, with the settings the command reference describes. From the repository root:",
       "pause": 400
     },
     {
@@ -125,6 +125,6 @@
   ],
   "_source": {
     "file": "preprod.md",
-    "sha256": "08942b885c7245e5e1de6269d9f01ab36fe4a3754f935cddaa6a9b325f35c4bf"
+    "sha256": "fc048f51b14ef68f6dc30a95770ab8312726cc5313de884f9929700976d295fa"
   }
 }

@@ -2,8 +2,8 @@ Singular is a registry of unique keys on Cardano that applications can use with
 their own rules. This release carries ready-built commands for Linux and macOS,
 the compiled smart contracts and the run page for Demo 1: create a registry,
 insert a key, change it, terminate it, and see each refusal appear where the page
-says it will. Play it first on a private development node, then on the public
-preprod network with test ada.
+says it will. Play it on a private development node; the run page also names the
+three settings that change for a public test network.
 
 ## Get the commands
 
@@ -40,6 +40,5 @@ commands for each platform.
    no faucet and no account. If you did not take the shell in step 1, it also
    shows how to build the commands; that compiles a large Haskell stack unless the
    project's public binary cache serves it.
-5. Then follow the preprod runbook,
-   https://lambdasistemi.github.io/singular/docs/demo1-on-preprod/, which plays
-   the same steps on preprod with the faucet, a Koios address and the amounts.
+5. The same steps as a page to paste from, one block at a time, are at
+   https://lambdasistemi.github.io/singular-demo/.
