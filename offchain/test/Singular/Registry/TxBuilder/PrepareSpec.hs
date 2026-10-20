@@ -19,7 +19,9 @@ planned transaction or the wallet, never typed.
 -}
 module Singular.Registry.TxBuilder.PrepareSpec (spec) where
 
-import Data.Foldable (toList)
+import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
+import Data.Foldable (forM_, toList)
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down (..))
@@ -28,9 +30,13 @@ import Lens.Micro ((&), (.~), (^.))
 import Test.Hspec
 import Test.QuickCheck
     ( Gen
+    , Property
+    , checkCoverage
     , choose
     , chooseInteger
     , counterexample
+    , cover
+    , elements
     , forAll
     , property
     , vectorOf
@@ -55,6 +61,7 @@ import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
     , MultiAsset (..)
+    , PolicyID
     )
 import Cardano.Ledger.TxIn (TxIn (..))
 
@@ -66,6 +73,7 @@ import Singular.Registry.TxBuilder.BookingFixture
     , payer
     , preprodParams
     )
+import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import Singular.Registry.TxBuilder.Prepare
     ( Preparation (..)
     , PrepareError (..)
@@ -83,6 +91,7 @@ spec = describe "one preparation transaction" $ do
     fewestDeterministic
     boundaryAgreement
     shortfalls
+    sharedPolicies
 
 testPayer :: Addr
 testPayer = payer
@@ -297,6 +306,290 @@ boundaryAgreement = describe "the one-lovelace boundary" $ do
             in  case accept mid of
                     Right _ -> search lo mid
                     Left _ -> search (mid + 1) hi
+
+{- | As Alice, my approvals sit in several outputs, some of them under one
+policy. Planning a preparation from them must not lose or merge any of
+them: the remainder holds, asset by asset, exactly what the spent outputs
+held, and a wallet that holds more than the preparation needs is planned,
+not refused as short. The sums below are written independently of the
+planner (one key per policy and asset name, added), never the planner's own
+combination of the outputs' maps.
+-}
+sharedPolicies :: Spec
+sharedPolicies = describe "outputs that share a policy" $ do
+    forM_ sharedWallets $ \(label, wallet) ->
+        it ("plans a wallet of " <> label <> " and conserves every asset") $
+            case planPreparation testParams testPayer 1_500_000 wallet of
+                Left err ->
+                    expectationFailure
+                        ( "refused a wallet holding "
+                            <> show (heldBy wallet)
+                            <> " lovelace for a requirement of 1500000: "
+                            <> show err
+                        )
+                Right p -> expectAssetsConserved wallet p
+    it
+        "plans from several outputs and conserves each asset, whatever policies and names they share"
+        $ checkCoverage
+        $ forAll genSharedWallet
+        $ \w ->
+            forAll genRequirement $ \r -> case planPreparation testParams testPayer r w of
+                Left err ->
+                    counterexample
+                        ( "refused a wallet holding "
+                            <> show (heldBy w)
+                            <> " lovelace for a requirement of "
+                            <> show r
+                            <> ": "
+                            <> show err
+                        )
+                        (property False)
+                Right p ->
+                    cover 25 (length (prepSpent p) > 1) "spends several outputs" $
+                        conservedAssets w p
+    it
+        "a wallet too short to plan names the ledger minimum for returning every asset it holds, shared policy included"
+        $ do
+            let wallet =
+                    [ (i, setCoin 600_000 o)
+                    | (i, o) <-
+                        sharedWalletOf
+                            [ (applicationPolicy, "tok-a", 3)
+                            , (applicationPolicy, "tok-b", 5)
+                            ]
+                    ]
+                held = perAsset (map snd wallet)
+                everything =
+                    mkBasicTxOut
+                        testPayer
+                        ( MaryValue
+                            (Coin 0)
+                            ( MultiAsset
+                                ( Map.fromListWith
+                                    (Map.unionWith (+))
+                                    [(p, Map.singleton n q) | ((p, n), q) <- Map.toList held]
+                                )
+                            )
+                        )
+                Coin floorForAll = getMinCoinTxOut testParams everything
+            case planPreparation testParams testPayer 1_500_000 wallet of
+                Right _ ->
+                    expectationFailure
+                        "planned a preparation from a wallet holding less than the requirement"
+                Left (PrepareShortfall required _ remainderMin heldAda _) -> do
+                    required `shouldBe` 1_500_000
+                    heldAda `shouldBe` heldBy wallet
+                    remainderMin `shouldBe` floorForAll
+    it
+        "a wallet too short to plan prices the return of a shared name at the sum of its quantities, across a size boundary of the encoding"
+        $ do
+            let wallet =
+                    [ (i, setCoin 1_200_000 o)
+                    | (i, o) <-
+                        sharedWalletOf
+                            [ (applicationPolicy, "tok-a", 17)
+                            , (applicationPolicy, "tok-a", 17)
+                            ]
+                    ]
+                summed = perAsset (map snd wallet)
+                holding quantities =
+                    mkBasicTxOut
+                        testPayer
+                        ( MaryValue
+                            (Coin 0)
+                            ( MultiAsset
+                                ( Map.fromListWith
+                                    (Map.unionWith (+))
+                                    [(p, Map.singleton n q) | ((p, n), q) <- Map.toList quantities]
+                                )
+                            )
+                        )
+                Coin floorForSum = getMinCoinTxOut testParams (holding summed)
+                Coin floorForOne =
+                    getMinCoinTxOut
+                        testParams
+                        (holding (perAsset (map snd (take 1 wallet))))
+            -- the instrument sees the boundary: 17 and 34 are one and two
+            -- bytes of the encoding, so their minimums differ
+            summed
+                `shouldBe` Map.singleton (applicationPolicy, AssetName "tok-a") 34
+            floorForSum `shouldSatisfy` (> floorForOne)
+            case planPreparation testParams testPayer 3_000_000 wallet of
+                Right _ ->
+                    expectationFailure
+                        "planned a preparation from a wallet holding less than the requirement"
+                Left (PrepareShortfall required _ remainderMin heldAda _) -> do
+                    required `shouldBe` 3_000_000
+                    heldAda `shouldBe` heldBy wallet
+                    remainderMin `shouldBe` floorForSum
+    it "the independent sums tell a shared policy's two names from one" $ do
+        -- a negative control for the instrument itself: the sums keep
+        -- every (policy, name) pair, so a combination that drops one differs
+        let w =
+                snd
+                    <$> sharedWalletOf
+                        [(applicationPolicy, "tok-a", 3), (applicationPolicy, "tok-b", 5)]
+        perAsset w
+            `shouldBe` Map.fromList
+                [ ((applicationPolicy, AssetName "tok-a"), 3)
+                , ((applicationPolicy, AssetName "tok-b"), 5)
+                ]
+        perAsset (w <> w)
+            `shouldBe` Map.fromList
+                [ ((applicationPolicy, AssetName "tok-a"), 6)
+                , ((applicationPolicy, AssetName "tok-b"), 10)
+                ]
+  where
+    sharedWallets =
+        [
+            ( "two outputs, one policy, two names"
+            , sharedWalletOf
+                [(applicationPolicy, "tok-a", 3), (applicationPolicy, "tok-b", 5)]
+            )
+        ,
+            ( "two outputs, one policy, the same name"
+            , sharedWalletOf
+                [(applicationPolicy, "tok-a", 3), (applicationPolicy, "tok-a", 5)]
+            )
+        ,
+            ( "two outputs, two policies"
+            , sharedWalletOf
+                [(applicationPolicy, "tok-a", 3), (otherPolicy, "tok-b", 5)]
+            )
+        ,
+            ( "one output holding both names"
+            ,
+                [
+                    ( outRef 'a'
+                    , mkBasicTxOut
+                        testPayer
+                        ( MaryValue
+                            (Coin (2 * sharedAda))
+                            ( MultiAsset
+                                ( Map.singleton
+                                    applicationPolicy
+                                    (Map.fromList [(AssetName "tok-a", 3), (AssetName "tok-b", 5)])
+                                )
+                            )
+                        )
+                    )
+                ]
+            )
+        ]
+
+-- | Each output of the shared-policy wallets holds this much: little ada.
+sharedAda :: Integer
+sharedAda = 2_300_000
+
+-- | A policy the application's does not share.
+otherPolicy :: PolicyID
+otherPolicy = policyIdFromPin (SBS.toShort (BS.replicate 28 7))
+
+-- | One token-carrying output per (policy, name, quantity), each with 'sharedAda'.
+sharedWalletOf
+    :: [(PolicyID, SBS.ShortByteString, Integer)]
+    -> [(TxIn, TxOut ConwayEra)]
+sharedWalletOf holdings =
+    [ ( outRef c
+      , mkBasicTxOut
+            testPayer
+            ( MaryValue
+                (Coin sharedAda)
+                ( MultiAsset
+                    (Map.singleton policy (Map.singleton (AssetName name) quantity))
+                )
+            )
+      )
+    | (c, (policy, name, quantity)) <- zip "abcdef" holdings
+    ]
+
+-- | An output with its lovelace set.
+setCoin :: Integer -> TxOut ConwayEra -> TxOut ConwayEra
+setCoin lovelace o = o & coinTxOutL .~ Coin lovelace
+
+-- | The lovelace a wallet holds, added.
+heldBy :: [(TxIn, TxOut ConwayEra)] -> Integer
+heldBy w = sum [c | (_, o) <- w, let (c, _) = assetsOf o]
+
+{- | The quantity of every (policy, name) a list of outputs holds, added by
+key: independent of the planner and of any semigroup on the maps.
+-}
+perAsset :: [TxOut ConwayEra] -> Map.Map (PolicyID, AssetName) Integer
+perAsset outs =
+    Map.fromListWith
+        (+)
+        [ ((policy, name), q)
+        | o <- outs
+        , let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
+        , (policy, names) <- Map.toList m
+        , (name, q) <- Map.toList names
+        ]
+
+{- | A planned preparation conserves every asset: its funding output holds
+none, its remainder holds, asset by asset, what the spent outputs held, and
+that plus what stayed unspent is what the wallet held.
+-}
+conservedAssets
+    :: [(TxIn, TxOut ConwayEra)] -> Preparation -> Property
+conservedAssets w p = case txOutputs p of
+    [fundOut, changeOut] ->
+        let spentOuts = map snd (prepSpent p)
+            spentIns = map fst (prepSpent p)
+            unspent = [o | (i, o) <- w, i `notElem` spentIns]
+        in  (perAsset [fundOut] === Map.empty)
+                .&&. (perAsset [changeOut] === perAsset spentOuts)
+                .&&. ( Map.unionWith (+) (perAsset [changeOut]) (perAsset unspent)
+                        === perAsset (map snd w)
+                     )
+    _ -> counterexample "not two outputs" (property False)
+
+expectAssetsConserved
+    :: [(TxIn, TxOut ConwayEra)] -> Preparation -> Expectation
+expectAssetsConserved w p =
+    case txOutputs p of
+        [fundOut, changeOut] -> do
+            let spentIns = map fst (prepSpent p)
+            perAsset [fundOut] `shouldBe` Map.empty
+            perAsset [changeOut] `shouldBe` perAsset (map snd (prepSpent p))
+            Map.unionWith
+                (+)
+                (perAsset [changeOut])
+                (perAsset [o | (i, o) <- w, i `notElem` spentIns])
+                `shouldBe` perAsset (map snd w)
+        _ -> expectationFailure "the preparation is not two outputs"
+
+{- | A generated wallet of three to five token-carrying outputs with little
+ada each, whose policies and asset names overlap (two policies, three names)
+and whose quantities differ.
+-}
+genSharedWallet :: Gen [(TxIn, TxOut ConwayEra)]
+genSharedWallet = do
+    n <- choose (3, 5)
+    outs <- vectorOf n genSharedOutput
+    pure (zipWith (\c o -> (outRef c, o)) "abcdef" outs)
+
+genSharedOutput :: Gen (TxOut ConwayEra)
+genSharedOutput = do
+    lovelace <- chooseInteger (2_000_000, 3_000_000)
+    policy <- elements [applicationPolicy, otherPolicy]
+    count <- choose (1, 2)
+    named <-
+        vectorOf
+            count
+            ((,) <$> elements ["tok-a", "tok-b", "tok-c"] <*> chooseInteger (1, 9))
+    pure
+        ( mkBasicTxOut
+            testPayer
+            ( MaryValue
+                (Coin lovelace)
+                ( MultiAsset
+                    ( Map.singleton
+                        policy
+                        (Map.fromList [(AssetName name, q) | (name, q) <- named])
+                    )
+                )
+            )
+        )
 
 shortfalls :: Spec
 shortfalls = describe "short wallets" $ do
