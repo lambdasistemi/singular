@@ -1,17 +1,17 @@
 {
-  "singular-release-archive-start-with-demo-1": [
+  "singular-release-archive": [
     {
-      "text": "Singular release archive: start with Demo 1.",
+      "text": "Singular release archive.",
       "pause": 500
     },
     {
-      "text": "You are a Cardano developer who knows cardano-cli, wallets, faucets and Koios, and you have received a tagged Singular release. You want to play Demo 1 from it without guessing a value: create a registry, put keys in it, change and end them, and see each refusal appear where the page says it will. This archive carries what you need, and DEMO1.md in this directory is the page that does it. You need none of the repository. The only external requirement is Nix with flakes (the identity verification also runs without it, with just jq), plus git, jq and curl.",
+      "text": "You are a Cardano developer who knows cardano-cli, wallets, faucets and Koios, and you have received a tagged Singular release. You want to know what it holds, that it is what it says it is, and where to play Demo 1 with it: create a registry, put keys in it, change and end them, and see each refusal appear where it should. Demo 1 is played from singular-demo. This archive carries the compiled validators, the sources the commands are built from and the checks that tie them to the release. You need none of the repository. The only external requirement is Nix with flakes (the identity verification also runs without it, with just jq), plus git, jq and curl.",
       "pause": 400
     }
   ],
-  "start-here-play-demo-1": [
+  "play-demo-1": [
     {
-      "text": "Start here: play Demo 1.",
+      "text": "Play Demo 1.",
       "pause": 500
     },
     {
@@ -19,11 +19,7 @@
       "pause": 300
     },
     {
-      "text": "Follow DEMO1.md, in this directory. It builds singular and open-datum, starts a private development node, makes Alice's and Bob's vault wallets and runs the sixteen steps, with every value taken from the previous receipt.",
-      "pause": 300
-    },
-    {
-      "text": "The same steps as a page to paste from, one block at a time, are in singular-demo. The section \"On a public network\" of DEMO1.md names the three settings that change for a public test network.",
+      "text": "Play Demo 1 from singular-demo. Its step-by-step page, https://lambdasistemi.github.io/singular-demo/, gives the sixteen steps; its Nix shell and Ubuntu kit provide singular, open-datum and a private development node, and its README names the release they are built from.",
       "pause": 300
     },
     {
@@ -93,11 +89,11 @@
       "pause": 400
     },
     {
-      "text": "The packaged journey defaults to a private generated devnet behind the Koios HTTP facade. The journey is a harness and keeps a key file: to point it at a test-network API and a wallet of your own, pass --koios-url URL --network-magic N --wallet-skey FILE; the matching environment variables are SINGULAR_KOIOS_URL, SINGULAR_NETWORK_MAGIC and SINGULAR_WALLET_SKEY. Demo 1 itself does not use it: DEMO1.md does. --network-time DIR (or SINGULAR_NETWORK_TIME) supplies pinned genesis/history material; preprod otherwise uses the reviewed packaged recording. The launcher checks configuration before spawning its private fixture. Old ordinary socket and backend settings refuse before provider acquisition. This route remains an obligation of the unchanged journey gate; its command description alone is not a current release or hosted pass. The command reference explains the API, time and wallet settings. The legacy naming commands below retain their stated unverified status.",
+      "text": "The packaged journey defaults to a private generated devnet behind the Koios HTTP facade. The journey is a harness and keeps a key file: to point it at a test-network API and a wallet of your own, pass --koios-url URL --network-magic N --wallet-skey FILE; the matching environment variables are SINGULAR_KOIOS_URL, SINGULAR_NETWORK_MAGIC and SINGULAR_WALLET_SKEY. Demo 1 itself does not use it. --network-time DIR (or SINGULAR_NETWORK_TIME) supplies pinned genesis/history material; preprod otherwise uses the reviewed packaged recording. The launcher checks configuration before spawning its private fixture. Old ordinary socket and backend settings refuse before provider acquisition. This route remains an obligation of the unchanged journey gate; its command description alone is not a current release or hosted pass. The command reference explains the API, time and wallet settings. The legacy naming commands below retain their stated unverified status.",
       "pause": 400
     },
     {
-      "text": "The write commands (singular registry create, fold, reject and reclaim, and open-datum create, insert, update, terminate and fold) take exactly one signer, which is one of three. The first two are the ones to use. A vault, --vault FILE (with --passphrase-fd N for a script, otherwise the passphrase is typed at a prompt), makes the command sign, send and land its run in one step. An address with a bundle file, --wallet-address ADDR --bundle FILE, makes the command build its whole run as that bundle, sign and send nothing and exit with status 19; singular wallet sign --vault FILE signs the bundle and singular submit sends it. The third, a key file, --wallet-skey FILE, is being retired (issue 672) and is not a way to start. singular wallet create makes a vault and prints its address; it asks for the passphrase twice, and every later command that opens the vault asks once. The Demo 1 run page, DEMO1.md in this archive, shows the vault and the external way from the first command to the last.",
+      "text": "The write commands (singular registry create, fold, reject and reclaim, and open-datum create, insert, update, terminate and fold) take exactly one signer, which is one of three. The first two are the ones to use. A vault, --vault FILE (with --passphrase-fd N for a script, otherwise the passphrase is typed at a prompt), makes the command sign, send and land its run in one step. An address with a bundle file, --wallet-address ADDR --bundle FILE, makes the command build its whole run as that bundle, sign and send nothing and exit with status 19; singular wallet sign --vault FILE signs the bundle and singular submit sends it. The third, a key file, --wallet-skey FILE, is being retired (issue 672) and is not a way to start. singular wallet create makes a vault and prints its address; it asks for the passphrase twice, and every later command that opens the vault asks once. The Demo 1 page of singular-demo shows the vault and the external way from the first command to the last.",
       "pause": 400
     },
     {
@@ -187,6 +183,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "227fbc8b3ac57f21535152601ba8e1a45acf75aa406997c3c85bbd67809c3e39"
+    "sha256": "8521a322837ace349895d56dddc065c3f0d254263dafd93a4c70049f6d4505c9"
   }
 }

@@ -2653,8 +2653,8 @@
     "index": 1,
     "name": "docs-demo1/the-release-behind-it-01",
     "pause_ms": 400,
-    "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release. Each release archive also carries the same story as a run page, DEMO1.md (the page in the repository), which builds the commands from the archive and which the project's hosted checks run against every change.",
-    "v": "8461241de34b"
+    "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release.",
+    "v": "fa636edcc79c"
    }
   ],
   "what-it-does-not-claim": [

@@ -93991,17 +93991,17 @@
    ]
   },
   "docs-demo1/the-release-behind-it-01": {
-   "audio_sha256": "8461241de34bf2c3da8e9951bc3b2b3492198a06c2229f387b26455f555e5841",
-   "characters": 377,
-   "cost": 0.00037322999999999995,
-   "duration": 24.375,
+   "audio_sha256": "fa636edcc79c8cfebc6f0f16bc735ec4039c6edbad07f1d8e4fd86f02b1413a5",
+   "characters": 167,
+   "cost": 0.00016533,
+   "duration": 10.55,
    "index": 1,
-   "key": "d2003d584aedf3d5fedbf8e7faf783130210888c04b5a3739017b8dfdda358bf",
+   "key": "aa83dea5552dc111a2afae74d8ff9352d86e3595f316a9d48be7b15213087785",
    "page": "docs/demo1.md",
    "pause_ms": 400,
    "section": "the-release-behind-it",
-   "sent_text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release. Each release archive also carries the same story as a run page, DEMO1.md (the page in the repository), which builds the commands from the archive and which the project's hosted checks run against every change.",
-   "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release. Each release archive also carries the same story as a run page, DEMO1.md (the page in the repository), which builds the commands from the archive and which the project's hosted checks run against every change.",
+   "sent_text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release.",
+   "text": "The play runs a release of Singular. These pages are about the release itself, not about the steps: install the commands without Nix and download and verify a release.",
    "words": [
     {
      "end": 0.25,
@@ -94166,206 +94166,6 @@
     {
      "end": 10.55,
      "start": 10.35,
-     "text": "."
-    },
-    {
-     "end": 10.938,
-     "start": 10.75,
-     "text": "Each"
-    },
-    {
-     "end": 11.262,
-     "start": 10.938,
-     "text": "release"
-    },
-    {
-     "end": 11.788,
-     "start": 11.262,
-     "text": "archive"
-    },
-    {
-     "end": 12.15,
-     "start": 11.788,
-     "text": "also"
-    },
-    {
-     "end": 12.512,
-     "start": 12.15,
-     "text": "carries"
-    },
-    {
-     "end": 12.625,
-     "start": 12.512,
-     "text": "the"
-    },
-    {
-     "end": 12.9,
-     "start": 12.625,
-     "text": "same"
-    },
-    {
-     "end": 13.3,
-     "start": 12.9,
-     "text": "story"
-    },
-    {
-     "end": 13.413,
-     "start": 13.3,
-     "text": "as"
-    },
-    {
-     "end": 13.5,
-     "start": 13.413,
-     "text": "a"
-    },
-    {
-     "end": 13.75,
-     "start": 13.5,
-     "text": "run"
-    },
-    {
-     "end": 14.65,
-     "start": 13.75,
-     "text": "page"
-    },
-    {
-     "end": 14.875,
-     "start": 14.65,
-     "text": ","
-    },
-    {
-     "end": 16.013,
-     "start": 15.05,
-     "text": "DEMO1.md"
-    },
-    {
-     "end": 16.05,
-     "start": 16.013,
-     "text": "("
-    },
-    {
-     "end": 16.125,
-     "start": 16.05,
-     "text": "the"
-    },
-    {
-     "end": 16.438,
-     "start": 16.125,
-     "text": "page"
-    },
-    {
-     "end": 16.513,
-     "start": 16.438,
-     "text": "in"
-    },
-    {
-     "end": 16.587,
-     "start": 16.513,
-     "text": "the"
-    },
-    {
-     "end": 17.8,
-     "start": 16.587,
-     "text": "repository"
-    },
-    {
-     "end": 18.025,
-     "start": 17.8,
-     "text": ")"
-    },
-    {
-     "end": 18.1,
-     "start": 18.025,
-     "text": ","
-    },
-    {
-     "end": 18.513,
-     "start": 18.3,
-     "text": "which"
-    },
-    {
-     "end": 18.85,
-     "start": 18.513,
-     "text": "builds"
-    },
-    {
-     "end": 18.95,
-     "start": 18.85,
-     "text": "the"
-    },
-    {
-     "end": 19.45,
-     "start": 18.95,
-     "text": "commands"
-    },
-    {
-     "end": 19.587,
-     "start": 19.45,
-     "text": "from"
-    },
-    {
-     "end": 19.7,
-     "start": 19.587,
-     "text": "the"
-    },
-    {
-     "end": 20.337,
-     "start": 19.7,
-     "text": "archive"
-    },
-    {
-     "end": 20.462,
-     "start": 20.337,
-     "text": "and"
-    },
-    {
-     "end": 20.65,
-     "start": 20.462,
-     "text": "which"
-    },
-    {
-     "end": 20.75,
-     "start": 20.65,
-     "text": "the"
-    },
-    {
-     "end": 21.275,
-     "start": 20.75,
-     "text": "project's"
-    },
-    {
-     "end": 21.688,
-     "start": 21.275,
-     "text": "hosted"
-    },
-    {
-     "end": 22.062,
-     "start": 21.688,
-     "text": "checks"
-    },
-    {
-     "end": 22.35,
-     "start": 22.062,
-     "text": "run"
-    },
-    {
-     "end": 22.75,
-     "start": 22.35,
-     "text": "against"
-    },
-    {
-     "end": 23.087,
-     "start": 22.75,
-     "text": "every"
-    },
-    {
-     "end": 24.15,
-     "start": 23.087,
-     "text": "change"
-    },
-    {
-     "end": 24.375,
-     "start": 24.15,
      "text": "."
     }
    ]

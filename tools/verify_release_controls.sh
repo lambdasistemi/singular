@@ -21,7 +21,7 @@
 #                            as it was (the release's sums recomputed)
 #   model-revision-missing   the on-chain archive without MODEL-REVISION
 #   model-revision-mismatch  MODEL-REVISION naming another commit
-#   member-missing, three ways the on-chain archive without its DEMO1.md;
+#   member-missing, three ways the on-chain archive without its flake lock;
 #                            without its open-datum entry point;
 #                            without its singular entry point
 #   command-failed, two ways the archive's offchain flake made unevaluable
@@ -139,12 +139,12 @@ variant() {
 
 no_model_revision() { rm "$1/MODEL-REVISION"; }
 other_model_revision() { printf '%040d\n' 0 >"$1/MODEL-REVISION"; }
-no_run_page() { rm "$1/DEMO1.md"; }
+no_flake_lock() { rm "$1/offchain/flake.lock"; }
 # #528 slice 4: the release ships both executables. Removing either entry
 # point must refuse as member-missing naming that member.
 no_open_datum() { rm "$1/applications/open-datum/offchain/app/Main.hs"; }
 no_singular() { rm "$1/offchain/cli/Main.hs"; }
-changed_run_page() { printf '\n' >>"$1/DEMO1.md"; }
+changed_readme() { printf '\n' >>"$1/README.md"; }
 broken_flake() { printf '\n}\n' >>"$1/offchain/flake.nix"; }
 empty_blueprint() { printf '{}\n' >"$1/onchain/plutus.json"; }
 # This deliberately builds ordinary-named outputs with the real test flag
@@ -163,8 +163,8 @@ copy onchain-byte
 printf 'x' >>"$scratch/onchain-byte/$onchain"
 check onchain-byte sum-mismatch "$onchain" "" "sums"
 
-variant inner-file changed_run_page keep-inner
-check inner-file sum-mismatch "DEMO1.md" "" "sums"
+variant inner-file changed_readme keep-inner
+check inner-file sum-mismatch "README.md" "" "sums"
 
 variant no-revision no_model_revision
 check no-revision model-revision-missing "states no MODEL-REVISION" "sums" "model_revision"
@@ -172,8 +172,8 @@ check no-revision model-revision-missing "states no MODEL-REVISION" "sums" "mode
 variant other-revision other_model_revision
 check other-revision model-revision-mismatch "states 0000000000000000000000000000000000000000" "sums" "model_revision"
 
-variant no-page no_run_page
-check no-page member-missing "DEMO1.md" "sums model_revision" "members"
+variant no-flake-lock no_flake_lock
+check no-flake-lock member-missing "offchain/flake.lock" "sums model_revision" "members"
 
 variant no-open-datum no_open_datum
 check no-open-datum member-missing "applications/open-datum/offchain/app/Main.hs" "sums model_revision" "members"

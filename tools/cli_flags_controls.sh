@@ -168,30 +168,6 @@ fresh
 printf '\n```sh\nopen-datum insert --state-dir ./reg \\\n  --made-up-flag 1\n```\n' >>"$scratch/t/docs/cli-recovery.md"
 expect invocation-unknown-od 1 'docs/cli-recovery.md:[0-9]+: open-datum insert --made-up-flag'
 
-# The release archive's run page, invoking the singular binary through a
-# variable and through a path: an unknown flag there fails, by page and line.
-fresh
-printf '\n```sh\n"$singular" registry inspect --state-dir reg --run-page-flag 1\n```\n' \
-  >>"$scratch/t/onchain-release/DEMO1.md"
-expect run-page-variable 1 'onchain-release/DEMO1.md:[0-9]+: singular registry inspect --run-page-flag'
-
-fresh
-printf '\n```sh\n./bin/singular registry inspect --state-dir reg \\\n  --path-form-flag 1\n```\n' \
-  >>"$scratch/t/onchain-release/DEMO1.md"
-expect run-page-path 1 'onchain-release/DEMO1.md:[0-9]+: singular registry inspect --path-form-flag'
-
-# The run page invoking the open-datum binary through a variable and through
-# a path: an unknown flag there fails, by page and line.
-fresh
-printf '\n```sh\n"$open_datum" insert --state-dir reg --run-page-flag 1\n```\n' \
-  >>"$scratch/t/onchain-release/DEMO1.md"
-expect run-page-variable-od 1 'onchain-release/DEMO1.md:[0-9]+: open-datum insert --run-page-flag'
-
-fresh
-printf '\n```sh\n./bin/open-datum insert --state-dir reg \\\n  --path-form-flag 1\n```\n' \
-  >>"$scratch/t/onchain-release/DEMO1.md"
-expect run-page-path-od 1 'onchain-release/DEMO1.md:[0-9]+: open-datum insert --path-form-flag'
-
 # A command the overview names has no help of its own: its --help fails.
 fresh
 cat >"$scratch/singular" <<EOF
