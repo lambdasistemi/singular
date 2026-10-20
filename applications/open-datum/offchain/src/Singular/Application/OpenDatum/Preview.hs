@@ -35,7 +35,6 @@ module Singular.Application.OpenDatum.Preview
     , runPreview
     ) where
 
-import Control.Exception (throwIO)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
 import Data.ByteString (ByteString)
@@ -98,8 +97,7 @@ import Singular.CLI.Outlay
     , updateOutlay
     )
 import Singular.CLI.Prepare
-    ( PrepareRefusal (..)
-    , preparationFields
+    ( preparationFields
     , previewFunding
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
@@ -111,7 +109,6 @@ import Singular.CLI.Registry
 import Singular.CLI.Session
     ( Env (..)
     , failWith
-    , failWithFields
     , readsIn
     , txIdHex
     )
@@ -125,13 +122,8 @@ import Singular.Registry.Ledger (ConwayEra, PParams)
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges
-    ( bookEdgeMeasured
-    , selectFunding
-    )
+import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal (addrKeyHashBytes)
-import Singular.Registry.TxBuilder.Prepare (spendableOuts)
-import Singular.Registry.Wallet (bech32Address)
 
 -- | Which entry command is being prepared.
 data Kind = KInsert | KUpdate | KTerminate
@@ -228,14 +220,30 @@ runPreview app env kind a settings addrText = do
                     refuseBooking context key BookUpdate
                     (holding, _) <- planUpdate live caller key outs
                     walletUtxos <- Cage.outputsAt v addr
-                    _ <- resolveFunding addr walletUtxos (entryFund a)
-                    tx <- buildUpdate v live addr (entryFund a) holding payload
+                    refuseEmptyWallet addr (entryFund a) walletUtxos
+                    refuseUnsuitableChoice addr (entryFund a) walletUtxos
+                    prepared <-
+                        previewFunding
+                            "update"
+                            addr
+                            (entryFund a)
+                            (entryMaxOutlay a)
+                            updateOutlay
+                            ( \funded ->
+                                buildUpdate funded live addr (entryFund a) holding payload
+                            )
+                            v
+                    (mPrep, tx) <- case prepared of
+                        Left refusal -> refuseFunding addr walletUtxos refusal
+                        Right (_, mPrep, cmdTx) -> pure (mPrep, cmdTx)
                     let outlay = updateOutlay tx
                     refuseOver (entryMaxOutlay a) outlay
                     pure
-                        [ ("update", bodyReport pp tx)
-                        , ("outlay", outlayReport (entryMaxOutlay a) outlay)
-                        ]
+                        ( [ ("update", bodyReport pp tx)
+                          , ("outlay", outlayReport (entryMaxOutlay a) outlay)
+                          ]
+                            <> preparationFields mPrep
+                        )
             scope <- sessionReceipt caps v
             pure $
                 receipt
@@ -275,37 +283,15 @@ previewBooking a v live addr key b = do
         cfg = savedCfg s
     pp <- Cage.parameters v
     walletUtxos <- Cage.outputsAt v addr
-    -- Empty wallet names the retained faucet sentence (no self-payment), before
-    -- the fold-reserve floor; token-only previews go to the seam to plan.
-    case (selectFunding (entryFund a) walletUtxos, spendableOuts walletUtxos) of
-        (Left msg, []) ->
-            failWithFields
-                ClientRefusal
-                ( msg
-                    <> " for wallet "
-                    <> bech32Address addr
-                    <> " (client policy). "
-                    <> retainedFaucetStep
-                )
-                (emptyFields addr walletUtxos)
-        _ -> pure ()
+    -- Empty wallet names the retained faucet sentence, before the
+    -- fold-reserve floor; token-only previews go to the seam to plan.
+    refuseEmptyWallet addr (entryFund a) walletUtxos
     -- An explicit choice is validated before the fold-reserve floor, as
     -- this preview always did through the resolver: a foreign or
     -- ineligible named output refuses with the foreign-choice wording
     -- whatever the wallet holds, while a valid named output continues to
     -- the floor and the plan.
-    case (entryFund a, selectFunding (entryFund a) walletUtxos) of
-        (Just _, Left msg)
-            | not (null (spendableOuts walletUtxos)) ->
-                failWithFields
-                    ClientRefusal
-                    ( msg
-                        <> " for wallet "
-                        <> bech32Address addr
-                        <> " (client policy)"
-                    )
-                    (emptyFields addr walletUtxos)
-        _ -> pure ()
+    refuseUnsuitableChoice addr (entryFund a) walletUtxos
     let Coin reserve = protocolFeeReserve pp (liveRefs live)
     refuseUnderfunded addr walletUtxos reserve "fold reserve"
     let refs = liveRefs live
@@ -333,20 +319,7 @@ previewBooking a v live addr key b = do
             build
             v
     (mPrep, booking) <- case prepared of
-        Left (ExplicitFundingRefusal why) ->
-            failWithFields
-                ClientRefusal
-                ( why
-                    <> " for wallet "
-                    <> bech32Address addr
-                    <> " (client policy)"
-                )
-                (emptyFields addr walletUtxos)
-        Left (OriginalFailure e) -> throwIO e
-        Left (PreparationShortfall text fields) ->
-            failWithFields ClientRefusal text fields
-        Left (AllowanceExceeded text fields) ->
-            failWithFields ClientRefusal text fields
+        Left refusal -> refuseFunding addr walletUtxos refusal
         Right (_, mPrep, cmdTx) -> pure (mPrep, cmdTx)
     let outlay = measure booking
     refuseOver (entryMaxOutlay a) outlay

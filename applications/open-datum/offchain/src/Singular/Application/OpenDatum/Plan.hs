@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -37,10 +38,13 @@ module Singular.Application.OpenDatum.Plan
     , refuseUnderfunded
     , emptyFields
     , retainedFaucetStep
-    , resolveFunding
+    , refuseEmptyWallet
+    , refuseUnsuitableChoice
+    , refuseFunding
     , outlayReport
     ) where
 
+import Control.Exception (throwIO)
 import Control.Monad (unless)
 import Data.Aeson (Value)
 import Data.ByteString (ByteString)
@@ -83,14 +87,15 @@ import Singular.CLI.Plan
     ( emptyFields
     , outlayReport
     , readJson
+    , refuseEmptyWallet
     , refuseOver
     , refuseUnderfunded
-    , resolveFunding
     , retainedFaucetStep
     )
+import Singular.CLI.Prepare (PrepareRefusal (..))
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
-import Singular.CLI.Session (failWith)
+import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Application (DecodedHolding (..))
 import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.Ledger (ConwayEra)
@@ -101,11 +106,13 @@ import Singular.Registry.TxBuilder.Edges
     , edgeDeposit
     , selectFunding
     )
+import Singular.Registry.TxBuilder.Prepare (spendableOuts)
 import Singular.Registry.Types
     ( Edge
     , edgeInsertActive
     , edgeUpdateTerminal
     )
+import Singular.Registry.Wallet (bech32Address)
 
 -- | The caller must be the envelope's controller.
 controllerCheck :: ByteString -> Control -> IO ()
@@ -304,7 +311,51 @@ buildUpdate v live addr chosen holding payload = do
             }
         >>= either (failWith ClientRefusal) pure
 
+{- | An explicit funding choice that no output of a wallet with spendable
+outputs satisfies, refused before anything is placed or built with the
+foreign-choice text. A wallet with nothing spendable at all is
+'refuseEmptyWallet''s; a choice the wallet can satisfy passes.
+-}
+refuseUnsuitableChoice
+    :: Addr
+    -> Maybe TxIn
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
+refuseUnsuitableChoice addr chosen utxos =
+    case (chosen, selectFunding chosen utxos) of
+        (Just _, Left msg)
+            | not (null (spendableOuts utxos)) ->
+                refuseFunding addr utxos (ExplicitFundingRefusal msg)
+        _ -> pure ()
+
+{- | Stop with the refusal a funding decision ended in: an explicit choice
+the wallet cannot honour, a shortfall or an allowance exceeded, all client
+policy with their figures; or the command's own failure, unchanged. One
+mapping for every command and its preview, so a preview refuses in the
+words its command refuses in.
+-}
+refuseFunding
+    :: Addr
+    -> [(TxIn, TxOut ConwayEra)]
+    -> PrepareRefusal
+    -> IO a
+refuseFunding addr utxos = \case
+    ExplicitFundingRefusal why ->
+        failWithFields
+            ClientRefusal
+            ( why
+                <> " for wallet "
+                <> bech32Address addr
+                <> " (client policy)"
+            )
+            (emptyFields addr utxos)
+    OriginalFailure e -> throwIO e
+    PreparationShortfall text fields ->
+        failWithFields ClientRefusal text fields
+    AllowanceExceeded text fields ->
+        failWithFields ClientRefusal text fields
+
 -- Generic planning (readJson, refuseOver, refuseUnderfunded,
--- retainedFaucetStep, resolveFunding, outlayReport) comes from
+-- retainedFaucetStep, refuseEmptyWallet, outlayReport) comes from
 -- Singular.CLI.Plan, the one module both binaries plan through, and is
 -- re-exported here so existing callers keep importing this module.

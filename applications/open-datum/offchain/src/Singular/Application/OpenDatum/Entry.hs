@@ -47,7 +47,6 @@ module Singular.Application.OpenDatum.Entry
     , runTerminate
     ) where
 
-import Control.Exception (throwIO)
 import Control.Monad (unless, when)
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.ByteString (ByteString)
@@ -117,8 +116,7 @@ import Singular.CLI.Outlay
     , updateOutlay
     )
 import Singular.CLI.Prepare
-    ( PrepareRefusal (..)
-    , preparationFields
+    ( preparationFields
     , prepareFunding
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
@@ -135,25 +133,18 @@ import Singular.Registry.Evidence qualified as Cage
 import Singular.Registry.LedgerProvider qualified as Cage
 import Singular.Registry.Lifecycle (protocolFeeReserve)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.TxBuilder.Edges
-    ( bookEdgeMeasured
-    , selectFunding
-    )
+import Singular.Registry.TxBuilder.Edges (bookEdgeMeasured)
 import Singular.Registry.TxBuilder.Internal
     ( extractCageDatum
     , requestAddrFromCfg
     )
-import Singular.Registry.TxBuilder.Prepare
-    ( Preparation (..)
-    , spendableOuts
-    )
+import Singular.Registry.TxBuilder.Prepare (Preparation (..))
 import Singular.Registry.Types
     ( CageDatum (..)
     , OnChainRequest
     , OnChainTokenState
     , edgeName
     )
-import Singular.Registry.Wallet (bech32Address)
 
 -- | The state a request's deadline is read under, and the request it names.
 requestAndState
@@ -212,22 +203,10 @@ book at a key verb plan = do
                 let edge = T.pack (edgeName (bookedEdge b))
                     payerAddr = wcCaller wc
                 walletUtxos <- Cage.outputsAt v payerAddr
-                -- Empty wallet (nothing spendable at all) keeps the friendly refusal
-                -- with the retained faucet sentence (no self-payment); a token-only
-                -- wallet with spendable outputs goes to the seam to prepare.
-                -- Before the fold-reserve floor, so an empty wallet names the faucet.
-                case (selectFunding (entryFund a) walletUtxos, spendableOuts walletUtxos) of
-                    (Left msg, []) ->
-                        failWithFields
-                            ClientRefusal
-                            ( msg
-                                <> " for wallet "
-                                <> bech32Address payerAddr
-                                <> " (client policy). "
-                                <> retainedFaucetStep
-                            )
-                            (emptyFields payerAddr walletUtxos)
-                    _ -> pure ()
+                -- A wallet with nothing spendable at all is told its address,
+                -- what it holds and where the faucet is, before the fold-reserve
+                -- floor; one with spendable outputs goes to the seam.
+                refuseEmptyWallet payerAddr (entryFund a) walletUtxos
                 pp <- Cage.parameters v
                 let Coin reserve =
                         protocolFeeReserve pp (liveRefs live)
@@ -266,20 +245,7 @@ book at a key verb plan = do
                         build
                         v
                 case prepared of
-                    Left (ExplicitFundingRefusal why) ->
-                        failWithFields
-                            ClientRefusal
-                            ( why
-                                <> " for wallet "
-                                <> bech32Address payerAddr
-                                <> " (client policy)"
-                            )
-                            (emptyFields payerAddr walletUtxos)
-                    Left (OriginalFailure e) -> throwIO e
-                    Left (PreparationShortfall text fields) ->
-                        failWithFields ClientRefusal text fields
-                    Left (AllowanceExceeded text fields) ->
-                        failWithFields ClientRefusal text fields
+                    Left refusal -> refuseFunding payerAddr walletUtxos refusal
                     Right (_, mPrep, realTx) -> do
                         let outlay = bookingOutlay pp refs realTx
                         refuseOver (entryMaxOutlay a) outlay
@@ -533,12 +499,12 @@ runUpdate env a = case entryMode a of
                 -- parameters, the script evaluation and the outlay judged against
                 -- the allowance all come from the update's one view.
                 let placed = [InKey key, InEdge Updating]
-                (signed, envelope) <-
+                (signed, (envelope, mPrep)) <-
                     submitBuiltIn
                         wc
                         "update"
                         ["state", "key outputs"]
-                        ( \envelope ->
+                        ( \(envelope, _) ->
                             Expectation
                                 (Just key)
                                 ("payload:" <> hexT (envelopeHash envelope{envPayload = payload}))
@@ -557,12 +523,31 @@ runUpdate env a = case entryMode a of
                                     pure
                                     (envelopeFromData (dhDatumData dh))
                             walletUtxos <- Cage.outputsAt v addr
-                            _ <- resolveFunding addr walletUtxos (entryFund a)
+                            -- Nothing spendable at all, or a named output the
+                            -- wallet cannot honour, is refused first; any other
+                            -- wallet goes to the seam, which funds the update
+                            -- from its largest ada-only output, prepares one
+                            -- when none suits, and keeps a named choice final.
+                            refuseEmptyWallet addr (entryFund a) walletUtxos
+                            refuseUnsuitableChoice addr (entryFund a) walletUtxos
                             place building placed (EdgeStarted Updating)
-                            unsigned <-
-                                buildUpdate v live addr (entryFund a) holding payload
-                            refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
-                            pure (unsigned, envelope)
+                            prepared <-
+                                prepareFunding
+                                    wc
+                                    "update"
+                                    addr
+                                    (entryFund a)
+                                    (entryMaxOutlay a)
+                                    updateOutlay
+                                    ( \funded ->
+                                        buildUpdate funded live addr (entryFund a) holding payload
+                                    )
+                                    v
+                            case prepared of
+                                Left refusal -> refuseFunding addr walletUtxos refusal
+                                Right (_, mPrep, unsigned) -> do
+                                    refuseOver (entryMaxOutlay a) (updateOutlay unsigned)
+                                    pure (unsigned, (envelope, mPrep))
                         )
                 after <-
                     readingBack
@@ -606,6 +591,7 @@ runUpdate env a = case entryMode a of
                                , ("payload", dataToJson (envPayload seen))
                                , ("root", toJSON (hexT rootAfter))
                                ]
+                            <> preparationFields mPrep
                         )
 
 -- ---------------------------------------------------------

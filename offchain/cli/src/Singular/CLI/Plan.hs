@@ -20,7 +20,7 @@ module Singular.CLI.Plan
     , refuseUnderfunded
     , emptyFields
     , retainedFaucetStep
-    , resolveFunding
+    , refuseEmptyWallet
     , outlayReport
     ) where
 
@@ -45,6 +45,7 @@ import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (failWith, failWithFields)
 import Singular.Registry.Ledger (ConwayEra)
 import Singular.Registry.TxBuilder.Edges (selectFunding)
+import Singular.Registry.TxBuilder.Prepare (spendableOuts)
 import Singular.Registry.Wallet (bech32Address)
 
 -- | A JSON document the caller named, or a client refusal saying why not.
@@ -141,40 +142,27 @@ retainedFaucetStep =
         <> "https://docs.cardano.org/cardano-testnets/tools/faucet"
         <> "."
 
-{- | The wallet output a write is funded from, or the refusal
-that stops it before anything is built: the caller's chosen
-output when it is an ada-only output of the wallet, else the
-largest ada-only output. A wallet with no ada-only output is
-refused with the wallet address and the faucet step; a foreign
-funding choice from a funded wallet is refused with the wallet
-address and without it. Both carry the wallet fields and the
-client policy.
+{- | Stop before anything is built when the wallet holds nothing it may
+spend: the refusal carries the wallet address, what it holds and the faucet
+step. A wallet with spendable outputs is never refused here, whatever they
+carry: the funding seam ("Singular.CLI.Prepare") chooses among them or
+prepares the output the command needs.
 -}
-resolveFunding
+refuseEmptyWallet
     :: Addr
-    -> [(TxIn, TxOut ConwayEra)]
     -> Maybe TxIn
-    -> IO (TxIn, TxOut ConwayEra)
-resolveFunding addr utxos chosen =
-    case selectFunding chosen utxos of
-        Right funded -> pure funded
-        Left msg -> case selectFunding Nothing utxos of
-            Left _ ->
-                failWithFields
-                    ClientRefusal
-                    ( msg
-                        <> " for wallet "
-                        <> bech32Address addr
-                        <> " (client policy). "
-                        <> retainedFaucetStep
-                    )
-                    (emptyFields addr utxos)
-            Right _ ->
-                failWithFields
-                    ClientRefusal
-                    ( msg
-                        <> " for wallet "
-                        <> bech32Address addr
-                        <> " (client policy)"
-                    )
-                    (emptyFields addr utxos)
+    -> [(TxIn, TxOut ConwayEra)]
+    -> IO ()
+refuseEmptyWallet addr chosen utxos =
+    case (selectFunding chosen utxos, spendableOuts utxos) of
+        (Left msg, []) ->
+            failWithFields
+                ClientRefusal
+                ( msg
+                    <> " for wallet "
+                    <> bech32Address addr
+                    <> " (client policy). "
+                    <> retainedFaucetStep
+                )
+                (emptyFields addr utxos)
+        _ -> pure ()

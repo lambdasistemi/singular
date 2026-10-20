@@ -26,9 +26,10 @@ module Singular.Application.OpenDatum.WalletShortfallSpec (spec) where
 
 import Control.Applicative ((<|>))
 import Control.Exception (SomeException, bracket, try)
-import Control.Monad (when)
+import Control.Monad (forM_, when)
 import Control.Tracer (Tracer (..), nullTracer)
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -43,9 +44,10 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (isInfixOf, sort)
+import Data.List (isInfixOf, nub, sort, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (isJust, listToMaybe)
+import Data.Ord (Down (..))
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -72,10 +74,16 @@ import Test.Hspec
 
 import Cardano.Ledger.Address (Addr)
 import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx)
-import Cardano.Ledger.Api.Tx.Body (inputsTxBodyL, outputsTxBodyL)
+import Cardano.Ledger.Api.Tx.Body
+    ( collateralInputsTxBodyL
+    , inputsTxBodyL
+    , outputsTxBodyL
+    )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
     , addrTxOutL
+    , coinTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
     , referenceScriptTxOutL
     , valueTxOutL
@@ -111,6 +119,7 @@ import Singular.CLI.Trace
     , How (..)
     , Trace (..)
     , TxEvent (..)
+    , What (EdgeStarted)
     )
 import Singular.Provider.Koios.FakeServer qualified as Fake
 import Singular.Provider.Koios.Recorded (loadFixtureSet)
@@ -380,7 +389,7 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
         selectFunding (Just (fundOutput 99)) []
             `shouldSatisfy` isLeftWithEmpty
     it "refuses a foreign funding output before building" $ with20AdaRig $ \rig -> do
-        -- Pinned exact old wording (base `Plan.hs` resolveFunding foreign branch, no prefix,
+        -- Pinned exact old wording (the base's foreign-choice branch of the funding resolution, no prefix,
         -- no faucet): msg frozen literal + wallet address (producer) + policy suffix.
         let foreignMsg = "the chosen funding output is not an ada-only output of the payer"
         seed <- fundSeed rig
@@ -1484,6 +1493,697 @@ spec = describe "a write asks the wallet for what it costs (#526)" $ do
                         $ \_ ->
                             writeIORef ran True
                 readIORef ran `shouldReturn` True
+    updatePreparationRows
+    splitApprovalsRows
+    approvalsAboveOneRows
+
+-- ---------------------------------------------------------
+-- update prepares the funding output it needs (#491 part 3)
+-- ---------------------------------------------------------
+
+{- | As Alice, my wallet holds one output that carries my approval tokens
+beside the ada. I run @open-datum update@: the preview shows the one
+preparation transaction the command will make, and the command makes it as
+an ordinary journalled transaction, then updates against the output it made
+and leaves my tokens and the published scripts alone. A wallet that suffices
+gets no preparation, a named output stays final, a wallet that cannot pay for
+both is refused with the figures before anything is signed.
+-}
+updatePreparationRows :: Spec
+updatePreparationRows =
+    describe "update prepares the funding output it needs (#491 part 3)" $ do
+        it
+            "an update preview from an empty wallet names the faucet and no hand step"
+            $ with20AdaRig
+            $ \rig -> do
+                (t, _) <- liveKeyRig rig
+                emptyTestWalletOutputs rig
+                previewed <- previewUpdateAs rig t "update preview, empty wallet" []
+                outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+                runCode previewed `shouldBe` ExitFailure 10
+                reasonOf previewed
+                    `shouldBe` ( "the payer wallet has no ada-only output for wallet "
+                                    <> previewAddr rig
+                                    <> " (client policy). "
+                                    <> retainedFaucet
+                               )
+                walletOfRun previewed `shouldBe` Just (T.pack (previewAddr rig))
+                heldOfRun previewed `shouldBe` Just 0
+                countOfRun previewed `shouldBe` Just 0
+                submittedOf previewed `shouldBe` False
+        it "a token-only update completes through one preparation" $
+            withFundedRig [(11, 100_000_000), (12, 100_000_000)] $ \rig -> do
+                (t, bundle) <- liveKeyRig rig
+                let testPayer = walletAddr (rigTestWallet rig)
+                plantTokenOutputs rig bundle 100_000_000 0
+                walletBefore <- readTestWallet rig
+                [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+                length (spendableOuts walletBefore) `shouldBe` 1
+                assetsOf walletBefore `shouldBe` bundle
+                refsBefore <- referenceOutputs rig
+                updated <- updateAs rig t "update from the token-only wallet" []
+                (outcomeOf (runReceipt updated), reasonOf updated)
+                    `shouldBe` (Just "success", "")
+                (_, prepOut) <-
+                    expectCompletedThroughPreparation
+                        "update"
+                        "update"
+                        rig
+                        testPayer
+                        updated
+                updateTx <- requireMember "update" updated
+                entries <- concat <$> (mapM readJournal =<< journalDirs rig)
+                [journalEvent e | e <- entries, journalTxId e == updateTx]
+                    `shouldBe` ["prepared", "submitted", "confirmed", "observed"]
+                sent <- decodeJsonFile (rigDir rig </> "payload-2.json")
+                valueOfRun "payload" updated `shouldBe` Just sent
+                BL.toStrict (Aeson.encode (runReceipt updated))
+                    `shouldSatisfy` (not . BS.isInfixOf "send one self-payment")
+                walletAfter <- readTestWallet rig
+                assetsOf walletAfter `shouldBe` bundle
+                map (renderOutRef . fst) walletAfter `shouldNotContain` [prepOut]
+                refsAfter <- referenceOutputs rig
+                refsAfter `shouldBe` refsBefore
+        it
+            "the update preview plans the preparation the update then makes, and submits nothing"
+            $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+            $ \rig -> do
+                (t, bundle) <- liveKeyRig rig
+                plantTokenOutputs rig bundle 100_000_000 0
+                walletBefore <- readTestWallet rig
+                [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+                stateBefore <- snapshotStateDir rig
+                previewed <-
+                    previewUpdateAs rig t "update preview, token-only wallet" []
+                (outcomeOf (runReceipt previewed), reasonOf previewed)
+                    `shouldBe` (Just "success", "")
+                runCode previewed `shouldBe` ExitSuccess
+                BL.toStrict (Aeson.encode (runReceipt previewed))
+                    `shouldSatisfy` (not . BS.isInfixOf "send one self-payment")
+                (txP, outP, coinP, feeP) <- preparationMembersOf previewed
+                submittedOf previewed `shouldBe` False
+                readTestWallet rig `shouldReturn` walletBefore
+                snapshotStateDir rig `shouldReturn` stateBefore
+                updated <- updateAs rig t "update after the preview" []
+                _ <-
+                    expectCompletedThroughPreparation
+                        "update"
+                        "update"
+                        rig
+                        (walletAddr (rigTestWallet rig))
+                        updated
+                (txW, outW, coinW, feeW) <- preparationMembersOf updated
+                (txW, coinW, feeW) `shouldBe` (txP, coinP, feeP)
+                outW `shouldBe` outP
+        it
+            "a token-only wallet too short for the update is refused before signing, in the preview and in the update, with the same figures"
+            $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+            $ \rig -> do
+                (t, bundle) <- liveKeyRig rig
+                pp <-
+                    SessionIO.withLatest
+                        (rawChainProvider (rigChain rig))
+                        SessionIO.parameters
+                -- what the approval tokens alone need to sit in an output
+                let Coin held =
+                        getMinCoinTxOut
+                            pp
+                            ( mkBasicTxOut
+                                (walletAddr (rigTestWallet rig))
+                                (MaryValue (Coin 0) (MultiAsset bundle))
+                            )
+                plantTokenOutputs rig bundle held 0
+                walletBefore <- readTestWallet rig
+                [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+                spendableHeld walletBefore `shouldBe` held
+                stateBefore <- snapshotStateDir rig
+                previewed <-
+                    previewUpdateAs rig t "update preview, short token-only wallet" []
+                previewFigures <- expectPreparationUnfunded held previewed
+                submittedOf previewed `shouldBe` False
+                readTestWallet rig `shouldReturn` walletBefore
+                snapshotStateDir rig `shouldReturn` stateBefore
+                written <- updateAs rig t "update, short token-only wallet" []
+                writeFigures <- expectPreparationUnfunded held written
+                submissionsOfRun written `shouldBe` Just []
+                submittedOf written `shouldBe` False
+                writeFigures `shouldBe` previewFigures
+                readTestWallet rig `shouldReturn` walletBefore
+                snapshotStateDir rig `shouldReturn` stateBefore
+        it
+            "the allowance judges the update with its preparation fee, before anything is signed"
+            $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+            $ \rig -> do
+                (t, bundle) <- liveKeyRig rig
+                plantTokenOutputs rig bundle 100_000_000 0
+                walletBefore <- readTestWallet rig
+                previewed <-
+                    previewUpdateAs rig t "update preview for the allowance" []
+                outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+                outlayCommand <- outlayTotalOf previewed
+                (_, _, _, feePrep) <- preparationMembersOf previewed
+                outlayCommand `shouldSatisfy` (> 0)
+                feePrep `shouldSatisfy` (> 1)
+                let whole = outlayCommand + feePrep
+                    refusalAt allowance =
+                        "the measured outlay of "
+                            <> show outlayCommand
+                            <> " lovelace with the preparation fee of "
+                            <> show feePrep
+                            <> " lovelace passes the approved allowance of "
+                            <> show allowance
+                            <> " (client policy); nothing was submitted"
+                stateBefore <- snapshotStateDir rig
+                forM_
+                    [ ("one lovelace below the whole", whole - 1)
+                    , ("the command's outlay alone", outlayCommand)
+                    ]
+                    $ \(label, allowance) -> do
+                        previewRefused <-
+                            previewUpdateAs
+                                rig
+                                t
+                                ("update preview, allowance " <> label)
+                                ["--max-outlay", show allowance]
+                        outcomeOf (runReceipt previewRefused) `shouldBe` Just "client-refusal"
+                        runCode previewRefused `shouldBe` ExitFailure 10
+                        reasonOf previewRefused `shouldBe` refusalAt allowance
+                        submittedOf previewRefused `shouldBe` False
+                        refused <-
+                            updateAs
+                                rig
+                                t
+                                ("update, allowance " <> label)
+                                ["--max-outlay", show allowance]
+                        outcomeOf (runReceipt refused) `shouldBe` Just "client-refusal"
+                        runCode refused `shouldBe` ExitFailure 10
+                        reasonOf refused `shouldBe` refusalAt allowance
+                        submissionsOfRun refused `shouldBe` Just []
+                        submittedOf refused `shouldBe` False
+                        readTestWallet rig `shouldReturn` walletBefore
+                        snapshotStateDir rig `shouldReturn` stateBefore
+                accepted <-
+                    updateAs
+                        rig
+                        t
+                        "update, allowance equal to the whole"
+                        ["--max-outlay", show whole]
+                _ <-
+                    expectCompletedThroughPreparation
+                        "update"
+                        "update"
+                        rig
+                        (walletAddr (rigTestWallet rig))
+                        accepted
+                (_, _, _, feeMade) <- preparationMembersOf accepted
+                feeMade `shouldBe` feePrep
+        it
+            "an explicit funding choice is final: the smaller named output funds the update, not the natural one"
+            $ withFundedRig [(11, 300_000_000), (12, 100_000_000)]
+            $ \rig -> do
+                (t, _) <- liveKeyRig rig
+                wallet <- readTestWallet rig
+                let adaOnly =
+                        sortOn
+                            (Down . coinOf . snd)
+                            [u | u@(_, o) <- wallet, adaOnlyOut o]
+                (natural, named) <- case adaOnly of
+                    n : m : _ -> do
+                        coinOf (snd n) `shouldSatisfy` (> coinOf (snd m))
+                        pure (fst n, fst m)
+                    _ -> fail "the wallet does not hold two ada-only outputs"
+                let choice = ["--fund-input", T.unpack (renderOutRef named)]
+                previewed <-
+                    previewUpdateAs rig t "update preview, named output" choice
+                outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+                previewInputs <- updateInputsOf previewed
+                previewInputs `shouldContain` [renderOutRef named]
+                previewInputs `shouldNotContain` [renderOutRef natural]
+                hasMember "preparation" previewed `shouldBe` False
+                updated <- updateAs rig t "update, named output" choice
+                (outcomeOf (runReceipt updated), reasonOf updated)
+                    `shouldBe` (Just "success", "")
+                hasMember "preparation" updated `shouldBe` False
+                updateTx <- requireMember "update" updated
+                entries <- concat <$> (mapM readJournal =<< journalDirs rig)
+                (_, bodyOrWhy) <- boundBody entries updateTx
+                tx <- either (fail . T.unpack) pure bodyOrWhy
+                let inputs = toList (tx ^. bodyTxL . inputsTxBodyL)
+                    collateral = toList (tx ^. bodyTxL . collateralInputsTxBodyL)
+                inputs `shouldContain` [named]
+                inputs `shouldNotContain` [natural]
+                collateral `shouldBe` [named]
+        it
+            "an explicit choice naming an output that carries tokens is refused with today's text, not prepared around"
+            $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+            $ \rig -> do
+                (t, bundle) <- liveKeyRig rig
+                plantTokenOutputs rig bundle 100_000_000 0
+                walletBefore <- readTestWallet rig
+                carrying <- case walletBefore of
+                    [(i, _)] -> pure i
+                    _ -> fail "the planted wallet is not exactly one output"
+                stateBefore <- snapshotStateDir rig
+                let choice = ["--fund-input", T.unpack (renderOutRef carrying)]
+                    expected =
+                        "the chosen funding output is not an ada-only output of the payer"
+                            <> " for wallet "
+                            <> previewAddr rig
+                            <> " (client policy)"
+                previewed <-
+                    previewUpdateAs rig t "update preview, token-carrying choice" choice
+                outcomeOf (runReceipt previewed) `shouldBe` Just "client-refusal"
+                runCode previewed `shouldBe` ExitFailure 10
+                reasonOf previewed `shouldBe` expected
+                submittedOf previewed `shouldBe` False
+                written <- updateAs rig t "update, token-carrying choice" choice
+                outcomeOf (runReceipt written) `shouldBe` Just "client-refusal"
+                runCode written `shouldBe` ExitFailure 10
+                reasonOf written `shouldBe` expected
+                submissionsOfRun written `shouldBe` Just []
+                submittedOf written `shouldBe` False
+                -- refused before the edge starts, as the old resolution did
+                edgesStartedOf written `shouldBe` 0
+                readTestWallet rig `shouldReturn` walletBefore
+                snapshotStateDir rig `shouldReturn` stateBefore
+        it
+            "a funded wallet updates with no preparation, from the same output as before"
+            $ with20AdaRig
+            $ \rig -> do
+                (t, _) <- liveKeyRig rig
+                wallet <- readTestWallet rig
+                natural <- case sortOn (Down . coinOf . snd) [u | u@(_, o) <- wallet, adaOnlyOut o] of
+                    n : _ -> pure (fst n)
+                    [] -> fail "the funded wallet holds no ada-only output"
+                stateBefore <- snapshotStateDir rig
+                previewed <- previewUpdateAs rig t "update preview, funded wallet" []
+                outcomeOf (runReceipt previewed) `shouldBe` Just "success"
+                hasMember "preparation" previewed `shouldBe` False
+                submittedOf previewed `shouldBe` False
+                snapshotStateDir rig `shouldReturn` stateBefore
+                updated <- updateAs rig t "update, funded wallet" []
+                (outcomeOf (runReceipt updated), reasonOf updated)
+                    `shouldBe` (Just "success", "")
+                runCode updated `shouldBe` ExitSuccess
+                -- the instrument that counts started edges can see one
+                edgesStartedOf updated `shouldBe` 1
+                hasMember "preparation" updated `shouldBe` False
+                updateTx <- requireMember "update" updated
+                [ (s, txid)
+                  | Trace _ (How (Tx TxSubmitted{submitStep = s, submitTxId = txid})) <-
+                        runEvents updated
+                  ]
+                    `shouldBe` [("update", updateTx)]
+                entries <- concat <$> (mapM readJournal =<< journalDirs rig)
+                (_, bodyOrWhy) <- boundBody entries updateTx
+                tx <- either (fail . T.unpack) pure bodyOrWhy
+                toList (tx ^. bodyTxL . inputsTxBodyL) `shouldContain` [natural]
+                toList (tx ^. bodyTxL . collateralInputsTxBodyL) `shouldBe` [natural]
+
+{- | As Carol, my approvals of one registry sit in two outputs under the same
+policy, each with little ada, and I hold no ada-only output. The update tells
+me nothing is short and completes through ONE preparation that spends both
+outputs: no single output can pay for it, and every approval is back in the
+wallet afterwards, each name at the quantity it had.
+-}
+splitApprovalsRows :: Spec
+splitApprovalsRows =
+    describe "approvals in several outputs of one policy (#710)"
+        $ it
+            "an update from a wallet whose approvals sit in two outputs of one policy, with little ada, completes through one preparation that spends both"
+        $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+        $ \rig -> do
+            (t, policy, kinds) <- liveKeyRigKinds rig
+            (a, b) <- case kinds of
+                [x, y] -> pure (x, y)
+                _ -> fail "the rehearsal names are not two"
+            plantSplitTokenOutputs rig policy [(a, 3), (b, 5)] littleAda
+            walletBefore <- readTestWallet rig
+            length walletBefore `shouldBe` 2
+            [() | (_, o) <- walletBefore, adaOnlyOut o] `shouldBe` []
+            spendableHeld walletBefore `shouldBe` 2 * littleAda
+            assetsOf walletBefore
+                `shouldBe` Map.singleton policy (Map.fromList [(a, 3), (b, 5)])
+            refsBefore <- referenceOutputs rig
+            updated <-
+                updateAs rig t "update, approvals in two outputs of one policy" []
+            (outcomeOf (runReceipt updated), reasonOf updated)
+                `shouldBe` (Just "success", "")
+            (prepTx, _) <-
+                expectCompletedThroughPreparation
+                    "update"
+                    "update"
+                    rig
+                    (walletAddr (rigTestWallet rig))
+                    updated
+            entries <- concat <$> (mapM readJournal =<< journalDirs rig)
+            (_, prepBody) <- boundBody entries prepTx
+            prep <- either (fail . T.unpack) pure prepBody
+            map fst walletBefore
+                `shouldSatisfy` all (`elem` toList (prep ^. bodyTxL . inputsTxBodyL))
+            walletAfter <- readTestWallet rig
+            assetsOf walletAfter `shouldBe` assetsOf walletBefore
+            refsAfter <- referenceOutputs rig
+            refsAfter `shouldBe` refsBefore
+
+-- | Each output of a split wallet holds this much ada: little, and no single output covers an update's preparation.
+littleAda :: Integer
+littleAda = 2_300_000
+
+{- | Replant the test wallet as one token-carrying output per given asset name
+under one policy, each with the given quantity and this much ada; every
+other output at the test wallet's address is deleted.
+-}
+plantSplitTokenOutputs
+    :: Rig -> PolicyID -> [(AssetName, Integer)] -> Integer -> IO ()
+plantSplitTokenOutputs rig policy named lovelace = do
+    let addr = walletAddr (rigTestWallet rig)
+        made =
+            [ ( fundOutput (31 + i)
+              , mkBasicTxOut
+                    addr
+                    ( MaryValue
+                        (Coin lovelace)
+                        (MultiAsset (Map.singleton policy (Map.singleton name quantity)))
+                    )
+              )
+            | (i, (name, quantity)) <- zip [0 ..] named
+            ]
+    advanceChain (rigChain rig) $ \facts ->
+        facts
+            { csUTxO =
+                Map.union
+                    (Map.fromList made)
+                    (Map.filter ((/= addr) . (^. addrTxOutL)) (csUTxO facts))
+            }
+
+{- | As Alice, my wallet holds two approval kinds at quantities above one,
+spread over three outputs under one policy (the first kind in two of them),
+beside my ada, and no ada-only output. A command that prepares its own
+funding output spends what it must of them and leaves every approval in the
+wallet at the quantity it had: each kind's total is the same before and after,
+and the kinds' quantities differ, so a swap, a sum of the two kinds or a
+reset to one shows.
+-}
+approvalsAboveOneRows :: Spec
+approvalsAboveOneRows =
+    describe
+        "approval tokens above quantity one, over several outputs, stay exact across a preparation (#491 part 3)"
+        $ do
+            it
+                "an insert from a wallet holding two kinds above quantity one over three outputs"
+                $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    outcomeOf (runReceipt create) `shouldBe` Just "success"
+                    t <- tokenOf create
+                    (policy, kinds) <- rehearsalKindsOf create
+                    plantSplitTokenOutputs rig policy (spreadOver kinds) bookingOutputAda
+                    walletBefore <- readTestWallet rig
+                    expectKindsAboveOne walletBefore
+                    inserted <-
+                        runWithKey
+                            (rigTestKey rig)
+                            rig
+                            "insert, quantities above one"
+                            ( [ "open-datum"
+                              , "insert"
+                              , "--key"
+                              , "bob-1"
+                              , "--payload"
+                              , rigDir rig </> "payload.json"
+                              ]
+                                <> tokenArgs t
+                            )
+                    (outcomeOf (runReceipt inserted), reasonOf inserted)
+                        `shouldBe` (Just "success", "")
+                    (prepTx, _) <-
+                        expectBookedThroughPreparation
+                            rig
+                            (walletAddr (rigTestWallet rig))
+                            inserted
+                    expectSeveralSpent rig prepTx
+                    walletAfter <- readTestWallet rig
+                    assetsOf walletAfter `shouldBe` assetsOf walletBefore
+            it
+                "a terminate from a wallet holding two kinds above quantity one over three outputs"
+                $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+                $ \rig -> do
+                    (t, policy, kinds) <- liveKeyRigKinds rig
+                    plantSplitTokenOutputs rig policy (spreadOver kinds) bookingOutputAda
+                    walletBefore <- readTestWallet rig
+                    expectKindsAboveOne walletBefore
+                    terminated <-
+                        runWithKey
+                            (rigTestKey rig)
+                            rig
+                            "terminate, quantities above one"
+                            (["open-datum", "terminate", "--key", "alice-1"] <> tokenArgs t)
+                    (outcomeOf (runReceipt terminated), reasonOf terminated)
+                        `shouldBe` (Just "success", "")
+                    (prepTx, _) <-
+                        expectBookedThroughPreparation
+                            rig
+                            (walletAddr (rigTestWallet rig))
+                            terminated
+                    expectSeveralSpent rig prepTx
+                    walletAfter <- readTestWallet rig
+                    assetsOf walletAfter `shouldBe` assetsOf walletBefore
+            it
+                "an update from a wallet holding two kinds above quantity one over three outputs"
+                $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+                $ \rig -> do
+                    (t, policy, kinds) <- liveKeyRigKinds rig
+                    plantSplitTokenOutputs rig policy (spreadOver kinds) littleAda
+                    walletBefore <- readTestWallet rig
+                    expectKindsAboveOne walletBefore
+                    updated <- updateAs rig t "update, quantities above one" []
+                    (prepTx, _) <-
+                        expectCompletedThroughPreparation
+                            "update"
+                            "update"
+                            rig
+                            (walletAddr (rigTestWallet rig))
+                            updated
+                    expectSeveralSpent rig prepTx
+                    walletAfter <- readTestWallet rig
+                    assetsOf walletAfter `shouldBe` assetsOf walletBefore
+            it
+                "the quantity check refuses a wallet holding one of each kind, the same quantity of both, or everything in one output"
+                $ withFundedRig [(11, 100_000_000), (12, 100_000_000)]
+                $ \rig -> do
+                    seed <- fundSeed rig
+                    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+                    outcomeOf (runReceipt create) `shouldBe` Just "success"
+                    (policy, kinds) <- rehearsalKindsOf create
+                    (a, b) <- case kinds of
+                        [x, y] -> pure (x, y)
+                        _ -> fail "the rehearsal names are not two"
+                    forM_
+                        [ [(a, 1), (b, 1), (a, 1)]
+                        , [(a, 4), (b, 4)]
+                        ]
+                        $ \named -> do
+                            plantSplitTokenOutputs rig policy named littleAda
+                            held <- readTestWallet rig
+                            expectKindsAboveOne held `shouldThrow` anyException
+                    plantTokenOutputs
+                        rig
+                        (Map.singleton policy (Map.fromList [(a, 3), (b, 5)]))
+                        littleAda
+                        0
+                    alone <- readTestWallet rig
+                    expectKindsAboveOne alone `shouldThrow` anyException
+
+-- | Three of the first kind in one output and one in another, five of the second: totals four and five.
+spreadOver :: [AssetName] -> [(AssetName, Integer)]
+spreadOver kinds = case kinds of
+    [a, b] -> [(a, 3), (b, 5), (a, 1)]
+    _ -> error "spreadOver: the rehearsal names are not two"
+
+{- | What each of three outputs holds for a booking: together they cover the
+fold reserve and the outlay the booking is judged on, and apart none covers
+the preparation of an insert or a terminate (each needs more than this alone),
+so the preparation must spend several of them.
+-}
+bookingOutputAda :: Integer
+bookingOutputAda = 5_000_000
+
+{- | What the wallet read through the provider holds: more than one kind,
+each kind's total above one and no two alike, over more than one output. The
+fixture sets them; the row reads them back, so an unplanted or collapsed
+wallet fails here.
+-}
+expectKindsAboveOne :: [(TxIn, TxOut ConwayEra)] -> Expectation
+expectKindsAboveOne wallet = do
+    let totals = concatMap Map.elems (Map.elems (assetsOf wallet))
+    length totals `shouldSatisfy` (> 1)
+    all (> 1) totals `shouldBe` True
+    length (nub totals) `shouldBe` length totals
+    length
+        [ () | (i, o) <- wallet, not (Map.null (assetsOf [(i, o)]))
+        ]
+        `shouldSatisfy` (> 1)
+
+{- | The preparation spent more than one output: no single output of the
+wallet could pay for it, which is what makes the tokens' spread over outputs
+matter.
+-}
+expectSeveralSpent :: Rig -> Text -> Expectation
+expectSeveralSpent rig prepTx = do
+    entries <- concat <$> (mapM readJournal =<< journalDirs rig)
+    (_, bodyOrWhy) <- boundBody entries prepTx
+    prep <- either (fail . T.unpack) pure bodyOrWhy
+    length (prep ^. bodyTxL . inputsTxBodyL)
+        `shouldSatisfy` (> 1)
+
+-- | How many edges a run's trace reports started.
+edgesStartedOf :: Run -> Int
+edgesStartedOf r = length [() | Trace _ (What (EdgeStarted _)) <- runEvents r]
+
+-- | The lovelace an output holds.
+coinOf :: TxOut ConwayEra -> Integer
+coinOf o = let Coin c = o ^. coinTxOutL in c
+
+{- | A registry holding one live key, @alice-1@: inserted from the test
+wallet as the rig funds it and folded, so the test wallet may update it.
+Returns the state token and the approval bundle the test wallet is later
+made to hold.
+-}
+liveKeyRig
+    :: Rig -> IO (String, Map.Map PolicyID (Map.Map AssetName Integer))
+liveKeyRig rig = do
+    (t, policy, kinds) <- liveKeyRigKinds rig
+    pure (t, singleKindBundle policy kinds)
+
+-- | The same registry, with the policy and the names of its approval kinds.
+liveKeyRigKinds :: Rig -> IO (String, PolicyID, [AssetName])
+liveKeyRigKinds rig = do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    outcomeOf (runReceipt create) `shouldBe` Just "success"
+    t <- tokenOf create
+    (policy, kinds) <- rehearsalKindsOf create
+    inserted <-
+        runWithKey
+            (rigTestKey rig)
+            rig
+            "insert alice-1"
+            ( [ "open-datum"
+              , "insert"
+              , "--key"
+              , "alice-1"
+              , "--payload"
+              , rigDir rig </> "payload.json"
+              ]
+                <> tokenArgs t
+            )
+    outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+    folded <-
+        run
+            rig
+            "fold alice-1"
+            (["open-datum", "fold"] <> requestOf inserted <> tokenArgs t)
+    outcomeOf (runReceipt folded) `shouldBe` Just "success"
+    pure (t, policy, kinds)
+
+-- | The update of @alice-1@ to the second payload, with these further flags.
+updateWords :: Rig -> String -> [String] -> [String]
+updateWords rig t extra =
+    [ "open-datum"
+    , "update"
+    , "--key"
+    , "alice-1"
+    , "--payload"
+    , rigDir rig </> "payload-2.json"
+    ]
+        <> extra
+        <> tokenArgs t
+
+-- | The update signed by the test wallet's key file.
+updateAs :: Rig -> String -> String -> [String] -> IO Run
+updateAs rig t label extra =
+    runWithKey (rigTestKey rig) rig label (updateWords rig t extra)
+
+-- | The preview of the update for the test wallet's address.
+previewUpdateAs :: Rig -> String -> String -> [String] -> IO Run
+previewUpdateAs rig t label extra =
+    run
+        rig
+        label
+        ( updateWords rig t extra
+            <> ["--preview", "--wallet-address", previewAddr rig]
+        )
+
+-- | A top-level receipt member, if present and whatever it holds.
+valueOfRun :: Aeson.Key -> Run -> Maybe Aeson.Value
+valueOfRun k r = case runReceipt r of
+    Aeson.Object o -> KeyMap.lookup k o
+    _ -> Nothing
+
+-- | Whether the receipt has this top-level member at all (null counts).
+hasMember :: Aeson.Key -> Run -> Bool
+hasMember k r = isJust (valueOfRun k r)
+
+-- | A top-level text member the row requires.
+requireMember :: Aeson.Key -> Run -> IO Text
+requireMember k r = case textAt k (runReceipt r) of
+    Just v -> pure v
+    Nothing -> fail ("no " <> show k <> " member in " <> runLabel r)
+
+decodeJsonFile :: FilePath -> IO Aeson.Value
+decodeJsonFile path =
+    Aeson.eitherDecodeFileStrict' path >>= either fail pure
+
+-- | The total of the outlay a receipt reports, required present.
+outlayTotalOf :: Run -> IO Integer
+outlayTotalOf r = case valueOfRun "outlay" r of
+    Just (Aeson.Object o) | Just n <- numberAt "total" o -> pure n
+    _ -> fail ("no outlay total in " <> runLabel r)
+
+-- | The inputs a preview's update body lists, as output references.
+updateInputsOf :: Run -> IO [Text]
+updateInputsOf r = case valueOfRun "update" r of
+    Just (Aeson.Object o)
+        | Just (Aeson.Array xs) <- KeyMap.lookup "inputs" o ->
+            pure [x | Aeson.String x <- toList xs]
+    _ -> fail ("no update inputs in " <> runLabel r)
+
+{- | A refusal for a wallet that cannot pay for the command and its
+preparation: client policy, exit 10, the seam's text built from the figures
+the receipt carries, ending that nothing was submitted, and neither the
+faucet sentence (the wallet is not empty) nor a hand step. Returns the
+held, required, shortfall, fee and remainder floor, all required present.
+-}
+expectPreparationUnfunded
+    :: Integer -> Run -> IO (Integer, Integer, Integer, Integer, Integer)
+expectPreparationUnfunded planted r = do
+    outcomeOf (runReceipt r) `shouldBe` Just "client-refusal"
+    runCode r `shouldBe` ExitFailure 10
+    held <- requireNumberOf "held" r
+    needed <- requireNumberOf "required" r
+    shortfall <- requireNumberOf "shortfall" r
+    fee <- requireNumberOf "fee" r
+    remainder <- requireNumberOf "remainderMin" r
+    held `shouldBe` planted
+    needed `shouldSatisfy` (> held)
+    shortfall `shouldBe` needed - held
+    reasonOf r
+        `shouldBe` ( "preparation-unfunded: the wallet holds "
+                        <> show held
+                        <> " lovelace but "
+                        <> show needed
+                        <> " is required for the preparation ("
+                        <> show (needed - fee - remainder)
+                        <> " for the command, "
+                        <> show fee
+                        <> " fee and "
+                        <> show remainder
+                        <> " remainder floor) (client policy); nothing was submitted"
+                   )
+    walletOfRun r `shouldSatisfy` isJust
+    pure (held, needed, shortfall, fee, remainder)
 
 -- ---------------------------------------------------------
 -- Helpers
@@ -1534,6 +2234,10 @@ data Run = Run
     , runReceipt :: Aeson.Value
     , runEvents :: [Trace]
     , runCode :: ExitCode
+    , runRefsBefore :: Map.Map TxIn (TxOut ConwayEra)
+    -- ^ The published reference outputs of the creator, read before the command ran
+    , runRefsAfter :: Map.Map TxIn (TxOut ConwayEra)
+    -- ^ The same, read once it had finished
     }
 
 magic :: Integer
@@ -1724,7 +2428,9 @@ runVia rig env registry label args = do
             (fail . show)
             pure
             (parseOpenDatumCommand (commandLine rig registry args))
+    refsBefore <- referenceOutputs rig
     (code, out, _) <- captured (runOpenDatum env command)
+    refsAfter <- referenceOutputs rig
     receipt <-
         maybe
             (fail ("no receipt for " <> label <> ": " <> show out))
@@ -1737,6 +2443,8 @@ runVia rig env registry label args = do
             , runReceipt = receipt
             , runEvents = events
             , runCode = code
+            , runRefsBefore = refsBefore
+            , runRefsAfter = refsAfter
             }
 
 commandLine :: Rig -> FilePath -> [String] -> [String]
@@ -2045,34 +2753,42 @@ preparedBodyOf entries txid =
         , Just p <- [journalBody e]
         ]
 
-{- | What every booking command that completed through one preparation
-must show: the receipt's typed preparation member; exactly two submitted
-transactions for the command, both under the booking step — the
-preparation then the command's own booking; the preparation's journal
-phases in order with the @funding@ expectation naming the payer; and the
-booking's own prepared journal line listing the made output among its
-inputs, read from the journal the submission wrote, not the receipt.
-Returns the preparation's transaction and made output.
+{- | What every command that completed through one preparation must show:
+the receipt's typed preparation member; exactly two submitted transactions
+for the command, both under the command's step — the preparation then the
+command's own transaction, named by the receipt member given; the
+preparation's journal phases in order with the @funding@ expectation
+naming the payer; and the command's own prepared journal line listing the
+made output among its inputs, read from the journal the submission wrote,
+not the receipt; that body's collateral is exactly the made output, which
+the preparation's own body shows ada only at the lovelace the receipt
+reports; and the creator's published reference outputs are, by input and
+value, what they were before the command ran. Returns the preparation's
+transaction and made output.
 -}
-expectBookedThroughPreparation
-    :: Rig -> Addr -> Run -> IO (Text, Text)
-expectBookedThroughPreparation rig payerOfRun r = do
+expectCompletedThroughPreparation
+    :: Text -> Text -> Rig -> Addr -> Run -> IO (Text, Text)
+expectCompletedThroughPreparation commandStep member rig payerOfRun r = do
     outcomeOf (runReceipt r) `shouldBe` Just "success"
     runCode r `shouldBe` ExitSuccess
+    -- the creator's published reference outputs, by input and whole value,
+    -- are what they were before the command ran and are not an empty census
+    Map.null (runRefsBefore r) `shouldBe` False
+    runRefsAfter r `shouldBe` runRefsBefore r
     (prepTx, prepOut, prepLovelace, prepFeeFig) <- preparationMembersOf r
     prepLovelace `shouldSatisfy` (> 0)
     prepFeeFig `shouldSatisfy` (> 0)
     T.length prepTx `shouldBe` 64
     prepTx `T.isPrefixOf` prepOut `shouldBe` True
-    bookingTx <- case textAt "booking" (runReceipt r) of
+    commandTx <- case textAt (Key.fromText member) (runReceipt r) of
         Just b -> pure b
-        Nothing -> fail ("no booking member in " <> runLabel r)
+        Nothing -> fail ("no " <> T.unpack member <> " member in " <> runLabel r)
     let submitted =
-            [ (step, txid)
-            | Trace _ (How (Tx TxSubmitted{submitStep = step, submitTxId = txid})) <-
+            [ (s, txid)
+            | Trace _ (How (Tx TxSubmitted{submitStep = s, submitTxId = txid})) <-
                 runEvents r
             ]
-    submitted `shouldBe` [("book", prepTx), ("book", bookingTx)]
+    submitted `shouldBe` [(commandStep, prepTx), (commandStep, commandTx)]
     entries <- concat <$> (mapM readJournal =<< journalDirs rig)
     let phases = [journalEvent e | e <- entries, journalTxId e == prepTx]
     phases `shouldBe` ["prepared", "submitted", "confirmed", "observed"]
@@ -2084,50 +2800,77 @@ expectBookedThroughPreparation rig payerOfRun r = do
             ]
     expects
         `shouldBe` [Just ("funding:" <> T.pack (bech32Address payerOfRun))]
-    let bookingInputs =
+    let commandInputs =
             [ journalInputs e
             | e <- entries
-            , journalTxId e == bookingTx
+            , journalTxId e == commandTx
             , journalEvent e == "prepared"
             ]
-    -- the SUBMITTED booking body, bound to its prepared line by byte hash
+    -- the SUBMITTED command body, bound to its prepared line by byte hash
     -- and derived id: the made output is among the inputs it decodes with
-    (mPreparedLine, bodyOrWhy) <- boundBody entries bookingTx
+    (mPreparedLine, bodyOrWhy) <- boundBody entries commandTx
     case bodyOrWhy of
-        Left why -> fail ("the booking's saved body does not bind: " <> T.unpack why)
-        Right tx ->
+        Left why -> fail ("the command's saved body does not bind: " <> T.unpack why)
+        Right tx -> do
             map txInText (toList (tx ^. bodyTxL . inputsTxBodyL))
                 `shouldContain` [prepOut]
-    -- the journal's own list of the booking's inputs agrees (second observation)
-    case bookingInputs of
+            -- the collateral is the made output and nothing else: a ledger
+            -- refuses collateral that carries tokens, and the fixture's
+            -- submission accepts any body
+            map txInText (toList (tx ^. bodyTxL . collateralInputsTxBodyL))
+                `shouldBe` [prepOut]
+    -- the made output itself, read from the preparation's own saved body:
+    -- ada only, holding the lovelace the receipt reports
+    (_, prepBodyOrWhy) <- boundBody entries prepTx
+    prepBody <-
+        either
+            (fail . ("the preparation's saved body does not bind: " <>) . T.unpack)
+            pure
+            prepBodyOrWhy
+    madeIndex <- case parseOutRef prepOut of
+        Right (TxIn _ (TxIx ix)) -> pure (fromIntegral ix :: Int)
+        Left why -> fail ("the made output does not parse: " <> why)
+    case drop madeIndex (toList (prepBody ^. bodyTxL . outputsTxBodyL)) of
+        made : _ -> do
+            adaOnlyOut made `shouldBe` True
+            coinOf made `shouldBe` prepLovelace
+        [] -> fail ("the preparation made no output " <> T.unpack prepOut)
+    -- the journal's own list of the command's inputs agrees (second observation)
+    case commandInputs of
         [Just ins] -> ins `shouldContain` [prepOut]
         _ ->
             fail
-                ("the booking's prepared journal line is missing in " <> runLabel r)
+                ("the command's prepared journal line is missing in " <> runLabel r)
     -- negative control: a SUBSTITUTED saved body — another transaction's
-    -- bytes over the booking's file — is rejected, and the restored body
+    -- bytes over the command's file — is rejected, and the restored body
     -- binds again
     case (journalBody =<< mPreparedLine, preparedBodyOf entries prepTx) of
-        (Just bookingPath, Just preparationPath) -> do
-            original <- BS.readFile bookingPath
+        (Just commandPath, Just preparationPath) -> do
+            original <- BS.readFile commandPath
             substitutedBytes <- BS.readFile preparationPath
-            BS.writeFile bookingPath substitutedBytes
-            (_, substituted) <- boundBody entries bookingTx
+            BS.writeFile commandPath substitutedBytes
+            (_, substituted) <- boundBody entries commandTx
             case substituted of
                 Left _ -> pure ()
                 Right _ ->
                     fail
-                        ( "a substituted saved booking body was accepted in "
+                        ( "a substituted saved command body was accepted in "
                             <> runLabel r
                         )
-            BS.writeFile bookingPath original
-            (_, restored) <- boundBody entries bookingTx
+            BS.writeFile commandPath original
+            (_, restored) <- boundBody entries commandTx
             case restored of
                 Right _ -> pure ()
                 Left why ->
                     fail ("the restored body no longer binds: " <> T.unpack why)
         _ -> fail ("the bodies are not recorded in " <> runLabel r)
     pure (prepTx, prepOut)
+
+-- | A booking that completed through one preparation, under the step @book@.
+expectBookedThroughPreparation
+    :: Rig -> Addr -> Run -> IO (Text, Text)
+expectBookedThroughPreparation =
+    expectCompletedThroughPreparation "book" "booking"
 
 policyOfRun :: Run -> Maybe Text
 policyOfRun r = do
