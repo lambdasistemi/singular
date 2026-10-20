@@ -87,6 +87,10 @@ Available settings:
 
   File holding a Koios bearer token; its contents are never printed.
   option: --koios-token-file FILE
+  env: SINGULAR_KOIOS_TOKEN_FILE FILE
+  config:
+    koios-token-file: # or null
+      <string>
 
   Directory with the pinned time-manifest.json, shelley-genesis.json and
   era-history.cbor.
@@ -99,6 +103,10 @@ Available settings:
 
   Signer, normal route: sign from this encrypted wallet vault.
   option: --vault FILE
+  env: SINGULAR_VAULT FILE
+  config:
+    vault: # or null
+      <string>
 
   Read the vault passphrase, one line, from this inherited file descriptor.
   option: --passphrase-fd N
@@ -133,14 +141,26 @@ Available settings:
   How much to narrate: off, what (protocol steps) or how (also their
   mechanics).
   option: --trace LEVEL
+  env: SINGULAR_TRACE LEVEL
+  config:
+    trace: # or null
+      <string>
   default: what on a terminal, otherwise off
 
   Where the narration goes: stderr or file:PATH; repeat for several.
   option: --trace-to SINK
+  env: SINGULAR_TRACE_TO SINK
+  config:
+    trace-to: # or null
+      <string>
   default: stderr
 
   The format of the narration: text for a person, json for a program.
   option: --trace-format FORMAT
+  env: SINGULAR_TRACE_FORMAT FORMAT
+  config:
+    trace-format: # or null
+      <string>
   default: text on standard error, json in a file
 
 Where settings come from:

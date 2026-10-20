@@ -126,6 +126,7 @@ import Singular.CLI.Sources
     , loadSources
     , missingHint
     , noSources
+    , sourceConflict
     )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Version (releaseVersion)
@@ -168,7 +169,7 @@ data CLIError
       its name and the command, before any key is read or anything written
       -}
       UnsupportedFlag String String
-    | -- | the config file cannot be used, said in one sentence
+    | -- | the settings the config file or the environment give cannot be used, said in one sentence
       ConfigRefused String
     deriving stock (Eq, Show)
 
@@ -644,6 +645,9 @@ parseOpenDatumInvocationFrom
     -> Either CLIError (OpenDatumCommand, TraceRequest)
 parseOpenDatumInvocationFrom sources args = do
     raw <- readFlags invocationFlags args
+    mapM_
+        (Left . ConfigRefused)
+        (sourceConflict (openDatumProgram openDatumVersion) sources raw)
     let environment = sourceEnvironment sources
         filled = applySources (openDatumProgram openDatumVersion) sources raw
         (tracing, rest) =

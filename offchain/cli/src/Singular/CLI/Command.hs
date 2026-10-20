@@ -141,6 +141,7 @@ import Singular.CLI.Sources
     , loadSources
     , missingHint
     , noSources
+    , sourceConflict
     )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Vault
@@ -451,7 +452,7 @@ data CLIError
       other actor file.
       -}
       RefusedSetting String
-    | -- | the config file cannot be used, said in one sentence
+    | -- | the settings the config file or the environment give cannot be used, said in one sentence
       ConfigRefused String
     deriving stock (Eq, Show)
 
@@ -1092,6 +1093,9 @@ parseInvocationFrom
     -> Either CLIError (Command, TraceRequest)
 parseInvocationFrom sources args = do
     raw <- readFlags invocationFlags args
+    mapM_
+        (Left . ConfigRefused)
+        (sourceConflict (singularProgram singularVersion) sources raw)
     let environment = sourceEnvironment sources
         filled = applySources (singularProgram singularVersion) sources raw
         (tracing, rest) =

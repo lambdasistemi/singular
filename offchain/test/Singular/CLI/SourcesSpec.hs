@@ -6,8 +6,9 @@ Module      : Singular.CLI.SourcesSpec
 Description : The settings a command line may leave to the environment and a file
 License     : Apache-2.0
 
-The six standing settings (the chain, the compiled contracts and the registry)
-have three forms: a flag, a variable and a key of one JSON file. These cases
+The standing settings (the chain, the compiled contracts, the registry, the Koios
+token file, the tracing and the vault) have three forms: a flag, a variable and
+a key of one JSON file. These cases
 hold what a person is told: a setting left out of the command line is the
 same setting given by its variable or by its key, the flag wins over the
 variable and the variable over the file, a command takes only the settings it
@@ -40,6 +41,7 @@ import Singular.CLI.Options
     , Leaf (..)
     , Program
     , Raw (..)
+    , exampleSettings
     , leafShape
     , programLeaves
     , shapeFlags
@@ -58,7 +60,7 @@ program = singularProgram singularVersion
 token :: String
 token = replicate 56 'a' <> "." <> replicate 64 'b'
 
--- | The six standing settings: flag, variable, key and a value each.
+-- | The standing settings but the vault: flag, variable, key and a value each.
 settings :: [(String, String, String, String)]
 settings =
     [
@@ -72,36 +74,48 @@ settings =
     , ("--blueprint", "SINGULAR_BLUEPRINT", "blueprint", "plutus.json")
     , ("--state-dir", "SINGULAR_STATE_DIR", "state-dir", "/state")
     , ("--state-token", "SINGULAR_STATE_TOKEN", "state-token", token)
+    ,
+        ( "--koios-token-file"
+        , "SINGULAR_KOIOS_TOKEN_FILE"
+        , "koios-token-file"
+        , "koios.token"
+        )
+    , ("--trace", "SINGULAR_TRACE", "trace", "how")
+    , ("--trace-to", "SINGULAR_TRACE_TO", "trace-to", "stderr")
+    , ("--trace-format", "SINGULAR_TRACE_FORMAT", "trace-format", "json")
     ]
 
 flagOf :: (String, String, String, String) -> String
 flagOf (f, _, _, _) = f
 
--- | A fold with the named settings on its command line and a vault.
-foldWith :: [(String, String, String, String)] -> [String]
-foldWith kept =
+-- | A fold with the named settings on its command line and no signer.
+foldBase :: [(String, String, String, String)] -> [String]
+foldBase kept =
     ["registry", "fold"]
         <> concat [[f, v] | (f, _, _, v) <- kept]
-        <> ["--vault", "alice.vault"]
+
+-- | The same with a vault.
+foldWith :: [(String, String, String, String)] -> [String]
+foldWith kept = foldBase kept <> ["--vault", "alice.vault"]
 
 meaning :: [String] -> Either CLIError String
-meaning = fmap (show . fst) . parseInvocation []
+meaning = fmap show . parseInvocation []
 
 withEnvironment
     :: [(String, String)] -> [String] -> Either CLIError String
 withEnvironment environment =
-    fmap (show . fst)
+    fmap show
         . parseInvocationFrom (Sources environment (Right []))
 
 withFile :: [(String, String)] -> [String] -> Either CLIError String
 withFile pairs =
-    fmap (show . fst) . parseInvocationFrom (Sources [] (Right pairs))
+    fmap show . parseInvocationFrom (Sources [] (Right pairs))
 
 spec :: Spec
 spec = describe "the settings given by the environment and a config file" $ do
-    it "has a command line with all six that is accepted" $
+    it "has a command line with every setting typed that is accepted" $
         meaning (foldWith settings) `shouldSatisfy` isRight
-    describe "each of the six" $
+    describe "each setting but the vault" $
         forM_ settings $ \setting@(flag, variable, key, value) -> do
             let others = filter ((/= flag) . flagOf) settings
             it (flag <> " left out is read from " <> variable) $
@@ -130,7 +144,7 @@ spec = describe "the settings given by the environment and a config file" $ do
             file = [("koios-url", "http://file.example")]
         it "gives the flag over the variable and the file" $
             fmap
-                (show . fst)
+                show
                 ( parseInvocationFrom
                     (Sources environment (Right file))
                     (foldWith (at "http://flag.example"))
@@ -138,7 +152,7 @@ spec = describe "the settings given by the environment and a config file" $ do
                 `shouldBe` meaning (foldWith (at "http://flag.example"))
         it "gives the variable over the file" $
             fmap
-                (show . fst)
+                show
                 ( parseInvocationFrom
                     (Sources environment (Right file))
                     (foldWith without)
@@ -164,6 +178,126 @@ spec = describe "the settings given by the environment and a config file" $ do
                             ]
             withEnvironment [("SINGULAR_STATE_DIR", "/state")] line
                 `shouldBe` meaning line
+    describe "the vault" $ do
+        let signed = meaning (foldWith settings)
+            rivalsOnTheLine =
+                [ ("--wallet-skey", "alice.skey")
+                ,
+                    ( "--wallet-address"
+                    , "addr_test1vpd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95ksypknf7"
+                    )
+                , ("--bundle", "bundle.json")
+                ]
+            preview =
+                [ "registry"
+                , "create"
+                , "--preview"
+                , "--blueprint"
+                , "plutus.json"
+                , "--koios-url"
+                , "http://koios.example"
+                , "--network-time"
+                , "/times"
+                , "--network-magic"
+                , "42"
+                , "--wallet-address"
+                , "addr_test1vpd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95ksypknf7"
+                ]
+        it "left out is read from SINGULAR_VAULT" $
+            withEnvironment
+                [("SINGULAR_VAULT", "alice.vault")]
+                (foldBase settings)
+                `shouldBe` signed
+        it "left out is read from the key vault" $
+            withFile [("vault", "alice.vault")] (foldBase settings)
+                `shouldBe` signed
+        it "gives the flag over the variable and the variable over the file" $ do
+            let typed = foldBase settings <> ["--vault", "typed.vault"]
+            withEnvironment [("SINGULAR_VAULT", "env.vault")] typed
+                `shouldBe` meaning typed
+            fmap
+                show
+                ( parseInvocationFrom
+                    ( Sources
+                        [("SINGULAR_VAULT", "env.vault")]
+                        (Right [("vault", "file.vault")])
+                    )
+                    (foldBase settings)
+                )
+                `shouldBe` meaning (foldBase settings <> ["--vault", "env.vault"])
+        it "keeps the descriptor of its passphrase on the line" $ do
+            withEnvironment
+                [("SINGULAR_VAULT", "alice.vault")]
+                (foldBase settings <> ["--passphrase-fd", "3"])
+                `shouldBe` meaning (foldWith settings <> ["--passphrase-fd", "3"])
+            withEnvironment
+                [("SINGULAR_VAULT", "alice.vault"), ("SINGULAR_PASSPHRASE_FD", "3")]
+                (foldBase settings)
+                `shouldBe` signed
+        forM_ rivalsOnTheLine $ \(flag, value) -> do
+            let line' = foldBase settings <> [flag, value]
+            it
+                ( "from the variable is refused with "
+                    <> flag
+                    <> " on the line, naming both"
+                )
+                $ withEnvironment [("SINGULAR_VAULT", "alice.vault")] line'
+                    `shouldSatisfy` refusedNaming
+                        ["--vault", "the variable SINGULAR_VAULT", flag, "unset the variable"]
+            it
+                ( "from the file is refused with "
+                    <> flag
+                    <> " on the line, naming both"
+                )
+                $ withFile [("vault", "alice.vault")] line'
+                    `shouldSatisfy` refusedNaming
+                        ["--vault", "\"vault\" key of singular.json", flag, "remove the key"]
+            it ("typed with " <> flag <> " is the refusal it always was") $
+                meaning (line' <> ["--vault", "alice.vault"])
+                    `shouldSatisfy` \case
+                        Left (BadValue _ _) -> True
+                        _ -> False
+        it "names the file the settings were read from" $
+            fmap
+                show
+                ( parseInvocationFrom
+                    ( Sources
+                        [("SINGULAR_CONFIG", "mine.json")]
+                        (Right [("vault", "alice.vault")])
+                    )
+                    (foldBase settings <> ["--wallet-skey", "alice.skey"])
+                )
+                `shouldSatisfy` refusedNaming ["\"vault\" key of mine.json"]
+        it "is not refused when the line names no other signer" $
+            withEnvironment
+                [("SINGULAR_VAULT", "alice.vault")]
+                (foldBase settings <> ["--passphrase-fd", "0"])
+                `shouldSatisfy` isRight
+        it "is not taken by a preview, which signs nothing" $ do
+            meaning preview `shouldSatisfy` isRight
+            withEnvironment [("SINGULAR_VAULT", "alice.vault")] preview
+                `shouldBe` meaning preview
+            withFile [("vault", "alice.vault")] preview `shouldBe` meaning preview
+        it "does not hold up a request for help" $
+            withEnvironment
+                [("SINGULAR_VAULT", "alice.vault")]
+                (foldBase settings <> ["--wallet-skey", "alice.skey", "--help"])
+                `shouldSatisfy` isRight
+        forM_
+            [ ["wallet", "address", "--network-magic", "1"]
+            , ["wallet", "create", "--network-magic", "1"]
+            , ["wallet", "sign", "bundle.json", "--out", "witnesses"]
+            ]
+            $ \command ->
+                it
+                    (unwords (take 2 command) <> " takes it from the variable and the file")
+                    $ do
+                        let typed = take 2 command <> ["--vault", "alice.vault"] <> drop 2 command
+                        meaning typed `shouldSatisfy` isRight
+                        withEnvironment [("SINGULAR_VAULT", "alice.vault")] command
+                            `shouldBe` meaning typed
+                        withFile [("vault", "alice.vault")] command
+                            `shouldBe` meaning typed
     describe "an empty setting" $ do
         let without = filter ((/= "--koios-url") . flagOf) settings
         it "is not a setting in the environment" $
@@ -188,7 +322,7 @@ spec = describe "the settings given by the environment and a config file" $ do
                 `shouldSatisfy` isRight
     describe "the keys of a file" $ do
         let read' = configFromValue program "demo.json"
-        it "are the six settings, numbers allowed" $
+        it "are the settings, numbers allowed" $
             read'
                 ( object
                     [ "koios-url" .= String "http://koios.example"
@@ -211,8 +345,16 @@ spec = describe "the settings given by the environment and a config file" $ do
         it "refuse a passphrase in words about passphrases" $
             read' (object ["passphrase" .= String "x"])
                 `shouldSatisfy` mentions ["passphrase is never read from a file"]
-        it "refuse a setting that is typed on the command line" $
-            forM_ ["vault", "passphrase-fd", "wallet-skey", "preview", "config"] $ \name ->
+        it "refuse a setting that is typed on the command line" $ do
+            let typedOnly =
+                    [ "passphrase-fd"
+                    , "wallet-skey"
+                    , "wallet-address"
+                    , "bundle"
+                    , "preview"
+                    , "config"
+                    ]
+            forM_ typedOnly $ \name ->
                 read' (object [Key.fromString name .= String "x"])
                     `shouldSatisfy` mentions ["cannot come from a file", name]
         it "refuse a value that is not text or a number" $ do
@@ -270,10 +412,9 @@ spec = describe "the settings given by the environment and a config file" $ do
     describe "the declaration" $ do
         let everyFlag = nub (concatMap (shapeFlags . leafShape) (programLeaves program))
             standing = [f | f <- everyFlag, isJust (flagEnvironment f)]
-        it
-            "gives exactly the six settings three forms"
-            $ sort (nub (map flagName standing))
-                `shouldBe` sort (map flagOf settings)
+        it "gives exactly these eleven settings three forms" $
+            sort (nub (map flagName standing))
+                `shouldBe` sort ("--vault" : map flagOf settings)
         it "names each variable and key after its flag" $
             forM_ standing $ \f -> do
                 let name = drop 2 (flagName f)
@@ -305,16 +446,14 @@ spec = describe "the settings given by the environment and a config file" $ do
         Left why -> all (`isInfixOf` why) needles
         Right _ -> False
     mentionsLeft = mentions
-    standingFlags leaf =
-        [ f
-        | f <- nub (shapeFlags (leafShape leaf))
-        , isJust (flagEnvironment f)
-        ]
+    refusedNaming needles = \case
+        Left (ConfigRefused why) -> all (`isInfixOf` why) needles
+        _ -> False
     shortened leaf =
         [ (words' full, words' short)
         | not (null (leafExamples leaf))
         , Just shortLines <-
-            [shortenedExample (standingFlags leaf) (leafExamples leaf)]
+            [shortenedExample (exampleSettings leaf) (leafExamples leaf)]
         , let full = leafExamples leaf
               short = shortLines
         ]
