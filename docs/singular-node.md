@@ -23,7 +23,7 @@ no coherent chain snapshot and carries no verification witness.
 
 As a registry operator, you can ask either program what it does before you read this page or any other. `singular --version` and `open-datum --version` print the program's name, its version and the commit it was built from; a build that carries no commit says `commit unknown`. `singular --help` and `open-datum --help` print one screen: what the program is for, and every command with a line about it. Each command has its own `--help` that shows only that command: its settings, each with a description and a default, the signer routes grouped with the vault first and the key file, which is legacy, last, the environment variables it reads, an example for a command that writes, and how it ends.
 
-A mistyped command or flag prints what is wrong in one line, the usage of the command you were heading for and where its help is, and exits with status 2. A mistyped command also names the nearest command. Both programs complete commands and flags in your shell: `source <(singular --bash-completion-script "$(which singular)")` for bash, with `--zsh-completion-script` and `--fish-completion-script` for the other shells.
+A mistyped command or flag prints what is wrong in one line, the usage of the command you were heading for and where its help is, and exits with status 2. A mistyped command also names the nearest command. A failure that no command reported itself, such as a file that cannot be read, ends as one line on standard error saying what failed, with status 1, never the runtime's own report of an uncaught exception. Both programs complete commands and flags in your shell: `source <(singular --bash-completion-script "$(which singular)")` for bash, with `--zsh-completion-script` and `--fish-completion-script` for the other shells.
 
 The overview of each program follows, quoted from the program itself. The first line of every help page names the version and the commit; it is left out here, and `VERSION` stands for the version of the build. The documentation check runs the programs and fails when a quotation, or the settings table below, disagrees with what they print.
 
@@ -136,7 +136,10 @@ what it does; standard output carries the receipt alone.
 The URL, network magic and one signer (the signing key, the vault, or on `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate` and `open-datum fold` an address with its bundle file) travel together on a write: naming only some of
 them is refused as partially configured, and so is a write that names none,
 because `singular` never starts a node of its own — a registry booted on a
-chain that dies with the process could not be attached to again. The six
+chain that dies with the process could not be attached to again. The refusal
+says which part is missing and, for the signer, the three ways to name one: the
+vault first, then an address with its bundle file, and last the key file, which is
+legacy. The six
 settings that do not change from one command to the next can be given once,
 as [the next section](#giving-the-chain-the-contracts-and-the-registry-once)
 says; the signer and everything else a command does are typed on the command.
@@ -224,7 +227,7 @@ sequenceDiagram
 ```
 
 Creating over an existing path — a symbolic link included — is refused
-with that path's bytes untouched; the vault file is made readable by its
+before a passphrase is asked for, with that path's bytes untouched; `wallet address` on a vault that is not there or cannot be read says so in one sentence naming the file, also before it asks for a passphrase; the vault file is made readable by its
 owner only, and a write that fails removes the file it made. A wrong
 passphrase, a corrupt file and a file that is not a vault all answer one
 refusal naming no secret, nothing prints on standard output, and the
