@@ -62,6 +62,7 @@ import Cardano.Ledger.Api.Tx.Body
     , mintTxBodyL
     , outputsTxBodyL
     , referenceInputsTxBodyL
+    , treasuryDonationTxBodyL
     , vldtTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
@@ -110,7 +111,6 @@ import Singular.Application.OpenDatum.Envelope
     )
 import Singular.Application.OpenDatum.Release
     ( releaseOf
-    , withApplication
     )
 import UntypedPlutusCore.DeBruijn ()
 
@@ -157,8 +157,10 @@ import Singular.Registry.TxBuilder.Internal
     , leafActive
     , mkInlineDatum
     , mkRequestScript
+    , onChainTokenId
     , policyIdFromPin
     , requestAddrFromCfg
+    , requestPolicyOf
     , scriptFromBytes
     , scriptHashBytes
     , toPlcData
@@ -176,18 +178,22 @@ import Singular.Registry.TxBuilder.Update
 import Singular.Registry.Types
     ( CageDatum (..)
     , Edge
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
     , OnChainRoot (..)
+    , OnChainTerminationRequest (..)
     , OnChainTokenId (..)
     , OnChainTokenState (..)
     , OnChainTxOutRef
+    , applicationTagName
     , edgeInsertActive
     , edgeUpdateTerminal
+    , terminationTrieReadyTagName
+    , trieReadyTagName
     )
 
 import Control.Monad (forM_, void)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
 import Data.Text qualified as T
 
 -- ---------------------------------------------------------
@@ -907,27 +913,198 @@ stateUtxoFor =
                 (Map.singleton (AssetName "t177-registry") 1)
             )
 
-{- | A stub provider serving one registry: the state at the cage, the one
-pending request at the request address, an ada-only wallet output
-anywhere else. Explicit finite synthetic time, exact resolved outputs and
-unit-returning synthetic witnesses let the real local evaluator run. These
-rows inspect assembled bodies and do not establish registry script admission.
+{- | The application's own program and script, and the registry the whole-path
+rows fold: `builtCfg` with the application policy pinned to that script, so the
+application tag a booked registration holds is burned under a policy the
+context can answer for.
 -}
-foldProvider :: Session NoWitness IO
-foldProvider =
-    withAddressOutputs (pure . utxosAt) $
-        withParameters (withSyntheticCosts preprodParams) $
-            withTime (pure syntheticTime) $
-                withResolvedOutputs
-                    (resolveBuilt [builtRequest (requestFor edgeInsertActive)] [])
-                    stubSession
+appProgram :: SBS.ShortByteString
+appProgram = applyDataParam (PLC.I 7) (unitProgram 2)
 
--- | Actual script address for the request the built fixture owns.
-builtRequest :: (TxIn, TxOut ConwayEra) -> (TxIn, TxOut ConwayEra)
-builtRequest (reference, output) =
+appScript :: Script ConwayEra
+appScript = scriptFromBytes "open-datum" appProgram
+
+foldCfg :: CageConfig
+foldCfg =
+    builtCfg
+        { cfgApplicationPolicy =
+            SBS.toShort (scriptHashBytes (computeScriptHash appProgram))
+        }
+
+{- | The scripts the library finds by the registry's pins: the three witness
+policies (the active one mints and burns the singular tag) and the
+application's (it burns the application tag a registration holds).
+-}
+foldContext :: RegistryContext
+foldContext =
+    witnessScripts
+        { rcWitnessScripts =
+            Map.insert 3 appScript (rcWitnessScripts witnessScripts)
+        }
+
+{- | A booked registration of `key` at the fold's registry, as its booking
+leaves it: the datum a registry commits to under the trie-ready tag.
+-}
+bookedRegistrationOf
+    :: ByteString
+    -> Integer
+    -> ByteString
+    -> Maybe PLC.Data
+    -> OnChainRegistrationRequest
+bookedRegistrationOf key submittedAt destination datum =
+    OnChainRegistrationRequest
+        { regRegistry = onChainTokenId foldTokenId
+        , regKey = key
+        , regRefundAddress = toBuiltin ownerKey
+        , regDestination = destination
+        , regDatum = datum
+        , regSubmittedAt = submittedAt
+        , regRegistrationCost = 2000000
+        , regDeclaredTip = bookedTip
+        , regCarrierAda = 2000000
+        , regNonce = 1
+        }
+
+-- | The output that holds a booked registration, with both tags its booking issued.
+bookedRegistration
+    :: TxIn -> OnChainRegistrationRequest -> (TxIn, TxOut ConwayEra)
+bookedRegistration reference r =
     ( reference
-    , output & addrTxOutL .~ requestAddrFromCfg builtCfg foldTokenId Testnet
+    , mkBasicTxOut
+        (requestAddrFromCfg foldCfg foldTokenId Testnet)
+        ( MaryValue
+            (Coin 5000000)
+            ( MultiAsset
+                ( Map.fromList
+                    [
+                        ( requestPolicyOf foldCfg foldTokenId
+                        , Map.singleton
+                            (AssetName (SBS.toShort (trieReadyTagName r)))
+                            1
+                        )
+                    ,
+                        ( policyIdFromPin (cfgApplicationPolicy foldCfg)
+                        , Map.singleton
+                            ( AssetName
+                                ( SBS.toShort
+                                    ( applicationTagName
+                                        (regKey r)
+                                        (regRefundAddress r)
+                                        (regDestination r)
+                                        (regNonce r)
+                                    )
+                                )
+                            )
+                            1
+                        )
+                    ]
+                )
+            )
+        )
+        & datumTxOutL .~ mkInlineDatum (toPlcData (RegistrationDatum r))
     )
+
+{- | A booked termination of `key`: the request holds the key's singular tag
+and the whole value of its booking, under the trie-ready tag its datum commits to.
+-}
+bookedTermination :: TxIn -> ByteString -> (TxIn, TxOut ConwayEra)
+bookedTermination reference key =
+    ( reference
+    , mkBasicTxOut
+        (requestAddrFromCfg foldCfg foldTokenId Testnet)
+        ( MaryValue
+            (Coin 4000000)
+            ( MultiAsset
+                ( Map.fromList
+                    [
+                        ( requestPolicyOf foldCfg foldTokenId
+                        , Map.singleton
+                            (AssetName (SBS.toShort (terminationTrieReadyTagName t)))
+                            1
+                        )
+                    ,
+                        ( policyIdFromPin (cfgActivePolicy foldCfg)
+                        , Map.singleton (AssetName (SBS.toShort key)) 1
+                        )
+                    ]
+                )
+            )
+        )
+        & datumTxOutL .~ mkInlineDatum (toPlcData (TerminationDatum t))
+    )
+  where
+    t =
+        OnChainTerminationRequest
+            { termRegistry = onChainTokenId foldTokenId
+            , termKey = key
+            , termDestination = BS.empty
+            , termDeclaredTip = bookedTip
+            , termCarrierAda = 2000000
+            , termNonce = 1
+            }
+
+-- | The tip every booked request declares.
+bookedTip :: Integer
+bookedTip = 1000000
+
+{- | A legacy request, even one that holds a tag under the request policy, is
+no booked request: its datum is the legacy edge-only one. This one names an
+edge no booked request can name.
+-}
+legacyTagged :: (TxIn, TxOut ConwayEra)
+legacyTagged =
+    let (_, out) = requestFor 99
+    in  ( requestIn
+        , out
+            & addrTxOutL .~ requestAddrFromCfg foldCfg foldTokenId Testnet
+            & valueTxOutL
+                .~ MaryValue
+                    (out ^. coinTxOutL)
+                    ( MultiAsset
+                        ( Map.singleton
+                            (requestPolicyOf foldCfg foldTokenId)
+                            (Map.singleton (AssetName "legacy-tag") 1)
+                        )
+                    )
+        )
+
+-- | The registration the whole-path rows fold unless they name another.
+defaultRegistration :: (TxIn, TxOut ConwayEra)
+defaultRegistration =
+    bookedRegistration
+        requestIn
+        (bookedRegistrationOf keyA 0 refund Nothing)
+
+-- | An untagged output at the request address: pollution no discovery sees.
+pollutionOut :: (TxIn, TxOut ConwayEra)
+pollutionOut =
+    ( case parseOutRef (T.pack (replicate 64 'c' <> "#0")) of
+        Right r -> r
+        Left e -> error ("BurnSourceSpec fixture: " <> e)
+    , mkBasicTxOut
+        (requestAddrFromCfg foldCfg foldTokenId Testnet)
+        (MaryValue (Coin 3000000) mempty)
+    )
+
+{- | A stub provider serving one registry: the state at the cage, the booked
+requests under the request policy, an untagged output at the request address
+that discovery must never read, an ada-only wallet output anywhere else.
+Explicit finite synthetic time, exact resolved outputs and unit-returning
+synthetic witnesses let the real local evaluator run. These rows inspect
+assembled bodies and do not establish registry script admission.
+-}
+foldProviderOver :: [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
+foldProviderOver requests =
+    withPolicyOutputs (\_ -> pure requests) $
+        withAddressOutputs (pure . utxosAt) $
+            withParameters (withSyntheticCosts preprodParams) $
+                withTime (pure syntheticTime) $
+                    withResolvedOutputs
+                        (resolveBuilt requests [])
+                        stubSession
+
+foldProvider :: Session NoWitness IO
+foldProvider = foldProviderOver [defaultRegistration]
 
 {- | Resolve the full raw extent, including application inputs and publications.
 Explicit extra facts replace the default application output by reference.
@@ -953,7 +1130,7 @@ utxosAt :: Addr -> [(TxIn, TxOut ConwayEra)]
 utxosAt a
     | a == cageAddrFromCfg builtCfg Testnet = [stateUtxoFor]
     | a == requestAddrFromCfg builtCfg foldTokenId Testnet =
-        [builtRequest (requestFor edgeInsertActive)]
+        [pollutionOut]
     | otherwise =
         [(feeIn, mkBasicTxOut a (MaryValue (Coin 100000000) mempty))]
 
@@ -964,38 +1141,36 @@ outlay across the booking and the fold).
 -}
 builtFoldUnder :: PParams ConwayEra -> IO ConwayTx
 builtFoldUnder pp = do
-    tm <- mkPureTrieManager
-    createTrie tm foldTokenId
+    tm <- trieWith Nothing
     updateTokenWithDuties
-        builtCfg
+        foldCfg
         (withParameters (withSyntheticCosts pp) foldProvider)
         tm
         foldTokenId
         payer
-        witnessScripts
+        foldContext
 
 {- | The fold's promise that no signer is required is a promise about
 the transaction a caller SUBMITS, so the row drives the public
-`updateTokenWithDuties` — query, proofs, duties and assembly, the whole
-path a caller runs — and reads the required-signer field of the body it
-builds. Non-vacuity rides the same body: the fold really spent the
-state and the request and really minted, so an empty signer field is a
-built fold's decision, not an empty answer.
+`updateTokenWithDuties` — discovery by the request policy, selection, proofs,
+duties and assembly, the whole path a caller runs — and reads the
+required-signer field of the body it builds. Non-vacuity rides the same body:
+the fold really spent the state and the booked request and really minted, so
+an empty signer field is a built fold's decision, not an empty answer.
 -}
 builtFoldBody :: Spec
 builtFoldBody =
     describe "#267: the built fold requires no signature" $
         it "builds the fold with no required signers in its body" $ do
-            tm <- mkPureTrieManager
-            createTrie tm foldTokenId
+            tm <- trieWith Nothing
             tx <-
                 updateTokenWithDuties
-                    builtCfg
+                    foldCfg
                     foldProvider
                     tm
                     foldTokenId
                     payer
-                    witnessScripts
+                    foldContext
             let body = tx ^. bodyTxL
             body ^. reqSignerHashesTxBodyL `shouldSatisfy` Set.null
             body
@@ -1005,8 +1180,14 @@ builtFoldBody =
                 MultiAsset m -> m `shouldSatisfy` (not . Map.null)
 
 {- | The public fold builder supplies an unsigned body only when a future
-slot remains. Its original omitted lower bound must stay omitted. Synthetic
-scripts establish construction/refusal here, not actual registry admission.
+slot remains. A registration folds only from the slot its booking was made, so
+the interval the ruled fold states has both bounds: it opens at the booking
+and closes at the registration's deadline, held inside the ledger's horizon
+(`lean/Singular/Economics/Fold.lean`, `foldPrerequisite`; the Aiken
+`modify.ak` requires `lower >= submitted_at` and two finite bounds). The
+numerical boundaries are the legacy rows' own: the legacy rows omitted the
+lower bound, which the ruled fold cannot. Synthetic scripts establish
+construction/refusal here, not actual registry admission.
 -}
 upperOnlyWindow :: Spec
 upperOnlyWindow = describe "upper-only folds remain usable after their observed tip" $ do
@@ -1031,7 +1212,7 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
                     [] -> (([], seen <> [971]), 971)
             tx <- buildWith next 1250
             let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-            lower `shouldBe` SNothing
+            lower `shouldBe` SJust (bookedAt 1250)
             upper `shouldBe` SJust (SlotNo 1250)
             (_, observed) <- readIORef observations
             observed `shouldBe` [915, 970, 971]
@@ -1043,7 +1224,14 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
                     current : rest -> ((rest, seen <> [current]), current)
                     [] -> (([], seen <> [971]), 971)
             buildWith next 1016
-                `shouldThrow` (== WindowTooShort (SlotNo 971) (SlotNo 1500) Nothing (SlotNo 1016) 100)
+                `shouldThrow` ( ==
+                                    WindowTooShort
+                                        (SlotNo 971)
+                                        (SlotNo 1500)
+                                        (Just (bookedAt 1016))
+                                        (SlotNo 1016)
+                                        100
+                              )
             (_, observed) <- readIORef observations
             observed `shouldBe` [915, 916, 970, 971]
     it
@@ -1074,11 +1262,11 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
                     [] -> ([], 1016)
             buildWith next 1250
                 `shouldThrow` (== HorizonWaitTimedOut (SlotNo 1016) (SlotNo 1500))
-    it "builds the accepting upper-999 twin with no lower bound" $ do
+    it "builds the accepting upper-999 twin from the booking's slot" $ do
         tx <- build 999
         let body = tx ^. bodyTxL
             ValidityInterval lower upper = body ^. vldtTxBodyL
-        lower `shouldBe` SNothing
+        lower `shouldBe` SJust (bookedAt 999)
         upper `shouldBe` SJust (SlotNo 999)
         body ^. inputsTxBodyL
             `shouldSatisfy` (\inputs -> Set.member stateIn inputs && Set.member requestIn inputs)
@@ -1086,27 +1274,27 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
   where
     build = buildAt 868
     buildAt observed = buildWith (pure observed)
+    -- one slot lasts a tenth of a second, and a registration is booked a
+    -- processing time before its deadline: the slot it opens its window at
+    bookedAt upper =
+        SlotNo
+            ( fromInteger upper
+                - fromInteger (stateProcessTime tokenState `div` 100)
+            )
     buildWith nextTip upper = do
-        let (reference, output) = requestFor edgeInsertActive
-            requested = case extractCageDatum output of
-                Just (RequestDatum request) ->
-                    ( reference
-                    , output
-                        & datumTxOutL
-                            .~ mkInlineDatum
-                                ( toPlcData
-                                    ( RequestDatum
-                                        request
-                                            { requestSubmittedAt = upper * 100 - stateProcessTime tokenState
-                                            }
-                                    )
-                                )
+        let requested =
+                bookedRegistration
+                    requestIn
+                    ( bookedRegistrationOf
+                        keyA
+                        (upper * 100 - stateProcessTime tokenState)
+                        refund
+                        Nothing
                     )
-                _ -> error "upper-only fixture: request datum absent"
             raw =
                 withTime
                     (pure (syntheticTimeWith 0 (1 / 10) 500))
-                    (providerWith requested)
+                    (foldProviderOver [requested])
             view =
                 raw
                     { tipObservation = do
@@ -1116,17 +1304,17 @@ upperOnlyWindow = describe "upper-only folds remain usable after their observed 
                     }
         tm <- trieWith Nothing
         updateTokenWithDuties
-            builtCfg
+            foldCfg
             view
             tm
             foldTokenId
             payer
-            witnessScripts
+            foldContext
     refused upper failure = case failure of
         WindowPastLedgerHorizon tip horizon lower windowUpper ->
             tip == SlotNo 868
                 && horizon == SlotNo 1000
-                && isNothing lower
+                && lower == Just (bookedAt upper)
                 && windowUpper == SlotNo (fromInteger upper)
         _ -> False
 
@@ -1141,14 +1329,14 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
             otherWho
             stateIn
             validState
-            [requestFor edgeInsertActive]
+            [defaultRegistration]
     it "names another selected output StaleState" $
         check
             "TrieState StaleState"
             who
             requestIn
             validState
-            [requestFor edgeInsertActive]
+            [defaultRegistration]
     it "names a different recorded root StaleState" $
         check
             "TrieState StaleState"
@@ -1162,14 +1350,14 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                                 (StateDatum tokenState{stateRoot = OnChainRoot "different-root"})
                             )
             )
-            [requestFor edgeInsertActive]
+            [defaultRegistration]
     it "names an undecodable state datum StaleState" $
         check
             "TrieState StaleState"
             who
             stateIn
             (const (snd stateUtxoFor & datumTxOutL .~ mkInlineDatum (PLC.I 42)))
-            [requestFor edgeInsertActive]
+            [defaultRegistration]
     it "names a request datum in the state output StaleState" $
         check
             "TrieState StaleState"
@@ -1177,9 +1365,9 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
             stateIn
             ( const $
                 snd stateUtxoFor
-                    & datumTxOutL .~ (snd (requestFor edgeInsertActive) ^. datumTxOutL)
+                    & datumTxOutL .~ (snd defaultRegistration ^. datumTxOutL)
             )
-            [requestFor edgeInsertActive]
+            [defaultRegistration]
     it "names a missing state datum StaleState" $
         check
             "TrieState StaleState"
@@ -1190,16 +1378,19 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                     (snd stateUtxoFor ^. addrTxOutL)
                     (snd stateUtxoFor ^. valueTxOutL)
             )
-            [requestFor edgeInsertActive]
-    it "prints the speculative refusal with its subject and cause" $
-        check
-            ( "TrieState "
-                <> show (TS.UndecodableRequest who Nothing (TS.EdgeOutOfRange 99))
-            )
+            [defaultRegistration]
+    -- A request datum carries no edge: a booked request is a registration or
+    -- a termination, so an edge outside the two, which the legacy row printed
+    -- as the speculative walk's `EdgeOutOfRange 99`, has no booked form. The
+    -- legacy request that names it, even rightly tagged, is no pending request.
+    it
+        "refuses a legacy request naming an edge no booked request can, as no pending request"
+        $ check
+            "updateToken: no pending requests"
             who
             stateIn
             validState
-            [requestFor 99]
+            [legacyTagged]
     it "still refuses a view without the state output" $
         checkView
             "updateToken: state UTxO not found"
@@ -1212,16 +1403,7 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
     it "still refuses a view without pending requests" $
         checkView
             "updateToken: no pending requests"
-            ( withAddressOutputs
-                ( \a ->
-                    pure
-                        ( if a == requestAddrFromCfg builtCfg foldTokenId Testnet
-                            then []
-                            else utxosAt a
-                        )
-                )
-                foldProvider
-            )
+            (foldProviderOver [])
     it "still refuses a view without an ada-only funding output" $
         checkView
             "updateToken: no ada-only UTxO to fund the fold"
@@ -1252,12 +1434,9 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
                     pure $
                         if a == cageAddrFromCfg builtCfg Testnet
                             then [(stateIn, state root)]
-                            else
-                                if a == requestAddrFromCfg builtCfg foldTokenId Testnet
-                                    then requests
-                                    else utxosAt a
+                            else utxosAt a
                 )
-                foldProvider
+                (foldProviderOver requests)
     checkView name view = checkWith name who stateIn (const view)
     checkWith name identity output viewAt = do
         let root = Root (BS.replicate 32 0)
@@ -1284,7 +1463,7 @@ builderRefusals = describe "the fold builder preserves its printed refusal names
         result <- TS.withTrieState capability chosen $ \snap ->
             try @ErrorCall
                 ( updateTokenWithTrieState
-                    builtCfg
+                    foldCfg
                     (viewAt root)
                     snap
                     foldTokenId
@@ -1401,12 +1580,17 @@ applicationRelease =
 {- $buildOnly
 Transaction-build evidence only. These rows drive the real
 'updateTokenWithDuties' with the application's context and read the
-body it assembles: which inputs it spends, with which redeemers, paying
-which outputs. The scripts are the synthetic 'program', the pins are the
+body it assembles: which inputs it spends, which tags it mints and burns,
+paying which outputs. The scripts are the synthetic 'program', the pins are the
 synthetic 'cfg' ones, and the envelope names a synthetic registry, so
 nothing here evaluates the applied open_datum script or shows a ledger
 would accept the transaction. That acceptance is the devnet journey's
 evidence, not these rows'.
+
+A termination is booked with the key's singular tag and the whole value of its
+booking inside the request itself, so the fold consumes that request and burns
+the tag: there is no separate holder to spend and no holder release to pay.
+The retired holder-release row is replaced by the booked termination below.
 -}
 
 -- | The application's live-output address: the applied script's own hash.
@@ -1440,20 +1624,6 @@ liveOutput =
         & datumTxOutL .~ mkInlineDatum (envelopeToData openEnvelope)
     )
 
--- | A stub view whose one pending request is `request`.
-providerWith :: (TxIn, TxOut ConwayEra) -> Session NoWitness IO
-providerWith request =
-    withAddressOutputs
-        ( \a ->
-            pure $
-                if a == requestAddrFromCfg builtCfg foldTokenId Testnet
-                    then [builtRequest request]
-                    else utxosAt a
-        )
-        $ withResolvedOutputs
-            (resolveBuilt [builtRequest request] [])
-            foldProvider
-
 -- | An in-memory trie whose `keyA` leaf is `leaf`, or empty.
 trieWith :: Maybe ByteString -> IO (TrieManager IO)
 trieWith leaf = do
@@ -1471,6 +1641,21 @@ spendRedeemers tx =
 
 bodyOutputs :: ConwayTx -> [TxOut ConwayEra]
 bodyOutputs tx = toList (tx ^. bodyTxL . outputsTxBodyL)
+
+-- | What the body mints of one asset, zero when it mints none.
+mintedBy :: ConwayTx -> PolicyID -> ByteString -> Integer
+mintedBy tx policy key = case tx ^. bodyTxL . mintTxBodyL of
+    MultiAsset m ->
+        maybe
+            0
+            (Map.findWithDefault 0 (AssetName (SBS.toShort key)))
+            (Map.lookup policy m)
+
+-- | The booked termination of `keyA` the retirement rows fold.
+terminationIn :: TxIn
+terminationIn = case parseOutRef (T.pack (replicate 64 'd' <> "#0")) of
+    Right r -> r
+    Left e -> error ("BurnSourceSpec fixture: " <> e)
 
 openDatumFold :: Spec
 openDatumFold =
@@ -1500,55 +1685,57 @@ openDatumFold =
                     )
                     `shouldSatisfy` isLeft
             it
-                "retires the key by spending its live output with Release, paying deposit and release together"
+                "retires the key by consuming a booked termination that holds its singular tag and whole value"
                 $ do
                     tm <- trieWith (Just leafActive)
-                    ctx <-
-                        either
-                            fail
-                            pure
-                            (withApplication program Nothing [liveOutput] witnessScripts)
+                    let termination = bookedTermination terminationIn keyA
+                        Coin held = snd termination ^. coinTxOutL
+                        active = policyIdFromPin (cfgActivePolicy foldCfg)
                     tx <-
                         updateTokenWithDuties
-                            builtCfg
-                            (providerWith (retirementAt 1 ownerKey keyA))
+                            foldCfg
+                            (foldProviderOver [termination])
                             tm
                             foldTokenId
                             payer
-                            ctx
-                    tx ^. bodyTxL . inputsTxBodyL `shouldSatisfy` Set.member (holderIn 1)
-                    spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])
-                    bodyOutputs tx
-                        `shouldSatisfy` elem (ownerPaid ownerKey (2000000 + 2000000))
+                            foldContext
+                    -- the request is consumed, and no holder rides in beside it
+                    tx ^. bodyTxL . inputsTxBodyL `shouldSatisfy` Set.member terminationIn
+                    tx ^. bodyTxL . inputsTxBodyL
+                        `shouldSatisfy` (not . Set.member (fst liveOutput))
+                    -- its singular tag burns, and the request's own tag with it
+                    mintedBy tx active keyA `shouldBe` (-1)
+                    -- the whole value less the declared tip goes to the treasury
+                    tx ^. bodyTxL . treasuryDonationTxBodyL
+                        `shouldBe` Coin (held - bookedTip)
+                    -- no old holder release is invoked, and no output carries the tag
+                    spendRedeemers tx `shouldSatisfy` notElem (PLC.Constr 1 [])
+                    [ ()
+                      | out <- bodyOutputs tx
+                      , carried keyA out /= 0
+                      ]
+                        `shouldBe` []
             it
                 "delivers an insertion's token to an output carrying its envelope inline"
                 $ do
                     tm <- trieWith Nothing
-                    let destination =
-                            (serialiseAddr applicationAddr, Just (envelopeToData openEnvelope))
-                        request =
-                            let (i, out) = requestFor edgeInsertActive
-                                req = case extractCageDatum out of
-                                    Just (RequestDatum r) ->
-                                        r
-                                            { requestOwner = toBuiltin ownerKey
-                                            , requestDestination = destination
-                                            }
-                                    _ -> error "BurnSourceSpec fixture: no request"
-                            in  (i, out & datumTxOutL .~ mkInlineDatum (toPlcData (RequestDatum req)))
-                    ctx <-
-                        either
-                            fail
-                            pure
-                            (withApplication program Nothing [] witnessScripts)
+                    let registration =
+                            bookedRegistration
+                                requestIn
+                                ( bookedRegistrationOf
+                                    keyA
+                                    0
+                                    (serialiseAddr applicationAddr)
+                                    (Just (envelopeToData openEnvelope))
+                                )
                     tx <-
                         updateTokenWithDuties
-                            builtCfg
-                            (providerWith request)
+                            foldCfg
+                            (foldProviderOver [registration])
                             tm
                             foldTokenId
                             payer
-                            ctx
+                            foldContext
                     [ ()
                       | out <- bodyOutputs tx
                       , out ^. addrTxOutL == applicationAddr
@@ -1557,15 +1744,8 @@ openDatumFold =
                         `shouldBe` [()]
 
 -- ---------------------------------------------------------
--- #299 F299-T6-001: the release script beside the registry's references
+-- #299 F299-T6-001: the application's script beside the registry's references
 -- ---------------------------------------------------------
-
--- | An application program distinct from the registry's own `program`.
-appProgram :: SBS.ShortByteString
-appProgram = applyDataParam (PLC.I 7) (unitProgram 2)
-
-appScript :: Script ConwayEra
-appScript = scriptFromBytes "open-datum" appProgram
 
 -- | A published reference output carrying `script`, at input `c`.
 referenceOf :: Char -> Script ConwayEra -> (TxIn, TxOut ConwayEra)
@@ -1590,39 +1770,20 @@ requestReference = referenceOf '7' (mkRequestScript builtCfg foldTokenId)
 appReference :: (TxIn, TxOut ConwayEra)
 appReference = referenceOf '9' appScript
 
--- | Retire keyA with the registry's references in hand, and the app's if given.
-retireWithReferences :: Maybe (TxIn, TxOut ConwayEra) -> IO ConwayTx
-retireWithReferences app = do
-    let appLive =
-            second
-                ( addrTxOutL
-                    .~ Addr
-                        Testnet
-                        (ScriptHashObj (computeScriptHash appProgram))
-                        StakeRefNull
-                )
-                liveOutput
-    tm <- trieWith (Just leafActive)
-    ctx <-
-        either
-            fail
-            pure
-            ( withApplication
-                appProgram
-                app
-                [appLive]
-                witnessScripts{rcRefUtxos = [registryReference, requestReference]}
-            )
+-- | Register keyA with the registry's references in hand, and the application's if given.
+registerWithReferences :: Maybe (TxIn, TxOut ConwayEra) -> IO ConwayTx
+registerWithReferences app = do
+    tm <- trieWith Nothing
     updateTokenWithDuties
-        builtCfg
-        ( withResolvedOutputs
-            (resolveBuilt [builtRequest (retirementAt 1 ownerKey keyA)] [appLive])
-            $ providerWith (retirementAt 1 ownerKey keyA)
-        )
+        foldCfg
+        (foldProviderOver [defaultRegistration])
         tm
         foldTokenId
         payer
-        ctx
+        foldContext
+            { rcRefUtxos =
+                [registryReference, requestReference] <> maybe [] pure app
+            }
 
 witnessedScripts :: ConwayTx -> [ScriptHash]
 witnessedScripts tx = Map.keys (tx ^. witsTxL . scriptTxWitsL)
@@ -1630,24 +1791,33 @@ witnessedScripts tx = Map.keys (tx ^. witsTxL . scriptTxWitsL)
 releaseResolution :: Spec
 releaseResolution =
     describe
-        "#299 (build only): the release script resolves beside the registry's references"
+        "#299 (build only): the application's script resolves beside the registry's references"
         $ do
-            it "attaches the release script when no reference carries it" $ do
-                tx <- retireWithReferences Nothing
+            let registration = bookedRegistrationOf keyA 0 refund Nothing
+                applicationTag =
+                    applicationTagName
+                        (regKey registration)
+                        (regRefundAddress registration)
+                        (regDestination registration)
+                        (regNonce registration)
+                appPolicy = policyIdFromPin (cfgApplicationPolicy foldCfg)
+            it "attaches the application's script when no reference carries it" $ do
+                tx <- registerWithReferences Nothing
                 tx ^. bodyTxL . referenceInputsTxBodyL
                     `shouldSatisfy` Set.member (fst registryReference)
                 witnessedScripts tx `shouldSatisfy` elem (hashScript appScript)
                 witnessedScripts tx
                     `shouldSatisfy` notElem (hashScript (scriptFromBytes "state" program))
-                spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])
+                -- the script is run: it is the policy that burns the registration's application tag
+                mintedBy tx appPolicy applicationTag `shouldBe` (-1)
             it
-                "references the release script, attaching nothing, when its output is given"
+                "references the application's script, attaching nothing, when its output is given"
                 $ do
-                    tx <- retireWithReferences (Just appReference)
+                    tx <- registerWithReferences (Just appReference)
                     tx ^. bodyTxL . referenceInputsTxBodyL
                         `shouldSatisfy` ( \refs ->
                                             Set.member (fst appReference) refs
                                                 && Set.member (fst registryReference) refs
                                         )
                     witnessedScripts tx `shouldSatisfy` notElem (hashScript appScript)
-                    spendRedeemers tx `shouldSatisfy` elem (PLC.Constr 1 [])
+                    mintedBy tx appPolicy applicationTag `shouldBe` (-1)

@@ -29,10 +29,16 @@ processing window and not before it was booked; a termination has no window.
 The caller attaches the mints of the selected members only: the application
 tag burn of a registration and the singular tag moves.
 
-The transaction library states no treasury donation, so the donation is set on
-the balanced body (the folder's change gives it up, the fee is raised for the
-bytes the field adds); the scripts are judged on that same body, change and
-donation included, while the program is built and once more at the end.
+The transaction library states no treasury donation and its balancer ignores
+one. So the program holds the donation's lovelace in a placeholder output
+beside the real ones, which makes the library balance, price and evaluate the
+body as if that lovelace were paid out; the placeholder is then replaced by
+the donation field and nothing else changes: the fee, the change, the declared
+units and the script-integrity hash stay the ones the library settled. The
+scripts, which check that lovelace is conserved, are shown that very body
+(placeholder gone, donation set, the folder's change) in every evaluation, and
+the finished body is evaluated once more: a fold whose scripts refuse it, or
+whose declared units do not cover the units measured on it, is not returned.
 
 This is the single canonical permissionless-fold implementation for
 issue #77's runners (register, recovery, retirement). Its lineage is
@@ -48,12 +54,17 @@ module Singular.Registry.TxBuilder.ConnectedFold
     , ConnectedMint (..)
     , ConnectedFoldArgs (..)
     , connectedFoldTx
+    , FoldProofs
+    , managerProofs
+    , connectedFoldWith
+    , connectedFoldAt
+    , bookedMove
     , syncFoldedRequests
     , generousUnits
     , skipEvalUnits
     ) where
 
-import Control.Monad (unless, when)
+import Control.Monad (forM_, unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
@@ -70,7 +81,6 @@ import Cardano.Ledger.Address (Addr, decodeAddrEither)
 import Cardano.Ledger.Api.PParams
     ( ppMaxBlockExUnitsL
     , ppMaxTxExUnitsL
-    , ppTxFeePerByteL
     )
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
@@ -90,12 +100,8 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
-import Cardano.Ledger.Coin
-    ( Coin (..)
-    , CoinPerByte (..)
-    , CompactForm (..)
-    )
-import Cardano.Ledger.Core (Script, sizeTxF)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Core (Script)
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -313,14 +319,51 @@ guardMintMatch cfg members mints =
         BookedRegistration _ -> 1
         BookedTermination _ -> -1
 
+{- | The proofs a fold states for its members, given in the ledger's input
+order, and the root they lead to.
+-}
+type FoldProofs = [(TxIn, BookedRequest)] -> IO ([[ProofStep]], Root)
+
+{- | The key a booked request names and the edge the model takes it through:
+an insertion for a registration, the active-to-terminal replacement for a
+termination.
+-}
+bookedMove :: BookedRequest -> (ByteString, Integer)
+bookedMove = \case
+    BookedRegistration r -> (regKey r, edgeInsertActive)
+    BookedTermination t -> (termKey t, edgeUpdateTerminal)
+
 {- | Build the connected fold transaction (unsigned), returning the
-computed new root the state continuation carries.
+computed new root the state continuation carries. The proofs come from the
+manager's speculative trie.
 -}
 connectedFoldTx :: ConnectedFoldArgs -> IO (ConwayTx, Root)
-connectedFoldTx args = do
+connectedFoldTx args =
+    connectedFoldWith (managerProofs (cfaTrie args) (cfaToken args)) args
+
+{- | The fold of 'connectedFoldTx' with the proofs supplied by the caller, for a
+caller whose proofs come from an authenticated trie snapshot rather than a
+manager; the manager of the arguments is then never read.
+-}
+connectedFoldWith
+    :: FoldProofs -> ConnectedFoldArgs -> IO (ConwayTx, Root)
+connectedFoldWith proofsFor args = do
+    observed <- Services.tip (cfaSession args)
+    connectedFoldAt observed proofsFor args
+
+{- | The fold of 'connectedFoldWith' built from a tip the caller has already
+observed, for a caller that judged its requests against that same observation:
+a build takes one observation of the tip, and a wait for the ledger's horizon
+reads the tip again only from there.
+-}
+connectedFoldAt
+    :: TipObservation
+    -> FoldProofs
+    -> ConnectedFoldArgs
+    -> IO (ConwayTx, Root)
+connectedFoldAt observed proofsFor args = do
     let cfg = cfaCfg args
         view = cfaSession args
-        tm = cfaTrie args
         tid = cfaToken args
         feeAddr = cfaFeeAddr args
         (stateIn, stateOut) = cfaStateUtxo args
@@ -330,7 +373,8 @@ connectedFoldTx args = do
     when (cfaSkipEval args) $ guardMintMatch cfg members (cfaMints args)
     guardOneRequestPerKey members
     pp <- parameters view
-    (proofs, newRoot) <- computeProofs tm tid members
+    (proofs, newRoot) <-
+        proofsFor [(memberRef m, memberRequest m) | m <- members]
     let adjustedRoot = cfaAdjustRoot args newRoot
         (oldState, newStateOut, script) =
             prepareState cfg stateOut adjustedRoot
@@ -340,7 +384,8 @@ connectedFoldTx args = do
         windowed = [(ref, regSubmittedAt r) | (ref, r) <- registrations]
         carriers = [carrierOutput cfg r | (_, r) <- registrations]
         donation = Coin (sum (map owedDonation members))
-    observed <- Services.tip view
+        -- the donation's lovelace, paid out in the library's eyes
+        placeholder = [mkBasicTxOut feeAddr (inject donation) | donation /= Coin 0]
     tipStartMs <- Services.slotStart view (observedSlot observed)
     -- a registration folds only while its window is open
     maybe
@@ -404,6 +449,7 @@ connectedFoldTx args = do
                 (cfaSpends args)
                 (cfaMints args)
                 (cfaOutputs args)
+                placeholder
                 (cfaSigners args)
                 (cfaRefUtxos args)
                 (cfaAttachScripts args)
@@ -419,19 +465,30 @@ connectedFoldTx args = do
     case result of
         Left err -> refuse ("build failed: " <> show err)
         Right built -> do
-            donated <- withDonation pp feeAddr donation built
+            final <- settleDonation pp known programOutputs feeAddr donation built
             unless (cfaSkipEval args) $ do
-                judged <- evaluate donated
-                case [(p, e) | (p, Left e) <- Map.toList judged] of
-                    [] -> pure ()
-                    (purpose, e) : _ ->
+                judged <- evaluate final
+                let Redeemers declared = final ^. witsTxL . rdmrsTxWitsL
+                forM_ (Map.toList judged) $ \(purpose, outcome) -> case outcome of
+                    Left e ->
                         refuse
                             ( "the built fold is refused by its own scripts: "
                                 <> show purpose
                                 <> ": "
                                 <> e
                             )
-            pure (donated, newRoot)
+                    Right measured@(ExUnits m s) -> case Map.lookup purpose declared of
+                        Just (_, ExUnits dm ds) | m <= dm && s <= ds -> pure ()
+                        other ->
+                            refuse
+                                ( "the built fold declares units that do not cover those measured on it: "
+                                    <> show purpose
+                                    <> ": measured "
+                                    <> show measured
+                                    <> ", declared "
+                                    <> show (fmap snd other)
+                                )
+            pure (final, newRoot)
   where
     refuseWindow refusal =
         refuse
@@ -541,53 +598,64 @@ settledForScripts known programOutputs changeAddr donation tx =
                 )
             )
 
-{- | The transaction library states no treasury donation, so the donation is
-set on the balanced body: the change output gives it up, and the fee is raised
-for the bytes the donation field adds until it covers the body that carries
-it. The folder's change must still carry its minimum ada.
+{- | Replace the donation's placeholder by the donation. The placeholder sits
+right after the program's own outputs and the library's change right after it;
+removing it and stating its lovelace as the donation leaves lovelace conserved
+by construction, and leaves the fee, the change, the declared units, the
+collateral and the script-integrity hash as the library settled them for a body
+that paid the same lovelace out. What is returned is refused when it does not
+conserve lovelace, or when the folder's change cannot carry its minimum ada.
 -}
-withDonation
-    :: PParams ConwayEra -> Addr -> Coin -> ConwayTx -> IO ConwayTx
-withDonation pp changeAddr donation tx0
-    | donation == Coin 0 = pure tx0
-    | otherwise = case tx0 ^. bodyTxL . outputsTxBodyL of
-        rest StrictSeq.:|> change
-            | change ^. addrTxOutL == changeAddr ->
-                settle rest change (8 :: Int) originalFee
-        _ ->
+settleDonation
+    :: PParams ConwayEra
+    -> Map TxIn (TxOut ConwayEra)
+    -> Int
+    -> Addr
+    -> Coin
+    -> ConwayTx
+    -> IO ConwayTx
+settleDonation pp known programOutputs changeAddr donation built
+    | donation == Coin 0 = pure built
+    | otherwise = do
+        unless holdsPlaceholder $
             refuse
-                "the balanced fold has no change output of the folder to give the donation up"
+                "the balanced body does not hold the donation's placeholder where it was put"
+        unless (conserves final) $
+            refuse "the finished body does not conserve lovelace"
+        case toList after of
+            [change]
+                | change ^. addrTxOutL == changeAddr
+                    && change ^. coinTxOutL >= getMinCoinTxOut pp change ->
+                    pure final
+            _ ->
+                refuse
+                    "the folder's funding cannot carry the change that the fee and the donation leave"
   where
-    originalFee = tx0 ^. bodyTxL . feeTxBodyL
-    size0 = toInteger (tx0 ^. sizeTxF)
-    perByte = case unCoinPerByte (pp ^. ppTxFeePerByteL) of
-        CompactCoin w -> toInteger w
-    lovelace (Coin c) = c
-    settle rest change n fee
-        | n == 0 = refuse "the donation's fee did not settle"
-        | lovelace (change' ^. coinTxOutL)
-            < lovelace (getMinCoinTxOut pp change') =
-            refuse
-                "the folder's funding cannot carry the change that the fee and the donation leave"
-        | needed <= lovelace fee = pure tx
-        | otherwise = settle rest change (n - 1) (Coin needed)
-      where
-        change' =
-            change
-                & coinTxOutL
-                    .~ Coin
-                        ( lovelace (change ^. coinTxOutL)
-                            + lovelace originalFee
-                            - lovelace fee
-                            - lovelace donation
-                        )
-        tx =
-            tx0
-                & bodyTxL . treasuryDonationTxBodyL .~ donation
-                & bodyTxL . feeTxBodyL .~ fee
-                & bodyTxL . outputsTxBodyL .~ (rest StrictSeq.|> change')
-        needed =
-            lovelace originalFee + (toInteger (tx ^. sizeTxF) - size0) * perByte
+    outs = built ^. bodyTxL . outputsTxBodyL
+    before = StrictSeq.take programOutputs outs
+    after = StrictSeq.drop (programOutputs + 1) outs
+    holdsPlaceholder = case StrictSeq.lookup programOutputs outs of
+        Just o -> o ^. addrTxOutL == changeAddr && o ^. coinTxOutL == donation
+        Nothing -> False
+    final =
+        built
+            & bodyTxL . outputsTxBodyL .~ (before <> after)
+            & bodyTxL . treasuryDonationTxBodyL .~ donation
+    conserves tx =
+        let body = tx ^. bodyTxL
+            lovelace (Coin c) = c
+            inputs =
+                sum
+                    [ lovelace (o ^. coinTxOutL)
+                    | i <- Set.toList (body ^. inputsTxBodyL)
+                    , Just o <- [Map.lookup i known]
+                    ]
+            paid =
+                sum
+                    (map (lovelace . (^. coinTxOutL)) (toList (body ^. outputsTxBodyL)))
+                    + lovelace (body ^. treasuryDonationTxBodyL)
+                    + lovelace (body ^. feeTxBodyL)
+        in  inputs == paid
 
 {- | Generous per-purpose budget stated when local evaluation is
 skipped (adversarial path only); the ledger re-executes for real.
@@ -625,22 +693,12 @@ skipEvalUnits txLimit blockLimit n =
 data NoCtx a
 
 -- | Run speculative trie operations to compute proofs and the new root.
-computeProofs
-    :: TrieManager IO
-    -> TokenId
-    -> [Member]
-    -> IO ([[ProofStep]], Root)
-computeProofs tm tid members =
+managerProofs :: TrieManager IO -> TokenId -> FoldProofs
+managerProofs tm tid booked =
     withSpeculativeTrie tm tid $ \trie -> do
-        ps <- mapM (processMember trie) members
+        ps <- mapM (uncurry (walkEdge trie) . bookedMove . snd) booked
         r <- getRoot trie
         pure (ps, r)
-
--- | Walk one member's edge through the speculative trie.
-processMember :: (Monad m) => Trie m -> Member -> m [ProofStep]
-processMember trie m = walkEdge trie (memberKey m) $ case memberRequest m of
-    BookedRegistration _ -> edgeInsertActive
-    BookedTermination _ -> edgeUpdateTerminal
 
 -- | Replay one accepted request into a trie: a booking by its model edge, a legacy request by its own.
 processRequest
@@ -725,6 +783,7 @@ buildProgram
     -> [ConnectedSpend]
     -> [ConnectedMint]
     -> [TxOut ConwayEra]
+    -> [TxOut ConwayEra]
     -> [KeyHash Guard]
     -> [(TxIn, TxOut ConwayEra)]
     -> [Script ConwayEra]
@@ -744,6 +803,7 @@ buildProgram
     extraSpends
     extraMints
     extraOutputs
+    placeholder
     extraSigners
     refUtxos
     attachScripts = do
@@ -769,6 +829,7 @@ buildProgram
             in  if f > Coin 0 then Tx.Ok f else Tx.Iterate f
         mapM_ Tx.output carriers
         mapM_ Tx.output extraOutputs
+        mapM_ Tx.output placeholder
         -- Scripts arrive by witness or by reference, never both: with
         -- reference UTxOs every purpose resolves through them (a fold
         -- carries four scripts and would otherwise breach the max tx size);

@@ -72,7 +72,10 @@ import Lens.Micro ((&), (.~), (^.))
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
 import Test.Hspec
 
+import PlutusCore.Data qualified as PLC
+import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint (applyDataParam)
 import Singular.Registry.ChainedView
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Deployment (parseOutRef)
@@ -145,11 +148,15 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , extractCageDatum
     , mkCageScript
     , mkInlineDatum
-    , mkRequestDatumWith
+    , onChainTokenId
+    , policyIdFromPin
     , requestAddrFromCfg
+    , scriptFromBytes
     , scriptHashBytes
+    , toPlcData
     , txInToRef
     )
+import Singular.Registry.TxBuilder.Internal.Lookup (requestPolicyOf)
 import Singular.Registry.TxBuilder.Prepare
     ( Preparation (..)
     , planPreparation
@@ -161,8 +168,11 @@ import Singular.Registry.TxBuilder.Update
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRoot (..)
+    , applicationTagName
     , stateRoot
+    , trieReadyTagName
     )
 
 -- ---------------------------------------------------------
@@ -655,7 +665,7 @@ foldRig = do
             view <- chainedSession (pure []) base
             foldTx <-
                 updateTokenSelected
-                    cfg
+                    foldCfg
                     view
                     (foldSnapshot boot)
                     tokenId
@@ -683,21 +693,51 @@ foldRig = do
     plantRequest chain =
         advanceChain chain $ \facts ->
             facts{csUTxO = Map.insert requestIn requestOutput (csUTxO facts)}
+    -- a genuine booked registration: the request policy's tag and the
+    -- application tag its booking issued, with the datum the tag commits to
     requestOutput =
         mkBasicTxOut
             (requestAddrFromCfg cfg tokenId Testnet)
-            (MaryValue (Coin 10_000_000) mempty)
-            & datumTxOutL
-                .~ mkInlineDatum
-                    ( mkRequestDatumWith
-                        tokenId
-                        payer
-                        key
-                        1
-                        2_000_000
-                        1_000
-                        (serialiseAddr payer, Nothing)
+            ( MaryValue
+                (Coin 10_000_000)
+                ( MultiAsset
+                    ( Map.fromList
+                        [
+                            ( requestPolicyOf cfg tokenId
+                            , Map.singleton
+                                (AssetName (SBS.toShort (trieReadyTagName booked)))
+                                1
+                            )
+                        ,
+                            ( policyIdFromPin (cfgApplicationPolicy foldCfg)
+                            , Map.singleton
+                                (AssetName (SBS.toShort (applicationTagOf booked)))
+                                1
+                            )
+                        ]
                     )
+                )
+            )
+            & datumTxOutL .~ mkInlineDatum (toPlcData (RegistrationDatum booked))
+    booked =
+        OnChainRegistrationRequest
+            { regRegistry = onChainTokenId tokenId
+            , regKey = key
+            , regRefundAddress = BuiltinByteString (BS.replicate 28 0xd1)
+            , regDestination = serialiseAddr payer
+            , regDatum = Nothing
+            , regSubmittedAt = 1_000
+            , regRegistrationCost = 2_000_000
+            , regDeclaredTip = 1_500_000
+            , regCarrierAda = 1_500_000
+            , regNonce = 1
+            }
+    applicationTagOf r =
+        applicationTagName
+            (regKey r)
+            (regRefundAddress r)
+            (regDestination r)
+            (regNonce r)
     foldRootOf tx =
         case [ Root (unOnChainRoot (stateRoot st))
              | out <- toList (tx ^. bodyTxL . outputsTxBodyL)
@@ -735,8 +775,29 @@ foldSnapshot boot =
 foldContext :: RegistryContext
 foldContext =
     emptyRegistryContext
-        { rcWitnessScripts = Map.singleton 1 Fixture.applicationScript
+        { rcWitnessScripts =
+            Map.fromList
+                [ (1, scriptFromBytes "chained-view-active" activeProgram)
+                , (3, scriptFromBytes "chained-view-application" applicationProgram)
+                ]
         }
+
+{- | The registry as the fold sees it: the token policies it pins are
+always-succeeding programs, whose scripts the context carries, so the fold's
+own mints evaluate. The boot and the chain views use the registry as it is.
+-}
+foldCfg :: CageConfig
+foldCfg =
+    cfg
+        { cfgActivePolicy = pinOf activeProgram
+        , cfgApplicationPolicy = pinOf applicationProgram
+        }
+  where
+    pinOf = SBS.toShort . scriptHashBytes . computeScriptHash
+
+activeProgram, applicationProgram :: SBS.ShortByteString
+activeProgram = applyDataParam (PLC.I 1) (unitProgram 2)
+applicationProgram = applyDataParam (PLC.I 2) (unitProgram 2)
 
 -- ---------------------------------------------------------
 -- The trie selection over a session, and its comparison

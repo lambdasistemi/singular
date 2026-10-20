@@ -25,6 +25,7 @@ module Singular.Registry.TxBuilder.Internal.Lookup
     , findStateUtxo
     , findRequestUtxos
     , BookedRequest (..)
+    , bookedKey
     , requestPolicyOf
     , bookedRequestOf
     , pendingByTag
@@ -105,6 +106,7 @@ import Cardano.Tx.Balance
     )
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Exception (SomeException, throwIO)
+import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
@@ -308,6 +310,11 @@ data BookedRequest
     = BookedRegistration !OnChainRegistrationRequest
     | BookedTermination !OnChainTerminationRequest
     deriving stock (Show, Eq)
+
+-- | The registry key a booked request names.
+bookedKey :: BookedRequest -> ByteString
+bookedKey (BookedRegistration r) = regKey r
+bookedKey (BookedTermination t) = termKey t
 
 {- | The request policy of a registry, from the bytes of its request validator
 applied to the state policy and the registry token: the credential of the

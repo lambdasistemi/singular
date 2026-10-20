@@ -3,15 +3,18 @@
 
 {- |
 Module      : Singular.Registry.TxBuilder.Update.Duties
-Description : Fold duty decisions — what each edge owes
+Description : Fold duty decisions — what each request owes
 License     : Apache-2.0
 
-The obligations a fold's requests create, computed once, off chain:
-what must move under the registry's three token policies, where a
-minted token has to land, which custody has to be spent, which holder
-input a burn consumes, what returns to the owner, and who has to sign
-(the fold: nobody). This is one derivation; the cage computes its own
-from the requests it consumes, and the two are deliberately separate.
+The obligations a fold's requests create, computed once, off chain. For
+booked requests ('taggedMints'): the mints the model owes a registration and a
+termination, under the policies the registry pins. For legacy edge-only
+requests ('registryDuties', a pure calculator no fold entry point calls): what
+must move under the registry's three token policies, where a minted token has
+to land, which custody has to be spent, which holder input a burn consumes,
+what returns to the owner, and who has to sign (the fold: nobody). This is one
+derivation; the cage computes its own from the requests it consumes, and the
+two are deliberately separate.
 
 This module owns no queries and no transaction assembly; see
 "Singular.Registry.TxBuilder.Update.Context" and
@@ -22,9 +25,11 @@ unchanged (#267).
 module Singular.Registry.TxBuilder.Update.Duties
     ( RegistryDuties (..)
     , registryDuties
+    , taggedMints
     ) where
 
 import Data.ByteString.Short qualified as SBS
+import Data.List (find)
 import Data.Map.Strict qualified as Map
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
@@ -35,10 +40,12 @@ import Cardano.Ledger.Api.Tx.Out
     , datumTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
+    , referenceScriptTxOutL
     , valueTxOutL
     )
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Core (hashScript)
+import Cardano.Ledger.Core (Script, hashScript)
 import Cardano.Ledger.Keys (KeyHash)
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -64,17 +71,23 @@ import Singular.Registry.TxBuilder.ConnectedFold
     )
 import Singular.Registry.TxBuilder.Internal.Edges
 import Singular.Registry.TxBuilder.Internal.Identity
+import Singular.Registry.TxBuilder.Internal.Lookup
+    ( BookedRequest (..)
+    )
 import Singular.Registry.TxBuilder.Update.Context
     ( HolderRelease (..)
     , RegistryContext (..)
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
+    , OnChainTerminationRequest (..)
     , OnChainTokenState (..)
     , edgeInsertActive
     , edgeUpdateTerminal
     )
+import Singular.Registry.Wire.Booking (applicationTagName)
 
 -- ---------------------------------------------------------
 -- Registry-mode obligations (#157 mint-matches-edge-deltas, token-destinations-and-refunds, T1-T6)
@@ -406,3 +419,82 @@ registryDuties cfg pp st ctx reqUtxos processed = do
                     (MaryValue (Coin owed) (MultiAsset approvals))
         requireMinAda "deposit" out
         pure out
+
+-- ---------------------------------------------------------
+-- Tagged members: what a booked registration or termination owes the mint
+-- ---------------------------------------------------------
+
+{- | The mints the fold of these booked requests must carry, beyond the
+request-policy tags the fold itself burns: a registration burns the
+application tag it holds and creates its key's singular tag, a termination
+burns the singular tag its request holds. Moves under one policy travel as one
+mint. The script of each policy is the one the registry pins for it, found by
+its hash among the context's witness scripts and the scripts the reference
+outputs carry; a policy no such script answers for is named and refused here,
+where it is cheap, rather than on chain.
+
+A registration's application burn and the singular moves are the mints the
+model owes; anything else a producer attaches (a naming claim, a record
+output) belongs to the producer and reaches the builder through its own
+arguments.
+-}
+taggedMints
+    :: CageConfig
+    -> RegistryContext
+    -> [(TxIn, BookedRequest)]
+    -> Either String [ConnectedMint]
+taggedMints cfg ctx members = do
+    application <- mintsOf "application" (cfgApplicationPolicy cfg) burns
+    active <- mintsOf "active" (cfgActivePolicy cfg) moves
+    pure (application <> active)
+  where
+    burns =
+        Map.fromListWith
+            (+)
+            [ (AssetName (SBS.toShort (tagOf r)), -1)
+            | (_, BookedRegistration r) <- members
+            ]
+    moves =
+        Map.fromListWith
+            (+)
+            ( [ (AssetName (SBS.toShort (regKey r)), 1)
+              | (_, BookedRegistration r) <- members
+              ]
+                <> [ (AssetName (SBS.toShort (termKey t)), -1)
+                   | (_, BookedTermination t) <- members
+                   ]
+            )
+    tagOf r =
+        applicationTagName
+            (regKey r)
+            (regRefundAddress r)
+            (regDestination r)
+            (regNonce r)
+    mintsOf what pin assets
+        | Map.null assets = Right []
+        | otherwise = case scriptOfPin pin of
+            Nothing ->
+                Left
+                    ( "taggedMints: no script in hand answers for the "
+                        <> what
+                        <> " policy this registry pins"
+                    )
+            Just script ->
+                Right
+                    [ ConnectedMint
+                        { cmPolicy = policyIdFromPin pin
+                        , cmAssets = assets
+                        , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
+                        , cmScript = script
+                        }
+                    ]
+    scriptOfPin pin =
+        find
+            ((== policyIdFromPin pin) . PolicyID . hashScript)
+            (carried :: [Script ConwayEra])
+    carried =
+        Map.elems (rcWitnessScripts ctx)
+            <> [ s
+               | (_, o) <- rcRefUtxos ctx
+               , SJust s <- [o ^. referenceScriptTxOutL]
+               ]

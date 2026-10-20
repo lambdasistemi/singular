@@ -51,19 +51,25 @@ import Data.Text qualified as T
 import Data.Word (Word32)
 import Lens.Micro ((%~), (&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
+import PlutusCore.Default (DefaultFun (..), DefaultUni)
+import PlutusCore.MkPlc (mkConstant)
+import PlutusCore.Version (plcVersion110)
+import PlutusLedgerApi.V3 qualified as PLCV3
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Test.Hspec
+import UntypedPlutusCore qualified as UPLC
 
 import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo.Plutus.Evaluate (evalTxExUnits)
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
 import Cardano.Ledger.Api.Scripts.Data (Data (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
     , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
+    , scriptIntegrityHashTxBodyL
     , treasuryDonationTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
@@ -140,6 +146,7 @@ import Singular.Registry.TxBuilder.Edges
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
+    , computeScriptIntegrity
     , mkCageScript
     , mkInlineDatum
     , mkRequestScript
@@ -149,6 +156,11 @@ import Singular.Registry.TxBuilder.Internal
     , scriptFromBytes
     , toPlcData
     , walkEdge
+    )
+import Singular.Registry.TxBuilder.Update
+    ( RegistryContext (..)
+    , emptyRegistryContext
+    , updateTokenWithDuties
     )
 import Singular.Registry.Types
     ( CageDatum (..)
@@ -174,6 +186,58 @@ toyCodes =
         , ncWitness = unitProgram 3
         }
 
+{- | A toy V3 policy whose cost follows the transaction's fee: it reads the fee
+from its script context and writes a zero of a width given by the fee plus an
+offset, modulo 8000. It accepts whatever it is shown, so only the units it
+costs depend on the body: a body whose fee moves after the scripts were
+measured needs different units.
+-}
+feeSensitiveProgram :: Integer -> SBS.ShortByteString
+feeSensitiveProgram offset =
+    PLCV3.serialiseUPLC . UPLC.Program () plcVersion110 $
+        UPLC.LamAbs () (UPLC.DeBruijn 0) body
+  where
+    body =
+        app
+            (UPLC.LamAbs () (UPLC.DeBruijn 0) (mkConstant () ()))
+            (app (builtin LengthOfByteString) bytes)
+    bytes =
+        app
+            (app (app (builtin IntegerToByteString) (mkConstant () True)) count)
+            (integer 0)
+    count =
+        app
+            ( app
+                (builtin ModInteger)
+                (app (app (builtin AddInteger) fee) (integer offset))
+            )
+            (integer 8000)
+    -- the script context, its transaction info, and the fee: field 3 of it
+    ctx = UPLC.Var () (UPLC.DeBruijn 1)
+    fields term =
+        app
+            (force (force (builtin SndPair)))
+            (app (builtin UnConstrData) term)
+    first = app (force (builtin HeadList))
+    rest = app (force (builtin TailList))
+    fee =
+        app
+            (builtin UnIData)
+            (first (rest (rest (rest (fields (first (fields ctx)))))))
+    app = UPLC.Apply ()
+    force = UPLC.Force ()
+    builtin = UPLC.Builtin ()
+    integer :: Integer -> UPLC.Term UPLC.DeBruijn DefaultUni DefaultFun ()
+    integer = mkConstant ()
+
+-- | The naming programs of the registry in which the application's burn follows the fee.
+feeSensitiveCodes :: Integer -> NamingCodes
+feeSensitiveCodes offset =
+    NamingCodes
+        { ncApplication = feeSensitiveProgram offset
+        , ncWitness = unitProgram 3
+        }
+
 -- | Everything a row needs of the registry the retained blueprint boots.
 data World = World
     { wCfg :: CageConfig
@@ -191,23 +255,27 @@ naming pins of the toy programs. The state and request programs and every
 pin that does not name a toy policy are the boot's own.
 -}
 worldOf :: RetainedRegistry -> World
-worldOf r =
+worldOf = worldWith toyCodes
+
+-- | The same registry with other programs for the naming policies.
+worldWith :: NamingCodes -> RetainedRegistry -> World
+worldWith codes r =
     World
         { wCfg = cfg
         , wToken = rrToken r
         , wActiveId = policyIdFromPin (cfgActivePolicy cfg)
         , wApplicationId = policyIdFromPin (cfgApplicationPolicy cfg)
         , wRequestId = requestPolicyOf cfg (rrToken r)
-        , wActiveScript = witnessScriptOf cfg toyCodes 1
+        , wActiveScript = witnessScriptOf cfg codes 1
         , wApplicationScript =
-            scriptFromBytes "application" (ncApplication toyCodes)
+            scriptFromBytes "application" (ncApplication codes)
         , wRegistryName = case unTokenId (rrToken r) of
             AssetName n -> SBS.fromShort n
         }
   where
     booted = rrConfig r
     (applicationPin, absentPin, activePin, terminalPin) =
-        namingPins toyCodes (registryIdOf booted)
+        namingPins codes (registryIdOf booted)
     cfg =
         booted
             { cfgApplicationPolicy = applicationPin
@@ -590,6 +658,66 @@ withProofsEmptied tx =
                 stated
                 rs
 
+-- | The units the body declares for each purpose.
+declaredUnits
+    :: ConwayTx -> Map.Map (ConwayPlutusPurpose AsIx ConwayEra) ExUnits
+declaredUnits tx = Map.map snd redeemers
+  where
+    Redeemers redeemers = tx ^. witsTxL . rdmrsTxWitsL
+
+{- | The same body with its fee moved by some lovelace and the folder's change,
+the last output, moved the other way: lovelace stays conserved and nothing
+else changes.
+-}
+
+{- | The purposes whose declared units fall short of those measured on the very
+body that declares them, or that are declared without a measurement.
+-}
+uncovered
+    :: Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits)
+    -> ConwayTx
+    -> [String]
+uncovered measured tx =
+    concatMap one (Map.toList measured)
+        <> [ show p <> ": declared without a measurement"
+           | p <- Map.keys declared
+           , Map.notMember p measured
+           ]
+  where
+    declared = declaredUnits tx
+    one (p, got) = case (got, Map.lookup p declared) of
+        (Right (ExUnits m s), Just (ExUnits dm ds))
+            | m <= dm && s <= ds -> []
+            | otherwise ->
+                [ show p
+                    <> ": measured on the final body "
+                    <> show (m, s)
+                    <> ", declared "
+                    <> show (dm, ds)
+                ]
+        other -> [show p <> ": " <> show other]
+
+-- | The body with every declared memory budget one unit lower.
+withDeclarationsShort :: ConwayTx -> ConwayTx
+withDeclarationsShort =
+    witsTxL . rdmrsTxWitsL %~ \(Redeemers r) ->
+        Redeemers
+            ( Map.map
+                (\(d, ExUnits m s) -> (d, ExUnits (if m > 0 then m - 1 else 0) s))
+                r
+            )
+
+withFeeMoved :: Integer -> ConwayTx -> ConwayTx
+withFeeMoved d tx =
+    tx
+        & bodyTxL . feeTxBodyL %~ (\(Coin c) -> Coin (c + d))
+        & bodyTxL . outputsTxBodyL %~ \case
+            rest StrictSeq.:|> change
+                | change ^. addrTxOutL == payer ->
+                    rest
+                        StrictSeq.:|> (change & coinTxOutL %~ (\(Coin c) -> Coin (c - d)))
+            outs -> outs
+
 -- ---------------------------------------------------------
 -- The rows
 -- ---------------------------------------------------------
@@ -641,6 +769,104 @@ spec =
                             forM_ (Map.elems judgments) $ \case
                                 Right (ExUnits m s) -> (m > 0 && s > 0) `shouldBe` True
                                 Left e -> expectationFailure e
+                describe "the library entry path over the same validators" $ do
+                    let entry w root requests manager =
+                            updateTokenWithDuties
+                                (wCfg w)
+                                (withPolicyOutputs (\_ -> pure requests) (viewOver w root requests))
+                                manager
+                                (wToken w)
+                                payer
+                                emptyRegistryContext
+                                    { rcWitnessScripts =
+                                        Map.fromList
+                                            [ (1, wActiveScript w)
+                                            , (3, wApplicationScript w)
+                                            ]
+                                    }
+                    it
+                        "discovers the booked requests by the request policy and builds a fold the ledger's evaluator accepts at every purpose"
+                        $ \r -> do
+                            let w = worldOf r
+                            (manager, root) <- worldTrie w
+                            let requests = shapeMembers mixed w
+                                inputs = (stateRef, stateOutAt w root) : (feeRef, feeOut) : requests
+                            tx <- entry w root requests manager
+                            conserved inputs tx `shouldBe` True
+                            Map.size (judged inputs tx) `shouldBe` 6
+                            failures (judged inputs tx) `shouldBe` []
+                            -- the same members, the same mints, the same donation as the builder
+                            (direct, _) <- built w mixed
+                            tx ^. bodyTxL . inputsTxBodyL
+                                `shouldBe` direct ^. bodyTxL . inputsTxBodyL
+                            tx ^. bodyTxL . mintTxBodyL `shouldBe` direct ^. bodyTxL . mintTxBodyL
+                            tx ^. bodyTxL . treasuryDonationTxBodyL
+                                `shouldBe` direct ^. bodyTxL . treasuryDonationTxBodyL
+                    it
+                        "builds a body whose donation moved by one lovelace the real state validator refuses, at the state's spend alone"
+                        $ \r -> do
+                            let w = worldOf r
+                            (manager, root) <- worldTrie w
+                            let requests = shapeMembers mixed w
+                                inputs = (stateRef, stateOutAt w root) : (feeRef, feeOut) : requests
+                            tx <- entry w root requests manager
+                            let variant = withDonationMoved 1 tx
+                                stated = ConwaySpending (AsIx (indexOf tx stateRef))
+                            failures (judged inputs tx) `shouldBe` []
+                            conserved inputs variant `shouldBe` True
+                            failures (judged inputs variant) `shouldBe` [stated]
+                describe "a purpose whose cost follows the fee" $ do
+                    let feeWorld = worldWith (feeSensitiveCodes 3_000)
+                    it
+                        "is run by the toy application policy and costs units that follow the body's fee"
+                        $ \r -> do
+                            let w = feeWorld r
+                            (tx, inputs) <- built w registrationAlone
+                            let application = hashScript (wApplicationScript w)
+                                unitsOf body =
+                                    [ (m, s)
+                                    | (p, Right (ExUnits m s)) <- Map.toList (judged inputs body)
+                                    , scriptOf body inputs p == Just application
+                                    ]
+                            failures (judged inputs tx) `shouldBe` []
+                            length (unitsOf tx) `shouldBe` 1
+                            -- the same body with its fee moved by a thousand lovelace
+                            -- costs the application purpose different units
+                            conserved inputs (withFeeMoved 1_000 tx) `shouldBe` True
+                            unitsOf (withFeeMoved 1_000 tx) `shouldNotBe` unitsOf tx
+                    it
+                        "returns a fold whose declarations cover the units measured on that exact final body"
+                        $ \r -> do
+                            let w = feeWorld r
+                            forM_ [registrationAlone, mixed] $ \shape -> do
+                                (tx, inputs) <- built w shape
+                                let measured = judged inputs tx
+                                Map.null measured `shouldBe` False
+                                (shapeName shape, uncovered measured tx)
+                                    `shouldBe` (shapeName shape, [])
+                    it
+                        "reports a declaration one unit short of the units measured on its body"
+                        $ \r -> do
+                            let w = feeWorld r
+                            (tx, inputs) <- built w registrationAlone
+                            let short = withDeclarationsShort tx
+                                measured = judged inputs short
+                            -- the measurement does not depend on the declared units
+                            measured `shouldBe` judged inputs tx
+                            length (uncovered measured short)
+                                `shouldBe` Map.size measured
+                            Map.size measured `shouldSatisfy` (> 1)
+                    it
+                        "returns a body whose integrity hash, fee, change and minima agree with its declarations"
+                        $ \r -> do
+                            let w = feeWorld r
+                            (tx, inputs) <- built w mixed
+                            conserved inputs tx `shouldBe` True
+                            tx ^. bodyTxL . scriptIntegrityHashTxBodyL
+                                `shouldBe` computeScriptIntegrity ledgerParameters (tx ^. witsTxL . rdmrsTxWitsL)
+                            -- the fee covers the ledger's own estimate for the body as declared
+                            (tx ^. bodyTxL . feeTxBodyL)
+                                `shouldSatisfy` (>= estimateMinFeeTx ledgerParameters tx 1 0 0)
                 it
                     "refuses the fold of both members with its donation moved by one lovelace, at the state's spend alone"
                     $ \r -> do
