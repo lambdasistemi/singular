@@ -126,7 +126,7 @@ what it does; standard output carries the receipt alone.
 | `--deposit LOVELACE` | `insert` | The deposit the key's envelope protects, a whole number of lovelace: 2 000 000 when not given, and refused below that. The minimum is the client's own policy; the chain enforces only that a request's deposit equals the control's at booking and that an update keeps at least the control's deposit, and sets no floor. |
 | `--receipt FILE` | `singular create`, `singular fold`, `singular reject`, `singular reclaim`, `singular inspect`, `singular submit`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold`, `open-datum inspect` | Also write the JSON receipt the command prints on standard output to this file. |
 | `--vault FILE` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | The encrypted wallet vault. `wallet create` makes this file — a fresh signing key sealed inside it — and refuses an existing path of any kind, a symbolic link included, leaving its bytes untouched; the file is created readable by its owner only, and a failed write removes what it made. `wallet address` and `wallet sign` open it. On `singular create`, `singular fold`, `singular reclaim`, `singular reject` and the five open-datum writes (`open-datum create`, with or without `--closed`, `insert` and `terminate`, alone and with `--fold`, `update` and `fold`) it names the signer in place of the signing key: the command opens the vault once, before anything else is read, builds the same bundle an external signer's run writes for the vault's address, signs every transaction from the vault and sends them in order as `singular submit` does. When every one has landed, each is journalled landed and the receipt states the command's fields as fact. When the node refuses one, the bundle is journalled dead and the run ends as a ledger refusal naming what went through. An uncertain answer ends the run partial, and the next run settles the bundle by identity. A wrong passphrase or an unreadable vault is refused, naming the vault, before the blueprint, the provider or the state directory is read, and so is `--wallet-skey` or `--wallet-address` beside it, because a write takes exactly one signer. Every `open-datum` preview and `open-datum inspect` refuses `--vault` by name. When the flag is absent, `SINGULAR_VAULT` or the key `vault` of the config file gives it, unless the line names the key file or an external signer, which is refused naming both, or is a preview, which signs nothing; see [the vault from the environment or the file](#the-vault-from-the-environment-or-the-file). |
-| `--passphrase-fd N` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. Without it the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. |
+| `--passphrase-fd N` | `singular wallet create`, `singular wallet address`, `singular wallet sign`, `singular create`, `singular fold`, `singular reclaim`, `singular reject`, `open-datum create`, `open-datum insert`, `open-datum update`, `open-datum terminate`, `open-datum fold` | The inherited file descriptor the passphrase is read from, one line: the way a script supplies it. It wins over the variable `SINGULAR_PASSPHRASE`, which gives the passphrase on a development network only (see [the passphrase from the environment](#the-passphrase-from-the-environment-on-a-development-network)). Without either, the passphrase is typed at a prompt on the terminal with the echo off — twice on a creation, once on an opening or a signing — and a differing confirmation is refused. On a write it goes with `--vault`, and alone it is refused. The passphrase itself is never taken as an argument, and no output, refusal, journal line or trace names it. |
 | `--wallet-skey FILE` | `create`, `insert`, `update`, `terminate`, `fold`, `reclaim`, `reject` | Being retired ([issue 672](https://github.com/lambdasistemi/singular/issues/672)): not a way to start. Your payment signing key: a `cardano-cli` text envelope, its `cborHex` value or the 32 key bytes as bare hex, or the 32 raw key bytes. The key funds and signs every write; it is read and never printed — only the address derived from it appears. `inspect` and `describe` refuse it. The five open-datum writes still accept the key file, until it is retired; the registry's `singular` commands, the negative host, the bounded journey and the deployment tool keep key files for now (issue 672 retires the registry's), and the last three are harnesses. |
 | `--out DIR` | `singular wallet sign` | Where the witness files go: one file per transaction of the bundle, each named by its transaction's identity with `.witness` appended and created exclusively — an existing file is refused with its bytes untouched. The directory is made when absent; the bundle's own directory when not given. |
 | `--witnesses FILE` | `singular submit` | A witness file `singular wallet sign` wrote, or a directory standing for the `.witness` files it holds; give it once per file or directory. Each witness is matched to its transaction by its signature, never by its file name. |
@@ -187,13 +187,13 @@ What you see when something is wrong:
 - A file that does not exist when you named it, that is not JSON, that is not one object, or that holds a key the program does not read is refused in one sentence naming the file. A key that is nearly a setting's name says which one it nearly is. A default `singular.json` that is not there is no file; one that is there and broken is refused. A problem with the file never stops `--help` or `--version`.
 - A path in the file means what the same path means on the command line: it is read from the folder the command runs from.
 - A value is text or a number, as `network-magic` above; an empty text or `null` is no setting.
-- Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor `--passphrase-fd` names.
+- Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor `--passphrase-fd` names. The environment gives a passphrase only on a development network, as `SINGULAR_PASSPHRASE`; the section after the vault one says how.
 
 A line that carries every flag it needs means what it meant before. An environment variable or a file only fills in what the line leaves out, so a flag you type is never overruled.
 
 ### The vault from the environment or the file
 
-As an operator who signs with a vault, you can name it once: `SINGULAR_VAULT=alice.vault`, or `"vault": "alice.vault"` in the config file, and `open-datum insert --key alice --payload payload.json` signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor `--passphrase-fd` names on the command, with a vault from either source just as with a typed one.
+As an operator who signs with a vault, you can name it once: `SINGULAR_VAULT=alice.vault`, or `"vault": "alice.vault"` in the config file, and `open-datum insert --key alice --payload payload.json` signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor `--passphrase-fd` names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.
 
 A write is signed by exactly one signer, so a vault you did not type on the command never joins another signer you did. If the line names the key file `--wallet-skey`, or an external signer with `--wallet-address` or `--bundle`, the command is refused in one sentence that names where the vault comes from and the flag on the line, before anything is read or sent:
 
@@ -202,6 +202,28 @@ open-datum: --vault comes from the variable SINGULAR_VAULT and --wallet-skey is 
 ```
 
 For a vault from the file, the sentence names the key and the file (`the "vault" key of singular.json`) and says to remove the key. A preview signs nothing, so it takes no vault from the environment or the file, and `--preview --wallet-address ADDR` means the same with or without one. The wallet commands `wallet create`, `wallet address` and `wallet sign` take the vault from either source too: `wallet create` still refuses a path that is taken before it asks for a passphrase.
+
+### The passphrase from the environment on a development network
+
+As a reader of the tutorial on a private development network, I sign with a deliberately weak passphrase and do not want to type it at every command. I export it once, and every command that opens a vault reads it, with the other settings given as the sections above describe:
+
+```sh
+export SINGULAR_PASSPHRASE=weak
+singular wallet create --vault alice.vault --network-magic 42
+open-datum insert --key alice --payload payload.json --vault alice.vault
+```
+
+`wallet create` takes the variable for both of its asks, so a creation is not asked to confirm. A development network is any network that is not one of the three public ones the build names: mainnet (network magic 764824073), preprod (1) and preview (2). On those three, a command that would read the variable is refused in one sentence that names the variable and the network, before the vault is read. The sentence is the line a wallet command prints on standard error and the reason in the receipt of a write that was refused by the client:
+
+```text
+SINGULAR_PASSPHRASE is set and the network is preprod (network magic 1), but the variable is for development networks only: unset it and type the passphrase, or name --passphrase-fd
+```
+
+The decision uses the network magic the command already receives. `wallet sign` is offline and takes no network magic, so it uses the network the bundle names, once it has read the bundle and before it reads the vault. A write is refused on mainnet before any passphrase is considered, so for a write the variable is refused on preprod and preview.
+
+The variable is the whole of this: there is no config key for it and no flag, and a config file that names a passphrase is refused. The descriptor wins: with `--passphrase-fd N` on the command the variable is not read, on any network. With neither, the prompt is as before. A variable that is set but empty is refused, naming the variable, rather than taken as an empty passphrase.
+
+The variable is for a passphrase that protects nothing. Every process you start inherits your environment, and a process of your account can read it, so a real vault keeps the prompt or the descriptor.
 
 ## Keeping your signing key in an encrypted vault
 
@@ -227,6 +249,8 @@ line, and is never asked for a confirmation:
 ```sh
 singular wallet create --vault alice.vault --network-magic 1 --passphrase-fd 9
 ```
+
+On a development network a script can set `SINGULAR_PASSPHRASE` instead, which a descriptor outranks; preprod and the other public networks refuse the variable (see [the passphrase from the environment](#the-passphrase-from-the-environment-on-a-development-network)).
 
 ```mermaid
 %%{init: {'sequence': {'actorMargin': 20, 'width': 110, 'wrap': true, 'mirrorActors': false}}}%%

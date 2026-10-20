@@ -87,7 +87,7 @@
       "pause": 300
     },
     {
-      "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
+      "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names. The environment gives a passphrase only on a development network, as SINGULAR_PASSPHRASE; the section after the vault one says how.",
       "pause": 300
     },
     {
@@ -101,7 +101,7 @@
       "pause": 500
     },
     {
-      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one.",
+      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
       "pause": 400
     },
     {
@@ -110,6 +110,32 @@
     },
     {
       "text": "For a vault from the file, the sentence names the key and the file (the \"vault\" key of singular.json) and says to remove the key. A preview signs nothing, so it takes no vault from the environment or the file, and --preview --wallet-address ADDR means the same with or without one. The wallet commands wallet create, wallet address and wallet sign take the vault from either source too: wallet create still refuses a path that is taken before it asks for a passphrase.",
+      "pause": 400
+    }
+  ],
+  "the-passphrase-from-the-environment-on-a-development-network": [
+    {
+      "text": "The passphrase from the environment on a development network.",
+      "pause": 500
+    },
+    {
+      "text": "As a reader of the tutorial on a private development network, I sign with a deliberately weak passphrase and do not want to type it at every command. I export it once, and every command that opens a vault reads it, with the other settings given as the sections above describe:",
+      "pause": 400
+    },
+    {
+      "text": "wallet create takes the variable for both of its asks, so a creation is not asked to confirm. A development network is any network that is not one of the three public ones the build names: mainnet (network magic 764824073), preprod (1) and preview (2). On those three, a command that would read the variable is refused in one sentence that names the variable and the network, before the vault is read. The sentence is the line a wallet command prints on standard error and the reason in the receipt of a write that was refused by the client:",
+      "pause": 400
+    },
+    {
+      "text": "The decision uses the network magic the command already receives. wallet sign is offline and takes no network magic, so it uses the network the bundle names, once it has read the bundle and before it reads the vault. A write is refused on mainnet before any passphrase is considered, so for a write the variable is refused on preprod and preview.",
+      "pause": 400
+    },
+    {
+      "text": "The variable is the whole of this: there is no config key for it and no flag, and a config file that names a passphrase is refused. The descriptor wins: with --passphrase-fd N on the command the variable is not read, on any network. With neither, the prompt is as before. A variable that is set but empty is refused, naming the variable, rather than taken as an empty passphrase.",
+      "pause": 400
+    },
+    {
+      "text": "The variable is for a passphrase that protects nothing. Every process you start inherits your environment, and a process of your account can read it, so a real vault keeps the prompt or the descriptor.",
       "pause": 400
     }
   ],
@@ -128,6 +154,10 @@
     },
     {
       "text": "A script supplies the passphrase on an inherited file descriptor, one line, and is never asked for a confirmation:",
+      "pause": 400
+    },
+    {
+      "text": "On a development network a script can set SINGULAR_PASSPHRASE instead, which a descriptor outranks; preprod and the other public networks refuse the variable (see the passphrase from the environment).",
       "pause": 400
     },
     {
@@ -507,6 +537,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "40f5d8d6c40e99af7a2c564dc97fa7541c4bba6635eb72643c9aab2d37144700"
+    "sha256": "9756c147341b28cd649a36710e07217e2488e491de1b8e9adef294c14167a571"
   }
 }

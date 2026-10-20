@@ -9328,8 +9328,8 @@
     "index": 9,
     "name": "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-09",
     "pause_ms": 300,
-    "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
-    "v": "6cd42f6d90c4"
+    "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names. The environment gives a passphrase only on a development network, as SINGULAR_PASSPHRASE; the section after the vault one says how.",
+    "v": "4fb97e0bfa20"
    },
    {
     "index": 10,
@@ -9418,15 +9418,22 @@
     "index": 4,
     "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-04",
     "pause_ms": 400,
-    "text": "Creating over an existing path — a symbolic link included — is refused before a passphrase is asked for, with that path's bytes untouched; wallet address on a vault that is not there or cannot be read says so in one sentence naming the file, also before it asks for a passphrase; the vault file is made readable by its owner only, and a write that fails removes the file it made. A wrong passphrase, a corrupt file and a file that is not a vault all answer one refusal naming no secret, nothing prints on standard output, and the empty passphrase is refused at birth. Every creation draws a fresh key from the operating system's entropy: fresh entropy for every vault.",
-    "v": "898e44e074e8"
+    "text": "On a development network a script can set SINGULAR_PASSPHRASE instead, which a descriptor outranks; preprod and the other public networks refuse the variable (see the passphrase from the environment).",
+    "v": "4bf2427aaa87"
    },
    {
     "index": 5,
     "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-05",
     "pause_ms": 400,
+    "text": "Creating over an existing path — a symbolic link included — is refused before a passphrase is asked for, with that path's bytes untouched; wallet address on a vault that is not there or cannot be read says so in one sentence naming the file, also before it asks for a passphrase; the vault file is made readable by its owner only, and a write that fails removes the file it made. A wrong passphrase, a corrupt file and a file that is not a vault all answer one refusal naming no secret, nothing prints on standard output, and the empty passphrase is refused at birth. Every creation draws a fresh key from the operating system's entropy: fresh entropy for every vault.",
+    "v": "eb12106b2fcf"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-06",
+    "pause_ms": 400,
     "text": "The vault is an ordinary age file, one passphrase recipient with scrypt work factor 18, holding the key's standard text envelope as its plaintext. Any age tool opens it with the passphrase and yields the envelope: age --decrypt alice.vault asks for the passphrase on the terminal and prints the plaintext, and the decrypted bytes are the cardano-cli key format itself, accepted wherever a signing-key file is read.",
-    "v": "6570ae2bde37"
+    "v": "702afab66b90"
    }
   ],
   "naming-the-registry-by-its-state-token": [
@@ -9690,6 +9697,50 @@
     "v": "55829b8d57e2"
    }
   ],
+  "the-passphrase-from-the-environment-on-a-development-network": [
+   {
+    "index": 0,
+    "name": "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-00",
+    "pause_ms": 500,
+    "text": "The passphrase from the environment on a development network.",
+    "v": "f6b0a1d97af2"
+   },
+   {
+    "index": 1,
+    "name": "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-01",
+    "pause_ms": 400,
+    "text": "As a reader of the tutorial on a private development network, I sign with a deliberately weak passphrase and do not want to type it at every command. I export it once, and every command that opens a vault reads it, with the other settings given as the sections above describe:",
+    "v": "a504e881f2cb"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-02",
+    "pause_ms": 400,
+    "text": "wallet create takes the variable for both of its asks, so a creation is not asked to confirm. A development network is any network that is not one of the three public ones the build names: mainnet (network magic 764824073), preprod (1) and preview (2). On those three, a command that would read the variable is refused in one sentence that names the variable and the network, before the vault is read. The sentence is the line a wallet command prints on standard error and the reason in the receipt of a write that was refused by the client:",
+    "v": "11087b65fddd"
+   },
+   {
+    "index": 3,
+    "name": "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-03",
+    "pause_ms": 400,
+    "text": "The decision uses the network magic the command already receives. wallet sign is offline and takes no network magic, so it uses the network the bundle names, once it has read the bundle and before it reads the vault. A write is refused on mainnet before any passphrase is considered, so for a write the variable is refused on preprod and preview.",
+    "v": "aaaaf8d1e33e"
+   },
+   {
+    "index": 4,
+    "name": "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-04",
+    "pause_ms": 400,
+    "text": "The variable is the whole of this: there is no config key for it and no flag, and a config file that names a passphrase is refused. The descriptor wins: with --passphrase-fd N on the command the variable is not read, on any network. With neither, the prompt is as before. A variable that is set but empty is refused, naming the variable, rather than taken as an empty passphrase.",
+    "v": "191f6d5c0426"
+   },
+   {
+    "index": 5,
+    "name": "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-05",
+    "pause_ms": 400,
+    "text": "The variable is for a passphrase that protects nothing. Every process you start inherits your environment, and a process of your account can read it, so a real vault keeps the prompt or the descriptor.",
+    "v": "4808dea90d89"
+   }
+  ],
   "the-settings-you-give": [
    {
     "index": 0,
@@ -9718,8 +9769,8 @@
     "index": 1,
     "name": "docs-singular-node/the-vault-from-the-environment-or-the-file-01",
     "pause_ms": 400,
-    "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one.",
-    "v": "d15fa35bde25"
+    "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
+    "v": "3bbdd968b5f7"
    },
    {
     "index": 2,
