@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.1](https://github.com/lambdasistemi/singular/compare/v0.13.0...v0.13.1) (2026-10-20)
+
+
+### Fixes
+
+* release notes lead with the executables, list each change once, title the release by version ([21e620e](https://github.com/lambdasistemi/singular/commit/21e620e18a57422f9dc3dd8085ef9b4c916e6e0b))
+* release notes lead with the executables, list each change once, title the release by version ([dc8a791](https://github.com/lambdasistemi/singular/commit/dc8a791a006193288482cd682085dbd1a48a7f46))
+
 ## [0.13.0](https://github.com/lambdasistemi/singular/compare/v0.12.0...v0.13.0) (2026-10-19)
 
 
