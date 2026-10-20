@@ -306,6 +306,9 @@ FENCE = re.compile(r"```.*?```", re.S)
 CODE_SPAN = re.compile(r"`[^`]*`")
 MDLINK = re.compile(r"(?<!\!)\[[^\]]+\]\(([^)\s]+)[^)]*\)")
 RAWANCHOR = re.compile(r'<a\s+href="([^"]+)"[^>]*>(.*?)</a>', re.S)
+# Project sites of the same account that share this site's host. Each is served by
+# its own repository, so a link to one is an external link and is fetched like one.
+SIBLING_SITES = ("/singular-demo/",)
 SELF_GITHUB = re.compile(
     r"^/lambdasistemi/singular/(?P<kind>blob|tree)/(?P<ref>[^/]+)/(?P<rest>.+)$"
 )
@@ -354,7 +357,10 @@ def classify(url):
         return "internal-site"
     if parts.scheme not in ("http", "https"):
         return "non-http"
-    if parts.netloc == urlsplit(SITE_URL).netloc:
+    if parts.netloc == urlsplit(SITE_URL).netloc and not any(
+        parts.path == sibling.rstrip("/") or parts.path.startswith(sibling)
+        for sibling in SIBLING_SITES
+    ):
         # Same host: a path outside the project prefix is a deterministic 404
         # (INV-26-PREFIX), provable offline — never a network question.
         return "internal-site"
