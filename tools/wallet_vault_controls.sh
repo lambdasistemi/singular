@@ -12,6 +12,10 @@
 #   * a second create over the existing vault is refused by name, the
 #     file's bytes unchanged;
 #   * a wrong passphrase is refused with nothing on standard output;
+#   * SINGULAR_PASSPHRASE gives the passphrase on a development network, a
+#     descriptor outranks it, and mainnet, preprod and preview refuse it
+#     naming the variable and the network, before a vault is read or made,
+#     as does an empty one;
 #   * no key envelope appears in the clear in the vault file, which is
 #     an age file;
 #   * `cardano-cli` is never on the path the commands run with;
@@ -285,6 +289,80 @@ set -e
 grep -q "cannot open vault" "$scratch/run/address.err" || fail wrong-passphrase "refusal does not name the cause"
 grep -q "$wrong" "$scratch/run/address.err" && fail wrong-passphrase "the refusal names the passphrase"
 echo "control wrong-passphrase: refused, empty standard output, no secret"
+
+# --- the passphrase from the environment (#716) ----------------------
+
+var_run() { # var_run PASSPHRASE BINARY ARGS... -> the command with SINGULAR_PASSPHRASE set
+  local value=$1 binary=$2
+  shift 2
+  bounded env PATH="$SANITISED_PATH" SINGULAR_PASSPHRASE="$value" "$binary" "$@"
+}
+
+fresh
+var_run "$passphrase" "$real_singular" wallet create --vault "$scratch/run/dev.vault" \
+  --network-magic 42 >"$scratch/run/dev-create.out" 2>"$scratch/run/dev-create.err" \
+  || fail variable-development "create exited non-zero: $(head -n 1 "$scratch/run/dev-create.err")"
+dev_address=$(cat "$scratch/run/dev-create.out")
+if ! refusal=$(create_refusal "$scratch/run/dev-create.out" "$dev_address"); then
+  fail variable-development "$refusal"
+fi
+printed=$(var_run "$passphrase" "$real_singular" wallet address --vault "$scratch/run/dev.vault" \
+  --network-magic 42 2>/dev/null) || fail variable-development "address exited non-zero"
+[ "$printed" = "$dev_address" ] || fail variable-development "'$printed' is not '$dev_address'"
+echo "control variable-development: create and address on network 42 from the variable, one address line"
+
+# The descriptor wins over the variable: a wrong variable beside the right descriptor.
+printf '%s\n' "$passphrase" >"$scratch/run/passphrase"
+exec 9<"$scratch/run/passphrase"
+printed=$(var_run "$wrong" "$real_singular" wallet address --vault "$scratch/run/dev.vault" \
+  --network-magic 42 --passphrase-fd 9 2>/dev/null) || fail variable-descriptor-wins "exited non-zero"
+exec 9<&-
+[ "$printed" = "$dev_address" ] || fail variable-descriptor-wins "'$printed' is not '$dev_address'"
+# and that wrong variable alone is a wrong passphrase, the positive control's twin
+rc=0
+var_run "$wrong" "$real_singular" wallet address --vault "$scratch/run/dev.vault" \
+  --network-magic 42 >"$scratch/run/wrong.out" 2>"$scratch/run/wrong.err" || rc=$?
+[ "$rc" -ne 0 ] || fail variable-descriptor-wins "a wrong variable alone opened the vault"
+grep -q "cannot open vault" "$scratch/run/wrong.err" || fail variable-descriptor-wins "the refusal does not name the cause"
+echo "control variable-descriptor-wins: the descriptor outranks the variable, a wrong variable alone is refused"
+
+for network in "preprod 1" "preview 2" "mainnet 764824073"; do
+  name=${network% *}
+  magic=${network#* }
+  fresh
+  rc=0
+  var_run "$passphrase" "$real_singular" wallet create --vault "$scratch/run/public.vault" \
+    --network-magic "$magic" >"$scratch/run/public.out" 2>"$scratch/run/public.err" || rc=$?
+  [ "$rc" -ne 0 ] || fail variable-public "create on $name exited 0"
+  [ ! -e "$scratch/run/public.vault" ] || fail variable-public "create on $name made a vault"
+  [ ! -s "$scratch/run/public.out" ] || fail variable-public "create on $name printed on standard output"
+  for word in SINGULAR_PASSPHRASE "$name" "network magic $magic"; do
+    grep -qF -- "$word" "$scratch/run/public.err" \
+      || fail variable-public "the refusal on $name does not name $word"
+  done
+  grep -qF -- "$passphrase" "$scratch/run/public.err" \
+    && fail variable-public "the refusal on $name names the passphrase"
+  # wallet address refuses before it reads the vault: a path that is not there is not named
+  rc=0
+  var_run "$passphrase" "$real_singular" wallet address --vault "$scratch/run/absent.vault" \
+    --network-magic "$magic" >"$scratch/run/public.out" 2>"$scratch/run/public.err" || rc=$?
+  [ "$rc" -ne 0 ] || fail variable-public "address on $name exited 0"
+  grep -qF -- "SINGULAR_PASSPHRASE" "$scratch/run/public.err" \
+    || fail variable-public "the address refusal on $name does not name the variable"
+  grep -qF -- "absent.vault" "$scratch/run/public.err" \
+    && fail variable-public "the address refusal on $name came after the vault was read"
+done
+echo "control variable-public: mainnet, preprod and preview refuse the variable by name before a vault is read or made"
+
+fresh
+rc=0
+var_run "" "$real_singular" wallet create --vault "$scratch/run/empty.vault" \
+  --network-magic 42 >"$scratch/run/empty.out" 2>"$scratch/run/empty.err" || rc=$?
+[ "$rc" -ne 0 ] || fail variable-empty "an empty variable created a vault"
+[ ! -e "$scratch/run/empty.vault" ] || fail variable-empty "an empty variable made a vault"
+grep -q "SINGULAR_PASSPHRASE is set but empty" "$scratch/run/empty.err" \
+  || fail variable-empty "the refusal does not name the variable"
+echo "control variable-empty: an empty variable is refused, not an empty passphrase"
 
 fresh
 address=$(create_vault "$real_singular" "$scratch/run")

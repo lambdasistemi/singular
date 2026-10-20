@@ -84,7 +84,8 @@ createLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum create --blueprint plutus.json \\"
                 , "    " <> preprodExample <> " \\"
@@ -132,7 +133,8 @@ insertLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum insert --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> --key my-key --payload payload.json \\"
@@ -174,7 +176,8 @@ updateLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum update --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> --key my-key --payload payload.json \\"
@@ -220,7 +223,8 @@ terminateLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum terminate --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> --key my-key \\"
@@ -256,7 +260,8 @@ foldLeaf =
                     , tracingShape
                     ]
             , leafWord = Nothing
-            , leafEnvironment = [environmentLog, environmentState]
+            , leafEnvironment =
+                [environmentLog, environmentState, environmentPassphrase]
             , leafExamples =
                 [ "open-datum fold --blueprint plutus.json \\"
                 , "    --state-token <policy>.<name> \\"

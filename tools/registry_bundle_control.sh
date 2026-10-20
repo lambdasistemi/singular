@@ -16,7 +16,11 @@
 # 4. Alice stages a fold of a second request and never sends it. Once the
 #    request's processing deadline has passed, her next fold (of a third
 #    request, from the vault) builds, and its receipt and her journal name
-#    the unsent bundle dead: "expired, rebuild".
+#    the unsent bundle dead: "expired, rebuild". That fold takes the
+#    passphrase from SINGULAR_PASSPHRASE, the devnet being a development
+#    network; the same command with a public network's magic, run first, is
+#    refused naming the variable and the network, before the vault is read
+#    (#716).
 #
 # usage: registry_bundle_control.sh SINGULAR OPEN_DATUM DEVNET VAULT_SEAL BLUEPRINT VERSION WORKDIR
 #
@@ -247,6 +251,30 @@ done
 [ "$(date +%s%3N)" -gt "$deadline_ms" ] || setup_fail "the request's processing deadline never passed"
 run carol-insert-3 success "$open_datum" -- insert --key keyC --payload "$work/payload.json" "${carol[@]}"
 request3="$(field carol-insert-3 .request)"
+# The passphrase from the environment, the devnet being a development network.
+# First the same fold with a public network's magic: refused as a client
+# refusal naming the variable and the network, before the vault (named by a
+# path that does not exist) is read, with nothing built or journalled.
+export SINGULAR_PASSPHRASE
+SINGULAR_PASSPHRASE="$(head -n 1 "$passphrase")"
+public_node=(--koios-url "$provider_url" --network-time "$time_directory" --network-magic 1)
+journal_before="$(sha256sum "$alice_journal" | cut -d' ' -f1)"
+run alice-fold-public client-refusal "$singular" -- registry fold --request "$request3" \
+  --state-dir "$work/alice" --blueprint "$blueprint" --state-token "$token" "${public_node[@]}" \
+  --vault "$work/absent.vault"
+public_reason="$(field alice-fold-public .reason)"
+for word in SINGULAR_PASSPHRASE preprod "network magic 1"; do
+  case "$public_reason" in
+    *"$word"*) ;;
+    *) fail "the refusal on a public network does not name $word: $public_reason" ;;
+  esac
+done
+case "$public_reason" in
+  *absent.vault*) fail "the refusal on a public network came after the vault was read: $public_reason" ;;
+esac
+[ "$(sha256sum "$alice_journal" | cut -d' ' -f1)" = "$journal_before" ] \
+  || fail "the refused fold changed alice's journal"
+say "on a public network (magic 1) the variable is refused before the vault is read: $public_reason"
 # The tip reaches the bound a little after the wall clock: until then the
 # unsent bundle is pending, and the fold is stopped at 19 having built nothing.
 stopped=0
@@ -254,7 +282,7 @@ next_status=19
 for attempt in $(seq 1 24); do
   next_status=0
   "$singular" registry fold --request "$request3" "${alice[@]}" --vault "$work/alice.vault" \
-    --passphrase-fd 3 3<"$passphrase" >"$receipts/alice-fold-next.json" 2>"$receipts/alice-fold-next.err" \
+    >"$receipts/alice-fold-next.json" 2>"$receipts/alice-fold-next.err" \
     || next_status=$?
   [ "$next_status" -eq 19 ] || break
   [ "$(field alice-fold-next .pendingBundle.hash)" = "$unsent_hash" ] \
@@ -270,6 +298,12 @@ jq -e --arg h "$unsent_hash" 'any(.reconciled.bundles[]; .hash == $h and .state 
 unsent_member="$(jq -r '.bundle.transactions[0].identity' "$receipts/alice-fold-staged.json")"
 jq -se --arg m "$unsent_member" 'any(.[]; .journalTxId == $m and .journalEvent == "dead" and .journalDetail == "expired, rebuild")' \
   "$alice_journal" >/dev/null || fail "alice's journal has no dead line for $unsent_member"
+unset SINGULAR_PASSPHRASE
+for secret in "$(head -n 1 "$passphrase")" "$(cat "$work/alice.skey")"; do
+  ! grep -qF -- "$secret" "$receipts/alice-fold-public.json" "$receipts/alice-fold-public.err" \
+    "$receipts/alice-fold-next.json" "$receipts/alice-fold-next.err" "$alice_journal" \
+    || fail "a secret of alice's vault appears in a receipt or her journal after the variable was used"
+done
 say "on carol's open-datum registry: past its deadline the unsent bundle is dead (expired, rebuild) and the next fold built, after $stopped stop(s) at 19"
 
 say "bundle control: PASS"

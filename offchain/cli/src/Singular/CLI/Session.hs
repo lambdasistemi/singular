@@ -185,9 +185,9 @@ import Singular.CLI.Harness
     )
 import Singular.CLI.Passphrase
     ( Confirmation (AskOnce)
-    , PassphraseSource (..)
     , readPassphrase
     , renderPassphraseRefusal
+    , sourceFor
     )
 import Singular.CLI.Receipt
     ( BundleState (..)
@@ -584,19 +584,19 @@ unopenedVault vault =
         )
 
 {- | Open the vault a write names, once and before anything else of the
-run is read or written: the passphrase is read from its descriptor, or
-asked once at the terminal, and the vault decrypted into the wallet its
-key derives, held in memory for this run only. A refused passphrase, an
-unreadable vault and a wrong passphrase are client refusals, the last two
-naming the vault alike. Every other signer is left as it is.
+run is read or written: the passphrase is read from its descriptor, or from
+@SINGULAR_PASSPHRASE@ on a development network, or asked once at the
+terminal, and the vault decrypted into the wallet its key derives, held in
+memory for this run only. The variable on a public network is refused before
+the vault is read. A refused passphrase, an unreadable vault and a wrong
+passphrase are client refusals, the last two naming the vault alike. Every
+other signer is left as it is.
 -}
 openWriteSigner :: WriteSettings -> IO WriteSettings
 openWriteSigner ws = case writeSigner ws of
     SignerVault vault descriptor -> do
-        asked <-
-            readPassphrase
-                AskOnce
-                (maybe PassphraseTerminal PassphraseDescriptor descriptor)
+        chosen <- sourceFor (providerMagic (writeProvider ws)) descriptor
+        asked <- either (pure . Left) (readPassphrase AskOnce) chosen
         passphrase <-
             either (failWith ClientRefusal . renderPassphraseRefusal) pure asked
         sealed <- try @IOException (BS.readFile vault)

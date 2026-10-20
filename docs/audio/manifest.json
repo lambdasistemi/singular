@@ -332171,17 +332171,17 @@
    ]
   },
   "docs-singular-node/giving-the-chain-the-contracts-and-the-registry-once-09": {
-   "audio_sha256": "6cd42f6d90c43c6e8fcf14ba6c743774144ff55d7679a7d159f2e4229b93de7f",
-   "characters": 289,
-   "cost": 0.00028610999999999996,
-   "duration": 18.1,
+   "audio_sha256": "4fb97e0bfa201849dd398508b92e4d10de260b0597431abd3c01bdd4cb68ed02",
+   "characters": 421,
+   "cost": 0.00041679,
+   "duration": 26.625,
    "index": 9,
-   "key": "b7df123b9ccf6a7575b2ca8942c9702d006758542c39b7d2ab001e5a197894bc",
+   "key": "1283b2916a5a2cf01e1f364cc6a23955c80ca07e78dbf2bcff6190b7caec259d",
    "page": "docs/singular-node.md",
    "pause_ms": 300,
    "section": "giving-the-chain-the-contracts-and-the-registry-once",
-   "sent_text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
-   "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
+   "sent_text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names. The environment gives a passphrase only on a development network, as SINGULAR_PASSPHRASE; the section after the vault one says how.",
+   "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names. The environment gives a passphrase only on a development network, as SINGULAR_PASSPHRASE; the section after the vault one says how.",
    "words": [
     {
      "end": 0.5,
@@ -332461,6 +332461,121 @@
     {
      "end": 18.1,
      "start": 17.875,
+     "text": "."
+    },
+    {
+     "end": 18.4,
+     "start": 18.275,
+     "text": "The"
+    },
+    {
+     "end": 19.0,
+     "start": 18.4,
+     "text": "environment"
+    },
+    {
+     "end": 19.212,
+     "start": 19.0,
+     "text": "gives"
+    },
+    {
+     "end": 19.288,
+     "start": 19.212,
+     "text": "a"
+    },
+    {
+     "end": 20.062,
+     "start": 19.288,
+     "text": "passphrase"
+    },
+    {
+     "end": 20.45,
+     "start": 20.062,
+     "text": "only"
+    },
+    {
+     "end": 20.587,
+     "start": 20.45,
+     "text": "on"
+    },
+    {
+     "end": 20.65,
+     "start": 20.587,
+     "text": "a"
+    },
+    {
+     "end": 21.2,
+     "start": 20.65,
+     "text": "development"
+    },
+    {
+     "end": 21.7,
+     "start": 21.2,
+     "text": "network"
+    },
+    {
+     "end": 21.8,
+     "start": 21.7,
+     "text": ","
+    },
+    {
+     "end": 22.013,
+     "start": 21.8,
+     "text": "as"
+    },
+    {
+     "end": 23.775,
+     "start": 22.013,
+     "text": "SINGULAR_PASSPHRASE"
+    },
+    {
+     "end": 23.975,
+     "start": 23.775,
+     "text": ";"
+    },
+    {
+     "end": 24.25,
+     "start": 24.15,
+     "text": "the"
+    },
+    {
+     "end": 24.65,
+     "start": 24.25,
+     "text": "section"
+    },
+    {
+     "end": 24.913,
+     "start": 24.65,
+     "text": "after"
+    },
+    {
+     "end": 25.0,
+     "start": 24.913,
+     "text": "the"
+    },
+    {
+     "end": 25.237,
+     "start": 25.0,
+     "text": "vault"
+    },
+    {
+     "end": 25.45,
+     "start": 25.237,
+     "text": "one"
+    },
+    {
+     "end": 25.7,
+     "start": 25.45,
+     "text": "says"
+    },
+    {
+     "end": 26.375,
+     "start": 25.7,
+     "text": "how"
+    },
+    {
+     "end": 26.625,
+     "start": 26.375,
      "text": "."
     }
    ]
@@ -334521,11 +334636,196 @@
    ]
   },
   "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-04": {
-   "audio_sha256": "898e44e074e8419c4fafefb8ae9418ddac870e388ef01d1e959cd9a7e8737e3b",
+   "audio_sha256": "4bf2427aaa8759b9a9605a3a5aa1ac510ce0a4e2f749e0adc17fca6d7bd6342a",
+   "characters": 200,
+   "cost": 0.000198,
+   "duration": 12.875,
+   "index": 4,
+   "key": "2c2621abf643c37913601cd0b27a52b76f2033b46c80eaaec790e66665816a99",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "keeping-your-signing-key-in-an-encrypted-vault",
+   "sent_text": "On a development network a script can set SINGULAR_PASSPHRASE instead, which a descriptor outranks; preprod and the other public networks refuse the variable (see the passphrase from the environment).",
+   "text": "On a development network a script can set SINGULAR_PASSPHRASE instead, which a descriptor outranks; preprod and the other public networks refuse the variable (see the passphrase from the environment).",
+   "words": [
+    {
+     "end": 0.338,
+     "start": 0.2,
+     "text": "On"
+    },
+    {
+     "end": 0.4,
+     "start": 0.338,
+     "text": "a"
+    },
+    {
+     "end": 0.975,
+     "start": 0.4,
+     "text": "development"
+    },
+    {
+     "end": 1.4,
+     "start": 0.975,
+     "text": "network"
+    },
+    {
+     "end": 1.513,
+     "start": 1.4,
+     "text": "a"
+    },
+    {
+     "end": 1.925,
+     "start": 1.513,
+     "text": "script"
+    },
+    {
+     "end": 2.112,
+     "start": 1.925,
+     "text": "can"
+    },
+    {
+     "end": 2.388,
+     "start": 2.112,
+     "text": "set"
+    },
+    {
+     "end": 3.55,
+     "start": 2.388,
+     "text": "SINGULAR_PASSPHRASE"
+    },
+    {
+     "end": 4.175,
+     "start": 3.55,
+     "text": "instead"
+    },
+    {
+     "end": 4.25,
+     "start": 4.175,
+     "text": ","
+    },
+    {
+     "end": 4.438,
+     "start": 4.25,
+     "text": "which"
+    },
+    {
+     "end": 4.5,
+     "start": 4.438,
+     "text": "a"
+    },
+    {
+     "end": 5.075,
+     "start": 4.5,
+     "text": "descriptor"
+    },
+    {
+     "end": 6.325,
+     "start": 5.075,
+     "text": "outranks"
+    },
+    {
+     "end": 6.525,
+     "start": 6.325,
+     "text": ";"
+    },
+    {
+     "end": 7.338,
+     "start": 6.725,
+     "text": "preprod"
+    },
+    {
+     "end": 7.463,
+     "start": 7.338,
+     "text": "and"
+    },
+    {
+     "end": 7.588,
+     "start": 7.463,
+     "text": "the"
+    },
+    {
+     "end": 7.875,
+     "start": 7.588,
+     "text": "other"
+    },
+    {
+     "end": 8.275,
+     "start": 7.875,
+     "text": "public"
+    },
+    {
+     "end": 8.75,
+     "start": 8.275,
+     "text": "networks"
+    },
+    {
+     "end": 9.225,
+     "start": 8.75,
+     "text": "refuse"
+    },
+    {
+     "end": 9.325,
+     "start": 9.225,
+     "text": "the"
+    },
+    {
+     "end": 9.962,
+     "start": 9.325,
+     "text": "variable"
+    },
+    {
+     "end": 10.05,
+     "start": 9.962,
+     "text": "("
+    },
+    {
+     "end": 10.275,
+     "start": 10.05,
+     "text": "see"
+    },
+    {
+     "end": 10.375,
+     "start": 10.275,
+     "text": "the"
+    },
+    {
+     "end": 11.075,
+     "start": 10.375,
+     "text": "passphrase"
+    },
+    {
+     "end": 11.238,
+     "start": 11.075,
+     "text": "from"
+    },
+    {
+     "end": 11.375,
+     "start": 11.238,
+     "text": "the"
+    },
+    {
+     "end": 12.625,
+     "start": 11.375,
+     "text": "environment"
+    },
+    {
+     "end": 12.825,
+     "start": 12.625,
+     "text": ")"
+    },
+    {
+     "end": 12.875,
+     "start": 12.825,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-05": {
+   "audio_sha256": "eb12106b2fcf40b1f80df670befbdf8dcb99cc63e68195c01a388a3473f7da5d",
    "characters": 668,
    "cost": 0.00066132,
    "duration": 45.725,
-   "index": 4,
+   "index": 5,
    "key": "d1ffe442bb0f9f23230bb8a87fd5133d41b70eb38b809e0f9bb351a568c4a5f9",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -335205,12 +335505,12 @@
     }
    ]
   },
-  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-05": {
-   "audio_sha256": "6570ae2bde370ccdf3142350d3f4ec0635e3c68df3e30934e60ee7aa430c996e",
+  "docs-singular-node/keeping-your-signing-key-in-an-encrypted-vault-06": {
+   "audio_sha256": "702afab66b903bf267e9c55e1bd3ee42c002d1eca39eab5b9fbdaf4a48e9b30c",
    "characters": 414,
    "cost": 0.00040985999999999996,
    "duration": 27.725,
-   "index": 5,
+   "index": 6,
    "key": "e598f5899f157902b21c98fde9552d620db9d8bc8d20e9f482eb9437ee6ec421",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
@@ -350155,6 +350455,1936 @@
     }
    ]
   },
+  "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-00": {
+   "audio_sha256": "f6b0a1d97af2c42bf14381b59b55872e7e538381dc61dc32528a46e6ecac0a2e",
+   "characters": 61,
+   "cost": 6.038999999999999e-05,
+   "duration": 3.825,
+   "index": 0,
+   "key": "2f463f28addd0801fc4828d8d206e42156dfcf826293d101c938bfe821f495d0",
+   "page": "docs/singular-node.md",
+   "pause_ms": 500,
+   "section": "the-passphrase-from-the-environment-on-a-development-network",
+   "sent_text": "The passphrase from the environment on a development network.",
+   "text": "The passphrase from the environment on a development network.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.925,
+     "start": 0.25,
+     "text": "passphrase"
+    },
+    {
+     "end": 1.062,
+     "start": 0.925,
+     "text": "from"
+    },
+    {
+     "end": 1.175,
+     "start": 1.062,
+     "text": "the"
+    },
+    {
+     "end": 1.913,
+     "start": 1.175,
+     "text": "environment"
+    },
+    {
+     "end": 2.062,
+     "start": 1.913,
+     "text": "on"
+    },
+    {
+     "end": 2.125,
+     "start": 2.062,
+     "text": "a"
+    },
+    {
+     "end": 2.675,
+     "start": 2.125,
+     "text": "development"
+    },
+    {
+     "end": 3.625,
+     "start": 2.675,
+     "text": "network"
+    },
+    {
+     "end": 3.825,
+     "start": 3.625,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-01": {
+   "audio_sha256": "a504e881f2cb95f529115f77a0c845be43073966a2667bc27d915a57e4996a11",
+   "characters": 276,
+   "cost": 0.00027323999999999995,
+   "duration": 17.85,
+   "index": 1,
+   "key": "20da507553f7b71f014b47b516a4da211daeb81c06b93a17b8117b51295c6bd9",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "the-passphrase-from-the-environment-on-a-development-network",
+   "sent_text": "As a reader of the tutorial on a private development network, I sign with a deliberately weak passphrase and do not want to type it at every command. I export it once, and every command that opens a vault reads it, with the other settings given as the sections above describe:",
+   "text": "As a reader of the tutorial on a private development network, I sign with a deliberately weak passphrase and do not want to type it at every command. I export it once, and every command that opens a vault reads it, with the other settings given as the sections above describe:",
+   "words": [
+    {
+     "end": 0.425,
+     "start": 0.225,
+     "text": "As"
+    },
+    {
+     "end": 0.538,
+     "start": 0.425,
+     "text": "a"
+    },
+    {
+     "end": 0.925,
+     "start": 0.538,
+     "text": "reader"
+    },
+    {
+     "end": 1.038,
+     "start": 0.925,
+     "text": "of"
+    },
+    {
+     "end": 1.138,
+     "start": 1.038,
+     "text": "the"
+    },
+    {
+     "end": 1.85,
+     "start": 1.138,
+     "text": "tutorial"
+    },
+    {
+     "end": 1.987,
+     "start": 1.85,
+     "text": "on"
+    },
+    {
+     "end": 2.088,
+     "start": 1.987,
+     "text": "a"
+    },
+    {
+     "end": 2.5,
+     "start": 2.088,
+     "text": "private"
+    },
+    {
+     "end": 3.05,
+     "start": 2.5,
+     "text": "development"
+    },
+    {
+     "end": 3.575,
+     "start": 3.05,
+     "text": "network"
+    },
+    {
+     "end": 3.65,
+     "start": 3.575,
+     "text": ","
+    },
+    {
+     "end": 3.85,
+     "start": 3.65,
+     "text": "I"
+    },
+    {
+     "end": 4.25,
+     "start": 3.85,
+     "text": "sign"
+    },
+    {
+     "end": 4.4,
+     "start": 4.25,
+     "text": "with"
+    },
+    {
+     "end": 4.512,
+     "start": 4.4,
+     "text": "a"
+    },
+    {
+     "end": 5.213,
+     "start": 4.512,
+     "text": "deliberately"
+    },
+    {
+     "end": 5.488,
+     "start": 5.213,
+     "text": "weak"
+    },
+    {
+     "end": 6.363,
+     "start": 5.488,
+     "text": "passphrase"
+    },
+    {
+     "end": 6.5,
+     "start": 6.363,
+     "text": "and"
+    },
+    {
+     "end": 6.625,
+     "start": 6.5,
+     "text": "do"
+    },
+    {
+     "end": 6.825,
+     "start": 6.625,
+     "text": "not"
+    },
+    {
+     "end": 7.012,
+     "start": 6.825,
+     "text": "want"
+    },
+    {
+     "end": 7.113,
+     "start": 7.012,
+     "text": "to"
+    },
+    {
+     "end": 7.425,
+     "start": 7.113,
+     "text": "type"
+    },
+    {
+     "end": 7.613,
+     "start": 7.425,
+     "text": "it"
+    },
+    {
+     "end": 7.787,
+     "start": 7.613,
+     "text": "at"
+    },
+    {
+     "end": 8.125,
+     "start": 7.787,
+     "text": "every"
+    },
+    {
+     "end": 9.325,
+     "start": 8.125,
+     "text": "command"
+    },
+    {
+     "end": 9.575,
+     "start": 9.325,
+     "text": "."
+    },
+    {
+     "end": 9.875,
+     "start": 9.75,
+     "text": "I"
+    },
+    {
+     "end": 10.312,
+     "start": 9.875,
+     "text": "export"
+    },
+    {
+     "end": 10.4,
+     "start": 10.312,
+     "text": "it"
+    },
+    {
+     "end": 10.8,
+     "start": 10.4,
+     "text": "once"
+    },
+    {
+     "end": 10.875,
+     "start": 10.8,
+     "text": ","
+    },
+    {
+     "end": 11.038,
+     "start": 10.875,
+     "text": "and"
+    },
+    {
+     "end": 11.35,
+     "start": 11.038,
+     "text": "every"
+    },
+    {
+     "end": 11.762,
+     "start": 11.35,
+     "text": "command"
+    },
+    {
+     "end": 11.875,
+     "start": 11.762,
+     "text": "that"
+    },
+    {
+     "end": 12.212,
+     "start": 11.875,
+     "text": "opens"
+    },
+    {
+     "end": 12.275,
+     "start": 12.212,
+     "text": "a"
+    },
+    {
+     "end": 12.6,
+     "start": 12.275,
+     "text": "vault"
+    },
+    {
+     "end": 12.962,
+     "start": 12.6,
+     "text": "reads"
+    },
+    {
+     "end": 13.625,
+     "start": 12.962,
+     "text": "it"
+    },
+    {
+     "end": 13.85,
+     "start": 13.625,
+     "text": ","
+    },
+    {
+     "end": 14.137,
+     "start": 14.025,
+     "text": "with"
+    },
+    {
+     "end": 14.25,
+     "start": 14.137,
+     "text": "the"
+    },
+    {
+     "end": 14.525,
+     "start": 14.25,
+     "text": "other"
+    },
+    {
+     "end": 15.038,
+     "start": 14.525,
+     "text": "settings"
+    },
+    {
+     "end": 15.413,
+     "start": 15.038,
+     "text": "given"
+    },
+    {
+     "end": 15.575,
+     "start": 15.413,
+     "text": "as"
+    },
+    {
+     "end": 15.712,
+     "start": 15.575,
+     "text": "the"
+    },
+    {
+     "end": 16.275,
+     "start": 15.712,
+     "text": "sections"
+    },
+    {
+     "end": 16.575,
+     "start": 16.275,
+     "text": "above"
+    },
+    {
+     "end": 17.625,
+     "start": 16.575,
+     "text": "describe"
+    },
+    {
+     "end": 17.85,
+     "start": 17.625,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-02": {
+   "audio_sha256": "11087b65fdddbeb810784d4ba9cde041c9381114bf5bb7a487f470e2c65ed8ba",
+   "characters": 541,
+   "cost": 0.00053559,
+   "duration": 40.525,
+   "index": 2,
+   "key": "e57b5578dc044b512dcc9f6cf8c59d9a3dfc0c8839452f7e85e3dfc287af5205",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "the-passphrase-from-the-environment-on-a-development-network",
+   "sent_text": "wallet create takes the variable for both of its asks, so a creation is not asked to confirm. A development network is any network that is not one of the three public ones the build names: mainnet (network magic 764824073), preprod (1) and preview (2). On those three, a command that would read the variable is refused in one sentence that names the variable and the network, before the vault is read. The sentence is the line a wallet command prints on standard error and the reason in the receipt of a write that was refused by the client:",
+   "text": "wallet create takes the variable for both of its asks, so a creation is not asked to confirm. A development network is any network that is not one of the three public ones the build names: mainnet (network magic 764824073), preprod (1) and preview (2). On those three, a command that would read the variable is refused in one sentence that names the variable and the network, before the vault is read. The sentence is the line a wallet command prints on standard error and the reason in the receipt of a write that was refused by the client:",
+   "words": [
+    {
+     "end": 0.55,
+     "start": 0.225,
+     "text": "wallet"
+    },
+    {
+     "end": 0.975,
+     "start": 0.55,
+     "text": "create"
+    },
+    {
+     "end": 1.275,
+     "start": 0.975,
+     "text": "takes"
+    },
+    {
+     "end": 1.375,
+     "start": 1.275,
+     "text": "the"
+    },
+    {
+     "end": 1.9,
+     "start": 1.375,
+     "text": "variable"
+    },
+    {
+     "end": 2.062,
+     "start": 1.9,
+     "text": "for"
+    },
+    {
+     "end": 2.362,
+     "start": 2.062,
+     "text": "both"
+    },
+    {
+     "end": 2.438,
+     "start": 2.362,
+     "text": "of"
+    },
+    {
+     "end": 2.638,
+     "start": 2.438,
+     "text": "its"
+    },
+    {
+     "end": 3.2,
+     "start": 2.638,
+     "text": "asks"
+    },
+    {
+     "end": 3.275,
+     "start": 3.2,
+     "text": ","
+    },
+    {
+     "end": 3.438,
+     "start": 3.275,
+     "text": "so"
+    },
+    {
+     "end": 3.525,
+     "start": 3.438,
+     "text": "a"
+    },
+    {
+     "end": 4.1,
+     "start": 3.525,
+     "text": "creation"
+    },
+    {
+     "end": 4.25,
+     "start": 4.1,
+     "text": "is"
+    },
+    {
+     "end": 4.475,
+     "start": 4.25,
+     "text": "not"
+    },
+    {
+     "end": 4.762,
+     "start": 4.475,
+     "text": "asked"
+    },
+    {
+     "end": 4.85,
+     "start": 4.762,
+     "text": "to"
+    },
+    {
+     "end": 6.0,
+     "start": 4.85,
+     "text": "confirm"
+    },
+    {
+     "end": 6.2,
+     "start": 6.0,
+     "text": "."
+    },
+    {
+     "end": 6.475,
+     "start": 6.4,
+     "text": "A"
+    },
+    {
+     "end": 7.025,
+     "start": 6.475,
+     "text": "development"
+    },
+    {
+     "end": 7.488,
+     "start": 7.025,
+     "text": "network"
+    },
+    {
+     "end": 7.7,
+     "start": 7.488,
+     "text": "is"
+    },
+    {
+     "end": 8.0,
+     "start": 7.7,
+     "text": "any"
+    },
+    {
+     "end": 8.587,
+     "start": 8.0,
+     "text": "network"
+    },
+    {
+     "end": 8.75,
+     "start": 8.587,
+     "text": "that"
+    },
+    {
+     "end": 8.913,
+     "start": 8.75,
+     "text": "is"
+    },
+    {
+     "end": 9.225,
+     "start": 8.913,
+     "text": "not"
+    },
+    {
+     "end": 9.387,
+     "start": 9.225,
+     "text": "one"
+    },
+    {
+     "end": 9.462,
+     "start": 9.387,
+     "text": "of"
+    },
+    {
+     "end": 9.6,
+     "start": 9.462,
+     "text": "the"
+    },
+    {
+     "end": 9.962,
+     "start": 9.6,
+     "text": "three"
+    },
+    {
+     "end": 10.375,
+     "start": 9.962,
+     "text": "public"
+    },
+    {
+     "end": 10.675,
+     "start": 10.375,
+     "text": "ones"
+    },
+    {
+     "end": 10.775,
+     "start": 10.675,
+     "text": "the"
+    },
+    {
+     "end": 11.05,
+     "start": 10.775,
+     "text": "build"
+    },
+    {
+     "end": 12.1,
+     "start": 11.05,
+     "text": "names"
+    },
+    {
+     "end": 12.325,
+     "start": 12.1,
+     "text": ":"
+    },
+    {
+     "end": 13.025,
+     "start": 12.6,
+     "text": "mainnet"
+    },
+    {
+     "end": 13.1,
+     "start": 13.025,
+     "text": "("
+    },
+    {
+     "end": 13.488,
+     "start": 13.1,
+     "text": "network"
+    },
+    {
+     "end": 13.962,
+     "start": 13.488,
+     "text": "magic"
+    },
+    {
+     "end": 18.075,
+     "start": 13.962,
+     "text": "764824073"
+    },
+    {
+     "end": 18.175,
+     "start": 18.075,
+     "text": ")"
+    },
+    {
+     "end": 18.25,
+     "start": 18.175,
+     "text": ","
+    },
+    {
+     "end": 18.8,
+     "start": 18.25,
+     "text": "preprod"
+    },
+    {
+     "end": 18.875,
+     "start": 18.8,
+     "text": "("
+    },
+    {
+     "end": 19.25,
+     "start": 18.875,
+     "text": "1"
+    },
+    {
+     "end": 19.337,
+     "start": 19.25,
+     "text": ")"
+    },
+    {
+     "end": 19.475,
+     "start": 19.337,
+     "text": "and"
+    },
+    {
+     "end": 19.925,
+     "start": 19.475,
+     "text": "preview"
+    },
+    {
+     "end": 20.025,
+     "start": 19.925,
+     "text": "("
+    },
+    {
+     "end": 20.55,
+     "start": 20.025,
+     "text": "2"
+    },
+    {
+     "end": 21.275,
+     "start": 20.55,
+     "text": ")"
+    },
+    {
+     "end": 21.45,
+     "start": 21.275,
+     "text": "."
+    },
+    {
+     "end": 21.775,
+     "start": 21.625,
+     "text": "On"
+    },
+    {
+     "end": 22.025,
+     "start": 21.775,
+     "text": "those"
+    },
+    {
+     "end": 22.7,
+     "start": 22.025,
+     "text": "three"
+    },
+    {
+     "end": 22.925,
+     "start": 22.7,
+     "text": ","
+    },
+    {
+     "end": 23.2,
+     "start": 23.125,
+     "text": "a"
+    },
+    {
+     "end": 23.7,
+     "start": 23.2,
+     "text": "command"
+    },
+    {
+     "end": 23.837,
+     "start": 23.7,
+     "text": "that"
+    },
+    {
+     "end": 24.0,
+     "start": 23.837,
+     "text": "would"
+    },
+    {
+     "end": 24.263,
+     "start": 24.0,
+     "text": "read"
+    },
+    {
+     "end": 24.362,
+     "start": 24.263,
+     "text": "the"
+    },
+    {
+     "end": 24.987,
+     "start": 24.362,
+     "text": "variable"
+    },
+    {
+     "end": 25.15,
+     "start": 24.987,
+     "text": "is"
+    },
+    {
+     "end": 25.888,
+     "start": 25.15,
+     "text": "refused"
+    },
+    {
+     "end": 26.05,
+     "start": 25.888,
+     "text": "in"
+    },
+    {
+     "end": 26.312,
+     "start": 26.05,
+     "text": "one"
+    },
+    {
+     "end": 26.825,
+     "start": 26.312,
+     "text": "sentence"
+    },
+    {
+     "end": 27.05,
+     "start": 26.825,
+     "text": "that"
+    },
+    {
+     "end": 27.4,
+     "start": 27.05,
+     "text": "names"
+    },
+    {
+     "end": 27.5,
+     "start": 27.4,
+     "text": "the"
+    },
+    {
+     "end": 28.225,
+     "start": 27.5,
+     "text": "variable"
+    },
+    {
+     "end": 28.388,
+     "start": 28.225,
+     "text": "and"
+    },
+    {
+     "end": 28.475,
+     "start": 28.388,
+     "text": "the"
+    },
+    {
+     "end": 29.55,
+     "start": 28.475,
+     "text": "network"
+    },
+    {
+     "end": 29.775,
+     "start": 29.55,
+     "text": ","
+    },
+    {
+     "end": 30.237,
+     "start": 29.95,
+     "text": "before"
+    },
+    {
+     "end": 30.325,
+     "start": 30.237,
+     "text": "the"
+    },
+    {
+     "end": 30.587,
+     "start": 30.325,
+     "text": "vault"
+    },
+    {
+     "end": 30.737,
+     "start": 30.587,
+     "text": "is"
+    },
+    {
+     "end": 31.4,
+     "start": 30.737,
+     "text": "read"
+    },
+    {
+     "end": 31.6,
+     "start": 31.4,
+     "text": "."
+    },
+    {
+     "end": 31.913,
+     "start": 31.8,
+     "text": "The"
+    },
+    {
+     "end": 32.425,
+     "start": 31.913,
+     "text": "sentence"
+    },
+    {
+     "end": 32.575,
+     "start": 32.425,
+     "text": "is"
+    },
+    {
+     "end": 32.713,
+     "start": 32.575,
+     "text": "the"
+    },
+    {
+     "end": 33.188,
+     "start": 32.713,
+     "text": "line"
+    },
+    {
+     "end": 33.312,
+     "start": 33.188,
+     "text": "a"
+    },
+    {
+     "end": 33.7,
+     "start": 33.312,
+     "text": "wallet"
+    },
+    {
+     "end": 34.287,
+     "start": 33.7,
+     "text": "command"
+    },
+    {
+     "end": 34.638,
+     "start": 34.287,
+     "text": "prints"
+    },
+    {
+     "end": 34.838,
+     "start": 34.638,
+     "text": "on"
+    },
+    {
+     "end": 35.362,
+     "start": 34.838,
+     "text": "standard"
+    },
+    {
+     "end": 35.95,
+     "start": 35.362,
+     "text": "error"
+    },
+    {
+     "end": 36.088,
+     "start": 35.95,
+     "text": "and"
+    },
+    {
+     "end": 36.213,
+     "start": 36.088,
+     "text": "the"
+    },
+    {
+     "end": 36.675,
+     "start": 36.213,
+     "text": "reason"
+    },
+    {
+     "end": 36.787,
+     "start": 36.675,
+     "text": "in"
+    },
+    {
+     "end": 36.875,
+     "start": 36.787,
+     "text": "the"
+    },
+    {
+     "end": 37.375,
+     "start": 36.875,
+     "text": "receipt"
+    },
+    {
+     "end": 37.463,
+     "start": 37.375,
+     "text": "of"
+    },
+    {
+     "end": 37.562,
+     "start": 37.463,
+     "text": "a"
+    },
+    {
+     "end": 37.925,
+     "start": 37.562,
+     "text": "write"
+    },
+    {
+     "end": 38.075,
+     "start": 37.925,
+     "text": "that"
+    },
+    {
+     "end": 38.25,
+     "start": 38.075,
+     "text": "was"
+    },
+    {
+     "end": 38.9,
+     "start": 38.25,
+     "text": "refused"
+    },
+    {
+     "end": 39.075,
+     "start": 38.9,
+     "text": "by"
+    },
+    {
+     "end": 39.175,
+     "start": 39.075,
+     "text": "the"
+    },
+    {
+     "end": 40.3,
+     "start": 39.175,
+     "text": "client"
+    },
+    {
+     "end": 40.525,
+     "start": 40.3,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-03": {
+   "audio_sha256": "aaaaf8d1e33e9d4ff377428aa8b888c21221e9b7a93fcdd1f13ca73e6e2881e8",
+   "characters": 346,
+   "cost": 0.00034254,
+   "duration": 23.125,
+   "index": 3,
+   "key": "84ed096490506122f56c7cd126c546fd0dd7d112d0aaa3a5f0fb7039916bda68",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "the-passphrase-from-the-environment-on-a-development-network",
+   "sent_text": "The decision uses the network magic the command already receives. wallet sign is offline and takes no network magic, so it uses the network the bundle names, once it has read the bundle and before it reads the vault. A write is refused on mainnet before any passphrase is considered, so for a write the variable is refused on preprod and preview.",
+   "text": "The decision uses the network magic the command already receives. wallet sign is offline and takes no network magic, so it uses the network the bundle names, once it has read the bundle and before it reads the vault. A write is refused on mainnet before any passphrase is considered, so for a write the variable is refused on preprod and preview.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.762,
+     "start": 0.25,
+     "text": "decision"
+    },
+    {
+     "end": 1.175,
+     "start": 0.762,
+     "text": "uses"
+    },
+    {
+     "end": 1.275,
+     "start": 1.175,
+     "text": "the"
+    },
+    {
+     "end": 1.675,
+     "start": 1.275,
+     "text": "network"
+    },
+    {
+     "end": 2.125,
+     "start": 1.675,
+     "text": "magic"
+    },
+    {
+     "end": 2.225,
+     "start": 2.125,
+     "text": "the"
+    },
+    {
+     "end": 2.7,
+     "start": 2.225,
+     "text": "command"
+    },
+    {
+     "end": 3.075,
+     "start": 2.7,
+     "text": "already"
+    },
+    {
+     "end": 4.175,
+     "start": 3.075,
+     "text": "receives"
+    },
+    {
+     "end": 4.375,
+     "start": 4.175,
+     "text": "."
+    },
+    {
+     "end": 4.875,
+     "start": 4.575,
+     "text": "wallet"
+    },
+    {
+     "end": 5.113,
+     "start": 4.875,
+     "text": "sign"
+    },
+    {
+     "end": 5.25,
+     "start": 5.113,
+     "text": "is"
+    },
+    {
+     "end": 5.875,
+     "start": 5.25,
+     "text": "offline"
+    },
+    {
+     "end": 6.0,
+     "start": 5.875,
+     "text": "and"
+    },
+    {
+     "end": 6.275,
+     "start": 6.0,
+     "text": "takes"
+    },
+    {
+     "end": 6.475,
+     "start": 6.275,
+     "text": "no"
+    },
+    {
+     "end": 6.85,
+     "start": 6.475,
+     "text": "network"
+    },
+    {
+     "end": 7.725,
+     "start": 6.85,
+     "text": "magic"
+    },
+    {
+     "end": 7.95,
+     "start": 7.725,
+     "text": ","
+    },
+    {
+     "end": 8.262,
+     "start": 8.15,
+     "text": "so"
+    },
+    {
+     "end": 8.35,
+     "start": 8.262,
+     "text": "it"
+    },
+    {
+     "end": 8.725,
+     "start": 8.35,
+     "text": "uses"
+    },
+    {
+     "end": 8.825,
+     "start": 8.725,
+     "text": "the"
+    },
+    {
+     "end": 9.225,
+     "start": 8.825,
+     "text": "network"
+    },
+    {
+     "end": 9.325,
+     "start": 9.225,
+     "text": "the"
+    },
+    {
+     "end": 9.725,
+     "start": 9.325,
+     "text": "bundle"
+    },
+    {
+     "end": 10.55,
+     "start": 9.725,
+     "text": "names"
+    },
+    {
+     "end": 10.75,
+     "start": 10.55,
+     "text": ","
+    },
+    {
+     "end": 11.212,
+     "start": 10.95,
+     "text": "once"
+    },
+    {
+     "end": 11.288,
+     "start": 11.212,
+     "text": "it"
+    },
+    {
+     "end": 11.45,
+     "start": 11.288,
+     "text": "has"
+    },
+    {
+     "end": 11.663,
+     "start": 11.45,
+     "text": "read"
+    },
+    {
+     "end": 11.75,
+     "start": 11.663,
+     "text": "the"
+    },
+    {
+     "end": 12.3,
+     "start": 11.75,
+     "text": "bundle"
+    },
+    {
+     "end": 12.438,
+     "start": 12.3,
+     "text": "and"
+    },
+    {
+     "end": 12.8,
+     "start": 12.438,
+     "text": "before"
+    },
+    {
+     "end": 12.925,
+     "start": 12.8,
+     "text": "it"
+    },
+    {
+     "end": 13.212,
+     "start": 12.925,
+     "text": "reads"
+    },
+    {
+     "end": 13.3,
+     "start": 13.212,
+     "text": "the"
+    },
+    {
+     "end": 14.125,
+     "start": 13.3,
+     "text": "vault"
+    },
+    {
+     "end": 14.325,
+     "start": 14.125,
+     "text": "."
+    },
+    {
+     "end": 14.613,
+     "start": 14.525,
+     "text": "A"
+    },
+    {
+     "end": 14.925,
+     "start": 14.613,
+     "text": "write"
+    },
+    {
+     "end": 15.075,
+     "start": 14.925,
+     "text": "is"
+    },
+    {
+     "end": 15.613,
+     "start": 15.075,
+     "text": "refused"
+    },
+    {
+     "end": 15.775,
+     "start": 15.613,
+     "text": "on"
+    },
+    {
+     "end": 16.2,
+     "start": 15.775,
+     "text": "mainnet"
+    },
+    {
+     "end": 16.575,
+     "start": 16.2,
+     "text": "before"
+    },
+    {
+     "end": 16.775,
+     "start": 16.575,
+     "text": "any"
+    },
+    {
+     "end": 17.4,
+     "start": 16.775,
+     "text": "passphrase"
+    },
+    {
+     "end": 17.55,
+     "start": 17.4,
+     "text": "is"
+    },
+    {
+     "end": 18.65,
+     "start": 17.55,
+     "text": "considered"
+    },
+    {
+     "end": 18.875,
+     "start": 18.65,
+     "text": ","
+    },
+    {
+     "end": 19.25,
+     "start": 19.075,
+     "text": "so"
+    },
+    {
+     "end": 19.362,
+     "start": 19.25,
+     "text": "for"
+    },
+    {
+     "end": 19.425,
+     "start": 19.362,
+     "text": "a"
+    },
+    {
+     "end": 19.725,
+     "start": 19.425,
+     "text": "write"
+    },
+    {
+     "end": 19.825,
+     "start": 19.725,
+     "text": "the"
+    },
+    {
+     "end": 20.35,
+     "start": 19.825,
+     "text": "variable"
+    },
+    {
+     "end": 20.5,
+     "start": 20.35,
+     "text": "is"
+    },
+    {
+     "end": 21.1,
+     "start": 20.5,
+     "text": "refused"
+    },
+    {
+     "end": 21.25,
+     "start": 21.1,
+     "text": "on"
+    },
+    {
+     "end": 21.8,
+     "start": 21.25,
+     "text": "preprod"
+    },
+    {
+     "end": 21.925,
+     "start": 21.8,
+     "text": "and"
+    },
+    {
+     "end": 22.875,
+     "start": 21.925,
+     "text": "preview"
+    },
+    {
+     "end": 23.125,
+     "start": 22.875,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-04": {
+   "audio_sha256": "191f6d5c0426d3080aa01048cf5629dec62ed1f84294a98e59c35f98301a633e",
+   "characters": 379,
+   "cost": 0.00037521,
+   "duration": 25.6,
+   "index": 4,
+   "key": "c7ba84845f2530b06fdf4a7710fcc0e7b282147de1630fc6d1859d1560b82c36",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "the-passphrase-from-the-environment-on-a-development-network",
+   "sent_text": "The variable is the whole of this: there is no config key for it and no flag, and a config file that names a passphrase is refused. The descriptor wins: with --passphrase-fd N on the command the variable is not read, on any network. With neither, the prompt is as before. A variable that is set but empty is refused, naming the variable, rather than taken as an empty passphrase.",
+   "text": "The variable is the whole of this: there is no config key for it and no flag, and a config file that names a passphrase is refused. The descriptor wins: with --passphrase-fd N on the command the variable is not read, on any network. With neither, the prompt is as before. A variable that is set but empty is refused, naming the variable, rather than taken as an empty passphrase.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.775,
+     "start": 0.25,
+     "text": "variable"
+    },
+    {
+     "end": 0.913,
+     "start": 0.775,
+     "text": "is"
+    },
+    {
+     "end": 1.0,
+     "start": 0.913,
+     "text": "the"
+    },
+    {
+     "end": 1.188,
+     "start": 1.0,
+     "text": "whole"
+    },
+    {
+     "end": 1.275,
+     "start": 1.188,
+     "text": "of"
+    },
+    {
+     "end": 1.975,
+     "start": 1.275,
+     "text": "this"
+    },
+    {
+     "end": 2.175,
+     "start": 1.975,
+     "text": ":"
+    },
+    {
+     "end": 2.525,
+     "start": 2.375,
+     "text": "there"
+    },
+    {
+     "end": 2.688,
+     "start": 2.525,
+     "text": "is"
+    },
+    {
+     "end": 2.925,
+     "start": 2.688,
+     "text": "no"
+    },
+    {
+     "end": 3.388,
+     "start": 2.925,
+     "text": "config"
+    },
+    {
+     "end": 3.662,
+     "start": 3.388,
+     "text": "key"
+    },
+    {
+     "end": 3.875,
+     "start": 3.662,
+     "text": "for"
+    },
+    {
+     "end": 4.025,
+     "start": 3.875,
+     "text": "it"
+    },
+    {
+     "end": 4.15,
+     "start": 4.025,
+     "text": "and"
+    },
+    {
+     "end": 4.412,
+     "start": 4.15,
+     "text": "no"
+    },
+    {
+     "end": 4.95,
+     "start": 4.412,
+     "text": "flag"
+    },
+    {
+     "end": 5.05,
+     "start": 4.95,
+     "text": ","
+    },
+    {
+     "end": 5.162,
+     "start": 5.05,
+     "text": "and"
+    },
+    {
+     "end": 5.225,
+     "start": 5.162,
+     "text": "a"
+    },
+    {
+     "end": 5.713,
+     "start": 5.225,
+     "text": "config"
+    },
+    {
+     "end": 6.075,
+     "start": 5.713,
+     "text": "file"
+    },
+    {
+     "end": 6.275,
+     "start": 6.075,
+     "text": "that"
+    },
+    {
+     "end": 6.588,
+     "start": 6.275,
+     "text": "names"
+    },
+    {
+     "end": 6.65,
+     "start": 6.588,
+     "text": "a"
+    },
+    {
+     "end": 7.275,
+     "start": 6.65,
+     "text": "passphrase"
+    },
+    {
+     "end": 7.425,
+     "start": 7.275,
+     "text": "is"
+    },
+    {
+     "end": 8.675,
+     "start": 7.425,
+     "text": "refused"
+    },
+    {
+     "end": 8.9,
+     "start": 8.675,
+     "text": "."
+    },
+    {
+     "end": 9.175,
+     "start": 9.1,
+     "text": "The"
+    },
+    {
+     "end": 9.738,
+     "start": 9.175,
+     "text": "descriptor"
+    },
+    {
+     "end": 10.15,
+     "start": 9.738,
+     "text": "wins"
+    },
+    {
+     "end": 10.225,
+     "start": 10.15,
+     "text": ":"
+    },
+    {
+     "end": 10.425,
+     "start": 10.225,
+     "text": "with"
+    },
+    {
+     "end": 11.387,
+     "start": 10.425,
+     "text": "--passphrase-fd"
+    },
+    {
+     "end": 11.75,
+     "start": 11.387,
+     "text": "N"
+    },
+    {
+     "end": 11.887,
+     "start": 11.75,
+     "text": "on"
+    },
+    {
+     "end": 11.975,
+     "start": 11.887,
+     "text": "the"
+    },
+    {
+     "end": 12.475,
+     "start": 11.975,
+     "text": "command"
+    },
+    {
+     "end": 12.575,
+     "start": 12.475,
+     "text": "the"
+    },
+    {
+     "end": 13.1,
+     "start": 12.575,
+     "text": "variable"
+    },
+    {
+     "end": 13.25,
+     "start": 13.1,
+     "text": "is"
+    },
+    {
+     "end": 13.538,
+     "start": 13.25,
+     "text": "not"
+    },
+    {
+     "end": 13.9,
+     "start": 13.538,
+     "text": "read"
+    },
+    {
+     "end": 13.975,
+     "start": 13.9,
+     "text": ","
+    },
+    {
+     "end": 14.188,
+     "start": 13.975,
+     "text": "on"
+    },
+    {
+     "end": 14.45,
+     "start": 14.188,
+     "text": "any"
+    },
+    {
+     "end": 15.475,
+     "start": 14.45,
+     "text": "network"
+    },
+    {
+     "end": 15.7,
+     "start": 15.475,
+     "text": "."
+    },
+    {
+     "end": 16.05,
+     "start": 15.875,
+     "text": "With"
+    },
+    {
+     "end": 16.35,
+     "start": 16.05,
+     "text": "neither"
+    },
+    {
+     "end": 16.388,
+     "start": 16.35,
+     "text": ","
+    },
+    {
+     "end": 16.475,
+     "start": 16.388,
+     "text": "the"
+    },
+    {
+     "end": 16.763,
+     "start": 16.475,
+     "text": "prompt"
+    },
+    {
+     "end": 16.875,
+     "start": 16.763,
+     "text": "is"
+    },
+    {
+     "end": 17.025,
+     "start": 16.875,
+     "text": "as"
+    },
+    {
+     "end": 17.925,
+     "start": 17.025,
+     "text": "before"
+    },
+    {
+     "end": 18.15,
+     "start": 17.925,
+     "text": "."
+    },
+    {
+     "end": 18.425,
+     "start": 18.35,
+     "text": "A"
+    },
+    {
+     "end": 18.975,
+     "start": 18.425,
+     "text": "variable"
+    },
+    {
+     "end": 19.125,
+     "start": 18.975,
+     "text": "that"
+    },
+    {
+     "end": 19.3,
+     "start": 19.125,
+     "text": "is"
+    },
+    {
+     "end": 19.6,
+     "start": 19.3,
+     "text": "set"
+    },
+    {
+     "end": 19.788,
+     "start": 19.6,
+     "text": "but"
+    },
+    {
+     "end": 20.237,
+     "start": 19.788,
+     "text": "empty"
+    },
+    {
+     "end": 20.4,
+     "start": 20.237,
+     "text": "is"
+    },
+    {
+     "end": 21.15,
+     "start": 20.4,
+     "text": "refused"
+    },
+    {
+     "end": 21.263,
+     "start": 21.15,
+     "text": ","
+    },
+    {
+     "end": 21.612,
+     "start": 21.263,
+     "text": "naming"
+    },
+    {
+     "end": 21.7,
+     "start": 21.612,
+     "text": "the"
+    },
+    {
+     "end": 22.375,
+     "start": 21.7,
+     "text": "variable"
+    },
+    {
+     "end": 22.475,
+     "start": 22.375,
+     "text": ","
+    },
+    {
+     "end": 22.85,
+     "start": 22.475,
+     "text": "rather"
+    },
+    {
+     "end": 23.025,
+     "start": 22.85,
+     "text": "than"
+    },
+    {
+     "end": 23.425,
+     "start": 23.025,
+     "text": "taken"
+    },
+    {
+     "end": 23.538,
+     "start": 23.425,
+     "text": "as"
+    },
+    {
+     "end": 23.663,
+     "start": 23.538,
+     "text": "an"
+    },
+    {
+     "end": 24.025,
+     "start": 23.663,
+     "text": "empty"
+    },
+    {
+     "end": 25.375,
+     "start": 24.025,
+     "text": "passphrase"
+    },
+    {
+     "end": 25.6,
+     "start": 25.375,
+     "text": "."
+    }
+   ]
+  },
+  "docs-singular-node/the-passphrase-from-the-environment-on-a-development-network-05": {
+   "audio_sha256": "4808dea90d89c82df26ebb39cf2afeb4f58ae6dd3a8b27fefa1c6d01d8d84034",
+   "characters": 201,
+   "cost": 0.00019899,
+   "duration": 12.375,
+   "index": 5,
+   "key": "b59f2eeac0f01127f591085be64cceb4bba95c152d07282d9543d3c9a11f7fe0",
+   "page": "docs/singular-node.md",
+   "pause_ms": 400,
+   "section": "the-passphrase-from-the-environment-on-a-development-network",
+   "sent_text": "The variable is for a passphrase that protects nothing. Every process you start inherits your environment, and a process of your account can read it, so a real vault keeps the prompt or the descriptor.",
+   "text": "The variable is for a passphrase that protects nothing. Every process you start inherits your environment, and a process of your account can read it, so a real vault keeps the prompt or the descriptor.",
+   "words": [
+    {
+     "end": 0.25,
+     "start": 0.175,
+     "text": "The"
+    },
+    {
+     "end": 0.775,
+     "start": 0.25,
+     "text": "variable"
+    },
+    {
+     "end": 0.925,
+     "start": 0.775,
+     "text": "is"
+    },
+    {
+     "end": 1.038,
+     "start": 0.925,
+     "text": "for"
+    },
+    {
+     "end": 1.1,
+     "start": 1.038,
+     "text": "a"
+    },
+    {
+     "end": 1.737,
+     "start": 1.1,
+     "text": "passphrase"
+    },
+    {
+     "end": 1.875,
+     "start": 1.737,
+     "text": "that"
+    },
+    {
+     "end": 2.325,
+     "start": 1.875,
+     "text": "protects"
+    },
+    {
+     "end": 3.25,
+     "start": 2.325,
+     "text": "nothing"
+    },
+    {
+     "end": 3.45,
+     "start": 3.25,
+     "text": "."
+    },
+    {
+     "end": 3.925,
+     "start": 3.65,
+     "text": "Every"
+    },
+    {
+     "end": 4.45,
+     "start": 3.925,
+     "text": "process"
+    },
+    {
+     "end": 4.6,
+     "start": 4.45,
+     "text": "you"
+    },
+    {
+     "end": 4.95,
+     "start": 4.6,
+     "text": "start"
+    },
+    {
+     "end": 5.438,
+     "start": 4.95,
+     "text": "inherits"
+    },
+    {
+     "end": 5.537,
+     "start": 5.438,
+     "text": "your"
+    },
+    {
+     "end": 6.55,
+     "start": 5.537,
+     "text": "environment"
+    },
+    {
+     "end": 6.75,
+     "start": 6.55,
+     "text": ","
+    },
+    {
+     "end": 7.012,
+     "start": 6.925,
+     "text": "and"
+    },
+    {
+     "end": 7.075,
+     "start": 7.012,
+     "text": "a"
+    },
+    {
+     "end": 7.562,
+     "start": 7.075,
+     "text": "process"
+    },
+    {
+     "end": 7.637,
+     "start": 7.562,
+     "text": "of"
+    },
+    {
+     "end": 7.738,
+     "start": 7.637,
+     "text": "your"
+    },
+    {
+     "end": 8.1,
+     "start": 7.738,
+     "text": "account"
+    },
+    {
+     "end": 8.275,
+     "start": 8.1,
+     "text": "can"
+    },
+    {
+     "end": 8.538,
+     "start": 8.275,
+     "text": "read"
+    },
+    {
+     "end": 9.1,
+     "start": 8.538,
+     "text": "it"
+    },
+    {
+     "end": 9.3,
+     "start": 9.1,
+     "text": ","
+    },
+    {
+     "end": 9.587,
+     "start": 9.5,
+     "text": "so"
+    },
+    {
+     "end": 9.65,
+     "start": 9.587,
+     "text": "a"
+    },
+    {
+     "end": 9.875,
+     "start": 9.65,
+     "text": "real"
+    },
+    {
+     "end": 10.125,
+     "start": 9.875,
+     "text": "vault"
+    },
+    {
+     "end": 10.387,
+     "start": 10.125,
+     "text": "keeps"
+    },
+    {
+     "end": 10.475,
+     "start": 10.387,
+     "text": "the"
+    },
+    {
+     "end": 10.9,
+     "start": 10.475,
+     "text": "prompt"
+    },
+    {
+     "end": 11.012,
+     "start": 10.9,
+     "text": "or"
+    },
+    {
+     "end": 11.1,
+     "start": 11.012,
+     "text": "the"
+    },
+    {
+     "end": 12.175,
+     "start": 11.1,
+     "text": "descriptor"
+    },
+    {
+     "end": 12.375,
+     "start": 12.175,
+     "text": "."
+    }
+   ]
+  },
   "docs-singular-node/the-settings-you-give-00": {
    "audio_sha256": "d91089a9829842a0539134a9754239f266d5686782d7c3330b7a3d1dff86266a",
    "characters": 22,
@@ -351371,17 +353601,17 @@
    ]
   },
   "docs-singular-node/the-vault-from-the-environment-or-the-file-01": {
-   "audio_sha256": "d15fa35bde250477090793e0aaa9704d3e20638b19bb0f23445aa1a05ad69970",
-   "characters": 392,
-   "cost": 0.00038807999999999996,
-   "duration": 25.975,
+   "audio_sha256": "3bbdd968b5f76f3352c9511ce4402f14ab259831298785a84ac4aec4f271ead5",
+   "characters": 479,
+   "cost": 0.00047421,
+   "duration": 31.475,
    "index": 1,
-   "key": "73604c7f3f9522a3e35ddae6df76d7da8bf79d43aef686e1123bfc2163eff47f",
+   "key": "9791088f04a0da6237400186779b2a841f6600632c70a237cd98ad3e254396ec",
    "page": "docs/singular-node.md",
    "pause_ms": 400,
    "section": "the-vault-from-the-environment-or-the-file",
-   "sent_text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one.",
-   "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one.",
+   "sent_text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
+   "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one. A development network can also take it from the environment, as the next section says.",
    "words": [
     {
      "end": 0.312,
@@ -351786,6 +354016,91 @@
     {
      "end": 25.975,
      "start": 25.775,
+     "text": "."
+    },
+    {
+     "end": 26.25,
+     "start": 26.175,
+     "text": "A"
+    },
+    {
+     "end": 26.8,
+     "start": 26.25,
+     "text": "development"
+    },
+    {
+     "end": 27.25,
+     "start": 26.8,
+     "text": "network"
+    },
+    {
+     "end": 27.375,
+     "start": 27.25,
+     "text": "can"
+    },
+    {
+     "end": 27.737,
+     "start": 27.375,
+     "text": "also"
+    },
+    {
+     "end": 28.0,
+     "start": 27.737,
+     "text": "take"
+    },
+    {
+     "end": 28.125,
+     "start": 28.0,
+     "text": "it"
+    },
+    {
+     "end": 28.288,
+     "start": 28.125,
+     "text": "from"
+    },
+    {
+     "end": 28.425,
+     "start": 28.288,
+     "text": "the"
+    },
+    {
+     "end": 29.175,
+     "start": 28.425,
+     "text": "environment"
+    },
+    {
+     "end": 29.263,
+     "start": 29.175,
+     "text": ","
+    },
+    {
+     "end": 29.45,
+     "start": 29.263,
+     "text": "as"
+    },
+    {
+     "end": 29.55,
+     "start": 29.45,
+     "text": "the"
+    },
+    {
+     "end": 29.825,
+     "start": 29.55,
+     "text": "next"
+    },
+    {
+     "end": 30.288,
+     "start": 29.825,
+     "text": "section"
+    },
+    {
+     "end": 31.25,
+     "start": 30.288,
+     "text": "says"
+    },
+    {
+     "end": 31.475,
+     "start": 31.25,
      "text": "."
     }
    ]

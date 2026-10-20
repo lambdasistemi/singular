@@ -215,6 +215,33 @@ spec = describe "the settings given by the environment and a config file" $ do
                         ["--vault", "\"vault\" key of singular.json", flag]
                         (withFile [("vault", "alice.vault")] (bare <> [flag, value]))
                         `shouldBe` True
+    describe "the passphrase" $ do
+        let environmentEntry = "SINGULAR_PASSPHRASE The vault passphrase"
+        it
+            "is not a setting: SINGULAR_PASSPHRASE in the environment changes no command line"
+            $ forM_ (map fst commands)
+            $ \name ->
+                withEnvironment
+                    [("SINGULAR_PASSPHRASE", "weak")]
+                    (line name (takenBy name))
+                    `shouldBe` meaning (line name (takenBy name))
+        it
+            "is listed for development networks only on the help of every command that opens a vault"
+            $ forM_ ["create", "insert", "update", "terminate", "fold"]
+            $ \name ->
+                unwords (words (helpText program [] [name]))
+                    `shouldSatisfy` \page ->
+                        all
+                            (`isInfixOf` page)
+                            [ environmentEntry
+                            , "development network only"
+                            , "mainnet (764824073)"
+                            , "preprod (1)"
+                            , "preview (2)"
+                            ]
+        it "has no environment entry on a command that opens no vault" $
+            unwords (words (helpText program [] ["inspect"]))
+                `shouldNotSatisfy` (environmentEntry `isInfixOf`)
     describe "the declaration" $ do
         let everyFlag = nub (concatMap (shapeFlags . leafShape) (programLeaves program))
         it "gives the same eleven settings three forms as singular" $

@@ -17,14 +17,17 @@ makes to whoever keeps their signing key in it:
   or symbolic link is refused with its bytes untouched, and a write that
   fails removes the file the call made;
 * the passphrase intake refuses the empty passphrase, confirms a typed
-  pair purely, and reads a descriptor exactly once.
+  pair purely, and reads a descriptor exactly once;
+* the variable @SINGULAR_PASSPHRASE@ is a source for a development network
+  only: a descriptor wins over it, a public network refuses it, an empty one
+  is refused, and its bytes are taken as the environment holds them.
 
 The terminal prompt is not executed here: the descriptor path shares the
 parser, and the plan records a manual transcript for the human path.
 -}
 module Singular.CLI.VaultSpec (spec) where
 
-import Control.Exception (SomeException, try)
+import Control.Exception (SomeException, finally, try)
 import Control.Exception qualified
 import Control.Monad (forM_)
 import Data.Bits (xor, (.&.))
@@ -35,6 +38,7 @@ import Data.ByteString.Char8 qualified as BC
 import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Word (Word32, Word8)
+import System.Directory (doesFileExist)
 import System.Exit (ExitCode (..))
 import System.IO
     ( BufferMode (NoBuffering)
@@ -46,6 +50,7 @@ import System.IO
     , hSetBuffering
     )
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Env.ByteString qualified as PosixEnv
 import System.Posix.Files
     ( createSymbolicLink
     , fileMode
@@ -113,6 +118,7 @@ spec = describe "wallet vault" $ do
     exclusiveCreation
     refusalOrder
     passphraseIntake
+    passphraseVariableIntake
     promptOrdering
     walletVerbs
 
@@ -475,6 +481,127 @@ passphraseIntake = describe "the passphrase intake" $ do
         readPassphrase AskOnce (PassphraseDescriptor (fromIntegral fdn))
             `shouldReturn` Left
                 (PassphraseDescriptorUnreadable (fromIntegral fdn))
+
+-- * The passphrase from the environment
+
+{- | The variable as a source: the pure decision on a network, the read of
+the process environment, and the wallet commands that use both. The
+environment is the process's own, so each row restores it.
+-}
+passphraseVariableIntake :: Spec
+passphraseVariableIntake = describe "the passphrase from SINGULAR_PASSPHRASE" $ do
+    it "names the public networks the build knows, mainnet first" $
+        publicNetworks
+            `shouldBe` [("mainnet", 764824073), ("preprod", 1), ("preview", 2)]
+    it "is the variable's bytes exactly, for both asks" $
+        forM_ [AskOnce, AskTwice] $ \confirmation ->
+            readPassphrase confirmation (PassphraseVariable "correct horse \n")
+                `shouldReturn` mkPassphrase "correct horse \n"
+    it "refuses a variable that is set but empty" $
+        readPassphrase AskOnce (PassphraseVariable "")
+            `shouldReturn` Left PassphraseVariableEmpty
+    it "shows no byte of the variable" $
+        show (PassphraseVariable "top-secret")
+            `shouldNotSatisfy` ("top-secret" `isInfixOf`)
+    forM_ publicNetworks $ \(name, magic) ->
+        it
+            ("refuses the variable on " <> name <> " and leaves the other sources")
+            $ do
+                networkAllows magic (PassphraseVariable "weak")
+                    `shouldBe` Left (PassphraseVariablePublic name magic)
+                networkAllows magic PassphraseTerminal
+                    `shouldBe` Right PassphraseTerminal
+                networkAllows magic (PassphraseDescriptor 3)
+                    `shouldBe` Right (PassphraseDescriptor 3)
+    it "allows the variable on any other network" $
+        forM_ [0, 3, 42, 764824072] $ \magic ->
+            networkAllows magic (PassphraseVariable "weak")
+                `shouldBe` Right (PassphraseVariable "weak")
+    it
+        "names the network, its magic and the variable in the refusal, and no passphrase"
+        $ do
+            let line = renderPassphraseRefusal (PassphraseVariablePublic "preprod" 1)
+            forM_
+                ["SINGULAR_PASSPHRASE", "preprod", "network magic 1", "development"]
+                $ \word -> line `shouldSatisfy` (word `isInfixOf`)
+            renderPassphraseRefusal PassphraseVariableEmpty
+                `shouldSatisfy` ("SINGULAR_PASSPHRASE is set but empty" `isInfixOf`)
+    it "is read from the environment when no descriptor is named" $ do
+        withVariable (Just "weak") (namedSource Nothing)
+            `shouldReturn` PassphraseVariable "weak"
+        withVariable Nothing (namedSource Nothing)
+            `shouldReturn` PassphraseTerminal
+    it "takes a variable that is set but empty as set" $
+        withVariable (Just "") (namedSource Nothing)
+            `shouldReturn` PassphraseVariable ""
+    it "lets the descriptor win over the variable, on any network" $
+        forM_ [42, 1] $ \magic ->
+            withVariable (Just "weak") (sourceFor magic (Just 7))
+                `shouldReturn` Right (PassphraseDescriptor 7)
+    it
+        "refuses the variable on a public network and takes it on a development one"
+        $ do
+            withVariable (Just "weak") (sourceFor 1 Nothing)
+                `shouldReturn` Left (PassphraseVariablePublic "preprod" 1)
+            withVariable (Just "weak") (sourceFor 42 Nothing)
+                `shouldReturn` Right (PassphraseVariable "weak")
+            withVariable Nothing (sourceFor 1 Nothing)
+                `shouldReturn` Right PassphraseTerminal
+    it
+        "creates a vault from the variable on a development network and opens it again"
+        $ withSystemTempDirectory "vault-variable"
+        $ \dir -> do
+            let path = dir <> "/alice.vault"
+                args = WalletArgs path 42 Nothing
+            withVariable (Just "weak") (walletCreateCommand args)
+                `shouldReturn` ExitSuccess
+            bytes <- BS.readFile path
+            opened <- either (fail . show) pure (mkPassphrase "weak")
+            openVault opened bytes
+                `shouldSatisfy` either (const False) (const True)
+    it
+        "refuses to create a vault on a public network from the variable, writing nothing"
+        $ forM_ [1, 2, 764824073]
+        $ \magic ->
+            withSystemTempDirectory "vault-variable-public" $ \dir -> do
+                let path = dir <> "/alice.vault"
+                withVariable
+                    (Just "weak")
+                    (walletCreateCommand (WalletArgs path magic Nothing))
+                    `shouldReturn` ExitFailure 1
+                doesFileExist path `shouldReturn` False
+    it
+        "creates on a public network when the passphrase comes from a descriptor, the variable set"
+        $ withSystemTempDirectory "vault-variable-fd"
+        $ \dir -> do
+            let path = dir <> "/alice.vault"
+                passphraseFile = dir <> "/passphrase"
+            BS.writeFile passphraseFile "from the descriptor\n"
+            Fd fdn <- openFd passphraseFile ReadOnly defaultFileFlags
+            withVariable
+                (Just "weak")
+                (walletCreateCommand (WalletArgs path 1 (Just (fromIntegral fdn))))
+                `shouldReturn` ExitSuccess
+            bytes <- BS.readFile path
+            opened <-
+                either (fail . show) pure (mkPassphrase "from the descriptor")
+            openVault opened bytes
+                `shouldSatisfy` either (const False) (const True)
+
+{- | Run an action with @SINGULAR_PASSPHRASE@ set to these bytes, or unset,
+and the process's own value put back after.
+-}
+withVariable :: Maybe ByteString -> IO a -> IO a
+withVariable wanted act = do
+    saved <- PosixEnv.getEnv name
+    set wanted
+    act `finally` set saved
+  where
+    name = BC.pack passphraseVariable
+    set =
+        maybe
+            (PosixEnv.unsetEnv name)
+            (\value -> PosixEnv.setEnv name value True)
 
 -- * The hidden terminal bracket
 

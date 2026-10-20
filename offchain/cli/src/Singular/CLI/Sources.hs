@@ -26,7 +26,9 @@ external signer on the line is refused, naming both, and a preview, which
 signs nothing, takes none from either.
 
 A passphrase is not a setting of either: the vault's stays on a descriptor or
-a prompt, and a file that names one is refused.
+a prompt, and a file that names one is refused. The environment variable
+@SINGULAR_PASSPHRASE@ is read where the vault is opened, not here, and only for
+a development network ("Singular.CLI.Passphrase").
 -}
 module Singular.CLI.Sources
     ( Sources (..)

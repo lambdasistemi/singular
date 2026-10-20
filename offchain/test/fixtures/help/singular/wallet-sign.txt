@@ -30,9 +30,11 @@ Available settings:
     vault: # or null
       <string>
 
-  Read the vault passphrase, one line, from this inherited file descriptor.
+  Read the vault passphrase, one line, from this inherited file descriptor; it
+  wins over SINGULAR_PASSPHRASE.
   option: --passphrase-fd N
-  default: ask on the terminal with the echo off
+  default: SINGULAR_PASSPHRASE on a development network, else ask on the
+  terminal with the echo off
 
   Directory the witness files are written to.
   option: --out DIR
@@ -78,11 +80,16 @@ Where settings come from:
 
   It is singular.json in the working directory, or the file named by --config
   or SINGULAR_CONFIG. A path in it means what it means on the command line,
-  from where the command runs. A passphrase is never read from the file or the
-  environment: it stays on the prompt or --passphrase-fd.
+  from where the command runs. A passphrase is never read from the file; the
+  environment gives one only on a development network, as SINGULAR_PASSPHRASE.
 
 Environment:
-  SINGULAR_LOG  A file the protocol phases are appended to, one line each.
+  SINGULAR_LOG         A file the protocol phases are appended to, one line
+                       each.
+  SINGULAR_PASSPHRASE  The vault passphrase, for a development network only: a
+                       command on mainnet (764824073), preprod (1) or preview
+                       (2) refuses it. --passphrase-fd wins over it, and a
+                       value that is empty is refused.
 
 Example:
   singular wallet sign bundle.json --vault alice.vault --out witnesses

@@ -73,7 +73,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (isInfixOf, nub, partition, sort, sortOn)
+import Data.List (isInfixOf, isPrefixOf, nub, partition, sort, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Maybe
     ( fromMaybe
@@ -126,6 +126,7 @@ import System.IO
     , stdout
     )
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Env.ByteString qualified as PosixEnv
 import System.Posix.Files
     ( nullFileMode
     , ownerReadMode
@@ -210,6 +211,7 @@ import Singular.CLI.Command
     , Command (..)
     , FoldArgs (..)
     , ProviderSettings (..)
+    , WalletArgs (..)
     , WriteSettings (..)
     , parseCommand
     , renderCLIError
@@ -225,7 +227,11 @@ import Singular.CLI.Outlay
     , spendableHeld
     , updateOutlay
     )
-import Singular.CLI.Passphrase (mkPassphrase)
+import Singular.CLI.Passphrase
+    ( mkPassphrase
+    , passphraseVariable
+    , publicNetworks
+    )
 import Singular.CLI.Prepare
     ( PrepareRefusal (..)
     , allowanceRefusal
@@ -6584,6 +6590,187 @@ vaultSignerRows = describe "the vault signer" $ do
     vaultRefusedRow
     vaultUncertainRow
     vaultRefusalsRow
+    vaultVariableRow
+    vaultVariableDescriptorRow
+    vaultVariableRefusedRow
+    walletVariableRow
+
+{- | The vault fold on the development network with the passphrase in
+@SINGULAR_PASSPHRASE@ and no descriptor: the bundle is the one the
+external mode writes for the vault's address, as with a descriptor.
+-}
+vaultVariableRow :: Spec
+vaultVariableRow =
+    it
+        "a vault fold on the development network signs from SINGULAR_PASSPHRASE, builds the bundle the external mode writes and names no secret"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-variable" 1_000_000 False
+            let bundlePath = rigDir rig </> "alice-external.bundle"
+                registry = "alice-variable-vault"
+            external <-
+                runAt
+                    rig
+                    "alice-external"
+                    "external fold"
+                    (foldLineOf t req <> externalArgs rig bundlePath)
+            runExit external `shouldBe` ExitFailure 19
+            externalBytes <- BS.readFile bundlePath
+            vault <- rigVault rig "alice"
+            signed <-
+                withVariable (Just (BC.pack vaultPassphrase)) $
+                    runAt
+                        rig
+                        registry
+                        "vault fold, passphrase from the variable"
+                        (foldLineOf t req <> ["--vault", vault])
+            outcomeOf (runReceipt signed) `shouldBe` Just "success"
+            (h, _, _) <- vaultBundleOf signed (stagedPartition rig registry t)
+            h `shouldBe` hashOfBytes externalBytes
+            assertNoVaultSecret rig (stagedPartition rig registry t) signed
+
+-- | The descriptor wins over the variable: a wrong variable beside the right descriptor signs.
+vaultVariableDescriptorRow :: Spec
+vaultVariableDescriptorRow =
+    it
+        "--passphrase-fd wins over SINGULAR_PASSPHRASE: a wrong variable beside the right descriptor still signs"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-wins" 1_000_000 False
+            vault <- rigVault rig "alice"
+            fd <- passphraseDescriptor rig "alice" vaultPassphrase
+            signed <-
+                withVariable (Just "not the passphrase") $
+                    runAt
+                        rig
+                        "alice-wins-vault"
+                        "vault fold, the descriptor and a wrong variable"
+                        (foldLineOf t req <> vaultArgs vault fd)
+            outcomeOf (runReceipt signed) `shouldBe` Just "success"
+
+{- | The same command with the variable set and a public network's magic:
+refused naming the variable and the network, before the vault, the
+blueprint or the chain is read. Mainnet is refused by the write parser
+itself, before any passphrase is considered, so a write has two public
+networks to try; the wallet commands try all three.
+-}
+vaultVariableRefusedRow :: Spec
+vaultVariableRefusedRow =
+    it
+        "SINGULAR_PASSPHRASE is refused on a public network, naming it and the network, before the vault, the blueprint or the chain is read, and an empty one is refused on the development network"
+        $ withRig
+        $ \rig -> do
+            (t, req, _) <- vaultRegistry rig "alice-public" 1_000_000 False
+            let registry = "alice-vault-public"
+                dir = stagedPartition rig registry t
+                absent = rigDir rig </> "absent.vault"
+                blind =
+                    (envOf rig)
+                        { envReads = \_ _ -> fail "read"
+                        , envWrites = \_ _ -> fail "read"
+                        , envLoadRelease = \_ _ -> pure (Left "the blueprint cannot be loaded")
+                        }
+                refusedOn network variable = do
+                    command <-
+                        either (fail . show) pure $
+                            parseCommand
+                                ( onNetwork
+                                    network
+                                    ( commandLine
+                                        rig
+                                        registry
+                                        (foldLineOf t req <> ["--vault", absent])
+                                    )
+                                )
+                    (code, out, _) <-
+                        withVariable (Just variable) $
+                            captured (runCommand neutralApplication blind command)
+                    receipt <-
+                        maybe
+                            (fail ("no receipt: " <> show out))
+                            pure
+                            (Aeson.decodeStrict out)
+                    pure (code, receipt :: Aeson.Value, out)
+            forM_ [("preprod", "1"), ("preview", "2")] $ \(name, public) -> do
+                (code, receipt, out) <- refusedOn public (BC.pack vaultPassphrase)
+                code `shouldBe` ExitFailure 10
+                outcomeOf receipt `shouldBe` Just "client-refusal"
+                let reason = fromMaybe "" (textAt "reason" receipt)
+                forM_ ["SINGULAR_PASSPHRASE", name, "network magic " <> public] $
+                    \word -> reason `shouldSatisfy` T.isInfixOf (T.pack word)
+                forM_ ["absent.vault", "blueprint"] $ \word ->
+                    reason `shouldNotSatisfy` T.isInfixOf word
+                out `shouldNotSatisfy` BS.isInfixOf (BC.pack vaultPassphrase)
+            (emptyCode, emptyReceipt, _) <- refusedOn "42" ""
+            emptyCode `shouldBe` ExitFailure 10
+            fromMaybe "" (textAt "reason" emptyReceipt)
+                `shouldSatisfy` T.isInfixOf "SINGULAR_PASSPHRASE is set but empty"
+            doesPathExist dir `shouldReturn` False
+
+{- | The wallet commands with the variable: refused on every public network
+before the vault is read or made, taken on the development one.
+-}
+walletVariableRow :: Spec
+walletVariableRow =
+    it
+        "wallet create and wallet address take SINGULAR_PASSPHRASE on the development network and refuse it on mainnet, preprod and preview before they read or make a vault"
+        $ withRig
+        $ \rig -> do
+            vault <- rigVault rig "alice"
+            let absent = rigDir rig </> "absent.vault"
+                fresh = rigDir rig </> "fresh.vault"
+                arguments path network =
+                    WalletArgs
+                        { walletVaultPath = path
+                        , walletNetworkMagic = network
+                        , walletPassphraseFd = Nothing
+                        }
+                running command =
+                    withVariable (Just (BC.pack vaultPassphrase)) $
+                        captured (runCommand neutralApplication (envOf rig) command)
+            forM_ publicNetworks $ \(name, public) -> do
+                (code, out, err) <- running (WalletAddress (arguments absent public))
+                code `shouldBe` ExitFailure 1
+                out `shouldBe` ""
+                forM_ [passphraseVariable, name, show public] $ \word ->
+                    BC.unpack err `shouldSatisfy` isInfixOf word
+                BC.unpack err `shouldNotSatisfy` isInfixOf "absent.vault"
+                (createCode, createOut, _) <-
+                    running (WalletCreate (arguments fresh public))
+                createCode `shouldBe` ExitFailure 1
+                createOut `shouldBe` ""
+                doesPathExist fresh `shouldReturn` False
+            (code, out, _) <-
+                running (WalletAddress (arguments vault (fromIntegral magic)))
+            code `shouldBe` ExitSuccess
+            BC.unpack out `shouldSatisfy` isPrefixOf "addr_test1"
+            (createCode, createOut, _) <-
+                running (WalletCreate (arguments fresh (fromIntegral magic)))
+            createCode `shouldBe` ExitSuccess
+            BC.unpack createOut `shouldSatisfy` isPrefixOf "addr_test1"
+            doesPathExist fresh `shouldReturn` True
+
+-- | A command line with the network magic its value names.
+onNetwork :: String -> [String] -> [String]
+onNetwork network = \case
+    "--network-magic" : _ : rest -> "--network-magic" : network : onNetwork network rest
+    word : rest -> word : onNetwork network rest
+    [] -> []
+
+{- | Run an action with @SINGULAR_PASSPHRASE@ set to these bytes, or unset,
+and the process's own value put back after.
+-}
+withVariable :: Maybe BS.ByteString -> IO a -> IO a
+withVariable wanted act = do
+    saved <- PosixEnv.getEnv name
+    set wanted
+    act `finally` set saved
+  where
+    name = BC.pack passphraseVariable
+    set =
+        maybe
+            (PosixEnv.unsetEnv name)
+            (\value -> PosixEnv.setEnv name value True)
 
 -- | The passphrase the rows' vaults are sealed with.
 vaultPassphrase :: String
