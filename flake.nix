@@ -306,6 +306,11 @@
           commit = rootCommit;
           singular = stampedSingular system;
           openDatum = stampedOpenDatum system;
+          # #707: the development node, from the same locked flake the Nix
+          # route uses, and the genesis directory the Nix journeys name.
+          devnet = offchain.packages.${system}.devnet-unwrapped;
+          cardanoNode = offchain.packages.${system}.cardano-node;
+          devnetGenesis = ./offchain/e2e-test/genesis;
         };
       # What this flake offers on each platform that ships a bundle: the two
       # programs, stamped with this flake's revision (`nix run .#singular --
@@ -352,7 +357,10 @@
                     gzip
                     perl
                   ]
-                  ++ pkgs.lib.optional pkgs.stdenv.isLinux bubblewrap;
+                  ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                    bubblewrap
+                    procps
+                  ];
                 text = ''
                   [ "$#" -eq 2 ] || {
                     echo "usage: verify-release-bundles TAG COMMIT" >&2
@@ -376,6 +384,7 @@
                     fi
                   done
                   export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                  export RELEASE_BUNDLES_CONF=${./tools/release_bundles.sh}
                   bash ${./tools/verify_release_bundles.sh} ${./tools/release_bundles.sh} \
                     ${./tools/release_bundle_smoke.sh} ${./tools/release_bundle_smoke_controls.sh} \
                     "$download" "$version" "$commit"
@@ -404,13 +413,20 @@
                     gzip
                     perl
                   ]
-                  ++ pkgs.lib.optional pkgs.stdenv.isLinux bubblewrap;
+                  ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                    bubblewrap
+                    procps
+                  ];
                 text = ''
                   [ "$#" -eq 3 ] || {
                     echo "usage: release-bundle-checks TARBALL VERSION COMMIT" >&2
                     exit 2
                   }
                   export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                  # a bundle built from this tree always carries the development
+                  # node, whatever version the tree says
+                  export RELEASE_BUNDLES_CONF=${./tools/release_bundles.sh}
+                  export RELEASE_BUNDLE_DEVNET=required
                   bash ${./tools/release_bundle_smoke.sh} "$@"
                   bash ${./tools/release_bundle_smoke_controls.sh} "$@"
                   bash ${./tools/verify_release_bundles.test.sh} \
@@ -460,6 +476,32 @@
             cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
             cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
           '';
+          # #707: the ordinary tools the bundle journey runs on, and nothing
+          # else: the PATH of a user who has no Nix
+          bundleJourneyTools = pkgs.buildEnv {
+            name = "demo1-bundle-journey-tools";
+            paths =
+              with pkgs;
+              [
+                bash
+                coreutils
+                curl
+                diffutils
+                findutils
+                gawk
+                gnugrep
+                gnused
+                gnutar
+                gzip
+                jq
+                procps
+              ]
+              # the journey watches which files a command opens and locks its state
+              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                pkgs.strace
+                pkgs.util-linux
+              ];
+          };
           # #449: the recovery controls as one app per part, each on its own
           # development node, so CI runs the parts as parallel jobs. An empty
           # part list runs them all.
@@ -770,6 +812,31 @@
                     ${./tools/demo1_cli_check.sh} \
                     ${./tools/demo1_cli_attach_check.sh}
                   DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/demo1_cli_check.sh} "$PWD"
+                '';
+              }
+            );
+          };
+          # #707: the Demo 1 journey from the unpacked Linux release bundle
+          # alone: `singular`, `open-datum` and the development node come out
+          # of the tarball, on a PATH that holds ordinary tools and no Nix.
+          # Nix only builds the bundle and the registry blueprint beforehand.
+          # Run from the repository root: `nix run --quiet .#demo1-bundle-journey`.
+          demo1-bundle-journey = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-bundle-journey";
+                runtimeInputs = [
+                  pkgs.coreutils
+                  pkgs.nix
+                ];
+                text = ''
+                  bundle="$(nix build --quiet --no-link --print-out-paths .#release-bundle)"
+                  tarball="$(ls "$bundle"/singular-*-${system}.tar.gz)"
+                  blueprint="$(nix build --quiet --no-link --print-out-paths ./applications/open-datum/onchain#open-datum-blueprint)"
+                  DEMO1_JOURNEY=${managedScripts}/demo1_cli_journey.sh \
+                    DEMO1_BUNDLE_TOOLS=${bundleJourneyTools}/bin \
+                    bash ${./tools/demo1_bundle_journey.sh} "$tarball" "$blueprint"
                 '';
               }
             );

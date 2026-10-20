@@ -24,6 +24,10 @@ work="$(mktemp -d "${TMPDIR:-/tmp}/verify-bundles-test.XXXXXX")"
 trap 'chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"' EXIT
 native="$(native_system)"
 
+# whether the stand-ins carry the development node (#707): they do when the
+# release the rule is read from requires it
+stand_in_programs="singular open-datum"
+if devnet_required "$version"; then stand_in_programs="$stand_in_programs devnet cardano-node"; fi
 # a downloaded release: the real bundle for this platform, a structural
 # stand-in for every other platform (the other platform's own job runs it)
 download() {
@@ -40,10 +44,14 @@ download() {
       top="singular-$version-$system"
       rm -rf "$work/stand-in"
       mkdir -p "$work/stand-in/$top/bin" "$work/stand-in/$top/libexec"
-      for program in singular open-datum; do
+      for program in $stand_in_programs; do
         printf '#!/bin/sh\n' >"$work/stand-in/$top/bin/$program"
         printf 'stand-in' >"$work/stand-in/$top/libexec/$program"
       done
+      if devnet_required "$version"; then
+        mkdir -p "$work/stand-in/$top/share/devnet/genesis"
+        printf '{}' >"$work/stand-in/$top/share/devnet/genesis/node-config.json"
+      fi
       printf '%s\n' "$version" >"$work/stand-in/$top/VERSION"
       printf '%s\n' "$commit" >"$work/stand-in/$top/COMMIT"
       tar -czf "$work/download/$name" -C "$work/stand-in" "$top"
@@ -119,4 +127,44 @@ for system in $SYSTEMS; do
   (cd "$work/download" && sha256sum ./*.tar.gz | sed 's|  \./|  |' >SHA256SUMS)
   must_refuse "the $system bundle without its executable" bundle-layout run_verify "$commit"
 done
+
+# the development node (#707): a release after the limit must carry it in every
+# bundle. The rule is read again with the limit moved below this version, so it
+# applies whatever version this build has; this runs last, because it changes
+# the rule for the rest of the script.
+listing="$(tar -tzf "$tarball")"
+if [[ "$listing" == */bin/devnet* ]]; then
+  strict="$work/release_bundles_strict.sh"
+  sed 's/^LAST_WITHOUT_DEVNET=.*/LAST_WITHOUT_DEVNET="0.0.1"/' "$conf" >"$strict"
+  grep -q '^LAST_WITHOUT_DEVNET="0.0.1"$' "$strict" \
+    || {
+      echo "verify-release-bundles-controls: FAIL the stricter rule was not written"
+      exit 1
+    }
+  conf="$strict"
+  # shellcheck source=/dev/null
+  . "$strict"
+  stand_in_programs="singular open-datum devnet cardano-node"
+  download
+  run_verify "$commit" >"$work/out" 2>&1 \
+    || {
+      echo "verify-release-bundles-controls: FAIL a release carrying the development node is refused: $(tail -n 1 "$work/out")"
+      exit 1
+    }
+  echo "verify-release-bundles-controls: a release whose bundles carry the development node passes"
+  for system in $SYSTEMS; do
+    [ "$system" != "$native" ] || continue
+    for missing in libexec/cardano-node bin/devnet share/devnet/genesis/node-config.json; do
+      download
+      name="singular-$version-$system.tar.gz"
+      rm -rf "$work/open"
+      mkdir -p "$work/open"
+      tar -xzf "$work/download/$name" -C "$work/open"
+      rm "$work/open/singular-$version-$system/$missing"
+      tar -czf "$work/download/$name" -C "$work/open" "singular-$version-$system"
+      (cd "$work/download" && sha256sum ./*.tar.gz | sed 's|  \./|  |' >SHA256SUMS)
+      must_refuse "the $system bundle without $missing in a release that requires the node" bundle-layout run_verify "$commit"
+    done
+  done
+fi
 echo "verify-release-bundles-controls: PASS"

@@ -32,4 +32,5 @@ here=$(CDPATH='' cd -- "$directory/.." && pwd -P)
 singular_registry_datadir=$here/share/singular-registry
 export singular_registry_datadir
 
+# @PRELUDE@
 exec @LOADER@ "$here/libexec/@PROGRAM@" "$@"

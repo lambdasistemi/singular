@@ -46,6 +46,8 @@ version="$5"
 tag_commit="$6"
 # shellcheck source=/dev/null
 . "$conf"
+# the smoke script reads the same rule for the development node
+export RELEASE_BUNDLES_CONF="$conf"
 
 refuse() {
   echo "verify-release: REFUSED $1: $2"
@@ -75,6 +77,11 @@ for system in $SYSTEMS; do
   for member in bin/singular bin/open-datum libexec/singular libexec/open-datum VERSION COMMIT; do
     [ -e "$tree/$top/$member" ] || refuse bundle-layout "$name carries no $member"
   done
+  if devnet_required "$version"; then
+    for member in bin/devnet bin/cardano-node libexec/devnet libexec/cardano-node share/devnet/genesis/node-config.json; do
+      [ -e "$tree/$top/$member" ] || refuse bundle-layout "$name carries no $member"
+    done
+  fi
   [ "$(cat "$tree/$top/VERSION")" = "$version" ] \
     || refuse bundle-commit-mismatch "$name says version $(cat "$tree/$top/VERSION"), the release is $version"
   [ "$(cat "$tree/$top/COMMIT")" = "$tag_commit" ] \

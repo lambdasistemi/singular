@@ -107,6 +107,47 @@ if [ "$(uname -s)" = Linux ]; then
   refused_for "a bundle without one of its libraries" 'identity|standalone' bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
 fi
 
+# the development node (#707): the bundles that carry it are held to it, and
+# each way it can be wrong is refused for the stated reason. A bundle of an
+# older release carries none and is checked as it was published.
+# the listing is matched without a pipe: under pipefail, `grep -q` ending a pipe
+# early would fail `tar` and make this look like a bundle without the node
+listing="$(tar -tzf "$tarball")"
+if [[ "$listing" == */bin/devnet* ]]; then
+  # a bundle built from source must carry it, whatever its version says
+  unpack
+  rm -r "$work/tree/$top/share/devnet"
+  repack
+  refused_for "a bundle without the genesis files" members env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  unpack
+  rm "$work/tree/$top/bin/cardano-node" "$work/tree/$top/libexec/cardano-node"
+  repack
+  refused_for "a bundle without the cardano-node" members env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  unpack
+  rm "$work/tree/$top/bin/devnet" "$work/tree/$top/libexec/devnet"
+  repack
+  refused_for "a bundle built from source without the development node" members env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  # a node that cannot start its chain: the settings are never printed
+  unpack
+  printf '{ not json' >"$work/tree/$top/share/devnet/genesis/node-config.json"
+  repack
+  refused_for "a bundle whose node settings are damaged" node env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  # a launcher that names another release than the bundle's
+  unpack
+  OLD="devnet $version" NEW="devnet 0.0.0" perl -0777 -i -pe '
+    $n += s/\Q$ENV{OLD}\E/$ENV{NEW}/g;
+    END { die "control: expected one name, replaced $n\n" unless $n == 2 }
+  ' "$work/tree/$top/bin/devnet"
+  repack
+  refused_for "a development node launcher naming another release" identity env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  if [ "$(uname -s)" = Linux ]; then
+    unpack
+    rm "$work/tree/$top/lib-node/libgmp.so.10"
+    repack
+    refused_for "a bundle without one of the node's libraries" 'identity|standalone' env RELEASE_BUNDLE_DEVNET=required bash "$smoke" "$work/changed.tar.gz" "$version" "$commit"
+  fi
+fi
+
 # an executable that states another commit than the bundle does
 unpack
 OLD="$commit" NEW="$other" perl -0777 -i -pe '

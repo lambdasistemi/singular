@@ -9,10 +9,13 @@
 # (0.12.0) and COMMIT the commit the bundle must name. In order, each check
 # stopping the run on refusal:
 #
-#   members     both launchers, both executables, the packaged time files,
-#               VERSION and COMMIT beside them
-#   identity    `singular --version` and `open-datum --version` print
-#               `<program> VERSION (commit COMMIT)` and exit 0
+#   members     the launchers and executables, the packaged time files,
+#               VERSION and COMMIT beside them, and, for a release that
+#               carries the development node (#707), `devnet`, `cardano-node`
+#               and the genesis files
+#   identity    `singular --version`, `open-datum --version` and
+#               `devnet --version` print `<program> VERSION (commit COMMIT)`
+#               and exit 0; `cardano-node --version` names its own release
 #   help        `--help` of each exits 0 and prints something
 #   offline     `singular wallet create` in a temporary directory, then
 #               `wallet address`, name the same address
@@ -22,6 +25,16 @@
 #               bundle alone works when the runner allows one; on macOS every
 #               load path is a system library or inside the bundle and every
 #               file's ad-hoc signature verifies
+#   node        `devnet` started from the unpacked bundle with an empty
+#               environment prints its settings document, the node it
+#               started answers on the socket the document names, and
+#               stopping `devnet` stops the node and removes the socket
+#
+# Whether a bundle must carry the development node is decided by
+# RELEASE_BUNDLE_DEVNET: `required` (a bundle built from source, which always
+# does) or `by-version` (the default: the releases after LAST_WITHOUT_DEVNET in
+# RELEASE_BUNDLES_CONF, release_bundles.sh beside this file unless set; an
+# older release's bundle is checked as it was published).
 #
 # Exit 0 and a `release-bundle-smoke: PASS` line when every check passes;
 # exit 1 and one `release-bundle-smoke: FAIL <check>: <detail>` line when one
@@ -29,7 +42,7 @@
 set -euo pipefail
 
 # a missing tool is a failed setup, never a pass
-for tool in tar gzip grep sed awk find basename tr wc cut head sort mktemp uname; do
+for tool in tar gzip grep sed awk find basename tr wc cut head sort mktemp uname pgrep kill sleep ps; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "release-bundle-smoke: needs $tool on PATH" >&2
     exit 2
@@ -53,9 +66,21 @@ fail() {
   exit 1
 }
 pass() { echo "release-bundle-smoke: $1: PASS${2:+ — $2}"; }
+# alive PID: the process runs (a child that stopped and was not yet reaped does not)
+alive() {
+  state="$(ps -o stat= -p "$1" 2>/dev/null | tr -d " ")"
+  [ -n "$state" ] && [ "${state#Z}" = "$state" ]
+}
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/release-bundle-smoke.XXXXXX")"
-trap 'chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"' EXIT
+devnet_pid=""
+cleanup() {
+  # a development node this run started never outlives it
+  [ -z "$devnet_pid" ] || kill "$devnet_pid" 2>/dev/null || true
+  chmod -R u+w "$work" 2>/dev/null
+  rm -rf "$work"
+}
+trap cleanup EXIT
 
 mkdir -p "$work/tree"
 tar -xzf "$tarball" -C "$work/tree" 2>"$work/extract.log" \
@@ -66,6 +91,37 @@ entries="$(find "$work/tree" -mindepth 1 -maxdepth 1 -exec basename {} \;)"
 bundle="$work/tree/$entries"
 [ -d "$bundle" ] || fail members "$entries is not a directory"
 
+# does this bundle have to carry the development node (#707)?
+case "${RELEASE_BUNDLE_DEVNET:-by-version}" in
+  required) with_devnet=true ;;
+  by-version)
+    conf="${RELEASE_BUNDLES_CONF:-$(cd "$(dirname "$0")" && pwd)/release_bundles.sh}"
+    [ -f "$conf" ] || {
+      echo "release-bundle-smoke: no bundle rule at $conf" >&2
+      exit 2
+    }
+    # shellcheck source=/dev/null
+    . "$conf"
+    # a bundle of an older release is checked as it was published; any
+    # bundle that carries the node is checked as one that does
+    if devnet_required "$version" || [ -e "$bundle/bin/devnet" ]; then
+      with_devnet=true
+    else
+      with_devnet=false
+    fi
+    ;;
+  *)
+    echo "release-bundle-smoke: RELEASE_BUNDLE_DEVNET is required or by-version" >&2
+    exit 2
+    ;;
+esac
+cli_programs="singular open-datum"
+bundled_programs="$cli_programs"
+if $with_devnet; then
+  cli_programs="$cli_programs devnet"
+  bundled_programs="$cli_programs cardano-node"
+fi
+
 # members
 for member in bin/singular bin/open-datum libexec/singular libexec/open-datum \
   share/singular-registry/data/network/preprod/time-manifest.json \
@@ -73,7 +129,19 @@ for member in bin/singular bin/open-datum libexec/singular libexec/open-datum \
   VERSION COMMIT; do
   [ -e "$bundle/$member" ] || fail members "$tarball carries no $member"
 done
-for program in singular open-datum; do
+if $with_devnet; then
+  for member in bin/devnet bin/cardano-node libexec/devnet libexec/cardano-node \
+    share/devnet/genesis/node-config.json share/devnet/genesis/topology.json \
+    share/devnet/genesis/byron-genesis.json share/devnet/genesis/shelley-genesis.json \
+    share/devnet/genesis/alonzo-genesis.json share/devnet/genesis/conway-genesis.json \
+    share/devnet/genesis/dijkstra-genesis.json \
+    share/devnet/genesis/delegate-keys/delegate1.kes.skey \
+    share/devnet/genesis/delegate-keys/delegate1.opcert \
+    share/devnet/genesis/delegate-keys/delegate1.vrf.skey; do
+    [ -e "$bundle/$member" ] || fail members "$tarball carries no $member"
+  done
+fi
+for program in $bundled_programs; do
   [ -x "$bundle/bin/$program" ] || fail members "bin/$program is not executable"
   [ -x "$bundle/libexec/$program" ] || fail members "libexec/$program is not executable"
 done
@@ -84,7 +152,7 @@ done
 pass members "$entries"
 
 # identity
-for program in singular open-datum; do
+for program in $cli_programs; do
   expected="$program $version (commit $commit)"
   status=0
   printed="$("$bundle/bin/$program" --version 2>"$work/version.err")" || status=$?
@@ -94,16 +162,28 @@ for program in singular open-datum; do
   [ ! -s "$work/version.err" ] \
     || fail identity "$program --version wrote to standard error: $(head -n 1 "$work/version.err")"
 done
-pass identity "singular and open-datum name $version and $commit"
+if $with_devnet; then
+  # the node states its own release, not ours; it must run from the bundle
+  status=0
+  printed="$("$bundle/bin/cardano-node" --version 2>"$work/version.err" | head -n 1)" || status=$?
+  case "$printed" in
+    "cardano-node "*) ;;
+    *) fail identity "cardano-node --version printed [$printed]" ;;
+  esac
+  node_release="${printed%% - *}"
+  pass identity "$(printf '%s' "$cli_programs" | tr ' ' ',') name $version and $commit; $node_release"
+else
+  pass identity "singular and open-datum name $version and $commit"
+fi
 
 # help
-for program in singular open-datum; do
+for program in $cli_programs; do
   status=0
   "$bundle/bin/$program" --help >"$work/help.out" 2>&1 || status=$?
   [ "$status" -eq 0 ] || fail help "$program --help exited $status"
   [ -s "$work/help.out" ] || fail help "$program --help printed nothing"
 done
-pass help "both print"
+pass help "all print"
 
 # offline
 mkdir -p "$work/offline"
@@ -123,6 +203,31 @@ esac
 pass offline "wallet create and wallet address name $created"
 
 # standalone
+# linux_libraries DIRECTORY PROGRAM: the bundled loader of DIRECTORY resolves
+# every library of PROGRAM inside DIRECTORY, and misses none.
+linux_libraries() {
+  directory="$1"
+  program="$2"
+  loader=""
+  for candidate in "$bundle/$directory"/ld-linux-*; do
+    [ -e "$candidate" ] && loader="$(basename "$candidate")"
+    break
+  done
+  [ -n "$loader" ] || fail standalone "no loader in the bundle's $directory"
+  "$bundle/$directory/$loader" --library-path "$bundle/$directory" --list "$bundle/libexec/$program" \
+    >"$work/list.out" 2>&1 || fail standalone "the bundled loader cannot list $program"
+  resolved="$(awk '$2 == "=>" && $3 ~ /^\// { print $3 }' "$work/list.out")"
+  # nothing outside the bundle means something only when libraries resolved
+  [ "$(printf '%s\n' "$resolved" | grep -c .)" -ge 5 ] \
+    || fail standalone "the bundled loader resolved too few libraries for $program: $(tr '\n' ' ' <"$work/list.out")"
+  printf '%s\n' "$resolved" | grep -q '/libc\.so' \
+    || fail standalone "the bundled loader did not resolve the C library for $program"
+  outside="$(printf '%s\n' "$resolved" | grep -v "^$bundle/$directory/" || true)"
+  [ -z "$outside" ] \
+    || fail standalone "$program loads outside the bundle: $(printf '%s' "$outside" | tr '\n' ' ')"
+  missing="$(grep 'not found' "$work/list.out" || true)"
+  [ -z "$missing" ] || fail standalone "$program misses a library: $missing"
+}
 case "$(uname -s)" in
   Linux)
     loader=""
@@ -131,21 +236,10 @@ case "$(uname -s)" in
       break
     done
     [ -n "$loader" ] || fail standalone "no loader in the bundle's lib"
-    for program in singular open-datum; do
-      "$bundle/lib/$loader" --library-path "$bundle/lib" --list "$bundle/libexec/$program" \
-        >"$work/list.out" 2>&1 || fail standalone "the bundled loader cannot list $program"
-      resolved="$(awk '$2 == "=>" && $3 ~ /^\// { print $3 }' "$work/list.out")"
-      # nothing outside the bundle means something only when libraries resolved
-      [ "$(printf '%s\n' "$resolved" | grep -c .)" -ge 5 ] \
-        || fail standalone "the bundled loader resolved too few libraries for $program: $(tr '\n' ' ' <"$work/list.out")"
-      printf '%s\n' "$resolved" | grep -q '/libc\.so' \
-        || fail standalone "the bundled loader did not resolve the C library for $program"
-      outside="$(printf '%s\n' "$resolved" | grep -v "^$bundle/lib/" || true)"
-      [ -z "$outside" ] \
-        || fail standalone "$program loads outside the bundle: $(printf '%s' "$outside" | tr '\n' ' ')"
-      missing="$(grep 'not found' "$work/list.out" || true)"
-      [ -z "$missing" ] || fail standalone "$program misses a library: $missing"
+    for program in $cli_programs; do
+      linux_libraries lib "$program"
     done
+    if $with_devnet; then linux_libraries lib-node cardano-node; fi
     sandbox="not run (no usable bubblewrap)"
     if command -v bwrap >/dev/null 2>&1 \
       && bwrap --unshare-all --die-with-parent --ro-bind "$bundle" /bundle --proc /proc --dev /dev \
@@ -164,15 +258,16 @@ case "$(uname -s)" in
     pass standalone "every library resolves inside the bundle; sandbox $sandbox"
     ;;
   Darwin)
-    for file in "$bundle"/libexec/* "$bundle"/lib/*; do
+    for file in "$bundle"/libexec/* "$bundle"/lib/* "$bundle"/lib-node/*; do
+      [ -e "$file" ] || continue
       loads="$(otool -L "$file" | awk 'NR > 1 { print $1 }')"
-      foreign="$(printf '%s\n' "$loads" | grep -v '^/usr/lib/\|^/System/\|^@executable_path/\.\./lib/\|^@loader_path/' || true)"
+      foreign="$(printf '%s\n' "$loads" | grep -v '^/usr/lib/\|^/System/\|^@executable_path/\.\./lib\(-node\)\{0,1\}/\|^@loader_path/' || true)"
       [ -z "$foreign" ] \
         || fail standalone "$(basename "$file") loads outside the bundle and the system: $(printf '%s' "$foreign" | tr '\n' ' ')"
       codesign --verify --strict "$file" 2>"$work/codesign.err" \
         || fail standalone "$(basename "$file") has no valid signature: $(head -n 1 "$work/codesign.err")"
     done
-    for program in singular open-datum; do
+    for program in $cli_programs; do
       printed="$(env -i "$bundle/bin/$program" --version)" \
         || fail standalone "$program does not run with an empty environment"
       [ "$printed" = "$program $version (commit $commit)" ] \
@@ -183,4 +278,47 @@ case "$(uname -s)" in
   *) fail standalone "no standalone check for $(uname -s)" ;;
 esac
 
-echo "release-bundle-smoke: PASS $(basename "$tarball") — members, identity, help, offline and standalone"
+# node: the development node, started from the unpacked bundle with an empty
+# environment, so the node it runs is the bundled one and nothing is read from
+# the host. Its settings document is the first line it prints.
+checked="members, identity, help, offline and standalone"
+if $with_devnet; then
+  node_tmp="$work/node-tmp"
+  mkdir -p "$node_tmp"
+  (cd "$work" && exec env -i HOME="$work" TMPDIR="$node_tmp" "$bundle/bin/devnet") \
+    >"$work/devnet.out" 2>"$work/devnet.err" &
+  devnet_pid=$!
+  settings_socket=""
+  waited=0
+  while [ "$waited" -lt 240 ]; do
+    settings="$(head -n 1 "$work/devnet.out" 2>/dev/null || true)"
+    settings_socket="$(printf '%s' "$settings" | sed -n 's/.*"privateProbeSocket":"\([^"]*\)".*/\1/p')"
+    magic="$(printf '%s' "$settings" | sed -n 's/.*"networkMagic":\([0-9][0-9]*\).*/\1/p')"
+    [ -n "$settings_socket" ] && [ "$magic" = 42 ] && [ -S "$settings_socket" ] && break
+    alive "$devnet_pid" \
+      || fail node "devnet exited before printing its settings: $(tail -n 3 "$work/devnet.err" | tr '\n' ' ')"
+    sleep 1
+    waited=$((waited + 1))
+  done
+  [ -S "$settings_socket" ] \
+    || fail node "devnet printed no usable settings in ${waited}s: $(head -c 300 "$work/devnet.out") $(tail -n 3 "$work/devnet.err" | tr '\n' ' ')"
+  # the node that answers is the bundle's own
+  pgrep -f "$bundle/libexec/cardano-node" >/dev/null \
+    || fail node "no cardano-node of this bundle is running although devnet printed its settings"
+  stopped=0
+  kill -TERM "$devnet_pid" 2>/dev/null || true
+  while [ "$stopped" -lt 30 ]; do
+    if ! alive "$devnet_pid" && ! pgrep -f "$bundle/libexec/cardano-node" >/dev/null; then break; fi
+    sleep 1
+    stopped=$((stopped + 1))
+  done
+  ! alive "$devnet_pid" \
+    || fail node "devnet did not stop within ${stopped}s of SIGTERM"
+  ! pgrep -f "$bundle/libexec/cardano-node" >/dev/null \
+    || fail node "cardano-node outlived devnet by ${stopped}s"
+  devnet_pid=""
+  pass node "settings after ${waited}s from the bundle's own node; stopped with it in ${stopped}s"
+  checked="$checked and node"
+fi
+
+echo "release-bundle-smoke: PASS $(basename "$tarball") — $checked"

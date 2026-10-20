@@ -5,9 +5,14 @@
 # (out and the variables below are set by the builder or the sourcing script)
 #
 # Expects in the environment: BUNDLE_NAME BUNDLE_VERSION BUNDLE_COMMIT
-# SINGULAR_PKG OPEN_DATUM_PKG LAUNCHER, and TMPDIR from the builder.
+# SINGULAR_PKG OPEN_DATUM_PKG DEVNET_PKG CARDANO_NODE_PKG DEVNET_GENESIS
+# LAUNCHER DEVNET_PRELUDE, and TMPDIR from the builder.
 
-programs="singular open-datum"
+# The three programs built with the registry share one set of libraries; the
+# node is built against other libraries (another C library, other copies of
+# several shared ones) and keeps its own, so no name ever resolves to two.
+programs="singular open-datum devnet"
+node_program="cardano-node"
 work="$TMPDIR/assemble"
 bundle="$work/$BUNDLE_NAME"
 
@@ -20,14 +25,16 @@ package_of() {
   case "$1" in
     singular) printf '%s' "$SINGULAR_PKG" ;;
     open-datum) printf '%s' "$OPEN_DATUM_PKG" ;;
+    devnet) printf '%s' "$DEVNET_PKG" ;;
+    cardano-node) printf '%s' "$CARDANO_NODE_PKG" ;;
     *) fail "unknown program $1" ;;
   esac
 }
 
-# The two executables as the real files the launchers start.
+# The executables as the real files the launchers start.
 copy_executables() {
-  mkdir -p "$bundle/bin" "$bundle/libexec" "$bundle/lib" "$bundle/share/singular-registry"
-  for program in $programs; do
+  mkdir -p "$bundle/bin" "$bundle/libexec" "$bundle/share/singular-registry"
+  for program in $programs $node_program; do
     source_file="$(package_of "$program")/bin/$program"
     [ -x "$source_file" ] || fail "no executable at $source_file"
     cp -L "$source_file" "$bundle/libexec/$program"
@@ -74,16 +81,43 @@ copy_data() {
   chmod -R u+w "$bundle/share/singular-registry"
 }
 
+# The genesis files, keys and settings the development node starts a chain
+# from: the directory the Nix journeys name with E2E_GENESIS_DIR, found
+# relative to the bundle by the devnet launcher.
+copy_genesis() {
+  [ -d "$DEVNET_GENESIS" ] || fail "no genesis directory at $DEVNET_GENESIS"
+  mkdir -p "$bundle/share/devnet"
+  cp -rL "$DEVNET_GENESIS" "$bundle/share/devnet/genesis"
+  chmod -R u+w "$bundle/share/devnet"
+  for member in alonzo-genesis.json byron-genesis.json conway-genesis.json \
+    dijkstra-genesis.json node-config.json shelley-genesis.json topology.json \
+    delegate-keys/delegate1.kes.skey delegate-keys/delegate1.opcert \
+    delegate-keys/delegate1.vrf.skey; do
+    [ -f "$bundle/share/devnet/genesis/$member" ] \
+      || fail "the genesis directory $DEVNET_GENESIS holds no $member"
+  done
+}
+
 # bin/<program>: the launcher with this bundle's identity and loader filled in.
+# $1 starts the registry's programs, $2 the node. The development node's
+# launcher carries its own lines (DEVNET_PRELUDE); the others carry none.
 write_launchers() {
   loader_command="$1"
-  for program in $programs; do
-    sed \
-      -e "s|@PROGRAM@|$program|g" \
-      -e "s|@VERSION@|$BUNDLE_VERSION|g" \
-      -e "s|@COMMIT@|$BUNDLE_COMMIT|g" \
-      -e "s|@LOADER@|$loader_command|g" \
-      "$LAUNCHER" >"$bundle/bin/$program"
+  node_loader_command="$2"
+  for program in $programs $node_program; do
+    prelude=/dev/null
+    loader="$loader_command"
+    case "$program" in
+      devnet) prelude="$DEVNET_PRELUDE" ;;
+      "$node_program") loader="$node_loader_command" ;;
+    esac
+    sed -e '/# @PRELUDE@/{' -e "r $prelude" -e 'd' -e '}' "$LAUNCHER" \
+      | sed \
+        -e "s|@PROGRAM@|$program|g" \
+        -e "s|@VERSION@|$BUNDLE_VERSION|g" \
+        -e "s|@COMMIT@|$BUNDLE_COMMIT|g" \
+        -e "s|@LOADER@|$loader|g" \
+        >"$bundle/bin/$program"
     chmod +x "$bundle/bin/$program"
   done
   printf '%s\n' "$BUNDLE_VERSION" >"$bundle/VERSION"
