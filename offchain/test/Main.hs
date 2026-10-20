@@ -49,10 +49,12 @@ import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
 import Singular.Registry.SubmitSpec qualified
+import Singular.Registry.TaggedDiscoverySpec qualified
 import Singular.Registry.TrieStateContractSpec qualified
 import Singular.Registry.TrieStateSpec qualified
 import Singular.Registry.TxBuilder.BookEdgeSpec qualified
 import Singular.Registry.TxBuilder.BootSpec qualified
+import Singular.Registry.TxBuilder.ConnectedFoldSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.PrepareSpec qualified
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
@@ -60,6 +62,7 @@ import Singular.Registry.TxBuilder.RegistrationBookingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
 import Singular.Registry.TxBuilder.SkipEvalUnitsSpec qualified
+import Singular.Registry.TxBuilder.TerminationBookingSpec qualified
 import Singular.Registry.TxBuilder.UpperSlotSpec qualified
 import Singular.Registry.TypesSpec qualified
 import Singular.Registry.WaitSpec qualified
@@ -81,6 +84,9 @@ main = hspec $ do
         (tagged "Singular.Registry.ChainedView" [Provider, History])
         Singular.Registry.ChainedViewSpec.spec
     describe
+        (tagged "Singular.Registry.TaggedDiscovery" [Provider])
+        Singular.Registry.TaggedDiscoverySpec.spec
+    describe
         (tagged "Singular.Registry.TxBuilder.BookEdge" [Builders])
         Singular.Registry.TxBuilder.BookEdgeSpec.spec
     describe
@@ -99,6 +105,9 @@ main = hspec $ do
         (tagged "Singular.Registry.TxBuilder.Boot" [Builders])
         Singular.Registry.TxBuilder.BootSpec.spec
     describe
+        (tagged "Singular.Registry.TxBuilder.ConnectedFold" [Builders])
+        Singular.Registry.TxBuilder.ConnectedFoldSpec.spec
+    describe
         (tagged "Singular.Registry.TxBuilder.Prepare" [Builders])
         Singular.Registry.TxBuilder.PrepareSpec.spec
     describe
@@ -116,6 +125,9 @@ main = hspec $ do
             [Builders, Evaluation]
         )
         Singular.Registry.TxBuilder.SkipEvalUnitsSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.TerminationBooking" [Builders])
+        Singular.Registry.TxBuilder.TerminationBookingSpec.spec
     describe
         ( tagged
             "Singular.Registry.TxBuilder.UpperSlot"

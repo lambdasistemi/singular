@@ -25,12 +25,15 @@ module Singular.Registry.TxBuilder.BookingFixture
     , keys
     , edges
     , preprodParams
+    , RetainedRegistry (..)
+    , retainedBlueprintFile
+    , loadRetained
     ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Short qualified as SBS
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~))
 import PlutusCore.Default (DefaultFun (..))
@@ -62,8 +65,20 @@ import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID)
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn)
 
-import Singular.Registry.Blueprint (NamingCodes (..), applyBytesParam)
+import Singular.Registry.Application (ApplicationPin (..))
+import Singular.Registry.AssetName (deriveAssetName)
+import Singular.Registry.Blueprint
+    ( Blueprint
+    , NamingCodes (..)
+    , applyBytesParam
+    , extractCompiledCode
+    , loadBlueprint
+    )
 import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Config.Application
+    ( RegistryEconomics (..)
+    , configForApplication
+    )
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Ledger (ConwayEra, TokenId (..))
 import Singular.Registry.TxBuilder.Edges
@@ -284,3 +299,81 @@ preprodParams =
             .~ Prices
                 (fromJust (boundRational (577 / 10_000)))
                 (fromJust (boundRational (721 / 10_000_000)))
+
+-- ---------------------------------------------------------
+-- The retained compiled bytes
+-- ---------------------------------------------------------
+
+{- | The registry the retained blueprint describes: the actual compiled
+validators of the accepted identity, and the configuration, boot state and
+pins the library derives from them. Nothing here is a toy program.
+-}
+data RetainedRegistry = RetainedRegistry
+    { rrFile :: ByteString
+    -- ^ The retained blueprint file, byte for byte
+    , rrBlueprint :: Blueprint
+    , rrStateCode :: SBS.ShortByteString
+    , rrRequestCode :: SBS.ShortByteString
+    , rrOpenCode :: SBS.ShortByteString
+    , rrWitnessCode :: SBS.ShortByteString
+    , rrCodes :: NamingCodes
+    -- ^ The generic open policy and the witness policy, as pinned
+    , rrConfig :: CageConfig
+    -- ^ The configuration the boot from the fixture seed pins
+    , rrToken :: TokenId
+    -- ^ The registry token that seed determines
+    }
+
+{- | A byte-identical copy of the retained store output
+@hnmfy1ikl30mdm5spxacyymgrmix9qdb-open-datum-deployment-blueprint@, sha256
+@8f02ed0d7d701243011626571785c66ca4543fe60a2daae787cb5110bedade3c@.
+-}
+retainedBlueprintFile :: FilePath
+retainedBlueprintFile =
+    "test/fixtures/blueprint/open-datum-deployment-blueprint.json"
+
+-- | Read the retained blueprint and derive the registry from its bytes.
+loadRetained :: IO RetainedRegistry
+loadRetained = do
+    bytes <- BS.readFile retainedBlueprintFile
+    blueprint <-
+        loadBlueprint retainedBlueprintFile
+            >>= either (fail . ("the retained blueprint: " <>)) pure
+    let code title =
+            fromMaybe
+                (error ("the retained blueprint has no code for " <> title))
+                (extractCompiledCode (T.pack title) blueprint)
+        stateCode = code "state.state"
+        requestCode = code "request.request"
+        openCode = code "open.open"
+        witnessCode = code "witness.witness"
+        retainedCodes = NamingCodes{ncApplication = openCode, ncWitness = witnessCode}
+        economics =
+            RegistryEconomics
+                { reProcessTime = 30_000
+                , reRetractTime = 30_000
+                , reTip = Coin 1_000_000
+                , reRegistrationCost = Coin 2_000_000
+                , reBookingWidth = 10_000
+                }
+        (config, pinned) =
+            configForApplication
+                (PinAsCompiled "open.open")
+                retainedCodes
+                stateCode
+                requestCode
+                economics
+                Testnet
+                seedRef
+    pure
+        RetainedRegistry
+            { rrFile = bytes
+            , rrBlueprint = blueprint
+            , rrStateCode = stateCode
+            , rrRequestCode = requestCode
+            , rrOpenCode = openCode
+            , rrWitnessCode = witnessCode
+            , rrCodes = pinned
+            , rrConfig = config
+            , rrToken = TokenId (AssetName (SBS.toShort (deriveAssetName seedRef)))
+            }

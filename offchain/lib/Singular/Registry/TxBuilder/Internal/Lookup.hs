@@ -22,6 +22,7 @@ module Singular.Registry.TxBuilder.Internal.Lookup
       findUtxoByTxIn
     , findStateUtxo
     , findRequestUtxos
+    , pendingByTag
 
       -- * Indexing
     , spendingIndex
@@ -105,6 +106,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
+import Singular.Registry.Config (CageConfig)
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
@@ -281,6 +283,22 @@ findRequestUtxos tid = filter isRequest
                 in  AssetName (SBS.toShort bs)
                         == targetName
             _ -> False
+
+{- | The registry's pending requests found by the request policy's trie-ready
+tag: one read of the outputs holding any asset of the request policy, of which
+only a genuine request counts (at the registry's request address, holding the
+tag its own datum commits to). Untagged outputs at the request address are not
+read. A failed or incomplete read is a failure, never an empty list. Not
+written yet.
+-}
+pendingByTag
+    :: CageConfig
+    -> Session NoWitness IO
+    -> TokenId
+    -> IO [(TxIn, TxOut ConwayEra)]
+pendingByTag _ _ _ =
+    ioError
+        (userError "pendingByTag: the tagged discovery is not written yet")
 
 -- | Compute the spending index of a 'TxIn'.
 spendingIndex :: TxIn -> Set.Set TxIn -> Word32

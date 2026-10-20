@@ -1,8 +1,11 @@
 module Singular.Registry.TypesSpec (spec) where
 
 import Control.Exception (evaluate)
+import Control.Monad (forM_)
 import Data.ByteString qualified as BS
+import Data.ByteString.Base16 qualified as B16
 import PlutusCore.Data (Data (..))
+import PlutusTx.Builtins qualified as Builtins
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
     , BuiltinData (..)
@@ -788,3 +791,234 @@ spec = do
                 requestPhase 100 200 100 `shouldBe` PhaseRetract
             it "treats the retract deadline slot itself as rejectable" $
                 requestPhase 100 200 200 `shouldBe` PhaseReject
+
+    describe "chunk3 offchain" $ do
+        describe "the termination request on the wire" $ do
+            forM_ terminationVectors $ \v -> describe (tvDescription v) $ do
+                it "encodes its six fields in the order of the on-chain type" $
+                    toBuiltinData (terminationRequestOf v)
+                        `shouldBe` BuiltinData (terminationWireOf v)
+                it "reads its own encoding back" $
+                    fromBuiltinData (toBuiltinData (terminationRequestOf v))
+                        `shouldBe` Just (terminationRequestOf v)
+                it "is constructor four of the cage datum" $
+                    toBuiltinData (TerminationDatum (terminationRequestOf v))
+                        `shouldBe` BuiltinData (Constr 4 [terminationWireOf v])
+                it "is read back from the cage datum" $
+                    fromBuiltinData
+                        (toBuiltinData (TerminationDatum (terminationRequestOf v)))
+                        `shouldBe` Just (TerminationDatum (terminationRequestOf v))
+                it "is read by the unchecked decoder from constructor four" $
+                    unsafeFromBuiltinData
+                        (BuiltinData (Constr 4 [terminationWireOf v]))
+                        `shouldBe` TerminationDatum (terminationRequestOf v)
+                it "names its trie-ready tag by the preimage the program wrote" $
+                    terminationTrieReadyTagName (terminationRequestOf v)
+                        `shouldBe` tvTag v
+            it
+                "refuses a termination with a field missing, and reads it with the field"
+                $ do
+                    let wire = terminationFields firstTermination
+                    fromBuiltinData (BuiltinData (Constr 0 wire))
+                        `shouldBe` Just (terminationRequestOf firstTermination)
+                    fromBuiltinData (BuiltinData (Constr 0 (take 5 wire)))
+                        `shouldBe` (Nothing :: Maybe OnChainTerminationRequest)
+            it "admits no refund address, clock or expiry field" $ do
+                let wire = terminationFields firstTermination
+                    withRefund = take 2 wire <> [B (BS.replicate 28 0xd1)] <> drop 2 wire
+                    withClock = wire <> [I 1_700_000_000_000]
+                fromBuiltinData (BuiltinData (Constr 0 wire))
+                    `shouldBe` Just (terminationRequestOf firstTermination)
+                fromBuiltinData (BuiltinData (Constr 0 withRefund))
+                    `shouldBe` (Nothing :: Maybe OnChainTerminationRequest)
+                fromBuiltinData (BuiltinData (Constr 0 withClock))
+                    `shouldBe` (Nothing :: Maybe OnChainTerminationRequest)
+            it "refuses a termination whose number is a byte string" $ do
+                let wire = terminationFields firstTermination
+                fromBuiltinData (BuiltinData (Constr 0 wire))
+                    `shouldBe` Just (terminationRequestOf firstTermination)
+                fromBuiltinData
+                    (BuiltinData (Constr 0 (take 5 wire <> [B "1"])))
+                    `shouldBe` (Nothing :: Maybe OnChainTerminationRequest)
+            it "keeps the registration datum at constructor three with ten fields" $
+                case toBuiltinData (RegistrationDatum registrationSample) of
+                    BuiltinData (Constr 3 [Constr 0 fields]) ->
+                        length fields `shouldBe` 10
+                    other -> expectationFailure (show other)
+        describe "the tag names a booking mints" $ do
+            it
+                "commits the termination tag to the key, the destination and the nonce"
+                $ do
+                    let base = terminationRequestOf firstTermination
+                        tag = terminationTrieReadyTagName
+                        moved =
+                            [ base{termKey = termKey base <> "x"}
+                            , base{termDestination = "dest"}
+                            , base{termNonce = termNonce base + 1}
+                            ]
+                    tag base `shouldBe` tvTag firstTermination
+                    forM_ moved $ \other -> tag other `shouldNotBe` tag base
+            it
+                "leaves the termination tag alone when only the registry, the tip or the carrier move"
+                $ do
+                    let base = terminationRequestOf firstTermination
+                        tag = terminationTrieReadyTagName
+                        others =
+                            [ base{termRegistry = OnChainTokenId "elsewhere"}
+                            , base{termDeclaredTip = termDeclaredTip base + 1}
+                            , base{termCarrierAda = termCarrierAda base + 1}
+                            ]
+                    tag base `shouldBe` tvTag firstTermination
+                    forM_ others $ \other -> tag other `shouldBe` tag base
+            it "keeps the registration tags committed to the nonce (preserved)" $ do
+                let r = registrationSample
+                    later = r{regNonce = regNonce r + 1}
+                    appTag x =
+                        applicationTagName
+                            (regKey x)
+                            (regRefundAddress x)
+                            (regDestination x)
+                            (regNonce x)
+                appTag later `shouldNotBe` appTag r
+                trieReadyTagName later `shouldNotBe` trieReadyTagName r
+        describe "the preimage route" $ do
+            it
+                "serialises the termination preimage to the bytes the program wrote"
+                $ forM_ terminationVectors
+                $ \v ->
+                    case Builtins.serialiseData
+                        ( BuiltinData
+                            ( List
+                                [ I 1
+                                , I 1
+                                , B (tvKey v)
+                                , B (tvDestination v)
+                                , I (tvNonce v)
+                                ]
+                            )
+                        ) of
+                        BuiltinByteString serialised ->
+                            serialised `shouldBe` tvPreimage v
+
+-- ---------------------------------------------------------
+-- chunk3 offchain: the termination request vectors
+-- ---------------------------------------------------------
+
+-- | One termination: its fields and the names a program computed.
+data TerminationVector = TerminationVector
+    { tvDescription :: String
+    , tvKey :: BS.ByteString
+    , tvDestination :: BS.ByteString
+    , tvNonce :: Integer
+    , tvPreimage :: BS.ByteString
+    , tvTag :: BS.ByteString
+    }
+
+unhex :: BS.ByteString -> BS.ByteString
+unhex = either (error . ("unhex: " <>)) id . B16.decode
+
+{- | Written by @termination_tag_vectors.py@ (evidence/cp3-red-dev/vectors,
+script sha256 @42079960…@, output sha256 @9ff8af7c…@), not typed: it builds the
+preimage @[1, 1, key, destination, nonce]@ as CBOR by hand and hashes it with
+BLAKE2b-256, so neither the wire module nor the validator produced a name.
+-}
+terminationVectors :: [TerminationVector]
+terminationVectors =
+    [ TerminationVector
+        { tvDescription = "termination booking request one"
+        , tvKey = unhex "6b657941"
+        , tvDestination = unhex ""
+        , tvNonce = 0
+        , tvPreimage = unhex "9f0101446b6579414000ff"
+        , tvTag =
+            unhex
+                "da3578537fca36038595a7fc164144f7416600e3e85e3bfc6d4ca06f09e06d3a"
+        }
+    , TerminationVector
+        { tvDescription = "termination booking request two"
+        , tvKey = unhex "6b657942"
+        , tvDestination = unhex ""
+        , tvNonce = 1
+        , tvPreimage = unhex "9f0101446b6579424001ff"
+        , tvTag =
+            unhex
+                "054c1c37bccb9747e1b4e0b76a7ddd96daf15b06d109654eecab7cde86b02e8a"
+        }
+    , TerminationVector
+        { tvDescription = "termination booking request three"
+        , tvKey =
+            unhex
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        , tvDestination = unhex ""
+        , tvNonce = 1000000000000
+        , tvPreimage =
+            unhex
+                "9f01015820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa401b000000e8d4a51000ff"
+        , tvTag =
+            unhex
+                "827dde282e1813e11b8d98b57896c056d6a8c5e3c6f4b0634729e6f0fa5c9da0"
+        }
+    , TerminationVector
+        { tvDescription = "termination booking request four"
+        , tvKey = unhex "6b657943"
+        , tvDestination =
+            unhex "60d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4"
+        , tvNonce = 7
+        , tvPreimage =
+            unhex
+                "9f0101446b657943581d60d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d407ff"
+        , tvTag =
+            unhex
+                "ab895f08cfb82ab4bfc105bb2a3c1717bbc1e337736b9d951a4e08de7b5b3234"
+        }
+    ]
+
+firstTermination :: TerminationVector
+firstTermination = case terminationVectors of
+    v : _ -> v
+    [] -> error "no termination vectors"
+
+{- | The request around a vector. The registry, the tip and the carrier are
+chosen to differ from anything a vector fixes, because the tag commits to none
+of them.
+-}
+terminationRequestOf :: TerminationVector -> OnChainTerminationRequest
+terminationRequestOf v =
+    OnChainTerminationRequest
+        { termRegistry = OnChainTokenId "another registry"
+        , termKey = tvKey v
+        , termDestination = tvDestination v
+        , termDeclaredTip = 1_500_000
+        , termCarrierAda = 2_500_000
+        , termNonce = tvNonce v
+        }
+
+-- | The six fields of the request as the on-chain type lays them out, written without the codec.
+terminationFields :: TerminationVector -> [Data]
+terminationFields v =
+    [ Constr 0 [B "another registry"]
+    , B (tvKey v)
+    , B (tvDestination v)
+    , I 1_500_000
+    , I 2_500_000
+    , I (tvNonce v)
+    ]
+
+terminationWireOf :: TerminationVector -> Data
+terminationWireOf = Constr 0 . terminationFields
+
+-- | A registration for the rows that keep the registration representation.
+registrationSample :: OnChainRegistrationRequest
+registrationSample =
+    OnChainRegistrationRequest
+        { regRegistry = OnChainTokenId "another registry"
+        , regKey = "key-a"
+        , regRefundAddress = BuiltinByteString (BS.replicate 28 0xd1)
+        , regDestination = "dest"
+        , regDatum = Nothing
+        , regSubmittedAt = 777
+        , regRegistrationCost = 2_000_000
+        , regDeclaredTip = 1_000_000
+        , regCarrierAda = 1_500_000
+        , regNonce = 1
+        }

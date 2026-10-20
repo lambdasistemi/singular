@@ -15,6 +15,7 @@ importable by a caller — the public surface is the
 module Singular.Registry.Wire.Booking
     ( applicationTagName
     , trieReadyTagName
+    , terminationTrieReadyTagName
     ) where
 
 import Cardano.Crypto.Hash (Blake2b_256, hashToBytes, hashWith)
@@ -27,6 +28,7 @@ import PlutusTx.Builtins.Internal
     )
 import Singular.Registry.Wire.Request
     ( OnChainRegistrationRequest (..)
+    , OnChainTerminationRequest (..)
     )
 
 {- | The name a list of data fields hashes to: BLAKE2b-256 of the data
@@ -74,3 +76,10 @@ trieReadyTagName OnChainRegistrationRequest{..} =
         ]
   where
     BuiltinByteString refund = regRefundAddress
+
+{- | The trie-ready tag name of a termination: the hash of the list
+@[1, 1, key, destination, nonce]@. Not written yet.
+-}
+terminationTrieReadyTagName :: OnChainTerminationRequest -> ByteString
+terminationTrieReadyTagName _ =
+    error "terminationTrieReadyTagName: not written yet"

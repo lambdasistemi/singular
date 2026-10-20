@@ -45,6 +45,7 @@ import Singular.Registry.Wire.Primitive
 import Singular.Registry.Wire.Request
     ( OnChainRegistrationRequest (..)
     , OnChainRequest (..)
+    , OnChainTerminationRequest (..)
     )
 
 {- | On-chain token state. Matches Aiken @types\/State@ (#157 state-datum-fields: eight
@@ -145,6 +146,11 @@ data CageDatum
       request the request policy minted its two tags for.
       -}
       RegistrationDatum !OnChainRegistrationRequest
+    | {- | A booked termination (Constr 4, appended): the authenticated
+      request the request policy minted its trie-ready tag for, holding the
+      key's singular tag and the whole custody value.
+      -}
+      TerminationDatum !OnChainTerminationRequest
     deriving stock (Show, Eq)
 
 -- ---------------------------------------------------------
@@ -227,6 +233,8 @@ instance ToData CageDatum where
     toBuiltinData (RegistrationDatum r) =
         mkD $
             Constr 3 [unD (toBuiltinData r)]
+    toBuiltinData (TerminationDatum _) =
+        error "toBuiltinData: TerminationDatum is not written yet"
 
 instance FromData CageDatum where
     fromBuiltinData bd = case unD bd of

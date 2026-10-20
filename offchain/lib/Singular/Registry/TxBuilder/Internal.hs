@@ -66,6 +66,7 @@ module Singular.Registry.TxBuilder.Internal
     , findUtxoByTxIn
     , findStateUtxo
     , findRequestUtxos
+    , pendingByTag
 
       -- * Indexing
     , spendingIndex
@@ -163,6 +164,7 @@ import Singular.Registry.TxBuilder.Internal.Lookup
     , findRequestUtxos
     , findStateUtxo
     , findUtxoByTxIn
+    , pendingByTag
     , placeholderExUnits
     , spendingIndex
     , trySlots

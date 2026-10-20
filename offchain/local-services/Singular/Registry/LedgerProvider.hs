@@ -105,6 +105,10 @@ data OutputQuery
     = AtAddress Addr
     | HoldingAsset Asset
     | AtTxIn TxIn
+    | {- | Live outputs holding any asset of this policy. A complete empty
+      answer is an empty list; an incomplete read is a named failure.
+      -}
+      HoldingPolicy PolicyID
     | {- | Live outputs carrying this reference script. An empty answer
       means not found by this provider, never not on chain; a consumer
       checks each candidate's script itself.

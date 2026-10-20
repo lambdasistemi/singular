@@ -15,7 +15,7 @@ refusal and never in a shorter answer.
 module Singular.Provider.Koios.ClientSpec (spec) where
 
 import Control.Monad (void)
-import Data.Aeson (Value, encode, object, (.=))
+import Data.Aeson (Value, decodeStrict', encode, object, toJSON, (.=))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.Maybe (fromMaybe)
@@ -24,20 +24,39 @@ import Data.Text qualified as T
 import Test.Hspec
 import Test.QuickCheck
 
+import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Address (AccountAddress (..), AccountId (..))
 import Cardano.Ledger.BaseTypes (EpochNo (..), Network (..))
 import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
 import Cardano.Ledger.TxIn (TxId)
 
 import Singular.Provider.Koios.Client
+import Singular.Provider.Koios.Recorded
+    ( loadFixtureSet
+    , recordedTransport
+    )
 import Singular.Provider.Koios.Scripted
 import Singular.Provider.Koios.Wire
     ( AssetTx (..)
+    , Body (..)
     , Call (..)
     , DecodeFailure (..)
+    , Method (..)
+    , Request (..)
     , TxStatus (..)
+    , decodePolicyAssetList
+    , policyAssetListRequest
     , renderRewardAccount
+    )
+import Singular.Registry.TaggedDiscoverySpec
+    ( retainedEmptyBody
+    , retainedFirstPageBody
+    , retainedListingBody
+    , retainedNames
+    , retainedPolicy
+    , retainedSecondPageBody
     )
 
 spec :: Spec
@@ -46,6 +65,7 @@ spec = describe "Koios client" $ do
     failureSpec
     unknownSpec
     submitSpec
+    policyListingSpec
 
 -- ---------------------------------------------------------------------------
 -- Paging
@@ -448,3 +468,190 @@ submitSpec = describe "submission" $ do
         (transport, seen) <- scriptedTransport (\_ _ -> pure (okJson [] "[]"))
         _ <- txStatus (koiosWith 10 10 transport) [someTxId]
         map rawRetry <$> seen `shouldReturn` [RetryTransient]
+
+-- ---------------------------------------------------------------------------
+-- The policy asset listing (chunk3 offchain)
+-- ---------------------------------------------------------------------------
+
+{- | The listing of a policy's assets: asked for by policy, ordered by asset
+name and counted exactly, and read page after page into the complete list of
+names or into the named failure of the page that cannot belong to it. The
+bodies are the retained reads of @evidence/koios-paging@, byte for byte.
+-}
+policyListingSpec :: Spec
+policyListingSpec = describe "chunk3 offchain" $ describe "the policy asset listing" $ do
+    let listing = okJson [("content-range", "0-1/2")] retainedListingBody
+        readWith size script = do
+            (transport, seen) <- scriptedTransport script
+            result <- policyAssets (koiosWith size 10 transport) retainedPolicy
+            requests <- seen
+            pure (result, requests)
+        reasonIs predicate result = case result of
+            Left failure ->
+                (failureCall failure, predicate (failureReason failure))
+                    `shouldBe` (CallPolicyAssetList, True)
+            Right names -> expectationFailure ("read " <> show names)
+    it
+        "is asked for by policy, ordered by asset name, with an exact count"
+        $ do
+            (result, requests) <- readWith 1000 (\_ _ -> pure listing)
+            result `shouldBe` Right retainedNames
+            case requests of
+                [request] -> do
+                    rawCall request `shouldBe` CallPolicyAssetList
+                    rawMethod request `shouldBe` Get
+                    rawPath request `shouldBe` "/policy_asset_list"
+                    queryParam "_asset_policy" request
+                        `shouldBe` Just "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
+                    queryParam "order" request `shouldBe` Just "asset_name.asc"
+                    queryParam "offset" request `shouldBe` Just "0"
+                    queryParam "limit" request `shouldBe` Just "1000"
+                    lookup "prefer" (rawHeaders request) `shouldBe` Just "count=exact"
+                    rawBody request `shouldBe` NoBody
+                other -> expectationFailure ("requests: " <> show (length other))
+    it "builds that request from the policy alone" $ do
+        let request = policyAssetListRequest retainedPolicy
+        requestCall request `shouldBe` CallPolicyAssetList
+        requestMethod request `shouldBe` Get
+        requestPath request `shouldBe` "/policy_asset_list"
+        requestQuery request
+            `shouldBe` [
+                           ( "_asset_policy"
+                           , "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
+                           )
+                       ]
+        requestBody request `shouldBe` NoBody
+        requestOrder request `shouldBe` Just "asset_name.asc"
+    it "reads an empty complete listing as an empty list" $ do
+        (result, requests) <-
+            readWith
+                1000
+                (\_ _ -> pure (okJson [("content-range", "*/0")] retainedEmptyBody))
+        result `shouldBe` Right []
+        length requests `shouldBe` 1
+    it
+        "reads the listing as two one-row pages that the service answers with 206"
+        $ do
+            let script raw _ = pure $ case offsetOf raw of
+                    0 -> answered' 206 [("content-range", "0-0/2")] retainedFirstPageBody
+                    _ -> answered' 206 [("content-range", "1-1/2")] retainedSecondPageBody
+            (result, requests) <- readWith 1 script
+            result `shouldBe` Right retainedNames
+            map offsetOf requests `shouldBe` [0, 1]
+    it
+        "reads the committed recording of the listing and of the empty listing"
+        $ do
+            set <- loadFixtureSet "test/fixtures/koios/preprod"
+            case set of
+                Left failure -> expectationFailure (show failure)
+                Right recorded -> do
+                    let client = Koios (ClientConfig 1000 10) (recordedTransport recorded)
+                    listed <- policyAssets client retainedPolicy
+                    listed `shouldBe` Right retainedNames
+                    nothing <- policyAssets client emptyPolicy
+                    nothing `shouldBe` Right []
+    it "decodes the names of the retained listing, in its order" $
+        fmap decodePolicyAssetList (decodeStrict' retainedListingBody)
+            `shouldBe` Just (Right retainedNames)
+    it "refuses a listing row that has no asset name, at its path" $
+        case decodePolicyAssetList
+            (toJSON [object ["fingerprint" .= ("asset1" :: Text)]]) of
+            Left failure -> T.unpack (decodePosition failure) `shouldContain` "[0]"
+            Right names -> expectationFailure ("decoded " <> show names)
+    describe
+        "refuses what cannot belong to a whole listing, and never answers with fewer names"
+        $ do
+            it "a listing cut off in the middle of its array" $ do
+                (result, _) <-
+                    readWith
+                        1000
+                        ( \_ _ ->
+                            pure
+                                ( okJson
+                                    [("content-range", "0-1/2")]
+                                    (BS.take 100 retainedListingBody)
+                                )
+                        )
+                reasonIs
+                    (\case IncompletePage (PageCutOff _ _) -> True; _ -> False)
+                    result
+            it "a listing with no exact total" $ do
+                (result, _) <-
+                    readWith 1000 (\_ _ -> pure (okJson [] retainedListingBody))
+                reasonIs
+                    (\case IncompletePage (TotalMissing _ _) -> True; _ -> False)
+                    result
+            it "a total that changes between pages" $ do
+                let script raw _ = pure $ case offsetOf raw of
+                        0 -> answered' 206 [("content-range", "0-0/2")] retainedFirstPageBody
+                        _ -> answered' 206 [("content-range", "1-1/3")] retainedSecondPageBody
+                (result, _) <- readWith 1 script
+                reasonIs
+                    (\case IncompletePage (TotalChanged{}) -> True; _ -> False)
+                    result
+            it "a page with more rows than the limit" $ do
+                (result, _) <- readWith 1 (\_ _ -> pure listing)
+                reasonIs
+                    (\case IncompletePage (PageOverLimit{}) -> True; _ -> False)
+                    result
+            it "a listing that ends before its stated total" $ do
+                let script raw _ = pure $ case offsetOf raw of
+                        0 -> answered' 206 [("content-range", "0-0/2")] retainedFirstPageBody
+                        _ -> okJson [("content-range", "*/2")] retainedEmptyBody
+                (result, _) <- readWith 1 script
+                reasonIs
+                    (\case IncompletePage (RowsMissing _ _) -> True; _ -> False)
+                    result
+            it "a refused page" $ do
+                (result, _) <-
+                    readWith
+                        1000
+                        (\_ _ -> pure (answered' 400 [] "{\"message\":\"bad request\"}"))
+                reasonIs (\case RefusedByServer 400 _ -> True; _ -> False) result
+            it "a row that does not decode" $ do
+                (result, _) <-
+                    readWith
+                        1000
+                        ( \_ _ ->
+                            pure
+                                (okJson [("content-range", "0-0/1")] "[{\"fingerprint\":\"asset1\"}]")
+                        )
+                reasonIs (\case Undecodable _ -> True; _ -> False) result
+            it "more pages than the configured ceiling" $ do
+                (transport, _) <-
+                    scriptedTransport
+                        ( \raw _ ->
+                            pure
+                                ( pageAnswer
+                                    (replicate 5 (object ["asset_name" .= ("aa" :: Text)]))
+                                    (offsetOf raw)
+                                    (limitOf raw)
+                                )
+                        )
+                result <- policyAssets (koiosWith 1 2 transport) retainedPolicy
+                reasonIs
+                    (\case IncompletePage (PageCeilingReached _) -> True; _ -> False)
+                    result
+  where
+    answered' status headers body =
+        Exchange
+            { exchangeAttempts = 1
+            , exchangeResult =
+                Right
+                    Answer
+                        { answerStatus = status
+                        , answerHeaders = ("content-type", "application/json") : headers
+                        , answerBody = body
+                        }
+            }
+
+-- | The retained policy that has no assets: 27 zero bytes and 0x0f.
+emptyPolicy :: PolicyID
+emptyPolicy =
+    PolicyID
+        ( ScriptHash
+            ( fromMaybe
+                (error "28 bytes")
+                (hashFromBytes (BS.replicate 27 0 <> BS.singleton 0x0f))
+            )
+        )

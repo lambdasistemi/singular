@@ -935,6 +935,13 @@ stubSessionFor chain =
             Right [u | u@(_, o) <- Map.toAscList live, o ^. addrTxOutL == addr]
         LP.HoldingAsset (pol, nm) ->
             Right [u | u@(_, o) <- Map.toAscList live, holds pol nm o]
+        LP.HoldingPolicy pol ->
+            Right
+                [ u
+                | u@(_, o) <- Map.toAscList live
+                , let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
+                , maybe False (any (/= 0)) (Map.lookup pol m)
+                ]
         LP.AtTxIn ref -> case Map.lookup ref live of
             Nothing -> Left (LP.MissingOutput ref)
             Just o -> Right [(ref, o)]

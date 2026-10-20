@@ -38,6 +38,7 @@ module Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainRequest (..)
     , OnChainRegistrationRequest (..)
+    , OnChainTerminationRequest (..)
     , RequestDestination
     , OnChainTokenState (..)
     , OnChainTxOutRef (..)
@@ -56,6 +57,7 @@ module Singular.Registry.Types
       -- * Registration booking tag names
     , applicationTagName
     , trieReadyTagName
+    , terminationTrieReadyTagName
 
       -- * Pinned-hook consumer redeemer (NOTE-021)
     , ConsumerRedeemer (..)
@@ -63,6 +65,7 @@ module Singular.Registry.Types
 
 import Singular.Registry.Wire.Booking
     ( applicationTagName
+    , terminationTrieReadyTagName
     , trieReadyTagName
     )
 import Singular.Registry.Wire.Primitive
@@ -85,6 +88,7 @@ import Singular.Registry.Wire.Request
     ( Edge
     , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
+    , OnChainTerminationRequest (..)
     , RequestDestination
     , RequestPhase (..)
     , edgeDeleteAbsent

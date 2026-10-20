@@ -22,6 +22,7 @@ module Singular.Registry.Wire.Request
     , edgeName
     , OnChainRequest (..)
     , OnChainRegistrationRequest (..)
+    , OnChainTerminationRequest (..)
     , RequestDestination
 
       -- * Request phase
@@ -169,6 +170,31 @@ data OnChainRegistrationRequest = OnChainRegistrationRequest
     -- ^ The declared carrier lovelace
     , regNonce :: !Integer
     -- ^ The one nonce both tags commit to
+    }
+    deriving stock (Show, Eq)
+
+{- | On-chain termination request: the datum a booked termination carries at
+the request address. Matches Aiken @types/TerminationRequest@, field for
+field. It has no refund address, clock, delivered datum, registration cost
+or application tag: the model admits none. The held assets and the output
+reference come from the transaction, never from this datum.
+
+The wire is the checkpoint's boundary: the type exists so the booking and
+fold paths can name it, and its encoding is not written yet.
+-}
+data OnChainTerminationRequest = OnChainTerminationRequest
+    { termRegistry :: !OnChainTokenId
+    -- ^ The registry this request is for, by its state token name
+    , termKey :: !ByteString
+    -- ^ The registry key being terminated
+    , termDestination :: !ByteString
+    -- ^ The model's destination 0: empty bytes
+    , termDeclaredTip :: !Integer
+    -- ^ The declared tip, at least the registry's minimum tip
+    , termCarrierAda :: !Integer
+    -- ^ The declared carrier lovelace: the held value less the tip
+    , termNonce :: !Integer
+    -- ^ The nonce the trie-ready tag commits to
     }
     deriving stock (Show, Eq)
 
@@ -355,3 +381,20 @@ instance UnsafeFromData OnChainRegistrationRequest where
         _ ->
             error
                 "unsafeFromBuiltinData: OnChainRegistrationRequest"
+
+-- ---------------------------------------------------------
+-- The termination request codec: not written yet
+-- ---------------------------------------------------------
+
+instance ToData OnChainTerminationRequest where
+    toBuiltinData _ =
+        error "toBuiltinData: OnChainTerminationRequest is not written yet"
+
+-- | Not written yet: no wire is read as a termination request.
+instance FromData OnChainTerminationRequest where
+    fromBuiltinData _ = Nothing
+
+instance UnsafeFromData OnChainTerminationRequest where
+    unsafeFromBuiltinData _ =
+        error
+            "unsafeFromBuiltinData: OnChainTerminationRequest is not written yet"

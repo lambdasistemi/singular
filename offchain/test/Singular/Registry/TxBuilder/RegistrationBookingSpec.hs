@@ -32,8 +32,9 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (listToMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Word (Word32)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((%~), (&), (.~), (^.))
 import PlutusCore.Data (Data (..))
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
@@ -95,11 +96,16 @@ import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Ledger (ConwayTx)
 
+import Singular.CLI.Permanent (knownScripts)
+import Singular.Provider.Koios.Recorded (bodySha256)
 import Singular.Registry.Application (ApplicationPin (..))
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Blueprint
-    ( NamingCodes (..)
+    ( Blueprint (..)
+    , NamingCodes (..)
+    , Validator (..)
     , applyRequestParams
+    , extractCompiledCode
     )
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Config.Application
@@ -124,8 +130,10 @@ import Singular.Registry.StubSession
 import Singular.Registry.SyntheticLedger (withCostCoefficients)
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture
-    ( cfg
+    ( RetainedRegistry (..)
+    , cfg
     , codes
+    , loadRetained
     , payer
     , preprodParams
     , program
@@ -452,6 +460,7 @@ spec = do
                 other -> expectationFailure ("not a script address: " <> show other)
 
     bookingTxSpec
+    realBytesSpec
 
 -- ---------------------------------------------------------
 -- The booking transaction
@@ -1123,3 +1132,186 @@ stateFields =
 
 pinnedStateWire :: Data
 pinnedStateWire = Constr 0 stateFields
+
+-- ---------------------------------------------------------
+-- chunk3 offchain: the retained compiled bytes
+-- ---------------------------------------------------------
+
+{- | The registry's actual compiled validators, read from the retained
+blueprint (a byte-identical copy of the store output the identity was
+accepted on): the pins they give the configuration, the state they boot, and
+the registration booking judged by the real request policy and the real generic
+open policy through the ledger's evaluator. Nothing here is a toy program.
+
+What this establishes is the observed offline behavior of these bytes under a
+stub chain view. It does not establish a deployment: nothing here is a live
+ledger, a published reference script or a node.
+-}
+realBytesSpec :: Spec
+realBytesSpec = describe "chunk3 offchain" $
+    describe "the retained compiled bytes" $
+        beforeAll loadRetained $ do
+            it "are the bytes the repository pins, the whole file and each script" $ \r -> do
+                bodySha256 (rrFile r)
+                    `shouldBe` "8f02ed0d7d701243011626571785c66ca4543fe60a2daae787cb5110bedade3c"
+                forM_ knownScripts $ \(title, wanted) ->
+                    fmap hashText (extractCompiledCode title (rrBlueprint r))
+                        `shouldBe` Just wanted
+                forM_ (validators (rrBlueprint r)) $ \v ->
+                    fmap hashText (extractCompiledCode (vTitle v) (rrBlueprint r))
+                        `shouldBe` Just (vHash v)
+            it "give the configuration the pins of their identity" $ \r -> do
+                let c = rrConfig r
+                    token = rrToken r
+                    state = hashOf (rrStateCode r)
+                    appliedRequest' =
+                        hashOf $
+                            applyRequestParams
+                                state
+                                (OnChainTokenId (BuiltinByteString (tokenBytes token)))
+                                (rrRequestCode r)
+                -- the state validator takes no parameter: its hash is its policy id
+                scriptHashBytes (cfgScriptHash c) `shouldBe` state
+                -- the generic open policy takes none either
+                SBS.fromShort (cfgApplicationPolicy c)
+                    `shouldBe` hashOf (rrOpenCode r)
+                -- the request validator is applied to the state policy and the registry token
+                SBS.fromShort (cfgRequestPolicy c) `shouldBe` appliedRequest'
+                SBS.fromShort (cfgRequestPolicy c)
+                    `shouldNotBe` hashOf (rrRequestCode r)
+                forM_ [cfgActivePolicy c, cfgAbsentPolicy c, cfgTerminalPolicy c] $ \pin ->
+                    SBS.fromShort pin `shouldNotBe` hashOf (rrWitnessCode r)
+                case requestAddrFromCfg c token Testnet of
+                    Addr _ (ScriptHashObj h) _ ->
+                        scriptHashBytes h `shouldBe` SBS.fromShort (cfgRequestPolicy c)
+                    other -> expectationFailure ("not a script address: " <> show other)
+            it
+                "boot a state that pins the applied request policy and the economics"
+                $ \r -> do
+                    let c = rrConfig r
+                        st = bootStateFromCfg c (OnChainRoot (BS.replicate 32 0))
+                    ( stateRegistrationCost st
+                        , stateBookingWidth st
+                        , stateMaxFee st
+                        , stateRequestPolicyBytes st
+                        , stateAppPolicyBytes st
+                        )
+                        `shouldBe` ( 2_000_000
+                                   , 10_000
+                                   , 1_000_000
+                                   , SBS.fromShort (cfgRequestPolicy c)
+                                   , SBS.fromShort (cfgApplicationPolicy c)
+                                   )
+            it
+                "accept the booking the library builds, in the real request policy and open policy"
+                $ \r -> do
+                    tx <- bookedWith r (realStateOutput r (pinnedBy (rrConfig r)))
+                    let Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
+                    -- both mint redeemers ran, in the real scripts, and cost something
+                    Map.size declared `shouldBe` 2
+                    all (\(_, ExUnits m s) -> m > 0 && s > 0) (Map.elems declared)
+                        `shouldBe` True
+            it
+                "refuse a booking altered by one lovelace of its declared tip, in the real request policy"
+                $ \r -> do
+                    let state = realStateOutput r (pinnedBy (rrConfig r))
+                    tx <- bookedWith r state
+                    let outcomes = judgedBy r state tx
+                        altered = alteredTip tx
+                        alteredOutcomes = judgedBy r state altered
+                    -- the control: the booking as built is accepted by every script it runs
+                    [p | (p, Left _) <- Map.toList outcomes] `shouldBe` []
+                    -- the same body with the tip declared one lovelace higher is refused by the request policy
+                    [() | (ConwayMinting _, Left _) <- Map.toList alteredOutcomes]
+                        `shouldSatisfy` (not . null)
+            it "refuse a state that pins the unapplied request validator's hash" $ \r -> do
+                let pinned = pinnedBy (rrConfig r)
+                    unapplied =
+                        pinned
+                            { stateRequestPolicy =
+                                BuiltinByteString (hashOf (rrRequestCode r))
+                            }
+                bookedWith r (realStateOutput r unapplied)
+                    `shouldThrow` \e ->
+                        "does not carry this configuration's booking pins"
+                            `isInfixOf` displayException (e :: SomeException)
+  where
+    hashOf = scriptHashBytes . computeScriptHash
+    hashText = TE.decodeUtf8 . B16.encode . hashOf
+    tokenBytes token = case unTokenId token of
+        AssetName n -> SBS.fromShort n
+
+-- | The real registry's state output: the state token at the state address, with these pins.
+realStateOutput
+    :: RetainedRegistry -> OnChainTokenState -> TxOut ConwayEra
+realStateOutput r st =
+    mkBasicTxOut
+        (cageAddrFromCfg c Testnet)
+        ( MaryValue
+            (Coin 2_000_000)
+            ( MultiAsset
+                ( Map.singleton
+                    (PolicyID (cfgScriptHash c))
+                    (Map.singleton (unTokenId (rrToken r)) 1)
+                )
+            )
+        )
+        & datumTxOutL .~ mkInlineDatum (toPlcData (StateDatum st))
+  where
+    c = rrConfig r
+
+realServed :: RetainedRegistry -> TxOut ConwayEra -> Served
+realServed r stateOut =
+    [ (payer, [(fundingIn, fundingOut)])
+    , (cageAddrFromCfg (rrConfig r) Testnet, [(stateRef, stateOut)])
+    ]
+
+-- | The booking of the toy rows, applied through the real generic open policy.
+realBooking :: RetainedRegistry -> RegistrationBooking
+realBooking r = booking{rbApplicationScript = ncApplication (rrCodes r)}
+
+bookedWith :: RetainedRegistry -> TxOut ConwayEra -> IO ConwayTx
+bookedWith r stateOut =
+    bookRegistrationImpl
+        (rrConfig r)
+        (viewServing (realServed r stateOut))
+        (rrToken r)
+        stateRef
+        (realBooking r)
+        payer
+
+-- | What the ledger's evaluator says of every script of a body over the real world.
+judgedBy
+    :: RetainedRegistry
+    -> TxOut ConwayEra
+    -> ConwayTx
+    -> Map.Map (ConwayPlutusPurpose AsIx ConwayEra) (Either String ExUnits)
+judgedBy _ stateOut tx =
+    Map.map
+        (either (Left . show) Right)
+        ( evalTxExUnits
+            ledgerParameters
+            tx
+            (UTxO (Map.fromList [(fundingIn, fundingOut), (stateRef, stateOut)]))
+            (networkEpochInfo syntheticTime)
+            (networkSystemStart syntheticTime)
+        )
+
+{- | The same body with the declared tip of its registration datum one lovelace
+higher, so that tip and carrier no longer account for what the request holds.
+-}
+alteredTip :: ConwayTx -> ConwayTx
+alteredTip tx =
+    tx & bodyTxL . outputsTxBodyL %~ fmap bump
+  where
+    bump o = case extractCageDatum o of
+        Just (RegistrationDatum rq) ->
+            o
+                & datumTxOutL
+                    .~ mkInlineDatum
+                        ( toPlcData
+                            ( RegistrationDatum
+                                rq{regDeclaredTip = regDeclaredTip rq + 1}
+                            )
+                        )
+        _ -> o

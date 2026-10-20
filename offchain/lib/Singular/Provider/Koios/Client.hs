@@ -58,6 +58,7 @@ module Singular.Provider.Koios.Client
     , tip
     , addressUtxos
     , assetUtxos
+    , policyAssets
     , assetTxs
     , Page
     , pageRows
@@ -551,6 +552,24 @@ assetUtxos
     -> [(PolicyID, AssetName)]
     -> m (Either ClientFailure [(TxIn, TxOut ConwayEra)])
 assetUtxos k assets = paged k (assetUtxosRequest assets) decodeUtxos
+
+{- | Every asset minted under the policy, read page by page in asset-name
+order. Not written yet: no request is made.
+-}
+policyAssets
+    :: (Monad m)
+    => Koios m
+    -> PolicyID
+    -> m (Either ClientFailure [AssetName])
+policyAssets _ _ =
+    pure
+        ( Left
+            ( failing
+                CallPolicyAssetList
+                0
+                (NotRecorded "policyAssets: not written yet")
+            )
+        )
 
 {- | Every transaction that included the asset, read page by page, in
 block height then transaction id order. That order makes pages stable;

@@ -816,7 +816,7 @@ selectionsAgree actual expected
 -- ---------------------------------------------------------
 
 spec :: Spec
-spec =
+spec = do
     describe "ChainedView answers as if the staged run had landed" $ do
         it "answers every output query form as the chain does after landing" $ do
             (prepStaged, bootStaged) <- stagedRunWithPublication
@@ -1084,3 +1084,110 @@ spec =
                         view <- chainedSession (pure []) base
                         selectionOver view foldStateIn frNewRoot
                 selectionsAgree defective expected `shouldSatisfy` isLeft
+
+    describe "chunk3 offchain" $ do
+        it "answers a policy query as the chain does after landing" $ do
+            (prepStaged, bootStaged) <- stagedRunWithPublication
+            let staged = [prepStaged, bootStaged]
+                queries =
+                    [ ("the state policy", HoldingPolicy statePolicy)
+                    , ("a policy nothing holds", HoldingPolicy nobodyPolicy)
+                    ,
+                        ( "an any-of over the state policy and an address"
+                        , AnyOf (HoldingPolicy statePolicy :| [AtAddress payer])
+                        )
+                    ,
+                        ( "an all-of over the state policy and the state address"
+                        , AllOf
+                            (HoldingPolicy statePolicy :| [AtAddress stateAddress])
+                        )
+                    ,
+                        ( "an all-of over the state policy and the payer's address"
+                        , AllOf (HoldingPolicy statePolicy :| [AtAddress payer])
+                        )
+                    ,
+                        ( "an any-of holding a staged-created reference and the policy"
+                        , AnyOf
+                            ( HoldingPolicy statePolicy
+                                :| [AtTxIn (stateRefOf (stagedBody bootStaged))]
+                            )
+                        )
+                    ]
+                names = map fst queries
+                expectedPairs = zip names
+            oracle <- landedRun
+            expected <- fixtureAnswers oracle (map snd queries)
+            chain <- newChain
+            actual <- chainedAnswersOf chain staged (map snd queries)
+            answersAsLanded (zip names actual) (expectedPairs expected)
+                `shouldBe` Right ()
+            forM_ [[prepStaged], [bootStaged]] $ \defect -> do
+                defective <- chainedAnswersOf chain defect (map snd queries)
+                answersAsLanded (zip names defective) (expectedPairs expected)
+                    `shouldSatisfy` isLeft
+        it "shows a staged creation under the policy it holds" $ do
+            (prepStaged, bootStaged) <- stagedRunWithPublication
+            chain <- newChain
+            [held] <-
+                chainedAnswersOf
+                    chain
+                    [prepStaged, bootStaged]
+                    [HoldingPolicy statePolicy]
+            fmap (map fst) held
+                `shouldBe` Right [stateRefOf (stagedBody bootStaged)]
+        it
+            "shows a staged creation under no policy it does not hold (preserved)"
+            $ do
+                (prepStaged, bootStaged) <- stagedRunWithPublication
+                chain <- newChain
+                [elsewhere] <-
+                    chainedAnswersOf
+                        chain
+                        [prepStaged, bootStaged]
+                        [HoldingPolicy nobodyPolicy]
+                fmap (map fst) elsewhere `shouldBe` Right []
+        it
+            "answers a policy query over a staged fold as the chain does once it landed"
+            $ do
+                FoldRig{frChain, frStaged, frOracle} <- foldRig
+                let queries =
+                        [ ("the state policy", HoldingPolicy statePolicy)
+                        ,
+                            ( "an all-of over the state policy and the state address"
+                            , AllOf
+                                (HoldingPolicy statePolicy :| [AtAddress stateAddress])
+                            )
+                        ]
+                    names = map fst queries
+                expected <- fixtureAnswers frOracle (map snd queries)
+                actual <- chainedAnswersOf frChain frStaged (map snd queries)
+                answersAsLanded (zip names actual) (zip names expected)
+                    `shouldBe` Right ()
+                defective <- chainedAnswersOf frChain [] (map snd queries)
+                answersAsLanded (zip names defective) (zip names expected)
+                    `shouldSatisfy` isLeft
+        it "drops a staged-spent output from a policy answer (preserved)" $ do
+            FoldRig{frChain, frStaged, frFoldTx} <- foldRig
+            let spentRefs = Set.toList (frFoldTx ^. bodyTxL . inputsTxBodyL)
+            [beforeFold] <-
+                chainedAnswersOf frChain [] [HoldingPolicy statePolicy]
+            [afterFold] <-
+                chainedAnswersOf frChain frStaged [HoldingPolicy statePolicy]
+            -- the registry's state output is live before the fold, held by the policy
+            fmap (any ((`elem` spentRefs) . fst)) beforeFold
+                `shouldBe` Right True
+            fmap (any ((`elem` spentRefs) . fst)) afterFold
+                `shouldBe` Right False
+        it "refuses the whole composed query when one leaf fails (preserved)" $ do
+            (prepStaged, bootStaged) <- stagedRunWithPublication
+            chain <- newChain
+            [answered] <-
+                chainedAnswersOf
+                    chain
+                    [prepStaged, bootStaged]
+                    [AnyOf (HoldingPolicy statePolicy :| [AtTxIn seedIn])]
+            -- the seed is spent by the staged preparation: its exact reference refuses
+            answered `shouldSatisfy` isLeft
+  where
+    statePolicy = fst stateAsset
+    nobodyPolicy = Fixture.applicationPolicy

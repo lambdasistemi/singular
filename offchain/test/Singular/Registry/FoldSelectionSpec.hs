@@ -170,6 +170,7 @@ afterFirstFoldFacts = Map.insert 7 (LeafActive, True) exampleFacts
 
 spec :: Spec
 spec = do
+    taggedSelectionSpec
     describe "each-request-judged-alone" $ do
         it
             "is a function of the request, its key's facts, the clock, the margin and the bound"
@@ -777,3 +778,147 @@ tenEligible = (pents, facts)
         ]
     facts =
         Map.fromList [(31 + i, (LeafUnknown, False)) | i <- [0 :: Int .. 9]]
+
+-- ---------------------------------------------------------
+-- chunk3 offchain: the tagged members
+-- ---------------------------------------------------------
+
+{- | The selection over tagged pending requests. A registration folds only
+inside its processing window; a termination has no window, no approval and no
+live holder to find: the singular tag is in the request itself. Every
+request lands in exactly one of the two lists, in ledger input order, and the
+capacity bound cuts what is left after each request has its own verdict.
+
+Every expected list is derived from the requests and the facts by field
+access and list operations, never typed back from the selection.
+-}
+taggedSelectionSpec :: Spec
+taggedSelectionSpec = describe "chunk3 offchain" $ describe "the tagged selection" $ do
+    let registration ref key submitted =
+            TaggedRequest ref key MemberRegistration submitted AppReady
+        termination ref key =
+            TaggedRequest ref key MemberTermination 0 AppReady
+        select = selectTaggedFold 9 nowMs marginMs processMs
+        reasonsOf sel =
+            [(tgRef r, exclusionName e) | (r, e) <- taggedExcluded sel]
+        settledRefs = map tgRef . taggedSettled
+        -- booked at the clock: its deadline is a processing time ahead
+        openAt = nowMs
+        known = Map.fromList
+        active = (LeafActive, True)
+        unknown = (LeafUnknown, False)
+    it
+        "settles registrations and terminations of distinct keys in ledger input order"
+        $ do
+            let reqs =
+                    [ registration 1 10 openAt
+                    , termination 2 11
+                    , registration 3 12 openAt
+                    , termination 4 13
+                    ]
+                facts = known [(10, unknown), (11, active), (12, unknown), (13, active)]
+                sel = select facts reqs
+            settledRefs sel `shouldBe` map tgRef reqs
+            taggedExcluded sel `shouldBe` []
+            map tgKind (taggedSettled sel) `shouldBe` map tgKind reqs
+    it
+        "refuses a registration past its window and settles a termination of any age"
+        $ do
+            let stale = nowMs - 10 * processMs
+                reqs = [registration 1 20 stale, termination 2 21]
+                facts = known [(20, unknown), (21, active)]
+                sel = select facts reqs
+            reasonsOf sel `shouldBe` [(1, "not-phase1")]
+            settledRefs sel `shouldBe` [2]
+    it "admits a registration whose deadline is exactly the probe bound" $ do
+        let atBound = nowMs + marginMs - processMs
+            sel = select (known [(22, unknown)]) [registration 1 22 atBound]
+        settledRefs sel `shouldBe` [1]
+        taggedExcluded sel `shouldBe` []
+    it "refuses a registration of a key the registry already knows" $ do
+        let reqs =
+                [ registration 1 30 openAt
+                , registration 2 31 openAt
+                , registration 3 32 openAt
+                ]
+            facts =
+                known
+                    [(30, active), (31, (LeafTerminal, False)), (32, (LeafAbsent, False))]
+        reasonsOf (select facts reqs)
+            `shouldBe` [(1, "key-exists"), (2, "key-exists"), (3, "key-exists")]
+    it "refuses a termination of a key the registry cannot terminate" $ do
+        let reqs = [termination 1 33, termination 2 34, termination 3 35]
+            facts =
+                known
+                    [ (33, unknown)
+                    , (34, (LeafAbsent, False))
+                    , (35, (LeafTerminal, False))
+                    ]
+        reasonsOf (select facts reqs)
+            `shouldBe` [(1, "key-unknown"), (2, "not-booked"), (3, "terminal-immutable")]
+    it
+        "settles a termination of an active key without a live holder to find"
+        $ do
+            let sel = select (known [(36, (LeafActive, False))]) [termination 1 36]
+            settledRefs sel `shouldBe` [1]
+            taggedExcluded sel `shouldBe` []
+    it
+        "refuses a registration whose delivered datum does not read, and never asks a termination for one"
+        $ do
+            let unreadable = AppDatumUnreadable
+                reqs =
+                    [ (registration 1 40 openAt){tgCarried = unreadable}
+                    , (termination 2 41){tgCarried = unreadable}
+                    ]
+                facts = known [(40, unknown), (41, active)]
+                sel = select facts reqs
+            reasonsOf sel `shouldBe` [(1, "application-datum-unreadable")]
+            settledRefs sel `shouldBe` [2]
+    it "takes one request per key in a batch" $ do
+        let regs = [registration 1 50 openAt, registration 2 50 openAt]
+            terms = [termination 3 51, termination 4 51]
+            facts = known [(50, unknown), (51, active)]
+            sel = select facts (regs <> terms)
+        reasonsOf sel `shouldBe` [(2, "key-in-batch"), (4, "key-in-batch")]
+        settledRefs sel `shouldBe` [1, 3]
+    it "cuts the settled prefix at the capacity bound and names the rest" $ do
+        let reqs =
+                [ if even i
+                    then registration i (100 + i) openAt
+                    else termination i (100 + i)
+                | i <- [1 .. 12]
+                ]
+            facts =
+                known
+                    [ (100 + i, if even i then unknown else active)
+                    | i <- [1 .. 12]
+                    ]
+            sel = selectTaggedFold 9 nowMs marginMs processMs facts reqs
+        settledRefs sel `shouldBe` [1 .. 9]
+        reasonsOf sel `shouldBe` [(i, "capacity") | i <- [10 .. 12]]
+        taggedBound sel `shouldBe` 9
+        sort (settledRefs sel <> map (tgRef . fst) (taggedExcluded sel))
+            `shouldBe` map tgRef reqs
+    it "names no approval, no edge and no live token among its reasons" $ do
+        let reqs =
+                [ registration 1 60 openAt
+                , registration 2 61 (nowMs - 10 * processMs)
+                , termination 3 62
+                , termination 4 63
+                , registration 5 60 openAt
+                ]
+            facts = known [(60, unknown), (61, unknown), (62, unknown), (63, active)]
+            names = map snd (reasonsOf (select facts reqs))
+        names `shouldSatisfy` (not . null)
+        names `shouldSatisfy` all (`elem` allowed)
+  where
+    allowed =
+        [ "not-phase1"
+        , "key-exists"
+        , "key-unknown"
+        , "not-booked"
+        , "terminal-immutable"
+        , "application-datum-unreadable"
+        , "key-in-batch"
+        , "capacity"
+        ]

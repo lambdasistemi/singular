@@ -139,6 +139,7 @@ library
     Singular.Registry.TxBuilder.Reject
     Singular.Registry.TxBuilder.Request
     Singular.Registry.TxBuilder.Retract
+    Singular.Registry.TxBuilder.TerminationBooking
     Singular.Registry.TxBuilder.Update
     Singular.Registry.Types
     Singular.Registry.Wait
@@ -1045,6 +1046,7 @@ test-suite cage-tests
     Singular.Registry.StubSession
     Singular.Registry.SyntheticLedger
     Singular.Registry.SyntheticTime
+    Singular.Registry.TaggedDiscoverySpec
     Singular.Registry.TrieStateContractSpec
     Singular.Registry.TrieStateSpec
     Singular.Registry.TxBuilder.BookEdgeSpec
@@ -1053,11 +1055,13 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.PublicationFundingSpec
     Singular.Registry.TxBuilder.RegistrationBookingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
+    Singular.Registry.TxBuilder.ConnectedFoldSpec
     Singular.Registry.TxBuilder.SelectedFoldSpec
     Singular.Registry.TxBuilder.MeasuredBookingSpec
     Singular.Registry.TxBuilder.PrepareSpec
     Singular.Registry.TxBuilder.RetractFundingSpec
     Singular.Registry.TxBuilder.SkipEvalUnitsSpec
+    Singular.Registry.TxBuilder.TerminationBookingSpec
     Singular.Registry.TxBuilder.UpperSlotSpec
     Singular.Registry.TypesSpec
     Singular.Registry.WaitSpec

@@ -10,11 +10,13 @@ module Singular.Registry.StubSession
     , withParameters
     , withTime
     , withAddressOutputs
+    , withPolicyOutputs
     , withResolvedOutputs
     , withTip
     ) where
 
 import Cardano.Ledger.Api.PParams (emptyPParams)
+import Cardano.Ledger.Mary.Value (PolicyID)
 import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Control.Exception (finally)
@@ -91,6 +93,22 @@ withAddressOutputs
 withAddressOutputs supplied session = session{outputs = query}
   where
     query (AtAddress address) = fmap (Right . (`Evidenced` Nothing)) (supplied address)
+    query (AnyOf queries) = joinQueries False query queries
+    query (AllOf queries) = joinQueries True query queries
+    query requested = outputs session requested
+
+{- | Serve the outputs holding any asset of a policy, as the generic provider
+does: the query itself, composed under any-of and all-of like the others. Every
+other query is left to the session it decorates.
+-}
+withPolicyOutputs
+    :: (PolicyID -> IO Outputs)
+    -> Session NoWitness IO
+    -> Session NoWitness IO
+withPolicyOutputs supplied session = session{outputs = query}
+  where
+    query (HoldingPolicy policy) =
+        fmap (Right . (`Evidenced` Nothing)) (supplied policy)
     query (AnyOf queries) = joinQueries False query queries
     query (AllOf queries) = joinQueries True query queries
     query requested = outputs session requested

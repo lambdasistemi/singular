@@ -63,6 +63,7 @@ module Singular.Provider.Koios.Wire
     , referenceScriptUtxosRequest
     , utxoInfoRequest
     , assetInfoRequest
+    , policyAssetListRequest
 
       -- * Decoded facts
     , Tip (..)
@@ -90,6 +91,7 @@ module Singular.Provider.Koios.Wire
     , decodeReferenceScriptUtxos
     , decodeUtxoInfos
     , decodeAssetInfos
+    , decodePolicyAssetList
 
       -- * Renderings
     , renderAddress
@@ -270,6 +272,7 @@ data Call
     | CallReferenceScriptUtxos
     | CallUtxoInfo
     | CallAssetInfo
+    | CallPolicyAssetList
     deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 -- | The Koios endpoint name of a call, as in its path.
@@ -289,6 +292,7 @@ callName = \case
     CallReferenceScriptUtxos -> "reference_script_utxos"
     CallUtxoInfo -> "utxo_info"
     CallAssetInfo -> "asset_info"
+    CallPolicyAssetList -> "policy_asset_list"
 
 -- | Whether a request reads or submits.
 data Access = Read | Submission
@@ -504,6 +508,13 @@ assetInfoRequest (p, n) =
         []
         (JsonBody (object ["_asset_list" .= [[policyHex p, assetNameHex n]]]))
         Nothing
+
+{- | @policy_asset_list@: every asset minted under a policy, ordered by asset
+name. Not written yet.
+-}
+policyAssetListRequest :: PolicyID -> Request 'Read
+policyAssetListRequest _ =
+    error "policyAssetListRequest: not written yet"
 
 scriptHashHex :: ScriptHash -> Text
 scriptHashHex (ScriptHash h) = hashToTextAsHex h
@@ -1001,6 +1012,17 @@ decodeAssetInfos = runParser $ rows $ \o ->
     AssetInfo
         <$> (o .: "minting_tx_hash" >>= txIdOf)
         <*> (o .: "total_supply" >>= integerText)
+
+{- | Decode a @policy_asset_list@ answer: the asset names, in answer order.
+Not written yet.
+-}
+decodePolicyAssetList :: Value -> Either DecodeFailure [AssetName]
+decodePolicyAssetList _ =
+    Left
+        DecodeFailure
+            { decodePosition = "$"
+            , decodeReason = "policy_asset_list: not written yet"
+            }
 
 -- | The bech32 rendering of a Shelley address.
 renderAddress :: Addr -> Text

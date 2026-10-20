@@ -319,6 +319,17 @@ selectOutputs allOutputs = fmap Map.toAscList . selected
                                 (Map.lookup policy assets)
                     )
                     allOutputs
+        HoldingPolicy policy ->
+            Right $
+                Map.filter
+                    ( \out ->
+                        let MaryValue _ (MultiAsset assets) = out ^. valueTxOutL
+                        in  maybe
+                                False
+                                (any (/= 0))
+                                (Map.lookup policy assets)
+                    )
+                    allOutputs
         AtTxIn reference -> case Map.lookup reference allOutputs of
             Nothing -> Left (MissingOutput reference)
             Just out -> Right (Map.singleton reference out)

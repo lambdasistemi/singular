@@ -92,6 +92,7 @@ requestSpec = describe "read requests" $ do
         CallReferenceScriptUtxos -> "reference_script_utxos"
         CallUtxoInfo -> "utxo_info"
         CallAssetInfo -> "asset_info"
+        CallPolicyAssetList -> "policy_asset_list"
 
 -- | One request text per read call.
 samples :: [(Text, ReadCall)]

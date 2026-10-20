@@ -258,6 +258,13 @@ chainSession logRef chain =
                         ((/= 0) . Map.findWithDefault 0 name)
                         (Map.lookup policy assets)
                     ]
+        LP.HoldingPolicy policy ->
+            Right
+                [ u
+                | u@(_, o) <- Map.toAscList live
+                , let MaryValue _ (MultiAsset assets) = o ^. valueTxOutL
+                , maybe False (any (/= 0)) (Map.lookup policy assets)
+                ]
         LP.AtTxIn reference -> case Map.lookup reference live of
             Nothing -> Left (LP.MissingOutput reference)
             Just o -> Right [(reference, o)]

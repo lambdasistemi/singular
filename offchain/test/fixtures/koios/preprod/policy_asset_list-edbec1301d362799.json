@@ -1,0 +1,75 @@
+{
+    "answer": {
+        "body": "[{\"asset_name\":\"bb41081f54d9c2cad883dbefe690affb0db49cff800e7574822fd1f57d76e778\",\"fingerprint\":\"asset1s32xew27j78gr5hkgpyrekrandpg9fvarqnxzq\",\"total_supply\":\"1\",\"decimals\":0}, \n {\"asset_name\":\"e82f5e34833d7a74ad0359788dfa31d7879d851d2af6c5d4f0f88518f11433b9\",\"fingerprint\":\"asset1q0z0t7e2zn6sgf4kpter0cazql4u2hrqrhfyj2\",\"total_supply\":\"1\",\"decimals\":0}]",
+        "headers": [
+            [
+                "date",
+                "Mon, 19 Oct 2026 15:29:30 GMT"
+            ],
+            [
+                "content-range",
+                "0-1/2"
+            ],
+            [
+                "preference-applied",
+                "count=exact"
+            ],
+            [
+                "content-length",
+                "354"
+            ],
+            [
+                "content-type",
+                "application/json; charset=utf-8"
+            ],
+            [
+                "vary",
+                "Origin"
+            ],
+            [
+                "access-control-allow-headers",
+                "Content-Type, Accept, Authorization"
+            ],
+            [
+                "access-control-allow-methods",
+                "GET, HEAD, OPTIONS, POST, PATCH"
+            ],
+            [
+                "access-control-max-age",
+                "600"
+            ],
+            [
+                "x-frame-options",
+                "DENY"
+            ]
+        ],
+        "status": 200
+    },
+    "recorded_at": "2026-10-19T15:29:31Z",
+    "request": {
+        "body": null,
+        "call": "policy_asset_list",
+        "method": "GET",
+        "path": "/policy_asset_list",
+        "query": [
+            [
+                "_asset_policy",
+                "8ac9562f5fb6be9b9b913ae2ad2cc1d9e038f7f7039256f1ac9f7a62"
+            ],
+            [
+                "limit",
+                "1000"
+            ],
+            [
+                "offset",
+                "0"
+            ],
+            [
+                "order",
+                "asset_name.asc"
+            ]
+        ]
+    },
+    "schema_revision": "v1.4.2",
+    "sha256": "7657b2d4d27ab272dca62b011a3c24f3eefece13dc8153440e3ad9f80c334410"
+}

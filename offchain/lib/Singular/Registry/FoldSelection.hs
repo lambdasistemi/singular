@@ -48,6 +48,10 @@ module Singular.Registry.FoldSelection
     , Selection (..)
     , LiveFacts
     , selectFold
+    , MemberKind (..)
+    , TaggedRequest (..)
+    , TaggedSelection (..)
+    , selectTaggedFold
     , judgeAlone
     , foldCapacity
     , foldCapacityProvenance
@@ -413,3 +417,53 @@ selectFold bound now margin process facts reqs =
                         ReasonCapacity
                         "the fold is at its capacity bound; the next fold takes this request"
                     )
+
+-- ---------------------------------------------------------
+-- Tagged members (the checkpoint's boundary)
+-- ---------------------------------------------------------
+
+{- | What a tagged pending request is: a registration, which folds only inside
+its processing window, or a termination, which has no window.
+-}
+data MemberKind
+    = MemberRegistration
+    | MemberTermination
+    deriving stock (Eq, Show)
+
+{- | One tagged pending request with what the selection needs: its position in
+ledger input order, its key, its kind, a registration's booked time and the
+verdict on a registration's delivered datum. Authenticity is not here: only
+requests the consumer has authenticated reach the selection.
+-}
+data TaggedRequest = TaggedRequest
+    { tgRef :: Int
+    , tgKey :: Int
+    , tgKind :: MemberKind
+    , tgSubmittedAt :: Integer
+    -- ^ The booked time of a registration; a termination has none to read
+    , tgCarried :: AppVerdict
+    -- ^ Whether a registration's delivered datum reads; a termination delivers none
+    }
+    deriving stock (Eq, Show)
+
+-- | The tagged selection: settled and excluded requests, each in ledger input order.
+data TaggedSelection = TaggedSelection
+    { taggedSettled :: [TaggedRequest]
+    , taggedExcluded :: [(TaggedRequest, Exclusion)]
+    , taggedBound :: Int
+    }
+    deriving stock (Eq, Show)
+
+{- | Judge every tagged pending request and settle the first included ones up
+to the capacity bound. Not written yet.
+-}
+selectTaggedFold
+    :: Int
+    -> Integer
+    -> Integer
+    -> Integer
+    -> LiveFacts
+    -> [TaggedRequest]
+    -> TaggedSelection
+selectTaggedFold _ _ _ _ _ _ =
+    error "selectTaggedFold: the tagged selection is not written yet"
