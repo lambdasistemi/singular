@@ -33,6 +33,9 @@ module Singular.CLI.Vault
     , freshSignKey
     , createVaultFile
     , withVaultFile
+    , vaultPathTaken
+    , readVaultFile
+    , ioReason
     ) where
 
 import Control.Exception (IOException, bracket, try)
@@ -53,6 +56,11 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.List.NonEmpty (NonEmpty (..))
 import System.IO (Handle, hClose)
+import System.IO.Error
+    ( ioeGetErrorString
+    , isDoesNotExistError
+    , isPermissionError
+    )
 import System.Posix.Files
     ( getSymbolicLinkStatus
     , ownerReadMode
@@ -91,6 +99,8 @@ data VaultRefusal
       VaultPathExists FilePath
     | -- | the file could not be created or written, naming the path
       VaultNotWritten FilePath
+    | -- | the vault file could not be read, naming the path and why
+      VaultNotRead FilePath String
     | {- | the vault could not be opened: wrong passphrase, corrupt file,
       or not a singular vault
       -}
@@ -102,6 +112,7 @@ renderVaultRefusal :: VaultRefusal -> String
 renderVaultRefusal = \case
     VaultPathExists path -> "vault already exists: " <> path
     VaultNotWritten path -> "cannot write the vault file: " <> path
+    VaultNotRead path why -> "cannot read the vault file " <> path <> ": " <> why
     VaultNotOpened ->
         "cannot open vault: wrong passphrase, corrupt file, or not a singular vault"
 
@@ -243,6 +254,33 @@ withVaultFile path write = do
                 _ <- try (removeLink path) :: IO (Either IOException ())
                 pure (Left (VaultNotWritten path))
             Right result -> pure (Right result)
+
+{- | Read a vault file, or say in a few words why it cannot be read.
+Effect: reads the file.
+-}
+readVaultFile :: FilePath -> IO (Either VaultRefusal ByteString)
+readVaultFile path =
+    either (Left . VaultNotRead path . ioReason) Right
+        <$> try (BS.readFile path)
+
+{- | Why a file operation failed, as a person says it: the cause alone,
+never the library's name for it.
+-}
+ioReason :: IOException -> String
+ioReason e
+    | isDoesNotExistError e = "it does not exist"
+    | isPermissionError e = "permission denied"
+    | otherwise = ioeGetErrorString e
+
+{- | Whether anything is at the path, a symbolic link included.  create@
+asks this before it asks for a passphrase, so a vault that would be refused is
+refused before the passphrase is typed twice; the exclusive create above stays
+the judge when the path is taken in between.
+-}
+vaultPathTaken :: FilePath -> IO Bool
+vaultPathTaken path =
+    either (\(_ :: IOException) -> False) (const True)
+        <$> try (getSymbolicLinkStatus path)
 
 {- | The mode a vault is born with: readable and writable by its owner
 only.

@@ -51,7 +51,7 @@ import Singular.Application.OpenDatum.Command
 import Singular.Application.OpenDatum.Help (openDatumProgram)
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.CLI.Options (builtinCommand)
-import Singular.CLI.Root (standardError)
+import Singular.CLI.Root (containFailure, standardError)
 import Singular.CLI.Session (Env, koiosEnv)
 import Singular.CLI.Trace (Trace, withTracing)
 import Singular.Registry.Application (Application)
@@ -136,9 +136,10 @@ runPackagedOpenDatumVia
     -> [String]
     -> [(String, String)]
     -> IO ExitCode
-runPackagedOpenDatumVia provider app getErrors args environment = do
-    errors <- fromRight Nothing <$> attempt getErrors
-    runOpenDatumSingularVia provider app errors environment args
+runPackagedOpenDatumVia provider app getErrors args environment =
+    containFailure "open-datum" $ do
+        errors <- fromRight Nothing <$> attempt getErrors
+        runOpenDatumSingularVia provider app errors environment args
 
 -- | The packaged open-datum command with the process's own standard error.
 runPackagedOpenDatum

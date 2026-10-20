@@ -144,11 +144,14 @@ import Singular.CLI.Sources
     )
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.CLI.Vault
-    ( createVaultFile
+    ( VaultRefusal (..)
+    , createVaultFile
     , freshSignKey
     , openVault
+    , readVaultFile
     , renderVaultRefusal
     , sealVault
+    , vaultPathTaken
     , vaultWorkFactor
     )
 import Singular.CLI.Version (releaseVersion)
@@ -1221,19 +1224,23 @@ prints nothing on standard output, and removes any file this run made.
 -}
 walletCreateCommand :: WalletArgs -> IO ExitCode
 walletCreateCommand WalletArgs{..} =
-    readPassphrase AskTwice (passphraseSource walletPassphraseFd) >>= \case
-        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
-        Right passphrase -> do
-            key <- freshSignKey
-            sealed <- sealVault vaultWorkFactor passphrase key
-            case sealed of
-                Left refusal -> walletRefused (renderVaultRefusal refusal)
-                Right bytes ->
-                    createVaultFile walletVaultPath bytes >>= \case
+    vaultPathTaken walletVaultPath >>= \case
+        True ->
+            walletRefused (renderVaultRefusal (VaultPathExists walletVaultPath))
+        False ->
+            readPassphrase AskTwice (passphraseSource walletPassphraseFd) >>= \case
+                Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+                Right passphrase -> do
+                    key <- freshSignKey
+                    sealed <- sealVault vaultWorkFactor passphrase key
+                    case sealed of
                         Left refusal -> walletRefused (renderVaultRefusal refusal)
-                        Right () -> do
-                            putStrLn (addressOf walletNetworkMagic key)
-                            pure ExitSuccess
+                        Right bytes ->
+                            createVaultFile walletVaultPath bytes >>= \case
+                                Left refusal -> walletRefused (renderVaultRefusal refusal)
+                                Right () -> do
+                                    putStrLn (addressOf walletNetworkMagic key)
+                                    pure ExitSuccess
 
 {- | @wallet address@: open the vault with the passphrase asked once,
 and print exactly the address @wallet create@ printed for the same
@@ -1241,20 +1248,21 @@ network.
 -}
 walletAddressCommand :: WalletArgs -> IO ExitCode
 walletAddressCommand WalletArgs{..} =
-    readPassphrase AskOnce (passphraseSource walletPassphraseFd) >>= \case
-        Left refusal -> walletRefused (renderPassphraseRefusal refusal)
-        Right passphrase -> do
-            bytes <- BS.readFile walletVaultPath
-            case openVault passphrase bytes of
-                Left _ ->
-                    walletRefused
-                        ( "cannot open vault "
-                            <> walletVaultPath
-                            <> ": wrong passphrase, corrupt file, or not a singular vault"
-                        )
-                Right key -> do
-                    putStrLn (addressOf walletNetworkMagic key)
-                    pure ExitSuccess
+    readVaultFile walletVaultPath >>= \case
+        Left refusal -> walletRefused (renderVaultRefusal refusal)
+        Right bytes ->
+            readPassphrase AskOnce (passphraseSource walletPassphraseFd) >>= \case
+                Left refusal -> walletRefused (renderPassphraseRefusal refusal)
+                Right passphrase -> case openVault passphrase bytes of
+                    Left _ ->
+                        walletRefused
+                            ( "cannot open vault "
+                                <> walletVaultPath
+                                <> ": wrong passphrase, corrupt file, or not a singular vault"
+                            )
+                    Right key -> do
+                        putStrLn (addressOf walletNetworkMagic key)
+                        pure ExitSuccess
 
 {- | @wallet sign@: witness a bundle of unsigned transactions from the
 vault, offline — one witness file per transaction, named by its

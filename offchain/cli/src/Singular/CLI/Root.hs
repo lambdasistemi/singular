@@ -24,11 +24,16 @@ module Singular.CLI.Root
     , runPackagedWith
     , runPackagedVia
     , standardError
+    , containFailure
+    , failureSentence
     ) where
 
 import Control.Exception
-    ( SomeAsyncException
+    ( IOException
+    , SomeAsyncException
     , SomeException
+    , catch
+    , displayException
     , fromException
     , throwIO
     , try
@@ -42,6 +47,7 @@ import System.IO
     , hPutStrLn
     , stderr
     )
+import System.IO.Error (ioeGetFileName)
 import System.Posix.Files
     ( getFdStatus
     , isCharacterDevice
@@ -66,6 +72,7 @@ import Singular.CLI.Help (singularProgram)
 import Singular.CLI.Options (builtinCommand)
 import Singular.CLI.Session (Env, koiosEnv)
 import Singular.CLI.Trace (Trace, withTracing)
+import Singular.CLI.Vault (ioReason)
 import Singular.Registry.Application (Application)
 
 -- | Run one command line, with this environment and standard error.
@@ -161,11 +168,40 @@ runPackagedVia
     -> [String]
     -> [(String, String)]
     -> IO ExitCode
-runPackagedVia provider app getErrors args environment = do
-    errors <- fromRight Nothing <$> attempt getErrors
-    runSingularVia provider app errors environment args
+runPackagedVia provider app getErrors args environment =
+    containFailure "singular" $ do
+        errors <- fromRight Nothing <$> attempt getErrors
+        runSingularVia provider app errors environment args
 
 -- | The packaged command with the process's own standard error.
 runPackaged
     :: Application -> [String] -> [(String, String)] -> IO ExitCode
 runPackaged app = runPackagedWith app standardError
+
+{- | The last resort for a failure no command reported: one line on standard
+error saying what failed, and status 1, in place of the runtime's own report of
+an uncaught exception. A command that stops on purpose says so itself and never
+comes here. An asynchronous exception, the interrupt that ends a run, goes on
+through, and so does an exit.
+-}
+containFailure :: String -> IO ExitCode -> IO ExitCode
+containFailure program act =
+    act `catch` \e -> case fromException e of
+        Just (async :: SomeAsyncException) -> throwIO async
+        Nothing -> case fromException e of
+            Just (code :: ExitCode) -> pure code
+            Nothing -> do
+                void
+                    (attempt (hPutStrLn stderr (program <> ": " <> failureSentence e)))
+                pure (ExitFailure 1)
+
+{- | What failed in a sentence: a file that could not be used says which and
+why, anything else its first line.
+-}
+failureSentence :: SomeException -> String
+failureSentence e = unwords (words (takeWhile (/= '\n') said))
+  where
+    said = case fromException e of
+        Just (io :: IOException) ->
+            maybe "" (<> ": ") (ioeGetFileName io) <> ioReason io
+        Nothing -> displayException e
