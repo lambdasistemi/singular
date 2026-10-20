@@ -5,7 +5,7 @@
       "pause": 500
     },
     {
-      "text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As an integrator, you want to know what the page does not prove, and the page says so itself.",
+      "text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As a script, you read the page with an ordinary JSON parser and take its fields by name. As an integrator, you want to know what the page does not prove, and the page says so itself.",
       "pause": 400
     }
   ],
@@ -19,7 +19,11 @@
       "pause": 400
     },
     {
-      "text": "A program reads the same facts with the json switch:",
+      "text": "The page prints as indented JSON, which a person reads and any JSON parser reads. A script takes a field by name:",
+      "pause": 400
+    },
+    {
+      "text": "The json switch is accepted and changes nothing, so a script that passes it keeps working:",
       "pause": 400
     },
     {
@@ -27,7 +31,7 @@
       "pause": 400
     },
     {
-      "text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. The text and the JSON carry the same fields.",
+      "text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. With or without the json switch the page is the same bytes: the keys come in alphabetical order, as the encoder prints them, and the table above is the order of this page's sections, not of the keys.",
       "pause": 400
     }
   ],
@@ -37,7 +41,7 @@
       "pause": 500
     },
     {
-      "text": "Alice's page after her own fold, on the development network, exactly as the command printed it. The page names the release it runs; this one ran version 0.10.1, and a later release prints its own label:",
+      "text": "Alice's page after her own fold, on the development network: the facts that run recorded, with the release it ran, version 0.10.1, as the command prints them now. A later release prints its own label:",
       "pause": 400
     },
     {
@@ -51,7 +55,7 @@
       "pause": 500
     },
     {
-      "text": "The provenance line says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
+      "text": "The provenance field says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
       "pause": 400
     }
   ],
@@ -77,6 +81,6 @@
   ],
   "_source": {
     "file": "registry-page.md",
-    "sha256": "54202be275a511ace5fc1588ca87c61c60fb4351ebba03b69b6b28ea55537a6f"
+    "sha256": "96c2fe0af1d8b7bdef7ee3111e7eb976d3454ed4276f3fc7a84284d5cdbe8a44"
   }
 }
