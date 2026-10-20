@@ -68,7 +68,17 @@ flagOf (f, _, _, _) = f
 -- | Each command with what it needs beside the six.
 commands :: [(String, [String])]
 commands =
-    [ ("create", ["--vault", "alice.vault"])
+    [
+        ( "create"
+        ,
+            [ "--vault"
+            , "alice.vault"
+            , "--registration-cost"
+            , "0"
+            , "--booking-width"
+            , "60000"
+            ]
+        )
     ,
         ( "insert"
         ,

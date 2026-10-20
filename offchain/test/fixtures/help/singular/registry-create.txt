@@ -2,18 +2,21 @@ singular VERSION (commit unknown)
 
 Usage: singular registry create [--config FILE] [--state-dir DIR] --blueprint
        FILE [--seed TXID#IX] [--application-policy HEX] [--process-time MS]
-       [--retract-time MS] --koios-url URL --network-magic N
-       [--koios-token-file FILE] [--network-time DIR] [[--vault FILE
-       [--passphrase-fd N] | --wallet-address ADDR --bundle FILE |
-       --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE] |
-       --preview --wallet-address ADDR] [--trace LEVEL] [--trace-to SINK]
+       [--retract-time MS] --registration-cost LOVELACE --booking-width MS
+       --koios-url URL --network-magic N [--koios-token-file FILE]
+       [--network-time DIR] [[--vault FILE [--passphrase-fd N] |
+       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
+       [--confirm-timeout SECONDS] [--receipt FILE] | --preview
+       --wallet-address ADDR] [--trace LEVEL] [--trace-to SINK]
        [--trace-format FORMAT]
 
 Boot a registry, or preview its identity
 
 Boots one registry from a seed output of your wallet and prints its state
-token, which every other command names the registry by. The processing window
-and the retract window are fixed here for the life of the registry.
+token, which every other command names the registry by. The processing window,
+the retract window, the registration cost and the widest booking interval are
+fixed here for the life of the registry; the cost and the width have no
+default.
 
 A write is signed by exactly one signer: --vault (the normal route),
 --wallet-address with --bundle (written for an external signer, ending as
@@ -66,6 +69,14 @@ Available settings:
   milliseconds; fixed for the life of the registry.
   option: --retract-time MS
   default: 300000, five minutes
+
+  What a registration request pays into the registry, at least zero; fixed for
+  the life of the registry, and with no default.
+  option: --registration-cost LOVELACE
+
+  The widest interval a request may be booked over, in milliseconds, positive;
+  fixed for the life of the registry, and with no default.
+  option: --booking-width MS
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL
@@ -161,11 +172,13 @@ Environment:
 
 Example:
   singular registry create --blueprint plutus.json \
+      --registration-cost 0 --booking-width 60000 \
       --koios-url https://preprod.koios.rest/api/v1 --network-magic 1 \
       --vault alice.vault
 
   With those settings in singular.json instead:
-  singular registry create --vault alice.vault
+  singular registry create --registration-cost 0 --booking-width 60000 \
+      --vault alice.vault
 
 Output and exit status:
   Prints one JSON receipt on standard output (--receipt also writes it).
