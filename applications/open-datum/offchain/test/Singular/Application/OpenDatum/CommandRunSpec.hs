@@ -30,7 +30,7 @@ module Singular.Application.OpenDatum.CommandRunSpec (spec) where
 
 import Control.Applicative ((<|>))
 import Control.Exception (bracket, finally, throwIO)
-import Control.Monad (forM, unless)
+import Control.Monad (forM, unless, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson (toJSON, (.=))
 import Data.Aeson qualified as Aeson
@@ -113,20 +113,27 @@ import System.Posix.IO
 import System.Posix.Types (Fd (..))
 import Test.Hspec
 
-import Cardano.Crypto.DSIGN (rawSerialiseSignKeyDSIGN)
+import Cardano.Crypto.DSIGN
+    ( Ed25519DSIGN
+    , SignKeyDSIGN
+    , deriveVerKeyDSIGN
+    , genKeyDSIGN
+    , rawSerialiseSignKeyDSIGN
+    )
 import Cardano.Crypto.Hash.Blake2b (Blake2b_256)
 import Cardano.Crypto.Hash.Class
     ( hashFromBytes
     , hashToBytes
     , hashWith
     )
+import Cardano.Crypto.Seed (mkSeedFromBytes)
 import Cardano.Ledger.Alonzo.PParams (getLanguageView)
 import Cardano.Ledger.Alonzo.Tx
     ( ScriptIntegrity (..)
     , hashScriptIntegrity
     )
 import Cardano.Ledger.Alonzo.TxWits (Redeemers (..), TxDats (..))
-import Cardano.Ledger.Api.Tx (bodyTxL, txIdTx, witsTxL)
+import Cardano.Ledger.Api.Tx (addrTxWitsL, bodyTxL, txIdTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( collateralInputsTxBodyL
     , inputsTxBodyL
@@ -140,11 +147,19 @@ import Cardano.Ledger.Api.Tx.Out
     , coinTxOutL
     , datumTxOutL
     , mkBasicTxOut
+    , referenceScriptTxOutL
+    , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (datsTxWitsL, rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
-import Cardano.Ledger.Core (PParams)
+import Cardano.Ledger.Core (PParams, extractHash)
 import Cardano.Ledger.Hashes (ScriptHash (..))
+import Cardano.Ledger.Keys
+    ( VKey (..)
+    , WitVKey (..)
+    , asWitness
+    , verifySignedDSIGN
+    )
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MaryValue (..)
@@ -152,7 +167,7 @@ import Cardano.Ledger.Mary.Value
     , PolicyID (..)
     )
 import Cardano.Ledger.Plutus.Language (Language (PlutusV3))
-import Cardano.Ledger.TxIn (TxIn (..))
+import Cardano.Ledger.TxIn (TxId (..), TxIn (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 
@@ -170,7 +185,7 @@ import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
-import Singular.CLI.Passphrase (mkPassphrase)
+import Singular.CLI.Passphrase (PassphraseSource (..), mkPassphrase)
 import Singular.CLI.Proof (Leaf (..), leafName)
 import Singular.CLI.Receipt
     ( JournalEntry (..)
@@ -185,6 +200,8 @@ import Singular.CLI.Registry
     , pendingPath
     )
 import Singular.CLI.Session (Env (..), txIdHex)
+import Singular.CLI.Sign (signBundle)
+import Singular.CLI.Submit (submitBundle)
 import Singular.CLI.Trace
 import Singular.CLI.Vault
     ( createVaultFile
@@ -213,6 +230,7 @@ import Singular.Registry.Evidence
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
     , RawChain
@@ -224,7 +242,7 @@ import Singular.Registry.RawChainFixture
     )
 import Singular.Registry.SessionEvidence (observeProvider)
 import Singular.Registry.SessionIO qualified as SessionIO
-import Singular.Registry.Signing (signedTx)
+import Singular.Registry.Signing (detachedWitness, signedTx)
 import Singular.Registry.StateToken (parseStateToken)
 import Singular.Registry.SyntheticLedger
     ( errorProgram
@@ -1210,6 +1228,8 @@ data Rig = Rig
     , rigEvents :: IORef [Trace]
     , rigAnswer :: IORef (Maybe Cage.SubmitResult)
     -- ^ When set, what the provider answers the next submission instead of taking it
+    , rigSubmitted :: IORef [ConwayTx]
+    -- ^ Every transaction the provider took, as it was submitted, in order
     , rigTracer :: Tracer IO Trace
     -- ^ What the commands trace into: the collector, or a composition holding it
     }
@@ -1294,8 +1314,10 @@ withRigIn dir blueprintJson compose use = do
     advanceChain chain id
     events <- newIORef []
     answer <- newIORef Nothing
+    submitted <- newIORef []
     tracer <- compose (Tracer (\t -> modifyIORef' events (<> [t])))
-    use (Rig dir chain wallet keyPath blueprint events answer tracer)
+    use
+        (Rig dir chain wallet keyPath blueprint events answer submitted tracer)
 
 -- | A wallet output at the start of the chain.
 fundOutput :: Int -> TxIn
@@ -1384,6 +1406,7 @@ capabilities rig =
                         spent = Set.toList (tx ^. bodyTxL . inputsTxBodyL)
                         made = zip [0 ..] (toList (tx ^. bodyTxL . outputsTxBodyL))
                     recordTransaction (rigChain rig) tx
+                    modifyIORef' (rigSubmitted rig) (<> [tx])
                     advanceChain (rigChain rig) $ \facts ->
                         facts
                             { csUTxO =
@@ -2749,6 +2772,8 @@ externalWriteRows =
         keyFileNeedsItsKeyRow
         refusalsWriteNoBundleRows
         pendingBundleRows
+        externalCompletionRows
+        witnessCheckRow
 
 {- | The rows every staged scenario owes, whichever command it runs: the
 bundle, the bodies against the key-file path's, the journal, the receipt and
@@ -2844,9 +2869,349 @@ stagedShapeRows shape = do
             outcomeOf (runReceipt (stKeyFile st)) `shouldBe` Just "success"
             valueAt "expected" (runReceipt (stKeyFile st)) `shouldBe` Nothing
             valueAt "bundle" (runReceipt (stKeyFile st)) `shouldBe` Nothing
+    when (needsPreparation shape)
+        $ it
+            "the key-file path submits that chain, each transaction witnessed by the one wallet alone, and leaves the published references as they were"
+        $ \st -> do
+            map txIdTx (stKeySubmitted st) `shouldBe` map txIdTx (stKeyBodies st)
+            forM_ (stKeySubmitted st) (expectSignedOnlyBy (rigWallet (stRig st)))
+            Map.null (stRefsBefore st) `shouldBe` False
+            stRefsAfter st `shouldBe` stRefsBefore st
+    when (needsPreparation shape)
+        $ it
+            "begins with a preparation whose made output the command spends and collateralises from alone, one wallet signing for the whole bundle, the key-file path building the same chain"
+        $ \st -> do
+            (_, bundle, bodies) <- bundleOf st
+            expectPreparedBundle (stRig st) bundle bodies
+            expectPreparedChain (stKeyBodies st)
+    when (needsPreparation shape)
+        $ it
+            "the preparation checks refuse a command that collateralises elsewhere, one that leaves the made output unspent, a lone preparation and another signer"
+        $ \st -> do
+            (_, bundle, bodies) <- bundleOf st
+            case bodies of
+                [prep, final] -> do
+                    let made = TxIn (txIdTx prep) (TxIx 0)
+                        elsewhere = TxIn (txIdTx prep) (TxIx 1)
+                    expectPreparedChain
+                        [ prep
+                        , final & bodyTxL . collateralInputsTxBodyL .~ Set.singleton elsewhere
+                        ]
+                        `shouldThrow` anyException
+                    expectPreparedChain
+                        [ prep
+                        , final & bodyTxL . inputsTxBodyL %~ Set.delete made
+                        ]
+                        `shouldThrow` anyException
+                    expectPreparedChain [prep] `shouldThrow` anyException
+                    expectPreparedBundle
+                        (stRig st)
+                        bundle{bundleSigners = pure "addr_test1other"}
+                        bodies
+                        `shouldThrow` anyException
+                _ ->
+                    expectationFailure
+                        "the staged chain is not a preparation and its command"
+
+{- | The witness check can fail: a real submitted transaction passes it, and
+the same transaction without its witness, under a foreign key's witness, with
+a foreign witness beside its own, or under a valid signature over another
+body, does not.
+-}
+witnessCheckRow :: Spec
+witnessCheckRow =
+    it
+        "the witness check refuses a transaction with no witness, a foreign one, an extra one and a signature over another body"
+        $ withRig
+        $ \rig -> do
+            seed <- fundSeed rig
+            create <- run rig "create" ["open-datum", "create", "--seed", seed]
+            t <- tokenOf create
+            inserted <- run rig "insert" (insertWords rig <> tokenArgs t)
+            outcomeOf (runReceipt inserted) `shouldBe` Just "success"
+            taken <- readIORef (rigSubmitted rig)
+            case reverse taken of
+                tx : other : _ -> do
+                    let wallet = rigWallet rig
+                        stranger =
+                            genKeyDSIGN (mkSeedFromBytes (BS.replicate 32 9))
+                                :: SignKeyDSIGN Ed25519DSIGN
+                        own = tx ^. witsTxL . addrTxWitsL
+                        with ws = tx & witsTxL . addrTxWitsL .~ ws
+                    expectSignedOnlyBy wallet tx
+                    expectSignedOnlyBy wallet (with Set.empty)
+                        `shouldThrow` anyException
+                    expectSignedOnlyBy
+                        wallet
+                        (with (Set.singleton (detachedWitness stranger tx)))
+                        `shouldThrow` anyException
+                    expectSignedOnlyBy
+                        wallet
+                        (with (Set.insert (detachedWitness stranger tx) own))
+                        `shouldThrow` anyException
+                    expectSignedOnlyBy
+                        wallet
+                        (with (Set.singleton (detachedWitness (walletSignKey wallet) other)))
+                        `shouldThrow` anyException
+                _ -> expectationFailure "the registry made fewer than two transactions"
+
+{- | What an externally signed bundle that needs a preparation leaves: the
+bundle staged without a key, signed OUTSIDE the command by the vault
+(@singular wallet sign@'s own function), submitted (@singular submit@'s own
+function), and then reconciled by the next write of the same wallet.
+-}
+data Completion = Completion
+    { cpRig :: Rig
+    , cpBundle :: (BS.ByteString, Bundle, [ConwayTx])
+    , cpStaged :: Run
+    , cpSign :: (ExitCode, [FilePath])
+    -- ^ the signing's exit and the witness files it printed
+    , cpSubmit :: (ExitCode, Maybe Aeson.Value)
+    -- ^ the submission's exit and the receipt it printed
+    , cpTaken :: [ConwayTx]
+    -- ^ the transactions the provider took during the submission
+    , cpWalletAfter :: [TxIn]
+    , cpTokensBefore :: Map.Map PolicyID (Map.Map AssetName Integer)
+    , cpTokensAfter :: Map.Map PolicyID (Map.Map AssetName Integer)
+    , cpRefsBefore :: Map.Map TxIn (TxOut ConwayEra)
+    , cpRefsAfter :: Map.Map TxIn (TxOut ConwayEra)
+    , cpNext :: Run
+    -- ^ the next write of the same wallet and state root
+    , cpJournal :: [JournalEntry]
+    -- ^ the journal after that write
+    }
+
+externalCompletionOf :: Shape -> (Completion -> IO ()) -> IO ()
+externalCompletionOf shape use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    create <- run rig "create" ["open-datum", "create", "--seed", seed]
+    t <- tokenOf create
+    extra <- shapeSetup shape rig t
+    tokenOnlyWallet rig
+    let line = shapeWords shape rig <> extra <> tokenArgs t
+        witnessDir = rigDir rig </> "witnesses"
+    tokensBefore <- walletTokens rig
+    refsBefore <- referenceCensus rig
+    staged <- runHidden rig "staged" line
+    bundle <- readBundle (stagedBundlePath rig) >>= either fail pure
+    vault <- rigVault rig "bob"
+    fd <- passphraseDescriptor rig "bob" vaultPassphrase
+    (signExit, signOut, _) <-
+        captured
+            ( signBundle
+                (stagedBundlePath rig)
+                vault
+                (PassphraseDescriptor fd)
+                (Just witnessDir)
+            )
+    submittedBefore <- countSubmitted rig
+    (submitExit, submitOut, _) <-
+        captured
+            ( submitBundle
+                (envOf rig)
+                fixtureSettings
+                (stagedBundlePath rig)
+                [witnessDir]
+                Nothing
+            )
+    taken <- submittedSince rig submittedBefore
+    walletAfter <- walletRefs rig
+    tokensAfter <- walletTokens rig
+    refsAfter <- referenceCensus rig
+    next <-
+        runAt
+            rig
+            stagedRoot
+            "next write"
+            (insertOtherWords rig <> tokenArgs t)
+    journal <- journalAt (stagedPartition rig stagedRoot t)
+    use
+        Completion
+            { cpRig = rig
+            , cpBundle = bundle
+            , cpStaged = staged
+            , cpSign = (signExit, lines (BC.unpack signOut))
+            , cpSubmit = (submitExit, Aeson.decodeStrict submitOut)
+            , cpTaken = taken
+            , cpWalletAfter = walletAfter
+            , cpTokensBefore = tokensBefore
+            , cpTokensAfter = tokensAfter
+            , cpRefsBefore = refsBefore
+            , cpRefsAfter = refsAfter
+            , cpNext = next
+            , cpJournal = journal
+            }
+
+{- | A booking or an update that needs a preparation, staged without a key,
+is signed elsewhere and submitted: both members go through in order under the
+one signature, the made output is spent by the command, the tokens and the
+published references are as they were, and the next write reconciles the
+bundle: each member journalled landed after its waiting line, nothing left
+waiting.
+-}
+externalCompletionRows :: Spec
+externalCompletionRows =
+    describe
+        "an externally signed bundle that needs a preparation is signed elsewhere, submitted, and completes"
+        $ forM_ [s | s <- shapes, needsPreparation s, shapeCommand s /= "fold"]
+        $ \shape ->
+            describe (shapeName shape) $
+                aroundAll (externalCompletionOf shape) $ do
+                    it
+                        "waits at 19 without a key, then the saved bundle is signed by the vault and submitted: both members sent, in order, each carrying the one wallet's witness alone"
+                        $ \c -> do
+                            let (_, bundle, bodies) = cpBundle c
+                            runExit (cpStaged c) `shouldBe` ExitFailure 19
+                            length bodies `shouldBe` 2
+                            fst (cpSign c) `shouldBe` ExitSuccess
+                            length (snd (cpSign c)) `shouldBe` length bodies
+                            fst (cpSubmit c) `shouldBe` ExitSuccess
+                            receipt <-
+                                maybe
+                                    (fail "the submission printed no receipt")
+                                    pure
+                                    (snd (cpSubmit c))
+                            outcomeOf receipt `shouldBe` Just "success"
+                            let entries = fromMaybe [] (elementsAt "submissions" receipt)
+                            map (textAt "identity") entries
+                                `shouldBe` map (Just . txIdHex) bodies
+                            map (textAt "how") entries `shouldBe` [Just "sent", Just "sent"]
+                            forM_ entries $ \e ->
+                                (valueAt "chainPoint" e `shouldNotBe` Nothing)
+                                    >> (valueAt "chainPoint" e `shouldNotBe` Just Aeson.Null)
+                            map txIdTx (cpTaken c) `shouldBe` map txIdTx bodies
+                            forM_ (cpTaken c) (expectSignedOnlyBy (rigWallet (cpRig c)))
+                            toList (bundleSigners bundle)
+                                `shouldBe` [T.pack (bech32Address (walletAddr (rigWallet (cpRig c))))]
+                    it
+                        "leaves the made output spent by the command, the tokens exact and the published references as they were"
+                        $ \c -> do
+                            let (_, _, bodies) = cpBundle c
+                            case bodies of
+                                [prep, final] -> do
+                                    let made = TxIn (txIdTx prep) (TxIx 0)
+                                    expectPreparedChain bodies
+                                    cpWalletAfter c `shouldNotContain` [made]
+                                    toList (final ^. bodyTxL . inputsTxBodyL) `shouldContain` [made]
+                                _ ->
+                                    expectationFailure "the bundle is not a preparation and its command"
+                            Map.null (cpTokensBefore c) `shouldBe` False
+                            cpTokensAfter c `shouldBe` cpTokensBefore c
+                            Map.null (cpRefsBefore c) `shouldBe` False
+                            cpRefsAfter c `shouldBe` cpRefsBefore c
+                    it
+                        "is reconciled by the next write: each member journalled waiting then landed, in order, and nothing left waiting"
+                        $ \c -> do
+                            let (bytes, _, bodies) = cpBundle c
+                            outcomeOf (runReceipt (cpNext c)) `shouldBe` Just "success"
+                            bundleStatesOf (runReceipt (cpNext c))
+                                `shouldBe` [(hashOfBytes bytes, "landed")]
+                            map (memberEvents (cpJournal c)) bodies
+                                `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
 
 -- | How the wallet is funded for a shape.
 data Funding = PlainFunding | TokenOnlyFunding
+
+-- | Whether the shape's wallet needs a funding preparation first.
+needsPreparation :: Shape -> Bool
+needsPreparation shape = case shapeFunding shape of
+    PlainFunding -> False
+    TokenOnlyFunding -> True
+
+{- | A chain that begins with a preparation: its first body's first output is
+the made output and is ada only; the last body spends it and collateralises
+from it alone (a ledger refuses collateral that carries tokens); and the
+chain holds exactly the preparation and the command.
+-}
+expectPreparedChain :: [ConwayTx] -> Expectation
+expectPreparedChain bodies = case bodies of
+    [prep, final] -> do
+        let made = TxIn (txIdTx prep) (TxIx 0)
+        case toList (prep ^. bodyTxL . outputsTxBodyL) of
+            o : _ -> adaOnlyOut o `shouldBe` True
+            [] -> expectationFailure "the preparation made no output"
+        toList (final ^. bodyTxL . inputsTxBodyL) `shouldContain` [made]
+        toList (final ^. bodyTxL . collateralInputsTxBodyL) `shouldBe` [made]
+    _ ->
+        expectationFailure
+            ( "a preparation and its command are two bodies, not "
+                <> show (length bodies)
+            )
+
+{- | The same for a bundle, which a single wallet signs whole: the preparation
+and the command are signed by the same signer, the rig wallet.
+-}
+expectPreparedBundle :: Rig -> Bundle -> [ConwayTx] -> Expectation
+expectPreparedBundle rig bundle bodies = do
+    expectPreparedChain bodies
+    toList (bundleSigners bundle)
+        `shouldBe` [T.pack (bech32Address (walletAddr (rigWallet rig)))]
+
+-- | How many transactions the provider has taken so far.
+countSubmitted :: Rig -> IO Int
+countSubmitted rig = length <$> readIORef (rigSubmitted rig)
+
+-- | The transactions the provider took after the first @n@, in order.
+submittedSince :: Rig -> Int -> IO [ConwayTx]
+submittedSince rig n = drop n <$> readIORef (rigSubmitted rig)
+
+{- | A transaction the provider took carries exactly one verification-key
+witness, the wallet's, valid over the transaction's own body: nothing
+missing, nothing foreign, nothing signed over another body. The provider of
+the rig accepts any transaction, so the witnesses are read off what it was
+given.
+-}
+expectSignedOnlyBy :: Wallet -> ConwayTx -> Expectation
+expectSignedOnlyBy wallet tx =
+    case Set.toList (tx ^. witsTxL . addrTxWitsL) of
+        [WitVKey key signature] -> do
+            key
+                `shouldBe` asWitness (VKey (deriveVerKeyDSIGN (walletSignKey wallet)))
+            let TxId bodyHash = txIdTx tx
+            verifySignedDSIGN key (extractHash bodyHash) signature `shouldBe` True
+        witnesses ->
+            expectationFailure
+                ( "a submitted transaction carries "
+                    <> show (length witnesses)
+                    <> " verification-key witnesses, wanted exactly the wallet's"
+                )
+
+{- | The published reference outputs at the rig wallet's address, by input,
+with their whole value: the outputs no command may spend.
+-}
+referenceCensus :: Rig -> IO (Map.Map TxIn (TxOut ConwayEra))
+referenceCensus rig =
+    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+        outs <- SessionIO.outputsAt v (walletAddr (rigWallet rig))
+        pure
+            ( Map.fromList
+                [u | u@(_, o) <- outs, o ^. referenceScriptTxOutL /= SNothing]
+            )
+
+-- | The settings the fixture's own provider ignores.
+fixtureSettings :: ProviderSettings
+fixtureSettings =
+    ProviderSettings
+        "http://fixture.invalid"
+        (fromIntegral magic)
+        Nothing
+        Nothing
+
+-- | The non-ada assets the rig wallet holds, summed over its outputs.
+walletTokens
+    :: Rig -> IO (Map.Map PolicyID (Map.Map AssetName Integer))
+walletTokens rig =
+    SessionIO.withLatest (rawChainProvider (rigChain rig)) $ \v -> do
+        outs <- SessionIO.outputsAt v (walletAddr (rigWallet rig))
+        pure
+            ( foldr
+                ( \(_, o) acc -> case o ^. valueTxOutL of
+                    MaryValue _ (MultiAsset m) ->
+                        Map.unionWith (Map.unionWith (+)) m acc
+                )
+                mempty
+                outs
+            )
 
 -- | One command shape, run as a staged external run and then by the key file.
 data Shape = Shape
@@ -2901,10 +3266,33 @@ shapes =
             , payload2Of rig
             ]
     , Shape
+        "update from a wallet that needs a funding preparation"
+        "update"
+        2
+        TokenOnlyFunding
+        [DoneUpdated, DoneRootSeen]
+        (\rig t -> [] <$ activeEntry rig t)
+        $ \rig ->
+            [ "open-datum"
+            , "update"
+            , "--key"
+            , "bob-1"
+            , "--payload"
+            , payload2Of rig
+            ]
+    , Shape
         "terminate"
         "terminate"
         1
         PlainFunding
+        [DoneBooked]
+        (\rig t -> [] <$ activeEntry rig t)
+        (const ["open-datum", "terminate", "--key", "bob-1"])
+    , Shape
+        "terminate from a wallet that needs a funding preparation"
+        "terminate"
+        2
+        TokenOnlyFunding
         [DoneBooked]
         (\rig t -> [] <$ activeEntry rig t)
         (const ["open-datum", "terminate", "--key", "bob-1"])
@@ -2989,6 +3377,12 @@ data Staging = Staging
     -- ^ The same for the key-file run
     , stParams :: PParams ConwayEra
     -- ^ The chain's protocol parameters, whose cost models the script data hash covers
+    , stKeySubmitted :: [ConwayTx]
+    -- ^ The transactions the key-file run submitted, as the provider took them
+    , stRefsBefore :: Map.Map TxIn (TxOut ConwayEra)
+    -- ^ The wallet's published reference outputs before either run
+    , stRefsAfter :: Map.Map TxIn (TxOut ConwayEra)
+    -- ^ The same once the key-file run has landed
     }
 
 -- | The directory a staged run of this state root resolves for the rig's wallet.
@@ -3059,9 +3453,13 @@ stagingOf shape use = withRig $ \rig -> do
         TokenOnlyFunding -> tokenOnlyWallet rig
     let line = shapeWords shape rig <> extra <> tokenArgs t
     walletBefore <- walletRefs rig
+    refsBefore <- referenceCensus rig
     (stagedWindow, staged) <- windowed (runHidden rig "staged" line)
     walletAfter <- walletRefs rig
+    submittedBefore <- countSubmitted rig
     (keyWindow, keyFile) <- windowed (run rig "key file" line)
+    keySubmitted <- submittedSince rig submittedBefore
+    refsAfter <- referenceCensus rig
     params <-
         SessionIO.withLatest
             (rawChainProvider (rigChain rig))
@@ -3094,6 +3492,9 @@ stagingOf shape use = withRig $ \rig -> do
             , stStagedWindow = stagedWindow
             , stKeyWindow = keyWindow
             , stParams = params
+            , stKeySubmitted = keySubmitted
+            , stRefsBefore = refsBefore
+            , stRefsAfter = refsAfter
             }
 
 -- | The journal of a partition, empty when nothing was ever written to it.
@@ -3619,10 +4020,14 @@ createStagingOf sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> do
             else pure []
     let line = createWords sc <> seed
     walletBefore <- walletRefs rig
+    refsBefore <- referenceCensus rig
     (stagedWindow, staged) <-
         windowed (runHidden rig "staged create" line)
     walletAfter <- walletRefs rig
+    submittedBefore <- countSubmitted rig
     (keyWindow, keyFile) <- windowed (run rig "key file create" line)
+    keySubmitted <- submittedSince rig submittedBefore
+    refsAfter <- referenceCensus rig
     t <- case valueAt "expected" (runReceipt staged) >>= textAt "stateToken" of
         Just token -> pure (T.unpack token)
         Nothing -> tokenOf keyFile
@@ -3658,6 +4063,9 @@ createStagingOf sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> do
             , stStagedWindow = stagedWindow
             , stKeyWindow = keyWindow
             , stParams = params
+            , stKeySubmitted = keySubmitted
+            , stRefsBefore = refsBefore
+            , stRefsAfter = refsAfter
             }
 
 existingBundleCreateRow :: Spec
@@ -4159,6 +4567,16 @@ data VaultStaging = VaultStaging
     -- ^ The same for the vault run
     , vsParams :: PParams ConwayEra
     -- ^ The chain's protocol parameters, whose cost models the script data hash covers
+    , vsTokensBefore :: Map.Map PolicyID (Map.Map AssetName Integer)
+    -- ^ The tokens the wallet held before either run
+    , vsTokensAfter :: Map.Map PolicyID (Map.Map AssetName Integer)
+    -- ^ The tokens it holds once the vault run has landed
+    , vsSubmitted :: [ConwayTx]
+    -- ^ The transactions the vault run submitted, as the provider took them
+    , vsRefsBefore :: Map.Map TxIn (TxOut ConwayEra)
+    -- ^ The wallet's published reference outputs before either run
+    , vsRefsAfter :: Map.Map TxIn (TxOut ConwayEra)
+    -- ^ The same once the vault run has landed
     }
 
 -- | Run a shape staged externally, then from the vault, over the same chain.
@@ -4194,6 +4612,9 @@ vaultCreateStaging sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> 
                 (\s -> ["--seed", s]) <$> fundSeed2 rig
             else pure []
     let line = createWords sc <> seed
+    tokensBefore <- walletTokens rig
+    refsBefore <- referenceCensus rig
+    submittedBefore <- countSubmitted rig
     (stagedWindow, staged) <-
         windowed (runHidden rig "staged create" line)
     t <- case valueAt "expected" (runReceipt staged) >>= textAt "stateToken" of
@@ -4205,6 +4626,9 @@ vaultCreateStaging sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> 
         windowed $
             withKeyHidden rig $
                 runAt rig vaultRoot "vault create" (line <> vaultArgs vault fd)
+    tokensAfter <- walletTokens rig
+    refsAfter <- referenceCensus rig
+    submitted <- submittedSince rig submittedBefore
     external <- readBundle (stagedBundlePath rig)
     journal <- journalAt (stagedPartition rig vaultRoot t)
     params <-
@@ -4222,18 +4646,29 @@ vaultCreateStaging sc use = withRigOf (blueprintFor (csMode sc)) pure $ \rig -> 
             , vsStagedWindow = stagedWindow
             , vsSignedWindow = signedWindow
             , vsParams = params
+            , vsTokensBefore = tokensBefore
+            , vsTokensAfter = tokensAfter
+            , vsSubmitted = submitted
+            , vsRefsBefore = refsBefore
+            , vsRefsAfter = refsAfter
             }
 
 vaultStagingOver
     :: Rig -> String -> [String] -> (VaultStaging -> IO ()) -> IO ()
 vaultStagingOver rig t line use = do
+    tokensBefore <- walletTokens rig
+    refsBefore <- referenceCensus rig
     (stagedWindow, staged) <- windowed (runHidden rig "staged" line)
+    submittedBefore <- countSubmitted rig
     vault <- rigVault rig "bob"
     fd <- passphraseDescriptor rig "bob" vaultPassphrase
     (signedWindow, signed) <-
         windowed $
             withKeyHidden rig $
                 runAt rig vaultRoot "vault" (line <> vaultArgs vault fd)
+    tokensAfter <- walletTokens rig
+    refsAfter <- referenceCensus rig
+    submitted <- submittedSince rig submittedBefore
     external <- readBundle (stagedBundlePath rig)
     journal <- journalAt (stagedPartition rig vaultRoot t)
     params <-
@@ -4251,6 +4686,11 @@ vaultStagingOver rig t line use = do
             , vsStagedWindow = stagedWindow
             , vsSignedWindow = signedWindow
             , vsParams = params
+            , vsTokensBefore = tokensBefore
+            , vsTokensAfter = tokensAfter
+            , vsSubmitted = submitted
+            , vsRefsBefore = refsBefore
+            , vsRefsAfter = refsAfter
             }
 
 -- | The rows every vault scenario owes, whichever command it runs.
@@ -4293,6 +4733,32 @@ vaultShapeRows shape = do
             map (textAt "how") sent `shouldBe` [Just "sent" | _ <- bodies]
             map (memberEvents (vsJournal vs)) bodies
                 `shouldBe` [["waiting-for-signatures", "landed"] | _ <- bodies]
+    when (needsPreparation shape)
+        $ it
+            "signs the preparation and the command from the one vault: the command spends the made output and collateralises from it alone, and the wallet keeps its tokens"
+        $ \vs -> do
+            (_, bundle, bodies) <- vaultBundleOf vs
+            expectPreparedBundle (vsRig vs) bundle bodies
+            Map.null (vsTokensBefore vs) `shouldBe` False
+            -- a booking and an update move none of them; a fold also
+            -- receives the approval of the request it settles
+            if shapeCommand shape == "fold"
+                then
+                    Map.isSubmapOfBy
+                        (Map.isSubmapOfBy (<=))
+                        (vsTokensBefore vs)
+                        (vsTokensAfter vs)
+                        `shouldBe` True
+                else vsTokensAfter vs `shouldBe` vsTokensBefore vs
+    when (needsPreparation shape)
+        $ it
+            "the vault run submits the bundle's transactions in order, each witnessed by the one wallet alone, and leaves the published references as they were"
+        $ \vs -> do
+            (_, _, bodies) <- vaultBundleOf vs
+            map txIdTx (vsSubmitted vs) `shouldBe` map txIdTx bodies
+            forM_ (vsSubmitted vs) (expectSignedOnlyBy (rigWallet (vsRig vs)))
+            Map.null (vsRefsBefore vs) `shouldBe` False
+            vsRefsAfter vs `shouldBe` vsRefsBefore vs
     it "states open-datum's own fields as fact, none under expected" $
         \vs -> do
             expected <- case valueAt "expected" (runReceipt (vsStaged vs)) of

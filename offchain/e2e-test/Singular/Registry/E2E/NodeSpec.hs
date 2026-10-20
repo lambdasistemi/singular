@@ -88,7 +88,7 @@ import Ouroboros.Network.Protocol.Handshake.Type
     ( HandshakeProtocolError (HandshakeError)
     , RefuseReason (Refused)
     )
-import Singular.CLI.Plan (resolveFunding, retainedFaucetStep)
+import Singular.CLI.Plan (refuseEmptyWallet, retainedFaucetStep)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Session (CommandFailure (..))
 import Singular.Provider.Koios.Wire (txIdHex)
@@ -206,15 +206,14 @@ spec = aroundAll withSource $ do
                 outputs `shouldSatisfy` null
                 result <-
                     try @CommandFailure
-                        (resolveFunding (walletAddr wallet) outputs Nothing)
+                        (refuseEmptyWallet (walletAddr wallet) Nothing outputs)
                 case result of
-                    Right _ -> fail "an empty wallet funded a transaction"
+                    Right () -> fail "an empty wallet passed the empty-wallet check"
                     Left (CommandFailure cls reason fields) -> do
                         cls `shouldBe` ClientRefusal
                         reason `shouldSatisfy` isInfixOf (bech32Address (walletAddr wallet))
-                        -- The retained faucet sentence, kept exactly: the
-                        -- seam's paths end with it; resolveFunding still
-                        -- carries update's hand step until pull request 3.
+                        -- The retained faucet sentence, kept exactly: every
+                        -- command's empty-wallet refusal ends with it.
                         reason `shouldSatisfy` isInfixOf retainedFaucetStep
                         lookup "held" fields `shouldBe` Just (toJSON (0 :: Integer))
                         lookup "wallet" fields

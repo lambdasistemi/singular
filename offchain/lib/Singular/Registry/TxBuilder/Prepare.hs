@@ -92,6 +92,18 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , addrWitnessKeyHash
     )
 
+{- | What these outputs hold of every asset, added per policy and per asset
+name. Two outputs under one policy keep every name of both, and a name two
+outputs share adds up: a plain union of the maps would keep one output's
+names and drop the other's.
+-}
+sumAssets
+    :: [TxOut ConwayEra] -> Map.Map PolicyID (Map.Map AssetName Integer)
+sumAssets outs =
+    Map.unionsWith
+        (Map.unionWith (+))
+        [m | o <- outs, let MaryValue _ (MultiAsset m) = o ^. valueTxOutL]
+
 -- | Why no preparation can be planned: what shortfall the wallet leaves.
 data PrepareError
     = PrepareShortfall
@@ -176,14 +188,7 @@ planPreparation pp payerAddr required wallet = go prefixes Nothing
             )
     -- The ledger minimum for returning everything the wallet holds.
     remainderMinAll =
-        let tokens =
-                foldl'
-                    (<>)
-                    mempty
-                    [ m
-                    | (_, o) <- spendableOuts wallet
-                    , let MaryValue _ (MultiAsset m) = o ^. valueTxOutL
-                    ]
+        let tokens = sumAssets (map snd (spendableOuts wallet))
             Coin c =
                 getMinCoinTxOut
                     pp
@@ -239,11 +244,7 @@ planPreparation pp payerAddr required wallet = go prefixes Nothing
                         , prepRemainderCoin = changeCoin
                         }
             _ -> Left Nothing
-    sumsOver = foldl' addOut (Coin 0, mempty)
-    addOut
-        :: (Coin, Map.Map PolicyID (Map.Map AssetName Integer))
-        -> TxOut ConwayEra
-        -> (Coin, Map.Map PolicyID (Map.Map AssetName Integer))
-    addOut (Coin a, ma) o =
-        let MaryValue (Coin c) (MultiAsset m) = o ^. valueTxOutL
-        in  (Coin (a + c), ma <> m)
+    sumsOver outs =
+        ( Coin (sum [c | o <- outs, let Coin c = o ^. coinTxOutL])
+        , sumAssets outs
+        )
