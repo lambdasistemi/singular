@@ -11,7 +11,7 @@ provider and a network, and nothing else: no wallet, no signing key, no
 state directory and no file of any actor. It selects the registry from
 its token and the release, runs the same public replay @inspect@ reads,
 reads the live request outputs, and prints the page @Singular.Registry.Page@
-renders from those facts: the text, or the JSON with @--json@.
+renders from those facts: indented JSON, with or without @--json@.
 
 Every write setting is refused by the parser before anything is read. The
 version label comes from @version.txt@ beside the blueprint and is refused
@@ -108,7 +108,6 @@ import Singular.Registry.Page
     , parseVersionLabel
     , renderPageJson
     , renderPageRefusal
-    , renderPageText
     )
 import Singular.Registry.SessionIO qualified as Cage
 import Singular.Registry.StateToken (renderStateToken)
@@ -280,7 +279,7 @@ runDescribeCommand app env a = do
             traceWith
                 tracer
                 (Trace [] (What (CommandEnded "describe" (outcomeName Success) ms)))
-            printPage (describeJson a) page
+            printPage page
             pure ExitSuccess
         Left e -> case reportedOf e of
             (marked, failure) -> case fromException failure of
@@ -316,11 +315,9 @@ finishRefusal tracer marked ms outcome why fields = do
     BLC.putStrLn (encodePretty value)
     pure (exitCodeOf outcome)
 
--- | Print the page alone: JSON with @--json@, text otherwise. No file is written.
-printPage :: Bool -> Page -> IO ()
-printPage json page
-    | json = BLC.putStrLn (encodePretty (renderPageJson page))
-    | otherwise = TIO.putStr (renderPageText page)
+-- | Print the page alone, as indented JSON. No file is written.
+printPage :: Page -> IO ()
+printPage = BLC.putStrLn . encodePretty . renderPageJson
 
 -- | Asynchronous cancellation and infrastructure waits propagate, as in finish.
 refusalFailure :: SomeException -> Maybe SomeException

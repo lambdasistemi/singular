@@ -812,8 +812,11 @@ common+=(--state-token "$state_token")
 # The create receipt prints the working describe command; run it as printed,
 # with only the program name resolving to this archive's singular, and print
 # the page text to the journey log. The read leaves the actor's state
-# directory exactly as it was. The page steps run only where the archive
-# layout is present; in test-harness mode without it the journey says so
+# directory exactly as it was. The page the command prints by default is the
+# page `--json` prints: a standard JSON parser must read it and find the same
+# page, and two controls show that check failing: the text layout the page had
+# before it was JSON, and a page whose fields differ. The page steps run only
+# where the archive layout is present; in test-harness mode without it the journey says so
 # once below and runs none of them.
 # require_archive_layout BLUEPRINT MODE: 0 iff version.txt sits beside the
 # blueprint. It never exits: in ordinary mode it names the missing file and
@@ -828,6 +831,13 @@ require_archive_layout() {
     echo "the archive's blueprint has no version.txt beside it" >&2
   fi
   return 1
+}
+# page_json_agrees DEFAULT JSON: a standard JSON parser (jq) reads the page the
+# command prints by default, and finds exactly the page `--json` prints.
+page_json_agrees() {
+  local default_page="$1" json_page="$2"
+  jq -e . "$default_page" >/dev/null || return 1
+  [ "$(jq -S . "$default_page")" = "$(jq -S . "$json_page")" ]
 }
 page_steps_run=0
 if require_archive_layout "$blueprint" "$mode"; then
@@ -853,9 +863,24 @@ if require_archive_layout "$blueprint" "$mode"; then
   [ "$describe_status" -eq 0 ] || fail "the printed describe command failed as JSON after create"
   jq -e '.command == "describe" and .outcome == "success"' "$receipts/describe-after-create.json" >/dev/null \
     || fail "the page after create is no success page"
+  page_json_agrees "$receipts/describe-after-create.txt" "$receipts/describe-after-create.json" \
+    || fail "a JSON parser does not read the default page as the page --json prints"
+  # Control: the text layout before the page was JSON, with a sentence holding a
+  # colon in its provenance line, is not accepted by the parse.
+  printf '%s\n' 'command: describe' 'outcome: success' \
+    'provenance: the page shows the public history: from create to the live state output, and nothing beyond it.' \
+    >"$work/describe-text-layout.txt"
+  if page_json_agrees "$work/describe-text-layout.txt" "$receipts/describe-after-create.json"; then
+    fail "control: the earlier text layout passed the JSON parse check"
+  fi
+  # Control: a parseable page with another value in one field is not accepted.
+  sed 's/\("activeKeys": \)[0-9][0-9]*/\199/' "$receipts/describe-after-create.txt" >"$work/describe-other-field.txt"
+  if page_json_agrees "$work/describe-other-field.txt" "$receipts/describe-after-create.json"; then
+    fail "control: a page with another value in a field passed the JSON parse check"
+  fi
   describe_tree_after="$(cd "$reg" && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
   [ "$describe_tree_after" = "$describe_tree_before" ] || fail "a page read changed the actor's state directory"
-  say "the registry page reads after create from the receipt's command"
+  say "the registry page reads after create from the receipt's command, and a JSON parser reads it as the page --json prints"
 elif [ "$mode" = test-harness ]; then
   say "the page steps belong to the archive journey; skipped in this mode"
 else

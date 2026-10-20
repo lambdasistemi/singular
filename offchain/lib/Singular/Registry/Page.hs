@@ -3,7 +3,7 @@
 
 {- |
 Module      : Singular.Registry.Page
-Description : The registry page: one value from explicit inputs, rendered as text or JSON
+Description : The registry page: one value from explicit inputs, rendered as JSON
 License     : Apache-2.0
 
 The page says which registry this is, which release it runs, what its
@@ -13,8 +13,7 @@ facts. It reads no chain, file, clock, tip or session, so identical
 inputs give identical bytes. Pending requests render in one fixed
 order, by request output reference.
 
-The text and the JSON carry the same facts: every key the JSON carries
-appears as a @name:@ line in the text. The provenance line states what
+The page is printed as JSON, the one rendering. The provenance field states what
 the page does not prove: the facts are state fields read from a replay
 checked from create, the indexer's answers are unverified claims, the
 release label is the archive's own claim, and the page is unsigned.
@@ -33,24 +32,19 @@ module Singular.Registry.Page
     , PageInputs (..)
     , Page
     , describeRegistry
-    , renderPageText
     , renderPageJson
     ) where
 
 import Crypto.Hash (Digest, SHA256, hash)
 import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteArray (convert)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as BL
 import Data.Char (isDigit)
-import Data.Foldable (toList)
 import Data.List qualified as List
-import Data.Maybe (fromMaybe)
-import Data.Scientific (floatingOrInteger)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -255,102 +249,6 @@ renderPageJson (Page inputs links) =
                 ]
         , "provenance" .= provenanceText
         ]
-
--- | The text rendering: every JSON key as a @name:@ line, same facts as the JSON.
-renderPageText :: Page -> Text
-renderPageText (Page inputs links) =
-    T.unlines
-        ( [ "command: describe"
-          , "outcome: success"
-          , "registry:"
-          , "  stateToken: " <> pageStateToken inputs
-          , "  stateOutput: " <> pageStateOutput inputs
-          , "  stateScript: " <> pageStateScript inputs
-          , "  applicationScript: " <> pageApplicationScript inputs
-          , "  activeScript: " <> pageActiveScript inputs
-          , "  absentScript: " <> pageAbsentScript inputs
-          , "  terminalScript: " <> pageTerminalScript inputs
-          , "release:"
-          , "  version: " <> releaseVersion (pageRelease inputs)
-          , "  blueprintTitle: " <> releaseBlueprintTitle (pageRelease inputs)
-          , "  blueprintSha: " <> releaseBlueprintSha (pageRelease inputs)
-          , "  applicationHash: " <> releaseApplicationHash (pageRelease inputs)
-          , "  releaseUrl: " <> linkRelease links
-          , "  docsUrl: " <> linkDocs links
-          , "rules:"
-          , "  processTime: " <> number (pageProcessTime inputs)
-          , "  retractTime: " <> number (pageRetractTime inputs)
-          , "  tip: " <> number (pageTip inputs)
-          , "  maxKeyBytes: " <> T.pack (show (pageMaxKeyBytes inputs))
-          , "  publicFold: " <> publicFoldText
-          , "state:"
-          , "  root: " <> pageRoot inputs
-          , "  activeKeys: " <> T.pack (show (pageActiveKeys inputs))
-          , "  terminalKeys: " <> T.pack (show (pageTerminalKeys inputs))
-          , "  foldsSinceCreate: " <> T.pack (show (pageFoldsSinceCreate inputs))
-          , "  createTransaction: " <> pageCreateTransaction inputs
-          , "  lastFold: " <> fromMaybe "none" (pageLastFold inputs)
-          , "  stateOutput: " <> pageStateOutput inputs
-          ]
-            <> pendingLines (pagePendingRequests inputs)
-            <> ["provenance: " <> provenanceText]
-        )
-
--- | Pending requests as indented @name:@ lines, in the page's fixed order.
-pendingLines :: [Value] -> [Text]
-pendingLines [] = ["  pendingRequests: []"]
-pendingLines entries = "  pendingRequests:" : concatMap entryLines entries
-
--- | One pending request: the fields @inspect@ prints, then what it locks.
-entryLines :: Value -> [Text]
-entryLines entry =
-    [ "  - request: " <> fieldText "request" entry
-    , "    owner: " <> fieldText "owner" entry
-    , "    key: " <> fieldText "key" entry
-    , "    edge: " <> fieldText "edge" entry
-    , "    submittedAt: " <> fieldText "submittedAt" entry
-    , "    locked:"
-    , "      lovelace: " <> fieldText "lovelace" locked
-    , "      assets:" <> if null assets then " []" else ""
-    ]
-        <> concatMap assetLines assets
-  where
-    locked = fromMaybe Aeson.Null (field "locked" entry)
-    assets = case field "assets" locked of
-        Just (Array items) -> toList items
-        _ -> []
-
--- | One locked asset.
-assetLines :: Value -> [Text]
-assetLines asset =
-    [ "      - policy: " <> fieldText "policy" asset
-    , "        name: " <> fieldText "name" asset
-    , "        quantity: " <> fieldText "quantity" asset
-    ]
-
--- | One field of an object, or nothing.
-field :: Text -> Value -> Maybe Value
-field name = \case
-    Object o -> KeyMap.lookup (Key.fromText name) o
-    _ -> Nothing
-
--- | One field as text, or null when it has none.
-fieldText :: Text -> Value -> Text
-fieldText name entry = maybe "null" scalar (field name entry)
-
--- | One JSON value as text: strings bare, whole numbers plain, the rest compact.
-scalar :: Value -> Text
-scalar = \case
-    String t -> t
-    Number n -> case floatingOrInteger n :: Either Double Integer of
-        Right i -> T.pack (show i)
-        Left _ -> T.pack (show n)
-    Bool b -> if b then "true" else "false"
-    Null -> "null"
-    v -> TE.decodeUtf8 (BL.toStrict (Aeson.encode v))
-
-number :: Integer -> Text
-number = T.pack . show
 
 -- | Anyone may build a fold from the public view.
 publicFoldText :: Text

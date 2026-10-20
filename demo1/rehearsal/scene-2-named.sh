@@ -52,5 +52,5 @@ play -p 16 $'On chain: alice is active. Its token is held in this application ou
 play -t -p 3 "She reads the registry's page with the command the create receipt printed: a read of the chain." \
   'eval "$(jq -r .describeCommand create.json)" > page.txt'
 play -p 18 $'The registry\'s state on chain: one active key (alice), one fold since create, nothing pending.' \
-  'section state < page.txt | short'
+  'jq .state page.txt | short'
 finish

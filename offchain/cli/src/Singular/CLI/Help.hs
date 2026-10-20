@@ -283,6 +283,9 @@ describeLeaf =
                 , "The version label comes from the version file beside the \
                   \blueprint; it is refused by name when missing, unreadable or \
                   \malformed."
+                , "The page is printed as indented JSON, which a JSON parser \
+                  \reads. --json is accepted and changes nothing: the page is \
+                  \JSON either way."
                 ]
             , leafShape =
                 Each
@@ -299,7 +302,7 @@ describeLeaf =
                 , "    --state-token <policy>.<name> " <> preprodExample
                 ]
             , leafNotes =
-                "Prints the page alone, as text or with --json as JSON, and writes no file."
+                "Prints the page alone, as indented JSON with or without --json, and writes no file."
                     : drop 1 exitStatuses
             }
 
@@ -459,7 +462,10 @@ reclaimRequest =
     valued "--request" "TXID#IX" "The pending request to take back."
 
 json :: Flag
-json = switch' "--json" "Print the page as JSON for a program to read."
+json =
+    switch'
+        "--json"
+        "Accepted and changes nothing: the page is printed as indented JSON either way."
 
 vaultToCreate :: Flag
 vaultToCreate =

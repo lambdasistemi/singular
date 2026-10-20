@@ -89,9 +89,6 @@ comment_lines() {
   done <<<"$1"
 }
 
-# section NAME...: from a page on standard input, only the named top-level sections
-section() { awk -v want="$*" 'BEGIN { n = split(want, a, " "); for (i = 1; i <= n; i++) w[a[i] ":"] = 1 } /^[A-Za-z]+:/ { on = ($1 in w) } on'; }
-
 # play [-t|-f] [-p SECONDS] COMMENT COMMAND
 #   -t  one of the tool's commands that must succeed (counts in n/N; a non-zero exit aborts the tour)
 #   -f  one of the tool's commands that must be REFUSED (counts in n/N; exit 0 aborts the tour: no fabricated refusal)
