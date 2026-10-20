@@ -360,7 +360,25 @@ settings = describe "settings" $ do
             `shouldBe` Left
                 ( UnsafeSettings
                     ( "partially configured write: missing --koios-url"
-                        <> "; a write needs --koios-url, --network-magic and --wallet-skey"
+                        <> "; a write needs --koios-url, --network-magic and a signer: "
+                        <> "--vault FILE, or --wallet-address ADDR with --bundle FILE, "
+                        <> "or --wallet-skey FILE (legacy)"
+                    )
+                )
+    it
+        "names the signer forms, the vault first, for a write with none"
+        $ parseFlagGroup
+            MissingFlag
+            BadValue
+            UnsafeSettings
+            WriteSettings
+            validProviderFlags
+            `shouldBe` Left
+                ( UnsafeSettings
+                    ( "partially configured write: no signer"
+                        <> "; a write needs --koios-url, --network-magic and a signer: "
+                        <> "--vault FILE, or --wallet-address ADDR with --bundle FILE, "
+                        <> "or --wallet-skey FILE (legacy)"
                     )
                 )
     it "refuses a non-numeric magic as unsafe" $

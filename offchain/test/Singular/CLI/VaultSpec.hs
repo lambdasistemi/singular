@@ -35,10 +35,14 @@ import Data.ByteString.Char8 qualified as BC
 import Data.List (isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Word (Word32, Word8)
+import System.Exit (ExitCode (..))
 import System.IO
     ( BufferMode (NoBuffering)
     , Handle
     , hClose
+    , hFlush
+    , hGetLine
+    , hPutStr
     , hSetBuffering
     )
 import System.IO.Temp (withSystemTempDirectory)
@@ -52,7 +56,9 @@ import System.Posix.Files
 import System.Posix.IO
     ( OpenMode (ReadOnly)
     , closeFd
+    , createPipe
     , defaultFileFlags
+    , dup
     , fdToHandle
     , openFd
     )
@@ -66,6 +72,7 @@ import System.Posix.Terminal
     , withMode
     )
 import System.Posix.Types (Fd (..))
+import System.Timeout (timeout)
 import Test.Hspec
 
 import Cardano.Crypto.DSIGN
@@ -83,6 +90,7 @@ import Singular.CLI.Command
     , WalletArgs (..)
     , WriteSettings (..)
     , parseCommand
+    , walletCreateCommand
     )
 import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Passphrase
@@ -103,6 +111,7 @@ spec = describe "wallet vault" $ do
     theEnvelope
     aFreshKey
     exclusiveCreation
+    refusalOrder
     passphraseIntake
     promptOrdering
     walletVerbs
@@ -340,6 +349,43 @@ aFreshKey = describe "a fresh key" $ do
             `shouldSatisfy` either
                 (const False)
                 ((== rawSerialiseSignKeyDSIGN key) . rawSerialiseSignKeyDSIGN)
+
+-- * The order of the refusals
+
+refusalOrder :: Spec
+refusalOrder = describe "wallet create" $ do
+    it "sees a taken path, a symbolic link included, and a free one" $
+        withSystemTempDirectory "vault-taken" $ \dir -> do
+            let path = dir <> "/alice.vault"
+                link = dir <> "/link.vault"
+                dangling = dir <> "/dangling.vault"
+            vaultPathTaken path `shouldReturn` False
+            BS.writeFile path (BC.pack "the wallet that lives here already")
+            vaultPathTaken path `shouldReturn` True
+            createSymbolicLink "alice.vault" link
+            vaultPathTaken link `shouldReturn` True
+            createSymbolicLink "nowhere" dangling
+            vaultPathTaken dangling `shouldReturn` True
+    it "refuses an existing vault before it reads the passphrase" $
+        withSystemTempDirectory "vault-order" $ \dir -> do
+            let path = dir <> "/alice.vault"
+                original = BC.pack "the wallet that lives here already"
+            BS.writeFile path original
+            (readEnd, writeEnd) <- createPipe
+            kept <- dup readEnd
+            writer <- fdToHandle writeEnd
+            hPutStr writer "secret\nsecret\n"
+            hFlush writer
+            let Fd descriptor = readEnd
+            walletCreateCommand
+                (WalletArgs path 1 (Just (fromIntegral descriptor)))
+                `shouldReturn` ExitFailure 1
+            BS.readFile path `shouldReturn` original
+            -- the passphrase is still in the pipe: nothing asked for it
+            reader <- fdToHandle kept
+            timeout 2000000 (hGetLine reader) `shouldReturn` Just "secret"
+            hClose writer
+            hClose reader
 
 -- * Exclusive creation
 

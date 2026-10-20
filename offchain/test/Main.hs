@@ -8,6 +8,7 @@ import Singular.CLI.BookingRefusalSpec qualified
 import Singular.CLI.CommandRunSpec qualified
 import Singular.CLI.CreateFundingSpec qualified
 import Singular.CLI.DescribeSpec qualified
+import Singular.CLI.FailureSentenceSpec qualified
 import Singular.CLI.FlagGroupSpec qualified
 import Singular.CLI.FoldRulesSpec qualified
 import Singular.CLI.HelpSnapshotSpec qualified
@@ -223,6 +224,9 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.Prepare" [Cli, Builders])
         Singular.CLI.PrepareSpec.spec
+    describe
+        (tagged "Singular.CLI.FailureSentence" [Cli])
+        Singular.CLI.FailureSentenceSpec.spec
     describe
         (tagged "Singular.CLI.FlagGroup" [Cli])
         Singular.CLI.FlagGroupSpec.spec

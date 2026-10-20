@@ -418,17 +418,13 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
                 ( unsafe
                     ( "partially configured write: missing "
                         <> name
-                        <> "; a write needs --koios-url, --network-magic and "
-                        <> (if staged then "a signer" else "--wallet-skey")
+                        <> "; "
+                        <> writeNeeds
                     )
                 )
     when (not staged && isNothing keyNamed) $
         Left
-            ( unsafe
-                ( "partially configured write: missing --wallet-skey"
-                    <> "; a write needs --koios-url, --network-magic and --wallet-skey"
-                )
-            )
+            (unsafe ("partially configured write: no signer; " <> writeNeeds))
     settings <- case readProvider flags of
         Left (ProviderBad "--network-magic" _) ->
             Left
@@ -454,7 +450,9 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
                 Just spelling -> case readMaybe spelling of
                     Just n | n >= 0 -> Right (Just n)
                     _ -> Left (bad "--passphrase-fd" "not a descriptor number")
-        _ -> Left (missing "--wallet-skey")
+        _ ->
+            Left
+                (unsafe ("partially configured write: no signer; " <> writeNeeds))
     confirmationTimeout <- case flagValue "--confirm-timeout" flags of
         Nothing -> Right Nothing
         Just value -> case readMaybe value of
@@ -462,3 +460,12 @@ parseFlagGroup missing bad unsafe mkWrite flags = do
             _ ->
                 Left (bad "--confirm-timeout" "is not a whole number of seconds")
     pure (mkWrite settings signer confirmationTimeout)
+
+{- | What a write needs, said the same way whichever part is missing: the node
+and a signer, the vault first and the key file, which is legacy, last.
+-}
+writeNeeds :: String
+writeNeeds =
+    "a write needs --koios-url, --network-magic and a signer: \
+    \--vault FILE, or --wallet-address ADDR with --bundle FILE, \
+    \or --wallet-skey FILE (legacy)"

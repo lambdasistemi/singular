@@ -264,6 +264,7 @@ offchain/cli/src/Singular/CLI/Options.hs readLine unsafePerformIO 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader modifyIORef' 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader newIORef 1
 offchain/cli/src/Singular/CLI/Reconcile.hs liveReader readIORef 1
+offchain/cli/src/Singular/CLI/Root.hs containFailure async 2
 offchain/cli/src/Singular/CLI/Session.hs <decl> IORef 7
 offchain/cli/src/Singular/CLI/Session.hs endFromVault readIORef 1
 offchain/cli/src/Singular/CLI/Session.hs endStagedRun readIORef 3
@@ -505,6 +506,7 @@ offchain/test/Singular/CLI/SubmitSpec.hs theRerun writeIORef 2
 offchain/test/Singular/CLI/SubmitSpec.hs theSends readIORef 3
 offchain/test/Singular/CLI/SubmitSpec.hs withRig newIORef 5
 offchain/test/Singular/CLI/VaultSpec.hs exclusiveCreation link 5
+offchain/test/Singular/CLI/VaultSpec.hs refusalOrder link 3
 offchain/test/Singular/Provider/Koios/FakeServer.hs app IORef 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs app atomicModifyIORef' 1
 offchain/test/Singular/Provider/Koios/FakeServer.hs withFakeKoios newIORef 1
