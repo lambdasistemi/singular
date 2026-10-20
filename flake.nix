@@ -32,6 +32,12 @@
     # locked revisions.
     open-datum.url = "path:./?dir=applications/open-datum/offchain";
     nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
+    # #707: the organisation's binary distribution helpers (AppImage, DEB, RPM,
+    # Homebrew; the distribute-binaries standard) and the NixOS bundlers they drive.
+    dev-assets = {
+      url = "github:paolino/dev-assets/6f017970a83f8da90e2cff0a391e71f6e8a85d15";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # The Lean compiler the model builds with. It is the version root
     # `lean-toolchain` names (Lean 4.27.0), pinned to the nixpkgs commit that
     # packages it ("lean4: 4.26 -> 4.27"), so the compiler moves with this line
@@ -45,6 +51,7 @@
       nixpkgs-lean,
       dev-assets-mkdocs,
       dev-assets-playwright,
+      dev-assets,
       offchain,
       conformance,
       onchain,
@@ -312,14 +319,126 @@
           cardanoNode = offchain.packages.${system}.cardano-node;
           devnetGenesis = ./offchain/e2e-test/genesis;
         };
+      # #707: the releases at the organisation's binary distribution standard,
+      # through the dev-assets helpers: AppImage, DEB and RPM for Linux, a
+      # Homebrew formula for macOS. Release outputs carry the release number;
+      # the dev channels add this flake's short revision.
+      releaseVersion = nixpkgs.lib.removeSuffix "\n" (builtins.readFile ./version.txt);
+      devArtifactVersion = "${releaseVersion}-${self.shortRev or (self.dirtyShortRev or "dirty")}";
+      productCommands = [
+        "singular"
+        "open-datum"
+        "devnet"
+      ];
+      # devnet for the Linux packages: the launcher with the locked cardano-node
+      # on its path and the genesis files the Nix journeys name, answering
+      # --version and --help itself as the release bundle's launcher does
+      # (any other argument starts a node).
+      devnetCommand =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.writeShellScriptBin "devnet" ''
+          case "''${1-}" in
+            --version)
+              printf '%s\n' 'devnet ${releaseVersion} (commit ${rootCommit})'
+              exit 0
+              ;;
+            --help | -h)
+              printf '%s\n' 'devnet ${releaseVersion} (commit ${rootCommit})' \
+                'Starts a private Cardano development node and prints its settings as one JSON line.' \
+                'Funding: --fund-address ADDRESS:N:LOVELACE (see the Demo 1 development node page).'
+              exit 0
+              ;;
+          esac
+          export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+          export PATH="${offchain.packages.${system}.cardano-node}/bin''${PATH:+:$PATH}"
+          exec ${offchain.packages.${system}.devnet-unwrapped}/bin/devnet "$@"
+        '';
+      # the one product the Linux packages carry: its three commands
+      linuxProduct =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.symlinkJoin {
+          name = "singular-${releaseVersion}";
+          paths = [
+            (stampedSingular system)
+            (stampedOpenDatum system)
+            (devnetCommand system)
+          ];
+          meta.mainProgram = "singular";
+        };
+      # an AppImage per command, one DEB and one RPM with every command on the path
+      linuxArtifacts =
+        system: artifactVersion:
+        dev-assets.lib.mkLinuxArtifacts {
+          pkgs = import nixpkgs { inherit system; };
+          inherit system artifactVersion;
+          inherit (dev-assets.inputs) bundlers;
+          executableName = "singular";
+          commands = productCommands;
+          # each AppImage carries its own command only; the DEB and RPM all three
+          commandPackages = {
+            singular = stampedSingular system;
+            open-datum = stampedOpenDatum system;
+            devnet = devnetCommand system;
+          };
+          version = releaseVersion;
+          glibcPackage = linuxProduct system;
+        };
+      # the Homebrew formula of the macOS release bundle, which it ships as it is
+      darwinArtifacts =
+        system: extra:
+        dev-assets.lib.mkDarwinHomebrewBundle { pkgs = import nixpkgs { inherit system; }; } (
+          {
+            pname = "singular";
+            version = releaseVersion;
+            owner = "lambdasistemi";
+            repo = "singular";
+            desc = "Registry of unique keys on Cardano: singular, open-datum and a private development node";
+            homepage = "https://lambdasistemi.github.io/singular/";
+            formulaClass = "Singular";
+            executableNames = productCommands;
+            bundleTarball = "${releaseBundle system}/singular-${releaseVersion}-${system}.tar.gz";
+            smokeCommands = map (command: "${command} --version") productCommands;
+            formulaTest = nixpkgs.lib.concatMapStringsSep "\n" (line: "    ${line}") [
+              "%w[singular open-datum devnet].each do |program|"
+              "  assert_match \"#{program} ${releaseVersion} (commit \", shell_output(\"#{bin}/#{program} --version\")"
+              "end"
+              "assert_match \"cardano-node\", shell_output(\"#{libexec}/bin/cardano-node --version\")"
+            ];
+          }
+          // extra
+        );
       # What this flake offers on each platform that ships a bundle: the two
       # programs, stamped with this flake's revision (`nix run .#singular --
       # --version`), and the release bundle that carries both.
-      bundles = nixpkgs.lib.genAttrs bundleSystems (system: {
-        singular = stampedSingular system;
-        open-datum = stampedOpenDatum system;
-        release-bundle = releaseBundle system;
-      });
+      bundles = nixpkgs.lib.genAttrs bundleSystems (
+        system:
+        {
+          singular = stampedSingular system;
+          open-datum = stampedOpenDatum system;
+          release-bundle = releaseBundle system;
+        }
+        // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          linux-release-artifacts = linuxArtifacts system releaseVersion;
+          linux-dev-release-artifacts = linuxArtifacts system devArtifactVersion;
+        }
+        // nixpkgs.lib.optionalAttrs (system == "aarch64-darwin") {
+          darwin-release-artifacts = darwinArtifacts system { };
+          darwin-dev-homebrew-artifacts = darwinArtifacts system {
+            artifactVersion = devArtifactVersion;
+            releaseTag = "dev-homebrew";
+            formulaName = "singular-dev";
+            formulaClass = "SingularDev";
+            formulaVersion = devArtifactVersion;
+            formulaExtraLines = "\n  conflicts_with \"singular\", because: \"both install the same commands\"";
+          };
+        }
+      );
       bundleApps = nixpkgs.lib.genAttrs bundleSystems (
         system:
         let
@@ -433,6 +552,24 @@
                     ${./tools/verify_release_bundles.sh} ${./tools/release_bundles.sh} \
                     ${./tools/release_bundle_smoke.sh} ${./tools/release_bundle_smoke_controls.sh} "$@"
                 '';
+              }
+            );
+          };
+        }
+        // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          # #707: the distribution standard's smoke of the Linux packages: each
+          # extracted, each command run with --version. The dev-assets
+          # linux-release action runs it as `nix run .#linux-artifact-smoke`.
+          linux-artifact-smoke = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              dev-assets.lib.mkLinuxArtifactSmoke {
+                inherit pkgs system;
+                artifacts = [
+                  "appimage"
+                  "deb"
+                  "rpm"
+                ];
               }
             );
           };

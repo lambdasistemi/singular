@@ -1,11 +1,16 @@
 name: Release bundles
-# The relocatable singular, open-datum and development node bundles of every
-# platform (#695, #707), built from the flake's release-bundle output and
-# smoke-tested on their own platform from the extracted tarball. The Linux
-# bundle also runs the Demo 1 journey. Nothing here publishes: pull requests
-# that touch the release workflows or the Nix packaging and every push to main
-# build and test the bundles; the tag run of the release workflow calls this
-# one and publishes what it uploaded.
+# The release artifacts of every platform (#695, #707), at the organisation's
+# binary distribution standard (the dev-assets helpers and actions): the
+# relocatable bundles of singular, open-datum and the development node, built
+# from the flake's release-bundle output and smoke-tested on their own platform
+# from the extracted tarball; for Linux an AppImage per command and one DEB and
+# one RPM with every command, smoke-tested extracted and installed on machines
+# without Nix; for macOS the Homebrew formula, installed from a local tap on a
+# pull request. The Linux bundle also plays the Demo 1 journey. Nothing here
+# publishes on a pull request, a push to main or the tag run that calls this
+# one (the release workflow publishes what it uploaded); a manual run with
+# dev_channels publishes the dev channels (dev-linux assets, the singular-dev
+# formula).
 on:
   pull_request:
     branches: [main]
@@ -14,6 +19,12 @@ on:
     branches: [main]
   workflow_call:
   workflow_dispatch:
+    inputs:
+      dev_channels:
+        description: "Publish the dev channels: the dev-linux release assets and the singular-dev formula"
+        type: choice
+        options: ["no", "yes"]
+        default: "no"
 permissions:
   contents: read
 concurrency:
@@ -66,6 +77,8 @@ jobs:
             runner: macos-14
     env:
       SYSTEM: ${{ matrix.system }}
+      # a tag run builds and checks the release outputs; every other run the dev ones
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
     steps:
       - name: Isolate Nix cache
         if: runner.os == 'Linux'
@@ -116,6 +129,52 @@ jobs:
           # published release's bundles pass, with the tools they need carried
           # by the app, not read from the runner
           nix run --quiet .#release-bundle-checks -- "$tarball" "$version" "$commit"
+      # #707: the Linux packages of the distribution standard: an AppImage per
+      # command, one DEB and one RPM with every command, each smoke-tested from
+      # its extracted form with --version, kept as a workflow artifact for the
+      # install test below. A manual run publishes nothing here (see dev-channels).
+      - name: Linux packages
+        if: runner.os == 'Linux' && github.event_name != 'workflow_dispatch'
+        uses: paolino/dev-assets/linux-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        with:
+          mode: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'dev-linux' }}
+          tag: ${{ env.RELEASE_TAG }}
+          publish: "no"
+          release-output: linux-release-artifacts
+          dev-output: linux-dev-release-artifacts
+          executable-name: singular
+          commands: singular,open-datum,devnet
+          smoke-args: --version
+          usage-grep: "(commit "
+          dev-tag: dev-linux
+          release-version-command: cat version.txt
+          retention-days: "7"
+      # #707: the Homebrew formula of the distribution standard, built from this
+      # macOS bundle, the tarball smoked unpacked and, on a pull request,
+      # installed through a local tap pointing at it and tested with brew test.
+      - name: Homebrew formula
+        if: runner.os == 'macOS' && github.event_name != 'workflow_dispatch'
+        uses: paolino/dev-assets/darwin-homebrew-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        with:
+          mode: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'dev-homebrew' }}
+          tag: ${{ env.RELEASE_TAG }}
+          publish: "no"
+          release-formula: singular.rb
+          dev-formula: singular-dev.rb
+          tarball-pattern: "singular-*-aarch64-darwin.tar.gz"
+          installed-commands: singular open-datum devnet
+          cleanup-formulae: singular singular-dev
+          tap-name: lambdasistemi/tap
+          tap-repository: lambdasistemi/homebrew-tap
+          tarball-smoke-script: |
+            singular --version
+            open-datum --version
+            devnet --version
+          brew-smoke-script: |
+            singular --version
+            open-datum --version
+            devnet --version
+          retention-days: "7"
       - name: Keep the bundle
         uses: actions/upload-artifact@v7
         with:
@@ -123,6 +182,45 @@ jobs:
           path: dist/*.tar.gz
           if-no-files-found: error
           retention-days: 7
+  # #707: the Linux packages as a user meets them: the DEB installed on Ubuntu,
+  # the RPM on Fedora and each AppImage run, on machines without Nix, every
+  # command run from where the package put it.
+  install:
+    needs: [changes, bundle]
+    if: needs.changes.outputs.bundles == 'true' && github.event_name != 'workflow_dispatch'
+    name: Linux packages installed on machines without Nix
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Name the packages this run built
+        id: names
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+        run: |
+          version="$(cat version.txt)"
+          if [ -n "$RELEASE_TAG" ]; then
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "artifact=linux-release-bundles-singular" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$version-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+            echo "artifact=linux-dev-release-bundles-singular" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download the Linux packages
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ steps.names.outputs.artifact }}
+          path: ${{ runner.temp }}/packages
+      - name: Install and run every package
+        uses: paolino/dev-assets/linux-install-test@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        with:
+          artifacts-dir: ${{ runner.temp }}/packages
+          artifact-version: ${{ steps.names.outputs.version }}
+          executable-name: singular
+          commands: singular,open-datum,devnet
+          smoke-args: --version
+          usage-grep: "(commit "
   # #707: Demo 1 played from the unpacked Linux bundle alone. Nix builds the
   # bundle and the registry blueprint beforehand; the journey then runs the
   # bundle's `singular`, `open-datum` and development node on a PATH that holds
@@ -148,9 +246,94 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Play Demo 1 from the unpacked bundle
         run: nix run --quiet .#demo1-bundle-journey
+  # #707: the dev channels, on a manual run that asks for them: the dev-linux
+  # release assets, downloaded back and smoked, and the singular-dev formula in
+  # the tap, installed from it and tested, by the shared actions.
+  dev-channels:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' && inputs.dev_channels == 'yes'
+    name: Dev channels (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 240
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: nixos
+          - system: aarch64-darwin
+            runner: macos-14
+    steps:
+      - name: Isolate Nix cache
+        if: runner.os == 'Linux'
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-dev"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - name: Free runner disk
+        if: runner.os == 'macOS'
+        run: sudo rm -rf /Library/Developer/CoreSimulator /Users/runner/Library/Android 2>/dev/null || true
+      - uses: actions/checkout@v6
+      - uses: cachix/cachix-action@v17
+        if: runner.os == 'Linux'
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - uses: paolino/dev-assets/setup-nix@a9d7371c1118de4026ba6ee3a9c3b54614924b82
+        if: runner.os == 'macOS'
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Publish the dev-linux assets
+        if: runner.os == 'Linux'
+        uses: paolino/dev-assets/linux-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        with:
+          mode: dev-linux
+          release-output: linux-release-artifacts
+          dev-output: linux-dev-release-artifacts
+          executable-name: singular
+          commands: singular,open-datum,devnet
+          smoke-args: --version
+          usage-grep: "(commit "
+          dev-tag: dev-linux
+          dev-release-title: singular dev Linux packages
+          release-version-command: cat version.txt
+          github-token: ${{ github.token }}
+      - name: Mint a token for the Homebrew tap alone
+        if: runner.os == 'macOS'
+        id: tap-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          owner: lambdasistemi
+          repositories: homebrew-tap
+          permission-contents: write
+      - name: Publish the singular-dev formula
+        if: runner.os == 'macOS'
+        uses: paolino/dev-assets/darwin-homebrew-release@6f017970a83f8da90e2cff0a391e71f6e8a85d15
+        with:
+          mode: dev-homebrew
+          update-tap: "yes"
+          dev-tag: dev-homebrew
+          release-formula: singular.rb
+          dev-formula: singular-dev.rb
+          tarball-pattern: "singular-*-aarch64-darwin.tar.gz"
+          installed-commands: singular open-datum devnet
+          cleanup-formulae: singular singular-dev
+          tap-name: lambdasistemi/tap
+          tap-repository: lambdasistemi/homebrew-tap
+          dev-release-title: singular dev Homebrew
+          brew-smoke-script: |
+            singular --version
+            open-datum --version
+            devnet --version
+          github-token: ${{ github.token }}
+          tap-token: ${{ steps.tap-token.outputs.token }}
   bundles:
     name: Release bundles
-    needs: [changes, bundle, journey]
+    needs: [changes, bundle, journey, install]
     if: always()
     runs-on: ubuntu-24.04
     steps:
@@ -159,19 +342,26 @@ jobs:
           SCOPE: ${{ needs.changes.result }}
           BUNDLES: ${{ needs.bundle.result }}
           JOURNEY: ${{ needs.journey.result }}
+          INSTALL: ${{ needs.install.result }}
+          EVENT: ${{ github.event_name }}
         run: |
-          echo "scope=$SCOPE bundles=$BUNDLES journey=$JOURNEY"
+          echo "scope=$SCOPE bundles=$BUNDLES journey=$JOURNEY install=$INSTALL event=$EVENT"
           [ "$SCOPE" = success ] || { echo "the scope decision did not succeed"; exit 1; }
-          for result in "$BUNDLES" "$JOURNEY"; do
+          for result in "$BUNDLES" "$JOURNEY" "$INSTALL"; do
             case "$result" in
               success | skipped) ;;
               *) echo "a bundle check did not pass: $result"; exit 1 ;;
             esac
           done
-          # the two are both run or both skipped, never mixed
+          # the bundles and the journey are both run or both skipped; the install
+          # test runs with them, except on a manual run, which builds no packages
           [ "$BUNDLES" = "$JOURNEY" ] \
             || { echo "the bundle checks disagree: $BUNDLES $JOURNEY"; exit 1; }
+          if [ "$EVENT" != workflow_dispatch ]; then
+            [ "$BUNDLES" = "$INSTALL" ] \
+              || { echo "the install test disagrees: $BUNDLES $INSTALL"; exit 1; }
+          fi
           case "$BUNDLES" in
-            success) echo "every bundle was built and tested and the journey played" ;;
+            success) echo "every bundle and package was built and tested, the journey played" ;;
             skipped) echo "no release or packaging file changed" ;;
           esac
