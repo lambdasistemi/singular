@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.14.0](https://github.com/lambdasistemi/singular/compare/v0.13.1...v0.14.0) (2026-10-20)
+
+
+### Features
+
+* every way to install carries the deployment blueprint ([df44758](https://github.com/lambdasistemi/singular/commit/df44758edcc356b457165bcd1d5cea96d24a7714))
+* Linux packages and a Homebrew formula at the distribution standard ([6748dc0](https://github.com/lambdasistemi/singular/commit/6748dc02c0950c16cbad76bc1199b76899de7457))
+* registry describe prints the page as indented JSON by default ([9180a17](https://github.com/lambdasistemi/singular/commit/9180a17d60d6ba71c9bdc6cf7b6c5c07ce0c4ec7))
+* registry describe prints the page as indented JSON by default ([8a111df](https://github.com/lambdasistemi/singular/commit/8a111df3bba8394b862a5faa5e335b3793c7154b))
+* the release bundles carry the development node ([4852746](https://github.com/lambdasistemi/singular/commit/48527460dbc92fff53d0774e8e55d392d848352d))
+* the release carries the development node, Linux packages and a Homebrew formula ([8331331](https://github.com/lambdasistemi/singular/commit/8331331a7309c879d0873c7155538f89715a5bab))
+* the token file, the tracing and the vault from the environment and singular.json ([3dc000c](https://github.com/lambdasistemi/singular/commit/3dc000cfbf69337633b7fcb0c846f8b1b11e24e1))
+* the token file, the tracing and the vault from the environment and singular.json ([4943209](https://github.com/lambdasistemi/singular/commit/4943209b03a1b9803a41e84620d3f207f24480ba))
+* the vault passphrase from SINGULAR_PASSPHRASE on a development network ([672edae](https://github.com/lambdasistemi/singular/commit/672edaee7a9919ff33917bfc0b52722271e52138))
+* the vault passphrase from SINGULAR_PASSPHRASE on a development network ([7078dad](https://github.com/lambdasistemi/singular/commit/7078dad3fb6abbdc7529b7d1a622014244023a9e))
+* update funds from the wallet or prepares the output it needs ([d9beac6](https://github.com/lambdasistemi/singular/commit/d9beac6bd52c6e4f208d15c484d4d36402d2e2dd))
+
+
+### Fixes
+
+* messages for the signer, the vault and failures nobody reported ([a24baeb](https://github.com/lambdasistemi/singular/commit/a24baeb5301781a98033b9cbf064f795b18fc74c))
+* messages for the signer, the vault and failures nobody reported ([d2125f5](https://github.com/lambdasistemi/singular/commit/d2125f526e6a035878d045b9670d473bde13910d))
+* the preparation planner adds the quantities of outputs that share a policy ([3c82340](https://github.com/lambdasistemi/singular/commit/3c823402d407293db37a03588130984ee0fe2762))
+* the release workflow grants the bundles call what its dev-channels job asks ([0157696](https://github.com/lambdasistemi/singular/commit/0157696be62ff51fd61124807f4e9b572eba6419))
+* the release workflow grants the bundles call what its dev-channels job asks ([d4ceff1](https://github.com/lambdasistemi/singular/commit/d4ceff1ea09d0859b9db637135077ef42660683e))
+
+
+### Documentation
+
+* Demo 1 has one definition, in singular-demo ([ef48fb9](https://github.com/lambdasistemi/singular/commit/ef48fb9b816985477f7949304f1d0382373a736c))
+* Demo 1 has one definition, in singular-demo, and the release archive carries no copy ([341a8d5](https://github.com/lambdasistemi/singular/commit/341a8d507128a4b0018ecf988dc4540177fc1e14))
+* Demo 1 on the site is one page that links singular-demo ([e6708aa](https://github.com/lambdasistemi/singular/commit/e6708aafd1f5ee4ea671fe23369c57e244fe4094))
+* install without Nix from the Homebrew formula, the Linux packages or the tarballs ([f1e0982](https://github.com/lambdasistemi/singular/commit/f1e0982bae5c455dd4572c246c42ff30712573fa))
+* let the link check pass a link to the singular-demo site ([88ae187](https://github.com/lambdasistemi/singular/commit/88ae1876fe7e906343c7e5b0cf0ea6664be5ddce))
+* replace the Demo 1 tutorial pages with one page that links singular-demo ([291cca3](https://github.com/lambdasistemi/singular/commit/291cca3d14ea032cb34e6e1af426f95f04326ad4))
+* the narration of the node page ([1c253a2](https://github.com/lambdasistemi/singular/commit/1c253a249986c72aa0cd711a3c20e22b003f1dff))
+* the node page says insert, terminate and update prepare the funding output they need ([99362ea](https://github.com/lambdasistemi/singular/commit/99362ea7db03e9f6cc3652b38d8c6703a214bf72))
+* the passphrase from the environment on a development network ([4de1c5c](https://github.com/lambdasistemi/singular/commit/4de1c5c74064725251fdf61b9f52a7f379fc8aa6))
+* the registry page prints as indented JSON ([828a24e](https://github.com/lambdasistemi/singular/commit/828a24e5c3fccd6015da03525c998dd12ee44f6e))
+* the signer forms, the vault refusals and one-line failures ([c536a84](https://github.com/lambdasistemi/singular/commit/c536a840cf968f1e9e3a8b7fd9b6873bf131196f))
+* the token file, the tracing and the vault from the environment and singular.json ([73fbb87](https://github.com/lambdasistemi/singular/commit/73fbb872397bd750a662dd082a46f042b5144c88))
+
 ## [0.13.1](https://github.com/lambdasistemi/singular/compare/v0.13.0...v0.13.1) (2026-10-20)
 
 
