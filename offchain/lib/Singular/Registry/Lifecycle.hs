@@ -103,6 +103,7 @@ import Singular.Registry.TxBuilder.Internal.Identity
     )
 import Singular.Registry.TxBuilder.Internal.Lookup
     ( computeScriptIntegrity
+    , totalWithinLimit
     )
 import Singular.Registry.TxBuilder.Request (requestLockedAda)
 import Singular.Registry.Types (Edge)
@@ -326,22 +327,20 @@ fundingTx fundingWallet v outs = do
         (balanceTx pp inputs [] address draft)
 
 checkExecutionLimit :: ExUnits -> [ExUnits] -> Either String ExUnits
-checkExecutionLimit (ExUnits maxMem maxSteps) costs =
-    let total@(ExUnits mem steps) = foldl add (ExUnits 0 0) costs
-        add (ExUnits a b) (ExUnits c d) = ExUnits (a + c) (b + d)
-    in  if mem <= maxMem && steps <= maxSteps
-            then Right total
-            else
-                Left
-                    ( "lifecycle execution limit: requires memory="
-                        <> show mem
-                        <> ", steps="
-                        <> show steps
-                        <> "; live transaction limit memory="
-                        <> show maxMem
-                        <> ", steps="
-                        <> show maxSteps
-                    )
+checkExecutionLimit limit@(ExUnits maxMem maxSteps) costs =
+    case totalWithinLimit limit costs of
+        Right total -> Right total
+        Left (ExUnits mem steps) ->
+            Left
+                ( "lifecycle execution limit: requires memory="
+                    <> show mem
+                    <> ", steps="
+                    <> show steps
+                    <> "; live transaction limit memory="
+                    <> show maxMem
+                    <> ", steps="
+                    <> show maxSteps
+                )
 
 {- | Evaluate before signing, replace every declared budget with the node's
 measured cost, and charge the actual fee from the final change output only.

@@ -359,12 +359,15 @@ worldTrie = do
         getRoot trie
     pure (manager, root)
 
+-- The state output holds the lovelace its ledger minimum asks of an output with
+-- its token and its datum (above 2_004_150 here); the earlier 2_000_000 fell
+-- short of it, which the fold's final-body check now refuses.
 stateOutAt :: Root -> TxOut ConwayEra
 stateOutAt root =
     mkBasicTxOut
         (cageAddrFromCfg cfg Testnet)
         ( MaryValue
-            (Coin 2_000_000)
+            (Coin 3_000_000)
             ( MultiAsset
                 ( Map.singleton
                     (cagePolicyIdFromCfg cfg)

@@ -40,6 +40,7 @@ module Singular.Registry.TxBuilder.Internal.Lookup
     , evaluateAndBalance
     , evaluateAndBalanceReferencing
     , placeholderExUnits
+    , totalWithinLimit
 
       -- * Time and slot helpers
     , currentPosixMs
@@ -153,6 +154,20 @@ unbalanced transaction.
 -}
 placeholderExUnits :: ExUnits
 placeholderExUnits = ExUnits 0 0
+
+{- | The one rule for a transaction's declared execution budget: the sum of
+the budgets declared for its purposes may not exceed the protocol's
+transaction limit, in memory or in steps. 'Right' is the total, 'Left' the
+total that passes the limit. Pricing or evaluating each purpose does not
+establish it: each can fit while their sum does not.
+-}
+totalWithinLimit :: ExUnits -> [ExUnits] -> Either ExUnits ExUnits
+totalWithinLimit (ExUnits maxMem maxSteps) costs =
+    let total@(ExUnits mem steps) = foldl add (ExUnits 0 0) costs
+        add (ExUnits a b) (ExUnits c d) = ExUnits (a + c) (b + d)
+    in  if mem <= maxMem && steps <= maxSteps
+            then Right total
+            else Left total
 
 {- | Evaluate script execution units and balance
 a transaction.

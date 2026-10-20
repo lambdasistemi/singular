@@ -61,7 +61,9 @@ import Cardano.Ledger.Api.Tx.Out
     , addrTxOutL
     , coinTxOutL
     , datumTxOutL
+    , getMinCoinTxOut
     , mkBasicTxOut
+    , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
 import Cardano.Ledger.BaseTypes (Network (Testnet), StrictMaybe (..))
@@ -153,6 +155,7 @@ import Singular.Registry.TxBuilder.Internal.Lookup
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
     , emptyRegistryContext
+    , taggedMints
     , updateTokenSelected
     , updateTokenWithDuties
     , updateTokenWithTrieState
@@ -469,7 +472,7 @@ stateOutAt (Root root) =
     in  mkBasicTxOut
             (cageAddrFromCfg cfg Testnet)
             ( MaryValue
-                (Coin 2_000_000)
+                (Coin 3_000_000)
                 ( MultiAsset
                     (Map.singleton (cagePolicyIdFromCfg cfg) (Map.singleton name 1))
                 )
@@ -482,11 +485,13 @@ stateOutAt (Root root) =
 data Chain = Chain
     { listed :: [(TxIn, TxOut ConwayEra)]
     , atRequestAddress :: [(TxIn, TxOut ConwayEra)]
+    , funding :: TxOut ConwayEra
+    -- ^ The folder's one output
     }
 
 -- | A chain whose only outputs at the request address are the listed requests.
 chainOf :: [(TxIn, TxOut ConwayEra)] -> Chain
-chainOf requests = Chain requests requests
+chainOf requests = Chain requests requests feeOut
 
 requestAddr :: Addr
 requestAddr = requestAddrFromCfg cfg tokenId Testnet
@@ -500,7 +505,7 @@ viewAt
     -> Root
     -> Chain
     -> Session NoWitness IO
-viewAt asked slot root Chain{listed, atRequestAddress} =
+viewAt asked slot root Chain{listed, atRequestAddress, funding} =
     recording $
         withTip (TipObservation slot (BS.replicate 32 0) 1 0) $
             withPolicyOutputs
@@ -513,7 +518,7 @@ viewAt asked slot root Chain{listed, atRequestAddress} =
                                 else
                                     if addr == cageAddrFromCfg cfg Testnet
                                         then [(stateIn, stateOutAt root)]
-                                        else [(feeIn, feeOut)]
+                                        else [(feeIn, funding)]
                     )
                     ( withParameters (withSyntheticCosts Fixture.preprodParams) $
                         withTime (pure syntheticTime) $
@@ -522,7 +527,7 @@ viewAt asked slot root Chain{listed, atRequestAddress} =
                                     pure
                                         [ (reference, output)
                                         | (reference, output) <-
-                                            (stateIn, stateOutAt root) : (feeIn, feeOut) : listed
+                                            (stateIn, stateOutAt root) : (feeIn, funding) : listed
                                         , reference `Set.member` wanted
                                         ]
                                 )
@@ -978,6 +983,113 @@ spec = describe "chunk3 offchain" $ do
             length folded `shouldBe` 9
             -- the first nine in the ledger's input order, the rest wait
             folded `shouldBe` take 9 (sort (map fst many))
+    describe
+        "the final body the ledger would accept, through the public path"
+        $ do
+            let params = withSyntheticCosts Fixture.preprodParams
+                -- the least lovelace an output may hold under the parameters
+                least out = go 0
+                  where
+                    go c =
+                        let Coin needed = getMinCoinTxOut params (out & coinTxOutL .~ Coin c)
+                        in  if needed <= c then c else go needed
+                holdsKey key out = case out ^. valueTxOutL of
+                    MaryValue _ (MultiAsset assets) ->
+                        maybe
+                            False
+                            (Map.member (AssetName (SBS.toShort key)))
+                            (Map.lookup (policyIdFromPin (cfgActivePolicy cfg)) assets)
+                carrierAt key coin =
+                    mkBasicTxOut
+                        payer
+                        ( MaryValue
+                            (Coin coin)
+                            ( MultiAsset
+                                ( Map.singleton
+                                    (policyIdFromPin (cfgActivePolicy cfg))
+                                    (Map.singleton (AssetName (SBS.toShort key)) 1)
+                                )
+                            )
+                        )
+                -- a booked registration that costs nothing, so the fold donates nothing
+                free key carrier =
+                    ( reqIn1
+                    , registrationOutput
+                        (registrationOf key submitted1)
+                            { regRegistrationCost = 0
+                            , regCarrierAda = carrier
+                            }
+                    )
+                outputsOf tx = foldr (:) [] (tx ^. bodyTxL . outputsTxBodyL)
+            it
+                "folds a registration that costs nothing with its carrier at exactly its minimum, and refuses one lovelace less, and none"
+                $ do
+                    let m = least (carrierAt key1 0)
+                    (tx, _) <- selectedOver [] (chainOf [free key1 m]) (reqIn1 :| [])
+                    tx ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
+                    -- the booked allocation reaches the destination exactly
+                    [o ^. coinTxOutL | o <- outputsOf tx, holdsKey key1 o]
+                        `shouldBe` [Coin m]
+                    forM_ [m - 1, 0] $ \short -> do
+                        result <-
+                            refusedWith
+                                (selectedOver [] (chainOf [free key1 short]) (reqIn1 :| []))
+                        case result of
+                            Left err -> do
+                                err `shouldSatisfy` isInfixOf "the carrier of the registration of key"
+                                err `shouldSatisfy` isInfixOf ("holds " <> show short <> " lovelace")
+                                err
+                                    `shouldSatisfy` isInfixOf "booked allocation is exact and unchanged"
+                            Right _ ->
+                                expectationFailure
+                                    ("a carrier of " <> show short <> " lovelace built a fold")
+            it
+                "keeps the change of a fold that donates nothing at its minimum, and refuses it a step under"
+                $ do
+                    let request = free key1 1_500_000
+                        booked = case bookedRequestOf cfg tokenId (snd request) of
+                            Just b -> [(fst request, b)]
+                            Nothing -> error "the free registration is not a booked request"
+                        mints = either error id (taggedMints cfg ctx0 booked)
+                        -- the surplus of the booking is absorbed by an attached output of the caller,
+                        -- so the folder's change is the one thing left to size
+                        direct attached = do
+                            rig <- rigWith []
+                            asked <- newIORef []
+                            fst
+                                <$> connectedFoldTx
+                                    ConnectedFoldArgs
+                                        { cfaCfg = cfg
+                                        , cfaSession = viewOver asked (rigRoot rig) (chainOf [request])
+                                        , cfaTrie = rigManager rig
+                                        , cfaToken = tokenId
+                                        , cfaFeeAddr = payer
+                                        , cfaStateUtxo = (stateIn, stateOutAt (rigRoot rig))
+                                        , cfaReqUtxos = [request]
+                                        , cfaFeeUtxo = (feeIn, feeOut)
+                                        , cfaSpends = []
+                                        , cfaMints = mints
+                                        , cfaOutputs = [mkBasicTxOut payer (MaryValue (Coin attached) mempty)]
+                                        , cfaSigners = []
+                                        , cfaRefUtxos = []
+                                        , cfaAttachScripts = []
+                                        , cfaSkipEval = False
+                                        , cfaAdjustRoot = id
+                                        }
+                        changeOf tx = case reverse (outputsOf tx) of
+                            change : _ -> change
+                            [] -> error "no output"
+                    wide <- direct 1_000_000
+                    wide ^. bodyTxL . treasuryDonationTxBodyL `shouldBe` Coin 0
+                    let Coin wideChange = changeOf wide ^. coinTxOutL
+                        changeMinimum = least (changeOf wide)
+                        attachedFor delta = 1_000_000 + wideChange - (changeMinimum + delta)
+                    enough <- direct (attachedFor 1_000)
+                    changeOf enough ^. coinTxOutL `shouldSatisfy` (>= Coin changeMinimum)
+                    result <- refusedWith (direct (attachedFor (-1_000)))
+                    case result of
+                        Left err -> err `shouldSatisfy` isInfixOf "the folder's change holds"
+                        Right _ -> expectationFailure "a change under its minimum built a fold"
     describe "what discovery sees" $ do
         let pollution =
                 [ ( txIn 'd' i
@@ -1011,7 +1123,7 @@ spec = describe "chunk3 offchain" $ do
                 (polluted, askedPolluted) <-
                     selectedOver
                         []
-                        (Chain pendingReqs (pendingReqs <> pollution))
+                        ((chainOf pendingReqs){atRequestAddress = pendingReqs <> pollution})
                         (reqIn1 :| [reqIn2])
                 polluted `shouldBe` clean
                 askedClean `shouldNotContain` [AtAddress requestAddr]
@@ -1029,7 +1141,7 @@ spec = describe "chunk3 offchain" $ do
                 refusedWith
                     ( selectedOver
                         []
-                        (Chain pendingReqs (pendingReqs <> pollution))
+                        ((chainOf pendingReqs){atRequestAddress = pendingReqs <> pollution})
                         (legacyIn :| [])
                     )
             case result of
@@ -1043,7 +1155,10 @@ spec = describe "chunk3 offchain" $ do
             $ do
                 result <-
                     refusedWith
-                        (everySettleableOver [] (Chain [] (pendingReqs <> pollution)))
+                        ( everySettleableOver
+                            []
+                            ((chainOf []){atRequestAddress = pendingReqs <> pollution})
+                        )
                 case result of
                     Left err -> err `shouldSatisfy` isInfixOf "no pending requests"
                     Right _ ->
@@ -1054,7 +1169,7 @@ spec = describe "chunk3 offchain" $ do
             $ do
                 rig <- rigWith []
                 asked <- newIORef []
-                let polluted = Chain pendingReqs (pendingReqs <> pollution)
+                let polluted = (chainOf pendingReqs){atRequestAddress = pendingReqs <> pollution}
                     healthy = viewOver asked (rigRoot rig) polluted
                     failing =
                         healthy

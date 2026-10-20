@@ -40,6 +40,19 @@ scripts, which check that lovelace is conserved, are shown that very body
 the finished body is evaluated once more: a fold whose scripts refuse it, or
 whose declared units do not cover the units measured on it, is not returned.
 
+A fold is also not returned when the ledger would refuse its final body for a
+reason no script and no balancer here would catch ('finalBodyRefusals'): an
+output under its minimum lovelace (the state continuation, a carrier, an
+attached output, the change, the collateral return), declared units that add
+up beyond the transaction limit, a transaction too large once its witnesses are
+counted, a fee under the minimum (reference scripts of the inputs and of the
+reference inputs included), collateral absent, insufficient or incoherent, and
+a body that does not balance or whose script-integrity hash is not that of its
+redeemers. These refuse to *build* and read the acquired session's parameters;
+the booked allocations are exact and never changed to make a body pass, so
+they say nothing against a booking's economic admission. With evaluation
+skipped (the adversarial mode) none of them is applied.
+
 This is the single canonical permissionless-fold implementation for
 issue #77's runners (register, recovery, retirement). Its lineage is
 @offchain/journey/repair/Main.hs@'s @foldRequestsTx@ \/
@@ -58,6 +71,8 @@ module Singular.Registry.TxBuilder.ConnectedFold
     , managerProofs
     , connectedFoldWith
     , connectedFoldAt
+    , FinalFacts (..)
+    , finalBodyRefusals
     , bookedMove
     , syncFoldedRequests
     , generousUnits
@@ -68,7 +83,7 @@ import Control.Monad (forM_, unless, when)
 import Data.ByteString (ByteString)
 import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
-import Data.List (sortOn)
+import Data.List (intercalate, sortOn)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as StrictSeq
@@ -77,17 +92,25 @@ import Data.Void (Void)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusCore.Data qualified as PLC
 
-import Cardano.Ledger.Address (Addr, decodeAddrEither)
+import Cardano.Ledger.Address (Addr (..), decodeAddrEither)
+import Cardano.Ledger.Alonzo.TxBody (scriptIntegrityHashTxBodyL)
 import Cardano.Ledger.Api.PParams
-    ( ppMaxBlockExUnitsL
+    ( ppCollateralPercentageL
+    , ppMaxBlockExUnitsL
+    , ppMaxCollateralInputsL
     , ppMaxTxExUnitsL
+    , ppMaxTxSizeL
     )
-import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL, estimateMinFeeTx, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
-    ( feeTxBodyL
+    ( collateralInputsTxBodyL
+    , collateralReturnTxBodyL
+    , feeTxBodyL
     , inputsTxBodyL
     , mintTxBodyL
     , outputsTxBodyL
+    , referenceInputsTxBodyL
+    , totalCollateralTxBodyL
     , treasuryDonationTxBodyL
     )
 import Cardano.Ledger.Api.Tx.Out
@@ -100,8 +123,10 @@ import Cardano.Ledger.Api.Tx.Out
     , valueTxOutL
     )
 import Cardano.Ledger.Api.Tx.Wits (Redeemers (..), rdmrsTxWitsL)
+import Cardano.Ledger.BaseTypes (StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
-import Cardano.Ledger.Core (Script)
+import Cardano.Ledger.Core (Script, sizeTxF)
+import Cardano.Ledger.Credential (Credential (..))
 import Cardano.Ledger.Keys (KeyHash, KeyRole (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
@@ -110,13 +135,16 @@ import Cardano.Ledger.Mary.Value
     , PolicyID
     )
 import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
+import Cardano.Ledger.Tools (addDummyWitsTx)
 import Cardano.Ledger.Val (inject, (<+>), (<->))
 import Cardano.Slotting.Slot (SlotNo)
 import PlutusTx.Builtins.Internal (BuiltinData (..))
 import PlutusTx.IsData.Class (ToData (..))
 
+import Cardano.Tx.Balance (refScriptsSize)
 import Cardano.Tx.Build qualified as Tx
 import Cardano.Tx.Ledger (ConwayTx)
+import Cardano.Tx.Witnesses (estimatedKeyWitnessCount)
 import Singular.Registry.Config (CageConfig (..))
 import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.FoldAdmission
@@ -148,8 +176,10 @@ import Singular.Registry.TxBuilder.Internal.Identity
 import Singular.Registry.TxBuilder.Internal.Lookup
     ( BookedRequest (..)
     , bookedRequestOf
+    , computeScriptIntegrity
     , currentPosixMs
     , requestPolicyOf
+    , totalWithinLimit
     , tryUpperSlots
     )
 import Singular.Registry.Types
@@ -467,8 +497,30 @@ connectedFoldAt observed proofsFor args = do
         Right built -> do
             final <- settleDonation pp known programOutputs feeAddr donation built
             unless (cfaSkipEval args) $ do
+                let facts =
+                        FinalFacts
+                            { ffParams = pp
+                            , ffInputs = known
+                            , ffReferences = cfaRefUtxos args
+                            , ffLabel = outputLabel members carriers programOutputs
+                            }
+                case finalBodyRefusals facts final of
+                    [] -> pure ()
+                    refusals ->
+                        refuse
+                            ( "the fold is not built, because the ledger would refuse its final body (the booked allocation is exact and unchanged): "
+                                <> intercalate "; " refusals
+                            )
                 judged <- evaluate final
                 let Redeemers declared = final ^. witsTxL . rdmrsTxWitsL
+                unless (Map.keysSet judged == Map.keysSet declared) $
+                    refuse
+                        ( "the built fold declares units for "
+                            <> show (Map.size declared)
+                            <> " purposes but "
+                            <> show (Map.size judged)
+                            <> " were evaluated on it"
+                        )
                 forM_ (Map.toList judged) $ \(purpose, outcome) -> case outcome of
                     Left e ->
                         refuse
@@ -656,6 +708,267 @@ settleDonation pp known programOutputs changeAddr donation built
                     + lovelace (body ^. treasuryDonationTxBodyL)
                     + lovelace (body ^. feeTxBodyL)
         in  inputs == paid
+
+{- | What the finished body is judged against: the acquired protocol
+parameters, every input the body spends or offers as collateral resolved to
+its output, the outputs its reference inputs name, and what each output is.
+-}
+data FinalFacts = FinalFacts
+    { ffParams :: PParams ConwayEra
+    , ffInputs :: Map TxIn (TxOut ConwayEra)
+    , ffReferences :: [(TxIn, TxOut ConwayEra)]
+    , ffLabel :: Int -> String
+    }
+
+{- | Everything the ledger's rules would refuse about the finished body that
+the transaction library does not itself enforce, each refusal worded for what
+it is: the fold cannot be built, the booked allocation being exact and
+unchanged, which says nothing against the booking's economic admission. An
+empty list is a body that satisfies every one of them. The rules are the
+protocol's, read from the parameters the acquired session gave, and they are
+judged on the body that will be signed, with the witnesses it still needs:
+
+* every output, the collateral return included, holds its minimum lovelace;
+* the declared execution units, summed, fit the transaction limit in memory and
+  in steps (each purpose fitting its own declaration is not that);
+* the serialized transaction, with the key witnesses it still needs, fits the
+  transaction size limit;
+* the fee covers the minimum of that transaction, reference scripts of the
+  inputs and of the reference inputs included;
+* collateral is present, key-locked, not more inputs than allowed, returns what
+  it does not collateralise, states a total that agrees with them, and covers
+  the fee at the protocol's percentage;
+* inputs, mint, outputs, donation and fee balance in lovelace and in every
+  asset;
+* the script-integrity hash is that of the redeemers the body declares.
+
+Not established here, because nothing before the signature can: the signatures
+themselves, the validity of the interval against a future slot, and inclusion.
+-}
+finalBodyRefusals :: FinalFacts -> ConwayTx -> [String]
+finalBodyRefusals facts tx =
+    concat
+        [ minima
+        , executionTotal
+        , serializedSize
+        , minimumFee
+        , collateral
+        , conservation
+        , integrity
+        ]
+  where
+    pp = ffParams facts
+    body = tx ^. bodyTxL
+    Redeemers declared = tx ^. witsTxL . rdmrsTxWitsL
+    outs = toList (body ^. outputsTxBodyL)
+    spent = body ^. inputsTxBodyL
+    collateralIns = body ^. collateralInputsTxBodyL
+    referenced = body ^. referenceInputsTxBodyL
+    resolved = ffInputs facts
+    coinOf (Coin c) = c
+    fee = coinOf (body ^. feeTxBodyL)
+    unresolved =
+        [ i
+        | i <- Set.toList (spent <> collateralIns)
+        , Map.notMember i resolved
+        ]
+    keyWitnesses =
+        estimatedKeyWitnessCount
+            body
+            (spent <> collateralIns)
+            (Map.toList resolved)
+
+    minima =
+        [ "the ledger would refuse an output of the fold: "
+            <> intercalate
+                "; "
+                [ what
+                    <> " holds "
+                    <> show held
+                    <> " lovelace, under the "
+                    <> show needed
+                    <> " the ledger requires of it"
+                | (what, held, needed) <- short
+                ]
+        | not (null short)
+        ]
+      where
+        short =
+            [ (what, coinOf (out ^. coinTxOutL), coinOf (getMinCoinTxOut pp out))
+            | (what, out) <-
+                zip (map (ffLabel facts) [0 ..]) outs
+                    <> [ ("the collateral return", r)
+                       | SJust r <- [body ^. collateralReturnTxBodyL]
+                       ]
+            , out ^. coinTxOutL < getMinCoinTxOut pp out
+            ]
+
+    executionTotal =
+        case totalWithinLimit
+            (pp ^. ppMaxTxExUnitsL)
+            (map snd (Map.elems declared)) of
+            Right _ -> []
+            Left (ExUnits m st) ->
+                let ExUnits lm ls = pp ^. ppMaxTxExUnitsL
+                in  [ "the declared execution units add up to memory "
+                        <> show m
+                        <> ", steps "
+                        <> show st
+                        <> ", over the transaction limit of memory "
+                        <> show lm
+                        <> ", steps "
+                        <> show ls
+                    ]
+
+    serializedSize =
+        let witnessed = addDummyWitsTx pp tx keyWitnesses []
+            size = toInteger (witnessed ^. sizeTxF)
+            limit = toInteger (pp ^. ppMaxTxSizeL)
+        in  [ "the transaction is "
+                <> show size
+                <> " bytes with the "
+                <> show keyWitnesses
+                <> " key witnesses it still needs, over the limit of "
+                <> show limit
+            | size > limit
+            ]
+
+    minimumFee
+        | not (null unresolved) = []
+        | otherwise =
+            let refBytes =
+                    refScriptsSize
+                        (spent <> referenced)
+                        (Map.toList resolved <> ffReferences facts)
+                needed = coinOf (estimateMinFeeTx pp tx keyWitnesses 0 refBytes)
+            in  [ "the fee of "
+                    <> show fee
+                    <> " lovelace is under the "
+                    <> show needed
+                    <> " the ledger requires of this transaction ("
+                    <> show keyWitnesses
+                    <> " key witnesses, "
+                    <> show refBytes
+                    <> " bytes of reference scripts)"
+                | fee < needed
+                ]
+
+    collateral
+        | Map.null declared = []
+        | Set.null collateralIns =
+            ["the transaction runs scripts and offers no collateral input"]
+        | not (null unresolvedCollateral) =
+            [ "a collateral input is not among the inputs the build was given: "
+                <> show unresolvedCollateral
+            ]
+        | otherwise =
+            concat
+                [ [ "collateral names "
+                        <> show (Set.size collateralIns)
+                        <> " inputs, over the limit of "
+                        <> show (pp ^. ppMaxCollateralInputsL)
+                  | toInteger (Set.size collateralIns)
+                        > toInteger (pp ^. ppMaxCollateralInputsL)
+                  ]
+                , [ "a collateral input is locked by a script"
+                  | not (all keyLocked collateralOuts)
+                  ]
+                , [ "collateral inputs hold assets the collateral return does not give back"
+                  | assetsOf collateralValue /= maybe mempty assetsOf returnValue
+                  ]
+                , case body ^. totalCollateralTxBodyL of
+                    SJust (Coin stated)
+                        | stated /= collateralised ->
+                            [ "the stated total collateral of "
+                                <> show stated
+                                <> " is not what the collateral inputs less the return leave: "
+                                <> show collateralised
+                            ]
+                    _ -> []
+                , [ "collateral of "
+                        <> show collateralised
+                        <> " lovelace does not cover "
+                        <> show (pp ^. ppCollateralPercentageL)
+                        <> "% of the fee of "
+                        <> show fee
+                  | collateralised * 100 < toInteger (pp ^. ppCollateralPercentageL) * fee
+                  ]
+                ]
+      where
+        unresolvedCollateral =
+            [i | i <- Set.toList collateralIns, Map.notMember i resolved]
+        collateralOuts =
+            [o | i <- Set.toList collateralIns, Just o <- [Map.lookup i resolved]]
+        keyLocked o = case o ^. addrTxOutL of
+            Addr _ (KeyHashObj _) _ -> True
+            _ -> False
+        collateralValue =
+            foldl' (<+>) (inject (Coin 0)) (map (^. valueTxOutL) collateralOuts)
+        returnValue = case body ^. collateralReturnTxBodyL of
+            SJust r -> Just (r ^. valueTxOutL)
+            SNothing -> Nothing
+        assetsOf (MaryValue _ assets) = assets
+        collateralised =
+            coinOf (coinOfValue collateralValue)
+                - maybe 0 (coinOf . coinOfValue) returnValue
+        coinOfValue (MaryValue c _) = c
+
+    conservation
+        | not (null unresolved) =
+            [ "an input is not among the inputs the build was given: "
+                <> show unresolved
+            ]
+        | consumed == produced = []
+        | otherwise =
+            [ "inputs and mint do not balance outputs, donation and fee: lovelace differ by "
+                <> show (coinOfValue' consumed - coinOfValue' produced)
+                <> ( if assetsOfValue consumed == assetsOfValue produced
+                        then ""
+                        else ", and assets differ"
+                   )
+            ]
+      where
+        consumed =
+            foldl'
+                (<+>)
+                (MaryValue (Coin 0) (body ^. mintTxBodyL))
+                [ o ^. valueTxOutL
+                | i <- Set.toList spent
+                , Just o <- [Map.lookup i resolved]
+                ]
+        produced =
+            foldl'
+                (<+>)
+                (inject (body ^. feeTxBodyL <+> body ^. treasuryDonationTxBodyL))
+                (map (^. valueTxOutL) outs)
+        coinOfValue' (MaryValue (Coin c) _) = c
+        assetsOfValue (MaryValue _ a) = a
+
+    integrity =
+        [ "the script-integrity hash is not that of the redeemers the body declares"
+        | body ^. scriptIntegrityHashTxBodyL
+            /= computeScriptIntegrity pp (tx ^. witsTxL . rdmrsTxWitsL)
+        , not (Map.null declared)
+        ]
+
+{- | What an output of the finished body is, for a refusal that names it: the
+state continuation first, then each registration's carrier in the order the
+registrations were given, then the caller's own outputs, then the folder's
+change.
+-}
+outputLabel :: [Member] -> [TxOut ConwayEra] -> Int -> Int -> String
+outputLabel members carriers programOutputs index
+    | index == 0 = "the state continuation"
+    | index <= length carriers =
+        "the carrier of the registration of key "
+            <> show (keyOfNth (index - 1))
+    | index < programOutputs =
+        "an attached output (number " <> show (index - length carriers) <> ")"
+    | otherwise = "the folder's change"
+  where
+    keyOfNth n = case drop n [regKey r | (_, r) <- registrationsOf members] of
+        key : _ -> key
+        [] -> mempty
 
 {- | Generous per-purpose budget stated when local evaluation is
 skipped (adversarial path only); the ledger re-executes for real.

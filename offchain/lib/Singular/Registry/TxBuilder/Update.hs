@@ -55,6 +55,7 @@ module Singular.Registry.TxBuilder.Update
     , RegistryContext (..)
     , HolderRelease (..)
     , registryDuties
+    , taggedMints
     , NoCtx
     , mkEvalTx
     ) where
