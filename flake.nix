@@ -31,7 +31,17 @@
     # the `open-datum` executable from it; its dependencies keep their own
     # locked revisions.
     open-datum.url = "path:./?dir=applications/open-datum/offchain";
+    # #707: the application's on-chain flake the same way, for the merged
+    # deployment blueprint the release archive ships as onchain/plutus.json;
+    # every release bundle and package carries the same file.
+    open-datum-onchain.url = "path:./?dir=applications/open-datum/onchain";
     nixpkgs.follows = "dev-assets-mkdocs/nixpkgs";
+    # #707: the organisation's binary distribution helpers (AppImage, DEB, RPM,
+    # Homebrew; the distribute-binaries standard) and the NixOS bundlers they drive.
+    dev-assets = {
+      url = "github:paolino/dev-assets/ecc41cee5d4c18ac4a8a2527c07cf33cba300a11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # The Lean compiler the model builds with. It is the version root
     # `lean-toolchain` names (Lean 4.27.0), pinned to the nixpkgs commit that
     # packages it ("lean4: 4.26 -> 4.27"), so the compiler moves with this line
@@ -45,10 +55,12 @@
       nixpkgs-lean,
       dev-assets-mkdocs,
       dev-assets-playwright,
+      dev-assets,
       offchain,
       conformance,
       onchain,
       open-datum,
+      open-datum-onchain,
     }:
     let
       systems = [
@@ -306,15 +318,154 @@
           commit = rootCommit;
           singular = stampedSingular system;
           openDatum = stampedOpenDatum system;
+          # #707: the development node, from the same locked flake the Nix
+          # route uses, and the genesis directory the Nix journeys name.
+          devnet = offchain.packages.${system}.devnet-unwrapped;
+          cardanoNode = offchain.packages.${system}.cardano-node;
+          devnetGenesis = ./offchain/e2e-test/genesis;
+          # the deployment blueprint the on-chain archive ships, with the
+          # release number beside it as the commands require
+          blueprint = open-datum-onchain.packages.${system}.open-datum-blueprint;
         };
+      # #707: the releases at the organisation's binary distribution standard,
+      # through the dev-assets helpers: AppImage, DEB and RPM for Linux, a
+      # Homebrew formula for macOS. Release outputs carry the release number;
+      # the dev channels add this flake's short revision.
+      releaseVersion = nixpkgs.lib.removeSuffix "\n" (builtins.readFile ./version.txt);
+      devArtifactVersion = "${releaseVersion}-${self.shortRev or (self.dirtyShortRev or "dirty")}";
+      productCommands = [
+        "singular"
+        "open-datum"
+        "devnet"
+      ];
+      # devnet for the Linux packages: the launcher with the locked cardano-node
+      # on its path and the genesis files the Nix journeys name, answering
+      # --version and --help itself as the release bundle's launcher does
+      # (any other argument starts a node).
+      devnetCommand =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.writeShellScriptBin "devnet" ''
+          case "''${1-}" in
+            --version)
+              printf '%s\n' 'devnet ${releaseVersion} (commit ${rootCommit})'
+              exit 0
+              ;;
+            --help | -h)
+              printf '%s\n' 'devnet ${releaseVersion} (commit ${rootCommit})' \
+                'Starts a private Cardano development node and prints its settings as one JSON line.' \
+                'Funding: --fund-address ADDRESS:N:LOVELACE (see the Demo 1 development node page).'
+              exit 0
+              ;;
+          esac
+          export E2E_GENESIS_DIR=${./offchain/e2e-test/genesis}
+          export PATH="${offchain.packages.${system}.cardano-node}/bin''${PATH:+:$PATH}"
+          exec ${offchain.packages.${system}.devnet-unwrapped}/bin/devnet "$@"
+        '';
+      # the deployment blueprint the release ships, with the release number
+      # beside it, as the Linux packages put it: share/singular/
+      blueprintData =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.runCommand "singular-blueprint-${releaseVersion}" { } ''
+          mkdir -p "$out/share/singular"
+          cp ${open-datum-onchain.packages.${system}.open-datum-blueprint} "$out/share/singular/plutus.json"
+          printf '%s\n' '${releaseVersion}' > "$out/share/singular/version.txt"
+        '';
+      # the one product the Linux packages carry: its three commands and the blueprint
+      linuxProduct =
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.symlinkJoin {
+          name = "singular-${releaseVersion}";
+          paths = [
+            (stampedSingular system)
+            (stampedOpenDatum system)
+            (devnetCommand system)
+            (blueprintData system)
+          ];
+          meta.mainProgram = "singular";
+        };
+      # an AppImage per command, one DEB and one RPM with every command on the path
+      linuxArtifacts =
+        system: artifactVersion:
+        dev-assets.lib.mkLinuxArtifacts {
+          pkgs = import nixpkgs { inherit system; };
+          inherit system artifactVersion;
+          inherit (dev-assets.inputs) bundlers;
+          executableName = "singular";
+          commands = productCommands;
+          # each AppImage carries its own command only; the DEB and RPM all three
+          commandPackages = {
+            singular = stampedSingular system;
+            open-datum = stampedOpenDatum system;
+            devnet = devnetCommand system;
+          };
+          # the blueprint and its version.txt at a path users can name
+          packageLinks = {
+            "usr/share/singular" = "${blueprintData system}/share/singular";
+          };
+          version = releaseVersion;
+          glibcPackage = linuxProduct system;
+        };
+      # the Homebrew formula of the macOS release bundle, which it ships as it is
+      darwinArtifacts =
+        system: extra:
+        dev-assets.lib.mkDarwinHomebrewBundle { pkgs = import nixpkgs { inherit system; }; } (
+          {
+            pname = "singular";
+            version = releaseVersion;
+            owner = "lambdasistemi";
+            repo = "singular";
+            desc = "Registry of unique keys on Cardano: singular, open-datum and a private development node";
+            homepage = "https://lambdasistemi.github.io/singular/";
+            formulaClass = "Singular";
+            executableNames = productCommands;
+            bundleTarball = "${releaseBundle system}/singular-${releaseVersion}-${system}.tar.gz";
+            smokeCommands = map (command: "${command} --version") productCommands;
+            formulaTest = nixpkgs.lib.concatMapStringsSep "\n" (line: "    ${line}") [
+              "%w[singular open-datum devnet].each do |program|"
+              "  assert_match \"#{program} ${releaseVersion} (commit \", shell_output(\"#{bin}/#{program} --version\")"
+              "end"
+              "assert_match \"cardano-node\", shell_output(\"#{libexec}/bin/cardano-node --version\")"
+              "assert_predicate libexec/\"share/plutus.json\", :exist?"
+              "assert_equal \"${releaseVersion}\", (libexec/\"share/version.txt\").read.strip"
+            ];
+          }
+          // extra
+        );
       # What this flake offers on each platform that ships a bundle: the two
       # programs, stamped with this flake's revision (`nix run .#singular --
       # --version`), and the release bundle that carries both.
-      bundles = nixpkgs.lib.genAttrs bundleSystems (system: {
-        singular = stampedSingular system;
-        open-datum = stampedOpenDatum system;
-        release-bundle = releaseBundle system;
-      });
+      bundles = nixpkgs.lib.genAttrs bundleSystems (
+        system:
+        {
+          singular = stampedSingular system;
+          open-datum = stampedOpenDatum system;
+          release-bundle = releaseBundle system;
+        }
+        // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          linux-release-artifacts = linuxArtifacts system releaseVersion;
+          linux-dev-release-artifacts = linuxArtifacts system devArtifactVersion;
+        }
+        // nixpkgs.lib.optionalAttrs (system == "aarch64-darwin") {
+          darwin-release-artifacts = darwinArtifacts system { };
+          darwin-dev-homebrew-artifacts = darwinArtifacts system {
+            artifactVersion = devArtifactVersion;
+            releaseTag = "dev-homebrew";
+            formulaName = "singular-dev";
+            formulaClass = "SingularDev";
+            formulaVersion = devArtifactVersion;
+            formulaExtraLines = "\n  conflicts_with \"singular\", because: \"both install the same commands\"";
+          };
+        }
+      );
       bundleApps = nixpkgs.lib.genAttrs bundleSystems (
         system:
         let
@@ -344,6 +495,7 @@
                     bash
                     coreutils
                     curl
+                    diffutils
                     findutils
                     gawk
                     gnugrep
@@ -352,7 +504,10 @@
                     gzip
                     perl
                   ]
-                  ++ pkgs.lib.optional pkgs.stdenv.isLinux bubblewrap;
+                  ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                    bubblewrap
+                    procps
+                  ];
                 text = ''
                   [ "$#" -eq 2 ] || {
                     echo "usage: verify-release-bundles TAG COMMIT" >&2
@@ -365,7 +520,8 @@
                   . ${./tools/release_bundles.sh}
                   download="$(mktemp -d)"
                   trap 'rm -rf "$download"' EXIT
-                  names="SHA256SUMS"
+                  # the on-chain archive too: the bundles' blueprint is checked against it
+                  names="SHA256SUMS singular-onchain-$version.tar.gz"
                   for system in $SYSTEMS; do names="$names singular-$version-$system.tar.gz"; done
                   for name in $names; do
                     if [ -n "''${VERIFY_RELEASE_BUNDLES_ASSETS:-}" ]; then
@@ -376,6 +532,7 @@
                     fi
                   done
                   export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                  export RELEASE_BUNDLES_CONF=${./tools/release_bundles.sh}
                   bash ${./tools/verify_release_bundles.sh} ${./tools/release_bundles.sh} \
                     ${./tools/release_bundle_smoke.sh} ${./tools/release_bundle_smoke_controls.sh} \
                     "$download" "$version" "$commit"
@@ -396,6 +553,7 @@
                   [
                     bash
                     coreutils
+                    diffutils
                     findutils
                     gawk
                     gnugrep
@@ -404,19 +562,44 @@
                     gzip
                     perl
                   ]
-                  ++ pkgs.lib.optional pkgs.stdenv.isLinux bubblewrap;
+                  ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                    bubblewrap
+                    procps
+                  ];
                 text = ''
                   [ "$#" -eq 3 ] || {
                     echo "usage: release-bundle-checks TARBALL VERSION COMMIT" >&2
                     exit 2
                   }
                   export RELEASE_BUNDLE_SMOKE=${./tools/release_bundle_smoke.sh}
+                  # a bundle built from this tree always carries the development
+                  # node, whatever version the tree says
+                  export RELEASE_BUNDLES_CONF=${./tools/release_bundles.sh}
+                  export RELEASE_BUNDLE_DEVNET=required
                   bash ${./tools/release_bundle_smoke.sh} "$@"
                   bash ${./tools/release_bundle_smoke_controls.sh} "$@"
                   bash ${./tools/verify_release_bundles.test.sh} \
                     ${./tools/verify_release_bundles.sh} ${./tools/release_bundles.sh} \
                     ${./tools/release_bundle_smoke.sh} ${./tools/release_bundle_smoke_controls.sh} "$@"
                 '';
+              }
+            );
+          };
+        }
+        // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          # #707: the distribution standard's smoke of the Linux packages: each
+          # extracted, each command run with --version. The dev-assets
+          # linux-release action runs it as `nix run .#linux-artifact-smoke`.
+          linux-artifact-smoke = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              dev-assets.lib.mkLinuxArtifactSmoke {
+                inherit pkgs system;
+                artifacts = [
+                  "appimage"
+                  "deb"
+                  "rpm"
+                ];
               }
             );
           };
@@ -460,6 +643,32 @@
             cp ${./tools/demo1_cli_prepare_funding.sh} $out/demo1_cli_prepare_funding.sh
             cp ${./tools/cli_recovery_receipt_cap.test.sh} $out/cli_recovery_receipt_cap.test.sh
           '';
+          # #707: the ordinary tools the bundle journey runs on, and nothing
+          # else: the PATH of a user who has no Nix
+          bundleJourneyTools = pkgs.buildEnv {
+            name = "demo1-bundle-journey-tools";
+            paths =
+              with pkgs;
+              [
+                bash
+                coreutils
+                curl
+                diffutils
+                findutils
+                gawk
+                gnugrep
+                gnused
+                gnutar
+                gzip
+                jq
+                procps
+              ]
+              # the journey watches which files a command opens and locks its state
+              ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                pkgs.strace
+                pkgs.util-linux
+              ];
+          };
           # #449: the recovery controls as one app per part, each on its own
           # development node, so CI runs the parts as parallel jobs. An empty
           # part list runs them all.
@@ -770,6 +979,30 @@
                     ${./tools/demo1_cli_check.sh} \
                     ${./tools/demo1_cli_attach_check.sh}
                   DEMO1_VERIFY_RELEASE=${pkgs.lib.getExe (verifyRelease "demo1_cli_journey.sh")} bash ${./tools/demo1_cli_check.sh} "$PWD"
+                '';
+              }
+            );
+          };
+          # #707: the Demo 1 journey from the unpacked Linux release bundle
+          # alone: `singular`, `open-datum` and the development node come out
+          # of the tarball, on a PATH that holds ordinary tools and no Nix.
+          # Nix only builds the bundle beforehand; the blueprint is the bundle's.
+          # Run from the repository root: `nix run --quiet .#demo1-bundle-journey`.
+          demo1-bundle-journey = {
+            type = "app";
+            program = pkgs.lib.getExe (
+              pkgs.writeShellApplication {
+                name = "demo1-bundle-journey";
+                runtimeInputs = [
+                  pkgs.coreutils
+                  pkgs.nix
+                ];
+                text = ''
+                  bundle="$(nix build --quiet --no-link --print-out-paths .#release-bundle)"
+                  tarball="$(ls "$bundle"/singular-*-${system}.tar.gz)"
+                  DEMO1_JOURNEY=${managedScripts}/demo1_cli_journey.sh \
+                    DEMO1_BUNDLE_TOOLS=${bundleJourneyTools}/bin \
+                    bash ${./tools/demo1_bundle_journey.sh} "$tarball"
                 '';
               }
             );

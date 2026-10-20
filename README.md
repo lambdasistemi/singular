@@ -8,6 +8,16 @@ As a Cardano developer who knows `cardano-cli`, wallets, faucets and Koios but n
 
 <a href="https://lambdasistemi.github.io/singular/simulator/"><strong>Try the simulation</strong></a> — register a name, terminate it permanently, and inspect refusals for the five historical edge encodings. Switch the profile picker to the naming instance for the Over witness and the lifecycle replay. The [simulation guide](docs/simulation.md) says what the page establishes and what it does not.
 
+## Install
+
+From the release after 0.13.1, without Nix. On a Mac with Apple Silicon:
+
+```sh
+brew install lambdasistemi/tap/singular
+```
+
+On Linux on x86_64, download `singular-X.Y.Z-x86_64-linux.deb` or `singular-X.Y.Z-x86_64-linux.rpm` from the [releases page](https://github.com/lambdasistemi/singular/releases) and install it with your package manager, or run the AppImage of a command. Each of them gives `singular`, `open-datum` and `devnet`, the private development node Demo 1 starts, and, except the AppImages, the deployment blueprint the commands take as `--blueprint`. The [install page](docs/install.md) has the commands, the checksums and the tarballs that hold all three in one folder.
+
 ## Who this is for
 
 **An application developer** wants keys that are unique across everyone using the application — names, identifiers, handles — without running a registrar. They supply one parameter, their application policy ID, and get a registry in which every active key is represented by exactly one NFT sitting in one of their own application outputs. Singular mints that NFT when a certified registration is folded in, burns it when the key is retired or released, and lets a released key be registered again.

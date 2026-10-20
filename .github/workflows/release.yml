@@ -198,3 +198,104 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
           TAG_COMMIT: ${{ github.sha }}
         run: nix run --quiet .#verify-release-bundles -- "$RELEASE_TAG" "$TAG_COMMIT"
+  # #707: the Linux packages of the distribution standard, published to the
+  # release just created: an AppImage per command, one DEB and one RPM with
+  # every command, and their own SHA256SUMS, built by the release outputs the
+  # tag run of the bundles workflow already built, smoke-tested and installed
+  # on machines without Nix.
+  linux-packages:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: publish
+    name: Publish the Linux packages
+    runs-on: nixos
+    timeout-minutes: 90
+    steps:
+      - name: Isolate Nix cache
+        run: |
+          cache_dir="$RUNNER_TEMP/nix-cache-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-linux-packages"
+          mkdir -p "$cache_dir"
+          printf 'XDG_CACHE_HOME=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Mint repository-scoped publication token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          owner: lambdasistemi
+          repositories: singular
+          permission-contents: write
+      - name: Build, smoke-test and publish the Linux packages
+        uses: paolino/dev-assets/linux-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
+        with:
+          mode: release
+          tag: ${{ github.ref_name }}
+          publish: "yes"
+          release-output: linux-release-artifacts
+          dev-output: linux-dev-release-artifacts
+          executable-name: singular
+          commands: singular,open-datum,devnet
+          smoke-args: --version
+          usage-grep: "(commit "
+          dev-tag: dev-linux
+          release-version-command: cat version.txt
+          release-check-command: '[ "$TAG" = "v$(cat version.txt)" ]'
+          github-token: ${{ steps.app-token.outputs.token }}
+  # #707: the Homebrew formula of the release just published and verified,
+  # built from the macOS tarball the release already carries: the action
+  # requires the published asset to be that tarball, pushes the formula to the
+  # organisation's tap with a token minted for the tap alone, then installs
+  # lambdasistemi/tap/singular from the tap and runs brew test.
+  homebrew:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [verify-release, verify-macos-bundle]
+    name: Publish the Homebrew formula
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+      - uses: paolino/dev-assets/setup-nix@a9d7371c1118de4026ba6ee3a9c3b54614924b82
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Mint a token for the Homebrew tap alone
+        id: tap-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.CI_APP_ID }}
+          private-key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+          owner: lambdasistemi
+          repositories: homebrew-tap
+          permission-contents: write
+      - name: Build, check and publish the formula, then install it from the tap
+        uses: paolino/dev-assets/darwin-homebrew-release@ecc41cee5d4c18ac4a8a2527c07cf33cba300a11
+        with:
+          mode: release
+          tag: ${{ github.ref_name }}
+          publish: "yes"
+          upload-assets: "no"
+          release-formula: singular.rb
+          dev-formula: singular-dev.rb
+          tarball-pattern: "singular-*-aarch64-darwin.tar.gz"
+          installed-commands: singular open-datum devnet
+          cleanup-formulae: singular singular-dev
+          tap-name: lambdasistemi/tap
+          tap-repository: lambdasistemi/homebrew-tap
+          release-check-command: '[ "$TAG" = "v$(cat version.txt)" ]'
+          tarball-smoke-script: |
+            singular --version
+            open-datum --version
+            devnet --version
+          brew-smoke-script: |
+            singular --version
+            open-datum --version
+            devnet --version
+          github-token: ${{ github.token }}
+          tap-token: ${{ steps.tap-token.outputs.token }}

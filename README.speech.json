@@ -23,6 +23,20 @@
       "pause": 400
     }
   ],
+  "install": [
+    {
+      "text": "Install.",
+      "pause": 500
+    },
+    {
+      "text": "From the release after 0.13.1, without Nix. On a Mac with Apple Silicon:",
+      "pause": 400
+    },
+    {
+      "text": "On Linux on x86_64, download singular-X.Y.Z-x86_64-linux.deb or singular-X.Y.Z-x86_64-linux.rpm from the releases page and install it with your package manager, or run the AppImage of a command. Each of them gives singular, open-datum and devnet, the private development node Demo 1 starts, and, except the AppImages, the deployment blueprint the commands take as --blueprint. The install page has the commands, the checksums and the tarballs that hold all three in one folder.",
+      "pause": 400
+    }
+  ],
   "who-this-is-for": [
     {
       "text": "Who this is for.",
@@ -147,6 +161,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "5d09b633983a2f68564e0194bdfbd7f8e790a8ab158c6ce550c2ac4524b9602d"
+    "sha256": "fd5a03f7519a0b33a680f2a64cbb0833c1a24a8dc61f799b843f268436399858"
   }
 }

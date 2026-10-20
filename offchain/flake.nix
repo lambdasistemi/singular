@@ -682,6 +682,10 @@
           # The same executable before the commit is stamped into a copy of
           # it: the cached Haskell build, for consumers that stamp their own.
           singular-unstamped = components.exes.singular;
+          # The development node launcher before the wrapper that puts the
+          # locked cardano-node on its PATH: the release bundle carries this
+          # executable and the node beside it.
+          devnet-unwrapped = components.exes.devnet;
           # #641: a test-harness tool the packaged bundle control seals its
           # devnet keys with; never evidence of anything.
           inherit (components.exes) vault-seal;

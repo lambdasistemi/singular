@@ -13,7 +13,11 @@
 #   listed      the bundle is in DIR and SHA256SUMS lists it
 #   sum         its recorded checksum is its actual one
 #   layout      it extracts to singular-VERSION-SYSTEM/ and holds both
-#               launchers and executables, VERSION and COMMIT
+#               launchers and executables, VERSION and COMMIT, and for a
+#               release after LAST_WITHOUT_DEVNET the development node and the
+#               deployment blueprint (share/plutus.json, share/version.txt)
+#   blueprint   that blueprint is the on-chain archive's onchain/plutus.json,
+#               byte for byte, when the archive is in DIR
 #   identity    its VERSION is the release's and its COMMIT is the tag's
 #   run         on the platform this runs on: the smoke script and its
 #               controls, so `--version` names the tag commit from the
@@ -22,12 +26,12 @@
 #
 # Exit 0 and `verify-release: bundles: PASS`; exit 1 and one
 # `verify-release: REFUSED <name>: <detail>` line otherwise. The names:
-# bundle-missing, bundle-sum-mismatch, bundle-layout, bundle-commit-mismatch,
-# bundle-run-failed. Exit 2 on usage.
+# bundle-missing, bundle-sum-mismatch, bundle-layout, bundle-blueprint-mismatch,
+# bundle-commit-mismatch, bundle-run-failed. Exit 2 on usage.
 set -euo pipefail
 
 # a missing tool is a failed setup, never a pass
-for tool in tar gzip grep sed awk find basename tr wc cut head sort sha256sum mktemp dd; do
+for tool in tar gzip grep sed awk find basename tr wc cut head sort sha256sum mktemp dd cmp; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "verify-release: needs $tool on PATH" >&2
     exit 2
@@ -46,6 +50,8 @@ version="$5"
 tag_commit="$6"
 # shellcheck source=/dev/null
 . "$conf"
+# the smoke script reads the same rule for the development node
+export RELEASE_BUNDLES_CONF="$conf"
 
 refuse() {
   echo "verify-release: REFUSED $1: $2"
@@ -75,6 +81,24 @@ for system in $SYSTEMS; do
   for member in bin/singular bin/open-datum libexec/singular libexec/open-datum VERSION COMMIT; do
     [ -e "$tree/$top/$member" ] || refuse bundle-layout "$name carries no $member"
   done
+  if devnet_required "$version"; then
+    for member in bin/devnet bin/cardano-node libexec/devnet libexec/cardano-node \
+      share/devnet/genesis/node-config.json share/plutus.json share/version.txt; do
+      [ -e "$tree/$top/$member" ] || refuse bundle-layout "$name carries no $member"
+    done
+    # the blueprint the programs come with is the one the on-chain archive
+    # ships, byte for byte, when the archive was downloaded beside the bundles
+    archive="$dir/singular-onchain-$version.tar.gz"
+    if [ -f "$archive" ]; then
+      if [ ! -f "$work/onchain/onchain/plutus.json" ]; then
+        mkdir -p "$work/onchain"
+        tar -xzf "$archive" -C "$work/onchain" ./onchain/plutus.json 2>"$work/tar.err" \
+          || refuse bundle-layout "the on-chain archive holds no onchain/plutus.json: $(tr '\n' ' ' <"$work/tar.err")"
+      fi
+      cmp -s "$work/onchain/onchain/plutus.json" "$tree/$top/share/plutus.json" \
+        || refuse bundle-blueprint-mismatch "$name carries another blueprint than the on-chain archive's onchain/plutus.json"
+    fi
+  fi
   [ "$(cat "$tree/$top/VERSION")" = "$version" ] \
     || refuse bundle-commit-mismatch "$name says version $(cat "$tree/$top/VERSION"), the release is $version"
   [ "$(cat "$tree/$top/COMMIT")" = "$tag_commit" ] \

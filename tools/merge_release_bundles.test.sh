@@ -86,4 +86,22 @@ bundles_required 0.100.0 || {
   exit 1
 }
 echo "merge-release-bundles-controls: the threshold follows version order"
+# the development node is carried by the releases after LAST_WITHOUT_DEVNET only
+devnet_required "$LAST_WITHOUT_DEVNET" && {
+  echo "merge-release-bundles-controls: FAIL $LAST_WITHOUT_DEVNET requires the development node"
+  exit 1
+}
+devnet_required 0.13.0 && {
+  echo "merge-release-bundles-controls: FAIL 0.13.0 requires the development node"
+  exit 1
+}
+devnet_required 0.13.2 || {
+  echo "merge-release-bundles-controls: FAIL 0.13.2 does not require the development node"
+  exit 1
+}
+devnet_required 0.100.0 || {
+  echo "merge-release-bundles-controls: FAIL 0.100.0 does not require the development node"
+  exit 1
+}
+echo "merge-release-bundles-controls: the development node is required after $LAST_WITHOUT_DEVNET only"
 echo "merge-release-bundles-controls: PASS"
