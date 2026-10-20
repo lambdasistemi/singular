@@ -58,6 +58,7 @@ module Singular.CLI.Options
     , programLeaves
     , shapeFlags
     , shortenedExample
+    , exampleSettings
     , docParser
     , lintDeclaration
 
@@ -753,7 +754,7 @@ leafExtras leaf =
         , section
             "Example"
             ( map ("  " <>) (leafExamples leaf)
-                <> shortExample standings (leafExamples leaf)
+                <> shortExample (exampleSettings leaf) (leafExamples leaf)
             )
         , section
             "Output and exit status"
@@ -790,6 +791,17 @@ leafExtras leaf =
             ("  " <> name <> replicate (width - length name) ' ' <> first)
                 : map (replicate (2 + width) ' ' <>) rest
         [] -> ["  " <> name]
+
+{- | The standing settings an example may leave to the config file: those of
+the command except the vault, which is how the example signs and stays in it.
+-}
+exampleSettings :: Leaf -> [Flag]
+exampleSettings leaf =
+    [ f
+    | f <- nub (shapeFlags (leafShape leaf))
+    , isJust (flagEnvironment f)
+    , flagName f /= "--vault"
+    ]
 
 {- | An example command again with the standing settings it names left to the
 config file: the same words with those flags and their values taken out, laid

@@ -45,7 +45,7 @@
       "pause": 500
     },
     {
-      "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The six settings that do not change from one command to the next can be given once, as the next section says; the signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
+      "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
       "pause": 400
     }
   ],
@@ -59,7 +59,7 @@
       "pause": 400
     },
     {
-      "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
+      "text": "The variable is SINGULAR_ followed by the flag's name in capitals with underscores, and the key is the flag's name without its dashes. The six above are --koios-url, --network-time, --network-magic, --blueprint, --state-dir and --state-token. Five more have the same three forms: --koios-token-file, the narration controls --trace, --trace-to and --trace-format, and --vault. The --help of every command lists the three forms of each of them that the command takes, and says where the config file is.",
       "pause": 400
     },
     {
@@ -87,11 +87,29 @@
       "pause": 300
     },
     {
-      "text": "Nothing else can come from the file or the environment. The signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
+      "text": "Nothing else can come from the file or the environment. The key file, an external signer, the passphrase and what a command does stay on the command line: a file that names a passphrase is refused, and the passphrase stays on the terminal prompt or on the descriptor --passphrase-fd names.",
       "pause": 300
     },
     {
       "text": "A line that carries every flag it needs means what it meant before. An environment variable or a file only fills in what the line leaves out, so a flag you type is never overruled.",
+      "pause": 400
+    }
+  ],
+  "the-vault-from-the-environment-or-the-file": [
+    {
+      "text": "The vault from the environment or the file.",
+      "pause": 500
+    },
+    {
+      "text": "As an operator who signs with a vault, you can name it once: SINGULAR_VAULT=alice.vault, or \"vault\": \"alice.vault\" in the config file, and open-datum insert --key alice --payload payload.json signs from it. The passphrase is not part of this: it stays on the terminal prompt, or on the descriptor --passphrase-fd names on the command, with a vault from either source just as with a typed one.",
+      "pause": 400
+    },
+    {
+      "text": "A write is signed by exactly one signer, so a vault you did not type on the command never joins another signer you did. If the line names the key file --wallet-skey, or an external signer with --wallet-address or --bundle, the command is refused in one sentence that names where the vault comes from and the flag on the line, before anything is read or sent:",
+      "pause": 400
+    },
+    {
+      "text": "For a vault from the file, the sentence names the key and the file (the \"vault\" key of singular.json) and says to remove the key. A preview signs nothing, so it takes no vault from the environment or the file, and --preview --wallet-address ADDR means the same with or without one. The wallet commands wallet create, wallet address and wallet sign take the vault from either source too: wallet create still refuses a path that is taken before it asks for a passphrase.",
       "pause": 400
     }
   ],
@@ -473,7 +491,7 @@
       "pause": 500
     },
     {
-      "text": "As an operator, I can supply each of the six settings of the section above as a variable, for example SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line value takes precedence, and the config file comes after the variable. The token names the registry, and never selects a provider. SINGULAR_CONFIG names the config file. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
+      "text": "As an operator, I can supply each setting of the section above as a variable, for example SINGULAR_STATE_TOKEN when I omit --state-token; an explicit command-line value takes precedence, and the config file comes after the variable. The token names the registry, and never selects a provider. SINGULAR_CONFIG names the config file. SINGULAR_LOG=PATH appends phase events to a file alongside the narration sinks selected by --trace, --trace-to and --trace-format. It does not replace those sinks or change their command-line precedence. An empty phase-log path disables that sink.",
       "pause": 400
     }
   ],
@@ -489,6 +507,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "62d42e6e5c96f89fa751787a5f0f9fb1dac4ca3f2defeaa94de204f00ab547ed"
+    "sha256": "c908dfa705cff6bf458e452d69f34a54202d67ba6baada2edf8e7068a66a3347"
   }
 }

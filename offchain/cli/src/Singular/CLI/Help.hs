@@ -24,6 +24,7 @@ import Singular.CLI.Options
     , Program (..)
     , Shape (..)
     , helpText
+    , standing
     , switch'
     , usageText
     , valued
@@ -462,13 +463,15 @@ json = switch' "--json" "Print the page as JSON for a program to read."
 
 vaultToCreate :: Flag
 vaultToCreate =
-    valued
-        "--vault"
-        "FILE"
-        "The new vault file to create; an existing path is refused."
+    standing
+        ( valued
+            "--vault"
+            "FILE"
+            "The new vault file to create; an existing path is refused."
+        )
 
 vaultToOpen :: Flag
-vaultToOpen = valued "--vault" "FILE" "The vault to open."
+vaultToOpen = standing (valued "--vault" "FILE" "The vault to open.")
 
 networkMagicOfAddress :: Flag
 networkMagicOfAddress =

@@ -20,6 +20,11 @@ when neither does, it is @singular.json@ in the working directory if there is
 one. A path inside it means what the same path on a command line means:
 relative to where the command runs.
 
+A signer is one of a choice, so a setting that sits in one is never joined to
+the others: a vault from the environment or the file with a key file or an
+external signer on the line is refused, naming both, and a preview, which
+signs nothing, takes none from either.
+
 A passphrase is not a setting of either: the vault's stays on a descriptor or
 a prompt, and a file that names one is refused.
 -}
@@ -29,6 +34,7 @@ module Singular.CLI.Sources
     , noSources
     , applySources
     , configPath
+    , sourceConflict
     , loadSources
     , loadSourcesAt
     , configFromValue
@@ -41,8 +47,15 @@ import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Lazy.Char8 qualified as LC
-import Data.List (intercalate, isInfixOf, nub, sort, stripPrefix)
-import Data.Maybe (fromMaybe, isNothing)
+import Data.List
+    ( intercalate
+    , isInfixOf
+    , nub
+    , partition
+    , sort
+    , stripPrefix
+    )
+import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import Data.Text qualified as T
 import System.Directory (doesFileExist)
 import System.IO.Error
@@ -55,6 +68,7 @@ import Singular.CLI.Options
     ( Flag (..)
     , Program
     , Raw (..)
+    , Shape (..)
     , configFlag
     , defaultConfigFile
     , leafAt
@@ -86,10 +100,11 @@ noSources environment = Sources environment (Right [])
 
 {- | The command line, with the standing settings the command takes and the
 line leaves out added from the environment and the file, as if typed after
-the rest. A line that asks for help or the version is left alone.
+the rest. A line that asks for help or the version is left alone, and so is a
+preview: it signs nothing, so it takes no signer from either.
 -}
 applySources :: Program -> Sources -> Raw -> Raw
-applySources program (Sources environment config) raw@(Raw ws flags)
+applySources program sources@(Sources environment _) raw@(Raw ws flags)
     | any (`elem` present) ["--help", "--version"] = raw
     | otherwise = case leafAt program (fst (resolvePath program ws)) of
         Nothing -> raw
@@ -100,26 +115,90 @@ applySources program (Sources environment config) raw@(Raw ws flags)
                         <> [ (flagName f, Just value)
                            | f <- nub (shapeFlags (leafShape leaf))
                            , flagName f `notElem` present
-                           , Just value <- [given f]
+                           , not (previewing && not (null (rivals (leafShape leaf) f)))
+                           , Just (value, _) <- [sourced sources file f]
                            ]
                 }
   where
     present = map fst flags
-    given f = case filter (not . null) (environmentValue f <> fileValue f) of
-        value : _ -> Just value
+    previewing = "--preview" `elem` present
+    file = fromMaybe defaultConfigFile (configPath environment raw)
+
+{- | A setting a source gives: its value, where it comes from said as a
+person reads it, and how to take it away.
+-}
+type Sourced = (String, (String, String))
+
+{- | What the environment, then the file, gives for a standing setting; an
+empty value is no value.
+-}
+sourced :: Sources -> FilePath -> Flag -> Maybe Sourced
+sourced (Sources environment config) file f =
+    case filter (not . null . fst) (environmentValue <> fileValue) of
+        found : _ -> Just found
         [] -> Nothing
-    environmentValue f =
-        [ value
+  where
+    environmentValue =
+        [ (value, ("the variable " <> variable, "unset the variable"))
         | Just variable <- [flagEnvironment f]
         , Just value <- [lookup variable environment]
         ]
-    fileValue f =
-        [ value
+    fileValue =
+        [ ( value
+          , ("the " <> show key <> " key of " <> file, "remove the key")
+          )
         | Just key <- [flagConfig f]
         , Right pairs <- [config]
         , (name, value) <- pairs
         , name == key
         ]
+
+{- | The flags a setting excludes, by the group the command declares it in:
+those of the other branches of the innermost exclusive choice that holds it.
+The vault of a write is excluded by the external signer's address and bundle
+and by the key file; a setting outside any choice excludes nothing.
+-}
+rivals :: Shape -> Flag -> [String]
+rivals shape f = case shape of
+    OneOf branches -> case partition (elem f . shapeFlags) branches of
+        ([], _) -> []
+        (mine, others) -> case concatMap (`rivals` f) mine of
+            [] -> nub (map flagName (concatMap shapeFlags others))
+            deeper -> deeper
+    Each parts -> concatMap (`rivals` f) parts
+    _ -> []
+
+{- | A setting the environment or the file would give, while the line names a
+flag it cannot be used with: the refusal, naming where the setting comes from
+and the flag on the line. Only one signer is ever taken, so a vault from the
+environment is never joined to a key file or an external signer typed on the
+line, and neither is one silently dropped.
+-}
+sourceConflict :: Program -> Sources -> Raw -> Maybe String
+sourceConflict program sources@(Sources environment _) raw@(Raw ws flags)
+    | any (`elem` present) ["--help", "--version", "--preview"] = Nothing
+    | otherwise = do
+        leaf <- leafAt program (fst (resolvePath program ws))
+        listToMaybe
+            [ flagName f
+                <> " comes from "
+                <> from
+                <> " and "
+                <> rival
+                <> " is on the command line, and only one of the two can be used: "
+                <> undo
+                <> ", or leave "
+                <> rival
+                <> " out"
+            | f <- nub (shapeFlags (leafShape leaf))
+            , flagName f `notElem` present
+            , Just (_, (from, undo)) <- [sourced sources file f]
+            , rival <- rivals (leafShape leaf) f
+            , rival `elem` present
+            ]
+  where
+    present = map fst flags
+    file = fromMaybe defaultConfigFile (configPath environment raw)
 
 -- | The file the command names: @--config@, else the variable.
 configPath :: [(String, String)] -> Raw -> Maybe FilePath

@@ -2,16 +2,18 @@
 
 {- |
 Module      : Singular.Application.OpenDatum.SourcesSpec
-Description : open-datum reads the six standing settings from the environment and a file
+Description : open-datum reads its standing settings from the environment and a file
 License     : Apache-2.0
 
 The chain (@koios-url@, @network-time@, @network-magic@), the compiled
-contracts (@blueprint@) and the registry (@state-dir@, @state-token@) are
-typed on every command today. Each has three forms: the flag, the variable
-@SINGULAR_<NAME>@ and the key @<name>@ of one JSON file. With the six in the
-file, @open-datum insert --key alice --payload payload.json --vault
-alice.vault@ is a whole command and means what the same command with the six
-flags means.
+contracts (@blueprint@), the registry (@state-dir@, @state-token@), the Koios
+token file, the tracing and the vault are typed on every command today. Each
+has three forms: the flag, the variable @SINGULAR_<NAME>@ and the key @<name>@
+of one JSON file. With the first six in the file, @open-datum insert --key
+alice --payload payload.json --vault alice.vault@ is a whole command and
+means what the same command with the six flags means. A vault from the
+environment or the file is never joined to a key file or an external signer on
+the line.
 -}
 module Singular.Application.OpenDatum.SourcesSpec (spec) where
 
@@ -46,7 +48,7 @@ program = openDatumProgram openDatumVersion
 token :: String
 token = replicate 56 'a' <> "." <> replicate 64 'b'
 
--- | The six standing settings: flag, variable, key and a value each.
+-- | The standing settings but the vault: flag, variable, key and a value each.
 settings :: [(String, String, String, String)]
 settings =
     [
@@ -60,12 +62,21 @@ settings =
     , ("--blueprint", "SINGULAR_BLUEPRINT", "blueprint", "plutus.json")
     , ("--state-dir", "SINGULAR_STATE_DIR", "state-dir", "/state")
     , ("--state-token", "SINGULAR_STATE_TOKEN", "state-token", token)
+    ,
+        ( "--koios-token-file"
+        , "SINGULAR_KOIOS_TOKEN_FILE"
+        , "koios-token-file"
+        , "koios.token"
+        )
+    , ("--trace", "SINGULAR_TRACE", "trace", "how")
+    , ("--trace-to", "SINGULAR_TRACE_TO", "trace-to", "stderr")
+    , ("--trace-format", "SINGULAR_TRACE_FORMAT", "trace-format", "json")
     ]
 
 flagOf :: (String, String, String, String) -> String
 flagOf (f, _, _, _) = f
 
--- | Each command with what it needs beside the six.
+-- | Each command with what it needs beside the standing settings.
 commands :: [(String, [String])]
 commands =
     [ ("create", ["--vault", "alice.vault"])
@@ -96,7 +107,7 @@ commands =
     , ("inspect", ["--key", "alice"])
     ]
 
--- | The six a command declares.
+-- | The standing settings a command declares, but the vault.
 takenBy :: String -> [(String, String, String, String)]
 takenBy name =
     [ s
@@ -113,24 +124,28 @@ line name kept =
             <> fromMaybe [] (lookup name commands)
 
 meaning :: [String] -> Either CLIError String
-meaning = fmap (show . fst) . parseOpenDatumInvocation []
+meaning = fmap show . parseOpenDatumInvocation []
 
 withEnvironment
     :: [(String, String)] -> [String] -> Either CLIError String
 withEnvironment environment =
-    fmap (show . fst)
+    fmap show
         . parseOpenDatumInvocationFrom (Sources environment (Right []))
+
+refusedNaming :: [String] -> Either CLIError String -> Bool
+refusedNaming needles (Left (ConfigRefused why)) = all (`isInfixOf` why) needles
+refusedNaming _ _ = False
 
 withFile :: [(String, String)] -> [String] -> Either CLIError String
 withFile pairs =
-    fmap (show . fst)
+    fmap show
         . parseOpenDatumInvocationFrom (Sources [] (Right pairs))
 
 spec :: Spec
 spec = describe "the settings given by the environment and a config file" $ do
     -- The command of the Demo 1 runbook: insert --key alice
-    -- --payload payload.json --vault alice.vault, with the six in the file.
-    it "needs only its own options once the six are in the file" $ do
+    -- --payload payload.json --vault alice.vault, with the settings in the file.
+    it "needs only its own options once the settings are in the file" $ do
         let whole = line "insert" (takenBy "insert")
         meaning whole `shouldSatisfy` isRight
         withFile
@@ -155,11 +170,56 @@ spec = describe "the settings given by the environment and a config file" $ do
                     helpText program [] [name]
                         `shouldSatisfy` \page ->
                             all (`isInfixOf` page) [flag, "env: " <> variable, key <> ": "]
+    describe "the vault" $ do
+        let bare =
+                "insert"
+                    : concat [[f, v] | (f, _, _, v) <- takenBy "insert"]
+                        <> ["--key", "alice", "--payload", "payload.json"]
+            signed = meaning (bare <> ["--vault", "alice.vault"])
+        it "left out is read from SINGULAR_VAULT and from the key vault" $ do
+            signed `shouldSatisfy` isRight
+            withEnvironment [("SINGULAR_VAULT", "alice.vault")] bare
+                `shouldBe` signed
+            withFile [("vault", "alice.vault")] bare `shouldBe` signed
+        it "is shown with its variable and its key on the help page" $
+            helpText program [] ["insert"]
+                `shouldSatisfy` \page ->
+                    all (`isInfixOf` page) ["env: SINGULAR_VAULT", "vault: "]
+        forM_
+            [ ("--wallet-skey", "alice.skey")
+            ,
+                ( "--wallet-address"
+                , "addr_test1vpd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95kj6tfd95ksypknf7"
+                )
+            , ("--bundle", "bundle.json")
+            ]
+            $ \(flag, value) -> do
+                it
+                    ( "from the variable is refused with "
+                        <> flag
+                        <> " on the line, naming both"
+                    )
+                    $ refusedNaming
+                        ["--vault", "the variable SINGULAR_VAULT", flag]
+                        ( withEnvironment
+                            [("SINGULAR_VAULT", "alice.vault")]
+                            (bare <> [flag, value])
+                        )
+                        `shouldBe` True
+                it
+                    ( "from the file is refused with "
+                        <> flag
+                        <> " on the line, naming both"
+                    )
+                    $ refusedNaming
+                        ["--vault", "\"vault\" key of singular.json", flag]
+                        (withFile [("vault", "alice.vault")] (bare <> [flag, value]))
+                        `shouldBe` True
     describe "the declaration" $ do
         let everyFlag = nub (concatMap (shapeFlags . leafShape) (programLeaves program))
-        it "gives the same six settings three forms as singular" $
+        it "gives the same eleven settings three forms as singular" $
             sort (nub [flagName f | f <- everyFlag, isJust (flagEnvironment f)])
-                `shouldBe` sort (map flagOf settings)
+                `shouldBe` sort ("--vault" : map flagOf settings)
     describe "a missing setting" $
         it "names its flag, its variable and its key" $
             openDatumRefusalHint (MissingFlag "--koios-url")

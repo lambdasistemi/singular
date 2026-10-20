@@ -23,6 +23,10 @@ Available settings:
 
   The new vault file to create; an existing path is refused.
   option: --vault FILE
+  env: SINGULAR_VAULT FILE
+  config:
+    vault: # or null
+      <string>
 
   The network the address is built for.
   option: --network-magic N
@@ -34,15 +38,42 @@ Available settings:
   How much to narrate: off, what (protocol steps) or how (also their
   mechanics).
   option: --trace LEVEL
+  env: SINGULAR_TRACE LEVEL
+  config:
+    trace: # or null
+      <string>
   default: what on a terminal, otherwise off
 
   Where the narration goes: stderr or file:PATH; repeat for several.
   option: --trace-to SINK
+  env: SINGULAR_TRACE_TO SINK
+  config:
+    trace-to: # or null
+      <string>
   default: stderr
 
   The format of the narration: text for a person, json for a program.
   option: --trace-format FORMAT
+  env: SINGULAR_TRACE_FORMAT FORMAT
+  config:
+    trace-format: # or null
+      <string>
   default: text on standard error, json in a file
+
+Where settings come from:
+  A setting with an env and a config line above is given in any of three ways,
+  and the first that is present wins: the flag, then the variable, then the
+  key in the config file, then the default.
+
+  The file is one JSON object whose keys are the setting names without their
+  dashes, text or numbers, for example
+
+    {"koios-url": "https://preprod.koios.rest/api/v1", "network-magic": 1}
+
+  It is singular.json in the working directory, or the file named by --config
+  or SINGULAR_CONFIG. A path in it means what it means on the command line,
+  from where the command runs. A passphrase is never read from the file or the
+  environment: it stays on the prompt or --passphrase-fd.
 
 Environment:
   SINGULAR_LOG  A file the protocol phases are appended to, one line each.

@@ -119,10 +119,12 @@ networkMagic =
 
 koiosTokenFile :: Flag
 koiosTokenFile =
-    valued
-        "--koios-token-file"
-        "FILE"
-        "File holding a Koios bearer token; its contents are never printed."
+    standing
+        ( valued
+            "--koios-token-file"
+            "FILE"
+            "File holding a Koios bearer token; its contents are never printed."
+        )
 
 networkTime :: Flag
 networkTime =
@@ -137,10 +139,12 @@ networkTime =
 
 vault :: Flag
 vault =
-    valued
-        "--vault"
-        "FILE"
-        "Signer, normal route: sign from this encrypted wallet vault."
+    standing
+        ( valued
+            "--vault"
+            "FILE"
+            "Signer, normal route: sign from this encrypted wallet vault."
+        )
 
 passphraseFd :: Flag
 passphraseFd =
@@ -274,33 +278,36 @@ previewAddress =
 
 traceLevel :: Flag
 traceLevel =
-    ( valued
-        "--trace"
-        "LEVEL"
-        "How much to narrate: off, what (protocol steps) or how (also their mechanics)."
-    )
-        { flagDefault = Just "what on a terminal, otherwise off"
-        }
+    standing
+        ( valued
+            "--trace"
+            "LEVEL"
+            "How much to narrate: off, what (protocol steps) or how (also their mechanics)."
+        )
+            { flagDefault = Just "what on a terminal, otherwise off"
+            }
 
 traceTo :: Flag
 traceTo =
-    ( valued
-        "--trace-to"
-        "SINK"
-        "Where the narration goes: stderr or file:PATH; repeat for several."
-    )
-        { flagDefault = Just "stderr"
-        }
+    standing
+        ( valued
+            "--trace-to"
+            "SINK"
+            "Where the narration goes: stderr or file:PATH; repeat for several."
+        )
+            { flagDefault = Just "stderr"
+            }
 
 traceFormat :: Flag
 traceFormat =
-    ( valued
-        "--trace-format"
-        "FORMAT"
-        "The format of the narration: text for a person, json for a program."
-    )
-        { flagDefault = Just "text on standard error, json in a file"
-        }
+    standing
+        ( valued
+            "--trace-format"
+            "FORMAT"
+            "The format of the narration: text for a person, json for a program."
+        )
+            { flagDefault = Just "text on standard error, json in a file"
+            }
 
 -- | The Koios node every chain-reading command names.
 nodeShape :: Shape
