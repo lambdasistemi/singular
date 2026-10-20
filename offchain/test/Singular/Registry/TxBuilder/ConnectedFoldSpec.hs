@@ -450,6 +450,16 @@ attachedMints =
 registrationMints :: [ConnectedMint]
 registrationMints = [applicationBurn, activeMint [(registrationKey, 1)]]
 
+-- | What a fold of the termination alone mints: the burn of its trie-ready tag and of its key's singular tag.
+terminationOnlyMint :: MultiAsset
+terminationOnlyMint =
+    MultiAsset
+        ( Map.fromList
+            [ (requestId, Map.singleton (nameOf terminationTag) (-1))
+            , (activeId, Map.singleton (nameOf terminationKey) (-1))
+            ]
+        )
+
 -- | The mints of a fold of the termination alone: its singular burn and nothing of the registration.
 terminationMints :: [ConnectedMint]
 terminationMints = [activeMint [(terminationKey, -1)]]
@@ -547,32 +557,54 @@ holding tx key =
 changeOf :: ConwayTx -> [Coin]
 changeOf tx = [o ^. coinTxOutL | o <- outputsOf tx, o ^. addrTxOutL == payer]
 
--- | The actions the fold states for the state it spends.
-stateActionsOf :: ConwayTx -> [RequestAction]
+{- | The whole sequence of actions the fold states for the state it spends, as
+decoded from its redeemer: nothing when the redeemer is not a Modify.
+-}
+stateActionsOf :: ConwayTx -> Maybe [RequestAction]
 stateActionsOf tx =
     case lookup (indexOf tx stateRef) (spendRedeemers tx)
         >>= fromBuiltinData . BuiltinData of
-        Just (Modify actions) -> actions
-        _ -> []
+        Just (Modify actions) -> Just actions
+        _ -> Nothing
 
--- | The proof of each update the fold states, in the order stated.
-stateProofs :: ConwayTx -> [[ProofStep]]
-stateProofs tx = [steps | Update steps <- stateActionsOf tx]
+isUpdate :: RequestAction -> Bool
+isUpdate = \case Update _ -> True; _ -> False
 
-{- | The same fold with the proofs of its state action replaced, so that the
-root, the mint and every amount of the body stay as built.
+-- | Whether the state action is exactly this many updates and no other action.
+exactlyUpdates :: Int -> ConwayTx -> Bool
+exactlyUpdates n tx = case stateActionsOf tx of
+    Just actions -> length actions == n && all isUpdate actions
+    Nothing -> False
+
+{- | The proof of each update, in the order stated, and only when the whole
+sequence is updates: an action of another kind is not dropped, it leaves
+nothing to observe.
 -}
-withStateProofs :: [[ProofStep]] -> ConwayTx -> ConwayTx
-withStateProofs proofs tx =
+stateProofs :: ConwayTx -> Maybe [[ProofStep]]
+stateProofs tx = stateActionsOf tx >>= traverse updateSteps
+  where
+    updateSteps = \case
+        Update steps -> Just steps
+        _ -> Nothing
+
+{- | The same fold with its state action replaced, so that the root, the mint
+and every amount of the body stay as built.
+-}
+withStateActions :: [RequestAction] -> ConwayTx -> ConwayTx
+withStateActions actions tx =
     tx & witsTxL . rdmrsTxWitsL %~ replaced
   where
     stated = ConwaySpending (AsIx (indexOf tx stateRef))
     replaced (Redeemers rs) =
         Redeemers $
             Map.adjust
-                (\(_, units) -> (Data (toPlcData (Modify (map Update proofs))), units))
+                (\(_, units) -> (Data (toPlcData (Modify actions)), units))
                 stated
                 rs
+
+-- | The same fold with the proofs of its updates replaced.
+withStateProofs :: [[ProofStep]] -> ConwayTx -> ConwayTx
+withStateProofs = withStateActions . map Update
 
 -- ---------------------------------------------------------
 -- The transition of the registry, observed without the builder
@@ -648,6 +680,50 @@ provesTransition roots moves proofs =
     encoded steps = case Builtins.serialiseData (toBuiltinData steps) of
         BuiltinByteString bytes -> bytes
 
+{- | Whether the built transaction states exactly one update per move and
+nothing else, and those proofs carry the registry through the moves.
+-}
+statedTransitionProven :: [Root] -> [Move] -> ConwayTx -> Bool
+statedTransitionProven roots moves tx =
+    maybe False (provesTransition roots moves) (stateProofs tx)
+
+{- | Action sequences that keep the lawful updates and add a rejection, repeat
+an update, or drop one: the body stays as built and the sequence is not one
+update per selected member.
+-}
+wrongActions :: [[ProofStep]] -> [(String, [RequestAction])]
+wrongActions lawful =
+    [ ("a rejection before the updates", Rejected : updates)
+    , ("a rejection after the updates", updates <> [Rejected])
+    ,
+        ( "a rejection between the first update and the rest"
+        , take 1 updates <> [Rejected] <> drop 1 updates
+        )
+    , ("an update repeated", updates <> take 1 updates)
+    , ("an update dropped", drop 1 updates)
+    ]
+  where
+    updates = map Update lawful
+
+{- | The lawful positive and the surplus-action discriminator of one built
+fold: its state action is one update per move, and the same body with an extra
+or missing action is refused by the same observation.
+-}
+strictActionObserved :: [Move] -> ConwayTx -> Expectation
+strictActionObserved moves tx = do
+    (roots, _) <- replayMoves moves
+    exactlyUpdates (length moves) tx `shouldBe` True
+    statedTransitionProven roots moves tx `shouldBe` True
+    case stateProofs tx of
+        Nothing -> expectationFailure "the state action is not a Modify of updates"
+        Just lawful -> forM_ (wrongActions lawful) $ \(what, actions) -> do
+            let variant = withStateActions actions tx
+            (what, stateActionsOf variant /= stateActionsOf tx)
+                `shouldBe` (what, True)
+            (what, variant ^. bodyTxL == tx ^. bodyTxL) `shouldBe` (what, True)
+            (what, statedTransitionProven roots moves variant)
+                `shouldBe` (what, False)
+
 -- | A proof set that is wrong in each of the ways a body can keep its root and its amounts and still not be a fold.
 wrongProofs :: [[ProofStep]] -> [(String, [[ProofStep]])]
 wrongProofs lawful =
@@ -671,28 +747,32 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
         "spends the state through Modify with one update per member, and never a rejection"
         $ do
             (tx, _) <- folded bothMembers attachedMints
-            stateActionsOf tx
-                `shouldSatisfy` (\as -> length as == 2 && all isUpdate as)
+            exactlyUpdates 2 tx `shouldBe` True
     it
         "states Modify proofs that carry the registry through both edges, member by member, from the initial root"
         $ do
             (tx, _) <- folded bothMembers attachedMints
             (roots, _) <- replayMoves bothMoves
-            length (stateProofs tx) `shouldBe` 2
-            provesTransition roots bothMoves (stateProofs tx) `shouldBe` True
+            exactlyUpdates 2 tx `shouldBe` True
+            statedTransitionProven roots bothMoves tx `shouldBe` True
     it
         "tells emptied, swapped and corrupted proofs from the stated ones while the root and every amount stay as built"
         $ do
             (tx, _) <- folded bothMembers attachedMints
             (roots, _) <- replayMoves bothMoves
-            let lawful = stateProofs tx
-            provesTransition roots bothMoves lawful `shouldBe` True
+            let lawful = fromMaybe [] (stateProofs tx)
+            statedTransitionProven roots bothMoves tx `shouldBe` True
             forM_ (wrongProofs lawful) $ \(what, proofs) -> do
                 let variant = withStateProofs proofs tx
                 (what, proofs /= lawful) `shouldBe` (what, True)
                 (what, variant ^. bodyTxL == tx ^. bodyTxL) `shouldBe` (what, True)
-                (what, provesTransition roots bothMoves (stateProofs variant))
+                (what, statedTransitionProven roots bothMoves variant)
                     `shouldBe` (what, False)
+    it
+        "refuses a state action with a rejection added, an update repeated or an update dropped, at the body as built, beside the lawful one update per member"
+        $ do
+            (tx, _) <- folded bothMembers attachedMints
+            strictActionObserved bothMoves tx
     it
         "has an observation of proofs that accepts the replayed proofs and refuses the emptied, the swapped and the corrupted (control of the observation)"
         $ do
@@ -866,20 +946,13 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
                         other -> expectationFailure ("interval: " <> show other)
                     (roots, _) <- replayMoves [Registers registrationKey]
                     root `shouldBe` last roots
-                    provesTransition roots [Registers registrationKey] (stateProofs tx)
-                        `shouldBe` True
+                    strictActionObserved [Registers registrationKey] tx
             it
                 "a termination alone: its burns, no delivery, its held value less its tip, and no window"
                 $ do
                     (tx, root) <-
                         folded [(terminationRef, terminationOut)] terminationMints
-                    tx ^. bodyTxL . mintTxBodyL
-                        `shouldBe` MultiAsset
-                            ( Map.fromList
-                                [ (requestId, Map.singleton (nameOf terminationTag) (-1))
-                                , (activeId, Map.singleton (nameOf terminationKey) (-1))
-                                ]
-                            )
+                    tx ^. bodyTxL . mintTxBodyL `shouldBe` terminationOnlyMint
                     holding tx registrationKey `shouldBe` []
                     holding tx terminationKey `shouldBe` []
                     tx ^. bodyTxL . treasuryDonationTxBodyL
@@ -893,8 +966,7 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
                         other -> expectationFailure ("interval: " <> show other)
                     (roots, _) <- replayMoves [Terminates terminationKey]
                     root `shouldBe` last roots
-                    provesTransition roots [Terminates terminationKey] (stateProofs tx)
-                        `shouldBe` True
+                    strictActionObserved [Terminates terminationKey] tx
             it
                 "a termination long after every registration window, where a registration of the same age is refused"
                 $ do
@@ -904,6 +976,8 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
                     case tx ^. bodyTxL . vldtTxBodyL of
                         ValidityInterval (SJust lower) (SJust upper) -> lower `shouldSatisfy` (< upper)
                         other -> expectationFailure ("interval: " <> show other)
+                    tx ^. bodyTxL . mintTxBodyL `shouldBe` terminationOnlyMint
+                    strictActionObserved [Terminates terminationKey] tx
                     refusesWith "not-phase1" $
                         foldedAt
                             late
@@ -949,7 +1023,6 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
                     payer
   where
     defaultProcessTimeMs = 30_000
-    isUpdate = \case Update _ -> True; _ -> False
     extractState o = case rawDatum o of
         Just d -> case fromBuiltinData (BuiltinData d) of
             Just (StateDatum st) -> Just st
