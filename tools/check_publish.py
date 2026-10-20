@@ -26,6 +26,57 @@ for phrase in ("epic", "E18", "obligation", "milestone artifact"):
     assert phrase.casefold() not in stable.casefold(), (
         f"release text contains forbidden wording: {phrase}"
     )
+
+
+def without_repeats(text):
+    """The changes with each bullet kept once under its heading, as written."""
+    kept, seen = [], set()
+    for line in text.splitlines(keepends=True):
+        if line.startswith("### "):
+            seen = set()
+        if line.startswith("* "):
+            key = re.sub(r" \(\[[0-9a-f]+\]\([^)]*\)\)$", "", line.rstrip("\n"))
+            if key in seen:
+                continue
+            seen.add(key)
+        kept.append(line)
+    return "".join(kept)
+
+
+def commit_link(sha):
+    return f"([{sha}](https://example.org/commit/{sha}))"
+
+
+section_head = f"## [{version}](https://example.org/compare) (2026-09-14)\n\n"
+# the merge commit and the feature commit state one change twice
+repeated_bullets = (
+    section_head
+    + "### Fixes\n\n"
+    + f'* a staged [release] is verified, said "explicitly" {commit_link("1111111")}\n'
+    + f"* another fix {commit_link('2222222')}\n"
+    + f'* a staged [release] is verified, said "explicitly" {commit_link("3333333")}\n'
+    + "  and a second line that belongs to the repeat\n"
+    + f"* a third fix {commit_link('4444444')}\n"
+    + "\n### Documentation\n\n"
+    + f'* a staged [release] is verified, said "explicitly" {commit_link("5555555")}\n'
+)
+repeated_bullets_once = (
+    section_head
+    + "### Fixes\n\n"
+    + f'* a staged [release] is verified, said "explicitly" {commit_link("1111111")}\n'
+    + f"* another fix {commit_link('2222222')}\n"
+    + f"* a third fix {commit_link('4444444')}\n"
+    + "\n### Documentation\n\n"
+    + f'* a staged [release] is verified, said "explicitly" {commit_link("5555555")}\n'
+)
+# two different changes, one the other's prefix, both stay
+distinct_bullets = (
+    section_head
+    + "### Fixes\n\n"
+    + f"* keep the registry {commit_link('1111111')}\n"
+    + f"* keep the registry state {commit_link('2222222')}\n"
+    + f"* keep the registry and more {commit_link('3333333')}\n"
+)
 sha = "a" * 40
 mock = """#!PYTHON
 import json, os, pathlib, shutil, sys
@@ -60,6 +111,8 @@ cases = [
     ("section-at-eof", f"v{version}", {}, True),
     ("notes-override", f"v{version}", {}, True),
     ("new-release", f"v{version}", {}, True),
+    ("repeated-bullet", f"v{version}", {}, True),
+    ("distinct-bullets", f"v{version}", {}, True),
     ("already-published", f"v{version}", {"EXISTING": "1"}, True),
 ]
 results = []
@@ -88,7 +141,13 @@ for name, tag, extra, success in cases:
         )
         expected_section = fixture_section
         if name == "new-release":
-            fixture, expected_section = changelog, section.group(0)
+            fixture, expected_section = changelog, without_repeats(section.group(0))
+        elif name == "repeated-bullet":
+            fixture = "# Changelog\n\n" + repeated_bullets
+            expected_section = repeated_bullets_once
+        elif name == "distinct-bullets":
+            fixture = "# Changelog\n\n" + distinct_bullets
+            expected_section = distinct_bullets
         elif name == "missing-section":
             fixture = fixture.replace(f"## [{version}]", f"## [{version}0]")
         elif name == "empty-section":
@@ -152,6 +211,14 @@ for name, tag, extra, success in cases:
                 f"missing or empty CHANGELOG.md section for {version}" in result.stderr
             ), (name, result.stderr)
         if success and name != "already-published":
+            created = [x for x in calls if x[:2] == ["release", "create"]]
+            assert len(created) == 1, (name, "the release was not created once")
+            assert (
+                created[0][created[0].index("--title") + 1] == f"Singular {version}"
+            ), (
+                name,
+                "the release title is not the product and its version",
+            )
             expected_stable = (
                 override.read_text() if name == "notes-override" else stable
             )
