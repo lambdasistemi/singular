@@ -27,6 +27,7 @@ These rows are the checkpoint's RED: they call the real builder.
 module Singular.Registry.TxBuilder.ConnectedFoldSpec (spec) where
 
 import Control.Exception (SomeException, displayException)
+import Control.Monad (forM_)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
@@ -34,11 +35,17 @@ import Data.ByteString.Short qualified as SBS
 import Data.Foldable (toList)
 import Data.List (isInfixOf)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Word (Word32)
-import Lens.Micro ((&), (.~), (^.))
+import Lens.Micro ((%~), (&), (.~), (^.))
+import MPF.Verify
+    ( verifyAikenExclusionProof
+    , verifyAikenInclusionProof
+    )
 import PlutusCore.Data qualified as PLC
+import PlutusTx.Builtins qualified as Builtins
 import PlutusTx.Builtins.Internal
     ( BuiltinByteString (..)
     , BuiltinData (..)
@@ -49,7 +56,11 @@ import Test.Hspec
 import Cardano.Ledger.Address (Addr, serialiseAddr)
 import Cardano.Ledger.Allegra.Scripts (ValidityInterval (..))
 import Cardano.Ledger.Alonzo.Scripts (AsIx (..))
-import Cardano.Ledger.Api.Scripts.Data (Datum (..), binaryDataToData)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
 import Cardano.Ledger.Api.Tx (bodyTxL, witsTxL)
 import Cardano.Ledger.Api.Tx.Body
     ( feeTxBodyL
@@ -98,7 +109,10 @@ import Singular.Registry.SyntheticLedger
     , withSyntheticCosts
     )
 import Singular.Registry.SyntheticTime (syntheticTime)
-import Singular.Registry.Trie (Trie (getRoot), TrieManager (..))
+import Singular.Registry.Trie
+    ( Trie (delete, getProofSteps, getRoot, insert)
+    , TrieManager (..)
+    )
 import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
 import Singular.Registry.TxBuilder.ConnectedFold
@@ -135,11 +149,11 @@ import Singular.Registry.Types
     , OnChainRoot (..)
     , OnChainTokenId (..)
     , OnChainTokenState (..)
+    , ProofStep (..)
     , RequestAction (..)
     , UpdateRedeemer (..)
     , applicationTagName
     , edgeInsertActive
-    , edgeUpdateTerminal
     , trieReadyTagName
     )
 
@@ -366,8 +380,13 @@ stateOutAt root =
 
 -- | The view: the tip inside the registration's window, every output resolvable.
 viewOver :: Root -> [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
-viewOver root requests =
-    withTip (TipObservation (SlotNo 5_005) (BS.replicate 32 0) 1 0) $
+viewOver = viewOverAt (SlotNo 5_005)
+
+-- | The same view with the chain's tip at the given slot.
+viewOverAt
+    :: SlotNo -> Root -> [(TxIn, TxOut ConwayEra)] -> Session NoWitness IO
+viewOverAt tipSlot root requests =
+    withTip (TipObservation tipSlot (BS.replicate 32 0) 1 0) $
         withAddressOutputs
             ( \a ->
                 pure $
@@ -391,45 +410,68 @@ viewOver root requests =
                         stubSession
             )
 
--- | The mints the caller attaches: the application tag burn and the singular tags.
-attachedMints :: [ConnectedMint]
-attachedMints =
-    [ ConnectedMint
+-- | The application tag the registration's booking minted, which its fold burns.
+registrationApplicationTag :: ByteString
+registrationApplicationTag =
+    applicationTagName
+        (regKey registration)
+        (regRefundAddress registration)
+        (regDestination registration)
+        (regNonce registration)
+
+-- | The registration's application tag burn.
+applicationBurn :: ConnectedMint
+applicationBurn =
+    ConnectedMint
         { cmPolicy = applicationId
-        , cmAssets =
-            Map.singleton
-                ( nameOf
-                    ( applicationTagName
-                        (regKey registration)
-                        (regRefundAddress registration)
-                        (regDestination registration)
-                        (regNonce registration)
-                    )
-                )
-                (-1)
+        , cmAssets = Map.singleton (nameOf registrationApplicationTag) (-1)
         , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
         , cmScript = applicationScript
         }
-    , ConnectedMint
+
+-- | The singular tags the selected members move: one mint per registration, one burn per termination.
+activeMint :: [(ByteString, Integer)] -> ConnectedMint
+activeMint moved =
+    ConnectedMint
         { cmPolicy = activeId
-        , cmAssets =
-            Map.fromList [(registrationKey, 1), (terminationKey, -1)]
-                & Map.mapKeys nameOf
+        , cmAssets = Map.fromList moved & Map.mapKeys nameOf
         , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
         , cmScript = activeScript
         }
+
+-- | The mints of the fold of both members: the registration's application tag burn and both singular moves.
+attachedMints :: [ConnectedMint]
+attachedMints =
+    [ applicationBurn
+    , activeMint [(registrationKey, 1), (terminationKey, -1)]
     ]
+
+-- | The mints of a fold of the registration alone.
+registrationMints :: [ConnectedMint]
+registrationMints = [applicationBurn, activeMint [(registrationKey, 1)]]
+
+-- | The mints of a fold of the termination alone: its singular burn and nothing of the registration.
+terminationMints :: [ConnectedMint]
+terminationMints = [activeMint [(terminationKey, -1)]]
 
 folded
     :: [(TxIn, TxOut ConwayEra)]
     -> [ConnectedMint]
     -> IO (ConwayTx, Root)
-folded requests mints = do
+folded = foldedAt (SlotNo 5_005)
+
+-- | The fold built with the chain's tip at the given slot.
+foldedAt
+    :: SlotNo
+    -> [(TxIn, TxOut ConwayEra)]
+    -> [ConnectedMint]
+    -> IO (ConwayTx, Root)
+foldedAt tipSlot requests mints = do
     (manager, root) <- worldTrie
     connectedFoldTx
         ConnectedFoldArgs
             { cfaCfg = cfg
-            , cfaSession = viewOver root requests
+            , cfaSession = viewOverAt tipSlot root requests
             , cfaTrie = manager
             , cfaToken = tokenId
             , cfaFeeAddr = payer
@@ -491,6 +533,134 @@ rawDatum o = case o ^. datumTxOutL of
     Datum bd -> Just (getPlutusData (binaryDataToData bd))
     _ -> Nothing
 
+-- | The outputs of the fold that hold the singular tag of a key.
+holding :: ConwayTx -> ByteString -> [TxOut ConwayEra]
+holding tx key =
+    [ o
+    | o <- outputsOf tx
+    , MaryValue _ (MultiAsset m) <- [o ^. valueTxOutL]
+    , Just held <- [Map.lookup activeId m]
+    , Map.member (nameOf key) held
+    ]
+
+-- | The lovelace of the outputs that return to the folder.
+changeOf :: ConwayTx -> [Coin]
+changeOf tx = [o ^. coinTxOutL | o <- outputsOf tx, o ^. addrTxOutL == payer]
+
+-- | The actions the fold states for the state it spends.
+stateActionsOf :: ConwayTx -> [RequestAction]
+stateActionsOf tx =
+    case lookup (indexOf tx stateRef) (spendRedeemers tx)
+        >>= fromBuiltinData . BuiltinData of
+        Just (Modify actions) -> actions
+        _ -> []
+
+-- | The proof of each update the fold states, in the order stated.
+stateProofs :: ConwayTx -> [[ProofStep]]
+stateProofs tx = [steps | Update steps <- stateActionsOf tx]
+
+{- | The same fold with the proofs of its state action replaced, so that the
+root, the mint and every amount of the body stay as built.
+-}
+withStateProofs :: [[ProofStep]] -> ConwayTx -> ConwayTx
+withStateProofs proofs tx =
+    tx & witsTxL . rdmrsTxWitsL %~ replaced
+  where
+    stated = ConwaySpending (AsIx (indexOf tx stateRef))
+    replaced (Redeemers rs) =
+        Redeemers $
+            Map.adjust
+                (\(_, units) -> (Data (toPlcData (Modify (map Update proofs))), units))
+                stated
+                rs
+
+-- ---------------------------------------------------------
+-- The transition of the registry, observed without the builder
+-- ---------------------------------------------------------
+
+-- | What a member does to the registry: a registration inserts its key active, a termination makes its active key terminal.
+data Move = Registers ByteString | Terminates ByteString
+
+bothMoves :: [Move]
+bothMoves = [Registers registrationKey, Terminates terminationKey]
+
+-- | The leaf bytes the model writes for a key: active, then terminal.
+activeLeaf, terminalLeaf :: ByteString
+activeLeaf = BS.singleton 0x01
+terminalLeaf = BS.singleton 0x02
+
+{- | A second trie replays the moves from the world's root with plain trie
+operations: the root before the first move and after each, and the proof each
+move states (after an insertion, before a replacement).
+-}
+replayMoves :: [Move] -> IO ([Root], [[ProofStep]])
+replayMoves moves = do
+    (manager, root0) <- worldTrie
+    withTrie manager tokenId $ \trie -> do
+        let proofOf k = fromMaybe [] <$> getProofSteps trie k
+            move = \case
+                Registers k -> do
+                    _ <- insert trie k activeLeaf
+                    proof <- proofOf k
+                    root <- getRoot trie
+                    pure (root, proof)
+                Terminates k -> do
+                    proof <- proofOf k
+                    _ <- delete trie k
+                    _ <- insert trie k terminalLeaf
+                    root <- getRoot trie
+                    pure (root, proof)
+        results <- mapM move moves
+        pure (root0 : map fst results, map snd results)
+
+{- | Whether the proofs a fold states carry the registry through the moves in
+order, each checked by the verifier of the on-chain encoding against the roots:
+an insertion's proof shows the key absent before and bound active after, a
+termination's shows it active before and terminal after.
+-}
+provesTransition :: [Root] -> [Move] -> [[ProofStep]] -> Bool
+provesTransition roots moves proofs =
+    length roots == length moves + 1
+        && length proofs == length moves
+        && and (zipWith3 each (zip roots (drop 1 roots)) moves proofs)
+  where
+    each (rootBefore, rootAfter) move proof = case move of
+        Registers k ->
+            verifyAikenExclusionProof (unRoot rootBefore) k (encoded proof)
+                && verifyAikenInclusionProof
+                    (unRoot rootAfter)
+                    k
+                    activeLeaf
+                    (encoded proof)
+        Terminates k ->
+            verifyAikenInclusionProof
+                (unRoot rootBefore)
+                k
+                activeLeaf
+                (encoded proof)
+                && verifyAikenInclusionProof
+                    (unRoot rootAfter)
+                    k
+                    terminalLeaf
+                    (encoded proof)
+    -- the reference encoding opens and closes an indefinite list, an empty one too
+    encoded [] = BS.pack [0x9f, 0xff]
+    encoded steps = case Builtins.serialiseData (toBuiltinData steps) of
+        BuiltinByteString bytes -> bytes
+
+-- | A proof set that is wrong in each of the ways a body can keep its root and its amounts and still not be a fold.
+wrongProofs :: [[ProofStep]] -> [(String, [[ProofStep]])]
+wrongProofs lawful =
+    [ ("emptied", map (const []) lawful)
+    , ("swapped", reverse lawful)
+    , ("corrupted", map (map bump) lawful)
+    ]
+  where
+    bump = \case
+        Branch skip neighbors -> Branch (skip + 1) neighbors
+        Fork skip neighbor -> Fork (skip + 1) neighbor
+        Leaf skip key value -> Leaf (skip + 1) key value
+
 -- ---------------------------------------------------------
 -- The rows
 -- ---------------------------------------------------------
@@ -501,8 +671,37 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
         "spends the state through Modify with one update per member, and never a rejection"
         $ do
             (tx, _) <- folded bothMembers attachedMints
-            stateActions tx
+            stateActionsOf tx
                 `shouldSatisfy` (\as -> length as == 2 && all isUpdate as)
+    it
+        "states Modify proofs that carry the registry through both edges, member by member, from the initial root"
+        $ do
+            (tx, _) <- folded bothMembers attachedMints
+            (roots, _) <- replayMoves bothMoves
+            length (stateProofs tx) `shouldBe` 2
+            provesTransition roots bothMoves (stateProofs tx) `shouldBe` True
+    it
+        "tells emptied, swapped and corrupted proofs from the stated ones while the root and every amount stay as built"
+        $ do
+            (tx, _) <- folded bothMembers attachedMints
+            (roots, _) <- replayMoves bothMoves
+            let lawful = stateProofs tx
+            provesTransition roots bothMoves lawful `shouldBe` True
+            forM_ (wrongProofs lawful) $ \(what, proofs) -> do
+                let variant = withStateProofs proofs tx
+                (what, proofs /= lawful) `shouldBe` (what, True)
+                (what, variant ^. bodyTxL == tx ^. bodyTxL) `shouldBe` (what, True)
+                (what, provesTransition roots bothMoves (stateProofs variant))
+                    `shouldBe` (what, False)
+    it
+        "has an observation of proofs that accepts the replayed proofs and refuses the emptied, the swapped and the corrupted (control of the observation)"
+        $ do
+            (roots, lawful) <- replayMoves bothMoves
+            provesTransition roots bothMoves lawful `shouldBe` True
+            forM_ (wrongProofs lawful) $ \(what, proofs) -> do
+                (what, proofs /= lawful) `shouldBe` (what, True)
+                (what, provesTransition roots bothMoves proofs)
+                    `shouldBe` (what, False)
     it "spends each member through Contribute of the state it folds into" $ do
         (tx, _) <- folded bothMembers attachedMints
         case toBuiltinData (Contribute (txInToRef stateRef)) of
@@ -515,7 +714,7 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
         "continues the state with the root of the two edges the model names, in input order"
         $ do
             (tx, root) <- folded bothMembers attachedMints
-            expected <- replayedRoot
+            expected <- last . fst <$> replayMoves bothMoves
             root `shouldBe` expected
             case outputsOf tx of
                 continuation : _ -> do
@@ -622,12 +821,94 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
         (ascending, _) <- folded bothMembers attachedMints
         (descending, _) <- folded (reverse bothMembers) attachedMints
         descending `shouldBe` ascending
-    it "folds a termination of any age, with a finite interval" $ do
-        (tx, _) <-
-            folded [(terminationRef, terminationOut)] (drop 1 attachedMints)
-        case tx ^. bodyTxL . vldtTxBodyL of
-            ValidityInterval (SJust lower) (SJust upper) -> lower `shouldSatisfy` (< upper)
-            other -> expectationFailure ("interval: " <> show other)
+    describe
+        "folds a member of either kind alone, with the singular mint of that member only"
+        $ do
+            it
+                "a registration alone: its burns, its mint, its carrier, its cost and its window"
+                $ do
+                    (tx, root) <-
+                        folded
+                            [(registrationRef, registrationOut registration)]
+                            registrationMints
+                    tx ^. bodyTxL . mintTxBodyL
+                        `shouldBe` MultiAsset
+                            ( Map.fromList
+                                [
+                                    ( requestId
+                                    , Map.singleton (nameOf (trieReadyTagName registration)) (-1)
+                                    )
+                                ,
+                                    ( applicationId
+                                    , Map.singleton (nameOf registrationApplicationTag) (-1)
+                                    )
+                                , (activeId, Map.singleton (nameOf registrationKey) 1)
+                                ]
+                            )
+                    case holding tx registrationKey of
+                        [o] -> do
+                            serialiseAddr (o ^. addrTxOutL) `shouldBe` regDestination registration
+                            rawDatum o `shouldBe` Just (PLC.I 7)
+                        other -> expectationFailure ("carriers: " <> show (length other))
+                    holding tx terminationKey `shouldBe` []
+                    tx ^. bodyTxL . treasuryDonationTxBodyL
+                        `shouldBe` Coin (regRegistrationCost registration)
+                    tx ^. bodyTxL . inputsTxBodyL
+                        `shouldBe` Set.fromList [stateRef, feeRef, registrationRef]
+                    changeOf tx
+                        `shouldBe` [Coin (100_000_000 + regDeclaredTip registration - feeOf tx)]
+                    case tx ^. bodyTxL . vldtTxBodyL of
+                        ValidityInterval (SJust lower) (SJust upper) -> do
+                            slotMs lower `shouldSatisfy` (>= regSubmittedAt registration)
+                            slotMs upper
+                                `shouldSatisfy` (<= regSubmittedAt registration + defaultProcessTimeMs)
+                            lower `shouldSatisfy` (< upper)
+                        other -> expectationFailure ("interval: " <> show other)
+                    (roots, _) <- replayMoves [Registers registrationKey]
+                    root `shouldBe` last roots
+                    provesTransition roots [Registers registrationKey] (stateProofs tx)
+                        `shouldBe` True
+            it
+                "a termination alone: its burns, no delivery, its held value less its tip, and no window"
+                $ do
+                    (tx, root) <-
+                        folded [(terminationRef, terminationOut)] terminationMints
+                    tx ^. bodyTxL . mintTxBodyL
+                        `shouldBe` MultiAsset
+                            ( Map.fromList
+                                [ (requestId, Map.singleton (nameOf terminationTag) (-1))
+                                , (activeId, Map.singleton (nameOf terminationKey) (-1))
+                                ]
+                            )
+                    holding tx registrationKey `shouldBe` []
+                    holding tx terminationKey `shouldBe` []
+                    tx ^. bodyTxL . treasuryDonationTxBodyL
+                        `shouldBe` Coin (terminationHeld - terminationTip)
+                    tx ^. bodyTxL . inputsTxBodyL
+                        `shouldBe` Set.fromList [stateRef, feeRef, terminationRef]
+                    changeOf tx
+                        `shouldBe` [Coin (100_000_000 + terminationTip - feeOf tx)]
+                    case tx ^. bodyTxL . vldtTxBodyL of
+                        ValidityInterval (SJust lower) (SJust upper) -> lower `shouldSatisfy` (< upper)
+                        other -> expectationFailure ("interval: " <> show other)
+                    (roots, _) <- replayMoves [Terminates terminationKey]
+                    root `shouldBe` last roots
+                    provesTransition roots [Terminates terminationKey] (stateProofs tx)
+                        `shouldBe` True
+            it
+                "a termination long after every registration window, where a registration of the same age is refused"
+                $ do
+                    let late = SlotNo 500_005
+                    (tx, _) <-
+                        foldedAt late [(terminationRef, terminationOut)] terminationMints
+                    case tx ^. bodyTxL . vldtTxBodyL of
+                        ValidityInterval (SJust lower) (SJust upper) -> lower `shouldSatisfy` (< upper)
+                        other -> expectationFailure ("interval: " <> show other)
+                    refusesWith "not-phase1" $
+                        foldedAt
+                            late
+                            [(registrationRef, registrationOut registration)]
+                            registrationMints
     describe "refuses before building" $ do
         it "a registration whose processing window has closed, by name" $
             refusesWith "not-phase1" $
@@ -637,7 +918,7 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
                         , registrationOut registration{regSubmittedAt = 1_000_000}
                         )
                     ]
-                    (take 1 attachedMints)
+                    registrationMints
         it "a legacy untagged request, with no fallback" $
             refusesWith "genuine tagged request" $
                 folded [(registrationRef, legacyRequestOut)] []
@@ -652,7 +933,7 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
                     []
         it "a registration whose tag is not the name its own datum commits to" $
             refusesWith "genuine tagged request" $
-                folded [(registrationRef, forgedTagOut)] (take 1 attachedMints)
+                folded [(registrationRef, forgedTagOut)] registrationMints
     describe "never spends the state to reject" $ do
         it "the tagged requests the registry holds" $ do
             (_, root) <- worldTrie
@@ -669,22 +950,11 @@ spec = describe "chunk3 offchain" $ describe "the fold of tagged requests" $ do
   where
     defaultProcessTimeMs = 30_000
     isUpdate = \case Update _ -> True; _ -> False
-    stateActions tx =
-        case lookup (indexOf tx stateRef) (spendRedeemers tx)
-            >>= fromBuiltinData . BuiltinData of
-            Just (Modify actions) -> actions
-            _ -> []
     extractState o = case rawDatum o of
         Just d -> case fromBuiltinData (BuiltinData d) of
             Just (StateDatum st) -> Just st
             _ -> Nothing
         Nothing -> Nothing
-    replayedRoot = do
-        (manager, _) <- worldTrie
-        withTrie manager tokenId $ \trie -> do
-            _ <- walkEdge trie registrationKey edgeInsertActive
-            _ <- walkEdge trie terminationKey edgeUpdateTerminal
-            getRoot trie
     legacyRequestOut =
         mkBasicTxOut requestAddr (MaryValue (Coin 10_000_000) mempty)
             & datumTxOutL
