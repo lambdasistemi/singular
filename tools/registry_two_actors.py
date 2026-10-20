@@ -3733,20 +3733,18 @@ class Journey:
             (before_json, before_text, "before"),
             (after_json, after_text, "after"),
         ):
-            state = page_json["state"]
-            for key in (
-                "root",
-                "activeKeys",
-                "terminalKeys",
-                "foldsSinceCreate",
-                "createTransaction",
-            ):
-                if f"{key}: {state.get(key)}" not in page_text:
-                    return False, names, f"the {label} text lacks {key}"
-            last = state.get("lastFold")
-            want = f"lastFold: {last}" if isinstance(last, str) else "lastFold: none"
-            if want not in page_text:
-                return False, names, f"the {label} text lacks lastFold"
+            # The default page is the page --json prints: a standard JSON
+            # parser must read it as exactly that page.
+            try:
+                parsed = json.loads(page_text)
+            except ValueError as error:
+                return False, names, f"the {label} text is not JSON: {error}"
+            if parsed != page_json:
+                return (
+                    False,
+                    names,
+                    f"the {label} text, read as JSON, differs from the page --json prints",
+                )
         for moment in ("before", "after"):
             if homes[f"home_{moment}_before"] != homes[f"home_{moment}_after"]:
                 return (

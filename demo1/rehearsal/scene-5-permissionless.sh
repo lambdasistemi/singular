@@ -25,7 +25,7 @@ play -t -p 3 "Bob reads the registry's page: a node, the blueprint and the state
   'singular registry describe $BLUEPRINT $TOKEN $NODE > page-before.txt'
 # WORKAROUND: the forged request from the negative host stays pending on the registry (a reclaim needs the processing window to pass first) -> this pending frame names it beside Alice's request
 play -p 8 $'The registry\'s state on chain, pending requests: Alice\'s alice-cert (key 616c6963652d63657274)\nand the forged alice (616c696365) that the negative host left in scene 3.' \
-  'section state < page-before.txt | grep -A3 -e "- request" | short'
+  'jq ".state.pendingRequests[] | {request, owner, key, edge}" page-before.txt | short'
 play -s -p 4 $'Bob books bob, the external way: his command names his address and a bundle file, builds the\nbooking, signs nothing, sends nothing and exits 19: waiting-for-signatures, not a failure.' \
   'open-datum insert --key bob --payload payload.json --state-dir state $TOKEN $BLUEPRINT $NODE --wallet-address "$bob_addr" --bundle insert-bob.bundle > booking.json'
 play -p 8 $'The receipt: the outcome waiting-for-signatures, the bundle holding the booking, and the request\nit expects once sent. Nothing is on the chain yet: Bob\'s request is not pending.' \
@@ -65,5 +65,5 @@ play -p 6 $'On chain: alice-cert is active. Its token is held in this applicatio
 play -t -p 3 "And the registry's page again, read from the chain." \
   'singular registry describe $BLUEPRINT $TOKEN $NODE > page-after.txt'
 play -p 6 $'The registry\'s state on chain: two active keys (bob, alice-cert), one terminal (alice), three\nfolds since create, and the forged request, still pending.' \
-  'section state < page-after.txt | short'
+  'jq .state page-after.txt | short'
 finish

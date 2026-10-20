@@ -3752,6 +3752,8 @@ def _write_text(tmp, name, text, exit_code=0):
 
 
 def _page_valid_base(tmp):
+    import json as _json
+
     root_before = "aa" * 32
     root_after = "bb" * 32
     create_tx = "cc" * 32
@@ -3818,21 +3820,8 @@ def _page_valid_base(tmp):
         }
 
     def page_text(root, active, folds, last):
-        return (
-            "\n".join(
-                [
-                    "command: describe",
-                    "state:",
-                    f"  root: {root}",
-                    f"  activeKeys: {active}",
-                    "  terminalKeys: 0",
-                    f"  foldsSinceCreate: {folds}",
-                    f"  createTransaction: {create_tx}",
-                    f"  lastFold: {last if last else 'none'}",
-                ]
-            )
-            + "\n"
-        )
+        # the default page: the indented JSON that --json prints
+        return _json.dumps(page_json(root, active, folds, last), indent=2) + "\n"
 
     before_json = page_json(root_before, 0, 0, None)
     after_json = page_json(root_after, 1, 1, fold_tx)
@@ -3899,6 +3888,27 @@ def test_page_agreement_missing_reading_pends(mod, tmp):
         journey.load_text("no-such-page", Path(tmp)) is None,
         "a missing page text did not read as absent",
     )
+
+
+def test_page_agreement_text_with_another_field_pends(mod, tmp):
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    path = Path(tmp) / "alice-page-after-text.txt"
+    path.write_text(path.read_text().replace('"activeKeys": 1', '"activeKeys": 7'))
+    passed, _, waiting = journey.page_agreement("alice", leg, Path(tmp))
+    check("page-text-other-field-pends", not passed, "a page whose JSON differs passed")
+
+
+def test_page_agreement_text_that_is_not_json_pends(mod, tmp):
+    journey = bare(mod, tmp)
+    leg = _page_valid_base(tmp)
+    for name in ("alice-page-after-text", "alice-page-after-text-rep"):
+        # the layout the page had before it was JSON: a sentence holding a colon
+        Path(tmp, f"{name}.txt").write_text(
+            "command: describe\nprovenance: the page shows the history: from create\n"
+        )
+    passed, _, waiting = journey.page_agreement("alice", leg, Path(tmp))
+    check("page-text-not-json-pends", not passed, "a page that is not JSON passed")
 
 
 def test_page_agreement_root_mismatch_pends(mod, tmp):
@@ -4247,6 +4257,8 @@ def main():
         test_guard_keeps_status_through_teardown_failure,
         test_page_agreement_passes,
         test_page_agreement_missing_reading_pends,
+        test_page_agreement_text_with_another_field_pends,
+        test_page_agreement_text_that_is_not_json_pends,
         test_page_agreement_root_mismatch_pends,
         test_page_removal_flips_row,
         test_removal_check_covers_page_row,

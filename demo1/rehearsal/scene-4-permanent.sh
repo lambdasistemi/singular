@@ -35,5 +35,5 @@ play -p 12 "On disk: nothing in her state directory is newer than the fold: the 
 play -t -p 3 "The registry's page, read again from the chain." \
   'singular registry describe $BLUEPRINT $TOKEN $NODE > page-after.txt'
 play -p 30 $'The registry\'s state on chain: one terminal key (alice), no active key, two folds, and the\nforged request, still pending.' \
-  'section state < page-after.txt | short'
+  'jq .state page-after.txt | short'
 finish

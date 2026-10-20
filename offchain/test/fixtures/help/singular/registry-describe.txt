@@ -15,6 +15,9 @@ before anything is read.
 The version label comes from the version file beside the blueprint; it is
 refused by name when missing, unreadable or malformed.
 
+The page is printed as indented JSON, which a JSON parser reads. --json is
+accepted and changes nothing: the page is JSON either way.
+
 Available settings:
   Show this help text
   switch: -h|--help
@@ -70,7 +73,8 @@ Available settings:
       <string>
   default: the preprod recording packaged with the program
 
-  Print the page as JSON for a program to read.
+  Accepted and changes nothing: the page is printed as indented JSON either
+  way.
   switch: --json
 
   How much to narrate: off, what (protocol steps) or how (also their
@@ -124,7 +128,8 @@ Example:
   singular registry describe
 
 Output and exit status:
-  Prints the page alone, as text or with --json as JSON, and writes no file.
+  Prints the page alone, as indented JSON with or without --json, and writes
+  no file.
   Exit status 0 on success, 2 for a command line it refused, otherwise the
   outcome class the receipt names: 10 refused before anything was sent,
   11 refused by the ledger, 12 node unavailable, 13 timeout, 14 stale state,

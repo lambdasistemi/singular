@@ -46,7 +46,7 @@ jq -e 'all(.submissions[]; .how=="sent")' $A/create.json >/dev/null || bad "crea
 jq -e '.keyText=="alice" and (.settled|length)==1 and .settled[0].edge=="insertActive"' $A/insert.json >/dev/null || bad "alice's insert --fold: not one settled insertActive"
 sent_steps '["book","fold"]' <$A/insert.json >/dev/null || bad "alice's insert --fold: not one bundle of a booking and a fold, sent from the vault"
 jq -e --slurpfile i $A/insert.json '.leaf=="active" and .keyText=="alice" and .applicationOutput.controller==$i[0].settled[0].owner and .applicationOutput.output==$i[0].settled[0].settlement.liveOutput' $A/inspect-alice.json >/dev/null || bad "alice is not active under alice's key at the fold's output"
-grep -q '^  activeKeys: 1$' $A/page.txt && grep -q '^  foldsSinceCreate: 1$' $A/page.txt && grep -q '^  pendingRequests: \[\]$' $A/page.txt || bad "scene 2 page: counts"
+jq -e '.state.activeKeys==1 and .state.foldsSinceCreate==1 and (.state.pendingRequests|length)==0' $A/page.txt >/dev/null || bad "scene 2 page: counts"
 # the vault run leaves, for each transaction of its bundle, one waiting-for-signatures line and one landed line
 jq -s -e '[.[] | select(.journalCommand=="insert") | .journalEvent][0:4] == ["waiting-for-signatures","waiting-for-signatures","landed","landed"]' $A/state/net-42/*/wallets/*/journal.jsonl >/dev/null || bad "alice's insert --fold did not leave two waiting-for-signatures lines and then two landed lines"
 
@@ -73,7 +73,7 @@ rel=$(jq -r '.settled[0].settlement.released' $A/terminate.json)
 live "$rel" && bad "alice's application output is still live after the termination"
 jq -e '.leaf=="terminal" and (.applicationOutput.holdings|length)==0' $A/inspect-terminal.json >/dev/null || bad "alice is not terminal with no holder"
 jq -e '.outcome=="client-refusal" and .leafFound=="terminal"' $A/reregister.json >/dev/null || bad "re-registration of a terminal name was not refused"
-grep -q '^  activeKeys: 0$' $A/page-after.txt && grep -q '^  terminalKeys: 1$' $A/page-after.txt && grep -q '^  foldsSinceCreate: 2$' $A/page-after.txt || bad "the page after scene 4: counts"
+jq -e '.state.activeKeys==0 and .state.terminalKeys==1 and .state.foldsSinceCreate==2' $A/page-after.txt >/dev/null || bad "the page after scene 4: counts"
 
 # ---- scene 5: alice-cert pending (Alice's vault), then Bob stages, signs and sends his booking and the fold of both
 jq -e '.outcome=="success" and .keyText=="alice-cert"' $A/cert.json >/dev/null || bad "alice-cert booking"
@@ -97,7 +97,7 @@ at=$(jq -r .expected.hostClockMs $B/fold.json)
 echo "verify: alice-cert folded $(((dl - at) / 1000)) s before its deadline" >&2
 jq -e --slurpfile a $A/cert.json '.leaf=="active" and .keyText=="alice-cert" and .applicationOutput.controller==$a[0].requester' $B/inspect-cert.json >/dev/null || bad "alice-cert is not active under alice's key"
 live "$(jq -r .applicationOutput.output $B/inspect-cert.json)" || bad "alice-cert's application output is not live"
-grep -q '^  activeKeys: 2$' $B/page-after.txt && grep -q '^  terminalKeys: 1$' $B/page-after.txt && grep -q '^  foldsSinceCreate: 3$' $B/page-after.txt || bad "the page after scene 5: counts"
+jq -e '.state.activeKeys==2 and .state.terminalKeys==1 and .state.foldsSinceCreate==3' $B/page-after.txt >/dev/null || bad "the page after scene 5: counts"
 # independence: the two players share no wallet partition
 part=$(jq -r .stateToken $A/create.json | tr . -)
 [ "$(ls $A/state/net-42/$part/wallets)" != "$(ls $B/state/net-42/$part/wallets)" ] || bad "the two players share one wallet partition"

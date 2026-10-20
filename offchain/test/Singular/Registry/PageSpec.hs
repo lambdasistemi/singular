@@ -1,25 +1,21 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
 Module      : Singular.Registry.PageSpec
-Description : The registry page renders the same facts as text and JSON
+Description : The registry page renders one JSON value
 License     : Apache-2.0
 
-The page is a pure value from explicit inputs: its text and JSON renderings
-carry the same facts in a fixed order with no clock, tip or session, and a
-missing, unreadable or malformed version is refused by name.
+The page is a pure value from explicit inputs: its JSON rendering carries
+the facts in a fixed order with no clock, tip or session, and a missing,
+unreadable or malformed version is refused by name.
 -}
 module Singular.Registry.PageSpec (spec) where
 
 import Control.Monad (forM_)
 import Data.Aeson (Value (..), (.=))
 import Data.Aeson qualified as Aeson
-import Data.Aeson.Key qualified as Key
-import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString.Lazy qualified as BL
 import Data.Either (isLeft)
-import Data.List (nub)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -35,15 +31,12 @@ import Singular.Registry.Page
     , releaseLinks
     , renderPageJson
     , renderPageRefusal
-    , renderPageText
     )
 
 spec :: Spec
 spec = describe "Singular.Registry.Page" $ do
     it "renders identical bytes for identical inputs" $ do
         let page = describeRegistry sampleInputs
-        renderPageText page
-            `shouldBe` renderPageText (describeRegistry sampleInputs)
         renderPageJson page
             `shouldBe` renderPageJson (describeRegistry sampleInputs)
     it "orders pending requests canonically" $ do
@@ -51,22 +44,13 @@ spec = describe "Singular.Registry.Page" $ do
             backwards = sampleInputs{pagePendingRequests = [entryB, entryA]}
         renderPageJson (describeRegistry forwards)
             `shouldBe` renderPageJson (describeRegistry backwards)
-        renderPageText (describeRegistry forwards)
-            `shouldBe` renderPageText (describeRegistry backwards)
-    it "carries the same facts in text and JSON" $ do
-        let text = renderPageText (describeRegistry sampleInputs)
-        forM_
-            (nub (jsonKeys (renderPageJson (describeRegistry sampleInputs))))
-            $ \k ->
-                text `shouldSatisfy` T.isInfixOf (k <> ":")
     it "links the claimed version" $ do
         let links = releaseLinks sampleRelease
         linkRelease links `shouldSatisfy` T.isInfixOf "v0.10.1"
         linkDocs links `shouldSatisfy` T.isInfixOf "0.10.1"
     it "states the four provenance limits" $ do
         let rendered =
-                [ renderPageText (describeRegistry sampleInputs)
-                , TE.decodeUtf8
+                [ TE.decodeUtf8
                     ( BL.toStrict
                         (Aeson.encode (renderPageJson (describeRegistry sampleInputs)))
                     )
@@ -82,8 +66,7 @@ spec = describe "Singular.Registry.Page" $ do
                 $ \statement -> page `shouldSatisfy` T.isInfixOf statement
     it "never words anything as verified" $ do
         let rendered =
-                [ renderPageText (describeRegistry sampleInputs)
-                , TE.decodeUtf8
+                [ TE.decodeUtf8
                     ( BL.toStrict
                         (Aeson.encode (renderPageJson (describeRegistry sampleInputs)))
                     )
@@ -100,13 +83,6 @@ spec = describe "Singular.Registry.Page" $ do
             `shouldSatisfy` T.isInfixOf "version-malformed"
         renderPageRefusal (VersionUnreadable "denied")
             `shouldSatisfy` T.isInfixOf "version-unreadable"
-
--- | Every object key the JSON rendering carries, at every level.
-jsonKeys :: Value -> [Text]
-jsonKeys = \case
-    Object o -> concatMap (\(k, v) -> Key.toText k : jsonKeys v) (KeyMap.toList o)
-    Array a -> concatMap jsonKeys a
-    _ -> []
 
 -- | A rendered page with every allowed wording of verification removed.
 scrubVerified :: Text -> Text

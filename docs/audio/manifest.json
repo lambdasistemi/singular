@@ -295346,226 +295346,226 @@
    ]
   },
   "docs-registry-page/a-page-from-the-two-actor-run-01": {
-   "audio_sha256": "f464fec0dd5a4f08f52992b8009cbdf67fefc3b5d1c67ef79b113c3a3c494954",
-   "characters": 202,
-   "cost": 0.00019998,
-   "duration": 14.475,
+   "audio_sha256": "f7687f8d5fa9e8d458ca1dbfea5b61e6d064fad5c6397d4af8724fb95fd87db7",
+   "characters": 200,
+   "cost": 0.000198,
+   "duration": 14.1,
    "index": 1,
-   "key": "470ca18f020cd91a6cd24a658136ab17af48a1794628907d4791803bf4784d2c",
+   "key": "5cb86f8c04914275a7bfcbe48feaa16ff0a84259f66e8a34997a314c011fc603",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
    "section": "a-page-from-the-two-actor-run",
-   "sent_text": "Alice's page after her own fold, on the development network, exactly as the command printed it. The page names the release it runs; this one ran version 0.10.1, and a later release prints its own label:",
-   "text": "Alice's page after her own fold, on the development network, exactly as the command printed it. The page names the release it runs; this one ran version 0.10.1, and a later release prints its own label:",
+   "sent_text": "Alice's page after her own fold, on the development network: the facts that run recorded, with the release it ran, version 0.10.1, as the command prints them now. A later release prints its own label:",
+   "text": "Alice's page after her own fold, on the development network: the facts that run recorded, with the release it ran, version 0.10.1, as the command prints them now. A later release prints its own label:",
    "words": [
     {
-     "end": 0.712,
-     "start": 0.225,
+     "end": 0.637,
+     "start": 0.2,
      "text": "Alice's"
     },
     {
-     "end": 1.175,
-     "start": 0.712,
+     "end": 1.05,
+     "start": 0.637,
      "text": "page"
     },
     {
-     "end": 1.438,
-     "start": 1.175,
+     "end": 1.312,
+     "start": 1.05,
      "text": "after"
     },
     {
-     "end": 1.575,
-     "start": 1.438,
+     "end": 1.45,
+     "start": 1.312,
      "text": "her"
     },
     {
-     "end": 1.837,
-     "start": 1.575,
+     "end": 1.712,
+     "start": 1.45,
      "text": "own"
     },
     {
-     "end": 2.3,
-     "start": 1.837,
+     "end": 2.2,
+     "start": 1.712,
      "text": "fold"
     },
     {
-     "end": 2.35,
-     "start": 2.3,
+     "end": 2.275,
+     "start": 2.2,
      "text": ","
     },
     {
-     "end": 2.487,
-     "start": 2.35,
+     "end": 2.412,
+     "start": 2.275,
      "text": "on"
     },
     {
-     "end": 2.575,
-     "start": 2.487,
+     "end": 2.487,
+     "start": 2.412,
      "text": "the"
     },
     {
-     "end": 3.125,
-     "start": 2.575,
+     "end": 3.013,
+     "start": 2.487,
      "text": "development"
     },
     {
-     "end": 3.65,
-     "start": 3.125,
+     "end": 3.925,
+     "start": 3.013,
      "text": "network"
     },
     {
-     "end": 3.725,
-     "start": 3.65,
-     "text": ","
+     "end": 4.15,
+     "start": 3.925,
+     "text": ":"
     },
     {
-     "end": 4.387,
-     "start": 3.725,
-     "text": "exactly"
-    },
-    {
-     "end": 4.55,
-     "start": 4.387,
-     "text": "as"
-    },
-    {
-     "end": 4.65,
-     "start": 4.55,
+     "end": 4.463,
+     "start": 4.35,
      "text": "the"
     },
     {
-     "end": 5.15,
-     "start": 4.65,
-     "text": "command"
+     "end": 4.85,
+     "start": 4.463,
+     "text": "facts"
     },
     {
-     "end": 5.5,
-     "start": 5.15,
-     "text": "printed"
+     "end": 5.062,
+     "start": 4.85,
+     "text": "that"
+    },
+    {
+     "end": 5.35,
+     "start": 5.062,
+     "text": "run"
+    },
+    {
+     "end": 5.975,
+     "start": 5.35,
+     "text": "recorded"
+    },
+    {
+     "end": 6.012,
+     "start": 5.975,
+     "text": ","
+    },
+    {
+     "end": 6.137,
+     "start": 6.012,
+     "text": "with"
     },
     {
      "end": 6.225,
-     "start": 5.5,
-     "text": "it"
-    },
-    {
-     "end": 6.45,
-     "start": 6.225,
-     "text": "."
-    },
-    {
-     "end": 6.762,
-     "start": 6.65,
-     "text": "The"
-    },
-    {
-     "end": 7.238,
-     "start": 6.762,
-     "text": "page"
-    },
-    {
-     "end": 7.6,
-     "start": 7.238,
-     "text": "names"
-    },
-    {
-     "end": 7.7,
-     "start": 7.6,
+     "start": 6.137,
      "text": "the"
     },
     {
-     "end": 8.125,
-     "start": 7.7,
+     "end": 6.625,
+     "start": 6.225,
      "text": "release"
     },
     {
-     "end": 8.288,
-     "start": 8.125,
+     "end": 6.775,
+     "start": 6.625,
      "text": "it"
     },
     {
-     "end": 8.85,
-     "start": 8.288,
-     "text": "runs"
-    },
-    {
-     "end": 8.925,
-     "start": 8.85,
-     "text": ";"
-    },
-    {
-     "end": 9.175,
-     "start": 8.925,
-     "text": "this"
-    },
-    {
-     "end": 9.4,
-     "start": 9.175,
-     "text": "one"
-    },
-    {
-     "end": 9.738,
-     "start": 9.4,
+     "end": 7.15,
+     "start": 6.775,
      "text": "ran"
     },
     {
-     "end": 10.188,
-     "start": 9.738,
-     "text": "version"
-    },
-    {
-     "end": 11.325,
-     "start": 10.188,
-     "text": "0.10.1"
-    },
-    {
-     "end": 11.425,
-     "start": 11.325,
+     "end": 7.238,
+     "start": 7.15,
      "text": ","
     },
     {
-     "end": 11.538,
-     "start": 11.425,
-     "text": "and"
+     "end": 7.675,
+     "start": 7.238,
+     "text": "version"
     },
     {
-     "end": 11.637,
-     "start": 11.538,
-     "text": "a"
+     "end": 8.85,
+     "start": 7.675,
+     "text": "0.10.1"
     },
     {
-     "end": 12.025,
-     "start": 11.637,
-     "text": "later"
+     "end": 8.962,
+     "start": 8.85,
+     "text": ","
     },
     {
-     "end": 12.488,
-     "start": 12.025,
-     "text": "release"
+     "end": 9.15,
+     "start": 8.962,
+     "text": "as"
     },
     {
-     "end": 12.762,
-     "start": 12.488,
+     "end": 9.25,
+     "start": 9.15,
+     "text": "the"
+    },
+    {
+     "end": 9.788,
+     "start": 9.25,
+     "text": "command"
+    },
+    {
+     "end": 10.175,
+     "start": 9.788,
      "text": "prints"
     },
     {
-     "end": 12.925,
-     "start": 12.762,
+     "end": 10.375,
+     "start": 10.175,
+     "text": "them"
+    },
+    {
+     "end": 11.35,
+     "start": 10.375,
+     "text": "now"
+    },
+    {
+     "end": 11.575,
+     "start": 11.35,
+     "text": "."
+    },
+    {
+     "end": 11.85,
+     "start": 11.775,
+     "text": "A"
+    },
+    {
+     "end": 12.137,
+     "start": 11.85,
+     "text": "later"
+    },
+    {
+     "end": 12.475,
+     "start": 12.137,
+     "text": "release"
+    },
+    {
+     "end": 12.712,
+     "start": 12.475,
+     "text": "prints"
+    },
+    {
+     "end": 12.85,
+     "start": 12.712,
      "text": "its"
     },
     {
-     "end": 13.175,
-     "start": 12.925,
+     "end": 13.075,
+     "start": 12.85,
      "text": "own"
     },
     {
-     "end": 14.25,
-     "start": 13.175,
+     "end": 13.9,
+     "start": 13.075,
      "text": "label"
     },
     {
-     "end": 14.475,
-     "start": 14.25,
+     "end": 14.1,
+     "start": 13.9,
      "text": ":"
     }
    ]
@@ -295881,81 +295881,256 @@
    ]
   },
   "docs-registry-page/read-it-02": {
-   "audio_sha256": "6243ac4cd7d4149ad4712809624f887ac029900ceb7a57e925f0ac1aff68deea",
-   "characters": 52,
-   "cost": 5.1479999999999995e-05,
-   "duration": 3.575,
+   "audio_sha256": "df413fcb4c5af875e80f10f3e499a3cf1d46285ae3336b739292224c242030e6",
+   "characters": 113,
+   "cost": 0.00011186999999999998,
+   "duration": 9.125,
    "index": 2,
-   "key": "c8082cc0fdbb9ce8603b8d0037fbbca5d464b4bde2c2936f44d358de3c54e8a8",
+   "key": "e95c3f51094772ebc58228ab0ef93af0d461121d1c212746fb31712c054045f8",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
    "section": "read-it",
-   "sent_text": "A program reads the same facts with the json switch:",
-   "text": "A program reads the same facts with the json switch:",
+   "sent_text": "The page prints as indented JSON, which a person reads and any JSON parser reads. A script takes a field by name:",
+   "text": "The page prints as indented JSON, which a person reads and any JSON parser reads. A script takes a field by name:",
    "words": [
     {
-     "end": 0.225,
-     "start": 0.175,
-     "text": "A"
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
     },
     {
-     "end": 0.725,
-     "start": 0.225,
-     "text": "program"
+     "end": 0.712,
+     "start": 0.312,
+     "text": "page"
     },
     {
-     "end": 1.013,
-     "start": 0.725,
+     "end": 1.112,
+     "start": 0.712,
+     "text": "prints"
+    },
+    {
+     "end": 1.312,
+     "start": 1.112,
+     "text": "as"
+    },
+    {
+     "end": 1.938,
+     "start": 1.312,
+     "text": "indented"
+    },
+    {
+     "end": 2.925,
+     "start": 1.938,
+     "text": "JSON"
+    },
+    {
+     "end": 3.0,
+     "start": 2.925,
+     "text": ","
+    },
+    {
+     "end": 3.188,
+     "start": 3.0,
+     "text": "which"
+    },
+    {
+     "end": 3.25,
+     "start": 3.188,
+     "text": "a"
+    },
+    {
+     "end": 3.7,
+     "start": 3.25,
+     "text": "person"
+    },
+    {
+     "end": 4.1,
+     "start": 3.7,
      "text": "reads"
     },
     {
-     "end": 1.125,
-     "start": 1.013,
-     "text": "the"
+     "end": 4.225,
+     "start": 4.1,
+     "text": "and"
     },
     {
-     "end": 1.4,
-     "start": 1.125,
-     "text": "same"
+     "end": 4.512,
+     "start": 4.225,
+     "text": "any"
     },
     {
-     "end": 1.763,
-     "start": 1.4,
-     "text": "facts"
+     "end": 5.275,
+     "start": 4.512,
+     "text": "JSON"
     },
     {
-     "end": 1.862,
-     "start": 1.763,
-     "text": "with"
+     "end": 5.7,
+     "start": 5.275,
+     "text": "parser"
     },
     {
-     "end": 1.95,
-     "start": 1.862,
-     "text": "the"
+     "end": 6.7,
+     "start": 5.7,
+     "text": "reads"
     },
     {
-     "end": 2.463,
-     "start": 1.95,
-     "text": "json"
+     "end": 6.9,
+     "start": 6.7,
+     "text": "."
     },
     {
-     "end": 3.35,
-     "start": 2.463,
-     "text": "switch"
+     "end": 7.15,
+     "start": 7.075,
+     "text": "A"
     },
     {
-     "end": 3.575,
-     "start": 3.35,
+     "end": 7.438,
+     "start": 7.15,
+     "text": "script"
+    },
+    {
+     "end": 7.662,
+     "start": 7.438,
+     "text": "takes"
+    },
+    {
+     "end": 7.725,
+     "start": 7.662,
+     "text": "a"
+    },
+    {
+     "end": 8.0,
+     "start": 7.725,
+     "text": "field"
+    },
+    {
+     "end": 8.175,
+     "start": 8.0,
+     "text": "by"
+    },
+    {
+     "end": 8.925,
+     "start": 8.175,
+     "text": "name"
+    },
+    {
+     "end": 9.125,
+     "start": 8.925,
      "text": ":"
     }
    ]
   },
   "docs-registry-page/read-it-03": {
-   "audio_sha256": "cf0d0228e5ca5195bce7d052fff7d86fa2a638d8f1f777cd7241354ee16122d8",
+   "audio_sha256": "31fa67be955c2622dff0f892c760ec6f99547a2f148350d8cdb5bce2a81dceba",
+   "characters": 90,
+   "cost": 8.91e-05,
+   "duration": 6.125,
+   "index": 3,
+   "key": "4e4ba22959ea659df693d6000f76667d33fc8a283ee67654f7bc7a3f919a0662",
+   "page": "docs/registry-page.md",
+   "pause_ms": 400,
+   "section": "read-it",
+   "sent_text": "The json switch is accepted and changes nothing, so a script that passes it keeps working:",
+   "text": "The json switch is accepted and changes nothing, so a script that passes it keeps working:",
+   "words": [
+    {
+     "end": 0.312,
+     "start": 0.2,
+     "text": "The"
+    },
+    {
+     "end": 0.913,
+     "start": 0.312,
+     "text": "json"
+    },
+    {
+     "end": 1.25,
+     "start": 0.913,
+     "text": "switch"
+    },
+    {
+     "end": 1.4,
+     "start": 1.25,
+     "text": "is"
+    },
+    {
+     "end": 2.013,
+     "start": 1.4,
+     "text": "accepted"
+    },
+    {
+     "end": 2.162,
+     "start": 2.013,
+     "text": "and"
+    },
+    {
+     "end": 2.625,
+     "start": 2.162,
+     "text": "changes"
+    },
+    {
+     "end": 3.1,
+     "start": 2.625,
+     "text": "nothing"
+    },
+    {
+     "end": 3.2,
+     "start": 3.1,
+     "text": ","
+    },
+    {
+     "end": 3.338,
+     "start": 3.2,
+     "text": "so"
+    },
+    {
+     "end": 3.412,
+     "start": 3.338,
+     "text": "a"
+    },
+    {
+     "end": 3.8,
+     "start": 3.412,
+     "text": "script"
+    },
+    {
+     "end": 3.975,
+     "start": 3.8,
+     "text": "that"
+    },
+    {
+     "end": 4.45,
+     "start": 3.975,
+     "text": "passes"
+    },
+    {
+     "end": 4.6,
+     "start": 4.45,
+     "text": "it"
+    },
+    {
+     "end": 4.9,
+     "start": 4.6,
+     "text": "keeps"
+    },
+    {
+     "end": 5.925,
+     "start": 4.9,
+     "text": "working"
+    },
+    {
+     "end": 6.125,
+     "start": 5.925,
+     "text": ":"
+    }
+   ]
+  },
+  "docs-registry-page/read-it-04": {
+   "audio_sha256": "b1b412823a82d944a1a5c031e00585f4ec88a037ed2d8e544e244c6b3ab77fd0",
    "characters": 644,
    "cost": 0.0006375599999999999,
    "duration": 42.7,
-   "index": 3,
+   "index": 4,
    "key": "19e0f895a1d8e8bd0e94384f7ce619d56fc256168e43e5330d2ee57a08eb37c7",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
@@ -296590,18 +296765,18 @@
     }
    ]
   },
-  "docs-registry-page/read-it-04": {
-   "audio_sha256": "887cf14a2db1ef00769dea3ce266e4649892b19e0c03c464c28f4b840f072aeb",
-   "characters": 195,
-   "cost": 0.00019305,
-   "duration": 14.45,
-   "index": 4,
-   "key": "3acb5b99fac16a7092b0aaf38fc6c2f11894836d3ce9233aaec30019e9607304",
+  "docs-registry-page/read-it-05": {
+   "audio_sha256": "3a619f42423b09db27225c00b69779828d8c0b9295b3799aeddaf9709bb38dd2",
+   "characters": 350,
+   "cost": 0.0003465,
+   "duration": 24.05,
+   "index": 5,
+   "key": "c4bbc0111da8f6d50c22f50ba8485470b932f553bf61c2a3167797445ed8bc52",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
    "section": "read-it",
-   "sent_text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. The text and the JSON carry the same fields.",
-   "text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. The text and the JSON carry the same fields.",
+   "sent_text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. With or without the json switch the page is the same bytes: the keys come in alphabetical order, as the encoder prints them, and the table above is the order of this page's sections, not of the keys.",
+   "text": "The page carries no clock, no chain tip and no session identity, so identical inputs give identical bytes. Pending requests appear in one fixed order. With or without the json switch the page is the same bytes: the keys come in alphabetical order, as the encoder prints them, and the table above is the order of this page's sections, not of the keys.",
    "words": [
     {
      "end": 0.275,
@@ -296714,88 +296889,253 @@
      "text": "Pending"
     },
     {
-     "end": 8.9,
+     "end": 8.925,
      "start": 8.35,
      "text": "requests"
     },
     {
-     "end": 9.3,
-     "start": 8.9,
+     "end": 9.35,
+     "start": 8.925,
      "text": "appear"
     },
     {
-     "end": 9.462,
-     "start": 9.3,
+     "end": 9.512,
+     "start": 9.35,
      "text": "in"
     },
     {
-     "end": 9.8,
-     "start": 9.462,
+     "end": 9.85,
+     "start": 9.512,
      "text": "one"
     },
     {
-     "end": 10.15,
-     "start": 9.8,
+     "end": 10.2,
+     "start": 9.85,
      "text": "fixed"
     },
     {
-     "end": 10.625,
-     "start": 10.15,
+     "end": 10.725,
+     "start": 10.2,
      "text": "order"
     },
     {
-     "end": 10.725,
-     "start": 10.625,
+     "end": 10.825,
+     "start": 10.725,
      "text": "."
     },
     {
-     "end": 10.863,
-     "start": 10.725,
-     "text": "The"
+     "end": 11.05,
+     "start": 10.825,
+     "text": "With"
     },
     {
-     "end": 11.35,
-     "start": 10.863,
-     "text": "text"
+     "end": 11.2,
+     "start": 11.05,
+     "text": "or"
     },
     {
-     "end": 11.462,
-     "start": 11.35,
-     "text": "and"
+     "end": 11.512,
+     "start": 11.2,
+     "text": "without"
     },
     {
-     "end": 11.562,
-     "start": 11.462,
+     "end": 11.613,
+     "start": 11.512,
      "text": "the"
     },
     {
-     "end": 12.363,
-     "start": 11.562,
-     "text": "JSON"
+     "end": 12.163,
+     "start": 11.613,
+     "text": "json"
     },
     {
-     "end": 12.675,
-     "start": 12.363,
-     "text": "carry"
+     "end": 12.525,
+     "start": 12.163,
+     "text": "switch"
     },
     {
-     "end": 12.812,
-     "start": 12.675,
+     "end": 12.637,
+     "start": 12.525,
      "text": "the"
     },
     {
-     "end": 13.137,
-     "start": 12.812,
+     "end": 13.1,
+     "start": 12.637,
+     "text": "page"
+    },
+    {
+     "end": 13.25,
+     "start": 13.1,
+     "text": "is"
+    },
+    {
+     "end": 13.387,
+     "start": 13.25,
+     "text": "the"
+    },
+    {
+     "end": 13.675,
+     "start": 13.387,
      "text": "same"
     },
     {
-     "end": 14.25,
-     "start": 13.137,
-     "text": "fields"
+     "end": 14.725,
+     "start": 13.675,
+     "text": "bytes"
     },
     {
-     "end": 14.45,
-     "start": 14.25,
+     "end": 14.925,
+     "start": 14.725,
+     "text": ":"
+    },
+    {
+     "end": 15.212,
+     "start": 15.1,
+     "text": "the"
+    },
+    {
+     "end": 15.575,
+     "start": 15.212,
+     "text": "keys"
+    },
+    {
+     "end": 15.788,
+     "start": 15.575,
+     "text": "come"
+    },
+    {
+     "end": 15.9,
+     "start": 15.788,
+     "text": "in"
+    },
+    {
+     "end": 16.6,
+     "start": 15.9,
+     "text": "alphabetical"
+    },
+    {
+     "end": 17.05,
+     "start": 16.6,
+     "text": "order"
+    },
+    {
+     "end": 17.163,
+     "start": 17.05,
+     "text": ","
+    },
+    {
+     "end": 17.312,
+     "start": 17.163,
+     "text": "as"
+    },
+    {
+     "end": 17.45,
+     "start": 17.312,
+     "text": "the"
+    },
+    {
+     "end": 17.95,
+     "start": 17.45,
+     "text": "encoder"
+    },
+    {
+     "end": 18.275,
+     "start": 17.95,
+     "text": "prints"
+    },
+    {
+     "end": 19.025,
+     "start": 18.275,
+     "text": "them"
+    },
+    {
+     "end": 19.225,
+     "start": 19.025,
+     "text": ","
+    },
+    {
+     "end": 19.513,
+     "start": 19.425,
+     "text": "and"
+    },
+    {
+     "end": 19.6,
+     "start": 19.513,
+     "text": "the"
+    },
+    {
+     "end": 19.975,
+     "start": 19.6,
+     "text": "table"
+    },
+    {
+     "end": 20.375,
+     "start": 19.975,
+     "text": "above"
+    },
+    {
+     "end": 20.525,
+     "start": 20.375,
+     "text": "is"
+    },
+    {
+     "end": 20.688,
+     "start": 20.525,
+     "text": "the"
+    },
+    {
+     "end": 21.075,
+     "start": 20.688,
+     "text": "order"
+    },
+    {
+     "end": 21.163,
+     "start": 21.075,
+     "text": "of"
+    },
+    {
+     "end": 21.35,
+     "start": 21.163,
+     "text": "this"
+    },
+    {
+     "end": 21.725,
+     "start": 21.35,
+     "text": "page's"
+    },
+    {
+     "end": 22.375,
+     "start": 21.725,
+     "text": "sections"
+    },
+    {
+     "end": 22.475,
+     "start": 22.375,
+     "text": ","
+    },
+    {
+     "end": 22.688,
+     "start": 22.475,
+     "text": "not"
+    },
+    {
+     "end": 22.788,
+     "start": 22.688,
+     "text": "of"
+    },
+    {
+     "end": 22.875,
+     "start": 22.788,
+     "text": "the"
+    },
+    {
+     "end": 23.85,
+     "start": 22.875,
+     "text": "keys"
+    },
+    {
+     "end": 24.05,
+     "start": 23.85,
      "text": "."
     }
    ]
@@ -296861,17 +297201,17 @@
    ]
   },
   "docs-registry-page/read-the-registry-page-generated-from-the-chain-01": {
-   "audio_sha256": "918cef037714ce055259e13bd5b14f6e2f133a1fa3e31ba0fde344fc41a45b58",
-   "characters": 506,
-   "cost": 0.00050094,
-   "duration": 31.075,
+   "audio_sha256": "1420df58fcc866f0f7e5cba31ee0cbe6506b388d4f715d92ff1368eb2b22b01f",
+   "characters": 595,
+   "cost": 0.00058905,
+   "duration": 37.325,
    "index": 1,
-   "key": "269c313fcb161a83575a9eb39dd6e5a73306ffa01ccd013b7499f3b003cd7e77",
+   "key": "bb65ef90117b7513e6a3087dfdf3ae3eea1a5b84b3e61112508b8e748ed48ff7",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
    "section": "read-the-registry-page-generated-from-the-chain",
-   "sent_text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As an integrator, you want to know what the page does not prove, and the page says so itself.",
-   "text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As an integrator, you want to know what the page does not prove, and the page says so itself.",
+   "sent_text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As a script, you read the page with an ordinary JSON parser and take its fields by name. As an integrator, you want to know what the page does not prove, and the page says so itself.",
+   "text": "As Alice, you hold a registry's state token and the packaged release, and nothing else: no wallet file of yours, nothing from the person who created the registry. You run one command and read which registry this is, which release it runs, what its rules are and what it holds now. As Bob, on your own machine, you run the same command: reading the same chain state with the same release gives you the same bytes. As a script, you read the page with an ordinary JSON parser and take its fields by name. As an integrator, you want to know what the page does not prove, and the page says so itself.",
    "words": [
     {
      "end": 0.35,
@@ -297314,113 +297654,213 @@
      "text": "."
     },
     {
-     "end": 25.763,
+     "end": 25.737,
      "start": 25.6,
      "text": "As"
     },
     {
-     "end": 25.85,
-     "start": 25.763,
-     "text": "an"
+     "end": 25.837,
+     "start": 25.737,
+     "text": "a"
+    },
+    {
+     "end": 26.25,
+     "start": 25.837,
+     "text": "script"
+    },
+    {
+     "end": 26.3,
+     "start": 26.25,
+     "text": ","
     },
     {
      "end": 26.45,
-     "start": 25.85,
-     "text": "integrator"
-    },
-    {
-     "end": 26.5,
-     "start": 26.45,
-     "text": ","
-    },
-    {
-     "end": 26.65,
-     "start": 26.5,
+     "start": 26.3,
      "text": "you"
     },
     {
-     "end": 26.837,
-     "start": 26.65,
-     "text": "want"
+     "end": 26.663,
+     "start": 26.45,
+     "text": "read"
     },
     {
-     "end": 26.925,
-     "start": 26.837,
-     "text": "to"
-    },
-    {
-     "end": 27.1,
-     "start": 26.925,
-     "text": "know"
-    },
-    {
-     "end": 27.237,
-     "start": 27.1,
-     "text": "what"
-    },
-    {
-     "end": 27.337,
-     "start": 27.237,
+     "end": 26.763,
+     "start": 26.663,
      "text": "the"
     },
     {
-     "end": 27.725,
-     "start": 27.337,
+     "end": 27.225,
+     "start": 26.763,
      "text": "page"
     },
     {
-     "end": 27.925,
-     "start": 27.725,
-     "text": "does"
+     "end": 27.362,
+     "start": 27.225,
+     "text": "with"
     },
     {
-     "end": 28.188,
-     "start": 27.925,
-     "text": "not"
+     "end": 27.487,
+     "start": 27.362,
+     "text": "an"
     },
     {
-     "end": 28.675,
-     "start": 28.188,
-     "text": "prove"
+     "end": 28.087,
+     "start": 27.487,
+     "text": "ordinary"
     },
     {
-     "end": 28.75,
-     "start": 28.675,
-     "text": ","
+     "end": 28.825,
+     "start": 28.087,
+     "text": "JSON"
     },
     {
-     "end": 28.862,
-     "start": 28.75,
+     "end": 29.388,
+     "start": 28.825,
+     "text": "parser"
+    },
+    {
+     "end": 29.525,
+     "start": 29.388,
      "text": "and"
     },
     {
-     "end": 28.95,
-     "start": 28.862,
+     "end": 29.737,
+     "start": 29.525,
+     "text": "take"
+    },
+    {
+     "end": 29.925,
+     "start": 29.737,
+     "text": "its"
+    },
+    {
+     "end": 30.3,
+     "start": 29.925,
+     "text": "fields"
+    },
+    {
+     "end": 30.475,
+     "start": 30.3,
+     "text": "by"
+    },
+    {
+     "end": 31.45,
+     "start": 30.475,
+     "text": "name"
+    },
+    {
+     "end": 31.65,
+     "start": 31.45,
+     "text": "."
+    },
+    {
+     "end": 32.013,
+     "start": 31.85,
+     "text": "As"
+    },
+    {
+     "end": 32.1,
+     "start": 32.013,
+     "text": "an"
+    },
+    {
+     "end": 32.7,
+     "start": 32.1,
+     "text": "integrator"
+    },
+    {
+     "end": 32.75,
+     "start": 32.7,
+     "text": ","
+    },
+    {
+     "end": 32.9,
+     "start": 32.75,
+     "text": "you"
+    },
+    {
+     "end": 33.088,
+     "start": 32.9,
+     "text": "want"
+    },
+    {
+     "end": 33.175,
+     "start": 33.088,
+     "text": "to"
+    },
+    {
+     "end": 33.35,
+     "start": 33.175,
+     "text": "know"
+    },
+    {
+     "end": 33.487,
+     "start": 33.35,
+     "text": "what"
+    },
+    {
+     "end": 33.588,
+     "start": 33.487,
      "text": "the"
     },
     {
-     "end": 29.3,
-     "start": 28.95,
+     "end": 33.975,
+     "start": 33.588,
      "text": "page"
     },
     {
-     "end": 29.538,
-     "start": 29.3,
+     "end": 34.175,
+     "start": 33.975,
+     "text": "does"
+    },
+    {
+     "end": 34.438,
+     "start": 34.175,
+     "text": "not"
+    },
+    {
+     "end": 34.925,
+     "start": 34.438,
+     "text": "prove"
+    },
+    {
+     "end": 35.0,
+     "start": 34.925,
+     "text": ","
+    },
+    {
+     "end": 35.112,
+     "start": 35.0,
+     "text": "and"
+    },
+    {
+     "end": 35.2,
+     "start": 35.112,
+     "text": "the"
+    },
+    {
+     "end": 35.55,
+     "start": 35.2,
+     "text": "page"
+    },
+    {
+     "end": 35.787,
+     "start": 35.55,
      "text": "says"
     },
     {
-     "end": 29.75,
-     "start": 29.538,
+     "end": 36.0,
+     "start": 35.787,
      "text": "so"
     },
     {
-     "end": 30.875,
-     "start": 29.75,
+     "end": 37.125,
+     "start": 36.0,
      "text": "itself"
     },
     {
-     "end": 31.075,
-     "start": 30.875,
+     "end": 37.325,
+     "start": 37.125,
      "text": "."
     }
    ]
@@ -297976,17 +298416,17 @@
    ]
   },
   "docs-registry-page/what-the-page-does-not-prove-01": {
-   "audio_sha256": "2191b1e7dcd369718f3d85e032156671a596d14bccde8542b04099fb49454b9f",
-   "characters": 464,
-   "cost": 0.00045935999999999997,
-   "duration": 30.95,
+   "audio_sha256": "730e46d8c82b614d00ebac75e7ed7f98b208f3499629f10c212a1364ab679272",
+   "characters": 465,
+   "cost": 0.00046035,
+   "duration": 30.975,
    "index": 1,
-   "key": "554f2fd6a84fdaf15c503ffcb501277c62e0ec5d8308dc9d1d6e68a61f87b9c6",
+   "key": "3ec350e35cf7b7140bf103df42395929d1ae131d92548dd898895eb7b4f3c95f",
    "page": "docs/registry-page.md",
    "pause_ms": 400,
    "section": "what-the-page-does-not-prove",
-   "sent_text": "The provenance line says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
-   "text": "The provenance line says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
+   "sent_text": "The provenance field says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
+   "text": "The provenance field says it in fixed text: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
    "words": [
     {
      "end": 0.25,
@@ -297999,433 +298439,433 @@
      "text": "provenance"
     },
     {
-     "end": 1.025,
+     "end": 1.05,
      "start": 0.75,
-     "text": "line"
+     "text": "field"
     },
     {
-     "end": 1.275,
-     "start": 1.025,
+     "end": 1.3,
+     "start": 1.05,
      "text": "says"
     },
     {
-     "end": 1.375,
-     "start": 1.275,
+     "end": 1.4,
+     "start": 1.3,
      "text": "it"
     },
     {
-     "end": 1.538,
-     "start": 1.375,
+     "end": 1.562,
+     "start": 1.4,
      "text": "in"
     },
     {
-     "end": 1.85,
-     "start": 1.538,
+     "end": 1.875,
+     "start": 1.562,
      "text": "fixed"
     },
     {
-     "end": 2.65,
-     "start": 1.85,
+     "end": 2.675,
+     "start": 1.875,
      "text": "text"
     },
     {
-     "end": 2.85,
-     "start": 2.65,
+     "end": 2.875,
+     "start": 2.675,
      "text": ":"
     },
     {
-     "end": 3.112,
-     "start": 3.025,
+     "end": 3.138,
+     "start": 3.05,
      "text": "the"
     },
     {
-     "end": 3.562,
-     "start": 3.112,
+     "end": 3.588,
+     "start": 3.138,
      "text": "page"
     },
     {
-     "end": 3.9,
-     "start": 3.562,
+     "end": 3.925,
+     "start": 3.588,
      "text": "shows"
     },
     {
-     "end": 4.0,
-     "start": 3.9,
+     "end": 4.025,
+     "start": 3.925,
      "text": "the"
     },
     {
-     "end": 4.375,
-     "start": 4.0,
+     "end": 4.4,
+     "start": 4.025,
      "text": "public"
     },
     {
-     "end": 4.787,
-     "start": 4.375,
+     "end": 4.812,
+     "start": 4.4,
      "text": "history"
     },
     {
-     "end": 4.863,
-     "start": 4.787,
+     "end": 4.887,
+     "start": 4.812,
      "text": "of"
     },
     {
-     "end": 4.988,
-     "start": 4.863,
+     "end": 5.012,
+     "start": 4.887,
      "text": "the"
     },
     {
-     "end": 5.412,
-     "start": 4.988,
+     "end": 5.438,
+     "start": 5.012,
      "text": "state"
     },
     {
-     "end": 5.775,
-     "start": 5.412,
+     "end": 5.8,
+     "start": 5.438,
      "text": "token"
     },
     {
-     "end": 5.975,
-     "start": 5.775,
+     "end": 6.0,
+     "start": 5.8,
      "text": "from"
     },
     {
-     "end": 6.463,
-     "start": 5.975,
+     "end": 6.488,
+     "start": 6.0,
      "text": "create"
     },
     {
-     "end": 6.575,
-     "start": 6.463,
+     "end": 6.6,
+     "start": 6.488,
      "text": "to"
     },
     {
-     "end": 6.7,
-     "start": 6.575,
+     "end": 6.725,
+     "start": 6.6,
      "text": "the"
     },
     {
-     "end": 7.05,
-     "start": 6.7,
+     "end": 7.075,
+     "start": 6.725,
      "text": "live"
     },
     {
-     "end": 7.35,
-     "start": 7.05,
+     "end": 7.375,
+     "start": 7.075,
      "text": "state"
     },
     {
-     "end": 8.375,
-     "start": 7.35,
+     "end": 8.4,
+     "start": 7.375,
      "text": "output"
     },
     {
-     "end": 8.6,
-     "start": 8.375,
+     "end": 8.625,
+     "start": 8.4,
      "text": ","
     },
     {
-     "end": 9.087,
-     "start": 8.8,
+     "end": 9.113,
+     "start": 8.825,
      "text": "each"
     },
     {
-     "end": 9.525,
-     "start": 9.087,
+     "end": 9.55,
+     "start": 9.113,
      "text": "fold's"
     },
     {
-     "end": 9.95,
-     "start": 9.525,
+     "end": 9.975,
+     "start": 9.55,
      "text": "rebuilt"
     },
     {
-     "end": 10.188,
-     "start": 9.95,
+     "end": 10.212,
+     "start": 9.975,
      "text": "root"
     },
     {
-     "end": 10.525,
-     "start": 10.188,
+     "end": 10.55,
+     "start": 10.212,
      "text": "checked"
     },
     {
-     "end": 10.863,
-     "start": 10.525,
+     "end": 10.887,
+     "start": 10.55,
      "text": "against"
     },
     {
-     "end": 10.988,
-     "start": 10.863,
+     "end": 11.012,
+     "start": 10.887,
      "text": "the"
     },
     {
-     "end": 11.275,
-     "start": 10.988,
+     "end": 11.3,
+     "start": 11.012,
      "text": "root"
     },
     {
-     "end": 11.762,
-     "start": 11.275,
+     "end": 11.788,
+     "start": 11.3,
      "text": "recorded"
     },
     {
-     "end": 11.875,
-     "start": 11.762,
+     "end": 11.9,
+     "start": 11.788,
      "text": "in"
     },
     {
-     "end": 12.15,
-     "start": 11.875,
+     "end": 12.175,
+     "start": 11.9,
      "text": "that"
     },
     {
-     "end": 12.5,
-     "start": 12.15,
+     "end": 12.525,
+     "start": 12.175,
      "text": "fold's"
     },
     {
-     "end": 12.825,
-     "start": 12.5,
+     "end": 12.85,
+     "start": 12.525,
      "text": "state"
     },
     {
-     "end": 13.8,
-     "start": 12.825,
+     "end": 13.825,
+     "start": 12.85,
      "text": "datum"
     },
     {
-     "end": 14.025,
-     "start": 13.8,
+     "end": 14.05,
+     "start": 13.825,
      "text": ","
     },
     {
-     "end": 14.312,
-     "start": 14.225,
+     "end": 14.337,
+     "start": 14.25,
      "text": "and"
     },
     {
-     "end": 14.6,
-     "start": 14.312,
+     "end": 14.625,
+     "start": 14.337,
      "text": "nothing"
     },
     {
-     "end": 15.038,
-     "start": 14.6,
+     "end": 15.062,
+     "start": 14.625,
      "text": "beyond"
     },
     {
-     "end": 15.55,
-     "start": 15.038,
+     "end": 15.575,
+     "start": 15.062,
      "text": "it"
     },
     {
-     "end": 15.725,
-     "start": 15.55,
+     "end": 15.75,
+     "start": 15.575,
      "text": "."
     },
     {
-     "end": 16.0,
-     "start": 15.9,
+     "end": 16.025,
+     "start": 15.925,
      "text": "The"
     },
     {
-     "end": 16.475,
-     "start": 16.0,
+     "end": 16.5,
+     "start": 16.025,
      "text": "history"
     },
     {
-     "end": 16.688,
-     "start": 16.475,
+     "end": 16.712,
+     "start": 16.5,
      "text": "was"
     },
     {
-     "end": 16.95,
-     "start": 16.688,
+     "end": 16.975,
+     "start": 16.712,
      "text": "read"
     },
     {
-     "end": 17.163,
-     "start": 16.95,
+     "end": 17.188,
+     "start": 16.975,
      "text": "from"
     },
     {
-     "end": 17.825,
-     "start": 17.163,
+     "end": 17.85,
+     "start": 17.188,
      "text": "Koios"
     },
     {
-     "end": 17.925,
-     "start": 17.825,
+     "end": 17.95,
+     "start": 17.85,
      "text": "."
     },
     {
-     "end": 18.025,
-     "start": 17.925,
+     "end": 18.05,
+     "start": 17.95,
      "text": "The"
     },
     {
-     "end": 18.575,
-     "start": 18.025,
+     "end": 18.6,
+     "start": 18.05,
      "text": "provider's"
     },
     {
-     "end": 19.075,
-     "start": 18.575,
+     "end": 19.1,
+     "start": 18.6,
      "text": "answers"
     },
     {
-     "end": 19.225,
-     "start": 19.075,
+     "end": 19.25,
+     "start": 19.1,
      "text": "are"
     },
     {
-     "end": 20.5,
-     "start": 19.225,
+     "end": 20.525,
+     "start": 19.25,
      "text": "unverified"
     },
     {
-     "end": 20.725,
-     "start": 20.5,
+     "end": 20.75,
+     "start": 20.525,
      "text": ":"
     },
     {
-     "end": 21.188,
-     "start": 20.95,
+     "end": 21.212,
+     "start": 20.975,
      "text": "raw"
     },
     {
-     "end": 21.65,
-     "start": 21.188,
+     "end": 21.675,
+     "start": 21.212,
      "text": "facts"
     },
     {
-     "end": 21.788,
-     "start": 21.65,
+     "end": 21.812,
+     "start": 21.675,
      "text": "and"
     },
     {
-     "end": 22.425,
-     "start": 21.788,
+     "end": 22.45,
+     "start": 21.812,
      "text": "untrusted"
     },
     {
-     "end": 23.138,
-     "start": 22.425,
+     "end": 23.163,
+     "start": 22.45,
      "text": "reconstruction"
     },
     {
-     "end": 23.75,
-     "start": 23.138,
+     "end": 23.775,
+     "start": 23.163,
      "text": "material"
     },
     {
-     "end": 23.862,
-     "start": 23.75,
+     "end": 23.888,
+     "start": 23.775,
      "text": ","
     },
     {
-     "end": 24.1,
-     "start": 23.862,
+     "end": 24.125,
+     "start": 23.888,
      "text": "no"
     },
     {
-     "end": 24.438,
-     "start": 24.1,
+     "end": 24.462,
+     "start": 24.125,
      "text": "ledger"
     },
     {
-     "end": 24.875,
-     "start": 24.438,
+     "end": 24.9,
+     "start": 24.462,
      "text": "proofs"
     },
     {
-     "end": 25.0,
-     "start": 24.875,
+     "end": 25.025,
+     "start": 24.9,
      "text": "and"
     },
     {
-     "end": 25.225,
-     "start": 25.0,
+     "end": 25.25,
+     "start": 25.025,
      "text": "no"
     },
     {
-     "end": 26.175,
-     "start": 25.225,
+     "end": 26.2,
+     "start": 25.25,
      "text": "anchor"
     },
     {
-     "end": 26.4,
-     "start": 26.175,
+     "end": 26.425,
+     "start": 26.2,
      "text": "."
     },
     {
-     "end": 26.65,
-     "start": 26.575,
+     "end": 26.675,
+     "start": 26.6,
      "text": "The"
     },
     {
-     "end": 27.025,
-     "start": 26.65,
+     "end": 27.05,
+     "start": 26.675,
      "text": "release"
     },
     {
-     "end": 27.375,
-     "start": 27.025,
+     "end": 27.4,
+     "start": 27.05,
      "text": "label"
     },
     {
-     "end": 27.487,
-     "start": 27.375,
+     "end": 27.513,
+     "start": 27.4,
      "text": "is"
     },
     {
-     "end": 27.6,
-     "start": 27.487,
+     "end": 27.625,
+     "start": 27.513,
      "text": "the"
     },
     {
-     "end": 28.125,
-     "start": 27.6,
+     "end": 28.15,
+     "start": 27.625,
      "text": "archive's"
     },
     {
-     "end": 28.325,
-     "start": 28.125,
+     "end": 28.35,
+     "start": 28.15,
      "text": "own"
     },
     {
-     "end": 28.85,
-     "start": 28.325,
+     "end": 28.875,
+     "start": 28.35,
      "text": "claim"
     },
     {
-     "end": 28.95,
-     "start": 28.85,
+     "end": 28.975,
+     "start": 28.875,
      "text": "."
     },
     {
-     "end": 29.05,
-     "start": 28.95,
+     "end": 29.075,
+     "start": 28.975,
      "text": "The"
     },
     {
-     "end": 29.425,
-     "start": 29.05,
+     "end": 29.45,
+     "start": 29.075,
      "text": "page"
     },
     {
-     "end": 29.587,
-     "start": 29.425,
+     "end": 29.612,
+     "start": 29.45,
      "text": "is"
     },
     {
-     "end": 30.75,
-     "start": 29.587,
+     "end": 30.775,
+     "start": 29.612,
      "text": "unsigned"
     },
     {
-     "end": 30.95,
-     "start": 30.75,
+     "end": 30.975,
+     "start": 30.775,
      "text": "."
     }
    ]

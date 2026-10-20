@@ -538,12 +538,26 @@ createDescribeCommandRows = describe "Create prints the describe command" $ do
                     )
                     >> pure []
         command <- either (fail . show) pure (parseCommand commandWords)
+        jsonCommand <-
+            either (fail . show) pure (parseCommand (commandWords <> ["--json"]))
         (code, out, _) <-
             captured (runCommand neutralApplication (envOf rig) command)
         code `shouldBe` ExitSuccess
-        let page = TE.decodeUtf8 out
-        T.isInfixOf "command: describe" page `shouldBe` True
-        T.isInfixOf (T.pack token) page `shouldBe` True
+        (jsonCode, jsonOut, _) <-
+            captured (runCommand neutralApplication (envOf rig) jsonCommand)
+        jsonCode `shouldBe` ExitSuccess
+        -- the default page is the page --json prints, and a JSON parser reads it
+        out `shouldBe` jsonOut
+        page <-
+            either
+                fail
+                pure
+                (Aeson.eitherDecodeStrict out :: Either String Aeson.Value)
+        case page of
+            Aeson.Object o -> do
+                KeyMap.lookup "command" o `shouldBe` Just (Aeson.String "describe")
+                T.isInfixOf (T.pack token) (TE.decodeUtf8 out) `shouldBe` True
+            _ -> expectationFailure "the page is no JSON object"
 
 confirmationLifetime :: Spec
 confirmationLifetime = describe "CLI confirmation lifetime" $ do

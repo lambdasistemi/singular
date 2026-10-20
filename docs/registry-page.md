@@ -5,8 +5,9 @@ nothing else: no wallet file of yours, nothing from the person who created
 the registry. You run one command and read which registry this is, which
 release it runs, what its rules are and what it holds now. As Bob, on your
 own machine, you run the same command: reading the same chain state with
-the same release gives you the same bytes. As an integrator, you want to
-know what the page does not prove, and the page says so itself.
+the same release gives you the same bytes. As a script, you read the page
+with an ordinary JSON parser and take its fields by name. As an integrator,
+you want to know what the page does not prove, and the page says so itself.
 
 ```mermaid
 flowchart LR
@@ -14,7 +15,7 @@ flowchart LR
     release[packaged release<br/>blueprint plus version file] --> describe
     describe{{registry describe}} -->|reads, never writes| koios[public indexer]
     koios -->|history of the token| replay[public replay<br/>checked from create]
-    replay --> page[the registry page<br/>text or JSON]
+    replay --> page[the registry page<br/>JSON]
     release --> page
 ```
 
@@ -29,7 +30,17 @@ singular registry describe --blueprint onchain/plutus.json \
   --koios-url "$koios_url" --network-magic 1
 ```
 
-A program reads the same facts with the json switch:
+The page prints as indented JSON, which a person reads and any JSON parser
+reads. A script takes a field by name:
+
+```sh
+singular registry describe --blueprint onchain/plutus.json \
+  --state-token "$state_token" \
+  --koios-url "$koios_url" --network-magic 1 | jq '.state.activeKeys'
+```
+
+The json switch is accepted and changes nothing, so a script that passes it
+keeps working:
 
 ```sh
 singular registry describe --blueprint onchain/plutus.json \
@@ -58,48 +69,56 @@ non-zero.
 
 The page carries no clock, no chain tip and no session identity, so
 identical inputs give identical bytes. Pending requests appear in one
-fixed order. The text and the JSON carry the same fields.
+fixed order. With or without the json switch the page is the same bytes:
+the keys come in alphabetical order, as the encoder prints them, and the
+table above is the order of this page's sections, not of the keys.
 
 ## A page from the two-actor run
 
-Alice's page after her own fold, on the development network, exactly as
-the command printed it. The page names the release it runs; this one ran
-version 0.10.1, and a later release prints its own label:
+Alice's page after her own fold, on the development network: the facts that
+run recorded, with the release it ran, version 0.10.1, as the command prints
+them now. A later release prints its own label:
 
-```text
-command: describe
-outcome: success
-registry:
-  stateToken: 68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5.1d5542bdf2b2c8c76728a5935edd71676d1df5f389c70863b6a4d15fe33bde26
-  stateOutput: 19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7#0
-  stateScript: 68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5
-  applicationScript: 1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a
-  activeScript: 847e1671c3ce4e9c13c28c51b6f563f7d9d7cc3996c744a455715b09
-  absentScript: ea2d49ce6945088b9657e093e24939a6c87ce3b0371b2c49a327b0b
-  terminalScript: f58e458aeeacac74f13d2e367a6793ac997a54867ba2e5b63dfbc176
-release:
-  version: 0.10.1
-  blueprintTitle: singular/registry
-  blueprintSha: b08853db256269379ca60b25b28f435d9651c8b893e9a1af21472c9941078bad
-  applicationHash: 1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a
-  releaseUrl: https://github.com/lambdasistemi/singular/releases/tag/v0.10.1
-  docsUrl: https://github.com/lambdasistemi/singular/releases/download/v0.10.1/singular-docs-0.10.1.tar.gz
-rules:
-  processTime: 120000
-  retractTime: 120000
-  tip: 1000000
-  maxKeyBytes: 32
-  publicFold: anyone may build a fold from the public view (Singular.Statements.fold_inputs_public)
-state:
-  root: 58397587c712dcf8e99043ab07b63dfe38fe3628000a1b09e4805f647570b76b
-  activeKeys: 1
-  terminalKeys: 0
-  foldsSinceCreate: 1
-  createTransaction: 05377065127df10ea376c6c4d8b83aeccbc6ff79ad0cfd85a6373b9886aaac47
-  lastFold: 19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7
-  stateOutput: 19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7#0
-  pendingRequests: []
-provenance: the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: it supplies raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.
+```json
+{
+    "command": "describe",
+    "outcome": "success",
+    "provenance": "the page shows the public history of the state token from create to the live state output, each fold's rebuilt root checked against the root recorded in that fold's state datum, and nothing beyond it. The history was read from Koios. The provider's answers are unverified: it supplies raw facts and untrusted reconstruction material, no ledger proofs and no anchor. The release label is the archive's own claim. The page is unsigned.",
+    "registry": {
+        "absentScript": "ea2d49ce6945088b9657e093e24939a6c87ce3b0371b2c49a327b0b",
+        "activeScript": "847e1671c3ce4e9c13c28c51b6f563f7d9d7cc3996c744a455715b09",
+        "applicationScript": "1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a",
+        "stateOutput": "19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7#0",
+        "stateScript": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
+        "stateToken": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5.1d5542bdf2b2c8c76728a5935edd71676d1df5f389c70863b6a4d15fe33bde26",
+        "terminalScript": "f58e458aeeacac74f13d2e367a6793ac997a54867ba2e5b63dfbc176"
+    },
+    "release": {
+        "applicationHash": "1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a",
+        "blueprintSha": "b08853db256269379ca60b25b28f435d9651c8b893e9a1af21472c9941078bad",
+        "blueprintTitle": "singular/registry",
+        "docsUrl": "https://github.com/lambdasistemi/singular/releases/download/v0.10.1/singular-docs-0.10.1.tar.gz",
+        "releaseUrl": "https://github.com/lambdasistemi/singular/releases/tag/v0.10.1",
+        "version": "0.10.1"
+    },
+    "rules": {
+        "maxKeyBytes": 32,
+        "processTime": 120000,
+        "publicFold": "anyone may build a fold from the public view (Singular.Statements.fold_inputs_public)",
+        "retractTime": 120000,
+        "tip": 1000000
+    },
+    "state": {
+        "activeKeys": 1,
+        "createTransaction": "05377065127df10ea376c6c4d8b83aeccbc6ff79ad0cfd85a6373b9886aaac47",
+        "foldsSinceCreate": 1,
+        "lastFold": "19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7",
+        "pendingRequests": [],
+        "root": "58397587c712dcf8e99043ab07b63dfe38fe3628000a1b09e4805f647570b76b",
+        "stateOutput": "19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7#0",
+        "terminalKeys": 0
+    }
+}
 ```
 
 One active key, no terminal keys, one fold since create: Alice's own
@@ -107,7 +126,7 @@ insertion, folded by her, read back under the fold's root.
 
 ## What the page does not prove
 
-The provenance line says it in fixed text: the page shows the public
+The provenance field says it in fixed text: the page shows the public
 history of the state token from create to the live state output, each
 fold's rebuilt root checked against the root recorded in that fold's
 state datum, and nothing beyond it. The history was read from Koios.

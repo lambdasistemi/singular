@@ -230,8 +230,8 @@ data CreateArgs = CreateArgs
 {- | @registry describe@: the token, the blueprint, a provider and a network.
 
 Never a wallet, key, state directory or other actor file: those are
-refused with their names before anything is read. With @--json@ the
-page prints as JSON, otherwise as text.
+refused with their names before anything is read. The page prints as
+indented JSON; @--json@ is accepted and changes nothing.
 -}
 data DescribeArgs = DescribeArgs
     { describeBlueprint :: FilePath
@@ -241,7 +241,7 @@ data DescribeArgs = DescribeArgs
     -}
     , describeProvider :: ProviderSettings
     , describeJson :: Bool
-    -- ^ With @--json@, print the page as JSON
+    -- ^ @--json@ given: accepted for scripts that pass it, the page is JSON either way
     }
     deriving stock (Eq, Show)
 
