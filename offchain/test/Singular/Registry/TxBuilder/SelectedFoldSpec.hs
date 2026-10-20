@@ -55,7 +55,10 @@ import Cardano.Ledger.TxIn (TxIn)
 import Cardano.Slotting.Slot (SlotNo (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import MPF.Backend.Pure (emptyMPFInMemoryDB)
-import PlutusTx.Builtins.Internal (BuiltinData (..))
+import PlutusTx.Builtins.Internal
+    ( BuiltinByteString (..)
+    , BuiltinData (..)
+    )
 import PlutusTx.IsData.Class (FromData (..))
 
 import PlutusCore.Data qualified as PLC
@@ -106,11 +109,13 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , emptyRoot
     , mkInlineDatum
     , mkRequestDatumWith
+    , onChainTokenId
     , policyIdFromPin
     , requestAddrFromCfg
     , scriptHashBytes
     , toPlcData
     )
+import Singular.Registry.TxBuilder.Internal.Lookup (requestPolicyOf)
 import Singular.Registry.TxBuilder.Update
     ( RegistryContext (..)
     , emptyRegistryContext
@@ -119,9 +124,13 @@ import Singular.Registry.TxBuilder.Update
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRoot (..)
+    , OnChainTerminationRequest (..)
     , RequestAction (..)
     , UpdateRedeemer (..)
+    , terminationTrieReadyTagName
+    , trieReadyTagName
     )
 
 -- ---------------------------------------------------------
@@ -318,19 +327,97 @@ unrelatedMint =
         , cmScript = Fixture.applicationScript
         }
 
--- | One insertion on its own, for the foreign-mint rows.
-pendingSkipSingle :: [(TxIn, TxOut ConwayEra)]
-pendingSkipSingle = [(reqIn12, requestOutEdge key7 submitted1 1)]
+{- | A booked registration of a key: the request the request policy vouches
+for, held with the trie-ready tag its own datum commits to.
+-}
+taggedRegistration :: ByteString -> Integer -> TxOut ConwayEra
+taggedRegistration key submittedAt =
+    mkBasicTxOut
+        (requestAddrFromCfg cfg tokenId Testnet)
+        ( MaryValue
+            (Coin 5_000_000)
+            ( MultiAsset
+                ( Map.singleton
+                    (requestPolicyOf cfg tokenId)
+                    (Map.singleton (AssetName (SBS.toShort (trieReadyTagName request))) 1)
+                )
+            )
+        )
+        & datumTxOutL .~ mkInlineDatum (toPlcData (RegistrationDatum request))
+  where
+    request =
+        OnChainRegistrationRequest
+            { regRegistry = onChainTokenId tokenId
+            , regKey = key
+            , regRefundAddress = BuiltinByteString (BS.replicate 28 0xd1)
+            , regDestination = serialiseAddr payer
+            , regDatum = Nothing
+            , regSubmittedAt = submittedAt
+            , regRegistrationCost = 2_000_000
+            , regDeclaredTip = 1_500_000
+            , regCarrierAda = 1_500_000
+            , regNonce = 1
+            }
 
-{- | A created pair beside a further insertion, all edges admitted and all
-windows open: the model's keyed mint check fires before the pair scan,
-so with no mints supplied the builder must refuse @net-mint-mismatch@.
+{- | A booked termination of a key: the request holding the key's singular tag
+and the trie-ready tag its own datum commits to.
+-}
+taggedTermination :: ByteString -> TxOut ConwayEra
+taggedTermination key =
+    mkBasicTxOut
+        (requestAddrFromCfg cfg tokenId Testnet)
+        ( MaryValue
+            (Coin 4_000_000)
+            ( MultiAsset
+                ( Map.fromList
+                    [
+                        ( requestPolicyOf cfg tokenId
+                        , Map.singleton
+                            (AssetName (SBS.toShort (terminationTrieReadyTagName request)))
+                            1
+                        )
+                    ,
+                        ( policyIdFromPin (cfgActivePolicy cfg)
+                        , Map.singleton (AssetName (SBS.toShort key)) 1
+                        )
+                    ]
+                )
+            )
+        )
+        & datumTxOutL .~ mkInlineDatum (toPlcData (TerminationDatum request))
+  where
+    request =
+        OnChainTerminationRequest
+            { termRegistry = onChainTokenId tokenId
+            , termKey = key
+            , termDestination = BS.empty
+            , termDeclaredTip = 1_500_000
+            , termCarrierAda = 2_500_000
+            , termNonce = 1
+            }
+
+-- | One booked registration on its own, for the foreign-mint rows.
+pendingSkipSingle :: [(TxIn, TxOut ConwayEra)]
+pendingSkipSingle = [(reqIn12, taggedRegistration key7 submitted1)]
+
+{- | A registration of a key and the termination of that same key, booked in
+one batch: the pair the model refuses, one request per key.
+-}
+pendingTaggedPair :: [(TxIn, TxOut ConwayEra)]
+pendingTaggedPair =
+    [ (reqIn5, taggedRegistration key5 submitted1)
+    , (reqIn6, taggedTermination key5)
+    ]
+
+{- | A created pair beside a further registration, all windows open: the
+model's keyed mint check fires before the pair scan, so with no mints
+supplied the builder must refuse @net-mint-mismatch@.
 -}
 pendingSkipMint :: [(TxIn, TxOut ConwayEra)]
 pendingSkipMint =
-    [ (reqIn9, requestOutEdge key5 submitted1 1)
-    , (reqIn10, requestOutEdge key5 submitted2 3)
-    , (reqIn11, requestOutEdge key6 submitted3 1)
+    [ (reqIn9, taggedRegistration key5 submitted1)
+    , (reqIn10, taggedTermination key5)
+    , (reqIn11, taggedRegistration key6 submitted3)
     ]
 
 {- | The connected fold in the mode that skips evaluation (conformance
@@ -654,11 +741,11 @@ spec = describe "The fold builder over a chosen pending request" $ do
         "reaches the pair on a cancelling delta with no mints in skip-evaluation mode"
         $ do
             result <-
-                try (buildSkipFold pendingPair [reqIn5, reqIn6] [])
+                try (buildSkipFold pendingTaggedPair [reqIn5, reqIn6] [])
                     :: IO (Either SomeException (ConwayTx, Root))
             case result of
                 Left err ->
-                    displayException err `shouldSatisfy` isInfixOf "token-missing"
+                    displayException err `shouldSatisfy` isInfixOf "key-in-batch"
                 Right _ ->
                     expectationFailure
                         "a cancelling delta with no mints built a fold"
@@ -675,7 +762,7 @@ spec = describe "The fold builder over a chosen pending request" $ do
                     :: IO (Either SomeException (ConwayTx, Root))
             case result of
                 Left err ->
-                    displayException err `shouldSatisfy` isInfixOf "token-missing"
+                    displayException err `shouldSatisfy` isInfixOf "key-in-batch"
                 Right _ ->
                     expectationFailure
                         "a funded batch beside a created pair built a fold"
@@ -701,11 +788,11 @@ spec = describe "The fold builder over a chosen pending request" $ do
         "reaches the pair with an attached foreign mint in skip-evaluation mode"
         $ do
             result <-
-                try (buildSkipFold pendingPair [reqIn5, reqIn6] [unrelatedMint])
+                try (buildSkipFold pendingTaggedPair [reqIn5, reqIn6] [unrelatedMint])
                     :: IO (Either SomeException (ConwayTx, Root))
             case result of
                 Left err ->
-                    displayException err `shouldSatisfy` isInfixOf "token-missing"
+                    displayException err `shouldSatisfy` isInfixOf "key-in-batch"
                 Right _ ->
                     expectationFailure
                         "a created pair with an attached mint built a fold"

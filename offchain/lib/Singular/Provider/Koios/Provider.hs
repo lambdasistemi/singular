@@ -220,11 +220,19 @@ queryOutputs
 queryOutputs client = \case
     AtAddress address -> fetch (Client.addressUtxos client [address]) >>= mergeOutputs
     HoldingAsset asset -> fetch (Client.assetUtxos client [asset]) >>= mergeOutputs
-    HoldingPolicy _ ->
-        throwError
-            ( BackendReadFailure
-                "holding a policy: the Koios listing is not written yet"
-            )
+    HoldingPolicy policy -> do
+        -- One whole listing of the policy's asset names, then each asset's
+        -- holders read singly, so that no page of any read carries rows of
+        -- several assets. A listing that is not whole, or any read that fails,
+        -- fails the query; a complete empty listing is the empty answer. The
+        -- outputs are never taken from an address: the consumer
+        -- authenticates what this lists.
+        names <- fetch (Client.policyAssets client policy)
+        held <-
+            traverse
+                (\name -> fetch (Client.assetUtxos client [(policy, name)]))
+                names
+        mergeOutputs (concat held)
     AtTxIn reference@(TxIn key _) -> do
         -- tx_info includes spent outputs: current visibility requires the
         -- shared UTxO endpoint at the resolved output's address as well.

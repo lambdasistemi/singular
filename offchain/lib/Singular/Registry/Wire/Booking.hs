@@ -78,8 +78,10 @@ trieReadyTagName OnChainRegistrationRequest{..} =
     BuiltinByteString refund = regRefundAddress
 
 {- | The trie-ready tag name of a termination: the hash of the list
-@[1, 1, key, destination, nonce]@. Not written yet.
+@[1, 1, key, destination, nonce]@, as the on-chain @terminationTrieReadyTagName@
+computes it. It commits to the key, the destination and the nonce and to
+nothing else: not the registry, the tip or the carrier.
 -}
 terminationTrieReadyTagName :: OnChainTerminationRequest -> ByteString
-terminationTrieReadyTagName _ =
-    error "terminationTrieReadyTagName: not written yet"
+terminationTrieReadyTagName OnChainTerminationRequest{..} =
+    nameOf [I 1, I 1, B termKey, B termDestination, I termNonce]

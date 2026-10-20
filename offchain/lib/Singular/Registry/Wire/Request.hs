@@ -179,8 +179,9 @@ field. It has no refund address, clock, delivered datum, registration cost
 or application tag: the model admits none. The held assets and the output
 reference come from the transaction, never from this datum.
 
-The wire is the checkpoint's boundary: the type exists so the booking and
-fold paths can name it, and its encoding is not written yet.
+Constructor 0 of six fields, in the order of the on-chain type: the registry
+token, the key, the destination, the declared tip, the declared carrier
+lovelace and the nonce.
 -}
 data OnChainTerminationRequest = OnChainTerminationRequest
     { termRegistry :: !OnChainTokenId
@@ -383,18 +384,43 @@ instance UnsafeFromData OnChainRegistrationRequest where
                 "unsafeFromBuiltinData: OnChainRegistrationRequest"
 
 -- ---------------------------------------------------------
--- The termination request codec: not written yet
+-- The termination request codec
 -- ---------------------------------------------------------
 
 instance ToData OnChainTerminationRequest where
-    toBuiltinData _ =
-        error "toBuiltinData: OnChainTerminationRequest is not written yet"
+    toBuiltinData OnChainTerminationRequest{..} =
+        mkD $
+            Constr
+                0
+                [ unD (toBuiltinData termRegistry)
+                , bsToD termKey
+                , bsToD termDestination
+                , I termDeclaredTip
+                , I termCarrierAda
+                , I termNonce
+                ]
 
--- | Not written yet: no wire is read as a termination request.
 instance FromData OnChainTerminationRequest where
-    fromBuiltinData _ = Nothing
+    fromBuiltinData bd = case unD bd of
+        Constr 0 [reg, k, dest, I tip, I carrier, I nonce] -> do
+            termRegistry <- fromBuiltinData (mkD reg)
+            termKey <- bsFromD k
+            termDestination <- bsFromD dest
+            let termDeclaredTip = tip
+                termCarrierAda = carrier
+                termNonce = nonce
+            Just OnChainTerminationRequest{..}
+        _ -> Nothing
 
 instance UnsafeFromData OnChainTerminationRequest where
-    unsafeFromBuiltinData _ =
-        error
-            "unsafeFromBuiltinData: OnChainTerminationRequest is not written yet"
+    unsafeFromBuiltinData bd = case unD bd of
+        Constr 0 [reg, B k, B dest, I tip, I carrier, I nonce] ->
+            OnChainTerminationRequest
+                { termRegistry = unsafeFromBuiltinData (mkD reg)
+                , termKey = k
+                , termDestination = dest
+                , termDeclaredTip = tip
+                , termCarrierAda = carrier
+                , termNonce = nonce
+                }
+        _ -> error "unsafeFromBuiltinData: OnChainTerminationRequest"

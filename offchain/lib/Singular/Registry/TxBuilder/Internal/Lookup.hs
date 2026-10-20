@@ -7,7 +7,9 @@ License     : Apache-2.0
 
 One owner for where a builder finds its inputs and closes its
 transaction: UTxO lookup by input, state and request
-('findUtxoByTxIn', 'findStateUtxo', 'findRequestUtxos'), spending-index
+('findUtxoByTxIn', 'findStateUtxo', 'findRequestUtxos'), the discovery of
+booked requests by the request policy ('pendingByTag', 'bookedRequestOf'),
+spending-index
 computation, script evaluation and balancing ('evaluateAndBalance'),
 script-integrity hashing, rejected-row refund outputs
 ('computeRefund'), and POSIX-time to slot conversion
@@ -22,6 +24,9 @@ module Singular.Registry.TxBuilder.Internal.Lookup
       findUtxoByTxIn
     , findStateUtxo
     , findRequestUtxos
+    , BookedRequest (..)
+    , requestPolicyOf
+    , bookedRequestOf
     , pendingByTag
 
       -- * Indexing
@@ -71,6 +76,7 @@ import Cardano.Ledger.Api.Tx.Body
     )
 import Cardano.Ledger.Api.Tx.Out
     ( TxOut
+    , addrTxOutL
     , coinTxOutL
     , getMinCoinTxOut
     , mkBasicTxOut
@@ -98,16 +104,17 @@ import Cardano.Tx.Balance
     , balanceTx
     )
 import Cardano.Tx.Ledger (ConwayTx)
-import Control.Exception (SomeException)
+import Control.Exception (SomeException, throwIO)
 import Data.ByteString.Short qualified as SBS
+import Data.List (sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Word (Word32)
 import Lens.Micro ((&), (.~), (^.))
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
-import Singular.Registry.Config (CageConfig)
-import Singular.Registry.Evidence (NoWitness)
+import Singular.Registry.Config (CageConfig (..))
+import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.Ledger
     ( AssetName (..)
     , Coin (..)
@@ -115,17 +122,27 @@ import Singular.Registry.Ledger
     , PParams
     , TokenId (..)
     )
-import Singular.Registry.LedgerProvider (Session)
+import Singular.Registry.LedgerProvider
+    ( OutputQuery (..)
+    , Session (..)
+    )
 import Singular.Registry.SessionIO qualified as Services
 import Singular.Registry.TxBuilder.Internal.Identity
     ( addrFromKeyHashBytes
     , extractCageDatum
     , extractOwnerBytes
+    , onChainTokenId
+    , requestAddrFromCfg
+    , requestPolicyHash
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
+    , OnChainTerminationRequest (..)
     , OnChainTokenId (..)
+    , terminationTrieReadyTagName
+    , trieReadyTagName
     )
 import Singular.Registry.Wait qualified as Wait
 
@@ -284,21 +301,82 @@ findRequestUtxos tid = filter isRequest
                         == targetName
             _ -> False
 
-{- | The registry's pending requests found by the request policy's trie-ready
+{- | A booked request of this registry: a registration or a termination, with
+the datum its output carries.
+-}
+data BookedRequest
+    = BookedRegistration !OnChainRegistrationRequest
+    | BookedTermination !OnChainTerminationRequest
+    deriving stock (Show, Eq)
+
+{- | The request policy of a registry, from the bytes of its request validator
+applied to the state policy and the registry token: the credential of the
+request address and the policy of every trie-ready tag.
+-}
+requestPolicyOf :: CageConfig -> TokenId -> PolicyID
+requestPolicyOf cfg tid =
+    PolicyID $
+        requestPolicyHash
+            (cfgScriptHash cfg)
+            (requestScriptBytes cfg)
+            (onChainTokenId tid)
+
+{- | The booked request an output is, when it is a genuine one of this
+registry: it sits at the registry's request address, its inline datum is a
+registration or a termination of this registry, and it holds the trie-ready
+tag under the request policy that this datum commits to. An untagged output
+at the request address, a legacy request, a datum that does not read, a
+booking of another registry and a tag that is not the committed name are none
+of these.
+-}
+bookedRequestOf
+    :: CageConfig -> TokenId -> TxOut ConwayEra -> Maybe BookedRequest
+bookedRequestOf cfg tid out
+    | out ^. addrTxOutL /= requestAddrFromCfg cfg tid (network cfg) =
+        Nothing
+    | otherwise = case extractCageDatum out of
+        Just (RegistrationDatum r)
+            | regRegistry r == registry
+            , holdsTag (trieReadyTagName r) ->
+                Just (BookedRegistration r)
+        Just (TerminationDatum t)
+            | termRegistry t == registry
+            , holdsTag (terminationTrieReadyTagName t) ->
+                Just (BookedTermination t)
+        _ -> Nothing
+  where
+    registry = onChainTokenId tid
+    policy = requestPolicyOf cfg tid
+    holdsTag name = case out ^. valueTxOutL of
+        MaryValue _ (MultiAsset assets) ->
+            maybe
+                False
+                ((/= 0) . Map.findWithDefault 0 (AssetName (SBS.toShort name)))
+                (Map.lookup policy assets)
+
+{- | The registry's pending requests, found by the request policy's trie-ready
 tag: one read of the outputs holding any asset of the request policy, of which
-only a genuine request counts (at the registry's request address, holding the
-tag its own datum commits to). Untagged outputs at the request address are not
-read. A failed or incomplete read is a failure, never an empty list. Not
-written yet.
+only a genuine booked request counts ('bookedRequestOf'), in output-reference
+order. Untagged outputs at the request address are not read, whatever their
+number. A read that fails or is incomplete is a failure of this call, never an
+empty list.
 -}
 pendingByTag
     :: CageConfig
     -> Session NoWitness IO
     -> TokenId
     -> IO [(TxIn, TxOut ConwayEra)]
-pendingByTag _ _ _ =
-    ioError
-        (userError "pendingByTag: the tagged discovery is not written yet")
+pendingByTag cfg session tid = do
+    listed <-
+        outputs session (HoldingPolicy (requestPolicyOf cfg tid))
+            >>= either throwIO (pure . value)
+    pure $
+        sortOn
+            fst
+            [ pair
+            | pair@(_, out) <- listed
+            , Just _ <- [bookedRequestOf cfg tid out]
+            ]
 
 -- | Compute the spending index of a 'TxIn'.
 spendingIndex :: TxIn -> Set.Set TxIn -> Word32

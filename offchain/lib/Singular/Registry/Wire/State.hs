@@ -233,8 +233,9 @@ instance ToData CageDatum where
     toBuiltinData (RegistrationDatum r) =
         mkD $
             Constr 3 [unD (toBuiltinData r)]
-    toBuiltinData (TerminationDatum _) =
-        error "toBuiltinData: TerminationDatum is not written yet"
+    toBuiltinData (TerminationDatum r) =
+        mkD $
+            Constr 4 [unD (toBuiltinData r)]
 
 instance FromData CageDatum where
     fromBuiltinData bd = case unD bd of
@@ -249,6 +250,9 @@ instance FromData CageDatum where
         Constr 3 [d] ->
             RegistrationDatum
                 <$> fromBuiltinData (mkD d)
+        Constr 4 [d] ->
+            TerminationDatum
+                <$> fromBuiltinData (mkD d)
         _ -> Nothing
 
 instance UnsafeFromData CageDatum where
@@ -262,5 +266,8 @@ instance UnsafeFromData CageDatum where
         Constr 2 [B refund] -> AbsentCustody refund
         Constr 3 [d] ->
             RegistrationDatum $
+                unsafeFromBuiltinData (mkD d)
+        Constr 4 [d] ->
+            TerminationDatum $
                 unsafeFromBuiltinData (mkD d)
         _ -> error "unsafeFromBuiltinData: CageDatum"

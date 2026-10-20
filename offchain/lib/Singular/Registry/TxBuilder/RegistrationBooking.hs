@@ -21,6 +21,7 @@ other application policies or redeemers.
 module Singular.Registry.TxBuilder.RegistrationBooking
     ( RegistrationBooking (..)
     , bookRegistrationImpl
+    , holdsStateToken
     ) where
 
 import Control.Monad (unless)

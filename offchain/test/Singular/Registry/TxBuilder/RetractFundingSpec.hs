@@ -25,6 +25,7 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (comparing)
 import Data.Text qualified as T
 import Lens.Micro ((&), (.~), (^.))
+import PlutusCore.Data qualified as PLC
 import Test.Hspec
 import Test.QuickCheck
     ( Gen
@@ -59,13 +60,15 @@ import Cardano.Ledger.Mary.Value
     , PolicyID (..)
     )
 import Cardano.Ledger.TxIn (TxIn)
+import Cardano.Tx.Ledger (ConwayTx)
 
 import Data.ByteString qualified as BS
+import Data.ByteString.Short qualified as SBS
 import Data.Set qualified as Set
 import Singular.Registry.Config (CageConfig (..), bootStateFromCfg)
 import Singular.Registry.Deployment (parseOutRef)
 import Singular.Registry.Evidence (NoWitness)
-import Singular.Registry.Ledger (ConwayEra, TokenId (..))
+import Singular.Registry.Ledger (ConwayEra, Root (..), TokenId (..))
 import Singular.Registry.LedgerProvider (Session, TipObservation (..))
 import Singular.Registry.NetworkTime (NetworkTimeFailure (..))
 import Singular.Registry.SessionIO qualified as SessionIO
@@ -78,6 +81,8 @@ import Singular.Registry.SyntheticTime
     ( syntheticTime
     , syntheticTimeWith
     )
+import Singular.Registry.Trie (Trie (getRoot), TrieManager (..))
+import Singular.Registry.Trie.PureManager (mkPureTrieManagerFrom)
 import Singular.Registry.TxBuilder.BookingFixture
     ( applicationScript
     , payer
@@ -89,6 +94,12 @@ import Singular.Registry.TxBuilder.CollateralJudgement
     ( Spend (..)
     , judgeCollateral
     )
+import Singular.Registry.TxBuilder.ConnectedFold
+    ( ConnectedFoldArgs (..)
+    , ConnectedMint (..)
+    , RawRedeemer (..)
+    , connectedFoldTx
+    )
 import Singular.Registry.TxBuilder.Internal
     ( cageAddrFromCfg
     , cagePolicyIdFromCfg
@@ -97,15 +108,24 @@ import Singular.Registry.TxBuilder.Internal
     , emptyRoot
     , mkInlineDatum
     , mkRequestDatumWith
+    , onChainTokenId
+    , policyIdFromPin
     , requestAddrFromCfg
+    , requestPolicyOf
     , toPlcData
+    , walkEdge
     )
-import Singular.Registry.TxBuilder.Reject (rejectRequestsImpl)
 import Singular.Registry.TxBuilder.Retract
     ( retractRequestAtTipImpl
     , retractRequestImpl
     )
-import Singular.Registry.Types (CageDatum (..), OnChainRoot (..))
+import Singular.Registry.Types
+    ( CageDatum (..)
+    , OnChainRoot (..)
+    , OnChainTerminationRequest (..)
+    , edgeInsertActive
+    , terminationTrieReadyTagName
+    )
 
 -- The state witness consumes one V3 context; the request pin consumes two
 -- parameters followed by its context. These are explicit synthetic scripts,
@@ -154,7 +174,11 @@ requestOut submittedAt =
                 )
 
 stateOut :: TxOut ConwayEra
-stateOut =
+stateOut = stateOutWith (OnChainRoot emptyRoot)
+
+-- | The registry's state output carrying a root.
+stateOutWith :: OnChainRoot -> TxOut ConwayEra
+stateOutWith root =
     let TokenId name = tokenId
     in  mkBasicTxOut
             (cageAddrFromCfg cfg Testnet)
@@ -166,7 +190,7 @@ stateOut =
             )
             & datumTxOutL
                 .~ mkInlineDatum
-                    (toPlcData (StateDatum (bootStateFromCfg cfg (OnChainRoot emptyRoot))))
+                    (toPlcData (StateDatum (bootStateFromCfg cfg root)))
 
 -- | A larger output holding a token, and a larger one publishing a script.
 tokenHeldOut, publicationOut :: Integer -> TxOut ConwayEra
@@ -222,7 +246,24 @@ fundingOf sc =
 
 chainView
     :: Scenario -> Integer -> Maybe Integer -> Session NoWitness IO
-chainView sc submittedAt horizon =
+chainView sc submittedAt =
+    chainViewOver
+        [(requestIn, requestOut submittedAt)]
+        stateOut
+        sc
+        submittedAt
+
+{- | A view over a registry holding the given pending requests and the given
+state output, with the wallet the scenario drew.
+-}
+chainViewOver
+    :: [(TxIn, TxOut ConwayEra)]
+    -> TxOut ConwayEra
+    -> Scenario
+    -> Integer
+    -> Maybe Integer
+    -> Session NoWitness IO
+chainViewOver requests state sc submittedAt horizon =
     withTip
         ( TipObservation
             ( SlotNo
@@ -236,10 +277,10 @@ chainView sc submittedAt horizon =
             ( \addr ->
                 pure $
                     if addr == requestAddrFromCfg cfg tokenId Testnet
-                        then [(requestIn, requestOut submittedAt)]
+                        then requests
                         else
                             if addr == cageAddrFromCfg cfg Testnet
-                                then [(stateIn, stateOut)]
+                                then [(stateIn, state)]
                                 else wallet sc
             )
             ( withParameters (withSyntheticCosts preprodParams)
@@ -253,7 +294,7 @@ chainView sc submittedAt horizon =
                         pure
                             [ (reference, output)
                             | (reference, output) <-
-                                (requestIn, requestOut submittedAt) : (stateIn, stateOut) : wallet sc
+                                requests <> ((stateIn, state) : wallet sc)
                             , reference `Set.member` wanted
                             ]
                     )
@@ -262,93 +303,202 @@ chainView sc submittedAt horizon =
 
 spec :: Spec
 spec = do
-    rejectValidity
+    foldValidity
     retractValidity
     retractFunding
 
-{- | These rows inspect the actual reject body. Scripts and evaluation are
-fixtures, so this establishes builder bounds rather than node acceptance.
+{- | These rows inspect the actual body of the fold of a termination, which
+has no window: like the reject that the fold replaced, it is admitted in every
+window, so its validity starts at the acquired view's tip and the clock
+chooses only the upper bound. Scripts and evaluation are fixtures (the
+evaluation is skipped), so this establishes builder bounds rather than node
+acceptance.
 -}
-rejectValidity :: Spec
-rejectValidity = describe "a reject's validity starts at the acquired view's tip" $ do
-    it "caps the reached tip-868 build window before the ledger horizon" $ do
-        now <- currentPosixMs
-        let start = now - 86_800
-            view =
-                withTime
-                    (pure (syntheticTimeWith start (1 / 10) 500))
-                    (rejectView (SlotNo 868) Nothing)
-        tx <- rejectRequestsImpl cfg view tokenId payer
-        let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-        lower `shouldBe` SJust (SlotNo 868)
-        -- k=10, f=1, epoch 500: the first boundary at/after 868+30 is 1000.
-        upper `shouldBe` SJust (SlotNo 999)
-    it "never starts ahead of a tip lagging the host clock" $
-        property $
-            forAll (chooseInteger (1, 600)) $ \lag -> ioProperty $ do
+foldValidity :: Spec
+foldValidity = describe
+    "a termination fold's validity starts at the acquired view's tip"
+    $ do
+        it "caps the reached tip-868 build window before the ledger horizon" $ do
+            now <- currentPosixMs
+            let start = now - 86_800
+            (world, base) <- foldWorld (SlotNo 868) Nothing
+            let view = withTime (pure (syntheticTimeWith start (1 / 10) 500)) base
+            tx <- terminationFold world view
+            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+            lower `shouldBe` SJust (SlotNo 868)
+            -- k=10, f=1, epoch 500: the first boundary at/after 868+30 is 1000.
+            upper `shouldBe` SJust (SlotNo 999)
+        it "never starts ahead of a tip lagging the host clock" $
+            property $
+                forAll (chooseInteger (1, 600)) $ \lag -> ioProperty $ do
+                    now <- currentPosixMs
+                    (world, view) <- foldWorld (slotOf (now - lag * 1000)) Nothing
+                    tip <- observedSlot <$> SessionIO.tip view
+                    tx <- terminationFold world view
+                    let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+                    pure $
+                        conjoin
+                            [ property (lower <= SJust tip)
+                            , lower === SJust tip
+                            , property (upper > lower)
+                            ]
+        it
+            "refuses a window with no usable slot after a tip ahead of the host clock"
+            $ do
                 now <- currentPosixMs
-                let view = rejectView (slotOf (now - lag * 1000)) Nothing
-                tip <- observedSlot <$> SessionIO.tip view
-                tx <- rejectRequestsImpl cfg view tokenId payer
+                (world, view) <- foldWorld (slotOf (now + 300_000)) Nothing
+                actualTip <- SessionIO.tip view
+                terminationFold world view
+                    `shouldThrow` ( \case
+                                        WindowPastLedgerHorizon tip _ lower upper ->
+                                            tip == observedSlot actualTip
+                                                && lower == Just tip
+                                                && upper == tip + 1
+                                        _ -> False
+                                  )
+        it
+            "caps the requested upper-bound window at the ledger horizon from its observed tip"
+            $ do
+                now <- currentPosixMs
+                (world, view) <-
+                    foldWorld (slotOf (now - 36_000)) (Just (now + 10_000))
+                actualTip <- SessionIO.tip view
+                tx <- terminationFold world view
                 let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-                pure $
-                    conjoin
-                        [ property (lower <= SJust tip)
-                        , lower === SJust tip
-                        , property (upper > lower)
-                        ]
-    it
-        "refuses a window with no usable slot after a tip ahead of the host clock"
-        $ do
-            now <- currentPosixMs
-            let view = rejectView (slotOf (now + 300_000)) Nothing
-            actualTip <- SessionIO.tip view
-            rejectRequestsImpl cfg view tokenId payer
-                `shouldThrow` ( \case
-                                    WindowPastLedgerHorizon tip _ lower upper ->
-                                        tip == observedSlot actualTip
-                                            && lower == Just tip
-                                            && upper == tip + 1
-                                    _ -> False
-                              )
-    it
-        "caps the requested upper-bound window at the ledger horizon from its observed tip"
-        $ do
-            now <- currentPosixMs
-            let view = rejectView (slotOf (now - 36_000)) (Just (now + 10_000))
-            actualTip <- SessionIO.tip view
-            tx <- rejectRequestsImpl cfg view tokenId payer
-            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-            lower `shouldBe` SJust (observedSlot actualTip)
-            upper `shouldSatisfy` (> lower)
-            -- Here tip+30s is still in the synthetic epoch ending just
-            -- beyond now+10s, so the moving cap is its last slot.
-            upper `shouldBe` SJust (slotOf (now + 10_000))
-    it
-        "builds a nonempty reject interval when the tip is beyond the captured horizon"
-        $ do
-            now <- currentPosixMs
-            let tip = slotOf (now + 11_000)
-                view = rejectView tip (Just (now + 10_000))
-            tx <- rejectRequestsImpl cfg view tokenId payer
-            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-            lower `shouldBe` SJust tip
-            upper `shouldSatisfy` (> lower)
-    it
-        "allows an upper bound raised past the captured horizon while preserving a nonempty interval"
-        $ do
-            now <- currentPosixMs
-            let tip = slotOf (now + 10_000)
-                view = rejectView tip (Just (now + 10_000))
-            tx <- rejectRequestsImpl cfg view tokenId payer
-            let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
-            lower `shouldBe` SJust tip
-            upper `shouldSatisfy` (> lower)
+                lower `shouldBe` SJust (observedSlot actualTip)
+                upper `shouldSatisfy` (> lower)
+                -- Here tip+30s is still in the synthetic epoch ending just
+                -- beyond now+10s, so the moving cap is its last slot.
+                upper `shouldBe` SJust (slotOf (now + 10_000))
+        it
+            "builds a nonempty fold interval when the tip is beyond the captured horizon"
+            $ do
+                now <- currentPosixMs
+                let tip = slotOf (now + 11_000)
+                (world, view) <- foldWorld tip (Just (now + 10_000))
+                tx <- terminationFold world view
+                let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+                lower `shouldBe` SJust tip
+                upper `shouldSatisfy` (> lower)
+        it
+            "allows an upper bound raised past the captured horizon while preserving a nonempty interval"
+            $ do
+                now <- currentPosixMs
+                let tip = slotOf (now + 10_000)
+                (world, view) <- foldWorld tip (Just (now + 10_000))
+                tx <- terminationFold world view
+                let ValidityInterval lower upper = tx ^. bodyTxL . vldtTxBodyL
+                lower `shouldBe` SJust tip
+                upper `shouldSatisfy` (> lower)
   where
     slotOf ms = SlotNo (fromInteger (ms `div` 1000))
-    rejectView tip horizon =
-        let view = chainView (Scenario [100_000_000] 1_000_000) 1_000 horizon
-        in  withTip (TipObservation tip (BS.replicate 32 0) 1 0) view
+
+-- | The key the fold terminates, active in the registry's trie.
+foldedKey :: BS.ByteString
+foldedKey = "a-key"
+
+-- | The booked termination of that key, holding its singular tag and its trie-ready tag.
+terminationRequest :: OnChainTerminationRequest
+terminationRequest =
+    OnChainTerminationRequest
+        { termRegistry = onChainTokenId tokenId
+        , termKey = foldedKey
+        , termDestination = BS.empty
+        , termDeclaredTip = 1_500_000
+        , termCarrierAda = 1_500_000
+        , termNonce = 1
+        }
+
+terminationRequestOut :: TxOut ConwayEra
+terminationRequestOut =
+    mkBasicTxOut
+        (requestAddrFromCfg cfg tokenId Testnet)
+        ( MaryValue
+            (Coin bond)
+            ( MultiAsset
+                ( Map.fromList
+                    [
+                        ( requestPolicyOf cfg tokenId
+                        , Map.singleton
+                            ( AssetName
+                                (SBS.toShort (terminationTrieReadyTagName terminationRequest))
+                            )
+                            1
+                        )
+                    ,
+                        ( policyIdFromPin (cfgActivePolicy cfg)
+                        , Map.singleton (AssetName (SBS.toShort foldedKey)) 1
+                        )
+                    ]
+                )
+            )
+        )
+        & datumTxOutL
+            .~ mkInlineDatum (toPlcData (TerminationDatum terminationRequest))
+
+{- | A registry holding the one pending termination, its trie holding the key
+active, seen from a tip: the trie manager the fold proves against, and the
+view.
+-}
+foldWorld
+    :: SlotNo
+    -> Maybe Integer
+    -> IO ((TrieManager IO, OnChainRoot), Session NoWitness IO)
+foldWorld tip horizon = do
+    (manager, _) <- mkPureTrieManagerFrom Map.empty
+    createTrie manager tokenId
+    root <- withTrie manager tokenId $ \trie -> do
+        _ <- walkEdge trie foldedKey edgeInsertActive
+        getRoot trie
+    let stated = OnChainRoot (unRoot root)
+        view =
+            chainViewOver
+                [(requestIn, terminationRequestOut)]
+                (stateOutWith stated)
+                (Scenario [100_000_000] 1_000_000)
+                1_000
+                horizon
+    pure
+        ( (manager, stated)
+        , withTip (TipObservation tip (BS.replicate 32 0) 1 0) view
+        )
+
+-- | The fold of the pending termination built over a view, with the singular burn it owes.
+terminationFold
+    :: (TrieManager IO, OnChainRoot) -> Session NoWitness IO -> IO ConwayTx
+terminationFold (manager, root) view =
+    fst
+        <$> connectedFoldTx
+            ConnectedFoldArgs
+                { cfaCfg = cfg
+                , cfaSession = view
+                , cfaTrie = manager
+                , cfaToken = tokenId
+                , cfaFeeAddr = payer
+                , cfaStateUtxo = (stateIn, stateOutWith root)
+                , cfaReqUtxos = [(requestIn, terminationRequestOut)]
+                , cfaFeeUtxo =
+                    ( fst funding
+                    , mkBasicTxOut payer (MaryValue (Coin (snd funding)) mempty)
+                    )
+                , cfaSpends = []
+                , cfaMints =
+                    [ ConnectedMint
+                        { cmPolicy = policyIdFromPin (cfgActivePolicy cfg)
+                        , cmAssets = Map.singleton (AssetName (SBS.toShort foldedKey)) (-1)
+                        , cmRedeemer = RawRedeemer (PLC.Constr 0 [])
+                        , cmScript = applicationScript
+                        }
+                    ]
+                , cfaOutputs = []
+                , cfaSigners = []
+                , cfaRefUtxos = []
+                , cfaAttachScripts = []
+                , cfaSkipEval = True
+                , cfaAdjustRoot = id
+                }
+  where
+    funding = fundingOf (Scenario [100_000_000] 1_000_000)
 
 {- | Both public entry points must refuse a future lower bound rather
 than return a transaction the acquired ledger cannot accept yet.

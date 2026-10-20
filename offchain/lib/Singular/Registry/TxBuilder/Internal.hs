@@ -66,6 +66,9 @@ module Singular.Registry.TxBuilder.Internal
     , findUtxoByTxIn
     , findStateUtxo
     , findRequestUtxos
+    , BookedRequest (..)
+    , requestPolicyOf
+    , bookedRequestOf
     , pendingByTag
 
       -- * Indexing
@@ -156,7 +159,9 @@ import Singular.Registry.TxBuilder.Internal.Identity
     , txInToRef
     )
 import Singular.Registry.TxBuilder.Internal.Lookup
-    ( computeRefund
+    ( BookedRequest (..)
+    , bookedRequestOf
+    , computeRefund
     , computeScriptIntegrity
     , currentPosixMs
     , evaluateAndBalance
@@ -166,6 +171,7 @@ import Singular.Registry.TxBuilder.Internal.Lookup
     , findUtxoByTxIn
     , pendingByTag
     , placeholderExUnits
+    , requestPolicyOf
     , spendingIndex
     , trySlots
     , trySync

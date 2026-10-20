@@ -89,6 +89,7 @@ import Singular.Provider.Koios.Client
     , assetUtxos
     , cliProtocolParams
     , epochParams
+    , policyAssets
     , referenceScriptUtxos
     , tip
     , txCbor
@@ -142,6 +143,7 @@ data ReadCall
     | ReadReferenceScriptUtxos
     | ReadUtxoInfo
     | ReadAssetInfo
+    | ReadPolicyAssetList
     deriving stock (Eq, Show, Enum, Bounded)
 
 -- | The command-line name of a read call: its Koios endpoint name.
@@ -164,6 +166,7 @@ readCallCall = \case
     ReadReferenceScriptUtxos -> CallReferenceScriptUtxos
     ReadUtxoInfo -> CallUtxoInfo
     ReadAssetInfo -> CallAssetInfo
+    ReadPolicyAssetList -> CallPolicyAssetList
 
 -- | One read request with its arguments.
 data ReadRequest
@@ -180,6 +183,7 @@ data ReadRequest
     | ReferenceScriptUtxosOf (NonEmpty ScriptHash)
     | UtxoInfoOf (NonEmpty TxIn)
     | AssetInfoOf PolicyID AssetName
+    | PolicyAssetListOf PolicyID
     deriving stock (Eq, Show)
 
 -- | The read call a request makes.
@@ -198,6 +202,7 @@ readRequestCall = \case
     ReferenceScriptUtxosOf _ -> ReadReferenceScriptUtxos
     UtxoInfoOf _ -> ReadUtxoInfo
     AssetInfoOf _ _ -> ReadAssetInfo
+    PolicyAssetListOf _ -> ReadPolicyAssetList
 
 {- | Parse @<call>@ or @<call>:<argument>[,<argument>]@, where the call
 is a 'readCallName': an address or stake address in bech32, an asset as
@@ -240,16 +245,22 @@ parseReadRequest text = do
                     "output references"
                     (traverse outputReference (T.splitOn "," argument))
         ReadAssetInfo -> uncurry AssetInfoOf <$> asset argument
+        ReadPolicyAssetList -> PolicyAssetListOf <$> policy argument
   where
     none argument r
         | T.null argument = Right r
         | otherwise = Left ("takes no argument: " <> argument)
+    policy argument =
+        hex argument
+            >>= maybe
+                (Left ("not a policy id: " <> argument))
+                (Right . PolicyID . ScriptHash)
+                . hashFromBytes
     asset argument = do
-        let (policy, name) = T.breakOn "." argument
-        p <-
-            hex policy >>= maybe (Left "not a policy id") Right . hashFromBytes
+        let (policyText, name) = T.breakOn "." argument
+        p <- policy policyText
         n <- hex (T.drop 1 name)
-        pure (PolicyID (ScriptHash p), AssetName (SBS.toShort n))
+        pure (p, AssetName (SBS.toShort n))
     txIds argument =
         traverse
             ( \t ->
@@ -302,6 +313,7 @@ probe k = \case
     AssetInfoOf p n ->
         fmap (maybe ["no record"] (pure . assetInfoLine))
             <$> assetInfo k (p, n)
+    PolicyAssetListOf p -> fmap (map assetNameLine) <$> policyAssets k p
   where
     tipLine t =
         "slot "
@@ -341,6 +353,7 @@ probe k = \case
     spentLine i =
         referenceText (utxoInfoReference i)
             <> if utxoInfoSpent i then " spent" else " unspent"
+    assetNameLine (AssetName name) = "asset " <> TE.decodeUtf8 (Base16.encode (SBS.fromShort name))
     assetInfoLine a =
         "minted by "
             <> txIdHex (assetInfoMintingTx a)

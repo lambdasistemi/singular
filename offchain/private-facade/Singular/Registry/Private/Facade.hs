@@ -686,6 +686,9 @@ answer server request body
     | requestMethod request == "POST"
     , rawPathInfo request == "/api/v1/asset_info" =
         answerAssetInfo server body
+    | requestMethod request == "GET"
+    , rawPathInfo request == "/api/v1/policy_asset_list" =
+        answerPolicyAssets server request
     | otherwise = do
         source <- readLedgerSource (serverLSQ server)
         -- Publish from the HTTP request's own fresh acquired ledger facts.
@@ -1060,6 +1063,52 @@ answerOutputs server request body = do
                     )
                 , origin
                 )
+
+{- | The assets of one policy that the whole current UTxO holds at one acquired
+point, ordered by asset name, with the quantity held. A name no current output
+holds is not listed, so a policy nothing holds lists nothing, and a complete
+empty list is the whole answer. The scan reads every current output: this is
+the harness's cost, not a node adapter. The answer carries the name, the held
+quantity as @total_supply@ and zero decimals; it carries no fingerprint, which
+no consumer here reads.
+-}
+answerPolicyAssets
+    :: Server
+    -> Request
+    -> IO (Status, [(HeaderName, ByteString)], LBS.ByteString, Value)
+answerPolicyAssets server request = do
+    policy <- requiredQuery "_asset_policy" request
+    source <- readOutputSourceFacts (serverLSQ server)
+    let held =
+            Map.fromListWith
+                (+)
+                [ (Wire.assetNameHex name, quantity)
+                | output <- Map.elems (outputSourceOutputs source)
+                , MaryValue _ (MultiAsset assets) <- [output ^. valueTxOutL]
+                , (actualPolicy, names) <- Map.toList assets
+                , Wire.policyHex actualPolicy == policy
+                , (name, quantity) <- Map.toList names
+                , quantity /= 0
+                ]
+        rows =
+            [ object
+                [ "asset_name" .= name
+                , "total_supply" .= Text.pack (show quantity)
+                , "decimals" .= (0 :: Int)
+                ]
+            | (name, quantity) <- Map.toAscList held
+            ]
+        origin =
+            object
+                [ "point" .= show (outputSourcePoint source)
+                , "queriedExtent"
+                    .= object
+                        [ "query" .= ("GetUTxOWhole" :: Text)
+                        , "policy" .= policy
+                        ]
+                ]
+    (headers, value) <- paged request rows
+    pure (status200, headers, encode value, origin)
 
 {- | These endpoints consume confirmed full-block material only. A fresh
 whole-UTxO/parameter acquisition contributes no fact to their answer.

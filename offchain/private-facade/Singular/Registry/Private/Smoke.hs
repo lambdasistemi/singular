@@ -18,7 +18,11 @@ import Cardano.Ledger.Binary (serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (eraProtVerHigh)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Node.Client.E2E.Setup (genesisAddr, genesisSignKey)
 import Control.Concurrent.MVar (newMVar, withMVar)
@@ -26,8 +30,10 @@ import Control.Exception (finally, throwIO)
 import Control.Monad (unless)
 import Control.Tracer (nullTracer)
 import Data.Aeson (encode, object, (.=))
+import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Lazy qualified as LBS
+import Data.ByteString.Short qualified as SBS
 import Data.Map.Strict qualified as Map
 import Data.Sequence.Strict qualified as Seq
 import Data.Set qualified as Set
@@ -49,6 +55,7 @@ import Singular.Registry.Private.Facade
 import Singular.Registry.SessionIO qualified as Session
 import Singular.Registry.Signing (signTx, signedTx)
 import Singular.Registry.Terminal (withReads)
+import Singular.Registry.TxBuilder.Internal (policyIdFromPin)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
 
@@ -114,6 +121,14 @@ runFacadeSmoke genesisDirectory outputDirectory = do
         unless
             (length found == 1)
             (fail "private facade smoke exact confirmed output missing")
+        -- A policy nothing holds lists nothing: the complete empty answer of
+        -- the whole-ledger policy scan, read through the shared provider.
+        unheld <- Session.withLatest (capReads capabilities) $ \scope ->
+            outputs scope (HoldingPolicy unheldPolicy)
+                >>= either throwIO (pure . Evidence.value)
+        unless
+            (null unheld)
+            (fail "private facade smoke: a policy nothing holds lists outputs")
         archive <- facadeArchive facade
         let recorded =
                 [ tx
@@ -189,3 +204,7 @@ runFacadeSmoke genesisDirectory outputDirectory = do
                     ]
                 )
             )
+
+-- | A policy no output of the generated ledger holds: twenty-eight zero bytes.
+unheldPolicy :: PolicyID
+unheldPolicy = policyIdFromPin (SBS.toShort (BS.replicate 28 0))

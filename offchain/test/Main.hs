@@ -58,6 +58,7 @@ import Singular.Registry.TxBuilder.ConnectedFoldSpec qualified
 import Singular.Registry.TxBuilder.MeasuredBookingSpec qualified
 import Singular.Registry.TxBuilder.PrepareSpec qualified
 import Singular.Registry.TxBuilder.PublicationFundingSpec qualified
+import Singular.Registry.TxBuilder.RealFoldSpec qualified
 import Singular.Registry.TxBuilder.RegistrationBookingSpec qualified
 import Singular.Registry.TxBuilder.RetractFundingSpec qualified
 import Singular.Registry.TxBuilder.SelectedFoldSpec qualified
@@ -107,6 +108,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Registry.TxBuilder.ConnectedFold" [Builders])
         Singular.Registry.TxBuilder.ConnectedFoldSpec.spec
+    describe
+        (tagged "Singular.Registry.TxBuilder.RealFold" [Builders])
+        Singular.Registry.TxBuilder.RealFoldSpec.spec
     describe
         (tagged "Singular.Registry.TxBuilder.Prepare" [Builders])
         Singular.Registry.TxBuilder.PrepareSpec.spec

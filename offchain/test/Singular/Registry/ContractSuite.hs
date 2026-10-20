@@ -351,6 +351,7 @@ run c ch = case c of
             [ address
             , AtTxIn reference
             , HoldingAsset asset
+            , HoldingPolicy (fst asset)
             , AnyOf (address :| [AtTxIn reference])
             , AllOf (address :| [AtTxIn reference])
             ]

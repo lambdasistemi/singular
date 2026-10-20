@@ -47,7 +47,11 @@ import Cardano.Ledger.BaseTypes (StrictMaybe (..), TxIx (..))
 import Cardano.Ledger.Binary (serialize)
 import Cardano.Ledger.Conway (ConwayEra)
 import Cardano.Ledger.Core (eraProtVerHigh, hashScript)
-import Cardano.Ledger.Mary.Value (MaryValue (..), MultiAsset (..))
+import Cardano.Ledger.Mary.Value
+    ( MaryValue (..)
+    , MultiAsset (..)
+    , PolicyID
+    )
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Control.Monad (foldM)
@@ -177,6 +181,7 @@ chainedAnswer staged query chainAnswer = answerOver query
     selects which output = case which of
         AtAddress address -> output ^. addrTxOutL == address
         HoldingAsset asset -> holds asset output
+        HoldingPolicy policy -> holdsUnder policy output
         CarryingReferenceScript script ->
             case output ^. referenceScriptTxOutL of
                 SJust carried -> hashScript carried == script
@@ -388,6 +393,12 @@ holds (policy, name) output = case output ^. valueTxOutL of
             False
             ((/= 0) . Map.findWithDefault 0 name)
             (Map.lookup policy assets)
+
+-- | Whether an output holds any quantity of any asset under the policy.
+holdsUnder :: PolicyID -> TxOut ConwayEra -> Bool
+holdsUnder policy output = case output ^. valueTxOutL of
+    MaryValue _ (MultiAsset assets) ->
+        maybe False (any (/= 0)) (Map.lookup policy assets)
 
 minted :: Asset -> ConwayTx -> Integer
 minted (policy, name) tx = case tx ^. bodyTxL . mintTxBodyL of

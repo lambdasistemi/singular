@@ -67,6 +67,21 @@ requestSpec = describe "read requests" $ do
         forM_ samples $ \(text, rc) ->
             fmap readRequestCall (parseReadRequest text) `shouldBe` Right rc
 
+    describe "chunk3 offchain" $ describe "the policy asset listing" $ do
+        it
+            "is a read request of a policy alone, and names the policy it lists"
+            $ parseReadRequest ("policy_asset_list:" <> T.replicate 56 "1")
+                `shouldBe` Right (PolicyAssetListOf (PolicyID (scriptHashOfByte 0x11)))
+        it
+            "refuses a request that names no policy, a short one, or an asset beside it"
+            $ forM_
+                [ "policy_asset_list"
+                , "policy_asset_list:" <> T.replicate 54 "1"
+                , "policy_asset_list:" <> T.replicate 56 "1" <> ".ab"
+                , "policy_asset_list:zz"
+                ]
+            $ \text -> parseReadRequest text `shouldSatisfy` isLeft'
+
     it "locates the schema document at the origin of the base URL" $
         schemaUrlOf "https://preprod.koios.rest/api/v1"
             `shouldBe` "https://preprod.koios.rest/koiosapi.yaml"
@@ -119,6 +134,7 @@ samples =
         )
     , ("utxo_info:" <> txHex <> "#0," <> txHex <> "#3", ReadUtxoInfo)
     , ("asset_info:" <> policyHex <> "." <> "ab", ReadAssetInfo)
+    , ("policy_asset_list:" <> policyHex, ReadPolicyAssetList)
     ]
   where
     policyHex = T.replicate 56 "1"

@@ -510,11 +510,17 @@ assetInfoRequest (p, n) =
         Nothing
 
 {- | @policy_asset_list@: every asset minted under a policy, ordered by asset
-name. Not written yet.
+name. A listing read page by page names no output: each asset's holders are
+read singly afterwards.
 -}
 policyAssetListRequest :: PolicyID -> Request 'Read
-policyAssetListRequest _ =
-    error "policyAssetListRequest: not written yet"
+policyAssetListRequest p =
+    request
+        CallPolicyAssetList
+        Get
+        [("_asset_policy", policyHex p)]
+        NoBody
+        (Just "asset_name.asc")
 
 scriptHashHex :: ScriptHash -> Text
 scriptHashHex (ScriptHash h) = hashToTextAsHex h
@@ -1013,16 +1019,13 @@ decodeAssetInfos = runParser $ rows $ \o ->
         <$> (o .: "minting_tx_hash" >>= txIdOf)
         <*> (o .: "total_supply" >>= integerText)
 
-{- | Decode a @policy_asset_list@ answer: the asset names, in answer order.
-Not written yet.
+{- | Decode a @policy_asset_list@ answer: the asset names, in answer order. A
+row that carries no asset name, or one that is not hex, is refused at its
+path; the other fields of a row (fingerprint, supply, decimals) are not read.
 -}
 decodePolicyAssetList :: Value -> Either DecodeFailure [AssetName]
-decodePolicyAssetList _ =
-    Left
-        DecodeFailure
-            { decodePosition = "$"
-            , decodeReason = "policy_asset_list: not written yet"
-            }
+decodePolicyAssetList = runParser $ rows $ \o ->
+    AssetName . SBS.toShort <$> (o .: "asset_name" >>= hexAny)
 
 -- | The bech32 rendering of a Shelley address.
 renderAddress :: Addr -> Text

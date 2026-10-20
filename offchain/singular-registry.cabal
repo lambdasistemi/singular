@@ -1053,6 +1053,7 @@ test-suite cage-tests
     Singular.Registry.TxBuilder.BookingFixture
     Singular.Registry.TxBuilder.BootSpec
     Singular.Registry.TxBuilder.PublicationFundingSpec
+    Singular.Registry.TxBuilder.RealFoldSpec
     Singular.Registry.TxBuilder.RegistrationBookingSpec
     Singular.Registry.TxBuilder.CollateralJudgement
     Singular.Registry.TxBuilder.ConnectedFoldSpec

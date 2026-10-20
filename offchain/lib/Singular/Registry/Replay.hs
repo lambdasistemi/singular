@@ -17,10 +17,14 @@ its scripts (@isValid = false@) spent only its collateral and is never in
 the lineage, whatever its body's inputs name. Every fold applies its
 requests the way the state validator does
 (@onchain\/validators\/registry\/fold.ak@): the spending inputs in ledger
-order, an inline 'RequestDatum' naming this registry's token takes the
-next action of the state input's @Modify@ redeemer, 'Rejected' leaves the
-trie as it is and 'Update' walks the request's edge with 'walkEdge'. After
-every fold the rebuilt root must equal the root in that fold's state datum.
+order, an inline 'RegistrationDatum' or 'TerminationDatum' naming this
+registry's token takes the next action of the state input's @Modify@
+redeemer, 'Rejected' leaves the trie as it is and 'Update' walks the member's
+edge with 'walkEdge': a registration inserts its key active, a termination
+makes its active key terminal. The history of a registry booted before booked
+requests, whose folds spent an inline 'RequestDatum' that names the token, is
+read the same way, each by its own edge. After every fold the rebuilt root
+must equal the root in that fold's state datum.
 
 The answer is the trie rebuilt into the caller's 'Trie', or one named
 'TrieFailure'. On a refusal the caller's trie holds a partial replay and must
@@ -29,6 +33,8 @@ be discarded.
 module Singular.Registry.Replay
     ( replayLineage
     , Replayed (..)
+    , Member (..)
+    , memberOf
     , appliedKeys
     , replayedLineage
     ) where
@@ -96,13 +102,18 @@ import Singular.Registry.TxBuilder.Internal
     )
 import Singular.Registry.Types
     ( CageDatum (..)
+    , Edge
     , MintRedeemer (..)
+    , OnChainRegistrationRequest (..)
     , OnChainRequest (..)
     , OnChainRoot (..)
+    , OnChainTerminationRequest (..)
     , OnChainTokenId (..)
     , OnChainTokenState (..)
     , RequestAction (..)
     , UpdateRedeemer (..)
+    , edgeInsertActive
+    , edgeUpdateTerminal
     )
 
 -- | A replay that reached the selected state output from @create@.
@@ -121,10 +132,39 @@ are not applied and name nothing here.
 -}
 appliedKeys :: [(OnChainRequest, RequestAction)] -> [ByteString]
 appliedKeys pairs =
+    appliedMemberKeys
+        [(Member (requestKey r) (requestEdge r), a) | (r, a) <- pairs]
+
+-- | What one fold member asks of the trie: the key it names and the edge it takes.
+data Member = Member
+    { memberKey :: ByteString
+    , memberEdge :: Edge
+    }
+    deriving stock (Eq, Show)
+
+-- | The distinct keys applied updates named, ascending.
+appliedMemberKeys :: [(Member, RequestAction)] -> [ByteString]
+appliedMemberKeys pairs =
     List.sort
         ( Set.toList
-            (Set.fromList [requestKey r | (r, Update _) <- pairs])
+            (Set.fromList [memberKey m | (m, Update _) <- pairs])
         )
+
+{- | The member an output is, when its inline datum names this registry's
+token: a booked registration takes the insertion edge, a booked termination
+the active-to-terminal edge, a request of the earlier kind its own edge.
+-}
+memberOf :: RegistryIdentity -> TxOut ConwayEra -> Maybe Member
+memberOf token o = case extractCageDatum o of
+    Just (RegistrationDatum r)
+        | namesToken token (regRegistry r) ->
+            Just (Member (regKey r) edgeInsertActive)
+    Just (TerminationDatum t)
+        | namesToken token (termRegistry t) ->
+            Just (Member (termKey t) edgeUpdateTerminal)
+    Just (RequestDatum r)
+        | requestNames token r -> Just (Member (requestKey r) (requestEdge r))
+    _ -> Nothing
 
 {- | A replay as its public lineage: the create, the folds in chain order
 and the distinct keys the applied updates named.
@@ -388,20 +428,20 @@ replayFolds trie token Lineage{..} = do
                 rebuilt <- getRoot trie
                 if rebuilt /= foldRoot
                     then pure (failWith token foldId (chained rebuilt foldRoot))
-                    else go (Set.union seen (Set.fromList (appliedKeys pairs))) rest
-    apply OnChainRequest{requestKey, requestEdge} = \case
-        Update _ -> void (walkEdge trie requestKey requestEdge)
+                    else go (Set.union seen (Set.fromList (appliedMemberKeys pairs))) rest
+    apply Member{memberKey, memberEdge} = \case
+        Update _ -> void (walkEdge trie memberKey memberEdge)
         Rejected -> pure ()
 
-{- | The fold's actions paired with its requests, as the validator pairs them:
+{- | The fold's actions paired with its members, as the validator pairs them:
 the state input's @Modify@ redeemer, and every spending input in ledger
-order whose inline datum is a request naming this registry's token.
+order whose inline datum is a booked request naming this registry's token.
 -}
 pairing
     :: RegistryIdentity
     -> (TxIn -> Either Incomplete (TxOut ConwayEra))
     -> Fold
-    -> Either TrieFailure [(OnChainRequest, RequestAction)]
+    -> Either TrieFailure [(Member, RequestAction)]
 pairing token resolve Fold{foldId, foldTx, foldStateInput} = do
     let refuse = failWith token foldId
         inputs = spendingInputs foldTx
@@ -415,12 +455,7 @@ pairing token resolve Fold{foldId, foldTx, foldStateInput} = do
         traverse
             (either (refuse . because HistoryIncomplete) pure . resolve)
             inputs
-    let requests =
-            [ request
-            | o <- resolvedInputs
-            , Just (RequestDatum request) <- [extractCageDatum o]
-            , requestNames token request
-            ]
+    let requests = [member | o <- resolvedInputs, Just member <- [memberOf token o]]
     unless (length requests == length actions) $
         refuse
             ( because
@@ -508,9 +543,12 @@ isPolicyOf (RegistryIdentity (StatePolicyId policy) _) (PolicyID h) =
 
 -- | Whether a request names this registry's token, as the validator compares it.
 requestNames :: RegistryIdentity -> OnChainRequest -> Bool
-requestNames (RegistryIdentity _ (AssetName name)) request =
-    let OnChainTokenId (BuiltinByteString named) = requestToken request
-    in  named == SBS.fromShort name
+requestNames token request = namesToken token (requestToken request)
+
+-- | Whether a registry token id is this registry's, as the validator compares it.
+namesToken :: RegistryIdentity -> OnChainTokenId -> Bool
+namesToken (RegistryIdentity _ (AssetName name)) (OnChainTokenId (BuiltinByteString named)) =
+    named == SBS.fromShort name
 
 -- | A redeemer of the transaction, decoded.
 redeemerAt

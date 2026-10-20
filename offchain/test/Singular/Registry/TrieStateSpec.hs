@@ -1,3 +1,4 @@
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -7,6 +8,9 @@ boundaries; ledger coverage comes from the packaged connected journeys.
 -}
 module Singular.Registry.TrieStateSpec (spec, produced, edgeCases) where
 
+import Cardano.Ledger.Api.Tx.Out (datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.Coin (Coin (..))
+import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Control.Exception
     ( SomeException
@@ -21,6 +25,7 @@ import Data.ByteString qualified as BS
 import Data.IORef (newIORef)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Map.Strict qualified as Map
+import Lens.Micro ((&), (.~))
 import MPF.Backend.Pure (MPFInMemoryDB (..), emptyMPFInMemoryDB)
 import PlutusTx.Builtins.Internal (BuiltinByteString (..))
 import Singular.CLI.Proof
@@ -42,8 +47,10 @@ import Singular.Registry.Ledger
     , TokenId (..)
     )
 import Singular.Registry.Replay
-    ( Replayed (..)
+    ( Member (..)
+    , Replayed (..)
     , appliedKeys
+    , memberOf
     , replayedLineage
     )
 import Singular.Registry.Trie (Trie (..), TrieManager (..))
@@ -61,12 +68,22 @@ import Singular.Registry.TrieState.Fixture
     ( fixtureSnapshot
     , fixtureStore
     )
-import Singular.Registry.TxBuilder.Internal (walkEdge)
+import Singular.Registry.TxBuilder.BookingFixture qualified as Fixture
+import Singular.Registry.TxBuilder.Internal
+    ( mkInlineDatum
+    , toPlcData
+    , walkEdge
+    )
 import Singular.Registry.Types
-    ( OnChainRequest (..)
+    ( CageDatum (..)
+    , OnChainRegistrationRequest (..)
+    , OnChainRequest (..)
+    , OnChainTerminationRequest (..)
     , OnChainTokenId (..)
     , ProofStep
     , RequestAction (..)
+    , edgeInsertActive
+    , edgeUpdateTerminal
     )
 import System.Environment (lookupEnv)
 import System.FilePath ((</>))
@@ -397,6 +414,78 @@ spec = describe "TrieState preservation oracle (existing IO producer)" $ do
                 , lineageFolds = [txOf 2, txOf 3]
                 , lineageKeys = ["a", "b"]
                 }
+    memberRows
+
+-- ---------------------------------------------------------
+-- chunk3 offchain: the members of a replayed fold
+-- ---------------------------------------------------------
+
+-- | What a fold member asks of the trie, read from the output that holds it.
+memberRows :: Spec
+memberRows = describe "chunk3 offchain" $ describe "the members of a replayed fold" $ do
+    let registry = AssetName "replayed-registry"
+        identity = RegistryIdentity (StatePolicyId (BS.replicate 28 9)) registry
+        named = OnChainTokenId (BuiltinByteString "replayed-registry")
+        another = OnChainTokenId (BuiltinByteString "another-registry")
+        held datum =
+            mkBasicTxOut Fixture.payer (MaryValue (Coin 2_000_000) mempty)
+                & datumTxOutL .~ mkInlineDatum (toPlcData datum)
+        registration registryId =
+            OnChainRegistrationRequest
+                { regRegistry = registryId
+                , regKey = "registered"
+                , regRefundAddress = BuiltinByteString (BS.replicate 28 1)
+                , regDestination = BS.cons 0x60 (BS.replicate 28 2)
+                , regDatum = Nothing
+                , regSubmittedAt = 1_000
+                , regRegistrationCost = 2_000_000
+                , regDeclaredTip = 1_500_000
+                , regCarrierAda = 1_500_000
+                , regNonce = 7
+                }
+        termination registryId =
+            OnChainTerminationRequest
+                { termRegistry = registryId
+                , termKey = "terminated"
+                , termDestination = BS.empty
+                , termDeclaredTip = 1_500_000
+                , termCarrierAda = 2_500_000
+                , termNonce = 1
+                }
+        legacy registryId edge =
+            OnChainRequest
+                { requestToken = registryId
+                , requestOwner = BuiltinByteString (BS.replicate 28 1)
+                , requestKey = "legacy"
+                , requestEdge = edge
+                , requestDeposit = 2_000_000
+                , requestSubmittedAt = 1_000
+                , requestDestination = (BS.cons 0x60 (BS.replicate 28 2), Nothing)
+                }
+    it "reads a booked registration as the insertion of its key" $
+        memberOf identity (held (RegistrationDatum (registration named)))
+            `shouldBe` Just (Member "registered" edgeInsertActive)
+    it "reads a booked termination as the termination of its key" $
+        memberOf identity (held (TerminationDatum (termination named)))
+            `shouldBe` Just (Member "terminated" edgeUpdateTerminal)
+    it "reads a request of the earlier kind by its own edge" $
+        forM_ [edgeInsertActive, edgeUpdateTerminal, 2] $ \edge ->
+            memberOf identity (held (RequestDatum (legacy named edge)))
+                `shouldBe` Just (Member "legacy" edge)
+    it "reads no member from what names another registry or is no request" $ do
+        memberOf identity (held (RegistrationDatum (registration another)))
+            `shouldBe` Nothing
+        memberOf identity (held (TerminationDatum (termination another)))
+            `shouldBe` Nothing
+        memberOf
+            identity
+            (held (RequestDatum (legacy another edgeInsertActive)))
+            `shouldBe` Nothing
+        memberOf identity (held (AbsentCustody "refund")) `shouldBe` Nothing
+        memberOf
+            identity
+            (mkBasicTxOut Fixture.payer (MaryValue (Coin 2_000_000) mempty))
+            `shouldBe` (Nothing :: Maybe Member)
 
 -- Distinct byte keys and generated multi-key registration/retirement
 -- lifecycles, with refused raw encodings inserted between admitted moves.

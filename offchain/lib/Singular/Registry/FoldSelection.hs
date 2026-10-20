@@ -455,7 +455,15 @@ data TaggedSelection = TaggedSelection
     deriving stock (Eq, Show)
 
 {- | Judge every tagged pending request and settle the first included ones up
-to the capacity bound. Not written yet.
+to the capacity bound. A registration is judged against its processing window
+at the probe bound (the clock plus the fold margin), then the leaf of its key
+(a key the registry knows is refused @key-exists@), then its carried datum; a
+termination has no window and is judged against the leaf alone (@key-unknown@,
+@not-booked@, @terminal-immutable@), needing no live holder and no datum. A
+request whose key an earlier included request already names is refused
+@key-in-batch@, and the requests beyond the bound @capacity@. Both lists keep
+ledger input order. Only the reasons of the model's two kinds are named: no
+approval, edge or live token is judged.
 -}
 selectTaggedFold
     :: Int
@@ -465,5 +473,98 @@ selectTaggedFold
     -> LiveFacts
     -> [TaggedRequest]
     -> TaggedSelection
-selectTaggedFold _ _ _ _ _ _ =
-    error "selectTaggedFold: the tagged selection is not written yet"
+selectTaggedFold bound now margin process facts reqs =
+    TaggedSelection settled excluded bound
+  where
+    judged = [(req, judgeTagged now margin process facts req) | req <- reqs]
+
+    deduped :: [(TaggedRequest, Either Exclusion TaggedRequest)]
+    deduped = go Set.empty judged
+      where
+        go _ [] = []
+        go seen ((req, verdict) : rest) = case verdict of
+            Left exc -> (req, Left exc) : go seen rest
+            Right ok
+                | tgKey ok `Set.member` seen ->
+                    ( req
+                    , Left
+                        ( Exclusion
+                            ReasonKeyInBatch
+                            "an earlier included request names the same key"
+                        )
+                    )
+                        : go seen rest
+                | otherwise ->
+                    (req, Right ok) : go (Set.insert (tgKey ok) seen) rest
+
+    settledRefs =
+        Set.fromList
+            (take (max 0 bound) [tgRef ok | (_, Right ok) <- deduped])
+
+    settled = [ok | (_, Right ok) <- deduped, tgRef ok `Set.member` settledRefs]
+
+    excluded =
+        [ (req, exc)
+        | (req, verdict) <- deduped
+        , Just exc <- [toExclusion verdict]
+        ]
+      where
+        toExclusion (Left exc) = Just exc
+        toExclusion (Right ok)
+            | tgRef ok `Set.member` settledRefs = Nothing
+            | otherwise =
+                Just
+                    ( Exclusion
+                        ReasonCapacity
+                        "the fold is at its capacity bound; the next fold takes this request"
+                    )
+
+judgeTagged
+    :: Integer
+    -> Integer
+    -> Integer
+    -> LiveFacts
+    -> TaggedRequest
+    -> Either Exclusion TaggedRequest
+judgeTagged now margin process facts req = case tgKind req of
+    MemberRegistration -> case foldAdmission
+        process
+        (now + margin)
+        [(tgRef req, tgSubmittedAt req)] of
+        Just refusal ->
+            Left
+                ( Exclusion
+                    ReasonNotPhase1
+                    ( T.pack
+                        ( "the request's processing deadline, "
+                            <> show (refusalDeadline refusal)
+                            <> " ms, is before the probe bound "
+                            <> show (refusalBound refusal)
+                            <> " ms the fold would build under: no fold is built"
+                        )
+                    )
+                )
+        Nothing
+            | leaf /= LeafUnknown ->
+                Left (Exclusion ReasonKeyExists "the key is already booked")
+            | otherwise -> case tgCarried req of
+                AppReady -> Right req
+                AppDatumUnreadable ->
+                    Left
+                        ( Exclusion
+                            ReasonAppDatumUnreadable
+                            "the carried datum does not read"
+                        )
+                AppRequired exe ->
+                    Left
+                        ( Exclusion
+                            ReasonAppRequired
+                            ("the value carries no holding rules; settle with " <> exe)
+                        )
+    MemberTermination -> case leaf of
+        LeafUnknown -> Left (Exclusion ReasonKeyUnknown "the key is unknown")
+        LeafAbsent -> Left (Exclusion ReasonNotBooked "the key is not booked")
+        LeafTerminal -> Left (Exclusion ReasonTerminalImmutable "the key is terminal")
+        LeafActive -> Right req
+  where
+    (leaf, _) = Map.findWithDefault (LeafUnknown, False) (tgKey req) facts

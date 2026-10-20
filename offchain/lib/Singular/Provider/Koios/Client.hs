@@ -123,6 +123,7 @@ import Singular.Provider.Koios.Wire
     , decodeAssetTxs
     , decodeCliProtocolParams
     , decodeEpochParams
+    , decodePolicyAssetList
     , decodeReferenceScriptUtxos
     , decodeSubmitted
     , decodeTip
@@ -133,6 +134,7 @@ import Singular.Provider.Koios.Wire
     , decodeUtxos
     , epochParamsRequest
     , parseBody
+    , policyAssetListRequest
     , referenceScriptUtxosRequest
     , renderRewardAccount
     , submitTxRequest
@@ -554,22 +556,17 @@ assetUtxos
 assetUtxos k assets = paged k (assetUtxosRequest assets) decodeUtxos
 
 {- | Every asset minted under the policy, read page by page in asset-name
-order. Not written yet: no request is made.
+order. The listing is whole only when every page was read and the exact total
+Koios stated was reached; a listing cut off, with no total, with a changing
+total, past the page ceiling or refused is a named failure, never a shorter
+list. An empty complete listing is an empty list.
 -}
 policyAssets
     :: (Monad m)
     => Koios m
     -> PolicyID
     -> m (Either ClientFailure [AssetName])
-policyAssets _ _ =
-    pure
-        ( Left
-            ( failing
-                CallPolicyAssetList
-                0
-                (NotRecorded "policyAssets: not written yet")
-            )
-        )
+policyAssets k p = paged k (policyAssetListRequest p) decodePolicyAssetList
 
 {- | Every transaction that included the asset, read page by page, in
 block height then transaction id order. That order makes pages stable;
