@@ -73,7 +73,7 @@ An `@` before a path says the value is in a receipt: `@receipts/03-insert-alice.
 
 ## A readable summary of a receipt
 
-Every command that prints a receipt or a reading takes the switch `--summary`: both programs' `create`, `fold`, `insert`, `update` and `terminate`, `singular`'s `registry reject`, `registry reclaim`, `registry fold`, `registry create`, `registry inspect` and `submit`, and `open-datum inspect`.
+Every command that prints a receipt or a reading takes the switch `--summary`: `create`, `fold`, `insert`, `update`, `terminate` and `inspect` of `open-datum`, and `registry create`, `registry fold`, `registry reject`, `registry reclaim`, `registry inspect` and `submit` of `singular`.
 
 - With the switch, standard output carries the summary and not the JSON. The JSON receipt still goes to the file named by `--receipt`, so one command can show the summary and keep the receipt for the next step.
 - The exit status, the journal and the receipt file are the same as without the switch.

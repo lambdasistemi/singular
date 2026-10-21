@@ -157,7 +157,7 @@
       "pause": 500
     },
     {
-      "text": "Every command that prints a receipt or a reading takes the switch --summary: both programs' create, fold, insert, update and terminate, singular's registry reject, registry reclaim, registry fold, registry create, registry inspect and submit, and open-datum inspect.",
+      "text": "Every command that prints a receipt or a reading takes the switch --summary: create, fold, insert, update, terminate and inspect of open-datum, and registry create, registry fold, registry reject, registry reclaim, registry inspect and submit of singular.",
       "pause": 400
     },
     {
@@ -219,6 +219,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "4bf6ada9dbff0d44c605773b59368dc163eb21acdcc790783cdaff0467d698e3"
+    "sha256": "28959a05e35d798613d532512b19a7d302d4ce08b2530c4dafd3d5e1b12cf195"
   }
 }
