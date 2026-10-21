@@ -1,0 +1,76 @@
+{
+  "functions-for-the-pin-gate": [
+    {
+      "text": "Functions for the pin gate.",
+      "pause": 500
+    },
+    {
+      "text": "Names, argument names and result types only. No bodies.",
+      "pause": 400
+    }
+  ],
+  "state-token-module-of-the-registry-library": [
+    {
+      "text": "State token module of the registry library.",
+      "pause": 500
+    },
+    {
+      "text": "resolveRegistry(application, release, token, session): changed. Compares the application pin for every pin form except the one taken from the datum; the result carries the application pin standing.",
+      "pause": 300
+    },
+    {
+      "text": "resolveRegistryAmong(candidates, token, session): new. Candidates are non-empty pairs of an application and its release; the result is the resolved registry and the candidate the datum's application pin selects, or the refusal.",
+      "pause": 300
+    },
+    {
+      "text": "pinsDifference(config, datum, fields): new, pure. The first field whose datum pin differs from the configuration's pin, or none.",
+      "pause": 300
+    }
+  ],
+  "live-module-of-the-command-line-library": [
+    {
+      "text": "Live module of the command line library.",
+      "pause": 500
+    },
+    {
+      "text": "resolveSaved(application, directory, release, access, roles, wallet, session): unchanged signature; the saved registry also carries the application pin standing.",
+      "pause": 300
+    },
+    {
+      "text": "resolveSavedAmong(candidates, directory, access, roles, wallet, session): new, for a program with several applications.",
+      "pause": 300
+    }
+  ],
+  "command-modules": [
+    {
+      "text": "Command modules.",
+      "pause": 500
+    },
+    {
+      "text": "runDescribe, runInspect, runCreate, submitBundle: changed behaviour as the command table says; submitBundle gains a release argument for a bundle that names a registry.",
+      "pause": 300
+    },
+    {
+      "text": "open-datum registryMode: removed. Its place is a function that returns the mode and the saved registry from the gate, with the refusal as the command's own.",
+      "pause": 300
+    },
+    {
+      "text": "receipt helpers: gain the application pin field where a registry was resolved.",
+      "pause": 300
+    }
+  ],
+  "library-reference": [
+    {
+      "text": "Library reference.",
+      "pause": 500
+    },
+    {
+      "text": "The worked example calls resolveRegistry with an application and a release and shows the refusal for a forged pin.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "bc04087822e7b226d461242c79dba8743ad0f71da5d03d35957642c4bc49476c"
+  }
+}

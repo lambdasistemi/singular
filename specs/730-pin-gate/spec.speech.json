@@ -1,0 +1,162 @@
+{
+  "an-application-gates-every-operation-on-the-registrys-pinned-policies": [
+    {
+      "text": "An application gates every operation on the registry's pinned policies.",
+      "pause": 500
+    },
+    {
+      "text": "Issue 730. This page is for the people who build on a registry (an application author, a third-party reader) and for the people who run the commands (Bob). It records the story, the trust model, the command table, the requirements and the refusals.",
+      "pause": 400
+    }
+  ],
+  "story": [
+    {
+      "text": "Story.",
+      "pause": 500
+    },
+    {
+      "text": "Mallory creates a genuine registry: a real state token, minted by the real contract. Its datum pins an \"active\" policy of her own, and she mints alice under it with a payload she chose. Bob is handed the registry's address. Whatever Bob runs, open-datum inspect for alice, any write, or a third-party reader built on our library, the registry is refused before anything about it is shown or built, and the refusal says which pinned policy is not the one the application derives. A registry with honest pins reads and works as today.",
+      "pause": 400
+    }
+  ],
+  "the-trust-model": [
+    {
+      "text": "The trust model.",
+      "pause": 500
+    },
+    {
+      "text": "Creation does not check the pins: they are chosen freely at boot, and the witness policy at minting checks only that its registry's state token is spent. So a token under a registry's pinned active policy means nothing until a reader has compared the pins with its own derivation. A reader that trusts the datum is shown whatever the registry's creator pinned: an always-true active policy lets its creator mint a token named after any key, with any payload, and the registry's own contracts will fold it. This ticket makes the comparison total in our programs and states it for everyone else.",
+      "pause": 400
+    }
+  ],
+  "the-commands": [
+    {
+      "text": "The commands.",
+      "pause": 500
+    },
+    {
+      "text": "Each command that names a registry resolves it through the one gate before it prints a fact about the registry or builds a transaction. The right-hand column is the state after this ticket; the middle column was read from the code at the start of the ticket and each gap was confirmed there.",
+      "pause": 400
+    },
+    {
+      "text": "A pull request lists this table with the module and function where each command now resolves.",
+      "pause": 400
+    }
+  ],
+  "requirements": [
+    {
+      "text": "Requirements.",
+      "pause": 500
+    },
+    {
+      "text": "gate-before-anything: a command in the table resolves its registry before any output about the registry and before any transaction is built; no read of the state datum comes before it, the choice of an application's mode included.",
+      "pause": 300
+    },
+    {
+      "text": "refusal-names-the-field: a registry whose pinned policies differ is refused with the existing name registry-pin-mismatch and the field: application, active, absent or terminal.",
+      "pause": 300
+    },
+    {
+      "text": "application-pin-always-compared-when-known: an application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, compares the application pin as well as the three witness pins.",
+      "pause": 300
+    },
+    {
+      "text": "application-pin-unchecked-is-said: where the program cannot derive the application pin (singular, which takes it from the datum), every output that shows registry content says once that the application pin was not checked against any application's blueprint.",
+      "pause": 300
+    },
+    {
+      "text": "mode-is-behind-the-gate: an open-datum registry is classed open or closed only by an application pin that equals one of the two derivations the gate makes; a datum matching neither is refused naming the application field.",
+      "pause": 300
+    },
+    {
+      "text": "describe-does-not-borrow-the-release: describe never presents a value read from the datum as derived from the release.",
+      "pause": 300
+    },
+    {
+      "text": "interrupted-create-is-gated: the report of an interrupted create resolves the state token first when it is on the chain.",
+      "pause": 300
+    },
+    {
+      "text": "submit-gates-the-named-registry: submit resolves the registry its bundle names, with the release the user gives, before sending anything; the older bundles are accepted because the bundle format is unchanged and the user gives the release the registry was created under.",
+      "pause": 300
+    },
+    {
+      "text": "create-reads-back-its-pins: create compares the pins of the datum it finds after the boot with the pins it built, and reports a partial outcome naming the field when they differ.",
+      "pause": 300
+    },
+    {
+      "text": "honest-registry-unchanged: with honest pins every command behaves, prints and exits as before, apart from the sentence about the application pin where it applies.",
+      "pause": 300
+    },
+    {
+      "text": "library-gate-is-usable-outside-the-commands: the function the commands call is exported from the library the commands use, documented with a worked example in the library reference.",
+      "pause": 300
+    },
+    {
+      "text": "trust-model-is-published: the protocol page states the trust model above, in the reader's words, including what a reader that trusts the datum can be shown.",
+      "pause": 300
+    },
+    {
+      "text": "pins-compared-once-per-command: the documentation states that pins are compared when a command resolves its registry and not again within the command, and why that is enough: every fold preserves them on chain.",
+      "pause": 300
+    },
+    {
+      "text": "no-contract-change: nothing under the on-chain code, the Lean model or any script hash changes.",
+      "pause": 300
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Refusals.",
+      "pause": 500
+    },
+    {
+      "text": "registry-pin-mismatch FIELD: the datum's policy for that field differs from the one derived (existing).",
+      "pause": 300
+    },
+    {
+      "text": "A bundle that names no registry and is not a create bundle: refused by submit before the chain is read.",
+      "pause": 300
+    },
+    {
+      "text": "A bundle that names a registry, submitted without a release to derive from: refused before the chain is read.",
+      "pause": 300
+    },
+    {
+      "text": "A create whose new datum pins differ from the pins it built: partial, naming the field, no root reported as success.",
+      "pause": 300
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Decisions.",
+      "pause": 500
+    }
+  ],
+  "limits": [
+    {
+      "text": "Limits.",
+      "pause": 500
+    },
+    {
+      "text": "The gate protects the programs that run it. Another reader of the chain must run the same comparison; the protocol page says so.",
+      "pause": 300
+    },
+    {
+      "text": "Making the pins unforgeable at creation is on-chain hardening and is not in this ticket.",
+      "pause": 300
+    },
+    {
+      "text": "The browser build does not exist on main; the gate stays a function of the portable library, and a ticket asks for the browser build to expose it.",
+      "pause": 300
+    },
+    {
+      "text": "The registry name in a bundle is its writer's statement; submit checks the registry it names, not that the transactions act on it.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "spec.md",
+    "sha256": "b759a4f634e3b0f18c4855c2469b433c8d2276ac59d81cfe2b4e36156d3c1dbc"
+  }
+}

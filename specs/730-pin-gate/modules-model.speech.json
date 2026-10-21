@@ -1,0 +1,64 @@
+{
+  "modules-for-the-pin-gate": [
+    {
+      "text": "Modules for the pin gate.",
+      "pause": 500
+    },
+    {
+      "text": "Dependency direction runs from the programs down to the library. No new package.",
+      "pause": 400
+    }
+  ],
+  "changed-responsibilities": [
+    {
+      "text": "Changed responsibilities.",
+      "pause": 500
+    },
+    {
+      "text": "The state token module of the registry library owns the gate: resolving a state token against a release and an application, comparing every pin the application can derive, and the comparison itself, which is exported so that the command that creates a registry can compare the datum it reads back. It also exports the gate over several candidate applications.",
+      "pause": 300
+    },
+    {
+      "text": "The application module owns what a pin form can derive: the pin forms that carry a script say so, and the module states which fields each form compares.",
+      "pause": 300
+    },
+    {
+      "text": "The command line library's live module keeps one resolution entry for the commands (resolving and finding references) and gains the application pin standing in what it returns.",
+      "pause": 300
+    },
+    {
+      "text": "The describe module prints the registry's pinned policies from the datum and states which were derived by the release and which were not.",
+      "pause": 300
+    },
+    {
+      "text": "The inspect module resolves before the report of an interrupted create.",
+      "pause": 300
+    },
+    {
+      "text": "The create module compares the read-back datum.",
+      "pause": 300
+    },
+    {
+      "text": "The submit module resolves the registry its bundle names before the first send.",
+      "pause": 300
+    },
+    {
+      "text": "The open-datum run module decides the mode through the gate and has no read of the state datum of its own.",
+      "pause": 300
+    }
+  ],
+  "not-changed": [
+    {
+      "text": "Not changed.",
+      "pause": 500
+    },
+    {
+      "text": "Builders, folds, reconciliation, the bundle format, the signing verbs, the on-chain code, the Lean model, the blueprint and every script hash.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "40026ebad39089bc3eb12f6257ee4f3430a2b89863e271766f545d8167b96210"
+  }
+}

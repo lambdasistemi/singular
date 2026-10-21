@@ -1,0 +1,106 @@
+{
+  "plan-for-the-pin-gate": [
+    {
+      "text": "Plan for the pin gate.",
+      "pause": 500
+    },
+    {
+      "text": "Two pull requests. Both change off-chain code and documentation only: no on-chain code, no Lean model, no script hash.",
+      "pause": 400
+    }
+  ],
+  "why-two": [
+    {
+      "text": "Why two.",
+      "pause": 500
+    },
+    {
+      "text": "The gate on every command, the documentation and the offline refusal rows are the safety fix. The hosted forged-pins row needs a new test harness that builds a registry on a development network with a policy compiled for the test; it would hold the safety fix behind it. The first pull request refers to issue 730; the second closes it.",
+      "pause": 400
+    }
+  ],
+  "first-pull-request-the-gate-everywhere": [
+    {
+      "text": "First pull request: the gate everywhere.",
+      "pause": 500
+    },
+    {
+      "text": "Red proof first: for each row of the command table, a command run over a session whose registry is real in form and pins a forged active policy, plus the honest control. Every forged run must fail on main and pass with the change. The application pin cases (script, hash, compiled) have their own forged runs.",
+      "pause": 300
+    },
+    {
+      "text": "The library compares the application pin for every pin form that knows its own script, exposes the comparison, and records whether the application pin was compared.",
+      "pause": 300
+    },
+    {
+      "text": "The gate can take the candidate applications of one program and returns the one the datum selects; open-datum passes its two.",
+      "pause": 300
+    },
+    {
+      "text": "Every command of the table routes through the gate as the table says. The old early reads of the state datum (open-datum's mode read, the interrupted-create report) are removed or moved behind it in the same change.",
+      "pause": 300
+    },
+    {
+      "text": "Receipts and the describe page carry the application pin standing; describe stops presenting the datum's pin as derived from the release.",
+      "pause": 300
+    },
+    {
+      "text": "Submit takes the release for a bundle that names a registry; a create bundle needs none.",
+      "pause": 300
+    },
+    {
+      "text": "Create compares the pins of the datum it reads back.",
+      "pause": 300
+    },
+    {
+      "text": "Documentation: the protocol page, the library reference with the worked example, the command reference for describe and submit, the recovery page if it shows a submit command line; speech companions and narration clips regenerated for every changed page.",
+      "pause": 300
+    }
+  ],
+  "second-pull-request-the-forged-pins-row": [
+    {
+      "text": "Second pull request: the forged-pins row.",
+      "pause": 500
+    },
+    {
+      "text": "A test harness builds a registry with the real contracts and the real boot whose datum pins an always-true active policy compiled for the test, mints a token named after a key under it, and runs inspect, describe and every write against it on a development network; the control with honest pins proceeds. The row also records whether the genuine witness policy of that registry can be minted in a fold, as evidence for the on-chain hardening ticket, and does not try to change it. The browser build ticket is opened here. The row is a hosted job and a required check.",
+      "pause": 400
+    }
+  ],
+  "consumers-that-move-with-the-first-pull-request": [
+    {
+      "text": "Consumers that move with the first pull request.",
+      "pause": 500
+    },
+    {
+      "text": "Provider and resolution consumers: open-datum's suite, the conformance application's backend, the node confinement controls and the keri-stub value (its hash pin is now compared).",
+      "pause": 300
+    },
+    {
+      "text": "Command line flag consumers: the declared options, the help snapshots, the parser corpora, the application settings specification, the documented flags check, and every page or script that shows a submit command line (a bundle that names a registry now needs the release).",
+      "pause": 300
+    },
+    {
+      "text": "Refusal text consumers: grep the old wording of the closed-update refusal, the pending-create report and the describe release block in tests, journeys and pages.",
+      "pause": 300
+    }
+  ],
+  "the-gate": [
+    {
+      "text": "The gate.",
+      "pause": 500
+    },
+    {
+      "text": "The existing hosted commands, scoped to what the slice touches, each seen red then green:",
+      "pause": 400
+    },
+    {
+      "text": "just ci runs once, on the final candidate. Hosted checks at the exact head, read by exact name, are the net.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "7854ca0b051f8e9488a78d2138e15790d8a4069c5e4197c9c7276f8cb6419088"
+  }
+}

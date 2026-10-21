@@ -1,0 +1,74 @@
+{
+  "first-pull-request-the-gate-everywhere": [
+    {
+      "text": "First pull request: the gate everywhere.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] forged-registry-red-rows: the command runs of the table over a forged-pin registry and the honest control, red on main, one row per command and per pin form.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] application-pin-compared-for-every-known-form: the library compares script, hash and compiled pins; the keri-stub value is covered.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] gate-among-candidate-applications: the gate over several candidates, and open-datum's mode behind it.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] unchecked-application-pin-is-said: the standing in receipts and in the describe page, once.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] describe-registry-block: describe prints the registry's pinned policies and not a release-derived application hash.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] interrupted-create-is-gated: inspect resolves before the report of an interrupted create.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] create-reads-back-its-pins: the comparison after the boot.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] submit-gates-the-named-registry: the release for a bundle that names a registry; the create bundle exception; sign's line says the name is stated by the writer.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] command-table-in-the-pull-request: each command with the module and function where it resolves.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] trust-model-and-library-documentation: the protocol page, the library reference with the worked example, the command reference, speech and narration regenerated.",
+      "pause": 300
+    }
+  ],
+  "second-pull-request-the-forged-pins-row": [
+    {
+      "text": "Second pull request: the forged-pins row.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] forged-registry-harness: a registry with the real contracts and boot whose datum pins an always-true active policy compiled for the test, and a token minted under it.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] forged-registry-hosted-row: inspect, describe and every write refuse it on a development network; the honest control proceeds; hosted and required.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] genuine-witness-in-a-fold-evidence: whether the genuine witness policy of that registry can be minted in a fold, recorded as evidence.",
+      "pause": 300
+    },
+    {
+      "text": "[ ] browser-build-ticket: the ticket for the browser build exposing the gate, searched and placed in its milestone.",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "a87fba5eea870a30b9a6416bbc930870496a5f9a4f8a390d10185a5e9743d91d"
+  }
+}
