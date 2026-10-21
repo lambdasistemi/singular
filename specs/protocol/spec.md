@@ -187,6 +187,22 @@ A reader that trusts the datum instead is shown whatever the registry's creator 
 
 The comparison protects the programs that run it. Another program that reads the chain MUST run the same comparison, and this page is where it learns that. Making the pins unforgeable at creation is a change to the contracts and is not part of this specification yet.
 
+### The forged registry, run on a development network
+
+A reader can watch the refusal rather than read about it. A hosted journey builds the registry of the story on a development network and runs the packaged programs against it. It is the evidence for the trust model above.
+
+A test harness boots the registry. It is not a product command, because no command a user runs can pin a policy the release does not derive. The harness uses the real boot and the real contracts, and the datum it writes pins an always-true script as the active policy. It then mints a token named `alice` under that policy. The development network's own record of the chain shows a reader that trusts the datum exactly what the story says: a token named `alice`, under the policy the datum pins, held by the wallet.
+
+| What runs | What the journey checks |
+| --- | --- |
+| Every `singular` command that names a registry (`inspect`, `describe`, `fold`, `reject`, `reclaim`, and `submit` given a signed bundle that names it) and every `open-datum` command (`inspect`, `insert`, `update`, `terminate`, `fold`), against the forged registry | Each ends in the refusal that names the active policy, prints nothing of the registry, and adds no transaction to the chain. Transactions are counted from the network's own record of every block, never from a command's receipt |
+| The same commands against a registry made the same way with the honest active policy | They proceed: the pages print, a key is booked, folded, updated and terminated, and the bundle is sent |
+| Each check above, given altered input in the same run | It fails, so a refusal that stopped being checked would be seen |
+
+Two more observations are recorded and not asserted. The first is evidence for hardening creation. On the forged registry, a fold that mints the token its request owes under the pinned policy and, beside it, a token under the honest witness policy was accepted by the node. The honest witness policy accepts any mint while its registry's state is spent in a fold, and the state contract checks the mint only under the three pinned policies, so on a forged registry the honest witness policy is not pinned and a fold can mint under it freely. A fold that mints under the honest active policy instead of the pinned one is refused by the state script.
+
+The second is the check that makes one comparison per command enough. A fold that swaps the active policy in the new state datum for the always-true script is refused by the node, which names the state script as the script that failed it, and the same fold without the swap is accepted. The deployed scripts carry no trace, so the node's answer names the failing script and not the check. The contract's own tests of that alteration name the check `pins-altered`.
+
 ## Acceptance scenarios
 
 These scenarios are specification obligations. **They have not been executed as tests or proved.** The branch's Markdown checks do not validate them. The last column names the sections above that govern each scenario.

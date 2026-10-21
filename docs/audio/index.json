@@ -11409,6 +11409,43 @@
     "v": "045895fbd97e"
    }
   ],
+  "the-forged-registry-run-on-a-development-network": [
+   {
+    "index": 0,
+    "name": "specs-protocol-spec/the-forged-registry-run-on-a-development-network-00",
+    "pause_ms": 500,
+    "text": "The forged registry, run on a development network.",
+    "v": "a381428d9be7"
+   },
+   {
+    "index": 1,
+    "name": "specs-protocol-spec/the-forged-registry-run-on-a-development-network-01",
+    "pause_ms": 400,
+    "text": "A reader can watch the refusal rather than read about it. A hosted journey builds the registry of the story on a development network and runs the packaged programs against it. It is the evidence for the trust model above.",
+    "v": "f010cfc1ec2b"
+   },
+   {
+    "index": 2,
+    "name": "specs-protocol-spec/the-forged-registry-run-on-a-development-network-02",
+    "pause_ms": 400,
+    "text": "A test harness boots the registry. It is not a product command, because no command a user runs can pin a policy the release does not derive. The harness uses the real boot and the real contracts, and the datum it writes pins an always-true script as the active policy. It then mints a token named alice under that policy. The development network's own record of the chain shows a reader that trusts the datum exactly what the story says: a token named alice, under the policy the datum pins, held by the wallet.",
+    "v": "da7097317e92"
+   },
+   {
+    "index": 3,
+    "name": "specs-protocol-spec/the-forged-registry-run-on-a-development-network-03",
+    "pause_ms": 400,
+    "text": "Two more observations are recorded and not asserted. The first is evidence for hardening creation. On the forged registry, a fold that mints the token its request owes under the pinned policy and, beside it, a token under the honest witness policy was accepted by the node. The honest witness policy accepts any mint while its registry's state is spent in a fold, and the state contract checks the mint only under the three pinned policies, so on a forged registry the honest witness policy is not pinned and a fold can mint under it freely. A fold that mints under the honest active policy instead of the pinned one is refused by the state script.",
+    "v": "a1161946fe63"
+   },
+   {
+    "index": 4,
+    "name": "specs-protocol-spec/the-forged-registry-run-on-a-development-network-04",
+    "pause_ms": 400,
+    "text": "The second is the check that makes one comparison per command enough. A fold that swaps the active policy in the new state datum for the always-true script is refused by the node, which names the state script as the script that failed it, and the same fold without the swap is accepted. The deployed scripts carry no trace, so the node's answer names the failing script and not the check. The contract's own tests of that alteration name the check pins-altered.",
+    "v": "4d982faa4546"
+   }
+  ],
   "update-and-delete-application-authorization": [
    {
     "index": 0,
