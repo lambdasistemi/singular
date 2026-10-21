@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 {- |
 Module      : Singular.CLI.FlagGroupSpec
 Description : Both parsers accept exactly the shared flag group
@@ -23,7 +25,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.Either (isRight)
-import Data.List (nub)
+import Data.List (isPrefixOf, nub)
 import Test.Hspec
 
 import Cardano.Crypto.Hash.Class (hashFromBytes)
@@ -100,6 +102,7 @@ pinnedCommonValued =
     , "--max-outlay"
     , "--deposit"
     , "--payload"
+    , "--payload-schema"
     , "--request"
     , "--state-token"
     ]
@@ -560,6 +563,24 @@ registryCommand = describe "registry command" $ do
         it ("owns " <> flag) $
             parseCommand (validFold <> [flag])
                 `shouldNotBe` Left (unknownRefusal flag)
+    forM_ ["fold", "reject", "reclaim"] $ \verb ->
+        it
+            ( "refuses --payload-schema in registry "
+                <> verb
+                <> " as it refuses --payload"
+            )
+            $ do
+                let line flag = ["registry", verb] <> drop 2 validFold <> [flag, "plain"]
+                    renamed = \case
+                        Left (BadValue _ why) -> Left (BadValue "--payload-schema" why)
+                        other -> other
+                parseCommand (line "--payload-schema")
+                    `shouldBe` renamed (parseCommand (line "--payload"))
+                parseCommand (line "--payload-schema")
+                    `shouldSatisfy` \case
+                        Left (BadValue "--payload-schema" why) ->
+                            ("is not accepted by registry " <> verb) `isPrefixOf` why
+                        _ -> False
 
 -- | Whether a full valued list accepts every common flag.
 acceptsCommon :: [String] -> Bool

@@ -116,6 +116,7 @@ insertLeaf =
                     , Needs stateToken
                     , keyShape
                     , Needs payload
+                    , Takes payloadSchema
                     , Takes deposit
                     , nodeShape
                     , OneOf
@@ -164,6 +165,7 @@ updateLeaf =
                     , Needs stateToken
                     , keyShape
                     , Needs payload
+                    , Takes payloadSchema
                     , nodeShape
                     , OneOf
                         [ Each [writeShape, spendingShape]
@@ -319,7 +321,7 @@ payload =
     valued
         "--payload"
         "FILE"
-        "The key's payload, a datum in detailed-schema JSON."
+        "The key's payload: a JSON file, stored as plain JSON unless --payload-schema says otherwise."
 
 deposit :: Flag
 deposit =

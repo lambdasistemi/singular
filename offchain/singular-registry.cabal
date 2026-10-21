@@ -117,6 +117,7 @@ library
     Singular.Registry.Funding
     Singular.Registry.Lifecycle
     Singular.Registry.Page
+    Singular.Registry.PlainJson
     Singular.Registry.Proof
     Singular.Registry.Replay
     Singular.Registry.StateToken
@@ -212,6 +213,7 @@ library registry-cli
     Singular.CLI.Options
     Singular.CLI.Outlay
     Singular.CLI.Passphrase
+    Singular.CLI.Payload
     Singular.CLI.Permanent
     Singular.CLI.Plan
     Singular.CLI.Prepare
@@ -992,7 +994,9 @@ test-suite cage-tests
     Singular.CLI.CreateFundingSpec
     Singular.CLI.DescribeSpec
     Singular.CLI.OneOutputCreateSpec
+    Singular.CLI.PayloadSpec
     Singular.CLI.PrepareSpec
+    Singular.CLI.PrintedPayloadSpec
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.HelpSnapshotSpec
@@ -1037,6 +1041,7 @@ test-suite cage-tests
     Singular.Registry.OneViewSpec
     Singular.Registry.PageSpec
     Singular.Registry.PhaseLogSpec
+    Singular.Registry.PlainJsonSpec
     Singular.Registry.Private.Archive
     Singular.Registry.Private.ArchiveSpec
     Singular.Registry.ProviderSpec

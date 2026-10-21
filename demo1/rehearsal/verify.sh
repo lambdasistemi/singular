@@ -108,7 +108,8 @@ jq -e '.keyText=="checkpoint" and (.settled|length)==1 and .settled[0].edge=="in
 sent_steps '["book","fold"]' <$A/closed-insert.json >/dev/null || bad "checkpoint's insert --fold: not one bundle of a booking and a fold, sent from the vault"
 jq -e --slurpfile i $A/closed-insert.json '.leaf=="active" and .keyText=="checkpoint"
   and .applicationOutput.controller==$i[0].settled[0].owner
-  and .applicationOutput.payload==$i[0].settled[0].settlement.envelope.fields[1]' $A/closed-inspect.json >/dev/null || bad "checkpoint does not read back its controller and payload"
+  and .applicationOutput.payload==$i[0].settled[0].settlement.envelope.fields[1]
+  and .applicationOutput.payloadSchema=="detailed"' $A/closed-inspect.json >/dev/null || bad "checkpoint does not read back its controller and payload"
 jq -e --arg t "$(jq -r .stateToken $A/closed-create.json)" '.outcome=="client-refusal"
   and (.reason|contains($t) and contains("is closed") and contains("written once"))' $A/closed-update.json >/dev/null || bad "the closed update refusal does not name the closed registry"
 # WORKAROUND: a find -newer update-wrote-nothing check is defeated by the terminate that follows on the same chain -> the proof reads the journal: no update command line exists in state-closed at all; the cast's own nothing-new frame runs before the terminate, where -newer is honest.

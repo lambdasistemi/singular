@@ -220,7 +220,7 @@ externalWriteRows =
             `shouldReturn` False
     payloadFile root = do
         let path = root </> "payload.json"
-        writeFile path "{\"int\": 7}"
+        writeFile path "7"
         pure path
     insertLine root addr bundlePath payload withFold = do
         parsed <-

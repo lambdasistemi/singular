@@ -2,13 +2,13 @@ open-datum VERSION (commit unknown)
 
 Usage: open-datum update [--config FILE] [--state-dir DIR] --blueprint FILE
        --state-token POLICY.NAME [--key KEY | --key-hex HEX] --payload FILE
-       --koios-url URL --network-magic N [--koios-token-file FILE]
-       [--network-time DIR] [[--vault FILE [--passphrase-fd N] |
-       --wallet-address ADDR --bundle FILE | --wallet-skey FILE]
-       [--confirm-timeout SECONDS] [--receipt FILE] [--fund-input TXID#IX]
-       [--max-outlay LOVELACE] | --preview --wallet-address ADDR [--fund-input
-       TXID#IX] [--max-outlay LOVELACE]] [--trace LEVEL] [--trace-to SINK]
-       [--trace-format FORMAT]
+       [--payload-schema plain|detailed] --koios-url URL --network-magic N
+       [--koios-token-file FILE] [--network-time DIR] [[--vault FILE
+       [--passphrase-fd N] | --wallet-address ADDR --bundle FILE |
+       --wallet-skey FILE] [--confirm-timeout SECONDS] [--receipt FILE]
+       [--fund-input TXID#IX] [--max-outlay LOVELACE] | --preview
+       --wallet-address ADDR [--fund-input TXID#IX] [--max-outlay LOVELACE]]
+       [--trace LEVEL] [--trace-to SINK] [--trace-format FORMAT]
 
 Replace the payload of a key
 
@@ -65,8 +65,15 @@ Available settings:
   this or --key.
   option: --key-hex HEX
 
-  The key's payload, a datum in detailed-schema JSON.
+  The key's payload: a JSON file, stored as plain JSON unless --payload-schema
+  says otherwise.
   option: --payload FILE
+
+  The form the payload file is written in. plain: ordinary JSON, mapped to
+  Plutus data by the table in the documentation. detailed: the schema that
+  writes any Plutus data exactly.
+  option: --payload-schema plain|detailed
+  default: plain
 
   Base URL of the Koios API used to read the chain and to submit.
   option: --koios-url URL

@@ -20,7 +20,8 @@ order; the reading itself is shared.
 * 'splitTracingFor' takes the tracing flags out of a command line;
 * 'readProviderSettings' reads the node settings from tokenized flags;
 * 'parseFlagGroup' reads the write settings from tokenized flags: the
-  single write reader both binaries call.
+  single write reader both binaries call;
+* 'payloadSchemaFrom' reads the form a payload file is written in.
 -}
 module Singular.CLI.FlagGroup
     ( commonFlagGroup
@@ -35,6 +36,7 @@ module Singular.CLI.FlagGroup
     , traceRequestFrom
     , readProviderSettings
     , parseFlagGroup
+    , payloadSchemaFrom
     ) where
 
 import Control.Applicative ((<|>))
@@ -56,6 +58,10 @@ import Singular.CLI.Trace
     , TraceRequest (..)
     , TraceSink (..)
     , noTraceRequest
+    )
+import Singular.Registry.PlainJson
+    ( PayloadSchema (..)
+    , parseSchemaName
     )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.Wallet (Wallet, bech32Address, walletAddr)
@@ -140,6 +146,7 @@ commonFlagGroup =
     , "--max-outlay"
     , "--deposit"
     , "--payload"
+    , "--payload-schema"
     , "--request"
     , "--state-token"
     ]
@@ -469,3 +476,26 @@ writeNeeds =
     "a write needs --koios-url, --network-magic and a signer: \
     \--vault FILE, or --wallet-address ADDR with --bundle FILE, \
     \or --wallet-skey FILE (legacy)"
+
+{- | The form the payload file of a command is written in: what
+@--payload-schema@ names, and plain when it names nothing. A name that is
+neither is a refusal of the flag, raised with the binary's own constructor.
+-}
+payloadSchemaFrom
+    :: (String -> String -> e)
+    -- ^ the bad-value refusal
+    -> [(String, Maybe String)]
+    -- ^ the tokenized flags
+    -> Either e PayloadSchema
+payloadSchemaFrom bad flags = case lookup "--payload-schema" flags of
+    Just (Just name) ->
+        maybe
+            ( Left
+                ( bad
+                    "--payload-schema"
+                    "is not a payload schema: give plain or detailed"
+                )
+            )
+            Right
+            (parseSchemaName (Text.pack name))
+    _ -> Right PlainSchema

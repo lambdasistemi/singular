@@ -130,7 +130,6 @@ holdingOf e =
             , dhController = ctlController c
             , dhPayload = envPayload e
             , dhDatumJson = dataToJson datum
-            , dhPayloadJson = dataToJson (envPayload e)
             }
 
 -- | The datum an insertion's request must carry: the envelope itself.

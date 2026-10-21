@@ -895,7 +895,7 @@ withTempWallet use = withSystemTempDirectory "closed-wallet" $ \dir -> do
 withTempPayload :: (FilePath -> IO a) -> IO a
 withTempPayload use = withSystemTempDirectory "closed-payload" $ \dir -> do
     let path = dir </> "payload.json"
-    Aeson.encodeFile path (Aeson.object ["int" Aeson..= (7 :: Int)])
+    Aeson.encodeFile path (7 :: Int)
     use path
 
 sessionFor :: Fixture.Chain -> LP.Session NoWitness IO

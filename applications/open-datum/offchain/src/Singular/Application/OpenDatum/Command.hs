@@ -99,6 +99,7 @@ import Singular.CLI.FlagGroup
     , commonFlagGroup
     , commonSwitches
     , parseFlagGroup
+    , payloadSchemaFrom
     , readProviderSettings
     , traceFlags
     , traceRequestFrom
@@ -492,6 +493,7 @@ commandFrom environment (Raw ws allFlags) = do
                             WriteSettings
                             flags
         doc <- traverse (`required` flags) document
+        schema <- payloadSchemaFrom BadValue flags
         fund <- fundFrom flags
         outlay <- outlayFrom flags
         access <- registryAccess env flags
@@ -503,6 +505,7 @@ commandFrom environment (Raw ws allFlags) = do
                 , entryMode = mode
                 , entryKey = key
                 , entryDocument = doc
+                , entryPayloadSchema = schema
                 , entryDeposit = Nothing
                 , entryFund = fund
                 , entryMaxOutlay = outlay
@@ -513,7 +516,9 @@ commandFrom environment (Raw ws allFlags) = do
         let dir = optional "--state-dir" flags
         bp <- required "--blueprint" flags
         forM_
-            (map fst keyFlags <> ["--deposit", "--payload", "--preview", "--fold"])
+            ( map fst keyFlags
+                <> ["--deposit", "--payload", "--payload-schema", "--preview", "--fold"]
+            )
             $ \flag ->
                 when (isJust (lookup flag flags)) $
                     Left

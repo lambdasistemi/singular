@@ -170,6 +170,7 @@ valuedRefusals =
     , "--key-hex"
     , "--deposit"
     , "--payload"
+    , "--payload-schema"
     , "--fund-input"
     , "--max-outlay"
     , "--confirm-timeout"

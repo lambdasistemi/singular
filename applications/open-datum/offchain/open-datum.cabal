@@ -95,7 +95,11 @@ test-suite open-datum-tests
   hs-source-dirs:   test test-tags ../negative/src
   main-is:          Main.hs
   other-modules:
+    Negative.Craft
     Negative.Parse
+    Negative.Read
+    Negative.Run
+    Negative.Submit
     Singular.Application.OpenDatum.BuildersSpec
     Singular.Application.OpenDatum.BuildSpec
     Singular.Application.OpenDatum.EnvelopeSpec

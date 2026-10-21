@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
@@ -11,6 +12,7 @@ or key is read.
 -}
 module Singular.Application.KeriStub.CLISpec (spec) where
 
+import Control.Monad (forM_)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -32,6 +34,7 @@ spec :: Spec
 spec = describe "keri-stub commands" $ do
     commandLine
     flags
+    payloadSchemaRows
 
 provider :: [String]
 provider =
@@ -304,3 +307,70 @@ flags = describe "the common flags" $ do
     it "names the token spelling it cannot read" $
         T.pack (renderCLIError (MissingFlag "--state-token"))
             `shouldSatisfy` (not . T.null)
+
+-- ---------------------------------------------------------
+-- The payload schema (#719)
+-- ---------------------------------------------------------
+
+{- | @--payload-schema@ names the form the register's payload file is
+written in. Register reads it; every other verb refuses it by name as it
+refuses @--payload@; the value is one of two lower-case names.
+-}
+payloadSchemaRows :: Spec
+payloadSchemaRows = describe "the payload schema setting (#719)" $ do
+    let register extra =
+            parseKeriStubCommand
+                ( ["keri-stub", "register", "--key", "hello", "--payload", "/p.json"]
+                    <> extra
+                    <> reg
+                    <> provider
+                    <> wallet
+                )
+    forM_ ["plain", "detailed"] $ \name ->
+        it ("reads --payload-schema " <> name <> " on register") $
+            register ["--payload-schema", name] `shouldSatisfy` isRight
+    it "reads the =value spelling on register" $
+        register ["--payload-schema=detailed"] `shouldSatisfy` isRight
+    it "reads a register without the setting, as before" $
+        register [] `shouldSatisfy` isRight
+    it "refuses a value that is not a schema name, naming the flag" $
+        forM_ ["yaml", "Plain", "DETAILED", "", "plain,detailed", "json"] $ \value ->
+            register ["--payload-schema", value]
+                `shouldBe` Left
+                    ( BadValue
+                        "--payload-schema"
+                        "is not a payload schema: give plain or detailed"
+                    )
+    it "refuses the setting with no value" $
+        parseKeriStubCommand
+            ( ["keri-stub", "register", "--key", "hello", "--payload", "/p.json"]
+                <> reg
+                <> provider
+                <> wallet
+                <> ["--payload-schema"]
+            )
+            `shouldBe` Left (BadValue "--payload-schema" "needs a value")
+    forM_ ["fold", "status", "convict"] $ \verb ->
+        it
+            ( "refuses the setting on "
+                <> verb
+                <> ", by name, as it refuses --payload"
+            )
+            $ do
+                let line extra =
+                        parseKeriStubCommand
+                            ( ["keri-stub", verb, "--key", "hello", "--evidence", evidenceHex]
+                                <> reg
+                                <> provider
+                                <> wallet
+                                <> extra
+                            )
+                    renamed = \case
+                        Left (BadValue _ why) -> Left (BadValue "--payload-schema" why)
+                        other -> other
+                line ["--payload-schema", "plain"]
+                    `shouldBe` renamed (line ["--payload", "/p.json"])
+                line ["--payload-schema", "plain"]
+                    `shouldSatisfy` \case
+                        Left (BadValue "--payload-schema" _) -> True
+                        _ -> False

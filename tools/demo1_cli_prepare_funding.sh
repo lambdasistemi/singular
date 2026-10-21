@@ -372,10 +372,10 @@ for ref_out in $(jq -r '.references[] | .output' "$receipts/carol-create.json");
 done
 say "carol's six references are live"
 
-orun bob-insert success -- insert --key keyPrepareA --payload "$work/payload-insert.json" \
+orun bob-insert success -- insert --key keyPrepareA --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 say "bob booked keyPrepareA: $(field bob-insert .request)"
-orun bob-insert-b success -- insert --key keyPrepareB --payload "$work/payload-insert.json" \
+orun bob-insert-b success -- insert --key keyPrepareB --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 say "bob booked keyPrepareB: $(field bob-insert-b .request)"
 
@@ -408,7 +408,7 @@ jq -e '[.[] | select(.address == "'"$carol_addr"'") | .asset_list // [] | length
   || fail "carol's wallet does not hold both approval kinds: $(jq -c '[.[] | select(.address == "'"$carol_addr"'") | {output: "\(.tx_hash)#\(.tx_index)", assets: [.asset_list // [] | .[] | "\(.policy_id).\(.asset_name)x\(.quantity)"]}]' "$work/carol-utxos.json")"
 say "carol's wallet holds both approval kinds beside her ada"
 
-orun bob-insert-t success -- insert --key keyPrepareT --payload "$work/payload-insert.json" \
+orun bob-insert-t success -- insert --key keyPrepareT --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 say "bob booked keyPrepareT: $(field bob-insert-t .request)"
 orun bob-fold-t success -- fold --request "$(field bob-insert-t .request)" \
@@ -488,7 +488,7 @@ say "carol's funded reject made no preparation"
 # remainder (refused before signing, nothing submitted), then naming her
 # ada-only fold change (used, no preparation). All outputs named at run
 # time from the provider, never typed.
-orun bob-insert-e success -- insert --key keyPrepareE --payload "$work/payload-insert.json" \
+orun bob-insert-e success -- insert --key keyPrepareE --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 say "bob booked keyPrepareE: $(field bob-insert-e .request)"
 wallet_utxos "$carol_addr" "$work/carol-utxos-explicit.json" >"$work/carol-utxo-explicit-lines.txt"
@@ -563,7 +563,7 @@ say "carol's named ada-only output funded her fold with no preparation"
 # the stable text (what is needed, what she may spend, ends nothing was
 # submitted); nothing is submitted, the journal is unchanged, her outputs
 # are all still there in run-time numbers from the receipt itself.
-orun bob-insert-f success -- insert --key keyPrepareF --payload "$work/payload-insert.json" \
+orun bob-insert-f success -- insert --key keyPrepareF --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 say "bob booked keyPrepareF: $(field bob-insert-f .request)"
 orun bob-fold-f success -- fold --request "$(field bob-insert-f .request)" \
@@ -661,9 +661,9 @@ dave_addr="$(field dave-create .wallet)"
 davekey="$(field dave-create .walletKeyHash)"
 say "dave's one-output create made registry $dave_token"
 davecommon=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$dave_token")
-orun dave-bob-insert-k success -- insert --key keyPrepareK --payload "$work/payload-insert.json" \
+orun dave-bob-insert-k success -- insert --key keyPrepareK --payload "$work/payload-insert.json" --payload-schema detailed \
   "${davecommon[@]}" "${node[@]}" "${bob[@]}"
-orun dave-bob-insert-l success -- insert --key keyPrepareL --payload "$work/payload-insert.json" \
+orun dave-bob-insert-l success -- insert --key keyPrepareL --payload "$work/payload-insert.json" --payload-schema detailed \
   "${davecommon[@]}" "${node[@]}" "${bob[@]}"
 say "bob booked keyPrepareK and keyPrepareL in dave's registry"
 deadline_k_ms="$(jq -er .foldDeadline.posixMs "$receipts/dave-bob-insert-k.json")"
@@ -694,7 +694,7 @@ say "dave's wallet is token-only, holding both approval kinds"
 # stand still around it.
 dave_state_before_preview="$(state_digest "$reg")"
 dave_preview_status=0
-"$open_datum" insert --key keyPrepare2b --payload "$work/payload-insert.json" \
+"$open_datum" insert --key keyPrepare2b --payload "$work/payload-insert.json" --payload-schema detailed \
   --preview --wallet-address "$dave_addr" "${davecommon[@]}" "${node[@]}" \
   >"$receipts/dave-insert-preview.json" 2>"$receipts/dave-insert-preview.err" || dave_preview_status=$?
 [ "$dave_preview_status" -eq 0 ] \
@@ -715,7 +715,7 @@ say "dave's preview submitted and journalled nothing"
 # equal the preview's on the same wallet.
 jq -c --arg a "$dave_addr" '[.[] | select(.address == $a) | .asset_list[] | "\(.policy_id):\(.asset_name):\(.quantity)"] | sort' \
   "$work/dave-utxos.json" >"$work/dave-assets-before.json"
-orun dave-insert success -- insert --key keyPrepare2b --payload "$work/payload-insert.json" \
+orun dave-insert success -- insert --key keyPrepare2b --payload "$work/payload-insert.json" --payload-schema detailed \
   "${davecommon[@]}" "${node[@]}" "${dave[@]}"
 prep_wellformed "dave insert" "$receipts/dave-insert.json"
 prep_wellformed "dave insert (figure equality)" "$receipts/dave-insert.json"
@@ -788,7 +788,7 @@ say "dave's $dave_ref_count references are live after his insert"
 # (what the faucet pays). His insert and his terminate complete with no
 # hand step; each receipt says whether a preparation was made, and the
 # leg asserts what it says.
-orun frank-insert success -- insert --key keyFaucet1 --payload "$work/payload-insert.json" \
+orun frank-insert success -- insert --key keyFaucet1 --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${frank[@]}"
 if jq -e 'has("preparation")' "$receipts/frank-insert.json" >/dev/null; then
   prep_wellformed "frank's insert" "$receipts/frank-insert.json"
@@ -807,7 +807,7 @@ orun frank-fold-bob success -- fold --request "$(field frank-insert .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 say "bob folded keyFaucet1 active for frank"
 jq -n '{int: 43}' >"$work/payload-update.json"
-orun frank-update success -- update --key keyFaucet1 --payload "$work/payload-update.json" \
+orun frank-update success -- update --key keyFaucet1 --payload "$work/payload-update.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${frank[@]}"
 frank_update_tx="$(field frank-update .update)"
 [ -n "$frank_update_tx" ] && [ "$frank_update_tx" != null ] \
@@ -822,8 +822,8 @@ else
     "$(jq -cn --arg u "$frank_update_tx" '[["update", $u]]')"
   say "frank's update needed no preparation: the single output funded and collateralised it"
 fi
-jq -e '.payload == {"int": 43}' "$receipts/frank-update.json" >/dev/null \
-  || fail "frank's update receipt does not carry the new payload: $(jq -c .payload "$receipts/frank-update.json")"
+jq -e '.payload == 43 and .payloadSchema == "plain"' "$receipts/frank-update.json" >/dev/null \
+  || fail "frank's update receipt does not carry the new payload: $(jq -c '{payload, payloadSchema}' "$receipts/frank-update.json")"
 orun frank-terminate success -- terminate --key keyFaucet1 \
   "${common[@]}" "${node[@]}" "${frank[@]}"
 if jq -e 'has("preparation")' "$receipts/frank-terminate.json" >/dev/null; then
@@ -844,7 +844,7 @@ fi
 # submitted, the journal unchanged, her outputs all still there.
 eve_state_before_insert="$(state_digest "$reg")"
 wallet_utxos "$(jq -r '.wallet' "$receipts/eve-fold-short.json")" "$work/eve-utxos-insert.json" >"$work/eve-utxo-insert-lines.txt"
-orun eve-insert-short client-refusal -- insert --key keyEveShort --payload "$work/payload-insert.json" \
+orun eve-insert-short client-refusal -- insert --key keyEveShort --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${eve[@]}"
 case "$(jq -r .reason "$receipts/eve-insert-short.json")" in
   "the wallet holds "*" lovelace but "*" is required for fold reserve (client policy)") ;;
@@ -917,22 +917,22 @@ hankcommon=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$hank_tok
 say "iris made registry $iris_token and hank registry $hank_token"
 
 # each makes a live key of their own while an ada-only output is still theirs
-orun iris-insert-u success -- insert --key keyIrisU --payload "$work/payload-insert.json" \
+orun iris-insert-u success -- insert --key keyIrisU --payload "$work/payload-insert.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${iris[@]}"
 orun iris-fold-u success -- fold --request "$(field iris-insert-u .request)" \
   "${iriscommon[@]}" "${node[@]}" "${bob[@]}"
-orun hank-insert-t success -- insert --key keyHankT --payload "$work/payload-insert.json" \
+orun hank-insert-t success -- insert --key keyHankT --payload "$work/payload-insert.json" --payload-schema detailed \
   "${hankcommon[@]}" "${node[@]}" "${hank[@]}"
 orun hank-fold-t success -- fold --request "$(field hank-insert-t .request)" \
   "${hankcommon[@]}" "${node[@]}" "${bob[@]}"
 say "iris and hank each hold a live key of their own"
 
 # round one for both: Bob books, one wait covers both registries
-orun iris-bob-a-1 success -- insert --key keyIrisA --payload "$work/payload-insert.json" \
+orun iris-bob-a-1 success -- insert --key keyIrisA --payload "$work/payload-insert.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${bob[@]}"
-orun iris-bob-b-1 success -- insert --key keyIrisB --payload "$work/payload-insert.json" \
+orun iris-bob-b-1 success -- insert --key keyIrisB --payload "$work/payload-insert.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${bob[@]}"
-orun hank-bob-a success -- insert --key keyHankA --payload "$work/payload-insert.json" \
+orun hank-bob-a success -- insert --key keyHankA --payload "$work/payload-insert.json" --payload-schema detailed \
   "${hankcommon[@]}" "${node[@]}" "${bob[@]}"
 wait_for_windows "$iris_retract_ms" iris-bob-a-1 iris-bob-b-1 hank-bob-a
 srun iris-reject-1 success -- registry reject "${iriscommon[@]}" "${node[@]}" "${iris[@]}"
@@ -941,13 +941,13 @@ say "round one: iris and hank rejected what bob booked"
 
 # Iris, rounds two and three: the same keys, the same booker, the same
 # destination: the same approvals, so each kind's quantity grows by one
-orun iris-bob-a-2 success -- insert --key keyIrisA --payload "$work/payload-insert.json" \
+orun iris-bob-a-2 success -- insert --key keyIrisA --payload "$work/payload-insert.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${bob[@]}"
-orun iris-bob-b-2 success -- insert --key keyIrisB --payload "$work/payload-insert.json" \
+orun iris-bob-b-2 success -- insert --key keyIrisB --payload "$work/payload-insert.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${bob[@]}"
 wait_for_windows "$iris_retract_ms" iris-bob-a-2 iris-bob-b-2
 srun iris-reject-2 success -- registry reject "${iriscommon[@]}" "${node[@]}" "${iris[@]}"
-orun iris-bob-a-3 success -- insert --key keyIrisA --payload "$work/payload-insert.json" \
+orun iris-bob-a-3 success -- insert --key keyIrisA --payload "$work/payload-insert.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${bob[@]}"
 wait_for_windows "$iris_retract_ms" iris-bob-a-3
 srun iris-reject-3 success -- registry reject "${iriscommon[@]}" "${node[@]}" "${iris[@]}"
@@ -1004,7 +1004,7 @@ jq -e --argjson want "$iris_want" '
   || fail "iris's approvals are not three kinds at the quantities $iris_want: $(cat "$work/iris-assets-before.json")"
 say "iris's wallet holds two approval kinds above quantity one and her own insert's: $(cat "$work/iris-assets-before.json")"
 iris_state_before="$(state_digest "$reg")"
-orun iris-update-preview success -- update --key keyIrisU --payload "$work/payload-update.json" \
+orun iris-update-preview success -- update --key keyIrisU --payload "$work/payload-update.json" --payload-schema detailed \
   --preview --wallet-address "$iris_addr" "${iriscommon[@]}" "${node[@]}"
 prep_wellformed "iris update preview" "$receipts/iris-update-preview.json"
 jq -e 'tostring | contains("send one self-payment") | not' "$receipts/iris-update-preview.json" >/dev/null \
@@ -1021,7 +1021,7 @@ say "iris's update preview plans $(field iris-update-preview .preparation.output
 iris_whole=$((iris_outlay + iris_prep_fee))
 for allowance in $((iris_whole - 1)) "$iris_outlay"; do
   orun "iris-update-allowance-$allowance" client-refusal -- update --key keyIrisU \
-    --payload "$work/payload-update.json" --max-outlay "$allowance" \
+    --payload "$work/payload-update.json" --payload-schema detailed --max-outlay "$allowance" \
     "${iriscommon[@]}" "${node[@]}" "${iris[@]}"
   [ "$(field "iris-update-allowance-$allowance" .reason)" = "the measured outlay of $iris_outlay lovelace with the preparation fee of $iris_prep_fee lovelace passes the approved allowance of $allowance (client policy); nothing was submitted" ] \
     || fail "iris's update past an allowance of $allowance was not refused with the exact text: $(cat "$receipts/iris-update-allowance-$allowance.json")"
@@ -1036,13 +1036,13 @@ wallet_utxos "$iris_addr" "$work/iris-utxos-after-refusals.json" >"$work/iris-ut
 [ "$(state_digest "$reg")" = "$iris_state_before" ] \
   || fail "the registry state changed across iris's refused updates"
 say "iris's update past the whole outlay less one lovelace, and past the command's alone, was refused before signing"
-orun iris-update success -- update --key keyIrisU --payload "$work/payload-update.json" \
+orun iris-update success -- update --key keyIrisU --payload "$work/payload-update.json" --payload-schema detailed \
   "${iriscommon[@]}" "${node[@]}" "${iris[@]}"
 assert_preview_equals iris-update iris-update-preview
 assert_through_preparation iris-update update update "$iris_addr" \
   "$(managed_journal "$reg" "$iris_token" "$iriskey")"
-jq -e '.payload == {"int": 43}' "$receipts/iris-update.json" >/dev/null \
-  || fail "iris's update receipt does not carry the new payload: $(jq -c .payload "$receipts/iris-update.json")"
+jq -e '.payload == 43 and .payloadSchema == "plain"' "$receipts/iris-update.json" >/dev/null \
+  || fail "iris's update receipt does not carry the new payload: $(jq -c '{payload, payloadSchema}' "$receipts/iris-update.json")"
 wallet_utxos "$iris_addr" "$work/iris-utxos-after.json" >/dev/null
 [ "$(asset_totals "$iris_addr" "$work/iris-utxos-after.json")" = "$(cat "$work/iris-assets-before.json")" ] \
   || fail "iris's approvals changed across her update: before $(cat "$work/iris-assets-before.json") after $(asset_totals "$iris_addr" "$work/iris-utxos-after.json")"
@@ -1050,11 +1050,11 @@ say "iris still holds her approvals in exact quantities after her update"
 assert_refs_live "iris" "$receipts/iris-create.json"
 
 # --- Bob's funded update makes no preparation
-orun bob-insert-u success -- insert --key keyBobU --payload "$work/payload-insert.json" \
+orun bob-insert-u success -- insert --key keyBobU --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 orun bob-fold-u success -- fold --request "$(field bob-insert-u .request)" \
   "${common[@]}" "${node[@]}" "${bob[@]}"
-orun bob-update success -- update --key keyBobU --payload "$work/payload-update.json" \
+orun bob-update success -- update --key keyBobU --payload "$work/payload-update.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" "${bob[@]}"
 jq -e 'has("preparation") | not' "$receipts/bob-update.json" >/dev/null \
   || fail "bob's funded update carries a preparation member: $(cat "$receipts/bob-update.json")"

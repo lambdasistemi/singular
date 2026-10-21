@@ -1,0 +1,44 @@
+{
+  "payload-written-as-plain-json-functions": [
+    {
+      "text": "Payload written as plain JSON: functions.",
+      "pause": 500
+    },
+    {
+      "text": "New and changed signatures with argument names. Types are in the data model, homes in the modules model.",
+      "pause": 400
+    }
+  ],
+  "singularregistryplainjson": [
+    {
+      "text": "Singular.Registry.PlainJson.",
+      "pause": 500
+    }
+  ],
+  "singularclipayload": [
+    {
+      "text": "Singular.CLI.Payload.",
+      "pause": 500
+    }
+  ],
+  "changed-signatures": [
+    {
+      "text": "Changed signatures.",
+      "pause": 500
+    }
+  ],
+  "removed": [
+    {
+      "text": "Removed.",
+      "pause": 500
+    },
+    {
+      "text": "readInsertPayload's own file reading, the update's own file reading, the preview's own document call for a payload, keri-stub's readPayload file reading and the negative host's direct dataFromJson call, each replaced by readPayloadFile; the dhPayloadJson field when no reader remains.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "functions-model.md",
+    "sha256": "2ab9e8ecfdb13de079688410023dd6dd1bd32a387b709b070b3dac86d493282b"
+  }
+}

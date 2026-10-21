@@ -42,9 +42,10 @@ import Singular.Application.OpenDatum.Command
     , WriteSettings (..)
     , neededRoles
     )
-import Singular.Application.OpenDatum.Envelope
-    ( dataFromJson
-    , envelopeFromData
+import Singular.Application.OpenDatum.Envelope (envelopeFromData)
+import Singular.Application.OpenDatum.Plan
+    ( readInsertPayload
+    , readUpdatePayload
     )
 import Singular.Application.OpenDatum.Run
     ( readModeFor
@@ -68,7 +69,6 @@ import Singular.CLI.Live
     , txInText
     )
 import Singular.CLI.ManagedState (resolveSignerDir)
-import Singular.CLI.Plan (readJson)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT)
 import Singular.CLI.Session
@@ -134,17 +134,7 @@ runNegativeInsert env args = case entryMode args of
         failWith ClientRefusal "preview takes no key: the host submits"
     Submit ws -> do
         let Key key = entryKey args
-        payloadPath <-
-            maybe
-                (failWith ClientRefusal "insert needs --payload")
-                pure
-                (entryDocument args)
-        payloadValue <- readJson payloadPath
-        payload <-
-            either
-                (failWith ClientRefusal)
-                pure
-                (dataFromJson payloadValue)
+        payload <- readInsertPayload args
         let deposit = fromMaybe minimumDeposit (entryDeposit args)
         dir <- negativeStateDir args ws
         (mode, modeEnv) <- readModeFor env args
@@ -327,17 +317,7 @@ runNegativeUpdate env args tamper = case entryMode args of
         failWith ClientRefusal "preview takes no key: the host submits"
     Submit ws -> do
         let Key key = entryKey args
-        payloadPath <-
-            maybe
-                (failWith ClientRefusal "update needs --payload")
-                pure
-                (entryDocument args)
-        payloadValue <- readJson payloadPath
-        payload <-
-            either
-                (failWith ClientRefusal)
-                pure
-                (dataFromJson payloadValue)
+        payload <- readUpdatePayload args
         dir <- negativeStateDir args ws
         (mode, modeEnv) <- readModeFor env args
         attached

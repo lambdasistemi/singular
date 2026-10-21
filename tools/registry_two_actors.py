@@ -1228,7 +1228,12 @@ class Journey:
         )
         arguments = [command, "--key", key]
         if command == "insert":
-            arguments += ["--payload", str(self.payload(name))]
+            arguments += [
+                "--payload",
+                str(self.payload(name)),
+                "--payload-schema",
+                "detailed",
+            ]
         arguments += [
             "--blueprint",
             self.blueprint,
@@ -2670,6 +2675,8 @@ class Journey:
             key,
             "--payload",
             str(self.payload(name)),
+            "--payload-schema",
+            "detailed",
             "--blueprint",
             self.blueprint,
             "--state-token",

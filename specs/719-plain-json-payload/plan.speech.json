@@ -1,0 +1,78 @@
+{
+  "payload-written-as-plain-json-plan": [
+    {
+      "text": "Payload written as plain JSON: plan.",
+      "pause": 500
+    },
+    {
+      "text": "The story, the mapping and the refusals are in the spec. Shapes are in the modules model, the data model and the functions model; the task list is in tasks.",
+      "pause": 400
+    }
+  ],
+  "strategy": [
+    {
+      "text": "Strategy.",
+      "pause": 500
+    },
+    {
+      "text": "One pull request, Closes #719; the intake found no independent part. The change keeps the chain behaviour of every command, so the process is a behaviour change on the off-chain side only (one commit owner, one persistent auditor) and a documentation part that gets no checkpoint.",
+      "pause": 400
+    },
+    {
+      "text": "The mapping is a pure library module, written test first. The commands then read every payload file through one reader that takes the schema, and print every payload through one view. The callers of the old behaviour inside this repository (shell journeys, the conformance backend, the negative host sources) are moved in the same commit as the behaviour that breaks them, so each commit builds and each hosted job stays green.",
+      "pause": 400
+    }
+  ],
+  "slices": [
+    {
+      "text": "Slices.",
+      "pause": 500
+    },
+    {
+      "text": "Each slice builds and passes its gate on its own.",
+      "pause": 400
+    }
+  ],
+  "files-that-change-with-a-payload-flag-or-a-printed-payload": [
+    {
+      "text": "Files that change with a payload flag or a printed payload.",
+      "pause": 500
+    },
+    {
+      "text": "The commit owner starts from this list and from the compiler. Search again for --payload, applicationOutput.payload, .payload == and dataFromJson before the last slice.",
+      "pause": 400
+    }
+  ],
+  "gate": [
+    {
+      "text": "Gate.",
+      "pause": 500
+    },
+    {
+      "text": "The gate for a candidate is the existing hosted commands, narrowed by the suites' own filters to what the slice can break. The hosted jobs are the net; none is rerun locally as a whole. Every build or test runs under a systemd scope with a memory cap and a timeout.",
+      "pause": 400
+    },
+    {
+      "text": "Hosted only, never rerun locally: \"Demo 1 journey from the release archive\" (the new plain and detailed steps and refusals), \"Closed-datum journey from the release archive\", \"Keri-stub journey\", the negative-host jobs, the conformance jobs and the two-actor jobs. Their scripts change in this pull request, so the commit owner reads each changed script against the just lint run and against bash -n before the first push.",
+      "pause": 400
+    },
+    {
+      "text": "The first run of every new test is made on the base to see it fail, and the failing output is kept in the evidence folder.",
+      "pause": 400
+    }
+  ],
+  "checkpoints": [
+    {
+      "text": "Checkpoints.",
+      "pause": 500
+    },
+    {
+      "text": "The auditor is asked at the red tests of each of the first three slices, when the slice's acceptance lines are green, and before the push. The documentation slice and the handoff get no checkpoint.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "plan.md",
+    "sha256": "2f3ef4c94eda0236ed7e5728ad0971925919624fbe1a755fd10877ca3f41f147"
+  }
+}

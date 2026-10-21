@@ -26,6 +26,11 @@ import Test.QuickCheck
 
 import PlutusCore.Data qualified as PLC
 
+import Singular.Registry.PlainJson
+    ( PayloadSchema (..)
+    , payloadFromJson
+    )
+
 import Singular.Application.OpenDatum.Build
 import Singular.Application.OpenDatum.Envelope
 
@@ -365,8 +370,9 @@ payloadReading = describe "reading a payload" $ do
         it ("refuses " <> name <> " as not Plutus data") $
             readPayload v `shouldSatisfy` isNotData
     isNotData = \case
-        Left (PayloadNotPlutusData _) -> True
+        Left _ -> True
         Right _ -> False
+    readPayload = payloadFromJson DetailedSchema
     genData' =
         oneof
             [ PLC.I <$> arbitrary

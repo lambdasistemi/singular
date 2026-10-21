@@ -240,7 +240,7 @@ if [ "$part" = closed-update ]; then
     || setup_fail "closed pin equals the open pin of the same seed"
 fi
 common=(--state-dir "$reg" --blueprint "$blueprint" --state-token "$state_token")
-run_ok insert "$open_datum" open-datum insert --key alice-1 --payload "$work/payload-insert.json" \
+run_ok insert "$open_datum" open-datum insert --key alice-1 --payload "$work/payload-insert.json" --payload-schema detailed \
   "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
   || setup_fail "insert failed"
 run_ok fold "$open_datum" open-datum fold "${common[@]}" "${node[@]}" --wallet-skey "$work/bob.skey" \
@@ -270,7 +270,7 @@ forbidden_status=0
 control_status=0
 case "$part" in
   stranger-updates-the-key | controller-tamper-controller | controller-tamper-deposit | controller-tamper-token | controller-tamper-address | controller-tamper-datum)
-    forbidden_args=(registry update --key alice-1 --payload "$work/payload-update.json")
+    forbidden_args=(registry update --key alice-1 --payload "$work/payload-update.json" --payload-schema detailed)
     case "$part" in
       controller-tamper-controller) forbidden_args+=(--tamper controller) ;;
       controller-tamper-deposit) forbidden_args+=(--tamper deposit) ;;
@@ -284,7 +284,7 @@ case "$part" in
       --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$signer_skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
-    "$host" registry update --key alice-1 --payload "$work/payload-update.json" \
+    "$host" registry update --key alice-1 --payload "$work/payload-update.json" --payload-schema detailed \
       --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
@@ -321,7 +321,7 @@ case "$part" in
     # controller with no tamper flag: the node refuses it. The control is
     # the termination of the same key, booked and folded with the
     # executable as the withdraw part's control is.
-    "$host" registry update --key alice-1 --payload "$work/payload-update.json" \
+    "$host" registry update --key alice-1 --payload "$work/payload-update.json" --payload-schema detailed \
       --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
@@ -350,11 +350,11 @@ case "$part" in
     # No `--fold` flag: the host always books then folds (issue 486 removes
     # the combined switch from the ordinary insert), so the command line
     # never carries it.
-    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
-    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-bob-control" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
@@ -385,11 +385,11 @@ case "$part" in
     # No `--fold` flag: the host always books then folds (issue 486 removes
     # the combined switch from the ordinary insert), so the command line
     # never carries it.
-    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
-    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-alice-control" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
@@ -407,11 +407,11 @@ case "$part" in
     # No `--fold` flag: the host always books then folds (issue 486 removes
     # the combined switch from the ordinary insert), so the command line
     # never carries it.
-    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-alice" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
-    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-alice-control" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/alice.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
@@ -441,11 +441,11 @@ case "$part" in
     # No `--fold` flag: the host always books then folds (issue 486 removes
     # the combined switch from the ordinary insert), so the command line
     # never carries it.
-    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" \
+    "$host" registry insert --key alice-1 --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-bob" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/forbidden.json" \
       >"$receipts/forbidden.out" 2>"$receipts/forbidden.stderr" || forbidden_status=$?
-    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" \
+    "$host" registry insert --key "$fresh_key" --payload "$work/payload-insert.json" --payload-schema detailed \
       --state-dir "$work/host-bob-control" --blueprint "$blueprint" --state-token "$state_token" \
       "${node[@]}" --wallet-skey "$work/bob.skey" --receipt "$receipts/control.json" \
       >"$receipts/control.out" 2>"$receipts/control.stderr" || control_status=$?
@@ -458,7 +458,7 @@ case "$part" in
     # the controller in full. Same folder (Bob), same request, same state,
     # same path; the one difference is the payment (1 less vs exactly owed).
     # No `--fold` on any command line (issue 486).
-    run_ok setup-insert "$open_datum" open-datum insert --key alice-2 --payload "$work/payload-insert.json" \
+    run_ok setup-insert "$open_datum" open-datum insert --key alice-2 --payload "$work/payload-insert.json" --payload-schema detailed \
       "${common[@]}" "${node[@]}" --wallet-skey "$work/alice.skey" \
       || setup_fail "setup insert alice-2 failed"
     run_ok setup-fold "$open_datum" open-datum fold \

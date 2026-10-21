@@ -118,7 +118,6 @@ holdingOf h =
             , dhController = hdController h
             , dhPayload = hdPayload h
             , dhDatumJson = datumToJson datum
-            , dhPayloadJson = datumToJson (hdPayload h)
             }
 
 -- | The datum an insertion's request must carry: the holding itself.

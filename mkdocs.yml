@@ -10,6 +10,7 @@ site_dir: site
 nav:
   - Home: index.md
   - Demo 1: docs/demo1.md
+  - Store ordinary JSON as a key's payload: docs/payload-json.md
   - The release:
       - Install the commands without Nix: docs/install.md
       - Download and verify a release: docs/verify-release.md

@@ -2477,6 +2477,7 @@ commandReceipt c k updates terminal = case c of
             [ "outcome" .= ("success" :: String)
             , "liveOutput" .= ("u" <> show (updates + 1) <> "#0")
             , "payload" .= payload ("p" <> show (updates + 1))
+            , "payloadSchema" .= ("detailed" :: String)
             , "root" .= ("r1" :: String)
             ]
     Terminate ->
@@ -2556,6 +2557,7 @@ commandReceipt c k updates terminal = case c of
                             , "datumCbor" .= ("d87980" :: String)
                             , "envelope" .= envelope p
                             , "payload" .= payload p
+                            , "payloadSchema" .= ("detailed" :: String)
                             , "controller" .= ("c0" :: String)
                             , "deposit" .= (2_000_000 :: Int)
                             , "lovelace" .= (2_000_000 :: Int)

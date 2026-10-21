@@ -80,6 +80,7 @@ import Singular.CLI.Command
 import Singular.CLI.FlagGroup
     ( commonFlagGroup
     , parseFlagGroup
+    , payloadSchemaFrom
     , readProviderSettings
     , splitTracingFor
     , tokenizeWith
@@ -95,6 +96,7 @@ import Singular.CLI.Registry (economics)
 import Singular.CLI.Trace (TraceRequest (..))
 import Singular.Registry.Config.Application (RegistryEconomics (..))
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.PlainJson (PayloadSchema (..))
 import Singular.Registry.StateToken
     ( ReferenceRole (..)
     , parseStateToken
@@ -234,7 +236,7 @@ parseKeriStubWithGroup group environment args = do
                     "is taken by register only, which books: this command books nothing, so there is nothing to fold in the same command"
                 )
     refuseEntry flags =
-        forM_ ["--deposit", "--payload"] $ \flag ->
+        forM_ ["--deposit", "--payload", "--payload-schema"] $ \flag ->
             when (isJust (lookup flag flags)) $
                 Left
                     ( BadValue
@@ -261,6 +263,7 @@ parseKeriStubWithGroup group environment args = do
                 WriteSettings
                 flags
         deposit <- depositFrom flags
+        schema <- payloadSchemaFrom BadValue flags
         fund <- fundFrom flags
         outlay <- outlayFrom flags
         access <- registryAccess env flags
@@ -272,6 +275,7 @@ parseKeriStubWithGroup group environment args = do
                 , entryMode = Submit settings
                 , entryKey = key
                 , entryDocument = optional "--payload" flags
+                , entryPayloadSchema = schema
                 , entryDeposit = deposit
                 , entryFund = fund
                 , entryMaxOutlay = outlay
@@ -328,6 +332,7 @@ parseKeriStubWithGroup group environment args = do
                         , entryMode = Submit settings
                         , entryKey = key
                         , entryDocument = Nothing
+                        , entryPayloadSchema = PlainSchema
                         , entryDeposit = Nothing
                         , entryFund = fund
                         , entryMaxOutlay = outlay
@@ -600,7 +605,8 @@ keriStubUsage =
         , "  keri-stub register [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --state-token POLICY.NAME"
         , "      --koios-url URL --network-magic N --wallet-skey FILE [--receipt FILE]"
-        , "      [--deposit LOVELACE] [--payload PLUTUS_JSON] [--fund-input TXID#IX] [--max-outlay LOVELACE]"
+        , "      [--deposit LOVELACE] [--payload FILE] [--payload-schema plain|detailed]"
+        , "      [--fund-input TXID#IX] [--max-outlay LOVELACE]"
         , "      [--fold]"
         , "  keri-stub convict [--state-dir ROOT] --blueprint PLUTUS_JSON (--key KEY | --key-hex HEX)"
         , "      --evidence HEX --state-token POLICY.NAME"

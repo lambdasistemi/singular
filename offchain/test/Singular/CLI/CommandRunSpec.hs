@@ -4756,7 +4756,6 @@ testAppExpecting expected =
             , dhController = BS.replicate 28 9
             , dhPayload = PLC.I 0
             , dhDatumJson = Aeson.object ["constant" .= (1 :: Int)]
-            , dhPayloadJson = Aeson.object ["constant" .= (0 :: Int)]
             }
     rules =
         HoldingRules

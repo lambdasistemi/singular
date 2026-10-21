@@ -111,7 +111,8 @@ import Singular.CLI.FoldRules
 import Singular.CLI.Live
 import Singular.CLI.ManagedState (resolveSignerDir)
 import Singular.CLI.Outlay (bookingOutlay)
-import Singular.CLI.Plan (readJson, refuseOver)
+import Singular.CLI.Payload (readPayloadFile)
+import Singular.CLI.Plan (refuseOver)
 import Singular.CLI.Receipt (OutcomeClass (..))
 import Singular.CLI.Registry (hexT, keyFields)
 import Singular.CLI.Session
@@ -123,7 +124,6 @@ import Singular.CLI.Trace
     )
 import Singular.Registry.Application
     ( DecodedHolding (..)
-    , datumFromJson
     , datumToJson
     )
 import Singular.Registry.Evidence qualified as Cage
@@ -377,17 +377,14 @@ managedEntryDir a ws =
         (accessToken (entryAccess a))
         (writeSigner ws)
 
-{- | The payload a register carries: the file its @--payload@ names as
-Plutus data, or the empty prefix when none is named.
+{- | The payload a register carries: the file its @--payload@ names, read through
+the one reader under the payload schema the command was given, or the empty
+prefix when none is named.
 -}
 readPayload :: EntryArgs -> IO PLC.Data
 readPayload a = case entryDocument a of
     Nothing -> pure defaultPayload
-    Just path ->
-        readJson path
-            >>= either (failWith ClientRefusal . refused path) pure . datumFromJson
-  where
-    refused path why = path <> ": --payload is not Plutus data: " <> why
+    Just path -> readPayloadFile (entryPayloadSchema a) path
 
 -- | A holding as the datum the receipts print.
 holdingDatum :: Holding -> Value

@@ -24,7 +24,7 @@ play -p 10 $'On chain: alice is active, held in this application output, control
 play -p 5 "On disk: his state directory is still empty. A read writes nothing." \
   'find state'
 play -f -p 4 $'Bob asks to register the key alice, booking and folding as Alice did, with his address and a\nbundle file. The command reads the registry first, finds alice taken, and stops.' \
-  'open-datum insert --key alice --payload payload.json --state-dir state $TOKEN $BLUEPRINT $NODE --wallet-address "$bob_addr" --bundle refused.bundle --fold > refused.json'
+  'open-datum insert --key alice --payload payload.json --payload-schema detailed --state-dir state $TOKEN $BLUEPRINT $NODE --wallet-address "$bob_addr" --bundle refused.bundle --fold > refused.json'
 play -p 8 "The refusal, from the receipt: alice is active, and a key being registered must be unknown." \
   'jq "{outcome, reason, leafFound, leafRequired}" refused.json'
 play -p 6 $'On disk: his state directory is still empty and no bundle file was written: the refusal built\nnothing, so there is nothing to sign.' \
@@ -32,7 +32,7 @@ play -p 6 $'On disk: his state directory is still empty and no bundle file was w
 test -z "$(find state -type f)"
 test -z "$(find . -maxdepth 1 -name '*.bundle')"
 play -f -p 5 $'A client check is not a proof. The negative host skips it, with a test wallet of its own: it\nbooks alice, then sends the fold. On chain: the booking lands; the node gets the fold.' \
-  'singular-negative registry insert --key alice --payload payload.json --state-dir forged-state $TOKEN $BLUEPRINT $NODE $FORGER --receipt forged.json > forged.out'
+  'singular-negative registry insert --key alice --payload payload.json --payload-schema detailed --state-dir forged-state $TOKEN $BLUEPRINT $NODE $FORGER --receipt forged.json > forged.out'
 play -p 14 $'On chain: the node refused the fold; the receipt names the script that failed:\nthe registry\'s state validator.' \
   'jq "{outcome, key, failedScripts}" forged.json | short'
 play -p 6 "That hash is the policy of the state token Bob was given: the registry's own validator." \

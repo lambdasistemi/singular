@@ -1557,6 +1557,8 @@ updatePreparationRows =
                     `shouldBe` ["prepared", "submitted", "confirmed", "observed"]
                 sent <- decodeJsonFile (rigDir rig </> "payload-2.json")
                 valueOfRun "payload" updated `shouldBe` Just sent
+                valueOfRun "payloadSchema" updated
+                    `shouldBe` Just (Aeson.String "plain")
                 BL.toStrict (Aeson.encode (runReceipt updated))
                     `shouldSatisfy` (not . BS.isInfixOf "send one self-payment")
                 walletAfter <- readTestWallet rig
@@ -2277,10 +2279,10 @@ withRigIn dir funds blueprintJson compose use = do
     BL.writeFile blueprint (Aeson.encode blueprintJson)
     BL.writeFile
         (dir </> "payload.json")
-        (Aeson.encode (Aeson.object ["int" .= (7 :: Int)]))
+        (Aeson.encode (7 :: Int))
     BL.writeFile
         (dir </> "payload-2.json")
-        (Aeson.encode (Aeson.object ["int" .= (8 :: Int)]))
+        (Aeson.encode (8 :: Int))
     wallet <- loadWallet (fromIntegral magic) keyPath
     testWallet <- loadWallet (fromIntegral magic) testKeyPath
     chain <-

@@ -29,8 +29,15 @@ listed here; a constructor no run exercises fails the extent row.
 module Singular.Application.OpenDatum.CommandRunSpec (spec) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (bracket, finally, throwIO)
-import Control.Monad (forM, unless, when)
+import Control.Exception
+    ( SomeException
+    , bracket
+    , finally
+    , fromException
+    , throwIO
+    , try
+    )
+import Control.Monad (forM, unless, void, when)
 import Control.Tracer (Tracer (..))
 import Data.Aeson (toJSON, (.=))
 import Data.Aeson qualified as Aeson
@@ -40,6 +47,7 @@ import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
 import Data.ByteString.Short qualified as SBS
+import Data.Either (fromLeft)
 import Data.Foldable (forM_, toList)
 import Data.Function ((&))
 import Data.IORef
@@ -177,10 +185,21 @@ import PlutusCore.Version (plcVersion110)
 import PlutusLedgerApi.V3 qualified as PLC
 import UntypedPlutusCore qualified as UPLC
 
+import Negative.Parse
+    ( NegativeInvocation (..)
+    , parseNegativeInvocation
+    )
+import Negative.Run (runNegativeInsert, runNegativeUpdate)
+import PlutusCore.Data qualified as PD
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , parseOpenDatumCommand
     , renderCLIError
+    )
+import Singular.Application.OpenDatum.Envelope
+    ( Envelope (..)
+    , dataFromJson
+    , envelopeFromData
     )
 import Singular.Application.OpenDatum.Root
     ( runOpenDatumSingular
@@ -204,7 +223,7 @@ import Singular.CLI.Registry
     , loadReleaseCodes
     , pendingPath
     )
-import Singular.CLI.Session (Env (..), txIdHex)
+import Singular.CLI.Session (CommandFailure (..), Env (..), txIdHex)
 import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Submit (submitBundle)
 import Singular.CLI.Trace
@@ -213,6 +232,7 @@ import Singular.CLI.Vault
     , sealVault
     , vaultWorkFactor
     )
+import Singular.Registry.Application (datumFromJson)
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Bundle
     ( Bundle (..)
@@ -235,6 +255,10 @@ import Singular.Registry.Evidence
     )
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider qualified as Cage
+import Singular.Registry.PlainJson
+    ( PayloadSchema (..)
+    , payloadFromJson
+    )
 import Singular.Registry.ProviderSettings (ProviderSettings (..))
 import Singular.Registry.RawChainFixture
     ( ChainFacts (..)
@@ -294,6 +318,8 @@ spec =
         >> externalWriteRows
         >> vaultWriteRows
         >> saveStateTokenRows
+        >> payloadSchemaRunRows
+        >> printedPayloadRows
 
 {- | The open datum create receipt carries the working describe line. The
 application owns no describe verb, so the line always names the registry
@@ -1294,10 +1320,10 @@ withRigIn dir blueprintJson compose use = do
     BL.writeFile blueprint (Aeson.encode blueprintJson)
     BL.writeFile
         (dir </> "payload.json")
-        (Aeson.encode (Aeson.object ["int" .= (7 :: Int)]))
+        (Aeson.encode (7 :: Int))
     BL.writeFile
         (dir </> "payload-2.json")
-        (Aeson.encode (Aeson.object ["int" .= (8 :: Int)]))
+        (Aeson.encode (8 :: Int))
     wallet <- loadWallet (fromIntegral magic) keyPath
     chain <-
         newRawChain
@@ -5118,3 +5144,568 @@ savingRun rig args = do
             pure
             (Aeson.decodeStrict out)
     pure (code, receipt, err)
+
+-- ---------------------------------------------------------
+-- A payload written as plain JSON (#719)
+-- ---------------------------------------------------------
+
+{- | Every command that takes @--payload@ reads the file in the schema it is
+given: plain JSON by default, the detailed Plutus data schema when the
+setting says so. What a key holds is read back from inspect's envelope, the
+exact data, never from the print this ticket changes later. Each expected
+datum is the one the detailed-schema reader of the previous release gives
+for the detailed document the spec works out by hand. A refusal names the
+file and the flag, nothing is submitted, and it comes before the node is
+read: the environment of those rows cannot read a node at all.
+-}
+payloadSchemaRunRows :: Spec
+payloadSchemaRunRows = describe "a payload written as plain JSON (#719)" $ do
+    describe "what insert and update store" $
+        forM_ storedRows $ \(label, file, setting, detailed) -> do
+            it ("insert stores " <> label) $ withRegistry $ \rig token -> do
+                path <- payloadFile rig "stored.json" file
+                booked <-
+                    run
+                        rig
+                        "insert"
+                        ( ["open-datum", "insert", "--key", "k1", "--payload", path]
+                            <> setting
+                            <> tokenArgs token
+                        )
+                outcomeOf (runReceipt booked) `shouldBe` Just "success"
+                _ <-
+                    run
+                        rig
+                        "fold"
+                        (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+                heldPayload rig token "k1"
+                    `shouldReturn` Just (detailedDatum detailed)
+            it ("update replaces the payload with " <> label) $ withRegistry $ \rig token -> do
+                first <- payloadFile rig "first.json" "0"
+                booked <-
+                    run
+                        rig
+                        "insert"
+                        ( ["open-datum", "insert", "--key", "k1", "--payload", first]
+                            <> tokenArgs token
+                        )
+                outcomeOf (runReceipt booked) `shouldBe` Just "success"
+                _ <-
+                    run
+                        rig
+                        "fold"
+                        (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+                heldPayload rig token "k1" `shouldReturn` Just (PD.I 0)
+                path <- payloadFile rig "stored.json" file
+                updated <-
+                    run
+                        rig
+                        "update"
+                        ( ["open-datum", "update", "--key", "k1", "--payload", path]
+                            <> setting
+                            <> tokenArgs token
+                        )
+                outcomeOf (runReceipt updated) `shouldBe` Just "success"
+                heldPayload rig token "k1"
+                    `shouldReturn` Just (detailedDatum detailed)
+    describe "the previews build what the commands submit" $ do
+        it
+            "an insert preview of a plain file carries the envelope of the detailed document"
+            $ withRegistry
+            $ \rig token -> do
+                plain <- payloadFile rig "plain.json" "{\"answer\": 42}"
+                detailed <- payloadFile rig "detailed.json" answerDetailed
+                a <- previewInsert rig token plain []
+                b <- previewInsert rig token detailed ["--payload-schema", "detailed"]
+                outcomeOf (runReceipt a) `shouldBe` Just "success"
+                previewedPayload a `shouldBe` Just (detailedDatum answerDetailed)
+                previewedPayload b `shouldBe` previewedPayload a
+        it
+            "an update preview of a plain file builds what the detailed document builds"
+            $ withRegistry
+            $ \rig token -> do
+                first <- payloadFile rig "first.json" "0"
+                booked <-
+                    run
+                        rig
+                        "insert"
+                        ( ["open-datum", "insert", "--key", "k1", "--payload", first]
+                            <> tokenArgs token
+                        )
+                _ <-
+                    run
+                        rig
+                        "fold"
+                        (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+                plain <- payloadFile rig "plain.json" "{\"answer\": 42}"
+                detailed <- payloadFile rig "detailed.json" answerDetailed
+                a <- previewUpdate rig token plain []
+                b <- previewUpdate rig token detailed ["--payload-schema", "detailed"]
+                outcomeOf (runReceipt a) `shouldBe` Just "success"
+                valueAt "update" (runReceipt a) `shouldSatisfy` (/= Nothing)
+                valueAt "update" (runReceipt b)
+                    `shouldBe` valueAt "update" (runReceipt a)
+    describe "what is refused, and where" $
+        forM_ refusalRows $ \(label, file, setting, sentence) ->
+            forM_ refusedBy $ \(verb, attempt) ->
+                it (label <> " is refused by " <> verb <> " before the node is read") $
+                    withRig $ \rig -> do
+                        path <- payloadFile rig "refused.json" file
+                        outcome <- attempt rig path setting
+                        outcome `shouldBe` Just ("client-refusal", sentence path)
+    describe "the negative host reads the payload as the commands do" $
+        forM_ ["insert", "update"] $ \word -> do
+            it ("accepts a plain file on " <> word <> " past the payload") $ withRig $ \rig -> do
+                path <- payloadFile rig "plain.json" "{\"answer\": 42}"
+                outcome <- negativeAttempt word rig path []
+                fmap snd outcome
+                    `shouldSatisfy` maybe False (isInfixOf "was read")
+            it ("accepts a detailed file on " <> word <> " with the setting") $ withRig $ \rig -> do
+                path <- payloadFile rig "detailed.json" answerDetailed
+                outcome <-
+                    negativeAttempt word rig path ["--payload-schema", "detailed"]
+                fmap snd outcome
+                    `shouldSatisfy` maybe False (isInfixOf "was read")
+  where
+    storedRows =
+        [
+            ( "a plain object with no setting"
+            , "{\"answer\": 42}"
+            , []
+            , answerDetailed
+            )
+        ,
+            ( "a plain object with the setting plain"
+            , "{\"answer\": 42}"
+            , ["--payload-schema", "plain"]
+            , answerDetailed
+            )
+        ,
+            ( "the same object in the detailed schema with the setting detailed"
+            , answerDetailed
+            , ["--payload-schema", "detailed"]
+            , answerDetailed
+            )
+        , ("a plain integer", "7", [], "{\"int\":7}")
+        ,
+            ( "the detailed integer"
+            , "{\"int\":7}"
+            , ["--payload-schema", "detailed"]
+            , "{\"int\":7}"
+            )
+        , ("a plain text", "\"alice\"", [], "{\"bytes\":\"616c696365\"}")
+        ,
+            ( "a plain list of a number and a boolean"
+            , "[1, true]"
+            , []
+            , "{\"list\":[{\"int\":1},{\"constructor\":1,\"fields\":[]}]}"
+            )
+        ,
+            ( "a constructor of the detailed schema with the setting detailed"
+            , "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , ["--payload-schema", "detailed"]
+            , "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            )
+        ]
+    answerDetailed =
+        "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+    -- the file text, the setting, and the sentence the refusal must be
+    refusalRows =
+        [
+            ( "a detailed document without the setting"
+            , "{\"constructor\":0,\"fields\":[{\"int\":42}]}"
+            , []
+            , \path ->
+                path <> ": --payload cannot be stored as plain JSON: " <> instruction
+            )
+        ,
+            ( "a plain object under the setting detailed"
+            , "{\"answer\": 42}"
+            , ["--payload-schema", "detailed"]
+            , \path ->
+                path
+                    <> ": --payload is not Plutus data: "
+                    <> fromLeft "" (datumFromJson (decodeDoc "{\"answer\": 42}"))
+            )
+        ,
+            ( "a number with a fraction"
+            , "{\"price\": 1.5}"
+            , []
+            , ( <>
+                    ": --payload cannot be stored as plain JSON: the number 1.5 at $.price has a fraction; only whole numbers are stored"
+              )
+            )
+        ,
+            ( "null"
+            , "{\"gone\": null}"
+            , []
+            , ( <>
+                    ": --payload cannot be stored as plain JSON: null at $.gone has no Plutus data counterpart"
+              )
+            )
+        ,
+            ( "a file that is not JSON"
+            , "{\"a\": }"
+            , []
+            , \path -> path <> ": " <> notJsonReason "{\"a\": }"
+            )
+        ]
+    instruction = case payloadFromJson PlainSchema (decodeDoc "{\"int\":1}") of
+        Left why -> T.unpack why
+        Right _ -> "stored as plain"
+    decodeDoc :: BL.ByteString -> Aeson.Value
+    decodeDoc = either (error . ("not JSON: " <>)) id . Aeson.eitherDecode
+    notJsonReason :: BL.ByteString -> String
+    notJsonReason text =
+        fromLeft
+            "it is JSON"
+            ( Aeson.eitherDecodeStrict' (BL.toStrict text)
+                :: Either String Aeson.Value
+            )
+    -- every command that takes a payload, as a refusal outcome the environment cannot disturb
+    refusedBy =
+        [
+            ( "insert"
+            , \rig path setting ->
+                viaCommand
+                    rig
+                    ["open-datum", "insert", "--key", "k9", "--payload", path]
+                    setting
+            )
+        ,
+            ( "update"
+            , \rig path setting ->
+                viaCommand
+                    rig
+                    ["open-datum", "update", "--key", "k9", "--payload", path]
+                    setting
+            )
+        ,
+            ( "insert --preview"
+            , \rig path setting ->
+                viaCommand
+                    rig
+                    ( [ "open-datum"
+                      , "insert"
+                      , "--key"
+                      , "k9"
+                      , "--payload"
+                      , path
+                      , "--preview"
+                      ]
+                        <> ["--wallet-address", bech32Address (walletAddr (rigWallet rig))]
+                    )
+                    setting
+            )
+        ,
+            ( "update --preview"
+            , \rig path setting ->
+                viaCommand
+                    rig
+                    ( [ "open-datum"
+                      , "update"
+                      , "--key"
+                      , "k9"
+                      , "--payload"
+                      , path
+                      , "--preview"
+                      ]
+                        <> ["--wallet-address", bech32Address (walletAddr (rigWallet rig))]
+                    )
+                    setting
+            )
+        ,
+            ( "the negative host's insert"
+            , negativeAttempt "insert"
+            )
+        ,
+            ( "the negative host's update"
+            , negativeAttempt "update"
+            )
+        ]
+
+-- | A rig with a registry created, and the state-token argument of its commands.
+withRegistry :: (Rig -> String -> IO a) -> IO a
+withRegistry use = withRig $ \rig -> do
+    seed <- fundSeed rig
+    created <- run rig "create" ["open-datum", "create", "--seed", seed]
+    token <- tokenOf created
+    use rig token
+
+-- | A payload file in the rig's directory.
+payloadFile :: Rig -> FilePath -> BL.ByteString -> IO FilePath
+payloadFile rig name text = do
+    let path = rigDir rig </> name
+    BL.writeFile path text
+    pure path
+
+-- | The data of a detailed-schema document, by the reader of the previous release.
+detailedDatum :: BL.ByteString -> PD.Data
+detailedDatum text = case Aeson.eitherDecode text of
+    Left why -> error ("not JSON: " <> why)
+    Right v -> either (error . ("not detailed: " <>)) id (datumFromJson v)
+
+-- | The payload data of an envelope printed as detailed-schema JSON.
+payloadOfEnvelope :: Aeson.Value -> Maybe PD.Data
+payloadOfEnvelope json =
+    either (const Nothing) Just (dataFromJson json)
+        >>= either (const Nothing) (Just . envPayload) . envelopeFromData
+
+-- | The payload the registry holds for a key, from inspect's envelope.
+heldPayload :: Rig -> String -> String -> IO (Maybe PD.Data)
+heldPayload rig token key = do
+    inspected <-
+        run
+            rig
+            ("inspect " <> key)
+            (["open-datum", "inspect", "--key", key] <> tokenArgs token)
+    pure $
+        valueAt "applicationOutput" (runReceipt inspected)
+            >>= valueAt "envelope"
+            >>= payloadOfEnvelope
+
+-- | The payload an insert preview's envelope carries.
+previewedPayload :: Run -> Maybe PD.Data
+previewedPayload r = valueAt "envelope" (runReceipt r) >>= payloadOfEnvelope
+
+previewInsert :: Rig -> String -> FilePath -> [String] -> IO Run
+previewInsert rig token path setting =
+    run
+        rig
+        "insert preview"
+        ( [ "open-datum"
+          , "insert"
+          , "--key"
+          , "k2"
+          , "--payload"
+          , path
+          , "--preview"
+          ]
+            <> ["--wallet-address", bech32Address (walletAddr (rigWallet rig))]
+            <> setting
+            <> tokenArgs token
+        )
+
+previewUpdate :: Rig -> String -> FilePath -> [String] -> IO Run
+previewUpdate rig token path setting =
+    run
+        rig
+        "update preview"
+        ( [ "open-datum"
+          , "update"
+          , "--key"
+          , "k1"
+          , "--payload"
+          , path
+          , "--preview"
+          ]
+            <> ["--wallet-address", bech32Address (walletAddr (rigWallet rig))]
+            <> setting
+            <> tokenArgs token
+        )
+
+-- | An environment that cannot read a node: a refusal that comes first is the only thing it shows.
+blindEnv :: Rig -> Env
+blindEnv rig =
+    (envOf rig)
+        { envReads = \_ _ -> fail "the node was read"
+        , envWrites = \_ _ -> fail "the node was read"
+        , envLoadRelease = \_ _ -> pure (Left "the blueprint was read")
+        }
+
+{- | A command line run where the node cannot be read: its outcome class and
+reason when it ends in a refusal, and nothing submitted.
+-}
+viaCommand :: Rig -> [String] -> [String] -> IO (Maybe (Text, String))
+viaCommand rig command setting = do
+    let token = phantomToken
+    submittedBefore <- countSubmitted rig
+    r <-
+        runVia
+            rig
+            (blindEnv rig)
+            "registry"
+            "payload refusal"
+            (command <> setting <> tokenArgs token)
+    submittedAfter <- countSubmitted rig
+    submittedAfter `shouldBe` submittedBefore
+    pure
+        ( (,)
+            <$> outcomeOf (runReceipt r)
+            <*> fmap T.unpack (textAt "reason" (runReceipt r))
+        )
+
+{- | The negative host's insert or update on a payload file, in the blind
+environment: the refusal it ends in, when it ends in one.
+-}
+negativeAttempt
+    :: String -> Rig -> FilePath -> [String] -> IO (Maybe (Text, String))
+negativeAttempt word rig path setting = do
+    let token = phantomToken
+        line =
+            ["registry", word, "--key", "k9", "--payload", path]
+                <> setting
+                <> ["--state-dir", rigDir rig </> "negative"]
+                <> ["--blueprint", rigBlueprint rig]
+                <> [ "--koios-url"
+                   , "http://fixture.invalid"
+                   , "--network-magic"
+                   , show magic
+                   ]
+                <> ["--wallet-skey", rigKey rig]
+                <> tokenArgs token
+    invocation <-
+        either (fail . show) pure (parseNegativeInvocation [] line)
+    outcome <-
+        try $ case invocation of
+            Ordinary (OpenInsert a) -> void (runNegativeInsert (blindEnv rig) a)
+            NegativeUpdate a tamper -> void (runNegativeUpdate (blindEnv rig) a tamper)
+            other -> fail ("not an insert or update: " <> show other)
+    pure $ case outcome of
+        Left (e :: SomeException) -> case fromException e of
+            Just (CommandFailure _ why _) -> Just ("client-refusal", why)
+            Nothing -> Just ("failed", show e)
+        Right () -> Nothing
+
+-- | A well-formed state token no registry minted; the blind environment never looks it up.
+phantomToken :: String
+phantomToken = replicate 56 '0' <> "." <> replicate 64 '0'
+
+-- ---------------------------------------------------------
+-- The payload that inspect and the update receipt print (#719)
+-- ---------------------------------------------------------
+
+{- | Inspect and the update receipt print a key's payload as plain JSON when
+the stored data has a plain reading, else in the detailed schema, and always
+beside the name of the schema. The form a payload was written in is not
+kept: the detailed integer and the plain integer print alike. The envelope
+is printed as before and holds the exact data.
+-}
+printedPayloadRows :: Spec
+printedPayloadRows = describe "the printed payload (#719)" $
+    forM_ printedRows $ \(label, file, setting, detailed, expected, schema) -> do
+        it ("inspect prints " <> label) $ withRegistry $ \rig token -> do
+            path <- payloadFile rig "stored.json" file
+            booked <-
+                run
+                    rig
+                    "insert"
+                    ( ["open-datum", "insert", "--key", "k1", "--payload", path]
+                        <> setting
+                        <> tokenArgs token
+                    )
+            _ <-
+                run
+                    rig
+                    "fold"
+                    (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+            inspected <-
+                run
+                    rig
+                    "inspect"
+                    (["open-datum", "inspect", "--key", "k1"] <> tokenArgs token)
+            let output = valueAt "applicationOutput" (runReceipt inspected)
+            (output >>= valueAt "payload", output >>= valueAt "payloadSchema")
+                `shouldBe` (Just expected, Just (Aeson.String schema))
+            (output >>= valueAt "envelope" >>= payloadOfEnvelope)
+                `shouldBe` Just (detailedDatum detailed)
+        it ("the update receipt prints " <> label) $ withRegistry $ \rig token -> do
+            first <- payloadFile rig "first.json" "0"
+            booked <-
+                run
+                    rig
+                    "insert"
+                    ( ["open-datum", "insert", "--key", "k1", "--payload", first]
+                        <> tokenArgs token
+                    )
+            outcomeOf (runReceipt booked) `shouldBe` Just "success"
+            _ <-
+                run
+                    rig
+                    "fold"
+                    (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+            path <- payloadFile rig "stored.json" file
+            updated <-
+                run
+                    rig
+                    "update"
+                    ( ["open-datum", "update", "--key", "k1", "--payload", path]
+                        <> setting
+                        <> tokenArgs token
+                    )
+            outcomeOf (runReceipt updated) `shouldBe` Just "success"
+            ( valueAt "payload" (runReceipt updated)
+                , valueAt "payloadSchema" (runReceipt updated)
+                )
+                `shouldBe` (Just expected, Just (Aeson.String schema))
+  where
+    jsonOf :: BL.ByteString -> Aeson.Value
+    jsonOf = either (error . ("not JSON: " <>)) id . Aeson.eitherDecode
+    -- label, the file, the setting, the detailed document of the same data,
+    -- the JSON that must be printed, and the schema it is printed in
+    printedRows =
+        [
+            ( "a plain object as plain JSON"
+            , "{\"answer\": 42}"
+            , []
+            , "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+            , jsonOf "{\"answer\": 42}"
+            , "plain"
+            )
+        ,
+            ( "the detailed form of the same object as the same plain JSON"
+            , "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+            , ["--payload-schema", "detailed"]
+            , "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+            , jsonOf "{\"answer\": 42}"
+            , "plain"
+            )
+        ,
+            ( "a plain integer as plain JSON"
+            , "7"
+            , []
+            , "{\"int\":7}"
+            , Aeson.Number 7
+            , "plain"
+            )
+        ,
+            ( "the detailed integer as the plain integer"
+            , "{\"int\":7}"
+            , ["--payload-schema", "detailed"]
+            , "{\"int\":7}"
+            , Aeson.Number 7
+            , "plain"
+            )
+        ,
+            ( "a plain text as plain JSON"
+            , "\"alice\""
+            , []
+            , "{\"bytes\":\"616c696365\"}"
+            , Aeson.String "alice"
+            , "plain"
+            )
+        ,
+            ( "a plain list as plain JSON"
+            , "[1, true]"
+            , []
+            , "{\"list\":[{\"int\":1},{\"constructor\":1,\"fields\":[]}]}"
+            , jsonOf "[1, true]"
+            , "plain"
+            )
+        ,
+            ( "bytes that are not text in the detailed schema"
+            , "{\"bytes\":\"ff\"}"
+            , ["--payload-schema", "detailed"]
+            , "{\"bytes\":\"ff\"}"
+            , jsonOf "{\"bytes\":\"ff\"}"
+            , "detailed"
+            )
+        ,
+            ( "a constructor that is not a boolean in the detailed schema"
+            , "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , ["--payload-schema", "detailed"]
+            , "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , jsonOf "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , "detailed"
+            )
+        ]

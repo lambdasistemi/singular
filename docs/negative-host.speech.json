@@ -39,6 +39,10 @@
       "pause": 400
     },
     {
+      "text": "Both executables read new.json the same way: ordinary JSON is stored as plain JSON, and a file in the detailed schema is given with --payload-schema detailed, as store ordinary JSON as a key's payload says.",
+      "pause": 400
+    },
+    {
       "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd N in a script) or names an address and a bundle file for a signer elsewhere.",
       "pause": 400
     },
@@ -225,6 +229,6 @@
   ],
   "_source": {
     "file": "negative-host.md",
-    "sha256": "1c4a3b547cc7e8c95c8ede5c45b76d59f7f9c5b97c3a7bf470e757bf403f9da4"
+    "sha256": "a7a586fc321e8098e176843e3f9ce8776c7e75d150ce220f96b3c72cd7ab158e"
   }
 }

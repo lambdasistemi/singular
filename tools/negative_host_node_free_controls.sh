@@ -126,7 +126,7 @@ else
 fi
 jq -n '{map:[{k:{bytes:"6e616d65"},v:{list:[{int:-7},{bytes:"616c696365"},{constructor:2,fields:[]}]}}]}' >"$receipts/payload.json" \
   || setup_fail "writing the insert payload"
-ins_out="$("$host_bin" registry insert --blueprint "$receipts/nope.json" --key alice-1 --payload "$receipts/payload.json" --state-token "$tok" --koios-url http://127.0.0.1:1 --network-magic 42 --wallet-skey "$receipts/nope.skey" 2>&1)" || ins_code=$?
+ins_out="$("$host_bin" registry insert --blueprint "$receipts/nope.json" --key alice-1 --payload "$receipts/payload.json" --payload-schema detailed --state-token "$tok" --koios-url http://127.0.0.1:1 --network-magic 42 --wallet-skey "$receipts/nope.skey" 2>&1)" || ins_code=$?
 ins_code="${ins_code:-0}"
 if [ "$ins_code" -eq 10 ] && printf '%s' "$ins_out" | grep -Fq '"command": "insert"' && ! printf '%s' "$ins_out" | grep -Fq "not in this slice"; then
   say "insert books: handler ran (exit 10)"

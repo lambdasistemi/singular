@@ -5622,22 +5622,29 @@
     "index": 7,
     "name": "docs-negative-host/who-this-is-for-07",
     "pause_ms": 400,
-    "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd N in a script) or names an address and a bundle file for a signer elsewhere.",
-    "v": "9dd70e62d0b0"
+    "text": "Both executables read new.json the same way: ordinary JSON is stored as plain JSON, and a file in the detailed schema is given with --payload-schema detailed, as store ordinary JSON as a key's payload says.",
+    "v": "f051f63a5516"
    },
    {
     "index": 8,
     "name": "docs-negative-host/who-this-is-for-08",
     "pause_ms": 400,
-    "text": "The host builds the update, signs it as Bob, and submits it unevaluated. The application's spending contract refuses it, the node's verdict names that script, and a fresh read shows the registry, the key's holding and the wallets exactly as they were.",
-    "v": "85d9a0330a91"
+    "text": "The negative host's parts keep key files as harness controls: it signs with whatever key file you name and opens no vault, so its command lines on this page name --wallet-skey, and only they do. Every open-datum line a reader types here signs from a vault (--vault FILE, the passphrase typed once at the prompt, or read from --passphrase-fd N in a script) or names an address and a bundle file for a signer elsewhere.",
+    "v": "2b59811f2ce7"
    },
    {
     "index": 9,
     "name": "docs-negative-host/who-this-is-for-09",
     "pause_ms": 400,
+    "text": "The host builds the update, signs it as Bob, and submits it unevaluated. The application's spending contract refuses it, the node's verdict names that script, and a fresh read shows the registry, the key's holding and the wallets exactly as they were.",
+    "v": "147cb866dcd4"
+   },
+   {
+    "index": 10,
+    "name": "docs-negative-host/who-this-is-for-10",
+    "pause_ms": 400,
     "text": "Beside every forbidden move its accepting control runs too: the same command with the one forbidden difference removed, from the same registry state, signed by the same signer. A refusal only means something when the same machinery succeeds on the next line.",
-    "v": "7045d20a2109"
+    "v": "0a5fa7bb37ce"
    }
   ]
  },
@@ -5790,8 +5797,8 @@
     "index": 1,
     "name": "docs-offchain-api-reference/what-the-reference-does-not-claim-01",
     "pause_ms": 400,
-    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
-    "v": "3415c424e996"
+    "text": "This reference covers the off-chain registry library only. The four registry commands — the journey, insert-active, update-terminal and deployment — are executables, not library modules: their command-local modules are documented with source links in Who owns a registry command, and the library interfaces they call are the ones listed above. The conformance suite's own library now has its own generated reference — the Conformance API reference — generated and checked by the same discipline from the Conformance tree. Together the two references cover the documented module surfaces of the two public libraries, no more: this reference's extent is the off-chain main library's, with the runtime service modules staying outside it in Runtime service ownership, and the conformance reference's extent is the conformance library's. The executables and the on-chain Aiken validators remain outside the generated references. The public local-services component also exposes LocalEvaluation, NetworkTime, ProviderSettings, ProviderTrace, SessionEvidence, SessionIO, SessionServices, TimeMaterial, TimeSource, Trace, TraceRender, WaitTypes and Wallet; their sources live under offchain/local-services/Singular/Registry/. Their generated pages are not in this main-library reference. The public open-datum-application component (applications/open-datum/offchain/) carries the open-datum application the command line composes — entry commands, envelope, booking approval and destination, payload update, release rules, script, and the application value: Singular.Application.OpenDatum.Book, Singular.Application.OpenDatum.Build, Singular.Application.OpenDatum.Command, Singular.Application.OpenDatum.Entry, Singular.Application.OpenDatum.Envelope, Singular.Application.OpenDatum.InsertEnvelope, Singular.Application.OpenDatum.Permanent, Singular.Application.OpenDatum.Plan, Singular.Application.OpenDatum.Preview, Singular.Application.OpenDatum.Release, Singular.Application.OpenDatum.Root, Singular.Application.OpenDatum.Run, Singular.Application.OpenDatum.Script, Singular.Application.OpenDatum.Update and Singular.Application.OpenDatum.Value; their sources live under applications/open-datum/offchain/src/Singular/Application/OpenDatum/, and the executable's entry point lives in applications/open-datum/offchain/app/. The public registry-cli component (offchain/cli/) carries the registry command line the two binaries link — session, journal and receipts, the flag group, create, fold, reject, reclaim, inspect, reconcile, recovery and the booking call: Singular.CLI, Singular.CLI.Attached, Singular.CLI.Command, Singular.CLI.Create, Singular.CLI.Finish, Singular.CLI.Fold, Singular.CLI.FoldRules, Singular.CLI.Inspect, Singular.CLI.Key, Singular.CLI.Live, Singular.CLI.ManagedState, Singular.CLI.Outlay, Singular.CLI.Payload, Singular.CLI.Permanent, Singular.CLI.Plan, Singular.CLI.Proof, Singular.CLI.Receipt, Singular.CLI.ReceiptBody, Singular.CLI.Reclaim, Singular.CLI.ReclaimRules, Singular.CLI.Reconcile, Singular.CLI.Recovery, Singular.CLI.Registry, Singular.CLI.Reject, Singular.CLI.RejectRules, Singular.CLI.RequestWindow, Singular.CLI.Root, Singular.CLI.Session, Singular.CLI.Trace, Singular.CLI.TrieHistory and Singular.CLI.TrieTrace; their sources live under offchain/cli/src/Singular/CLI/.",
+    "v": "28e2bdad55a3"
    },
    {
     "index": 2,
@@ -5827,8 +5834,8 @@
     "index": 3,
     "name": "docs-offchain-api-reference/what-this-reference-contains-03",
     "pause_ms": 400,
-    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
-    "v": "154e936e463b"
+    "text": "MkDocs environment ready! Run: mkdocs serve - Naming.Datum — source - Naming.Register — source - Naming.Request — source - Naming.Verify — source - Naming.Wire — source - Naming.Wire.Vectors — source - Singular.Provider.Koios.Client — source - Singular.Provider.Koios.Evidence — source - Singular.Provider.Koios.History — source - Singular.Provider.Koios.Provider — source - Singular.Provider.Koios.Recorded — source - Singular.Provider.Koios.Runtime — source - Singular.Provider.Koios.State — source - Singular.Provider.Koios.Wire — source - Singular.Registry.Application — source - Singular.Registry.AssetName — source - Singular.Registry.Blueprint — source - Singular.Registry.Blueprint.Load — source - Singular.Registry.Blueprint.Params — source - Singular.Registry.Blueprint.Schema — source - Singular.Registry.Candidate — source - Singular.Registry.Capabilities — source - Singular.Registry.Config — source - Singular.Registry.Config.Application — source - Singular.Registry.Confirmation — source - Singular.Registry.Deployment — source - Singular.Registry.Deployment.Attach — source - Singular.Registry.Deployment.Manifest — source - Singular.Registry.Deployment.Mirror — source - Singular.Registry.Driver — source - Singular.Registry.Evidence — source - Singular.Registry.FoldAdmission — source - Singular.Registry.FoldSelection — source - Singular.Registry.Funding — source - Singular.Registry.Ledger — source - Singular.Registry.LedgerProvider — source - Singular.Registry.Lifecycle — source - Singular.Registry.Page — source - Singular.Registry.PlainJson — source - Singular.Registry.Proof — source - Singular.Registry.Replay — source - Singular.Registry.Signing — source - Singular.Registry.StateToken — source - Singular.Registry.Trie — source - Singular.Registry.Trie.Pure — source - Singular.Registry.Trie.PureManager — source - Singular.Registry.TrieState — source - Singular.Registry.TrieState.Core — source - Singular.Registry.TrieState.Fixture — source - Singular.Registry.TrieState.Lineage — source - Singular.Registry.TrieState.Types — source - Singular.Registry.TxBuilder.Boot — source - Singular.Registry.TxBuilder.ConnectedFold — source - Singular.Registry.TxBuilder.Edges — source - Singular.Registry.TxBuilder.Internal — source - Singular.Registry.TxBuilder.Internal.Edges — source - Singular.Registry.TxBuilder.Internal.Identity — source - Singular.Registry.TxBuilder.Internal.Lookup — source - Singular.Registry.TxBuilder.Prepare — source - Singular.Registry.TxBuilder.Register — source - Singular.Registry.TxBuilder.Reject — source - Singular.Registry.TxBuilder.Request — source - Singular.Registry.TxBuilder.Retract — source - Singular.Registry.TxBuilder.Update — source - Singular.Registry.TxBuilder.Update.Build — source - Singular.Registry.TxBuilder.Update.Context — source - Singular.Registry.TxBuilder.Update.Duties — source - Singular.Registry.Types — source - Singular.Registry.Wait — source - Singular.Registry.Wire.Primitive — source - Singular.Registry.Wire.Proof — source - Singular.Registry.Wire.Redeemer — source - Singular.Registry.Wire.Request — source - Singular.Registry.Wire.State — source",
+    "v": "c8c30749dbe4"
    },
    {
     "index": 4,
@@ -7638,6 +7645,309 @@
     "pause_ms": 400,
     "text": "Singular has no native owner, privileged requester or privileged folder. Permissionless submission does not mean arbitrary requests are valid. Applications can impose their own validation conditions; they cannot authorize bypassing Singular's NFT supply or custody rules.",
     "v": "9183ad9261e4"
+   }
+  ]
+ },
+ "docs/payload-json.md": {
+  "choose-the-form-with-the-schema-setting": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/choose-the-form-with-the-schema-setting-00",
+    "pause_ms": 500,
+    "text": "Choose the form with the schema setting.",
+    "v": "d64d4a3aa62d"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/choose-the-form-with-the-schema-setting-01",
+    "pause_ms": 400,
+    "text": "The setting has two values, plain and detailed, and plain when it is absent. It is not a standing setting: there is no environment variable and no key in the configuration file, because the form is a property of the file you give.",
+    "v": "3fe419e81c36"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/choose-the-form-with-the-schema-setting-02",
+    "pause_ms": 400,
+    "text": "The refusal of a detailed file covers the whole document only. A detailed-looking object nested inside a larger document is plain JSON like any other: the file {\"wrapper\": {\"int\": 5}} is stored as a map from the text wrapper to a map from the text int to the integer 5. Every file the previous release accepted is therefore either refused with the instruction or read exactly as before when the setting is detailed; none is stored as a different datum.",
+    "v": "06c93f7cf447"
+   }
+  ],
+  "how-ordinary-json-becomes-data": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-00",
+    "pause_ms": 500,
+    "text": "How ordinary JSON becomes data.",
+    "v": "36b03971f318"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-01",
+    "pause_ms": 400,
+    "text": "Reading a file in the plain schema turns its JSON into Plutus data by these rules, and by nothing else, so you can apply them by hand.",
+    "v": "96b6dbe13f26"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-02",
+    "pause_ms": 300,
+    "text": "A whole number becomes the integer. A number written 1.0 or 5e2 is a whole number too and is stored as 1 and 500; the way the number was written is not kept. A number may have at most a thousand digits.",
+    "v": "7fab1b180ded"
+   },
+   {
+    "index": 3,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-03",
+    "pause_ms": 300,
+    "text": "A text becomes the byte string of its UTF-8. The empty text is the empty byte string.",
+    "v": "c4f24125c7ff"
+   },
+   {
+    "index": 4,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-04",
+    "pause_ms": 300,
+    "text": "true becomes the constructor with index 1 and no fields, which is the Plutus boolean, and false becomes the constructor with index 0 and no fields.",
+    "v": "83783377a9be"
+   },
+   {
+    "index": 5,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-05",
+    "pause_ms": 300,
+    "text": "An array becomes the list of its items, mapped in order. The empty array is the empty list.",
+    "v": "061fda679055"
+   },
+   {
+    "index": 6,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-06",
+    "pause_ms": 300,
+    "text": "An object becomes the map from each key, as a byte string of its UTF-8, to its value, mapped. The entries are in ascending order of the key bytes, whatever order the file wrote them in. The empty object is the empty map.",
+    "v": "f944c4f99759"
+   },
+   {
+    "index": 7,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-07",
+    "pause_ms": 300,
+    "text": "null and a number with a fraction are refused.",
+    "v": "2784b7770de7"
+   },
+   {
+    "index": 8,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-08",
+    "pause_ms": 400,
+    "text": "A whole file is accepted, not only an object: the file may hold 42, \"alice\" or [1, 2].",
+    "v": "c24cca8b8779"
+   },
+   {
+    "index": 9,
+    "name": "docs-payload-json/how-ordinary-json-becomes-data-09",
+    "pause_ms": 400,
+    "text": "Worked by hand, the file {\"answer\": 42} holds one object with one key, so the data is a map with one entry. The key is the byte string of the text answer, whose bytes are 616e73776572 in hex, and the value is the integer 42. In the detailed schema that is {\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}. The file 42 is the integer 42, the same data as the detailed {\"int\":42}.",
+    "v": "5c5276b59c41"
+   }
+  ],
+  "limits": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/limits-00",
+    "pause_ms": 500,
+    "text": "Limits.",
+    "v": "2f0ed2ce5d74"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/limits-01",
+    "pause_ms": 300,
+    "text": "null is not stored. A later release may accept it without changing what is stored today.",
+    "v": "b37564c6a3b7"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/limits-02",
+    "pause_ms": 300,
+    "text": "The text of a number is not kept: 1.0 is read back as 1.",
+    "v": "1faf3c3fbda9"
+   },
+   {
+    "index": 3,
+    "name": "docs-payload-json/limits-03",
+    "pause_ms": 300,
+    "text": "An object's key order in the file is not kept; the stored order is ascending by key bytes, because JSON readers do not preserve it and a map in Plutus data is ordered. A key repeated in the file keeps its first value, as the JSON reader does.",
+    "v": "b6cc4d9e0000"
+   },
+   {
+    "index": 4,
+    "name": "docs-payload-json/limits-04",
+    "pause_ms": 300,
+    "text": "A payload with a byte string that is not text, a map with keys that are not text or any constructor other than the two booleans needs the detailed schema, and it prints in the detailed schema.",
+    "v": "1fc672ff6ccf"
+   },
+   {
+    "index": 5,
+    "name": "docs-payload-json/limits-05",
+    "pause_ms": 300,
+    "text": "A text stored as bytes by the detailed schema reads back as text when the bytes are valid UTF-8; nobody can tell from the chain which form wrote it.",
+    "v": "daa4c6b9f4b5"
+   },
+   {
+    "index": 6,
+    "name": "docs-payload-json/limits-06",
+    "pause_ms": 300,
+    "text": "A whole payload that looks like a detailed document, such as {\"int\": 5} as a plain object, cannot be written in the plain schema because of the refusal above. It can be stored through the detailed schema as a map with the text key, and it then reads back as plain JSON; writing that JSON again needs the detailed form.",
+    "v": "1e68ec61c034"
+   },
+   {
+    "index": 7,
+    "name": "docs-payload-json/limits-07",
+    "pause_ms": 400,
+    "text": "The settings table in connecting singular to a ledger provider lists --payload and --payload-schema with the commands that take them.",
+    "v": "5f72b5c4bcdf"
+   }
+  ],
+  "store-a-document": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/store-a-document-00",
+    "pause_ms": 500,
+    "text": "Store a document.",
+    "v": "64971ce90dcf"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/store-a-document-01",
+    "pause_ms": 400,
+    "text": "Write the file and give it to insert, with no other setting:",
+    "v": "881a8f476d74"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/store-a-document-02",
+    "pause_ms": 400,
+    "text": "The second command prints the payload you wrote and the name of the schema it is printed in:",
+    "v": "2e05fefc0a91"
+   },
+   {
+    "index": 3,
+    "name": "docs-payload-json/store-a-document-03",
+    "pause_ms": 400,
+    "text": "update takes the same file and the same setting, and so do the previews of both, keri-stub register, and the negative host's insert and update: every command that reads a payload file reads it one way.",
+    "v": "a344772544ff"
+   }
+  ],
+  "store-ordinary-json-as-a-keys-payload": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/store-ordinary-json-as-a-keys-payload-00",
+    "pause_ms": 500,
+    "text": "Store ordinary JSON as a key's payload.",
+    "v": "9450983fb73e"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/store-ordinary-json-as-a-keys-payload-01",
+    "pause_ms": 400,
+    "text": "As a reader with a registry and a key, you store the document {\"answer\": 42} under the key by writing that file and nothing else. You read the key back and the page shows {\"answer\": 42}. You did not have to learn first how Plutus data is written in JSON. As an integrator who needs exact control of the bytes on chain, you keep writing the detailed schema, {\"constructor\": 0, \"fields\": [{\"int\": 42}]}, and say so on the command, so nothing is guessed. As someone with a script from the previous release, you find that your payload file in the detailed schema is refused with a sentence that tells you to say so, and is never stored as something else.",
+    "v": "7f9dfbfe9871"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/store-ordinary-json-as-a-keys-payload-02",
+    "pause_ms": 400,
+    "text": "The first diagram shows how a file is read. The setting --payload-schema decides how the file becomes Plutus data: by the plain mapping of this page when the setting is plain or absent, and by the detailed schema, as before, when it is detailed. Either way the result is the same kind of value, Plutus data in the key's output on chain.",
+    "v": "6452db2d1d96"
+   },
+   {
+    "index": 3,
+    "name": "docs-payload-json/store-ordinary-json-as-a-keys-payload-03",
+    "pause_ms": 400,
+    "text": "The second diagram shows how a key is read back. The data is printed as plain JSON if it has a plain reading and in the detailed schema if it has none, and the print always says which.",
+    "v": "2e0aee99217d"
+   }
+  ],
+  "what-inspect-prints": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/what-inspect-prints-00",
+    "pause_ms": 500,
+    "text": "What inspect prints.",
+    "v": "81cbc12c91a6"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/what-inspect-prints-01",
+    "pause_ms": 400,
+    "text": "inspect prints the key's payload under payload in the application output, with the field payloadSchema beside it, and the update receipt prints the two fields the same way. A payload has a plain reading when it is one that the rules above could have produced:",
+    "v": "bf31b6a64e24"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/what-inspect-prints-02",
+    "pause_ms": 300,
+    "text": "an integer of at most a thousand digits;",
+    "v": "541b36b09a6d"
+   },
+   {
+    "index": 3,
+    "name": "docs-payload-json/what-inspect-prints-03",
+    "pause_ms": 300,
+    "text": "a byte string that is valid UTF-8, read as a text;",
+    "v": "f1454814194a"
+   },
+   {
+    "index": 4,
+    "name": "docs-payload-json/what-inspect-prints-04",
+    "pause_ms": 300,
+    "text": "a list whose items all have a plain reading;",
+    "v": "5cbd78425c1b"
+   },
+   {
+    "index": 5,
+    "name": "docs-payload-json/what-inspect-prints-05",
+    "pause_ms": 300,
+    "text": "a map whose keys are valid UTF-8 byte strings in strictly ascending order of bytes and whose values all have a plain reading;",
+    "v": "39fbe1b6ad16"
+   },
+   {
+    "index": 6,
+    "name": "docs-payload-json/what-inspect-prints-06",
+    "pause_ms": 300,
+    "text": "the constructor with index 0 or 1 and no fields, read as false or true.",
+    "v": "9bf2607a8270"
+   },
+   {
+    "index": 7,
+    "name": "docs-payload-json/what-inspect-prints-07",
+    "pause_ms": 400,
+    "text": "When the stored data has a plain reading, payload is that JSON and payloadSchema is plain. Otherwise payload is the detailed schema of the data and payloadSchema is detailed: a byte string that is not text, a map with a key that is not text or with its keys out of order, any other constructor, or a number past the limit of a thousand digits.",
+    "v": "aebb25eda6bc"
+   },
+   {
+    "index": 8,
+    "name": "docs-payload-json/what-inspect-prints-08",
+    "pause_ms": 400,
+    "text": "The reading is a property of the data, not of how it was stored. The detailed {\"int\":42} and the plain 42 store the same data, so both read back as 42. The envelope, with its control and its payload in the detailed schema, is printed as before under envelope, and it is the way to read the exact data.",
+    "v": "9b8850b5167e"
+   }
+  ],
+  "what-is-refused": [
+   {
+    "index": 0,
+    "name": "docs-payload-json/what-is-refused-00",
+    "pause_ms": 500,
+    "text": "What is refused.",
+    "v": "e214f71b76f8"
+   },
+   {
+    "index": 1,
+    "name": "docs-payload-json/what-is-refused-01",
+    "pause_ms": 400,
+    "text": "A refusal names the file, says what it asked for, and names the value and where it is, written as a path from the document: $ is the whole document, .name an object key and [2] an item. Every refusal comes before the node is read, so a preview with an unreachable node shows them too, and nothing is submitted.",
+    "v": "cbcee13d0418"
+   },
+   {
+    "index": 2,
+    "name": "docs-payload-json/what-is-refused-02",
+    "pause_ms": 400,
+    "text": "A number is judged by its size before it is written out, so a file such as 1e1000000000 is refused at once and the refusal names the number.",
+    "v": "89483747322b"
    }
   ]
  },
@@ -9827,6 +10137,13 @@
     "pause_ms": 400,
     "text": "The URL, network magic and one signer (the signing key, the vault, or on singular create, singular fold, singular reclaim, singular reject, open-datum create, open-datum insert, open-datum update, open-datum terminate and open-datum fold an address with its bundle file) travel together on a write: naming only some of them is refused as partially configured, and so is a write that names none, because singular never starts a node of its own — a registry booted on a chain that dies with the process could not be attached to again. The refusal says which part is missing and, for the signer, the three ways to name one: the vault first, then an address with its bundle file, and last the key file, which is legacy. The settings that do not change from one command to the next (the node, the contracts, the registry, the token file, the narration and the vault) can be given once, as the next section says; the key file, an external signer and everything else a command does are typed on the command. Public environment configuration lists the variables and the phase-log path.",
     "v": "c713d531eeca"
+   },
+   {
+    "index": 2,
+    "name": "docs-singular-node/the-settings-you-give-02",
+    "pause_ms": 400,
+    "text": "The file alice.json is the key's payload, ordinary JSON stored as plain JSON unless --payload-schema detailed says it is written in the detailed Plutus data schema; store ordinary JSON as a key's payload gives the rules.",
+    "v": "e371a736e826"
    }
   ],
   "the-vault-from-the-environment-or-the-file": [

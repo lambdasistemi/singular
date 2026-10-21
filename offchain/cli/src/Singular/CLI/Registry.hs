@@ -24,6 +24,7 @@ module Singular.CLI.Registry
     , pinsOf
     , hexT
     , keyFields
+    , payloadFields
     , parseEnterpriseAddress
 
       -- * Files
@@ -75,6 +76,7 @@ import Cardano.Ledger.Mary.Value (MaryValue (..))
 import Cardano.Ledger.TxIn (TxIn)
 import Codec.Binary.Bech32 qualified as Bech32
 import Control.Monad (when)
+import PlutusCore.Data qualified as PLC
 
 import Singular.CLI.Permanent (knownScripts)
 import Singular.Registry.Application
@@ -94,6 +96,11 @@ import Singular.Registry.Config.Application
 import Singular.Registry.Deployment (renderOutRef)
 import Singular.Registry.Ledger (Coin (..), ConwayEra)
 import Singular.Registry.LedgerProvider (Asset)
+import Singular.Registry.PlainJson
+    ( PayloadView (..)
+    , payloadView
+    , schemaName
+    )
 import Singular.Registry.StateToken (Release (..), renderStateToken)
 import Singular.Registry.TxBuilder.Edges
     ( PublicationFundingError (..)
@@ -625,3 +632,16 @@ checkPendingToken pending requested
                 <> ", not "
                 <> renderStateToken requested
             )
+
+{- | The payload of a holding as a receipt prints it (#719): the plain JSON when
+the data has a plain reading, else the detailed schema of the data, and always
+the name of the schema it is in. Inspect and the update receipt print through
+this one function, so a payload never appears without its schema.
+-}
+payloadFields :: PLC.Data -> [(Text, Aeson.Value)]
+payloadFields d =
+    [ ("payload", viewJson view)
+    , ("payloadSchema", toJSON (schemaName (viewSchema view)))
+    ]
+  where
+    view = payloadView d

@@ -15,7 +15,9 @@ import Singular.CLI.HelpSnapshotSpec qualified
 import Singular.CLI.JournalTransitionsSpec qualified
 import Singular.CLI.OneOutputCreateSpec qualified
 import Singular.CLI.ParserCorpusSpec qualified
+import Singular.CLI.PayloadSpec qualified
 import Singular.CLI.PrepareSpec qualified
+import Singular.CLI.PrintedPayloadSpec qualified
 import Singular.CLI.ReclaimSpec qualified
 import Singular.CLI.RejectSpec qualified
 import Singular.CLI.SaveStateTokenSpec qualified
@@ -48,6 +50,7 @@ import Singular.Registry.NetworkTimeSpec qualified
 import Singular.Registry.OneViewSpec qualified
 import Singular.Registry.PageSpec qualified
 import Singular.Registry.PhaseLogSpec qualified
+import Singular.Registry.PlainJsonSpec qualified
 import Singular.Registry.Private.ArchiveSpec qualified
 import Singular.Registry.ProviderSpec qualified
 import Singular.Registry.SessionServicesSpec qualified
@@ -161,6 +164,9 @@ main = hspec $ do
         (tagged "Singular.Registry.PhaseLog" [Provider, History, Recovery])
         Singular.Registry.PhaseLogSpec.spec
     describe
+        (tagged "Singular.Registry.PlainJson" [Application])
+        Singular.Registry.PlainJsonSpec.spec
+    describe
         (tagged "Singular.Registry.Provider" [Provider])
         Singular.Registry.ProviderSpec.spec
     describe
@@ -235,6 +241,12 @@ main = hspec $ do
     describe
         (tagged "Singular.CLI.ParserCorpus" [Cli])
         Singular.CLI.ParserCorpusSpec.spec
+    describe
+        (tagged "Singular.CLI.Payload" [Cli])
+        Singular.CLI.PayloadSpec.spec
+    describe
+        (tagged "Singular.CLI.PrintedPayload" [Cli])
+        Singular.CLI.PrintedPayloadSpec.spec
     describe
         (tagged "Singular.CLI.HelpSnapshot" [Cli])
         Singular.CLI.HelpSnapshotSpec.spec
