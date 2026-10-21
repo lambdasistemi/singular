@@ -5,35 +5,35 @@
       "pause": 500
     },
     {
-      "text": "[ ] Refusal tests: the switch with a preview, with an external signer, with an unwritable file",
+      "text": "[x] Refusal tests: the switch with a preview, with an external signer, with an unwritable file",
       "pause": 300
     },
     {
-      "text": "[ ] Writer tests: other keys and their kind kept, a name replaced, a new file made, the old permissions kept",
+      "text": "[x] Writer tests: other keys and their kind kept, a name replaced, a new file made, the old permissions kept",
       "pause": 300
     },
     {
-      "text": "[ ] Create tests: written only on success, never on another outcome, receipt unchanged",
+      "text": "[x] Create tests: written only on success, never on another outcome, receipt unchanged",
       "pause": 300
     },
     {
-      "text": "[ ] The settings file writer and the switch in both programs",
+      "text": "[x] The settings file writer and the switch in both programs",
       "pause": 300
     },
     {
-      "text": "[ ] Help snapshots, parser corpora and the application settings spec",
+      "text": "[x] Help snapshots, parser corpora and the application settings spec",
       "pause": 300
     },
     {
-      "text": "[ ] A hosted devnet journey that creates with the switch and runs later commands with the file alone",
+      "text": "[x] A hosted devnet journey that creates with the switch and runs later commands with the file alone",
       "pause": 300
     },
     {
-      "text": "[ ] Documentation of the switch with regenerated narration",
+      "text": "[x] Documentation of the switch with regenerated narration",
       "pause": 300
     },
     {
-      "text": "[ ] The note for the tutorial's owner for the registry's name",
+      "text": "[x] The note for the tutorial's owner for the registry's name",
       "pause": 300
     }
   ],
@@ -137,6 +137,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "8d76efcf1ec7d8892eb89abd3f9ec4e2decc074f6254d7cb2810306b19754660"
+    "sha256": "433b05473a9a7add75b958eecff2531b495247c77a361b9973d049a80a66eec2"
   }
 }

@@ -71,6 +71,10 @@
       "pause": 300
     },
     {
+      "text": "the third program, keri-stub, which builds the shared create arguments and stops compiling when a field is added to them without a value there; its component build and its tests are hosted jobs and a row of the gate;",
+      "pause": 300
+    },
+    {
       "text": "the settings table of docs/singular-node.md and the documented-flags check that holds it to the real help;",
       "pause": 300
     },
@@ -135,6 +139,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "78ca2258fad1f464e540f8e138db643d6b2694d773381f5431d201fd6cb1e999"
+    "sha256": "acf4d215b3fc4866af044fd889f05435b7b963bc4686cf5c305c232709f792a9"
   }
 }

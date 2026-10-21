@@ -31,6 +31,7 @@ A new flag or command is never one edit. Each part lists and touches these, foun
 - the help snapshots of both programs, recorded with the snapshot spec's own switch;
 - the two parser corpora, where a changed line keeps `result` and gains `after`, and a new accepted line is added;
 - the application settings spec of `open-datum`;
+- the third program, `keri-stub`, which builds the shared create arguments and stops compiling when a field is added to them without a value there; its component build and its tests are hosted jobs and a row of the gate;
 - the settings table of `docs/singular-node.md` and the documented-flags check that holds it to the real help;
 - the narration clips of every documentation page the part changes.
 

@@ -2,14 +2,14 @@
 
 ## Registry's name recorded
 
-- [ ] Refusal tests: the switch with a preview, with an external signer, with an unwritable file
-- [ ] Writer tests: other keys and their kind kept, a name replaced, a new file made, the old permissions kept
-- [ ] Create tests: written only on success, never on another outcome, receipt unchanged
-- [ ] The settings file writer and the switch in both programs
-- [ ] Help snapshots, parser corpora and the application settings spec
-- [ ] A hosted devnet journey that creates with the switch and runs later commands with the file alone
-- [ ] Documentation of the switch with regenerated narration
-- [ ] The note for the tutorial's owner for the registry's name
+- [x] Refusal tests: the switch with a preview, with an external signer, with an unwritable file
+- [x] Writer tests: other keys and their kind kept, a name replaced, a new file made, the old permissions kept
+- [x] Create tests: written only on success, never on another outcome, receipt unchanged
+- [x] The settings file writer and the switch in both programs
+- [x] Help snapshots, parser corpora and the application settings spec
+- [x] A hosted devnet journey that creates with the switch and runs later commands with the file alone
+- [x] Documentation of the switch with regenerated narration
+- [x] The note for the tutorial's owner for the registry's name
 
 ## Settings from the devnet
 
