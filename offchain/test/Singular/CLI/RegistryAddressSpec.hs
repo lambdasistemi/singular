@@ -24,7 +24,7 @@ packaged command runs it ('runSingular'):
   rename any more.
 
 Every address, fingerprint and refusing word compared against here was made by
-an independent implementation of bech32 ("Singular.CLI.AddressVectors"), never
+an independent implementation of bech32 ("Singular.Registry.AddressVectors"), never
 by the code under test. Every refusal is paired with the line that is read
 when the one thing wrong is put right, so a refusal cannot be mistaken for a
 line the program never understood.
@@ -45,11 +45,6 @@ import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
-import Singular.CLI.AddressVectors
-    ( Vector (..)
-    , refusalWord
-    , vectors
-    )
 import Singular.CLI.Command
     ( Command (..)
     , DescribeArgs (..)
@@ -65,8 +60,13 @@ import Singular.CLI.Command
     , singularVersion
     )
 import Singular.CLI.Help (singularHelp, singularProgram)
-import Singular.CLI.RunStreams (ran, said)
 import Singular.CLI.Sources (Sources (..), configFromValue)
+import Singular.Registry.AddressVectors
+    ( Vector (..)
+    , refusalWord
+    , vectors
+    )
+import Singular.Registry.RunStreams (ran, said)
 import Singular.Registry.StateToken (renderStateToken)
 
 -- ---------------------------------------------------------------------------

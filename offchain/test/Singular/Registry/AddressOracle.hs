@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 
 {- |
-Module      : Singular.CLI.AddressOracle
+Module      : Singular.Registry.AddressOracle
 Description : What an address holds, read by the bech32 package and the hash directly
 License     : Apache-2.0
 
@@ -13,7 +13,7 @@ bytes of the state token, and the fingerprint is rebuilt from blake2b with a
 its receipt uses these to say whether the address and the fingerprint it
 printed are the registry's.
 -}
-module Singular.CLI.AddressOracle
+module Singular.Registry.AddressOracle
     ( addressOf
     , holdsOf
     , prefixFor

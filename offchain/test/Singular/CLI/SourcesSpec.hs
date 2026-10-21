@@ -28,7 +28,6 @@ import System.FilePath ((</>))
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec
 
-import Singular.CLI.AddressOracle (addressOf)
 import Singular.CLI.Command
     ( CLIError (..)
     , parseInvocation
@@ -54,6 +53,7 @@ import Singular.CLI.Sources
     , configPath
     , loadSourcesAt
     )
+import Singular.Registry.AddressOracle (addressOf)
 
 program :: Program
 program = singularProgram singularVersion

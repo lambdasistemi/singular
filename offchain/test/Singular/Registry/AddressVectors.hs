@@ -1,5 +1,5 @@
 {- |
-Module      : Singular.CLI.AddressVectors
+Module      : Singular.Registry.AddressVectors
 Description : Fixed registry addresses, fingerprints and refusing words
 License     : Apache-2.0
 
@@ -10,7 +10,7 @@ specification) after it reproduced two published BIP-173 vectors and the eight
 published CIP-14 asset fingerprints; none is produced by the code under test.
 The CIP-14 vectors are the ones the CIP prints, copied from its text.
 -}
-module Singular.CLI.AddressVectors
+module Singular.Registry.AddressVectors
     ( Vector (..)
     , vectors
     , Cip14 (..)

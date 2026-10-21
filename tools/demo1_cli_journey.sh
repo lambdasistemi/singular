@@ -1021,8 +1021,11 @@ say "bob booked and folded from an empty directory on the state token; another e
 # state directories, with no state token and no network magic on any line, in
 # any variable or in any settings key, Alice books a key, Bob folds it and a
 # third empty directory reads it back, through both programs; every receipt
-# names the registry the create made.
-registry_address="$(field create .registry)"
+# names the registry the create made. The registry is the second one the journey
+# created (create-defaults), so that its booking and fold change no fact the page of the
+# first registry is compared with at the end.
+registry_address="$(field create-defaults .registry)"
+registry_token="$(field create-defaults .stateToken)"
 case "$registry_address" in
   singular_devnet1*) ;;
   *) fail "create printed no development network address: [$registry_address]" ;;
@@ -1049,14 +1052,14 @@ run address-singular-inspect success -- registry inspect --key keyAddress --regi
   --state-dir "$address_reader" --blueprint "$blueprint" "${node_address[@]}"
 # the registry every receipt names is the one create made
 for name in address-inspect address-singular-inspect; do
-  jq -e --slurpfile c "$receipts/create.json" \
+  jq -e --slurpfile c "$receipts/create-defaults.json" \
     '.registry == $c[0].registry and .stateToken == $c[0].stateToken and .fingerprint == $c[0].fingerprint' \
     "$receipts/$name.json" >/dev/null \
     || fail "$name names another registry than the create made"
 done
 # the address, shown by the program that makes it, holds the state token of the create
 "$singular" registry address --registry "$registry_address" >"$receipts/address-holds.json"
-jq -e --slurpfile c "$receipts/create.json" \
+jq -e --slurpfile c "$receipts/create-defaults.json" \
   '.stateToken == $c[0].stateToken and .fingerprint == $c[0].fingerprint and .networkMagic == 42' \
   "$receipts/address-holds.json" >/dev/null \
   || fail "the address of the create does not hold its state token, its fingerprint and its network"
@@ -1074,7 +1077,7 @@ address_control() {
 status="$(address_control reaches --registry "$registry_address" "${unreachable[@]}")"
 [ "$status" -ne 2 ] && [ "$status" -ne 0 ] \
   || fail "control: the good address on an unreachable provider ended $status, not at the provider"
-other_network_address="$("$singular" registry address --state-token "$state_token" --network-magic 1 | jq -r .registry)"
+other_network_address="$("$singular" registry address --state-token "$registry_token" --network-magic 1 | jq -r .registry)"
 case "$other_network_address" in
   singular_preprod1*) ;;
   *) fail "control: the address of the registry on preprod is [$other_network_address]" ;;

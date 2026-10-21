@@ -211,12 +211,6 @@ import Data.Word (Word64)
 
 import PlutusCore.Data qualified as PLC
 import Singular.CLI (runCommand)
-import Singular.CLI.AddressOracle
-    ( addressOf
-    , bodyOfToken
-    , fingerprintOf
-    , holdsOf
-    )
 import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
@@ -297,6 +291,12 @@ import Singular.CLI.Vault
     ( createVaultFile
     , sealVault
     , vaultWorkFactor
+    )
+import Singular.Registry.AddressOracle
+    ( addressOf
+    , bodyOfToken
+    , fingerprintOf
+    , holdsOf
     )
 import Singular.Registry.Application
     ( Application (..)
@@ -8149,7 +8149,7 @@ receiptDecidesRows =
 
 {- | The receipts and the refusals of a registry that has an address, run
 through the same dispatch as every command above. The address and the
-fingerprint a receipt gives are judged by 'Singular.CLI.AddressOracle', which
+fingerprint a receipt gives are judged by 'Singular.Registry.AddressOracle', which
 reads the word with the @bech32@ package and hashes with @crypton@ directly,
 never by the code that wrote them.
 -}

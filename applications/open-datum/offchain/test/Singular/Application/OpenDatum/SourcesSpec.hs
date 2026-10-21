@@ -31,7 +31,6 @@ import Singular.Application.OpenDatum.Command
     , parseOpenDatumInvocationFrom
     )
 import Singular.Application.OpenDatum.Help (openDatumProgram)
-import Singular.CLI.AddressOracle (addressOf)
 import Singular.CLI.Options
     ( Flag (..)
     , Leaf (..)
@@ -42,6 +41,7 @@ import Singular.CLI.Options
     , shapeFlags
     )
 import Singular.CLI.Sources (Sources (..))
+import Singular.Registry.AddressOracle (addressOf)
 
 program :: Program
 program = openDatumProgram openDatumVersion

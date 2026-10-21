@@ -128,7 +128,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.BurnSourceSpec
     Singular.Application.OpenDatum.OutlaySpec
     Singular.Application.OpenDatum.WalletShortfallSpec
-    Singular.CLI.AddressOracle
+    Singular.Registry.AddressOracle
     Singular.PhaseLogFixture
     Singular.Provider.Koios.FakeServer
     Singular.Provider.Koios.Scripted

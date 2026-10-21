@@ -11,7 +11,7 @@ character refused as a wrong checksum; every other prefix and every other body
 length refused with its own cause; and the refusals in their order.
 
 The words that the module is judged against are never made by it: the fixed
-ones come from "Singular.CLI.AddressVectors", and the generated ones are
+ones come from "Singular.Registry.AddressVectors", and the generated ones are
 written with the @bech32@ package directly.
 -}
 module Singular.Registry.AddressSpec (spec) where
@@ -41,14 +41,6 @@ import Cardano.Crypto.Hash.Class (hashFromBytes)
 import Cardano.Ledger.Hashes (ScriptHash (..))
 import Cardano.Ledger.Mary.Value (AssetName (..), PolicyID (..))
 
-import Singular.CLI.AddressOracle (addressOf)
-import Singular.CLI.AddressVectors
-    ( Cip14 (..)
-    , Vector (..)
-    , cip14
-    , refusalWord
-    , vectors
-    )
 import Singular.Registry.Address
     ( AddressRefusal (..)
     , addressPrefix
@@ -57,6 +49,14 @@ import Singular.Registry.Address
     , registryFingerprint
     , renderAddressRefusal
     , renderRegistryAddress
+    )
+import Singular.Registry.AddressOracle (addressOf)
+import Singular.Registry.AddressVectors
+    ( Cip14 (..)
+    , Vector (..)
+    , cip14
+    , refusalWord
+    , vectors
     )
 import Singular.Registry.LedgerProvider (Asset)
 import Singular.Registry.StateToken (parseStateToken)

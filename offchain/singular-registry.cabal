@@ -993,8 +993,6 @@ test-suite cage-tests
     Naming.RegisterSpec
     Naming.RetireVerifySpec
     Paths_singular_registry
-    Singular.CLI.AddressOracle
-    Singular.CLI.AddressVectors
     Singular.CLI.BookingRefusalSpec
     Singular.CLI.CommandRunSpec
     Singular.CLI.CreateFundingSpec
@@ -1004,7 +1002,6 @@ test-suite cage-tests
     Singular.CLI.PrepareSpec
     Singular.CLI.PrintedPayloadSpec
     Singular.CLI.RegistryAddressSpec
-    Singular.CLI.RunStreams
     Singular.CLI.FailureSentenceSpec
     Singular.CLI.FlagGroupSpec
     Singular.CLI.HelpSnapshotSpec
@@ -1030,6 +1027,8 @@ test-suite cage-tests
     Singular.Provider.Koios.RecorderSpec
     Singular.Provider.Koios.ReferenceScriptsSpec
     Singular.Provider.Koios.Scripted
+    Singular.Registry.AddressOracle
+    Singular.Registry.AddressVectors
     Singular.Registry.AddressSpec
     Singular.Registry.BlueprintParametersSpec
     Singular.Registry.ContractTableSpec
@@ -1056,6 +1055,7 @@ test-suite cage-tests
     Singular.Registry.Private.ArchiveSpec
     Singular.Registry.ProviderSpec
     Singular.Registry.RawChainFixture
+    Singular.Registry.RunStreams
     Singular.Registry.SessionServicesSpec
     Singular.Registry.StubSession
     Singular.Registry.SyntheticLedger

@@ -207,12 +207,6 @@ import Singular.Application.OpenDatum.Root
     )
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
-import Singular.CLI.AddressOracle
-    ( addressOf
-    , bodyOfToken
-    , fingerprintOf
-    , holdsOf
-    )
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
 import Singular.CLI.Passphrase (PassphraseSource (..), mkPassphrase)
@@ -237,6 +231,12 @@ import Singular.CLI.Vault
     ( createVaultFile
     , sealVault
     , vaultWorkFactor
+    )
+import Singular.Registry.AddressOracle
+    ( addressOf
+    , bodyOfToken
+    , fingerprintOf
+    , holdsOf
     )
 import Singular.Registry.Application (datumFromJson)
 import Singular.Registry.AssetName (deriveAssetName)
@@ -5723,7 +5723,7 @@ printedPayloadRows = describe "the printed payload (#719)" $
 
 {- | The receipts and the refusals of a registry that has an address, run
 through the dispatch the packaged command runs. The address and the
-fingerprint a receipt gives are judged by 'Singular.CLI.AddressOracle', which
+fingerprint a receipt gives are judged by 'Singular.Registry.AddressOracle', which
 reads the word with the @bech32@ package and hashes with @crypton@ directly,
 never by the code that wrote them.
 -}

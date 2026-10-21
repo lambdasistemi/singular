@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {- |
-Module      : Singular.CLI.RunStreams
+Module      : Singular.Registry.RunStreams
 Description : Run the packaged command and read what it wrote
 License     : Apache-2.0
 
@@ -9,7 +9,7 @@ One packaged run of @singular@ ('runSingular') with the process's standard
 output and standard error redirected to files, so a case can read the exit
 status, what was printed and what was said, as a person at a terminal would.
 -}
-module Singular.CLI.RunStreams
+module Singular.Registry.RunStreams
     ( Ran
     , ran
     , ranWith

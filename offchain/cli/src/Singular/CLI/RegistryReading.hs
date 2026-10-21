@@ -10,8 +10,8 @@ A command names its registry by its address (@--registry@, the variable
 state token and its network as before. The address holds both the state token
 and the network, so a command given the address needs neither.
 
-This is the one reading of that setting, used by @singular@, @open-datum@ and
-@keri-stub@ alike. It runs before the flags of a command are read, and gives
+This is the one reading of that setting, used by every program that takes a
+registry. It runs before the flags of a command are read, and gives
 those flags the state token and the network the address names, so the rest of
 the parser needs no second path. The address is read before anything else is
 done with it, in the order its causes are checked ("Singular.Registry.Address"),
