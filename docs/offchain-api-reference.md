@@ -138,6 +138,74 @@ are described module by module in the
 the registry wire's five owners behind the `Types` facade in
 [Who owns the registry wire](offchain-wire-types.md).
 
+## A worked example: resolving a registry before showing it
+
+As a third-party reader built on this library, I am handed the address of a
+registry and want to show what it holds. A registry's datum pins four
+policies, and a genuine registry can pin policies its creator chose, so what I
+read from the datum means nothing until I have compared the pins with the ones
+the application derives. `Singular.Registry.StateToken.resolveRegistry` is that
+comparison. It takes the application, the release the registry was created
+under, the state token and one view of the chain, and gives back either the
+registry, whose datum has passed every check, or the refusal that names the
+first thing that does not.
+
+```haskell
+import Data.Text (Text)
+import Data.Text qualified as T
+import Singular.Registry.Application (neutralApplication)
+import Singular.Registry.StateToken
+    ( Release (..)
+    , ResolvedRegistry (..)
+    , parseStateToken
+    , renderIdentityRefusal
+    , resolveRegistry
+    )
+
+-- | Print what a registry holds only when its pinned policies are the ones
+-- the release derives for it.
+readRegistry
+    :: Session NoWitness IO
+    -- ^ one view of the chain, from your provider
+    -> Release
+    -- ^ the compiled code of the release the registry was created under
+    -> Text
+    -- ^ the state token, POLICY.NAME in hex
+    -> IO ()
+readRegistry session release spelled = do
+    token <- either (fail . T.unpack) pure (parseStateToken spelled)
+    resolveRegistry neutralApplication release token session >>= \case
+        Right registry -> print (resolvedDatum registry)
+        Left refusal -> putStrLn (T.unpack (renderIdentityRefusal refusal))
+```
+
+Over Mallory's registry, whose datum pins an active policy of her own, the
+function never reaches the first branch and the program prints:
+
+```text
+registry-pin-mismatch active: the datum's active policy differs from the one the release derives for this token
+```
+
+The application you pass decides which pins are compared. An application that
+knows its own script, whether it states it as a blueprint title applied to the
+registry, as a compiled script or as a hash, has its application policy
+compared as well as the three witness policies. The neutral value used above
+knows none, so it takes the application policy from the datum, compares the
+other three, and records that in the resolved registry: `resolvedApplicationPin`
+says whether the application policy was compared or was not checked against any
+blueprint, and a reader that shows registry content says so. A program that
+derives several applications from one registry, as `open-datum` does for its
+open and its closed registries, calls `resolveRegistryAmong` with its
+candidates and gets back the registry and the candidate the datum's application
+policy selects. `pinsDifference` is the comparison itself, exported for a
+command that creates a registry and wants to compare the datum it reads back
+with the pins it built.
+
+The comparison is made when the registry is resolved and not again within the
+same run, because every fold preserves the pinned policies on chain; the
+[protocol page](../specs/protocol/spec.md#reading-a-registry-what-each-layer-guarantees)
+says why a reader must make it.
+
 ## Interruptible confirmation
 
 An application author supplying registry capabilities wants a cancelled or

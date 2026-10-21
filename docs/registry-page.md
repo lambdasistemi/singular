@@ -61,8 +61,8 @@ non-zero.
 
 | Section | What you read | Where it comes from |
 | --- | --- | --- |
-| Registry | the state token, the live state output, the five script hashes the release derives | the token, the release, the live state output |
-| Release | version label, blueprint title and checksum, applied application script hash, links to that version's release and documentation asset | the release alone; the links are computed from the label, never fetched |
+| Registry | the state token, the live state output, the state script the release derives, the four policies the registry's datum pins, and whether the application policy was compared with an application's blueprint | the token, the release, the state datum |
+| Release | version label, blueprint title and checksum, links to that version's release and documentation asset | the release alone; the links are computed from the label, never fetched |
 | Rules | processing window, retract window, tip per request, key length bound, anyone may build a fold from public inputs | the state datum and the release's own limit |
 | State | root, active and terminal key counts, folds since create, create transaction, last fold, pending requests with owner, key, edge, submission time and locked value | the public replay and the live request outputs |
 | Limits | what is not shown and not claimed | fixed text |
@@ -87,6 +87,7 @@ them now. A later release prints its own label:
     "registry": {
         "absentScript": "ea2d49ce6945088b9657e093e24939a6c87ce3b0371b2c49a327b0b",
         "activeScript": "847e1671c3ce4e9c13c28c51b6f563f7d9d7cc3996c744a455715b09",
+        "applicationPin": "not-checked-against-any-blueprint",
         "applicationScript": "1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a",
         "stateOutput": "19c5fb15336e7de3dbbe8c8c1009c1927306441fb403eaf9aa416d45a92b79b7#0",
         "stateScript": "68df9c42ebd4468be130e9cd5538a7af39cc31c146cda45f274cccc5",
@@ -94,7 +95,6 @@ them now. A later release prints its own label:
         "terminalScript": "f58e458aeeacac74f13d2e367a6793ac997a54867ba2e5b63dfbc176"
     },
     "release": {
-        "applicationHash": "1d906e06f8c0570316336844b3960935dee26c162e36cf9a17597b7a",
         "blueprintSha": "b08853db256269379ca60b25b28f435d9651c8b893e9a1af21472c9941078bad",
         "blueprintTitle": "singular/registry",
         "docsUrl": "https://github.com/lambdasistemi/singular/releases/download/v0.10.1/singular-docs-0.10.1.tar.gz",
@@ -124,6 +124,26 @@ them now. A later release prints its own label:
 One active key, no terminal keys, one fold since create: Alice's own
 insertion, folded by her, read back under the fold's root.
 
+## The registry's pinned policies
+
+The registry section shows the four policies the registry's datum pins:
+the application, active, absent and terminal policies. They are the
+registry's own statement, read from its state datum, and they never change
+after the registry is created. The command compares the three witness
+policies with the ones the release derives for this registry before it
+prints anything: a registry that pins another is refused, as the refusals
+below say.
+
+The application policy is the one the command cannot derive. The command is
+told the registry and the release, and the release does not say which
+application the registry was created for, so the application policy shown is
+the datum's own and the page says so beside it: the field
+`applicationPin` reads `not-checked-against-any-blueprint`. An application's
+own program, which knows its blueprint, derives the application policy as
+well and compares it, and its output reads `compared`. The page never
+presents a value read from the datum as if the release had derived it, and
+the release section holds only the release's own claims.
+
 ## What the page does not prove
 
 The provenance field says it in fixed text: the page shows the public
@@ -141,6 +161,7 @@ label is the archive's own claim. The page is unsigned.
 | A wallet, key, state directory or other write setting is given | Refused by name, before any read |
 | The version file is missing, unreadable or not a version | Refused by name; no release label is printed |
 | The blueprint is another release's | The foreign-release refusal, as other commands print it |
+| A policy the registry pins is not the one the release derives | `registry-pin-mismatch` naming the field (`active`, `absent` or `terminal`); no page is printed |
 | The indexer cannot be read | The node-unavailable outcome, as other commands print it |
 | The history is incomplete or does not chain to the live root | The named trie refusal; no page is printed |
 

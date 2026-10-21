@@ -156,6 +156,37 @@ The mint field records net quantities by asset. If a future construction reuses 
 
 Moving an existing action token MUST NOT be treated as re-execution of its minting policy. Its certified scope, custody and disposal rules MUST account for later movement or reuse. This includes the distinction between a currently consumed request and an authorization that may intentionally permit repeated use within a specified scope.
 
+## Reading a registry: what each layer guarantees
+
+Mallory creates a genuine registry: a real state token, minted by the real contract. Its datum pins an active policy of her own, and she mints `alice` under that policy with a payload she chose. Bob is handed the registry's address. A program that reads the datum and believes what it pins shows Bob Mallory's `alice`. A program that first derives the policies the application pins for this registry and compares them with the datum's refuses the registry before it shows anything, and says which pinned policy is not the one it derived.
+
+```mermaid
+flowchart LR
+  A["Bob is given a registry's address"] --> B["One state token under<br/>Singular's state policy"]
+  B --> C["Its state datum pins four policies:<br/>application, active, absent, terminal"]
+  C --> D{"Is each pinned policy the one<br/>the application derives<br/>for this registry?"}
+  D -->|"yes"| E["The program shows the registry<br/>and builds on it"]
+  D -->|"no"| F["The program refuses it, naming the<br/>pinned policy that differs;<br/>nothing is shown or built"]
+```
+
+Each layer guarantees one thing, and a reader needs all three:
+
+| Layer | What it guarantees | Who guarantees it |
+| --- | --- | --- |
+| The address | Which registry: one state token under Singular's state policy, on that network | The address's checksum and network prefix, and the chain, which holds one such token and minted it from its seed |
+| The datum's pinned policies | The four pinned policies never change after the registry is created: only the state contract spends the state output, and every fold preserves them | The state token and the state contract |
+| Witness correctness | The pinned policies are the right ones for this application | The application, which applies its blueprint to the registry's identity and compares the result with the datum before it shows or does anything |
+
+Creation does not check the pins. They are chosen freely at boot, and the witness policy at minting checks only that its registry's state token is spent. A token under a registry's pinned active policy therefore means nothing until a reader has compared the pins with its own derivation.
+
+A reader MUST compare a registry's pinned policies with the policies it derives, and MUST do so before it shows any fact about the registry or builds any transaction for it. The three witness policies are the blueprint's witness script applied to the registry's identity, which is the state policy followed by the token name. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, MUST also compare the application policy. A program that cannot derive the application policy, because it is told only the registry, takes it from the datum, MUST compare the other three, and MUST say wherever it shows registry content that the application policy was not checked against any blueprint.
+
+The pinned policies are compared when the registry is resolved, and not again inside the same run. That is enough because every fold preserves them on chain: the state contract refuses a fold that alters one, so a later read of the state output in the same run carries the pins the comparison already accepted.
+
+A reader that trusts the datum instead is shown whatever the registry's creator pinned. An always-true active policy lets its creator mint a token named after any key, with any payload, and the registry's own contracts then fold it. The counts, roots and leaves such a reader prints stay consistent with the chain, because the registry is genuine; they say nothing about whether its tokens mean anything to the application.
+
+The comparison protects the programs that run it. Another program that reads the chain MUST run the same comparison, and this page is where it learns that. Making the pins unforgeable at creation is a change to the contracts and is not part of this specification yet.
+
 ## Acceptance scenarios
 
 These scenarios are specification obligations. **They have not been executed as tests or proved.** The branch's Markdown checks do not validate them. The last column names the sections above that govern each scenario.
@@ -179,6 +210,8 @@ These scenarios are specification obligations. **They have not been executed as 
 | A completed request or approval outside its certified incarnation/scope is replayed | Rejected; approval reuse within its intended scope and its concrete binding await the action-encoding and incarnation-scope decisions | Update/Delete custody; Replay |
 | A valid transaction is submitted by an unrelated folder | No privileged actor gate rejects it | Folding and permissions |
 | Outsider sends malformed output to Singular's address | Output creation does not imply admission; later native processing rejects the malformed request | Request construction; Executing witnesses |
+| A registry whose datum pins a policy the application does not derive | The reader refuses the registry naming the pinned policy that differs; nothing is shown and no transaction is built | Reading a registry |
+| A registry whose datum pins an always-true active policy, with a token named after a key and a payload its creator chose | A reader that compares refuses the registry; a reader that trusts the datum is shown the token as if the application had approved it | Reading a registry |
 | Configured application policy approves behavior contrary to its claimed semantics | Native issuer recognition alone is not proof of those semantics; application conformance fails its own contract | Insert approval |
 | Folding has a nonzero net burn of an application action asset | Its minting policy executes; disposal/burn-branch conformance awaits the action-encoding decision | Folding and permissions; Executing witnesses |
 | Existing action token is moved without net minting | No mint-policy re-execution is assumed; scope/custody requirements still hold | Replay; Executing witnesses |

@@ -113,7 +113,7 @@
       "pause": 400
     },
     {
-      "text": "A pending bundle never needs the journal edited. Sign the bundle and send it with singular submit, or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.",
+      "text": "A pending bundle never needs the journal edited. Sign the bundle and send it with singular submit, giving the blueprint of the release the registry was created under with --blueprint because the bundle names a registry (a create bundle needs none), or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.",
       "pause": 400
     },
     {
@@ -167,6 +167,6 @@
   ],
   "_source": {
     "file": "cli-recovery.md",
-    "sha256": "3b26f02f3050f3f2575e9f787fb3fd1f2a9e807d0725ed04fdfc512365081b7a"
+    "sha256": "462b7cd1e98754c1d8ff28c1ec0d933ed3647631f41eaed1882879d80f878557"
   }
 }

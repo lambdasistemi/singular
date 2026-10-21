@@ -1168,8 +1168,8 @@
     "index": 6,
     "name": "docs-cli-recovery/when-a-bundle-waits-for-signatures-06",
     "pause_ms": 400,
-    "text": "A pending bundle never needs the journal edited. Sign the bundle and send it with singular submit, or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.",
-    "v": "775199bd4854"
+    "text": "A pending bundle never needs the journal edited. Sign the bundle and send it with singular submit, giving the blueprint of the release the registry was created under with --blueprint because the bundle names a registry (a create bundle needs none), or let a member's deadline pass and run the command again. A vault run whose answer from the node was lost ends partial, and the next write settles its bundle by identity in the same way. A write that sent its transactions and then could not journal the outcome keeps the submission's outcome and its sends in the receipt, and names what failed on its own.",
+    "v": "8409d18e0298"
    },
    {
     "index": 7,
@@ -5649,6 +5649,43 @@
   ]
  },
  "docs/offchain-api-reference.md": {
+  "a-worked-example-resolving-a-registry-before-showing-it": [
+   {
+    "index": 0,
+    "name": "docs-offchain-api-reference/a-worked-example-resolving-a-registry-before-showing-it-00",
+    "pause_ms": 500,
+    "text": "A worked example: resolving a registry before showing it.",
+    "v": "feccd9b939d0"
+   },
+   {
+    "index": 1,
+    "name": "docs-offchain-api-reference/a-worked-example-resolving-a-registry-before-showing-it-01",
+    "pause_ms": 400,
+    "text": "As a third-party reader built on this library, I am handed the address of a registry and want to show what it holds. A registry's datum pins four policies, and a genuine registry can pin policies its creator chose, so what I read from the datum means nothing until I have compared the pins with the ones the application derives. Singular.Registry.StateToken.resolveRegistry is that comparison. It takes the application, the release the registry was created under, the state token and one view of the chain, and gives back either the registry, whose datum has passed every check, or the refusal that names the first thing that does not.",
+    "v": "15bd71c409af"
+   },
+   {
+    "index": 2,
+    "name": "docs-offchain-api-reference/a-worked-example-resolving-a-registry-before-showing-it-02",
+    "pause_ms": 400,
+    "text": "Over Mallory's registry, whose datum pins an active policy of her own, the function never reaches the first branch and the program prints:",
+    "v": "c2a7968553f5"
+   },
+   {
+    "index": 3,
+    "name": "docs-offchain-api-reference/a-worked-example-resolving-a-registry-before-showing-it-03",
+    "pause_ms": 400,
+    "text": "The application you pass decides which pins are compared. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, has its application policy compared as well as the three witness policies. The neutral value used above knows none, so it takes the application policy from the datum, compares the other three, and records that in the resolved registry: resolvedApplicationPin says whether the application policy was compared or was not checked against any blueprint, and a reader that shows registry content says so. A program that derives several applications from one registry, as open-datum does for its open and its closed registries, calls resolveRegistryAmong with its candidates and gets back the registry and the candidate the datum's application policy selects. pinsDifference is the comparison itself, exported for a command that creates a registry and wants to compare the datum it reads back with the pins it built.",
+    "v": "8e20dcf2c174"
+   },
+   {
+    "index": 4,
+    "name": "docs-offchain-api-reference/a-worked-example-resolving-a-registry-before-showing-it-04",
+    "pause_ms": 400,
+    "text": "The comparison is made when the registry is resolved and not again within the same run, because every fold preserves the pinned policies on chain; the protocol page says why a reader must make it.",
+    "v": "6dbf87ecf0b8"
+   }
+  ],
   "appendix-discovered-adapter-consumers": [
    {
     "index": 0,
@@ -8866,6 +8903,29 @@
     "v": "627fc4801843"
    }
   ],
+  "the-registrys-pinned-policies": [
+   {
+    "index": 0,
+    "name": "docs-registry-page/the-registrys-pinned-policies-00",
+    "pause_ms": 500,
+    "text": "The registry's pinned policies.",
+    "v": "4433ed65c39c"
+   },
+   {
+    "index": 1,
+    "name": "docs-registry-page/the-registrys-pinned-policies-01",
+    "pause_ms": 400,
+    "text": "The registry section shows the four policies the registry's datum pins: the application, active, absent and terminal policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the three witness policies with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
+    "v": "a34dec4aed5a"
+   },
+   {
+    "index": 2,
+    "name": "docs-registry-page/the-registrys-pinned-policies-02",
+    "pause_ms": 400,
+    "text": "The application policy is the one the command cannot derive. The command is told the registry and the release, and the release does not say which application the registry was created for, so the application policy shown is the datum's own and the page says so beside it: the field applicationPin reads not-checked-against-any-blueprint. An application's own program, which knows its blueprint, derives the application policy as well and compares it, and its output reads compared. The page never presents a value read from the datum as if the release had derived it, and the release section holds only the release's own claims.",
+    "v": "154680ee17df"
+   }
+  ],
   "what-is-not-in-this-page": [
    {
     "index": 0,
@@ -9855,15 +9915,43 @@
     "index": 4,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-04",
     "pause_ms": 400,
-    "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
-    "v": "f8eb0fcb7765"
+    "text": "As Bob, handed the address of a registry that Mallory created with a policy of her own pinned as its active policy, I am refused before anything about the registry is shown or built, and the refusal names the pinned policy that differs. Every command that names a registry runs this comparison first, the reads included: inspect and describe do, and so does the report of an interrupted create, which resolves the state token before it prints the identity the create recorded. A registry that fails the comparison is refused and the report is not printed; the report goes on for a registry that passes and for a token the chain has no record of, where no registry exists to be shown. singular submit runs it for the registry a bundle names, as submitting a signed bundle says.",
+    "v": "4b2df66c86a4"
    },
    {
     "index": 5,
     "name": "docs-singular-node/naming-the-registry-by-its-state-token-05",
     "pause_ms": 400,
+    "text": "The comparison is total for the application that runs it. singular is told the registry and the release and not the application, so it cannot derive the application policy: it takes it from the datum, compares the other three, and says so, once, in every receipt that shows registry content: the field applicationPin reads not-checked-against-any-blueprint. open-datum knows its own script, so it derives the application policy too and compares all four; its receipts read compared. It derives two application policies, the open one and the closed one, and learns which kind of registry it has only from the comparison: the registry's application policy must be one of the two, and a registry whose application policy is neither is refused naming application, before the command says anything about the registry, even that it is closed. A create reads back the state datum its boot made and compares its four pins with the ones it built, and reports a partial outcome naming the field when they differ.",
+    "v": "343418a5bd4a"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-06",
+    "pause_ms": 400,
+    "text": "The pins are compared when the command resolves its registry, and not again inside the same run. That is enough because every fold preserves them on chain: the state contract refuses a fold that alters a pinned policy, so the state output the command reads again later in its run carries the pins already accepted. open-datum makes one extra comparison before the command's own resolution, to choose between its two derivations.",
+    "v": "894a2571017c"
+   },
+   {
+    "index": 7,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-07",
+    "pause_ms": 400,
+    "text": "A program that is not one of ours must run the same comparison before it shows what a registry holds: Singular.Registry.StateToken.resolveRegistry does it, with a worked example in the off-chain API reference, and the protocol page says why.",
+    "v": "c9cf993d50da"
+   },
+   {
+    "index": 8,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-08",
+    "pause_ms": 400,
+    "text": "Each command then looks up only the reference scripts its own transactions run, by hash: the provider's answer first, then your own wallet's outputs, which are read only when the provider has none for some script, taking the lowest output reference among the outputs that carry the right script. A command that runs no reference script, such as inspect, looks up none. The hash is computed from the script each output carries, never taken from the provider. When neither has one the command refuses reference-missing ROLE HASH: not found by this provider or wallet, naming singular registry publish-references as the remedy. An empty provider answer means only that this provider found none.",
+    "v": "e65966b90ee4"
+   },
+   {
+    "index": 9,
+    "name": "docs-singular-node/naming-the-registry-by-its-state-token-09",
+    "pause_ms": 400,
     "text": "The provider's answers are unverified, and the token is not signed by anyone: a genuine registry of the same release made by someone else passes every check. The ledger revalidates every reference input of a write, so a stale or wrong carrier can fail a submission but never run another script. A registry made by an earlier release is refused by name here and stays operable with the release that made it.",
-    "v": "ee24ebdc59a7"
+    "v": "574c732561a3"
    }
   ],
   "public-environment-configuration": [
@@ -10035,8 +10123,8 @@
     "index": 4,
     "name": "docs-singular-node/signing-a-bundle-of-unsigned-transactions-offline-04",
     "pause_ms": 400,
-    "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
-    "v": "189e9a50f343"
+    "text": "Each witness is the standard TxWitness ConwayEra text envelope of one verification-key witness — my public key and my signature over that transaction's own hash — so the submitting command (or any Cardano tool) can check and assemble them. The effects lines a bundle carries are the writer's claims: the summary shows them, and nothing trusts them. The registry a bundle names is the writer's statement too: the summary says so beside the name, and singular submit is where the bundle meets the chain. Whether the signers list is complete cannot be checked offline — inputs cannot be resolved — and expiry is not judged without a clock that knows the slot; both are the submitting command's judgement. No output, refusal or file names the passphrase or any key byte.",
+    "v": "af6a3931bade"
    }
   ],
   "signing-a-write-elsewhere-or-from-your-vault": [
@@ -10088,36 +10176,43 @@
     "index": 1,
     "name": "docs-singular-node/submitting-a-signed-bundle-01",
     "pause_ms": 400,
-    "text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
-    "v": "db50aacf5d42"
+    "text": "As Bob, I hand back the witnesses for a bundle and run singular submit with the node settings and, when the bundle names a registry, the release that registry was created under. The transactions are sent in the bundle's order, and the receipt says what the chain shows. If the run is cut short, I run the same command again: it sends only the transactions the chain does not hold yet. If a body has expired, it says to rebuild the bundle and sends nothing. It needs no wallet key and keeps no state.",
+    "v": "50d9f625811a"
    },
    {
     "index": 2,
     "name": "docs-singular-node/submitting-a-signed-bundle-02",
     "pause_ms": 400,
-    "text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
-    "v": "65032db5d8b5"
+    "text": "A bundle that names a registry is checked against it before anything else is read from the chain. The command resolves that registry with the release the bundle was created under, the blueprint I give, and compares its pinned policies exactly as every other command does: a registry whose pins differ is refused naming the field, the refusal is a client refusal with the cause registry-pin-mismatch and an empty list of submissions, and nothing is sent. The older bundles still submit, because the bundle format is unchanged and the release I give is the one the registry was created under. A bundle that names a registry and comes with no release is refused, cause release-not-given, before the chain is read. A bundle that names no registry is refused, cause bundle-names-no-registry, unless it is a create bundle: a create bundle names none because its registry does not exist until it is sent, and it needs no release. Without this refusal a writer could drop the name from a bundle to skip the comparison. The registry name in a bundle is its writer's statement, and wallet sign says so in its summary: submit checks the registry the bundle names, not that its transactions act on it. The receipt carries the standing of the application pin, applicationPin, once.",
+    "v": "67347d7c5f51"
    },
    {
     "index": 3,
     "name": "docs-singular-node/submitting-a-signed-bundle-03",
     "pause_ms": 400,
-    "text": "A transaction the chain already holds, found by its identity, is skipped before those checks, and the witnesses supplied for it are ignored: the inputs it spent can no longer be read from the chain, and it is never sent again. A witness that cannot be read, or that verifies against no transaction of the bundle, is refused all the same, before the chain is read, even when every transaction is already on chain.",
-    "v": "97afcdecf54a"
+    "text": "The witness files are the ones singular wallet sign writes; a directory stands for the .witness files it holds, and each witness is matched to a transaction by its signature, never by its file name. The command checks everything it can before it sends anything, in this order. Without touching the chain, it refuses a bundle the signing step would refuse, a bundle that names no registry and is not a create bundle, a bundle that names a registry when no release is given, a witness file it cannot read, and a witness whose signature verifies against no transaction of the bundle. Then it resolves the registry the bundle names and compares its pinned policies. Then it reads the chain once: where each transaction sits, the tip, and the inputs of each transaction not on chain yet — an input an earlier transaction of the bundle produces is taken from that transaction, every other from the chain. Witnesses are required for the transactions this run will send, and for those alone. It refuses a witness for a key none of them needs, a transaction left without a witness for a key it needs (its required signers and the payment keys of what it spends), an input found nowhere, and a transaction not on chain whose validity upper bound the tip has reached, with the word rebuild. A refusal exits as a client refusal, naming its cause, with an empty list of submissions.",
+    "v": "01f7be6d236c"
    },
    {
     "index": 4,
     "name": "docs-singular-node/submitting-a-signed-bundle-04",
     "pause_ms": 400,
-    "text": "Each transaction the chain does not hold is sent in turn, carrying exactly its own witnesses, and confirmed before the next. An answer that may or may not mean the node took the transaction stops the run as partial, and nothing is sent again within the run; the next run finds what landed. Once every transaction is on chain, the receipt is read back from the chain: for each transaction, whether this run sent it or found it, its chain point, its confirmations, and each of its outputs — unspent with what it holds, or spent since — plus the bundle's hash.",
-    "v": "a8c041839914"
+    "text": "A transaction the chain already holds, found by its identity, is skipped before those checks, and the witnesses supplied for it are ignored: the inputs it spent can no longer be read from the chain, and it is never sent again. A witness that cannot be read, or that verifies against no transaction of the bundle, is refused all the same, before the chain is read, even when every transaction is already on chain.",
+    "v": "00891036eed1"
    },
    {
     "index": 5,
     "name": "docs-singular-node/submitting-a-signed-bundle-05",
     "pause_ms": 400,
+    "text": "Each transaction the chain does not hold is sent in turn, carrying exactly its own witnesses, and confirmed before the next. An answer that may or may not mean the node took the transaction stops the run as partial, and nothing is sent again within the run; the next run finds what landed. Once every transaction is on chain, the receipt is read back from the chain: for each transaction, whether this run sent it or found it, its chain point, its confirmations, and each of its outputs — unspent with what it holds, or spent since — plus the bundle's hash.",
+    "v": "c0183c72fd6c"
+   },
+   {
+    "index": 6,
+    "name": "docs-singular-node/submitting-a-signed-bundle-06",
+    "pause_ms": 400,
     "text": "The effect lines a bundle carries are its writer's claims: the receipt shows them under claims and never says they were confirmed. The completeness of the signatures is judged here, against the inputs the chain resolves, which the offline signing step cannot do. Expiry is judged against the tip read before the first send. A command that stops leaves nothing behind but its receipt, and it never resubmits on its own. A valid signature by an unneeded key over an already-landed body is not reported.",
-    "v": "55829b8d57e2"
+    "v": "332fadd96e90"
    }
   ],
   "the-passphrase-from-the-environment-on-a-development-network": [
@@ -11169,6 +11264,64 @@
     "pause_ms": 400,
     "text": "Singular is a permissionless registry on Cardano for unique identities and independent application state. It uses an authenticated MPF map and representative NFTs. This specification covers registry operations, native requests, certification and custody. It does not select an implementation language, a certificate encoding, a generic application plugin, a KERI integration or a shared-library API.",
     "v": "c2d470053c61"
+   }
+  ],
+  "reading-a-registry-what-each-layer-guarantees": [
+   {
+    "index": 0,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-00",
+    "pause_ms": 500,
+    "text": "Reading a registry: what each layer guarantees.",
+    "v": "c9f810a146bb"
+   },
+   {
+    "index": 1,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-01",
+    "pause_ms": 400,
+    "text": "Mallory creates a genuine registry: a real state token, minted by the real contract. Its datum pins an active policy of her own, and she mints alice under that policy with a payload she chose. Bob is handed the registry's address. A program that reads the datum and believes what it pins shows Bob Mallory's alice. A program that first derives the policies the application pins for this registry and compares them with the datum's refuses the registry before it shows anything, and says which pinned policy is not the one it derived.",
+    "v": "577a512366d7"
+   },
+   {
+    "index": 2,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-02",
+    "pause_ms": 400,
+    "text": "Each layer guarantees one thing, and a reader needs all three:",
+    "v": "d6236c296354"
+   },
+   {
+    "index": 3,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-03",
+    "pause_ms": 400,
+    "text": "Creation does not check the pins. They are chosen freely at boot, and the witness policy at minting checks only that its registry's state token is spent. A token under a registry's pinned active policy therefore means nothing until a reader has compared the pins with its own derivation.",
+    "v": "5e6355264e45"
+   },
+   {
+    "index": 4,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-04",
+    "pause_ms": 400,
+    "text": "A reader MUST compare a registry's pinned policies with the policies it derives, and MUST do so before it shows any fact about the registry or builds any transaction for it. The three witness policies are the blueprint's witness script applied to the registry's identity, which is the state policy followed by the token name. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, MUST also compare the application policy. A program that cannot derive the application policy, because it is told only the registry, takes it from the datum, MUST compare the other three, and MUST say wherever it shows registry content that the application policy was not checked against any blueprint.",
+    "v": "f70aedfaaa2b"
+   },
+   {
+    "index": 5,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-05",
+    "pause_ms": 400,
+    "text": "The pinned policies are compared when the registry is resolved, and not again inside the same run. That is enough because every fold preserves them on chain: the state contract refuses a fold that alters one, so a later read of the state output in the same run carries the pins the comparison already accepted.",
+    "v": "2f6d7da30adb"
+   },
+   {
+    "index": 6,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-06",
+    "pause_ms": 400,
+    "text": "A reader that trusts the datum instead is shown whatever the registry's creator pinned. An always-true active policy lets its creator mint a token named after any key, with any payload, and the registry's own contracts then fold it. The counts, roots and leaves such a reader prints stay consistent with the chain, because the registry is genuine; they say nothing about whether its tokens mean anything to the application.",
+    "v": "ec77e0594691"
+   },
+   {
+    "index": 7,
+    "name": "specs-protocol-spec/reading-a-registry-what-each-layer-guarantees-07",
+    "pause_ms": 400,
+    "text": "The comparison protects the programs that run it. Another program that reads the chain MUST run the same comparison, and this page is where it learns that. Making the pins unforgeable at creation is a change to the contracts and is not part of this specification yet.",
+    "v": "33c7f13dc704"
    }
   ],
   "registry-transitions-and-representative-supply": [

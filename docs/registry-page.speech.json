@@ -49,6 +49,20 @@
       "pause": 400
     }
   ],
+  "the-registrys-pinned-policies": [
+    {
+      "text": "The registry's pinned policies.",
+      "pause": 500
+    },
+    {
+      "text": "The registry section shows the four policies the registry's datum pins: the application, active, absent and terminal policies. They are the registry's own statement, read from its state datum, and they never change after the registry is created. The command compares the three witness policies with the ones the release derives for this registry before it prints anything: a registry that pins another is refused, as the refusals below say.",
+      "pause": 400
+    },
+    {
+      "text": "The application policy is the one the command cannot derive. The command is told the registry and the release, and the release does not say which application the registry was created for, so the application policy shown is the datum's own and the page says so beside it: the field applicationPin reads not-checked-against-any-blueprint. An application's own program, which knows its blueprint, derives the application policy as well and compares it, and its output reads compared. The page never presents a value read from the datum as if the release had derived it, and the release section holds only the release's own claims.",
+      "pause": 400
+    }
+  ],
   "what-the-page-does-not-prove": [
     {
       "text": "What the page does not prove.",
@@ -81,6 +95,6 @@
   ],
   "_source": {
     "file": "registry-page.md",
-    "sha256": "96c2fe0af1d8b7bdef7ee3111e7eb976d3454ed4276f3fc7a84284d5cdbe8a44"
+    "sha256": "c52ff026b357491f0f70b29117cb74da390e86a16a719245597512bc5d1a16b6"
   }
 }
