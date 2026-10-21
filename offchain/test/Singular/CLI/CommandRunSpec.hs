@@ -59,6 +59,7 @@ import Data.Aeson ((.=))
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Bits ((.&.))
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -105,10 +106,12 @@ import System.Directory
     , doesDirectoryExist
     , doesFileExist
     , doesPathExist
+    , getCurrentDirectory
     , listDirectory
     , removePathForcibly
     , renameDirectory
     , renameFile
+    , setCurrentDirectory
     )
 import System.Exit (ExitCode (..))
 import System.FilePath
@@ -128,7 +131,9 @@ import System.IO
 import System.IO.Temp (withSystemTempDirectory)
 import System.Posix.Env.ByteString qualified as PosixEnv
 import System.Posix.Files
-    ( nullFileMode
+    ( fileMode
+    , getFileStatus
+    , nullFileMode
     , ownerReadMode
     , ownerWriteMode
     , setFileMode
@@ -210,16 +215,23 @@ import Singular.CLI.Command
     ( CLIError (..)
     , Command (..)
     , FoldArgs (..)
+    , InspectArgs (..)
     , ProviderSettings (..)
+    , RegistryAccess (..)
     , WalletArgs (..)
     , WriteSettings (..)
     , parseCommand
+    , parseCommandWithEnvironment
+    , parseInvocationFrom
     , renderCLIError
+    , singularVersion
     )
 import Singular.CLI.Finish (finish)
 import Singular.CLI.FlagGroup (Signer (..))
 import Singular.CLI.Fold (runFoldBounded)
+import Singular.CLI.Help (singularProgram)
 import Singular.CLI.ManagedState (addressPartition, managedDir)
+import Singular.CLI.Options (Raw (..))
 import Singular.CLI.Outlay
     ( Outlay (..)
     , bookingOutlay
@@ -246,6 +258,7 @@ import Singular.CLI.Receipt
     , OutcomeClass (..)
     , bodiesDir
     , journalPath
+    , outcomeName
     , readJournal
     )
 import Singular.CLI.ReceiptBody (boundBody)
@@ -257,7 +270,7 @@ import Singular.CLI.Registry
     , pendingPath
     , registryConfigFor
     )
-import Singular.CLI.Root (runPackagedVia)
+import Singular.CLI.Root (runPackagedVia, runSingular)
 import Singular.CLI.Session
     ( CommandFailure (..)
     , Env (..)
@@ -269,7 +282,9 @@ import Singular.CLI.Session
     , txIdHex
     , withSession
     )
+import Singular.CLI.SettingsFile (keepStateToken)
 import Singular.CLI.Sign (renderSignRefusal, witnessPlan)
+import Singular.CLI.Sources (loadSources)
 import Singular.CLI.SubmitSpec (selfPaymentFiles)
 import Singular.CLI.Trace
 import Singular.CLI.Vault
@@ -406,6 +421,7 @@ spec =
         >> stagedNarrationRows
         >> vaultBookkeepingRows
         >> vaultUnreadJournalRows
+        >> saveStateTokenRows
 
 {- | The create receipt carries the working describe line, built from the
 arguments the create ran with. Two registries give two tokens, so a fixed
@@ -7501,3 +7517,581 @@ vaultUnreadJournalRows = describe "the vault signer's journal unread" $ do
             valueAt "journalUnread" (runReceipt signed) `shouldSatisfy` isJust
             reference <- keyFileFoldOf 3_000_000_000 True
             assertExpectationOnly signed reference
+
+-- ---------------------------------------------------------
+-- --save-state-token: the registry's name kept by create
+-- ---------------------------------------------------------
+
+{- | A create can keep the new registry's name in the settings file, so the
+commands after it name no registry on their line. The name is whatever the
+create's own receipt prints, read from the run and never typed; a create that
+does not succeed leaves the file as it was; the receipt is the one the same
+create prints without the switch.
+-}
+saveStateTokenRows :: Spec
+saveStateTokenRows = describe "Create keeps the registry's name in the settings file" $ do
+    savedAfterSuccessRows
+    savedFileRows
+    notSavedRows
+    failedWriteRows
+    sameReceiptRows
+    receiptDecidesRows
+    laterCommandRows
+    chosenFileRows
+    rootRefusalRows
+
+saveSwitch :: String
+saveSwitch = "--save-state-token"
+
+-- | A create of the first seed, with the switch and this settings file.
+saveLine :: String -> FilePath -> [String]
+saveLine seed file =
+    ["registry", "create", "--seed", seed]
+        <> policyArgs
+        <> [saveSwitch, "--config", file]
+
+{- | One command line as the packaged command parses it and the dispatch runs
+it, with the standard error it wrote.
+-}
+runSaving
+    :: Rig -> [String] -> IO (ExitCode, Aeson.Value, BS.ByteString)
+runSaving rig args = do
+    command <-
+        either
+            (fail . renderCLIError)
+            pure
+            (parseCommand (commandLine rig "registry" args))
+    saving rig command
+
+saving :: Rig -> Command -> IO (ExitCode, Aeson.Value, BS.ByteString)
+saving rig command = do
+    (code, out, err) <-
+        captured (runCommand neutralApplication (envOf rig) command)
+    receipt <-
+        maybe
+            (fail ("no receipt: " <> show out))
+            pure
+            (Aeson.decodeStrict out)
+    pure (code, receipt, err)
+
+-- | The state token a receipt prints.
+receiptToken :: Aeson.Value -> IO Text
+receiptToken receipt =
+    maybe
+        (fail ("no state token in " <> show receipt))
+        pure
+        (textAt "stateToken" receipt)
+
+-- | The keys of a settings file, which must be one JSON object.
+settingsKeys :: FilePath -> IO Aeson.Object
+settingsKeys file =
+    BS.readFile file >>= \bytes -> case Aeson.eitherDecodeStrict bytes of
+        Right (Aeson.Object o) -> pure o
+        Right other -> fail (file <> " is not one object: " <> show other)
+        Left why -> fail (file <> " is not JSON: " <> why)
+
+-- | The permission bits of a file.
+permissionsOf :: FilePath -> IO Word
+permissionsOf file =
+    (\status -> fromIntegral (fileMode status .&. 0o777))
+        <$> getFileStatus file
+
+-- | A directory the test may lock, and unlock again whatever happens.
+lockedDirectory :: FilePath -> IO a -> IO a
+lockedDirectory dir =
+    (setFileMode dir 0o555 >>) . (`finally` setFileMode dir 0o755)
+
+savedAfterSuccessRows :: Spec
+savedAfterSuccessRows =
+    describe "after a create that succeeds" $ do
+        it "makes the settings file holding the receipt's state token alone" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                (code, receipt, err) <- runSaving rig (saveLine seed file)
+                code `shouldBe` ExitSuccess
+                outcomeOf receipt `shouldBe` Just "success"
+                token <- receiptToken receipt
+                keys <- settingsKeys file
+                KeyMap.toList keys `shouldBe` [("state-token", Aeson.String token)]
+                -- one line says which file now holds the name
+                BC.unpack err `shouldSatisfy` isInfixOf file
+        it
+            "writes the token the same create printed, not a typed one, for two registries"
+            $ withRig
+            $ \rig -> do
+                first <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                (_, firstReceipt, _) <- runSaving rig (saveLine first file)
+                firstToken <- receiptToken firstReceipt
+                keys <- settingsKeys file
+                KeyMap.lookup "state-token" keys
+                    `shouldBe` Just (Aeson.String firstToken)
+                second <- fundSeed2 rig
+                (secondCode, secondReceipt, _) <-
+                    runSaving rig (saveLine second file)
+                secondCode `shouldBe` ExitSuccess
+                secondToken <- receiptToken secondReceipt
+                secondToken `shouldSatisfy` (/= firstToken)
+                keysAfter <- settingsKeys file
+                KeyMap.lookup "state-token" keysAfter
+                    `shouldBe` Just (Aeson.String secondToken)
+
+savedFileRows :: Spec
+savedFileRows =
+    describe "the file it rewrites" $ do
+        it
+            "keeps every other key with its value and its kind, and replaces a name"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                BC.writeFile file . BC.pack $
+                    "{\"koios-url\": \"http://koios.example\","
+                        <> " \"network-magic\": 42,"
+                        <> " \"state-token\": \"stale.token\","
+                        <> " \"trace\": \"what\"}"
+                (_, receipt, _) <- runSaving rig (saveLine seed file)
+                token <- receiptToken receipt
+                keys <- settingsKeys file
+                KeyMap.toList keys
+                    `shouldMatchList` [ ("koios-url", Aeson.String "http://koios.example")
+                                      , ("network-magic", Aeson.Number 42)
+                                      , ("state-token", Aeson.String token)
+                                      , ("trace", Aeson.String "what")
+                                      ]
+        it "is one indented JSON object, ended by a line" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                BC.writeFile file "{\"trace\":\"what\",\"vault\":\"alice.vault\"}"
+                _ <- runSaving rig (saveLine seed file)
+                bytes <- BS.readFile file
+                length (BC.lines bytes) `shouldSatisfy` (> 2)
+                BC.last bytes `shouldBe` '\n'
+                bytes `shouldSatisfy` BS.isPrefixOf "{"
+        it "keeps the permissions of the file it replaces" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                BC.writeFile file "{\"trace\":\"what\"}"
+                setFileMode file 0o640
+                _ <- runSaving rig (saveLine seed file)
+                permissionsOf file `shouldReturn` 0o640
+        it "leaves nothing but the settings file in its folder" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let dir = rigDir rig </> "settings-home"
+                    file = dir </> "settings.json"
+                createDirectory dir
+                BC.writeFile file "{\"trace\":\"what\"}"
+                _ <- runSaving rig (saveLine seed file)
+                listDirectory dir `shouldReturn` ["settings.json"]
+
+notSavedRows :: Spec
+notSavedRows =
+    describe "a create that does not succeed" $ do
+        it "leaves the file byte for byte as it was, whatever the outcome" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                    untouched = "{\"state-token\": \"stale.token\", \"trace\": \"what\"}"
+                BC.writeFile file untouched
+                refused <-
+                    runAtTxIn
+                        (Left (Cage.BackendReadFailure "the exchange died"))
+                        rig
+                        "create-read-failed"
+                        ( ["registry", "create", "--seed", seed]
+                            <> policyArgs
+                            <> [saveSwitch, "--config", file]
+                        )
+                outcomeOf (runReceipt refused) `shouldBe` Just "partial"
+                runExit refused `shouldSatisfy` (/= ExitSuccess)
+                BS.readFile file `shouldReturn` untouched
+        it "makes no file where there was none" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                refused <-
+                    runAtTxIn
+                        (Left (Cage.BackendReadFailure "the exchange died"))
+                        rig
+                        "create-read-failed"
+                        ( ["registry", "create", "--seed", seed]
+                            <> policyArgs
+                            <> [saveSwitch, "--config", file]
+                        )
+                runExit refused `shouldSatisfy` (/= ExitSuccess)
+                doesPathExist file `shouldReturn` False
+        it "leaves the file alone when the seed is not the wallet's" $
+            withRig $ \rig -> do
+                let file = rigDir rig </> "settings.json"
+                    untouched = "{\"trace\": \"what\"}"
+                BC.writeFile file untouched
+                (code, receipt, _) <-
+                    runSaving
+                        rig
+                        ( [ "registry"
+                          , "create"
+                          , "--seed"
+                          , T.unpack (renderOutRef (fundOutput 9))
+                          ]
+                            <> policyArgs
+                            <> [saveSwitch, "--config", file]
+                        )
+                code `shouldSatisfy` (/= ExitSuccess)
+                outcomeOf receipt `shouldNotBe` Just "success"
+                BS.readFile file `shouldReturn` untouched
+        it "never touches the file when the switch is not given" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                    untouched = "{\"state-token\": \"stale.token\"}"
+                BC.writeFile file untouched
+                (code, receipt, _) <-
+                    runSaving
+                        rig
+                        ( ["registry", "create", "--seed", seed]
+                            <> policyArgs
+                            <> ["--config", file]
+                        )
+                code `shouldBe` ExitSuccess
+                outcomeOf receipt `shouldBe` Just "success"
+                BS.readFile file `shouldReturn` untouched
+
+failedWriteRows :: Spec
+failedWriteRows =
+    describe "a write that fails after the registry exists" $ do
+        it
+            "says so on standard error, keeps the receipt and the exit status, and keeps the old file"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                let dir = rigDir rig </> "settings-home"
+                    file = dir </> "settings.json"
+                    untouched = "{\"trace\": \"what\"}"
+                createDirectory dir
+                BC.writeFile file untouched
+                (code, receipt, err) <-
+                    lockedDirectory dir (runSaving rig (saveLine seed file))
+                -- the registry exists: the status and the receipt are the create's
+                code `shouldBe` ExitSuccess
+                outcomeOf receipt `shouldBe` Just "success"
+                -- one sentence names the file, the cause, and where the name is
+                let said = T.toLower (TE.decodeUtf8 err)
+                said `shouldSatisfy` T.isInfixOf (T.pack file)
+                said `shouldSatisfy` T.isInfixOf "permission denied"
+                said `shouldSatisfy` T.isInfixOf "receipt"
+                -- the old file stays whole and nothing else is left behind
+                BS.readFile file `shouldReturn` untouched
+                listDirectory dir `shouldReturn` ["settings.json"]
+        it "does not replace a read-only file, and says why" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                    untouched = "{\"trace\": \"what\"}"
+                BC.writeFile file untouched
+                setFileMode file 0o444
+                (code, receipt, err) <- runSaving rig (saveLine seed file)
+                code `shouldBe` ExitSuccess
+                outcomeOf receipt `shouldBe` Just "success"
+                let said = T.toLower (TE.decodeUtf8 err)
+                said `shouldSatisfy` T.isInfixOf (T.pack file)
+                said `shouldSatisfy` T.isInfixOf "read-only"
+                BS.readFile file `shouldReturn` untouched
+        it "does not rewrite a file that is not one JSON object" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                    untouched = "[1, 2, 3]"
+                BC.writeFile file untouched
+                (code, _, err) <- runSaving rig (saveLine seed file)
+                code `shouldBe` ExitSuccess
+                TE.decodeUtf8 err `shouldSatisfy` T.isInfixOf (T.pack file)
+                BS.readFile file `shouldReturn` untouched
+
+sameReceiptRows :: Spec
+sameReceiptRows =
+    describe "the receipt" $
+        it "is the one the same create prints without the switch" $ do
+            plain <- creating []
+            again <- creating []
+            -- the control: two creates without the switch agree, so a
+            -- difference below is the switch's
+            again `shouldBe` plain
+            saved <- creating [saveSwitch]
+            saved `shouldBe` plain
+  where
+    creating extra = withRig $ \rig -> do
+        seed <- fundSeed rig
+        (code, receipt, _) <-
+            runSaving
+                rig
+                ( ["registry", "create", "--seed", seed]
+                    <> policyArgs
+                    <> extra
+                    <> ["--config" | not (null extra)]
+                    <> [rigDir rig </> "settings.json" | not (null extra)]
+                )
+        pure (code, normalised rig receipt)
+    normalised rig =
+        T.replace (T.pack (rigDir rig)) "RIG"
+            . TE.decodeUtf8
+            . BL.toStrict
+            . Aeson.encode
+
+laterCommandRows :: Spec
+laterCommandRows =
+    describe "the commands after it" $
+        it "name the registry from the file alone" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                (_, receipt, _) <- runSaving rig (saveLine seed file)
+                token <- receiptToken receipt
+                named <- case parseStateToken token of
+                    Right asset -> pure asset
+                    Left why -> fail (T.unpack why)
+                sources <-
+                    loadSources
+                        (singularProgram singularVersion)
+                        [("SINGULAR_CONFIG", file)]
+                        (Raw [] [])
+                case parseInvocationFrom
+                    sources
+                    [ "registry"
+                    , "inspect"
+                    , "--key"
+                    , "alice"
+                    , "--blueprint"
+                    , rigBlueprint rig
+                    , "--koios-url"
+                    , "http://fixture.invalid"
+                    , "--network-magic"
+                    , show magic
+                    ] of
+                    Right (Inspect inspecting, _) ->
+                        inspectAccess inspecting
+                            `shouldBe` RegistryAccess{accessToken = named}
+                    other -> expectationFailure ("not an inspect: " <> show other)
+
+chosenFileRows :: Spec
+chosenFileRows =
+    describe "the settings file in use" $ do
+        it "is the one SINGULAR_CONFIG names" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "from-variable.json"
+                command <-
+                    either
+                        (fail . renderCLIError)
+                        pure
+                        ( parseCommandWithEnvironment
+                            [("SINGULAR_CONFIG", file)]
+                            ( commandLine
+                                rig
+                                "registry"
+                                (["registry", "create", "--seed", seed] <> policyArgs <> [saveSwitch])
+                            )
+                        )
+                (code, receipt, _) <- saving rig command
+                code `shouldBe` ExitSuccess
+                token <- receiptToken receipt
+                keys <- settingsKeys file
+                KeyMap.lookup "state-token" keys `shouldBe` Just (Aeson.String token)
+        it
+            "is singular.json in the working directory when none is named, made holding the one key"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                let dir = rigDir rig </> "working"
+                createDirectory dir
+                original <- getCurrentDirectory
+                (_, receipt, _) <-
+                    ( setCurrentDirectory dir
+                        >> runSaving
+                            rig
+                            (["registry", "create", "--seed", seed] <> policyArgs <> [saveSwitch])
+                    )
+                        `finally` setCurrentDirectory original
+                token <- receiptToken receipt
+                keys <- settingsKeys (dir </> "singular.json")
+                KeyMap.toList keys `shouldBe` [("state-token", Aeson.String token)]
+
+{- | The root refuses a switch whose file cannot be written before it opens a
+vault or asks a provider: the vault is absent and the provider unreachable, so
+reaching either would be a different failure than the one-line refusal.
+-}
+rootRefusalRows :: Spec
+rootRefusalRows =
+    describe "the packaged command" $ do
+        it
+            "refuses a read-only settings file with status 2, before opening anything"
+            $ withSystemTempDirectory "save-root"
+            $ \dir -> do
+                let file = dir </> "settings.json"
+                BC.writeFile file "{\"trace\": \"what\"}"
+                setFileMode file 0o444
+                (code, out, err) <-
+                    captured
+                        ( runSingular
+                            neutralApplication
+                            (Just stderr)
+                            []
+                            (rootLine dir ["--config", file, saveSwitch])
+                        )
+                code `shouldBe` ExitFailure 2
+                out `shouldBe` ""
+                let said = TE.decodeUtf8 err
+                said `shouldSatisfy` T.isInfixOf (T.pack saveSwitch)
+                said `shouldSatisfy` T.isInfixOf (T.pack file)
+                said `shouldSatisfy` T.isInfixOf "read-only"
+                said `shouldSatisfy` (not . T.isInfixOf "absent.vault")
+                doesPathExist (dir </> "state") `shouldReturn` False
+        it "refuses a missing settings file in a folder it cannot write" $
+            withSystemTempDirectory "save-root" $ \dir -> do
+                original <- getCurrentDirectory
+                (code, out, err) <-
+                    lockedDirectory dir $
+                        ( setCurrentDirectory dir
+                            >> captured
+                                ( runSingular
+                                    neutralApplication
+                                    (Just stderr)
+                                    []
+                                    (rootLine dir [saveSwitch])
+                                )
+                        )
+                            `finally` setCurrentDirectory original
+                code `shouldBe` ExitFailure 2
+                out `shouldBe` ""
+                let said = TE.decodeUtf8 err
+                said `shouldSatisfy` T.isInfixOf (T.pack saveSwitch)
+                said `shouldSatisfy` T.isInfixOf "singular.json"
+                said `shouldSatisfy` T.isInfixOf "folder"
+        it "runs the same create to its own failure without the switch" $
+            withSystemTempDirectory "save-root" $ \dir -> do
+                let file = dir </> "settings.json"
+                BC.writeFile file "{\"trace\": \"what\"}"
+                setFileMode file 0o444
+                -- the control: nothing refuses it at the root, so the create
+                -- goes on and stops on the vault that is not there
+                (code, _, _) <-
+                    captured
+                        ( runSingular
+                            neutralApplication
+                            (Just stderr)
+                            []
+                            (rootLine dir ["--config", file])
+                        )
+                code `shouldNotBe` ExitFailure 2
+  where
+    rootLine dir extra =
+        [ "registry"
+        , "create"
+        , "--blueprint"
+        , dir </> "plutus.json"
+        , "--koios-url"
+        , "http://127.0.0.1:9"
+        , "--network-magic"
+        , "42"
+        , "--vault"
+        , dir </> "absent.vault"
+        , "--state-dir"
+        , dir </> "state"
+        ]
+            <> extra
+
+{- | What is written is decided by the receipt the create returned, not by the
+route to it: only a success that names a registry writes, and the receipt
+comes back as it went in. The receipts here are made up for the purpose, since
+no real create returns a failure that carries a token; the real ones are held
+by the rows above.
+-}
+receiptDecidesRows :: Spec
+receiptDecidesRows =
+    describe "the receipt decides what is written" $ do
+        it "writes the token of a success and returns the receipt as it was" $
+            withSystemTempDirectory "keep" $ \dir -> do
+                let file = dir </> "settings.json"
+                    made =
+                        Aeson.object
+                            [ "outcome" .= outcomeName Success
+                            , "stateToken" .= ("p.n" :: Text)
+                            , "root" .= ("00" :: Text)
+                            ]
+                (returned, _, err) <-
+                    captured (keepStateToken "singular" (Just file) (pure made))
+                returned `shouldBe` made
+                keys <- settingsKeys file
+                KeyMap.toList keys `shouldBe` [("state-token", Aeson.String "p.n")]
+                BC.unpack err `shouldSatisfy` isInfixOf file
+        it
+            "writes nothing for any other outcome, whatever the receipt carries"
+            $ withSystemTempDirectory "keep"
+            $ \dir ->
+                forM_ [c | c <- [minBound .. maxBound], c /= Success] $ \other -> do
+                    let file = dir </> (T.unpack (outcomeName other) <> ".json")
+                        made =
+                            Aeson.object
+                                ["outcome" .= outcomeName other, "stateToken" .= ("p.n" :: Text)]
+                    (returned, _, err) <-
+                        captured (keepStateToken "singular" (Just file) (pure made))
+                    returned `shouldBe` made
+                    doesPathExist file `shouldReturn` False
+                    err `shouldBe` ""
+        it
+            "writes nothing for a preview, whose success names a registry that does not exist"
+            $ withSystemTempDirectory "keep"
+            $ \dir -> do
+                let file = dir </> "settings.json"
+                    made =
+                        Aeson.object
+                            [ "outcome" .= outcomeName Success
+                            , "preview" .= True
+                            , "stateToken" .= ("p.n" :: Text)
+                            ]
+                (returned, _, _) <-
+                    captured (keepStateToken "singular" (Just file) (pure made))
+                returned `shouldBe` made
+                doesPathExist file `shouldReturn` False
+        it
+            "says so, and writes nothing, for a success that names no state token"
+            $ withSystemTempDirectory "keep"
+            $ \dir -> do
+                let file = dir </> "settings.json"
+                    made =
+                        Aeson.object
+                            ["outcome" .= outcomeName Success, "stateToken" .= Aeson.Null]
+                (returned, _, err) <-
+                    captured (keepStateToken "singular" (Just file) (pure made))
+                returned `shouldBe` made
+                doesPathExist file `shouldReturn` False
+                TE.decodeUtf8 err `shouldSatisfy` T.isInfixOf "no state token"
+        it "writes nothing when no file was asked for" $
+            withSystemTempDirectory "keep" $ \dir -> do
+                let made =
+                        Aeson.object
+                            ["outcome" .= outcomeName Success, "stateToken" .= ("p.n" :: Text)]
+                (returned, _, err) <-
+                    captured (keepStateToken "singular" Nothing (pure made))
+                returned `shouldBe` made
+                err `shouldBe` ""
+                listDirectory dir `shouldReturn` []
+        it "leaves a thrown failure to the caller and writes nothing" $
+            withSystemTempDirectory "keep" $ \dir -> do
+                let file = dir </> "settings.json"
+                result <-
+                    try
+                        ( captured
+                            ( keepStateToken
+                                "singular"
+                                (Just file)
+                                (throwIO (ErrorCall "the create failed"))
+                            )
+                        )
+                case result of
+                    Left (ErrorCall why) -> why `shouldBe` "the create failed"
+                    Right _ -> expectationFailure "the failure was swallowed"
+                doesPathExist file `shouldReturn` False

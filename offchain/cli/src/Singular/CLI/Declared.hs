@@ -30,6 +30,7 @@ module Singular.CLI.Declared
     , maxOutlay
     , seed
     , preview
+    , saveStateToken
     , processTime
     , retractTime
     , keyText
@@ -226,6 +227,13 @@ preview =
     switch'
         "--preview"
         "Build and measure what would be submitted and print it; sign, submit and journal nothing."
+
+-- | The switch that has create keep the registry's name in the settings file.
+saveStateToken :: Flag
+saveStateToken =
+    switch'
+        "--save-state-token"
+        "After a create that succeeds, keep the new registry's state token as the key state-token of the settings file (--config, SINGULAR_CONFIG, else singular.json in the working directory), so the commands after it need no --state-token. Refused with --preview and with --wallet-address and --bundle."
 
 processTime :: Flag
 processTime =

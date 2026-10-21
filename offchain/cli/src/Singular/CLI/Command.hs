@@ -86,7 +86,7 @@ import Data.Char
     , isDigit
     )
 import Data.List (partition)
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -101,6 +101,7 @@ import Text.Read (readMaybe)
 import Cardano.Crypto.DSIGN (Ed25519DSIGN, SignKeyDSIGN)
 import Cardano.Ledger.TxIn (TxIn)
 import Paths_singular_registry qualified as Paths
+import Singular.CLI.Declared (saveStateToken)
 import Singular.CLI.FlagGroup
     ( Signer (..)
     , commonFlagGroup
@@ -120,7 +121,9 @@ import Singular.CLI.Key
     )
 import Singular.CLI.Options
     ( Accepted (..)
+    , Flag (..)
     , Raw (..)
+    , defaultConfigFile
     , hintLines
     , identityLine
     , readLine
@@ -139,6 +142,7 @@ import Singular.CLI.Sign (signBundle)
 import Singular.CLI.Sources
     ( Sources (..)
     , applySources
+    , configPath
     , loadSources
     , missingHint
     , noSources
@@ -221,6 +225,11 @@ data CreateArgs = CreateArgs
     -- ^ @txid#index@ of the wallet output the boot consumes
     , createPreview :: Bool
     , createReceipt :: Maybe FilePath
+    , createSaveStateTokenTo :: Maybe FilePath
+    {- ^ @--save-state-token@: the settings file that takes the new registry's
+    state token when the create succeeds, as the commands read it (@--config@,
+    else @SINGULAR_CONFIG@, else @singular.json@ in the working directory)
+    -}
     , createProcessTime :: Integer
     -- ^ Positive processing window in milliseconds, fixed at creation
     , createRetractTime :: Integer
@@ -489,7 +498,8 @@ readFlags group =
             Accepted
                 { acceptedValued = group <> ["--witnesses", "--config"]
                 , acceptedEarly = ["--json"]
-                , acceptedSwitches = commonSwitches <> ["--version"]
+                , acceptedSwitches =
+                    commonSwitches <> ["--version", flagName saveStateToken]
                 }
 
 {- | What a command line read flat asks for. The switches and the repeated
@@ -524,6 +534,7 @@ commandFrom environment (Raw ws allFlags) = do
                         )
                 else
                     refuseWindows ws flags
+                        >> refuseSaveStateToken ws flags
                         >> refuseOutputsAt ws flags
                         >> refuseJson ws jsonSwitch
                         >> refuseWitnesses ws witnesses
@@ -589,6 +600,46 @@ commandFrom environment (Raw ws allFlags) = do
                 ( BadValue
                     "--json"
                     "is a registry describe flag: only describe prints the page as JSON"
+                )
+    -- @--save-state-token@ keeps the name of the registry a create makes; any
+    -- other command refuses it by name rather than ignore it.
+    refuseSaveStateToken words' flags =
+        when
+            ( isJust (lookup saveSwitch flags)
+                && words' /= ["registry", "create"]
+            )
+            $ Left
+                ( BadValue
+                    saveSwitch
+                    "is a create flag: only create keeps the registry's name"
+                )
+    saveSwitch = flagName saveStateToken
+    -- It is judged before anything else of the create is: a preview creates
+    -- nothing and an external signer's registry does not exist until its bundle
+    -- is submitted, so neither has a name to keep. The file is the one the
+    -- settings are read from.
+    saveTarget flags
+        | isNothing (lookup saveSwitch flags) = Right Nothing
+        | isJust (lookup "--preview" flags) =
+            Left
+                ( BadValue
+                    saveSwitch
+                    "cannot be used with --preview: nothing is created, so there is no name to keep"
+                )
+        | isJust (lookup "--wallet-address" flags)
+            && isJust (lookup "--bundle" flags) =
+            Left
+                ( BadValue
+                    saveSwitch
+                    "cannot be used with --wallet-address and --bundle: the registry does not exist until the bundle is submitted, so there is no name to keep yet"
+                )
+        | otherwise =
+            Right
+                ( Just
+                    ( fromMaybe
+                        defaultConfigFile
+                        (configPath environment (Raw ws allFlags))
+                    )
                 )
     refuseWindows words' flags =
         unless (words' == ["registry", "create"]) $
@@ -727,6 +778,7 @@ commandFrom environment (Raw ws allFlags) = do
         , "--fold"
         ]
     createArgs flags = do
+        saveTo <- saveTarget flags
         when (isJust (lookup "--state-token" flags)) $
             Left
                 ( BadValue
@@ -767,6 +819,7 @@ commandFrom environment (Raw ws allFlags) = do
                 , createSeed = seed
                 , createPreview = preview
                 , createReceipt = optional "--receipt" flags
+                , createSaveStateTokenTo = saveTo
                 , createProcessTime = processing
                 , createRetractTime = retracting
                 }

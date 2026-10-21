@@ -113,7 +113,7 @@ createLeaf =
                     , Takes retractTime
                     , nodeShape
                     , OneOf
-                        [ writeShape
+                        [ Each [writeShape, Takes saveStateToken]
                         , Each [Needs preview, Needs previewAddress]
                         ]
                     , tracingShape

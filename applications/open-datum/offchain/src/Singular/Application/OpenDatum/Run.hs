@@ -72,6 +72,7 @@ import Singular.CLI.Session
     , openWriteSigner
     , readOnce
     )
+import Singular.CLI.SettingsFile (keepStateToken)
 import Singular.Registry.Application (ApplicationPin (..), applyPin)
 import Singular.Registry.Config.Application ()
 import Singular.Registry.Ledger (AssetName (..))
@@ -205,7 +206,9 @@ runOpenDatum env = \case
             (envTracer env)
             "create"
             (createReceipt a)
-            (openCreate a >>= runCreate (applicationIn mode) env)
+            ( keepStateToken "open-datum" (createSaveStateTokenTo a) $
+                openCreate a >>= runCreate (applicationIn mode) env
+            )
     -- A write that names a vault opens it first, before the registry's mode is
     -- read from the chain: a refused opening is the command's own refusal.
     OpenInsert a0 -> openedFirst env "insert" (entryReceipt a0) (openEntry a0) $ \a -> do

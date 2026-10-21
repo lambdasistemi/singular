@@ -1,0 +1,142 @@
+{
+  "registrys-name-recorded": [
+    {
+      "text": "Registry's name recorded.",
+      "pause": 500
+    },
+    {
+      "text": "[x] Refusal tests: the switch with a preview, with an external signer, with an unwritable file",
+      "pause": 300
+    },
+    {
+      "text": "[x] Writer tests: other keys and their kind kept, a name replaced, a new file made, the old permissions kept",
+      "pause": 300
+    },
+    {
+      "text": "[x] Create tests: written only on success, never on another outcome, receipt unchanged",
+      "pause": 300
+    },
+    {
+      "text": "[x] The settings file writer and the switch in both programs",
+      "pause": 300
+    },
+    {
+      "text": "[x] Help snapshots, parser corpora and the application settings spec",
+      "pause": 300
+    },
+    {
+      "text": "[x] A hosted devnet journey that creates with the switch and runs later commands with the file alone",
+      "pause": 300
+    },
+    {
+      "text": "[x] Documentation of the switch with regenerated narration",
+      "pause": 300
+    },
+    {
+      "text": "[x] The note for the tutorial's owner for the registry's name",
+      "pause": 300
+    }
+  ],
+  "settings-from-the-devnet": [
+    {
+      "text": "Settings from the devnet.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Tests: the devnet's line read from a file with other lines, the wait, the refusals",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Tests: a flag beating the line, merging into an existing file, a null time directory",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The command settings save and its help",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Help snapshots, parser corpora and the application settings spec",
+      "pause": 300
+    },
+    {
+      "text": "[ ] A hosted devnet journey that writes the file from the devnet's output and runs the first command with it alone",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Documentation of the command with regenerated narration",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The note for the tutorial's owner for the settings",
+      "pause": 300
+    }
+  ],
+  "receipt-as-input": [
+    {
+      "text": "Receipt as input.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Tests: each refusal names the option and the file, the fallback to the expected request, each source of the value",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The @FILE form for the two options",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Help snapshots, parser corpora and the application settings spec",
+      "pause": 300
+    },
+    {
+      "text": "[ ] A hosted devnet journey that takes a booking back by its receipt",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Documentation of the form with regenerated narration",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The note for the tutorial's owner for the receipts",
+      "pause": 300
+    }
+  ],
+  "readable-summary": [
+    {
+      "text": "Readable summary.",
+      "pause": 500
+    },
+    {
+      "text": "[ ] Golden tests: one summary per receipt shape of the listed commands, with null fields left out and identifiers whole",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Tests: the receipt file and the exit status are the same with and without the switch",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The summary module and the switch on the listed commands",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Help snapshots, parser corpora and the application settings spec",
+      "pause": 300
+    },
+    {
+      "text": "[ ] A hosted devnet journey that runs a command with the switch and checks the summary against the receipt file",
+      "pause": 300
+    },
+    {
+      "text": "[ ] Documentation of the switch with regenerated narration",
+      "pause": 300
+    },
+    {
+      "text": "[ ] The note for the tutorial's owner for the summaries",
+      "pause": 300
+    }
+  ],
+  "_source": {
+    "file": "tasks.md",
+    "sha256": "433b05473a9a7add75b958eecff2531b495247c77a361b9973d049a80a66eec2"
+  }
+}

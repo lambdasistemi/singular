@@ -49,7 +49,7 @@ import Data.IORef
     , readIORef
     , writeIORef
     )
-import Data.List (nub, partition, sort)
+import Data.List (isInfixOf, nub, partition, sort)
 import Data.Map.Strict qualified as Map
 import Data.Maybe
     ( fromMaybe
@@ -99,6 +99,7 @@ import System.IO
     , stdout
     )
 import System.IO.Temp (withSystemTempDirectory)
+import System.Posix.Files (setFileMode)
 import System.Posix.IO
     ( OpenFileFlags (..)
     , OpenMode (..)
@@ -179,8 +180,12 @@ import UntypedPlutusCore qualified as UPLC
 import Singular.Application.OpenDatum.Command
     ( OpenDatumCommand (..)
     , parseOpenDatumCommand
+    , renderCLIError
     )
-import Singular.Application.OpenDatum.Root (runPackagedOpenDatumVia)
+import Singular.Application.OpenDatum.Root
+    ( runOpenDatumSingular
+    , runPackagedOpenDatumVia
+    )
 import Singular.Application.OpenDatum.Run (runOpenDatum)
 import Singular.Application.OpenDatum.Value (openDatumApplication)
 import Singular.CLI.Booking (BookingVerb (..), bookingEdgeName)
@@ -288,6 +293,7 @@ spec =
         >> openDatumDescribeCommandRows
         >> externalWriteRows
         >> vaultWriteRows
+        >> saveStateTokenRows
 
 {- | The open datum create receipt carries the working describe line. The
 application owns no describe verb, so the line always names the registry
@@ -4975,3 +4981,140 @@ vaultRefusalsRow =
                     fromMaybe "" (textAt "reason" (runReceipt r))
                         `shouldNotSatisfy` T.isInfixOf "blueprint"
             doesPathExist (rigDir rig </> "never-made") `shouldReturn` False
+
+-- ---------------------------------------------------------
+-- --save-state-token: the registry's name kept by create
+-- ---------------------------------------------------------
+
+{- | A create can keep the new registry's name in the settings file, so the
+commands after it name no registry on their line. The name is whatever the
+create's own receipt prints, read from the run and never typed; a create that
+does not succeed leaves the file as it was.
+-}
+saveStateTokenRows :: Spec
+saveStateTokenRows = describe
+    "Open datum create keeps the registry's name in the settings file"
+    $ do
+        it "writes the receipt's state token and keeps the other keys" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                BC.writeFile
+                    file
+                    "{\"network-magic\": 42, \"state-token\": \"stale.token\"}"
+                (code, receipt, err) <-
+                    savingRun
+                        rig
+                        ["open-datum", "create", "--seed", seed, saveSwitch, "--config", file]
+                (code, outcomeOf receipt, textAt "reason" receipt)
+                    `shouldBe` (ExitSuccess, Just "success", Nothing)
+                token <-
+                    maybe (fail "no state token") pure (textAt "stateToken" receipt)
+                written <- BS.readFile file
+                Aeson.decodeStrict written
+                    `shouldBe` Just
+                        ( Aeson.object
+                            [ "network-magic" .= (42 :: Int)
+                            , "state-token" .= token
+                            ]
+                        )
+                BC.unpack err `shouldSatisfy` isInfixOf file
+        it "leaves the file as it was when the create does not succeed" $
+            withRig $ \rig -> do
+                seed <- fundSeed rig
+                let file = rigDir rig </> "settings.json"
+                    untouched = "{\"state-token\": \"stale.token\"}"
+                BC.writeFile file untouched
+                refused <-
+                    runAtTxIn
+                        (Left (Cage.BackendReadFailure "the exchange died"))
+                        rig
+                        "create-read-failed"
+                        ["open-datum", "create", "--seed", seed, saveSwitch, "--config", file]
+                outcomeOf (runReceipt refused) `shouldBe` Just "partial"
+                runExit refused `shouldSatisfy` (/= ExitSuccess)
+                BS.readFile file `shouldReturn` untouched
+        it
+            "says on standard error that a write failed after the registry exists, and keeps the exit status"
+            $ withRig
+            $ \rig -> do
+                seed <- fundSeed rig
+                let dir = rigDir rig </> "settings-home"
+                    file = dir </> "settings.json"
+                    untouched = "{\"trace\": \"what\"}"
+                createDirectory dir
+                BC.writeFile file untouched
+                setFileMode dir 0o555
+                (code, receipt, err) <-
+                    savingRun
+                        rig
+                        ["open-datum", "create", "--seed", seed, saveSwitch, "--config", file]
+                        `finally` setFileMode dir 0o755
+                code `shouldBe` ExitSuccess
+                outcomeOf receipt `shouldBe` Just "success"
+                let said = T.toLower (TE.decodeUtf8 err)
+                said `shouldSatisfy` T.isInfixOf (T.pack file)
+                said `shouldSatisfy` T.isInfixOf "permission denied"
+                said `shouldSatisfy` T.isInfixOf "receipt"
+                BS.readFile file `shouldReturn` untouched
+                listDirectory dir `shouldReturn` ["settings.json"]
+        it
+            "refuses a read-only settings file at the root, before opening anything"
+            $ withSystemTempDirectory "save-root"
+            $ \dir -> do
+                let file = dir </> "settings.json"
+                BC.writeFile file "{\"trace\": \"what\"}"
+                setFileMode file 0o444
+                (code, out, err) <-
+                    captured
+                        ( runOpenDatumSingular
+                            openDatumApplication
+                            (Just stderr)
+                            []
+                            [ "open-datum"
+                            , "create"
+                            , "--blueprint"
+                            , dir </> "plutus.json"
+                            , "--koios-url"
+                            , "http://127.0.0.1:9"
+                            , "--network-magic"
+                            , "42"
+                            , "--vault"
+                            , dir </> "absent.vault"
+                            , "--state-dir"
+                            , dir </> "state"
+                            , "--config"
+                            , file
+                            , saveSwitch
+                            ]
+                        )
+                code `shouldBe` ExitFailure 2
+                out `shouldBe` ""
+                let said = TE.decodeUtf8 err
+                said `shouldSatisfy` T.isInfixOf (T.pack saveSwitch)
+                said `shouldSatisfy` T.isInfixOf (T.pack file)
+                said `shouldSatisfy` T.isInfixOf "read-only"
+                said `shouldSatisfy` (not . T.isInfixOf "absent.vault")
+                doesPathExist (dir </> "state") `shouldReturn` False
+
+saveSwitch :: String
+saveSwitch = "--save-state-token"
+
+{- | One command line as the packaged command parses it and the dispatch runs
+it, with the standard error it wrote.
+-}
+savingRun
+    :: Rig -> [String] -> IO (ExitCode, Aeson.Value, BS.ByteString)
+savingRun rig args = do
+    command <-
+        either
+            (fail . renderCLIError)
+            pure
+            (parseOpenDatumCommand (commandLine rig "registry" args))
+    (code, out, err) <- captured (runOpenDatum (envOf rig) command)
+    receipt <-
+        maybe
+            (fail ("no receipt: " <> show out))
+            pure
+            (Aeson.decodeStrict out)
+    pure (code, receipt, err)

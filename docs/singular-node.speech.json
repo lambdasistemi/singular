@@ -95,6 +95,48 @@
       "pause": 400
     }
   ],
+  "the-registrys-name-kept-by-create": [
+    {
+      "text": "The registry's name kept by create.",
+      "pause": 500
+    },
+    {
+      "text": "As Alice, I create a registry and act on it next, and I do not want to copy its state token out of the receipt. I add the switch --save-state-token to create, and the command keeps the name for me. The example below creates a registry on the development network and asks for its name to be kept.",
+      "pause": 400
+    },
+    {
+      "text": "When the create succeeds, the command writes the new registry's state token into the settings file as the key state-token, and says on standard error which file now holds it. open-datum create takes the same switch. The next commands find the state token there, and the other settings in the same file when it already holds them, as in the section above. With a file that holds the chain and the contracts, singular registry fold --vault alice.vault and open-datum insert --key alice --payload payload.json --vault alice.vault name no registry on their line.",
+      "pause": 400
+    },
+    {
+      "text": "The file is the one the other commands read: the file named by --config, else the one named by SINGULAR_CONFIG, else singular.json in the folder the command runs from. When none of the three exists as a file, create makes singular.json there, holding the one key. Every other key keeps its value and its kind, text or number, and an existing state-token is replaced. The file is rewritten as one indented JSON object, so its key order and spacing may change. The new file replaces the old one in a single step and keeps the old file's permissions, so a failure leaves the old file or the new one and never half of each. The receipt is the same with the switch and without it.",
+      "pause": 400
+    },
+    {
+      "text": "What you see when something is wrong:",
+      "pause": 400
+    },
+    {
+      "text": "A preview creates nothing, and an external signer's registry does not exist until its bundle is submitted, so neither has a name to keep. With --preview, or with --wallet-address and --bundle, the switch is refused in one sentence, with exit status 2, before a wallet is opened or the chain is read.",
+      "pause": 300
+    },
+    {
+      "text": "A settings file that exists and cannot be written, or a missing one in a folder that cannot be written, is refused with exit status 2, naming the file and the cause, before a wallet is opened or the chain is read. Nothing is spent.",
+      "pause": 300
+    },
+    {
+      "text": "A create whose outcome is not success writes nothing: its receipt names whatever state there is.",
+      "pause": 300
+    },
+    {
+      "text": "If the write fails after the registry exists, one sentence on standard error says so, names the file and the cause, and says the state token is in the receipt. The exit status stays the create's own.",
+      "pause": 300
+    },
+    {
+      "text": "The switch has no variable and no key of the config file, because it is an action of one command and not a setting that stands. Every other command refuses it by name.",
+      "pause": 300
+    }
+  ],
   "the-vault-from-the-environment-or-the-file": [
     {
       "text": "The vault from the environment or the file.",
@@ -293,7 +335,7 @@
       "pause": 500
     },
     {
-      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes.",
+      "text": "As Carol, the creator, I run create from an empty directory. Its receipt names stateToken, the registry's state token as POLICY.NAME in hex, and describeCommand, the working singular registry describe line built from the arguments the create ran with: the blueprint as given, the new state token, the provider and network settings, and the network time directory when given. It names no wallet key and no credential file. Run it as printed to read the registry page. I publish nothing else and keep no file anyone else needs: create writes no identity file, and the pending identity it records before its first submission is removed once it finishes. When I add --save-state-token, a create that succeeds also keeps the state token in my settings file, as the registry's name kept by create says.",
       "pause": 400
     },
     {
@@ -537,6 +579,6 @@
   ],
   "_source": {
     "file": "singular-node.md",
-    "sha256": "9756c147341b28cd649a36710e07217e2488e491de1b8e9adef294c14167a571"
+    "sha256": "51f532ced2ec604f9a4b47676046087cead2a97a1428d59dc18ba113e4226746"
   }
 }
