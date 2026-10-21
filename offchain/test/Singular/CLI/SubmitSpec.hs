@@ -201,6 +201,7 @@ theCommandLine = describe "the command line" $ do
                                 , providerTokenFile = Nothing
                                 , providerTimeDirectory = Nothing
                                 }
+                        , submitBlueprint = Nothing
                         , submitReceipt = Just "receipt.json"
                         }
                 )
@@ -899,7 +900,7 @@ paymentBody spent bound =
 bundleOf :: [ConwayTx] -> Bundle
 bundleOf bodies =
     Bundle
-        { bundleCommand = "registry fold"
+        { bundleCommand = "create"
         , bundleNetworkMagic = magic
         , bundleStateToken = Nothing
         , bundleSigners = walletSigner :| []

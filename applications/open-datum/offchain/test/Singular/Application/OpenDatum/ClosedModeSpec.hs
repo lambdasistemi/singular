@@ -12,7 +12,24 @@ Create chooses a registry's mode with the closed switch and every later
 command follows the registry's mode read from the chain, refusing an
 update on a closed registry before anything is built or signed.
 -}
-module Singular.Application.OpenDatum.ClosedModeSpec (spec) where
+module Singular.Application.OpenDatum.ClosedModeSpec
+    ( spec
+    , testEnv
+    , chainWith
+    , stateOpen
+    , stateClosed
+    , stateThird
+    , releaseOpen
+    , releaseClosed
+    , releaseThird
+    , capturedRun
+    , withTempWallet
+    , withTempPayload
+    , withTempDir
+    , fixtureTokenSpelling
+    , providerArgs
+    , previewAddrOf
+    ) where
 
 import Control.Exception
     ( AsyncException (..)
@@ -32,6 +49,7 @@ import Data.IORef
     , readIORef
     )
 import Data.List (isInfixOf)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -70,16 +88,12 @@ import Cardano.Ledger.Mary.Value
 import Singular.Application.OpenDatum.Command
     ( CLIError (..)
     , OpenDatumCommand (..)
-    , ProviderSettings (..)
     , closedSwitch
     , openDatumHelp
     , parseOpenDatumCommand
     )
 import Singular.Application.OpenDatum.Run
-    ( ModeRefusal (..)
-    , closedUpdateRefusal
-    , modeOfRecordedPolicy
-    , registryMode
+    ( closedUpdateRefusal
     , runOpenDatum
     )
 import Singular.Application.OpenDatum.StateTokenFixture qualified as Fixture
@@ -105,7 +119,13 @@ import Singular.Registry.Config.Application
     )
 import Singular.Registry.Evidence (Evidenced (..), NoWitness)
 import Singular.Registry.LedgerProvider qualified as LP
-import Singular.Registry.StateToken (Release (..), resolveRegistry)
+import Singular.Registry.StateToken
+    ( IdentityRefusal (..)
+    , PinField (..)
+    , Release (..)
+    , resolveRegistry
+    , resolveRegistryAmong
+    )
 import Singular.Registry.StubSession (servingSession, stubSession)
 import Singular.Registry.SyntheticTime (syntheticTime)
 import Singular.Registry.TxBuilder.BookingFixture qualified as Booking
@@ -118,7 +138,6 @@ import Singular.Registry.TxBuilder.Internal
 import Singular.Registry.Types
     ( OnChainRoot (..)
     , OnChainTokenState
-    , stateAppPolicyBytes
     )
 import Singular.Registry.WaitTypes (WaitFailure (..), WaitStage (..))
 import Singular.Registry.Wallet (bech32Address)
@@ -442,13 +461,6 @@ stateOpen = bootStateFromCfg cfgOpen (OnChainRoot emptyRoot)
 stateClosed = bootStateFromCfg cfgClosed (OnChainRoot emptyRoot)
 stateThird = bootStateFromCfg cfgThird (OnChainRoot emptyRoot)
 
-openPolicy :: ByteString
-closedPolicy :: ByteString
-thirdPolicy :: ByteString
-openPolicy = stateAppPolicyBytes stateOpen
-closedPolicy = stateAppPolicyBytes stateClosed
-thirdPolicy = stateAppPolicyBytes stateThird
-
 -- ---------------------------------------------------------
 -- Chains
 -- ---------------------------------------------------------
@@ -467,21 +479,38 @@ chainMissing =
         }
 
 -- ---------------------------------------------------------
--- L2 pure
+-- L2: the gate over both derivations selects the mode
 -- ---------------------------------------------------------
 
+{- | The mode the library's gate selects for a datum, given the candidates the
+program derives: the closed one only when the blueprint carries it.
+-}
+gateSelects
+    :: Bool -> OnChainTokenState -> IO (Either IdentityRefusal Mode)
+gateSelects withClosed datum = do
+    let candidates =
+            (applicationIn Open, releaseOpen)
+                :| [(applicationIn Closed, releaseClosed) | withClosed]
+    resolved <-
+        resolveRegistryAmong
+            candidates
+            Fixture.token
+            (sessionFor (chainWith datum))
+    pure $ case resolved of
+        Left refusal -> Left refusal
+        Right (_, (selected, _))
+            | appPin selected == appPin (applicationIn Closed) -> Right Closed
+            | otherwise -> Right Open
+
 modeReadFromChain :: Spec
-modeReadFromChain = describe "the mode read from the chain" $ do
-    it "reads a closed datum as closed" $ do
-        openPolicy `shouldNotBe` closedPolicy
-        modeOfRecordedPolicy closedPolicy openPolicy (Just closedPolicy)
-            `shouldBe` Right Closed
-    it "reads an open datum as open" $ do
-        modeOfRecordedPolicy openPolicy openPolicy (Just closedPolicy)
-            `shouldBe` Right Open
-    it "reads an open registry with an older blueprint as open" $ do
-        modeOfRecordedPolicy openPolicy openPolicy Nothing
-            `shouldBe` Right Open
+modeReadFromChain = describe "the mode selected by the gate" $ do
+    it "selects the closed derivation for a closed datum" $
+        gateSelects True stateClosed `shouldReturn` Right Closed
+    it "selects the open derivation for an open datum" $
+        gateSelects True stateOpen `shouldReturn` Right Open
+    it
+        "selects the open derivation for an open registry with an older blueprint"
+        $ gateSelects False stateOpen `shouldReturn` Right Open
 
 cancellationPropagates :: Spec
 cancellationPropagates = describe "a cancelled closed load propagates" $ do
@@ -546,41 +575,13 @@ cancellationPropagates = describe "a cancelled closed load propagates" $ do
 
 unreadableNotGuessed :: Spec
 unreadableNotGuessed = describe "an unreadable mode is not guessed" $ do
-    it "refuses a neither-hash as unrecognised" $ do
-        thirdPolicy `shouldNotBe` openPolicy
-        thirdPolicy `shouldNotBe` closedPolicy
-        modeOfRecordedPolicy thirdPolicy openPolicy (Just closedPolicy)
-            `shouldSatisfy` isUnrecognised
-    it "reads the mode from the chain for closed and open" $ do
-        let prov = ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
-        asked <- newIORef []
-        let envC =
-                testEnv
-                    (\t -> modifyIORef' asked (<> [t]))
-                    (chainWith stateClosed)
-                    True
-        registryMode envC prov "/srv/plutus.json" Fixture.token
-            >>= (`shouldBe` Right Closed)
-        asked2 <- newIORef []
-        let envO =
-                testEnv
-                    (\t -> modifyIORef' asked2 (<> [t]))
-                    (chainWith stateOpen)
-                    True
-        registryMode envO prov "/srv/plutus.json" Fixture.token
-            >>= (`shouldBe` Right Open)
-    it "reads an open registry with a blueprint without the closed title" $ do
-        let prov = ProviderSettings "http://127.0.0.1:8080/api/v1" 42 Nothing Nothing
-        asked <- newIORef []
-        let envO =
-                testEnv
-                    (\t -> modifyIORef' asked (<> [t]))
-                    (chainWith stateOpen)
-                    False
-        registryMode envO prov "/srv/plutus.json" Fixture.token
-            >>= (`shouldBe` Right Open)
-        titles <- readIORef asked
-        titles `shouldSatisfy` elem "open_datum.open_datum"
+    it "refuses a neither-hash, naming the application" $
+        gateSelects True stateThird
+            `shouldReturn` Left RegistryPinMismatchEvery
+    it
+        "refuses a neither-hash with an older blueprint, naming the application"
+        $ gateSelects False stateThird
+            `shouldReturn` Left (RegistryPinMismatch PinApplication)
     it
         "a neither-hash insert ends in its own refusal with no closed load after the read"
         $ do
@@ -873,11 +874,6 @@ updateRefusal = describe "an update on a closed registry stops before building" 
                 (_, out) <- capturedRun env cmd
                 out
                     `shouldSatisfy` (not . BC.isInfixOf (BC.pack (closedUpdateRefusal Fixture.token)))
-
-isUnrecognised :: Either ModeRefusal Mode -> Bool
-isUnrecognised = \case
-    Left (UnrecognisedPolicy _) -> True
-    _ -> False
 
 -- ---------------------------------------------------------
 -- Helpers (one recording cell only)

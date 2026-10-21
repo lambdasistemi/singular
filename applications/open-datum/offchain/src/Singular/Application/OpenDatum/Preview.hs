@@ -256,6 +256,7 @@ runPreview app env kind a settings addrText = do
                     (kindName kind)
                     Success
                     ( [("preview", toJSON True)]
+                        <> standingFields (savedApplicationPin saved)
                         <> keyFields key
                         <> [ ("networkMagic", toJSON magic)
                            , ("caller", callerReport addrText caller)

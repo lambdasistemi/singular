@@ -126,6 +126,7 @@ import Cardano.Ledger.Plutus.ExUnits (ExUnits (..))
 import Cardano.Ledger.TxIn (TxIn (..))
 import Cardano.Tx.Ledger (ConwayTx)
 import Codec.Binary.Bech32 qualified as Bech32
+import Singular.Registry.Application (ApplicationPinStanding (..))
 import Singular.Registry.AssetName (deriveAssetName)
 
 import Control.Tracer (Tracer (..), nullTracer)
@@ -602,6 +603,7 @@ withReplayViews use = withFixture $ \fx -> do
                 Booking.codes
                 tid
                 []
+                ApplicationPinNotChecked
     (boot, ()) <-
         submitBuilt
             (writeContext fx)

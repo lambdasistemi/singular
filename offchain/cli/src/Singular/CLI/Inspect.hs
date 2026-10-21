@@ -136,10 +136,17 @@ import Singular.Registry.Application
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (sessionReceipt)
 import Singular.Registry.Deployment (parseOutRef)
+import Singular.Registry.Evidence (NoWitness)
 import Singular.Registry.Ledger (ConwayEra)
-import Singular.Registry.LedgerProvider (Asset)
+import Singular.Registry.LedgerProvider (Asset, Session)
 import Singular.Registry.SessionIO qualified as Cage
-import Singular.Registry.StateToken (renderStateToken)
+import Singular.Registry.StateToken
+    ( IdentityRefusal (..)
+    , ResolvedRegistry (..)
+    , renderIdentityRefusal
+    , renderStateToken
+    , resolveRegistry
+    )
 import Singular.Registry.TxBuilder.Internal
     ( computeScriptHash
     , extractCageDatum
@@ -182,7 +189,14 @@ runInspect app env a = do
                         (failWith ClientRefusal . T.unpack)
                         pure
                         (pendingToken release identity >>= (`checkPendingToken` requested))
-                    inspectIncompleteCreate env dir settings identity
+                    inspectIncompleteCreate
+                        app
+                        env
+                        release
+                        requested
+                        dir
+                        settings
+                        identity
                 else inspectSaved app env dir (Just dir) key settings release a
         -- A stateless public read: no wallet journal is reconciled, no
         -- wallet partition is scanned, no pending identity is looked up and
@@ -246,6 +260,28 @@ reconciledFields = \case
             )
         ]
 
+{- | The gate before the report of an interrupted create: the state token is
+resolved first, because a registry on the chain is shown only to a reader
+whose pins it passes. A token the chain has no record of is the one answer
+that lets the report go on: no registry exists to be shown. The registry's
+standing of the application pin, when there is one, joins the report.
+-}
+gatePendingToken
+    :: Application
+    -> Release
+    -> Asset
+    -> Session NoWitness IO
+    -> IO [(Text, Value)]
+gatePendingToken app release requested view =
+    resolveRegistry app release requested view >>= \case
+        Right registry ->
+            pure (standingFields (resolvedApplicationPin registry))
+        Left StateTokenNotFound -> pure []
+        Left refusal@(IdentityUnreadable _) ->
+            failWith NodeUnavailable (T.unpack (renderIdentityRefusal refusal))
+        Left refusal ->
+            failWith ClientRefusal (T.unpack (renderIdentityRefusal refusal))
+
 {- | A create that stopped before saving its identity: its pending identity
 and journal are read, its journalled transactions are looked for on the
 ledger (confirmed, and observed where their own after-state reads back),
@@ -253,10 +289,18 @@ and the outcome is @partial@ with no leaf. Create refuses the directory;
 nothing is booted again or resubmitted.
 -}
 inspectIncompleteCreate
-    :: Env -> FilePath -> ProviderSettings -> Value -> IO Value
-inspectIncompleteCreate env dir settings identity = do
+    :: Application
+    -> Env
+    -> Release
+    -> Asset
+    -> FilePath
+    -> ProviderSettings
+    -> Value
+    -> IO Value
+inspectIncompleteCreate app env release requested dir settings identity = do
     reached <-
-        try $ readOnce env settings ["chain tip", "journal transactions"] $ \caps v -> do
+        try $ readOnce env settings ["state", "chain tip", "journal transactions"] $ \caps v -> do
+            standing <- gatePendingToken app release requested v
             point <- Cage.tip v
             reconciled <-
                 reconcileLocked dir (reconcileIncomplete "inspect" dir v)
@@ -273,6 +317,7 @@ inspectIncompleteCreate env dir settings identity = do
                           , toJSON (renderPoint point)
                           )
                       ]
+                        <> standing
                         <> reconciledFields reconciled
                         <> [ ("unresolved", toJSON (journalTxId <$> pending))
                            ,
@@ -350,214 +395,216 @@ inspectSaved app env savedPath mJournal key settings release a = do
                     Set.empty
                     Nothing
                     v
-            point <- Cage.tip v
-            reconciled <- case mJournal of
-                Just dir -> reconcileLocked dir (reconcile app "inspect" dir saved v)
-                Nothing -> pure Nothing
-            live <- attachLive v saved
-            state <- case extractCageDatum (snd (liveState live)) of
-                Just (StateDatum found) -> pure found
-                _ ->
-                    failWith Partial "the registry's state output carries no state datum"
-            let root = unOnChainRoot (stateRoot state)
-            context <- requireTrieSelection saved live
-            leaf <- trieLeaf context key root
-            outs <- liveOutputs app v saved
-            requests <-
-                Cage.outputsAt
-                    v
-                    (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
-            listed <- case inspectOutputsAt a of
-                Nothing -> pure []
-                Just text -> do
-                    addr <-
-                        either
-                            (failWith ClientRefusal . replaceFlag)
-                            pure
-                            (parseEnterpriseAddress magic text)
-                    os <- Cage.outputsAt v addr
-                    pure
-                        [
-                            ( "outputsAt"
-                            , object
-                                [ "address" .= T.pack text
-                                , "outputs" .= [outputJson i o | (i, o) <- os]
-                                ]
-                            )
-                        ]
-            scope <- sessionReceipt caps v
-            let holdings = holdingsFor app saved key outs
-                keyOutput = liveOutputFor app saved key outs
-            entries <- case mJournal of
-                Just dir -> readJournal dir
-                Nothing -> pure []
-            let pending = unresolved entries
-            let pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
-                -- what the read found, reported once its read step closes
-                findings =
-                    ( []
-                    , RegistrySeen
-                        (txInText (fst (liveState live)))
-                        (hexT root)
-                        (Just (length pendingOuts))
-                    )
-                        : [ ( [InKey key]
-                            , KeySeen
-                                key
-                                (leafName l)
-                                (either (const Nothing) (Just . txInText . fst . fst) keyOutput)
-                            )
-                          | Right l <- [leaf]
-                          ]
-                            <> [ ( [InRequest (txInText i)]
-                                 , RequestSeen
-                                    (txInText i)
-                                    (T.pack (edgeName (requestEdge r)))
-                                    (requestKey r)
-                                    Nothing
-                                    Nothing
-                                 )
-                               | (i, o) <- pendingOuts
-                               , Just (RequestDatum r) <- [extractCageDatum o]
-                               ]
-            let chainPoint = renderPoint point
-                rawDatums =
-                    [ object
-                        [ "output" .= txInText i
-                        , "lovelace" .= let Coin c = o ^. coinTxOutL in c
-                        , "datumCbor" .= fmap fst (inlineDatum o)
-                        , "datumHash" .= fmap snd (inlineDatum o)
-                        , "datum"
-                            .= maybe
-                                (toJSON ([] :: [Value]))
-                                ((\(cbor, h) -> toJSON [cbor, h]) . bimap hexT hexT)
-                                (txOutDatum o)
-                        ]
-                    | (i, o) <- outs
-                    ]
-                application = case appDecoder app of
-                    Just _ -> case keyOutput of
-                        Right ((i, o), dh) ->
-                            object
-                                ( [ "output" .= txInText i
-                                  , "envelope" .= dhDatumJson dh
-                                  ]
-                                    <> [ Key.fromText name .= printed
-                                       | (name, printed) <- payloadFields (dhPayload dh)
-                                       ]
-                                    <> [ "deposit" .= dhDeposit dh
-                                       , "controller" .= hexT (dhController dh)
-                                       , "lovelace" .= let Coin c = o ^. coinTxOutL in c
-                                       , "datumCbor" .= fmap fst (inlineDatum o)
-                                       , "datumHash" .= fmap snd (inlineDatum o)
-                                       ]
+            withStandingOnFailure (savedApplicationPin saved) $ do
+                point <- Cage.tip v
+                reconciled <- case mJournal of
+                    Just dir -> reconcileLocked dir (reconcile app "inspect" dir saved v)
+                    Nothing -> pure Nothing
+                live <- attachLive v saved
+                state <- case extractCageDatum (snd (liveState live)) of
+                    Just (StateDatum found) -> pure found
+                    _ ->
+                        failWith Partial "the registry's state output carries no state datum"
+                let root = unOnChainRoot (stateRoot state)
+                context <- requireTrieSelection saved live
+                leaf <- trieLeaf context key root
+                outs <- liveOutputs app v saved
+                requests <-
+                    Cage.outputsAt
+                        v
+                        (requestAddrFromCfg (savedCfg saved) (savedToken saved) Testnet)
+                listed <- case inspectOutputsAt a of
+                    Nothing -> pure []
+                    Just text -> do
+                        addr <-
+                            either
+                                (failWith ClientRefusal . replaceFlag)
+                                pure
+                                (parseEnterpriseAddress magic text)
+                        os <- Cage.outputsAt v addr
+                        pure
+                            [
+                                ( "outputsAt"
+                                , object
+                                    [ "address" .= T.pack text
+                                    , "outputs" .= [outputJson i o | (i, o) <- os]
+                                    ]
                                 )
-                        Left why ->
+                            ]
+                scope <- sessionReceipt caps v
+                let holdings = holdingsFor app saved key outs
+                    keyOutput = liveOutputFor app saved key outs
+                entries <- case mJournal of
+                    Just dir -> readJournal dir
+                    Nothing -> pure []
+                let pending = unresolved entries
+                let pendingOuts = sortOn fst (findRequestUtxos (savedToken saved) requests)
+                    -- what the read found, reported once its read step closes
+                    findings =
+                        ( []
+                        , RegistrySeen
+                            (txInText (fst (liveState live)))
+                            (hexT root)
+                            (Just (length pendingOuts))
+                        )
+                            : [ ( [InKey key]
+                                , KeySeen
+                                    key
+                                    (leafName l)
+                                    (either (const Nothing) (Just . txInText . fst . fst) keyOutput)
+                                )
+                              | Right l <- [leaf]
+                              ]
+                                <> [ ( [InRequest (txInText i)]
+                                     , RequestSeen
+                                        (txInText i)
+                                        (T.pack (edgeName (requestEdge r)))
+                                        (requestKey r)
+                                        Nothing
+                                        Nothing
+                                     )
+                                   | (i, o) <- pendingOuts
+                                   , Just (RequestDatum r) <- [extractCageDatum o]
+                                   ]
+                let chainPoint = renderPoint point
+                    rawDatums =
+                        [ object
+                            [ "output" .= txInText i
+                            , "lovelace" .= let Coin c = o ^. coinTxOutL in c
+                            , "datumCbor" .= fmap fst (inlineDatum o)
+                            , "datumHash" .= fmap snd (inlineDatum o)
+                            , "datum"
+                                .= maybe
+                                    (toJSON ([] :: [Value]))
+                                    ((\(cbor, h) -> toJSON [cbor, h]) . bimap hexT hexT)
+                                    (txOutDatum o)
+                            ]
+                        | (i, o) <- outs
+                        ]
+                    application = case appDecoder app of
+                        Just _ -> case keyOutput of
+                            Right ((i, o), dh) ->
+                                object
+                                    ( [ "output" .= txInText i
+                                      , "envelope" .= dhDatumJson dh
+                                      ]
+                                        <> [ Key.fromText name .= printed
+                                           | (name, printed) <- payloadFields (dhPayload dh)
+                                           ]
+                                        <> [ "deposit" .= dhDeposit dh
+                                           , "controller" .= hexT (dhController dh)
+                                           , "lovelace" .= let Coin c = o ^. coinTxOutL in c
+                                           , "datumCbor" .= fmap fst (inlineDatum o)
+                                           , "datumHash" .= fmap snd (inlineDatum o)
+                                           ]
+                                    )
+                            Left why ->
+                                object
+                                    [ "absent" .= T.pack why
+                                    , "holdings" .= map (txInText . fst . fst) holdings
+                                    ]
+                        Nothing ->
                             object
-                                [ "absent" .= T.pack why
+                                [ "rawDatums" .= rawDatums
                                 , "holdings" .= map (txInText . fst . fst) holdings
                                 ]
-                    Nothing ->
-                        object
-                            [ "rawDatums" .= rawDatums
-                            , "holdings" .= map (txInText . fst . fst) holdings
-                            ]
-                labels =
-                    [("stateToken", toJSON (renderStateToken requested))]
-                        <> registryFields magic requested
-                        <> keyFields key
-                        <> [ ("sessionEvidence", scope)
-                           , ("observedTip", toJSON chainPoint)
-                           ,
-                               ( "mechanism"
-                               , toJSON ("Koios raw facts through the shared HTTP transport" :: Text)
-                               )
-                           ,
-                               ( "freshness"
-                               , toJSON ("Latest reads in this process; no snapshot binding" :: Text)
-                               )
-                           , ("root", toJSON (hexT root))
-                           , ("processTime", toJSON (stateProcessTime state))
-                           , ("retractTime", toJSON (stateRetractTime state))
-                           , ("applicationOutput", application)
-                           ]
-                        <> [
-                               ( "pendingRequests"
-                               , toJSON
-                                    ( map
-                                        pendingJson
-                                        pendingOuts
-                                    )
-                               )
-                           ]
-                        <> listed
-                        <> case mJournal of
-                            Just _ -> reconciledFields reconciled
-                            Nothing ->
-                                [
-                                    ( "reconciliation"
-                                    , toJSON ("stateless public read: no wallet journal checked" :: Text)
-                                    )
-                                ]
-                agrees = case appHolding app of
-                    Nothing -> const True
-                    Just _ -> \case
-                        Active -> length holdings == 1
-                        _ -> null holdings
-            pure . (,) findings $ case (pending, leaf) of
-                (Just e, _) ->
-                    receipt
-                        "inspect"
-                        Partial
-                        ( labels
+                    labels =
+                        [("stateToken", toJSON (renderStateToken requested))]
+                            <> registryFields magic requested
+                            <> keyFields key
+                            <> standingFields (savedApplicationPin saved)
+                            <> [ ("sessionEvidence", scope)
+                               , ("observedTip", toJSON chainPoint)
+                               ,
+                                   ( "mechanism"
+                                   , toJSON ("Koios raw facts through the shared HTTP transport" :: Text)
+                                   )
+                               ,
+                                   ( "freshness"
+                                   , toJSON ("Latest reads in this process; no snapshot binding" :: Text)
+                                   )
+                               , ("root", toJSON (hexT root))
+                               , ("processTime", toJSON (stateProcessTime state))
+                               , ("retractTime", toJSON (stateRetractTime state))
+                               , ("applicationOutput", application)
+                               ]
                             <> [
-                                   ( "unresolved"
-                                   , object
-                                        [ "tx" .= journalTxId e
-                                        , "step" .= journalStep e
-                                        , "lastPhase" .= journalEvent e
-                                        , "case" .= (caseName <$> submissionCase entries (journalTxId e))
-                                        , "status" .= ("uncertain" :: Text)
-                                        ]
+                                   ( "pendingRequests"
+                                   , toJSON
+                                        ( map
+                                            pendingJson
+                                            pendingOuts
+                                        )
                                    )
                                ]
-                        )
-                (Nothing, Left err@(RootMismatch _ _)) ->
-                    receipt
-                        "inspect"
-                        StaleState
-                        ( labels
-                            <> [("refusal", toJSON (renderAuthError err))]
-                            <> authErrorFields err
-                        )
-                (Nothing, Left err) ->
-                    receipt
-                        "inspect"
-                        ProofInconsistent
-                        ( labels
-                            <> [("refusal", toJSON (renderAuthError err))]
-                            <> authErrorFields err
-                        )
-                (Nothing, Right l)
-                    | agrees l ->
-                        receipt "inspect" Success (labels <> [("leaf", toJSON (leafName l))])
-                    | otherwise ->
+                            <> listed
+                            <> case mJournal of
+                                Just _ -> reconciledFields reconciled
+                                Nothing ->
+                                    [
+                                        ( "reconciliation"
+                                        , toJSON ("stateless public read: no wallet journal checked" :: Text)
+                                        )
+                                    ]
+                    agrees = case appHolding app of
+                        Nothing -> const True
+                        Just _ -> \case
+                            Active -> length holdings == 1
+                            _ -> null holdings
+                pure . (,) findings $ case (pending, leaf) of
+                    (Just e, _) ->
+                        receipt
+                            "inspect"
+                            Partial
+                            ( labels
+                                <> [
+                                       ( "unresolved"
+                                       , object
+                                            [ "tx" .= journalTxId e
+                                            , "step" .= journalStep e
+                                            , "lastPhase" .= journalEvent e
+                                            , "case" .= (caseName <$> submissionCase entries (journalTxId e))
+                                            , "status" .= ("uncertain" :: Text)
+                                            ]
+                                       )
+                                   ]
+                            )
+                    (Nothing, Left err@(RootMismatch _ _)) ->
+                        receipt
+                            "inspect"
+                            StaleState
+                            ( labels
+                                <> [("refusal", toJSON (renderAuthError err))]
+                                <> authErrorFields err
+                            )
+                    (Nothing, Left err) ->
                         receipt
                             "inspect"
                             ProofInconsistent
                             ( labels
-                                <> [
-                                       ( "refusal"
-                                       , toJSON
-                                            ( "the proven leaf and this registry's holdings of the key disagree: "
-                                                <> leafName l
-                                                <> " with "
-                                                <> T.pack (show (length holdings))
-                                                <> " holding(s)"
-                                            )
-                                       )
-                                   ]
+                                <> [("refusal", toJSON (renderAuthError err))]
+                                <> authErrorFields err
                             )
+                    (Nothing, Right l)
+                        | agrees l ->
+                            receipt "inspect" Success (labels <> [("leaf", toJSON (leafName l))])
+                        | otherwise ->
+                            receipt
+                                "inspect"
+                                ProofInconsistent
+                                ( labels
+                                    <> [
+                                           ( "refusal"
+                                           , toJSON
+                                                ( "the proven leaf and this registry's holdings of the key disagree: "
+                                                    <> leafName l
+                                                    <> " with "
+                                                    <> T.pack (show (length holdings))
+                                                    <> " holding(s)"
+                                                )
+                                           )
+                                       ]
+                                )
     case reached of
         Right (findings, v) -> do
             mapM_ (uncurry (report (envTracer registryEnv))) findings

@@ -223,7 +223,10 @@ import Singular.Provider.Koios.Runtime (newIORuntime)
 import Singular.Provider.Koios.Scripted (koiosWith)
 import Singular.Provider.Koios.Wire (Body (..))
 import Singular.Provider.Koios.Wire qualified as Wire
-import Singular.Registry.Application (DecodedHolding (..))
+import Singular.Registry.Application
+    ( ApplicationPinStanding (..)
+    , DecodedHolding (..)
+    )
 import Singular.Registry.AssetName (deriveAssetName)
 import Singular.Registry.Capabilities (Capabilities (..))
 import Singular.Registry.Config
@@ -1252,6 +1255,7 @@ withSyntheticSavedRegistry publishHistory story =
                     Booking.codes
                     tid
                     []
+                    ApplicationPinNotChecked
             expectation = "active:" <> hexT (envelopeHash envelope)
             serve addr
                 | addr == cageAddrFromCfg cfg Testnet =

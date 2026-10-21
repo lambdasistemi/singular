@@ -225,7 +225,11 @@ summaryOf bundle tx =
         <> " signer addresses"
         <> maybe
             ""
-            (\token -> ", registry " <> Text.unpack token)
+            ( \token ->
+                ", registry "
+                    <> Text.unpack token
+                    <> " (the name is the bundle writer's statement; submit is where the bundle meets the chain)"
+            )
             (bundleStateToken bundle)
     )
         : map (("  effect: " <>) . Text.unpack) (bundleTxEffects tx)

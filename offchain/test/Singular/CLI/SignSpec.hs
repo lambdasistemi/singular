@@ -326,6 +326,26 @@ theFileEffects = describe "the file effects" $ do
                 forM_ expectedPaths $ \path -> do
                     bytes <- BS.readFile path
                     bytes `shouldNotSatisfy` (secret `BS.isInfixOf`)
+    it
+        "says on standard error that a registry the bundle names is its writer's statement, checked by submit"
+        $ withSystemTempDirectory "sign-registry-name"
+        $ \dir -> do
+            key <- freshSignKey
+            vault <- makeVault dir key
+            let named = Text.replicate 56 "a" <> "." <> Text.replicate 64 "b"
+                bundle =
+                    (bundleWithSigners [Text.pack (vaultAddressOf key)])
+                        { bundleStateToken = Just named
+                        }
+                bundlePath = dir </> "bundle.json"
+            BS.writeFile bundlePath (encodeBundle bundle)
+            (exit, _, err) <-
+                withCapture dir . withPassphraseSource dir $ \source ->
+                    signBundle bundlePath vault source (Just (dir </> "witnesses"))
+            exit `shouldBe` ExitSuccess
+            err `shouldSatisfy` isInfixOf (Text.unpack named)
+            err `shouldSatisfy` isInfixOf "the bundle writer's statement"
+            err `shouldSatisfy` isInfixOf "submit"
     it "writes next to the bundle when no directory is named" $
         withSystemTempDirectory "sign-beside" $ \dir -> do
             key <- freshSignKey

@@ -119,6 +119,7 @@ test-suite open-datum-tests
     Singular.Application.OpenDatum.SaveStateTokenSpec
     Singular.Application.OpenDatum.SourcesSpec
     Singular.Application.OpenDatum.ClosedModeSpec
+    Singular.Application.OpenDatum.PinGateSpec
     Singular.Application.OpenDatum.ApplicationSpec
     Singular.Application.OpenDatum.NeutralValueSpec
     Singular.Application.OpenDatum.NegativeParseSpec

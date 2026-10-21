@@ -1,4 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {- |
 Module      : Singular.CLI.Live
@@ -15,6 +17,9 @@ module Singular.CLI.Live
     ( -- * The saved registry
       Saved (..)
     , resolveSaved
+    , standingFields
+    , stampStanding
+    , withStandingOnFailure
 
       -- * Attached to the chain
     , Live (..)
@@ -46,8 +51,16 @@ module Singular.CLI.Live
     , applied
     ) where
 
-import Data.Aeson (Value, object, (.=))
+import Control.Exception
+    ( SomeException
+    , catch
+    , fromException
+    , throwIO
+    , toException
+    )
+import Data.Aeson (Value (..), object, toJSON, (.=))
 import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.ByteString (ByteString)
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Char8 qualified as BC
@@ -83,7 +96,13 @@ import Cardano.Ledger.Mary.Value
 import Cardano.Ledger.TxIn (TxIn)
 
 import Singular.CLI.Command (RegistryAccess (..))
-import Singular.CLI.Failure (failWith, failWithFields)
+import Singular.CLI.Failure
+    ( CommandFailure (..)
+    , failWith
+    , failWithFields
+    , markedLike
+    , reportedOf
+    )
 import Singular.CLI.Proof qualified as Proof
 import Singular.CLI.Receipt (OutcomeClass, outcomeName)
 import Singular.CLI.Receipt qualified as Receipt
@@ -91,8 +110,10 @@ import Singular.CLI.Registry (Release (..), hexT)
 import Singular.CLI.TrieTrace (observeTrie)
 import Singular.Registry.Application
     ( Application (..)
+    , ApplicationPinStanding
     , DecodedHolding (..)
     , HoldingRules (..)
+    , renderApplicationPinStanding
     )
 import Singular.Registry.Blueprint (NamingCodes (..))
 import Singular.Registry.Config (CageConfig (..))
@@ -142,6 +163,10 @@ data Saved = Saved
     , savedToken :: TokenId
     , savedRefs :: [(TxIn, TxOut ConwayEra)]
     -- ^ The reference outputs found for the roles the command runs
+    , savedApplicationPin :: ApplicationPinStanding
+    {- ^ Whether the resolution compared the application pin with the
+    datum's: the one fact the receipts say about it
+    -}
     }
 
 -- | The applied application script of a saved registry.
@@ -159,6 +184,11 @@ data Live = Live
 {- | The registry's current state output, read again from this session: the
 output that holds the state token at the state address. The references are
 the ones the resolution found.
+
+The pins of the datum are not compared again here: every fold preserves the
+four pinned policies on chain (the state validator refuses a fold that alters
+one, by the name pins-altered), so the comparison made when the command
+resolved its registry holds for every later read of the state output.
 -}
 attachLive :: Cage.Session Cage.NoWitness IO -> Saved -> IO Live
 attachLive view s = do
@@ -449,4 +479,51 @@ resolveSaved app dir release access roles wallet view = do
             , savedCodes = resolvedCodes resolved
             , savedToken = TokenId name
             , savedRefs = Map.elems found
+            , savedApplicationPin = resolvedApplicationPin resolved
             }
+
+{- | The receipt field that says whether the application pin was compared
+with the datum's, for a command that resolved a registry: once, under one
+name, whatever the command prints.
+-}
+standingFields :: ApplicationPinStanding -> [(Text, Value)]
+standingFields standing =
+    [("applicationPin", toJSON (renderApplicationPinStanding standing))]
+
+{- | Run what follows a registry's resolution so that a refusal of it names the
+application pin's standing as a success does: the command resolved a registry,
+and every receipt it prints says so, once. The refusal keeps its mark of
+having been reported.
+-}
+withStandingOnFailure :: ApplicationPinStanding -> IO a -> IO a
+withStandingOnFailure standing act =
+    act `catch` \(e :: SomeException) -> case fromException e of
+        Just (CommandFailure outcome why fields) ->
+            throwIO
+                ( markedLike
+                    (fst (reportedOf e))
+                    ( toException
+                        ( CommandFailure
+                            outcome
+                            why
+                            ( filter ((/= "applicationPin") . fst) fields
+                                <> standingFields standing
+                            )
+                        )
+                    )
+                )
+        Nothing -> throwIO e
+
+{- | A printed receipt with the standing of the application pin in it, once:
+an object takes the field, any other value is left as it is.
+-}
+stampStanding :: ApplicationPinStanding -> Value -> Value
+stampStanding standing = \case
+    Object o ->
+        Object
+            ( foldr
+                (\(k, v) -> KeyMap.insert (Key.fromText k) v)
+                o
+                (standingFields standing)
+            )
+    other -> other

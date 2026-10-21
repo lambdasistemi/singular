@@ -18,6 +18,7 @@ import Singular.Application.OpenDatum.NegativeParseSpec qualified
 import Singular.Application.OpenDatum.NeutralValueSpec qualified
 import Singular.Application.OpenDatum.OutlaySpec qualified
 import Singular.Application.OpenDatum.ParserCorpusSpec qualified
+import Singular.Application.OpenDatum.PinGateSpec qualified
 import Singular.Application.OpenDatum.RecoverySpec qualified
 import Singular.Application.OpenDatum.RegistryAddressSpec qualified
 import Singular.Application.OpenDatum.RegistryStateTokenSpec qualified
@@ -113,6 +114,9 @@ main = hspec $ do
     describe
         (tagged "Singular.Application.OpenDatum.ClosedMode" [Cli])
         Singular.Application.OpenDatum.ClosedModeSpec.spec
+    describe
+        (tagged "Singular.Application.OpenDatum.PinGate" [Cli])
+        Singular.Application.OpenDatum.PinGateSpec.spec
     describe
         (tagged "Singular.Application.OpenDatum.Trace" [Cli])
         Singular.Application.OpenDatum.TraceSpec.spec

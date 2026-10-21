@@ -1000,6 +1000,7 @@ test-suite cage-tests
     Singular.CLI.OneOutputCreateSpec
     Singular.CLI.PayloadSpec
     Singular.CLI.PrepareSpec
+    Singular.CLI.PinGateSpec
     Singular.CLI.PrintedPayloadSpec
     Singular.CLI.RegistryAddressSpec
     Singular.CLI.FailureSentenceSpec

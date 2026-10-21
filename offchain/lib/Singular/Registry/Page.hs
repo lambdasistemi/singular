@@ -54,7 +54,9 @@ import Text.Read (readMaybe)
 -- Release
 -- ---------------------------------------------------------
 
--- | The release the page names: the archive's own claims.
+{- | The release the page names: the archive's own claims, never a value read
+from the registry's datum.
+-}
 data ReleaseInfo = ReleaseInfo
     { releaseVersion :: Text
     -- ^ The label from @version.txt@ beside the blueprint
@@ -62,8 +64,6 @@ data ReleaseInfo = ReleaseInfo
     -- ^ The blueprint preamble title
     , releaseBlueprintSha :: Text
     -- ^ Hex SHA-256 over the blueprint file bytes
-    , releaseApplicationHash :: Text
-    -- ^ The applied application script hash the registry runs
     }
     deriving stock (Eq, Show)
 
@@ -142,8 +142,14 @@ data PageInputs = PageInputs
     , pageStateOutput :: Text
     -- ^ The live state output holding the token
     , pageStateScript :: Text
-    -- ^ The five script hashes the release derives, hex
+    {- ^ The state script hash the release derives, and the four policies the
+    registry's datum pins, each hex
+    -}
     , pageApplicationScript :: Text
+    , pageApplicationPin :: Text
+    {- ^ What the resolution knew of the application pin: compared, or not
+    checked against any blueprint
+    -}
     , pageActiveScript :: Text
     , pageAbsentScript :: Text
     , pageTerminalScript :: Text
@@ -221,6 +227,7 @@ renderPageJson (Page inputs links) =
                 , "stateOutput" .= pageStateOutput inputs
                 , "stateScript" .= pageStateScript inputs
                 , "applicationScript" .= pageApplicationScript inputs
+                , "applicationPin" .= pageApplicationPin inputs
                 , "activeScript" .= pageActiveScript inputs
                 , "absentScript" .= pageAbsentScript inputs
                 , "terminalScript" .= pageTerminalScript inputs
@@ -230,7 +237,6 @@ renderPageJson (Page inputs links) =
                 [ "version" .= releaseVersion (pageRelease inputs)
                 , "blueprintTitle" .= releaseBlueprintTitle (pageRelease inputs)
                 , "blueprintSha" .= releaseBlueprintSha (pageRelease inputs)
-                , "applicationHash" .= releaseApplicationHash (pageRelease inputs)
                 , "releaseUrl" .= linkRelease links
                 , "docsUrl" .= linkDocs links
                 ]

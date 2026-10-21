@@ -1,0 +1,70 @@
+{
+  "application-pin-standing": [
+    {
+      "text": "Application pin standing.",
+      "pause": 500
+    },
+    {
+      "text": "What the gate knows of the application pin after resolving a registry. Exactly one of:",
+      "pause": 400
+    },
+    {
+      "text": "compared: the application derived its pin and the datum's pin equals it.",
+      "pause": 300
+    },
+    {
+      "text": "not checked against any blueprint: the pin was taken from the datum because the program cannot derive it.",
+      "pause": 300
+    },
+    {
+      "text": "A resolved registry carries it. A pin form that carries a script, a compiled script or a hash is always compared; only a pin taken from the datum is not.",
+      "pause": 400
+    }
+  ],
+  "where-the-standing-is-printed": [
+    {
+      "text": "Where the standing is printed.",
+      "pause": 500
+    },
+    {
+      "text": "Every receipt of a command that resolved a registry carries the standing in a field named applicationPin with the text compared or not-checked-against-any-blueprint, once.",
+      "pause": 300
+    },
+    {
+      "text": "The describe page carries it beside the application policy among the registry's pinned policies, and its release block no longer holds an application hash.",
+      "pause": 300
+    }
+  ],
+  "refusals": [
+    {
+      "text": "Refusals.",
+      "pause": 500
+    },
+    {
+      "text": "The existing refusal registry-pin-mismatch FIELD keeps its name and its field spellings. For a program with several candidate applications and a datum matching none, the field is application and the text says the datum's policy differs from every application policy the program derives.",
+      "pause": 300
+    },
+    {
+      "text": "A create whose read-back datum differs from what it built is the partial outcome and names the field, with the words of the existing refusal.",
+      "pause": 300
+    },
+    {
+      "text": "A submit refusal for a bundle that names no registry, and one for a bundle that names a registry when no release is given, each with its own name.",
+      "pause": 300
+    }
+  ],
+  "unchanged": [
+    {
+      "text": "Unchanged.",
+      "pause": 500
+    },
+    {
+      "text": "The bundle (its registry name stays an optional text), the state datum, the configuration, the receipts' other fields, exit statuses for honest registries.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "d9ed69e778a788843c551059d2d9f1fc1495d278efd9c47881d23f3071cc895e"
+  }
+}

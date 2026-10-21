@@ -729,7 +729,7 @@ archiveHeight devnet =
 bundleOf :: Context -> [ConwayTx] -> Bundle
 bundleOf _ bodies =
     Bundle
-        { bundleCommand = "registry fold"
+        { bundleCommand = "create"
         , bundleNetworkMagic = 42
         , bundleStateToken = Nothing
         , bundleSigners = signerOf genesisSignKey :| []

@@ -2,8 +2,8 @@ singular VERSION (commit unknown)
 
 Usage: singular submit [--config FILE] --witnesses FILE --koios-url URL
        --network-magic N [--koios-token-file FILE] [--network-time DIR]
-       [--receipt FILE] [--trace LEVEL] [--trace-to SINK] [--trace-format
-       FORMAT] BUNDLE
+       [--blueprint FILE] [--receipt FILE] [--trace LEVEL] [--trace-to SINK]
+       [--trace-format FORMAT] BUNDLE
 
 Send a signed bundle, print its receipt
 
@@ -12,6 +12,14 @@ of a directory, is matched to a transaction by its signature, and every check
 runs before the first send: a witness for no transaction or for a key no
 transaction needs, a missing witness, an input found nowhere and a body the
 tip has expired (rebuild the bundle) are refused by name.
+
+A bundle that names a registry is checked against it before the first send:
+give the release it was created under with --blueprint, and the registry's
+pinned policies must be the ones that release derives, or the bundle is
+refused naming the policy that differs. A bundle that names no registry is
+refused, unless it is a create bundle, which needs no release. The registry
+name in a bundle is its writer's statement: this checks the registry it names,
+not that the transactions act on it.
 
 The transactions the chain does not hold are sent in the bundle's order, each
 confirmed before the next; an uncertain answer stops the run as partial and
@@ -61,6 +69,13 @@ Available settings:
     network-time: # or null
       <string>
   default: the preprod recording packaged with the program
+
+  The compiled validators (plutus.json) of the release.
+  option: --blueprint FILE
+  env: SINGULAR_BLUEPRINT FILE
+  config:
+    blueprint: # or null
+      <string>
 
   Also write the JSON receipt to FILE.
   option: --receipt FILE
@@ -113,6 +128,7 @@ Environment:
 
 Example:
   singular submit bundle.json --witnesses witnesses \
+      --blueprint plutus.json \
       --koios-url https://preprod.koios.rest/api/v1 --network-magic 1
 
   With those settings in singular.json instead:

@@ -55,6 +55,11 @@ module Singular.Registry.Application
 
       -- * Deriving from a pin
     , applyPin
+
+      -- * What was compared
+    , ApplicationPinStanding (..)
+    , applicationPinStanding
+    , renderApplicationPinStanding
     ) where
 
 import Control.Monad (unless, when)
@@ -346,3 +351,31 @@ datumFromJson = \case
             v <- datumFromJson =<< field "v" e
             pure (k, v)
         _ -> Left "a map entry is a JSON object"
+
+{- | What a resolution knows of the application pin. A form that carries a
+script, a compiled script or a hash is compared with the registry's
+datum; the pin read from the state datum is the datum's own and is
+compared with nothing.
+-}
+data ApplicationPinStanding
+    = -- | The application derived its pin and the datum's pin equals it
+      ApplicationPinCompared
+    | -- | The pin was taken from the datum: no blueprint was asked
+      ApplicationPinNotChecked
+    deriving stock (Eq, Show)
+
+{- | The standing of the application pin for a pin form: every form that
+knows its own script is compared, only the pin read from state is not.
+-}
+applicationPinStanding :: ApplicationPin -> ApplicationPinStanding
+applicationPinStanding = \case
+    PinFromState -> ApplicationPinNotChecked
+    PinByHash _ -> ApplicationPinCompared
+    PinByScript _ -> ApplicationPinCompared
+    PinAsCompiled _ -> ApplicationPinCompared
+
+-- | The standing as receipts and the registry page spell it.
+renderApplicationPinStanding :: ApplicationPinStanding -> Text
+renderApplicationPinStanding = \case
+    ApplicationPinCompared -> "compared"
+    ApplicationPinNotChecked -> "not-checked-against-any-blueprint"

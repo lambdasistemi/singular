@@ -237,6 +237,40 @@
       "pause": 400
     }
   ],
+  "reading-a-registry-what-each-layer-guarantees": [
+    {
+      "text": "Reading a registry: what each layer guarantees.",
+      "pause": 500
+    },
+    {
+      "text": "Mallory creates a genuine registry: a real state token, minted by the real contract. Its datum pins an active policy of her own, and she mints alice under that policy with a payload she chose. Bob is handed the registry's address. A program that reads the datum and believes what it pins shows Bob Mallory's alice. A program that first derives the policies the application pins for this registry and compares them with the datum's refuses the registry before it shows anything, and says which pinned policy is not the one it derived.",
+      "pause": 400
+    },
+    {
+      "text": "Each layer guarantees one thing, and a reader needs all three:",
+      "pause": 400
+    },
+    {
+      "text": "Creation does not check the pins. They are chosen freely at boot, and the witness policy at minting checks only that its registry's state token is spent. A token under a registry's pinned active policy therefore means nothing until a reader has compared the pins with its own derivation.",
+      "pause": 400
+    },
+    {
+      "text": "A reader MUST compare a registry's pinned policies with the policies it derives, and MUST do so before it shows any fact about the registry or builds any transaction for it. The three witness policies are the blueprint's witness script applied to the registry's identity, which is the state policy followed by the token name. An application that knows its own script, whether it states it as a blueprint title applied to the registry, as a compiled script or as a hash, MUST also compare the application policy. A program that cannot derive the application policy, because it is told only the registry, takes it from the datum, MUST compare the other three, and MUST say wherever it shows registry content that the application policy was not checked against any blueprint.",
+      "pause": 400
+    },
+    {
+      "text": "The pinned policies are compared when the registry is resolved, and not again inside the same run. That is enough because every fold preserves them on chain: the state contract refuses a fold that alters one, so a later read of the state output in the same run carries the pins the comparison already accepted.",
+      "pause": 400
+    },
+    {
+      "text": "A reader that trusts the datum instead is shown whatever the registry's creator pinned. An always-true active policy lets its creator mint a token named after any key, with any payload, and the registry's own contracts then fold it. The counts, roots and leaves such a reader prints stay consistent with the chain, because the registry is genuine; they say nothing about whether its tokens mean anything to the application.",
+      "pause": 400
+    },
+    {
+      "text": "The comparison protects the programs that run it. Another program that reads the chain MUST run the same comparison, and this page is where it learns that. Making the pins unforgeable at creation is a change to the contracts and is not part of this specification yet.",
+      "pause": 400
+    }
+  ],
   "acceptance-scenarios": [
     {
       "text": "Acceptance scenarios.",
@@ -277,6 +311,6 @@
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "479f5acda9e66deb3b6ddf69b5cebe54dd07dd19e011a6f6f4bc259074f286a4"
+    "sha256": "1fddea1efb1a6294c2d991664cb3c25e88a93f4ad440ed147856c49324394037"
   }
 }

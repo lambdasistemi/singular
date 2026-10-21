@@ -36,6 +36,8 @@ module Singular.Registry.StateToken
     , PinField (..)
     , IdentityRefusal (..)
     , resolveRegistry
+    , resolveRegistryAmong
+    , pinsDifference
     , findStateOutput
     , renderIdentityRefusal
 
@@ -53,8 +55,11 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
 import Data.List (minimumBy)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty qualified as NE
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (listToMaybe)
 import Data.Ord (comparing)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -92,6 +97,8 @@ import Cardano.Ledger.TxIn (TxId, TxIn (..))
 import Singular.Registry.Application
     ( Application (..)
     , ApplicationPin (..)
+    , ApplicationPinStanding
+    , applicationPinStanding
     , applyPin
     )
 import Singular.Registry.AssetName (deriveAssetName)
@@ -274,6 +281,10 @@ data ResolvedRegistry = ResolvedRegistry
     , resolvedExpected :: Map ReferenceRole ScriptHash
     , resolvedNetwork :: Network
     -- ^ The provider session's network
+    , resolvedApplicationPin :: ApplicationPinStanding
+    {- ^ Whether the application pin was compared with the datum's: every
+    pin form that knows its script is, the pin read from state is not
+    -}
     }
 
 -- | Why a state token is not a registry of this release, in checking order.
@@ -290,6 +301,11 @@ data IdentityRefusal
       StateOutputMissing
     | -- | A datum pin differs from the hash the release and token derive
       RegistryPinMismatch PinField
+    | {- | The datum's application pin differs from the one every candidate
+      application derives: the program derives several and the datum
+      matches none of them
+      -}
+      RegistryPinMismatchEvery
     | -- | The provider's network is not the release's
       NetworkMismatch Network
     | -- | The provider could not be read; no identity fact was decided
@@ -297,9 +313,12 @@ data IdentityRefusal
     deriving stock (Eq, Show)
 
 {- | Resolve a state token into a registry, refusing by name in the checking
-order. No file is read. The application pin is compared with the state
-datum only for a script pin; a pin read from state is taken from the
-datum, and the three witness pins are compared as always.
+order. No file is read. Every pin form that knows its own script, whether
+it states it as a blueprint title applied to the registry, as a compiled
+script or as a hash, compares the application pin as well as the three
+witness pins. A pin read from state is the datum's own: only the three
+witness pins are compared, and the registry says the application pin was
+not checked.
 -}
 resolveRegistry
     :: (Monad m)
@@ -308,11 +327,34 @@ resolveRegistry
     -> Asset
     -> Session w m
     -> m (Either IdentityRefusal ResolvedRegistry)
-resolveRegistry app release token@(PolicyID policy, AssetName name) session =
+resolveRegistry app release token session =
+    fmap fst <$> resolveRegistryAmong ((app, release) :| []) token session
+
+{- | Resolve a state token for a program that derives several applications
+from one registry: the identity is read once, and the candidate whose
+derivation the datum's application pin equals is the one compared with
+every pin and returned with the registry. A datum whose application pin is
+every candidate's mismatch is refused naming the application; a datum that
+matches one candidate's application pin and differs from it in another pin
+is refused naming that pin.
+-}
+resolveRegistryAmong
+    :: (Monad m)
+    => NonEmpty (Application, Release)
+    -> Asset
+    -> Session w m
+    -> m
+        ( Either
+            IdentityRefusal
+            (ResolvedRegistry, (Application, Release))
+        )
+resolveRegistryAmong candidates token@(PolicyID policy, AssetName name) session =
     runExceptT $ do
-        let stateHash = computeScriptHash (releaseState release)
-        when (policy /= stateHash) $
-            throwError (StateTokenForeignRelease stateHash)
+        let ofThisRelease =
+                NE.filter ((== policy) . stateHashOf) candidates
+        when (null ofThisRelease) $
+            throwError
+                (StateTokenForeignRelease (stateHashOf (NE.head candidates)))
         record <-
             readFact (mintRecord session token)
                 >>= maybe (throwError StateTokenNotFound) pure
@@ -322,52 +364,105 @@ resolveRegistry app release token@(PolicyID policy, AssetName name) session =
             case filter derivesName (mintSpentInputs record) of
                 found : _ -> pure found
                 [] -> throwError (StateTokenSeedMismatch (mintTransaction record))
-        (stateRef, stateOut, datum) <- ExceptT (findStateOutput token session)
-        effectivePin <- case appPin app of
-            PinFromState ->
-                pure (PinByHash (SBS.toShort (stateAppPolicyBytes datum)))
-            pin -> pure pin
-        let (cfg, codes) =
-                configForApplication
-                    effectivePin
-                    (releaseCodes release)
-                    (releaseState release)
-                    (releaseRequest release)
-                    RegistryEconomics
-                        { reProcessTime = stateProcessTime datum
-                        , reRetractTime = stateRetractTime datum
-                        , reTip = Coin (stateMaxFee datum)
-                        }
-                    Ledger.Testnet
-                    (txInToRef seed)
-        forM_ checkFields $ \field ->
-            when (datumPin field datum /= SBS.fromShort (configPin field cfg)) $
-                throwError (RegistryPinMismatch field)
+        found <- ExceptT (findStateOutput token session)
         let network = sessionNetwork session
-        when (ledgerNetwork network /= Ledger.Testnet) $
-            throwError (NetworkMismatch network)
-        pure
-            ResolvedRegistry
-                { resolvedToken = token
-                , resolvedSeed = seed
-                , resolvedCreation = mintTransaction record
-                , resolvedState = (stateRef, stateOut)
-                , resolvedDatum = datum
-                , resolvedConfig = cfg
-                , resolvedCodes = codes
-                , resolvedExpected = expectedReferences effectivePin release token
-                , resolvedNetwork = network
-                }
+            attempts =
+                [ (candidate, deriveRegistry candidate)
+                | candidate <- ofThisRelease
+                ]
+            deriveRegistry =
+                derivedRegistry token record seed found network
+        case [(registry, candidate) | (candidate, Right registry) <- attempts] of
+            chosen : _ -> pure chosen
+            [] ->
+                throwError (chosenRefusal [refusal | (_, Left refusal) <- attempts])
   where
-    -- \| The datum pins this resolution compares: the three witness pins
-    -- always, the application pin only for a script pin.
-    checkFields = case appPin app of
-        PinByScript _ -> [minBound .. maxBound]
-        _ -> [PinActive, PinAbsent, PinTerminal]
+    stateHashOf (_, release) = computeScriptHash (releaseState release)
     derivesName input = deriveAssetName (txInToRef input) == SBS.fromShort name
     readFact action =
         ExceptT
             (fmap (either (Left . IdentityUnreadable) (Right . value)) action)
+
+{- | What the identity facts and one candidate application say of a registry:
+its configuration derived from the release, every pin the application can
+derive compared with the datum's, and the network checked.
+-}
+derivedRegistry
+    :: Asset
+    -> MintRecord
+    -> TxIn
+    -> (TxIn, TxOut ConwayEra, OnChainTokenState)
+    -> Network
+    -> (Application, Release)
+    -> Either IdentityRefusal ResolvedRegistry
+derivedRegistry token record seed (stateRef, stateOut, datum) network (app, release) = do
+    let effectivePin = case appPin app of
+            PinFromState ->
+                PinByHash (SBS.toShort (stateAppPolicyBytes datum))
+            pin -> pin
+        (cfg, codes) =
+            configForApplication
+                effectivePin
+                (releaseCodes release)
+                (releaseState release)
+                (releaseRequest release)
+                RegistryEconomics
+                    { reProcessTime = stateProcessTime datum
+                    , reRetractTime = stateRetractTime datum
+                    , reTip = Coin (stateMaxFee datum)
+                    }
+                Ledger.Testnet
+                (txInToRef seed)
+    forM_ (pinsDifference cfg datum (comparedFields (appPin app))) $
+        Left . RegistryPinMismatch
+    when (ledgerNetwork network /= Ledger.Testnet) $
+        Left (NetworkMismatch network)
+    pure
+        ResolvedRegistry
+            { resolvedToken = token
+            , resolvedSeed = seed
+            , resolvedCreation = mintTransaction record
+            , resolvedState = (stateRef, stateOut)
+            , resolvedDatum = datum
+            , resolvedConfig = cfg
+            , resolvedCodes = codes
+            , resolvedExpected = expectedReferences effectivePin release token
+            , resolvedNetwork = network
+            , resolvedApplicationPin = applicationPinStanding (appPin app)
+            }
+
+{- | The refusal to report when no candidate resolved: a refusal that is not
+the application mismatch comes from a candidate whose application pin the
+datum matched, so it is the more specific; with only application
+mismatches, one candidate names the field and several say none matched.
+-}
+chosenRefusal :: [IdentityRefusal] -> IdentityRefusal
+chosenRefusal refusals =
+    case filter (/= RegistryPinMismatch PinApplication) refusals of
+        specific : _ -> specific
+        [] -> case refusals of
+            [_] -> RegistryPinMismatch PinApplication
+            _ -> RegistryPinMismatchEvery
+
+-- | The datum pins a resolution compares for a pin form, in checking order.
+comparedFields :: ApplicationPin -> [PinField]
+comparedFields = \case
+    PinFromState -> [PinActive, PinAbsent, PinTerminal]
+    _ -> [minBound .. maxBound]
+
+{- | The first of these fields, in the order given, whose datum pin differs
+from the configuration's, or none when they all agree. Pure: a command that
+creates a registry compares the datum it reads back with the pins it
+built through it.
+-}
+pinsDifference
+    :: CageConfig -> OnChainTokenState -> [PinField] -> Maybe PinField
+pinsDifference cfg datum fields =
+    listToMaybe
+        [ field
+        | field <- fields
+        , datumPin field datum /= SBS.fromShort (configPin field cfg)
+        ]
 
 {- | The output that holds the token at the state address of the token's
 policy, with its state datum. The provider's answer to who holds the token
@@ -426,6 +521,8 @@ renderIdentityRefusal = \case
             <> ": the datum's "
             <> pinName field
             <> " policy differs from the one the release derives for this token"
+    RegistryPinMismatchEvery ->
+        "registry-pin-mismatch application: the datum's application policy differs from every application policy this program derives"
     NetworkMismatch (Network magic) ->
         "network-mismatch: the provider's network (magic "
             <> T.pack (show magic)
