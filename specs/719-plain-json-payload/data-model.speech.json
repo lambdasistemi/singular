@@ -1,0 +1,72 @@
+{
+  "payload-written-as-plain-json-data": [
+    {
+      "text": "Payload written as plain JSON: data.",
+      "pause": 500
+    },
+    {
+      "text": "Fields, relationships and validation. The table of the mapping itself is in the spec; where each type lives is in the modules model.",
+      "pause": 400
+    }
+  ],
+  "types": [
+    {
+      "text": "Types.",
+      "pause": 500
+    }
+  ],
+  "relationships": [
+    {
+      "text": "Relationships.",
+      "pause": 500
+    },
+    {
+      "text": "A stored payload is a Plutus data value. The plain mapping is a partial function from JSON to data; the plain reading is a partial function from data to JSON.",
+      "pause": 300
+    },
+    {
+      "text": "Reading after mapping is the identity on accepted JSON, compared as JSON values (numbers by value, objects without order). Mapping after reading is the identity on data that has a plain reading. Together the image of the mapping and the domain of the reading are the same set.",
+      "pause": 300
+    },
+    {
+      "text": "The entry arguments carry the schema beside the payload file's path. A command with no payload file ignores it.",
+      "pause": 300
+    }
+  ],
+  "validation": [
+    {
+      "text": "Validation.",
+      "pause": 500
+    },
+    {
+      "text": "A number is accepted when its value is a whole number with at most 1000 digits. A number with a large exponent is judged by its size before it is expanded.",
+      "pause": 300
+    },
+    {
+      "text": "A text is accepted whatever it holds; it is stored as its UTF-8.",
+      "pause": 300
+    },
+    {
+      "text": "An object's keys are sorted by their UTF-8 bytes before the entries are listed.",
+      "pause": 300
+    },
+    {
+      "text": "With the plain schema a whole document that the detailed schema accepts is refused before the mapping runs.",
+      "pause": 300
+    }
+  ],
+  "state": [
+    {
+      "text": "State.",
+      "pause": 500
+    },
+    {
+      "text": "None. No file, journal entry or on-chain value gains a field.",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "data-model.md",
+    "sha256": "93427b0c69fe8dab2806f6a9f3d496e681ad9a52bd6f77a868ca9077bfa089e5"
+  }
+}

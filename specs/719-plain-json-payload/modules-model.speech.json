@@ -1,0 +1,42 @@
+{
+  "payload-written-as-plain-json-modules": [
+    {
+      "text": "Payload written as plain JSON: modules.",
+      "pause": 500
+    },
+    {
+      "text": "Responsibilities and the direction of dependencies. Fields are in the data model, signatures in the functions model.",
+      "pause": 400
+    }
+  ],
+  "new-and-changed-modules": [
+    {
+      "text": "New and changed modules.",
+      "pause": 500
+    }
+  ],
+  "direction": [
+    {
+      "text": "Direction.",
+      "pause": 500
+    },
+    {
+      "text": "PlainJson is pure and knows nothing of commands. Singular.CLI.Payload is the only module that reads a payload file. Applications call it; none calls datumFromJson or the open-datum dataFromJson on a payload file. The open-datum dataFromJson stays for decoding envelopes.",
+      "pause": 400
+    }
+  ],
+  "promotion": [
+    {
+      "text": "Promotion.",
+      "pause": 500
+    },
+    {
+      "text": "The mapping serves every application that stores data, so it lives in the shared library, beside the detailed schema it complements, rather than in the open-datum package. dhPayloadJson of the decoded holding is removed when the print moves to Singular.CLI.Inspect, because nothing else reads it; each application keeps providing the payload data (dhPayload).",
+      "pause": 400
+    }
+  ],
+  "_source": {
+    "file": "modules-model.md",
+    "sha256": "b068e180f8c8425719acc90206df3ebeabe337e088b94df32581a5a28b7d5477"
+  }
+}
