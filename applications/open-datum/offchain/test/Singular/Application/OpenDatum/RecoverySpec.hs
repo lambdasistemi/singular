@@ -1891,7 +1891,6 @@ foldHolding key hash =
         , dhController = BS.empty
         , dhPayload = PLC.Constr 0 []
         , dhDatumJson = Aeson.Null
-        , dhPayloadJson = Aeson.Null
         }
 
 {- | A fold's @prepared@ line over the given transitions, with the scalars

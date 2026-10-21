@@ -3441,6 +3441,10 @@ check req rs = case (req, rs) of
                 (at [field "payload"] u)
                 (at [field "applicationOutput", field "payload"] a)
             <> same
+                "the schema the payload is printed in"
+                (at [field "payloadSchema"] u)
+                (at [field "applicationOutput", field "payloadSchema"] a)
+            <> same
                 "the holding's output"
                 (at [field "liveOutput"] u)
                 (at [field "applicationOutput", field "output"] a)

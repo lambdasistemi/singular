@@ -1804,7 +1804,7 @@ run update success -- update --key "$key" --payload "$work/payload.json" --paylo
 run inspect-2 success -- inspect --key "$key" "${common[@]}" "${node[@]}"
 [ "$(field inspect-2 .leaf)" = active ] || fail "inspect after update is not active"
 [ "$(field inspect-2 .root)" = "$(field bob-fold .root)" ] || fail "the update moved the root"
-jq -e --slurpfile p "$work/payload.json" '.applicationOutput.payload == $p[0]' \
+jq -e --slurpfile p "$work/payload.json" '.applicationOutput.payload == $p[0] and .applicationOutput.payloadSchema == "detailed"' \
   "$receipts/inspect-2.json" >/dev/null || fail "the holding does not carry the new payload"
 
 # ------------------------------------------------------------------
@@ -2912,7 +2912,7 @@ say "story 7. Read it back."
 run story-inspect-2 success -- inspect --key alice "${scommon[@]}" "${node[@]}"
 [ "$(field story-inspect-2 .leaf)" = active ] || fail "inspect after the story update is not active"
 [ "$(field story-inspect-2 .root)" = "$(field story-fold .root)" ] || fail "the story update moved the root"
-jq -e --slurpfile p "$story/payload-update.json" '.applicationOutput.payload == $p[0]' \
+jq -e --slurpfile p "$story/payload-update.json" '.applicationOutput.payload == $p[0] and .applicationOutput.payloadSchema == "detailed"' \
   "$receipts/story-inspect-2.json" >/dev/null || fail "the story holding does not carry the new payload"
 
 say "story 8. Book the termination of the key."

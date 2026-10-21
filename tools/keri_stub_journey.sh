@@ -294,10 +294,11 @@ jq -e --arg k "$key_hex" --arg c "$controller" --arg p "$payload_hex" --argjson 
 # ------------------------------------------------------------------
 run status success -- status --key "$key" "${common[@]}" "${registry[@]}" "${node[@]}"
 [ "$(field status .leaf)" = "active" ] || fail "status: the key is not active after the fold"
-jq -e --arg c "$controller" --arg p "$payload_hex" --argjson d "$deposit" \
+jq -e --arg c "$controller" --arg t "$payload_prefix" --argjson d "$deposit" \
   '.applicationOutput.deposit == $d
     and .applicationOutput.controller == $c
-    and .applicationOutput.payload == {bytes: $p}
+    and .applicationOutput.payload == $t
+    and .applicationOutput.payloadSchema == "plain"
     and (.applicationOutput.output | type == "string" and length > 0)' "$receipts/status.json" >/dev/null \
   || fail "status: the holding the key reads back is not the one booked, with its deposit, controller and payload"
 [ "$(jq -r '.pendingRequests | length' "$receipts/status.json")" = 0 ] \

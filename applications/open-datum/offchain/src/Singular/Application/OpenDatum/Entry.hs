@@ -67,7 +67,6 @@ import Singular.Application.OpenDatum.Command
 import Singular.Application.OpenDatum.Envelope
     ( Control (..)
     , Envelope (..)
-    , dataToJson
     , envelopeFromData
     , envelopeHash
     , envelopeToJson
@@ -119,7 +118,7 @@ import Singular.CLI.Prepare
     , prepareFunding
     )
 import Singular.CLI.Receipt (OutcomeClass (..))
-import Singular.CLI.Registry (hexT, keyFields)
+import Singular.CLI.Registry (hexT, keyFields, payloadFields)
 import Singular.CLI.Session
 import Singular.CLI.Trace
     ( EdgeAction (..)
@@ -581,9 +580,9 @@ runUpdate env a = case entryMode a of
                         ( keyFields key
                             <> [ ("update", toJSON (txIdHex (confirmedTx signed)))
                                , ("liveOutput", toJSON (txInText liveIn))
-                               , ("payload", dataToJson (envPayload seen))
-                               , ("root", toJSON (hexT rootAfter))
                                ]
+                            <> payloadFields (envPayload seen)
+                            <> [("root", toJSON (hexT rootAfter))]
                             <> preparationFields mPrep
                         )
 

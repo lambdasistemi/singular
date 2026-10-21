@@ -319,6 +319,7 @@ spec =
         >> vaultWriteRows
         >> saveStateTokenRows
         >> payloadSchemaRunRows
+        >> printedPayloadRows
 
 {- | The open datum create receipt carries the working describe line. The
 application owns no describe verb, so the line always names the registry
@@ -5569,3 +5570,142 @@ negativeAttempt word rig path setting = do
 -- | A well-formed state token no registry minted; the blind environment never looks it up.
 phantomToken :: String
 phantomToken = replicate 56 '0' <> "." <> replicate 64 '0'
+
+-- ---------------------------------------------------------
+-- The payload that inspect and the update receipt print (#719)
+-- ---------------------------------------------------------
+
+{- | Inspect and the update receipt print a key's payload as plain JSON when
+the stored data has a plain reading, else in the detailed schema, and always
+beside the name of the schema. The form a payload was written in is not
+kept: the detailed integer and the plain integer print alike. The envelope
+is printed as before and holds the exact data.
+-}
+printedPayloadRows :: Spec
+printedPayloadRows = describe "the printed payload (#719)" $
+    forM_ printedRows $ \(label, file, setting, detailed, expected, schema) -> do
+        it ("inspect prints " <> label) $ withRegistry $ \rig token -> do
+            path <- payloadFile rig "stored.json" file
+            booked <-
+                run
+                    rig
+                    "insert"
+                    ( ["open-datum", "insert", "--key", "k1", "--payload", path]
+                        <> setting
+                        <> tokenArgs token
+                    )
+            _ <-
+                run
+                    rig
+                    "fold"
+                    (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+            inspected <-
+                run
+                    rig
+                    "inspect"
+                    (["open-datum", "inspect", "--key", "k1"] <> tokenArgs token)
+            let output = valueAt "applicationOutput" (runReceipt inspected)
+            (output >>= valueAt "payload", output >>= valueAt "payloadSchema")
+                `shouldBe` (Just expected, Just (Aeson.String schema))
+            (output >>= valueAt "envelope" >>= payloadOfEnvelope)
+                `shouldBe` Just (detailedDatum detailed)
+        it ("the update receipt prints " <> label) $ withRegistry $ \rig token -> do
+            first <- payloadFile rig "first.json" "0"
+            booked <-
+                run
+                    rig
+                    "insert"
+                    ( ["open-datum", "insert", "--key", "k1", "--payload", first]
+                        <> tokenArgs token
+                    )
+            outcomeOf (runReceipt booked) `shouldBe` Just "success"
+            _ <-
+                run
+                    rig
+                    "fold"
+                    (["open-datum", "fold"] <> requestOf booked <> tokenArgs token)
+            path <- payloadFile rig "stored.json" file
+            updated <-
+                run
+                    rig
+                    "update"
+                    ( ["open-datum", "update", "--key", "k1", "--payload", path]
+                        <> setting
+                        <> tokenArgs token
+                    )
+            outcomeOf (runReceipt updated) `shouldBe` Just "success"
+            ( valueAt "payload" (runReceipt updated)
+                , valueAt "payloadSchema" (runReceipt updated)
+                )
+                `shouldBe` (Just expected, Just (Aeson.String schema))
+  where
+    jsonOf :: BL.ByteString -> Aeson.Value
+    jsonOf = either (error . ("not JSON: " <>)) id . Aeson.eitherDecode
+    -- label, the file, the setting, the detailed document of the same data,
+    -- the JSON that must be printed, and the schema it is printed in
+    printedRows =
+        [
+            ( "a plain object as plain JSON"
+            , "{\"answer\": 42}"
+            , []
+            , "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+            , jsonOf "{\"answer\": 42}"
+            , "plain"
+            )
+        ,
+            ( "the detailed form of the same object as the same plain JSON"
+            , "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+            , ["--payload-schema", "detailed"]
+            , "{\"map\":[{\"k\":{\"bytes\":\"616e73776572\"},\"v\":{\"int\":42}}]}"
+            , jsonOf "{\"answer\": 42}"
+            , "plain"
+            )
+        ,
+            ( "a plain integer as plain JSON"
+            , "7"
+            , []
+            , "{\"int\":7}"
+            , Aeson.Number 7
+            , "plain"
+            )
+        ,
+            ( "the detailed integer as the plain integer"
+            , "{\"int\":7}"
+            , ["--payload-schema", "detailed"]
+            , "{\"int\":7}"
+            , Aeson.Number 7
+            , "plain"
+            )
+        ,
+            ( "a plain text as plain JSON"
+            , "\"alice\""
+            , []
+            , "{\"bytes\":\"616c696365\"}"
+            , Aeson.String "alice"
+            , "plain"
+            )
+        ,
+            ( "a plain list as plain JSON"
+            , "[1, true]"
+            , []
+            , "{\"list\":[{\"int\":1},{\"constructor\":1,\"fields\":[]}]}"
+            , jsonOf "[1, true]"
+            , "plain"
+            )
+        ,
+            ( "bytes that are not text in the detailed schema"
+            , "{\"bytes\":\"ff\"}"
+            , ["--payload-schema", "detailed"]
+            , "{\"bytes\":\"ff\"}"
+            , jsonOf "{\"bytes\":\"ff\"}"
+            , "detailed"
+            )
+        ,
+            ( "a constructor that is not a boolean in the detailed schema"
+            , "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , ["--payload-schema", "detailed"]
+            , "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , jsonOf "{\"constructor\":2,\"fields\":[{\"int\":5}]}"
+            , "detailed"
+            )
+        ]

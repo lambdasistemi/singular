@@ -822,8 +822,8 @@ else
     "$(jq -cn --arg u "$frank_update_tx" '[["update", $u]]')"
   say "frank's update needed no preparation: the single output funded and collateralised it"
 fi
-jq -e '.payload == {"int": 43}' "$receipts/frank-update.json" >/dev/null \
-  || fail "frank's update receipt does not carry the new payload: $(jq -c .payload "$receipts/frank-update.json")"
+jq -e '.payload == 43 and .payloadSchema == "plain"' "$receipts/frank-update.json" >/dev/null \
+  || fail "frank's update receipt does not carry the new payload: $(jq -c '{payload, payloadSchema}' "$receipts/frank-update.json")"
 orun frank-terminate success -- terminate --key keyFaucet1 \
   "${common[@]}" "${node[@]}" "${frank[@]}"
 if jq -e 'has("preparation")' "$receipts/frank-terminate.json" >/dev/null; then
@@ -1041,8 +1041,8 @@ orun iris-update success -- update --key keyIrisU --payload "$work/payload-updat
 assert_preview_equals iris-update iris-update-preview
 assert_through_preparation iris-update update update "$iris_addr" \
   "$(managed_journal "$reg" "$iris_token" "$iriskey")"
-jq -e '.payload == {"int": 43}' "$receipts/iris-update.json" >/dev/null \
-  || fail "iris's update receipt does not carry the new payload: $(jq -c .payload "$receipts/iris-update.json")"
+jq -e '.payload == 43 and .payloadSchema == "plain"' "$receipts/iris-update.json" >/dev/null \
+  || fail "iris's update receipt does not carry the new payload: $(jq -c '{payload, payloadSchema}' "$receipts/iris-update.json")"
 wallet_utxos "$iris_addr" "$work/iris-utxos-after.json" >/dev/null
 [ "$(asset_totals "$iris_addr" "$work/iris-utxos-after.json")" = "$(cat "$work/iris-assets-before.json")" ] \
   || fail "iris's approvals changed across her update: before $(cat "$work/iris-assets-before.json") after $(asset_totals "$iris_addr" "$work/iris-utxos-after.json")"

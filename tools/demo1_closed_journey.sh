@@ -314,6 +314,7 @@ run inspect-active success -- inspect --key "$key" "${common[@]}" "${node[@]}"
 # mere positivity.
 jq -e --slurpfile b "$receipts/insert.json" --slurpfile f "$receipts/fold.json" '
     .applicationOutput.payload == $b[0].envelope.fields[1]
+    and .applicationOutput.payloadSchema == "detailed"
     and .applicationOutput.controller == $b[0].requester
     and .applicationOutput.deposit == $b[0].envelope.fields[0].fields[5].int
     and .applicationOutput.output == $f[0].settled[0].settlement.liveOutput

@@ -135,8 +135,6 @@ data DecodedHolding = DecodedHolding
     -- ^ The payload the application leaves unread by the registry
     , dhDatumJson :: Value
     -- ^ The datum as detailed-schema JSON (for receipts)
-    , dhPayloadJson :: Value
-    -- ^ The payload as detailed-schema JSON (for receipts)
     }
     deriving stock (Eq, Show)
 

@@ -42,6 +42,7 @@ import Control.Exception
     )
 import Data.Aeson (Value, object, toJSON, (.=))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Bifunctor (bimap)
 import Data.ByteString (ByteString)
@@ -109,6 +110,7 @@ import Singular.CLI.Registry
     , hexT
     , keyFields
     , parseEnterpriseAddress
+    , payloadFields
     , pendingPath
     )
 import Singular.CLI.Session
@@ -435,15 +437,19 @@ inspectSaved app env savedPath mJournal key settings release a = do
                     Just _ -> case keyOutput of
                         Right ((i, o), dh) ->
                             object
-                                [ "output" .= txInText i
-                                , "envelope" .= dhDatumJson dh
-                                , "payload" .= dhPayloadJson dh
-                                , "deposit" .= dhDeposit dh
-                                , "controller" .= hexT (dhController dh)
-                                , "lovelace" .= let Coin c = o ^. coinTxOutL in c
-                                , "datumCbor" .= fmap fst (inlineDatum o)
-                                , "datumHash" .= fmap snd (inlineDatum o)
-                                ]
+                                ( [ "output" .= txInText i
+                                  , "envelope" .= dhDatumJson dh
+                                  ]
+                                    <> [ Key.fromText name .= printed
+                                       | (name, printed) <- payloadFields (dhPayload dh)
+                                       ]
+                                    <> [ "deposit" .= dhDeposit dh
+                                       , "controller" .= hexT (dhController dh)
+                                       , "lovelace" .= let Coin c = o ^. coinTxOutL in c
+                                       , "datumCbor" .= fmap fst (inlineDatum o)
+                                       , "datumHash" .= fmap snd (inlineDatum o)
+                                       ]
+                                )
                         Left why ->
                             object
                                 [ "absent" .= T.pack why
