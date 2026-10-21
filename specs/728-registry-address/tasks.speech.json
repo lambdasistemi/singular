@@ -5,63 +5,63 @@
       "pause": 500
     },
     {
-      "text": "[ ] Tests: fixed addresses and fingerprints for the four networks, the CIP-14 published vectors, the round-trip property, the reading refusals in order",
+      "text": "[x] Tests: fixed addresses and fingerprints for the four networks, the CIP-14 published vectors, the round-trip property, the reading refusals in order",
       "pause": 300
     },
     {
-      "text": "[ ] Tests: the registry given to a command from each of the three forms, with a state token and a network magic that agree and that disagree, and the renamed-flag refusal gone",
+      "text": "[x] Tests: the registry given to a command from each of the three forms, with a state token and a network magic that agree and that disagree, and the renamed-flag refusal gone",
       "pause": 300
     },
     {
-      "text": "[ ] Tests: create receipts and the line on standard error, describe and inspect receipts, a network without a prefix",
+      "text": "[x] Tests: create receipts and the line on standard error, describe and inspect receipts, a network without a prefix",
       "pause": 300
     },
     {
-      "text": "[ ] Tests: registry address from an address and from a state token with a network magic, and its refusals",
+      "text": "[x] Tests: registry address from an address and from a state token with a network magic, and its refusals",
       "pause": 300
     },
     {
-      "text": "[ ] Tests: the table lookup for a hash of a known release, of a change not released yet, and of no known release",
+      "text": "[x] Tests: the table lookup for a hash of a known release, of a change not released yet, and of no known release",
       "pause": 300
     },
     {
-      "text": "[ ] The address module and the shared reading of the registry for the three programs",
+      "text": "[x] The address module and the shared reading of the registry for the three programs",
       "pause": 300
     },
     {
-      "text": "[ ] --registry on every command that takes a state token, in the three forms",
+      "text": "[x] --registry on every command that takes a state token, in the three forms",
       "pause": 300
     },
     {
-      "text": "[ ] The address, the asset id and the fingerprint in create, describe and inspect",
+      "text": "[x] The address, the asset id and the fingerprint in create, describe and inspect",
       "pause": 300
     },
     {
-      "text": "[ ] The command registry address",
+      "text": "[x] The command registry address",
       "pause": 300
     },
     {
-      "text": "[ ] The table, filled from the published release assets by a script kept as a tool, packaged and shipped in the release bundles",
+      "text": "[x] The table, filled from the published release assets by a script kept as a tool, packaged and shipped in the release bundles",
       "pause": 300
     },
     {
-      "text": "[ ] The foreign-release refusal that names the release and where to get it",
+      "text": "[x] The foreign-release refusal that names the release and where to get it",
       "pause": 300
     },
     {
-      "text": "[ ] Help snapshots, parser corpora, the application settings spec and the keri-stub suite",
+      "text": "[x] Help snapshots, parser corpora, the application settings spec and the keri-stub suite",
       "pause": 300
     },
     {
-      "text": "[ ] Hosted checks: the journey that uses the address alone, the table holding the hash being built, the bundled program finding its table",
+      "text": "[x] Hosted checks: the journey that uses the address alone, the table holding the hash being built, the bundled program finding its table",
       "pause": 300
     },
     {
-      "text": "[ ] Documentation of the address, the table and the settings, with regenerated narration",
+      "text": "[x] Documentation of the address, the table and the settings, with regenerated narration",
       "pause": 300
     },
     {
-      "text": "[ ] The note for the tutorial's owner",
+      "text": "[x] The note for the tutorial's owner",
       "pause": 300
     }
   ],
@@ -93,6 +93,6 @@
   ],
   "_source": {
     "file": "tasks.md",
-    "sha256": "e7f158092b30b97f89a0744f56a114824a1a84a8dbf256bd075ea4ff7239cc5c"
+    "sha256": "5f5412f202361685b0eb97068d4329d95deeca120ebb35678102deea6d7e131b"
   }
 }
