@@ -57,8 +57,18 @@
       "pause": 400
     }
   ],
+  "second-pull-request": [
+    {
+      "text": "Second pull request.",
+      "pause": 500
+    },
+    {
+      "text": "A test-only harness executable in the off-chain package boots the forged registry and its tokens against a running development node. The journey script and the flake app that runs it follow the keri-stub journey. Nothing in the registry library, the commands or the applications changes.",
+      "pause": 400
+    }
+  ],
   "_source": {
     "file": "modules-model.md",
-    "sha256": "40026ebad39089bc3eb12f6257ee4f3430a2b89863e271766f545d8167b96210"
+    "sha256": "eedc87c0f328ff631b388aac7c731b1c7c922f351ae6fa5f277d5d21ffe43b9f"
   }
 }

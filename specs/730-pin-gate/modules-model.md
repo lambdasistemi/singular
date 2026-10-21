@@ -16,3 +16,7 @@ Dependency direction runs from the programs down to the library. No new package.
 ## Not changed
 
 Builders, folds, reconciliation, the bundle format, the signing verbs, the on-chain code, the Lean model, the blueprint and every script hash.
+
+## Second pull request
+
+A test-only harness executable in the off-chain package boots the forged registry and its tokens against a running development node. The journey script and the flake app that runs it follow the keri-stub journey. Nothing in the registry library, the commands or the applications changes.

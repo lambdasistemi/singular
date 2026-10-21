@@ -63,7 +63,35 @@
       "pause": 500
     },
     {
-      "text": "A test harness builds a registry with the real contracts and the real boot whose datum pins an always-true active policy compiled for the test, mints a token named after a key under it, and runs inspect, describe and every write against it on a development network; the control with honest pins proceeds. The row also records whether the genuine witness policy of that registry can be minted in a fold, as evidence for the on-chain hardening ticket, and does not try to change it. The browser build ticket is opened here. The row is a hosted job and a required check.",
+      "text": "One hosted journey, built like the keri-stub journey: a flake app and a hosted job whose check name is added to the repository's required checks in the same change. One development node, started by the existing devnet executable, funds one generated wallet. Every command below is a separate process of the packaged binaries.",
+      "pause": 400
+    },
+    {
+      "text": "A test-only harness executable, classified in the component inventory, boots a registry with the real contracts and the real boot whose datum pins an always-true active policy compiled for the test, then mints a token named after a key under that policy. It is a test harness and not a product command: no product command can pin a policy the release does not derive.",
+      "pause": 300
+    },
+    {
+      "text": "Against that registry, singular inspect, describe, fold, reject and reclaim, a bundle that names it given to submit, and open-datum inspect, insert, update, terminate and fold each end in the refusal that names the active policy. Each prints no registry content, and the number of transactions on the chain, read independently of the commands, is the same before and after.",
+      "pause": 300
+    },
+    {
+      "text": "The control: a registry made by the product's own create with the same binaries, with honest pins. Inspect and describe print their ordinary receipts and a write proceeds.",
+      "pause": 300
+    },
+    {
+      "text": "Evidence for the on-chain hardening ticket: whether the genuine witness policy of the forged registry can be minted in a fold of that registry. The result, accepted or refused and by which check, is kept in the journey's receipts and in the pull request. No fix is attempted.",
+      "pause": 300
+    },
+    {
+      "text": "The check the first pull request names as missing: a fold that alters one pinned policy in the new state datum is submitted, and the node refuses it with the state contract's refusal named pins-altered.",
+      "pause": 300
+    },
+    {
+      "text": "The ticket for the browser build to expose the gate is searched, placed in its milestone and opened.",
+      "pause": 300
+    },
+    {
+      "text": "Any leg the harness cannot carry is recorded with the reason in the pull request and reported, not dropped.",
       "pause": 400
     }
   ],
@@ -101,6 +129,6 @@
   ],
   "_source": {
     "file": "plan.md",
-    "sha256": "7854ca0b051f8e9488a78d2138e15790d8a4069c5e4197c9c7276f8cb6419088"
+    "sha256": "5983e742f6e656992d336d2ec727fb0ca04d0a4096ed3973d2076751270b07fc"
   }
 }
