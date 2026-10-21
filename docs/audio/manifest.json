@@ -4691,17 +4691,17 @@
    ]
   },
   "README/start-here-play-demo-1-01": {
-   "audio_sha256": "c3e40b0e9bfe7388205df15614f84c0eab59f0bc35bcd6a5c414d51e200d18fd",
-   "characters": 513,
-   "cost": 0.00050787,
-   "duration": 33.8,
+   "audio_sha256": "a64242c2c9e36d08c68fcf3d5d131579dcf9807a56f284dc849f754104b5a232",
+   "characters": 652,
+   "cost": 0.0006454799999999999,
+   "duration": 43.175,
    "index": 1,
-   "key": "fa7943454b6901eddf3d41d8f274b0838ecdda35ad0552c75992b62d17a08379",
+   "key": "bccc25ef60d70f6d8e3667d678cf992de9078161c1dea0d7773fa2c10baa8722",
    "page": "README.md",
    "pause_ms": 400,
    "section": "start-here-play-demo-1",
-   "sent_text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix.",
-   "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix.",
+   "sent_text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix. To play it in a browser with nothing installed, open the Killercoda scenario; to watch it without running anything, open the recorded run.",
+   "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix. To play it in a browser with nothing installed, open the Killercoda scenario; to watch it without running anything, open the recorded run.",
    "words": [
     {
      "end": 0.363,
@@ -5169,53 +5169,188 @@
      "text": ";"
     },
     {
-     "end": 31.138,
-     "start": 31.05,
+     "end": 31.212,
+     "start": 31.1,
      "text": "and"
     },
     {
-     "end": 31.25,
-     "start": 31.138,
+     "end": 31.375,
+     "start": 31.212,
      "text": "its"
     },
     {
-     "end": 31.737,
-     "start": 31.25,
+     "end": 31.888,
+     "start": 31.375,
      "text": "Ubuntu"
     },
     {
-     "end": 31.975,
-     "start": 31.737,
+     "end": 32.15,
+     "start": 31.888,
      "text": "kit"
     },
     {
-     "end": 32.088,
-     "start": 31.975,
+     "end": 32.3,
+     "start": 32.15,
      "text": "for"
     },
     {
-     "end": 32.138,
-     "start": 32.088,
+     "end": 32.375,
+     "start": 32.3,
      "text": "a"
     },
     {
-     "end": 32.463,
-     "start": 32.138,
+     "end": 32.9,
+     "start": 32.375,
      "text": "machine"
     },
     {
-     "end": 32.775,
-     "start": 32.463,
+     "end": 33.263,
+     "start": 32.9,
      "text": "without"
     },
     {
-     "end": 33.6,
-     "start": 32.775,
+     "end": 33.925,
+     "start": 33.263,
      "text": "Nix"
     },
     {
-     "end": 33.8,
-     "start": 33.6,
+     "end": 34.062,
+     "start": 33.925,
+     "text": "."
+    },
+    {
+     "end": 34.2,
+     "start": 34.062,
+     "text": "To"
+    },
+    {
+     "end": 34.45,
+     "start": 34.2,
+     "text": "play"
+    },
+    {
+     "end": 34.6,
+     "start": 34.45,
+     "text": "it"
+    },
+    {
+     "end": 34.688,
+     "start": 34.6,
+     "text": "in"
+    },
+    {
+     "end": 34.787,
+     "start": 34.688,
+     "text": "a"
+    },
+    {
+     "end": 35.275,
+     "start": 34.787,
+     "text": "browser"
+    },
+    {
+     "end": 35.463,
+     "start": 35.275,
+     "text": "with"
+    },
+    {
+     "end": 35.85,
+     "start": 35.463,
+     "text": "nothing"
+    },
+    {
+     "end": 36.55,
+     "start": 35.85,
+     "text": "installed"
+    },
+    {
+     "end": 36.65,
+     "start": 36.55,
+     "text": ","
+    },
+    {
+     "end": 37.025,
+     "start": 36.65,
+     "text": "open"
+    },
+    {
+     "end": 37.125,
+     "start": 37.025,
+     "text": "the"
+    },
+    {
+     "end": 37.725,
+     "start": 37.125,
+     "text": "Killercoda"
+    },
+    {
+     "end": 39.0,
+     "start": 37.725,
+     "text": "scenario"
+    },
+    {
+     "end": 39.225,
+     "start": 39.0,
+     "text": ";"
+    },
+    {
+     "end": 39.55,
+     "start": 39.425,
+     "text": "to"
+    },
+    {
+     "end": 39.85,
+     "start": 39.55,
+     "text": "watch"
+    },
+    {
+     "end": 39.963,
+     "start": 39.85,
+     "text": "it"
+    },
+    {
+     "end": 40.275,
+     "start": 39.963,
+     "text": "without"
+    },
+    {
+     "end": 40.575,
+     "start": 40.275,
+     "text": "running"
+    },
+    {
+     "end": 41.15,
+     "start": 40.575,
+     "text": "anything"
+    },
+    {
+     "end": 41.25,
+     "start": 41.15,
+     "text": ","
+    },
+    {
+     "end": 41.537,
+     "start": 41.25,
+     "text": "open"
+    },
+    {
+     "end": 41.625,
+     "start": 41.537,
+     "text": "the"
+    },
+    {
+     "end": 42.15,
+     "start": 41.625,
+     "text": "recorded"
+    },
+    {
+     "end": 42.975,
+     "start": 42.15,
+     "text": "run"
+    },
+    {
+     "end": 43.175,
+     "start": 42.975,
      "text": "."
     }
    ]
@@ -96971,17 +97106,17 @@
    ]
   },
   "docs-demo1/where-to-play-it-01": {
-   "audio_sha256": "a76edcd9b592111a682ff293f43b2cd42c070a47671e4dcceabf405a049f4c6e",
-   "characters": 243,
-   "cost": 0.00024056999999999998,
-   "duration": 15.85,
+   "audio_sha256": "abda61998989aeb489a39035759a1b0f8fd4fc1dcd57e3319d4fa33330e8fc56",
+   "characters": 344,
+   "cost": 0.00034055999999999995,
+   "duration": 21.75,
    "index": 1,
-   "key": "6f950127bdc5d498f7c415d6ee81f31916b56f50d21767312ab019f9dbff5018",
+   "key": "80821b95d33b2d96cf5a2748b4634fca975daebf637f76df0d1d3d9334bd11ab",
    "page": "docs/demo1.md",
    "pause_ms": 400,
    "section": "where-to-play-it",
-   "sent_text": "Every way below plays the same sixteen steps. The table lists three: the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. Start with the step-by-step page.",
-   "text": "Every way below plays the same sixteen steps. The table lists three: the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. Start with the step-by-step page.",
+   "sent_text": "Every way below plays the same sixteen steps. The table lists five: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
+   "text": "Every way below plays the same sixteen steps. The table lists five: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
    "words": [
     {
      "end": 0.438,
@@ -97039,198 +97174,308 @@
      "text": "table"
     },
     {
-     "end": 3.925,
+     "end": 3.875,
      "start": 3.638,
      "text": "lists"
     },
     {
-     "end": 4.65,
-     "start": 3.925,
-     "text": "three"
+     "end": 4.625,
+     "start": 3.875,
+     "text": "five"
     },
     {
-     "end": 4.875,
-     "start": 4.65,
+     "end": 4.825,
+     "start": 4.625,
      "text": ":"
     },
     {
-     "end": 5.125,
-     "start": 5.05,
+     "end": 5.075,
+     "start": 5.0,
      "text": "the"
     },
     {
-     "end": 5.825,
-     "start": 5.125,
-     "text": "step-by-step"
+     "end": 5.6,
+     "start": 5.075,
+     "text": "recorded"
     },
     {
-     "end": 6.125,
-     "start": 5.825,
-     "text": "page"
+     "end": 5.85,
+     "start": 5.6,
+     "text": "run"
     },
     {
-     "end": 6.225,
-     "start": 6.125,
+     "end": 5.975,
+     "start": 5.85,
      "text": "to"
     },
     {
-     "end": 6.55,
-     "start": 6.225,
-     "text": "paste"
+     "end": 6.425,
+     "start": 5.975,
+     "text": "watch"
     },
     {
-     "end": 6.85,
-     "start": 6.55,
-     "text": "from"
-    },
-    {
-     "end": 6.912,
-     "start": 6.85,
+     "end": 6.5,
+     "start": 6.425,
      "text": ","
     },
     {
-     "end": 7.1,
-     "start": 6.912,
-     "text": "which"
-    },
-    {
-     "end": 7.338,
-     "start": 7.1,
-     "text": "needs"
-    },
-    {
-     "end": 7.425,
-     "start": 7.338,
+     "end": 6.6,
+     "start": 6.5,
      "text": "the"
     },
     {
-     "end": 8.525,
-     "start": 7.425,
-     "text": "programs"
+     "end": 7.15,
+     "start": 6.6,
+     "text": "Killercoda"
     },
     {
-     "end": 8.725,
-     "start": 8.525,
+     "end": 7.65,
+     "start": 7.15,
+     "text": "scenario"
+    },
+    {
+     "end": 7.775,
+     "start": 7.65,
+     "text": "to"
+    },
+    {
+     "end": 8.05,
+     "start": 7.775,
+     "text": "play"
+    },
+    {
+     "end": 8.137,
+     "start": 8.05,
+     "text": "in"
+    },
+    {
+     "end": 8.2,
+     "start": 8.137,
+     "text": "a"
+    },
+    {
+     "end": 9.225,
+     "start": 8.2,
+     "text": "browser"
+    },
+    {
+     "end": 9.45,
+     "start": 9.225,
      "text": ","
     },
     {
-     "end": 9.012,
-     "start": 8.925,
-     "text": "and"
-    },
-    {
-     "end": 9.1,
-     "start": 9.012,
+     "end": 9.7,
+     "start": 9.625,
      "text": "the"
     },
     {
-     "end": 9.363,
-     "start": 9.1,
-     "text": "Nix"
+     "end": 10.4,
+     "start": 9.7,
+     "text": "step-by-step"
     },
     {
-     "end": 9.762,
-     "start": 9.363,
-     "text": "shell"
+     "end": 10.7,
+     "start": 10.4,
+     "text": "page"
     },
     {
-     "end": 9.887,
-     "start": 9.762,
-     "text": "and"
-    },
-    {
-     "end": 10.0,
-     "start": 9.887,
-     "text": "the"
-    },
-    {
-     "end": 10.512,
-     "start": 10.0,
-     "text": "Ubuntu"
-    },
-    {
-     "end": 10.85,
-     "start": 10.512,
-     "text": "kit"
-    },
-    {
-     "end": 10.925,
-     "start": 10.85,
-     "text": ","
+     "end": 10.8,
+     "start": 10.7,
+     "text": "to"
     },
     {
      "end": 11.125,
-     "start": 10.925,
+     "start": 10.8,
+     "text": "paste"
+    },
+    {
+     "end": 11.425,
+     "start": 11.125,
+     "text": "from"
+    },
+    {
+     "end": 11.488,
+     "start": 11.425,
+     "text": ","
+    },
+    {
+     "end": 11.675,
+     "start": 11.488,
      "text": "which"
     },
     {
-     "end": 11.262,
-     "start": 11.125,
-     "text": "are"
+     "end": 11.913,
+     "start": 11.675,
+     "text": "needs"
     },
     {
-     "end": 11.475,
-     "start": 11.262,
-     "text": "two"
-    },
-    {
-     "end": 11.8,
-     "start": 11.475,
-     "text": "ways"
-    },
-    {
-     "end": 11.9,
-     "start": 11.8,
-     "text": "to"
-    },
-    {
-     "end": 12.062,
-     "start": 11.9,
-     "text": "get"
-    },
-    {
-     "end": 12.15,
-     "start": 12.062,
+     "end": 12.0,
+     "start": 11.913,
      "text": "the"
     },
     {
-     "end": 13.325,
-     "start": 12.15,
+     "end": 13.1,
+     "start": 12.0,
      "text": "programs"
     },
     {
-     "end": 13.55,
-     "start": 13.325,
-     "text": "."
+     "end": 13.3,
+     "start": 13.1,
+     "text": ","
     },
     {
-     "end": 13.938,
-     "start": 13.725,
-     "text": "Start"
+     "end": 13.587,
+     "start": 13.5,
+     "text": "and"
     },
     {
-     "end": 14.038,
-     "start": 13.938,
-     "text": "with"
-    },
-    {
-     "end": 14.125,
-     "start": 14.038,
+     "end": 13.675,
+     "start": 13.587,
      "text": "the"
     },
     {
-     "end": 14.825,
-     "start": 14.125,
+     "end": 13.938,
+     "start": 13.675,
+     "text": "Nix"
+    },
+    {
+     "end": 14.337,
+     "start": 13.938,
+     "text": "shell"
+    },
+    {
+     "end": 14.462,
+     "start": 14.337,
+     "text": "and"
+    },
+    {
+     "end": 14.575,
+     "start": 14.462,
+     "text": "the"
+    },
+    {
+     "end": 15.087,
+     "start": 14.575,
+     "text": "Ubuntu"
+    },
+    {
+     "end": 15.425,
+     "start": 15.087,
+     "text": "kit"
+    },
+    {
+     "end": 15.5,
+     "start": 15.425,
+     "text": ","
+    },
+    {
+     "end": 15.7,
+     "start": 15.5,
+     "text": "which"
+    },
+    {
+     "end": 15.837,
+     "start": 15.7,
+     "text": "are"
+    },
+    {
+     "end": 16.05,
+     "start": 15.837,
+     "text": "two"
+    },
+    {
+     "end": 16.375,
+     "start": 16.05,
+     "text": "ways"
+    },
+    {
+     "end": 16.475,
+     "start": 16.375,
+     "text": "to"
+    },
+    {
+     "end": 16.638,
+     "start": 16.475,
+     "text": "get"
+    },
+    {
+     "end": 16.725,
+     "start": 16.638,
+     "text": "the"
+    },
+    {
+     "end": 17.9,
+     "start": 16.725,
+     "text": "programs"
+    },
+    {
+     "end": 18.125,
+     "start": 17.9,
+     "text": "."
+    },
+    {
+     "end": 18.375,
+     "start": 18.3,
+     "text": "To"
+    },
+    {
+     "end": 18.587,
+     "start": 18.375,
+     "text": "play"
+    },
+    {
+     "end": 18.688,
+     "start": 18.587,
+     "text": "on"
+    },
+    {
+     "end": 18.8,
+     "start": 18.688,
+     "text": "your"
+    },
+    {
+     "end": 18.962,
+     "start": 18.8,
+     "text": "own"
+    },
+    {
+     "end": 19.45,
+     "start": 18.962,
+     "text": "machine"
+    },
+    {
+     "end": 19.525,
+     "start": 19.45,
+     "text": ","
+    },
+    {
+     "end": 19.788,
+     "start": 19.525,
+     "text": "start"
+    },
+    {
+     "end": 19.888,
+     "start": 19.788,
+     "text": "with"
+    },
+    {
+     "end": 19.975,
+     "start": 19.888,
+     "text": "the"
+    },
+    {
+     "end": 20.675,
+     "start": 19.975,
      "text": "step-by-step"
     },
     {
-     "end": 15.625,
-     "start": 14.825,
+     "end": 21.525,
+     "start": 20.675,
      "text": "page"
     },
     {
-     "end": 15.85,
-     "start": 15.625,
+     "end": 21.75,
+     "start": 21.525,
      "text": "."
     }
    ]

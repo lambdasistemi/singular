@@ -15,7 +15,7 @@
       "pause": 500
     },
     {
-      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix.",
+      "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix. To play it in a browser with nothing installed, open the Killercoda scenario; to watch it without running anything, open the recorded run.",
       "pause": 400
     },
     {
@@ -161,6 +161,6 @@
   ],
   "_source": {
     "file": "README.md",
-    "sha256": "fd5a03f7519a0b33a680f2a64cbb0833c1a24a8dc61f799b843f268436399858"
+    "sha256": "218f6fbf92aee64c339340370d070107b2848ec24efdac008f4b5c03f9805635"
   }
 }

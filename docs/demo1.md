@@ -48,12 +48,16 @@ hold the key.
 
 ## Where to play it
 
-Every way below plays the same sixteen steps. The table lists three: the
-step-by-step page to paste from, which needs the programs, and the Nix shell and the
-Ubuntu kit, which are two ways to get the programs. Start with the step-by-step page.
+Every way below plays the same sixteen steps. The table lists five: the recorded
+run to watch, the Killercoda scenario to play in a browser, the step-by-step page
+to paste from, which needs the programs, and the Nix shell and the Ubuntu kit,
+which are two ways to get the programs. To play on your own machine, start with
+the step-by-step page.
 
 | You want to | Go to | What you need |
 | --- | --- | --- |
+| Watch the whole play without running anything | [the recorded run](https://lambdasistemi.github.io/singular-demo/demo1/run/) | a browser |
+| Play it in a browser with nothing installed | the Killercoda scenario, [step by step](https://killercoda.com/paolino/course/killercoda/demo1-steps) or [as one script](https://killercoda.com/paolino/course/killercoda/demo1-script) | a browser and a Killercoda login |
 | Paste one block per step into a terminal, with a copy button on each block | [the step-by-step page](https://lambdasistemi.github.io/singular-demo/) | a terminal, and the programs from one of the next two rows |
 | The programs without building them | the [Nix shell](https://github.com/lambdasistemi/singular-demo), opened with `nix develop github:lambdasistemi/singular-demo --accept-flake-config` | Nix, on x86_64 Linux |
 | The programs without Nix | the Ubuntu kit, attached to the [releases of singular-demo](https://github.com/lambdasistemi/singular-demo/releases) | Ubuntu 24.04 on x86_64 |
