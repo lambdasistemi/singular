@@ -161,7 +161,7 @@
       "pause": 300
     },
     {
-      "text": "A provider on another network than the address names is refused by name. Where a provider already checks its network against the network magic, the refusal now says which network the address names and which network the provider reports. Where some path has no such check, that is stated in the pull request; no check is invented.",
+      "text": "The network the address names is the command's network, exactly as --network-magic is today, for every later step. A provider that serves another network is not refused yet: no provider is asked which network it serves, and that check is issue 729 (https://github.com/lambdasistemi/singular/issues/729). Nothing of the provider layer changes here.",
       "pause": 300
     },
     {
@@ -361,12 +361,12 @@
       "pause": 500
     },
     {
-      "text": "Contracts found from the installed release (a default for --blueprint), public networks bringing their own connection, wallets by name, reclaim by key, a public registry page reached from the address, and moving describeCommand to the address. They have their own tickets, with the same aim: a registry user is told only the address.",
+      "text": "Contracts found from the installed release (a default for --blueprint), public networks bringing their own connection, wallets by name, reclaim by key, a public registry page reached from the address, moving describeCommand to the address, and a provider refused when it serves another network than the address names (issue 729). They have their own tickets, with the same aim: a registry user is told only the address.",
       "pause": 400
     }
   ],
   "_source": {
     "file": "spec.md",
-    "sha256": "c96735d2e16baf6110a69e1baf6d07601ae1620f52500d29c45bf0fe36d7efc7"
+    "sha256": "36d427f18f61a3d4fbe5270aaf99837e76cf1762233fef672d8374e6f490d879"
   }
 }

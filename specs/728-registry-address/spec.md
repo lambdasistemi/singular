@@ -81,7 +81,7 @@ Every command of `singular`, `open-datum` and `keri-stub` that takes `--state-to
 - It gives both the state token and the network magic. A command given the address needs no `--state-token` and no `--network-magic`.
 - With a `--state-token` that names another token, or a `--network-magic` that names another network, the command is refused in one sentence naming both values. With values that agree it is accepted. The comparison is between the final values, wherever each came from, so a stale `state-token` key of the settings file next to a new `registry` key is refused, and the sentence says what disagrees.
 - A command given neither a registry nor a state token is refused as it is today.
-- A provider on another network than the address names is refused by name. Where a provider already checks its network against the network magic, the refusal now says which network the address names and which network the provider reports. Where some path has no such check, that is stated in the pull request; no check is invented.
+- The network the address names is the command's network, exactly as `--network-magic` is today, for every later step. A provider that serves another network is not refused yet: no provider is asked which network it serves, and that check is issue 729 (https://github.com/lambdasistemi/singular/issues/729). Nothing of the provider layer changes here.
 - The three programs read the registry through one shared function of the command library. None keeps its own copy.
 
 ## Contracts of another release
@@ -154,4 +154,4 @@ A section of the node page says that the address is the registry's NFT, what it 
 
 ## Not in this ticket
 
-Contracts found from the installed release (a default for `--blueprint`), public networks bringing their own connection, wallets by name, reclaim by key, a public registry page reached from the address, and moving `describeCommand` to the address. They have their own tickets, with the same aim: a registry user is told only the address.
+Contracts found from the installed release (a default for `--blueprint`), public networks bringing their own connection, wallets by name, reclaim by key, a public registry page reached from the address, moving `describeCommand` to the address, and a provider refused when it serves another network than the address names (issue 729). They have their own tickets, with the same aim: a registry user is told only the address.
