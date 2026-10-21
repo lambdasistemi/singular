@@ -209,8 +209,8 @@
     "index": 1,
     "name": "README/start-here-play-demo-1-01",
     "pause_ms": 400,
-    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix.",
-    "v": "c3e40b0e9bfe"
+    "text": "As a Cardano developer who knows cardano-cli, wallets, faucets and Koios but not Singular, you can play Demo 1, a registry from creation to termination in sixteen steps, and watch every step either succeed or be refused where the page says it will. The Demo 1 page says what the play shows and where to play it: the step-by-step page of singular-demo, with a copy button on every block; its Nix shell, which holds singular, open-datum and a private development chain; and its Ubuntu kit for a machine without Nix. To play it in a browser with nothing installed, open the Killercoda scenario; to watch it without running anything, open the recorded run.",
+    "v": "a64242c2c9e3"
    },
    {
     "index": 2,
@@ -2745,8 +2745,8 @@
     "index": 1,
     "name": "docs-demo1/where-to-play-it-01",
     "pause_ms": 400,
-    "text": "Every way below plays the same sixteen steps. The table lists three: the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. Start with the step-by-step page.",
-    "v": "a76edcd9b592"
+    "text": "Every way below plays the same sixteen steps. The table lists five: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
+    "v": "abda61998989"
    },
    {
     "index": 2,

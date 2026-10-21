@@ -37,7 +37,7 @@
       "pause": 500
     },
     {
-      "text": "Every way below plays the same sixteen steps. The table lists three: the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. Start with the step-by-step page.",
+      "text": "Every way below plays the same sixteen steps. The table lists five: the recorded run to watch, the Killercoda scenario to play in a browser, the step-by-step page to paste from, which needs the programs, and the Nix shell and the Ubuntu kit, which are two ways to get the programs. To play on your own machine, start with the step-by-step page.",
       "pause": 400
     },
     {
@@ -67,6 +67,6 @@
   ],
   "_source": {
     "file": "demo1.md",
-    "sha256": "7e4fdf61eda0b728891a61c84959cc3c8d05486446f9df03a2538d7c6165ab82"
+    "sha256": "c6ec1b0682879d1f16deafb87a5413b11c05c05f35b88fa0a38d1febbd845a8d"
   }
 }
